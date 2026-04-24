@@ -1,0 +1,157 @@
+# SQLite Schema
+
+## `records`
+
+```sql
+create table records (
+	record_pk text primary key default (
+		lower(
+			hex(randomblob(4)) || '-' ||
+			hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' ||
+			substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' ||
+			hex(randomblob(6))
+		)
+	)
+);
+
+create trigger records_no_update
+before update on records
+begin
+	select raise(fail, 'records rows are immutable');
+end;
+```
+
+## `records_history`
+
+```sql
+create table records_history (
+	instance_pk  text primary key default (
+		lower(
+			hex(randomblob(4)) || '-' ||
+			hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' ||
+			substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' ||
+			hex(randomblob(6))
+		)
+	),
+	record_pk      text not null references records(record_pk),
+	updated_at     text not null default (strftime('%Y-%m-%dT%H:%M:%f', 'now')),
+	active         integer not null default 1 check(active in (0, 1)),
+	bucket         text check(active = 0 or (bucket is not null and json_type(bucket) = 'object')),
+	class          text check(active = 0 or class is not null),
+	custom_classes text check(active = 0 or (custom_classes is not null and json_type(custom_classes) = 'object')),
+	unique(record_pk, updated_at)
+);
+
+create trigger records_history_no_update
+before update on records_history
+begin
+	select raise(fail, 'records_history rows are immutable');
+end;
+
+-- Enforce unique class names among active class definition records.
+create trigger records_history_unique_class_name
+before insert on records_history
+when new.active = 1 and new.bucket is not null
+begin
+	select raise(fail, 'duplicate class name')
+	where
+		new.class = 'mikobase.com/record/class'
+		and exists (
+			select 1 from current_records
+			where
+				class = 'mikobase.com/record/class'
+				and record_pk != new.record_pk
+				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
+		);
+end;
+```
+
+## Views
+
+```sql
+-- current_records: the latest active history row for each record.
+-- Tie-breaking uses instance_pk desc in case two rows share the same updated_at.
+create view current_records as
+with ranked as (
+	select
+		rh.*,
+		row_number() over (
+			partition by rh.record_pk
+			order by rh.updated_at desc, rh.instance_pk desc
+		) as row_num
+	from records_history rh
+)
+select
+	instance_pk,
+	record_pk,
+	updated_at,
+	active,
+	bucket,
+	class,
+	custom_classes
+from ranked
+where row_num = 1
+and active = 1;
+```
+
+## `files`
+
+```sql
+create table files (
+	file_pk text primary key default (
+		lower(
+			hex(randomblob(4)) || '-' ||
+			hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-' ||
+			substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' ||
+			hex(randomblob(6))
+		)
+	),
+	created_at text not null default (strftime('%Y-%m-%dT%H:%M:%f', 'now')),
+	size       integer not null,
+	sha256     text not null unique
+);
+
+create trigger files_no_update
+before update on files
+begin
+	select raise(fail, 'files rows are immutable');
+end;
+```
+
+## `file_chunks`
+
+```sql
+create table file_chunks (
+	file_chunk_pk integer primary key,
+	file_pk       text not null references files(file_pk) on delete cascade,
+	chunk_index   integer not null check(chunk_index >= 0),
+	content       blob not null,
+	last          integer not null default 0 check(last in (0, 1)),
+	unique(file_pk, chunk_index)
+);
+
+create unique index file_chunks_one_last_per_file
+	on file_chunks(file_pk)
+	where last = 1;
+
+create trigger file_chunks_no_update
+before update on file_chunks
+begin
+	select raise(fail, 'file_chunks rows are immutable');
+end;
+```
+
+## Notes
+
+- All primary keys are immutable and engine-generated; clients cannot supply PKs.
+- PKs are UUID v4 values generated via `randomblob`, compatible with all SQLite versions.
+- `records` and `records_history` are append-only; deletions are handled at the engine layer only.
+- `files` and `file_chunks` are immutable once written; deletions are handled at the engine layer only.
+- A record whose latest `records_history` row has `active = 0` is considered deleted and excluded from normal queries.
+- Historical reads use an `updated_at` cutoff timestamp to find the latest row at or before that point in time.
+- `unique(record_pk, updated_at)` prevents timestamp collisions within a record's history.
+- The `class` column stores the UNS class name directly. There is no foreign key to `records` — the engine validates class existence at write time.
+- Built-in classes (`mikobase.com/record`, `mikobase.com/record/class`, etc.) are recognized by the engine and do not need stored records.
+- Empty files are represented by a single `file_chunks` row with `content = ''` and `last = 1`.
+- Class name uniqueness is enforced by the `records_history_unique_class_name` trigger via `current_records`.
+- The `current_records` view uses `instance_pk desc` as a tie-breaker when two rows share the same `updated_at`.
