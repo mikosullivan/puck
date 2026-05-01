@@ -1,0 +1,46 @@
+$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db')
+
+$results = $mikobase.q0({
+    action:  :select,
+    class:   'foo.com/character',
+    then:    {path: ['rank', 'Captain']}
+})
+
+$results.each($record) do
+    puts($record['name'])
+end
+
+$mikobase.q0({
+    action: :create,
+    class:  'foo.com/character',
+    bucket: {name: 'Picard', rank: 'Captain'}
+})
+
+$mikobase.q0({
+    action: :update,
+    pk:     '92677339-df86-4f68-9397-999e40cf2c40',
+    bucket: {rank: 'Admiral'}
+})
+
+$hot_hive = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
+
+$record = $hot_hive.q0({action: :select, pk: '92677339-df86-4f68-9397-999e40cf2c40'})
+$record['rank'] = 'Admiral'
+
+$mikobase.listen 'foo.com/character', :after_save do($change)
+    puts($change.record['name'] + ' was saved')
+    puts($change.fields)
+end
+
+$server = %kiera['kiera.uno/mikobase/http'].new(
+    mikobase:   $mikobase,
+    socket: '/var/run/myhive.sock',
+    auth:   :peer
+)
+$server.start
+
+$remote = %kiera['kiera.uno/mikobase/http'].connect(
+    socket: '/var/run/myhive.sock',
+    auth:   :peer,
+    hot:    true
+)

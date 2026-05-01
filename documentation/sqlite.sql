@@ -1,4 +1,4 @@
--- Mikobase SQLite Schema
+-- Hive SQLite Schema
 
 -- ============================================================
 -- records
@@ -56,11 +56,11 @@ when new.active = 1 and new.bucket is not null
 begin
 	select raise(fail, 'duplicate class name')
 	where
-		new.class = 'mikobase.com/record/class'
+		new.class = 'kiera.uno/record/class'
 		and exists (
 			select 1 from current_records
 			where
-				class = 'mikobase.com/record/class'
+				class = 'kiera.uno/record/class'
 				and record_pk != new.record_pk
 				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
 		);

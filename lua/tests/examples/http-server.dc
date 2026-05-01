@@ -1,0 +1,34 @@
+$server = &kiera['kiera.uno/http/server'].new()
+
+$server.select('/') do($request, $response)
+end
+
+$server.select('/shakespeare/') do($request, $response)
+end
+
+$server.select('/shakespeare/sonnets/') do($request, $response)
+end
+
+$server.select('/shakespeare/{play}/') do($request, $response)
+end
+
+$server.select('/shakespeare/{play}/{act}/') do($request, $response)
+end
+
+$server.select('/shakespeare/{play}/{act}/{scene}') do($request, $response)
+	$request.steps['scene'] # the value of the "scene" path step
+end
+
+# /shakespeare/hamlet/2/?foo=bar
+
+$server.select('/shakespeare/{play}/{act}/') do($request, $response)
+	$request.steps['play'] # 'hamlet'
+end
+
+$server.select('/shakespeare/{play}/{act}/') do($request, $response)
+	$request.params['foo'] # 'bar'
+end
+
+$server.run() do($request, $response)
+	# we only get to this point if none of the selectors find anything
+end

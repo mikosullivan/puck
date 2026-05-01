@@ -1,0 +1,53 @@
+$rank = 'Captain'
+
+if ($rank == 'Captain')
+    puts('Aye, captain')
+elsif ($rank == 'Commander')
+    puts('Aye, commander')
+else
+    puts('Aye')
+end
+
+$scores = [98, 72, 85, 91]
+$total = 0
+
+$scores.each($score) as $loop
+    $total = $total + $score
+end
+
+puts($loop.count)
+
+$scores.each($score)
+    puts($score)
+before
+    puts('--- scores ---')
+after
+    puts('--------------')
+noloop
+    puts('no scores')
+end
+
+$i = 0
+
+while($i < 10)
+    $i = $i + 1
+end
+
+$result =
+    if ($rank == 'Captain') as $if
+        $if.return 'in charge'
+    else
+        $if.return 'not in charge'
+    end
+
+$exception = catch('borg.com/exception/assimilation')
+    &do_something_risky
+end
+
+if ($exception)
+    puts('caught: ' + $exception.message)
+end
+
+$warnings = heed('foo.com/warning/validation')
+    &validate($person)
+end

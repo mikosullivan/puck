@@ -2,24 +2,42 @@
 
 ## Overview
 
+vibecode: {
+	"section": "overview",
+	"role": "explains how class definitions are stored in the mikobase",
+	"key_concepts": ["records_history", "class_pk", "bucket", "kiera.uno/record/class"]
+}
+
 A class definition is stored as a record in `records_history` with `class_pk` pointing to the
-`mikobase.com/record/class` record.
+`kiera.uno/record/class` record.
 
 The class definition is stored in the `bucket` field.
 
 ## Universal Namespace (UNS)
+
+vibecode: {
+	"section": "universal_namespace",
+	"role": "defines the UNS naming convention for class names",
+	"key_concepts": ["UNS", "domain-scoped_namespacing", "globally_unique_class_names"]
+}
 
 Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
 globally unique namespace so developers using their own domains cannot accidentally collide.
 
 Examples:
 
-- `mikobase.com/record`
-- `mikobase.com/reference`
+- `kiera.uno/record`
+- `kiera.uno/reference`
 - `foo.com/bar`
 - `mycompany.com/character`
 
 ## Schema
+
+vibecode: {
+	"section": "schema",
+	"role": "describes the top-level schema format and import rules",
+	"key_concepts": ["classes_dict", "import_rules", "dependency_resolution", "parent-first_insertion"]
+}
 
 A full schema is a JSON object with a `classes` dict. Each key is the UNS class name and
 each value is the class definition. The `name` field is not repeated inside the definition.
@@ -59,6 +77,12 @@ explicitly set inside a class definition is ignored and overwritten with the key
 
 ## Class Name
 
+vibecode: {
+	"section": "class_name",
+	"role": "specifies the name field format and lists built-in seeded classes",
+	"key_concepts": ["UNS_name_field", "built-in_classes", "kiera.uno/record", "kiera.uno/reference", "kiera.uno/dbfile"]
+}
+
 Every class definition has a `name` field containing a UNS string.
 
 ```json
@@ -69,38 +93,29 @@ Every class definition has a `name` field containing a UNS string.
 
 Built-in classes seeded as database records:
 
-- `mikobase.com/record` — base class for all records
-- `mikobase.com/record/class` — class for class definitions
-- `mikobase.com/reference` — reference to another record
-- `mikobase.com/dbfile` — file attachment
+- `kiera.uno/record` — base class for all records
+- `kiera.uno/record/class` — class for class definitions
+- `kiera.uno/reference` — reference to another record
+- `kiera.uno/dbfile` — file attachment
 
-## Record Classes vs. Object Classes
+## Record Classes
 
-A class is either a **record class** (can be assigned to records in `records_history`) or an
-**object class** (used only for embedded objects via `custom_classes`).
+vibecode: {
+	"section": "record_classes",
+	"role": "states that all schema-defined classes are record classes with no separate declaration",
+	"key_concepts": ["record_class", "schema_classes", "assignable_to_records"]
+}
 
-A class must explicitly declare itself as a record class. A class with no such declaration is an
-object class only and cannot be used as a record class.
-
-Two equivalent ways to declare a record class:
-
-```json
-{ "name": "foo.com/bar", "record_class": true }
-```
-
-```json
-{ "name": "foo.com/bar", "inherits": "mikobase.com/record" }
-```
-
-`"record_class": true` is shorthand for `"inherits": "mikobase.com/record"`.
-
-If both `record_class: true` and `inherits` are present, the `inherits` target must be
-`mikobase.com/record` or a descendant of it — otherwise it is an error.
-
-A class that inherits from a record class is itself a record class without needing an explicit
-declaration.
+All classes defined in the `classes` schema are record classes — they can be assigned to
+records in `records_history`. There is no separate declaration required.
 
 ## Inheritance
+
+vibecode: {
+	"section": "inheritance",
+	"role": "documents single-parent explicit inheritance via the inherits field",
+	"key_concepts": ["inherits_field", "single_parent", "explicit_only", "no_path-implied_inheritance", "write-time_validation"]
+}
 
 A class inherits all field definitions from its parent class. Subclasses may override or extend
 inherited fields.
@@ -121,6 +136,12 @@ of the write. Previously written records are not retroactively invalidated by cl
 
 ## Fields
 
+vibecode: {
+	"section": "fields",
+	"role": "defines field definition syntax and field name conventions",
+	"key_concepts": ["fields_object", "field_definition", "snake_case", "class_constraint", "required", "collapse"]
+}
+
 A class definition may include a `fields` object. Each key is a field name, and each value is a
 field definition object.
 
@@ -129,7 +150,6 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 ```json
 {
     "name": "foo.com/bar",
-    "record_class": true,
     "fields": {
         "surname": {"class": "string", "required": true, "collapse": true, "min_length": 1},
         "age":     {"class": "number", "integer_only": true, "min": 0}
@@ -138,6 +158,12 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 ```
 
 ## Field Types
+
+vibecode: {
+	"section": "field_types",
+	"role": "enumerates all valid field type classes including primitives and UNS references",
+	"key_concepts": ["string", "number", "boolean", "hash", "array", "kiera.uno/reference", "kiera.uno/dbfile", "UNS_class_reference"]
+}
 
 | Class | Description |
 |---|---|
@@ -148,11 +174,17 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 | `"timestamp"` | ISO 8601 timestamp string with millisecond precision |
 | `"hash"` | Anonymous nested object with its own inline field definitions |
 | `"array"` | Untyped array |
-| `"mikobase.com/reference"` | Reference to another record |
-| `"mikobase.com/dbfile"` | File attachment |
+| `"kiera.uno/reference"` | Reference to another record |
+| `"kiera.uno/dbfile"` | File attachment |
 | any UNS class name | Reference to a named class defined elsewhere in the schema |
 
 ## Inline vs. Named Field Types
+
+vibecode: {
+	"section": "inline_vs_named_field_types",
+	"role": "explains when constraints are inline vs. referenced by UNS name; hash of and default behavior",
+	"key_concepts": ["inline_constraints", "UNS_reference", "hash_of", "hash_default", "anonymous_nested_objects"]
+}
 
 Only basic types (`string`, `number`, `boolean`, `url`, `timestamp`, `hash`, `array`) may
 have constraints defined inline in the field definition.
@@ -210,6 +242,12 @@ that type:
 
 ## Common Field Settings
 
+vibecode: {
+	"section": "common_field_settings",
+	"role": "lists settings that apply to all or most field types",
+	"key_concepts": ["required", "unique", "default", "instantiate"]
+}
+
 | Setting | Applies to | Description |
 |---|---|---|
 | `required` | all types | Field must be present and non-null |
@@ -219,6 +257,12 @@ that type:
 
 ## String Settings
 
+vibecode: {
+	"section": "string_settings",
+	"role": "lists constraints specific to string fields",
+	"key_concepts": ["min_length", "max_length", "collapse"]
+}
+
 | Setting | Description |
 |---|---|
 | `min_length` | Minimum character length |
@@ -226,6 +270,12 @@ that type:
 | `collapse` | If `true`, trim leading/trailing whitespace and collapse internal whitespace runs to one space |
 
 ## Number Settings
+
+vibecode: {
+	"section": "number_settings",
+	"role": "lists constraints specific to numeric fields",
+	"key_concepts": ["min", "max", "gt", "lt", "gte", "lte", "integer_only", "multiple_of"]
+}
 
 | Setting | Description |
 |---|---|
@@ -238,12 +288,24 @@ that type:
 
 ## Array and Hash Settings
 
+vibecode: {
+	"section": "array_and_hash_settings",
+	"role": "lists element/key count constraints shared by array and hash types",
+	"key_concepts": ["min_elements", "max_elements"]
+}
+
 | Setting | Description |
 |---|---|
 | `min_elements` | Minimum number of elements (array) or keys (hash) |
 | `max_elements` | Maximum number of elements (array) or keys (hash) |
 
 ## Typed Arrays
+
+vibecode: {
+	"section": "typed_arrays",
+	"role": "documents the of key for specifying element types in arrays",
+	"key_concepts": ["array_of", "typed_array", "untyped_array", "inline_element_constraints"]
+}
 
 A typed array uses `"class": "array"` with an `"of"` key specifying the element type. `"of"` may be a plain class name string or a full inline field definition when element-level constraints are needed.
 
@@ -257,13 +319,19 @@ An untyped array uses `"class": "array"` with no `"of"`.
 
 ## Reference Fields
 
-A `mikobase.com/reference` field may optionally constrain which record classes it may point to
+vibecode: {
+	"section": "reference_fields",
+	"role": "documents allowed_class and allowed_classes constraints on reference fields",
+	"key_concepts": ["kiera.uno/reference", "allowed_class", "allowed_classes", "subclass_valid"]
+}
+
+A `kiera.uno/reference` field may optionally constrain which record classes it may point to
 using `allowed_class` (single UNS name) and/or `allowed_classes` (array of UNS names). If both
 are present they are merged. Any record of the specified class or a subclass is valid.
 
 ```json
 {
-    "class": "mikobase.com/reference",
+    "class": "kiera.uno/reference",
     "allowed_class": "foo.com/planet",
     "allowed_classes": ["foo.com/moon", "foo.com/station"]
 }
@@ -271,11 +339,17 @@ are present they are merged. Any record of the specified class or a subclass is 
 
 ## Object Representation
 
+vibecode: {
+	"section": "object_representation",
+	"role": "defines hash form and shorthand form for object classes like reference and dbfile",
+	"key_concepts": ["hash_form", "shorthand_form", "kiera.uno/reference_shorthand", "kiera.uno/dbfile_shorthand", "record_pk_string"]
+}
+
 Every object class can always be represented as a hash. Some object classes additionally
 define a shorthand form for convenience. Both forms must always be accepted wherever that
 class is expected.
 
-For example, `mikobase.com/reference` in hash form and shorthand form:
+For example, `kiera.uno/reference` in hash form and shorthand form:
 
 ```json
 { "homeworld": {"pk": "92677339-df86-4f68-9397-999e40cf2c40"} }
@@ -285,9 +359,9 @@ For example, `mikobase.com/reference` in hash form and shorthand form:
 { "homeworld": "92677339-df86-4f68-9397-999e40cf2c40" }
 ```
 
-The shorthand for `mikobase.com/reference` is a plain string containing the target `record_pk`.
+The shorthand for `kiera.uno/reference` is a plain string containing the target `record_pk`.
 
-`mikobase.com/dbfile` follows the same pattern — hash form and shorthand form:
+`kiera.uno/dbfile` follows the same pattern — hash form and shorthand form:
 
 ```json
 { "avatar": {"pk": "92677339-df86-4f68-9397-999e40cf2c40"} }
@@ -297,13 +371,25 @@ The shorthand for `mikobase.com/reference` is a plain string containing the targ
 { "avatar": "92677339-df86-4f68-9397-999e40cf2c40" }
 ```
 
-The shorthand for `mikobase.com/dbfile` is a plain string containing the target `file_pk`.
+The shorthand for `kiera.uno/dbfile` is a plain string containing the target `file_pk`.
 
 ## File Fields
 
-`mikobase.com/dbfile` fields support only `required`. No other constraints.
+vibecode: {
+	"section": "file_fields",
+	"role": "notes that dbfile fields only support the required constraint",
+	"key_concepts": ["kiera.uno/dbfile", "required_only", "no_other_constraints"]
+}
+
+`kiera.uno/dbfile` fields support only `required`. No other constraints.
 
 ## Field Ordering
+
+vibecode: {
+	"section": "field_ordering",
+	"role": "specifies the canonical field order in query results",
+	"key_concepts": ["ancestor_fields_first", "definition_order", "undefined_fields_last"]
+}
 
 Records returned from queries present fields in this order:
 
@@ -312,6 +398,12 @@ Records returned from queries present fields in this order:
 3. Fields not defined in any class, in their stored order
 
 ## Unique Constraints
+
+vibecode: {
+	"section": "unique_constraints",
+	"role": "documents single-field and multi-field unique constraints",
+	"key_concepts": ["unique_true", "uniques_array", "multi-field_unique", "null_excluded", "write-time_error"]
+}
 
 A single field is made unique with `"unique": true` in the field definition:
 
@@ -327,8 +419,8 @@ that class:
 {
     "name": "borg.com/appearance",
     "fields": {
-        "person":  {"class": "mikobase.com/reference", "required": true},
-        "episode": {"class": "mikobase.com/reference", "required": true}
+        "person":  {"class": "kiera.uno/reference", "required": true},
+        "episode": {"class": "kiera.uno/reference", "required": true}
     },
     "uniques": [
         ["person", "episode"]
@@ -344,17 +436,22 @@ that class:
 
 ## Joins
 
+vibecode: {
+	"section": "joins",
+	"role": "documents the join shorthand that enforces required, unique, and immutable on a set of fields",
+	"key_concepts": ["join_array", "required_fields", "unique_combined", "immutable_fields", "join_semantics"]
+}
+
 `join` is a class-level shorthand for defining join-style relationships between records. It
 is an array of two or more field names.
 
 ```json
 {
     "name": "borg.com/appearance",
-    "record_class": true,
     "fields": {
-        "person":    {"class": "mikobase.com/reference", "allowed_class": "borg.com/person"},
-        "episode":   {"class": "mikobase.com/reference", "allowed_class": "borg.com/episode"},
-        "character": {"class": "mikobase.com/reference", "allowed_class": "borg.com/character"}
+        "person":    {"class": "kiera.uno/reference", "allowed_class": "borg.com/person"},
+        "episode":   {"class": "kiera.uno/reference", "allowed_class": "borg.com/episode"},
+        "character": {"class": "kiera.uno/reference", "allowed_class": "borg.com/character"}
     },
     "join": ["person", "episode", "character"]
 }
@@ -373,6 +470,12 @@ semantics — direction is determined by which field holds which reference.
 Additional fields beyond those listed in `join` may be defined and updated normally.
 
 ## Unknown Fields
+
+vibecode: {
+	"section": "unknown_fields",
+	"role": "states that undefined fields are stored as-is without validation",
+	"key_concepts": ["unknown_fields", "no_validation", "stored_as-is", "open_schema"]
+}
 
 If a record's bucket contains a field not defined in its class, that field is stored as-is
 without validation.

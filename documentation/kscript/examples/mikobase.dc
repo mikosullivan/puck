@@ -1,0 +1,161 @@
+%vibecode <<EOF
+{
+  "purpose": "KScript mikobase examples — q0 queries (select/create/update), hot connections, event listeners, HTTP server and remote client",
+  "demonstrates": [
+    "opening a SQLite mikobase connection",
+    "q0 select with path filter",
+    "iterating a result collection",
+    "q0 create with bucket hash",
+    "q0 update by primary key",
+    "hot connection — mutations auto-persist without explicit save",
+    "listen — event hook on after_save",
+    "kiera.uno/mikobase/http — HTTP server exposing the mikobase",
+    "kiera.uno/mikobase/http.connect — remote HTTP client with hot:true"
+  ]
+}
+EOF
+
+%vibecode <<EOF
+{
+  "purpose": "Open a standard (non-hot) SQLite mikobase connection",
+  "note":    "non-hot connections require explicit q0 calls to read and write; used for most transactional operations"
+}
+EOF
+
+$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db')
+
+%vibecode <<EOF
+{
+  "purpose": "Select all characters with rank 'Captain'",
+  "returns": "collection of foo.com/character records matching the path filter",
+  "note":    "path filter ['rank', 'Captain'] traverses the record's field graph; returns all matching records as a collection"
+}
+EOF
+
+$results = $mikobase.q0({
+    vibecode: {
+        intent:  "select foo.com/character records where rank == 'Captain'",
+        returns: "collection of matching character records"
+    },
+    action:  :select,
+    class:   'foo.com/character',
+    then:    {path: ['rank', 'Captain']}
+})
+
+%vibecode <<EOF
+{
+  "purpose": "Iterate the result collection and print each character's name",
+  "note":    "each element of $results is a foo.com/character record; field access uses hash notation $record['name']"
+}
+EOF
+
+$results.each($record) do
+    puts($record['name'])
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Create a new foo.com/character record with name and rank",
+  "note":    "bucket is a hash of field values; the mikobase assigns a UUID primary key automatically"
+}
+EOF
+
+$mikobase.q0({
+    vibecode: {
+        intent:  "insert a new character record for Picard",
+        returns: "the created record object"
+    },
+    action: :create,
+    class:  'foo.com/character',
+    bucket: {name: 'Picard', rank: 'Captain'}
+})
+
+%vibecode <<EOF
+{
+  "purpose": "Update a specific record by primary key — change rank to Admiral",
+  "note":    "pk is the UUID of the record to update; bucket contains only the fields to change; other fields are unaffected"
+}
+EOF
+
+$mikobase.q0({
+    vibecode: {
+        intent:  "update the rank field of a specific character record by UUID",
+        note:    "partial update — only fields in bucket are changed"
+    },
+    action: :update,
+    pk:     '92677339-df86-4f68-9397-999e40cf2c40',
+    bucket: {rank: 'Admiral'}
+})
+
+%vibecode <<EOF
+{
+  "purpose": "Hot connection — mutations to fetched records are automatically persisted",
+  "note":    "hot: true instructs the mikobase to hold a live reference to fetched records; assigning to $record['field'] triggers an implicit save; no explicit q0 update call needed"
+}
+EOF
+
+$hot_hive = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
+
+%vibecode <<EOF
+{
+  "purpose": "Fetch a record by primary key on a hot connection",
+  "note":    "q0 returns the record directly (not a collection) when pk is specified; $record is a live object"
+}
+EOF
+
+$record = $hot_hive.q0({
+    vibecode: {
+        intent:  "fetch a single character record by UUID via hot connection",
+        returns: "live record object — writes propagate back to the database automatically"
+    },
+    action: :select,
+    pk:     '92677339-df86-4f68-9397-999e40cf2c40'
+})
+
+%vibecode <<EOF
+{
+  "purpose": "Mutate the live record — the assignment auto-saves because $hot_hive is a hot connection",
+  "note":    "no explicit q0 update needed; the hot connection detects the write and persists it immediately"
+}
+EOF
+
+$record['rank'] = 'Admiral'
+
+%vibecode <<EOF
+{
+  "purpose": "Event listener — fires after_save on any foo.com/character record",
+  "note":    "$change.record is the saved record; $change.fields is a hash of only the fields that changed in this save; use $change.fields to detect specific changes"
+}
+EOF
+
+$mikobase.listen 'foo.com/character', :after_save do($change)
+    puts($change.record['name'] + ' was saved')
+    puts($change.fields)
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Expose the mikobase over HTTP using Unix domain socket with peer authentication",
+  "note":    "kiera.uno/mikobase/http wraps a mikobase and serves it over HTTP; socket path and auth method are required; peer auth uses OS-level Unix socket credentials"
+}
+EOF
+
+$server = %kiera['kiera.uno/mikobase/http'].new(
+    mikobase:   $mikobase,
+    socket: '/var/run/myhive.sock',
+    auth:   :peer
+)
+$server.start
+
+%vibecode <<EOF
+{
+  "purpose": "Connect to a remote mikobase over HTTP — hot client connection",
+  "note":    "kiera.uno/mikobase/http.connect is the client-side counterpart to .new; hot:true means fetched records are live; auth:peer uses Unix socket credentials for authentication"
+}
+EOF
+
+$remote = %kiera['kiera.uno/mikobase/http'].connect(
+    socket: '/var/run/myhive.sock',
+    auth:   :peer,
+    hot:    true
+)

@@ -1,0 +1,76 @@
+# Roles
+
+## Status
+
+This is an early design idea, not yet in active development.
+
+---
+
+## Overview
+
+`%role` is a system method that returns the current role object for the scope. It is
+an identifier and context store — a way of passing identity and related data down the
+call chain without threading it through every function signature.
+
+`%role` is not a permission system. It does not enforce access control by itself. It
+is simply an object in the chain that code can read and use however it needs to.
+
+---
+
+## Behavior
+
+- `%role` follows the same scoping rules as `%chain` — values flow down, changes do
+  not propagate back up.
+- If `%role` is null, there is no current role.
+- Over-reliance on `%role` can lead to privilege escalation if the developer forgets
+  to unset it before running untrusted code.
+
+---
+
+## Unsetting the Role
+
+Several ways to clear `%role`:
+
+```
+# Direct assignment
+%role = null
+
+# Block-scoped — role is null inside, restored after
+%role.none do
+end
+
+# Clear everything in the chain including role
+%chain.clear do
+end
+```
+
+---
+
+## Marking a Function as Untrusted
+
+Trust lives on the function object rather than at the call site. `untrusted()` wraps
+a function so that `%role` is automatically set to null whenever it is called:
+
+```
+$foo = function()
+end
+
+$foo = untrusted($foo)
+&foo   # %role is null for the duration of this call
+```
+
+The trust decision is made once when the function is wrapped. Every subsequent call
+automatically gets a null role — no forgetting at call sites.
+
+`untrusted()` is implemented as a wrapper that intercepts the call, sets `%role` to
+null, then delegates to the original function. It composes naturally with jail.
+
+---
+
+## Open Questions
+
+- What properties does a role object expose beyond being a context store?
+- How do roles interact with firewall rules?
+- Can roles be narrowed (permissions removed) rather than fully cleared?
+- Should there be a `trusted()` counterpart to `untrusted()`?
+- How do roles interact with multi-tenancy and audit logging?

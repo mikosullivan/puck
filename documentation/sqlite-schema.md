@@ -2,6 +2,12 @@
 
 ## `records`
 
+vibecode: {
+	"section": "records_table",
+	"role": "defines the records identity table with immutable UUID pk and no-update trigger",
+	"key_concepts": ["records", "record_pk", "UUID_v4", "randomblob", "immutable", "no_update_trigger"]
+}
+
 ```sql
 create table records (
 	record_pk text primary key default (
@@ -22,6 +28,13 @@ end;
 ```
 
 ## `records_history`
+
+vibecode: {
+	"section": "records_history_table",
+	"role": "defines the append-only version history table with class name uniqueness trigger",
+	"key_concepts": ["records_history", "instance_pk", "active", "bucket", "class", "custom_classes",
+		"immutable_rows", "unique_class_name_trigger"]
+}
 
 ```sql
 create table records_history (
@@ -55,11 +68,11 @@ when new.active = 1 and new.bucket is not null
 begin
 	select raise(fail, 'duplicate class name')
 	where
-		new.class = 'mikobase.com/record/class'
+		new.class = 'kiera.uno/record/class'
 		and exists (
 			select 1 from current_records
 			where
-				class = 'mikobase.com/record/class'
+				class = 'kiera.uno/record/class'
 				and record_pk != new.record_pk
 				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
 		);
@@ -67,6 +80,13 @@ end;
 ```
 
 ## Views
+
+vibecode: {
+	"section": "views",
+	"role": "defines the current_records view that shows the latest active row per record",
+	"key_concepts": ["current_records", "latest_active_row", "row_number", "tie_breaking_instance_pk",
+		"active_filter"]
+}
 
 ```sql
 -- current_records: the latest active history row for each record.
@@ -96,6 +116,12 @@ and active = 1;
 
 ## `files`
 
+vibecode: {
+	"section": "files_table",
+	"role": "defines the files metadata table with sha256 deduplication and immutability",
+	"key_concepts": ["files", "file_pk", "sha256_unique", "created_at", "size", "immutable"]
+}
+
 ```sql
 create table files (
 	file_pk text primary key default (
@@ -120,6 +146,13 @@ end;
 
 ## `file_chunks`
 
+vibecode: {
+	"section": "file_chunks_table",
+	"role": "defines the file content storage table with chunk ordering and last-chunk marker",
+	"key_concepts": ["file_chunks", "chunk_index", "content_blob", "last_flag", "one_last_per_file_index",
+		"immutable"]
+}
+
 ```sql
 create table file_chunks (
 	file_chunk_pk integer primary key,
@@ -143,6 +176,13 @@ end;
 
 ## Notes
 
+vibecode: {
+	"section": "notes",
+	"role": "summary of schema-wide invariants: immutability, soft deletes, historical reads, class column",
+	"key_concepts": ["engine_generated_pks", "append_only", "soft_deletes", "historical_reads",
+		"class_column_UNS", "built-in_classes_recognized", "empty_file_chunk"]
+}
+
 - All primary keys are immutable and engine-generated; clients cannot supply PKs.
 - PKs are UUID v4 values generated via `randomblob`, compatible with all SQLite versions.
 - `records` and `records_history` are append-only; deletions are handled at the engine layer only.
@@ -151,7 +191,7 @@ end;
 - Historical reads use an `updated_at` cutoff timestamp to find the latest row at or before that point in time.
 - `unique(record_pk, updated_at)` prevents timestamp collisions within a record's history.
 - The `class` column stores the UNS class name directly. There is no foreign key to `records` — the engine validates class existence at write time.
-- Built-in classes (`mikobase.com/record`, `mikobase.com/record/class`, etc.) are recognized by the engine and do not need stored records.
+- Built-in classes (`kiera.uno/record`, `kiera.uno/record/class`, etc.) are recognized by the engine and do not need stored records.
 - Empty files are represented by a single `file_chunks` row with `content = ''` and `last = 1`.
 - Class name uniqueness is enforced by the `records_history_unique_class_name` trigger via `current_records`.
 - The `current_records` view uses `instance_pk desc` as a tie-breaker when two rows share the same `updated_at`.

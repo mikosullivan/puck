@@ -1,10 +1,18 @@
-# Mikobase Requirements
+# Mikobase Engine Requirements
 
 ## Overview
 
-Mikobase is a middleware database system. It defines a protocol by which clients in various
-programming languages can access objects in a database. It is a NoSQL solution with a
-class-based object model.
+vibecode: {
+	"section": "overview",
+	"role": "introduces the mikobase engine requirements: clients, engines, Q0, and the Python SQLite implementation",
+	"key_concepts": ["mikobase_engine", "clients", "engines", "Q0", "chained_engines", "Python_SQLite"]
+}
+
+A mikobase is the object store layer of the Kiera ecoverse. It defines a protocol by which
+clients in various programming languages can access objects in a live object store. It is
+a NoSQL solution with a class-based object model.
+
+See [overview.md](overview.md) for the full picture.
 
 The system consists of:
 
@@ -24,15 +32,21 @@ is out of scope for now — only the engine is being developed at this stage.
 
 ## Universal Namespace (UNS)
 
+vibecode: {
+	"section": "universal_namespace",
+	"role": "defines UNS class naming for the requirements context",
+	"key_concepts": ["UNS", "domain_namespace", "kiera.uno_built-ins", "foo.com_examples"]
+}
+
 Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
 globally unique namespace.
 
 Examples:
 
-- `mikobase.com/record`
-- `mikobase.com/record/class`
-- `mikobase.com/reference`
-- `mikobase.com/dbfile`
+- `kiera.uno/record`
+- `kiera.uno/record/class`
+- `kiera.uno/reference`
+- `kiera.uno/dbfile`
 - `foo.com/bar`
 - `mycompany.com/character`
 
@@ -40,9 +54,16 @@ Examples:
 
 ## Object Model
 
+vibecode: {
+	"section": "object_model",
+	"role": "specifies the record, class, bucket, custom_classes, and built-in class model",
+	"key_concepts": ["records", "classes", "bucket", "custom_classes", "built-in_classes",
+		"record_pk", "append-only_history", "tombstone"]
+}
+
 ### Records
 
-- Records are the primary data objects in Mikobase.
+- Records are the primary data objects in a mikobase.
 - Every record has a stable identity (`record_pk`) and an append-only version history.
 - The current state of a record is its latest active history row.
 - A record whose latest history row has `active = false` is considered deleted.
@@ -50,14 +71,12 @@ Examples:
 
 ### Classes
 
-- Every record has a class. The default class is `mikobase.com/record`.
-- Classes are themselves stored as records with class `mikobase.com/record/class`.
+- Every record has a class. The default class is `kiera.uno/record`.
+- Classes are themselves stored as records with class `kiera.uno/record/class`.
 - A class definition is stored in the record's `bucket` field.
 - Class names are UNS strings.
 - Inheritance is always explicit via the `inherits` field. There is no path-implied inheritance.
-- A class is a **record class** if it inherits from `mikobase.com/record` (directly or
-  transitively). Otherwise it is an **object class**.
-- `"record_class": true` is shorthand for `"inherits": "mikobase.com/record"`.
+- All classes defined in the schema are record classes — they can be assigned to records.
 
 ### `bucket`
 
@@ -77,14 +96,20 @@ Examples:
 
 The following classes are seeded as database records on initialization:
 
-- `mikobase.com/record` — base class for all records
-- `mikobase.com/record/class` — class for class definitions
-- `mikobase.com/reference` — reference to another record by `record_pk`
-- `mikobase.com/dbfile` — file attachment
+- `kiera.uno/record` — base class for all records
+- `kiera.uno/record/class` — class for class definitions
+- `kiera.uno/reference` — reference to another record by `record_pk`
+- `kiera.uno/dbfile` — file attachment
 
 ---
 
 ## Connection
+
+vibecode: {
+	"section": "connection",
+	"role": "documents connection modes rw/r/w, cutoff timestamps, and the Python API",
+	"key_concepts": ["connection_modes", "rw", "r", "cutoff_timestamp", "read-only_historical", "Python_API"]
+}
 
 Connections are opened with an explicit mode. There is no default mode.
 
@@ -118,6 +143,13 @@ with mb.connect('/path/to/database.db', 'r', cutoff='2026-01-01T00:00:00.000') a
 ---
 
 ## Queries
+
+vibecode: {
+	"section": "queries",
+	"role": "documents engine.q0() API, lazy resultsets, response shapes, and convenience methods",
+	"key_concepts": ["engine.q0", "lazy_resultset", "select_response", "create_response", "delete_response",
+		"record_dict_shape", "convenience_methods"]
+}
 
 All queries are sent via `engine.q0()`, which accepts a Q0 dict.
 
@@ -183,6 +215,12 @@ The base engine also provides convenience methods that build Q0 dicts internally
 
 ## Records as Python Objects
 
+vibecode: {
+	"section": "records_as_python_objects",
+	"role": "describes future client behavior: wrapping dicts into typed Python objects via decorator",
+	"key_concepts": ["future_client", "mikobase_record_decorator", "class_registration", "field_ordering"]
+}
+
 *This section describes future client behaviour. The client is out of scope for the current
 implementation — only the engine is being developed at this stage.*
 
@@ -213,6 +251,13 @@ Records returned from queries present fields in this order:
 
 ## Transactions
 
+vibecode: {
+	"section": "transactions",
+	"role": "documents the future Python transaction API with nesting, commit, and exit",
+	"key_concepts": ["engine.transaction", "nested_transactions", "commit", "exit", "auto-rollback",
+		"context_manager", "future_client"]
+}
+
 *This section describes future client behaviour. The client is out of scope for the current
 implementation — only the engine is being developed at this stage.*
 
@@ -241,6 +286,12 @@ Rules:
 
 ## Error Handling
 
+vibecode: {
+	"section": "error_handling",
+	"role": "documents error return policy: engine never raises, always returns dict with errors array",
+	"key_concepts": ["no_exceptions_from_engine", "success_false", "errors_array", "MikobaseError", "error_id"]
+}
+
 - The engine never raises exceptions. It catches all internal errors (including SQLite
   exceptions) and returns a response dict with `"success": false` and an `"errors"` array.
 - Each error has an `"id"` and a `"details"` dict.
@@ -255,6 +306,13 @@ raise MikobaseError(errors=[
 ---
 
 ## SQLite Engine
+
+vibecode: {
+	"section": "sqlite_engine",
+	"role": "SQLite-specific implementation details: locking, schema init, historical reads, Q0 translation",
+	"key_concepts": ["SQLite", "tenancy", "locking", "schema_initialization", "historical_reads",
+		"Q0_to_SQL", "json_extract", "recursive_CTE", "validation"]
+}
 
 ### Tenancy
 
@@ -335,6 +393,13 @@ Correctness takes priority over efficiency.
 
 ## Engine Architecture
 
+vibecode: {
+	"section": "engine_architecture",
+	"role": "defines package structure, base engine interface, and validator design",
+	"key_concepts": ["package_structure", "base_engine", "q0_method", "validator", "run_all",
+		"placeholders_check", "uns_check", "fields_check", "action_check"]
+}
+
 ### Package Structure
 
 ```
@@ -399,6 +464,13 @@ check reports warnings when redundant field pairs are used together (`class` + `
 
 ## File Storage
 
+vibecode: {
+	"section": "file_storage",
+	"role": "documents file deduplication by sha256, chunk ordering, and immutability rules",
+	"key_concepts": ["files_table", "file_chunks_table", "sha256_deduplication", "chunk_index",
+		"last_chunk", "immutable_once_written"]
+}
+
 Files are stored in `files` (identity and metadata) and `file_chunks` (binary content).
 
 - Files are deduplicated by `sha256`.
@@ -410,6 +482,12 @@ Files are stored in `files` (identity and metadata) and `file_chunks` (binary co
 ---
 
 ## Schema Import and Export
+
+vibecode: {
+	"section": "schema_import_and_export",
+	"role": "documents import_schema and export_schema methods including file variants",
+	"key_concepts": ["import_schema", "import_schema_file", "export_schema", "export_schema_file"]
+}
 
 The engine provides methods for importing and exporting schemas.
 
@@ -428,6 +506,13 @@ See [class-definition.md](class-definition.md) for schema format and import rule
 ---
 
 ## General Guidelines
+
+vibecode: {
+	"section": "general_guidelines",
+	"role": "implementation constraints: stdlib only, sqlite3, pytest, broad Python compatibility",
+	"key_concepts": ["stdlib_only", "sqlite3", "pytest", "broad_Python_compat", "no_logging",
+		"temp_files_for_tests", "auto-rollback_on_exit"]
+}
 
 - Use Python's standard library only — no third-party dependencies for the SQLite engine.
 - Use `sqlite3` from the standard library for SQLite access.

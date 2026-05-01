@@ -1,0 +1,29 @@
+{
+    "name": "kscript",
+    "displayName": "KScript",
+    "description": "Syntax highlighting for KScript (.dc) files",
+    "version": "0.0.1",
+    "publisher": "mikobase",
+    "engines": {
+        "vscode": "^1.0.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "kscript",
+                "aliases": ["KScript", "kscript"],
+                "extensions": [".dc"]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "kscript",
+                "scopeName": "source.kscript",
+                "path": "./syntaxes/kscript.tmLanguage.json"
+            }
+        ]
+    }
+}

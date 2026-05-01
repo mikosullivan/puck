@@ -1,0 +1,454 @@
+# Starfleet personnel management system
+
+%vibecode <<EOF
+{
+  "purpose": "Starfleet personnel management — demonstrates the full KScript feature set in a realistic domain model",
+  "domain": "Officers, ships, and personnel records stored in a SQLite-backed mikobase",
+  "demonstrates": [
+    "class definitions with fields, properties, and helpers",
+    "mikobase Q0 queries (create and select)",
+    "event listeners (after_save)",
+    "block iteration with before/after/noloop clauses",
+    "pipe-based function composition",
+    "exception handling with catch",
+    "chain context scoping",
+    "null flavors (subclassing kiera.uno/null)",
+    "hot connections for real-time record updates"
+  ]
+}
+EOF
+
+%vibecode <<EOF
+{
+  "models": "Base class for any person in the Starfleet universe",
+  "fields": {
+    "name":      "required string; collapse:true means it is used as the display label for the record",
+    "birthdate": "optional string; no format enforced at this level",
+    "species":   "optional string; defaults to Human"
+  },
+  "property :nickname": "private instance variable with no automatic accessor — stored in %private but not exposed as a field"
+}
+EOF
+
+class 'starfleet.com/person'
+    field :name,      class: :string, required: true, collapse: true
+    field :birthdate, class: :string
+    field :species,   class: :string, default: 'Human'
+
+    property :nickname
+
+    %vibecode <<EOF
+    {
+      "returns": "greeting string using the officer's nickname",
+      "note":    "uses @nickname (shorthand for %private['nickname']) rather than @name — nickname is a separate property set independently"
+    }
+    EOF
+
+    function &greet
+        'Hello, I am ' + @nickname
+    end
+end
+
+%vibecode <<EOF
+{
+  "models": "A Starfleet officer — extends person with rank, serial, and ship assignment",
+  "notable": {
+    "helper :record":        "namespaces summary() away from the main method interface",
+    "promote and transfer":  "return self to enable pipe chaining",
+    "remote function &save": "executes on the mikobase server, not locally"
+  }
+}
+EOF
+
+class 'starfleet.com/officer'
+    inherits 'starfleet.com/person'
+
+    field :rank,     class: :string,  required: true
+    field :serial,   class: :string,  required: true, unique: true
+    field :active,   class: :boolean, default: true
+    field :starship, class: 'kiera.uno/reference', allowed_class: 'starfleet.com/ship'
+
+    %vibecode <<EOF
+    {
+      "purpose": "Namespaced helper for formatted record display",
+      "note":    "putting summary() on a helper keeps the main officer interface clean; callers use $officer.record.summary rather than $officer.summary"
+    }
+    EOF
+
+    helper :record
+        %vibecode <<EOF
+        {
+          "returns": "formatted string: 'Rank Name (Serial)' e.g. 'Captain Picard, Jean-Luc (SP-937-215)'",
+          "note":    "self.reference is the parent officer object; helper methods access the parent this way"
+        }
+        EOF
+
+        function &summary
+            $r = self.reference
+            $r.rank + ' ' + $r.name + ' (' + $r.serial + ')'
+        end
+    end
+
+    %vibecode <<EOF
+    {
+      "purpose": "Update the officer's rank",
+      "params":  {"new_rank": "string — the new rank title"},
+      "returns": "self, enabling pipe chaining: &find_officer | &promote(new_rank: 'Captain') | &save",
+      "note":    "writes directly to @rank; does not persist — caller must save"
+    }
+    EOF
+
+    function &promote(new_rank:)
+        @rank = new_rank
+        self
+    end
+
+    %vibecode <<EOF
+    {
+      "purpose": "Assign the officer to a ship",
+      "params":  {"ship": "a starfleet.com/ship record"},
+      "returns": "self, enabling pipe chaining",
+      "note":    "writes to @starship which is a kiera.uno/reference field — stores a reference to the ship record, not the ship itself"
+    }
+    EOF
+
+    function &transfer(ship:)
+        @starship = ship
+        self
+    end
+
+    %vibecode <<EOF
+    {
+      "purpose": "Persist the officer record to the mikobase",
+      "params":  {"name": "string", "rank": "string", "serial": "string"},
+      "remote":  true,
+      "note":    "remote functions execute on the mikobase server; the body is intentionally empty here — the server side is defined separately"
+    }
+    EOF
+
+    remote function &save(name:, rank:, serial:)
+    end
+end
+
+%vibecode <<EOF
+{
+  "models": "A Starfleet ship",
+  "fields": {
+    "name":       "required, unique — the ship's full name e.g. 'USS Enterprise'",
+    "registry":   "required, unique — Starfleet registry number e.g. 'NCC-1701-D'",
+    "ship_class": "optional — the class of ship e.g. 'Galaxy', 'Defiant'"
+  },
+  "join :name :registry": "defines a composite natural key; records are identified and deduplicated by name+registry together"
+}
+EOF
+
+class 'starfleet.com/ship'
+    field :name,       class: :string, required: true, unique: true
+    field :registry,   class: :string, required: true, unique: true
+    field :ship_class, class: :string
+
+    join :name, :registry
+end
+
+# Connect to the mikobase
+
+%vibecode <<EOF
+{
+  "purpose": "Open a standard (non-hot) connection to the personnel SQLite database",
+  "note":    "used for all write operations and non-live reads; contrast with $hot at the bottom of the file which uses hot:true for real-time updates"
+}
+EOF
+
+$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
+
+%vibecode <<EOF
+{
+  "purpose": "Listen for rank changes on officer records and log them",
+  "trigger": "after_save on any starfleet.com/officer record",
+  "note":    "$change.fields contains only the fields that changed in this save; checking $fields['rank'] ensures we only log actual rank changes, not every save"
+}
+EOF
+
+$mikobase.listen 'starfleet.com/officer', :after_save do($change)
+    $officer = $change.record
+    $fields  = $change.fields
+
+    if ($fields['rank'])
+        puts('Rank change: ' + $officer.record.summary)
+    end
+end
+
+# Seed ships
+
+$enterprise = $mikobase.q0({
+    vibecode: {
+        intent:  "seed the Enterprise ship record",
+        class:   "starfleet.com/ship",
+        returns: "the created ship object"
+    },
+    action: :create,
+    class:  'starfleet.com/ship',
+    bucket: {name: 'USS Enterprise', registry: 'NCC-1701-D', ship_class: 'Galaxy'}
+})
+
+$defiant = $mikobase.q0({
+    vibecode: {
+        intent:  "seed the Defiant ship record",
+        class:   "starfleet.com/ship",
+        returns: "the created ship object"
+    },
+    action: :create,
+    class:  'starfleet.com/ship',
+    bucket: {name: 'USS Defiant', registry: 'NX-74205', ship_class: 'Defiant'}
+})
+
+# Create officers
+
+%vibecode <<EOF
+{
+  "purpose": "Seed data — four officers from two different series",
+  "note":    "stored as an array of hashes; each hash matches the officer field schema; Sisko is included to show cross-series data"
+}
+EOF
+
+$crew = [
+    {name: 'Picard, Jean-Luc', rank: 'Captain',    serial: 'SP-937-215'},
+    {name: 'Riker, William',   rank: 'Commander',  serial: 'SC-231-427'},
+    {name: 'Data',             rank: 'Lieutenant', serial: 'SA-789-012'},
+    {name: 'Sisko, Benjamin',  rank: 'Commander',  serial: 'SB-539-781'}
+]
+
+%vibecode <<EOF
+{
+  "purpose": "Insert each crew member into the mikobase",
+  "pattern": "iterate seed array, create one record per element",
+  "note":    "$$officer is the variable object (not the value) — used here to access the hash by reference"
+}
+EOF
+
+$crew.each($officer) do
+    $mikobase.q0({
+        vibecode: {
+            intent:  "create an officer record from the seed data array",
+            note:    "iterates $crew; each element is a hash with name/rank/serial"
+        },
+        action: :create,
+        class:  'starfleet.com/officer',
+        bucket: {name: $$officer['name'], rank: $officer['rank'], serial: $o['serial']}
+    })
+end
+
+# Query and report
+
+$active = $mikobase.q0({
+    vibecode: {
+        intent:  "fetch all active officers for the personnel report",
+        returns: "collection of starfleet.com/officer records where active == true",
+        used_by: "the report loop below and the pattern-matching loop after it"
+    },
+    action: :select,
+    class:  'starfleet.com/officer',
+    then:   {path: ['active', true]}
+})
+
+%vibecode <<EOF
+{
+  "purpose": "Accumulate a formatted personnel report string",
+  "note":    "initialized with the report header via heredoc; lines are appended in the loop below"
+}
+EOF
+
+$report = <<'EOF'
+--- Starfleet Active Personnel ---
+EOF
+
+%vibecode <<EOF
+{"purpose":"Build the report string by iterating active officers","pattern":
+"as $loop gives access to the loop dispatcher for before/after/noloop clauses",
+"clauses":{"before":"runs once before iteration begins — prints a status message",
+"after":"runs once after all iterations — prints total count via $loop.count", "noloop":
+"runs if the collection is empty — prints a warning instead of a blank report"},
+"rank_formatting":
+"Captains get *** markers, Admirals get !!! markers, everyone else is indented"}
+EOF
+
+$active.each($officer) as $loop
+    $line = $officer.record.summary
+
+    if ($officer['rank'] == 'Captain')
+        $line = '*** ' + $line + ' ***'
+    elsif ($officer['rank'] == 'Admiral')
+        $line = '!!! ' + $line + ' !!!'
+    else
+        $line = '    ' + $line
+    end
+
+    $report = $report + $line + "\n"
+before
+    puts('Generating report...')
+after
+    puts('Total: ' + $loop.count)
+noloop
+    puts('No active officers found')
+end
+
+puts($report)
+
+# Pattern matching on names
+
+%vibecode <<EOF
+{
+  "purpose": "Extract and print each officer's family name using pattern matching",
+  "pattern": "Lua-style patterns via .match(); '^(%a+),' matches the family name at the start of 'Surname, Firstname' format",
+  "note":    "$match.groups[0] is the first capture group — the family name"
+}
+EOF
+
+$active.each($officer) do
+    $match = $officer['name'].match('^(%a+),')
+
+    if ($match)
+        puts('Family name: ' + $match.groups[0])
+    end
+end
+
+# Promotion pipeline
+
+%vibecode <<EOF
+{
+  "pattern": "find → mutate → persist via pipe",
+  "note":    "promote and transfer return self specifically to support this style"
+}
+EOF
+
+%vibecode <<EOF
+{
+  "purpose": "Look up a single officer by serial number",
+  "params":  {"serial": "string — the officer's unique serial number"},
+  "returns": "a single starfleet.com/officer record, or null if not found",
+  "note":    "defined here rather than at the top because it closes over $mikobase"
+}
+EOF
+
+function &find_officer(serial:)
+    $mikobase.q0({
+        vibecode: {
+            intent:  "look up a single officer by serial number",
+            returns: "first matching officer record, or null if not found",
+            note:    "serial is unique so .first is safe — at most one result"
+        },
+        action: :select,
+        class:  'starfleet.com/officer',
+        then:   {path: ['serial', serial]}
+    }).first
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Promote Riker to Captain using the pipe pattern",
+  "steps":   ["find Riker by serial", "promote to Captain (returns self)", "save to mikobase"],
+  "note":    "demonstrates that promote returns self, making it pipeable"
+}
+EOF
+
+&find_officer(serial: 'SC-231-427') |
+    &promote(new_rank: 'Captain') |
+    &save
+
+# Exception handling
+
+%vibecode <<EOF
+{
+  "purpose": "Demonstrate catch by attempting to find a non-existent officer",
+  "note":    "serial XX-000-000 does not exist; find_officer raises starfleet.com/exception/unauthorized when the record is missing or access is denied; $exception is null if no exception was raised"
+}
+EOF
+
+$exception = catch('starfleet.com/exception/unauthorized')
+    &find_officer(serial: 'XX-000-000')
+end
+
+if ($exception)
+    puts('Access denied: ' + $exception.message)
+end
+
+# Chain context
+
+%vibecode <<EOF
+{
+  "purpose": "Demonstrate %chain for passing request context down the call stack",
+  "note":    "%chain values are inherited by child scopes; %chain.scope creates an isolated scope where changes do not propagate back up"
+}
+EOF
+
+%chain['user']       = 'computer'
+%chain['request_id'] = '47'
+
+%vibecode <<EOF
+{
+  "purpose": "Override the user context within a scoped block",
+  "note":    "inside the block, %chain['user'] is 'worf'; outside, it remains 'computer'; demonstrates that %chain.scope changes are local to the block"
+}
+EOF
+
+%chain.scope do
+    %chain['user'] = 'worf'
+    &find_officer(serial: 'SP-937-215')
+end
+
+# Null flavors
+
+%vibecode <<EOF
+{
+  "purpose": "Define a domain-specific null type for classified information",
+  "pattern": "null flavor — subclass of kiera.uno/null that is falsey but carries type information",
+  "note":    "any instance of this class evaluates as false in conditionals, but code can inspect its class to know WHY the value is null"
+}
+EOF
+
+class 'starfleet.com/null/classified'
+    inherits 'kiera.uno/null'
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Instantiate the classified null and verify it is falsey",
+  "note":    "the if block is never entered — demonstrates that null flavors behave as null in conditionals despite being subclass instances"
+}
+EOF
+
+$classified = %kiera['starfleet.com/null/classified'].new
+
+if ($classified)
+    puts('never reached — classified is falsey')
+end
+
+# Hot connection for real-time updates
+
+%vibecode <<EOF
+{
+  "purpose": "Open a hot (live) connection to the personnel database",
+  "note":    "hot: true means writes to records fetched through $hot are automatically persisted; no explicit save call needed"
+}
+EOF
+
+$hot = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
+
+$picard = $hot.q0({
+    vibecode: {
+        intent:  "fetch Picard's record on a hot connection",
+        returns: "a live officer object — writes to $picard propagate back to the database automatically",
+        note:    "hot: true means the mikobase holds a live reference; no explicit save needed after mutation"
+    },
+    action: :select,
+    then:   {path: ['serial', 'SP-937-215']}
+}).first
+
+%vibecode <<EOF
+{
+  "purpose": "Promote Picard to Admiral directly via hot record mutation",
+  "note":    "because $picard was fetched through a hot connection, this assignment triggers an automatic save; no &save call is needed"
+}
+EOF
+
+$picard['rank'] = 'Admiral'

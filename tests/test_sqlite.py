@@ -350,3 +350,109 @@ def test_by_class(db):
     db.q0({'action': 'create', 'class': 'foo.com/y', 'bucket': {'a': 3}})
     records = list(db.by_class('foo.com/x'))
     assert len(records) == 2
+
+
+# ------------------------------------------------------------------
+# history
+# ------------------------------------------------------------------
+
+# history: true returns every version of a record, not just the current one
+def test_history_all_versions(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    db.q0({'action': 'update', 'pk': pk, 'bucket': {'v': 2}})
+    db.q0({'action': 'update', 'pk': pk, 'bucket': {'v': 3}})
+    records = list(db.q0({'action': 'select', 'pk': pk, 'history': True}))
+    assert len(records) == 3
+
+# history records include instance_pk and active in addition to normal fields
+def test_history_record_shape(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    record = list(db.q0({'action': 'select', 'pk': pk, 'history': True}))[0]
+    assert set(record.keys()) == {'instance_pk', 'pk', 'class', 'updated_at', 'active', 'bucket', 'custom_classes'}
+
+# history versions are ordered oldest-first within a record
+def test_history_order(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    db.q0({'action': 'update', 'pk': pk, 'bucket': {'v': 2}})
+    db.q0({'action': 'update', 'pk': pk, 'bucket': {'v': 3}})
+    records = list(db.q0({'action': 'select', 'pk': pk, 'history': True}))
+    assert [r['bucket']['v'] for r in records] == [1, 2, 3]
+
+# live versions have active: true
+def test_history_active_flag_on_live_version(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    record = list(db.q0({'action': 'select', 'pk': pk, 'history': True}))[0]
+    assert record['active'] is True
+
+# delete appends a tombstone row with active: false and null bucket/class
+def test_history_tombstone(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    db.q0({'action': 'delete', 'pk': pk})
+    records = list(db.q0({'action': 'select', 'pk': pk, 'history': True}))
+    assert len(records) == 2
+    assert records[0]['active'] is True
+    assert records[1]['active'] is False
+    assert records[1]['bucket'] is None
+    assert records[1]['class']  is None
+
+# tombstone count: a deleted record is invisible to regular select but has 2 history rows
+def test_history_deleted_record_visible(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    db.q0({'action': 'delete', 'pk': pk})
+    assert list(db.q0({'action': 'select', 'pk': pk})) == []
+    assert len(list(db.q0({'action': 'select', 'pk': pk, 'history': True}))) == 2
+
+# history without pk or class returns every history row across all records
+def test_history_no_filter(db):
+    r1 = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'a': 1}})
+    r2 = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'a': 2}})
+    db.q0({'action': 'update', 'pk': r1['results']['pk'], 'bucket': {'a': 10}})
+    records = list(db.q0({'action': 'select', 'history': True}))
+    assert len(records) == 3
+
+# history with class filter returns only history rows whose class column matches
+def test_history_class_filter(db):
+    db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'a': 1}})
+    r = db.q0({'action': 'create', 'class': 'foo.com/y', 'bucket': {'a': 2}})
+    db.q0({'action': 'update', 'pk': r['results']['pk'], 'bucket': {'a': 3}})
+    records = list(db.q0({'action': 'select', 'class': 'foo.com/y', 'history': True}))
+    assert len(records) == 2
+
+# tombstone rows are excluded from class-filtered history (class column is null on tombstones)
+def test_history_class_filter_excludes_tombstones(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    db.q0({'action': 'delete', 'pk': pk})
+    records = list(db.q0({'action': 'select', 'class': 'foo.com/x', 'history': True}))
+    assert len(records) == 1
+    assert records[0]['active'] is True
+
+# history respects limit and offset
+def test_history_limit_offset(db):
+    r  = db.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+    pk = r['results']['pk']
+    for i in range(2, 6):
+        db.q0({'action': 'update', 'pk': pk, 'bucket': {'v': i}})
+    records = list(db.q0({'action': 'select', 'pk': pk, 'history': True, 'limit': 2, 'offset': 1}))
+    assert len(records) == 2
+    assert records[0]['bucket']['v'] == 2
+
+# history on a cutoff connection only returns rows up to the cutoff
+def test_history_with_cutoff(tmp_path):
+    path = str(tmp_path / 'test.db')
+    with mb.connect(path, 'rw') as engine:
+        r  = engine.q0({'action': 'create', 'class': 'foo.com/x', 'bucket': {'v': 1}})
+        pk = r['results']['pk']
+        cutoff = list(engine.q0({'action': 'select', 'pk': pk}))[0]['updated_at']
+        engine.q0({'action': 'update', 'pk': pk, 'bucket': {'v': 2}})
+
+    with mb.connect(path, 'r', cutoff=cutoff) as engine:
+        records = list(engine.q0({'action': 'select', 'pk': pk, 'history': True}))
+        assert len(records) == 1
+        assert records[0]['bucket']['v'] == 1

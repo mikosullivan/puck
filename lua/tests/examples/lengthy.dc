@@ -1,0 +1,190 @@
+# Starfleet personnel management system
+
+class 'starfleet.com/person'
+    field :name,      class: :string, required: true, collapse: true
+    field :birthdate, class: :string
+    field :species,   class: :string, default: 'Human'
+
+    property :nickname
+
+    function &greet
+        'Hello, I am ' + @nickname
+    end
+end
+
+class 'starfleet.com/officer'
+    inherits 'starfleet.com/person'
+
+    field :rank,     class: :string, required: true
+    field :serial,   class: :string, required: true, unique: true
+    field :active,   class: :boolean, default: true
+    field :starship, class: 'kiera.uno/reference', allowed_class: 'starfleet.com/ship'
+
+    helper :record
+        function &summary
+            $r = self.reference
+            $r.rank + ' ' + $r.name + ' (' + $r.serial + ')'
+        end
+    end
+
+    function &promote(new_rank:)
+        @rank = new_rank
+        self
+    end
+
+    function &transfer(ship:)
+        @starship = ship
+        self
+    end
+
+    remote function &save(name:, rank:, serial:)
+    end
+end
+
+class 'starfleet.com/ship'
+    field :name,       class: :string, required: true, unique: true
+    field :registry,   class: :string, required: true, unique: true
+    field :ship_class, class: :string
+
+    join :name, :registry
+end
+
+# Connect to the mikobase
+
+$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
+
+$mikobase.listen 'starfleet.com/officer', :after_save do($change)
+    $officer = $change.record
+    $fields  = $change.fields
+
+    if ($fields['rank'])
+        puts('Rank change: ' + $officer.record.summary)
+    end
+end
+
+# Seed ships
+
+$enterprise = $mikobase.q0({
+    action: :create,
+    class:  'starfleet.com/ship',
+    bucket: {name: 'USS Enterprise', registry: 'NCC-1701-D', ship_class: 'Galaxy'}
+})
+
+$defiant = $mikobase.q0({
+    action: :create,
+    class:  'starfleet.com/ship',
+    bucket: {name: 'USS Defiant', registry: 'NX-74205', ship_class: 'Defiant'}
+})
+
+# Create officers
+
+$crew = [
+    {name: 'Picard, Jean-Luc', rank: 'Captain',    serial: 'SP-937-215'},
+    {name: 'Riker, William',   rank: 'Commander',  serial: 'SC-231-427'},
+    {name: 'Data',             rank: 'Lieutenant', serial: 'SA-789-012'},
+    {name: 'Sisko, Benjamin',  rank: 'Commander',  serial: 'SB-539-781'}
+]
+
+$crew.each($officer) do
+    $mikobase.q0({
+        action: :create,
+        class:  'starfleet.com/officer',
+        bucket: {name: $$officer['name'], rank: $officer['rank'], serial: $o['serial']}
+    })
+end
+
+# Query and report
+
+$active = $mikobase.q0({
+    action: :select,
+    class:  'starfleet.com/officer',
+    then:   {path: ['active', true]}
+})
+
+$report = <<'EOF'
+--- Starfleet Active Personnel ---
+EOF
+
+$active.each($officer) as $loop
+    $line = $officer.record.summary
+
+    if ($officer['rank'] == 'Captain')
+        $line = '*** ' + $line + ' ***'
+    elsif ($officer['rank'] == 'Admiral')
+        $line = '!!! ' + $line + ' !!!'
+    else
+        $line = '    ' + $line
+    end
+
+    $report = $report + $line + "\n"
+before
+    puts('Generating report...')
+after
+    puts('Total: ' + $loop.count)
+noloop
+    puts('No active officers found')
+end
+
+puts($report)
+
+# Pattern matching on names
+
+$active.each($officer) do
+    $match = $officer['name'].match('^(%a+),')
+
+    if ($match)
+        puts('Family name: ' + $match.groups[0])
+    end
+end
+
+# Promotion pipeline
+
+function &find_officer(serial:)
+    $mikobase.q0({
+        action: :select,
+        class:  'starfleet.com/officer',
+        then:   {path: ['serial', serial]}
+    }).first
+end
+
+&find_officer(serial: 'SC-231-427') |
+    &promote(new_rank: 'Captain') |
+    &save
+
+# Exception handling
+
+$exception = catch('starfleet.com/exception/unauthorized')
+    &find_officer(serial: 'XX-000-000')
+end
+
+if ($exception)
+    puts('Access denied: ' + $exception.message)
+end
+
+# Chain context
+
+%chain['user']       = 'computer'
+%chain['request_id'] = '47'
+
+%chain.scope do
+    %chain['user'] = 'worf'
+    &find_officer(serial: 'SP-937-215')
+end
+
+# Null flavors
+
+class 'starfleet.com/null/classified'
+    inherits 'kiera.uno/null'
+end
+
+$classified = %kiera['starfleet.com/null/classified'].new
+
+if ($classified)
+    puts('never reached — classified is falsey')
+end
+
+# Hot connection for real-time updates
+
+$hot    = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
+$picard = $hot.q0({action: :select, then: {path: ['serial', 'SP-937-215']}}).first
+$picard['rank'] = 'Admiral'
