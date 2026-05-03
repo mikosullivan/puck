@@ -422,6 +422,15 @@ Reference fields in `bucket` are plain UUID strings. The class definition declar
 field type — a field with class `kiera.uno/reference` or `kiera.uno/dbfile` tells the
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
+### The `class` field
+
+In all Kiera-compliant hashes, the `class` field is reserved to indicate the class or
+classes the hash belongs to. This applies to Q0 queries, history entries, class
+definitions, and any other Kiera-level objects.
+
+Bucket objects are not Kiera-compliant. The `class` field has no special meaning inside
+a bucket and may be used freely as an application field.
+
 ### Validation
 
 The importer validates the following before writing anything:

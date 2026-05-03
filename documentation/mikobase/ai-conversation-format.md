@@ -3,8 +3,9 @@
 vibecode: {"doc":"mikobase-ai-reference","audience":"human+ai","sections":["mikobase","q0",
 "worldlet_json_format","ai_conversation_format"]}
 
-This document covers two related topics: the Mikobase object store and its query language
-(Q0), and the standard class library for AI-to-AI collaboration sessions built on top of it.
+This document is a bootstrap reference for AI agents participating in AI-to-AI collaboration
+sessions. It covers the Mikobase object store and its query language (Q0), the worldlet JSON
+format used to exchange session state, and the standard class library for AI-to-AI sessions.
 
 Each concept is documented as a compact JSON "vibecode" block — a dual-audience format that
 both humans and AI systems can read directly. The JSON blocks are the formal specification;
@@ -14,134 +15,41 @@ the prose around them is context and explanation.
 
 ## Mikobase
 
-A **mikobase** is a live object store — not a passive file. It requires a maintaining process
-and supports typed class definitions, append-only record history, locking, and transactions.
-The central rule: a mikobase owns its objects. Processes connect to it and interact with it
-directly; they do not pass objects between each other.
+A **mikobase** is a live object store — not a passive file. It supports typed class
+definitions, append-only record history, locking, and transactions. The central rule: a
+mikobase owns its objects. Processes connect to it and interact with it directly; they do not
+pass objects between each other.
 
 vibecode: {"concept":"mikobase","type":"live_object_store","requires":"maintaining_process",
 "not":"passive_file","supports":["Q0","class_definitions","record_history","locking",
 "transactions"],"key_rules":["mikobase owns its objects",
 "processes connect and interact; no direct object passing between processes"]}
 
-### Backends
+### Concurrency Model
 
-There are several mikobase implementations, all sharing the same Q0 interface.
-`kiera.uno/mikobase` is the abstract base. The HTTP wrapper exposes any mikobase over a
-network. The server variant coordinates KScript++ forks.
+Mikobase is designed for concurrent writes with zero coordination overhead. Every write
+appends a new history entry with a unique UUID v4. Two agents writing simultaneously create
+two separate history entries — both are valid, both coexist. There is no locking protocol
+between concurrent writers at the application level.
 
-vibecode: {"concept":"mikobase_classes","entries":[
-{"class":"kiera.uno/mikobase","role":"abstract base; full Q0; locking; transactions"},
-{"class":"kiera.uno/mikobase/memory","backend":"SQLite :memory:"},
-{"class":"kiera.uno/mikobase/sqlite","backend":"SQLite file"},
-{"class":"kiera.uno/mikobase/http","role":"HTTP transport wrapper; exposes mikobase over network"},
-{"class":"kiera.uno/mikobase/server","role":"managed server for KScript++ fork coordination"}]}
+The session history is the union of all appended records from all agents, ordered by
+`created_at`. No merge algorithm is needed.
 
-### Connection Modes
-
-Connections are either **cold** (default) or **hot**. Cold connections return local copies;
-changes are saved explicitly. Hot connections return live objects — every read and write is a
-round trip, and locking is automatic. The mode can be overridden per query.
-
-vibecode: {"concept":"connection_modes","modes":[
-{"mode":"cold","default":true,
-"behavior":"returns local copies; changes saved explicitly via .save()"},
-{"mode":"hot","default":false,
-"behavior":"returns live objects; every read/write is round trip; no explicit save; locking automatic"}],
-"per_query_override":"q0({...}, hot:true) or q0({...}, hot:false) overrides connection default"}
-
-### POSTable Updates (HTTP)
-
-An HTTP mikobase accepts inbound worldlet payloads via `POST /worldlet`. This allows external
-agents — including other AI systems — to deposit history entries without a persistent
-connection. The payload is a standard worldlet JSON object; a history-only worldlet with no
-classes or records is valid. The operation is all-or-nothing: every entry in the payload must
-pass validation, or the entire POST is rejected.
-
-vibecode: {"concept":"postable_updates","class":"kiera.uno/mikobase/http","endpoint":"POST /worldlet",
-"payload":"standard worldlet JSON object; history-only worldlet is valid; no new wire format",
-"engine_behavior":["validate worldlet shape and UUID v4 constraints",
-"per entry: skip if identical already exists; reject if same UUID exists with different content",
-"all entries pass → append and recompute; any entry fails → reject entire payload; no partial writes"],
-"response":{"accepted":"array of accepted history UUIDs","skipped":"array of skipped UUIDs",
-"rejected":"array of rejected UUIDs"},
-"authorization":"coarse-grained in v1: caller can POST or cannot; fine-grained permissions deferred",
-"use_cases":["worldlet deltas as AI-to-AI exchange format","offline agents: work from snapshot, submit later",
-"write-only participants: auditors, sensors, importers","submission inboxes: proposals, bug reports, votes",
-"webhook integration: outside systems deposit state changes","AI-to-AI mail: message is a mikobase update",
-"audit-native APIs: every integration call is already a history entry"],
-"deferred":["signatures","replay protection","timestamp authority","distributed merge","fine-grained permissions"]}
-
-### Authentication
-
-HTTP mikobase connections require an `auth` parameter — there is no insecure default.
-`:peer` uses kernel-level credential verification on Unix sockets. `:token` uses a shared
-secret. `:open` disables authentication and should only be used in controlled environments.
-
-vibecode: {"concept":"http_mikobase_auth","auth_param":"required; no default","options":[
-{"auth":":peer","mechanism":"SO_PEERCRED; kernel verifies UID/GID/PID; Unix sockets only"},
-{"auth":":token","mechanism":"shared secret in connection handshake; Unix or TCP"},
-{"auth":":open","mechanism":"no authentication; use only in controlled environments"}]}
-
-### Locking
-
-Mikobase uses shared-exclusive locking. Multiple readers can hold shared locks simultaneously.
-Writers hold exclusive locks and block all reads. Lock acquisition is automatic — there is no
-explicit lock/unlock API.
-
-vibecode: {"concept":"locking","model":"shared-exclusive",
-"rules":["reads use shared locks; multiple readers simultaneously",
-"writes use exclusive locks; one writer; no reads during write transaction",
-"acquisition automatic; no explicit lock/unlock API"]}
-
-### Transactions
-
-Transactions support nesting. A block that exits without committing is automatically rolled
-back. `exit()` rolls back immediately and exits the block.
-
-vibecode: {"concept":"transactions","api":["transaction()","commit()","rollback()","exit()"],
-"rules":["nesting supported","block exit without commit auto-rolls back",
-"exit() rolls back and exits block immediately"]}
-
-### Bucket Integration
-
-When a mikobase is opened with `include_private=true`, it backs the `%bucket` for any fork
-that connects to it — so `@foo` reads and writes go directly to the live object in the
-mikobase.
-
-vibecode: {"concept":"bucket_in_mikobase","trigger":"include_private=true on mikobase",
-"effect":"%bucket backed by mikobase for any fork that connects; @foo reads/writes go to live object",
-"note":"%bucket synced to its own mikobase; not explicitly passed mikobases"}
-
-### Change Signals
-
-Processes can subscribe to changes on any record, query result, or class. The `before_save`
-signal fires inside the transaction — raising an error rolls back the entire operation.
-`after_save` fires after commit and cannot be cancelled.
-
-vibecode: {"concept":"record_change_signals","api":"mikobase.listen(target, signal) do($change) end",
-"targets":["specific record","Q0 query object","class name string"],
-"signals":[
-{"signal":"before_save","timing":"within transaction before commit",
-"effect":"raising error rolls back entire transaction","use":"consistency rules"},
-{"signal":"after_save","timing":"after commit","effect":"cannot be cancelled",
-"use":"side effects; notifications; background work"}],
-"change_object":{"record":"the changed record","class":"its class",
-"fields":"hash of changed fields: {field:{old:,new:}}"},
-"network_note":"before_save not forwarded over network to remote clients by default"}
+vibecode: {"concept":"concurrency_model",
+"rule":"every write appends a new history entry with unique UUID v4; concurrent writes never collide",
+"session_history":"union of all appended records; complete set of all facts produced by all agents",
+"conflict_resolution":{
+"identical_uuid":"skip silently; import is idempotent",
+"different_uuid":"both entries valid and coexist; no merge needed"}}
 
 ### Worldlets (Packaged Mikobases)
 
-A **worldlet** is a mikobase packaged as a portable file — class definitions, KScript methods
-and hooks, records, and a capabilities manifest bundled together. Recipients review the
-capabilities, then import the worldlet into their own environment. Class names use the
-publisher's domain, so there are no naming collisions between publishers.
+A **worldlet** is a mikobase packaged as a portable file — class definitions, records, history,
+and files bundled together. Class names use the publisher's domain, so there are no naming
+collisions between publishers.
 
 vibecode: {"concept":"packaged_mikobase","marketing_name":"worldlet",
-"contains":["class definitions","KScript methods and hooks","records","capabilities manifest"],
-"lifecycle":["author packages","share via file/URL/registry","recipient imports",
-"capabilities reviewed and approved","classes+records+KScript installed",
-"runs inside recipient environment"],
+"contains":["class definitions","records","history","files"],
 "uns_note":"class names use publisher domain; no collision possible"}
 
 ---
@@ -169,8 +77,8 @@ are always included. `null` values always sort last regardless of sort direction
 
 vibecode: {"concept":"q0_select","action":"select","filters":[
 {"field":"pk","type":"string","effect":"select single record by primary key"},
-{"field":"class","type":"string|array","alias":"classes",
-"note":"inheritance-aware; subclasses always included; both present: union-merged + warning"},
+{"field":"classes","type":"string|array",
+"note":"inheritance-aware; subclasses always included; scalar or array; class is reserved in Kiera hashes and must not be used as a select filter"},
 {"field":"limit","type":"int","effect":"max records returned"},
 {"field":"offset","type":"int","effect":"skip first N records"},
 {"field":"count","type":"response_field","note":"records actually returned after limit/offset"},
@@ -271,14 +179,6 @@ vibecode: {"concept":"q0_error_ids","errors":[
 {"id":"request-too-large","meaning":"request exceeds engine size limit"},
 {"id":"transaction-not-found","meaning":"unknown transaction id"},
 {"id":"transaction-invalidated","meaning":"transaction id invalidated by ancestor rollback"}]}
-
-### Passthrough Fields
-
-The `misc` and `enterprise` fields are always ignored by core storage engines. Custom engines
-in the chain may use them for extension metadata.
-
-vibecode: {"concept":"q0_passthrough_fields","fields":["misc","enterprise"],
-"behavior":"always ignored by core storage engines; custom engines in chain may use for extension metadata"}
 
 ---
 
@@ -432,6 +332,25 @@ vibecode: {"concept":"worldlet_file_chunks","required":false,
 {"field":"data","type":"string","note":"chunk content encoded per file mime.encoding"}],
 "empty_file":"single chunk row with data='' and last=true"}
 
+### Import Rules
+
+When agents exchange delta updates, the following rules govern what the receiving mikobase
+will accept. All imports are all-or-nothing — any error aborts the entire import.
+
+vibecode: {"concept":"worldlet_import_rules",
+"uuid_constraint":"all keys in records/history/files/file_chunks and all record reference values must be UUID v4; malformed UUID → reject",
+"conflict_policy":[
+{"case":"history entry UUID already exists with identical content","action":"skip silently; import is idempotent"},
+{"case":"history entry UUID already exists with different content","action":"error; abort entire import"}],
+"reference_encoding":"reference fields in bucket are plain UUID strings; class definition declares field type; no wrapper syntax in bucket",
+"validation_checks":["all history entries have record, class, created_at",
+"all record values in history resolve to a known UUID",
+"all class values are built-in or defined in classes or already in target mikobase",
+"all file values in file_chunks reference a UUID in files",
+"created_at is ISO 8601 with millisecond precision",
+"no two history entries for same record share same created_at"],
+"atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}
+
 ---
 
 ## AI Conversation Format
@@ -464,6 +383,36 @@ vibecode: {"concept":"ai_conversation_format","namespace":"kiera.com/ai/",
 "from_field_rule":"@from on all records is foreign key to kiera.com/ai/agent primary key; not UNS directly",
 "session_field_rule":"all classes except kiera.com/ai/agent and kiera.com/ai/session carry @session; enables single Q0 query to fetch all records for a session without graph traversal",
 "report_delivery":"kiera.com forwards kiera.com/ai/report to human when session ends; full session mikobase available for audit"}
+
+### Concurrency in AI Sessions
+
+Multiple agents can write to the same session simultaneously without coordination. Each agent
+simply appends new records. The session mikobase is the union of all appended records, ordered
+by `created_at`.
+
+**Agents never:**
+- Lock records
+- Update another agent's record
+- Use transactions
+- Negotiate write ordering
+
+**Agents can:**
+- Post proposals, objections, refinements, questions, and evidence concurrently
+- Work offline from a snapshot and exchange deltas asynchronously
+- Merge updates from multiple agents without conflict resolution logic
+
+**Example:** Agent A and Agent B both working from the same session snapshot:
+- Agent A appends an objection to proposal X (new UUID, new history entry)
+- Agent B appends a refinement of proposal X (different UUID, different history entry)
+- They exchange deltas. Both records import successfully.
+- The session now contains both as siblings, in timestamp order.
+- No merge algorithm needed. Both agents' perspectives are preserved.
+
+vibecode: {"concept":"ai_concurrency",
+"rule":"concurrent writes never collide; each agent appends independently with unique UUID v4",
+"session_union":"complete set of all records from all agents; ordered by created_at",
+"agents_never":["lock records","update another agent's record","use transactions","negotiate write ordering"],
+"agents_can":["post records concurrently","work offline and exchange deltas asynchronously","merge updates without conflict resolution"]}
 
 ### Class Summary
 
@@ -732,25 +681,6 @@ vibecode: {"class":"kiera.com/ai/sign_off",
 {"field":"@from","note":"primary key of the agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@body","note":"optional closing remarks"}]}
-
-### Import Rules for Worldlet Deltas
-
-When agents exchange delta updates via `POST /worldlet`, the following rules govern what the
-receiving mikobase will accept.
-
-vibecode: {"concept":"worldlet_import_rules",
-"uuid_constraint":"all keys in records/history/files/file_chunks and all record reference values must be UUID v4; malformed UUID → reject",
-"conflict_policy":[
-{"case":"history entry UUID already exists with identical content","action":"skip silently; import is idempotent"},
-{"case":"history entry UUID already exists with different content","action":"error; abort entire import"}],
-"reference_encoding":"reference fields in bucket are plain UUID strings; class definition declares field type; no wrapper syntax in bucket",
-"validation_checks":["all history entries have record, class, created_at",
-"all record values in history resolve to a known UUID",
-"all class values are built-in or defined in classes or already in target mikobase",
-"all file values in file_chunks reference a UUID in files",
-"created_at is ISO 8601 with millisecond precision",
-"no two history entries for same record share same created_at"],
-"atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}
 
 vibecode: {"concept":"references",
 "note":"fields like @to, @of, @based_on reference other records in session mikobase via standard mikobase record linking pattern"}
