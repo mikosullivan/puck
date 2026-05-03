@@ -15,7 +15,7 @@ vibecode: {
 	"prefix": "%",
 	"availability": "always_available_without_import",
 	"user_defined": false,
-	"methods": ["%chain", "%engine", "%kiera", "%call", "%bucket", "%object",
+	"methods": ["%chain", "%engine", "%kiera", "%call", "%bucket",
 		"%self", "%scope", "%timeout", "%process", "%now", "%blocks",
 		"%document", "%vibecode", "%role", "%sys"]
 }
@@ -24,15 +24,14 @@ vibecode: {
 | Method | Description |
 |--------|-------------|
 | `%chain` | Scoped ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Cleared at security boundaries. Use sparingly. |
-| `%engine` | Top-level gateway to host-injected resources. Only visible in the outermost script scope; non-capturable. The primary entry point for bootstrapping. |
+| `%engine` | Returns the engine object — the gateway to host-injected resources. The method only exists in the outermost scope; functions and closures cannot see it. The engine object itself is non-storable: it can be used directly but cannot be assigned to a variable. |
 | `%kiera` | Access to the Kieraverse object namespace by UNS address. `%kiera['foo.com/bar']` returns the registered object (class, capability, etc.) at that address. |
 | `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. |
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |
-| `%object` | The root class — foundation of the object system. All classes ultimately inherit from it. |
 | `%self` | The current object instance. `self` (bare word) is shorthand. |
 | `%scope` | The current lexical scope. Holds variables and is used for bare word command (bwc) resolution. `$foo` is shorthand for `%scope['foo']`. |
-| `%timeout` | Wraps a block with a hard time limit (whole-second granularity). A compliant engine must make this undefeatable by KScript code. |
-| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` is immediate (no cleanup). Abort is a capability — unavailable to untrusted code. |
+| `%timeout` | Wraps a block with a hard time limit (whole-second granularity). A compliant engine must make this undefeatable by KScript code. Untrusted code runs under a short default timeout to prevent surreptitious crypto mining. |
+| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises an abort exception immediately. Untrusted code may call abort, but its abort exception is caught at the nearest security boundary — it cannot abort the whole program. |
 | `%now` | Returns the current timestamp object. |
 | `%blocks` | The array of `do` blocks passed to the current function call. Used in multi-block functions alongside `%call.dispatcher`. |
 | `%document` | Saves a documentation block as a statement in the KScriptJSON command array. Takes a MIME type (`text/plain`, `text/markdown`, `text/vibecode`, etc.) and a heredoc or string. Shorthand type names: `text`, `markdown`, `vibecode`. All documentation rules (storage, `side` field, attachment TBD) apply regardless of type. |

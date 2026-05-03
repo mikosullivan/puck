@@ -128,6 +128,28 @@ end
 
 ---
 
+## `object.fork` — Forking a Single Object
+
+`object.fork` spawns N forks that all share a single object's `%bucket`. The object is
+passed into each fork as a block parameter:
+
+```
+$color = %kiera['kiera.uno/color'].new(hex: '#ff0000')
+
+$color.object.fork(20) do($c)
+    $c.red = 128
+end
+```
+
+`object.fork` blocks until all forks complete — pool semantics, no separate
+`%forks.wait` needed.
+
+Under the hood it is sugar for setting up a mikobase with `include_private = true`
+scoped to just this object's `%bucket`, spawning N forks via `%forks.pool`, and passing
+the object in as the block parameter. The caller sees none of that machinery.
+
+---
+
 ## Sharing `%bucket` Through a Mikobase
 
 Setting `include_private = true` on a mikobase causes `%bucket` to be backed by the mikobase for

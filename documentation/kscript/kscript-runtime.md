@@ -30,7 +30,7 @@ vibecode: {
 	"lua_role": "interpreter_loop_memory_management_external_bindings_only",
 	"exception": "move_to_lua_if_unwieldy_or_too_slow",
 	"kernel_required": ["interpreter_loop", "gc", "core_bwcs",
-		"primitive_types", "%object", "kiera.uno/helper",
+		"primitive_types", "kiera.uno/object", "kiera.uno/helper",
 		"system_methods_%call_%chain_%bucket"],
 	"goal": "standard_library_written_in_kscript_visible_and_inspectable",
 	"lua_reference_deps": ["SQLite", "libmicrohttpd"],
@@ -56,7 +56,7 @@ A compliant KScript engine must provide a minimal kernel:
 - Memory management and garbage collection
 - Core bwcs: `if`, `while`, `and`, `or`, `not`
 - Primitive types: string, number, boolean, null, array, hash
-- `%object` — the root class, foundation of the object system
+- `kiera.uno/object` — the root class, foundation of the object system
 - `kiera.uno/helper` — the base helper class
 - System methods: `%call`, `%chain`, `%bucket`
 
@@ -527,7 +527,8 @@ vibecode: {
 	"two_properties": ["classes", "bucket"],
 	"classes": "class_stack_array_resolved_top_down",
 	"bucket": "%bucket hash shared by all classes in stack",
-	"class_stack_order": ["shadow_class", "base_class", "additional_classes"],
+	"object_classes_order": ["base_class", "additional_classes"],
+	"shadow_class": "implicit_always_first_in_resolution_not_in_object_classes",
 	"object_helper": "reserved_built_in_cannot_be_overridden",
 	"explicit_dispatch": "$class.object.call_with($foo, 'method', args)"
 }
@@ -571,12 +572,36 @@ exports the object's state.
 
 Method calls are resolved top-down through the class stack:
 
-1. **Shadow class** — a private class every object secretly inherits. Used to define
-   methods on a single object without affecting the class. Always first in the stack.
+1. **Shadow class** — always consulted first. Implicit — not returned by `object.classes`.
+   Used to define methods on a single object without affecting the class.
 2. **Base class** — the class the object was instantiated from.
 3. **Additional classes** — any further classes added to the stack.
 
-The first class in the stack that defines the method wins.
+The first class in the resolution order that defines the method wins.
+
+To add methods to an object's shadow class, use `object.define`:
+
+```
+$foo.object.define do
+    function &bar
+        ...
+    end
+end
+```
+
+`object.define` is shorthand for `$foo.object.shadow.define`. Both open the shadow class
+as a definition context for the block. Inside a class body, `self` refers to the class
+object itself, so class-level methods are defined the same way:
+
+```
+class 'color'
+    self.object.define do
+        function &blue
+            return color.new(hex: '#0000ff')
+        end
+    end
+end
+```
 
 ### The `object` Helper
 
@@ -584,7 +609,8 @@ Every object has a reserved helper called `object` that cannot be overridden. It
 meta information about the object:
 
 ```
-$foo.object.classes      # the class stack array
+$foo.object.classes      # the explicit class stack (base class + any additional classes)
+                         # does not include the shadow class
 ```
 
 More meta information will be added as needed.
@@ -753,7 +779,7 @@ vibecode: {
 	"identity": "from_reference_held_not_declared_name",
 	"no_global_registry": true,
 	"kiera_namespace": "%kiera[UNS] to access registered objects",
-	"definition": "$myclass = %object.subclass do...end or class...end",
+	"definition": "$myclass = class...end or %kiera['kiera.uno/object'].subclass do...end",
 	"subclassing": "$new_class = $my_class.subclass do...end",
 	"properties": "declared with property @foo :get :set default:",
 	"abstract": "abstract true prevents direct instantiation",
@@ -791,24 +817,17 @@ $my_class.new(...)
 
 ### Defining a class
 
-The official form subclasses `%object`, the root class:
-
-```
-$myclass = %object.subclass do
-end
-```
-
-Shortcut for the same thing:
+The standard form:
 
 ```
 $myclass = class
 end
 ```
 
-Long-cut for those who prefer explicit inheritance syntax:
+For developers who need explicit access to the root class:
 
 ```
-$myclass = class(inherit: %object)
+$myclass = %kiera['kiera.uno/object'].subclass do
 end
 ```
 
@@ -819,8 +838,7 @@ $new_class = $my_class.subclass do
 end
 ```
 
-This is the same pattern as subclassing `%object` — subclassing is always a method call
-on the parent class object.
+Subclassing is always a method call on the parent class object.
 
 ### Properties
 
@@ -1160,22 +1178,29 @@ end
 
 ### `%engine`
 
-`%engine` is the gateway through which the top-level script accesses resources provided
-by the host (capabilities, configuration, injected objects). It is only available in
-top-level code — functions and closures cannot see it.
+`%engine` is a method that returns the engine object — the gateway through which the
+top-level script accesses resources provided by the host (capabilities, configuration,
+injected objects).
+
+Two distinct properties make it secure:
+
+**The method is scope-restricted.** `%engine` only exists in the outermost script scope.
+Functions and closures do not have it in their scope at all — it is not blocked, it is
+simply absent. This is why a closure cannot access `%engine`: the method is not there.
+
+**The engine object is non-storable.** Even in the outermost scope, the object returned
+by `%engine` cannot be assigned to a variable. This is enforced by the runtime:
 
 ```
-$db   = %engine['db']
-$docs = %engine['docs']
+$db   = %engine['db']    # fine — using the object directly
+$docs = %engine['docs']  # fine
+
+$e = %engine             # raises — engine object is non-storable
 ```
 
-The top-level script pulls what it needs from `%engine` and passes those resources down
-to functions explicitly as parameters. This keeps inner functions isolated — they only
+The top-level script calls methods on `%engine` directly to pull out what it needs, then
+passes those resources down to functions explicitly as parameters. Inner functions only
 have access to what they are explicitly given.
-
-**`%engine` is non-capturable.** The runtime will not allow it to be stored in a variable,
-passed as an argument, or captured by a closure. Any attempt to do so raises an error.
-This constraint will be revisited in the future.
 
 ---
 
@@ -1339,7 +1364,7 @@ vibecode: {
 		"$foo.object.bucket.freeze"],
 	"permanent": "without_block_no_unfreeze",
 	"temporary": "with_block_releases_when_block_exits",
-	"classes_freeze_prevents": "class_stack_modification_shadow_method_definition",
+	"classes_freeze_prevents": "class_stack_modification_object_define_blocked",
 	"bucket_freeze_prevents": "%bucket_writes",
 	"object_bucket_returns": "jail_wrapping_%bucket_with_only_freeze_permitted"
 }
@@ -1384,7 +1409,7 @@ end
 ### What each freeze prevents
 
 **Classes freeze** — the class stack cannot be modified. No classes can be added or
-removed, and no shadow methods can be defined on the object. The methods the object has
+removed, and `object.define` is blocked. The methods the object has
 at freeze time are the methods it will always have.
 
 **Bucket freeze** — `%bucket` becomes read-only. Any attempt to write to `@foo` or

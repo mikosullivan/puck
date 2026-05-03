@@ -264,7 +264,7 @@ the lighter intent.
 ## Open Questions
 
 - Can a module be assigned to a variable and passed around as an object from outside?
-- Does a module's anonymous class inherit from `%object` directly?
+- Does a module's anonymous class inherit from `kiera.uno/object` directly?
 - Can modules be named for later reference, or are they always anonymous?
 - How does the implicit top-level module interact with `%engine` and the bootstrapping
   sequence?

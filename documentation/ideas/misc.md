@@ -144,3 +144,9 @@ Every firewall rule can optionally declare an `id`. When engines inherit a defau
 a rule in the specific configuration can override a default rule by declaring the same `id`.
 
 Not well thought out yet. May be resolved by whichever layering mechanism is chosen above.
+
+---
+
+## AI Agent Collaboration
+
+See [agent-collaboration.md](agent-collaboration.md).

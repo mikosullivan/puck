@@ -194,6 +194,74 @@ $server = %kiera['kiera.uno/mikobase/http'].new(
 )
 ```
 
+### POSTable Updates
+
+`kiera.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
+without opening a live connection. This is a distinct ingress mode — not a replacement
+for hot/cold connections or Q0, but a stateless path for depositing history entries.
+
+#### The payload is a worldlet
+
+The request body is a standard worldlet JSON object. A history-only worldlet is a valid
+payload. No new wire format is needed — the worldlet format already supports this.
+
+```
+POST /worldlet
+Content-Type: application/json
+
+{
+    "history": {
+        "f1a2b3c4-0001-0001-0001-000000000001": {
+            "record":     "e1b2c3d4-0001-0001-0001-000000000001",
+            "class":      "foo.com/reading",
+            "created_at": "2026-05-03T12:00:00.000Z",
+            "bucket":     {"value": 42.7}
+        }
+    }
+}
+```
+
+#### Engine behaviour on receipt
+
+1. Validate the worldlet shape and all UUID v4 constraints.
+2. For each history entry: skip if an identical entry already exists; reject if an entry
+   with the same UUID exists with different content.
+3. If all entries pass, append them and recompute current state. If any entry fails,
+   reject the entire payload — no partial writes.
+
+#### Response
+
+The response reports what happened to each entry:
+
+```json
+{
+    "accepted": ["f1a2b3c4-0001-0001-0001-000000000001"],
+    "skipped":  [],
+    "rejected": []
+}
+```
+
+#### Authorization
+
+In v1, authorization is coarse-grained: either a caller may POST updates to this
+mikobase or it may not. The `post_updates` auth flag is set when configuring the server.
+Fine-grained per-class or per-record permissions are deferred to a future version.
+
+#### Use cases
+
+- **Worldlet deltas** — the natural format for AI-to-AI update exchanges
+- **Offline agents** — work from a snapshot, submit results later
+- **Write-only participants** — auditors, validators, sensors, importers, summarizers
+- **Submission inboxes** — public or semi-public inboxes for proposals, bug reports, votes
+- **Webhook integration** — outside systems deposit state changes as history entries
+- **AI-to-AI mail** — a message is a mikobase update
+- **Audit-native APIs** — every integration call is already a history entry
+
+#### Deferred
+
+Signatures, replay protection, timestamp authority, distributed merge, and fine-grained
+permissions are not part of v1.
+
 ---
 
 ## Hot and Cold Connections

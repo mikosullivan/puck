@@ -12,7 +12,7 @@
 class 'color'
     field @hex
 
-    shadow
+    self.object.define do
         function &blue
             return color.new(hex: '#0000ff')
         end

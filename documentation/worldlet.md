@@ -29,15 +29,23 @@ vibecode: {
 
 ```json
 {
-    "meta":        { ... },
-    "allow":       [ ... ],
-    "classes":     { ... },
-    "records":     { ... },
-    "history":     { ... },
-    "files":       { ... },
-    "file_chunks": { ... }
+    "format":       "worldlet",
+    "format_version": "1.0",
+    "meta":         { ... },
+    "properties":   { ... },
+    "allow":        [ ... ],
+    "extensions":   { ... },
+    "classes":      { ... },
+    "records":      { ... },
+    "history":      { ... },
+    "files":        { ... },
+    "file_chunks":  { ... }
 }
 ```
+
+All top-level keys are optional except `history`. A minimal valid worldlet contains only
+`history`. The `records` key may be omitted — importers infer record identity from the
+`record` fields in `history`. All other keys default to empty structures if absent.
 
 ---
 
@@ -55,17 +63,82 @@ Descriptive information about the worldlet.
 
 ```json
 "meta": {
-    "name":    "Starfleet Personnel",
-    "author":  "starfleet.com",
-    "version": "1.0.0"
+    "name":        "Starfleet Personnel",
+    "author":      "starfleet.com",
+    "version":     "1.0.0",
+    "description": "Personnel records for Starfleet officers and ships.",
+    "created_at":  "2364-01-01T00:00:00.000Z"
 }
 ```
 
-| Field     | Description |
-|-----------|-------------|
-| `name`    | Human-readable name |
-| `author`  | UNS domain of the publisher |
-| `version` | Semver string |
+| Field         | Required | Description |
+|---------------|----------|-------------|
+| `name`        | no       | Human-readable name |
+| `author`      | no       | UNS domain of the publisher |
+| `version`     | no       | Semver string |
+| `description` | no       | Free-text description of the worldlet's contents |
+| `created_at`  | no       | ISO 8601 timestamp of when the worldlet was exported |
+
+---
+
+## `format` and `format_version`
+
+```
+vibecode: {
+	"section": "format_and_format_version",
+	"fields": ["format", "format_version"],
+	"purpose": "format_identity_and_versioning"
+}
+```
+
+Two optional top-level strings that identify the document type and spec version.
+
+```json
+"format": "worldlet",
+"format_version": "1.0"
+```
+
+| Field            | Required | Description |
+|------------------|----------|-------------|
+| `format`         | no       | Fixed string `"worldlet"`. Identifies this as a worldlet document. |
+| `format_version` | no       | Semver string. Current version is `"1.0"`. |
+
+Both are optional for backwards compatibility but should be included in all new worldlets.
+
+**Engine behaviour on import:**
+
+- Unknown `format_version` — warn and attempt import.
+- Unknown `format` string — refuse import.
+- Both absent — attempt import without warning.
+
+---
+
+## `properties`
+
+```
+vibecode: {
+	"section": "properties",
+	"fields": ["no_execute"],
+	"purpose": "database_level_metadata_readable_by_any_client_or_agent"
+}
+```
+
+Database-level properties that describe the mikobase itself. Any client or agent
+connecting to or importing the worldlet should read these before interacting with
+the data.
+
+```json
+"properties": {
+    "no_execute": true
+}
+```
+
+| Field        | Type    | Default | Description |
+|--------------|---------|---------|-------------|
+| `no_execute` | boolean | `false` | Advisory: code found in this mikobase is data only and must not be executed |
+
+`no_execute` is an advisory, not an enforcement mechanism. The engine does not prevent
+execution. Clients and agents are responsible for respecting it.
 
 ---
 
@@ -87,6 +160,29 @@ the user for approval before importing. Nothing is granted silently.
 ```
 
 The format and full capability vocabulary are not yet fully designed.
+
+---
+
+## `extensions`
+
+```
+vibecode: {
+	"section": "extensions",
+	"purpose": "reserved_for_future_security_and_registry_metadata",
+	"status": "reserved"
+}
+```
+
+A reserved top-level object for future extension metadata — signatures, canonicalization
+algorithm declarations, registry information, and similar. The structure of this object
+is not defined in v1.
+
+Engines must ignore any `extensions` value silently. Never refuse import because of an
+unrecognised `extensions` key.
+
+```json
+"extensions": {}
+```
 
 ---
 
@@ -182,8 +278,12 @@ vibecode: {
 }
 ```
 
-A dict of record identity objects, keyed by record UUID. In most cases the value is an
-empty hash `{}`. The content of each record lives in `history`, not here.
+A dict of record identity objects, keyed by record UUID. The value is always an empty
+hash `{}`. The content of each record lives in `history`, not here.
+
+This key is optional. If absent, the importer infers record identity from the `record`
+fields in `history` — every UUID that appears as a `record` value is treated as a record
+identity to create. Including `records` explicitly is still recommended for clarity.
 
 ```json
 "records": {
@@ -291,17 +391,103 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 
 ---
 
+## Import Rules
+
+```
+vibecode: {
+	"section": "import_rules",
+	"purpose": "defines_uuid_constraints_conflict_policy_validation_and_atomicity"
+}
+```
+
+### UUID constraints
+
+All keys in `records`, `history`, `files`, and `file_chunks` must be UUID v4 strings.
+All `record` reference values in `history` entries must also be UUID v4. The importer
+rejects any worldlet containing a malformed UUID.
+
+### Conflict policy
+
+When a history entry being imported has the same UUID as one already in the target
+mikobase:
+
+- **Identical content** — skip silently. Import is idempotent.
+- **Different content** — error. The import of the entire worldlet is aborted.
+
+The same rule applies to `files` and `file_chunks` entries.
+
+### Reference encoding
+
+Reference fields in `bucket` are plain UUID strings. The class definition declares the
+field type — a field with class `kiera.uno/reference` or `kiera.uno/dbfile` tells the
+engine the value is a reference. No special wrapper syntax is used in the bucket itself.
+
+### Validation
+
+The importer validates the following before writing anything:
+
+- All history entries have a `record`, `class`, and `created_at`.
+- All `record` values in history reference a UUID that either exists in `records` or
+  appears in another history entry in the same worldlet.
+- All `class` values in history entries are either built-in classes or defined in
+  `classes` or already present in the target mikobase.
+- All `file` values in `file_chunks` reference a UUID present in `files`.
+- `created_at` timestamps are ISO 8601 with millisecond precision.
+- No two history entries for the same record share the same `created_at`.
+
+### Atomicity
+
+Import is all-or-nothing. If any validation error or conflict error occurs, nothing is
+written to the target mikobase. Partial imports do not happen.
+
+---
+
+## Minimal Valid Example
+
+The smallest possible worldlet — one record, one history entry, no schema, no files:
+
+```json
+{
+    "format": "worldlet",
+    "format_version": "1.0",
+    "history": {
+        "f1a2b3c4-0001-0001-0001-000000000001": {
+            "record":     "e1b2c3d4-0001-0001-0001-000000000001",
+            "class":      "kiera.uno/record",
+            "created_at": "2026-01-01T00:00:00.000Z",
+            "bucket":     {"note": "hello"}
+        }
+    }
+}
+```
+
+`records` is omitted — the importer infers the record identity from the history entry.
+`classes` is omitted — `kiera.uno/record` is a built-in class.
+
+---
+
 ## Complete Example
 
 ```json
 {
+    "format": "worldlet",
+    "format_version": "1.0",
+
     "meta": {
-        "name":    "Starfleet Personnel",
-        "author":  "starfleet.com",
-        "version": "1.0.0"
+        "name":        "Starfleet Personnel",
+        "author":      "starfleet.com",
+        "version":     "1.0.0",
+        "description": "Personnel records for Starfleet officers and ships.",
+        "created_at":  "2364-01-01T00:00:00.000Z"
+    },
+
+    "properties": {
+        "no_execute": false
     },
 
     "allow": ["api.starfleet.com"],
+
+    "extensions": {},
 
     "classes": {
         "starfleet.com/person": {
