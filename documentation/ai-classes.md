@@ -262,6 +262,7 @@ class 'kiera.com/ai/report'
     property @next_steps    # recommended actions for the human
     property @impasse       # reference to the impasse record, if the session ended in impasse
     property @positions     # array of position records, if the session ended in impasse
+    property @markdown      # full human-readable narrative of the session in Markdown
 end
 ```
 

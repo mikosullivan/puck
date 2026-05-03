@@ -1,15 +1,27 @@
-# Mikobase + AI Conversation Format
+# AI2AI — Collaborative Protocol for AI Agents
 
-vibecode: {"doc":"mikobase-ai-reference","audience":"human+ai","sections":["mikobase","q0",
-"worldlet_json_format","ai_conversation_format"]}
+vibecode: {"doc":"mikobase-ai-reference","audience":"human+ai","product":"ai2ai",
+"sections":["mikobase","q0","worldlet_json_format","ai_conversation_format"]}
 
-This document is a bootstrap reference for AI agents participating in AI-to-AI collaboration
-sessions. It covers the Mikobase object store and its query language (Q0), the worldlet JSON
-format used to exchange session state, and the standard class library for AI-to-AI sessions.
+**AI2AI** is a protocol for two AI agents to collaborate on a task, reach conclusions, and
+deliver a report to a human. It is the first product of the Kiera ecoverse — a broader
+infrastructure for connected objects, identities, and AI coordination that is actively being
+built. You do not need to know anything else about Kiera to use this protocol. This document
+is everything you need.
 
-Each concept is documented as a compact JSON "vibecode" block — a dual-audience format that
-both humans and AI systems can read directly. The JSON blocks are the formal specification;
-the prose around them is context and explanation.
+AI2AI sessions run on a shared **mikobase** — a live, append-only object store that both
+agents read and write simultaneously. Agents exchange structured records (proposals,
+objections, decisions) using a standard class library defined in this document. When the
+session concludes, the agents assemble a report and deliver it to the human.
+
+In the simplest case: the first agent sends the second agent a complete mikobase — the
+session schema, any initial records, and the agenda. From that point, each agent responds
+by sending back only new records (a delta). They continue exchanging deltas until the
+session is done.
+
+Each concept below is documented as a compact JSON "vibecode" block alongside human-readable
+prose. The vibecode blocks are the formal specification; the prose is context and explanation.
+Both humans and AI systems can read this document directly.
 
 ---
 
@@ -620,6 +632,8 @@ vibecode: {"class":"kiera.com/ai/decision",
 ### Report
 
 The final output forwarded to the human. Assembled by the agents when the session concludes.
+`@markdown` is the primary human-facing deliverable — a full narrative of the session written
+in Markdown. The structured fields (`@decisions`, `@open_items`, etc.) remain for machine use.
 When a session ends in impasse, `@decisions` will be empty or partial, and `@impasse` and
 `@positions` will be populated instead. The `@summary` and `@next_steps` fields must make
 clear that the human needs to decide.
@@ -633,7 +647,8 @@ vibecode: {"class":"kiera.com/ai/report",
 {"field":"@next_steps","note":"recommended actions for human"},
 {"field":"@session","note":"reference to full session for audit"},
 {"field":"@impasse","note":"reference to impasse record; present only if session ended in impasse"},
-{"field":"@positions","note":"array of position records; present only if session ended in impasse"}],
+{"field":"@positions","note":"array of position records; present only if session ended in impasse"},
+{"field":"@markdown","note":"full human-readable narrative of the session in Markdown; primary deliverable forwarded to human"}],
 "impasse_report_rules":["@decisions will be empty or partial","@summary and @next_steps must make clear human must decide",
 "@impasse and @positions replace the normal resolution fields"]}
 
@@ -685,340 +700,3 @@ vibecode: {"class":"kiera.com/ai/sign_off",
 vibecode: {"concept":"references",
 "note":"fields like @to, @of, @based_on reference other records in session mikobase via standard mikobase record linking pattern"}
 
----
-
-## Example Session Worldlet
-
-The following is the complete final mikobase from an actual AI-to-AI schema review session.
-Two AI instances (one acting as Spec Maintainer, one as Schema Reviewer) used a shared
-mikobase to review and agree on the AI conversation protocol class definitions. The session
-concluded with a decision to adopt all proposed class additions, with a note that the field
-type notation in the draft schema would need to be rewritten in valid Kiera format before
-production use.
-
-The `classes` section reflects the draft schema that was under review and uses simplified type
-notation (`"string"`, `"record"`, etc.) rather than standard Kiera field definitions — this
-was the subject of the objection raised and resolved during the session.
-
-vibecode: {"concept":"example_session_worldlet","note":"complete session mikobase from a real AI-to-AI schema review conversation; classes section uses the draft field types that were under review (non-standard Kiera format); a decision was reached that field types must be corrected before production use"}
-
-```json
-{
-  "format": "worldlet",
-  "format_version": "1.0",
-  "meta": {
-    "name": "AI Conversation Protocol Starter",
-    "author": "kiera.com",
-    "version": "0.1.0",
-    "description": "Starter mikobase/worldlet schema for auditable AI-to-AI collaboration.",
-    "created_at": "2026-05-03T00:00:00.000Z"
-  },
-  "properties": {
-    "no_execute": true
-  },
-  "classes": {
-    "kiera.com/ai/agent": {
-      "fields": {
-        "@name": "string",
-        "@uns": "string",
-        "@owner": "string",
-        "@model": "string",
-        "@registered_at": "datetime"
-      }
-    },
-    "kiera.com/ai/session": {
-      "fields": {
-        "@agenda": "string",
-        "@participants": "array:record",
-        "@human": "string",
-        "@status": "symbol",
-        "@created_at": "datetime"
-      }
-    },
-    "kiera.com/ai/proposal": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@subject": "string",
-        "@body": "string",
-        "@rationale": "string",
-        "@status": "symbol"
-      }
-    },
-    "kiera.com/ai/objection": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@to": "record",
-        "@body": "string",
-        "@severity": "symbol",
-        "@status": "symbol"
-      }
-    },
-    "kiera.com/ai/refinement": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@of": "record",
-        "@previous": "record",
-        "@body": "string",
-        "@changes": "string"
-      }
-    },
-    "kiera.com/ai/question": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@about": "record",
-        "@body": "string"
-      }
-    },
-    "kiera.com/ai/response": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@to": "record",
-        "@body": "string"
-      }
-    },
-    "kiera.com/ai/evidence": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@about": "record",
-        "@kind": "symbol",
-        "@source": "string",
-        "@body": "string",
-        "@confidence": "number"
-      }
-    },
-    "kiera.com/ai/acceptance": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@of": "record",
-        "@body": "string",
-        "@conditions": "string"
-      }
-    },
-    "kiera.com/ai/decision": {
-      "fields": {
-        "@session": "record",
-        "@body": "string",
-        "@based_on": "record",
-        "@agreed_by": "array:record",
-        "@confidence": "number",
-        "@risks": "array:string"
-      }
-    },
-    "kiera.com/ai/impasse": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@body": "string",
-        "@sticking_point": "string"
-      }
-    },
-    "kiera.com/ai/position": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@body": "string",
-        "@supports": "record"
-      }
-    },
-    "kiera.com/ai/human_instruction": {
-      "fields": {
-        "@session": "record",
-        "@from": "string",
-        "@body": "string",
-        "@created_at": "datetime"
-      }
-    },
-    "kiera.com/ai/human_decision": {
-      "fields": {
-        "@session": "record",
-        "@from": "string",
-        "@body": "string",
-        "@resolves": "record",
-        "@created_at": "datetime"
-      }
-    },
-    "kiera.com/ai/report": {
-      "fields": {
-        "@session": "record",
-        "@summary": "string",
-        "@decisions": "array:record",
-        "@open_items": "array:string",
-        "@next_steps": "array:string",
-        "@impasse": "record",
-        "@positions": "array:record"
-      }
-    },
-    "kiera.com/ai/sign_off": {
-      "fields": {
-        "@from": "record",
-        "@session": "record",
-        "@body": "string"
-      }
-    }
-  },
-  "records": {
-    "02000000-0000-4000-8000-000000000001": {},
-    "02000000-0000-4000-8000-000000000002": {},
-    "02000000-0000-4000-8000-000000000003": {},
-    "02000000-0000-4000-8000-000000000004": {},
-    "02000000-0000-4000-8000-000000000005": {},
-    "02000000-0000-4000-8000-000000000006": {},
-    "02000000-0000-4000-8000-000000000007": {},
-    "02000000-0000-4000-8000-000000000008": {},
-    "02000000-0000-4000-8000-000000000009": {}
-  },
-  "history": {
-    "41000000-0000-4000-8000-000000000001": {
-      "record": "02000000-0000-4000-8000-000000000001",
-      "class": "kiera.com/ai/agent",
-      "created_at": "2026-05-03T00:05:00.000Z",
-      "active": true,
-      "bucket": {
-        "@name": "Spec Maintainer",
-        "@model": "claude-sonnet-4-6",
-        "@registered_at": "2026-05-03T00:05:00.000Z"
-      }
-    },
-    "41000000-0000-4000-8000-000000000002": {
-      "record": "02000000-0000-4000-8000-000000000002",
-      "class": "kiera.com/ai/session",
-      "created_at": "2026-05-03T00:05:00.001Z",
-      "active": true,
-      "bucket": {
-        "@agenda": "Review the AI conversation protocol starter schema.",
-        "@participants": ["02000000-0000-4000-8000-000000000001"],
-        "@human": "user",
-        "@status": ":open",
-        "@created_at": "2026-05-03T00:05:00.001Z"
-      }
-    },
-    "41000000-0000-4000-8000-000000000003": {
-      "record": "02000000-0000-4000-8000-000000000003",
-      "class": "kiera.com/ai/proposal",
-      "created_at": "2026-05-03T00:05:00.002Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@subject": "Accept new classes and field additions",
-        "@body": "The substantive design additions should be adopted into the standard class library. (1) kiera.com/ai/evidence: supports attaching cited sources to any session record; useful for grounding proposals. (2) kiera.com/ai/acceptance: explicit acceptance creates a clear audit trail of who accepted what, cleaner than status fields alone. (3) kiera.com/ai/human_instruction and kiera.com/ai/human_decision: essential human oversight classes; @from as string rather than record reference is correct since the human may not have an agent record. (4) @session on every class: improves queryability; all records for a session can be found without graph traversal. (5) @previous on refinement: tracks the full chain of revisions. (6) @status on objection: allows marking objections as addressed. (7) @confidence and @risks on decision: useful metadata for the human reviewing the outcome.",
-        "@rationale": "Each addition addresses a real gap in the existing design. None conflict with existing classes.",
-        "@status": ":open"
-      }
-    },
-    "41000000-0000-4000-8000-000000000004": {
-      "record": "02000000-0000-4000-8000-000000000004",
-      "class": "kiera.com/ai/objection",
-      "created_at": "2026-05-03T00:05:00.003Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@to": "02000000-0000-4000-8000-000000000003",
-        "@body": "The field type notation in this schema is non-standard for Kiera class definitions. Types like \"string\", \"datetime\", \"record\", \"array:record\", \"symbol\", and \"array:string\" do not match the standard Kiera format, which wraps each type as {\"class\": \"typename\"}. Several of these types — \"datetime\", \"record\", \"array:record\", \"symbol\" — are also not currently defined in the Kiera type system. This schema as written would not be importable by a standard Kiera engine. The types need to be mapped to valid Kiera field definitions before this schema can be used in production.",
-        "@severity": ":concern",
-        "@status": ":open"
-      }
-    },
-    "41000000-0000-4000-8000-000000000005": {
-      "record": "02000000-0000-4000-8000-000000000005",
-      "class": "kiera.com/ai/sign_off",
-      "created_at": "2026-05-03T00:05:00.004Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@body": "Substantive design accepted. One concern raised on field type notation; awaiting response."
-      }
-    },
-    "41000000-0000-4000-8000-000000000006": {
-      "record": "02000000-0000-4000-8000-000000000006",
-      "class": "kiera.com/ai/refinement",
-      "created_at": "2026-05-03T00:05:00.005Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@of": "02000000-0000-4000-8000-000000000003",
-        "@previous": "02000000-0000-4000-8000-000000000003",
-        "@body": "Adopt the proposed AI conversation schema additions, but revise all class field definitions to use the standard Kiera field declaration format. Conceptual type labels such as string, datetime, record, array:record, symbol, and array:string must not appear as bare field values in production schema. Each field should instead use a valid Kiera class reference object. Where the underlying Kiera type system lacks a dedicated primitive, use the closest existing valid type or define a first-class Kiera class before import.",
-        "@changes": "Resolved the concern about non-standard field type notation. The substantive class additions remain accepted, but the starter schema must be rewritten into valid Kiera class-definition syntax before production use."
-      }
-    },
-    "41000000-0000-4000-8000-000000000007": {
-      "record": "02000000-0000-4000-8000-000000000007",
-      "class": "kiera.com/ai/acceptance",
-      "created_at": "2026-05-03T00:05:00.006Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@of": "02000000-0000-4000-8000-000000000006",
-        "@body": "Refinement accepted. The field type concern is resolved. Substantive additions stand; starter schema to be rewritten in valid Kiera class-definition syntax before production use."
-      }
-    },
-    "41000000-0000-4000-8000-000000000008": {
-      "record": "02000000-0000-4000-8000-000000000008",
-      "class": "kiera.com/ai/decision",
-      "created_at": "2026-05-03T00:05:00.007Z",
-      "active": true,
-      "bucket": {
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@body": "The AI conversation protocol schema additions are accepted: kiera.com/ai/evidence, kiera.com/ai/acceptance, kiera.com/ai/human_instruction, kiera.com/ai/human_decision, @session on all classes, @previous on refinement, @status on objection, @confidence and @risks on decision. The field type notation in the starter schema must be rewritten to standard Kiera field definition format before production use.",
-        "@based_on": "02000000-0000-4000-8000-000000000006",
-        "@agreed_by": ["02000000-0000-4000-8000-000000000001"]
-      }
-    },
-    "41000000-0000-4000-8000-000000000009": {
-      "record": "02000000-0000-4000-8000-000000000002",
-      "class": "kiera.com/ai/session",
-      "created_at": "2026-05-03T00:05:00.008Z",
-      "active": true,
-      "bucket": {
-        "@agenda": "Review the AI conversation protocol starter schema.",
-        "@participants": ["02000000-0000-4000-8000-000000000001"],
-        "@human": "user",
-        "@status": ":resolved",
-        "@created_at": "2026-05-03T00:05:00.001Z"
-      }
-    },
-    "41000000-0000-4000-8000-000000000010": {
-      "record": "02000000-0000-4000-8000-000000000009",
-      "class": "kiera.com/ai/report",
-      "created_at": "2026-05-03T00:05:00.009Z",
-      "active": true,
-      "bucket": {
-        "@session": "02000000-0000-4000-8000-000000000002",
-        "@summary": "The starter schema is substantively sound. All new classes and field additions are accepted. The field type notation must be corrected to standard Kiera format before the schema can be imported by a Kiera engine.",
-        "@decisions": ["02000000-0000-4000-8000-000000000008"],
-        "@open_items": [
-          "Rewrite starter schema field types to standard Kiera format.",
-          "Define or map datetime, record, array:record, symbol, and array:string to valid Kiera types."
-        ],
-        "@next_steps": [
-          "Update ai-classes.md with new classes and field additions.",
-          "Update ai-conversation-format.md vibecode blocks.",
-          "Produce a corrected starter schema worldlet with valid Kiera field definitions."
-        ]
-      }
-    },
-    "41000000-0000-4000-8000-000000000011": {
-      "record": "02000000-0000-4000-8000-000000000005",
-      "class": "kiera.com/ai/sign_off",
-      "created_at": "2026-05-03T00:05:00.010Z",
-      "active": true,
-      "bucket": {
-        "@from": "02000000-0000-4000-8000-000000000001",
-        "@session": "02000000-0000-4000-8000-000000000002"
-      }
-    }
-  }
-}
-```
