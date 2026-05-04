@@ -5,7 +5,7 @@
 Blockchain is an official part of the Kiera ecoverse. The details of this design are
 still being worked out. This document is a proposal being sent to Stuart for review.
 
-Note to Stuart: you might want to start with "## Use Case: Third-Party Endorsement".
+Note to Stuart: you might want to start with [Use Case: Third-Party Endorsement](#use-case-third-party-endorsement).
 
 ---
 
@@ -341,6 +341,23 @@ a leading authority on security-cleared open source across languages and ecosyst
 Any engine or toolchain that knows how to read the chain gains access to that trust
 infrastructure with no additional setup.
 
+### Partnership Goal
+
+Kiera is actively seeking a partner in this space — a company analogous to ChainGuard
+whose endorsements and deprecations would be surfaced directly through the
+`blockchain.kiera.uno` API. When such a partnership is in place, a developer calling
+the fetch endpoint would receive not just Kiera's provenance record but also the
+partner's security assessment in the same response — one API call, one result,
+government-grade confidence included.
+
+This removes friction for developers who need to ship within government specifications.
+They do not need to know anything about the partner's internal processes or query a
+separate API. The blockchain.kiera.uno response tells them everything: where the object
+came from, that it hasn't been modified, and whether it meets the security criteria they
+care about.
+
+As Stuart says, this scratches an itch.
+
 ---
 
 ## AWS Implementation
@@ -548,6 +565,83 @@ block on the chain. Kiera's key plays no role.
 
 **Fabric key:** `endorse:<endorser>:<target_key>`
 
+### Deprecation
+
+A security or quality warning posted by any entity against one or more versions of an
+object. Unlike revocation, deprecation is a third-party assessment — it does not require
+Kiera's involvement and does not affect the integrity of the original entry. The
+deprecated object remains on the chain; consumers decide how to respond.
+
+Deprecation targets are expressed using the same tombstone/birthstone model as version
+requests. Three targeting modes:
+
+**Single version** — deprecate one specific entry:
+
+```json
+{
+    "record_type": "deprecation",
+    "target_uns": "borg.com/parser",
+    "target_version": 3,
+    "posted_by": "chainguard.dev",
+    "notes": {},
+    "posted_at": "<ISO 8601>",
+    "signature": {
+        "algorithm": "Ed25519",
+        "signer": "chainguard.dev",
+        "value": "<base64-encoded signature>"
+    }
+}
+```
+
+**Bounded time span** — deprecate all versions within a date range:
+
+```json
+{
+    "record_type": "deprecation",
+    "target_uns": "borg.com/parser",
+    "target_birthstone": "2024-01-01T00:00:00Z",
+    "target_tombstone": "2025-03-01T00:00:00Z",
+    "posted_by": "chainguard.dev",
+    "notes": {},
+    "posted_at": "<ISO 8601>",
+    "signature": {
+        "algorithm": "Ed25519",
+        "signer": "chainguard.dev",
+        "value": "<base64-encoded signature>"
+    }
+}
+```
+
+**Open deprecation** — deprecate all versions up to (or from) an open-ended boundary.
+Omit `target_tombstone` to deprecate everything before a date with no upper bound, or
+omit `target_birthstone` to deprecate everything from a date forward:
+
+```json
+{
+    "record_type": "deprecation",
+    "target_uns": "borg.com/parser",
+    "target_tombstone": "2025-06-01T00:00:00Z",
+    "posted_by": "chainguard.dev",
+    "notes": {},
+    "posted_at": "<ISO 8601>",
+    "signature": {
+        "algorithm": "Ed25519",
+        "signer": "chainguard.dev",
+        "value": "<base64-encoded signature>"
+    }
+}
+```
+
+The `notes` field structure is TBD. It will carry human-readable and structured
+information about the deprecation — CVE references, severity, remediation guidance, etc.
+
+When the gateway resolves a version and finds a deprecation covering that version from a
+trusted source, it includes the deprecation in the response. Whether to treat the
+deprecation as a hard error or a warning is a consumer-side decision.
+
+**Fabric key:** `deprecate:<posted_by>:<target_uns>:<uuid>` — a UUID suffix allows
+multiple deprecations from the same poster against the same UNS.
+
 ---
 
 ## The Kiera Blockchain Gateway
@@ -696,6 +790,70 @@ valid JSON, required fields present, valid signature, no overwrites of immutable
 
 Trust delegation is architecturally specified above but not needed for the initial
 launch. Implement when there is a concrete delegatee.
+
+---
+
+## Versioning
+
+Every object published on the Kiera blockchain carries a timestamp. The timestamp is
+not set by the submitter — it is the block timestamp assigned by the Fabric orderer
+when the entry is committed. This makes timestamps canonical and tamper-evident.
+
+**Default behaviour: latest within range.** When you request an object with no version
+constraint, you get the most recently posted version. When you request with a date
+range, you get the most recently posted version that falls within that range.
+
+### Tombstone and Birthstone
+
+A **tombstone** is an upper bound on the timestamp: "give me the latest version of this
+object on or before this date." Setting a tombstone pins the entire resolution to a
+point in time — useful for reproducible builds or auditing what was deployed on a given
+date.
+
+A **birthstone** is a lower bound: "do not give me anything older than this date."
+Useful for excluding objects published before a known-good baseline, such as a security
+audit date.
+
+Either, both, or neither can be set. With neither, you get the latest version of
+everything.
+
+```json
+{
+    "uns": "borg.com/parser",
+    "tombstone": "2025-06-01T00:00:00Z",
+    "birthstone": "2024-01-01T00:00:00Z"
+}
+```
+
+### Dependency Resolution
+
+Each object may declare its own dependencies — by UNS name — along with an optional
+date range per dependency. When the gateway resolves a request, it traverses the
+dependency graph and applies the outer request range at every node.
+
+If an object declares a narrower range for one of its dependencies, the system
+intersects that range with the outer range. The narrower of the two wins. If the
+intersection is empty — no version of the dependency exists within both ranges — an
+exception is raised. The resolution fails rather than silently selecting something
+outside the intended range.
+
+Example: the outer request has a tombstone of 2025-06-01. Object A declares that it
+depends on `borg.com/utils` with a tombstone of 2025-01-01. The effective tombstone
+for `borg.com/utils` is 2025-01-01 — A's constraint is tighter and takes precedence.
+If `borg.com/utils` has no version on or before 2025-01-01, the resolution fails.
+
+Dependency declarations live inside the object's `bucket`. The gateway reads the
+`bucket` at each node to discover dependencies, then recurses. Dependency graphs
+for libraries are finite; resolution terminates.
+
+### Relationship to Semantic Versioning
+
+Timestamp-based versioning handles the common case — pin a date, get a reproducible
+dependency tree — with no coordination required between publishers. Semantic versioning
+is available as an additional layer for publishers who need to express compatibility
+constraints (e.g. "requires borg.com/utils >= 2.0.0"). The two systems can be combined:
+a semver constraint narrows which versions are candidates; the timestamp range selects
+the latest candidate within that set.
 
 ---
 
