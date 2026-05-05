@@ -13,7 +13,7 @@ for a generalised opt-in compute payment system. Any two parties can use it: a u
 for a service by donating compute time; the recipient verifies and records the work on
 the blockchain.
 
-This is not specific to kiera.com. Any site can offer it, accept it, or build on top of
+This is not specific to kiera.uno. Any site can offer it, accept it, or build on top of
 it using a standard KScript library.
 
 ---
@@ -51,7 +51,7 @@ it using a standard KScript library.
 
 ## Use Cases
 
-- **kiera.com services** — pay for signed object publishing by donating compute time
+- **kiera.uno services** — pay for signed object publishing by donating compute time
   instead of money.
 - **Free tiers** — SaaS products offer a free tier funded by optional mining sessions.
 - **Game credits** — earn in-game currency by running a mining session.

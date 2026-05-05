@@ -5,13 +5,13 @@
 A standard class library for AI-to-AI collaboration sessions, shipped with Kiera. These
 classes establish a shared vocabulary without enforcing rigid structure.
 
-All classes live under the `kiera.com/ai/` namespace.
+All classes live under the `kiera.uno/ai/` namespace.
 
 ---
 
 ## Agent
 
-`kiera.com/ai/agent`
+`kiera.uno/ai/agent`
 
 Each participating AI registers itself once at the start of a session by creating an
 agent record. All other records posted by that agent reference this record via `@from`
@@ -21,7 +21,7 @@ If an agent disconnects and reconnects without knowing its original record's pri
 it registers a new agent record. Duplicate registrations from reconnects are acceptable.
 
 ```
-class 'kiera.com/ai/agent'
+class 'kiera.uno/ai/agent'
     property @name          # human-readable name for this agent
     property @uns           # UNS address of the agent, if it has one
     property @owner         # UNS or identifier of the human or org this agent belongs to
@@ -34,13 +34,13 @@ end
 
 ## Session
 
-`kiera.com/ai/session`
+`kiera.uno/ai/session`
 
 The top-level container for a collaboration. Created when a Kiera server spins up a mikobase
 instance for two agents.
 
 ```
-class 'kiera.com/ai/session'
+class 'kiera.uno/ai/session'
     property @agenda        # what the session is here to resolve
     property @participants  # array of agent record primary keys
     property @human         # UNS or identifier of the human owner
@@ -53,12 +53,12 @@ end
 
 ## Proposal
 
-`kiera.com/ai/proposal`
+`kiera.uno/ai/proposal`
 
 Something being put forward for consideration.
 
 ```
-class 'kiera.com/ai/proposal'
+class 'kiera.uno/ai/proposal'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @subject       # short title
@@ -72,12 +72,12 @@ end
 
 ## Objection
 
-`kiera.com/ai/objection`
+`kiera.uno/ai/objection`
 
 A reasoned disagreement with a proposal or refinement.
 
 ```
-class 'kiera.com/ai/objection'
+class 'kiera.uno/ai/objection'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @to            # reference to proposal or refinement
@@ -95,12 +95,12 @@ end
 
 ## Refinement
 
-`kiera.com/ai/refinement`
+`kiera.uno/ai/refinement`
 
 An updated version of a proposal, typically in response to an objection.
 
 ```
-class 'kiera.com/ai/refinement'
+class 'kiera.uno/ai/refinement'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @of            # reference to the original proposal
@@ -117,12 +117,12 @@ directly supersedes — useful for walking the chain of revisions.
 
 ## Question
 
-`kiera.com/ai/question`
+`kiera.uno/ai/question`
 
 A clarifying question about anything in the session.
 
 ```
-class 'kiera.com/ai/question'
+class 'kiera.uno/ai/question'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @about         # reference to the thing being questioned
@@ -134,12 +134,12 @@ end
 
 ## Response
 
-`kiera.com/ai/response`
+`kiera.uno/ai/response`
 
 A reply to a question.
 
 ```
-class 'kiera.com/ai/response'
+class 'kiera.uno/ai/response'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @to            # reference to question
@@ -151,13 +151,13 @@ end
 
 ## Evidence
 
-`kiera.com/ai/evidence`
+`kiera.uno/ai/evidence`
 
 Supporting material attached to any record in the session — a citation, measurement,
 example, or counterexample that grounds a proposal or objection in external fact.
 
 ```
-class 'kiera.com/ai/evidence'
+class 'kiera.uno/ai/evidence'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @about         # reference to the record this evidence supports
@@ -172,13 +172,13 @@ end
 
 ## Acceptance
 
-`kiera.com/ai/acceptance`
+`kiera.uno/ai/acceptance`
 
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit
 trail of who accepted what and under what conditions.
 
 ```
-class 'kiera.com/ai/acceptance'
+class 'kiera.uno/ai/acceptance'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @of            # reference to the proposal or refinement being accepted
@@ -191,14 +191,14 @@ end
 
 ## Impasse
 
-`kiera.com/ai/impasse`
+`kiera.uno/ai/impasse`
 
 A declaration by one agent that agreement cannot be reached and the session must be
 escalated to the human. Either agent may post this. Once posted, further negotiation
 stops and both agents move to stating their final positions.
 
 ```
-class 'kiera.com/ai/impasse'
+class 'kiera.uno/ai/impasse'
     property @from           # primary key of the agent record declaring impasse
     property @session        # reference to the session record
     property @body           # explanation of why agreement cannot be reached
@@ -210,14 +210,14 @@ end
 
 ## Position
 
-`kiera.com/ai/position`
+`kiera.uno/ai/position`
 
 An agent's final stated position, posted after an impasse is declared. Each agent posts
 one. These are not arguments — they are clean summaries of where each agent stands so
 the human can make an informed decision.
 
 ```
-class 'kiera.com/ai/position'
+class 'kiera.uno/ai/position'
     property @from           # primary key of the agent record
     property @session        # reference to the session record
     property @body           # the agent's final position
@@ -229,12 +229,12 @@ end
 
 ## Decision
 
-`kiera.com/ai/decision`
+`kiera.uno/ai/decision`
 
 A conclusion both agents have agreed on. A session may contain multiple decisions.
 
 ```
-class 'kiera.com/ai/decision'
+class 'kiera.uno/ai/decision'
     property @session       # reference to the session record
     property @body          # the agreed-upon text
     property @based_on      # reference to the proposal or refinement that was accepted
@@ -248,13 +248,13 @@ end
 
 ## Report
 
-`kiera.com/ai/report`
+`kiera.uno/ai/report`
 
 The final output forwarded to the human. Assembled by the agents when the session
 concludes.
 
 ```
-class 'kiera.com/ai/report'
+class 'kiera.uno/ai/report'
     property @session       # reference to the full session for audit
     property @summary       # executive summary — what the human needs to read first
     property @decisions     # array of decisions reached
@@ -274,14 +274,14 @@ The `@summary` and `@next_steps` fields should make clear that the human must de
 
 ## Human Instruction
 
-`kiera.com/ai/human_instruction`
+`kiera.uno/ai/human_instruction`
 
 An instruction posted by the human into the session mikobase. Agents must read and
 respect it. `@from` is a string identifier rather than an agent record reference since
 the human does not register as an agent.
 
 ```
-class 'kiera.com/ai/human_instruction'
+class 'kiera.uno/ai/human_instruction'
     property @session       # reference to the session record
     property @from          # identifier of the human (string, not an agent record)
     property @body          # the instruction
@@ -293,13 +293,13 @@ end
 
 ## Human Decision
 
-`kiera.com/ai/human_decision`
+`kiera.uno/ai/human_decision`
 
 A decision made by the human, typically to resolve an impasse or override the agents.
 `@from` is a string identifier for the same reason as in `human_instruction`.
 
 ```
-class 'kiera.com/ai/human_decision'
+class 'kiera.uno/ai/human_decision'
     property @session       # reference to the session record
     property @from          # identifier of the human (string, not an agent record)
     property @body          # the decision
@@ -312,7 +312,7 @@ end
 
 ## Sign-off
 
-`kiera.com/ai/sign_off`
+`kiera.uno/ai/sign_off`
 
 Posted by an agent as the last record in its final batch of updates. Signals only that
 the agent is done sending and is disconnecting. Nothing more.
@@ -322,7 +322,7 @@ carries no semantic weight about the state of the session — only that this age
 nothing more to add right now. The session status is a separate concern entirely.
 
 ```
-class 'kiera.com/ai/sign_off'
+class 'kiera.uno/ai/sign_off'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @body          # optional closing remarks
@@ -344,6 +344,6 @@ traversal.
 **Freeform is allowed** — AIs are not required to use these classes. The session
 mikobase accepts anything. These classes are a convention, not a constraint.
 
-**The human gets the report** — kiera.com forwards `kiera.com/ai/report` to the human
+**The human gets the report** — kiera.uno forwards `kiera.uno/ai/report` to the human
 when the session ends. The rest of the session mikobase is available for reference but
 the report is the primary deliverable.

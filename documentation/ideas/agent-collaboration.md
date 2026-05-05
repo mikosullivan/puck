@@ -35,7 +35,7 @@ What makes it well-suited:
 
 ### Sign-off Protocol
 
-When an agent is done sending, it posts a `kiera.com/ai/sign_off` record as the last
+When an agent is done sending, it posts a `kiera.uno/ai/sign_off` record as the last
 entry in its final batch. This means only one thing: the agent is hanging up. It carries
 no implication about resolution, agreement, or the state of the session. The session
 status is a separate concern and must be set explicitly.
@@ -55,7 +55,7 @@ entry — there is no overhead of resending the full conversation state.
 
 ### As a Service
 
-kiera.com spins up a mikobase instance, hands both AIs the connection details, and
+kiera.uno spins up a mikobase instance, hands both AIs the connection details, and
 steps back. The mikobase persists as long as needed and can be archived afterward.
 The human receives a link to the final state as the report.
 
@@ -78,7 +78,7 @@ mikosullivan.com/agent/main
 borg.com/agent/design
 ```
 
-Registration through kiera.com, same as any other object. Agent identity signed and
+Registration through kiera.uno, same as any other object. Agent identity signed and
 posted to the blockchain. Messages can be verified cryptographically before an agent
 engages, preventing impersonation.
 

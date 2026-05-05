@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>borg.com/parser</title>
+
+  <!--
+    AI cold-start context. This is page-level metadata about the Kiera system,
+    not data belonging to the object. It does not appear in the JSON translation.
+  -->
+  <meta name="kiera:vibecode" content='{"ecoverse":"kiera",
+"ecoverse_description":"Kiera is a distributed object system. Objects are identified by UNS addresses (domain/path, e.g. borg.com/parser). Classes define types with typed fields and methods. Any domain can publish objects by serving them over HTTPS.",
+"this_page":"class definition — describes a type with typed fields and callable methods",
+"how_to_use":"read the fields section to understand the object structure; read the methods section to understand available operations; fetch this class from its UNS address to use it in code",
+"verification":"object provenance and integrity can be verified via the Kiera blockchain at blockchain.kiera.uno",
+"ecoverse_info":"kiera.uno/vibcode"}'>
+
+  <!--
+    Parsing rules for data-kiera-* attributes:
+      data-kiera-type  — type of this node: hash | array | string | number | boolean | null
+      data-kiera-key   — key name when this node is a value in a parent hash
+      data-kiera-value — scalar value for string/number/boolean nodes
+      data-vibecode    — parsed as JSON; included as "vibecode" key in this element's JSON object
+      Array items carry no data-kiera-key; DOM order is array order.
+      Display-only elements (no data-kiera-type) are ignored by parsers.
+  -->
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 860px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.2rem 0;
+      color: #111;
+      font-family: monospace;
+    }
+
+    .meta-line {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.4rem;
+      font-family: monospace;
+    }
+
+    .description {
+      font-size: 0.95rem;
+      color: #444;
+      margin: 0.75rem 0 2rem 0;
+      line-height: 1.5;
+    }
+
+    .section-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin: 2rem 0 0.5rem 0;
+    }
+
+    .kiera-object {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .kiera-field {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .kiera-field:last-child {
+      border-bottom: none;
+    }
+
+    .field-key {
+      padding: 0.55rem 1rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #555;
+      background: #fafafa;
+      border-right: 1px solid #f0f0f0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .field-value {
+      padding: 0.55rem 1rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #1a1a1a;
+    }
+
+    .field-value.is-hash,
+    .field-value.is-array {
+      padding: 0;
+    }
+
+    .kiera-nested { padding: 0; }
+
+    .kiera-nested .kiera-field { border-bottom: 1px solid #f0f0f0; }
+    .kiera-nested .kiera-field:last-child { border-bottom: none; }
+    .kiera-nested .field-key { padding-left: 2rem; background: #f7f7f7; }
+    .kiera-nested .kiera-nested .field-key { padding-left: 3.5rem; background: #f4f4f4; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-family: monospace;
+      white-space: nowrap;
+    }
+
+    .type-string  { background: #e8f4e8; color: #2d7a2d; }
+    .type-number  { background: #e8eef8; color: #2d4ea0; }
+    .type-boolean { background: #fdf0e0; color: #a06020; }
+    .type-null    { background: #f0f0f0; color: #888; }
+    .type-hash    { background: #f0e8f8; color: #6030a0; }
+    .type-array   { background: #f8e8e8; color: #a03030; }
+    .mod-required { background: #fde8e8; color: #c03030; }
+    .mod-optional { background: #f0f0f0; color: #999; }
+    .mod-returns  { background: #e8f0fd; color: #2050a0; }
+
+    .method-block {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .method-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 1rem;
+      background: #f5f0fc;
+      border-bottom: 1px solid #e0e0e0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #3a1a6a;
+    }
+
+    .method-desc {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      color: #555;
+      border-bottom: 1px solid #f0f0f0;
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    .vibecode-block {
+      background: #1e1e2e;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .vibecode-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #666;
+      padding: 0.3rem 0.75rem 0.1rem 0.75rem;
+      font-family: monospace;
+    }
+
+    .vibecode-block pre {
+      margin: 0;
+      padding: 0.3rem 0.75rem 0.5rem 0.75rem;
+      font-size: 0.78rem;
+      font-family: monospace;
+      color: #cdd6f4;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .sig-value { word-break: break-all; color: #aaa; font-size: 0.78rem; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ PAGE HEADER ══════════════════════════════════════════════════════ -->
+
+  <div class="vibecode-block" style="margin-bottom:1.5rem;">
+    <div class="vibecode-label">vibecode — kiera ecoverse bootstrap</div>
+    <pre>{"ecoverse":"kiera",
+"ecoverse_description":"Kiera is a distributed object system. Objects are identified by UNS addresses (domain/path, e.g. borg.com/parser). Classes define types with typed fields and methods. Any domain can publish objects by serving them over HTTPS.",
+"this_page":"class definition — describes a type with typed fields and callable methods",
+"how_to_use":"read the fields section to understand the object structure; read the methods section to understand available operations; fetch this class from its UNS address to use it in code",
+"verification":"object provenance and integrity can be verified via the Kiera blockchain at blockchain.kiera.uno",
+"ecoverse_info":"<a href="https://kiera.uno/vibcode" target="_blank" style="color:#89b4fa;">kiera.uno/vibcode</a>"}</pre>
+  </div>
+
+  <h1>borg.com/parser</h1>
+  <div class="meta-line">class: kiera.uno/class &nbsp;·&nbsp; version: 2.1.0 &nbsp;·&nbsp; signed by: kiera.uno</div>
+  <div class="description">
+    Parses structured text input into a normalised output hash. Supports strict and lenient
+    modes, configurable depth limits, and optional schema validation on output.
+  </div>
+
+  <!-- ═══ OBJECT ═══════════════════════════════════════════════════════════ -->
+
+  <div class="vibecode-block">
+    <div class="vibecode-label">vibecode</div>
+    <pre>{"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+"description":"Parses structured text input into a normalised output hash.",
+"tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]}</pre>
+  </div>
+
+  <div class="section-header">Core fields</div>
+
+  <div data-kiera-type="hash" class="kiera-object"
+       data-vibecode='{"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+"description":"Parses structured text input into a normalised output hash.",
+"tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]}'>
+
+    <div data-kiera-key="name" data-kiera-type="string" data-kiera-value="borg.com/parser" class="kiera-field">
+      <div class="field-key">name</div>
+      <div class="field-value">borg.com/parser <span class="badge type-string">string</span></div>
+    </div>
+
+    <div data-kiera-key="class" data-kiera-type="string" data-kiera-value="kiera.uno/class" class="kiera-field">
+      <div class="field-key">class</div>
+      <div class="field-value">kiera.uno/class <span class="badge type-string">string</span></div>
+    </div>
+
+    <div data-kiera-key="version" data-kiera-type="string" data-kiera-value="2.1.0" class="kiera-field">
+      <div class="field-key">version</div>
+      <div class="field-value">2.1.0 <span class="badge type-string">string</span></div>
+    </div>
+
+    <div data-kiera-key="description" data-kiera-type="string"
+         data-kiera-value="Parses structured text input into a normalised output hash." class="kiera-field">
+      <div class="field-key">description</div>
+      <div class="field-value">Parses structured text input into a normalised output hash. <span class="badge type-string">string</span></div>
+    </div>
+
+    <div data-kiera-key="tags" data-kiera-type="array" class="kiera-field">
+      <div class="field-key">tags <span class="badge type-array">array</span></div>
+      <div class="field-value is-array">
+        <div class="kiera-nested">
+          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/parsing" class="kiera-field">
+            <div class="field-key">[0]</div>
+            <div class="field-value"><a href="https://kiera.uno/tag/parsing" target="_blank">kiera.uno/tag/parsing</a> <span class="badge type-string">string</span></div>
+          </div>
+          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/text" class="kiera-field">
+            <div class="field-key">[1]</div>
+            <div class="field-value"><a href="https://kiera.uno/tag/text" target="_blank">kiera.uno/tag/text</a> <span class="badge type-string">string</span></div>
+          </div>
+          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/validation" class="kiera-field">
+            <div class="field-key">[2]</div>
+            <div class="field-value"><a href="https://kiera.uno/tag/validation" target="_blank">kiera.uno/tag/validation</a> <span class="badge type-string">string</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ FIELDS ═══════════════════════════════════════════════════════════ -->
+
+  <div class="vibecode-block">
+    <div class="vibecode-label">vibecode</div>
+    <pre>{"section":"fields","input":{"type":"string","required":true},
+"output":{"type":"hash","required":true},"max_length":{"type":"number","required":false,
+"default":65536},"strict":{"type":"boolean","required":false,"default":false},
+"schema":{"type":"string","required":false,"default":null}}</pre>
+  </div>
+
+  <div class="section-header">Fields</div>
+
+  <div data-kiera-key="fields" data-kiera-type="hash" class="kiera-object"
+       data-vibecode='{"section":"fields","input":{"type":"string","required":true},
+"output":{"type":"hash","required":true},"max_length":{"type":"number","required":false,
+"default":65536},"strict":{"type":"boolean","required":false,"default":false},
+"schema":{"type":"string","required":false,"default":null}}'>
+    <div class="kiera-nested">
+
+      <div data-kiera-key="input" data-kiera-type="hash" class="kiera-field">
+        <div class="field-key">input <span class="badge mod-required">required</span></div>
+        <div class="field-value is-hash">
+          <div class="kiera-nested">
+            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+              <div class="field-key">type</div>
+              <div class="field-value">string <span class="badge type-string">string</span></div>
+            </div>
+            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="true" class="kiera-field">
+              <div class="field-key">required</div>
+              <div class="field-value">true <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="description" data-kiera-type="string"
+                 data-kiera-value="Raw text to parse. Must be valid UTF-8." class="kiera-field">
+              <div class="field-key">description</div>
+              <div class="field-value">Raw text to parse. Must be valid UTF-8. <span class="badge type-string">string</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-kiera-key="output" data-kiera-type="hash" class="kiera-field">
+        <div class="field-key">output <span class="badge mod-required">required</span></div>
+        <div class="field-value is-hash">
+          <div class="kiera-nested">
+            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+              <div class="field-key">type</div>
+              <div class="field-value">hash <span class="badge type-hash">hash</span></div>
+            </div>
+            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="true" class="kiera-field">
+              <div class="field-key">required</div>
+              <div class="field-value">true <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="description" data-kiera-type="string"
+                 data-kiera-value="Normalised output. Keys depend on the input schema." class="kiera-field">
+              <div class="field-key">description</div>
+              <div class="field-value">Normalised output. Keys depend on the input schema. <span class="badge type-string">string</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-kiera-key="max_length" data-kiera-type="hash" class="kiera-field">
+        <div class="field-key">max_length <span class="badge mod-optional">optional</span></div>
+        <div class="field-value is-hash">
+          <div class="kiera-nested">
+            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="number" class="kiera-field">
+              <div class="field-key">type</div>
+              <div class="field-value">number <span class="badge type-number">number</span></div>
+            </div>
+            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+              <div class="field-key">required</div>
+              <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="default" data-kiera-type="number" data-kiera-value="65536" class="kiera-field">
+              <div class="field-key">default</div>
+              <div class="field-value">65536 <span class="badge type-number">number</span></div>
+            </div>
+            <div data-kiera-key="description" data-kiera-type="string"
+                 data-kiera-value="Maximum input size in bytes. Inputs exceeding this limit raise an error." class="kiera-field">
+              <div class="field-key">description</div>
+              <div class="field-value">Maximum input size in bytes. Inputs exceeding this limit raise an error. <span class="badge type-string">string</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-kiera-key="strict" data-kiera-type="hash" class="kiera-field">
+        <div class="field-key">strict <span class="badge mod-optional">optional</span></div>
+        <div class="field-value is-hash">
+          <div class="kiera-nested">
+            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="boolean" class="kiera-field">
+              <div class="field-key">type</div>
+              <div class="field-value">boolean <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+              <div class="field-key">required</div>
+              <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="default" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+              <div class="field-key">default</div>
+              <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="description" data-kiera-type="string"
+                 data-kiera-value="When true, unknown keys in input raise an error rather than being silently ignored." class="kiera-field">
+              <div class="field-key">description</div>
+              <div class="field-value">When true, unknown keys in input raise an error rather than being silently ignored. <span class="badge type-string">string</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-kiera-key="schema" data-kiera-type="hash" class="kiera-field">
+        <div class="field-key">schema <span class="badge mod-optional">optional</span></div>
+        <div class="field-value is-hash">
+          <div class="kiera-nested">
+            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+              <div class="field-key">type</div>
+              <div class="field-value">string <span class="badge type-string">string</span></div>
+            </div>
+            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+              <div class="field-key">required</div>
+              <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
+            </div>
+            <div data-kiera-key="default" data-kiera-type="null" class="kiera-field">
+              <div class="field-key">default</div>
+              <div class="field-value">null <span class="badge type-null">null</span></div>
+            </div>
+            <div data-kiera-key="description" data-kiera-type="string"
+                 data-kiera-value="UNS address of a schema object to validate output against. Null disables validation." class="kiera-field">
+              <div class="field-key">description</div>
+              <div class="field-value">UNS address of a schema object to validate output against. Null disables validation. <span class="badge type-string">string</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ METHODS ══════════════════════════════════════════════════════════ -->
+
+  <div class="section-header">Methods</div>
+
+  <div data-kiera-key="methods" data-kiera-type="hash">
+
+    <!-- parse() -->
+    <div data-kiera-key="parse" data-kiera-type="hash" class="method-block"
+         data-vibecode='{"method":"parse","returns":"hash","args":{"text":{"type":"string",
+"required":true},"options":{"type":"hash","required":false}}}'>
+      <div class="method-header">
+        parse <span class="badge mod-returns">→ hash</span>
+      </div>
+      <div class="method-desc">
+        Parse the input string and return a normalised output hash. Raises an error if
+        the input exceeds <code>max_length</code> or if <code>strict</code> is true and
+        unknown keys are encountered.
+      </div>
+      <div class="vibecode-block" style="margin:0.5rem 1rem;">
+        <div class="vibecode-label">vibecode</div>
+        <pre>{"method":"parse","returns":"hash","args":{"text":{"type":"string",
+"required":true},"options":{"type":"hash","required":false}}}</pre>
+      </div>
+      <div class="kiera-nested">
+        <div data-kiera-key="description" data-kiera-type="string"
+             data-kiera-value="Parse the input string and return a normalised output hash." class="kiera-field">
+          <div class="field-key">description</div>
+          <div class="field-value">Parse the input string and return a normalised output hash. <span class="badge type-string">string</span></div>
+        </div>
+        <div data-kiera-key="returns" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+          <div class="field-key">returns</div>
+          <div class="field-value">hash <span class="badge type-hash">hash</span></div>
+        </div>
+        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+          <div class="field-key">args <span class="badge type-hash">hash</span></div>
+          <div class="field-value is-hash">
+            <div class="kiera-nested">
+              <div data-kiera-key="text" data-kiera-type="hash" class="kiera-field">
+                <div class="field-key">text <span class="badge mod-required">required</span></div>
+                <div class="field-value is-hash">
+                  <div class="kiera-nested">
+                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+                      <div class="field-key">type</div>
+                      <div class="field-value">string <span class="badge type-string">string</span></div>
+                    </div>
+                    <div data-kiera-key="description" data-kiera-type="string"
+                         data-kiera-value="The text to parse." class="kiera-field">
+                      <div class="field-key">description</div>
+                      <div class="field-value">The text to parse. <span class="badge type-string">string</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div data-kiera-key="options" data-kiera-type="hash" class="kiera-field">
+                <div class="field-key">options <span class="badge mod-optional">optional</span></div>
+                <div class="field-value is-hash">
+                  <div class="kiera-nested">
+                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+                      <div class="field-key">type</div>
+                      <div class="field-value">hash <span class="badge type-hash">hash</span></div>
+                    </div>
+                    <div data-kiera-key="description" data-kiera-type="string"
+                         data-kiera-value="Runtime overrides for strict and max_length." class="kiera-field">
+                      <div class="field-key">description</div>
+                      <div class="field-value">Runtime overrides for strict and max_length. <span class="badge type-string">string</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- validate() -->
+    <div data-kiera-key="validate" data-kiera-type="hash" class="method-block"
+         data-vibecode='{"method":"validate","returns":"boolean","args":{"text":{"type":"string","required":true}}}'>
+      <div class="method-header">
+        validate <span class="badge mod-returns">→ boolean</span>
+      </div>
+      <div class="method-desc">
+        Check whether the input is valid without performing a full parse. Returns true if
+        the input would parse successfully, false otherwise. Does not raise on invalid input.
+      </div>
+      <div class="vibecode-block" style="margin:0.5rem 1rem;">
+        <div class="vibecode-label">vibecode</div>
+        <pre>{"method":"validate","returns":"boolean","args":{"text":{"type":"string","required":true}}}</pre>
+      </div>
+      <div class="kiera-nested">
+        <div data-kiera-key="description" data-kiera-type="string"
+             data-kiera-value="Check whether the input is valid without performing a full parse." class="kiera-field">
+          <div class="field-key">description</div>
+          <div class="field-value">Check whether the input is valid without performing a full parse. <span class="badge type-string">string</span></div>
+        </div>
+        <div data-kiera-key="returns" data-kiera-type="string" data-kiera-value="boolean" class="kiera-field">
+          <div class="field-key">returns</div>
+          <div class="field-value">boolean <span class="badge type-boolean">boolean</span></div>
+        </div>
+        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+          <div class="field-key">args <span class="badge type-hash">hash</span></div>
+          <div class="field-value is-hash">
+            <div class="kiera-nested">
+              <div data-kiera-key="text" data-kiera-type="hash" class="kiera-field">
+                <div class="field-key">text <span class="badge mod-required">required</span></div>
+                <div class="field-value is-hash">
+                  <div class="kiera-nested">
+                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+                      <div class="field-key">type</div>
+                      <div class="field-value">string <span class="badge type-string">string</span></div>
+                    </div>
+                    <div data-kiera-key="description" data-kiera-type="string"
+                         data-kiera-value="The text to validate." class="kiera-field">
+                      <div class="field-key">description</div>
+                      <div class="field-value">The text to validate. <span class="badge type-string">string</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- reset() -->
+    <div data-kiera-key="reset" data-kiera-type="hash" class="method-block"
+         data-vibecode='{"method":"reset","returns":null,"args":{}}'>
+      <div class="method-header">
+        reset <span class="badge mod-returns">→ null</span>
+      </div>
+      <div class="method-desc">
+        Reset the parser to its initial state, clearing any cached schema or internal
+        buffers. Takes no arguments.
+      </div>
+      <div class="vibecode-block" style="margin:0.5rem 1rem;">
+        <div class="vibecode-label">vibecode</div>
+        <pre>{"method":"reset","returns":null,"args":{}}</pre>
+      </div>
+      <div class="kiera-nested">
+        <div data-kiera-key="description" data-kiera-type="string"
+             data-kiera-value="Reset the parser to its initial state." class="kiera-field">
+          <div class="field-key">description</div>
+          <div class="field-value">Reset the parser to its initial state. <span class="badge type-string">string</span></div>
+        </div>
+        <div data-kiera-key="returns" data-kiera-type="null" class="kiera-field">
+          <div class="field-key">returns</div>
+          <div class="field-value">null <span class="badge type-null">null</span></div>
+        </div>
+        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+          <div class="field-key">args <span class="badge type-hash">hash</span></div>
+          <div class="field-value">— none —</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ SIGNATURE ════════════════════════════════════════════════════════ -->
+
+  <div class="section-header">Signature</div>
+
+  <div data-kiera-key="signature" data-kiera-type="hash" class="kiera-object">
+    <div class="kiera-nested">
+      <div data-kiera-key="algorithm" data-kiera-type="string" data-kiera-value="Ed25519" class="kiera-field">
+        <div class="field-key">algorithm</div>
+        <div class="field-value">Ed25519 <span class="badge type-string">string</span></div>
+      </div>
+      <div data-kiera-key="signer" data-kiera-type="string" data-kiera-value="kiera.uno" class="kiera-field">
+        <div class="field-key">signer</div>
+        <div class="field-value">kiera.uno <span class="badge type-string">string</span></div>
+      </div>
+      <div data-kiera-key="value" data-kiera-type="string"
+           data-kiera-value="base64encodedsignaturegoeshere==" class="kiera-field">
+        <div class="field-key">value</div>
+        <div class="field-value sig-value">base64encodedsignaturegoeshere==</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ JSON ═════════════════════════════════════════════════════════════ -->
+
+  <div class="section-header">JSON</div>
+
+  <div class="vibecode-block" style="margin-bottom:2rem;">
+    <div class="vibecode-label">lossless translation</div>
+    <pre>{
+    "vibecode": {"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+        "description":"Parses structured text input into a normalised output hash.",
+        "tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]},
+    "name": "borg.com/parser",
+    "class": "kiera.uno/class",
+    "version": "2.1.0",
+    "description": "Parses structured text input into a normalised output hash.",
+    "tags": [
+        "kiera.uno/tag/parsing",
+        "kiera.uno/tag/text",
+        "kiera.uno/tag/validation"
+    ],
+    "fields": {
+        "vibecode": {"section":"fields","input":{"type":"string","required":true},
+            "output":{"type":"hash","required":true},"max_length":{"type":"number","required":false,
+            "default":65536},"strict":{"type":"boolean","required":false,"default":false},
+            "schema":{"type":"string","required":false,"default":null}},
+        "input": {
+            "type": "string",
+            "required": true,
+            "description": "Raw text to parse. Must be valid UTF-8."
+        },
+        "output": {
+            "type": "hash",
+            "required": true,
+            "description": "Normalised output. Keys depend on the input schema."
+        },
+        "max_length": {
+            "type": "number",
+            "required": false,
+            "default": 65536,
+            "description": "Maximum input size in bytes. Inputs exceeding this limit raise an error."
+        },
+        "strict": {
+            "type": "boolean",
+            "required": false,
+            "default": false,
+            "description": "When true, unknown keys in input raise an error rather than being silently ignored."
+        },
+        "schema": {
+            "type": "string",
+            "required": false,
+            "default": null,
+            "description": "UNS address of a schema object to validate output against. Null disables validation."
+        }
+    },
+    "methods": {
+        "parse": {
+            "vibecode": {"method":"parse","returns":"hash","args":{"text":{"type":"string",
+                "required":true},"options":{"type":"hash","required":false}}},
+            "description": "Parse the input string and return a normalised output hash.",
+            "returns": "hash",
+            "args": {
+                "text": {"type": "string", "description": "The text to parse."},
+                "options": {"type": "hash", "description": "Runtime overrides for strict and max_length."}
+            }
+        },
+        "validate": {
+            "vibecode": {"method":"validate","returns":"boolean","args":{"text":{"type":"string","required":true}}},
+            "description": "Check whether the input is valid without performing a full parse.",
+            "returns": "boolean",
+            "args": {
+                "text": {"type": "string", "description": "The text to validate."}
+            }
+        },
+        "reset": {
+            "vibecode": {"method":"reset","returns":null,"args":{}},
+            "description": "Reset the parser to its initial state.",
+            "returns": null,
+            "args": {}
+        }
+    },
+    "signature": {
+        "algorithm": "Ed25519",
+        "signer": "kiera.uno",
+        "value": "base64encodedsignaturegoeshere=="
+    }
+}</pre>
+  </div>
+
+</body>
+</html>

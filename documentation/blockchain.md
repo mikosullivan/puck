@@ -97,7 +97,7 @@ entire history of what Kiera has published and verified is auditable by anyone.
 ## Opt-In Only
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
-Kiera will sign them. The domain owner must explicitly request signing through kiera.com.
+Kiera will sign them. The domain owner must explicitly request signing through kiera.uno.
 They are in charge of which objects get submitted and when.
 
 This keeps the blockchain from becoming a free-for-all. Only objects whose owners have
@@ -107,7 +107,7 @@ deliberately chosen to participate are signed and posted.
 
 ## How Kiera Vouches for an Object
 
-1. The domain owner submits their object through kiera.com
+1. The domain owner submits their object through kiera.uno
 2. Kiera fetches the object from their domain over HTTPS — TLS proves it is talking to
    the real domain owner
 3. Kiera signs the object with its private key
@@ -194,7 +194,7 @@ A collaboration between Kiera and ChainGuard could be a mutually beneficial arra
 
 **Step 1 — Kiera vouches for provenance.**
 
-`borg.com` submits their library through kiera.com. Kiera fetches it over HTTPS, signs
+`borg.com` submits their library through kiera.uno. Kiera fetches it over HTTPS, signs
 it, and posts it to the chain.
 
 ```json
@@ -546,6 +546,7 @@ established its own identity on the chain. Does not require any involvement from
     "criteria": "us-gov/nist-800-53",
     "verdict": "pass",
     "body": "Reviewed 2026-05-04. Meets all applicable NIST 800-53 controls.",
+    "effective_date": "<ISO 8601 or null>",
     "assessed_at": "<ISO 8601>",
     "signature": {
         "algorithm": "Ed25519",
@@ -802,6 +803,22 @@ when the entry is committed. This makes timestamps canonical and tamper-evident.
 **Default behaviour: latest within range.** When you request an object with no version
 constraint, you get the most recently posted version. When you request with a date
 range, you get the most recently posted version that falls within that range.
+
+### Effective Date
+
+An endorser may set an `effective_date` on an endorsement to declare the date that
+should be used for version ordering in place of the block timestamp. When the gateway
+resolves a version, it checks for a trusted endorsement with an `effective_date` set.
+If one is found, that date is used for tombstone/birthstone calculations. If none is
+found, the block timestamp is used as the fallback.
+
+This allows historical objects to be correctly ordered. A Python library released ten
+years ago can be posted to the chain today — the block timestamp will be today, but a
+trusted endorser can set `effective_date` to the library's original release date,
+placing it correctly in the version timeline.
+
+`effective_date` is optional. Omitting it (or setting it to `null`) means the block
+timestamp governs.
 
 ### Tombstone and Birthstone
 
