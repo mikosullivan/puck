@@ -9,12 +9,18 @@ vibecode: {
 }
 ```
 
-A worldlet is a complete mikobase — classes, records, version history, and files — packaged
-as a single JSON object. It is the standard format for sharing and distributing mikobases.
+A worldlet is a complete mikobase — classes, records, and files — packaged as a single
+JSON object. It is the standard format for sharing and distributing mikobases.
+
+**Worldlets are non-temporal.** Each record is stored as a single object with its
+current bucket; there is no version history. A worldlet represents a snapshot of a
+conversation, scenario, or scratch space, not an audit log. See
+[mikobase.md](mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
 
 A worldlet is imported into a running mikobase. The importer creates the classes, inserts
-the records and history, and stores any file attachments. PKs are preserved exactly as
-exported, so references between records remain valid after import.
+the records, and stores any file attachments. PKs are preserved exactly as exported, so
+references between records remain valid after import. The target mikobase must be
+non-temporal — importing a worldlet into a temporal mikobase raises an exception.
 
 ---
 
@@ -37,15 +43,16 @@ vibecode: {
     "extensions":   { ... },
     "classes":      { ... },
     "records":      { ... },
-    "history":      { ... },
     "files":        { ... },
     "file_chunks":  { ... }
 }
 ```
 
-All top-level keys are optional except `history`. A minimal valid worldlet contains only
-`history`. The `records` key may be omitted — importers infer record identity from the
-`record` fields in `history`. All other keys default to empty structures if absent.
+All top-level keys are optional except `records`. A minimal valid worldlet contains only
+`records`. All other keys default to empty structures if absent.
+
+The `history` key is **not part of the worldlet format**. Worldlets are non-temporal;
+each record carries its current bucket directly under `records`.
 
 ---
 
@@ -118,7 +125,7 @@ Both are optional for backwards compatibility but should be included in all new 
 ```
 vibecode: {
 	"section": "properties",
-	"fields": ["no_execute"],
+	"fields": ["executable", "temporal"],
 	"purpose": "database_level_metadata_readable_by_any_client_or_agent"
 }
 ```
@@ -129,16 +136,25 @@ the data.
 
 ```json
 "properties": {
-    "no_execute": true
+    "executable": true,
+    "temporal":   false
 }
 ```
 
 | Field        | Type    | Default | Description |
 |--------------|---------|---------|-------------|
-| `no_execute` | boolean | `false` | Advisory: code found in this mikobase is data only and must not be executed |
+| `executable` | boolean | `false` | Advisory: code in this mikobase may be executed. Default is non-executable; allowing execution requires a positive assertion |
+| `temporal`   | boolean | `false` | Whether the imported mikobase keeps record version history. Worldlets are non-temporal by default; setting `true` requests a temporal target mikobase |
 
-`no_execute` is an advisory, not an enforcement mechanism. The engine does not prevent
-execution. Clients and agents are responsible for respecting it.
+`executable` is an advisory, not an enforcement mechanism. The engine does not prevent
+or permit execution on its own — the field communicates the publisher's intent. Clients
+and agents are responsible for respecting it. The default of `false` means a worldlet
+imported with no `properties` block (or with `properties: {}`) is treated as data-only.
+
+`temporal` declares whether the worldlet expects to be imported into a temporal or
+non-temporal mikobase. The default `false` matches the worldlet format's non-temporal
+shape (each record carries its current bucket directly, no history block). See
+[mikobase.md](../../mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
 
 ---
 
@@ -273,48 +289,17 @@ See [class-definition.md](class-definition.md) for the full class definition for
 vibecode: {
 	"section": "records",
 	"format": "dict_keyed_by_uuid",
-	"value": "empty_hash",
-	"note": "content_lives_in_history_not_here"
+	"fields": ["class", "created_at", "bucket"]
 }
 ```
 
-A dict of record identity objects, keyed by record UUID. The value is always an empty
-hash `{}`. The content of each record lives in `history`, not here.
-
-This key is optional. If absent, the importer infers record identity from the `record`
-fields in `history` — every UUID that appears as a `record` value is treated as a record
-identity to create. Including `records` explicitly is still recommended for clarity.
+A dict of records, keyed by record UUID. Each entry carries the record's class, its
+creation timestamp, and its current bucket directly. Worldlets are non-temporal — there
+is no separate history block and no per-version entries.
 
 ```json
 "records": {
-    "e1b2c3d4-0001-0001-0001-000000000001": {},
-    "e1b2c3d4-0002-0002-0002-000000000002": {},
-    "e1b2c3d4-0003-0003-0003-000000000003": {},
-    "e1b2c3d4-0004-0004-0004-000000000004": {}
-}
-```
-
----
-
-## `history`
-
-```
-vibecode: {
-	"section": "history",
-	"format": "dict_keyed_by_history_uuid",
-	"fields": ["record", "class", "created_at", "bucket"],
-	"note": "multiple_entries_per_record_uuid_latest_created_at_is_current"
-}
-```
-
-A dict of history entries, keyed by history UUID. Each entry is one version of a record.
-Multiple entries may point to the same record UUID — this is the version history. The
-current state of a record is the entry with the latest `created_at`.
-
-```json
-"history": {
-    "f1a2b3c4-0001-0001-0001-000000000001": {
-        "record":     "e1b2c3d4-0001-0001-0001-000000000001",
+    "e1b2c3d4-0001-0001-0001-000000000001": {
         "class":      "starfleet.com/officer",
         "created_at": "2364-01-01T00:00:00.000Z",
         "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
@@ -322,12 +307,11 @@ current state of a record is the entry with the latest `created_at`.
 }
 ```
 
-| Field        | Description |
-|--------------|-------------|
-| `record`     | UUID of the record this version belongs to |
-| `class`      | UNS class name at the time of this write |
-| `created_at` | ISO 8601 timestamp with millisecond precision |
-| `bucket`     | The record's field values at this version |
+| Field        | Required | Description |
+|--------------|----------|-------------|
+| `class`      | yes      | UNS class name |
+| `created_at` | no       | ISO 8601 timestamp with millisecond precision; record-level metadata, not bucket data |
+| `bucket`     | yes      | The record's field values |
 
 ---
 
@@ -402,14 +386,12 @@ vibecode: {
 
 ### UUID constraints
 
-All keys in `records`, `history`, `files`, and `file_chunks` must be UUID v4 strings.
-All `record` reference values in `history` entries must also be UUID v4. The importer
+All keys in `records`, `files`, and `file_chunks` must be UUID v4 strings. The importer
 rejects any worldlet containing a malformed UUID.
 
 ### Conflict policy
 
-When a history entry being imported has the same UUID as one already in the target
-mikobase:
+When a record being imported has the same UUID as one already in the target mikobase:
 
 - **Identical content** — skip silently. Import is idempotent.
 - **Different content** — error. The import of the entire worldlet is aborted.
@@ -425,7 +407,7 @@ engine the value is a reference. No special wrapper syntax is used in the bucket
 ### The `class` field
 
 In all Kiera-compliant hashes, the `class` field is reserved to indicate the class or
-classes the hash belongs to. This applies to Q0 queries, history entries, class
+classes the hash belongs to. This applies to Q0 queries, record entries, class
 definitions, and any other Kiera-level objects.
 
 Bucket objects are not Kiera-compliant. The `class` field has no special meaning inside
@@ -435,14 +417,11 @@ a bucket and may be used freely as an application field.
 
 The importer validates the following before writing anything:
 
-- All history entries have a `record`, `class`, and `created_at`.
-- All `record` values in history reference a UUID that either exists in `records` or
-  appears in another history entry in the same worldlet.
-- All `class` values in history entries are either built-in classes or defined in
-  `classes` or already present in the target mikobase.
+- All record entries have a `class` and a `bucket`.
+- All `class` values are either built-in classes or defined in `classes` or already
+  present in the target mikobase.
 - All `file` values in `file_chunks` reference a UUID present in `files`.
-- `created_at` timestamps are ISO 8601 with millisecond precision.
-- No two history entries for the same record share the same `created_at`.
+- The target mikobase is non-temporal.
 
 ### Atomicity
 
@@ -453,24 +432,21 @@ written to the target mikobase. Partial imports do not happen.
 
 ## Minimal Valid Example
 
-The smallest possible worldlet — one record, one history entry, no schema, no files:
+The smallest possible worldlet — one record, no schema, no files:
 
 ```json
 {
     "format": "worldlet",
     "format_version": "1.0",
-    "history": {
-        "f1a2b3c4-0001-0001-0001-000000000001": {
-            "record":     "e1b2c3d4-0001-0001-0001-000000000001",
-            "class":      "kiera.uno/record",
-            "created_at": "2026-01-01T00:00:00.000Z",
-            "bucket":     {"note": "hello"}
+    "records": {
+        "e1b2c3d4-0001-0001-0001-000000000001": {
+            "class":  "kiera.uno/record",
+            "bucket": {"note": "hello"}
         }
     }
 }
 ```
 
-`records` is omitted — the importer infers the record identity from the history entry.
 `classes` is omitted — `kiera.uno/record` is a built-in class.
 
 ---
@@ -491,7 +467,8 @@ The smallest possible worldlet — one record, one history entry, no schema, no 
     },
 
     "properties": {
-        "no_execute": false
+        "executable": true,
+        "temporal":   false
     },
 
     "allow": ["api.starfleet.com"],
@@ -556,43 +533,25 @@ The smallest possible worldlet — one record, one history entry, no schema, no 
     },
 
     "records": {
-        "e1b2c3d4-0001-0001-0001-000000000001": {},
-        "e1b2c3d4-0002-0002-0002-000000000002": {},
-        "e1b2c3d4-0003-0003-0003-000000000003": {},
-        "e1b2c3d4-0004-0004-0004-000000000004": {}
-    },
-
-    "history": {
-        "f1a2b3c4-0001-0001-0001-000000000001": {
-            "record":     "e1b2c3d4-0001-0001-0001-000000000001",
+        "e1b2c3d4-0001-0001-0001-000000000001": {
             "class":      "starfleet.com/officer",
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
         },
 
-        "f1a2b3c4-0002-0002-0002-000000000002": {
-            "record":     "e1b2c3d4-0002-0002-0002-000000000002",
+        "e1b2c3d4-0002-0002-0002-000000000002": {
             "class":      "starfleet.com/officer",
             "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Riker, William", "rank": "Commander", "serial": "SC-231-427"}
-        },
-
-        "f1a2b3c4-0003-0003-0003-000000000003": {
-            "record":     "e1b2c3d4-0002-0002-0002-000000000002",
-            "class":      "starfleet.com/officer",
-            "created_at": "2366-03-15T09:22:00.000Z",
             "bucket":     {"name": "Riker, William", "rank": "Captain", "serial": "SC-231-427"}
         },
 
-        "f1a2b3c4-0004-0004-0004-000000000004": {
-            "record":     "e1b2c3d4-0003-0003-0003-000000000003",
+        "e1b2c3d4-0003-0003-0003-000000000003": {
             "class":      "starfleet.com/ship",
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "USS Enterprise", "registry": "NCC-1701-D", "ship_class": "Galaxy"}
         },
 
-        "f1a2b3c4-0005-0005-0005-000000000005": {
-            "record":     "e1b2c3d4-0004-0004-0004-000000000004",
+        "e1b2c3d4-0004-0004-0004-000000000004": {
             "class":      "starfleet.com/officer",
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "Data", "rank": "Lieutenant Commander", "serial": "SA-789-012", "photo": "d1e2f3a4-0001-0001-0001-000000000001"}

@@ -1,4 +1,4 @@
-# Threads
+# Forking and Concurrency
 
 ## Design Rationale
 
@@ -33,7 +33,33 @@ See [mikobase.md](../mikobase.md) for the mikobase design.
 
 ---
 
-## `%forks`
+## `%forks` and `%tmp`
+
+Forking is a standard KScript feature, but it requires explicit engine permission. The
+engine grants it by providing `%forks` and optionally `%tmp` — both are `null` if the
+engine did not grant the corresponding permission.
+
+```
+if %forks
+    %forks.run do
+    end
+end
+```
+
+`%tmp` returns a directory object for a temp path the engine has designated for this
+process. It is `null` if not granted. Forked server processes use it to create Unix domain
+socket files:
+
+```
+if %tmp
+    $socket_path = %tmp.file("server.sock")
+end
+```
+
+Both permissions are independent. An engine can grant `%tmp` without granting `%forks`,
+or vice versa. A process that needs to set up a socket server needs both.
+
+---
 
 `%forks` is a system method (like `%call` and `%chain`) that returns the fork manager for
 the current context.

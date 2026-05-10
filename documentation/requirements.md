@@ -108,20 +108,21 @@ The following classes are seeded as database records on initialization:
 vibecode: {
 	"section": "database_properties",
 	"role": "documents metadata properties of the database instance itself, readable by any client",
-	"key_concepts": ["database_metadata", "no_execute", "advisory", "client_readable"]
+	"key_concepts": ["database_metadata", "executable", "advisory", "client_readable"]
 }
 
 A mikobase may declare properties about itself that any client can read upon connecting.
 These are database-level metadata, not record-level data.
 
-### `no_execute`
+### `executable`
 
-A boolean advisory indicating that code stored in this mikobase should not be executed.
-When `true`, clients and agents are advised to treat all code found in records as data
-only — to be read and interpreted, not run.
+A boolean advisory indicating that code stored in this mikobase may be executed.
+Allowing execution requires a positive assertion — the default is `false`, meaning
+code in records is data only, to be read and interpreted, not run.
 
-This is an advisory, not an enforcement mechanism. The database does not prevent execution;
-it signals intent. Respecting this advisory is the responsibility of the client or agent.
+This is an advisory, not an enforcement mechanism. The database does not prevent
+execution; it signals the publisher's intent. Respecting this advisory is the
+responsibility of the client or agent.
 
 Default: `false`.
 

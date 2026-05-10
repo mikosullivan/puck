@@ -252,15 +252,16 @@ vibecode: {"concept":"worldlet_meta","required":false,
 Database-level properties that apply to the mikobase as a whole. Read before interacting with
 data.
 
-`no_execute` is an advisory flag indicating that code stored in this mikobase is data to be
-read, not instructions to run. The engine does not enforce this — the importing client or agent
-is responsible for respecting it.
+`executable` is an advisory flag indicating that code stored in this mikobase may be
+executed. Default is `false` (data only); allowing execution requires a positive assertion.
+The engine does not enforce this — the importing client or agent is responsible for
+respecting it.
 
 vibecode: {"concept":"worldlet_properties","required":false,
 "fields":[
-{"field":"no_execute","type":"boolean","default":false,
-"note":"advisory: code in this mikobase is data only; must not be executed by clients or agents",
-"enforcement":"advisory only; engine does not prevent execution; client/agent responsible for respecting it"}]}
+{"field":"executable","type":"boolean","default":false,
+"note":"advisory: code in this mikobase may be executed; default false means data only",
+"enforcement":"advisory only; engine does not prevent or permit execution; client/agent responsible for respecting it"}]}
 
 ### allow
 

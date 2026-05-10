@@ -15,7 +15,7 @@ vibecode: {
 	"prefix": "%",
 	"availability": "always_available_without_import",
 	"user_defined": false,
-	"methods": ["%chain", "%engine", "%kiera", "%call", "%bucket",
+	"methods": ["%chain", "%engine", "%forks", "%tmp", "%kiera", "%call", "%bucket",
 		"%self", "%scope", "%timeout", "%process", "%now", "%blocks",
 		"%document", "%vibecode", "%role", "%sys"]
 }
@@ -25,6 +25,8 @@ vibecode: {
 |--------|-------------|
 | `%chain` | Scoped ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Cleared at security boundaries. Use sparingly. |
 | `%engine` | Returns the engine object — the gateway to host-injected resources. The method only exists in the outermost scope; functions and closures cannot see it. The engine object itself is non-storable: it can be used directly but cannot be assigned to a variable. |
+| `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
+| `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
 | `%kiera` | Access to the Kieraverse object namespace by UNS address. `%kiera['foo.com/bar']` returns the registered object (class, capability, etc.) at that address. |
 | `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. |
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |

@@ -17,6 +17,60 @@ objects stay local. If an object needs to be shared, it must live in the mikobas
 
 ---
 
+## Temporal vs Non-temporal Mode
+
+vibecode: {
+	"section": "temporal_mode",
+	"role": "specifies the per-database mode flag that controls whether records keep version history",
+	"key_concepts": ["temporal", "non_temporal", "mode_flag", "history", "worldlet", "immutable_at_init"]
+}
+
+A mikobase is either **temporal** (every write appends a history row; older versions are
+recoverable) or **non-temporal** (each record is stored as a single object; writes
+overwrite in place). The choice is a per-database flag set at initialization and is
+**immutable** for the life of the database.
+
+Non-temporal mode exists for small or short-lived databases — worldlets, scratch state,
+ephemeral conversation snapshots — where keeping history just clutters the store and
+provides no value. For these cases, version history is overhead with no payoff.
+
+### Single read and write paths
+
+The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
+
+- One **retrieval** method understands how to find the latest version of a record. In
+  temporal mode it scans history for the latest `created_at`; in non-temporal mode it
+  reads the record directly. Callers don't branch.
+- One **save** method understands how to persist a write. In temporal mode it appends a
+  history row; in non-temporal mode it overwrites in place. Callers don't branch.
+
+For SQLite-backed mikobases, the retrieval abstraction can be a database view named
+`latest_records` that resolves to either `SELECT current rows from history` or
+`SELECT * FROM records` depending on mode. The engine queries the view; the database
+itself encodes the mode.
+
+### Temporal-only operations on a non-temporal database
+
+Operations that only make sense on a temporal database — rollback, version-at-timestamp,
+history scans, audit queries — raise an exception when called on a non-temporal database.
+No silent degradation, no empty results. The caller knows immediately that the operation
+isn't supported.
+
+### Changing modes later
+
+The flag is immutable at the database level. To convert a non-temporal database to
+temporal (or vice versa), import the data into a new database created with the desired
+mode. A future engine release may add a refactor tool, but the chosen mode is permanent
+for the database it was set on.
+
+### Worldlets are non-temporal
+
+Worldlets default to non-temporal mode. A worldlet represents a snapshot of a
+conversation, scenario, or scratch space — not an audit log. See
+[worldlet.md](worldlet.md) for the format implications.
+
+---
+
 ## KScript vs. KScript++
 
 vibecode: {

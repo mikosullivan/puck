@@ -24,7 +24,19 @@ A UNS string alone proves neither. It is just a name.
 
 ---
 
-## Key Design Decisions
+## License
+
+The Kiera distributed object system is released under the MIT License. This must be stated
+in any overview or primer describing Kiera, including the `kiera_primer` field of authority
+blocks.
+
+Code distributed through the Kiera ecosystem is not considered distributable unless it
+carries an explicit license. Provenance endorsements that sign a software artifact must
+always include a `license` field. A provenance endorsement that omits `license` is invalid.
+
+---
+
+## Design Principles
 
 **Kiera.uno holds one private key.** That is the only cryptographic key in the system
 that Kiera manages. Everything flows from it.
@@ -41,79 +53,68 @@ verify the entire system.
 
 ---
 
+## The Open Ledger
+
+The Kiera blockchain is an open, append-only ledger of signed records about objects in the
+Kiera distributed object system. Its purpose is to provide independently verifiable provenance
+— anyone can confirm that a given object was fetched from its UNS address at a specific time
+and signed by a specific key, without trusting Kiera.uno or any other central authority.
+
+The chain is open. Anyone can post records, including creating their own authority blocks with
+their own signing keys. An authority block is not a claim of ownership over the chain — it is
+the anchor of a web of trust rooted in a particular key. Kiera.uno's authority block
+establishes Kiera's own trust chain. A third party such as a security auditor or partner
+organisation can post their own authority block and build an independent chain of endorsements,
+delegations, and provenance records signed by their own key.
+
+Trust is determined by whose authority block and signing key you choose to trust, not by who
+is allowed to write to the ledger. The ledger is the record; the trust model is layered on top.
+
+Any entity can post their own authority block and establish their own web of trust, completely
+independent of Kiera. A company running internal KScript infrastructure could run their own
+chain, publish their own libraries, and configure their engines to trust their own authority
+block instead of (or in addition to) Kiera's.
+
+Engines can be configured to trust multiple authority blocks, enabling hybrid models: trust
+Kiera for public libraries, trust an internal root for private ones.
+
+---
+
 ## Trust Delegation
 
-A block can extend trust to another entity on the chain. Kiera.uno can post a block that
-says: "I trust this entity's blocks." From that point, objects signed by the trusted
-entity are treated as if Kiera signed them.
+A `delegate` block extends trust to another entity. Kiera.uno can post a `delegate` block
+that says: "I trust this entity's endorsements." The delegation references the trusted
+entity's authority block by `target_hash` and lists the endorsement types it covers.
+
+A delegation covers all blocks signed by the trusted entity from the time of their
+authority block onward — including blocks posted before the delegation itself was written.
+The order on the chain is not what matters; the anchor is the authority block. A consumer
+reading the chain should apply a delegation retroactively to any block signed by that
+entity after their authority block, regardless of whether the delegation appeared before
+or after those blocks.
 
 This allows Kiera.uno to hand off stewardship — to a regional maintainer, a successor
 organisation, or any trusted party — without breaking anything for engines that already
-trust the root block. The delegation is on the chain, permanent and auditable.
+trust the authority block. The delegation is on the chain, permanent and auditable.
 
 Delegated trust can be chained: Kiera trusts Entity A, Entity A trusts Entity B, and so
 on. Engines following the chain extend trust transitively.
 
 ---
 
-## Independent Webs of Trust
-
-Any entity can post their own root block and establish their own web of trust, completely
-independent of Kiera. A company running internal KScript infrastructure could run their
-own chain, publish their own libraries, and configure their engines to trust their own
-root block instead of (or in addition to) Kiera's.
-
-This is a powerful feature. The blockchain model is not Kiera-specific — it is a general
-mechanism for establishing decentralised trust. Kiera.uno's web of trust is the default
-that ships with every engine, but it is not the only one possible.
-
-Engines can be configured to trust multiple root blocks, enabling hybrid models: trust
-Kiera for public libraries, trust an internal root for private ones.
-
----
-
-## The Root Block and Web of Trust
-
-Kiera.uno posts a single block to the blockchain once. This is the **root block** — the
-anchor for the entire trust system. It establishes Kiera's identity on the chain and
-contains Kiera's public key.
-
-KScript engines trust this root block by default. It is the one thing baked into every
-compliant engine. Participants who choose not to trust it are opting out of the Kiera
-trust model entirely.
-
-Every subsequent block that Kiera posts — each signed object, each domain verification,
-each revocation — is cryptographically linked back to the root block. Because the
-blockchain is append-only and the root block cannot be altered, this chain of blocks
-forms a **web of trust**: any engine that trusts the root block can follow the chain
-forward and trust everything Kiera has vouched for, with the blockchain itself as the
-tamper-evident witness.
-
-The root block is the only thing an engine needs to bootstrap trust. From there, the
-entire history of what Kiera has published and verified is auditable by anyone.
-
----
-
-## Opt-In Only
+## How Kiera Vouches for an Object
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Kiera will sign them. The domain owner must explicitly request signing through kiera.uno.
 They are in charge of which objects get submitted and when.
 
-This keeps the blockchain from becoming a free-for-all. Only objects whose owners have
-deliberately chosen to participate are signed and posted.
-
----
-
-## How Kiera Vouches for an Object
-
 1. The domain owner submits their object through kiera.uno
 2. Kiera fetches the object from their domain over HTTPS — TLS proves it is talking to
    the real domain owner
-3. Kiera signs the object with its private key
-4. Kiera posts the signed object to the blockchain
+3. Kiera posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
+   fields directly in the endorsement entry
 
-When an engine needs `borg.com/foo`, it queries Kiera's API, receives the object, and
+When an engine needs `borg.com/foo`, it queries Kiera's API, receives the signed block, and
 verifies Kiera's signature using the baked-in public key. If the signature is valid, the
 object is trusted.
 
@@ -122,7 +123,7 @@ object is trusted.
 ## The Blockchain as Registry
 
 The blockchain serves as the permanent, decentralized registry for published objects.
-Once an object is posted, it is available forever regardless of what happens to any
+Once a block is posted, it is available forever regardless of what happens to any
 specific server. No single server going offline can make a published library unavailable.
 
 This is not the only way to obtain objects — objects can also be fetched directly from
@@ -130,35 +131,291 @@ Kiera servers or other sources — but it is the highest-trust path. An object o
 blockchain was verified by Kiera at the time of posting and cannot be silently altered.
 
 Kiera provides an API over the blockchain so engines do not need to interact with the
-chain directly. The API handles lookup by UNS address and returns the signed object.
+chain directly. The API handles lookup by UNS address and returns the signed block.
+
+---
+
+## Chain Design
+
+The Kiera blockchain is a permissioned append-only ledger. There is no mining, no
+proof-of-work, and no gas. Records are written directly by authorised signers. Validity
+is determined by signature verification and hash chaining, not by computational work.
+
+Each record in the chain is a JSON object with the following envelope fields:
+
+- `intent` — the block's intent; well-known values: `authority`, `grammar`, `endorse`,
+  `delegate`, `deprecate`, `revoke`
+- `prev_hash` — SHA-256 hash of the previous record (hex); `null` for the first block
+- `posted` — ISO 8601 UTC timestamp of when the record was written to the ledger
+- `signer` — UNS address of the signing entity
+- `payload` — the record-specific data (see Record Types below)
+- `signature` — Ed25519 signature (base64) over the record with the `signature` field
+  omitted, keys sorted alphabetically, minified JSON
+
+Records are never modified or deleted. The chain is valid if every `prev_hash` matches
+the SHA-256 of the preceding record.
+
+---
+
+## Record Types — Grammar v1.0
+
+All blocks must include a `grammar` field in their payload referencing the grammar block
+by hash. The hash is authoritative for machine verification; the version string is for
+human readability:
+
+```json
+"grammar": {"hash": "a3f9c2...", "version": "1.0"}
+```
+
+A `grammar` field pointing to an unrecognised hash is valid — consumers that do not
+recognise the grammar may choose to reject or accept such blocks at their discretion.
+
+**grammar** — defines a block grammar version; posted first so all subsequent blocks
+can reference it by `record_hash`.
+
+```json
+{
+  "intent": "grammar",
+  "version": "1.0",
+  "description": "Kiera blockchain block grammar version 1.0",
+  "grammar": {"hash": "self", "version": "1.0"},
+  "envelope": {
+    "fields": ["intent", "prev_hash", "posted", "signer", "payload", "signature"],
+    "required": ["intent", "prev_hash", "posted", "signer", "payload", "signature"]
+  },
+  "payload_common": {
+    "fields": ["intent", "grammar", "vibecode"],
+    "required": ["intent", "grammar"],
+    "encouraged": ["vibecode"]
+  },
+  "intent_values": ["authority", "grammar", "endorse", "mirror", "delegate", "deprecate", "revoke"],
+  "endorsement_values": ["canonical", "provenance", "license-verified", "security", "audit"]
+}
+```
+
+The grammar block uses `{"hash": "self", "version": "1.0"}` for its own `grammar` field
+since it cannot reference itself before it exists. This is the only block that will ever
+use `"self"`. A grammar may optionally include an `inherits` field pointing to a parent
+grammar block, allowing domain-specific grammars (DSLs) to extend the base without
+duplicating it.
+
+The canonical posting order for any chain is: grammar block first, authority block second.
+This eliminates all bootstrapping problems — every block from the authority onward has a
+real grammar hash.
+
+---
+
+**authority** — anchor of trust; establishes a signer's identity and public key on the
+chain. Any entity may post their own authority block.
+
+Required payload fields:
+
+- `intent` — always `"authority"`
+- `grammar` — reference to the grammar block
+- `note` — one-line description of this authority
+- `public_key` — the Ed25519 public key (PEM) for this authority's signatures
+- `kiera_primer` — a complete self-contained introduction to the Kiera distributed object
+  system; the authoritative cold-start reference for any agent or tool encountering the
+  chain with no prior knowledge of Kiera; required on all authority blocks
+- `vibecode` — compact machine-readable summary of the authority and its role
+
+The content of `kiera_primer` and `vibecode` for the production chain will be supplied
+by Miko. Both must be present before the authority block is posted to any production chain.
+
+---
+
+**endorse** — a claim made by the signer about a target. The target may be another block
+(referenced by `target_hash`) or content embedded within this block (`target_hash: "self"`).
+
+**The chain does not store software bodies.** A provenance endorsement signs an artifact
+by referencing it cryptographically — the artifact itself is hosted off-chain (the
+publisher's HTTPS server, a package registry, a content-addressed store, etc.). The
+on-chain record carries the artifact's hash so anyone can verify a fetched copy matches
+what was signed.
+
+To publish provenance for software, post an `endorse` block with `endorsement: "provenance"`
+and include the artifact metadata directly in the endorsement entry alongside `endorsement`.
+The required cryptographic anchor is `artifact_hash`. Additional endorsement entries in
+the same block — or in a later block by a third party — can assert security, license, or
+other claims.
+
+Provenance endorsement (signed by the publisher):
+
+```json
+{
+  "intent": "endorse",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "target_hash": "self",
+  "uns": "borg.com/parser",
+  "version": "2.1.0",
+  "effective_date": "2026-05-07",
+  "endorsements": [
+    {
+      "endorsement": "provenance",
+      "name": "borg.com/parser",
+      "description": "Parses structured text into a normalised output hash.",
+      "language": "kiera.uno/software/kscript",
+      "license": "MIT",
+      "version": "2.1.0",
+      "artifact_hash": "sha256:...",
+      "artifact_url": "https://borg.com/parser/2.1.0.tar.gz"
+    }
+  ]
+}
+```
+
+Third-party security endorsement (references a prior provenance block by hash):
+
+```json
+{
+  "intent": "endorse",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "target_hash": "a3f9c2...",
+  "endorsements": [
+    {"endorsement": "security", "security": {"fedramp-moderate": true}, "notes": "Reviewed 2026-05-07"},
+    {"endorsement": "license-verified", "notes": "Confirmed MIT via SPDX scan"}
+  ]
+}
+```
+
+Fields:
+
+- `target_hash` — `record_hash` of the block being endorsed; `"self"` when endorsed
+  content is embedded within this block
+- `uns` — UNS address of the software being endorsed (when applicable)
+- `version` — the specific version being endorsed
+- `effective_date` — date from which this endorsement applies; may differ from `posted`
+  for historical objects
+- `endorsements` — array of claims; each entry is a flat object whose fields are:
+  - `endorsement` — what is being claimed; open-ended string; well-known values:
+    `canonical` (the signer asserts this is the authoritative reference for its kind),
+    `provenance` (fetched from the stated UNS at the stated time),
+    `license-verified` (stated license confirmed accurate),
+    `security` (see below),
+    `audit` (general security review); third parties may define their own values
+  - artifact fields — for `provenance` entries, the artifact's metadata (`name`,
+    `description`, `language`, `license`, `version`, `artifact_hash`, `artifact_url`,
+    etc.) appears directly in the entry alongside `endorsement`. `artifact_hash` and
+    `license` are required. Software bodies are not stored on the chain — `artifact_hash`
+    is the cryptographic anchor and the artifact itself lives off-chain at `artifact_url`
+    or another resolvable location.
+  - `security` — present when `endorsement` is `security`; an object whose keys are
+    standard identifiers and whose values are booleans (pass/fail); e.g.
+    `{"fedramp-moderate": true, "fips-140-2": true}`; well-known keys include
+    `fedramp-moderate`, `fedramp-high`, `fips-140-2`
+  - `notes` — free-form elaboration on this specific claim
+
+---
+
+**mirror** — declares that the signer hosts a copy of an artifact at an alternate URL.
+Mirror blocks make code resilient to takedowns or upstream outages: if the original
+publisher's URL goes away, consumers can fetch the same bytes from any mirror that
+matches the artifact's hash.
+
+```json
+{
+  "intent": "mirror",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "target_hash": "<provenance block record_hash>",
+  "uns": "borg.com/parser",
+  "version": "2.1.0",
+  "artifact_hash": "sha256:8f2a3b7d1e9c4a5f...",
+  "mirror_url": "https://archive.example.org/kiera/borg.com/parser/2.1.0.kscript",
+  "notes": "Mirror of borg.com/parser 2.1.0 hosted by archive.example.org."
+}
+```
+
+Fields:
+
+- `target_hash` — `record_hash` of the original provenance block being mirrored
+- `uns` and `version` — duplicated at the top level for cheap filtering ("all mirrors of
+  this UNS at this version") without descending into the target block
+- `artifact_hash` — duplicated from the target block. Lets consumers verify a mirror's
+  bytes without first fetching the target, and keeps the mirror honest: if the bytes at
+  `mirror_url` don't hash to this value, the mirror is broken or lying
+- `mirror_url` — URL where the signer hosts the copy. Distinct from the original block's
+  `artifact_url` because the signer here is the mirror operator, not the publisher
+
+The signer is the mirror operator and must have their own authority block on chain.
+Mirror blocks fall under intent-level trust delegation: consumers who trust an entity
+for `mirror` intents (via a delegate block listing `intents: ["mirror"]`) accept mirror
+blocks signed by that entity automatically.
+
+Original publishers can also post mirror blocks for their own artifacts — e.g. if
+`borg.com` puts the parser on a CDN, they can sign a mirror block pointing at the CDN URL.
+The mechanism is the same; no special case for self-mirrors.
+
+---
+
+**delegate** — grants another entity trusted endorser status for a specified set of
+endorsement types. The delegation is scoped to the entity's authority block via
+`target_hash` and covers all blocks that entity has signed or will sign from that
+authority block onward.
+
+```json
+{
+  "intent": "delegate",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "entity": "chainguard.dev",
+  "endorsements": ["provenance", "security"],
+  "target_hash": "<chainguard.dev authority block record_hash>",
+  "note": "..."
+}
+```
+
+Fields:
+
+- `entity` — UNS address of the entity being trusted
+- `endorsements` — allowlist of endorsement types covered by this delegation; blocks
+  from the entity with other endorsement types are not covered
+- `target_hash` — `record_hash` of the entity's authority block; the delegation covers
+  all blocks signed by that entity from that anchor onward, including blocks posted
+  before this delegation was written
+
+---
+
+**deprecate** — marks a UNS or version range as deprecated. Does not invalidate the record;
+consumers decide how to respond.
+
+```json
+{
+  "intent": "deprecate",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "uns": "borg.com/parser",
+  "version": "1.0.0",
+  "reason": "superseded by 2.0.0"
+}
+```
+
+---
+
+**revoke** — invalidates a previously posted record (e.g. due to key compromise or bad data).
+
+```json
+{
+  "intent": "revoke",
+  "grammar": {"hash": "...", "version": "1.0"},
+  "target_hash": "a3f9c2...",
+  "reason": "key compromise"
+}
+```
 
 ---
 
 ## The Signing Scheme
 
-Each object is a JSON hash. To sign it:
+To sign a record:
 
-1. Delete the `signature` field if present
-2. Serialize to minified JSON, preserving insertion key order (Kiera hashes have
-   significant key order — this makes serialization deterministic)
-3. Sign the UTF-8 bytes using Ed25519 with Kiera's private key
-4. Base64-encode the signature
-5. Add a `signature` field to the hash
+1. Construct the record as a JSON object with all fields except `signature`
+2. Serialize to minified JSON with all keys sorted alphabetically at every level
+3. Sign the UTF-8 bytes using Ed25519
+4. Base64-encode the signature and add it as the `signature` field
 
-```json
-{
-    "name": "borg.com/foo",
-    "fields": {"rank": "string"},
-    "signature": {
-        "algorithm": "Ed25519",
-        "value": "base64encodedsignature..."
-    }
-}
-```
+To verify, remove the `signature` field, re-serialize with sorted keys, and run Ed25519
+verify against that string using the signer's public key (found in their authority block).
 
-To verify, the engine removes the `signature` field, re-serializes to minified
-insertion-order JSON, and runs Ed25519 verify against that string using Kiera's public
-key.
+The `record_hash` is the SHA-256 hex digest of the fully serialized record including the
+`signature` field, keys sorted alphabetically.
 
 ---
 
@@ -184,6 +441,99 @@ key.
 
 ---
 
+## API
+
+All blockchain services are hosted at `blockchain.kiera.uno`.
+
+The Kiera Lua library does not include routines for querying the blockchain directly.
+By default it operates through the API at `blockchain.kiera.uno`. The endpoints below
+describe the intended shape; the final API spec will be a separate document.
+
+### Submit (domain owner → Kiera)
+
+`POST https://blockchain.kiera.uno/v1/submit`
+
+Domain owner submits a UNS address. Kiera fetches, signs, and posts a provenance
+endorsement block.
+
+This endpoint is idempotent. If Kiera fetches the object and finds it identical to
+the most recently posted version, it returns the existing block rather than posting
+a new one.
+
+Request:
+```json
+{"uns": "borg.com/foo", "fetch_url": "https://borg.com/foo"}
+```
+
+Response:
+```json
+{"status": "posted", "uns": "borg.com/foo", "record_hash": "..."}
+```
+
+### Fetch (engine → Kiera)
+
+`GET https://blockchain.kiera.uno/v1/object/<uns>`
+
+Returns the latest provenance endorsement block for a UNS address. The engine verifies
+the signature client-side using the baked-in public key.
+
+`GET https://blockchain.kiera.uno/v1/object/<uns>?version=2.1.0` — exact version match.
+
+`GET https://blockchain.kiera.uno/v1/object/<uns>?at=2026-01-01` — latest version whose
+`effective_date` is on or before the given date.
+
+### Root block
+
+`GET https://blockchain.kiera.uno/v1/authority`
+
+Returns Kiera's authority block. Used during engine setup to verify the baked-in public
+key matches the chain.
+
+---
+
+## Versioning
+
+Every block on the Kiera blockchain carries a `posted` timestamp assigned at insertion.
+This is not set by the submitter — it is canonical and tamper-evident.
+
+**Default behaviour: latest within range.** When you request an object with no version
+constraint, you get the most recently posted version. When you request with a date range,
+you get the most recently posted version that falls within that range.
+
+### Effective Date
+
+A signer may set an `effective_date` on an endorsement to declare the date that
+should be used for version ordering in place of `posted`. This allows historical objects
+to be correctly ordered — a library released ten years ago can be posted to the chain
+today with `effective_date` set to its original release date.
+
+`effective_date` is optional. Omitting it means `posted` governs.
+
+### Tombstone and Birthstone
+
+A **tombstone** is an upper bound: "give me the latest version on or before this date."
+Setting a tombstone pins resolution to a point in time — useful for reproducible builds.
+
+A **birthstone** is a lower bound: "do not give me anything older than this date."
+Useful for excluding objects published before a known-good baseline.
+
+```json
+{"uns": "borg.com/parser", "tombstone": "2025-06-01T00:00:00Z", "birthstone": "2024-01-01T00:00:00Z"}
+```
+
+### Dependency Resolution
+
+Each object may declare its own dependencies — by UNS name — along with an optional
+date range per dependency. When the gateway resolves a request, it traverses the
+dependency graph and applies the outer request range at every node.
+
+If an object declares a narrower range for one of its dependencies, the system
+intersects that range with the outer range. The narrower of the two wins. If the
+intersection is empty, resolution fails rather than silently selecting something outside
+the intended range.
+
+---
+
 ## Use Case: Third-Party Endorsement
 
 **Scenario:** ChainGuard is a security auditing company. A government contractor needs
@@ -194,96 +544,91 @@ A collaboration between Kiera and ChainGuard could be a mutually beneficial arra
 
 **Step 1 — Kiera vouches for provenance.**
 
-`borg.com` submits their library through kiera.uno. Kiera fetches it over HTTPS, signs
-it, and posts it to the chain.
+`borg.com` submits their library through kiera.uno. Kiera fetches it over HTTPS and
+posts a provenance endorsement block with the object embedded in the `bucket`:
 
 ```json
 {
-    "record_type": "registry_entry",
+  "intent": "endorse",
+  "prev_hash": "...",
+  "posted": "2026-05-04T09:00:00Z",
+  "signer": "kiera.uno",
+  "payload": {
+    "intent": "endorse",
+    "grammar": {"hash": "...", "version": "1.0"},
+    "target_hash": "self",
     "uns": "borg.com/parser",
-    "version": 1,
-    "fetched_from": "https://borg.com/parser",
-    "fetched_at": "2026-05-04T09:00:00Z",
-    "bucket": {
+    "version": "2.1.0",
+    "effective_date": "2026-05-04",
+    "endorsements": [
+      {
+        "endorsement": "provenance",
         "name": "borg.com/parser",
-        "fields": {"input": "string", "output": "string"}
-    },
-    "signer": "kiera.uno",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "base64..."
-    }
+        "fields": {"input": "string", "output": "string"},
+        "license": "MIT"
+      }
+    ]
+  },
+  "signature": "base64..."
 }
 ```
 
-**Fabric key:** `obj:borg.com/parser:1`
-
-This entry answers one question: *did this object really come from borg.com?* Nothing
-more.
+This block answers one question: *did this object really come from borg.com?* Nothing more.
 
 ---
 
 **Step 2 — ChainGuard establishes its identity.**
 
-ChainGuard has its own Ed25519 key pair. It posts its own root block to the chain,
-establishing its identity independently of Kiera.
+ChainGuard has its own Ed25519 key pair. It posts its own authority block to the chain,
+establishing its identity independently of Kiera. No permission from Kiera is required.
 
 ```json
 {
-    "record_type": "root",
-    "signer": "chainguard.dev",
-    "public_key": {
-        "algorithm": "Ed25519",
-        "value": "<ChainGuard public key>"
-    },
-    "overview": "ChainGuard security audit registry. Entries here represent independent security assessments.",
-    "created_at": "2026-05-04T10:00:00Z",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "base64..."
-    }
+  "intent": "authority",
+  "prev_hash": "...",
+  "posted": "2026-05-04T10:00:00Z",
+  "signer": "chainguard.dev",
+  "payload": {
+    "intent": "authority",
+    "grammar": {"hash": "...", "version": "1.0"},
+    "note": "ChainGuard security audit authority — independent assessments for government contractors",
+    "public_key": "-----BEGIN PUBLIC KEY-----\n...",
+    "kiera_primer": "..."
+  },
+  "signature": "base64..."
 }
 ```
-
-**Fabric key:** `root:chainguard.dev`
-
-ChainGuard does not need any permission from Kiera to do this. They join the Fabric
-network as a member and post their root block. Anyone can post a root block.
 
 ---
 
 **Step 3 — ChainGuard reviews and endorses.**
 
-ChainGuard fetches `obj:borg.com/parser:1` from the chain, reviews the `bucket`
-contents, and posts an endorsement referencing Kiera's entry by its Fabric key.
-ChainGuard does not re-fetch from `borg.com` and does not re-post the source — they
-are endorsing the specific object Kiera already verified.
+ChainGuard fetches Kiera's provenance block, reviews the `bucket` contents, and posts
+an endorsement referencing that block by its `record_hash`. ChainGuard does not re-fetch
+from `borg.com` and does not re-post the source — they are endorsing the specific block
+Kiera already verified.
 
 ```json
 {
-    "record_type": "endorsement",
-    "target_key": "obj:borg.com/parser:1",
-    "target_uns": "borg.com/parser",
-    "target_version": 1,
-    "endorser": "chainguard.dev",
-    "criteria": "us-gov/nist-800-53",
-    "verdict": "pass",
-    "body": "Reviewed 2026-05-04. borg.com/parser meets all applicable NIST 800-53 controls for input validation and output sanitization.",
-    "assessed_at": "2026-05-04T11:00:00Z",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "base64..."
-    }
+  "intent": "endorse",
+  "prev_hash": "...",
+  "posted": "2026-05-04T11:00:00Z",
+  "signer": "chainguard.dev",
+  "payload": {
+    "intent": "endorse",
+    "grammar": {"hash": "...", "version": "1.0"},
+    "target_hash": "<record_hash of Kiera's provenance block>",
+    "endorsements": [
+      {
+        "endorsement": "security",
+        "security": {"fedramp-moderate": true},
+        "notes": "Reviewed 2026-05-04. borg.com/parser meets all applicable NIST 800-53 controls for input validation and output sanitization."
+      }
+    ]
+  },
+  "signature": "base64..."
 }
 ```
-
-**Fabric key:** `endorse:chainguard.dev:obj:borg.com/parser:1`
-
-The `target_key` is the chain of trust made explicit. ChainGuard is saying: "I reviewed
-the object Kiera fetched and signed, and I vouch for it under these criteria."
 
 ---
 
@@ -291,8 +636,8 @@ the object Kiera fetched and signed, and I vouch for it under these criteria."
 
 The engine fetches `borg.com/parser`. It verifies:
 
-1. Kiera's signature on the registry entry — provenance confirmed, object unmodified
-2. ChainGuard's endorsement referencing that same entry — security criteria met
+1. Kiera's signature on the provenance block — origin confirmed, object unmodified
+2. ChainGuard's endorsement referencing that same block — security criteria met
 
 Both checks are independent. The engine trusts Kiera's public key (baked in) and
 ChainGuard's public key (configured by the contractor). Neither party needed to
@@ -303,36 +648,35 @@ coordinate with the other. The shared ledger is what ties them together.
 Although Kiera and ChainGuard can operate completely independently, there is a deeper
 collaboration available through trust delegation.
 
-Kiera posts a trust delegation entry naming ChainGuard as a trusted fetcher:
+Kiera posts a `delegate` block naming ChainGuard as a trusted endorser:
 
 ```json
 {
-    "record_type": "trust_delegation",
-    "delegated_by": "kiera.uno",
-    "delegated_to": "chainguard.dev",
-    "delegate_public_key": {
-        "algorithm": "Ed25519",
-        "value": "<ChainGuard public key>"
-    },
-    "scope": "registry_entry",
-    "created_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "base64..."
-    }
+  "intent": "delegate",
+  "prev_hash": "...",
+  "posted": "...",
+  "signer": "kiera.uno",
+  "payload": {
+    "intent": "delegate",
+    "grammar": {"hash": "...", "version": "1.0"},
+    "entity": "chainguard.dev",
+    "endorsements": ["provenance", "security"],
+    "target_hash": "<chainguard.dev authority block record_hash>",
+    "note": "Kiera delegates provenance and security trust to ChainGuard."
+  },
+  "signature": "base64..."
 }
 ```
 
 With this delegation in place, ChainGuard can fetch objects from domains over HTTPS
-and post registry entries signed with their own key. Engines that trust Kiera's root
-block follow the delegation chain and accept ChainGuard's registry entries as trusted
-provenance — exactly as they would accept entries signed by Kiera directly.
+and post provenance endorsements signed with their own key. Engines that trust Kiera's
+authority block follow the delegation chain and accept ChainGuard's blocks as trusted
+provenance — exactly as they would accept blocks signed by Kiera directly.
 
 This offloads the fetch-and-sign work from Kiera entirely. ChainGuard becomes an
 operational partner: they fetch, they sign, they post, and they add their security
-endorsement in the same pass. Kiera's role shrinks to maintaining the root block and
-the delegation record.
+endorsement in the same pass. Kiera's role shrinks to maintaining the authority block
+and the delegation record.
 
 The broader opportunity is significant. The Kiera blockchain is not limited to KScript
 objects — it can store Python libraries, Go modules, or any signed artifact. A company
@@ -346,7 +690,7 @@ infrastructure with no additional setup.
 Kiera is actively seeking a partner in this space — a company analogous to ChainGuard
 whose endorsements and deprecations would be surfaced directly through the
 `blockchain.kiera.uno` API. When such a partnership is in place, a developer calling
-the fetch endpoint would receive not just Kiera's provenance record but also the
+the fetch endpoint would receive not just Kiera's provenance block but also the
 partner's security assessment in the same response — one API call, one result,
 government-grade confidence included.
 
@@ -360,545 +704,44 @@ As Stuart says, this scratches an itch.
 
 ---
 
-## AWS Implementation
-
-**Service: Amazon Managed Blockchain — Hyperledger Fabric**
-
-The chain is a shared append-only ledger. Any entity — Kiera.uno, a partner org, a
-company running its own internal web of trust, anyone who wants to publish signed
-libraries — can join as a Fabric member and post entries. Nothing executes on the chain;
-it stores signed JSON documents and nothing more. The trust model determines which
-entries an engine follows; the chain itself imposes no restriction on who writes.
-
-Hyperledger Fabric fits precisely:
-
-- **No mining, no gas** — Fabric uses RAFT consensus. Since nothing executes on-chain,
-  we need only an ordered append-only ledger, not a computation platform.
-- **Open to multiple writers** — any org can join the network and post entries under
-  their own identity and key. Kiera.uno is one participant, not the gatekeeper.
-- **Append-only** — chaincode enforces no deletes, no updates to existing entries.
-- **Fully managed** — AWS handles node provisioning, TLS, and availability.
-- **Auditable** — the full ledger is readable by anyone with read access.
-
-**Network topology:**
-
-- One Fabric network; Kiera.uno is the founding org and orderer operator
-- One orderer node (RAFT; additional orderer nodes can be added as other orgs join)
-- One or two peer nodes per participating org
-- One channel: `kiera-registry`
-- One chaincode: `kiera-registry-cc` (handles all entry types)
-
-Fabric channels are isolated ledgers. A single channel for all registry entries keeps
-the implementation simple and allows all participants to share one auditable history.
-If a participant needs a private channel (e.g., an internal-only web of trust), an
-additional channel can be created later.
-
----
-
-## On-Chain Data Structures
-
-Every entry on the chain is a JSON document stored as a Fabric state entry. Each entry
-type has a `record_type` field so chaincode can route queries without scanning all
-entries.
-
-### Root Block
-
-Posted once. Establishes Kiera's identity and public key. Self-signed.
-
-```json
-{
-    "record_type": "root",
-    "signer": "kiera.uno",
-    "public_key": {
-        "algorithm": "Ed25519",
-        "value": "<base64-encoded public key>"
-    },
-    "overview": "<Kiera ecoverse overview — content to be supplied>",
-    "created_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-The `signature` covers all fields except itself (delete `signature`, serialize, sign).
-Engines bootstrapping from this block verify the signature using the embedded public key.
-
-**`@overview` content is pending.** The root block will include a human-readable
-overview of the Kiera ecoverse in the `overview` field. That text will be supplied
-before the root block is posted. Stuart should leave the placeholder above and not post
-the root block until the content arrives.
-
-**Fabric key:** `root:kiera.uno`
-
-### Registry Entry
-
-One entry per signed object version. Immutable once posted.
-
-```json
-{
-    "record_type": "registry_entry",
-    "uns": "borg.com/foo",
-    "version": 1,
-    "fetched_from": "https://borg.com/foo",
-    "fetched_at": "<ISO 8601>",
-    "bucket": {
-        "name": "borg.com/foo",
-        "fields": {"rank": "string"}
-    },
-    "signer": "kiera.uno",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-The `signature` covers the `bucket` field only (not the envelope). Engines that cache
-the raw `bucket` can re-verify it without needing the full envelope.
-
-**Fabric key:** `obj:<uns>:<version>` e.g. `obj:borg.com/foo:1`
-
-The latest active version is tracked in a separate lightweight index entry:
-
-```json
-{
-    "record_type": "uns_head",
-    "uns": "borg.com/foo",
-    "latest_version": 3,
-    "active_version": 3,
-    "updated_at": "<ISO 8601>"
-}
-```
-
-**Fabric key:** `head:<uns>`
-
-### Trust Delegation
-
-Posted by a trusted signer to extend trust to another entity.
-
-```json
-{
-    "record_type": "trust_delegation",
-    "delegated_by": "kiera.uno",
-    "delegated_to": "partner.org",
-    "delegate_public_key": {
-        "algorithm": "Ed25519",
-        "value": "<base64-encoded public key>"
-    },
-    "scope": "all",
-    "created_at": "<ISO 8601>",
-    "expires_at": null,
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-`scope` may be `"all"` or a UNS prefix like `"partner.org/"` to restrict what the
-delegate may sign.
-
-**Fabric key:** `trust:<delegated_by>:<delegated_to>`
-
-### Revocation
-
-Marks a specific version of an object as untrusted. Does not delete it.
-
-```json
-{
-    "record_type": "revocation",
-    "target_uns": "borg.com/foo",
-    "target_version": 1,
-    "reason": "object content was incorrect at time of signing",
-    "revoked_at": "<ISO 8601>",
-    "revoked_by": "kiera.uno",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-When a revocation exists for the active version, the `uns_head` entry's `active_version`
-is updated to point to the most recent non-revoked version (or null if all versions are
-revoked). Engines receiving a revoked object from cache must re-fetch.
-
-**Fabric key:** `revoke:<uns>:<version>`
-
-### Endorsement
-
-A third-party assessment of a specific registry entry. Posted by any entity that has
-established its own identity on the chain. Does not require any involvement from Kiera.
-
-```json
-{
-    "record_type": "endorsement",
-    "target_key": "obj:borg.com/parser:1",
-    "target_uns": "borg.com/parser",
-    "target_version": 1,
-    "endorser": "chainguard.dev",
-    "criteria": "us-gov/nist-800-53",
-    "verdict": "pass",
-    "body": "Reviewed 2026-05-04. Meets all applicable NIST 800-53 controls.",
-    "effective_date": "<ISO 8601 or null>",
-    "assessed_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-`target_key` is the Fabric key of the registry entry being endorsed. `criteria` is a
-namespaced identifier for the standard or ruleset applied. `verdict` is `"pass"` or
-`"fail"` — a fail endorsement is still useful as a published record of a negative
-assessment.
-
-The signature is verified against the endorser's public key, found in their own root
-block on the chain. Kiera's key plays no role.
-
-**Fabric key:** `endorse:<endorser>:<target_key>`
-
-### Deprecation
-
-A security or quality warning posted by any entity against one or more versions of an
-object. Unlike revocation, deprecation is a third-party assessment — it does not require
-Kiera's involvement and does not affect the integrity of the original entry. The
-deprecated object remains on the chain; consumers decide how to respond.
-
-Deprecation targets are expressed using the same tombstone/birthstone model as version
-requests. Three targeting modes:
-
-**Single version** — deprecate one specific entry:
-
-```json
-{
-    "record_type": "deprecation",
-    "target_uns": "borg.com/parser",
-    "target_version": 3,
-    "posted_by": "chainguard.dev",
-    "notes": {},
-    "posted_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-**Bounded time span** — deprecate all versions within a date range:
-
-```json
-{
-    "record_type": "deprecation",
-    "target_uns": "borg.com/parser",
-    "target_birthstone": "2024-01-01T00:00:00Z",
-    "target_tombstone": "2025-03-01T00:00:00Z",
-    "posted_by": "chainguard.dev",
-    "notes": {},
-    "posted_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-**Open deprecation** — deprecate all versions up to (or from) an open-ended boundary.
-Omit `target_tombstone` to deprecate everything before a date with no upper bound, or
-omit `target_birthstone` to deprecate everything from a date forward:
-
-```json
-{
-    "record_type": "deprecation",
-    "target_uns": "borg.com/parser",
-    "target_tombstone": "2025-06-01T00:00:00Z",
-    "posted_by": "chainguard.dev",
-    "notes": {},
-    "posted_at": "<ISO 8601>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "chainguard.dev",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-The `notes` field structure is TBD. It will carry human-readable and structured
-information about the deprecation — CVE references, severity, remediation guidance, etc.
-
-When the gateway resolves a version and finds a deprecation covering that version from a
-trusted source, it includes the deprecation in the response. Whether to treat the
-deprecation as a hard error or a warning is a consumer-side decision.
-
-**Fabric key:** `deprecate:<posted_by>:<target_uns>:<uuid>` — a UUID suffix allows
-multiple deprecations from the same poster against the same UNS.
-
----
-
-## The Kiera Blockchain Gateway
-
-**All blockchain services are hosted at `blockchain.kiera.uno`.**
-
-**The Kiera Lua library does not include routines for querying the blockchain directly.**
-By default it operates through the API at `blockchain.kiera.uno`. That API is not yet
-fully specified. The endpoints below describe the intended shape; the final API spec will
-be a separate document.
-
-Engines do not interact with Fabric directly. They call the Kiera API. The gateway runs
-as a set of AWS Lambda functions behind API Gateway.
-
-### Submit (domain owner → Kiera)
-
-`POST https://blockchain.kiera.uno/v1/submit`
-
-Domain owner submits a UNS address. Kiera fetches, signs, and posts.
-
-**This endpoint is idempotent.** If Kiera fetches the object and finds it identical to
-the most recently signed version, it returns the existing signed entry rather than
-posting a new one. The response is the same either way — the caller does not need to
-know or care whether a new entry was posted. The mechanism for deduplication (how Kiera
-determines "identical") is to be specified.
-
-Request:
-```json
-{
-    "uns": "borg.com/foo",
-    "fetch_url": "https://borg.com/foo",
-    "owner_contact": "ops@borg.com"
-}
-```
-
-Response (success, whether newly posted or already exists):
-```json
-{
-    "status": "posted",
-    "uns": "borg.com/foo",
-    "version": 2,
-    "fabric_tx_id": "<Fabric transaction ID>",
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    }
-}
-```
-
-### Fetch (engine → Kiera)
-
-`GET https://blockchain.kiera.uno/v1/object/<uns>`
-
-Returns the latest active signed object for a UNS address. The engine verifies the
-signature client-side using the baked-in public key.
-
-Response:
-```json
-{
-    "uns": "borg.com/foo",
-    "version": 2,
-    "bucket": {"name": "borg.com/foo", "fields": {"rank": "string"}},
-    "signature": {
-        "algorithm": "Ed25519",
-        "signer": "kiera.uno",
-        "value": "<base64-encoded signature>"
-    },
-    "fetched_at": "<ISO 8601>",
-    "revoked": false
-}
-```
-
-`GET https://blockchain.kiera.uno/v1/object/<uns>/<version>` fetches a specific version.
-
-### Revocation check
-
-`GET https://blockchain.kiera.uno/v1/revocation/<uns>/<version>`
-
-Returns `{"revoked": false}` or `{"revoked": true, "revoked_at": "..."}`. Engines can
-poll this to detect newly revoked cached objects.
-
-### Root block
-
-`GET https://blockchain.kiera.uno/v1/root`
-
-Returns the root block. Used during engine setup to verify the baked-in public key
-matches the chain.
-
----
-
-## Chaincode Design
-
-The Fabric chaincode (`kiera-registry-cc`) exposes four functions:
-
-**`PostEntry(entry_json)`** — validate the record type, verify the signature against
-the known signer's public key (looked up from a prior `trust_delegation` or the root
-block), write to the ledger. For `registry_entry`, also upsert the `uns_head` index.
-
-**`GetEntry(key)`** — return a ledger entry by Fabric key.
-
-**`GetHead(uns)`** — return the `uns_head` entry for a UNS address.
-
-**`GetRevocation(uns, version)`** — return a revocation entry if one exists.
-
-The chaincode does not enforce anything about Kiera's business logic (fetch-from-HTTPS,
-opt-in, etc.) — that is the gateway's job. The chaincode enforces structural integrity:
-valid JSON, required fields present, valid signature, no overwrites of immutable entries.
-
----
-
-## Implementation Phases
-
-**Phase 1 — Network and chaincode**
-
-1. Provision Managed Blockchain network (`kiera-uno` org, RAFT orderer, one peer)
-2. Create `kiera-registry` channel
-3. Write and deploy `kiera-registry-cc` chaincode
-4. Write integration tests: post root block, post a registry entry, fetch it back,
-   post a revocation, verify revocation is returned
-
-**Phase 2 — Key management**
-
-1. Generate Ed25519 key pair for Kiera.uno
-2. Store private key in AWS Secrets Manager (never in code, never in env vars)
-3. Post root block to the chain
-4. Document the public key — this is what will be baked into engines
-
-**Phase 3 — Gateway API**
-
-1. Lambda: `submit` — fetch from HTTPS, sign, call `PostEntry`
-2. Lambda: `fetch` — call `GetHead` then `GetEntry`, return signed object
-3. Lambda: `revocation_check` — call `GetRevocation`
-4. Lambda: `root` — call `GetEntry("root:kiera.uno")`
-5. Wire all four to API Gateway
-6. Add API key auth on `submit` (domain owners authenticate; engine reads are open)
-
-**Phase 4 — Engine integration**
-
-1. Bake Kiera's public key into the KScript engine
-2. Implement fetch-from-Kiera-API with signature verification
-3. Implement cache invalidation on revocation (periodic poll or webhook)
-4. Test end-to-end: submit object, engine fetches, engine verifies
-
-**Phase 5 — Trust delegation (deferred)**
-
-Trust delegation is architecturally specified above but not needed for the initial
-launch. Implement when there is a concrete delegatee.
-
----
-
-## Versioning
-
-Every object published on the Kiera blockchain carries a timestamp. The timestamp is
-not set by the submitter — it is the block timestamp assigned by the Fabric orderer
-when the entry is committed. This makes timestamps canonical and tamper-evident.
-
-**Default behaviour: latest within range.** When you request an object with no version
-constraint, you get the most recently posted version. When you request with a date
-range, you get the most recently posted version that falls within that range.
-
-### Effective Date
-
-An endorser may set an `effective_date` on an endorsement to declare the date that
-should be used for version ordering in place of the block timestamp. When the gateway
-resolves a version, it checks for a trusted endorsement with an `effective_date` set.
-If one is found, that date is used for tombstone/birthstone calculations. If none is
-found, the block timestamp is used as the fallback.
-
-This allows historical objects to be correctly ordered. A Python library released ten
-years ago can be posted to the chain today — the block timestamp will be today, but a
-trusted endorser can set `effective_date` to the library's original release date,
-placing it correctly in the version timeline.
-
-`effective_date` is optional. Omitting it (or setting it to `null`) means the block
-timestamp governs.
-
-### Tombstone and Birthstone
-
-A **tombstone** is an upper bound on the timestamp: "give me the latest version of this
-object on or before this date." Setting a tombstone pins the entire resolution to a
-point in time — useful for reproducible builds or auditing what was deployed on a given
-date.
-
-A **birthstone** is a lower bound: "do not give me anything older than this date."
-Useful for excluding objects published before a known-good baseline, such as a security
-audit date.
-
-Either, both, or neither can be set. With neither, you get the latest version of
-everything.
-
-```json
-{
-    "uns": "borg.com/parser",
-    "tombstone": "2025-06-01T00:00:00Z",
-    "birthstone": "2024-01-01T00:00:00Z"
-}
-```
-
-### Dependency Resolution
-
-Each object may declare its own dependencies — by UNS name — along with an optional
-date range per dependency. When the gateway resolves a request, it traverses the
-dependency graph and applies the outer request range at every node.
-
-If an object declares a narrower range for one of its dependencies, the system
-intersects that range with the outer range. The narrower of the two wins. If the
-intersection is empty — no version of the dependency exists within both ranges — an
-exception is raised. The resolution fails rather than silently selecting something
-outside the intended range.
-
-Example: the outer request has a tombstone of 2025-06-01. Object A declares that it
-depends on `borg.com/utils` with a tombstone of 2025-01-01. The effective tombstone
-for `borg.com/utils` is 2025-01-01 — A's constraint is tighter and takes precedence.
-If `borg.com/utils` has no version on or before 2025-01-01, the resolution fails.
-
-Dependency declarations live inside the object's `bucket`. The gateway reads the
-`bucket` at each node to discover dependencies, then recurses. Dependency graphs
-for libraries are finite; resolution terminates.
-
-### Relationship to Semantic Versioning
-
-Timestamp-based versioning handles the common case — pin a date, get a reproducible
-dependency tree — with no coordination required between publishers. Semantic versioning
-is available as an additional layer for publishers who need to express compatibility
-constraints (e.g. "requires borg.com/utils >= 2.0.0"). The two systems can be combined:
-a semver constraint narrows which versions are candidates; the timestamp range selects
-the latest candidate within that set.
-
----
-
 ## Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Kiera is
-likely to encounter. No reason to prefer anything else for this use case.
+likely to encounter.
 
-**Insertion-order canonical JSON.** RFC 8785 (JCS) sorts keys alphabetically, which
-breaks Kiera's key-order semantics. The solution is to document that signing always
-uses insertion-order minified JSON, and require that all Kiera tooling preserves key
-order when serializing. Engines sign and verify using the same serializer — as long as
-the serializer is consistent, verification is reliable. This is non-standard but
-self-consistent.
+**Alphabetically sorted canonical JSON.** Signing uses minified JSON with all keys sorted
+alphabetically at every level. This is deterministic regardless of the order in which
+fields were constructed, and is compatible with RFC 8785 (JCS). All Kiera tooling must
+sort keys before signing or verifying.
 
-**Versioning.** Each new submission creates a new `registry_entry` with an incremented
-version. The `uns_head` index tracks the current active version. This is standard
-immutable-log versioning — no prior art needed. Engines should store both UNS and
-version in their cache so they know which entry to check for revocations.
+**Hash chaining.** Each record's `prev_hash` is the SHA-256 of the preceding record's
+full serialized form (including its `signature`). This makes the chain tamper-evident:
+altering any record invalidates every subsequent `prev_hash`.
 
 **Revocation and caching.** A revoked object in cache should be re-fetched immediately.
-The recommended strategy: on any object use, check the revocation endpoint with a
-short-lived local TTL (e.g., 5 minutes). If revoked, discard cache and re-fetch. A
-future webhook push model (Kiera notifies subscribed engines) can replace polling once
-the network grows.
+Recommended strategy: on any object use, check for a `revoke` block covering that
+`record_hash` with a short-lived local TTL (e.g. 5 minutes). If revoked, discard cache
+and re-fetch.
 
-**Fabric over QLDB.** Amazon QLDB (append-only ledger database, also AWS-managed) was
-an alternative, but AWS ended support for QLDB in July 2025. Hyperledger Fabric on
-Amazon Managed Blockchain is the current AWS-recommended path for append-only
-verifiable ledgers.
+**Grammar versioning.** The grammar is expected to evolve slowly — a handful of base
+revisions and at most a few hundred DSL grammars in the most ambitious scenario. A block
+referencing an unrecognised grammar hash is not automatically invalid; consumers decide
+whether to accept or reject it.
+
+**Mirror resolution.** Because `artifact_hash` is the cryptographic anchor, any URL
+serving matching bytes is functionally equivalent to the original. This decouples trust
+from location: a consumer can prefer mirrors over the original — for latency, geographic
+proximity, internal-cache policy, or operator reputation — without weakening the
+verification guarantee. The chain records availability ("here's a copy at this URL"); the
+ranking policy belongs in the engine or fetch library, not in block grammar.
+
+---
+
+## Open Issues
+
+**Software namespace identifier bloat.** As `kiera.uno/software` grows (programming
+languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.
+Most identifiers are just namespace declarations and don't need provenance or revocation
+the way published artifacts do. Do software identifiers belong on the chain at all, or
+should the chain only carry records that reference them?

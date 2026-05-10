@@ -9,8 +9,6 @@ globally unique namespace. For example: `kiera.uno/mikobase`, `foo.com/character
 
 The mikobase, Q0, and the object model are all Kiera components under the `kiera.uno` namespace.
 
-The `mikobase.com` namespace is reserved for the commercial Mikobase implementation of mikobases.
-
 See [ideas/marina.md](ideas/marina.md) for a prior design exploration.
 
 ---

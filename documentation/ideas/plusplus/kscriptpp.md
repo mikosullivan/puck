@@ -8,7 +8,9 @@ vibecode: {
 }
 ```
 
-Design only. KScript++ is not yet in active development.
+**Retired.** KScript++ has been merged into KScript. Forking is now a standard KScript
+feature, engine-granted via `%forks` and `%tmp`. There is no longer a separate KScript++
+language variant.
 
 ## Lua Implementation Note
 
@@ -20,33 +22,11 @@ The goal is to avoid reimplementing Kiera in C just to handle forking.
 
 ## Overview
 
-At this point, the only thing KScript++ adds over KScript is forking. It has not been
-ruled out that forking may eventually move into KScript proper. For now it remains a ++
-feature.
+Forking is now a standard KScript feature. The engine grants it by providing non-null
+`%forks` and `%tmp` globals. A script that doesn't use forking is unaffected — both
+globals are `null` by default.
 
-Everything in KScript is available in KScript++. The additions are opt-in — a program
-that doesn't use forking is just KScript.
-
----
-
-## Relationship to KScript
-
-KScript is single-threaded by design. It is lightweight, embeddable, and safe to run
-untrusted code in. KScript++ builds on top of it and adds concurrency capabilities.
-
-KScript has a core security model (`untrusted()`, `%chain` sandboxing). KScript++ extends
-that security model to cover forking — for example, a fork can be restricted from spawning
-its own child forks. The security model is not weakened by KScript++; it is extended.
-
----
-
-## Forking
-
-KScript++ introduces `%forks`, a system method that returns the fork manager for the
-current context. Each fork runs a single-threaded KScript interpreter independently.
-Forks do not share memory — all coordination happens through mikobases.
-
-See [threads.md](threads.md) for the full `%forks` API and threading model.
+See [threads.md](threads.md) for the full `%forks` and `%tmp` API.
 
 ---
 

@@ -86,7 +86,9 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
    name and `data-kiera-type` set to the value's type.
 3. For scalar values, `data-kiera-value` holds the raw value as a string.
 4. For hash and array values, recurse into child elements.
-5. Display content (labels, badges, layout) may be added freely — it is ignored during
+5. If an object has a `"vibecode"` key, serialize its value as the `data-vibecode`
+   attribute on that element. Do not emit it as a child element with `data-kiera-key`.
+6. Display content (labels, badges, layout) may be added freely — it is ignored during
    conversion back to JSON.
 
 **HTML → JSON**
@@ -97,7 +99,9 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 3. For `array`: collect all direct structural children in DOM order.
 4. For `string`, `number`, `boolean`: read `data-kiera-value`.
 5. For `null`: value is `null`.
-6. Ignore all elements without `data-kiera-type` — they are display-only.
+6. If `data-vibecode` is present, parse it as JSON and include it as the `"vibecode"`
+   key in that element's object.
+7. Ignore all elements without `data-kiera-type` — they are display-only.
 
 ---
 
