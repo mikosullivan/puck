@@ -1,7 +1,7 @@
 {
     "name": "kscript",
     "displayName": "KScript",
-    "description": "Syntax highlighting for KScript (.dc) files",
+    "description": "Syntax highlighting for KScript (.kscript) files",
     "version": "0.0.1",
     "publisher": "mikobase",
     "engines": {
@@ -15,7 +15,7 @@
             {
                 "id": "kscript",
                 "aliases": ["KScript", "kscript"],
-                "extensions": [".dc"]
+                "extensions": [".kscript"]
             }
         ],
         "grammars": [

@@ -1,0 +1,15 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name portia.idocs.com;
+
+    root /home/miko/projects/mikobase/working/web/sites/www/pages;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    access_log /var/log/nginx/portia.idocs.com.access.log;
+    error_log  /var/log/nginx/portia.idocs.com.error.log;
+}

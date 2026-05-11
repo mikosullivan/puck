@@ -164,3 +164,78 @@ Concurrency is KScript++.
 travel with it silently: `vibecode` (AI-readable context), `comment` (human-readable
 notes), `misc` (informal ad hoc data), and `enterprise` (formally defined standards).
 All four are always passed through; never stripped. See [vibecode.md](vibecode.md).
+
+**Libraries are cached, not installed** — KScript has no install step. Libraries are
+referenced by UNS in source code and resolved on the fly. See the section below.
+
+**No nanny code** — the system declines to second-guess deliberate developer choices.
+Restrictions exist for safety, not for paternalism, and every restriction has an
+explicit override. See "No Nanny Code" below.
+
+---
+
+## No Nanny Code
+
+vibecode: {
+	"section": "no_nanny_code",
+	"role": "states the design principle that Kiera avoids paternalistic API restrictions; safe defaults and security guarantees remain, but blocking legitimate operations because the designer disapproves is rejected",
+	"key_concepts": ["no_paternalism", "explicit_override_for_every_safe_default",
+		"security_guarantees_are_not_nanny_code", "structural_rules_are_not_nanny_code",
+		"borrowed_from_perl_enough_rope"]
+}
+
+Kiera follows a principle borrowed from Perl: **the system gives you enough rope to
+hang yourself.** When the system declines to do something by default, there are
+ways to override it if you choose.
+
+The clean way to phrase it:
+
+- **Nanny code** says "you can't, because I think you shouldn't."
+- **Safe defaults** say "you have to be explicit if you want to."
+- **Security guarantees** say "you can't, because allowing this would break the
+  trust model the rest of the system depends on."
+
+The first is what we avoid. The second and third stay. When in doubt: if a developer
+wants to do something legitimate that the API blocks without giving them a way through,
+that's nanny code.
+
+---
+
+## Libraries Are Cached, Not Installed
+
+vibecode: {
+	"section": "libraries_are_cached_not_installed",
+	"role": "explains that KScript has no library installation step — libraries are referenced by UNS and resolved on demand from a provider chain that may include a cache",
+	"key_concepts": ["no_install_step", "uns_reference", "engine_resolves_on_demand", "provider_chain", "cache"]
+}
+
+KScript has no library installation step. There is no `kscript install foo.com/bar`,
+no `package.json`, no lockfile, no manifest. A library is **referenced** directly in
+source code by its UNS:
+
+```
+%kiera['foo.com/bar'].new
+```
+
+When the engine encounters that reference, it resolves the UNS through whatever
+**provider chain** it has been configured with. A typical chain checks a local cache
+first, then one or more remote providers; if the library isn't cached, the engine
+fetches it on the fly and stores it for future use. Subsequent references to the same
+UNS hit the cache with no network round-trip.
+
+The provider chain is the engine's concern, not the script's. A developer's machine
+might check a local cache, then a corporate mirror, then the canonical UNS host. A
+locked-down production engine might be restricted to a single trusted source. The
+script is unaware of where its libraries came from.
+
+The cache holds **multiple versions** of the same library side by side. Versioning in
+Kiera is **date-pinned**: a single `%chain.cutoff` timestamp set at the top of the call
+chain governs the entire library tree, and each `(UNS, version, date)` triple is its own
+cached artifact. Different programs running through the same engine under different
+cutoffs each get the appropriate version for their cutoff with no cross-interference.
+See [versioning.md](versioning.md) for the full model.
+
+This is a design intent for how remote object resolution will work in KScript. Today's
+engines resolve only the built-in `kiera.uno/...` classes; remote resolution is not yet
+implemented. When it lands, it will work this way — there will be no install step, at
+least not initially.

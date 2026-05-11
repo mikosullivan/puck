@@ -38,20 +38,20 @@ vibecode: {
 ```
 
 ```
-kscript fmt file.dc
+kscript fmt file.kscript
 ```
 
-Formats `file.dc` in place using your personal style configuration. With no config,
+Formats `file.kscript` in place using your personal style configuration. With no config,
 the formatter applies a reasonable default style.
 
 ```
-kscript fmt *.dc
+kscript fmt *.kscript
 ```
 
 Formats multiple files.
 
 ```
-kscript fmt --check file.dc
+kscript fmt --check file.kscript
 ```
 
 Exits non-zero if the file does not match your personal style. Useful for pre-save hooks.
@@ -87,7 +87,7 @@ The exact set of configurable options will be defined as the formatter is implem
 vibecode: {
 	"section": "vscode_integration",
 	"features": ["format_on_save", "format_document_ShiftAltF"],
-	"file_extension": ".dc",
+	"file_extension": ".kscript",
 	"config_source": "~/.config/kscript/style.toml",
 	"project_settings_needed": false
 }
@@ -95,7 +95,7 @@ vibecode: {
 
 The KScript VS Code extension integrates the formatter directly:
 
-- **Format on save** — automatically applies your personal style when you save a `.dc` file
+- **Format on save** — automatically applies your personal style when you save a `.kscript` file
 - **Format Document** (`Shift+Alt+F`) — formats the current file on demand
 
 The extension reads your `~/.config/kscript/style.toml` for its style settings. No

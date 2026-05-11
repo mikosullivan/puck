@@ -23,7 +23,7 @@ vibecode: {
 
 | Method | Description |
 |--------|-------------|
-| `%chain` | Scoped ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Cleared at security boundaries. Use sparingly. |
+| `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. Cleared at security boundaries. Use sparingly. |
 | `%engine` | Returns the engine object — the gateway to host-injected resources. The method only exists in the outermost scope; functions and closures cannot see it. The engine object itself is non-storable: it can be used directly but cannot be assigned to a variable. |
 | `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
 | `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |

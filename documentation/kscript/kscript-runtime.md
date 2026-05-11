@@ -1104,8 +1104,21 @@ current user, request ID, locale, transaction context, security settings — wit
 requiring it to be threaded through every function signature.
 
 `%chain` has two main components: `misc` for arbitrary values, and `stack` for the
-call stack. It is scope-aware: values are inherited by child scopes and changes do not
-propagate back up.
+call stack.
+
+#### Block vs function isolation
+
+`%chain` does **not** isolate at block boundaries. A write to `%chain['foo']` inside an
+`if`, loop, or bare block persists after the block ends — chain flows freely through
+blocks within the same function. This is unlike `%scope`, where every block creates a new
+inherited scope.
+
+Isolation happens at **function call boundaries**. When a function is called, it gets its
+own chain that inherits from the caller's, but writes inside the callee do not propagate
+back up. The caller's chain is unchanged after the call returns.
+
+If you want block-level isolation, use `%chain.scope do...end` to create an explicit
+boundary inside the same function.
 
 `%chain` is cleared when crossing a security boundary (untrusted execution, `%chain.clear`
 blocks). stdout and stderr are **not** components of `%chain` — they are capabilities

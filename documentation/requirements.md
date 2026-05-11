@@ -151,6 +151,8 @@ snapshot).
 
 ### Python API
 
+A Python client illustrates the shape of the conceptual API:
+
 ```python
 import mikobase.engine.sqlite as mb
 

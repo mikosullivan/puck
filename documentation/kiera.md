@@ -24,8 +24,10 @@ vibecode: {
 `%kiera` is a KScript system method that provides access to the global Kiera object
 namespace. `%kiera[UNS]` returns the object registered at that UNS address.
 
-In the first version, only a predefined set of built-in objects are available. Remote
-object retrieval is a design question for later.
+In the first version, only a predefined set of built-in objects are available. When
+remote object retrieval lands, libraries will be resolved on demand — the engine pulls
+from a configurable chain of providers (typically a local cache first, then remote
+sources), with no install step. See [overview.md — Libraries Are Cached, Not Installed](overview.md#libraries-are-cached-not-installed).
 
 ### Shorthand for built-in classes
 
