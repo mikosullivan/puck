@@ -109,6 +109,58 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 
 ---
 
+## Invoking a File
+
+```
+vibecode: {
+    "section": "invoking_a_file",
+    "model": "file_invoked_like_a_function_call",
+    "scope": "own_implicit_top_level_module",
+    "return_value": "last_evaluated_expression",
+    "early_exit": "%call.return",
+    "vocabulary": "invoke_distinct_from_load_which_means_slurp_bytes"
+}
+```
+
+A file is **invoked** by being called, just like a function. The file's body runs
+in its own scope (its own implicit top-level module — same rules as any module).
+The return value of the invocation is **the value of the last expression
+evaluated**, the same rule that applies to closures and functions everywhere else
+in KScript. `%call.return` works inside file bodies too, for early exit.
+
+"Invoke" is the term of art. **It is intentionally distinct from "load."** Loading
+a file means slurping its bytes into memory — a lower-level operation. Invoking a
+file runs it as a function and captures its return value. The two are different
+operations, and the documentation uses them precisely.
+
+```
+# my-page.kscript — the file's return value is the class
+class < %kiera['kiera.uno/dogberry/page']
+    function &process($request)
+        response.new(200, {content_type: 'text/html'}, '...')
+    end
+end
+```
+
+The caller receives whatever the file returned and decides what to do with it. A
+page-handling system like Robinson expects a class. A configuration consumer might
+expect a hash. A helper file might return a function or an object. The invocation
+mechanism is the same; the convention is set by the caller.
+
+No new concepts are introduced — file invocation reuses what closures, functions,
+and modules already provide:
+
+- **Scope isolation**: each invocation gets its own implicit top-level module (no
+  scope leakage between files).
+- **Last-value return**: the same default that applies to every other callable in
+  KScript.
+- **`%call.return`**: for early exit, same as in closures and functions.
+
+Open: the exact API surface (system method name, argument-passing semantics, caching,
+relative-vs-absolute paths) is TBD.
+
+---
+
 ## Syntax
 
 ```

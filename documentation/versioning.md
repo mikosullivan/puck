@@ -52,29 +52,36 @@ Three concrete benefits:
 
 vibecode: {
 	"section": "cutoff_in_chain",
-	"role": "documents how the version cutoff propagates through the call stack via %chain",
-	"key_concepts": ["chain_cutoff_field", "set_once_at_top", "propagation_through_chain",
-		"function_boundary_inheritance"]
+	"role": "documents how the version cutoff lives on the kiera object and applies to UNS lookups",
+	"key_concepts": ["kiera_version_window", "upper_property", "lower_property",
+		"immutable_after_creation", "narrowing_only_derivation"]
 }
 
-The version cutoff lives on `%chain` as `%chain.cutoff`. The trusted outer layer that
-sets up the execution context sets it once, before invoking the program proper:
+The version cutoff lives on the **kiera object** as part of its **version
+window** (see [kiera.md](kiera.md) — Version Window). The engine sets it
+when creating the kiera, and it is **immutable thereafter**:
 
 ```
-%chain.cutoff = '2026-05-03T00:00:00Z'
-&run_program
+%kiera.upper = 'may 3, 2026'    # set at kiera creation; immutable after
+%kiera.lower = 'may 3, 2018'    # optional floor; also immutable
 ```
 
-From that point on, every `%kiera['foo.com/bar']` lookup down the stack consults
-`%chain.cutoff` to decide which library version to resolve. Because `%chain` propagates
-through function calls (with isolation at function boundaries — see
-[kscript-runtime.md](kscript/kscript-runtime.md#chain)), the cutoff reaches every
-library lookup automatically. No threading through call signatures, no per-library
-configuration.
+The window's `upper` is the version cutoff in the binary-trust sense.
+Once the engine creates the kiera with its `upper` set, every
+`%kiera['foo.com/bar']` lookup is bounded by that cutoff. User code
+cannot widen the window — assignments to `%kiera.upper` or `%kiera.lower`
+are not allowed once the kiera exists.
 
-User code **cannot modify** `%chain.cutoff` once it is set. Attempts to assign to it
-from inside the running program are themselves treated as security-relevant events —
-see the next section.
+To run a narrower window inside a block, use `%kiera.restrict do ... end`
+(see [kiera.md](kiera.md) — `restrict do ... end`). The restricted kiera
+must be narrower than or equal to the parent; widening is impossible.
+
+**Historical note.** The cutoff previously lived on `%chain` as
+`%chain.cutoff`. Under the current model (the role-based security model
+in [roles.md](roles.md)), the cutoff has moved to the kiera object,
+which is the natural unit of configuration — a kiera knows its own
+window and applies it during lookup. The `%chain.cutoff` mechanism is
+gone.
 
 ---
 
@@ -82,13 +89,18 @@ see the next section.
 
 vibecode: {
 	"section": "out_of_range_exceptions",
-	"role": "documents the security-grade exception raised when a library lookup falls outside the cutoff",
-	"key_concepts": ["uncatchable_at_user_level", "escalates_to_security_boundary",
-		"forensic_payload", "integrity_alarm_not_dependency_error"]
+	"role": "documents the security exception raised when a library lookup falls outside the cutoff; out_of_range follows the standard security-exception model",
+	"key_concepts": ["security_exception", "default_uncatchable_by_kscript",
+		"bubbles_to_engine", "no_graceful_unwind", "forensic_payload",
+		"integrity_alarm_not_dependency_error"]
 }
 
-When a library lookup returns nothing dated on or before `%chain.cutoff`, the engine
-raises an **out-of-range exception**.
+When a library lookup returns nothing dated within the kiera's
+`[lower, upper]` window, the engine raises `kiera.uno/error/out_of_range`.
+This is an **alarm** under the role model (see
+[roles.md](roles.md) — Exceptions and Alarms): always fatal, no
+unwinding, no `finally` blocks, no catch handlers from KScript code. The
+engine takes over directly.
 
 **This is not a "missing dependency" error.** If the program was tested under cutoff X
 and is now running under the same cutoff, every library it calls should resolve. An
@@ -99,10 +111,11 @@ out-of-range exception means one of the following has happened:
 - The cache or provider chain has been tampered with — a library has been backdated,
   removed, or replaced
 - The versioning system itself has a flaw — a bug in the resolver, cache corruption,
-  `%chain.cutoff` not propagating correctly
+  the kiera's window not being applied correctly
 
 In each case, the integrity of the deployment is in question. The exception is therefore
-treated with the same severity as a security violation, not as ordinary control flow.
+treated with the same severity as any other security exception, not as ordinary control
+flow.
 
 ### Forensic payload
 
@@ -116,24 +129,6 @@ The exception carries a structured payload describing exactly what happened:
 
 This is the information a security responder or audit log needs to investigate.
 
-### User code cannot catch it
-
-The out-of-range exception is **uncatchable at user level**. A `try`/`catch` in
-ordinary code does not see it; control flow simply skips past such handlers. This is
-deliberate — the mechanism an attacker would use to smuggle in an out-of-range library
-is exactly the same mechanism that would catch and silently swallow the exception. The
-engine refuses to let user code suppress the alarm.
-
-The exception escalates up through call frames, ignoring user-level catches, until it
-reaches the nearest **security boundary** — the trusted outer layer that established
-the execution context (and that set `%chain.cutoff` in the first place). The security
-boundary can catch the exception and decide what to do: terminate the process, log to an
-audit channel, redirect, alert an operator, or simply re-raise.
-
-This mirrors how KScript already handles `%process.abort` from untrusted code: untrusted
-code may raise it, but the exception is caught at the nearest security boundary and
-cannot abort the whole program. Out-of-range exceptions follow the same path.
-
 ---
 
 ## Resolution Rules
@@ -145,16 +140,19 @@ vibecode: {
 		"providers_consulted_in_order"]
 }
 
-For a lookup `%kiera['foo.com/bar']` under `%chain.cutoff = D`:
+For a lookup `%kiera['foo.com/bar']` under a kiera with window `[L, U]`:
 
-1. The engine asks each provider in its configured chain (cache first, then remote
-   sources) for the **latest version of `foo.com/bar` whose canonical date is on or
-   before D.**
-2. In a future release, the engine will be able to check the signature of the
-   library against a key library. That feature will not be in initial development.
-3. The first provider that returns a match satisfies the lookup. The result is cached
-   if it came from a remote source.
-4. If no provider returns a match, the out-of-range exception is raised.
+1. The kiera walks its getters (per [kiera.md](kiera.md) — Lookup
+   Mechanism), each consulting its faucets (cache first, then remote
+   source typically). Each getter reports the **latest version of
+   `foo.com/bar` within `[L, U]`** that it has.
+2. The kiera returns the latest result across all getters' responses.
+   Finding the latest requires consulting all getters, not
+   short-circuiting on first hit.
+3. In a future release, the kiera will check the signature of the
+   library against a key library. That feature is not in initial
+   development.
+4. If no getter returns a match, the out-of-range alarm is raised.
 
 Each `(UNS, version, date)` triple is its own cached artifact. Different programs running
 through the same engine under different cutoffs will each get the appropriate version
@@ -214,7 +212,7 @@ The model intentionally starts without:
   flat query against the cutoff.
 - **Transitive version conflicts** — a library deep in the call stack cannot pin a
   different version than the rest of the tree, because every lookup uses the same
-  `%chain.cutoff`.
+  kiera (and therefore the same window).
 
 The design starts from a position of not needing these mechanisms. Adding any of them
 later is possible — but each one increases the burden on every script (versions to

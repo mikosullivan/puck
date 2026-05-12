@@ -1,14 +1,44 @@
-# Trust
+# Trust (Historical)
 
+```
 vibecode: {
-	"section": "overview",
-	"role": "explains the unified trust model: every object carries a source tag, the engine maps sources to trust levels, %chain.trust provides explicit runtime overrides, and untrusted values are constrained at sinks (filesystem, eval, etc.)",
-	"key_concepts": ["source_tag_per_object", "engine_source_to_trust_mapping",
-		"chain_trust_override", "data_tainting", "cli_more_permissive_than_embedded",
-		"transitive_trust_does_not_apply"]
+    "section": "overview",
+    "status": "superseded",
+    "superseded_by": "roles.md",
+    "role": "historical record of the binary trust/untrust model that preceded the role-based security model",
+    "key_concepts": ["source_tag_per_object", "engine_source_to_trust_mapping",
+        "chain_trust_override_REMOVED", "data_tainting", "cli_more_permissive_than_embedded",
+        "transitive_trust_does_not_apply"]
 }
+```
 
-Trust in Kiera is **derived from the source of every object**. When an object is
+> **This document is superseded by [roles.md](roles.md).** The binary
+> trust/untrust security model documented here has been replaced by the
+> role-based model. New code follows the role model. This doc is
+> preserved as a historical reference for the previous design and
+> because some adjacent docs still reference its concepts pending an
+> integration sweep.
+>
+> Key differences:
+>
+> - **Binary trust → roles.** Every object now has an owning role
+>   instead of being trusted/untrusted. Trust is per-role-pair, not a
+>   global tier.
+> - **`%chain.trust` is removed.** The runtime override mechanism is
+>   gone. Use the role model's natural transitions instead.
+> - **`%chain.allow_abort_escalation` and `%chain.allow_catch_security_exceptions`
+>   are gone.** Alarms are unconditionally fatal under the role model.
+> - **Sinks check role relationships, not binary trust tags.** Details
+>   in [roles.md](roles.md) (sink-side semantics is one of the open
+>   refinement items).
+>
+> The historical model is preserved below for reference.
+
+---
+
+## Historical: The Binary Trust Model
+
+Trust in Kiera was **derived from the source of every object**. When an object is
 created — whether it is a function loaded from a cached library, a string parsed from
 a request, a record fetched from a database, or a closure defined inline — the engine
 tags it with the source it came from. The engine also holds a mapping from sources to
@@ -19,9 +49,10 @@ request is tainted the same way a function pulled from a database is. Sinks that
 on values — the filesystem, dynamic evaluation, query construction — check the trust
 tag and either refuse the operation or require an explicit override.
 
-KScript code can override trust at runtime via `%chain.trust`. The override is bounded
-by the granter's own trust (you can never grant more than you have) and lives in the
-current `%chain` frame, evaporating when that frame returns.
+KScript code could override trust at runtime via `%chain.trust`. (This mechanism is
+**removed** under the role model.) The override was bounded by the granter's own
+trust (you could never grant more than you had) and lived in the current `%chain`
+frame, evaporating when that frame returned.
 
 ---
 
@@ -401,24 +432,31 @@ vibecode: {
 	"section": "what_untrusted_means_at_runtime",
 	"role": "summarizes the runtime restrictions applied when untrusted code or values are encountered",
 	"key_concepts": ["security_boundary_at_call", "chain_carrier_cleared_grants_persist",
-		"capabilities_not_inherited", "abort_caught_at_boundary"]
+		"capabilities_not_inherited", "abort_and_security_exception_propagation"]
 }
 
 When the engine calls into untrusted code, a security boundary is established at the
 call site. Inside that boundary:
 
 - Carrier parts of `%chain` (user, request_id, locale) are cleared
-- Trust grants in `%chain` persist (so the boundary doesn't break legitimate elevation)
+- `%chain.allow_abort_escalation` resets to `false` (engine default for untrusted)
+- `%chain.allow_catch_security_exceptions` resets to `false` (engine default for everyone)
+- Trust grants in `%chain` (`%chain.trust $foo`) persist (so the boundary doesn't
+  break legitimate elevation)
 - Capabilities are not auto-inherited — only what is explicitly passed in is visible
 - Timeout budgets are constrained to the parent budget or tighter
 - Filesystem access is restricted to whatever jails are explicitly granted
-- Security-grade exceptions raised by the inner code (`%process.abort`, out-of-range
-  library lookups, etc.) propagate to this boundary, where the trusted outer layer
-  catches them and decides what to do
+
+When an exception originates inside the untrusted code, propagation depends on what
+kind of exception it is — see [security-boundaries.md](security-boundaries.md) for
+the full model. In summary: ordinary exceptions (including `nested_abort`) propagate
+normally; escalating aborts and security exceptions follow the uncatchable-by-user
+rules and bubble to the engine (or to a frame with the appropriate
+`allow_catch_security_exceptions` permission).
 
 The same mechanism applies whenever an untrusted value is passed to a sink that checks
-trust — the sink raises rather than acting. See [versioning.md](versioning.md) for how
-out-of-range exceptions interact with these boundaries.
+trust — the sink raises rather than acting. See [versioning.md](versioning.md) for the
+out-of-range exception used by version checks.
 
 ---
 
