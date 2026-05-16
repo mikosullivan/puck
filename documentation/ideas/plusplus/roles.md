@@ -1,12 +1,12 @@
 # Roles
 
-## Status
+## Status (O'Brien)
 
 This is an early design idea, not yet in active development.
 
 ---
 
-## Overview
+## Overview (Quark)
 
 `%role` is a system method that returns the current role object for the scope. It is
 an identifier and context store — a way of passing identity and related data down the
@@ -17,7 +17,7 @@ is simply an object in the chain that code can read and use however it needs to.
 
 ---
 
-## Behavior
+## Behavior (Rom)
 
 - `%role` follows the same scoping rules as `%chain` — values flow down, changes do
   not propagate back up.
@@ -27,7 +27,7 @@ is simply an object in the chain that code can read and use however it needs to.
 
 ---
 
-## Unsetting the Role
+## Unsetting the Role (Nog)
 
 Several ways to clear `%role`:
 
@@ -46,7 +46,7 @@ end
 
 ---
 
-## Marking a Function as Untrusted
+## Marking a Function as Untrusted (Jake)
 
 Trust lives on the function object rather than at the call site. `untrusted()` wraps
 a function so that `%role` is automatically set to null whenever it is called:
@@ -67,7 +67,7 @@ null, then delegates to the original function. It composes naturally with jail.
 
 ---
 
-## Open Questions
+## Open Questions (Garak)
 
 - What properties does a role object expose beyond being a context store?
 - How do roles interact with firewall rules?

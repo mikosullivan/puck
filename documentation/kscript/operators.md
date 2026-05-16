@@ -1,6 +1,6 @@
 # Operators
 
-## Overview
+## Overview (Tora Ziyal II)
 
 ```
 vibecode: {
@@ -20,7 +20,7 @@ KScript has three categories of operators:
 
 ---
 
-## Method Operators
+## Method Operators (Pa'Dar)
 
 ```
 vibecode: {
@@ -39,7 +39,7 @@ See the individual type docs for the operators each type supports.
 
 ---
 
-## Binary Operators
+## Binary Operators (Pa'Dar Cardassian)
 
 ```
 vibecode: {
@@ -133,7 +133,7 @@ The evaluator class follows the same contract as built-in operators — implemen
 
 ---
 
-## Unary Operators
+## Unary Operators (Pa'Dar Jasad)
 
 ```
 vibecode: {
@@ -170,7 +170,7 @@ end
 
 ---
 
-## Built-in Operators
+## Built-in Operators (Jasad)
 
 ```
 vibecode: {
@@ -208,7 +208,7 @@ vibecode: {
 
 ---
 
-## Ternary Operator
+## Ternary Operator (Tret)
 
 ```
 vibecode: {
@@ -239,7 +239,7 @@ end
 
 ---
 
-## Open Questions
+## Open Questions (Voval)
 
 - Should `scope.operators` be inheritable — i.e. does a child scope see parent scope
   operators automatically?

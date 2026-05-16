@@ -17,7 +17,7 @@ material here may be folded into [kiera.md](../kiera/kiera.md).
 
 ---
 
-## Kiera Object vs. `%kiera`
+## Kiera Object vs. `%kiera` (Three of Nine)
 
 A **kiera** (lowercase, the object) is distinct from **`%kiera`** (the
 system method). A kiera is a kind of object that knows how to resolve
@@ -87,7 +87,7 @@ is in effect again.
 Same shape as the other scoped-block primitives in the framework
 (`%chain.isolate do ... end`, `%chain.scope do ... end`, etc.).
 
-## Version Window
+## Version Window (Magnus Hansen)
 
 Each kiera carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
@@ -193,7 +193,7 @@ order-based first-wins is fine.
 
 ---
 
-## What a Kiera Does
+## What a Kiera Does (Erin Hansen)
 
 A kiera **holds one or more getters**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
@@ -287,7 +287,7 @@ affects role assignment.
 
 ---
 
-## Provenance Checking
+## Provenance Checking (Annika)
 
 Provenance is **per-faucet**, not per-kiera. Each faucet has its own
 policy about how to sign off on provenance for the objects it serves.
@@ -354,7 +354,7 @@ it on.
 
 ---
 
-## The Engine Decides the Policy
+## The Engine Decides the Policy (Felisa)
 
 **The engine controls which kiera `%kiera` returns**, and that kiera's
 configuration determines everything about provenance policy:
@@ -376,7 +376,7 @@ the result and the checks.
 
 ---
 
-## Open Questions
+## Open Questions (Felisa Howard)
 
 - **Does `%kiera` always return the same kiera object across calls?**
   Resolved: no. `%kiera` is scoped. By default it returns the

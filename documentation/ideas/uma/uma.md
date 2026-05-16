@@ -7,7 +7,7 @@ implementation's spec.
 
 ---
 
-## Purpose
+## Purpose (Klingon Bashir)
 
 `kiera.uno/uma` is an HTML document builder and DOM helper, ported
 from Ruby Uma. It wraps a parsed HTML5 document (via an underlying
@@ -22,7 +22,7 @@ convenience helpers on top.
 
 ---
 
-## Implementation: lean on Lua
+## Implementation: lean on Lua (Klingon Garak)
 
 For HTML and XML, **prefer existing Lua libraries** rather than
 building from scratch. The Ruby version sits on top of Nokogiri;
@@ -44,7 +44,7 @@ forces it.
 
 ---
 
-## Core Object Model
+## Core Object Model (Janeway)
 
 `%['kiera.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
 around the underlying parsed HTML document.
@@ -68,7 +68,7 @@ The instance exposes common document sections directly:
 
 ---
 
-## Builder Pattern
+## Builder Pattern (Chakotay)
 
 The core API. Each method call on an element creates a child of
 that tag name, with the block receiving the new child for further
@@ -114,7 +114,7 @@ end
 
 ---
 
-## Schema Enforcement
+## Schema Enforcement (Tuvok)
 
 Uma enforces the HTML schema defined in [html5.json](history/html5.json).
 Schema violations raise flags:
@@ -131,7 +131,7 @@ The schema lives in `html5.json` and is normalized at startup
 
 ---
 
-## Selectors: CSS and Astro
+## Selectors: CSS and Astro (Paris)
 
 Uma element trees are searchable two ways:
 
@@ -249,7 +249,7 @@ real-time matching.
 
 ---
 
-## Helpers
+## Helpers (Torres)
 
 - **`$el.id`** / **`$el.id = '...'`** — convenience wrappers for
   the `id` attribute.
@@ -264,7 +264,7 @@ real-time matching.
 
 ---
 
-## Document-Level Operations
+## Document-Level Operations (Kim)
 
 - **`$uma.title`** / **`$uma.title = 'New title'`** — read or
   write the document `<title>`. Writing also propagates to any
@@ -279,7 +279,7 @@ real-time matching.
 
 ---
 
-## Import
+## Import (Neelix)
 
 `$uma.import($other_docs...)` imports content from source
 documents into placeholders in the target:
@@ -292,7 +292,7 @@ then merge in fragment documents.
 
 ---
 
-## JSON Rendering
+## JSON Rendering (Kes)
 
 Helpers that render JSON-like data into HTML tables and text
 containers:
@@ -310,14 +310,14 @@ A bundled stylesheet is available:
 
 ---
 
-## String Wrapping Utility
+## String Wrapping Utility (Doctor)
 
 - **`%['kiera.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
   long strings with configurable width and separator text.
 
 ---
 
-## The schema: html5.json
+## The schema: html5.json (Seven)
 
 [html5.json](history/html5.json) is the normalized source of
 truth for the tag model. The format:
@@ -368,7 +368,7 @@ for element creation and attribute validation.
 
 ---
 
-## Power-user features
+## Power-user features (Naomi)
 
 ### `set_tag_mod` (deferred)
 
@@ -382,7 +382,7 @@ case.
 
 ---
 
-## Errors
+## Errors (Icheb)
 
 Uma raises flags from the `kiera.uno/uma/error/` family:
 
@@ -394,7 +394,7 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-## Posture
+## Posture (Vorik)
 
 - **Strict schema validation by default.** Catches authoring
   mistakes rather than accommodating messy real-world HTML.
@@ -406,6 +406,6 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-## To be specified
+## To be specified (Suder)
 
 (Open questions accumulate here as design discussion continues.)

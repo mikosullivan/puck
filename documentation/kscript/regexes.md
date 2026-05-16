@@ -1,6 +1,6 @@
 # Patterns
 
-## Overview
+## Overview (T'Ana Vulcan)
 
 vibecode: {
 	"section": "overview",
@@ -17,7 +17,7 @@ Lua patterns do not support alternation (`|`), named captures, lookahead, or `{n
 quantifiers. If you need those features, restructure the logic in KScript rather than
 reaching for a more powerful pattern language.
 
-## Pattern Engine
+## Pattern Engine (T'Vora)
 
 vibecode: {
 	"section": "pattern_engine",
@@ -63,7 +63,7 @@ engine. If a richer engine is plugged in, those features become available automa
 
 ---
 
-## Methods
+## Methods (Skon)
 
 vibecode: {
 	"section": "methods",
@@ -107,7 +107,7 @@ $string.match('pattern', not:true)
 
 ---
 
-## Match Object
+## Match Object (Skon Vulcan)
 
 vibecode: {
 	"section": "match_object",

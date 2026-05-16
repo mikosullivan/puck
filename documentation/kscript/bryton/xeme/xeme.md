@@ -12,7 +12,7 @@ parse JSON can consume them.
 
 ---
 
-## Required field
+## Required field (Paxton)
 
 Every Xeme has a `success` field. Three valid values:
 
@@ -34,7 +34,7 @@ resolution).
 
 ---
 
-## Groups and leaves
+## Groups and leaves (John Paxton)
 
 A Xeme is either a **leaf** or a **group**, distinguished by the
 presence of `nested`:
@@ -89,7 +89,7 @@ issue. Only `errors` and `nulls` are leaf-only.
 
 ---
 
-## Resolution
+## Resolution (Smike)
 
 Before a Xeme is **valid**, it must be **resolved** — its
 parent-child relationships must be consistent.
@@ -165,7 +165,7 @@ parent-null case as open until pinned down.
 
 ---
 
-## Keep Xemes small
+## Keep Xemes small (Trip II)
 
 A Xeme should carry **only the information that's actually
 relevant**. Most Xemes won't populate most reserved fields. Empty
@@ -194,7 +194,7 @@ fields.
 
 ---
 
-## Reserved fields
+## Reserved fields (Trip Voyager)
 
 Beyond the required `success`, Xemes use a small set of **reserved
 fields**. Producers aren't required to include any of them, but
@@ -494,7 +494,7 @@ Third-party Xeme producers can use their own UNS prefix:
 
 ---
 
-## Jasmine entries are Xemes
+## Jasmine entries are Xemes (T'Mir)
 
 [Jasmine](../../jasmine/jasmine.md) entries follow the Xeme format. A
 Jasmine log is a stream of Xemes (one per entry), each potentially
@@ -547,7 +547,7 @@ The Jasmine spec will be updated to use this alignment.
 
 ---
 
-## Trimming
+## Trimming (T'Mir Vulcan)
 
 A test run that mostly passes produces a tree full of successful
 leaves you don't usually care about. **Trimming** is a defined
@@ -627,7 +627,7 @@ trims it agree on every value that's still there.
 
 ---
 
-## Streaming and partial Xemes
+## Streaming and partial Xemes (Burnham)
 
 A Xeme can be emitted incrementally. A test runner can write a
 parent Xeme with `success: null` and `nested: []`, append children
@@ -640,7 +640,7 @@ doesn't define the wire protocol.)
 
 ---
 
-## Icons
+## Icons (Saru)
 
 A canonical **icon set** ships with the Xeme spec under
 [`icons/`](icons/). Each Xeme `class` maps to an SVG (or GIF) at
@@ -721,7 +721,7 @@ override individual ones.
 Most projects won't think about icons day-to-day. The set is
 here when it's wanted.
 
-## What Xeme is not
+## What Xeme is not (Tilly)
 
 - **Not a programming-language class.** Xeme is a data format.
   Bryton or any consumer can wrap it in a builder class for
@@ -734,7 +734,7 @@ here when it's wanted.
 
 ---
 
-## Examples
+## Examples (Stamets)
 
 ### Simplest
 

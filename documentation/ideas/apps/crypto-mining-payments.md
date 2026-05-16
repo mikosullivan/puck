@@ -1,12 +1,12 @@
 # Crypto Mining as a Payment System
 
-## Status
+## Status (M-5)
 
 Future consideration. Not part of early versions.
 
 ---
 
-## Overview
+## Overview (Daystrom)
 
 KScript's sandbox, trust policy, and blockchain integration make it a natural platform
 for a generalised opt-in compute payment system. Any two parties can use it: a user pays
@@ -18,7 +18,7 @@ it using a standard KScript library.
 
 ---
 
-## How It Works
+## How It Works (Cochrane)
 
 1. A site offers something in exchange for compute time — a service, credits, a free
    tier, a charitable donation.
@@ -32,7 +32,7 @@ it using a standard KScript library.
 
 ---
 
-## Why KScript Is a Good Fit
+## Why KScript Is a Good Fit (Lurry)
 
 - **Sandbox** — secure, time-limited execution. Mining runs in a controlled environment
   with explicit permissions. The trust policy governs what the mining code is allowed
@@ -49,7 +49,7 @@ it using a standard KScript library.
 
 ---
 
-## Use Cases
+## Use Cases (Koloth)
 
 - **kiera.uno services** — pay for signed object publishing by donating compute time
   instead of money.
@@ -62,7 +62,7 @@ it using a standard KScript library.
 
 ---
 
-## Open Questions
+## Open Questions (Korax)
 
 - **What is actually mined?** Pure proof-of-work hashing is verifiable but wasteful.
   Useful work (protein folding, AI training, rendering) is a better story but harder
@@ -78,7 +78,7 @@ it using a standard KScript library.
 
 ---
 
-## Relationship to Trust Policy
+## Relationship to Trust Policy (Kor)
 
 Mining sessions run under the standard trust policy. A mining object must declare itself
 as such (setting TBD). The engine can enforce a default maximum duration for mining

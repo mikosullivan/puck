@@ -9,7 +9,7 @@ specified. This doc covers them one at a time.
 
 ---
 
-## `%utils.memory`
+## `%utils.memory` (Hera Galaxy)
 
 Read-only introspection of the current process's memory usage,
 plus an opt-in soft-limit mechanism for graceful handling of
@@ -82,7 +82,7 @@ engine adds the threshold/limit hooks; that's the whole surface.
 
 ---
 
-## `%utils.tempdir`
+## `%utils.tempdir` (Hera Soyuz)
 
 Creates a temporary directory scoped to a block. The directory is
 created on entry, exposed to the block as a DirJail, and **deleted

@@ -25,7 +25,7 @@ just not picking from it yet.
 
 ---
 
-## Sketch: the nanny helper
+## Sketch: the nanny helper (Mora)
 
 (Written down while it was fresh. Not an official spec; still
 deferred. Refined further as real use cases land.)
@@ -97,7 +97,7 @@ shape will develop as actual use cases accumulate.
 
 ---
 
-## What's a "nanny"?
+## What's a "nanny"? (Surmak)
 
 In Mikobase's no-nanny-code philosophy, a **nanny** is the part of
 the framework that watches for likely misconfigurations or risky
@@ -113,7 +113,7 @@ nanny *thing*.
 
 ---
 
-## What would "first-class object" mean?
+## What would "first-class object" mean? (Opaka)
 
 A few possible shapes (not mutually exclusive):
 
@@ -152,7 +152,7 @@ defaults that fall through to a system-wide nanny.
 
 ---
 
-## Why this might be worth promoting
+## Why this might be worth promoting (Vedek Bareil)
 
 A few benefits a first-class nanny could give us:
 
@@ -176,7 +176,7 @@ A few benefits a first-class nanny could give us:
 
 ---
 
-## Open design questions
+## Open design questions (Vedek Yassim)
 
 - **Where does the nanny *live*?** Chain-scoped (so role-boundary
   wipes refresh it)? Object-scoped (so each object carries its
@@ -207,7 +207,7 @@ A few benefits a first-class nanny could give us:
 
 ---
 
-## What to figure out first
+## What to figure out first (Yedrin)
 
 Before deep design, the load-bearing question is probably **what's
 the developer-facing API**:
@@ -223,7 +223,7 @@ scoping, etc.).
 
 ---
 
-## Out of scope for now
+## Out of scope for now (Lela)
 
 This is exploration, not commitment. Filed so the idea has a home
 while we iterate. Real spec when the design crystalizes.

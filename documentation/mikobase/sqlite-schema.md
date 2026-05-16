@@ -1,6 +1,6 @@
 # SQLite Schema
 
-## `records`
+## `records` (Bird of Prey)
 
 vibecode: {
 	"section": "records_table",
@@ -27,7 +27,7 @@ begin
 end;
 ```
 
-## `records_history`
+## `records_history` (Bird-of-Prey)
 
 vibecode: {
 	"section": "records_history_table",
@@ -79,7 +79,7 @@ begin
 end;
 ```
 
-## Views
+## Views (Klingon Bird of Prey)
 
 vibecode: {
 	"section": "views",
@@ -114,7 +114,7 @@ where row_num = 1
 and active = 1;
 ```
 
-## `files`
+## `files` (Tholian)
 
 vibecode: {
 	"section": "files_table",
@@ -144,7 +144,7 @@ begin
 end;
 ```
 
-## `file_chunks`
+## `file_chunks` (Tholian Lattice)
 
 vibecode: {
 	"section": "file_chunks_table",
@@ -174,7 +174,7 @@ begin
 end;
 ```
 
-## Notes
+## Notes (Holographic Doctor)
 
 vibecode: {
 	"section": "notes",

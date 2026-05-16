@@ -1,6 +1,6 @@
 # KScript++
 
-## Status
+## Status (Sisko)
 
 ```
 vibecode: {
@@ -12,7 +12,7 @@ vibecode: {
 feature, engine-granted via `%forks` and `%tmp`. There is no longer a separate KScript++
 language variant.
 
-## Lua Implementation Note
+## Lua Implementation Note (Kira)
 
 Lua has no native fork support. When implementing forking in the Lua reference
 implementation, prefer an existing Lua library over writing a C extension from scratch.
@@ -20,7 +20,7 @@ The goal is to avoid reimplementing Kiera in C just to handle forking.
 
 ---
 
-## Overview
+## Overview (Odo)
 
 Forking is now a standard KScript feature. The engine grants it by providing non-null
 `%forks` and `%tmp` globals. A script that doesn't use forking is unaffected — both
@@ -30,7 +30,7 @@ See [threads.md](threads.md) for the full `%forks` and `%tmp` API.
 
 ---
 
-## Hives
+## Hives (Bashir)
 
 Hives are implemented in KScript — a mikobase is a useful local object store on its own.
 KScript++ adds the ability to share a mikobase between forked processes, making it the
@@ -40,7 +40,7 @@ See [mikobase.md](../../mikobase/mikobase.md) for the full mikobase design.
 
 ---
 
-## Security Extensions
+## Security Extensions (Jadzia)
 
 KScript++ extends KScript's core security model for the forking context:
 
@@ -53,7 +53,7 @@ KScript++ extends KScript's core security model for the forking context:
 
 ---
 
-## What Stays in KScript
+## What Stays in KScript (Ezri)
 
 The following are KScript features, not KScript++:
 

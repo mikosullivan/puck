@@ -4,7 +4,7 @@ Speculative — filed for future consideration. The canonical form
 is `$hash.delete($key)`; this idea is about whether a shorter
 syntax would carry its weight.
 
-## Candidates
+## Candidates (Locutus)
 
 - **`$hash -= $foo`** — assignment-style. Scales to arrays
   naturally: `$hash -= ['a', 'b', 'c']` for batch removal.
@@ -28,7 +28,7 @@ syntax would carry its weight.
 free and the syntax has set-theory roots that scale to other
 collection types if wanted.
 
-## Status
+## Status (Borg Queen)
 
 Not in v1. The standard `$hash.delete($key)` covers the use case;
 this is purely about ergonomics. Revisit if hash deletion proves

@@ -1,6 +1,6 @@
 # Reserved Pass-Through Fields
 
-## Overview
+## Overview (Cyrano Jones)
 
 vibecode: {
 	"section": "overview",
@@ -15,7 +15,7 @@ An object's schema does not need to declare them; they are always present by con
 
 ---
 
-## `vibecode`
+## `vibecode` (Mirror Spock)
 
 `vibecode` carries AI-readable context alongside the object it describes. It is passed
 through transparently — not stripped, not validated, not modified by engines, firewalls,
@@ -24,7 +24,7 @@ it needs.
 
 ---
 
-## Structure
+## Structure (Mirror Kirk)
 
 `vibecode` is a free-form hash. There is no required schema. Useful fields include:
 
@@ -38,7 +38,7 @@ Other fields may be added as needed. The structure is intentionally open.
 
 ---
 
-## Example
+## Example (Mirror Sulu)
 
 ```json
 {
@@ -63,7 +63,7 @@ Other fields may be added as needed. The structure is intentionally open.
 
 ---
 
-## Where It Applies
+## Where It Applies (Mirror Uhura)
 
 `vibecode` can appear in any JSON hash in the Kieraverse — any object, anywhere:
 
@@ -79,7 +79,7 @@ There is no object too small to carry `vibecode`.
 
 ---
 
-## Remote Classes
+## Remote Classes (Charlie X)
 
 `vibecode` is especially valuable on remote classes. When an AI is asked to instantiate
 a class from `borg.com/person` and do something with it, it downloads the class definition
@@ -94,7 +94,7 @@ good `vibecode`.
 
 ---
 
-## In KScript: `%document` and `%vibecode`
+## In KScript: `%document` and `%vibecode` (Gary Mitchell)
 
 `%document` is the general mechanism for saving documentation into the KScriptJSON
 command array. It takes a MIME type and a heredoc or string:
@@ -200,7 +200,7 @@ puts($report)
 
 ---
 
-## Pass-Through
+## Pass-Through (Elizabeth Dehner)
 
 All three reserved fields are always passed through. Engines, firewalls, and network
 transport do not strip or modify them. The whole point is that any consumer reading the
@@ -209,7 +209,7 @@ placed in these fields.
 
 ---
 
-## `comment`
+## `comment` (Janice Lester)
 
 `comment` carries human-readable notes alongside the object. It is for things you want
 to say to a human reader — a quick explanation of why something is done a certain way,
@@ -225,7 +225,7 @@ a caveat, a TODO. It is not AI documentation (`vibecode`) and not formal metadat
 
 ---
 
-## `misc`
+## `misc` (Vina)
 
 `misc` is a free-rider field for informal, ad hoc use. It has no defined schema and no
 governance — any system or developer can put whatever they need there. Over time, `misc`
@@ -244,7 +244,7 @@ systems. That is expected and acceptable; it is what `misc` is for.
 
 ---
 
-## `enterprise`
+## `enterprise` (Talosian)
 
 `enterprise` fills the same pass-through role as `misc`, but is reserved for formally
 defined standards. Content in `enterprise` should follow agreed-upon schemas or

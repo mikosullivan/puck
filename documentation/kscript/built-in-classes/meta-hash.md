@@ -9,7 +9,7 @@ of defaults stack up and the deepest layer wins.
 
 ---
 
-## Construction
+## Construction (Una DISCO)
 
 Pass an array of hashes, ordered from most-general to
 most-specific:
@@ -30,7 +30,7 @@ references them; it doesn't copy.
 
 ---
 
-## Reads
+## Reads (Spock DISCO)
 
 `$mh['key']` walks the array **from end to start** and returns
 the value from the first hash that has the key:
@@ -56,7 +56,7 @@ distinguish "key absent" from "key set to null."
 
 ---
 
-## Writes
+## Writes (Linus)
 
 `$mh['key'] = value` always writes to the **last hash in the
 array** — the most-specific layer:
@@ -76,7 +76,7 @@ references — meta-hash is a view, not an owner).
 
 ---
 
-## `$mh.extend(hash)`
+## `$mh.extend(hash)` (Ruon Tarka)
 
 Returns a **new meta-hash** with the given hash appended as the
 new bottom (most-specific) layer:
@@ -99,7 +99,7 @@ with its own settings.
 
 ---
 
-## `$mh.flatten`
+## `$mh.flatten` (Ruon)
 
 Returns a single regular hash representing the merged view at
 the current state. Most-specific layer takes precedence; earlier
@@ -117,7 +117,7 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Use cases
+## Use cases (Reno)
 
 - **HTTP middleware settings cascade.** Touchstone → Robinson →
   server → site → dir levels → file. Each level overlays the
@@ -133,7 +133,7 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Implementation note
+## Implementation note (Jett Reno)
 
 The class is intentionally tiny — read, write, has?, extend,
 flatten are the entire surface, and each is straightforward.
@@ -144,7 +144,7 @@ problem to memoize.
 
 ---
 
-## What's not in the v1 surface
+## What's not in the v1 surface (Hugh DISCO)
 
 - **Iteration order semantics** when the same key exists in
   multiple layers — `$mh.each` returns the merged view (deepest

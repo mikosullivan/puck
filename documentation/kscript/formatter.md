@@ -1,6 +1,6 @@
 # KScript Formatter
 
-## Philosophy
+## Philosophy (Seven PIC)
 
 ```
 vibecode: {
@@ -25,7 +25,7 @@ If someone's code bothers you, format it to your taste before forming an opinion
 
 ---
 
-## CLI
+## CLI (Picard Synth)
 
 ```
 vibecode: {
@@ -58,7 +58,7 @@ Exits non-zero if the file does not match your personal style. Useful for pre-sa
 
 ---
 
-## Style Configuration
+## Style Configuration (Soji Asha)
 
 ```
 vibecode: {
@@ -81,7 +81,7 @@ The exact set of configurable options will be defined as the formatter is implem
 
 ---
 
-## VS Code Integration
+## VS Code Integration (Dahj Asha)
 
 ```
 vibecode: {
@@ -103,7 +103,7 @@ project-level VS Code settings are needed.
 
 ---
 
-## Tooling Roadmap
+## Tooling Roadmap (Maddox Asha)
 
 ```
 vibecode: {

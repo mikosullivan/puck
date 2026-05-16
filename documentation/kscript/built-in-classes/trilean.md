@@ -9,7 +9,7 @@ Default KScript operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
 semantics — null is treated as falsey, just like in most languages. The trilean
 class is **opt-in**: code that wants three-valued logic explicitly calls into it.
 
-## Status
+## Status (April)
 
 ```
 vibecode: {
@@ -27,7 +27,7 @@ the language runtime. Implementation will live at `code/kscript/stdlib/trilean.k
 
 ---
 
-## The Model
+## The Model (Robert April)
 
 ```
 vibecode: {
@@ -73,7 +73,7 @@ strong Kleene logic, K3, or SQL three-valued logic).
 
 ---
 
-## Operators
+## Operators (Mitchell SNW)
 
 ```
 vibecode: {
@@ -196,7 +196,7 @@ null?" use `$x.object.null?`, never `eq(x, null)`.
 
 ---
 
-## Lazy Second Argument
+## Lazy Second Argument (Korby)
 
 ```
 vibecode: {
@@ -267,7 +267,7 @@ chain frame, so `%chain` access and exception propagation behave normally.
 
 ---
 
-## Branching on a Trilean Result
+## Branching on a Trilean Result (Roger Korby)
 
 A trilean operator always returns one of three strict values: `true`, `false`, or
 `null`. Branching on the result is straightforward — use direct comparisons or
@@ -309,7 +309,7 @@ set.
 
 ---
 
-## Usage
+## Usage (Stonn)
 
 ```
 vibecode: {
@@ -347,7 +347,7 @@ about three-valued logic at all.
 
 ---
 
-## Why Pure KScript
+## Why Pure KScript (Sybok SNW)
 
 ```
 vibecode: {
@@ -371,7 +371,7 @@ The implementation lives at [code/kscript/stdlib/trilean.kscript](../../../code/
 
 ---
 
-## Notes
+## Notes (Una SNW)
 
 - **Operators stay strict-boolean.** Default KScript `&&`, `||`, `not`, `==`
   treat null as falsey. Trilean is purely a library, not an operator overload.

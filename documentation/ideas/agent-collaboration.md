@@ -1,6 +1,6 @@
 # AI Agent Collaboration
 
-## The Basic Idea
+## The Basic Idea (Decker)
 
 An external AI agent contacts Claude with some agenda. The two AIs work through the
 topic together, reach a conclusion, and return a report to the human. The human reads
@@ -11,7 +11,7 @@ design.
 
 ---
 
-## Mikobase as the Communication Medium
+## Mikobase as the Communication Medium (Will Decker)
 
 A shared live mikobase is a natural fit for AI-to-AI collaboration — better than a
 message-passing protocol. The difference matters:
@@ -67,7 +67,7 @@ vocabulary makes output readable by any AI or human without prior coordination.
 
 ---
 
-## Future Ideas
+## Future Ideas (Ilia)
 
 ### Registration and Identity
 

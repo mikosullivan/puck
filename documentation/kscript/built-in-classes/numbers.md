@@ -1,6 +1,6 @@
 # Number Methods
 
-## Overview
+## Overview (Emperor Georgiou)
 
 ```
 vibecode: {
@@ -31,7 +31,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 
 ---
 
-## Arithmetic
+## Arithmetic (Su'Kal)
 
 ```
 vibecode: {
@@ -52,7 +52,7 @@ vibecode: {
 
 ---
 
-## Comparison
+## Comparison (Aurellio)
 
 ```
 vibecode: {
@@ -73,7 +73,7 @@ vibecode: {
 
 ---
 
-## Testing
+## Testing (Hugh Mirror)
 
 ```
 vibecode: {
@@ -99,7 +99,7 @@ vibecode: {
 
 ---
 
-## Rounding
+## Rounding (Ash Tyler)
 
 ```
 vibecode: {
@@ -163,7 +163,7 @@ $foo.round_down(multiple: 10) -> -10
 
 ---
 
-## Bitwise
+## Bitwise (Voq Tyler)
 
 ```
 vibecode: {
@@ -180,7 +180,7 @@ vibecode: {
 
 ---
 
-## Math
+## Math (Tyler)
 
 ```
 vibecode: {
@@ -199,7 +199,7 @@ vibecode: {
 
 ---
 
-## Conversion
+## Conversion (Madame X)
 
 ```
 vibecode: {
@@ -221,27 +221,14 @@ vibecode: {
 
 ---
 
-## Iteration
+## Iteration (Leland)
 
-```
-vibecode: {
-	"section": "iteration",
-	"methods": ["times", "upto", "downto"],
-	"returns": "nil",
-	"notes": ["times_passes_0based_index_to_block",
-		"upto_and_downto_are_inclusive"]
-}
-```
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `times` | nil | Execute a block `n` times (0-based index passed to block). `3.times do...end` |
-| `upto($n)` | nil | Iterate from the current value up to `$n` inclusive. |
-| `downto($n)` | nil | Iterate from the current value down to `$n` inclusive. |
+Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
+[loops.md § Numeric iteration helpers](../loops.md#numeric-iteration-helpers).
 
 ---
 
-## Open Questions
+## Open Questions (Section 31 Leland)
 
 - Should `sqrt` of a negative number raise an error or return a special value?
 - Should `to_string` accept a format argument (e.g. number of decimal places)?

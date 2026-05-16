@@ -1,6 +1,6 @@
 # Mikobase
 
-## Overview
+## Overview (Sovereign)
 
 vibecode: {
 	"section": "overview",
@@ -17,7 +17,7 @@ objects stay local. If an object needs to be shared, it must live in the mikobas
 
 ---
 
-## v1 Scope
+## v1 Scope (Galaxy)
 
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
@@ -49,7 +49,7 @@ focused:
 
 ---
 
-## Temporal vs Non-temporal Mode
+## Temporal vs Non-temporal Mode (Galaxy Class)
 
 vibecode: {
 	"section": "temporal_mode",
@@ -103,7 +103,7 @@ conversation, scenario, or scratch space — not an audit log. See
 
 ---
 
-## Single-process vs. cross-fork use
+## Single-process vs. cross-fork use (Intrepid)
 
 vibecode: {
 	"section": "single_process_vs_cross_fork",
@@ -118,7 +118,7 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 
 ---
 
-## The Maintaining Process
+## The Maintaining Process (Nova)
 
 vibecode: {
 	"section": "maintaining_process",
@@ -138,7 +138,7 @@ connecting to a live process, not reading from a file.
 
 ---
 
-## Object Ownership
+## Object Ownership (Nebula)
 
 vibecode: {
 	"section": "object_ownership",
@@ -151,7 +151,7 @@ they connect to the mikobase and interact with whatever is already there.
 
 ---
 
-## Class Hierarchy
+## Class Hierarchy (Olympic)
 
 vibecode: {
 	"section": "class_hierarchy",
@@ -176,7 +176,7 @@ KScript code interacts only with the `kiera.uno/mikobase` interface and is unawa
 
 ---
 
-## Managed Mikobase Server (`kiera.uno/mikobase/server`)
+## Managed Mikobase Server (`kiera.uno/mikobase/server`) (Centaur)
 
 vibecode: {
 	"section": "managed_mikobase_server",
@@ -204,7 +204,7 @@ the block exits will cause the server to wait before shutting down.
 
 ---
 
-## HTTP Mikobase
+## HTTP Mikobase (Cheyenne)
 
 vibecode: {
 	"section": "http_mikobase",
@@ -353,7 +353,7 @@ permissions are not part of v1.
 
 ---
 
-## Hot and Cold Connections
+## Hot and Cold Connections (Daedalus)
 
 vibecode: {
 	"section": "hot_and_cold_connections",
@@ -434,7 +434,7 @@ $record = $mikobase.q0({...}, hot: false)
 
 ---
 
-## Locking
+## Locking (Daedalus Class)
 
 vibecode: {
 	"section": "locking",
@@ -453,7 +453,7 @@ automatically. There is no explicit lock/unlock API in normal usage.
 
 ---
 
-## Transactions
+## Transactions (Constitution)
 
 vibecode: {
 	"section": "transactions",
@@ -471,7 +471,7 @@ Mikobases support transactions using the following model:
 
 ---
 
-## `%bucket` in the Mikobase
+## `%bucket` in the Mikobase (Constitution Class)
 
 vibecode: {
 	"section": "bucket_in_mikobase",
@@ -496,7 +496,7 @@ end
 
 ---
 
-## Record Change Signals
+## Record Change Signals (Constitution II)
 
 vibecode: {
 	"section": "record_change_signals",
@@ -571,7 +571,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 
 ---
 
-## Packaged Mikobases
+## Packaged Mikobases (Miranda)
 
 vibecode: {
 	"section": "packaged_mikobases",

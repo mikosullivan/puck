@@ -1,6 +1,6 @@
 # KScriptJSON
 
-## Overview
+## Overview (Tora Klingon)
 
 ```
 vibecode: {
@@ -26,7 +26,7 @@ itself before the parser exists.
 
 ---
 
-## Core Principle
+## Core Principle (K'mtar)
 
 ```
 vibecode: {
@@ -49,7 +49,7 @@ This applies uniformly to method calls, operators, assignment, and bwc calls.
 
 ---
 
-## Comments
+## Comments (K'mtar Klingon)
 
 ```
 vibecode: {
@@ -72,7 +72,7 @@ It is ignored by the interpreter.
 
 ---
 
-## Expressions
+## Expressions (Drex II)
 
 ```
 vibecode: {
@@ -153,7 +153,7 @@ A `function` does not capture the outer scope. A `closure` does.
 
 ---
 
-## Statements
+## Statements (Drex Mogh)
 
 ```
 vibecode: {
@@ -249,7 +249,7 @@ KScript equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 
 ---
 
-## Control Flow
+## Control Flow (Lukara)
 
 ```
 vibecode: {
@@ -309,7 +309,7 @@ end
 
 ---
 
-## Blocks
+## Blocks (Kahless I)
 
 ```
 vibecode: {
@@ -341,7 +341,7 @@ end
 
 ---
 
-## Function and Closure Definitions
+## Function and Closure Definitions (Mauk-to'Vor)
 
 ```
 vibecode: {
@@ -396,7 +396,7 @@ end
 
 ---
 
-## Return
+## Return (Korath)
 
 ```
 vibecode: {
@@ -420,7 +420,7 @@ Return with no value:
 
 ---
 
-## Exception Handling
+## Exception Handling (Korath Klingon)
 
 ```
 vibecode: {
@@ -457,7 +457,7 @@ KScript equivalent: `raise 'borg.com/exception/assimilation'`
 
 ---
 
-## System Methods
+## System Methods (Drex Worf)
 
 ```
 vibecode: {
@@ -485,7 +485,7 @@ KScript equivalent: `%chain['user']`
 
 ---
 
-## Document Statements
+## Document Statements (Quvar)
 
 ```
 vibecode: {
@@ -512,7 +512,7 @@ in the program array. They are no-ops at runtime.
 
 ---
 
-## Source Position Annotations
+## Source Position Annotations (Lurin)
 
 ```
 vibecode: {
@@ -575,7 +575,7 @@ position is genuinely unknown.
 
 ---
 
-## Known Gaps
+## Known Gaps (Pakled)
 
 ```
 vibecode: {
@@ -593,7 +593,7 @@ insertion order through serialization and deserialization.
 
 ---
 
-## Open Questions
+## Open Questions (Lurin Pakled)
 
 ### Class definitions
 

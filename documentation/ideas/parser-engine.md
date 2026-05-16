@@ -2,7 +2,7 @@
 
 **Status:** Filed as a forward direction. Not in v1.
 
-## Context
+## Context (Devinoni Ral)
 
 In v1, each parser is hand-rolled:
 
@@ -17,7 +17,7 @@ The hand-rolled approach keeps each parser purpose-built and
 small. Schemas (the Uma model) cover the "user-defined markup
 language" case without requiring grammar authoring.
 
-## When to revisit
+## When to revisit (Bjayzl)
 
 If we find ourselves accumulating hand-rolled parsers — say
 we add a few more parsers for new file formats, query
@@ -27,7 +27,7 @@ adds up. At some point a common parser engine pays for itself.
 Trigger to reconsider: **4 or 5 distinct hand-rolled parsers
 in the framework**, with the prospect of more.
 
-## Options if we revisit
+## Options if we revisit (Adami)
 
 ### Bundle LPeg
 
@@ -58,7 +58,7 @@ in the framework**, with the prospect of more.
 - Cons: parser-combinator engines can be slow for large inputs
   without aggressive optimization.
 
-## Constraint: don't displace the schema model
+## Constraint: don't displace the schema model (Tahna Los)
 
 Whatever engine lands, **Uma's schema-driven approach stays
 the user-facing way to define tag-based markup languages.**
@@ -72,7 +72,7 @@ where a real grammar is appropriate (mini-languages, DSLs,
 custom query syntaxes) — that's a bonus. But the schema-as-
 config story stays the headline.
 
-## Status
+## Status (Jaresh-Inyo)
 
 Not committed. Revisit when we have 4–5 hand-rolled parsers and
 can see the curve bending.

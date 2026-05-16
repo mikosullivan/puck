@@ -6,7 +6,7 @@ found so far.
 
 ---
 
-## Fixed during the sweep
+## Fixed during the sweep (Tain)
 
 - **`geolocation.md`** — `kiera.uno/error/unreachable` →
   `kiera.uno/exception/error/unreachable`. (Stale short-form of
@@ -23,7 +23,7 @@ found so far.
 
 ---
 
-## Still open
+## Still open (Maxwell)
 
 ### Better name needed for Xeme's `enterprise` field
 
@@ -76,7 +76,7 @@ consistent with recent design decisions:
 
 ---
 
-## Sweep status
+## Sweep status (Picard Maman)
 
 **Paused before completion.** The categories above were swept;
 the rest of the documentation tree (especially the larger files

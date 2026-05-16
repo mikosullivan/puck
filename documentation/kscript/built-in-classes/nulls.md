@@ -3,7 +3,7 @@
 `null` is a bare word method that returns an instance of the `kiera.uno/null`
 class.
 
-## Too Long, Didn't Read
+## Too Long, Didn't Read (Burnham Mother)
 
 `null` returns a new instance of `kiera.uno/null`. You do not get the same null
 object every time. Every null object has a `flavor` field to which you can
@@ -12,7 +12,7 @@ assign anything.
 Claude got pretty wordy in this document but it's a nice read if you're into
 the finer points of null.
 
-## Construction
+## Construction (Gabrielle)
 
 ```
 vibecode: {
@@ -36,7 +36,7 @@ A program that tries to redefine these names raises a runtime error.
 
 ---
 
-## Equality
+## Equality (Mike Burnham)
 
 ```
 vibecode: {
@@ -82,7 +82,7 @@ end
 
 ---
 
-## Identity Guarantees
+## Identity Guarantees (Mirror Georgiou)
 
 ```
 vibecode: {
@@ -122,7 +122,7 @@ The same applies symmetrically to `true` and `false`. The mechanism is
 
 ---
 
-## Null Flavors
+## Null Flavors (Georgiou)
 
 Null flavors let a program distinguish *why* a value is null, not just that it is
 null. The rest of this section explains the problem they solve, how the canonical

@@ -1,6 +1,6 @@
 # Object Signing and the Blockchain Registry
 
-## Status
+## Status (Tucker)
 
 **Deferred from production.** Blockchain is an official part of the Kiera ecoverse and
 the design properties documented here remain the intended target. However, no chain
@@ -24,7 +24,7 @@ You might want to start with [Use Case: Third-Party Endorsement](#use-case-third
 
 ---
 
-## The Problem
+## The Problem (Reed)
 
 Kiera is a distributed object system. Objects (classes, capabilities, etc.) are identified
 by UNS addresses like `borg.com/foo`. When a KScript engine fetches and uses an object, it
@@ -39,7 +39,7 @@ A UNS string alone proves neither. It is just a name.
 
 ---
 
-## License
+## License (Mayweather)
 
 The Kiera distributed object system is released under the MIT License. This must be stated
 in any overview or primer describing Kiera, including the `kiera_primer` field of authority
@@ -51,7 +51,7 @@ always include a `license` field. A provenance endorsement that omits `license` 
 
 ---
 
-## Design Principles
+## Design Principles (Sato)
 
 **Kiera.uno holds one private key.** That is the only cryptographic key in the system
 that Kiera manages. Everything flows from it.
@@ -68,7 +68,7 @@ verify the entire system.
 
 ---
 
-## The Open Ledger
+## The Open Ledger (Phlox)
 
 The Kiera blockchain is an open, append-only ledger of signed records about objects in the
 Kiera distributed object system. Its purpose is to provide independently verifiable provenance
@@ -95,7 +95,7 @@ Kiera for public libraries, trust an internal root for private ones.
 
 ---
 
-## Trust Delegation
+## Trust Delegation (Shran)
 
 A `delegate` block extends trust to another entity. Kiera.uno can post a `delegate` block
 that says: "I trust this entity's endorsements." The delegation references the trusted
@@ -117,7 +117,7 @@ on. Engines following the chain extend trust transitively.
 
 ---
 
-## How Kiera Vouches for an Object
+## How Kiera Vouches for an Object (Daniels)
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Kiera will sign them. The domain owner must explicitly request signing through kiera.uno.
@@ -135,7 +135,7 @@ object is trusted.
 
 ---
 
-## The Blockchain as Registry
+## The Blockchain as Registry (Silik)
 
 The blockchain serves as the permanent, decentralized registry for published objects.
 Once a block is posted, it is available forever regardless of what happens to any
@@ -150,7 +150,7 @@ chain directly. The API handles lookup by UNS address and returns the signed blo
 
 ---
 
-## Chain Design
+## Chain Design (Forrest)
 
 The Kiera blockchain is a permissioned append-only ledger. There is no mining, no
 proof-of-work, and no gas. Records are written directly by authorised signers. Validity
@@ -172,7 +172,7 @@ the SHA-256 of the preceding record.
 
 ---
 
-## Record Types — Grammar v1.0
+## Record Types — Grammar v1.0 (V'Las)
 
 All blocks must include a `grammar` field in their payload referencing the grammar block
 by hash. The hash is authoritative for machine verification; the version string is for
@@ -417,7 +417,7 @@ consumers decide how to respond.
 
 ---
 
-## The Signing Scheme
+## The Signing Scheme (Soval ENT)
 
 To sign a record:
 
@@ -434,7 +434,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 
 ---
 
-## Trust Tiers
+## Trust Tiers (Talas)
 
 | Source | Trust level |
 |--------|-------------|
@@ -445,7 +445,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 
 ---
 
-## What Each Party Manages
+## What Each Party Manages (Jhamel)
 
 | Party | Responsibility |
 |-------|---------------|
@@ -456,7 +456,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 
 ---
 
-## API
+## API (Thy'lek)
 
 All blockchain services are hosted at `blockchain.kiera.uno`.
 
@@ -506,7 +506,7 @@ key matches the chain.
 
 ---
 
-## Versioning
+## Versioning (Thelin)
 
 The Kiera ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
@@ -554,7 +554,7 @@ the intended range.
 
 ---
 
-## Use Case: Third-Party Endorsement
+## Use Case: Third-Party Endorsement (Gral)
 
 **Scenario:** ChainGuard is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
@@ -724,7 +724,7 @@ As Stuart says, this scratches an itch.
 
 ---
 
-## Design Notes
+## Design Notes (Naarg)
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Kiera is
@@ -758,7 +758,7 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 
 ---
 
-## Open Issues
+## Open Issues (Augris)
 
 **Software namespace identifier bloat.** As `kiera.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.

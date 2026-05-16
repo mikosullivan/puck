@@ -1,6 +1,6 @@
 # KScript
 
-## Overview
+## Overview (Aehallh)
 
 ```
 vibecode: {
@@ -26,7 +26,7 @@ community norm is: run your code through the formatter before complaining about 
 
 ---
 
-## Transpilation
+## Transpilation (Vrenn)
 
 ```
 vibecode: {
@@ -41,7 +41,7 @@ format.
 
 ---
 
-## Strings
+## Strings (Tebok)
 
 ```
 vibecode: {
@@ -131,7 +131,7 @@ own damn fault and they deserve it.
 
 ---
 
-## Variables
+## Variables (Telek R'Mor)
 
 ```
 vibecode: {
@@ -155,7 +155,7 @@ intentionally unsupported pattern. Future use cases will be designed around this
 
 ---
 
-## Blocks
+## Blocks (M'k'n'zy)
 
 ```
 vibecode: {
@@ -171,7 +171,73 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ---
 
-## When `do` is Required
+## Multi-section blocks (Q Continuum II)
+
+```
+vibecode: {
+	"section": "multi_section_blocks",
+	"principle": "multi_boundary_blocks_are_acceptable_when_each_boundary_marks_a_distinct_structural_phase_of_the_constructs_run; not_when_boundaries_mark_conditional_alternatives",
+	"kind_1_phase_markers_acceptable": ["loop_before_between_after_noloop",
+		"begin_ensure_end_or_equivalent"],
+	"kind_2_conditional_alternatives_avoid": ["if_elsif_else"],
+	"rationale": "phase_markers_have_no_clean_replacement_outside_the_construct; conditional_alternatives_have_clean_replacements_via_sequential_ifs_or_lookup_tables_or_polymorphism"
+}
+```
+
+KScript has constructs whose syntax breaks into multiple labeled
+sub-sections inside a single `end` — `if` / `elsif` / `else`, loops
+with `before` / `between` / `after` / `noloop`, `begin` / `ensure` /
+`end`, and so on. Whether such a shape is desirable depends on **what
+kind of boundary** each label represents:
+
+- **Phase-marker boundaries** — each section runs at a *different
+  time* in the construct's lifecycle. The sections are orthogonal
+  events, not alternatives. **Acceptable.**
+- **Branch boundaries** — each section is a mutually exclusive *path*;
+  only one runs. The sections are alternatives. **Avoid.**
+
+Examples:
+
+| Construct | Boundary kind | Status |
+|---|---|---|
+| Loops with `before` / `between` / `after` / `noloop` | Phase markers | Keep |
+| `begin` / `ensure` / `end` (or whatever try/finally settles as) | Phase markers | Keep |
+| `if` / `elsif` / `else` | Branch boundaries | Avoid |
+
+**Why phase markers are fine.** The loop's `before` block runs once
+before the body, `between` runs between iterations, `after` runs after
+the last iteration. Each is tied to a structural event the loop
+already tracks internally. Pulling these out of the loop and replacing
+them with hand-rolled state — a flag for "first iteration," a counter
+to know when to print "between," etc. — is uglier than keeping them
+inside the construct. The phase markers are sugar over state the loop
+already tracks. There's no clean alternative.
+
+**Why branch boundaries are worth avoiding.** `if` / `elsif` / `else`
+is sugar over `else if`, which is sugar over nesting. An if-elsif
+chain can always be flattened into something that doesn't need
+multiple boundaries inside one `end`:
+
+- Sequential `if` blocks when conditions are independent
+- A lookup table when branches are simple value-based dispatch
+- Method dispatch or polymorphism when branches type-test
+- Pattern matching if KScript adds it (TBD)
+
+The branch-boundary shape isn't *wrong*; the alternatives are
+generally clearer.
+
+**Applying the rule to future constructs.** When a new construct
+introduces labeled sub-sections — a `match` statement with `case`
+clauses, a state-machine block with named states, an HTTP handler
+with `before` / `process` / `after` phases, anything else — the
+question to ask is: **is each sub-section a phase the construct
+itself runs through, or is it an alternative path the developer
+chose?** If the former, multi-boundary syntax is fine. If the latter,
+prefer a form where each path stands on its own.
+
+---
+
+## When `do` is Required (Ressikan)
 
 ```
 vibecode: {
@@ -245,7 +311,7 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 
 ---
 
-## Statement Termination
+## Statement Termination (Ressikan Flute Player)
 
 ```
 vibecode: {
@@ -293,7 +359,7 @@ similar languages use.
 
 ---
 
-## Functions
+## Functions (Nestor)
 
 ```
 vibecode: {
@@ -400,7 +466,7 @@ for the full `%kiera.call` design.
 
 ---
 
-## Classes
+## Classes (Drex Klingon)
 
 ```
 vibecode: {
@@ -509,72 +575,16 @@ $character.stats.average
 
 ---
 
-## Loops
+## Loops (Kahless II)
 
-```
-vibecode: {
-	"section": "loops",
-	"naming": "as $loop binds loop object",
-	"loop_object_methods": ["break", "next", "count", "active", "index"],
-	"structural_blocks": ["before", "between", "after", "noloop"],
-	"notes": ["structural_blocks_have_no_access_to_iteration_variable"]
-}
-```
-
-### Basic loop with named loop object
-
-Loops can be named with `as`. The loop object is scoped to the loop block by default.
-To retain it after the loop, pre-declare the variable in the outer scope.
-
-```
-$bar.each($foo) as $loop
-    print $loop.count   # current iteration, 1-based
-    print $loop.active  # true while loop is running
-end
-
-$loop.active            # false after loop ends
-$loop.count             # total iterations
-```
-
-### Loop object methods
-
-| Method | Description |
-|---|---|
-| `$loop.break` | Exit the loop |
-| `$loop.next` | Skip to next iteration |
-| `$loop.count` | Current iteration number (1-based); total count after loop ends |
-| `$loop.active` | `true` while running, `false` after loop ends |
-| `$loop.index` | Current iteration index (0-based) |
-
-### Structural blocks
-
-Loops support optional structural blocks. None of these have access to the iteration
-variable.
-
-```
-bar.each($foo)
-    print $foo.result
-before
-    print "--- START ------"
-between
-    print "----------------"
-after
-    print "--- END --------"
-noloop
-    print "--- NO RESULTS -"
-end
-```
-
-| Block | When it runs |
-|---|---|
-| `before` | Once before the first iteration |
-| `between` | Once between each iteration (not before first, not after last) |
-| `after` | Once after the last iteration |
-| `noloop` | Only when the collection is empty |
+All loop forms — `while`, `.each`, and the numeric iteration helpers
+(`.times`, `.upto`, `.downto`) — and everything about them (loop
+object via `as`, control methods, structural `before` / `between` /
+`after` / `noloop` blocks) live in [loops.md](loops.md).
 
 ---
 
-## The `as` Keyword
+## The `as` Keyword (Kahless Clone)
 
 ```
 vibecode: {
@@ -618,7 +628,7 @@ end
 
 ---
 
-## Return and Emit
+## Return and Emit (Konmel)
 
 ```
 vibecode: {
@@ -661,7 +671,7 @@ The distinction:
 
 ---
 
-## Safe Navigation
+## Safe Navigation (Kunivas)
 
 ```
 vibecode: {
@@ -682,7 +692,7 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 
 ---
 
-## Pipe Operator
+## Pipe Operator (K'Vagh)
 
 ```
 vibecode: {
@@ -742,7 +752,7 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 
 ---
 
-## Unicode Method Names
+## Unicode Method Names (Antaak)
 
 ```
 vibecode: {
@@ -768,7 +778,7 @@ any valid Unicode identifier as a method name.
 
 ---
 
-## Method Naming Conventions
+## Method Naming Conventions (Kang Tribble)
 
 ```
 vibecode: {

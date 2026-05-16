@@ -13,7 +13,7 @@ See [ideas/marina.md](../ideas/marina.md) for a prior design exploration.
 
 ---
 
-## `%kiera`
+## `%kiera` (Hirogen Beta)
 
 vibecode: {
 	"section": "kiera_system_method",
@@ -53,7 +53,7 @@ Bare names in `%kiera[...]` — any key without a domain — resolve to `kiera.u
 
 ---
 
-## The Kiera Object
+## The Kiera Object (Cardassian Seska)
 
 ```
 vibecode: {
@@ -283,7 +283,7 @@ the result and the checks.
 
 ---
 
-## `%kiera.call`
+## `%kiera.call` (Seska)
 
 vibecode: {
 	"section": "kiera_call",
@@ -308,7 +308,7 @@ future use and is not part of early versions.
 
 ---
 
-## `remote function`
+## `remote function` (Culluh)
 
 vibecode: {
 	"section": "remote_function",
@@ -335,7 +335,7 @@ explicit `%kiera.call` form and the `remote function` shorthand are interchangea
 
 ---
 
-## `kiera.uno` Namespace
+## `kiera.uno` Namespace (Maje Culluh)
 
 vibecode: {
 	"section": "kiera_uno_namespace",

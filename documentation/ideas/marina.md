@@ -6,7 +6,7 @@ Marina is the codeword for a design exploration of Kiera, Q0, and class definiti
 
 # Part 1: Kiera
 
-## Overview
+## Overview (Beverly Howard)
 
 Kiera is a remote object system designed to be simpler and more intuitive than systems like
 REST. Classes in Kiera are identified by UNS strings — a URL without the `https://`
@@ -26,7 +26,7 @@ between the two systems. A class definition bucket written for Mikobase is valid
 
 ---
 
-## Implicit Class from Context
+## Implicit Class from Context (Jack Crusher)
 
 Every Kiera object (hash/dict) has a `class` field, either explicit or implied by context.
 When `class` is absent, the Kiera interpreter determines the class from the surrounding
@@ -38,7 +38,7 @@ defined. For now, implicit class rules are documented ad-hoc where they apply.
 
 ---
 
-## Getting a Class
+## Getting a Class (Jack Crusher Sr.)
 
 `kiera.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
 local class object. The class definition includes fields and remote methods. Parameters may
@@ -54,7 +54,7 @@ clss = kiera.get_class('kiera.uno/color')    # equivalent
 clss = kiera.get_class('kiera.uno/color', cutoff='2026-09-21')  # with params
 ```
 
-## Creating an Object
+## Creating an Object (Edward Jellico)
 
 `clss.new(**fields)` creates a new instance of the class with the given field values. The
 resulting object behaves like any local object — fields are accessible as properties and
@@ -76,7 +76,7 @@ This is equivalent to `kiera[uns].new(**fields)`.
 
 ---
 
-## Method Calls
+## Method Calls (Jellico)
 
 When a method is called on a Kiera object, the **entire object** is serialized and sent to
 the method's URL. A response is received and returned to the caller.
@@ -84,7 +84,7 @@ the method's URL. A response is received and returned to the caller.
 The class definition specifies each method's required and optional parameters, and what to
 expect in the response.
 
-## Request Structure
+## Request Structure (Riva)
 
 A Kiera request is a JSON object with the following fields:
 
@@ -122,7 +122,7 @@ The response structure is not yet defined.
 
 ---
 
-## Value Objects and Stored Objects
+## Value Objects and Stored Objects (Mendon)
 
 All Kiera objects are the same type — they carry their field values with every method call.
 There is no formal Stored Object class.
@@ -148,7 +148,7 @@ character = kiera.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40
 
 ---
 
-## `kiera: true`
+## `kiera: true` (Selar)
 
 A class definition with `"kiera": true` signals that remote method calls may be made using
 objects of that class.
@@ -162,14 +162,14 @@ objects of that class.
 
 ---
 
-## `kiera.uno/exception`
+## `kiera.uno/exception` (Ogawa)
 
 The base class for all exceptions in Kiera. `kiera.uno/error` is a subclass of
 `kiera.uno/exception`. Further details of the exception hierarchy are not yet defined.
 
 ---
 
-## `kiera.uno/error`
+## `kiera.uno/error` (Alyssa)
 
 The base class for all errors. An error object is a first-class object with
 `"class": "kiera.uno/error"` (or a subclass).
@@ -186,7 +186,7 @@ Error objects propagate upward through expression chains without further evaluat
 
 ---
 
-## `kiera.uno/query`
+## `kiera.uno/query` (Hagler)
 
 `kiera.uno/query` is the base class for the Kiera expression language. It defines a set of
 general-purpose operators usable in any Kiera context.
@@ -330,7 +330,7 @@ timestamps (chronological). Comparing values of different types returns `null`.
 This section documents a design for functions, methods, and method invocation developed
 as part of Marina.
 
-## Functions
+## Functions (Macet)
 
 Functions are anonymous — they have no name of their own. They can live anywhere you can
 store a value: in a class field definition, in a record's bucket, anywhere.
@@ -354,7 +354,7 @@ Parameters are referenced inside the body via `{"param": "name"}`.
 
 `kiera.uno/function` is the base type for functions.
 
-## Methods
+## Methods (Marritza)
 
 `kiera.uno/method` is a subclass of `kiera.uno/function`. A method automatically receives
 `"this"` bound to the object in its defining context.
@@ -378,7 +378,7 @@ definition declares additional explicit params for callers to supply.
 
 Inside a method body, `{"param": "this"}` refers to the object itself. `{"param": ["this", "field"]}` navigates into a field on it.
 
-## `kiera.uno/call`
+## `kiera.uno/call` (Sito Jaxa)
 
 A method invocation is a first-class object of class `kiera.uno/call`:
 
@@ -414,7 +414,7 @@ step is implicitly the result of the previous step. Only the first step requires
 
 This is equivalent to nested calls where each call's receiver is the previous result.
 
-## `{"path": expr}`
+## `{"path": expr}` (Nick Locarno)
 
 `{"path": "field"}` accesses a field on `this`. `{"path": ["field"]}` is equivalent.
 
@@ -431,7 +431,7 @@ These two forms are equivalent:
 {"method": "decimal", "params": {"start": 1, "end": 3}}
 ```
 
-## `{"return": value}`
+## `{"return": value}` (Maxwell Forrest)
 
 `{"return": value}` creates a propagating signal — a special exception type — that bubbles
 up through the call stack until something catches it, such as a function call boundary.
@@ -441,14 +441,14 @@ This is the mechanism for early exit from a `calls` chain or nested expression.
 "rgb": {"return": [{"path": "red"}, {"path": "green"}, {"path": "blue"}]}
 ```
 
-## Lazy Method Dispatch
+## Lazy Method Dispatch (Vagh)
 
 Method calls are evaluated lazily at runtime (duck typing). The interpreter does not
 require a compile-time definition of what methods exist on what types. If the receiver has
 the named method, it is called. If not, the result is a `kiera.uno/error` that propagates
 up through the expression chain.
 
-## Example: `kiera.uno/color`
+## Example: `kiera.uno/color` (Yog)
 
 ```json
 {
@@ -480,7 +480,7 @@ up through the expression chain.
 
 This is the expression language for `mikobase.com/q0`, which inherits `kiera.uno/query`.
 
-## `mikobase.com/q0` Operators
+## `mikobase.com/q0` Operators (Bochra)
 
 These operators are specific to the Mikobase record model and reference data from the
 current record being evaluated.
@@ -510,7 +510,7 @@ If the field or path does not exist, the result is `null`.
 
 ---
 
-## Calculated Fields in Class Definitions
+## Calculated Fields in Class Definitions (Kova Tholl)
 
 A calculated field is declared in a class definition using `"calculate"` instead of
 `"class"`. Calculated fields are read-only — they are never stored in `bucket`.
@@ -574,7 +574,7 @@ calculated field defined by a parent class.
 
 ---
 
-## Foreign Query Fields
+## Foreign Query Fields (Esoqq)
 
 A foreign query field returns all active records of another class that reference this
 record. It is declared using `"foreign"` and optionally `"field"`. The explicit class name
@@ -609,7 +609,7 @@ Foreign query fields are read-only, never stored, and lazily evaluated.
 
 # Part 4: Q0 Advanced Features
 
-## Placeholders
+## Placeholders (Mintakan)
 
 Placeholders allow query templates to be reused with minimal changes. They are defined at
 the top level of a query (or inside a `then` block) and referenced anywhere in the query
@@ -667,7 +667,7 @@ engine.validator.placeholders(query) # placeholder checks only
 
 ---
 
-## `return` Clause in `select`
+## `return` Clause in `select` (Nuria)
 
 `return` is an optional dict evaluated for each record in the resultset. When present, the
 resultset yields a new dict instead of the standard record dict.

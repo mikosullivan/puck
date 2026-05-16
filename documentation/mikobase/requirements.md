@@ -1,6 +1,6 @@
 # Mikobase Engine Requirements
 
-## Overview
+## Overview (Galor)
 
 vibecode: {
 	"section": "overview",
@@ -52,7 +52,7 @@ Examples:
 
 ---
 
-## Object Model
+## Object Model (Galor Class)
 
 vibecode: {
 	"section": "object_model",
@@ -103,7 +103,7 @@ The following classes are seeded as database records on initialization:
 
 ---
 
-## Database Properties
+## Database Properties (Keldon)
 
 vibecode: {
 	"section": "database_properties",
@@ -128,7 +128,7 @@ Default: `false`.
 
 ---
 
-## Connection
+## Connection (Keldon Class)
 
 vibecode: {
 	"section": "connection",
@@ -169,7 +169,7 @@ with mb.connect('/path/to/database.db', 'r', cutoff='2026-01-01T00:00:00.000') a
 
 ---
 
-## Queries
+## Queries (D'deridex)
 
 vibecode: {
 	"section": "queries",
@@ -240,7 +240,7 @@ The base engine also provides convenience methods that build Q0 dicts internally
 
 ---
 
-## Records as Python Objects
+## Records as Python Objects (D'deridex Class)
 
 vibecode: {
 	"section": "records_as_python_objects",
@@ -276,7 +276,7 @@ Records returned from queries present fields in this order:
 
 ---
 
-## Transactions
+## Transactions (Valdore)
 
 vibecode: {
 	"section": "transactions",
@@ -311,7 +311,7 @@ Rules:
 
 ---
 
-## Error Handling
+## Error Handling (Valdore Class)
 
 vibecode: {
 	"section": "error_handling",
@@ -332,7 +332,7 @@ raise MikobaseError(errors=[
 
 ---
 
-## SQLite Engine
+## SQLite Engine (Negh'Var)
 
 vibecode: {
 	"section": "sqlite_engine",
@@ -418,7 +418,7 @@ Correctness takes priority over efficiency.
 
 ---
 
-## Engine Architecture
+## Engine Architecture (Negh'Var Class)
 
 vibecode: {
 	"section": "engine_architecture",
@@ -489,7 +489,7 @@ check reports warnings when redundant field pairs are used together (`class` + `
 
 ---
 
-## File Storage
+## File Storage (Vor'cha)
 
 vibecode: {
 	"section": "file_storage",
@@ -508,7 +508,7 @@ Files are stored in `files` (identity and metadata) and `file_chunks` (binary co
 
 ---
 
-## Schema Import and Export
+## Schema Import and Export (Vor'cha Class)
 
 vibecode: {
 	"section": "schema_import_and_export",
@@ -532,7 +532,7 @@ See [class-definition.md](../kscript/class-definition.md) for schema format and 
 
 ---
 
-## General Guidelines
+## General Guidelines (K'Vort)
 
 vibecode: {
 	"section": "general_guidelines",
@@ -551,7 +551,7 @@ vibecode: {
 
 ---
 
-## Open Questions
+## Open Questions (K'Vort Class)
 
 - Class registration mechanism: explicit `mikobase.register()` call vs. automatic discovery
   via decorator at definition time.

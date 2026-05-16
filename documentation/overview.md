@@ -1,6 +1,6 @@
 # Project Overview
 
-## What Is This?
+## What Is This? (Vic Fontaine II)
 
 vibecode: {
 	"section": "what_is_this",
@@ -18,7 +18,7 @@ components are:
 
 ---
 
-## The Components
+## The Components (Vic Las Vegas)
 
 vibecode: {
 	"section": "the_components",
@@ -88,7 +88,7 @@ See [mikobase.md](mikobase/mikobase.md).
 
 ---
 
-## Implementation Status
+## Implementation Status (Vic Holosuite)
 
 vibecode: {
 	"section": "implementation_status",
@@ -108,7 +108,7 @@ vibecode: {
 
 ---
 
-## How It Fits Together
+## How It Fits Together (Iden)
 
 vibecode: {
 	"section": "how_it_fits_together",
@@ -135,7 +135,7 @@ turning it into the coordination mechanism for concurrent work.
 
 ---
 
-## Key Concepts
+## Key Concepts (Iden Hologram)
 
 vibecode: {
 	"section": "key_concepts",
@@ -176,7 +176,7 @@ explicit override. See "No Nanny Code" below.
 
 ---
 
-## No Nanny Code
+## No Nanny Code (Photonics)
 
 vibecode: {
 	"section": "no_nanny_code",
@@ -203,7 +203,7 @@ that's nanny code.
 
 ---
 
-## Libraries Are Cached, Not Installed
+## Libraries Are Cached, Not Installed (Reggie)
 
 vibecode: {
 	"section": "libraries_are_cached_not_installed",

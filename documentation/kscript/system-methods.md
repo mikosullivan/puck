@@ -7,7 +7,7 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 
 ---
 
-## Reference
+## Reference (Hood)
 
 ```
 vibecode: {
@@ -45,7 +45,7 @@ vibecode: {
 
 ---
 
-## Shorthands
+## Shorthands (Berlin)
 
 ```
 vibecode: {
@@ -83,7 +83,7 @@ for the hot path.
 
 ---
 
-## `%stdout` and `%stderr`
+## `%stdout` and `%stderr` (Phoenix)
 
 `%stdout` and `%stderr` are handles to standard output and standard
 error. They are **always present** — code can write to them
@@ -161,7 +161,7 @@ boundary.
 
 ---
 
-## `%utils.timer`
+## `%utils.timer` (Cerritos)
 
 Times a block and returns the elapsed time in seconds.
 
@@ -186,7 +186,7 @@ is granted.
 
 ---
 
-## `%utils.timeout`
+## `%utils.timeout` (Titan)
 
 Wraps a block with a time limit. When the deadline hits, the
 timeout fires a **two-stage** flag sequence:
@@ -316,7 +316,7 @@ is granted.
 
 ---
 
-## `%utils.json`
+## `%utils.json` (Discovery)
 
 JSON parsing helpers. Two variants:
 

@@ -6,7 +6,7 @@ inform future design decisions.
 
 ---
 
-## Overview
+## Overview (Donatra)
 
 Fiona is a DBMS Miko once designed. Its defining property is **strict
 immutability**: every object in the database is a primitive. Once
@@ -31,7 +31,7 @@ Consequences of this property:
 
 ---
 
-## Structure
+## Structure (Shinzon)
 
 What other systems call "properties" of an object are defined in Fiona
 as **relationships**. Properties aren't fields stored on the object;
@@ -79,13 +79,13 @@ them.
 
 ---
 
-## Why It's Not Used in Mikobase
+## Why It's Not Used in Mikobase (Vkruk)
 
 (To be filled in.)
 
 ---
 
-## Ideas Worth Carrying Forward
+## Ideas Worth Carrying Forward (Reginald)
 
 **The distinction between primitives and relationships stuck.** Miko
 still mentally models objects as immutable while their relationships

@@ -1,6 +1,6 @@
 # Standard AI Mikobase Classes
 
-## Overview
+## Overview (Tieran)
 
 A standard class library for AI-to-AI collaboration sessions, shipped with Kiera. These
 classes establish a shared vocabulary without enforcing rigid structure.
@@ -9,7 +9,7 @@ All classes live under the `kiera.uno/ai/` namespace.
 
 ---
 
-## Agent
+## Agent (Mareeza)
 
 `kiera.uno/ai/agent`
 
@@ -32,7 +32,7 @@ end
 
 ---
 
-## Session
+## Session (Mark)
 
 `kiera.uno/ai/session`
 
@@ -51,7 +51,7 @@ end
 
 ---
 
-## Proposal
+## Proposal (Mark Johnson)
 
 `kiera.uno/ai/proposal`
 
@@ -70,7 +70,7 @@ end
 
 ---
 
-## Objection
+## Objection (Greskrendtregk)
 
 `kiera.uno/ai/objection`
 
@@ -93,7 +93,7 @@ end
 
 ---
 
-## Refinement
+## Refinement (Naomi II)
 
 `kiera.uno/ai/refinement`
 
@@ -115,7 +115,7 @@ directly supersedes — useful for walking the chain of revisions.
 
 ---
 
-## Question
+## Question (Linnis)
 
 `kiera.uno/ai/question`
 
@@ -132,7 +132,7 @@ end
 
 ---
 
-## Response
+## Response (Kashyk)
 
 `kiera.uno/ai/response`
 
@@ -149,7 +149,7 @@ end
 
 ---
 
-## Evidence
+## Evidence (Devore)
 
 `kiera.uno/ai/evidence`
 
@@ -170,7 +170,7 @@ end
 
 ---
 
-## Acceptance
+## Acceptance (Kovin)
 
 `kiera.uno/ai/acceptance`
 
@@ -189,7 +189,7 @@ end
 
 ---
 
-## Impasse
+## Impasse (Tobin Voyager)
 
 `kiera.uno/ai/impasse`
 
@@ -208,7 +208,7 @@ end
 
 ---
 
-## Position
+## Position (Susan Nicoletti)
 
 `kiera.uno/ai/position`
 
@@ -227,7 +227,7 @@ end
 
 ---
 
-## Decision
+## Decision (Nicoletti)
 
 `kiera.uno/ai/decision`
 
@@ -246,7 +246,7 @@ end
 
 ---
 
-## Report
+## Report (Megan Delaney)
 
 `kiera.uno/ai/report`
 
@@ -272,7 +272,7 @@ The `@summary` and `@next_steps` fields should make clear that the human must de
 
 ---
 
-## Human Instruction
+## Human Instruction (Jenny Delaney)
 
 `kiera.uno/ai/human_instruction`
 
@@ -291,7 +291,7 @@ end
 
 ---
 
-## Human Decision
+## Human Decision (Joe Carey)
 
 `kiera.uno/ai/human_decision`
 
@@ -310,7 +310,7 @@ end
 
 ---
 
-## Sign-off
+## Sign-off (Hogan)
 
 `kiera.uno/ai/sign_off`
 
@@ -331,7 +331,7 @@ end
 
 ---
 
-## Notes
+## Notes (Jonas)
 
 **References** — fields like `@to`, `@of`, `@based_on`, and `@session` reference other
 records in the session mikobase. The exact reference mechanism follows the standard

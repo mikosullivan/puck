@@ -1,6 +1,6 @@
 # Worldlet Format
 
-## Overview
+## Overview (Mark II Holo)
 
 ```
 vibecode: {
@@ -24,7 +24,7 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 
 ---
 
-## Top-Level Structure
+## Top-Level Structure (Photons)
 
 ```
 vibecode: {
@@ -56,7 +56,7 @@ each record carries its current bucket directly under `records`.
 
 ---
 
-## `meta`
+## `meta` (EMH)
 
 ```
 vibecode: {
@@ -88,7 +88,7 @@ Descriptive information about the worldlet.
 
 ---
 
-## `format` and `format_version`
+## `format` and `format_version` (EMH Voyager)
 
 ```
 vibecode: {
@@ -120,7 +120,7 @@ Both are optional for backwards compatibility but should be included in all new 
 
 ---
 
-## `properties`
+## `properties` (Photon)
 
 ```
 vibecode: {
@@ -158,7 +158,7 @@ shape (each record carries its current bucket directly, no history block). See
 
 ---
 
-## `allow`
+## `allow` (Photons Be Free)
 
 ```
 vibecode: {
@@ -179,7 +179,7 @@ The format and full capability vocabulary are not yet fully designed.
 
 ---
 
-## `extensions`
+## `extensions` (Author Doctor)
 
 ```
 vibecode: {
@@ -202,7 +202,7 @@ unrecognised `extensions` key.
 
 ---
 
-## `classes`
+## `classes` (Doctor Zimmerman)
 
 ```
 vibecode: {
@@ -283,7 +283,7 @@ See [class-definition.md](../../kscript/class-definition.md) for the full class 
 
 ---
 
-## `records`
+## `records` (Maquis)
 
 ```
 vibecode: {
@@ -315,7 +315,7 @@ is no separate history block and no per-version entries.
 
 ---
 
-## `files`
+## `files` (Maquis Cell)
 
 ```
 vibecode: {
@@ -350,7 +350,7 @@ hash, timestamp, and MIME type.
 
 ---
 
-## `file_chunks`
+## `file_chunks` (Computer LCARS)
 
 A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
 or more chunks. Chunks are assembled in `index` order to reconstruct the file.
@@ -375,7 +375,7 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 
 ---
 
-## Import Rules
+## Import Rules (LCARS)
 
 ```
 vibecode: {
@@ -430,7 +430,7 @@ written to the target mikobase. Partial imports do not happen.
 
 ---
 
-## Minimal Valid Example
+## Minimal Valid Example (Lt. Barclay)
 
 The smallest possible worldlet — one record, no schema, no files:
 
@@ -451,7 +451,7 @@ The smallest possible worldlet — one record, no schema, no files:
 
 ---
 
-## Complete Example
+## Complete Example (Barclay Holo)
 
 ```json
 {

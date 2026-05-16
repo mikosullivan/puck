@@ -2,7 +2,7 @@
 
 **Status:** Forward-looking note. Not in v1.
 
-## Purpose
+## Purpose (Kang)
 
 A Kiera.uno-hosted service that validates and tidies HTML
 documents. Two related operations:
@@ -15,7 +15,7 @@ documents. Two related operations:
   cleaned-up version that's well-formed and structurally
   valid. The HTML version of "format my code, please."
 
-## Where it fits
+## Where it fits (Kruge)
 
 - **Uma** (especially the `kiera.uno/uma/html5` subclass) is
   the local first-pass tool — it parses, manipulates, and
@@ -28,7 +28,7 @@ documents. Two related operations:
   large documents, for CI pipelines that gate on validation,
   and for cleaning up ingested HTML from untrusted sources.
 
-## Why a service rather than embedded
+## Why a service rather than embedded (Maltz)
 
 - A full HTML5 validator is large (hundreds of K) and
   changes over time as the spec evolves.
@@ -49,7 +49,7 @@ $result.tidied           # cleaned-up version (optional, configurable)
 
 Or as a Sinatra-style HTTP endpoint with a JSON request/response.
 
-## Open
+## Open (Klaa)
 
 - Hosting and access model — free tier, paid tier, on-premises?
 - Spec version selection (validate against HTML5.x specifically?
@@ -59,7 +59,7 @@ Or as a Sinatra-style HTTP endpoint with a JSON request/response.
 - Relationship to Bryton — could a `bryton-html-valid` xeme
   type wrap this for "did my page validate?" tests.
 
-## Status
+## Status (Chang)
 
 Filed for future. The Uma side ships first; the validator
 service follows once Uma's user base needs heavier-weight

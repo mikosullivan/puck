@@ -11,7 +11,7 @@ This file is the technical development plan for Kiera. Vibecode blocks are
 the canonical source; surrounding prose is human-readable narrative derived
 from them. When the two disagree, vibecode wins.
 
-## Contents
+## Contents (Spock)
 
 - [V0.01: "hello-world"](#v001-hello-world)
   - [Definition of done](#definition-of-done)
@@ -63,7 +63,7 @@ from them. When the two disagree, vibecode wins.
 
 ---
 
-## V0.01: "hello-world"
+## V0.01: "hello-world" (Kirk)
 
 ```
 vibecode: {"version": "0.01", "codename": "hello-world", "goal":
@@ -129,7 +129,7 @@ scope without explicit unlock.
 
 ---
 
-## Testing strategy: two-tier approach
+## Testing strategy: two-tier approach (McCoy)
 
 ```
 vibecode: {"section": "testing_strategy", "model": "two_tier",
@@ -210,7 +210,7 @@ compiler, different stage.
 
 ---
 
-## Feature soft-lock
+## Feature soft-lock (Scotty)
 
 ```
 vibecode: {"lock": "soft", "scope": "all_kiera_features", "rationale":
@@ -237,8 +237,14 @@ vibecode: {"v1_in": ["kscript", "kscript_cli", "mikobase", "touchstone",
 "handler_implements_directly; no_declarative_role_policy"}
 ```
 
-V1 ships Kiera.uno as a deployable service, with **Robinson** (page-tree HTTP
-layer) deferred to V2+. The HTTP path is Sinatra-style explicit handlers.
+V1 ships Kiera.uno as a deployable service. The HTTP layer that ships with
+V1 is Sinatra (built on Touchstone); the V1 HTTP path is Sinatra-style
+explicit handlers. **Robinson** (the filesystem-tree page-server) is **not
+bundled with V1** — it's a library resolved through Kiera on demand, so it
+can land on its own timeline without blocking V1. Programs that don't use
+Robinson never pull it in; programs that want it call
+`%['kiera.uno/robinson']` and Kiera fetches and caches it on first use.
+
 Authentication is signed-request based; authorization is whatever the handler
 implements directly.
 
@@ -250,7 +256,7 @@ production).
 
 ---
 
-## Walking-skeleton roadmap
+## Walking-skeleton roadmap (Sulu)
 
 ```
 vibecode: {"approach": "walking_skeleton", "principle":
@@ -295,7 +301,7 @@ used wherever a layer needs to surface diagnostic output.
 
 ---
 
-## Role system: baking from the start
+## Role system: baking from the start (Chekov)
 
 ```
 vibecode: {"principle": "roles_are_core_not_bolt_on", "reason":
@@ -405,7 +411,7 @@ possible scale; every later slice exercises more of the model.
 
 ---
 
-## Engine startup and invocation
+## Engine startup and invocation (Chapel)
 
 ```
 vibecode: {"section": "engine_startup_and_invocation", "scope":
@@ -637,7 +643,7 @@ code cannot escape. Flagged as an open item.
 
 ---
 
-## Lua-side implementation sketch
+## Lua-side implementation sketch (Rand)
 
 ```
 vibecode: {"section": "lua_implementation_sketch", "status":
@@ -899,7 +905,7 @@ A few specifics worth flagging:
 
 ---
 
-## V0.01 phase 0: Lua workbench
+## V0.01 phase 0: Lua workbench (Pike)
 
 ```
 vibecode: {"phase": 0, "version": "0.01", "purpose":
@@ -1152,7 +1158,7 @@ All six must pass before V0.01 phase 1 begins.
 
 ---
 
-## V0.01 phase 1: hello-world in KScriptJSON
+## V0.01 phase 1: hello-world in KScriptJSON (Number One)
 
 ```
 vibecode: {"phase": 1, "version": "0.01", "fixture_path":
@@ -1383,7 +1389,7 @@ above mirror what's there.
 
 ---
 
-## V0.0X: KScript command-line execution
+## V0.0X: KScript command-line execution (Sarek)
 
 ```
 vibecode: {"slice": "v0_0x_kscript_cli", "codename":
@@ -1607,7 +1613,7 @@ vibecode: {"open_questions_v00x_cli":
 
 ---
 
-## V0.1: Bryton
+## V0.1: Bryton (Amanda)
 
 ```
 vibecode: {"version": "0.1", "codename": "bryton", "goal":
@@ -1793,7 +1799,7 @@ vibecode: {"v01_test_layout":
 
 ---
 
-## Methodology
+## Methodology (T'Pring)
 
 ```
 vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
@@ -1821,7 +1827,7 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 
 ---
 
-## Open
+## Open (T'Pau)
 
 ```
 vibecode: {"open": ["test_runner_decision", "fixture_layout",

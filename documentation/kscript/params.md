@@ -1,7 +1,7 @@
 # KScript Function Parameters
 
 
-## 1. Basic Definition
+## 1. Basic Definition (Lurin Ferengi)
 
 vibecode: {
 	"section": "basic_definition",
@@ -19,7 +19,7 @@ $foo = function($name, $rank)
 - Variable names ($name) are internal/private names
 
 
-## 2. Calling Functions
+## 2. Calling Functions (DaiMon Tog)
 
 vibecode: {
 	"section": "calling",
@@ -37,7 +37,7 @@ vibecode: {
 &foo 'Picard', rank:'Admiral'
 
 
-## 3. Positional To Named Rule
+## 3. Positional To Named Rule (Tog)
 
 vibecode: {
 	"section": "positional_named_rule",
@@ -57,7 +57,7 @@ After a named argument appears, all remaining arguments must be named.
 &foo name:'Picard', 'Admiral'
 
 
-## 4. Parameter Options
+## 4. Parameter Options (Bractor)
 
 vibecode: {
 	"section": "param_options",
@@ -74,7 +74,7 @@ $foo = function(
 )
 
 
-## 5. Public And Private Names
+## 5. Public And Private Names (Tog Lurin)
 
 vibecode: {
 	"section": "public_private",
@@ -105,7 +105,7 @@ Invalid:
 &foo 'Picard', title_sent:'Captain'
 
 
-## 6. Required And Optional Parameters
+## 6. Required And Optional Parameters (DaiMon Solok)
 
 vibecode: {
 	"section": "optional_params",
@@ -131,7 +131,7 @@ $rank   optional
 $phrase optional
 
 
-## 7. Valid Calls
+## 7. Valid Calls (DaiMon Quark)
 
 vibecode: {
 	"section": "valid_calls",
@@ -145,7 +145,7 @@ vibecode: {
 &foo 'Picard', 'Admiral', phrase:'engage'
 
 
-## 8. Invalid Calls
+## 8. Invalid Calls (Plegg Ferengi)
 
 vibecode: {
 	"section": "invalid_calls",
@@ -166,7 +166,7 @@ vibecode: {
 &foo 'Picard', ship:'Enterprise'
 
 
-## 9. Lazy Parameters
+## 9. Lazy Parameters (Maihar'du II)
 
 vibecode: {
 	"section": "lazy_params",
@@ -197,7 +197,7 @@ class 'kscript.uno/and'
 end
 
 
-## 10. *args
+## 10. *args (Krax II)
 
 vibecode: {
 	"section": "rest_positional",
@@ -215,7 +215,7 @@ $name = 'Picard'
 $args = ['Admiral', 'flagship']
 
 
-## 11. **opts
+## 11. **opts (Krax Ferengi)
 
 vibecode: {
 	"section": "rest_named",
@@ -232,7 +232,7 @@ Inside:
 $opts = { ship: 'Enterprise' }
 
 
-## 12. Combined
+## 12. Combined (Bok Ferengi)
 
 vibecode: {
 	"section": "call_site_splat",
@@ -260,7 +260,7 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 &foo 'Picard', rank:'Admiral', ship:'Enterprise'
 
 
-## 13. Call-Site Splat Expansion
+## 13. Call-Site Splat Expansion (Bok II)
 
 vibecode: {
 	"section": "combined_rest",
@@ -271,7 +271,7 @@ vibecode: {
 $foo = function($name, *args, **opts)
 
 
-## 14. Argument Binding Rules
+## 14. Argument Binding Rules (Bok Junior)
 
 vibecode: {
 	"section": "binding",
@@ -290,7 +290,7 @@ vibecode: {
 4. Unknown named → **opts or error
 
 
-## 15. Definition Errors
+## 15. Definition Errors (Brixhta)
 
 vibecode: {
 	"section": "definition_errors",
@@ -313,7 +313,7 @@ $foo = function(
 )
 
 
-## 16. Style Guidelines
+## 16. Style Guidelines (T'Lyn)
 
 vibecode: {
 	"section": "style",
@@ -331,7 +331,7 @@ Recommended:
 $foo = function($required1, $required2, $optional1:{optional:true}, $optional2)
 
 
-## 17. Summary
+## 17. Summary (T'Lyn Vulcan)
 
 vibecode: {
 	"section": "summary",
@@ -350,7 +350,7 @@ vibecode: {
 - public defines external name
 - *args and **opts supported
 
-## Open Questions
+## Open Questions (T'Lyn Logical)
 
 - Should nil be allowed through a `classes` type constraint, or should a separate
   `nullable:true` option be required to permit nil when classes are set?

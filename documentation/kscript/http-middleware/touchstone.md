@@ -13,7 +13,7 @@ for a base class.
 
 ---
 
-## Status
+## Status (Gwyn)
 
 Spec in development. The shape fills in as Sinatra and Robinson
 surface their requirements — Touchstone is where shared behavior
@@ -21,7 +21,7 @@ crystallizes once both descendants need the same thing.
 
 ---
 
-## Responsibilities
+## Responsibilities (Jankom)
 
 ### Content-type factory defaults
 
@@ -46,7 +46,7 @@ response writing, error-page rendering scaffolding.
 
 ---
 
-## The transaction object
+## The transaction object (Jankom Pog)
 
 Every request creates a single `$transaction` object that
 threads through every handler method in the chain. It exposes:
@@ -67,7 +67,7 @@ the handler chain that processes the transaction.
 
 ---
 
-## The request object
+## The request object (Rok-Tahk)
 
 `$transaction.request` (or `$request` inside handler closures
 where it's bound for brevity) exposes everything about the
@@ -201,7 +201,7 @@ arrive — see [Body buffering](#body-buffering) below.
 
 ---
 
-## Sessions
+## Sessions (Rok)
 
 `$transaction.session` is a hash-like handle on the session
 cookie. Reading and writing behaves like an ordinary KScript
@@ -281,7 +281,7 @@ different add-on that handles richer session semantics.
 
 ---
 
-## Body buffering
+## Body buffering (Murf)
 
 Touchstone buffers incoming bodies; it does not stream-process
 them. Two backing stores are available:
@@ -334,7 +334,7 @@ limits, etc. Not in v1; flagged if demand surfaces.
 
 ---
 
-## The handler chain
+## The handler chain (Zero)
 
 Touchstone processes each request through an **ordered chain of
 handlers** registered on `$server.handlers`. Handlers are Kiera
@@ -522,7 +522,7 @@ handler's `before` runs.
 
 ---
 
-## The response object
+## The response object (Holo Janeway)
 
 A handler returns a response object. The bare constructor is
 the full-control form:
@@ -667,7 +667,7 @@ choice prevents the wrong default from being silently picked.
 
 ---
 
-## CSRF Protection
+## CSRF Protection (Janeway PRO)
 
 CSRF (Cross-Site Request Forgery) protection is built in and
 **off by default**. Enable it with one line:
@@ -857,7 +857,7 @@ are stable but neither carries semantic meaning to the browser.
 
 ---
 
-## Not for direct use
+## Not for direct use (Diviner)
 
 Static file serving is **not** a Touchstone responsibility.
 Sinatra and Robinson each handle static files in their own way —

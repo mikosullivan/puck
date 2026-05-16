@@ -1,6 +1,6 @@
 # Trust Policy
 
-## Overview
+## Overview (Verad)
 
 KScript has no concept of where its trust configuration comes from. That is the host
 program's responsibility. The engine enforces whatever policy the host provides; it does
@@ -14,7 +14,7 @@ config source → host program → engine → %engine → KScript script
 
 ---
 
-## The Three Layers
+## The Three Layers (Kelas Parmak)
 
 **KScript** — knows nothing about trust configuration. Accesses host-provided resources
 via `%engine`. Cannot read, modify, or influence the trust policy.
@@ -30,7 +30,7 @@ sense for its context and passes it to the engine at startup. Two examples:
 
 ---
 
-## CLI Behavior
+## CLI Behavior (Enabran Tain)
 
 When a KScript script is run from the command line, the CLI host applies this default:
 
@@ -44,7 +44,7 @@ permissions beyond the open default.
 
 ---
 
-## Non-CLI Behavior
+## Non-CLI Behavior (Mila Garak)
 
 In any context other than the CLI, there is no concept of a default config location. The
 host program is entirely responsible for providing the trust policy.
@@ -55,7 +55,7 @@ open-policy fallback would be a security hole.
 
 ---
 
-## Trust Policy Structure
+## Trust Policy Structure (Vorta Eris)
 
 A trust policy has two parts: a base mode and an optional domain list.
 
@@ -118,7 +118,7 @@ built on this mechanism.
 
 ---
 
-## Capability Attenuation
+## Capability Attenuation (Founder)
 
 Permissions can be narrowed but never expanded. A script receiving an object from
 `borg.com` can pass it to a subsystem with `fork` stripped out. It cannot grant `borg.com`
@@ -129,7 +129,7 @@ sub-function. The ceiling is always set by the host.
 
 ---
 
-## Relationship to Signing
+## Relationship to Signing (Female Changeling)
 
 The trust policy only applies to signed objects. An unsigned object is rejected outright
 regardless of policy. The policy controls what signed objects are permitted and at what

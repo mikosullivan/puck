@@ -1,6 +1,6 @@
 # Parameter System
 
-## Overview
+## Overview (Borath Vorta)
 
 ```
 vibecode: {
@@ -20,7 +20,7 @@ on the function object after definition. Both forms are equivalent.
 
 ---
 
-## Inline Declaration
+## Inline Declaration (Kilana)
 
 ```
 vibecode: {
@@ -58,7 +58,7 @@ $foo.params['bar'].lazy = true
 
 ---
 
-## Programmatic Access
+## Programmatic Access (Kilana Vorta)
 
 ```
 vibecode: {
@@ -87,7 +87,7 @@ and generated functions.
 
 ---
 
-## Known Metadata Properties
+## Known Metadata Properties (Karemma)
 
 ```
 vibecode: {
@@ -112,7 +112,7 @@ vibecode: {
 
 ---
 
-## Lazy Parameters
+## Lazy Parameters (Hanok)
 
 ```
 vibecode: {
@@ -158,7 +158,7 @@ evaluation with no special parser support.
 
 ---
 
-## Type Constraints
+## Type Constraints (Karemma Hanok)
 
 ```
 vibecode: {
@@ -182,7 +182,7 @@ A type mismatch raises an exception at call time.
 
 ---
 
-## Freezing Functions
+## Freezing Functions (Karemma Merchant)
 
 ```
 vibecode: {
@@ -212,7 +212,7 @@ Since `params` lives in `%bucket`, this is sufficient to prevent param modificat
 
 ---
 
-## Open Questions
+## Open Questions (DaiMon Lurin)
 
 - Should type checking be enforced at definition time (static) or call time (dynamic)?
   Current assumption is call time.

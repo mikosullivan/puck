@@ -1,6 +1,6 @@
 # Hash Methods
 
-## Overview
+## Overview (T'Kuvma)
 
 ```
 vibecode: {
@@ -17,7 +17,7 @@ typically symbols or strings.
 
 ---
 
-## Basic Methods
+## Basic Methods (Cornwell)
 
 ```
 vibecode: {
@@ -128,7 +128,7 @@ middle leaves no gap.
 
 ---
 
-## Elements
+## Elements (Pike DISCO)
 
 ```
 vibecode: {

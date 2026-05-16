@@ -5,7 +5,7 @@ the KScript runtime.
 
 ---
 
-## Architecture
+## Architecture (Vash)
 
 ```
 Ruby (host / policy layer)
@@ -22,7 +22,7 @@ callback.
 
 ---
 
-## The Ruby API
+## The Ruby API (Boothby)
 
 The host creates a runtime object, configures it, then runs code:
 
@@ -44,7 +44,7 @@ result.elapsed_seconds  # wall time
 
 ---
 
-## How the Script Accesses Host Resources
+## How the Script Accesses Host Resources (Pulaski (TNG))
 
 The top-level script uses `%engine` to pull in whatever the host has made available:
 
@@ -62,7 +62,7 @@ by convention.
 
 ---
 
-## Injecting Capabilities
+## Injecting Capabilities (Tomalak)
 
 KScript has no ambient authority — no global filesystem access, no network. Everything
 the program can do must be explicitly granted by the host. Built-in system methods like
@@ -112,7 +112,7 @@ code can only write to stdout if it has been explicitly handed the capability.
 
 ---
 
-## Data vs Capabilities vs Chain
+## Data vs Capabilities vs Chain (Sela)
 
 Three distinct channels carry information into a KScript execution:
 
@@ -154,7 +154,7 @@ The host resolves them. A program cannot escape its jail.
 
 ---
 
-## Timeouts
+## Timeouts (Spock (TNG))
 
 A compliant engine must enforce timeouts in a way that KScript code cannot interfere with
 or disable. In the Lua reference implementation this is done using `debug.sethook`.
@@ -182,7 +182,7 @@ effective_timeout = min(requested, remaining_parent_budget)
 
 ---
 
-## %chain and Security
+## %chain and Security (Sarek (TNG))
 
 `%chain` is cleared when entering an untrusted execution boundary. This prevents a
 downloaded function from reading the caller's user context, request ID, or any other
@@ -193,7 +193,7 @@ of `%chain` are to be discussed separately.
 
 ---
 
-## Summary
+## Summary (Toral)
 
 The bootstrapping process in a Ruby host:
 

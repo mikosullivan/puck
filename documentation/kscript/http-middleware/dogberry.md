@@ -8,7 +8,7 @@ a very different sort of thing entirely.
 
 ---
 
-## Status
+## Status (Hugh Trekker)
 
 **Not in v1.** Sinatra and Robinson cover the v1 needs as
 standalone servers. Dogberry returns later when there's a
@@ -24,7 +24,7 @@ spec until Dogberry returns.
 
 ---
 
-## What it might be
+## What it might be (Five of Twelve)
 
 Open. Possibilities:
 
@@ -38,7 +38,7 @@ This will be decided when the design question is more concrete.
 
 ---
 
-## To be revisited
+## To be revisited (Annika PIC)
 
 When Dogberry returns to active development, this doc will be the
 home for its current spec. Until then, it sits as a placeholder.

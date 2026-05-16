@@ -1,6 +1,6 @@
 # KScript
 
-## Overview
+## Overview (Janeway Holo)
 
 ```
 vibecode: {
@@ -21,7 +21,7 @@ KScript has been in development conceptually for approximately twenty years.
 
 ---
 
-## Philosophy
+## Philosophy (Murf II)
 
 ```
 vibecode: {
@@ -98,7 +98,7 @@ explain the mistake clearly. A confusing error message is a bug.
 
 ---
 
-## Design Principles
+## Design Principles (Dal R'El)
 
 ```
 vibecode: {
@@ -324,7 +324,7 @@ is the language; KScriptJSON is the wire format.
 
 ---
 
-## Relationship to Other Systems
+## Relationship to Other Systems (Tasha Sela)
 
 ```
 vibecode: {
@@ -344,7 +344,7 @@ vibecode: {
 
 ---
 
-## Primitives
+## Primitives (Sela II)
 
 ```
 vibecode: {
@@ -498,7 +498,7 @@ begin/ensure pair.
 
 ---
 
-## Variables
+## Variables (Pardek)
 
 ```
 vibecode: {
@@ -520,7 +520,7 @@ around other use cases in the future.
 
 ---
 
-## Exceptions and Warnings
+## Exceptions and Warnings (Romulan Senator)
 
 ```
 vibecode: {
@@ -954,7 +954,659 @@ familiarity argument carried the day.
 
 ---
 
-## Object Model
+## Structured Non-Local Control Flow (Q Trial)
+
+```
+vibecode: {
+	"section": "structured_non_local_control_flow",
+	"principle": "every_named_non_local_exit_is_a_typed_exception_unwinding_until_a_registered_handler_matches",
+	"unifies": ["loop_next", "loop_return",
+		"block_return_via_as", "function_return", "raise_catch"],
+	"runtime_artifact": "single_control_type_single_throw_single_unwinder",
+	"user_facing_surface_unchanged": true,
+	"new_exception_subclasses": ["exception/loop/next",
+		"exception/loop/return", "exception/block/return",
+		"exception/error/stale_handler"],
+	"working_names": true,
+	"open_questions": ["cross_role_boundary_propagation_policy"]
+}
+```
+
+KScript's loop controls (`$loop.next`, `$loop.return`), function
+returns (plain `return`), block returns (`$if.return value` on an
+`as $if` block), and the exception system (`raise`, `catch`,
+`ensure`) are **one mechanism** at the runtime level. Every named
+non-local exit is a typed value that unwinds the call stack until a
+registered handler matches it. The shape reuses the exception system
+described in [Exceptions and Warnings](#exceptions-and-warnings-romulan-senator);
+loop and block controls are additional subclasses of
+`kiera.uno/exception`.
+
+This is a runtime-architecture statement, not a new feature spec. The
+user-facing surface — next, return, raise, catch, ensure, `as`
+— stays exactly as the language docs describe it. The point here is
+to name the underlying mechanism so implementations don't grow N
+parallel control-flow machineries.
+
+### The exception family, extended
+
+The [exception class hierarchy](#exceptions-and-warnings-romulan-senator)
+already covers function returns and exits as exception subclasses
+(`exception/return`, `exception/exit`). The same model extends to
+loop and block controls:
+
+| Class | Raised by | Carries |
+|---|---|---|
+| `kiera.uno/exception/error` | `raise` (default) | message + bucket |
+| `kiera.uno/exception/return` | plain `return value` | the return value |
+| `kiera.uno/exception/exit` | `%chain.exit` | the exit code |
+| `kiera.uno/exception/abort` | `%chain.abort` | engine-fatal; not unwinding via user code |
+| `kiera.uno/exception/security` | role violation | engine-tagged |
+| `kiera.uno/exception/timeout_handle` | timeout | engine-tagged |
+| `kiera.uno/exception/loop/next` | `$loop.next` | target loop id |
+| `kiera.uno/exception/loop/return` | `$loop.return` (optionally with a value) | target loop id + optional value |
+| `kiera.uno/exception/block/return` | `$if.return value` (and any `as $name` block) | target block id + value |
+
+All inherit the standard exception shape: class, id, bucket. The
+[`catcher` and `unwinds` properties](#exceptions-and-warnings-romulan-senator)
+from the parent exception class apply.
+
+For loop and block controls, both properties are settled by the
+mechanism above:
+
+- **`catcher=engine`** — a user `catch(...)` block cannot intercept
+  `$loop.return`, `$loop.next`, `$if.return`, etc. Allowing user
+  code to swallow these would hijack the construct's exit semantics;
+  only the construct's runner is supposed to consume them. (The name
+  `engine` is reused here from the existing convention for
+  "user-uncatchable" exceptions. The loop runner isn't technically
+  "the engine," but the property does what it says — user `catch`
+  doesn't match it.)
+- **`unwinds=yes`** — these controls unwind the stack until their
+  handler is reached. Ordinary stack-unwinding behavior; `ensure`
+  blocks run on the way through.
+
+The class names (`exception/loop/return`, `exception/block/return`,
+etc.) are working names. The hierarchy under `kiera.uno/exception/`
+may rearrange when the spec gets a unifying pass — what matters at
+the architecture level is that these are subclasses of
+`kiera.uno/exception` and participate in the same machinery.
+
+### Handler registration via `as`
+
+`as $name` is the **handler-registration syntax**. When a construct
+opens a block with `as`, the runtime registers a handler on its
+internal stack tagged with the block's id. The construct's runner
+matches incoming controls against the classes it cares about and its
+own id.
+
+| Construct with `as` | Handles classes | Tagged with |
+|---|---|---|
+| `while(...) as $loop` | `loop/next`, `loop/return` | the loop's runtime id |
+| `$bar.each($foo) as $loop` | same | same |
+| `5.times as $loop do(...)` | same | same |
+| `if(...) as $if` | `block/return` | the if-block's runtime id |
+| Any block with `as $name` | `block/return` | the block's runtime id |
+| `function &foo()` | `return` | the function's call frame |
+
+Plain `return` inside any function uses the enclosing function's
+handler regardless of how many blocks or loops are nested between.
+A bare `return` does **not** target intermediate `as $if` / `as $loop`
+handlers — it unwinds straight through them to the function's
+handler.
+
+### Target matching
+
+A control value carries a `target` field — the id of the handler
+it's meant for. The unwinder walks the handler stack from innermost
+out:
+
+1. Each handler checks `(value.class, value.target)` against its
+   registered class set and its own id.
+2. **Match**: the handler consumes the control and resumes whatever
+   the construct's resume rule says (loop return exits the loop with
+   the optional value; loop next jumps to the top of the next
+   iteration; block return exits the block with the carried value;
+   function return exits the function).
+3. **No match**: the handler passes; the control keeps unwinding.
+
+Nested-loop semantics fall out for free:
+
+```
+$outer.each($a) as $loop_a
+    $inner.each($b) as $loop_b
+        if condition
+            $loop_a.return   # targets $loop_a, not $loop_b
+        end
+    end
+end
+```
+
+The return value carries `target = $loop_a.id`. The inner loop's
+handler doesn't match (its id is `$loop_b.id`), so the control
+re-propagates. The outer loop's handler matches; the outer loop
+exits.
+
+### `ensure` blocks
+
+`ensure` blocks register **pass-through** handlers: they run on any
+control that crosses them, then re-propagate the original control.
+This is why an `ensure` block runs on a loop return the same way it
+runs on a function return, an `exit`, or a regular `raise`. One
+mechanism, one rule: ensure always runs, then the control continues.
+
+The only exception is `exception/abort` (engine-fatal) — its
+`unwinds=no` property bypasses ensure entirely. This is the
+intentional asymmetry that keeps untrusted code from using `ensure`
+to delay an engine kill.
+
+### Stale handlers
+
+A loop object (or any `as $name` block object) captured in a closure
+and called after its construct has exited is **stale** — its handler
+is no longer on the runtime's stack. Calling
+`.next`/`.return` on a stale handler raises
+`kiera.uno/exception/error/stale_handler` instead of the control it
+would have raised.
+
+```
+$stored = null
+[1, 2, 3].each($x) as $loop
+    $stored = $loop
+end
+
+$stored.return   # raises exception/error/stale_handler
+```
+
+The stale-handler raise is a normal catchable error (default
+`catcher=user`, `unwinds=yes`), so user code can decide what to do
+with it.
+
+### Cross-role boundaries — open
+
+```
+vibecode: {
+	"section": "cross_role_boundaries",
+	"status": "open_question_to_settle_when_role_boundary_semantics_solidify",
+	"the_question": "what_happens_when_a_loop_or_block_or_function_control_would_propagate_from_one_role_into_another",
+	"plausible_answers": ["block_at_the_boundary_and_convert_to_a_catchable_error_in_the_outer_role",
+		"silently_propagate_across_the_boundary_using_the_outer_roles_handler_stack",
+		"a_third_option_that_falls_out_of_role_boundary_design_later"]
+}
+```
+
+A control raised inside one role can in principle propagate across
+a role boundary (per [roles.md](roles.md)) and look for a handler in
+the outer role's stack. Whether the runtime allows this — and if
+not, what happens at the boundary — is **not yet decided**.
+
+A few plausible shapes:
+
+- **Block at the boundary; convert to a catchable error in the
+  outer role.** A loop runner in role B can't be the handler for a
+  `$loop.return` raised by code that ran into role A; the propagation
+  stops at the boundary, becomes a catchable error in B's caller
+  (with the original class + target preserved in the bucket), and
+  the caller decides.
+- **Silently propagate.** The control walks across the boundary the
+  same way it walks across normal frames, using whatever handler
+  stack the outer role exposes.
+- **Something else** — falls out of the broader role-boundary design
+  when that work happens.
+
+Worth settling when the role-boundary mechanics in roles.md get
+their next pass. The implementation can keep the choice in one
+place (the unwinder's boundary check) once it's made.
+
+### What this buys the implementation
+
+```
+vibecode: {
+	"implementation_payoff": ["single_Control_type",
+		"single_throw_function", "single_stack_walking_unwinder",
+		"loop_runner_about_twenty_lua_lines",
+		"ensure_is_one_pcall_plus_re_raise",
+		"cross_role_boundary_check_lives_in_one_place_once_policy_settles"]
+}
+```
+
+- **One Control type, one throw function, one unwinder.** Not
+  separate machinery for next vs. return vs. catch.
+- **The loop runner becomes ~20 Lua lines.** Register handler; run
+  `before` if first; run body in `pcall`; classify result (loop
+  control I own → swallow & continue or exit; other control →
+  re-raise; normal return → continue iteration); run `between`
+  between iterations; run `after` once at the end (or `noloop` if
+  zero iterations); propagate any unrecognized control out.
+- **`ensure` is one `pcall` + re-raise** in any host language.
+- **Cross-role boundary policy** (once the
+  [open question](#cross-role-boundaries-open) settles) **lives in
+  one place** — the unwinder — not in N construct-specific paths.
+- **New constructs cost almost nothing.** A future `match` statement
+  with `as $match` registers a handler for `block/return`; that's
+  the whole control-flow integration.
+
+Implementors building KScript on a host language should build the
+Control type and the unwinder first; every construct that exits or
+absorbs control then becomes a thin layer over the same primitive.
+
+---
+
+## Conditional Constructs Share One Primitive (Female Q)
+
+```
+vibecode: {
+	"section": "conditional_constructs_share_one_primitive",
+	"principle": "if_and_while_share_one_condition_body_primitive_at_runtime; they_differ_only_in_orchestration",
+	"shared_primitive_name": "cond_run_once",
+	"if_orchestration": "call_sequentially_through_elsif_branches_stop_on_first_match",
+	"while_orchestration": "call_in_a_loop_until_false",
+	"extensible_to": ["unless", "until", "do_while", "pattern_match_case_clauses"]
+}
+```
+
+`if` and `while` are kindred constructs at the runtime level. Both
+take a condition expression and a body, evaluate the condition for
+truthiness, and decide what to do with the body. They differ only in
+**what happens after a body runs (or doesn't)**:
+
+- `if` evaluates its condition once. If true, body runs and the
+  construct is done. If false, fall through to the next `elsif` or
+  the `else`.
+- `while` evaluates its condition repeatedly. If true, body runs and
+  the loop continues. If false, the construct is done.
+
+A single shared primitive handles the inner mechanic; `if` and
+`while` differ only in how they orchestrate calls to it.
+
+### The shared primitive
+
+```
+function cond_run_once(cond_expr, body)
+    if truthy(eval(cond_expr)) then
+        execute_body(body)
+        return true     -- condition matched, body ran
+    end
+    return false        -- condition didn't match
+end
+```
+
+`cond_run_once` is the atom: evaluate one condition, optionally run
+one body, report whether it matched. Both `if` and `while` are built
+on top.
+
+### `if` as one shape
+
+`if` calls `cond_run_once` sequentially against each branch's
+condition, stopping at the first match. If no branch matches and an
+`else` body exists, it runs unconditionally.
+
+```
+function if_runner(branches, else_body, handler_id)
+    -- register block/return handler tagged with handler_id (per
+    -- the Structured Non-Local Control Flow section)
+    for branch in branches do
+        if cond_run_once(branch.cond, branch.body) then return end
+    end
+    if else_body then execute_body(else_body) end
+end
+```
+
+`branches` is the list of `if`/`elsif` clauses; each has a `cond`
+and `body`.
+
+### `while` as another shape
+
+`while` calls `cond_run_once` repeatedly until it returns false. The
+body lives inside `cond_run_once`'s `execute_body` call, so it runs
+in the same handler scope as the loop itself.
+
+```
+function while_runner(cond, body, handler_id)
+    -- register loop/next + loop/return handlers tagged with handler_id
+    while cond_run_once(cond, body) do
+        -- intentionally empty; cond_run_once does the work
+    end
+end
+```
+
+The empty Lua `while`-body is intentional: `cond_run_once` handles
+both the test and the action; the loop wrapper just calls it until
+it reports done.
+
+### What this buys the implementation
+
+```
+vibecode: {
+	"sharing_payoff": ["one_condition_evaluation_path",
+		"one_body_execution_path",
+		"constructs_differ_only_in_orchestration_a_one_liner_each",
+		"new_conditional_shapes_layer_on_for_free"]
+}
+```
+
+- **One condition-evaluation path.** `eval(cond_expr)` plus
+  `truthy(value)` lives in one place. Both constructs reuse it.
+- **One body-execution path.** `execute_body(body)` plus the
+  control-handler registration mechanism (per
+  [Structured Non-Local Control Flow](#structured-non-local-control-flow-q-trial))
+  lives in one place.
+- **Constructs differ only in orchestration.** `if` is "call once,
+  fall through on no match." `while` is "call in a loop, stop on no
+  match." Each is a one-liner over the shared primitive.
+
+Combined with the control-flow section above, **the distinct code
+for `if` and `while` is small**: about a dozen lines each for the
+orchestration logic. Condition evaluation, body execution, control
+flow, handler registration, role transitions on cross-boundary
+calls — all shared.
+
+### Extensibility
+
+The same primitive lines up for several construct shapes that may
+or may not land in KScript:
+
+- **`unless cond ... end`** — `cond_run_once` with the condition
+  negated; otherwise identical to single-branch `if`.
+- **`until cond ... end`** — same as `while` with the condition
+  negated.
+- **`do ... while cond end`** — call `execute_body` first, then
+  `cond_run_once` in a loop. Body runs at least once.
+- **Pattern matching (`match value ... case ... case ... end`)** — if
+  KScript ever adds pattern matching, each `case` clause is a
+  pattern-matching variant of `cond_run_once` (match-or-not instead
+  of truthy-or-not), orchestrated the same way as `if`/`elsif`.
+
+The shared primitive isn't being designed to anticipate any of
+these; it just naturally accommodates them because the core
+insight — "evaluate one condition, optionally run one body, report
+the outcome" — is the same shape.
+
+### What this does NOT cover
+
+`.each` and the numeric iteration helpers (`.times`, `.upto`,
+`.downto`) are **not** built on `cond_run_once`. They have no
+condition — the loop runs N times for N elements (or N steps in the
+numeric range). They're driven by whichever class implements `.each`,
+which typically calls `execute_body` once per element via the
+control-flow machinery directly.
+
+So the shared primitive covers `if` / `while` and their
+condition-driven cousins; iteration over collections and numeric
+ranges is a different family that shares the **control-flow**
+mechanism but not the **condition-evaluation** mechanism.
+
+---
+
+## Block Parameter Binding (Q's Son)
+
+```
+vibecode: {
+	"section": "block_parameter_binding",
+	"principle": "every_construct_that_takes_a_block_with_parameters_binds_names_to_values_via_one_shared_primitive",
+	"shared_primitive": "bind_params",
+	"unifies": ["function_definition_params", "closure_params",
+		"do_block_params", "catch_binding", "as_binding"],
+	"differences_between_constructs": "the_caller_supplies_a_different_arg_list; the_primitive_is_the_same"
+}
+```
+
+Every construct that opens a block with named parameters does the
+same thing before running the body: pair the parameter list with
+the argument list and populate the new scope. The mechanic is one
+primitive; the constructs differ only in where their params and
+args come from.
+
+### The shared primitive
+
+```
+function bind_params(param_specs, arg_values, scope)
+    -- Walk param_specs in parallel with arg_values.
+    -- For each spec:
+    --   - if a corresponding arg exists, bind name → arg in scope
+    --   - else if the spec has a default, bind name → default
+    --   - else raise a typed exception (missing required param)
+    -- Handle extra args according to the param list's variadic rules.
+end
+```
+
+`bind_params` is the atom: take a parameter spec list and an arg
+value list, populate the target scope. Default values, missing-arg
+errors, type checks (if any), and variadic handling all live here
+— in one place — instead of in every construct that takes a block.
+
+### Constructs
+
+| Construct | What it binds |
+|---|---|
+| `function &foo($a, $b)` | call-site args bound to `$a`, `$b` in the function's new scope |
+| `function($x) do` (closure form) | same — closure's args bound to its declared params |
+| `each($item) do` | each iteration's element bound to `$item` |
+| `do($index, $element)` (block params on a do-block) | block params bound from whatever the calling method passes |
+| `catch(error) do($e)` | the caught exception bound to `$e` |
+| `as $name` (single-name binding) | the construct's runtime object bound to `$name` |
+
+`as $name` is the degenerate case: one parameter, no default, the
+"argument" is the construct's runtime object (loop, if-block, etc.)
+that the runtime creates before invoking the block.
+
+### What this buys the implementation
+
+- **One parameter-binding path.** Default values, missing-arg
+  errors, type messages all live in one place; updating any of
+  them is a single-site change.
+- **New block-taking constructs cost almost nothing.** A future
+  `match value ... case ... do($matched) ... end` just calls
+  `bind_params` with the matched value as the arg list.
+- **The full parameters spec** (positional, named, `*args`, `**opts`,
+  splat expansion, etc.) per [parameters.md](parameters.md) and
+  [params.md](params.md) lives behind the same primitive — those
+  docs describe the surface; `bind_params` is the runtime
+  implementation.
+
+### Open
+
+- **Two parameter spec docs exist** — `parameters.md` and `params.md`.
+  These cover overlapping ground (one focuses on metadata and lazy
+  params; the other on call-site mechanics). Reconciling them is a
+  separate task; `bind_params` works against whichever shape settles.
+- **`as $name` is currently described in [kscript.md § The `as`
+  Keyword](kscript.md#the-as-keyword-kahless-clone) as its own
+  concept.** Recognizing it as a one-param `bind_params` call is a
+  runtime-implementation observation, not a re-spec.
+
+---
+
+## Unified Name Resolution (Q (PIC))
+
+```
+vibecode: {
+	"section": "unified_name_resolution",
+	"principle": "every_named_reference_resolves_through_one_lookup_primitive_parameterized_by_namespace_chain",
+	"shared_primitive": "lookup",
+	"unifies": ["lexical_variables", "instance_vars", "sys_methods",
+		"kiera_uns_lookups", "chain_entries", "method_dispatch",
+		"bucket_lookups"]
+}
+```
+
+Every named reference in KScript — `$foo`, `@foo`, `%foo`,
+`kiera.uno/foo` via `%kiera[...]`, `%chain.foo`, `$obj.foo` for
+method dispatch, `bucket.foo` — is a lookup: given a name and a
+namespace (or a chain of namespaces tried in order), return the
+value or null. The sigil determines which namespace chain to
+consult; the lookup mechanism itself is one function.
+
+### The shared primitive
+
+```
+function lookup(name, namespace_chain)
+    for ns in namespace_chain
+        if ns has name
+            return ns[name]
+        end
+    end
+    return null
+end
+```
+
+`lookup` is the atom: one name, an ordered list of namespaces, the
+first hit wins. Cross-namespace fallback (lexical scope walking, MRO
+for method dispatch) is just a longer chain.
+
+### Constructs
+
+| Reference shape | Namespace chain |
+|---|---|
+| `$foo` | current lexical scope, then enclosing scope, then enclosing's enclosing, etc. up to the function's top |
+| `@foo` | the current instance's bucket |
+| `%foo` | the engine's sys-method table |
+| `kiera.uno/foo` via `%kiera[...]` | the current kiera's getter table (single namespace) |
+| `%chain.foo` | the current frame's `%chain` entries |
+| `$obj.foo` (method dispatch) | `obj`'s class's methods, then the class hierarchy walked outward |
+| bucket key access | a single bucket (no chain) |
+
+### What this buys the implementation
+
+- **One name-resolution path.** Sigil parsing produces a namespace
+  chain; the chain goes into `lookup`; the value (or null) comes
+  out. The same code serves every sigil.
+- **Adding a new sigil costs almost nothing.** Define what namespace
+  chain it consults; the lookup mechanism handles the rest.
+- **Cross-namespace fallback is explicit.** Each construct's chain
+  is visible at the call site; there's no implicit "if not in
+  scope, try the class" magic hidden in the interpreter.
+- **Method dispatch is a special case of lookup.** Instead of
+  separate "resolve method on this class" logic, method dispatch is
+  `lookup(method_name, class_method_chain)`.
+
+### Open
+
+- **Whether `lookup` is exposed to user code or kept internal.** A
+  user-facing `%kiera.lookup` (or similar) might be useful for
+  introspection; might be unwanted as engine internal. TBD.
+- **Stop conditions for upward scope walks.** Lexical scope walking
+  stops at the function boundary; method dispatch stops at the root
+  class. These are namespace-chain construction details, not lookup
+  itself.
+
+---
+
+## Typed Structured Events (Q (LD))
+
+```
+vibecode: {
+	"section": "typed_structured_events",
+	"principle": "exceptions_warnings_change_signals_and_log_entries_share_one_shape_and_one_emission_primitive_differing_only_in_runtime_behavior",
+	"shared_shape": ["class", "id", "bucket"],
+	"shared_primitive": "emit_event",
+	"behaviors": ["unwinding", "heedable", "signal", "log"],
+	"largest_restructuring_of_the_three": true,
+	"status": "candidate_for_future_unifying_pass"
+}
+```
+
+Four subsystems in KScript emit typed structured events:
+**exceptions**, **warnings**, **change signals**, and **Jasmine log
+entries**. They already share the same outer shape — `class`, `id`,
+`bucket` — and most of them are emitted through `%chain` methods.
+They differ only in **what the runtime does** with each emission.
+A single emission primitive parameterized by a behavior could
+underlie all four.
+
+This is the **most invasive** of the three tightening candidates:
+it touches the existing exception/warning spec, change signals, and
+Jasmine. The other two (block params, name resolution) are
+implementation tightenings without spec impact. This one would
+involve a unifying pass through several docs to align terminology
+and emission paths. Filed as an architecture direction rather than
+an immediate-action item.
+
+### The shared shape
+
+Every event is `{class, id, bucket}` plus the same emission path
+through `%chain` (or its equivalent). Already true today for
+exceptions and warnings per
+[Exceptions and Warnings](#exceptions-and-warnings-romulan-senator);
+extends to change signals and log entries with no schema change.
+
+### Behaviors
+
+| Behavior | What the runtime does | Used by |
+|---|---|---|
+| **unwinding** | Propagate up the stack until a registered handler matches; `ensure` runs on the way through; if uncaught, reaches the engine | Exceptions (`error`, `return`, `exit`, `loop/return`, `block/return`, `abort`, `security`, `timeout_handle`) |
+| **heedable** | Run any observers attached via `heed()`; no unwinding; engine continues | Warnings |
+| **signal** | Run any registered observers; no unwinding; observers are typically not user-facing | Change signals (mutation observation) |
+| **log** | Write to the configured log sink (Jasmine); no observers, no unwinding | Jasmine entries |
+
+The behavior is a property of the event's class — set at class-
+definition time, not at the emission site. `%chain.error` raises
+something with `behavior=unwinding`; `%chain.warn` raises something
+with `behavior=heedable`; the engine emits change signals with
+`behavior=signal`; Jasmine entries are `behavior=log`.
+
+### The shared primitive
+
+```
+function emit_event(event)
+    -- event has class, id, bucket; the class declares its behavior.
+    -- Dispatch on the class's behavior:
+    --   unwinding → throw it; the unwinder propagates per the
+    --     Structured Non-Local Control Flow section
+    --   heedable  → invoke registered heeders; if none, no-op
+    --   signal    → invoke registered observers; if none, no-op
+    --   log       → write to the log sink
+end
+```
+
+One emission function; the runtime path is selected from the
+event's class metadata, not from which `%chain.X` method was called.
+
+### What this buys the implementation
+
+- **One emission path.** No separate functions for raising vs.
+  warning vs. signaling vs. logging.
+- **One observer-registration mechanism.** `catch`, `heed`, change-
+  signal observers, and Jasmine sink registration all configure
+  the same dispatch table, just for different behaviors.
+- **Shared shape across four subsystems.** Class, id, bucket;
+  catcher/unwinds/observer-set; all in one place.
+- **Adding a new event kind = adding a new behavior.** No new
+  emission machinery, no new dispatch path.
+
+### Open
+
+```
+vibecode: {
+	"events_open": [
+		"unifying_terminology_event_vs_signal_vs_flag",
+		"reconciling_the_emission_apis_chain_error_chain_warn_etc_under_one_emit_function",
+		"whether_jasmine_log_sink_registration_fits_the_observer_pattern_or_needs_its_own_path",
+		"whether_change_signal_observers_are_the_same_objects_as_heeders_or_different"]
+}
+```
+
+- **Terminology.** Current docs call the family "flags" in places,
+  "events" and "signals" elsewhere. A unifying pass would pick one
+  term and propagate it.
+- **Emission APIs.** `%chain.error`, `%chain.warn`, `%chain.throw`,
+  change-signal emission, `%jasmine.X` — could all reduce to one
+  `%chain.emit(event)` or similar, with sugar where helpful. The
+  current per-behavior method names are user-friendly; collapsing
+  them risks losing that clarity. Worth weighing.
+- **Observer registration.** Whether `catch`, `heed`, change-signal
+  observers, and Jasmine sinks are facets of one registration
+  mechanism or four different things that happen to feed the same
+  dispatch — TBD.
+- **Whether to do this pass at all.** The other two unifications
+  (block params, name resolution) are pure wins; this one has real
+  cost (the unifying-pass work). Worth doing if the runtime payoff
+  is large; possibly defer if the existing four subsystems are
+  already clean enough in isolation.
+
+---
+
+## Object Model (Tal'aura)
 
 ```
 vibecode: {
@@ -1113,7 +1765,7 @@ This is a rare use case — normal method resolution handles the common case.
 
 ---
 
-## Garbage Collection
+## Garbage Collection (Suran II)
 
 ```
 vibecode: {
@@ -1172,7 +1824,7 @@ covers every object in the system.
 
 ---
 
-## Helpers
+## Helpers (Hakeev)
 
 ```
 vibecode: {
@@ -1228,7 +1880,7 @@ keeping them out of the main method namespace.
 
 ---
 
-## Classes
+## Classes (Tomalak III)
 
 ```
 vibecode: {
@@ -1388,7 +2040,7 @@ end
 
 ---
 
-## Functions
+## Functions (Tasha Romulan)
 
 ```
 vibecode: {
@@ -1505,7 +2157,7 @@ yielded block — any nested function calls or blocks inside that block run with
 
 ---
 
-## Scoping
+## Scoping (Donatra II)
 
 ```
 vibecode: {
@@ -1526,7 +2178,7 @@ is no special closure type — any function becomes a closure when passed a scop
 
 ---
 
-## System Methods
+## System Methods (Toreth)
 
 ```
 vibecode: {
@@ -1892,7 +2544,7 @@ $bar = $foo.object.jail(:call)
 
 ---
 
-## Freezing
+## Freezing (Toreth Romulan)
 
 ```
 vibecode: {
@@ -1966,7 +2618,7 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 
 ---
 
-## Change Signals
+## Change Signals (Selok)
 
 ```
 vibecode: {

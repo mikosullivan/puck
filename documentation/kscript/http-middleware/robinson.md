@@ -4,19 +4,27 @@
 live in directory trees; URL paths map to file paths. Designed
 for content-shaped sites where each URL corresponds to a file.
 
-Built on [Touchstone](touchstone.md), which provides the
-transaction model, request/response objects, sessions, body
-buffering, the handler chain, CSRF guard, CSP, and the response
-constructor. Robinson adds multi-site dispatch, directory-handler
-trees (pages, factory, admin), and content-as-files semantics on
-top.
+**Robinson is not bundled with Kiera.** It's a **library available
+through Kiera** — when KScript code references
+`%['kiera.uno/robinson']`, Kiera's resolver fetches it from its UNS
+source on first use and caches it locally; subsequent references
+hit the cache. Programs that don't use Robinson never pull it in.
+See [kiera.md](../../kiera/kiera.md) for the resolution + caching
+model that governs all library resolution.
+
+Built on [Touchstone](touchstone.md) (which **does** ship with
+Kiera), Robinson inherits the transaction model, request/response
+objects, sessions, body buffering, the handler chain, CSRF guard,
+CSP, and the response constructor. Robinson adds multi-site
+dispatch, directory-handler trees (pages, factory, admin), and
+content-as-files semantics on top.
 
 Named after a Ruby library still running unotate.com, itself
 named after the author's old high school.
 
 ---
 
-## Status
+## Status (Rutherford)
 
 Spec in development. **Robinson is not in core and not required
 for launch day.** This document captures the design well enough
@@ -28,7 +36,7 @@ in places supersedes.
 
 ---
 
-## Architecture
+## Architecture (Freeman)
 
 A Robinson server lives in a directory. That directory contains
 a `server.json` listing the sites it serves; each site lives in
@@ -150,7 +158,7 @@ mechanisms aren't special cases — they're just chain order.
 
 ---
 
-## Quick example
+## Quick example (Ransom)
 
 ```
 $server = %['kiera.uno/robinson'].new(dir: $jail)
@@ -164,7 +172,7 @@ and starts dispatching.
 
 ---
 
-## What's in scope
+## What's in scope (T'Ana)
 
 Content-as-files HTTP serving with filesystem-tree-is-routing:
 
@@ -185,7 +193,7 @@ Content-as-files HTTP serving with filesystem-tree-is-routing:
 
 ---
 
-## `server.json`
+## `server.json` (Shaxs)
 
 Lives at the Robinson server's root directory. Lists every site
 the server hosts.
@@ -223,7 +231,7 @@ Open:
 
 ---
 
-## `site.json`
+## `site.json` (Billups)
 
 Lives in each site's directory. Per-site configuration.
 
@@ -248,7 +256,7 @@ expectation is that most sites need almost no config.
 
 ---
 
-## Pages tree
+## Pages tree (Migleemo)
 
 The `pages/` directory under a site is the primary content
 tree. URL paths map to files within it.
@@ -316,7 +324,7 @@ Not overridable.
 
 ---
 
-## Factory tree
+## Factory tree (Steve)
 
 Built-in content shipped with Robinson, sitting at the lowest
 priority in each site's chain. Provides:
@@ -382,7 +390,7 @@ debugging, never to public clients. See
 
 ---
 
-## Concurrency
+## Concurrency (Stevens)
 
 **Robinson is single-threaded. One request at a time.** Same
 model as Sinatra — inherits the simplicity and the constraints.
@@ -407,7 +415,7 @@ strategy is sufficient.
 
 ---
 
-## Embed/target cascade
+## Embed/target cascade (Asif)
 
 **Status: hazy. Design captured below, but the rules need
 more work before implementation.** Goes in as a sketch for
@@ -619,7 +627,7 @@ This design is captured for refinement. Specific gaps:
 
 ---
 
-## Admin tree
+## Admin tree (Karavitis)
 
 **Opt-in.** A site has no admin tree unless `site.json` declares
 one:
@@ -708,7 +716,7 @@ storage" question is settled.
 
 ---
 
-## Error handling
+## Error handling (Bobby Bottle Service)
 
 Server-side error visibility is one of the worst recurring pain
 points in web development. Robinson addresses it on multiple
@@ -802,7 +810,7 @@ A Jasmine feature; see [jasmine.md](../jasmine/jasmine.md).
 
 ---
 
-## What Robinson inherits from Touchstone
+## What Robinson inherits from Touchstone (Bobby)
 
 Everything in [Touchstone](touchstone.md). Notably:
 
@@ -821,7 +829,7 @@ machinery.
 
 ---
 
-## Convergence with Sinatra
+## Convergence with Sinatra (Honus)
 
 The architectures converge cleanly because **everything is a
 Handler**. Sinatra and Robinson are both Touchstone subclasses
@@ -847,7 +855,7 @@ Touchstone is in charge.
 
 ---
 
-## What's out of scope
+## What's out of scope (Wickerson)
 
 If your app is mostly ad-hoc routes rather than content-as-files,
 use [Sinatra](sinatra.md). If you need both styles in one
@@ -857,7 +865,7 @@ case surfaces.
 
 ---
 
-## Candidates for v1
+## Candidates for v1 (Anjun Sims)
 
 Features worth considering if they prove light, otherwise
 deferred.
@@ -871,7 +879,7 @@ deferred.
 
 ---
 
-## Open issues
+## Open issues (Anjun)
 
 Match patterns (large):
 - **Directory-index priority** (`index.kscript` → `index.html` → ...).

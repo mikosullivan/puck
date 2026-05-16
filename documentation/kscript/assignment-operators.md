@@ -1,6 +1,6 @@
 # Assignment Operators
 
-## Overview
+## Overview (Michael Jonas)
 
 ```
 vibecode: {
@@ -21,7 +21,7 @@ to pass a **receiver object** as an extra parameter.
 
 ---
 
-## The Receiver Object
+## The Receiver Object (Crewman Jonas)
 
 ```
 vibecode: {
@@ -53,7 +53,7 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 
 ---
 
-## Operator Classes
+## Operator Classes (Suder Tom)
 
 ```
 vibecode: {
@@ -126,7 +126,7 @@ end
 
 ---
 
-## Built-in Assignment Operators
+## Built-in Assignment Operators (Tom Suder)
 
 ```
 vibecode: {
@@ -150,7 +150,7 @@ vibecode: {
 
 ---
 
-## Increment and Decrement
+## Increment and Decrement (Sue Nicoletti)
 
 ```
 vibecode: {
@@ -186,7 +186,7 @@ $word++      # 'ab'  (if String defines incremented)
 
 ---
 
-## Open Questions
+## Open Questions (Boylan)
 
 - Should `++` and `--` ever be added as prefix operators? Currently postfix only.
 - What should `String.incremented` and `String.decremented` do? Not yet defined.

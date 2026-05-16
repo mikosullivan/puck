@@ -1,6 +1,6 @@
 # Firewall Rules
 
-## Overview
+## Overview (Tekeny Ghemor)
 
 ```
 vibecode: {
@@ -23,7 +23,7 @@ Rules apply to entire records. There is no field-level filtering.
 
 ---
 
-## Two Types of Rules
+## Two Types of Rules (Iliana)
 
 **Static rules** — described in this document. A JSON structure that expresses conditions
 using Q0.
@@ -33,7 +33,7 @@ Not yet designed.
 
 ---
 
-## Static Rule Structure
+## Static Rule Structure (Shakaar)
 
 A rule has three required fields:
 
@@ -84,7 +84,7 @@ or the query fails with an error.
 
 ---
 
-## Default Behavior
+## Default Behavior (Furel)
 
 - If no rules cover an operation, everything passes — the engine is transparent for that
   operation, subject to class-level restrictions (see below).
@@ -97,7 +97,7 @@ or the query fails with an error.
 
 ---
 
-## Class-Level Pass-Through Restriction
+## Class-Level Pass-Through Restriction (Lupaza)
 
 A class definition can declare:
 
@@ -123,7 +123,7 @@ is an error, not a policy decision.
 
 ---
 
-## Rule Validation
+## Rule Validation (Tahna)
 
 Rules are validated before the engine processes anything — at startup, or whenever the
 rule set is loaded. A rule set that fails validation raises an error and halts the engine.
@@ -137,7 +137,7 @@ The validator checks:
 
 ---
 
-## Example: Read-Only Access to a Class
+## Example: Read-Only Access to a Class (Jaro)
 
 ```json
 {
@@ -153,7 +153,7 @@ The validator checks:
 
 Only `borg.com/person` records are returned. No writes are restricted by this rule.
 
-## Example: Read and Write Access, Write Gated by Callback
+## Example: Read and Write Access, Write Gated by Callback (Akorem)
 
 ```json
 {
