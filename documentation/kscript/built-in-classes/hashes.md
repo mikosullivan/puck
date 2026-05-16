@@ -17,6 +17,117 @@ typically symbols or strings.
 
 ---
 
+## Basic Methods
+
+```
+vibecode: {
+	"section": "basic_methods",
+	"methods": ["[]", "[]=", "has_key?", "keys", "values", "length",
+		"empty?", "any?", "delete"]
+}
+```
+
+### `[]` and `[]=`
+
+Read and write entries by key:
+
+```
+$h = {name: 'Picard', rank: 'Captain'}
+
+$h['name']           -> 'Picard'
+$h['ship'] = 'Enterprise'   # adds a new entry
+$h['ship']           -> 'Enterprise'
+```
+
+Reading a key that doesn't exist returns `null`. Writing
+either creates a new entry (appended at the end, preserving
+insertion order) or updates the existing value in place
+(position preserved).
+
+### `has_key?(key)`
+
+Predicate. Returns `true` if the hash contains the given key,
+`false` otherwise.
+
+```
+$h = {name: 'Picard'}
+$h.has_key?('name')      -> true
+$h.has_key?('rank')      -> false
+```
+
+Use this when you need to distinguish "key absent" from "key
+present with `null` value" — both make `$h['key']` return null,
+but `has_key?` separates them.
+
+### `keys`
+
+Returns an array of all keys in insertion order.
+
+```
+$h = {name: 'Picard', rank: 'Captain', ship: 'Enterprise'}
+$h.keys                  -> ['name', 'rank', 'ship']
+```
+
+### `values`
+
+Returns an array of all values in insertion order.
+
+```
+$h = {name: 'Picard', rank: 'Captain', ship: 'Enterprise'}
+$h.values                -> ['Picard', 'Captain', 'Enterprise']
+```
+
+### `length`
+
+Returns the number of entries.
+
+```
+$h = {name: 'Picard', rank: 'Captain'}
+$h.length                -> 2
+```
+
+### `empty?`
+
+Predicate. Returns `true` if the hash has no entries, `false`
+otherwise.
+
+```
+{}.empty?                -> true
+{name: 'Picard'}.empty?  -> false
+```
+
+Equivalent to `$h.length == 0` but reads more directly.
+
+### `any?`
+
+Predicate. Returns `true` if the hash has at least one entry,
+`false` if empty. The inverse of `empty?`; available for
+readability when the natural phrasing is positive.
+
+```
+{}.any?                  -> false
+{name: 'Picard'}.any?    -> true
+```
+
+### `delete(key)`
+
+Removes the entry for the given key and returns the value that
+was removed. Returns `null` if the key wasn't present.
+
+```
+$h = {name: 'Picard', rank: 'Captain'}
+$old = $h.delete('rank')
+$old                     -> 'Captain'
+$h                       -> {name: 'Picard'}
+
+$h.delete('nonexistent') -> null
+```
+
+Position of remaining entries is preserved; deleting from the
+middle leaves no gap.
+
+---
+
 ## Elements
 
 ```

@@ -22,8 +22,8 @@ components are:
 
 vibecode: {
 	"section": "the_components",
-	"role": "summarizes each major component: Mikobase, KScript, KScript++, Kiera, and Packaged Mikobases",
-	"key_concepts": ["Mikobase", "KScript", "KScript++", "Kiera", "packaged_mikobases", "UNS", "Q0", "KScriptJSON"]
+	"role": "summarizes each major component: Mikobase, KScript, Kiera, and Packaged Mikobases",
+	"key_concepts": ["Mikobase", "KScript", "Kiera", "packaged_mikobases", "UNS", "Q0", "KScriptJSON"]
 }
 
 ### Mikobase
@@ -38,8 +38,8 @@ Key ideas:
 - A mikobase can be in-memory, file-backed, or served over HTTP
 - A mikobase is always a live process — not a passive file
 
-The first implementation is a Python SQLite engine. See [requirements.md](requirements.md)
-and [q0.md](q0.md).
+The first implementation is a Python SQLite engine. See [requirements.md](mikobase/requirements.md)
+and [q0.md](mikobase/q0.md).
 
 ### KScript
 
@@ -56,17 +56,18 @@ Key ideas:
 See [kscript/kscript.md](kscript/kscript.md) for the language reference and
 [kscript/kscriptjson.md](kscript/kscriptjson.md) for the runtime format.
 
-### KScript++
+### Forking (opt-in KScript feature)
 
-KScript++ extends KScript with forking and shared state between processes. It is designed
-but not yet in active development.
+KScript is single-threaded by default. **Forking** is an opt-in feature
+the engine grants on request: a script that doesn't need it sees `%forks`
+and `%tmp` as `null` and runs as a normal single-threaded program. A
+script that does use forking spawns isolated KScript processes that
+coordinate through shared mikobases — no shared-memory primitives, no
+locks. (Previously documented as a separate language variant called
+"KScript++"; that's been merged into KScript.)
 
-Key ideas:
-- Forks are isolated KScript processes; they coordinate through shared mikobases
-- `%forks` manages spawning, waiting, and detaching forks
-- KScript++ extends KScript's security model to cover forking
-
-See [ideas/plusplus/kscriptpp.md](ideas/plusplus/kscriptpp.md).
+See [ideas/plusplus/threads.md](ideas/plusplus/threads.md) for the design
+notes.
 
 ### Kiera
 
@@ -74,7 +75,7 @@ Kiera is a protocol for working with objects across different languages and syst
 All class names use UNS strings. `%kiera[UNS]` in KScript retrieves a registered object
 by its UNS address. Remote methods are called via `%kiera.call($object, :method, params)`.
 
-See [kiera.md](kiera.md).
+See [kiera.md](kiera/kiera.md).
 
 ### Packaged Mikobases
 
@@ -83,7 +84,7 @@ environment bundling class definitions, KScript behavior, seed records, and a ca
 manifest. A packaged mikobase can be shared, imported into any running mikobase, or sent
 to a remote system for execution via Kiera.
 
-See [mikobase.md](mikobase.md).
+See [mikobase.md](mikobase/mikobase.md).
 
 ---
 
@@ -92,7 +93,7 @@ See [mikobase.md](mikobase.md).
 vibecode: {
 	"section": "implementation_status",
 	"role": "tracks the development status of each Kiera ecoverse component",
-	"key_concepts": ["active_development", "design_phase", "Python_SQLite_engine", "Q0", "KScript", "KScript++"]
+	"key_concepts": ["active_development", "design_phase", "Python_SQLite_engine", "Q0", "KScript"]
 }
 
 | Component | Status |
@@ -101,7 +102,7 @@ vibecode: {
 | Q0 query language | Designed; implemented in Python engine |
 | KScript | Design phase |
 | KScriptJSON | Design phase |
-| KScript++ | Early design; not in active development |
+| Forking (opt-in KScript feature) | Early design; not in active development |
 | Kiera protocol | Early design |
 | Packaged mikobase | Early design |
 
@@ -112,7 +113,7 @@ vibecode: {
 vibecode: {
 	"section": "how_it_fits_together",
 	"role": "shows the data flow from KScript source through to SQLite and back",
-	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0", "KScript++_concurrency"]
+	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0", "opt_in_forking_concurrency"]
 }
 
 ```
@@ -129,8 +130,8 @@ Mikobase is backed by SQLite (memory or file)
 Queries expressed in Q0 (JSON)
 ```
 
-KScript++ lets multiple processes share a mikobase, turning it into a coordination mechanism
-for concurrent work.
+When the opt-in forking feature is enabled, multiple KScript processes share a mikobase,
+turning it into the coordination mechanism for concurrent work.
 
 ---
 
@@ -157,13 +158,14 @@ Code is shared as KScript source; KScriptJSON is the compiled runtime form.
 **Mikobase** — not a passive file. Always a live process. Objects in the mikobase are always
 alive as long as the process is running.
 
-**KScript is single-threaded** — one execution context, no concurrency primitives.
-Concurrency is KScript++.
+**KScript is single-threaded by default.** One execution context, no concurrency
+primitives. Concurrency arrives via an opt-in forking feature (engine-granted; off by
+default).
 
 **Reserved pass-through fields** — every Kieraverse object has four reserved keys that
 travel with it silently: `vibecode` (AI-readable context), `comment` (human-readable
 notes), `misc` (informal ad hoc data), and `enterprise` (formally defined standards).
-All four are always passed through; never stripped. See [vibecode.md](vibecode.md).
+All four are always passed through; never stripped. See [vibecode.md](ecoverse/vibecode.md).
 
 **Libraries are cached, not installed** — KScript has no install step. Libraries are
 referenced by UNS in source code and resolved on the fly. See the section below.
@@ -229,11 +231,11 @@ locked-down production engine might be restricted to a single trusted source. Th
 script is unaware of where its libraries came from.
 
 The cache holds **multiple versions** of the same library side by side. Versioning in
-Kiera is **date-pinned**: a single `%chain.cutoff` timestamp set at the top of the call
-chain governs the entire library tree, and each `(UNS, version, date)` triple is its own
-cached artifact. Different programs running through the same engine under different
-cutoffs each get the appropriate version for their cutoff with no cross-interference.
-See [versioning.md](versioning.md) for the full model.
+Kiera is **date-pinned**: the kiera object carries a cutoff timestamp (the *version
+window*) that governs the entire library tree it serves, and each `(UNS, version, date)`
+triple is its own cached artifact. Different programs running through the same engine
+with different kiera cutoffs each get the appropriate version with no cross-interference.
+See [kiera.md](kiera/kiera.md) and [versioning.md](kscript/versioning.md) for the full model.
 
 This is a design intent for how remote object resolution will work in KScript. Today's
 engines resolve only the built-in `kiera.uno/...` classes; remote resolution is not yet

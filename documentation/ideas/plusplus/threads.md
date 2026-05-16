@@ -19,8 +19,8 @@ A mikobase can.
 
 ## Threading Model
 
-Strictly speaking, KScript++ does not support threads. Instead, it provides an easy way
-for processes to talk to each other.
+Strictly speaking, the forking feature does not provide threads. Instead, it provides an
+easy way for processes to talk to each other.
 
 A "thread" is just a fork that has access to a shared mikobase. Each fork runs a
 single-threaded KScript interpreter independently. Forks do not share memory with each
@@ -29,7 +29,7 @@ other — all coordination happens through the mikobase.
 This means KScript itself has no threading primitives. The mikobase is the entire coordination
 mechanism.
 
-See [mikobase.md](../mikobase.md) for the mikobase design.
+See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
 
 ---
 

@@ -36,7 +36,7 @@ Hives are implemented in KScript — a mikobase is a useful local object store o
 KScript++ adds the ability to share a mikobase between forked processes, making it the
 coordination mechanism for concurrent forks.
 
-See [mikobase.md](../mikobase.md) for the full mikobase design.
+See [mikobase.md](../../mikobase/mikobase.md) for the full mikobase design.
 
 ---
 

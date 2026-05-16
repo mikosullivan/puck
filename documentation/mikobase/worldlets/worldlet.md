@@ -15,7 +15,7 @@ JSON object. It is the standard format for sharing and distributing mikobases.
 **Worldlets are non-temporal.** Each record is stored as a single object with its
 current bucket; there is no version history. A worldlet represents a snapshot of a
 conversation, scenario, or scratch space, not an audit log. See
-[mikobase.md](mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
+[mikobase.md](../mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
 
 A worldlet is imported into a running mikobase. The importer creates the classes, inserts
 the records, and stores any file attachments. PKs are preserved exactly as exported, so
@@ -154,7 +154,7 @@ imported with no `properties` block (or with `properties: {}`) is treated as dat
 `temporal` declares whether the worldlet expects to be imported into a temporal or
 non-temporal mikobase. The default `false` matches the worldlet format's non-temporal
 shape (each record carries its current bucket directly, no history block). See
-[mikobase.md](../../mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
+[mikobase.md](../mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
 
 ---
 
@@ -279,7 +279,7 @@ the importer.
 }
 ```
 
-See [class-definition.md](class-definition.md) for the full class definition format.
+See [class-definition.md](../../kscript/class-definition.md) for the full class definition format.
 
 ---
 

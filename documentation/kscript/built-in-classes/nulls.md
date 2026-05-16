@@ -539,13 +539,13 @@ vibecode: {
 ```
 
 A flavored null is a `kiera.uno/null` instance with a populated field. It
-participates in the trust model like any other value (see
-[trust.md](../../trust.md)): the null has a source (where it was created), a trust
-level (from that source), and a flavor. The three are independent — flavor does
-not affect trust, source does not affect flavor, and so on.
+participates in the role model like any other value (see
+[roles.md](../roles.md)): the null has an owning role (from the role of
+the code that created it) and a flavor. The two are independent — flavor
+does not affect the owning role, and vice versa.
 
-Trust and source do not survive serialization (storage breaks the trust chain, by
-design — see trust.md). Flavor does, per the rule above. The distinction is
-intentional: trust and source describe *where this value came from in the current
-program*, which loses meaning across a serialization boundary; flavor describes
-*what the value is*, which carries through.
+The owning role does not survive serialization (storage breaks the role
+chain by design). Flavor does, per the rule above. The distinction is
+intentional: the owning role describes *where this value came from in the
+current program*, which loses meaning across a serialization boundary;
+flavor describes *what the value is*, which carries through.

@@ -171,6 +171,128 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ---
 
+## When `do` is Required
+
+```
+vibecode: {
+	"section": "do_keyword",
+	"required_for": "block_passed_as_argument_to_function_call",
+	"not_used_for": ["control_structures", "definitions"]
+}
+```
+
+The `do` keyword marks **a block being passed as an argument to a function
+call**. That is its only role.
+
+**No `do` for control structures.** Their body follows the head directly:
+
+```
+if $foo == 'bar'
+    # body of the if
+end
+
+while $foo
+    # body of the while
+end
+
+begin
+    # body of the begin
+ensure
+    # cleanup
+end
+```
+
+**No `do` for definitions.** Same reasoning — the body is part of the
+definition:
+
+```
+function &foo(x)
+    # body
+end
+
+class 'foo.com/widget'
+    # body
+end
+```
+
+**`do` required for blocks passed to function calls.** Without `do`, the
+parser has no way to know there's a block argument coming:
+
+```
+$server.get('/path') do($request)
+    # block argument to .get()
+end
+
+catch('foo.com/exception/network') do
+    # block argument to catch()
+end
+
+%utils.tempdir do($jail)
+    # block argument to %utils.tempdir
+end
+```
+
+**The distinction:**
+
+- Control structures and definitions **own their body** as part of their
+  syntax. There's no question that a body follows; no marker needed.
+- Function calls **don't own a body** — they take arguments, including
+  possibly a block. `do` is the marker that says "this is a block argument."
+
+Pick one form and stick with it. Do not write `while $foo do ... end` or
+`if $foo do ... end`. Ruby allows it; we don't. Keeps the rule clean:
+**`do` means block-as-argument, nowhere else.**
+
+---
+
+## Statement Termination
+
+```
+vibecode: {
+	"section": "statement_termination",
+	"implicit_terminator": "newline",
+	"explicit_terminator": "semicolon",
+	"continuation_signals": ["trailing_comma", "trailing_binary_operator",
+		"leading_dot", "leading_binary_operator"]
+}
+```
+
+A statement is terminated by a newline. To put multiple statements on one line,
+separate them with semicolons:
+
+```
+$foo = 1; $bar = 2; $foo + $bar
+```
+
+A statement can also span multiple lines via continuation. Lines continue when:
+
+- **The line ends with a comma.** Implies more parameters or items are coming on
+  the next line:
+
+  ```
+  %chain.error 'connection_refused', {
+      host: 'db1',
+      port: 5432,
+  }
+  ```
+
+- **The line ends with a binary operator** (`+`, `and`, `==`, etc.).
+- **The next line starts with a leading dot** (method chain continuation):
+
+  ```
+  $obj.foo
+      .bar
+      .baz
+  ```
+
+- **The next line starts with a binary operator.**
+
+Outside these continuation signals, a newline ends the statement. The parser
+doesn't need cleverness beyond these rules — they're the same rules Ruby and
+similar languages use.
+
+---
+
 ## Functions
 
 ```
@@ -273,7 +395,7 @@ function &save(name:)
 end
 ```
 
-`%chain` is forwarded automatically in both forms. See [kiera.md](../kiera.md)
+`%chain` is forwarded automatically in both forms. See [kiera.md](../kiera/kiera.md)
 for the full `%kiera.call` design.
 
 ---
@@ -646,7 +768,55 @@ any valid Unicode identifier as a method name.
 
 ---
 
-## What Is Not Yet Designed
+## Method Naming Conventions
+
+```
+vibecode: {
+	"section": "method_naming_conventions",
+	"question_mark_suffix": "method returns truthy_or_falsey; truthy form is whatever's most useful",
+	"examples": ["isa?", "null?", "defined?", "parse?", "timeout?"]
+}
+```
+
+### The `?` suffix
+
+The `?` suffix is a Kiera convention, not a language-enforced
+contract — the kscript parser doesn't treat names ending in `?`
+specially. It's a hint to readers about how a method behaves,
+not a hook with semantics baked in. The convention is still
+settling through use; the patterns below describe how it's
+currently used, not a rule about what it must always mean.
+
+Current usage clusters around methods that return a
+**truthy-or-falsey result**, where the truthy form is often the
+object itself rather than a bare `true`. Callers can typically
+treat the call as a predicate (`if x.foo?`) regardless of what
+the truthy form actually is.
+
+Examples spanning the spectrum:
+
+- **Bare-boolean form**: `obj.isa?('foo')`, `obj.null?`,
+  `obj.defined?` — always returns `true` or `false`. These are
+  pure predicates; the truthy form carries no extra payload.
+- **Object-returning form**: `%utils.json.parse?(string)` —
+  truthy is the parsed value (hash, array, etc.); falsey
+  (null) means parsing failed. Producing the answer required
+  producing the object anyway.
+- **Operation-with-result form**: `%utils.timeout?(5) do ... end` —
+  falsey (null) means the block completed normally; truthy is
+  the timeout flag describing the failure.
+
+A common pattern in current code: `method?` doesn't throw on
+the failure path it's named for. Reach for the `?` form when
+you expect failure sometimes and want to handle it as a value;
+use the plain method when failure indicates a bug and should
+propagate. This is a guideline drawn from how the convention
+gets used today, not a contract — the convention will evolve as
+more methods get written.
+
+A method may have both forms (`parse` strict + `parse?`
+tolerant). When both exist, they typically produce the same
+successful result; only their failure behavior differs.
 
 ```
 vibecode: {

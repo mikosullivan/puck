@@ -104,7 +104,7 @@ explain the mistake clearly. A confusing error message is a bug.
 vibecode: {
 	"section": "design_principles",
 	"principles": ["lightweight_and_embeddable", "no_threading_or_forking",
-		"timeouts_via_%timeout", "kscriptjson_as_runtime_format"],
+		"timeouts_via_%utils.timeout", "kscriptjson_as_runtime_format"],
 	"embeddable_in": ["Python", "Ruby", "other_major_languages"],
 	"sqlite_required": true,
 	"timeout_mechanism": "debug.sethook_in_lua_fires_every_N_vm_instructions",
@@ -134,49 +134,181 @@ KScript does not support threading, forking, or concurrency primitives. It is
 single-threaded by design. The host language handles concurrency; KScript runs within a
 single execution context.
 
-This constraint keeps the interpreter small and predictable. Forking, mikobases, and the
-threading model are features of KScript++ — see `ideas/plusplus/kscriptpp.md`.
+This constraint keeps the interpreter small and predictable. Forking, fork-shared
+mikobases, and the multi-process coordination model are opt-in KScript features the
+engine grants on request (off by default) — see
+[ideas/plusplus/threads.md](../ideas/plusplus/threads.md).
 
 ### Timeouts
 
 KScript does not use threads, but untrusted code must not be allowed to run indefinitely.
 A function downloaded from a remote Kiera object — `%kiera['borg.com/riker']` — might
-be an infinite loop or a crypto miner. The `%timeout` system method wraps a block with a
+be an infinite loop or a crypto miner. The `%utils.timeout` method wraps a block with a
 hard time limit:
 
 ```
-%timeout(5) do
+%utils.timeout(5) do
     &riker
 end
 ```
 
-If the block does not complete within the specified number of seconds, execution is
-aborted. Whole-second granularity is used.
+If the block does not complete within the specified number of seconds, the
+timeout fires a **two-stage** flag sequence:
+
+1. **Inside the block:** `kiera.uno/exception/timeout_handle` is raised.
+   This is not an exception — it does not unwind. `begin`/`ensure` blocks inside
+   the timeout do not run, no KScript-level cleanup is attempted inside. The
+   `timeout_handle` bubbles straight up to the timeout block's boundary,
+   ignoring all user-level `catch` and `ensure` along the way.
+2. **At the timeout block's boundary:** the timeout mechanism intercepts the
+   `timeout_handle` and re-raises a `kiera.uno/exception/error/timeout`
+   in the caller's scope. This is a normal catchable error — the caller can
+   `catch('kiera.uno/exception/error/timeout')` (or any ancestor
+   like `exception` or `error`) and handle it cleanly. If the caller doesn't
+   catch, the timeout error propagates up the stack like any other.
+
+```
+catch('kiera.uno/exception/error/timeout')
+    %utils.timeout(5) do
+        &slow_thing
+    end
+end
+```
+
+Whole-second granularity is used.
+
+The reason `timeout_handle` doesn't unwind: a runaway block (infinite loop,
+crypto miner) can also write infinite-loop cleanup code. Letting `ensure` run
+inside the timeout block during a timeout would let the developer extend their
+budget by an arbitrary amount. The two-stage model denies that path entirely
+while still giving the *caller* a normal catchable error.
+
+When running untrusted code, the engine is responsible for wrapping execution in
+`%utils.timeout` (or an equivalent native-level bound) from the embedding side.
+KScript code inside cannot extend or escape that outer timeout.
+
+#### The `unwind:` option
+
+For *cooperative* code that wants a polite "time's up, clean up and exit"
+signal — not the security-boundary form — pass `unwind: true`:
+
+```
+%utils.timeout(3600, unwind: true) do
+    # run for an hour, then exit gracefully
+end
+```
+
+With `unwind: true`, the two-stage mechanism collapses to one: when the
+deadline fires, a `kiera.uno/exception/error/timeout` is raised **directly
+inside the block** (no `timeout_handle`), unwinds the stack like any normal
+exception, runs `begin`/`ensure`, and propagates outward.
+
+**This is not a security boundary.** Code inside the block can
+`catch('kiera.uno/exception/error/timeout')` and keep running. That's the
+point — cooperative code is trusted to honor the timeout. Use `unwind: true`
+when you control the code inside the block and want cleanup; use the default
+when you don't.
+
+The `unwind:` kwarg is per-block. **The stricter parent always wins** at the
+moment its deadline fires. If an outer `unwind: false` deadline fires while
+execution is inside an inner `unwind: true` block, the outer's `timeout_handle`
+bubbles up uncatchably and bypasses the inner's `begin`/`ensure`. The inner's
+mode applies only when the inner's own deadline fires.
+
+#### The `?` form: `%utils.timeout?`
+
+`%utils.timeout?` (with the `?` suffix) is the **tolerant form** that returns
+the timeout flag as a value instead of raising it at the boundary:
+
+```
+$timeout = %utils.timeout?(5) do
+    &slow_thing
+end
+
+if $timeout
+    # timed out — $timeout is the flag object
+else
+    # block completed normally
+end
+```
+
+On normal completion, `%utils.timeout?` returns `null`. The block's own
+return value is not preserved through `%utils.timeout?` — if the caller
+needs it, assign it to a variable inside the block.
+
+The `?` form follows the language-wide
+[`?` suffix convention](kscript.md#the--suffix): falsey on the happy path,
+truthy (the flag itself) on the failure path. It's sugar for what would
+otherwise be `catch('exception/error/timeout')` wrapping around
+`%utils.timeout` — the common "try for N seconds, move on if not" pattern,
+compressed into the method name.
+
+#### The `?` form combines with `unwind:`
+
+`unwind:` controls *what fires inside the block* when the deadline hits;
+the `?` form controls *what happens at the boundary* when a timeout flag
+escapes the block. They combine cleanly:
+
+| Form | `unwind:` | Behavior |
+|---|---|---|
+| `%utils.timeout(N)` | (omitted) | `timeout_handle` inside (no `ensure`); `exception/error/timeout` raised in caller scope |
+| `%utils.timeout(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); propagates out of the block normally |
+| `%utils.timeout?(N)` | (omitted) | `timeout_handle` inside (no `ensure`); boundary catches and **returns** the timeout flag |
+| `%utils.timeout?(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); if it escapes the block, boundary catches and **returns** it |
+
+In the `%utils.timeout?(N, unwind: true)` case: if the block itself catches
+the timeout, `%utils.timeout?` returns `null` (nothing escaped). If the
+block doesn't catch, the `?` form converts the escaping timeout to a return
+value.
 
 #### Spec: compliant engine requirements
 
 A compliant engine must:
 
-- Abort execution of the block if it does not complete within the specified number of
-  seconds (whole-second granularity)
-- Make the timeout undefeatable by KScript code — there must be no path from a KScript
-  expression to the timeout mechanism
-- Apply nested timeout budgeting: `effective_timeout = min(requested, remaining_parent_budget)`
+- Abort execution of the block (default mode) or raise an unwinding
+  `exception/error/timeout` inside the block (`unwind: true` mode) if it does
+  not complete within the specified number of seconds (whole-second granularity)
+- Make each default-mode `%utils.timeout` call undefeatable by KScript code —
+  there must be no path from a KScript expression to suppress a `timeout_handle`
+- Allow `unwind: true` timeouts to be caught and suppressed from KScript code
+  (the cooperative-timeout contract)
+- Provide a `%utils.timeout?` form that catches the timeout flag at the
+  `%utils.timeout?` boundary and returns it as the call's value instead of
+  raising it. Returns `null` on normal completion.
+- Apply nested timeout budgeting: `effective_timeout = min(requested, remaining_parent_budget)`.
+  An inner `%utils.timeout(20)` inside an outer `%utils.timeout(5)` is bound by the
+  outer's remaining 5 seconds. The stricter parent's mode wins when its deadline fires.
 - Handle blocking system calls — any system method that can block must implement its own
   timeout at the native level, since the interpreter-level timeout cannot fire during a
   native blocking call
 
 #### Lua reference implementation
 
-`%timeout` is implemented using `debug.sethook`. A hook is registered that fires every N
-VM instructions and checks `os.time()` against the deadline. When the deadline is exceeded,
-the hook raises an error that unwinds the block. After the block completes — whether
-normally or via timeout — the hook is cleared. No threads are required.
+`%utils.timeout` is implemented using `debug.sethook`. A hook is registered that
+fires every N VM instructions and checks `os.time()` against the deadline. When
+the deadline is exceeded, the hook raises a Lua error whose tag depends on the
+block's mode:
 
-KScript code cannot defeat this because `debug`, `load`, `os`, and the rest of Lua's
-standard library are not reachable from KScript expressions. KScript is executed as
-interpreted KScriptJSON — the runtime walks AST nodes through a controlled environment
-with no path to arbitrary Lua functions.
+- **Default mode:** the error is tagged as `timeout_handle`. KScript's
+  `begin`/`ensure` compiles to a `pcall` variant that explicitly re-raises
+  `timeout_handle`-tagged errors instead of catching them, so the error
+  propagates through KScript-level frames without running any `ensure` blocks
+  until it reaches the `%utils.timeout` boundary. There, the timeout's wrapping
+  code intercepts the `timeout_handle` and translates it into a
+  `kiera.uno/exception/error/timeout` raised normally in the caller's scope.
+- **`unwind: true` mode:** the error is untagged (or tagged as a normal
+  exception). It's caught by ordinary `pcall`, runs `ensure`, and is exposed
+  to user `catch` as a `kiera.uno/exception/error/timeout` directly inside
+  the block. No boundary translation needed.
+
+The hook is cleared after the block completes (whether normally or via timeout).
+No threads are required.
+
+KScript code cannot defeat the default-mode timeout because `debug`, `load`,
+`os`, and the rest of Lua's standard library are not reachable from KScript
+expressions, and `begin`/`ensure` re-raises `timeout_handle`-tagged errors.
+`unwind: true` mode is deliberately suppressible by user code — that's the
+cooperative-timeout contract.
 
 ### KScriptJSON as the Runtime Format
 
@@ -354,7 +486,11 @@ The following bwcs are implemented in Lua and cannot be overridden:
 ```
 if    elsif (alias: elseif)    else    while
 and   or    not
+begin ensure
 ```
+
+See [Cleanup with `begin` / `ensure`](#cleanup-with-begin--ensure) for the
+begin/ensure pair.
 
 ### `self`
 
@@ -389,133 +525,432 @@ around other use cases in the future.
 ```
 vibecode: {
 	"section": "exceptions_and_warnings",
-	"hierarchy": ["kiera.uno/exception", "kiera.uno/exception/error",
-		"kiera.uno/exception/return", "kiera.uno/exception/exit",
-		"kiera.uno/exception/abort"],
-	"return_implemented_as": "raising_kiera.uno/exception/return",
-	"warnings": "propagate_without_unwinding_stack",
-	"catch": "catch('class') block",
-	"heed": "collects_warnings_heed('class') block",
-	"abort": "capability_tied_to_scope_untrusted_code_cannot_abort_process"
+	"shared_shape": ["class", "id", "bucket"],
+	"raise_methods": ["%chain.warn", "%chain.throw", "%chain.error",
+		"%chain.exit", "%chain.abort"],
+	"top_level_classes": ["kiera.uno/warning", "kiera.uno/exception"],
+	"exception_subclasses": ["exception/error", "exception/error/timeout",
+		"exception/exit", "exception/return", "exception/abort",
+		"exception/security", "exception/timeout_handle"],
+	"per_class_properties": ["catcher", "unwinds"],
+	"default_profile": "catcher=user, unwinds=yes",
+	"overrides_required_for": ["exit", "return", "abort", "security",
+		"timeout_handle"],
+	"catch": "catch() matches by class AND filters by catcher=user",
+	"heed": "heed() matches warnings (non-unwinding)",
+	"abort_capability": "tied_to_scope_untrusted_code_cannot_abort_process"
 }
 ```
 
-### Exception Hierarchy
+The framework's flow-modifying events come in two top-level classes:
+**warnings** (observational, non-unwinding, never user-catchable via `catch`)
+and **exceptions** (raised to redirect flow). All flags share a single object
+shape (class, id, bucket) and a single set of `%chain` raising methods.
+
+`exception` is the umbrella class for everything raised — including aborts,
+exits, security violations, and so on. By default an `exception` subclass
+unwinds and is catchable in user code; subclasses that need different
+behavior (abort, security, timeout_handle, exit, return) explicitly override
+either or both properties. The word "exception" is doing double duty here as
+the umbrella *and* the default-behavior class; in practice no one talks about
+the umbrella, so the ambiguity stays out of the way.
+
+### Shared shape
+
+Every flag is a KScript object with:
+
+- **A class** — the formal type, used by `catch()` and `heed()` to match.
+- **An id** — a string nickname for the specific case. Free-form, author-chosen
+  (e.g., `'connection_refused'`, `'redundant_fields'`). The id is a human-readable
+  label; matching is by class.
+- **A bucket** — a hash holding details/payload. Accessed openly via `[]`:
 
 ```
+$e = catch('foo.com/exception/network')
+    # ... something that throws
+end
+
+if $e
+	$e.id            # 'connection_refused' — the nickname
+	$e['host']       # 'db1' — direct bucket access
+	$e['port']       # 5432
+end
+```
+
+This matches the universal KScript object model (class stack + bucket). Exceptions,
+errors, and warnings are regular objects following that model — no special accessors.
+
+### The two top-level classes
+
+| Class | Propagation |
+|---|---|
+| **Warning** | Up through the stack without unwinding; collected via `heed()` |
+| **Exception** | Raised to redirect flow; each concrete subclass has its own (catcher, unwinds) profile |
+
+Under `exception`, every concrete class is independently declared. The default
+profile is `catcher=user, unwinds=yes` (the familiar "throw and catch" model).
+Subclasses override one or both properties as needed:
+
+- **`exception/error`** — same default profile. Semantic marker for "this is
+  an error situation" — behaviorally identical to plain `exception`. See
+  [error vs exception](#error-vs-exception) below.
+- **`exception/error/timeout`** — same default profile; the user-catchable
+  timeout raised at the boundary of a `%utils.timeout` block.
+- **`exception/exit`** — unwinds, but caught by the engine for orderly
+  shutdown rather than user `catch`.
+- **`exception/return`** — unwinds, caught at function-call boundary.
+- **`exception/abort`** — does *not* unwind; engine takes over, no `ensure`.
+- **`exception/security`** — does *not* unwind; engine catches.
+- **`exception/timeout_handle`** — does *not* unwind; bubbles to the
+  `%utils.timeout` block boundary, where the timeout mechanism translates
+  it into a user-facing `exception/error/timeout` (see
+  [Timeouts](#timeouts)).
+
+### Error vs exception
+
+`kiera.uno/exception/error` is a **semantic marker**, not a behavioral
+distinction. Both `exception` and `error` carry stack traces, both unwind,
+both are user-catchable. The class names exist to convey developer intent:
+
+- **`exception`** — generic flow-control raise. Used for redirects, custom
+  signals, control transfer, anything that's "this code path is taking a
+  turn."
+- **`error`** — "something went wrong." A subclass of exception; the name
+  signals to readers that this is a failure condition, not a routine
+  flow-control event.
+
+`catch('kiera.uno/exception')` catches both (error is-a exception).
+`catch('kiera.uno/exception/error')` catches only errors and their subclasses.
+
+**All exceptions carry a stack trace.** Trace capture cost is small in
+practice and the debug value of having a trace on every exception (especially
+when one propagates farther than its raiser anticipated) outweighs the cost.
+
+(**TBD:** the exact shape of the stack trace — what fields are captured per
+frame, how it's accessed on the exception object, serialization for Jasmine
+— is not yet specified. Likely lives at `$e.stack` or similar as an array of
+frame objects.)
+
+### Raising standard flags
+
+Each of the standard flag classes has a shortcut method on `%chain`. All take an
+id and a bucket; the class is implied by the method:
+
+```
+%chain.warn 'redundant_fields', {fields: ['sort', 'sorts']}
+    # class: kiera.uno/warning
+    # does not unwind
+
+%chain.throw 'cache_miss', {key: 'user:42'}
+    # class: kiera.uno/exception
+    # unwinds, carries stack trace
+
+%chain.error 'connection_refused', {host: 'db1', port: 5432}
+    # class: kiera.uno/exception/error
+    # unwinds, carries stack trace
+    # the "error" subclass is a semantic marker — same behavior as throw,
+    # just a name indicating "this is an error" for readers
+
+%chain.exit 'normal', {code: 0}
+    # class: kiera.uno/exception/exit
+    # unwinds (graceful shutdown), runs ensure and close
+
+%chain.abort 'unrecoverable', {reason: 'bad_state'}
+    # class: kiera.uno/exception/abort
+    # does NOT unwind — engine terminates, no ensure runs
+```
+
+These are convenience shortcuts for the **standard flag classes**. They cover most
+real use — custom flag subclasses exist (see below) but are less common in practice
+than you might expect.
+
+Why these live on `%chain`: raising any flag is a chain-flow event — exceptions
+unwind the chain, warnings travel up it, aborts terminate it. The chain owns the
+flow-control surface.
+
+### Raising custom flags
+
+For custom flag classes (a specific exception subclass, a Sinatra redirect, a
+custom warning, etc.), use the standard object-instantiation pattern:
+
+```
+$f = %['kiera.uno/sinatra/redirect/302'].new('temporary')
+$f['whatever'] = 'dude'
+$f.raise
+```
+
+- **Construct** the flag with `.new(id)` — the id positional arg is the nickname.
+- **Populate** the bucket via `[]`.
+- **Raise** with the universal `.raise` method on the flag object.
+
+`.raise` is the primitive that initiates propagation. The `%chain` shortcuts above
+internally do this — they construct a flag of the default class, populate it, and
+call `.raise`.
+
+This pattern is uniform with how every other object is created in KScript: `.new`,
+configure, use. Nothing special.
+
+### Class hierarchy
+
+```
+kiera.uno/warning
 kiera.uno/exception
-kiera.uno/exception/error
-kiera.uno/exception/return
-kiera.uno/exception/exit
-kiera.uno/exception/abort
+    kiera.uno/exception/error
+        kiera.uno/exception/error/timeout
+        # other built-in and developer-defined errors live here
+    kiera.uno/exception/exit
+    kiera.uno/exception/return
+    kiera.uno/exception/abort
+    kiera.uno/exception/security
+    kiera.uno/exception/timeout_handle
 ```
 
-Exceptions and warnings share a common ancestor but are distinct mechanisms.
+| Class | Catcher | Unwinds |
+|---|---|---|
+| `warning` | user (`heed`) | no |
+| `exception` | user (`catch`) | yes |
+| `exception/error` | user (`catch`) | yes |
+| `exception/error/timeout` | user (`catch`) | yes |
+| `exception/exit` | engine | yes |
+| `exception/return` | function boundary | yes |
+| `exception/abort` | engine | no |
+| `exception/security` | engine | no |
+| `exception/timeout_handle` | timeout block boundary | no |
 
-### Exceptions
+- `kiera.uno/warning` is observational. Emitted via `%chain.warn`, collected
+  via `heed()`, never user-catchable through `catch()`.
+- `kiera.uno/exception` is the umbrella for everything raised. By default,
+  exceptions are user-catchable and they unwind; the subclasses listed above
+  override one or both of those properties.
+- `error` is a subclass of `exception` — same default profile, but carries a
+  stack trace. `catch('exception')` catches both.
+- **`timeout` and `timeout_handle` are completely different classes** doing
+  different jobs. `timeout` is the user-catchable error that surfaces in
+  caller scope when a timeout block runs out. `timeout_handle` is the
+  internal abort that fires *inside* the timeout block and bubbles to the
+  block's boundary — see the [Timeouts section](#timeouts) for how they
+  interact.
 
-Exceptions unwind the call stack until caught. Uncaught exceptions are fatal.
+Custom flag classes can extend any concrete class — `foo.com/exception/error/network`,
+`foo.com/warning/validation`, etc. A custom class inherits its parent's
+profile unless it overrides.
 
-Returning from a function is implemented as raising `kiera.uno/exception/return`.
-Function call boundaries automatically catch it and extract the return value. This means
-early returns from nested blocks work naturally — no special non-local return machinery
-needed, and the interpreter has one propagation mechanism for everything.
+### `return`, `exit`, `abort`
 
-Exiting the program raises `kiera.uno/exception/exit`:
+These are KScript flow primitives:
 
-```
-%process.exit
-```
+- **`return`** raises `kiera.uno/exception/return`. Function call boundaries
+  automatically catch it and extract the return value. Early returns from nested
+  blocks work naturally — no special non-local-return machinery needed; the
+  interpreter uses the same unwind mechanism for all flow that unwinds.
+- **`exit`** raises `kiera.uno/exception/exit`. Graceful: unwinds the stack,
+  runs `begin`/`ensure` blocks, runs `close` on objects (see
+  [Garbage Collection](#garbage-collection)), and cleans up before the process
+  ends. Equivalent to `%chain.exit` or `%process.exit`.
+- **`abort`** raises `kiera.uno/exception/abort`. **Violent**: the engine
+  terminates the execution unit immediately. The stack is not unwound,
+  `begin`/`ensure` does not run, `close` is not called, GC does not run.
+  Equivalent to `%chain.abort` or `%process.abort`.
 
-for which the shortcut is
+`%chain.exit` and `%chain.abort` exist for symmetry with `%chain.error`,
+`%chain.warn`, and `%chain.throw` — all flag-raising lives on `%chain`. The
+bareword shortcuts (`exit`, `abort`) and the `%process.*` forms remain
+available for the developer who prefers them.
 
-```
-exit
-```
+**Unwinding rule:**
 
-Exit is graceful — it unwinds the call stack, runs `close` on objects, and cleans up
-before the process ends.
+| Method | Class | Unwinds? |
+|---|---|---|
+| `%chain.warn` | `warning` | No — propagates up without unwinding |
+| `%chain.throw` | `exception` | Yes — runs `ensure`, runs `close`, unwinds frames |
+| `%chain.error` | `exception/error` | Yes — runs `ensure`, runs `close`, unwinds frames |
+| `%chain.exit` | `exception/exit` | Yes — graceful unwind, runs `ensure`, `close`, GC |
+| `%chain.abort` | `exception/abort` | No — engine takes over, no `ensure`, no `close`, no GC |
 
-### Abort
+Two methods don't unwind, for two different reasons: warnings by design
+(they're observations, not flow events), aborts by intent (immediate
+termination, no KScript-level code is trusted to run during cleanup).
 
-Abort is a violent stop. The process terminates immediately. The call stack is not
-unwound, `close` is not called on objects, and GC does not run.
+Abort is a capability tied to the scope. The root scope has abort capability;
+code running inside `untrusted()` does not. `kiera.uno/exception/abort`
+propagates to scope boundaries:
 
-```
-%process.abort
-```
-
-Abort is a capability tied to the scope. The root scope has abort capability. Code
-running inside `untrusted()` does not — calling `%process.abort` from untrusted code
-raises `kiera.uno/exception/error` instead of terminating the process.
-
-More precisely: `kiera.uno/exception/abort` propagates to scope boundaries. At a scope
-boundary with abort capability, the process terminates. At a boundary without it — such
-as an `untrusted()` boundary — the abort is caught and converted to an error. Execution
-in the containing scope continues normally.
+- At a boundary **with** abort capability, the process terminates.
+- At a boundary **without** it (an `untrusted()` boundary), the abort is caught
+  and converted to an error. Execution in the containing scope continues normally.
 
 This means untrusted code can only abort itself, not the process that contains it.
 
-### Catching Exceptions
+### Catching exceptions
 
-To catch exceptions, use `catch()`.
+`catch()` matches **user-territory exceptions** — classes whose `catcher`
+property is "user." That's `kiera.uno/exception`, `.../error`, `.../error/timeout`,
+and any developer-defined class with `catcher: user`. Engine-territory
+subclasses (`exit`, `return`, `abort`, `security`, `timeout_handle`) are
+not catchable from user code; the engine catches them before user catch
+handlers see them, even though they share the `exception` umbrella by path.
 
 ```
-$exception = catch('borg.com/exception/jolene', 'borg.com/exception/other')
-    # code here
+$e = catch('foo.com/exception/network')
+    # ... code that may throw a network exception ...
+end
+
+$e             # null if no matching exception, otherwise the exception object
+$e.id          # the id nickname
+$e['host']     # bucket access
+```
+
+Multiple classes:
+
+```
+$e = catch('foo.com/exception/network',
+           'foo.com/exception/timeout')
+    # ...
 end
 ```
 
-Catching everything:
+Catch all user-territory exceptions:
 
 ```
-$exception = catch()
-    # code here
+$e = catch()
+    # ...
 end
 ```
 
-`$exception` is `null` if no exception is raised. If an exception is raised but doesn't
-match, it continues bubbling up.
+A no-args `catch()` matches anything whose `catcher` is "user" — both the
+built-in `exception` and `error` classes, plus any developer-defined classes
+that declared themselves user-catchable. This is the idiomatic "catch
+whatever the user might throw" form.
 
+**Note on the hierarchy.** `catch()` is filtered by both class match *and*
+the `catcher` property. So `catch('kiera.uno/exception')` matches `exception`,
+`error`, and `error/timeout` (all `catcher: user`), but **not** `exit`,
+`abort`, `security`, `return`, or `timeout_handle` — those share the
+`kiera.uno/exception/...` path but have engine-or-other catchers, and `catch`
+never sees them. The engine catches engine-territory subclasses before user
+catch handlers run. Custom subclasses match their declared parent:
+`catch('kiera.uno/exception/error')` matches `foo.com/exception/error/network`
+because the latter is declared as a subclass of error.
 
-### Warnings
+If an exception doesn't match any class given to `catch()`, it continues
+unwinding up the stack until something does match (or nothing does and it
+propagates to the engine top).
 
-Warnings propagate up the call stack without unwinding it. Code continues executing
-after a warning is raised. Warnings and exceptions are distinct — they share a common
-ancestor class but do not share propagation behavior.
+### Heeding warnings
 
-#### Heeding warnings
+`heed()` matches **non-unwinding events** — warnings:
 
-`heed` collects warnings raised in a block. By default, all `kiera.uno/warning`
-subclasses are heeded and stop propagating once collected:
+```
+$warnings = heed('foo.com/warning/validation')
+    # ... code that may emit validation warnings ...
+end
+
+$warnings      # array of warning objects collected during the block
+```
+
+Heed all warnings:
 
 ```
 $warnings = heed()
-    # code here
+    # ...
 end
 ```
 
-Heed specific warning classes:
-
-```
-$warnings = heed('borg.com/warning/validation')
-    # code here
-end
-```
-
-Allow warnings to continue propagating after being collected:
+By default, heeding a warning **collects it and stops its propagation**. To collect
+but let it keep traveling up the stack:
 
 ```
 $warnings = heed(rewarn:true)
-    # code here
+    # ...
 end
 ```
 
-Manually re-raise a collected warning:
+A collected warning can be manually re-raised later:
 
 ```
-$warning.warn
+$warning.warn         # short form, on the warning object
+# or
+%chain.warn $warning  # equivalent — pass the object instead of (id, bucket)
 ```
+
+### Auto-recording into Jasmine
+
+Anything that propagates *out of* a `.entry do` block — error, exception, or
+warning that wasn't heeded — is **automatically recorded into the entry** before
+the entry flushes. Errors include their stack trace; plain exceptions don't.
+See [jasmine.md § Automatic exception recording](jasmine/jasmine.md#automatic-exception-recording).
+
+### Cleanup with `begin` / `ensure`
+
+The `begin` bwc creates a scoped variable region. Variables declared inside the
+begin block aren't visible outside it:
+
+```
+begin
+    $var = 'foo'
+    # $var is in scope here
+end
+# $var not available here
+```
+
+A `begin` block can have an `ensure` clause that runs on scope exit — normally,
+via a raised flag, via `return`, via `exit`, anything that unwinds the scope:
+
+```
+begin
+    $var = 'foo'
+    # main work
+ensure
+    # always runs (except on abort)
+    # $var not available here — the begin block's scope has already exited
+end
+```
+
+**Ensure guarantees:**
+
+- Runs after the main block, regardless of how it exited (normal completion,
+  raised error/exception, `return`, `exit`).
+- Does **not** run on `abort` — abort is violent, no unwinding, no GC, no ensure.
+- A flag raised inside `ensure` itself propagates normally, overriding any
+  in-flight flag that was being unwound (same as Ruby).
+- Scope variables from the begin block are **not in scope** in the ensure
+  clause — the begin block's scope has already exited by the time `ensure`
+  runs. If the cleanup needs a resource, declare it before the `begin` (or
+  pass through some other mechanism).
+
+**Composes naturally with `catch`:**
+
+```
+$e = catch('foo.com/exception/network')
+    begin
+        $conn = $db.connect
+        $conn.query(...)
+    ensure
+        $db.release_connection
+    end
+end
+```
+
+`ensure` handles cleanup; `catch` handles whether a flag was raised. Each does
+one thing.
+
+**Naming note:** `begin` follows Ruby's `begin`/`ensure`/`end` shape for
+familiarity. Developers coming from Ruby (and similar shapes in Python's
+`try`/`finally`, Java's `try`/`finally`, etc.) will reach for this structure
+intuitively.
+
+**Design note (architectural objection):** the `begin ... ensure ... end`
+shape introduces a **multi-clause nested structure**, which is unusual for
+KScript. The only other multi-clause structure is `if`/`elsif`/`else`/`end`,
+and even that has occasionally been criticized for going against the language's
+"primitives are function calls" pattern. An alternative was considered —
+**`defer`-style registration** (à la Go/Swift/Zig), where cleanups are
+registered as flat statements: `defer do; $conn.close; end`. The defer pattern
+avoids the multi-clause structure and puts cleanup near the resource it cleans
+up, but the Ruby-flavored `begin`/`ensure` won on familiarity: it's the shape
+most developers coming from Ruby, Python, Java, etc. will reach for, and it
+reads more naturally to most readers. The architectural concern is noted; the
+familiarity argument carried the day.
 
 ---
 
@@ -568,6 +1003,40 @@ is the developer's responsibility.
 Serialization is straightforward — `%bucket` is the object's data, so exporting it
 exports the object's state.
 
+**Buckets are not Kiera hashes.** The global Kiera hash-key standard (snake_case
+names, JSON-shaped data) does not apply to object buckets. Buckets are internal
+storage with their own conventions; class designers pick whatever keys make sense
+for their state.
+
+**The `uns` bucket-key convention.** A Kiera-wide convention reserves the bucket
+key `uns` for a sub-hash organized by UNS strings. When a bucket has an `uns`
+key, the value is understood as a hash of "things keyed by UNS" — each entry's
+key is a class UNS and its value is whatever state that UNS-keyed entity wants
+to store.
+
+```
+%bucket = {
+    foo: 'bar',           # host class's own state
+    baz: 42,
+    uns: {
+        'kiera.uno/trivet/node': {parent: ..., children: ..., id: ...},
+        'kiera.uno/uma/text':    {...},
+    }
+}
+```
+
+The primary use case is **classes that get added to arbitrary host objects as
+mix-ins** — Trivet's node class is the canonical example. The mix-in stores its
+state under `uns.<its-UNS>` rather than at the top level of the bucket, so it
+doesn't collide with whatever the host class is already using.
+
+Host classes that don't use mix-ins can ignore the convention entirely. Classes
+that *are* mix-ins should namespace their state into the `uns` slot; host
+classes leave `uns` alone.
+
+This is a convention, not enforcement. The runtime treats the bucket as a flat
+hash; `uns` is just a reserved key by community agreement.
+
 ### The Class Stack
 
 Method calls are resolved top-down through the class stack:
@@ -611,7 +1080,22 @@ meta information about the object:
 ```
 $foo.object.classes      # the explicit class stack (base class + any additional classes)
                          # does not include the shadow class
+
+$foo.object.isa? 'kiera.uno/color'    # true if 'kiera.uno/color' is in the class stack
+                                       # (the object's class or any superclass)
 ```
+
+The `isa?` predicate walks the object's class stack and returns true if the given UNS
+matches any class in the stack. Use it to check class membership without caring about
+the exact resolution path:
+
+```
+if $foo.object.isa? 'kiera.uno/error'
+    # $foo is an error of some kind
+end
+```
+
+The trailing `?` is the KScript convention for predicate methods (boolean-returning).
 
 More meta information will be added as needed.
 
@@ -637,9 +1121,7 @@ vibecode: {
 	"model": "perfect_gc_immediate_collection_on_unreachable",
 	"mechanism": "root_trace_not_reference_counting",
 	"cycles": "handled_automatically",
-	"close_method": "called_by_gc_not_user_code",
-	"mikobase_objects": "not_subject_to_local_gc_mikobase_holds_them_alive",
-	"two_rules": ["local_objects_die_when_unreachable", "mikobase_objects_live_while_mikobase_holds_them"]
+	"close_method": "called_by_gc_not_user_code"
 }
 ```
 
@@ -683,35 +1165,10 @@ class 'myapp.com/connection'
 end
 ```
 
-### Mikobase objects
+### The rule
 
-Objects stored in a mikobase are not subject to local garbage collection. The mikobase holds them
-alive — they exist for as long as the mikobase exists. This is the "objects are always alive"
-guarantee of the mikobase model.
-
-Garbage collection applies to mikobase objects in two cases:
-
-1. **The mikobase itself goes out of scope.** The mikobase is collected, and `close` is called on
-   each of its objects.
-2. **An object is explicitly released from the mikobase.** The mikobase severs its reference to
-   the object. If nothing else holds it, it is collected.
-
-Dropping a local reference to a mikobase object does not affect the object. It remains alive
-in the mikobase regardless of whether any local code is currently holding a reference to it.
-
-### Why this simplifies the language
-
-Most of the complexity in other GC systems comes from shared mutable state — objects that
-are held by multiple things, passed around, and hard to reason about. In KScript, shared
-state lives in the mikobase and has its own clear lifetime. Local objects are almost always
-simple, short-lived, and unshared. The hard cases mostly do not arise.
-
-The result is two rules that cover everything:
-
-- **Local objects** die when they become unreachable from roots.
-- **Mikobase objects** live as long as the mikobase holds them.
-
-Every object in the system falls into one of those two cases.
+Objects die when they become unreachable from roots. That's the whole model — one rule
+covers every object in the system.
 
 ---
 
@@ -1120,9 +1577,23 @@ back up. The caller's chain is unchanged after the call returns.
 If you want block-level isolation, use `%chain.scope do...end` to create an explicit
 boundary inside the same function.
 
-`%chain` is cleared when crossing a security boundary (untrusted execution, `%chain.clear`
-blocks). stdout and stderr are **not** components of `%chain` — they are capabilities
-injected by the host and passed explicitly, like any other resource.
+`%chain` is cleared at role boundaries and inside `%chain.clear` blocks.
+
+`%stdout` and `%stderr` **do** live in `%chain`. The system methods `%stdout` / `%stderr`
+read from chain; the engine places them at bootstrap, always as a real handle —
+either pointing at a real destination (terminal, capture buffer, etc.) or as a
+dev/null handle that discards writes (with a nanny warning, silenceable via
+`no_writers_ok`). They are **never null**, so writes can be sprinkled in without
+guards. This is also why `%stdout.capture do ... end` works without special primitives —
+it creates an inherited chain scope where `%stdout` is the capture buffer, runs the
+block, and the parent's `%stdout` is restored on exit. Same mechanism as function-call
+chain isolation, applied to a single ambient handle.
+
+STDIN is different: it's **not** in `%chain`. The engine hands the script a STDIN object
+at bootstrap, and functions that need it must receive it as an explicit parameter. The
+asymmetry: incoming data needs role labeling (so the object travels explicitly with its
+role), while outgoing handles can be ambient (writes don't carry a role label, so the
+chain-replacement pattern works cleanly).
 
 #### Misc values
 
@@ -1198,11 +1669,20 @@ injected objects).
 Two distinct properties make it secure:
 
 **The method is scope-restricted.** `%engine` only exists in the outermost script scope.
-Functions and closures do not have it in their scope at all — it is not blocked, it is
-simply absent. This is why a closure cannot access `%engine`: the method is not there.
+**Functions** do not have it in their scope — they don't capture outer scope at all, so
+`%engine` is simply absent inside any function. **Closures** defined at the outermost
+scope *do* see `%engine`, because closures capture their lexical scope by design and the
+outermost scope is part of what they capture. A closure defined inside a function doesn't
+see `%engine` either (the function it was defined inside doesn't have it).
 
-**The engine object is non-storable.** Even in the outermost scope, the object returned
-by `%engine` cannot be assigned to a variable. This is enforced by the runtime:
+This matches the language's own promise about closures: they capture what's in their
+defining scope. Forcing closures to omit `%engine` specifically would be a special-case
+exception that goes against the model. The developer chose `closure` over `function`
+precisely to opt in to scope capture; the runtime honors that choice.
+
+**The engine object is non-storable.** Even in the outermost scope (or inside a closure
+that captured the outermost scope), the object returned by `%engine` cannot be assigned
+to a variable. This is enforced by the runtime:
 
 ```
 $db   = %engine['db']    # fine — using the object directly
@@ -1211,9 +1691,54 @@ $docs = %engine['docs']  # fine
 $e = %engine             # raises — engine object is non-storable
 ```
 
-The top-level script calls methods on `%engine` directly to pull out what it needs, then
-passes those resources down to functions explicitly as parameters. Inner functions only
-have access to what they are explicitly given.
+The non-storable rule is the load-bearing security guarantee: `%engine` itself can't be
+extracted into a variable that can be passed around. Specific resources pulled out of it
+can be passed around freely.
+
+The bootstrap pattern: the top-level script calls methods on `%engine` directly to pull
+out what it needs, then passes those resources down to functions explicitly as parameters.
+Closures defined at the top level can reference `%engine` directly if useful — their
+auto-capture lets them. Functions need things passed explicitly.
+
+### Function and closure opacity
+
+**Once a function or closure is defined, it exposes nothing about its internals to its
+caller.** This is a general default that applies to every callable in the language. A
+caller can *call* a function or closure and receive its return value. That's all.
+
+Specifically, none of the following is accessible to a caller:
+
+- The function's or closure's body code.
+- A closure's captured scope (variables, references, anything pulled in by the lexical
+  capture).
+- A closure's captured `%engine` reference, if any.
+- Internal stack frames during or after the call.
+- Parameter defaults set at definition time.
+- Equality or identity comparisons that would reveal contents (beyond "is this the same
+  callable object?").
+
+There is no opt-out at definition time, and no API a caller can use to peer inside.
+Opacity is enforced uniformly — by language rule, not by per-callable configuration.
+
+**Testing requirement.** This opacity guarantee is load-bearing for the security model
+(especially for closures capturing `%engine`, but more broadly for any function or
+closure carrying captured resources). It needs an extensive test suite verifying it holds
+against every introspection surface:
+
+- Direct access (`$fn.scope`, `$fn.body`, `$fn.captures`, etc.) — must not exist or
+  refuse.
+- Indirect access via exception traces, stack inspection, or call metadata — must not
+  leak captured values.
+- Finished closures (after they've returned) — must not be inspectable for their
+  captured state.
+- Closure / function equality — must not reveal contents.
+
+If any introspection path leaks, the language has a security regression that needs to be
+fixed before the leak is exploited.
+
+**Possible future feature:** an opt-in inspection capability granted at definition time
+for debugging or REPL use cases — `function .introspectable &foo() ... end` or similar.
+Not in v1; flagged if a real debugging story needs it.
 
 ---
 
@@ -1532,4 +2057,4 @@ connection returns a record, the runtime automatically registers listeners up th
 reference chain. A write anywhere in the chain triggers a save back to the mikobase without
 the developer doing anything explicitly.
 
-See [mikobase.md](../mikobase.md) for the hot record design.
+See [mikobase.md](../mikobase/mikobase.md) for the hot record design.

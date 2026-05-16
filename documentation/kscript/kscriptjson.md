@@ -512,6 +512,69 @@ in the program array. They are no-ops at runtime.
 
 ---
 
+## Source Position Annotations
+
+```
+vibecode: {
+	"section": "source_position_annotations",
+	"purpose": "preserve_kscript_source_line_numbers_through_transpilation_to_kscriptjson",
+	"use_case": "include_line_numbers_in_jasmine_log_entries_and_error_messages",
+	"shape": "optional_line_field_on_kscriptjson_nodes"
+}
+```
+
+When KScript source is transpiled to KScriptJSON, **line-number
+information from the original source is preserved** so that downstream
+consumers (Jasmine logging, error messages, debuggers) can refer back
+to the source position of any executing code.
+
+The mechanism: each KScriptJSON node optionally carries a **`line`**
+annotation indicating the source line it came from.
+
+```json
+{"line": 42, "var": "foo"}
+{"line": 42, "value": 1}
+[{"line": 42, "var": "greet"}, "=", {"line": 42, "function": {"params": ["name"], "body": [...]}}]
+```
+
+The transpiler populates `line` on every emitted node. The runtime
+preserves the annotation as it dispatches and can expose the current
+executing position via runtime introspection — used by Jasmine for
+log frame `location` fields (see
+[jasmine.md](jasmine/jasmine.md)), by error messages for "this error
+happened at line N," etc.
+
+### What gets annotated
+
+Every node emitted from a KScript-source transpile carries a `line`
+field. Granularity is per-statement at minimum and per-expression
+where reasonable — enough that any runtime position can resolve back
+to a source line.
+
+### KScriptJSON-only origins
+
+Code that originated as KScriptJSON directly (no KScript source) has
+**no `line` field** — there's nothing to annotate. Tools that inspect
+positions check whether `line` is present; if it isn't, the source
+position is genuinely unknown.
+
+### Open questions
+
+- **File identifier alongside line.** Line numbers alone aren't
+  enough to locate code; you also need to know which file. Probably
+  a `file` field at the top of the KScriptJSON program, or inherited
+  from the runtime invocation context.
+- **Column numbers.** Probably nice-to-have; verbose. Could be a
+  `col` field alongside `line`.
+- **Range annotations** (start line + end line) for multi-line
+  expressions. Probably more than needed for v1; single line is
+  sufficient for most purposes.
+- **Generated code** — code emitted by macros or DSLs may want to
+  carry both an original-source position AND a generator-source
+  position. Out of scope for v1.
+
+---
+
 ## Known Gaps
 
 ```

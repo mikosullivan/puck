@@ -43,8 +43,8 @@ on the horizon right now.
 What this means in practice:
 
 - **Defaults match the small case.** Single process, sensible auto-config.
-  The small-site convenience layer (the Piscopo handler, with its method
-  selectors and built-in error pages) is one keyword away (`piscopo: true`)
+  The small-site convenience layer (the Sinatra handler, with its method
+  selectors and built-in error pages) is one keyword away (`sinatra: true`)
   — not on by default, but trivial to turn on.
 - **Opt-ins unlock the large case.** Worker pool with prefork concurrency,
   custom handler chains, fine-grained settings cascade, alternative routing
@@ -56,7 +56,7 @@ What this means in practice:
 
 Many of the design choices already in this wishlist follow directly from this
 goal: the single-process default with `enable_forking` opt-in, the empty-by-
-default server with a one-keyword `piscopo: true` opt-in for the small-site
+default server with a one-keyword `sinatra: true` opt-in for the small-site
 convenience layer, the full handler-chain composability underneath everything.
 Each is a small-case default with a large-case opt-in (or vice versa: a
 clean-slate default with a convenience opt-in). The pattern repeats across
@@ -73,7 +73,7 @@ explicit decision.
 In many cases, Dogberry ships with **no default at all**. The developer
 has to declare an intent. There is no admin until you set one up. There
 is no forking until you opt in (and the engine grants permission). There
-is no Piscopo handler until you ask for one. Silence is not consent.
+is no Sinatra handler until you ask for one. Silence is not consent.
 
 This is the inverse of the "convenient out-of-the-box" tradition. We
 swap some initial setup for the certainty that the framework isn't
@@ -221,7 +221,7 @@ Every installation has **one or more request handlers** registered in an
 implement up to three optional methods.
 
 The hash representation is a convenience for developers: handlers are referred
-to by nickname (`$server.handlers['csrf']`, `$server.handlers['piscopo']`)
+to by nickname (`$server.handlers['csrf']`, `$server.handlers['sinatra']`)
 rather than by position. The keys are purely labels — Dogberry doesn't
 interpret them or enforce any pattern. Because Kiera hashes are order-sensitive
 (see [hashes.md](../kscript/built-in-classes/hashes.md)), the handlers still
@@ -359,22 +359,22 @@ Open:
 - What happens to in-flight requests during a graceful shutdown — wait, kill
   after a grace period, drop immediately?
 
-### Sinatra-Style Method Selectors (Piscopo Handler)
+### Sinatra Method Selectors
 
-> **Feature lock.** Piscopo is locked for v1. It's intended for **simple
+> **Feature lock.** Sinatra is locked for v1. It's intended for **simple
 > cases** — single-file sites, microservices, small internal tools — not
 > expansive multi-host sites with admin tooling. The fancier features
 > Robinson covers (sites, admin authentication, per-host dispatch,
 > `site.json`, canonical redirects, factory message overrides, etc.) do
-> **not** apply to Piscopo-only servers. May revisit if a real use case
-> surfaces; for now, Piscopo's surface is what's specified here.
+> **not** apply to Sinatra-only servers. May revisit if a real use case
+> surfaces; for now, Sinatra's surface is what's specified here.
 
 A bare `%kiera['kiera.uno/dogberry'].new()` returns an **empty server** — no
-handlers, no routes, nothing registered. To get the Sinatra-style
-method-selector API, opt into the **Piscopo handler**:
+handlers, no routes, nothing registered. To get the Ruby-Sinatra-style
+method-selector API, opt into the **Sinatra handler**:
 
 ```
-$server = %kiera['kiera.uno/dogberry'].new(piscopo: true)
+$server = %kiera['kiera.uno/dogberry'].new(sinatra: true)
 
 $server.get('/') do($request)
     response.new(200, {content_type: 'text/plain'}, 'Hello world')
@@ -396,8 +396,7 @@ $server.run() do($request)
 end
 ```
 
-The handler is named **Piscopo** after Joe Piscopo, who did an excellent Frank
-Sinatra impression — an intentional nod to Ruby Sinatra, whose method-selector
+The handler is named **Sinatra** after Ruby Sinatra, whose method-selector
 style Dogberry borrows.
 
 Each HTTP method has its own selector — `get()`, `post()`, `put()`, `delete()`,
@@ -407,8 +406,8 @@ different methods is fine — they're independent registrations.
 
 Three things are happening:
 
-- **`.new(piscopo: true)`** — instantiate a Dogberry server with the Piscopo
-  handler pre-registered under the `'piscopo'` key in the handler hash.
+- **`.new(sinatra: true)`** — instantiate a Dogberry server with the Sinatra
+  handler pre-registered under the `'sinatra'` key in the handler hash.
 - **`$server.<method>('/path') do ... end`** — register a closure to handle a
   specific HTTP method at a specific URL path. The closure runs when an
   incoming request matches both.
@@ -417,10 +416,10 @@ Three things are happening:
   registration matched. Without a fallback block (or with one that doesn't
   return a response), an unmatched request becomes a 404.
 
-#### `piscopo: true` Is Just Sugar
+#### `sinatra: true` Is Just Sugar
 
 The opt-in keyword is shorthand for what you could do manually: instantiate a
-Piscopo handler, add it to the handler hash under the `'piscopo'` key, and
+Sinatra handler, add it to the handler hash under the `'sinatra'` key, and
 delegate the method selectors (`$server.get`, `$server.post`, etc.) to that
 instance. Nothing about the wiring is special-cased inside Dogberry — the
 keyword just saves you the three lines.
@@ -430,10 +429,10 @@ it'll use the same delegation mechanism. There's no privileged path here.
 
 #### Built-in Error Pages
 
-The Piscopo handler ships with a **standard set of error pages** — 404, 500,
+The Sinatra handler ships with a **standard set of error pages** — 404, 500,
 and the other common HTTP status conditions — rendered with plain, sensible
 defaults. These error pages are **not configurable**. They are part of what
-Piscopo gives you; take them as-is when you use it.
+Sinatra gives you; take them as-is when you use it.
 
 For small installations this is adequate — most personal sites, internal
 tools, and prototype services never need a custom 404 page, let alone the
@@ -441,8 +440,8 @@ others. The plain defaults look professional enough and require zero work
 from the developer.
 
 For installations that need branded or custom error pages, don't opt into
-Piscopo (or replace it with a customized equivalent). Once you're past
-Piscopo's scope, you take responsibility for your own error handling.
+Sinatra (or replace it with a customized equivalent). Once you're past
+Sinatra's scope, you take responsibility for your own error handling.
 
 Key design properties:
 
@@ -452,7 +451,7 @@ Key design properties:
 - **Complex things possible**: when a site outgrows the closure-per-route
   pattern, developers register their own handlers in the chain (Rails-style
   page classes, static-file servers, custom middleware) alongside or
-  instead of Piscopo, without abandoning what's already there.
+  instead of Sinatra, without abandoning what's already there.
 - **Catch-all in `run()`**: the fallback handler lives in the `run()` call
   itself rather than being a separate registration. Reads naturally as "start
   the server, and if nothing else handles it, fall through to this."
@@ -460,12 +459,12 @@ Key design properties:
 - **Path parameter capture**: path segments wrapped in `{name}` are captured
   and exposed to the closure as `$request.steps['name']`. Example:
   `/shakespeare/{play}/{act}/{scene}` captures three values.
-- **Sinatra-style placeholders are a stated goal (not a hard requirement)**:
-  Piscopo aims to support the same kinds of placeholders Ruby Sinatra
+- **Ruby-Sinatra-style placeholders are a stated goal (not a hard requirement)**:
+  the Sinatra handler aims to support the same kinds of placeholders Ruby Sinatra
   supports — named captures, splat patterns (`*`), and similar matchers — so
-  that anyone familiar with Sinatra recognizes the route patterns
-  immediately. The specific syntax differs (Piscopo uses `{name}` rather
-  than Sinatra's `:name`), but the semantics aim for parity. This is **a
+  that anyone familiar with Ruby Sinatra recognizes the route patterns
+  immediately. The specific syntax differs (we use `{name}` rather
+  than Ruby Sinatra's `:name`), but the semantics aim for parity. This is **a
   goal, not a requirement**: if implementation pressure makes any specific
   Sinatra-style pattern hard to support, it can be simplified or dropped
   without breaking the design. Parity in spirit, feature-by-feature as
@@ -484,6 +483,29 @@ Open:
   first matching, or chain?
 - **A method-agnostic `all(...)` or `any(...)`**: convenience for routes
   that handle every HTTP method, or stay strictly per-method?
+
+### JSON URL Parameters
+
+Dogberry will natively support the
+[ecoverse JSON URL convention](../kiera/json-urls.md): machine-generated
+URLs that pass parameters as a JSON object in the query string
+(`?{"map":true}`) rather than as conventional `?key=value` pairs.
+
+Handlers receive parameters through a unified hash regardless of how
+the URL was formed. Dogberry's request layer:
+
+1. Inspects the raw query string.
+2. If it begins with `{` (after URL-decoding), parses it as JSON.
+3. If it's conventional `?key=value`, parses it as such.
+4. If it's a mix (`?{"map":true}&debug=1`), parses both halves and
+   merges them into one hash.
+
+Handlers see one parameter hash; the URL form is transparent to them.
+
+Specific rules for mixing (parser order, precedence on key
+collisions, cache-key canonicalization, edge cases) are TBD —
+captured in [json-urls.md](../kiera/json-urls.md) as a topic to revisit
+when the JSON-URL convention is fully spec'd.
 
 ### Closure Interface and Response Objects
 
@@ -662,7 +684,7 @@ a function, captures the return value). "Load" is a different word for a
 different operation (slurping bytes into memory) and isn't used here.
 
 For the invocation to succeed, the site root jail must have
-[execute permission](../kscript/filesystem.md#jail-permissions) enabled.
+[execute permission](../kscript/built-in-classes/filesystem.md#jail-permissions) enabled.
 Execute is off by default on jails (no dangerous defaults), so a Robinson
 site root is configured at injection time with `read + execute` (plus
 `write` if the site needs to author files at runtime — usually not).
@@ -674,7 +696,7 @@ served as-is, with content type inferred from extension.
 
 URLs map to files inside the site's root directory using **jail-based
 lookup**. The site root is exposed to Robinson as a
-[jail](../kscript/filesystem.md) — a directory-scoped handle that
+[jail](../kscript/built-in-classes/filesystem.md) — a directory-scoped handle that
 permits access only to the site root and everything underneath it. The
 underlying real filesystem path is never exposed to handler code.
 
@@ -686,7 +708,7 @@ Resolution flow:
    `/foo/bar` and `/foo/bar/` are different requests, not the same URL
    with sloppy formatting.
 2. **Hand the path to the site jail** via
-   [`$jail.use_path`](../kscript/filesystem.md#authorizing-untrusted-paths).
+   [`$jail.use_path`](../kscript/built-in-classes/filesystem.md#authorizing-untrusted-paths).
    This is required (untrusted strings can't be used for FS ops
    directly) and normalizes the path automatically. Robinson does not
    pre-normalize.
@@ -779,7 +801,7 @@ Open:
   Normalize or pass through?
 - **Specific filesystem-path normalization rules.** Lives in
   `use_path`, not Robinson. Worth pinning the canonical list in
-  [filesystem.md](../kscript/filesystem.md) when the runtime gets
+  [filesystem.md](../kscript/built-in-classes/filesystem.md) when the runtime gets
   spec'd in detail. URL decoding is upstream (HTTP layer, when
   `$request.path` is built), not part of `use_path`.
 

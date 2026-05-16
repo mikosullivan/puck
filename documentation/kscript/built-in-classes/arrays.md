@@ -186,6 +186,135 @@ $els[1].value   # raises exception — element has been deleted
 
 ---
 
+## Searching: `find`
+
+```
+vibecode: {
+	"section": "find",
+	"method": "find",
+	"returns": "Array of Element objects (subset of $arr.elements)",
+	"forms": ["value-equality", "block-predicate"],
+	"notes": ["always_returns_array_never_single_element",
+		"empty_array_when_no_matches",
+		"results_are_live_element_objects"]
+}
+```
+
+`find` is the unified search method on arrays. It **always
+returns an array of Element objects** — never a single element,
+never nil-on-no-match. The returned array is a subset of
+`$arr.elements`, so each result carries its `.value`, `.index`,
+and all the live-modification methods (`.move_*`, `.delete`,
+etc.).
+
+### Value-equality form
+
+Pass a value; `find` returns every Element whose value `==` the
+argument:
+
+```
+$arr = ['apple', 'banana', 'apple', 'cherry']
+
+$found = $arr.find('apple')
+
+$found.length        -> 2
+$found[0].index      -> 0
+$found[1].index      -> 2
+$found[0].value      -> 'apple'
+```
+
+If nothing matches, `find` returns `[]` (empty array). No
+special "not found" return value.
+
+### Block-predicate form
+
+Pass a block taking `($index, $element)`; `find` returns every
+Element for which the block returns truthy:
+
+```
+$arr = [1, 5, 12, 3, 8, 15]
+
+$found = $arr.find() do($index, $element)
+    $element.value > 10
+end
+
+$found.length        -> 2
+$found[0].value      -> 12
+$found[1].value      -> 15
+```
+
+The block parameters:
+
+- **`$index`** — the position in the source array, passed as a
+  convenience. (Equivalent to `$element.index`, just shorter to
+  reference.)
+- **`$element`** — the Element object at that position. Has
+  `.value`, `.index`, and the full Element API.
+
+The block returns truthy to include the Element in the result,
+falsey to skip. Implicit last-value return is the idiom; reserve
+`%call.return` for actual early exit.
+
+### Common idioms
+
+| Want | Idiom |
+|---|---|
+| All matches | `$arr.find($x)` |
+| First match | `$arr.find($x).first` (or `[0]`) |
+| Any match? | `$arr.find($x).any?` |
+| How many matches? | `$arr.find($x).length` |
+| Index of first match | `$arr.find($x).first.index` |
+| Delete first match | `$arr.find($x).first.delete` |
+| Delete all matches | `$arr.find($x).each do($i, $el); $el.delete; end` |
+
+Because results are live Element references back into the source
+array, modification operations on them work as expected — no
+stale-index problems and no "modify-while-iterating" undefined
+behavior.
+
+### `find_first` and `find_last` sugar
+
+For the common "I want just the first match" or "just the last
+match" cases, two thin sugars:
+
+```
+$el = $arr.find_first('apple')
+$el = $arr.find_last('apple')
+
+$el = $arr.find_first() do($index, $element)
+    $element.value > 10
+end
+$el = $arr.find_last() do($index, $element)
+    $element.value > 10
+end
+```
+
+Both return a **single Element object** (or `null` if no match).
+Same value-arg / block-predicate forms as `find`.
+
+Equivalent to `$arr.find(...).first` and `$arr.find(...).last`,
+just one method call shorter and reads more directly when only
+that one hit is wanted.
+
+### Why one method, always-array
+
+Ruby's array search splits across `find` (first match, returns
+element or nil), `find_index` (returns index or nil), `select`
+(all matches, returns values), and `include?` (returns
+boolean). Four methods for what is essentially "show me what
+matches." Each has its own return-type quirks.
+
+`find` collapses all four use cases:
+
+- "Did any match?" → `.any?`
+- "What's the first match?" → `.first` (or `[0]`)
+- "Where is the first match?" → `.first.index`
+- "All matches?" → the array itself
+
+One method, one return shape, no nil-on-no-match special case.
+
+---
+
 ## Open Questions
 
 - `⊃` (proper superset) and `⊇` (superset or equal) are not included — use

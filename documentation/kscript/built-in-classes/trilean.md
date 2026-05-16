@@ -262,7 +262,7 @@ end
 ```
 
 The block-form syntax is consistent with how other KScript constructs accept
-deferred work (`%timeout`, `%forks.run`, etc.). The block runs in the caller's
+deferred work (`%utils.timeout`, `%forks.run`, etc.). The block runs in the caller's
 chain frame, so `%chain` access and exception propagation behave normally.
 
 ---

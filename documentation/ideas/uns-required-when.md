@@ -12,11 +12,11 @@ Different subsystems treat UNS names differently:
   `$foo = class ... end` produces a valid anonymous class with no
   identity beyond the variable that holds it.
 - **Robinson page files** invoke to anonymous classes inheriting from
-  `kiera.uno/dogberry/page`. No UNS on the page class itself — the file's
+  `kiera.uno/robinson/page`. No UNS on the page class itself — the file's
   location in the tree is its identity.
-- **Other places UNS shows up**: handler classes
-  (`kiera.uno/dogberry/piscopo`), built-in classes
-  (`kiera.uno/error`, `kiera.uno/reference`), reference field types
+- **Other places UNS shows up**: server classes
+  (`kiera.uno/sinatra`, `kiera.uno/robinson`), built-in classes
+  (`kiera.uno/exception/error`, `kiera.uno/reference`), reference field types
   (`allowed_class: 'foo.com/planet'`), engine-resolved capabilities
   (`%kiera['kiera.uno/mikobase/sqlite']`), etc.
 
