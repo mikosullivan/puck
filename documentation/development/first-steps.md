@@ -71,6 +71,23 @@ You don't need to understand everything — just enough to know what's
 already there. This is the inventory phase. Output: a short list of
 "this exists, this is missing, this is unclear."
 
+**One thing to specifically look for in the inventory:** the existing
+interpreter consumes a **pre-spec KScriptJSON format** (its own
+docstring notes this). Concretely:
+
+- Assignment is emitted as `["scope", "setvar", name, value]` — a
+  four-element shape, not the canonical `[receiver, method, args?]`.
+- BWC calls wrap their args in an extra `{"args": [...]}` layer
+  rather than passing the positional expression directly.
+- Other shapes may differ; only two paths have been checked.
+
+The canonical form lives in
+[kscriptjson.md](../kscript/kscriptjson.md), and the V0.01 fixture
+uses it. **The spec wins** — when the interpreter and the spec
+disagree, the interpreter is the thing that changes. Part of Step 1's
+output is therefore the exact list of format mismatches the engine
+needs to be brought into line on.
+
 ---
 
 ## Step 3: Write the V0.01 fixture (Spock (TNG))
@@ -224,7 +241,8 @@ At this point the engine loads, parses, and returns the parsed tree.
 | `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type, owning_role, payload}` | ~20 |
 | `engine.lookup_method(value, name)` | Finds `to_string` on the string class | ~15 |
 | `engine.transition(new_role, fn)` | Save/restore ctx around a Lua function call | ~15 |
-| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore | ~25 |
+| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore. **Consumes canonical `[receiver, method, args?]` shape per [kscriptjson.md](../kscript/kscriptjson.md)** — the existing interpreter's pre-spec shapes are deprecated by this work. | ~25 |
+| Format alignment for the rest of the interpreter | Migrate the remaining statement-shape handlers (assignment, `if`/`elsif`/`else`, etc.) from the pre-spec format to canonical KSJ. Touches every dispatch path in `interpreter.lua`. Existing parser/transpiler tests still pass — they test the source-side, not the runtime format. Some interpreter-level tests may need to be added or rewritten. | varies |
 
 Recommended order: `bootstrap` first (everything else needs the roles
 and classes to exist), then `materialize`, then `lookup_method`, then

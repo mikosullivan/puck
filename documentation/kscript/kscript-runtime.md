@@ -21,6 +21,53 @@ KScript has been in development conceptually for approximately twenty years.
 
 ---
 
+## Host Language: Why Lua (Q Continuum III)
+
+```
+vibecode: {
+	"section": "host_language_why_lua",
+	"choice": "lua",
+	"reasons": ["tiny_footprint_and_wide_install_base",
+		"more_contributor_involvement_than_we_would_get_with_c",
+		"cross_os_reliability_already_solved_by_lua",
+		"python_too_monolithic_for_kieras_light_footprint_goal",
+		"c_efficient_but_too_painful_to_debug"]
+}
+```
+
+The reference engine for KScript is implemented in Lua 5.4. The
+choice is deliberate; the reasoning:
+
+- **Tiny and widely installed.** Lua's footprint is small enough
+  that asking users to install it (if they don't already have it)
+  is a minor ask, not a barrier.
+- **More involvement than we'd get with C.** Lua isn't a barrier
+  for contributors who want to patch the Kiera libraries. We expect
+  more involvement from a Lua codebase than from a C codebase.
+- **Cross-OS portability is already solved.** Lua works on essentially
+  every operating system that runs anything. Kiera inherits that
+  portability without doing the work itself: if a system can run
+  Lua, it can run Kiera.
+
+### Why not Python
+
+Python is also a solid candidate — installed everywhere, possibly
+the biggest software community of any language. But **Python is
+monolithic.** It's a much larger system than Lua, and pulling in
+its full footprint conflicts with the design goal of keeping Kiera
+light. A small, reliable cross-OS footprint matters more than a
+larger ecosystem.
+
+### Why not C
+
+C is the "obvious" choice in the sense that you *can* write very
+efficient systems in it. But C's syntax is complicated and the
+debugging cost is too high — running into low-level C bugs every
+time something subtle goes wrong is not a tax worth paying. Lua
+gets us most of the way without it.
+
+---
+
 ## Philosophy (Murf II)
 
 ```

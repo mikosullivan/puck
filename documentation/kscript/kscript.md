@@ -359,6 +359,62 @@ similar languages use.
 
 ---
 
+## The `__END__` Marker (First)
+
+```
+vibecode: {
+	"section": "end_marker",
+	"marker": "__END__",
+	"behavior": "everything_after_is_ignored",
+	"must_be": "at_start_of_line_optionally_with_trailing_whitespace",
+	"must_not_be_inside": ["string_literal", "heredoc_body", "comment"],
+	"data_access": "not_supported; trailing_content_is_discarded_entirely",
+	"status": "spec_requirement_not_yet_implemented",
+	"borrowed_from": ["perl", "ruby"]
+}
+```
+
+A line containing only `__END__` (optionally followed by trailing whitespace)
+terminates the script. Everything in the file after that line is ignored by
+the parser.
+
+```
+$foo = 'hello'
+puts $foo
+__END__
+this and everything else in the file is ignored
+```
+
+Borrowed from Perl and Ruby, both of which use the same marker for the same
+purpose.
+
+### Rules
+
+- **Must be at the start of a line.** `foo __END__ bar` on a single line does
+  not trigger; the marker only fires when `__END__` is the first non-whitespace
+  content on a line.
+- **Must not be inside a string literal, heredoc body, or comment.** Inside
+  those, `__END__` is literal text. The lexer suppresses the marker check
+  while in those states.
+- **Trailing whitespace allowed** on the marker line; anything else is not
+  treated as a marker line.
+
+### What KScript doesn't do
+
+Perl exposes post-`__END__` content via the `DATA` filehandle; Ruby exposes
+it via the `DATA` constant. **KScript discards the trailing content
+entirely.** A future `__DATA__` marker could surface it if a use case shows
+up, but `__END__` alone means "throw the rest away."
+
+### Status
+
+Spec requirement; **not yet implemented.** The change is small — a
+~10–15-line addition in `lexer.lua` that emits EOF on a top-level `__END__`
+line and suppresses the check while in heredoc/string/comment state. No
+parser, transpiler, or interpreter changes.
+
+---
+
 ## Functions (Nestor)
 
 ```

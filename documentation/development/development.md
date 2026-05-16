@@ -1167,25 +1167,48 @@ vibecode: {"phase": 1, "version": "0.01", "fixture_path":
 "tests/kscript/run.lua", "acceptance":
 "fixture_runs_via_engine_and_harness_captures_return_value_hello",
 "required_ksj_forms": ["value_literal", "statement_call"], "required_runtime":
-["json_parser", "statement_dispatcher_with_role_transition",
+["json_parser", "ksj_format_alignment_to_canonical_kscriptjson_spec",
+"statement_dispatcher_with_role_transition",
 "method_dispatch", "literal_materialization_with_owning_role_tag",
 "role_registry_with_user_and_string_class_role", "role_system_method",
 "chain_wipe_on_boundary",
 "top_level_returns_last_statement_value_to_harness"],
 "required_stdlib": ["string_class_min_with_to_string_returning_self"],
-"tactic": "inventory_then_fill_gaps; not_rewrite", "deferred_to_v002":
-["kscript_text_parser", "transpiler"], "deferred_to_later":
+"tactic": "inventory_then_fill_gaps_and_align_format; spec_wins_over_existing_code",
+"canon": "kscriptjson_md_is_canonical; existing_transpiler_interpreter_format_is_pre_spec_and_gets_brought_into_line",
+"deferred_to_v002":
+["kscript_text_parser", "transpiler_emitting_canonical_ksj"],
+"deferred_to_later":
 ["sys_references_including_stdout", "stdout_io",
 "any_method_beyond_to_string", "any_class_beyond_string"]}
 ```
 
 The first concrete development task. Work splits into three steps. The
-tactic is **inventory then fill gaps** — not rewrite. The existing engine
-under `code/kscript/lua/kscript/` already has a `json.lua`, `interpreter.lua`,
-and other modules with tests; the V0.01 work is to verify and complete the
-KScriptJSON-execution path just enough for `hello-world` to run. The KScript
-text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is V0.02 work and
-is not exercised by V0.01.
+tactic is **inventory then fill gaps** — but with an important caveat:
+the existing engine consumes a KScriptJSON shape that **predates the
+canonical [kscriptjson.md](../kscript/kscriptjson.md) spec.** The
+[V0.01 fixture](#v001-hello-world) is in the canonical form; the
+existing interpreter currently isn't.
+
+**Canon: the spec wins.** When `kscriptjson.md` and the existing
+engine disagree, the spec is authoritative and the engine gets
+brought into line. The format-alignment work is part of V0.01
+scope, not a separate slice — Phase 1 doesn't end until the
+interpreter consumes canonical KSJ. (Per
+[`feedback_surface_conflicts`](../../../.claude/projects/-home-miko-projects-mikobase-working/memory/feedback_surface_conflicts.md):
+this is a specific decision for this specific conflict, not a
+universal rule. Future conflicts get surfaced and resolved
+case-by-case.)
+
+The existing engine under `code/kscript/lua/kscript/` has a
+`json.lua`, `interpreter.lua`, and other modules with 172 passing
+tests. The V0.01 work is to (a) verify the JSON parser handles the
+canonical form, (b) realign the KScriptJSON-execution path to the
+canonical statement shape `[receiver, method, args?]`, and (c)
+complete enough of the executor to run `hello-world`. The KScript
+text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is V0.02
+work; when it lands, the transpiler must also emit canonical KSJ
+so the source→runtime pipeline is end-to-end canonical.
 
 ### Step 1: Inventory
 
