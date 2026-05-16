@@ -29,6 +29,16 @@ require("transpiler.test_expressions")
 require("transpiler.test_statements")
 require("transpiler.test_examples")
 
+-- V0.01 phase 1: hello-world in canonical KScriptJSON
+require("v001.test_json_parse")
+require("v001.test_bootstrap")
+require("v001.test_materialize")
+require("v001.test_lookup_method")
+require("v001.test_transition")
+require("v001.test_dispatch")
+require("v001.test_run")
+require("v001.test_transition_observed")
+
 local runner = require("support.runner")
 local ok = runner.report()
 os.exit(ok and 0 or 1)
