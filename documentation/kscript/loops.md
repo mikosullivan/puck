@@ -258,10 +258,10 @@ lexical context. The first example above relies on this.
 ### Argument validation
 
 - `break 1` is equivalent to bare `break`.
-- `break 0` raises `kiera.uno/exception/error/invalid_argument` —
+- `break 0` raises `kiera.uno/error/invalid_argument` —
   break by zero levels is nonsense and almost always a bug.
 - `break N` where N exceeds the number of enclosing loops raises
-  `kiera.uno/exception/error/invalid_argument`. Use named-loop
+  `kiera.uno/error/invalid_argument`. Use named-loop
   targeting (TBD, see open questions) when the depth might vary.
 - The level argument is evaluated as a normal integer expression;
   `break $depth` works with a variable. If the runtime value is not a

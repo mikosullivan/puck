@@ -13,36 +13,37 @@ from them. When the two disagree, vibecode wins.
 
 ## Contents (Spock)
 
-- [V0.01: "hello-world"](#v001-hello-world)
+- [V0.01: "hello-world"](#v001-hello-world-kirk)
   - [Definition of done](#definition-of-done)
-- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello)
+- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello-uhura)
   - [Definition of done (V0.02)](#definition-of-done-v002)
-- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout)
+- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout-janeway)
   - [Definition of done (V0.03)](#definition-of-done-v003)
-- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes)
+- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes-data)
   - [Definition of done (V0.04)](#definition-of-done-v004)
-- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization)
+- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization-geordi)
   - [Definition of done (V0.05)](#definition-of-done-v005)
-- [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach)
+- [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach-mccoy)
   - [Bootstrap path](#bootstrap-path)
   - [One product named Bryton, not "bryton-lite"](#one-product-named-bryton-not-bryton-lite)
-- [Feature soft-lock](#feature-soft-lock)
+- [Feature soft-lock](#feature-soft-lock-scotty)
+  - [Deliberate post-lock additions](#deliberate-post-lock-additions)
 - [V1 scope (after 0.01)](#v1-scope-after-001)
-- [Walking-skeleton roadmap](#walking-skeleton-roadmap)
-- [Role system: baking from the start](#role-system-baking-from-the-start)
-- [Engine startup and invocation](#engine-startup-and-invocation)
+- [Walking-skeleton roadmap](#walking-skeleton-roadmap-sulu)
+- [Role system: baking from the start](#role-system-baking-from-the-start-chekov)
+- [Engine startup and invocation](#engine-startup-and-invocation-chapel)
   - [Host vs. engine](#host-vs-engine)
   - [V0.01 invocation chain](#v001-invocation-chain)
   - [V0.01 engine bootstrap sequence](#v001-engine-bootstrap-sequence)
   - [Program model](#program-model)
   - [What user KSJ can see in V0.01](#what-user-ksj-can-see-in-v001)
   - [How later slices grow the lifecycle](#how-later-slices-grow-the-lifecycle)
-- [Lua-side implementation sketch](#lua-side-implementation-sketch)
+- [Lua-side implementation sketch](#lua-side-implementation-sketch-rand)
   - [Data structures (Lua tables)](#data-structures-lua-tables)
   - [Key procedures](#key-procedures)
   - [Pseudo-code skeleton](#pseudo-code-skeleton)
   - [Notes on the sketch](#notes-on-the-sketch)
-- [V0.01 phase 0: Lua workbench](#v001-phase-0-lua-workbench)
+- [V0.01 phase 0: Lua workbench](#v001-phase-0-lua-workbench-pike)
   - [Step 0.1: Confirm Lua 5.4](#step-01-confirm-lua-54)
   - [Step 0.2: Run a sanity hello in pure Lua](#step-02-run-a-sanity-hello-in-pure-lua)
   - [Step 0.3: Verify package.path resolves engine modules](#step-03-verify-packagepath-resolves-engine-modules)
@@ -50,46 +51,46 @@ from them. When the two disagree, vibecode wins.
   - [Step 0.5: Verify json.lua loads and parses](#step-05-verify-jsonlua-loads-and-parses)
   - [Step 0.6: Verify file reading](#step-06-verify-file-reading)
   - [Phase 0 test plan](#phase-0-test-plan)
-- [V0.01 phase 1: hello-world in KScriptJSON](#v001-phase-1-hello-world-in-kscriptjson)
+- [V0.01 phase 1: hello-world in KScriptJSON](#v001-phase-1-hello-world-in-kscriptjson-number-one)
   - [Step 1: Inventory](#step-1-inventory)
   - [Step 2: Fill the gaps](#step-2-fill-the-gaps)
   - [Step 3: Verify](#step-3-verify)
   - [Phase 1 test plan](#phase-1-test-plan)
   - [Test layout](#test-layout)
-- [V0.02 phase 0: source-side workbench](#v002-phase-0-source-side-workbench)
+- [V0.02 phase 0: source-side workbench](#v002-phase-0-source-side-workbench-saavik)
   - [Step 0.1: Confirm the lexer tokenizes the fixture](#step-01-confirm-the-lexer-tokenizes-the-fixture)
   - [Step 0.2: Confirm the parser produces a clean AST](#step-02-confirm-the-parser-produces-a-clean-ast)
   - [Step 0.3: Observe the transpiler's current output](#step-03-observe-the-transpilers-current-output)
   - [Step 0.4: Confirm engine.run handles a hand-built canonical tree](#step-04-confirm-enginerun-handles-a-hand-built-canonical-tree)
   - [V0.02 phase 0 test plan](#v002-phase-0-test-plan)
-- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source)
+- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source-hoshi)
   - [V0.02 Step 1: Inventory](#v002-step-1-inventory)
   - [V0.02 Step 2: Fill the gaps](#v002-step-2-fill-the-gaps)
   - [V0.02 Step 3: Verify](#v002-step-3-verify)
   - [V0.02 phase 1 test plan](#v002-phase-1-test-plan)
   - [V0.02 test layout](#v002-test-layout)
   - [V0.02 open questions](#v002-open-questions)
-- [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench)
+- [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench-tuvok)
   - [V0.03 phase 0 test plan](#v003-phase-0-test-plan)
-- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source)
+- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source-paris)
   - [V0.03 Step 1: Inventory](#v003-step-1-inventory)
   - [V0.03 Step 2: Fill the gaps](#v003-step-2-fill-the-gaps)
   - [V0.03 Step 3: Verify](#v003-step-3-verify)
   - [V0.03 phase 1 test plan](#v003-phase-1-test-plan)
   - [V0.03 test layout](#v003-test-layout)
   - [V0.03 open questions](#v003-open-questions)
-- [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution)
+- [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution-sarek)
   - [What the slice introduces](#what-the-slice-introduces)
   - [Permissions: default restrictive, opt-in via flags](#permissions-default-restrictive-opt-in-via-flags)
   - [Installation](#installation)
   - [Bryton interaction](#bryton-interaction)
   - [Open questions](#open-questions)
-- [V0.1: Bryton](#v01-bryton)
+- [V0.1: Bryton](#v01-bryton-amanda)
   - [V0.1 prerequisites](#v01-prerequisites)
   - [V0.1 phase plan](#v01-phase-plan)
   - [V0.1 test layout](#v01-test-layout)
-- [Methodology](#methodology)
-- [Open](#open)
+- [Methodology](#methodology-tpring)
+- [Open](#open-tpau)
 
 ---
 
@@ -133,7 +134,7 @@ built out fully.
 vibecode: {"scope_status": "confirmed_2026-05-15", "done_criteria":
 {"fixture_runs": "[[{\"value\": \"hello\"}, \"to_string\"]]_parses_and_executes",
 "runs_under_a_role":
-"program_executes_in_user_role; dispatch_transitions_to_string_class_role_and_back",
+"program_executes_in_user_role; dispatch_transitions_to_stdlib_role_and_back",
 "has_a_string_class":
 "minimum_built_in_string_class_with_to_string_returning_self; owned_by_engine_role",
 "returns_hello":
@@ -250,13 +251,13 @@ vibecode: {"version": "0.03", "codename": "kscript-with-stdout", "goal":
 "hello\\n", "observation":
 "test_harness_captures_stdout_via_injected_sink; payload_match_on_captured_buffer",
 "covers": ["bwc_dispatch_in_engine_lua",
-"stdout_faucet_object_and_role", "puts_bwc_implementation",
+"stdout_sink_object_and_role", "puts_bwc_implementation",
 "transpiler_realignment_for_bwc_statement_shape",
 "engine_run_source_extended_to_accept_stdout_sink_injection"],
 "reuses_from_prior": ["json_parser", "bootstrap", "materialize",
 "lookup_method", "transition", "dispatch", "engine_run_source",
 "engine_run_tree"], "first_real_io": true,
-"deferred_to_later": ["stdin_faucet", "stderr_faucet", "file_io",
+"deferred_to_later": ["stdin_faucet", "stderr_sink", "file_io",
 "network_io", "additional_classes_beyond_string",
 "variables_assignment_control_flow",
 "full_transpiler_realignment_for_unrelated_ast_types"]}
@@ -281,8 +282,9 @@ V0.03 introduces three pieces the engine doesn't have yet:
    V0.01 dispatcher only handles `[receiver, method, args?]` for value
    receivers; V0.03 extends it to `[{bwc: name}, arg?]` for bwc
    receivers.
-2. **stdout faucet/sink.** An engine-supplied object representing
-   "where text written by the program goes." Following
+2. **stdout sink.** An engine-supplied object representing "where
+   text written by the program goes." stdout is a sink (values flow
+   out), not a faucet (which would be input). Following
    [roles.md](../kscript/roles.md), it has its own role (`stdout`).
    For test injection, the engine exposes an `env.stdout` override
    parameter to `engine.run_source` / `engine.run_tree`, defaulting to
@@ -316,7 +318,8 @@ V0.03 is done when all four are true:
    parses, and transpiles to `[[{"bwc": "puts"}, {"value": "hello"}]]`
    exactly (deep-equal via the V0.02 `assert.deep_equal` helper).
 2. **bwc registry has `puts` after bootstrap.** `engine.bwcs.puts`
-   exists, owned by `engine.roles.stdout`, callable via the dispatcher.
+   exists as a struct `{fn = <function>, owning_role = engine.roles.stdout}`,
+   callable via the dispatcher.
 3. **Engine dispatches bwc statements.** Handing a bwc-shape statement
    to `engine.dispatch` resolves the handler, transitions to `stdout`
    role, calls it, restores.
@@ -628,7 +631,7 @@ vibecode: {"approach": "walking_skeleton", "principle":
 "hello_world_kscript", "proves":
 "kscript_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
 "name": "kscript_with_stdout", "proves":
-"bwc_dispatch; stdout_faucet_and_role; puts_bwc"}, {"v": "0.04",
+"bwc_dispatch; stdout_sink_and_role; puts_bwc"}, {"v": "0.04",
 "name": "kscript_with_hashes", "proves":
 "hash_class; hash_literal; key_access; ordered_iteration"}, {"v": "0.05",
 "name": "kscript_with_json_serialization", "proves":
@@ -698,7 +701,7 @@ cross-role call (`user` → string-class role → `user`):
 
 ```
 vibecode: {"v001_role_footprint": {"registry_entries_min":
-["user", "string_class_role_name_tbd"], "value_layer":
+["user", "stdlib"], "value_layer":
 "every_value_carries_owning_role_slot_immutable_after_creation",
 "dispatcher_layer":
 "on_method_call_compare_method_owning_role_to_current; if_differ_save_state_set_new_role_wipe_chain_run_restore",
@@ -729,8 +732,16 @@ vibecode: {"v001_role_footprint": {"registry_entries_min":
 vibecode: {"growth_path": [{"slice": "v0.01", "adds":
 "core_primitives_registry_owning_role_transition_role_chain_wipe"},
 {"slice": "v0.02", "adds":
-"transpiler_role; ksj_emitted_tagged_with_caller_role"}, {"slice":
-"first_http", "adds":
+"transpiler_role; ksj_emitted_tagged_with_caller_role"},
+{"slice": "v0.03", "adds":
+"stdout_role; owns_stdout_sink_and_puts_bwc; first_cross_role_boundary_for_engine_supplied_io"},
+{"slice": "v0.04", "adds":
+"no_new_role_primitives; built_in_hash_class_registered_under_existing_stdlib_role; same_pattern_as_v001_string_class"},
+{"slice": "v0.05", "adds":
+"no_new_role_primitives; to_json_methods_register_on_existing_stdlib_class_methods"},
+{"slice": "v0_0x_cli", "adds":
+"stderr_role; per_dirjail_roles_when_allow_fs_flag_used; per_faucet_roles_when_allow_net_flag_used; env_vars_and_cli_args_roles"},
+{"slice": "first_http", "adds":
 "network_faucet_role; request_body_values_inherit_faucet_role"},
 {"slice": "first_db", "adds":
 "per_mikobase_instance_role; rows_inherit_db_role"}, {"slice":
@@ -752,6 +763,10 @@ vibecode: {"growth_path": [{"slice": "v0.01", "adds":
 |---|---|
 | V0.01 | Core: registry, `owning_role` on values, transition-on-call, `%role`, `%chain` wipe |
 | V0.02 | Transpiler role; emitted KScriptJSON tagged with caller role |
+| V0.03 | `stdout` role; owns the stdout sink and the `puts` bwc; first cross-role boundary for engine-supplied I/O |
+| V0.04 | No new role primitives; built-in hash class is registered under the existing `stdlib` role (same pattern as V0.01's string class) |
+| V0.05 | No new role primitives; `to_json` methods register on existing `stdlib`-owned classes |
+| V0.0X CLI | `stderr` role; per-dirjail roles when `--allow-fs` is used; per-faucet roles when `--allow-net` is used; `env_vars` and `cli_args` roles |
 | First HTTP | Network faucet role; request-body values inherit it |
 | First DB | Per-Mikobase-instance role; rows inherit it |
 | First Uma | No new role primitives; Uma objects are user-owned by default |
@@ -857,12 +872,12 @@ Top-level shape:
 
 ```
 vibecode: {"v001_bootstrap_sequence": [{"step": 1, "name":
-"create_role_registry", "creates": ["user", "string_class_role"],
+"create_role_registry", "creates": ["user", "stdlib"],
 "role_object_v001":
 "name_only_no_methods_no_state_no_trust_web"}, {"step": 2, "name":
 "create_built_in_string_class", "creates":
 "string_class_object_with_one_method_to_string_returning_self",
-"tagged_with": "string_class_role"}, {"step": 3, "name":
+"tagged_with": "stdlib"}, {"step": 3, "name":
 "establish_execution_context", "sets":
 {"current_role": "user", "chain": "empty_placeholder"}}, {"step":
 4, "name": "load_and_parse_ksj_file", "uses": "json_parser",
@@ -1060,7 +1075,7 @@ reference, not the contents).
   ```lua
   engine.roles = {
       user         = { name = "user" },
-      string_class = { name = "string_class_role" },  -- name TBD
+      stdlib = { name = "stdlib" },
   }
   ```
 
@@ -1077,7 +1092,7 @@ reference, not the contents).
   ```lua
   {
       name = "string",
-      owning_role = engine.roles.string_class,
+      owning_role = engine.roles.stdlib,
       methods = {
           to_string = function(receiver, args) return receiver end,
       },
@@ -1159,12 +1174,12 @@ end
 function engine.bootstrap()
     engine.roles = {
         user         = { name = "user" },
-        string_class = { name = "string_class_role" },
+        stdlib = { name = "stdlib" },
     }
     engine.classes = {
         string = {
             name = "string",
-            owning_role = engine.roles.string_class,
+            owning_role = engine.roles.stdlib,
             methods = {
                 to_string = function(receiver, args)
                     return receiver       -- identity on a string
@@ -1538,7 +1553,7 @@ vibecode: {"phase": 1, "version": "0.01", "fixture_path":
 ["json_parser", "ksj_format_alignment_to_canonical_kscriptjson_spec",
 "statement_dispatcher_with_role_transition",
 "method_dispatch", "literal_materialization_with_owning_role_tag",
-"role_registry_with_user_and_string_class_role", "role_system_method",
+"role_registry_with_user_and_stdlib", "role_system_method",
 "chain_wipe_on_boundary",
 "top_level_returns_last_statement_value_to_harness"],
 "required_stdlib": ["string_class_min_with_to_string_returning_self"],
@@ -1614,11 +1629,11 @@ vibecode: {"step": 2, "name": "fill_gaps", "scope":
 ["top_level_statement_list", "statement_call_dispatch_with_role_transition",
 "value_literal_materialization_with_owning_role",
 "top_level_returns_last_statement_value"], "role_forms":
-["role_registry_init_with_user_and_string_class_role",
+["role_registry_init_with_user_and_stdlib",
 "owning_role_slot_on_every_value", "role_transition_save_and_restore",
 "chain_wipe_at_boundary_even_if_chain_is_empty_placeholder",
 "role_system_method_returning_current_role"], "stdlib_forms":
-["string_class_with_to_string_returning_self_owned_by_string_class_role"]}
+["string_class_with_to_string_returning_self_owned_by_stdlib_role"]}
 ```
 
 For each gap in the inventory, add only what V0.01 needs.
@@ -1706,7 +1721,7 @@ runner.suite("v0.01 / bootstrap")
 runner.test("populates the role registry with user and string-class roles", function()
     engine.bootstrap()
     assert_.not_nil(engine.roles.user)
-    assert_.not_nil(engine.roles.string_class)
+    assert_.not_nil(engine.roles.stdlib)
 end)
 
 runner.test("populates the class registry with the string class", function()
@@ -1729,10 +1744,10 @@ Every test in the plan below follows this pattern.
 | T1.2 | unit | bootstrap populates state | After `engine.bootstrap()`: `engine.roles.user` exists, `engine.classes.string` exists with `to_string` method, `engine.ctx.current_role == engine.roles.user` |
 | T1.3 | unit | materialize wraps literal | `engine.materialize({value = "hello"})` returns `{type = "string", payload = "hello", owning_role = engine.roles.user}` |
 | T1.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
-| T1.5 | unit | transition save/restore | Call `engine.transition(string_class_role, function() return engine.ctx.current_role end)`; verify return == string_class_role AND after the call `engine.ctx.current_role == user` and `engine.ctx.chain` is the original table |
+| T1.5 | unit | transition save/restore | Call `engine.transition(engine.roles.stdlib, function() return engine.ctx.current_role end)`; verify return == `engine.roles.stdlib` AND after the call `engine.ctx.current_role == engine.roles.user` and `engine.ctx.chain` is the original table |
 | T1.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
 | T1.7 | integration | full end-to-end | `engine.run("tests/kscript/fixtures/hello_world.ksj")` returns a value whose `payload == "hello"` |
-| T1.8 | unit | transition observed | A spy in the `to_string` method records `engine.ctx.current_role` at call time; assert it was `string_class_role`, not `user` |
+| T1.8 | unit | transition observed | A spy in the `to_string` method records `engine.ctx.current_role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
 
 T1.8 is the load-bearing test for the role system: it proves the
 transition *actually happened* (not just that it was set up). Without
@@ -2237,7 +2252,7 @@ vibecode: {"phase": 1, "version": "0.03", "fixture_path":
 ["bootstrap", "materialize", "lookup_method", "transition",
 "dispatch_for_method_call_form", "engine_run_source", "engine_run_tree",
 "assert_deep_equal"], "out_of_scope":
-["stdin_faucet", "stderr_faucet", "file_io", "variables_assignment",
+["stdin_faucet", "stderr_sink", "file_io", "variables_assignment",
 "control_flow", "full_transpiler_retrofit_for_unrelated_bwcs"],
 "tactic":
 "minimal_extension_just_for_puts_with_one_string_argument; other_bwcs_and_multi_argument_bwc_calls_left_for_later"}
@@ -2301,15 +2316,16 @@ For each gap from Step 1, add only what V0.03 needs:
   `[{bwc: name}, arg?]` shape. Existing transpiler tests for bwc paths
   get updated; tests for unrelated paths stay as-is.
 - **Engine bootstrap.** Add an `stdout` role to `engine.roles` and an
-  `engine.bwcs` table mapping `"puts"` to a handler function. The
-  handler is owned by the `stdout` role (assigned as
-  `bwcs.puts.owning_role = engine.roles.stdout`, or via a parallel
-  registry — exact shape decided during implementation; not
-  load-bearing for the plan).
+  `engine.bwcs` table mapping `"puts"` to a struct entry:
+  `engine.bwcs.puts = {fn = function(args) ... end, owning_role = engine.roles.stdout}`.
+  Each bwc carries its own metadata (handler function, owning role)
+  in a single entry — no parallel role-lookup table to keep in sync.
+  Forward-compatible for additional per-bwc fields later (docs,
+  deprecation flag, version) without an engine-wide refactor.
 - **Engine dispatch.** Extend `engine.dispatch` to branch on the
   receiver form: if `statement[1]` is `{bwc: <name>}`, look up the
-  handler in `engine.bwcs`, run inside `engine.transition` to the
-  handler's owning role, pass the materialized arg.
+  entry in `engine.bwcs`, run `entry.fn` inside `engine.transition`
+  to `entry.owning_role`, pass the materialized arg.
 - **Engine run_source signature.** Accept `(path, env)` with `env`
   optional. `env.stdout` overrides the default sink (which writes to
   `io.stdout` for production use). `engine.run_tree(tree, env)`
@@ -2382,7 +2398,7 @@ V0.01 T1.8): a spy on the `puts` handler records
 | ID | Level | Verifies | How |
 |---|---|---|---|
 | T3.1 | unit | Transpiler emits canonical bwc form | `assert.deep_equal(kscript.transpile("puts 'hello'"), {{ {bwc="puts"}, {value="hello"} }})` |
-| T3.2 | unit | Bootstrap registers stdout role and `puts` | `engine.roles.stdout` exists; `engine.bwcs.puts` is a function |
+| T3.2 | unit | Bootstrap registers stdout role and `puts` | `engine.roles.stdout` exists; `engine.bwcs.puts.fn` is a function; `engine.bwcs.puts.owning_role == engine.roles.stdout` |
 | T3.3 | unit | Dispatch routes bwc to handler | Hand-build `[{bwc:"puts"}, {value:"x"}]`; pass to `engine.dispatch` with a capture env; assert capture has `"x\n"` |
 | T3.4 | unit | `env.stdout` override accepted | `engine.run_source(path, {stdout = capture})` runs without error |
 | T3.5 | unit | Transition to stdout role observed during dispatch | Spy on `puts` handler records role at call time; assert it was `stdout` |
@@ -2416,10 +2432,11 @@ vibecode: {"test_directory": "tests/kscript/v003/",
 ```
 vibecode: {"open_questions":
 ["bwc_handler_calling_convention",
-"bwc_owning_role_attachment_mechanism",
 "capture_sink_signature",
 "stderr_vs_stdout_split",
-"sys_role_check_after_v003"]}
+"sys_role_check_after_v003"],
+"resolved":
+["bwc_owning_role_attachment_mechanism_resolved_2026-05-17_as_struct_per_bwc_fn_and_owning_role"]}
 ```
 
 - **bwc handler calling convention.** V0.01 method handlers take
@@ -2428,11 +2445,6 @@ vibecode: {"open_questions":
   `(interp, args)`. Recommendation: match the existing
   `interpreter.lua` pattern `(interp, args)` so the engine instance is
   available for stdout writes. Settled during implementation.
-- **bwc owning_role attachment.** Either store the role on the bwc
-  entry directly (`engine.bwcs.puts = {fn=..., owning_role=...}`) or
-  via a parallel table (`engine.bwc_roles = {puts = engine.roles.stdout}`).
-  First is more self-contained; second composes with the existing
-  bwcs-as-functions shape. Settled during implementation.
 - **Capture sink signature.** `env.stdout(s)` taking a single string,
   matching `interpreter.lua`. Buffer reconstruction happens in the
   test helper, not in the engine.
@@ -2453,7 +2465,7 @@ vibecode: {"open_questions":
 ```
 vibecode: {"slice": "v0_0x_kscript_cli", "codename":
 "kscript_cli", "position_in_roadmap":
-"after_v002_kscript_text_runs; before_v01_bryton",
+"after_v005_kscript_with_json_serialization; before_v01_bryton",
 "goal":
 "introduce_kscript_as_os_level_command_for_running_kscript_files_with_explicit_permission_model",
 "hard_prerequisite_for": "v0_1_bryton",
@@ -2475,9 +2487,13 @@ for KScript code launched at the CLI.
 ```
 vibecode: {"introduces": ["kscript_command_line_launcher",
 "shebang_support", "argument_passing_into_kscript",
-"stdout_stderr_separation",
+"stderr_sink_and_role",
+"routing_convention_engine_errors_to_stderr_program_output_to_stdout",
 "exit_codes_zero_on_clean_completion_nonzero_on_alarm_or_uncaught",
-"permission_flag_machinery"], "launcher_responsibilities":
+"permission_flag_machinery"],
+"note_on_stdout":
+"stdout_sink_and_puts_bwc_already_shipped_in_v003_kscript_with_stdout; v00x_cli_adds_stderr_as_a_peer_sink_plus_the_routing_convention",
+"launcher_responsibilities":
 ["take_a_kscript_file_path_as_first_argument",
 "set_up_engine_with_minimum_roles",
 "wire_up_faucets_for_any_granted_flags",
@@ -2494,8 +2510,14 @@ vibecode: {"introduces": ["kscript_command_line_launcher",
   `./file.kscript`.
 - Argument passing from OS argv into the running KScript program
   (surfaced via `%argv`; exact shape settled in this slice).
-- Stdout / stderr separation — engine errors to stderr, the program's
-  intentional output to stdout.
+- **stderr sink** — engine-introduced peer of the stdout sink that
+  shipped in V0.03. Has its own role (`stderr`); writes go to the
+  process's `io.stderr` by default; test injection via
+  `env.stderr` mirrors `env.stdout`.
+- **Routing convention** — engine errors and diagnostics go to
+  stderr; the program's intentional output goes to stdout. This is
+  the first slice that needs the distinction (V0.03 only had stdout,
+  V0.04/V0.05 had no engine-error-vs-program-output ambiguity).
 - Exit codes — 0 on clean completion, non-zero on uncaught exception
   or alarm.
 - The permission-flag machinery described below.
@@ -2592,7 +2614,7 @@ To make `kscript` available as a command, the user adds the project's
 
 ```bash
 # in ~/.bashrc or ~/.zshrc
-export PATH="/home/miko/projects/mikobase/working/bin:$PATH"
+export PATH="/path/to/kiera/working/bin:$PATH"   # replace with your local checkout path
 ```
 
 After re-sourcing the rc file (or starting a new shell),
@@ -2691,12 +2713,12 @@ vibecode: {"version": "0.1", "codename": "bryton", "goal":
 "distinct_from":
 "lua_side_engine_tests_which_continue_to_use_tests_kscript_support_runner",
 "spec_links":
-["documentation/bryton/overview.md",
-"documentation/bryton/runner.md"]}
+["documentation/kscript/bryton/overview.md",
+"documentation/kscript/bryton/runner.md"]}
 ```
 
 V0.1 is the first usable **Bryton** — see
-[bryton/overview.md](../overview.md) and
+[bryton/overview.md](../kscript/bryton/overview.md) and
 [bryton/runner.md](../kscript/bryton/runner.md) for the full spec. Per the
 direction to keep it very light at this stage, the V0.1 runner does
 only what's strictly needed: walk a directory, run each file as a
@@ -2891,9 +2913,11 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 ```
 vibecode: {"open": ["test_runner_decision", "fixture_layout",
 "vibecode_attachment_form", "bootstrap_parser_in_ksj",
-"string_class_role_name", "chain_placeholder_form_in_v001",
+"chain_placeholder_form_in_v001",
 "top_level_return_path_to_harness",
-"engine_capability_allow_list_v1_plus"]}
+"engine_capability_allow_list_v1_plus"],
+"resolved":
+["string_class_role_name_resolved_2026-05-17_as_stdlib_for_all_built_in_classes"]}
 ```
 
 - **Test runner.** Use the existing `tests/kscript/run.lua` or evolve it?

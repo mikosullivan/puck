@@ -15,6 +15,11 @@ Any process that connects to a mikobase can reach in and use its objects at any 
 Objects in the mikobase are always alive for as long as the mikobase exists. A process's local
 objects stay local. If an object needs to be shared, it must live in the mikobase.
 
+**Worldlets are the primary use case for mikobase** — packaged, portable mikobases
+used for scenarios, scratch state, AI conversation captures, and similar
+short-lived or snapshot-shaped workloads. Other use cases (microservices, larger
+services) are supported, but worldlets drive design decisions.
+
 ---
 
 ## v1 Scope (Galaxy)
@@ -22,16 +27,25 @@ objects stay local. If an object needs to be shared, it must live in the mikobas
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
 
-- **Two storage engines ship in v1:** **SQLite** (file-backed) and
-  **in-memory**. Mikobase already supports multiple engines as
-  pluggable backends, so the in-memory version is just another
-  engine — a "big JSON hash thing," roughly as much code as the
-  SQLite engine, no more complicated. Other backends (Postgres,
+- **Three storage engines ship in v1:**
+  1. **SQLite file-backed** — long-lived, file-persisted databases.
+  2. **SQLite in-memory** (`:memory:`) — ephemeral SQLite-backed
+     databases. Same SQLite backend as file-backed; only the
+     storage target differs. Q0 queries are just SQL in both cases.
+  3. **Worldlet-direct** — operates on the worldlet JSON structure
+     directly, with no SQLite import/export step. Built for very
+     short-lived workloads (AI2AI conversations, scratch sessions
+     measured in milliseconds) where the import/export cost would
+     dominate the actual work. Q0 queries are implemented against
+     the JSON structure instead of via SQL.
+
+  Mikobase still supports multiple engines as pluggable backends;
+  these three are what ships in v1. Other backends (Postgres,
   etc.) come later as add-ons.
 - **Time-travel stays in core.** It's well-designed already, not
   particularly expensive, and the toggle exists via
   [temporal vs non-temporal mode](#temporal-vs-non-temporal-mode)
-  for cases that don't want it (worldlets default to non-temporal).
+  for cases that don't want it (opt in via `"temporal": false`).
 - **Mikobase-as-filesystem: not in v1.** That whole brainstorm
   (see [ideas/mikobase-as-filesystem.md](../ideas/apps/mikobase-as-filesystem.md))
   is speculative. The filesystem-shaped interface, the
@@ -62,16 +76,36 @@ recoverable) or **non-temporal** (each record is stored as a single object; writ
 overwrite in place). The choice is a per-database flag set at initialization and is
 **immutable** for the life of the database.
 
-Non-temporal mode exists for small or short-lived databases — worldlets, scratch state,
-ephemeral conversation snapshots — where keeping history just clutters the store and
-provides no value. For these cases, version history is overhead with no payoff.
+**Temporal is the default. Non-temporal must be opted into explicitly** via the
+top-level flag:
+
+```json
+{
+    "temporal": false,
+    ...
+}
+```
+
+A database without the `temporal` key — or with `"temporal": true` — is temporal.
+
+Non-temporal mode was added because **worldlets are the primary use case for
+mikobase** (see [overview](#overview-sovereign)), and most worldlets don't
+benefit from history — they're snapshots of conversations, scenarios, or
+scratch state, not audit logs. After working with worldlets in temporal mode,
+reading through history records that each only appeared once was annoying;
+non-temporal mode is the direct fix.
+
+The same logic applies beyond worldlets: a microservice that doesn't need to
+audit past versions of its records probably doesn't need a temporal database
+either. Non-temporal isn't a niche mode; it's the right choice for any
+workload where version history adds clutter without payoff.
 
 ### Single read and write paths
 
 The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
 
 - One **retrieval** method understands how to find the latest version of a record. In
-  temporal mode it scans history for the latest `created_at`; in non-temporal mode it
+  temporal mode it scans history for the latest `updated_at`; in non-temporal mode it
   reads the record directly. Callers don't branch.
 - One **save** method understands how to persist a write. In temporal mode it appends a
   history row; in non-temporal mode it overwrites in place. Callers don't branch.
@@ -95,11 +129,109 @@ temporal (or vice versa), import the data into a new database created with the d
 mode. A future engine release may add a refactor tool, but the chosen mode is permanent
 for the database it was set on.
 
-### Worldlets are non-temporal
+### Worldlets and the temporal flag
 
-Worldlets default to non-temporal mode. A worldlet represents a snapshot of a
-conversation, scenario, or scratch space — not an audit log. See
-[worldlet.md](worldlets/worldlet.md) for the format implications.
+A worldlet is a **serialized export** of a mikobase, not a mikobase itself
+(see [Export formats](#export-formats) below). The worldlet JSON captures
+the source mikobase's `temporal` setting at the top level; on import, a
+fresh mikobase is created with the same temporal mode. Worldlets that
+represent a snapshot of a conversation, scenario, or scratch space — where
+version history adds nothing — were typically exported from a non-temporal
+mikobase and re-import into a non-temporal one. Worldlets that *do* care
+about version history come from temporal mikobases and round-trip the
+history block.
+
+**Open: a worldlet with both `records` populated as current-state AND a
+populated `history` block.** Combining the two modes' shapes in one export
+isn't specified and isn't a priority to resolve.
+
+---
+
+## Export formats (Akira)
+
+```
+vibecode: {
+    "section": "export_formats",
+    "role": "frames worldlets as one of multiple serialized export formats of a mikobase; the live mikobase is always engine-backed (currently SQLite)",
+    "key_concepts": ["export_format_not_engine", "worldlet_as_one_format",
+                     "second_export_format_tbd", "import_function_needed",
+                     "live_mikobase_is_always_sqlite_backed_in_v1"]
+}
+```
+
+A mikobase is always **live and engine-backed** (see
+[Class Hierarchy](#class-hierarchy-olympic)). **Exports** serialize a
+mikobase to a portable format that can be stored, shared, or
+re-imported. Exports are not live — they're pure data on disk.
+
+Mikobase v1 will support at least two export formats:
+
+| Format | Status | Description |
+|---|---|---|
+| **Worldlet** (JSON) | Format defined — [worldlet.md](worldlets/worldlet.md) | Single JSON document; portable; human-readable; suitable for sharing, AI conversation captures, snapshots |
+| (Second format) | TBD | A second export format is planned; shape not yet specified |
+
+### Worldlets play two roles
+
+Worldlet JSON is **both** an export format (from any engine) **and**
+the live storage of the [`kiera.uno/mikobase/worldlet`](#class-hierarchy-olympic)
+engine. From a SQLite-backed mikobase, exporting to a worldlet
+serializes the database; from the worldlet engine, the worldlet IS the
+database (no serialization step).
+
+This means:
+
+- **SQLite engine + worldlet file**: the worldlet is a snapshot. Load
+  via import (incurs the import cost); save via export (incurs the
+  export cost). Suitable for long-lived databases that occasionally
+  exchange data.
+- **Worldlet engine + worldlet file**: the worldlet is the live store.
+  Load by reading the file (parse JSON, done); save by writing the
+  file (serialize JSON, done). Suitable for very short-lived
+  workloads where import/export overhead would dominate.
+
+The choice of engine is the choice between persistence-cost and
+serialization-cost. Both engines speak the same `kiera.uno/mikobase`
+interface; KScript code that doesn't care which backend it's on works
+identically against either.
+
+### Import / export functions
+
+The pipeline between an engine-backed mikobase and an export format is
+exactly two functions per format:
+
+- **Export** — read the live mikobase, produce the format's bytes.
+- **Import** — read the format's bytes, produce a fresh engine-backed
+  mikobase.
+
+For the SQLite engines, both functions involve real work: import maps
+JSON shape to SQL schema, inserts every row; export reads tables, serializes
+to JSON. For the worldlet engine, "import" is just parsing the JSON
+into the engine's in-memory structure (and "export" is just serializing
+it back) — there's no schema-mapping step because the worldlet IS the
+storage shape.
+
+Neither function is specified in detail yet. Open work for the worldlet
+import in particular:
+
+- Method signature and ownership: instance method on the mikobase
+  (`$mb.export_worldlet()`, `$mb.import_worldlet(json)`), free function
+  (`%kiera['kiera.uno/mikobase'].import_worldlet(json)`), or a
+  constructor (`kiera.uno/mikobase.from_worldlet(json) → mikobase`).
+- Schema mapping for the temporal flag (the worldlet's
+  `"temporal": false` must produce the corresponding SQLite schema for
+  the SQLite engines).
+- UUID and timestamp preservation on import (`updated_at` on temporal
+  history rows must round-trip exactly; `created_at` on non-temporal
+  records must round-trip exactly).
+- Error handling for malformed JSON, unknown `format_version`,
+  unknown classes, etc.
+- Round-trip equivalence guarantee (export then import should produce
+  a mikobase indistinguishable from the original modulo file handles).
+- For the worldlet engine: how Q0 queries are implemented against the
+  JSON structure (joins, aggregations, indexes), and whether the
+  engine supports both temporal and non-temporal modes or only
+  non-temporal.
 
 ---
 
@@ -165,12 +297,15 @@ vibecode: {
 | `kiera.uno/mikobase` | Abstract base class (`abstract true`); full Q0 interface, locking, transactions |
 | `kiera.uno/mikobase/memory` | SQLite in-memory database (`:memory:`) |
 | `kiera.uno/mikobase/sqlite` | SQLite file-backed database |
+| `kiera.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (AI2AI conversations, scratch sessions) where import/export cost would dominate |
 | `kiera.uno/mikobase/http` | HTTP server that exposes a mikobase over the network |
 | `kiera.uno/mikobase/server` | Managed mikobase server for fork-based coordination |
 
-Both SQLite implementations run on the same backend — the only difference is whether
-SQLite is pointed at memory or a file. Q0 is just SQL in both cases, with no separate
-in-memory query engine needed.
+The two SQLite implementations run on the same backend — the only difference is
+whether SQLite is pointed at memory or a file. Q0 is just SQL in both cases, with
+no separate in-memory query engine needed. The worldlet engine is a third backend
+that implements Q0 against the worldlet's JSON structure directly (no SQLite
+involvement).
 
 KScript code interacts only with the `kiera.uno/mikobase` interface and is unaware of the backend.
 
@@ -303,7 +438,7 @@ Content-Type: application/json
         "f1a2b3c4-0001-0001-0001-000000000001": {
             "record":     "e1b2c3d4-0001-0001-0001-000000000001",
             "class":      "foo.com/reading",
-            "created_at": "2026-05-03T12:00:00.000Z",
+            "updated_at": "2026-05-03T12:00:00.000Z",
             "bucket":     {"value": 42.7}
         }
     }

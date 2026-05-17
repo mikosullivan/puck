@@ -22,7 +22,7 @@ This repository is the working source for the whole ecoverse: design docs, the e
 | Path | Contents |
 |---|---|
 | `documentation/` | All design specs — language, data store, HTTP middleware, security model, the development plan, idea drafts |
-| `code/` | Implementation (Lua-hosted KScript engine, Python Mikobase engine, etc.) |
+| `code/` | Implementation. Today: the Lua-hosted KScript engine under `code/kscript/lua/` (V0.01 hello-world ships and passes 213 tests). Other components — Mikobase, Kiera, Dogberry — are design-only placeholders (`.gitkeep`); see [`documentation/`](documentation/) for the specs and roadmap. |
 | `tests/` | Tests for the engine and other components |
 | `experiments/` | Small scratch files used for trying things out |
 | `web/` | Web-side configuration (nginx, sites) |

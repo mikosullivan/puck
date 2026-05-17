@@ -104,7 +104,7 @@ deferred — v1 returns the exit code only.
 An optional `timeout: N` keyword arg sets a hard wall-clock deadline (in
 whole seconds). If the child process doesn't exit by then, it's killed
 with SIGKILL (signal 9) — no SIGTERM courtesy, no chance for the child
-to clean up — and `.execute` raises a `kiera.uno/exception/error/timeout`
+to clean up — and `.execute` raises a `kiera.uno/error/timeout`
 in the caller's scope. That's the same class users catch from
 `%utils.timeout`, so a single `catch` clause can handle either source.
 Without `timeout:`, the call waits indefinitely.

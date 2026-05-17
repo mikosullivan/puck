@@ -54,10 +54,15 @@ threads through every handler method in the chain. It exposes:
 - **`$transaction.request`** — the request. **Immutable.**
   Handlers read it but cannot change it; cross-stage state goes
   in the handler's own bucket (see [The handler chain](#the-handler-chain)).
-- **`$transaction.response`** — the response. **Starts at null.**
-  No placeholder is built; the response object is whatever a
-  handler in stage 2 constructs and returns (or the built-in
-  404 / 5xx fallback if no handler does). Stage 3 handlers
+- **`$transaction.response`** — the response. **Starts at null** but
+  **auto-creates on first write**: writes to `$response.csp`,
+  `$response.headers`, `$response.status`, or `$response.body`
+  instantiate an empty response object on the spot. This means a
+  handler can configure CSP or headers (see
+  [CSP](#content-security-policy-csp)) without an explicit
+  construction step — the first write is the construction. If stage
+  2 ends with `$transaction.response` still null (no handler wrote
+  anything), the built-in 404 / 5xx fallback fires. Stage 3 handlers
   always see a non-null response.
 - **`$transaction.session`** — the mutable session cookie
   handle. See [Sessions](#sessions).
@@ -196,8 +201,14 @@ decides how to consume it. Useful when you want unparsed bytes
 (custom protocols, content types Touchstone doesn't parse, etc.).
 
 **Touchstone never slurps huge bodies into memory.** Large
-bodies are buffered through an FSO (filesystem object) as they
-arrive — see [Body buffering](#body-buffering) below.
+bodies are buffered through an **FSO** (filesystem object) as they
+arrive — see [Body buffering](#body-buffering) below. An FSO is
+any engine-configured object that can accept byte writes for
+storage; in v1, that means a [dirjail](../built-in-classes/filesystem.md)
+the deployer configures into the Touchstone instance. The
+abstraction leaves room for non-filesystem backings (network
+storage, etc.) in future revisions without changing the handler-side
+contract.
 
 ---
 
@@ -440,7 +451,7 @@ unknown classes fall back to 500:
 
 | Exception class | Status |
 |---|---|
-| `kiera.uno/exception/error/timeout` | 504 Gateway Timeout |
+| `kiera.uno/error/timeout` | 504 Gateway Timeout |
 | (anything else, uncaught) | 500 Internal Server Error |
 
 The mapping table is small in v1 and grows as more specific

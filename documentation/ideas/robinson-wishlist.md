@@ -1,12 +1,12 @@
-# Dogberry Wishlist
+# Robinson Wishlist
 
-A running list of features wanted in Dogberry, the KScript HTTP middleware framework.
-Background: Miko built a previous Dogberry in Ruby — a comprehensive web framework
+A running list of features wanted in Robinson, the KScript HTTP middleware framework.
+Background: Miko built a previous Robinson in Ruby — a comprehensive web framework
 in the same conceptual space as Rails or Sinatra. This document captures features
 to consider for the KScript reincarnation.
 
 **Purpose**: capture, not commit. Listing a feature here means "we want this
-eventually." It does not commit Dogberry to shipping it in any particular release.
+eventually." It does not commit Robinson to shipping it in any particular release.
 Prioritization (what's in the first release, what's deferred, what gets dropped)
 happens after the wishlist is reasonably complete.
 
@@ -20,12 +20,12 @@ list feels complete, we sort by priority and decide what's in for v1.
 
 ### Scales Down Small, Scales Up Large
 
-Dogberry is intended to be a **common scalable solution** — the same framework
+Robinson is intended to be a **common scalable solution** — the same framework
 serves a tiny personal site, an internal tool, and a moderately high-traffic
 production deployment. The same principle Mikobase follows: one tool for the
 whole range, configured appropriately for each scale, with no "use the big
 version when you get big" handoff. A microservice and an in-house API are
-running the same Dogberry; what differs is configuration.
+running the same Robinson; what differs is configuration.
 
 **The target range**:
 
@@ -51,7 +51,7 @@ What this means in practice:
   models. A production deployment selects the parts it needs.
 - **The transition is smooth, not a rewrite.** A site that grows from "small"
   to "large" turns on additional features incrementally. It doesn't abandon
-  Dogberry for a different framework, and it doesn't have to restructure its
+  Robinson for a different framework, and it doesn't have to restructure its
   handlers to scale up.
 
 Many of the design choices already in this wishlist follow directly from this
@@ -64,13 +64,13 @@ the design.
 
 ### No Dangerous Defaults
 
-Dogberry never ships with defaults that could harm the developer or
+Robinson never ships with defaults that could harm the developer or
 their users. For features that carry risk — admin access, forking,
 exception exposure, anything that can leak data or grant elevated
 privilege — the default is **off**. Turning them on requires an
 explicit decision.
 
-In many cases, Dogberry ships with **no default at all**. The developer
+In many cases, Robinson ships with **no default at all**. The developer
 has to declare an intent. There is no admin until you set one up. There
 is no forking until you opt in (and the engine grants permission). There
 is no Sinatra handler until you ask for one. Silence is not consent.
@@ -85,14 +85,14 @@ repeats.
 
 ### Dogfooding: kiera.uno
 
-Dogberry will be used for the Kiera project's own public site (kiera.uno)
+Robinson will be used for the Kiera project's own public site (kiera.uno)
 **as much as possible**. The Kiera ecoverse is its own first serious user.
 This sets a useful pressure on the design: the framework has to work well
 enough for a real public-facing site before we can ship our own. We feel any
 rough edges before anyone else does.
 
 Practical consequence: kiera.uno's needs are the de-facto v1 requirement set.
-If Dogberry can serve kiera.uno well, it can serve the kinds of sites the
+If Robinson can serve kiera.uno well, it can serve the kinds of sites the
 target range covers.
 
 ---
@@ -101,10 +101,10 @@ target range covers.
 
 ### Settings Hierarchy
 
-Everything in Dogberry rests in a settings cascade with five levels:
+Everything in Robinson rests in a settings cascade with five levels:
 
-1. **factory** — what ships with Dogberry (the base/default settings hash)
-2. **installation** — the server (a deployed Dogberry instance)
+1. **factory** — what ships with Robinson (the base/default settings hash)
+2. **installation** — the server (a deployed Robinson instance)
 3. **site** — a website served by this installation
 4. **directory** — directories within the site (potentially nested)
 5. **page** — individual pages
@@ -115,7 +115,7 @@ and can write its own settings, which then propagate to everything below it. Lik
 level is invisible to the directory level above it, and a setting written at the
 directory level is invisible to the site level above it.
 
-The factory defaults are the deepest baseline — every Dogberry installation starts
+The factory defaults are the deepest baseline — every Robinson installation starts
 from the same factory hash. The installation, site, directory, and page levels
 each get a chance to extend or override before the page actually runs.
 
@@ -140,12 +140,12 @@ filesystem; pages can come from:
 - Generated on the fly
 
 The installation asks "give me the page for this URL" and the site (or whoever
-owns page storage at that level) answers. Dogberry itself doesn't care which
+owns page storage at that level) answers. Robinson itself doesn't care which
 backend a site uses.
 
 ### Installation Object
 
-A Dogberry **installation** is the HTTP-facing process — the thing that gets
+A Robinson **installation** is the HTTP-facing process — the thing that gets
 called over HTTP. It owns:
 
 - The HTTP listener (Unix socket when behind a reverse proxy, TCP when serving
@@ -164,7 +164,7 @@ installation's job is "speak HTTP and dispatch."
 
 #### `installation.json`
 
-The Dogberry installation reads its configuration from `installation.json`.
+The Robinson installation reads its configuration from `installation.json`.
 The shape (initial version):
 
 ```json
@@ -187,7 +187,7 @@ The `sites` hash declares which sites this installation hosts.
   per-site `messages/` overrides.
 
 **Order matters.** When dispatching an incoming request by `Host` header,
-Dogberry walks the `sites` hash in insertion order and the first site
+Robinson walks the `sites` hash in insertion order and the first site
 whose `domains` hash contains the requested host wins. The operator
 controls precedence by ordering entries in `installation.json`.
 
@@ -222,7 +222,7 @@ implement up to three optional methods.
 
 The hash representation is a convenience for developers: handlers are referred
 to by nickname (`$server.handlers['csrf']`, `$server.handlers['sinatra']`)
-rather than by position. The keys are purely labels — Dogberry doesn't
+rather than by position. The keys are purely labels — Robinson doesn't
 interpret them or enforce any pattern. Because Kiera hashes are order-sensitive
 (see [hashes.md](../kscript/built-in-classes/hashes.md)), the handlers still
 have a well-defined processing order; the hash just gives each one a memorable
@@ -258,7 +258,7 @@ the response. Examples:
 - A logging handler records the final response
 
 This three-phase chain dissolves the earlier "routing convention" question. There
-is no single routing model in Dogberry — routing is whatever a handler implements
+is no single routing model in Robinson — routing is whatever a handler implements
 internally. A Sinatra-style closure-based router is a handler. A Rails-style
 class-based page resolver is a handler. A static-file server is a handler. They
 all coexist on the same chain.
@@ -289,7 +289,7 @@ Open:
 ### Concurrency Model
 
 **Default behavior: single process, one request at a time, no forking.** No
-opt-out from this; it's just what running Dogberry means in the absence of
+opt-out from this; it's just what running Robinson means in the absence of
 explicit configuration. A small site (or any site running on an engine that
 hasn't been granted `%forks`) gets predictable single-process semantics for
 free.
@@ -297,22 +297,22 @@ free.
 Concurrency is **doubly opt-in**:
 
 1. **The engine must grant `%forks` permission** — without this capability,
-   Dogberry cannot fork, period. This is the same `%forks` engine permission
+   Robinson cannot fork, period. This is the same `%forks` engine permission
    documented in the KScript runtime (`%forks` is `null` when the engine
    hasn't granted it). The developer cannot work around this from within the
-   Dogberry config; the host has to authorize it.
-2. **The developer must opt into forking in Dogberry's settings** — a
+   Robinson config; the host has to authorize it.
+2. **The developer must opt into forking in Robinson's settings** — a
    configuration flag (working name: `enable_forking`) defaults to `false`.
-   Even with `%forks` granted, Dogberry runs single-process until told
+   Even with `%forks` granted, Robinson runs single-process until told
    otherwise.
 
-This layered default-no means a Dogberry installation never accidentally
+This layered default-no means a Robinson installation never accidentally
 spawns child processes. The host controls the capability; the developer
 controls the policy; both must agree.
 
 #### Prefork-Pool Model (when forking is enabled)
 
-With both gates open, the main Dogberry process becomes a supervisor:
+With both gates open, the main Robinson process becomes a supervisor:
 
 - Forks N worker children, each a self-contained KScript runtime with the full
   handler chain loaded
@@ -369,12 +369,12 @@ Open:
 > **not** apply to Sinatra-only servers. May revisit if a real use case
 > surfaces; for now, Sinatra's surface is what's specified here.
 
-A bare `%kiera['kiera.uno/dogberry'].new()` returns an **empty server** — no
+A bare `%kiera['kiera.uno/Robinson'].new()` returns an **empty server** — no
 handlers, no routes, nothing registered. To get the Ruby-Sinatra-style
 method-selector API, opt into the **Sinatra handler**:
 
 ```
-$server = %kiera['kiera.uno/dogberry'].new(sinatra: true)
+$server = %kiera['kiera.uno/Robinson'].new(sinatra: true)
 
 $server.get('/') do($request)
     response.new(200, {content_type: 'text/plain'}, 'Hello world')
@@ -392,12 +392,12 @@ end
 $server.run() do($request)
     # only reached if no method+path registration caught the request.
     # if no do block here, or the do block doesn't return a response,
-    # Dogberry returns a 404.
+    # Robinson returns a 404.
 end
 ```
 
 The handler is named **Sinatra** after Ruby Sinatra, whose method-selector
-style Dogberry borrows.
+style Robinson borrows.
 
 Each HTTP method has its own selector — `get()`, `post()`, `put()`, `delete()`,
 `patch()`, `options()`, `head()`. A registration matches when **both** the HTTP
@@ -406,7 +406,7 @@ different methods is fine — they're independent registrations.
 
 Three things are happening:
 
-- **`.new(sinatra: true)`** — instantiate a Dogberry server with the Sinatra
+- **`.new(sinatra: true)`** — instantiate a Robinson server with the Sinatra
   handler pre-registered under the `'sinatra'` key in the handler hash.
 - **`$server.<method>('/path') do ... end`** — register a closure to handle a
   specific HTTP method at a specific URL path. The closure runs when an
@@ -421,7 +421,7 @@ Three things are happening:
 The opt-in keyword is shorthand for what you could do manually: instantiate a
 Sinatra handler, add it to the handler hash under the `'sinatra'` key, and
 delegate the method selectors (`$server.get`, `$server.post`, etc.) to that
-instance. Nothing about the wiring is special-cased inside Dogberry — the
+instance. Nothing about the wiring is special-cased inside Robinson — the
 keyword just saves you the three lines.
 
 If another handler wants to expose its own server-object shortcuts later,
@@ -486,13 +486,13 @@ Open:
 
 ### JSON URL Parameters
 
-Dogberry will natively support the
+Robinson will natively support the
 [ecoverse JSON URL convention](../kiera/json-urls.md): machine-generated
 URLs that pass parameters as a JSON object in the query string
 (`?{"map":true}`) rather than as conventional `?key=value` pairs.
 
 Handlers receive parameters through a unified hash regardless of how
-the URL was formed. Dogberry's request layer:
+the URL was formed. Robinson's request layer:
 
 1. Inspects the raw query string.
 2. If it begins with `{` (after URL-decoding), parses it as JSON.
@@ -523,10 +523,10 @@ end
 transformation a handler wants to communicate to later handlers in the chain
 goes through a different channel (TBD — possibly a per-request scratch
 hash, possibly explicit context-passing). Mutating the request itself is
-not how Dogberry plumbs information forward.
+not how Robinson plumbs information forward.
 
 **The closure must return a response object** — an instance of
-`kiera.uno/dogberry/response` (or whatever the final UNS turns out to be).
+`kiera.uno/Robinson/response` (or whatever the final UNS turns out to be).
 Returning `null` is how a handler declines (passes to the next handler in
 the chain). Anything else must be a response.
 
@@ -537,7 +537,7 @@ the response class. So instead of:
 
 ```
 $server.get('/') do($request)
-    %kiera['kiera.uno/dogberry/response'].new(200, {content_type: 'text/plain'}, 'Hello world')
+    %kiera['kiera.uno/Robinson/response'].new(200, {content_type: 'text/plain'}, 'Hello world')
 end
 ```
 
@@ -566,7 +566,7 @@ response.new(<status>, <options>, <body>)
   Specific keys TBD.
 - **Body** — the payload. String for character content, byte buffer for
   binary content, structured data (hash/array) for JSON content with the
-  appropriate content type. Serialization handled by Dogberry; charset
+  appropriate content type. Serialization handled by Robinson; charset
   appended automatically per the UTF-8 rules.
 
 #### Implicit Last-Value Return
@@ -623,9 +623,9 @@ author's old high school.)
 
 Two scoped meanings of "installation" coexist and shouldn't be confused:
 
-- A **Dogberry installation** is the outer server process — the HTTP-facing
+- A **Robinson installation** is the outer server process — the HTTP-facing
   daemon. It has a home directory for its own use (logs, config, sockets,
-  etc.), but the Dogberry installation isn't *defined by* that directory;
+  etc.), but the Robinson installation isn't *defined by* that directory;
   it's defined by being the running server.
 - A **Robinson installation** (also called a **Robinson instance**) **is a
   directory**. One Robinson instance lives in exactly one root directory
@@ -633,13 +633,13 @@ Two scoped meanings of "installation" coexist and shouldn't be confused:
   serves. The instance and the directory are the same thing in different
   words.
 
-A single Dogberry installation can host multiple Robinson instances if it
+A single Robinson installation can host multiple Robinson instances if it
 wants (one per site, or several within one site rooted at different
 subpaths) — each pinned to its own root directory.
 
 #### Design Pressure: Keep the Basic Install Simple
 
-The previous Dogberry (Ruby) eventually accumulated so many bells and
+The previous Robinson (Ruby) eventually accumulated so many bells and
 whistles that it *felt* too complicated, even when each individual feature
 was legitimately useful. This isn't quite feature creep — the features were
 real — it's that the cumulative surface area got intimidating. A new
@@ -662,7 +662,7 @@ features will still land in Robinson — but the front door stays narrow.
 #### Page File Contract
 
 `.kscript` files in the tree are page files. Each one's last expression
-must be a class inheriting from `kiera.uno/dogberry/page` with a `process`
+must be a class inheriting from `kiera.uno/Robinson/page` with a `process`
 method. Robinson invokes the file, takes the returned class, instantiates
 it, calls `process($request)`, and uses the returned response as the
 page's response.
@@ -676,7 +676,7 @@ Invocation uses the KScript runtime's general
 invoked like a function call, runs in its own scope, returns the value of
 its last expression. Robinson doesn't need a special invoker — it just
 uses the standard invocation and expects the value to be a
-`kiera.uno/dogberry/page` subclass. (Page files that return something
+`kiera.uno/Robinson/page` subclass. (Page files that return something
 else get a clear error.)
 
 Note the deliberate distinction: Robinson **invokes** the file (runs it as
@@ -850,10 +850,10 @@ truthy-values is forward-compatible — growing into
 **No placeholders or wildcards.** Every domain a site serves is listed
 explicitly. No `*.idocs.com`, no regex.
 
-Resolved (from earlier open): **Relationship to Dogberry-level sites.**
-Robinson sites are the things Dogberry dispatches to. The Dogberry
+Resolved (from earlier open): **Relationship to Robinson-level sites.**
+Robinson sites are the things Robinson dispatches to. The Robinson
 installation reads each Robinson site's `domains` list and routes
-incoming requests by `Host` header. No separate Dogberry-level site
+incoming requests by `Host` header. No separate Robinson-level site
 registry.
 
 Open:
@@ -861,7 +861,7 @@ Open:
 - **Scheme handling**: does the canonical redirect normalize scheme
   (HTTP → HTTPS) in addition to hostname? HTTPS termination is usually a
   reverse-proxy concern, so probably hostname only. Worth pinning.
-- **Domain overlap across sites**: if two sites in the same Dogberry
+- **Domain overlap across sites**: if two sites in the same Robinson
   installation declare the same domain, what happens? Two reasonable
   options, both consistent with the project's principles:
   - **First match wins** — since `installation.json` is order-sensitive,
@@ -922,7 +922,7 @@ Open:
 #### Factory Message Pages
 
 > **Feature lock.** This subsection is closed to new features. The
-> previous Dogberry iteration went down a rabbit hole on customized
+> previous Robinson iteration went down a rabbit hole on customized
 > messages; the design here is deliberately constrained to what's already
 > specified. New ideas about customized messages get filed as Deferred or
 > declined — not added to the spec.
@@ -971,7 +971,7 @@ typically have no body and bypass this machinery.
 ##### "No Coddling" Stance on JSON Errors
 
 The JSON shape is deliberately simple — `{"status": <code>, "message":
-"<text>"}`. Dogberry does not add error sentinels, "is_error" flags, or
+"<text>"}`. Robinson does not add error sentinels, "is_error" flags, or
 content-type tricks to protect clients from their own laziness. The HTTP
 status code is the canonical error signal; clients that don't check it
 are making a choice. The `{status, message}` shape is a mild courtesy:
@@ -992,7 +992,7 @@ admin requests with the same content that goes to the error logs
 (logging spec'd separately).
 
 This is a **core v1 requirement**, not a deferred extension. Dogfooding
-kiera.uno on Dogberry means we'll hit exceptions during early
+kiera.uno on Robinson means we'll hit exceptions during early
 development and need them visible without surgery. The feature pays for
 itself immediately.
 
@@ -1038,7 +1038,7 @@ Open:
 #### Admin Authentication
 
 A ready-made tool for authenticating admins and recognizing them across
-subsequent requests on a site. Dogberry ships this — auth is hard to get
+subsequent requests on a site. Robinson ships this — auth is hard to get
 right and rolling-your-own is a known foot-gun, so the framework
 provides a known-good answer instead.
 
@@ -1080,7 +1080,7 @@ Shape:
   file is the bar.
 
   Each site has its own admin list; different sites on the same
-  Dogberry installation have entirely separate admins. There's no
+  Robinson installation have entirely separate admins. There's no
   global admin registry.
 - **Login**: a simple login flow against those credentials.
 - **Recognition**: once authenticated, the admin is recognized on
@@ -1146,7 +1146,7 @@ namespace, which makes auth gating and URL discovery harder than they
 need to be. If/when admin tooling lands, likely paths to evaluate at
 that time:
 
-- A separate URL prefix at the Dogberry level (e.g. `/dogberry-admin/*`
+- A separate URL prefix at the Robinson level (e.g. `/Robinson-admin/*`
   regardless of site), with its own auth boundary.
 - A dedicated admin handler in the handler chain, alongside Robinson
   rather than inside it.

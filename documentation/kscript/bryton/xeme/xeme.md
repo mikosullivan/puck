@@ -393,7 +393,7 @@ plus any other descriptive fields:
 ```json
 "errors": [
     {
-        "class": "kiera.uno/result/failure/runtime/exception",
+        "class": "bryton/runtime/exception",
         "message": "uncaught NoMethodError",
         "details": {...}
     }
@@ -402,7 +402,7 @@ plus any other descriptive fields:
 
 ```json
 "nulls": [
-    {"class": "kiera.uno/result/null/promise"}
+    {"class": "bryton/null/promise"}
 ]
 ```
 
@@ -410,7 +410,7 @@ plus any other descriptive fields:
 isn't ready yet — the verdict will be determined later. Bryton
 doesn't define how promises get resolved (async runners, deferred
 evaluation, etc.); just that the placeholder is a null with class
-`kiera.uno/result/null/promise`.
+`bryton/null/promise`.
 
 Because the result is null, the
 [resolution rule](#resolution) means **none of its ancestors can
@@ -543,7 +543,11 @@ Benefits:
 - Tools that consume Xemes consume Jasmine logs (and vice versa).
 - The least-good-result rule applies uniformly.
 
-The Jasmine spec will be updated to use this alignment.
+**Status (2026-05-17): proposed, not yet applied.** [jasmine.md](../../jasmine/jasmine.md)
+still describes the current shape with `calls` and the `{"function":
+"...", "entry": {...}}` wrapper. The alignment above is a sketch
+for a future revision of Jasmine; until that revision lands, the
+two formats remain structurally different.
 
 ---
 
@@ -673,7 +677,7 @@ tries:
 3. `icons/tests/group.svg`
 4. `icons/tests/generic.svg`
 
-For a failure entry with `class: "kiera.uno/result/failure/runtime/crashed"`,
+For a failure entry with `class: "bryton/runtime/crashed"`,
 the result-icon lookup tries:
 
 1. `icons/results/failure/runtime/crashed.svg`
@@ -750,7 +754,7 @@ here when it's wanted.
     "class": "myorg.com/test/integration",
     "errors": [
         {
-            "class": "kiera.uno/result/failure/assertion",
+            "class": "bryton/assertion",
             "message": "expected user.email == 'foo@example.com', got null",
             "details": {
                 "expected": "foo@example.com",
@@ -790,7 +794,7 @@ here when it's wanted.
                 {
                     "success": false,
                     "meta": {"name": "test_connection"},
-                    "errors": [{"class": "kiera.uno/result/failure/connection_refused"}]
+                    "errors": [{"class": "bryton/connection_refused"}]
                 }
             ]
         }
@@ -805,7 +809,7 @@ here when it's wanted.
     "success": false,
     "class": "bryton/test",
     "errors": [
-        {"class": "kiera.uno/result/failure/runtime/crashed"}
+        {"class": "bryton/runtime/crashed"}
     ],
     "meta": {"name": "broken_test.kscript"},
     "io": {"stderr": "Traceback..."},
@@ -820,7 +824,7 @@ here when it's wanted.
     "success": false,
     "class": "bryton/test",
     "errors": [
-        {"class": "kiera.uno/result/failure/runtime/missing"}
+        {"class": "bryton/runtime/missing"}
     ],
     "meta": {"name": "expected_test_that_doesnt_exist.kscript"}
 }

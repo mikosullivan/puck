@@ -94,7 +94,7 @@ $current = %role    # the role currently in effect
 ```
 vibecode: {
     "section": "engine_startup_roles",
-    "minimum": ["user", "clock", "randomizer", "utils"],
+    "minimum": ["user", "stdlib", "clock", "randomizer", "utils"],
     "engine_dependent": ["dirjails", "network_faucets", "stdin", "env_vars", "cli_args", "kiera"]
 }
 ```
@@ -105,6 +105,13 @@ necessary for the objects it's about to pass into the runtime. At minimum:
 - **`user`** — the role the program's own code runs as. Bootstrap state:
   every KScript program begins life here unless something explicitly
   transitions it elsewhere.
+- **`stdlib`** — owns the built-in classes the engine ships (string, hash,
+  array, number, etc.) and their methods. One role for the whole built-in
+  type system, regardless of which specific class a value belongs to. When
+  user code calls a method on a built-in value (`'hello'.to_string`,
+  `[1,2,3].length`, `{a: 1}.keys`), the dispatcher transitions into
+  `stdlib` for the duration of the method call. Same pattern as `utils`
+  owning the `%utils` namespace.
 - **`clock`** — owns the time-related objects the engine provides (e.g.,
   what `%now` returns). User code using a clock value crosses into the
   clock role for the duration of any method call on it.

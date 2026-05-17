@@ -202,7 +202,7 @@ puts($report)
 
 ## Pass-Through (Elizabeth Dehner)
 
-All three reserved fields are always passed through. Engines, firewalls, and network
+All four reserved fields (`vibecode`, `comment`, `misc`, `enterprise`) are always passed through. Engines, firewalls, and network
 transport do not strip or modify them. The whole point is that any consumer reading the
 object — at any point in its journey through the system — has access to whatever was
 placed in these fields.

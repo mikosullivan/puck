@@ -12,8 +12,8 @@
     "run":           "(path) → value  read a .ksj file, parse, execute, return last statement's value"
   },
   "state": {
-    "roles":   "{ user, string_class }  populated by bootstrap; role objects are {name=string} only",
-    "classes": "{ string }  populated by bootstrap; class objects are {name, owning_role, methods}",
+    "roles":   "{ user, stdlib }  populated by bootstrap; role objects are {name=string} only; stdlib owns all built-in classes",
+    "classes": "{ string }  populated by bootstrap; class objects are {name, owning_role, methods}; all are owned by the stdlib role",
     "ctx":     "{ current_role, chain }  mutable execution context; restored across transitions"
   },
   "value_shape": "{ type=string, owning_role=role_object, payload=any_lua_value }",
@@ -33,20 +33,20 @@ local M = {}
   "side_effect": "populates M.roles, M.classes, M.ctx",
   "notes": [
     "idempotent — calling twice replaces the state with a fresh copy",
-    "string_class.methods.to_string is identity (returns its receiver unchanged)",
+    "string class methods.to_string is identity (returns its receiver unchanged)",
     "ctx.chain is a fresh empty table; the wipe-at-boundary contract relies on transition replacing it (not clearing in place)"
   ]
 }
 ]]
 function M.bootstrap()
     M.roles = {
-        user         = { name = "user" },
-        string_class = { name = "string_class_role" },
+        user   = { name = "user" },
+        stdlib = { name = "stdlib" },
     }
     M.classes = {
         string = {
             name        = "string",
-            owning_role = M.roles.string_class,
+            owning_role = M.roles.stdlib,
             methods = {
                 to_string = function(receiver, args) return receiver end,
             },
@@ -60,10 +60,14 @@ end
 
 --[[
 {
-  "in":  "expr: a KSJ expression (currently only {value: <string>} for V0.01)",
+  "in":  "expr: a KSJ expression",
   "out": "value table {type, owning_role, payload}",
   "owning_role": "always M.ctx.current_role at the moment of materialization",
-  "errors": "raises on unsupported expression forms — V0.01 only knows string literals"
+  "supported_forms": {
+    "literal_string": "{value: <string>}",
+    "sys_role":       "{sys: 'role'} — returns the current role wrapped as a value"
+  },
+  "errors": "raises on unsupported expression forms; sys references other than 'role' are deferred"
 }
 ]]
 function M.materialize(expr)
@@ -83,6 +87,17 @@ function M.materialize(expr)
             owning_role = M.ctx.current_role,
             payload     = expr.value,
         }
+    end
+    if expr.sys ~= nil then
+        --[[ V0.01 ships only %role; other sys methods land with the slices that need them ]]
+        if expr.sys == "role" then
+            return {
+                type        = "role",
+                owning_role = M.ctx.current_role,
+                payload     = M.ctx.current_role,
+            }
+        end
+        error("engine.materialize: unsupported sys reference in V0.01: " .. tostring(expr.sys))
     end
     error("engine.materialize: unsupported expression form in V0.01")
 end

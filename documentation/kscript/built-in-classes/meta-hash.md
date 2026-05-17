@@ -121,8 +121,10 @@ underlying hashes don't affect the returned snapshot.
 
 - **HTTP middleware settings cascade.** Touchstone → Robinson →
   server → site → dir levels → file. Each level overlays the
-  previous; reads return the most-specific value; writes at a
-  level set just that level.
+  previous; reads return the most-specific value. Writes through
+  the meta-hash land in the most-specific (last) layer; to mutate
+  an earlier layer, write to that hash directly (see
+  [Writes](#writes-linus)).
 - **Per-request configuration.** Engine defaults → per-handler
   overrides → per-request override.
 - **Class-stack-style metadata lookup** where classes carry

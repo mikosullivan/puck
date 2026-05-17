@@ -1,4 +1,12 @@
-# Trilean
+# Trilean (idea — not in core)
+
+> **Status**: 2026-05-17 — moved from `documentation/kscript/built-in-classes/`
+> to `documentation/ideas/`. KScript's core primitive for two-valued logic is
+> `boolean`, not `trilean`. Three-valued logic is an idea preserved here for
+> possible future revisit but is not part of the language. The text below
+> describes what trilean *would* be if introduced.
+
+---
 
 `kiera.uno/trilean` is the home for **three-valued logic** in KScript. It provides
 the standard operators (`and`, `or`, `not`, `nand`, `nor`, `xor`, `xnor`,

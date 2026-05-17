@@ -15,7 +15,17 @@
 --     support.runner, etc.) against this directory.
 package.path = "./code/kscript/lua/?.lua;./code/kscript/lua/?/init.lua;"
             .. "./tests/kscript/?.lua;./tests/kscript/?/init.lua;"
+            .. "./tests/sanity/?.lua;"
             .. package.path
+
+-- Phase 0 sanity tests — must pass before any engine tests have meaning
+-- (T0.1-T0.6 per documentation/development/development.md Pike section)
+require("test_lua_version")
+require("test_lua_hello")
+require("test_package_path")
+require("test_framework_sanity")
+require("test_json_parse")
+require("test_file_read")
 
 require("lexer.test_literals")
 require("lexer.test_sigils")
@@ -38,6 +48,7 @@ require("v001.test_transition")
 require("v001.test_dispatch")
 require("v001.test_run")
 require("v001.test_transition_observed")
+require("v001.test_sys_role")
 
 local runner = require("support.runner")
 local ok = runner.report()

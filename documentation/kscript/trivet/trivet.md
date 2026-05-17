@@ -4,7 +4,7 @@
 hierarchical node structures with parent/child relationships,
 traversal, query, and mutation. Ported from the Ruby Trivet gem.
 
-Used wherever the framework deals with trees: Uma (HTML documents),
+Used wherever the framework deals with trees: Uma (HTML documents — spec currently in [ideas/uma/](../../ideas/uma/uma.md), pending promotion to canonical),
 configuration trees, Bryton test trees, possibly AST manipulation,
 and any developer-level use case that benefits from a generic tree
 abstraction.

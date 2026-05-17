@@ -14,15 +14,15 @@ runner.suite("v0.01 / engine transition")
 
 runner.test("sees the new role inside fn", function()
     engine.bootstrap()
-    local observed = engine.transition(engine.roles.string_class, function()
+    local observed = engine.transition(engine.roles.stdlib, function()
         return engine.ctx.current_role
     end)
-    assert_.equal(observed, engine.roles.string_class, "fn sees the new role")
+    assert_.equal(observed, engine.roles.stdlib, "fn sees the new role")
 end)
 
 runner.test("restores the prior role after fn returns", function()
     engine.bootstrap()
-    engine.transition(engine.roles.string_class, function() return nil end)
+    engine.transition(engine.roles.stdlib, function() return nil end)
     assert_.equal(engine.ctx.current_role, engine.roles.user, "role restored")
 end)
 
@@ -31,7 +31,7 @@ runner.test("wipes the chain inside fn and restores the original on return", fun
     local original_chain = engine.ctx.chain
     original_chain["caller_key"] = "caller_value"  -- mutate before transition
     local inner_chain
-    engine.transition(engine.roles.string_class, function()
+    engine.transition(engine.roles.stdlib, function()
         inner_chain = engine.ctx.chain
         engine.ctx.chain["inner_key"] = "inner_value"
     end)
@@ -43,14 +43,14 @@ end)
 
 runner.test("returns fn's return value to the caller", function()
     engine.bootstrap()
-    local r = engine.transition(engine.roles.string_class, function() return 42 end)
+    local r = engine.transition(engine.roles.stdlib, function() return 42 end)
     assert_.equal(r, 42)
 end)
 
 runner.test("nests cleanly via Lua's call stack", function()
     engine.bootstrap()
     local depth_role
-    engine.transition(engine.roles.string_class, function()
+    engine.transition(engine.roles.stdlib, function()
         engine.transition(engine.roles.user, function()
             depth_role = engine.ctx.current_role
         end)

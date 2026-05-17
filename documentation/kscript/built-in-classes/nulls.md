@@ -427,7 +427,7 @@ $x = null
 $x.flavor = :timeout
 
 $y = $x or "default"
-# $y is "default" (a trusted string from the literal source).
+# $y is "default" (a fresh string from the literal source).
 # The flavor :timeout does not transfer to $y.
 ```
 

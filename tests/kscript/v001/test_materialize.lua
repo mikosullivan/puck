@@ -22,9 +22,9 @@ end)
 
 runner.test("owning_role reflects the current context, not always user", function()
     engine.bootstrap()
-    engine.ctx.current_role = engine.roles.string_class
+    engine.ctx.current_role = engine.roles.stdlib
     local v = engine.materialize({value = "x"})
-    assert_.equal(v.owning_role, engine.roles.string_class,
+    assert_.equal(v.owning_role, engine.roles.stdlib,
                   "owning_role tracks ctx.current_role at materialization time")
 end)
 

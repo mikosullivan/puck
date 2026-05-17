@@ -21,6 +21,14 @@ transpiles to KScriptJSON for execution.
 KScriptJSON is a runtime artifact. By convention, code is shared as KScript source, not
 as KScriptJSON.
 
+KScriptJSON also serves as a **canonical semantic intermediate** between source forms.
+The current pipeline is KScript source → KScriptJSON → execution, but the architecture
+permits multiple source syntaxes (different parsers fanning in to KScriptJSON) and
+multiple pretty-printers (different surface forms fanning out from KScriptJSON). The
+project shipped with a single canonical surface (KScript), but the multi-syntax option
+remains open — no spec change is required for an alternate-syntax parser to be added
+later. No such alternates are planned for v1.
+
 The bootstrap parser must be written directly in KScriptJSON, since KScript cannot parse
 itself before the parser exists.
 
@@ -31,21 +39,27 @@ itself before the parser exists.
 ```
 vibecode: {
 	"section": "core_principle",
-	"statement_form": "[receiver, method, args?]",
+	"value_receiver_form": "[receiver, method, args?]",
+	"bwc_receiver_form": "[{bwc: name}, args?]",
 	"receiver": "any_expression_variable_literal_sys_bwc_or_nested_call",
-	"method": "string_naming_method_or_operator",
+	"method": "string_naming_method_or_operator_required_for_value_receivers_omitted_for_bwc_receivers",
 	"args": "optional_keyword_hash_or_single_positional_expression",
-	"uniformity": "applies_to_method_calls_operators_assignment_and_bwc"
+	"two_shapes": "value_receiver_shape_for_method_calls_operators_assignment; bwc_shape_for_built_in_commands_where_the_bwc_name_is_the_call"
 }
 ```
 
-Every statement is an array: `[receiver, method, args?]`
+Every statement begins with a receiver. The receiver determines the shape:
 
-- **receiver** — any expression: a variable, literal, system method, bwc, or nested call
-- **method** — a string naming the method or operator
-- **args** — optional; a hash of keyword arguments, or a single expression for positional calls
+- **Value receivers** (variables, literals, system methods, nested calls) take a
+  **method name** next, then optional **args**:
+  `[receiver, method, args?]`. This covers method calls, operators, assignment.
+- **Bwc receivers** (`{"bwc": "name"}`) don't take a method — the bwc name
+  IS the call. Any arguments follow directly:
+  `[{"bwc": name}, args?]`. This covers built-in commands like `puts`,
+  `if`, `while`, `return`, `raise`.
 
-This applies uniformly to method calls, operators, assignment, and bwc calls.
+In both shapes, **args** is optional; when present, it's a hash of keyword
+arguments or a single expression for positional calls.
 
 ---
 
@@ -287,7 +301,9 @@ else
 end
 ```
 
-`branches` and `else` are both optional.
+`branches` and `else` are both optional. If both are absent or empty
+(`[{"bwc": "if"}, {}]`), the `if` is a no-op — nothing runs and the
+statement returns `null`. Not an error.
 
 ### While
 

@@ -45,7 +45,7 @@ two separate history entries — both are valid, both coexist. There is no locki
 between concurrent writers at the application level.
 
 The session history is the union of all appended records from all agents, ordered by
-`created_at`. No merge algorithm is needed.
+`updated_at`. No merge algorithm is needed.
 
 vibecode: {"concept":"concurrency_model",
 "rule":"every write appends a new history entry with unique UUID v4; concurrent writes never collide",
@@ -198,13 +198,17 @@ vibecode: {"concept":"q0_error_ids","errors":[
 
 A **worldlet** is a complete mikobase serialized as a single JSON object — classes, records,
 history, and files in one portable document. Primary keys are preserved exactly on import, so
-all references remain valid. The only required key is `history`; all other keys are optional
-and default to empty structures when absent.
+all references remain valid. This document describes the **temporal** worldlet shape
+(`"temporal"` flag absent or `true`); for non-temporal worldlets, see
+[worldlet.md](worldlets/worldlet.md). In the temporal shape, `history` is required;
+all other top-level keys are optional and default to empty structures when absent.
 
 vibecode: {"concept":"worldlet","aka":"packaged_mikobase","format":"single JSON object",
 "purpose":"complete portable mikobase: classes, records, history, files",
+"applies_to_mode":"temporal_worldlets_only; non_temporal_shape_lives_in_worldlet_md",
 "import_behavior":"PKs preserved exactly; references remain valid after import",
-"minimum_valid":"history key only; all other keys optional; absent keys default to empty structures"}
+"minimum_valid_temporal":"history key only; all other keys optional; absent keys default to empty structures",
+"temporal_flag_default":"temporal_is_the_default; non_temporal_requires_explicit_top_level_temporal_false_per_mikobase_md_temporal_section"}
 
 ### Top-Level Structure
 
@@ -303,22 +307,22 @@ vibecode: {"concept":"worldlet_records","required":false,
 ### history
 
 The core of the worldlet. Every entry is one version of one record. The entry with the latest
-`created_at` for a given record UUID is its current state. An entry with `active: false` is a
+`updated_at` for a given record UUID is its current state. An entry with `active: false` is a
 tombstone — the record is considered deleted. No two entries for the same record may share the
-same `created_at`.
+same `updated_at`.
 
 vibecode: {"concept":"worldlet_history","required":true,
 "format":"object keyed by history UUID; each value is one version of one record",
 "fields":[
 {"field":"record","type":"string","note":"UUID of the record this version belongs to"},
 {"field":"class","type":"string","note":"UNS class name at time of this write"},
-{"field":"created_at","type":"string","note":"ISO 8601 timestamp with millisecond precision"},
+{"field":"updated_at","type":"string","note":"ISO 8601 timestamp with millisecond precision"},
 {"field":"active","type":"boolean","default":true,
 "note":"false = tombstone; tombstone clears bucket and class; record is considered deleted"},
 {"field":"bucket","type":"object","note":"field values at this version; omitted on tombstone"}],
-"current_state":"entry with latest created_at for a given record UUID is the current state",
+"current_state":"entry with latest updated_at for a given record UUID is the current state",
 "deleted_state":"latest entry with active=false means record is deleted",
-"timestamp_rule":"two entries for the same record cannot share the same created_at"}
+"timestamp_rule":"two entries for the same record cannot share the same updated_at"}
 
 ### files
 
@@ -326,7 +330,7 @@ vibecode: {"concept":"worldlet_files","required":false,
 "format":"object keyed by file UUID",
 "fields":[
 {"field":"sha256","type":"string","note":"SHA-256 hash of complete file content; used for deduplication and integrity"},
-{"field":"created_at","type":"string","note":"ISO 8601 timestamp"},
+{"field":"updated_at","type":"string","note":"ISO 8601 timestamp"},
 {"field":"mime","type":"object","fields":[
 {"field":"type","note":"MIME type e.g. image/png"},
 {"field":"encoding","note":"encoding used for chunk data e.g. base64"}]}]}
@@ -356,12 +360,12 @@ vibecode: {"concept":"worldlet_import_rules",
 {"case":"history entry UUID already exists with identical content","action":"skip silently; import is idempotent"},
 {"case":"history entry UUID already exists with different content","action":"error; abort entire import"}],
 "reference_encoding":"reference fields in bucket are plain UUID strings; class definition declares field type; no wrapper syntax in bucket",
-"validation_checks":["all history entries have record, class, created_at",
+"validation_checks":["all history entries have record, class, updated_at",
 "all record values in history resolve to a known UUID",
 "all class values are built-in or defined in classes or already in target mikobase",
 "all file values in file_chunks reference a UUID in files",
-"created_at is ISO 8601 with millisecond precision",
-"no two history entries for same record share same created_at"],
+"updated_at is ISO 8601 with millisecond precision",
+"no two history entries for same record share same updated_at"],
 "atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}
 
 ---
@@ -401,7 +405,7 @@ vibecode: {"concept":"ai_conversation_format","namespace":"kiera.uno/ai/",
 
 Multiple agents can write to the same session simultaneously without coordination. Each agent
 simply appends new records. The session mikobase is the union of all appended records, ordered
-by `created_at`.
+by `updated_at`.
 
 **Agents never:**
 - Lock records
@@ -423,7 +427,7 @@ by `created_at`.
 
 vibecode: {"concept":"ai_concurrency",
 "rule":"concurrent writes never collide; each agent appends independently with unique UUID v4",
-"session_union":"complete set of all records from all agents; ordered by created_at",
+"session_union":"complete set of all records from all agents; ordered by updated_at",
 "agents_never":["lock records","update another agent's record","use transactions","negotiate write ordering"],
 "agents_can":["post records concurrently","work offline and exchange deltas asynchronously","merge updates without conflict resolution"]}
 
@@ -479,7 +483,7 @@ vibecode: {"class":"kiera.uno/ai/session","role":"top-level container for collab
 {"field":"@participants","note":"array of agent record primary keys"},
 {"field":"@human","note":"UNS or identifier of human owner"},
 {"field":"@status","values":[":open",":resolved",":impasse",":withdrawn"]},
-{"field":"@created_at"}]}
+{"field":"@updated_at"}]}
 
 ### Proposal
 
@@ -665,7 +669,7 @@ vibecode: {"class":"kiera.uno/ai/human_instruction",
 {"field":"@session","note":"reference to session record"},
 {"field":"@from","note":"identifier of human; string, not agent record pk"},
 {"field":"@body","note":"the instruction"},
-{"field":"@created_at"}]}
+{"field":"@updated_at"}]}
 
 ### Human Decision
 
@@ -680,7 +684,7 @@ vibecode: {"class":"kiera.uno/ai/human_decision",
 {"field":"@from","note":"identifier of human; string, not agent record pk"},
 {"field":"@body","note":"the decision"},
 {"field":"@resolves","note":"reference to impasse or open item being resolved"},
-{"field":"@created_at"}]}
+{"field":"@updated_at"}]}
 
 ### Sign-off
 

@@ -48,11 +48,27 @@ vibecode: {
 }
 ```
 
-All top-level keys are optional except `records`. A minimal valid worldlet contains only
-`records`. All other keys default to empty structures if absent.
+A worldlet is a **serialized export** of a mikobase, not a mikobase itself.
+A live mikobase is always engine-backed (SQLite in v1); worldlets are pure
+data on disk produced by an export and consumed by an import. See
+[mikobase.md § Export formats](../mikobase.md#export-formats-akira) for
+the broader export-format picture.
 
-The `history` key is **not part of the worldlet format**. Worldlets are non-temporal;
-each record carries its current bucket directly under `records`.
+A worldlet's required keys depend on its `temporal` flag (see
+[mikobase.md § Temporal vs Non-temporal Mode](../mikobase.md#temporal-vs-non-temporal-mode)):
+
+- **Temporal worldlets** (the default): `history` is required; `records` is
+  optional (the engine infers identity stubs from history if absent).
+- **Non-temporal worldlets** (`"temporal": false` at the top level): `records`
+  is required and carries each record's current bucket directly; `history` is
+  not part of the format.
+
+All other top-level keys default to empty structures if absent.
+
+This document describes the **non-temporal** worldlet shape — records carry
+their current bucket directly. For the temporal shape with per-version history
+entries, see
+[ai-conversation-format.md](../ai-conversation-format.md).
 
 ---
 

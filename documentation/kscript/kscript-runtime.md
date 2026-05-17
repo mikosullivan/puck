@@ -202,20 +202,20 @@ end
 If the block does not complete within the specified number of seconds, the
 timeout fires a **two-stage** flag sequence:
 
-1. **Inside the block:** `kiera.uno/exception/timeout_handle` is raised.
+1. **Inside the block:** `kiera.uno/timeout_handle` is raised.
    This is not an exception — it does not unwind. `begin`/`ensure` blocks inside
    the timeout do not run, no KScript-level cleanup is attempted inside. The
    `timeout_handle` bubbles straight up to the timeout block's boundary,
    ignoring all user-level `catch` and `ensure` along the way.
 2. **At the timeout block's boundary:** the timeout mechanism intercepts the
-   `timeout_handle` and re-raises a `kiera.uno/exception/error/timeout`
+   `timeout_handle` and re-raises a `kiera.uno/error/timeout`
    in the caller's scope. This is a normal catchable error — the caller can
-   `catch('kiera.uno/exception/error/timeout')` (or any ancestor
+   `catch('kiera.uno/error/timeout')` (or any ancestor
    like `exception` or `error`) and handle it cleanly. If the caller doesn't
    catch, the timeout error propagates up the stack like any other.
 
 ```
-catch('kiera.uno/exception/error/timeout')
+catch('kiera.uno/error/timeout')
     %utils.timeout(5) do
         &slow_thing
     end
@@ -246,12 +246,12 @@ end
 ```
 
 With `unwind: true`, the two-stage mechanism collapses to one: when the
-deadline fires, a `kiera.uno/exception/error/timeout` is raised **directly
+deadline fires, a `kiera.uno/error/timeout` is raised **directly
 inside the block** (no `timeout_handle`), unwinds the stack like any normal
 exception, runs `begin`/`ensure`, and propagates outward.
 
 **This is not a security boundary.** Code inside the block can
-`catch('kiera.uno/exception/error/timeout')` and keep running. That's the
+`catch('kiera.uno/error/timeout')` and keep running. That's the
 point — cooperative code is trusted to honor the timeout. Use `unwind: true`
 when you control the code inside the block and want cleanup; use the default
 when you don't.
@@ -286,7 +286,7 @@ needs it, assign it to a variable inside the block.
 The `?` form follows the language-wide
 [`?` suffix convention](kscript.md#the--suffix): falsey on the happy path,
 truthy (the flag itself) on the failure path. It's sugar for what would
-otherwise be `catch('exception/error/timeout')` wrapping around
+otherwise be `catch('error/timeout')` wrapping around
 `%utils.timeout` — the common "try for N seconds, move on if not" pattern,
 compressed into the method name.
 
@@ -298,10 +298,10 @@ escapes the block. They combine cleanly:
 
 | Form | `unwind:` | Behavior |
 |---|---|---|
-| `%utils.timeout(N)` | (omitted) | `timeout_handle` inside (no `ensure`); `exception/error/timeout` raised in caller scope |
-| `%utils.timeout(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); propagates out of the block normally |
+| `%utils.timeout(N)` | (omitted) | `timeout_handle` inside (no `ensure`); `error/timeout` raised in caller scope |
+| `%utils.timeout(N, unwind: true)` | `true` | `error/timeout` inside (catchable, `ensure` runs); propagates out of the block normally |
 | `%utils.timeout?(N)` | (omitted) | `timeout_handle` inside (no `ensure`); boundary catches and **returns** the timeout flag |
-| `%utils.timeout?(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); if it escapes the block, boundary catches and **returns** it |
+| `%utils.timeout?(N, unwind: true)` | `true` | `error/timeout` inside (catchable, `ensure` runs); if it escapes the block, boundary catches and **returns** it |
 
 In the `%utils.timeout?(N, unwind: true)` case: if the block itself catches
 the timeout, `%utils.timeout?` returns `null` (nothing escaped). If the
@@ -313,7 +313,7 @@ value.
 A compliant engine must:
 
 - Abort execution of the block (default mode) or raise an unwinding
-  `exception/error/timeout` inside the block (`unwind: true` mode) if it does
+  `error/timeout` inside the block (`unwind: true` mode) if it does
   not complete within the specified number of seconds (whole-second granularity)
 - Make each default-mode `%utils.timeout` call undefeatable by KScript code —
   there must be no path from a KScript expression to suppress a `timeout_handle`
@@ -342,10 +342,10 @@ block's mode:
   propagates through KScript-level frames without running any `ensure` blocks
   until it reaches the `%utils.timeout` boundary. There, the timeout's wrapping
   code intercepts the `timeout_handle` and translates it into a
-  `kiera.uno/exception/error/timeout` raised normally in the caller's scope.
+  `kiera.uno/error/timeout` raised normally in the caller's scope.
 - **`unwind: true` mode:** the error is untagged (or tagged as a normal
   exception). It's caught by ordinary `pcall`, runs `ensure`, and is exposed
-  to user `catch` as a `kiera.uno/exception/error/timeout` directly inside
+  to user `catch` as a `kiera.uno/error/timeout` directly inside
   the block. No boundary translation needed.
 
 The hook is cleared after the block completes (whether normally or via timeout).
@@ -539,6 +539,14 @@ begin ensure
 See [Cleanup with `begin` / `ensure`](#cleanup-with-begin--ensure) for the
 begin/ensure pair.
 
+**Loop-scoped section markers.** The keywords `before`, `between`, `after`,
+and `noloop` are also reserved and engine-implemented, but they are
+**not general bwcs** — they may only appear as section markers inside
+loop bodies (per [loops.md § Structural blocks](loops.md#structural-blocks-q-continuum)),
+not as standalone statements. The lexer/parser recognizes them as
+keywords; the loop runner consumes them. Outside a loop body their
+appearance is a parse error.
+
 ### `self`
 
 `self` is a bwc shortcut for `%self`, which returns the current object instance.
@@ -576,9 +584,9 @@ vibecode: {
 	"raise_methods": ["%chain.warn", "%chain.throw", "%chain.error",
 		"%chain.exit", "%chain.abort"],
 	"top_level_classes": ["kiera.uno/warning", "kiera.uno/exception"],
-	"exception_subclasses": ["exception/error", "exception/error/timeout",
-		"exception/exit", "exception/return", "exception/abort",
-		"exception/security", "exception/timeout_handle"],
+	"exception_subclasses": ["error", "error/timeout",
+		"exit", "return", "abort",
+		"security", "timeout_handle"],
 	"per_class_properties": ["catcher", "unwinds"],
 	"default_profile": "catcher=user, unwinds=yes",
 	"overrides_required_for": ["exit", "return", "abort", "security",
@@ -613,7 +621,7 @@ Every flag is a KScript object with:
 - **A bucket** — a hash holding details/payload. Accessed openly via `[]`:
 
 ```
-$e = catch('foo.com/exception/network')
+$e = catch('foo.com/error/network')
     # ... something that throws
 end
 
@@ -638,24 +646,24 @@ Under `exception`, every concrete class is independently declared. The default
 profile is `catcher=user, unwinds=yes` (the familiar "throw and catch" model).
 Subclasses override one or both properties as needed:
 
-- **`exception/error`** — same default profile. Semantic marker for "this is
+- **`error`** — same default profile. Semantic marker for "this is
   an error situation" — behaviorally identical to plain `exception`. See
   [error vs exception](#error-vs-exception) below.
-- **`exception/error/timeout`** — same default profile; the user-catchable
+- **`error/timeout`** — same default profile; the user-catchable
   timeout raised at the boundary of a `%utils.timeout` block.
-- **`exception/exit`** — unwinds, but caught by the engine for orderly
+- **`exit`** — unwinds, but caught by the engine for orderly
   shutdown rather than user `catch`.
-- **`exception/return`** — unwinds, caught at function-call boundary.
-- **`exception/abort`** — does *not* unwind; engine takes over, no `ensure`.
-- **`exception/security`** — does *not* unwind; engine catches.
-- **`exception/timeout_handle`** — does *not* unwind; bubbles to the
+- **`return`** — unwinds, caught at function-call boundary.
+- **`abort`** — does *not* unwind; engine takes over, no `ensure`.
+- **`security`** — does *not* unwind; engine catches.
+- **`timeout_handle`** — does *not* unwind; bubbles to the
   `%utils.timeout` block boundary, where the timeout mechanism translates
-  it into a user-facing `exception/error/timeout` (see
+  it into a user-facing `error/timeout` (see
   [Timeouts](#timeouts)).
 
 ### Error vs exception
 
-`kiera.uno/exception/error` is a **semantic marker**, not a behavioral
+`kiera.uno/error` is a **semantic marker**, not a behavioral
 distinction. Both `exception` and `error` carry stack traces, both unwind,
 both are user-catchable. The class names exist to convey developer intent:
 
@@ -667,16 +675,28 @@ both are user-catchable. The class names exist to convey developer intent:
   flow-control event.
 
 `catch('kiera.uno/exception')` catches both (error is-a exception).
-`catch('kiera.uno/exception/error')` catches only errors and their subclasses.
+`catch('kiera.uno/error')` catches only errors and their subclasses.
 
 **All exceptions carry a stack trace.** Trace capture cost is small in
 practice and the debug value of having a trace on every exception (especially
 when one propagates farther than its raiser anticipated) outweighs the cost.
 
-(**TBD:** the exact shape of the stack trace — what fields are captured per
-frame, how it's accessed on the exception object, serialization for Jasmine
-— is not yet specified. Likely lives at `$e.stack` or similar as an array of
-frame objects.)
+**Minimum stack-trace shape (v1):** the trace is accessed via `$e.stack`
+as an array of frame objects, root frame first, current frame last. Each
+frame is a hash with at minimum:
+
+| Field | Type | Description |
+|---|---|---|
+| `class` | string (UNS) | The owning role / class of the function-object whose call frame this is. For top-level scripts, the engine fills in a synthetic UNS (e.g., `kiera.uno/script/<name>`). |
+| `method` | string | The method or function name (e.g., `greet`, `init`, or `<top-level>`). |
+| `line` | integer | The source line number within the function (1-based). Null for engine-internal frames. |
+
+Engines may add fields (column, file path, role at-time-of-call, etc.) as
+needed; consumers should treat unknown fields as additive and not reject
+the trace because of them. Serialization for Jasmine flattens each frame
+to the same hash; serialization for the wire format used by
+[versioning.md](versioning.md) follows the same shape (with field
+trimming as the doc describes).
 
 ### Raising standard flags
 
@@ -693,17 +713,17 @@ id and a bucket; the class is implied by the method:
     # unwinds, carries stack trace
 
 %chain.error 'connection_refused', {host: 'db1', port: 5432}
-    # class: kiera.uno/exception/error
+    # class: kiera.uno/error
     # unwinds, carries stack trace
     # the "error" subclass is a semantic marker — same behavior as throw,
     # just a name indicating "this is an error" for readers
 
 %chain.exit 'normal', {code: 0}
-    # class: kiera.uno/exception/exit
+    # class: kiera.uno/exit
     # unwinds (graceful shutdown), runs ensure and close
 
 %chain.abort 'unrecoverable', {reason: 'bad_state'}
-    # class: kiera.uno/exception/abort
+    # class: kiera.uno/abort
     # does NOT unwind — engine terminates, no ensure runs
 ```
 
@@ -742,27 +762,27 @@ configure, use. Nothing special.
 ```
 kiera.uno/warning
 kiera.uno/exception
-    kiera.uno/exception/error
-        kiera.uno/exception/error/timeout
+    kiera.uno/error
+        kiera.uno/error/timeout
         # other built-in and developer-defined errors live here
-    kiera.uno/exception/exit
-    kiera.uno/exception/return
-    kiera.uno/exception/abort
-    kiera.uno/exception/security
-    kiera.uno/exception/timeout_handle
+    kiera.uno/exit
+    kiera.uno/return
+    kiera.uno/abort
+    kiera.uno/security
+    kiera.uno/timeout_handle
 ```
 
 | Class | Catcher | Unwinds |
 |---|---|---|
 | `warning` | user (`heed`) | no |
 | `exception` | user (`catch`) | yes |
-| `exception/error` | user (`catch`) | yes |
-| `exception/error/timeout` | user (`catch`) | yes |
-| `exception/exit` | engine | yes |
-| `exception/return` | function boundary | yes |
-| `exception/abort` | engine | no |
-| `exception/security` | engine | no |
-| `exception/timeout_handle` | timeout block boundary | no |
+| `error` | user (`catch`) | yes |
+| `error/timeout` | user (`catch`) | yes |
+| `exit` | engine | yes |
+| `return` | function boundary | yes |
+| `abort` | engine | no |
+| `security` | engine | no |
+| `timeout_handle` | timeout block boundary | no |
 
 - `kiera.uno/warning` is observational. Emitted via `%chain.warn`, collected
   via `heed()`, never user-catchable through `catch()`.
@@ -778,7 +798,7 @@ kiera.uno/exception
   block's boundary — see the [Timeouts section](#timeouts) for how they
   interact.
 
-Custom flag classes can extend any concrete class — `foo.com/exception/error/network`,
+Custom flag classes can extend any concrete class — `foo.com/error/network`,
 `foo.com/warning/validation`, etc. A custom class inherits its parent's
 profile unless it overrides.
 
@@ -786,15 +806,15 @@ profile unless it overrides.
 
 These are KScript flow primitives:
 
-- **`return`** raises `kiera.uno/exception/return`. Function call boundaries
+- **`return`** raises `kiera.uno/return`. Function call boundaries
   automatically catch it and extract the return value. Early returns from nested
   blocks work naturally — no special non-local-return machinery needed; the
   interpreter uses the same unwind mechanism for all flow that unwinds.
-- **`exit`** raises `kiera.uno/exception/exit`. Graceful: unwinds the stack,
+- **`exit`** raises `kiera.uno/exit`. Graceful: unwinds the stack,
   runs `begin`/`ensure` blocks, runs `close` on objects (see
   [Garbage Collection](#garbage-collection)), and cleans up before the process
   ends. Equivalent to `%chain.exit` or `%process.exit`.
-- **`abort`** raises `kiera.uno/exception/abort`. **Violent**: the engine
+- **`abort`** raises `kiera.uno/abort`. **Violent**: the engine
   terminates the execution unit immediately. The stack is not unwound,
   `begin`/`ensure` does not run, `close` is not called, GC does not run.
   Equivalent to `%chain.abort` or `%process.abort`.
@@ -810,35 +830,39 @@ available for the developer who prefers them.
 |---|---|---|
 | `%chain.warn` | `warning` | No — propagates up without unwinding |
 | `%chain.throw` | `exception` | Yes — runs `ensure`, runs `close`, unwinds frames |
-| `%chain.error` | `exception/error` | Yes — runs `ensure`, runs `close`, unwinds frames |
-| `%chain.exit` | `exception/exit` | Yes — graceful unwind, runs `ensure`, `close`, GC |
-| `%chain.abort` | `exception/abort` | No — engine takes over, no `ensure`, no `close`, no GC |
+| `%chain.error` | `error` | Yes — runs `ensure`, runs `close`, unwinds frames |
+| `%chain.exit` | `exit` | Yes — graceful unwind, runs `ensure`, `close`, GC |
+| `%chain.abort` | `abort` | No — engine takes over, no `ensure`, no `close`, no GC |
 
 Two methods don't unwind, for two different reasons: warnings by design
 (they're observations, not flow events), aborts by intent (immediate
 termination, no KScript-level code is trusted to run during cleanup).
 
-Abort is a capability tied to the scope. The root scope has abort capability;
-code running inside `untrusted()` does not. `kiera.uno/exception/abort`
-propagates to scope boundaries:
+Abort is a capability granted per role. The `user` role typically holds
+it; roles the engine launches with restricted surfaces may not.
+`kiera.uno/abort` propagates to role boundaries:
 
-- At a boundary **with** abort capability, the process terminates.
-- At a boundary **without** it (an `untrusted()` boundary), the abort is caught
-  and converted to an error. Execution in the containing scope continues normally.
+- At a boundary into a role **with** abort capability, the process
+  terminates.
+- At a boundary into a role **without** it, the abort is caught and
+  converted to an error. Execution in the role on the other side
+  continues normally.
 
-This means untrusted code can only abort itself, not the process that contains it.
+This means code running under a role without abort capability can only
+abort itself, not the process that contains it.
 
 ### Catching exceptions
 
 `catch()` matches **user-territory exceptions** — classes whose `catcher`
-property is "user." That's `kiera.uno/exception`, `.../error`, `.../error/timeout`,
-and any developer-defined class with `catcher: user`. Engine-territory
-subclasses (`exit`, `return`, `abort`, `security`, `timeout_handle`) are
-not catchable from user code; the engine catches them before user catch
-handlers see them, even though they share the `exception` umbrella by path.
+property is "user." That's `kiera.uno/exception`, `kiera.uno/error`,
+`kiera.uno/error/timeout`, and any developer-defined class with
+`catcher: user`. Engine-territory subclasses (`exit`, `return`, `abort`,
+`security`, `timeout_handle`) are not catchable from user code; the
+engine catches them before user catch handlers see them, even though
+they are declared subclasses of `exception`.
 
 ```
-$e = catch('foo.com/exception/network')
+$e = catch('foo.com/error/network')
     # ... code that may throw a network exception ...
 end
 
@@ -850,8 +874,8 @@ $e['host']     # bucket access
 Multiple classes:
 
 ```
-$e = catch('foo.com/exception/network',
-           'foo.com/exception/timeout')
+$e = catch('foo.com/error/network',
+           'foo.com/error/timeout')
     # ...
 end
 ```
@@ -872,12 +896,22 @@ whatever the user might throw" form.
 **Note on the hierarchy.** `catch()` is filtered by both class match *and*
 the `catcher` property. So `catch('kiera.uno/exception')` matches `exception`,
 `error`, and `error/timeout` (all `catcher: user`), but **not** `exit`,
-`abort`, `security`, `return`, or `timeout_handle` — those share the
-`kiera.uno/exception/...` path but have engine-or-other catchers, and `catch`
+`abort`, `security`, `return`, or `timeout_handle` — those are declared
+subclasses of `exception` but have engine-or-other catchers, and `catch`
 never sees them. The engine catches engine-territory subclasses before user
 catch handlers run. Custom subclasses match their declared parent:
-`catch('kiera.uno/exception/error')` matches `foo.com/exception/error/network`
+`catch('kiera.uno/error')` matches `foo.com/error/network`
 because the latter is declared as a subclass of error.
+
+**UNS naming is flat; inheritance is declared.** The class names above
+(`kiera.uno/error`, `kiera.uno/exit`, `kiera.uno/abort`, etc.) all live
+at the top of the `kiera.uno/` namespace — there is no `kiera.uno/exception/`
+prefix in the UNS. Their relationship to `kiera.uno/exception` is by
+**declared inheritance**, not by UNS path. Catch behavior, subclass
+matching, and the abstract-vs-concrete distinction all follow declared
+inheritance — not UNS-prefix matching. (See
+[ecoverse/uns.md](../ecoverse/uns.md) for the general rule that UNS
+does not imply inheritance, with xemes as one of the few exceptions.)
 
 If an exception doesn't match any class given to `catch()`, it continues
 unwinding up the stack until something does match (or nothing does and it
@@ -968,7 +1002,7 @@ end
 **Composes naturally with `catch`:**
 
 ```
-$e = catch('foo.com/exception/network')
+$e = catch('foo.com/error/network')
     begin
         $conn = $db.connect
         $conn.query(...)
@@ -1011,9 +1045,9 @@ vibecode: {
 		"block_return_via_as", "function_return", "raise_catch"],
 	"runtime_artifact": "single_control_type_single_throw_single_unwinder",
 	"user_facing_surface_unchanged": true,
-	"new_exception_subclasses": ["exception/loop/next",
-		"exception/loop/return", "exception/block/return",
-		"exception/error/stale_handler"],
+	"new_exception_subclasses": ["loop/next",
+		"loop/return", "block/return",
+		"error/stale_handler"],
 	"working_names": true,
 	"open_questions": ["cross_role_boundary_propagation_policy"]
 }
@@ -1039,20 +1073,20 @@ parallel control-flow machineries.
 
 The [exception class hierarchy](#exceptions-and-warnings-romulan-senator)
 already covers function returns and exits as exception subclasses
-(`exception/return`, `exception/exit`). The same model extends to
+(`return`, `exit`). The same model extends to
 loop and block controls:
 
 | Class | Raised by | Carries |
 |---|---|---|
-| `kiera.uno/exception/error` | `raise` (default) | message + bucket |
-| `kiera.uno/exception/return` | plain `return value` | the return value |
-| `kiera.uno/exception/exit` | `%chain.exit` | the exit code |
-| `kiera.uno/exception/abort` | `%chain.abort` | engine-fatal; not unwinding via user code |
-| `kiera.uno/exception/security` | role violation | engine-tagged |
-| `kiera.uno/exception/timeout_handle` | timeout | engine-tagged |
-| `kiera.uno/exception/loop/next` | `$loop.next` | target loop id |
-| `kiera.uno/exception/loop/return` | `$loop.return` (optionally with a value) | target loop id + optional value |
-| `kiera.uno/exception/block/return` | `$if.return value` (and any `as $name` block) | target block id + value |
+| `kiera.uno/error` | `raise` (default) | message + bucket |
+| `kiera.uno/return` | plain `return value` | the return value |
+| `kiera.uno/exit` | `%chain.exit` | the exit code |
+| `kiera.uno/abort` | `%chain.abort` | engine-fatal; not unwinding via user code |
+| `kiera.uno/security` | role violation | engine-tagged |
+| `kiera.uno/timeout_handle` | timeout | engine-tagged |
+| `kiera.uno/loop/next` | `$loop.next` | target loop id |
+| `kiera.uno/loop/return` | `$loop.return` (optionally with a value) | target loop id + optional value |
+| `kiera.uno/block/return` | `$if.return value` (and any `as $name` block) | target block id + value |
 
 All inherit the standard exception shape: class, id, bucket. The
 [`catcher` and `unwinds` properties](#exceptions-and-warnings-romulan-senator)
@@ -1073,10 +1107,12 @@ mechanism above:
   handler is reached. Ordinary stack-unwinding behavior; `ensure`
   blocks run on the way through.
 
-The class names (`exception/loop/return`, `exception/block/return`,
-etc.) are working names. The hierarchy under `kiera.uno/exception/`
-may rearrange when the spec gets a unifying pass — what matters at
-the architecture level is that these are subclasses of
+The class names (`loop/return`, `block/return`, etc.) are working names.
+They live at the top of the `kiera.uno/` namespace (`kiera.uno/loop/return`,
+`kiera.uno/block/return`) and are declared subclasses of
+`kiera.uno/exception` — UNS placement and inheritance are independent.
+Names may rearrange when the spec gets a unifying pass; what matters at
+the architecture level is that they are declared subclasses of
 `kiera.uno/exception` and participate in the same machinery.
 
 ### Handler registration via `as`
@@ -1142,7 +1178,7 @@ This is why an `ensure` block runs on a loop return the same way it
 runs on a function return, an `exit`, or a regular `raise`. One
 mechanism, one rule: ensure always runs, then the control continues.
 
-The only exception is `exception/abort` (engine-fatal) — its
+The only exception is `abort` (engine-fatal) — its
 `unwinds=no` property bypasses ensure entirely. This is the
 intentional asymmetry that keeps untrusted code from using `ensure`
 to delay an engine kill.
@@ -1153,7 +1189,7 @@ A loop object (or any `as $name` block object) captured in a closure
 and called after its construct has exited is **stale** — its handler
 is no longer on the runtime's stack. Calling
 `.next`/`.return` on a stale handler raises
-`kiera.uno/exception/error/stale_handler` instead of the control it
+`kiera.uno/error/stale_handler` instead of the control it
 would have raised.
 
 ```
@@ -1162,7 +1198,7 @@ $stored = null
     $stored = $loop
 end
 
-$stored.return   # raises exception/error/stale_handler
+$stored.return   # raises error/stale_handler
 ```
 
 The stale-handler raise is a normal catchable error (default
@@ -1446,10 +1482,9 @@ that the runtime creates before invoking the block.
   `match value ... case ... do($matched) ... end` just calls
   `bind_params` with the matched value as the arg list.
 - **The full parameters spec** (positional, named, `*args`, `**opts`,
-  splat expansion, etc.) per [parameters.md](parameters.md) and
-  [params.md](params.md) lives behind the same primitive — those
-  docs describe the surface; `bind_params` is the runtime
-  implementation.
+  splat expansion, etc.) per [parameters.md](parameters.md) lives
+  behind the same primitive — that doc describes the surface;
+  `bind_params` is the runtime implementation.
 
 ### Open
 
@@ -1897,7 +1932,7 @@ The `helper` bwc inside a class definition creates a lazily initialized helper:
 ```
 $myclass = class
     helper foo
-        function bar()
+        function &bar()
             return self.reference.gup
         end
     end
@@ -1911,7 +1946,7 @@ with `self` as the reference:
 
 ```
 $myclass = class
-    function foo()
+    function &foo()
         return @foo ||= $helper_class.new(self)
     end
 end
@@ -1940,7 +1975,7 @@ vibecode: {
 	"properties": "declared with property @foo :get :set default:",
 	"abstract": "abstract true prevents direct instantiation",
 	"initializer": "init method",
-	"methods": "function name() inside class block"
+	"methods": "function &name() inside class block"
 }
 ```
 
@@ -2006,11 +2041,14 @@ property @foo                  # private, no external access
 property @bar, :get            # creates a getter: bar()
 property @gup, :set            # creates a setter: gup=()
 property @baz, :get, :set      # creates both
-property @foo, default: 'bar'  # with a default value
-property @foo, :get, default: 'bar'  # accessor and default
 ```
 
+Mechanically, the getter/setter read from and write to `%bucket['<name>']` —
+properties are just typed sugar over bucket access.
+
 `:get` and `'get'` are equivalent — `:foo` is shorthand for `'foo'` throughout KScript.
+
+A `default:` option is reserved for a future revision; not in v1.
 
 ### Abstract Classes
 
@@ -2026,10 +2064,10 @@ end
 ### Initializer
 
 `init` is the method called when a new instance is created. It is defined using
-`function init(...)` inside the class block:
+`function &init(...)` inside the class block:
 
 ```
-function init($name, $birthdate)
+function &init($name, $birthdate)
     @name = $name
     @birthdate = $birthdate
 end
@@ -2037,10 +2075,10 @@ end
 
 ### Methods
 
-Methods are defined inside the class block using `function name(...)`:
+Methods are defined inside the class block using `function &name(...)`:
 
 ```
-function greet()
+function &greet()
     return "Hello, I am " + @name
 end
 ```
@@ -2054,13 +2092,13 @@ $person = class
     property @email, :get, :set
     property @active, default: false
 
-    function init($name, $birthdate)
+    function &init($name, $birthdate)
         @name = $name
         @birthdate = $birthdate
         @email = null
     end
 
-    function greet()
+    function &greet()
         return "Hello, I am " + @name
     end
 end
@@ -2075,11 +2113,11 @@ $p.greet   # "Hello, I am Jean-Luc"
 $officer = $person.subclass do
     property @rank, :get
 
-    function init($name, $birthdate, $rank)
+    function &init($name, $birthdate, $rank)
         @rank = $rank
     end
 
-    function greet()
+    function &greet()
         return @rank + " " + @name
     end
 end

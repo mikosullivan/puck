@@ -161,7 +161,7 @@ for their cutoff; no program's lookup affects any other's.
 The "canonical date" of a library is whatever the provider has authoritatively recorded.
 For a blockchain-backed provider, this is the `posted` timestamp on the chain (or the
 `effective_date`, if explicitly set; see the deferred
-[blockchain design](blockchain/blockchain.md#versioning) for the details). For a plain
+[blockchain design](../blockchain.md#versioning) for the details). For a plain
 HTTPS provider, this is whatever the provider asserts — the date is no stronger than
 the trust placed in the provider.
 
@@ -230,7 +230,7 @@ vibecode: {
 }
 
 The Kiera blockchain (currently deferred from production — see
-[blockchain.md](blockchain/blockchain.md)) provides a cryptographically anchored
+[blockchain.md](../blockchain.md)) provides a cryptographically anchored
 `posted` timestamp for every library version. When a chain is available, the cutoff
 is genuinely tamper-evident — a library's date cannot be forged.
 

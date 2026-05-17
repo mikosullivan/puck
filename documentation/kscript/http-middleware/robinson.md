@@ -566,6 +566,12 @@ page response, embed/target resolved into one document. The
 handler can manipulate it further (set page title, modify
 elements, add metadata) before serialization.
 
+> **Uma spec status (2026-05-17)**: Uma is currently brainstormed in
+> [`documentation/ideas/uma/uma.md`](../../ideas/uma/uma.md), not yet
+> promoted to canonical. Robinson's embed/target cascade and the
+> `$request.uma` interface depend on Uma being canonical before
+> Robinson can be implemented. Listed as a Robinson prerequisite.
+
 ### Validation: warnings on assembly issues
 
 Cascade assembly catches a few common slipups:

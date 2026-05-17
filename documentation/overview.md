@@ -93,18 +93,19 @@ See [mikobase.md](mikobase/mikobase.md).
 vibecode: {
 	"section": "implementation_status",
 	"role": "tracks the development status of each Kiera ecoverse component",
-	"key_concepts": ["active_development", "design_phase", "Python_SQLite_engine", "Q0", "KScript"]
+	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0", "KScript", "v01_hello_world_shipped"]
 }
 
 | Component | Status |
 |---|---|
-| Mikobase Python SQLite engine | In active development |
-| Q0 query language | Designed; implemented in Python engine |
-| KScript | Design phase |
-| KScriptJSON | Design phase |
-| Forking (opt-in KScript feature) | Early design; not in active development |
-| Kiera protocol | Early design |
-| Packaged mikobase | Early design |
+| KScript Lua reference engine | V0.01 hello-world ships; 213 tests passing. V0.02 (KScript source via transpiler) and V0.03–V0.05 plans drafted. |
+| KScript language | V0.01 surface shipped; broader language spec in active design. |
+| KScriptJSON | Canonical runtime format; V0.01 fixture-and-engine path is fully wired. |
+| Mikobase engine | Design only. V1 plan ships three engines (SQLite file, SQLite `:memory:`, worldlet-direct); none yet implemented. |
+| Q0 query language | Designed; will be implemented as SQL passthrough on the SQLite engines and against the JSON structure on the worldlet engine. |
+| Worldlet (packaged mikobase) | Format spec exists; import/export to be implemented alongside the Mikobase engines. |
+| Forking (opt-in KScript feature) | Early design; not in active development. |
+| Kiera protocol | Early design. |
 
 ---
 

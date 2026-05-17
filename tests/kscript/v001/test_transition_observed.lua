@@ -3,7 +3,7 @@
   "file": "tests/kscript/v001/test_transition_observed.lua",
   "test_id": "T1.8",
   "level": "unit_observability_check",
-  "verifies": "the role transition actually happened during dispatch — the to_string method, when called, observes ctx.current_role == string_class (not user); load-bearing for the role system: without it, all role machinery could be missing entirely and the rest of the V0.01 tests would still pass",
+  "verifies": "the role transition actually happened during dispatch — the to_string method, when called, observes ctx.current_role == stdlib (not user); load-bearing for the role system: without it, all role machinery could be missing entirely and the rest of the V0.01 tests would still pass",
   "tactic": "replace to_string with a spy that records ctx.current_role at call time, dispatch, then assert on what the spy saw"
 }
 ]]
@@ -13,7 +13,7 @@ local engine   = require("kscript.engine")
 
 runner.suite("v0.01 / engine transition observed during dispatch")
 
-runner.test("inside to_string, current_role is string_class — not user", function()
+runner.test("inside to_string, current_role is stdlib — not user", function()
     engine.bootstrap()
     local seen_role
     local seen_chain
@@ -28,8 +28,8 @@ runner.test("inside to_string, current_role is string_class — not user", funct
 
     engine.dispatch({{value = "hello"}, "to_string"})
 
-    assert_.equal(seen_role, engine.roles.string_class,
-        "method body must execute under the string_class role, not user")
+    assert_.equal(seen_role, engine.roles.stdlib,
+        "method body must execute under the stdlib role, not user")
     assert_.not_equal(seen_chain, nil,
         "chain visible inside the method must be a fresh table, not nil")
 end)

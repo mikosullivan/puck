@@ -21,6 +21,15 @@ KScript's style is influenced by Ruby with some Perl mixed in.
 By convention, code is shared as KScript, not as KScriptJSON. KScriptJSON is a runtime
 artifact, not a source format.
 
+KScript is the **canonical surface syntax** — the one users see and write today. The
+language architecture deliberately separates the surface syntax from the canonical
+runtime form ([KScriptJSON](kscriptjson.md)), preserving the possibility of alternate
+surface syntaxes that also transpile to KScriptJSON. The original design ambition was
+multiple coexisting source syntaxes for the same semantic core; the project scoped down
+to a single canonical surface (KScript) for clarity, but the multi-syntax option
+remains architecturally open through the KScript-source → KScriptJSON layer. No
+alternate surface syntaxes are planned for v1.
+
 Formatting conventions (tabs vs. spaces, etc.) are enforced by the KScript formatter. The
 community norm is: run your code through the formatter before complaining about formatting.
 
@@ -289,7 +298,7 @@ $server.get('/path') do($request)
     # block argument to .get()
 end
 
-catch('foo.com/exception/network') do
+catch('foo.com/error/network') do
     # block argument to catch()
 end
 
@@ -408,10 +417,25 @@ up, but `__END__` alone means "throw the rest away."
 
 ### Status
 
-Spec requirement; **not yet implemented.** The change is small — a
-~10–15-line addition in `lexer.lua` that emits EOF on a top-level `__END__`
-line and suppresses the check while in heredoc/string/comment state. No
-parser, transpiler, or interpreter changes.
+Spec requirement; **not yet implemented in the canonical Lua engine.** The
+change is small — a ~10–15-line addition in `lexer.lua` that emits EOF on
+a top-level `__END__` line and suppresses the check while in
+heredoc/string/comment state. No parser, transpiler, or interpreter
+changes.
+
+### Compliant-engine behavior for the unimplemented state
+
+Until an engine implements `__END__`, it treats the marker as ordinary
+input — i.e., as a bare identifier on a line, which is a parse error in
+most positions. This is the expected behavior of any KScript-conforming
+engine that hasn't yet shipped `__END__`: not silent acceptance, not a
+custom error class, just whatever the parser would normally do with
+`__END__` as an unrecognized identifier in that position.
+
+When an engine implements the feature, it follows the rules above
+(top-of-line, not inside strings/heredocs/comments, trailing whitespace
+ok) and discards content after the marker per the "What KScript doesn't
+do" section.
 
 ---
 
@@ -438,28 +462,30 @@ whether they capture the lexical scope at the point of creation.
 **Function** — does not capture outer scope:
 
 ```
-$foo = function($a, $b) do
-end
+$foo = function($a, $b)
+    # body
 end
 ```
 
 **Closure** — captures the lexical scope where it is defined:
 
 ```
-$bar = closure($a, $b) do
-end
+$bar = closure($a, $b)
+    # body
 end
 ```
 
-Both forms use a `do ... end` block for the body. The parameters are the block params.
-Outside variables are invisible to a function; a closure sees everything in scope at the
-point it was created.
+No `do` between the parameter list and the body — definitions own their body
+directly (per [When `do` is Required](#when-do-is-required-ressikan)). The
+parameters are the function's parameters; outside variables are invisible to
+a function; a closure sees everything in scope at the point it was created.
 
-`function &foo()` is syntactic sugar for `$foo = function()`:
+`function &foo()` is syntactic sugar for `$foo = function()`. The sigil form
+is used both at top level and inside class blocks for method definitions:
 
 ```
-function &foo($a, $b) do
-end
+function &foo($a, $b)
+    # body
 end
 ```
 
@@ -482,9 +508,9 @@ end
 
 | Form | Captures outer scope? |
 |------|-----------------------|
-| `$f = function(...) do ... end` | No |
-| `$f = closure(...) do ... end` | Yes |
-| `function &f(...) do ... end` | No (sugar for function) |
+| `$f = function(...) ... end` | No |
+| `$f = closure(...) ... end` | Yes |
+| `function &f(...) ... end` | No (sugar for function) |
 | inline `do ... end` block | Yes |
 
 ### Calling
@@ -556,6 +582,39 @@ class 'foo.com/character'
 end
 ```
 
+### Anonymous (bare) class
+
+The UNS name may be omitted. A bare `class ... end` block produces an
+**anonymous class** — a class with no UNS identity of its own. The class
+is just a value the surrounding code captures (typically by assignment,
+return, or the host that loaded the file):
+
+```
+class
+    inherits 'kiera.uno/robinson/page'
+
+    function &process($request)
+        response.html(200, '<h1>Hello</h1>')
+    end
+end
+```
+
+Anonymous classes are used where a class's identity comes from its
+*location* rather than its UNS — e.g., Robinson page files (identified
+by their path in the directory tree) and Robinson per-directory
+handlers. `inherits` and the other schema/method declarations work
+the same way as in named classes.
+
+If an anonymous class needs to refer to itself, capture it in a
+variable:
+
+```
+$page_class = class
+    inherits 'kiera.uno/robinson/page'
+    ...
+end
+```
+
 ### Schema declarations
 
 Schema declarations define the class's structure. They map directly to the JSON class
@@ -585,10 +644,16 @@ the quoted form by convention since they contain dots and slashes.
 ### `property`
 
 `property` declares a `%bucket`-backed accessor — instance state that lives in the object,
-not in the mikobase schema. It does not appear in the JSON class definition:
+not in the mikobase schema. It does not appear in the JSON class definition. The first
+argument is the sigil-prefixed instance-variable name; subsequent arguments are accessor
+flags (`:get`, `:set`). Mechanically, the flags create getter/setter methods that read
+from and write to `%bucket['<name>']`.
 
 ```
-property :nickname
+property @nickname              # private, no external access
+property @nickname, :get        # creates a getter: $obj.nickname
+property @nickname, :set        # creates a setter: $obj.nickname=()
+property @nickname, :get, :set  # creates both
 ```
 
 ### Abstract classes
@@ -700,7 +765,7 @@ vibecode: {
 
 ### `return`
 
-`return` exits the current function, raising `kiera.uno/exception/return`. Inside a
+`return` exits the current function, raising `kiera.uno/return`. Inside a
 closure, `return` propagates through the closure boundary and exits the calling function.
 
 ```

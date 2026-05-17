@@ -134,7 +134,7 @@ intended here.
 
 Kiera uses these primitives for:
 
-- Blockchain signing (see [blockchain.md](blockchain/blockchain.md)).
+- Blockchain signing (see [blockchain.md](../blockchain.md)).
 - Mikobase file deduplication via SHA-256.
 - Secure random for UUIDs (Jasmine entries, tokens, identifiers).
 - Constant-time secret comparison where needed.

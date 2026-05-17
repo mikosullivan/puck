@@ -148,9 +148,11 @@ else in the ecoverse that emits URLs containing structured params.
 
 ## Dogberry support (John Kelly)
 
-**[Dogberry](../ideas/dogberry-wishlist.md), the KScript HTTP middleware
-framework, will support JSON URL parameters natively.** Handlers will
-be able to receive parameters in either form (or mixed) without
-custom parsing — Dogberry's request layer parses both and presents a
-unified parameter hash to the handler. Details deferred to Dogberry's
-own spec.
+**[Dogberry](../ideas/dogberry.md) is currently undefined** — see the
+brainstorm doc for the current shape (transforming proxy that fetches
+and executes remote KScript). Whether Dogberry natively parses JSON URL
+parameters, and what shape that handler interface takes, is TBD as
+Dogberry firms up. The expectation is that any future HTTP middleware
+in the ecoverse will support both `?key=value` and the
+`?{"key":"value"}` JSON-URL forms uniformly; this section will be
+fleshed out once Dogberry's request layer is specified.

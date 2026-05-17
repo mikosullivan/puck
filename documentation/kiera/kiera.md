@@ -37,6 +37,15 @@ the current kiera does not propagate across role boundaries; each role gets
 its own world. When there is no kiera in the chain, `%kiera` returns plain
 null.
 
+**The engine decides what kiera (if any) populates each role boundary.**
+The engine may install a kiera for a new role on entry — typically a
+restricted/derived kiera per the role's trust profile — or it may leave
+`%kiera` null for that role. The "engine controls policy" framing in
+[The Engine Decides the Policy](#the-engine-decides-the-policy) applies
+per role boundary, not globally. The two statements are consistent: the
+engine's per-role policy is what determines whether crossing into role B
+yields a kiera or null.
+
 ### Shorthand for built-in classes
 
 Bare names in `%kiera[...]` — any key without a domain — resolve to `kiera.uno/...`:
@@ -132,10 +141,7 @@ which versions of an object are eligible to be returned. The window
 lives on the kiera object itself; the engine sets it when the kiera is
 created. (This replaces the earlier `%chain.cutoff` design.)
 
-```
-%kiera.lower = 'may 3, 2018'      # versions must be on or after
-%kiera.upper = 'may 3, 2028'      # versions must be on or before
-```
+The window has two read-only properties:
 
 - **`upper`** — the latest acceptable timestamp. The kiera returns the
   latest version of an object that is on or before `upper`. Without
@@ -144,9 +150,19 @@ created. (This replaces the earlier `%chain.cutoff` design.)
   `lower` are not returned. Without `lower`, the floor is effectively
   negative infinity.
 
-**Both properties are immutable once the kiera exists.** The engine
-sets them at creation time, and no API can change them afterward. This
-turns the timespan from a configuration knob into a structural sandbox.
+Both can be read:
+
+```
+$bound = %kiera.upper             # read the upper bound
+```
+
+But **both are immutable once the kiera exists.** The engine sets them
+at creation time, and no API can change them afterward — `%kiera.upper = ...`
+and `%kiera.lower = ...` are not valid; the assignment raises. This turns
+the timespan from a configuration knob into a structural sandbox. To get
+a kiera with a narrower window, **derive** one (see
+[Deriving a Narrower Kiera](#deriving-a-narrower-kiera)) or use
+[`restrict do ... end`](#restrict-do--end) for block-scoped narrowing.
 
 Lookup semantics:
 
@@ -261,7 +277,7 @@ Typical cases:
   matches how npm/pip/gem/Cargo work.
 - **Cache plus signature verification.** Additionally verifies
   cryptographic signatures (e.g., against the
-  [Kiera blockchain](../kscript/blockchain/blockchain.md)). This is the "two distant
+  [Kiera blockchain](../blockchain.md)). This is the "two distant
   objects" pattern: local cache holds the artifact, distant
   verification mechanism holds proof.
 
@@ -305,6 +321,26 @@ The three arguments are:
 `%kiera.call` automatically forwards the current `%chain` context to the remote call —
 the same chain the calling function is running under. `%role` is reserved for possible
 future use and is not part of early versions.
+
+### Return value and error model
+
+- **Return**: the remote method's return value, marshaled back as a Kiera object
+  reference (or a primitive value, if the remote method returned one). The caller
+  doesn't see "this was remote" — the value comes back like any local call.
+- **Target lookup failure**: if the target object can't be resolved (UNS unknown,
+  withdrawn, outside the current kiera's version window), `%kiera.call` raises
+  `kiera.uno/error/not_found`.
+- **Method not found**: if the target exists but doesn't expose the named method,
+  raises `kiera.uno/error/method_not_found`.
+- **Transport failure**: network errors, timeout, refused connections, etc., raise
+  `kiera.uno/error/transport` with the underlying cause in the bucket.
+- **Remote exception**: if the remote method itself raises, that exception
+  propagates to the caller as if it were thrown locally. The remote stack trace is
+  preserved (per the stack-trace shape in
+  [kscript-runtime.md](../kscript/kscript-runtime.md#all-exceptions-carry-a-stack-trace)).
+  Caller handles with `catch` as usual.
+- **Authorization failure**: if the remote rejects the call (signature invalid,
+  role not trusted, etc.), raises `kiera.uno/error/auth`.
 
 ---
 
@@ -360,15 +396,14 @@ vibecode: {
 | `kiera.uno/meta_hash` | Read-overlay-write hash backed by an array of hashes; cascading config primitive (see [meta-hash.md](../kscript/built-in-classes/meta-hash.md)) |
 | `kiera.uno/flag` | Abstract root of the flag hierarchy |
 | `kiera.uno/warning` | Observational, non-unwinding; emitted via `%chain.warn`, collected via `heed()` |
-| `kiera.uno/exception` | Abstract parent of everything raised to redirect flow |
-| `kiera.uno/exception` | Generic exception (user-catchable, unwinds, carries stack trace) |
-| `kiera.uno/exception/error` | Semantic-marker subclass of exception — same behavior; the name signals "this is an error condition" |
-| `kiera.uno/exception/error/timeout` | Caller-facing timeout error raised at the `%utils.timeout` boundary (user-catchable, unwinds) |
-| `kiera.uno/exception/exit` | Graceful process exit (engine-caught, unwinds stack, runs GC) |
-| `kiera.uno/exception/return` | Function return (caught at function boundary, unwinds) |
-| `kiera.uno/exception/abort` | Violent termination (engine-caught, does not unwind) |
-| `kiera.uno/exception/security` | Security violation (engine-caught, does not unwind) |
-| `kiera.uno/exception/timeout_handle` | Internal abort fired *inside* a `%utils.timeout` block; bubbles to the block boundary, does not unwind, not user-catchable |
+| `kiera.uno/exception` | Umbrella for everything raised. Also itself a concrete user-catchable class (unwinds; carries stack trace). All other classes in this block are declared subclasses; UNS naming is flat, inheritance is declared (see [kscript-runtime.md § Catching exceptions](../kscript/kscript-runtime.md#catching-exceptions)). |
+| `kiera.uno/error` | Semantic-marker subclass of exception — same behavior; the name signals "this is an error condition" |
+| `kiera.uno/error/timeout` | Caller-facing timeout error raised at the `%utils.timeout` boundary (user-catchable, unwinds) |
+| `kiera.uno/exit` | Graceful process exit (engine-caught, unwinds stack, runs GC) |
+| `kiera.uno/return` | Function return (caught at function boundary, unwinds) |
+| `kiera.uno/abort` | Violent termination (engine-caught, does not unwind) |
+| `kiera.uno/security` | Security violation (engine-caught, does not unwind) |
+| `kiera.uno/timeout_handle` | Internal abort fired *inside* a `%utils.timeout` block; bubbles to the block boundary, does not unwind, not user-catchable |
 
 ### Object Store
 

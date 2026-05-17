@@ -16,14 +16,14 @@ vibecode: {
 	"availability": "always_available_without_import",
 	"user_defined": false,
 	"methods": ["%chain", "%engine", "%forks", "%tmp", "%kiera", "%call", "%bucket",
-		"%self", "%scope", "%process", "%now", "%blocks",
+		"%self", "%scope", "%process", "%now",
 		"%document", "%vibecode", "%role", "%utils", "%stdout", "%stderr", "%sys"]
 }
 ```
 
 | Method | Description |
 |--------|-------------|
-| `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. **Wiped at role boundaries** (see [roles.md](roles.md)). Use `%chain.isolate do...end` for a voluntary inline wipe plus fresh ephemeral role. |
+| `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. **Wiped at role boundaries** (see [roles.md](roles.md)). Use `%chain.isolate do...end` for a voluntary inline wipe plus fresh ephemeral role. Engine-installed methods on `%chain` include flag-raising (`%chain.warn`, `%chain.throw`, `%chain.error`, `%chain.exit`, `%chain.abort` — see [kscript-runtime.md § Exceptions](kscript-runtime.md#exceptions-and-warnings-romulan-senator)) and logging (`%chain.log` — see [jasmine.md](jasmine/jasmine.md)). |
 | `%engine` | Returns the engine object — the gateway to host-injected resources. The method only exists in the outermost scope; functions and closures cannot see it. The engine object itself is non-storable: it can be used directly but cannot be assigned to a variable. |
 | `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
 | `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
@@ -32,11 +32,10 @@ vibecode: {
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |
 | `%self` | The current object instance. `self` (bare word) is shorthand. |
 | `%scope` | The current lexical scope. Holds variables and is used for bare word command (bwc) resolution. `$foo` is shorthand for `%scope['foo']`. |
-| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises a `kiera.uno/exception/abort` immediately (no unwind, engine terminates). Under the role model, abort behavior is governed by the alarm rules in [roles.md](roles.md). |
+| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises a `kiera.uno/abort` immediately (no unwind, engine terminates). Under the role model, abort behavior is governed by the alarm rules in [roles.md](roles.md). |
 | `%now` | Returns the current timestamp object. The returned timestamp is owned by the engine's `clock` role. |
-| `%blocks` | The array of `do` blocks passed to the current function call. Used in multi-block functions alongside `%call.dispatcher`. |
 | `%document` | Saves a documentation block as a statement in the KScriptJSON command array. Takes a MIME type (`text/plain`, `text/markdown`, `text/vibecode`, etc.) and a heredoc or string. Shorthand type names: `text`, `markdown`, `vibecode`. All documentation rules (storage, `side` field, attachment TBD) apply regardless of type. |
-| `%vibecode` | Shorthand for `%document 'vibecode' <<EOF...`, which is shorthand for `%document 'text/vibecode' <<EOF...`. Saves an AI-readable JSON documentation block. An optional `side` field indicates attachment intent: `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. |
+| `%vibecode` | Shorthand for `%document 'vibecode' <<EOF...`, which is shorthand for `%document 'text/vibecode' <<EOF...`. Saves an AI-readable JSON documentation block. An optional `side` field indicates attachment intent: `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. **Consumer effect of `side` is TBD** — the field is recorded in KScriptJSON for future use; no current consumer reads it. Reserved for tooling that wants to know which half of an assignment a vibecode block describes. |
 | `%role` | Returns the role currently in effect — the owning role of the function-object currently executing. See [roles.md](roles.md) for the role model. |
 | `%utils` | Engine-granted convenience-utility capability. Provides common, low-sensitivity helpers (`%utils.now`, `%utils.rand.uuid`, `%utils.timer`, `%utils.timeout`, `%utils.json.parse`, etc.). Returns `null` if the engine did not grant it. Everything coming out of `%utils` is owned by the `utils` role. See `%utils.timer`, `%utils.timeout`, and `%utils.json` sections below. |
 | `%stdout` | Standard output handle. **Always present** — never null. The engine decides what it points at; if no destination was granted, it's a dev/null handle that accepts writes and discards them (with a nanny warning, silenceable via `no_writers_ok`). Capture and tee are methods on the handle — see the `%stdout` / `%stderr` section below. |
@@ -191,20 +190,20 @@ is granted.
 Wraps a block with a time limit. When the deadline hits, the
 timeout fires a **two-stage** flag sequence:
 
-1. **Inside the block:** a `kiera.uno/exception/timeout_handle`
+1. **Inside the block:** a `kiera.uno/timeout_handle`
    is raised. It does not unwind — `begin`/`ensure` blocks inside
    the timeout do not run, no KScript-level cleanup is attempted
    inside. It bubbles up to the `%utils.timeout` boundary,
    ignoring all user-level `catch` and `ensure` along the way.
 2. **At the boundary:** the timeout mechanism intercepts the
    `timeout_handle` and re-raises a
-   `kiera.uno/exception/error/timeout` in the
+   `kiera.uno/error/timeout` in the
    caller's scope. This is a normal catchable error — the caller
    can `catch` it (or any ancestor like `exception` or `error`)
    and handle it cleanly.
 
 ```kscript
-catch('kiera.uno/exception/error/timeout')
+catch('kiera.uno/error/timeout')
     %utils.timeout(10) do
         # work that must finish within 10 seconds
     end
@@ -230,13 +229,13 @@ end
 ```
 
 With `unwind: true`, the two-stage mechanism collapses to one:
-when the deadline fires, a `kiera.uno/exception/error/timeout`
+when the deadline fires, a `kiera.uno/error/timeout`
 is raised **directly inside the block**, unwinds the stack like
 any normal exception, runs `begin`/`ensure`, and propagates
 outward. No `timeout_handle` is involved.
 
 **This is not a security boundary.** Code inside the block can
-`catch('kiera.uno/exception/error/timeout')` and keep running.
+`catch('kiera.uno/error/timeout')` and keep running.
 That's the point — cooperative code is trusted to honor the
 timeout. The default (`unwind: false`, or omitted) is the
 security-boundary form, with `timeout_handle` doing the
@@ -244,8 +243,8 @@ uncatchable bubble-up.
 
 | Mode | Inside the block | Caller's scope |
 |---|---|---|
-| Default | `timeout_handle` (uncatchable, no unwind) | `exception/error/timeout` (catchable) |
-| `unwind: true` | `exception/error/timeout` (catchable, unwinds) | propagates from the block |
+| Default | `timeout_handle` (uncatchable, no unwind) | `error/timeout` (catchable) |
+| `unwind: true` | `error/timeout` (catchable, unwinds) | propagates from the block |
 
 ### The `?` form: `%utils.timeout?`
 
@@ -282,10 +281,10 @@ The `?` form combines with the `unwind:` kwarg cleanly:
 
 | Form | `unwind:` | Behavior |
 |---|---|---|
-| `%utils.timeout(N)` | (omitted) | `timeout_handle` inside (no `ensure`); `exception/error/timeout` raised in caller scope |
-| `%utils.timeout(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); propagates out of the block normally |
+| `%utils.timeout(N)` | (omitted) | `timeout_handle` inside (no `ensure`); `error/timeout` raised in caller scope |
+| `%utils.timeout(N, unwind: true)` | `true` | `error/timeout` inside (catchable, `ensure` runs); propagates out of the block normally |
 | `%utils.timeout?(N)` | (omitted) | `timeout_handle` inside (no `ensure`); boundary catches and **returns** the timeout flag |
-| `%utils.timeout?(N, unwind: true)` | `true` | `exception/error/timeout` inside (catchable, `ensure` runs); if it escapes the block, boundary catches and **returns** it |
+| `%utils.timeout?(N, unwind: true)` | `true` | `error/timeout` inside (catchable, `ensure` runs); if it escapes the block, boundary catches and **returns** it |
 
 In the `%utils.timeout?(N, unwind: true)` case: if the block
 itself catches the timeout, `%utils.timeout?` returns `null`
@@ -323,8 +322,8 @@ JSON parsing helpers. Two variants:
 ### `%utils.json.parse(string)`
 
 Strict parser. Returns the parsed value (hash, array, string,
-number, trilean, or `kiera.uno/null`) on success. Raises
-`kiera.uno/exception/error/json_parse` on bad syntax.
+number, boolean, or `kiera.uno/null`) on success. Raises
+`kiera.uno/error/json_parse` on bad syntax.
 
 ```kscript
 $data = %utils.json.parse('{"name": "Picard", "rank": "Captain"}')

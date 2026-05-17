@@ -124,8 +124,9 @@ Xeme produced, no entry in the report).
 ### Why `false` produces an explicit skip
 
 A file marked `false` isn't silently dropped — it's a deliberate
-skip, and the report says so. This is the
-[slob pattern](../../) at work: the developer's choice is
+skip, and the report says so. This is the *slob pattern* at work
+(companion to the no-nanny principle in
+[overview.md](../../overview.md)): the developer's choice is
 respected (file doesn't run), but the choice is **visibly
 recorded** (skip appears in the Xeme tree). The developer can
 audit "what didn't run" without having to remember.

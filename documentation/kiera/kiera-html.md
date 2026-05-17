@@ -23,7 +23,7 @@ object itself. It lives in a `<meta name="kiera:vibecode">` tag in the `<head>`:
 "this_page":"class definition — describes a type with typed fields and callable methods",
 "how_to_use":"...",
 "verification":"object provenance and integrity can be verified via blockchain.kiera.uno",
-"ecoverse_info":"kiera.uno/vibcode"}'>
+"ecoverse_info":"kiera.uno/vibecode"}'>
 ```
 
 Because it is page metadata and not object data, it does not appear in the JSON
@@ -36,7 +36,7 @@ The meta tag must include:
 - What this page is — a class definition with fields and methods
 - How to use it — fetch from the UNS address, read fields and methods sections
 - Where to verify — the blockchain API at `blockchain.kiera.uno`
-- Where to learn more — `kiera.uno/vibcode`
+- Where to learn more — `kiera.uno/vibecode`
 
 See `json.html` in this directory for a worked example.
 

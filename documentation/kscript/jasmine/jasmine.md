@@ -22,15 +22,17 @@ a few tweaks specific to the Kiera ecoverse.
   eventually gets written to) is a separate thing the framework
   manages.
 
-**Primary use case: Robinson.** Jasmine was designed specifically as
-the logging format for the
-[Robinson handler](../../ideas/dogberry-wishlist.md#robinson-handler-filesystem-tree-pages)
-in Dogberry — capturing request/response data, errors, and other
-events from filesystem-tree-served sites. But the design isn't
-Robinson-specific; Jasmine is suitable for any logging scenario
-where its tweaks (corruption tolerance, ecoverse-specific
-conventions) are useful. Application logs, audit trails, event
-streams, and similar log-shaped data fit naturally.
+**Primary use case: Robinson.** Jasmine was originally motivated by
+[Robinson](../http-middleware/robinson.md), the filesystem-tree HTTP
+server — capturing request/response data, errors, and other events
+from filesystem-tree-served sites. (Note: Robinson and
+[Dogberry](../../ideas/dogberry.md) are independent HTTP middleware
+peers; Robinson is *not* a Dogberry handler, despite earlier docs
+having framed it that way.) The design isn't Robinson-specific —
+Jasmine is suitable for any logging scenario where its tweaks
+(corruption tolerance, ecoverse-specific conventions) are useful.
+Application logs, audit trails, event streams, and similar
+log-shaped data fit naturally.
 
 The JSONL baseline:
 

@@ -30,7 +30,7 @@ a | b
 
 ### Semantics
 
-The pipe operator passes the result of the left-hand expression as the **first and only argument** to the right-hand expression.
+The pipe operator passes the result of the left-hand expression as the **first positional argument** to the right-hand expression. The right-hand side may also accept additional positional or named arguments at the call site; the piped value occupies the first positional slot and the rest of the arguments are bound normally.
 
 ```kscript
 a | b
@@ -41,6 +41,22 @@ desugars to:
 ```kscript
 b(a)
 ```
+
+With additional arguments at the call site:
+
+```kscript
+$list | sort('asc')
+$list | filter(min: 5, max: 10)
+```
+
+desugar to:
+
+```kscript
+sort($list, 'asc')
+filter($list, min: 5, max: 10)
+```
+
+Same shape as Elixir's `|>`, F#'s `|>`, R's `%>%`.
 
 ---
 

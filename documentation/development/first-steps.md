@@ -237,7 +237,7 @@ At this point the engine loads, parses, and returns the parsed tree.
 
 | Candidate | What it does | Lines (rough) |
 |---|---|---|
-| `engine.bootstrap()` | Creates the role registry (`user` + `string_class`) and the string class with `to_string`. Sets `engine.ctx` | ~40 |
+| `engine.bootstrap()` | Creates the role registry (`user` + `stdlib`) and the string class with `to_string` (owned by `stdlib`). Sets `engine.ctx` | ~40 |
 | `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type, owning_role, payload}` | ~20 |
 | `engine.lookup_method(value, name)` | Finds `to_string` on the string class | ~15 |
 | `engine.transition(new_role, fn)` | Save/restore ctx around a Lua function call | ~15 |
