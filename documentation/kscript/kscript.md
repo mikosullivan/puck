@@ -680,7 +680,10 @@ while(&foo) as $loop
 end
 ```
 
-`$loop.return` exits the loop and returns a value. `$loop.break` exits without a value.
+`$loop.return` and `$loop.break` are aliases — both exit the loop, both
+accept an optional value (`$loop.return value` or `$loop.break value`).
+For the prefix-free `break` / `break N` bwc form (no `$loop` reference
+needed; supports multi-level exit), see [loops.md § break](loops.md#break-riker).
 
 ---
 

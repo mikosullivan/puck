@@ -6,10 +6,13 @@ vibecode: {
 	"role": "all_loop_constructs_in_kscript_in_one_place",
 	"loop_forms": ["while_block", "each_iteration_method", "numeric_helpers_times_upto_downto"],
 	"loop_object_via": "as_loop",
-	"loop_object_methods": ["next", "return", "count", "active", "index"],
+	"loop_object_methods": ["next", "return", "break", "count", "active", "index"],
+	"loop_exit_methods_aliased": ["return", "break"],
+	"loop_exit_bwc": "break_optional_level_count",
 	"structural_blocks": ["before", "between", "after", "noloop"],
 	"notes": ["structural_blocks_have_no_access_to_iteration_variable",
-		"as_keyword_is_a_general_block_mechanism_see_kscript_md_the_as_keyword_section"]
+		"as_keyword_is_a_general_block_mechanism_see_kscript_md_the_as_keyword_section",
+		"break_bwc_added_post_soft_lock_2026-05-17_as_deliberate_v1_addition"]
 }
 ```
 
@@ -158,7 +161,8 @@ end
 ```
 vibecode: {
 	"section": "loop_object_methods",
-	"control_methods": ["next", "return"],
+	"control_methods": ["next", "return", "break"],
+	"aliases": {"return": "break"},
 	"state_readers": ["count", "active", "index"]
 }
 ```
@@ -166,22 +170,120 @@ vibecode: {
 | Method | Description |
 |---|---|
 | `$loop.return` | Exit the loop. Optional value: `$loop.return value` exits with that value; `$loop.return` with no argument exits with no value. |
+| `$loop.break` | Alias for `$loop.return`. Same behavior, same optional value form. |
 | `$loop.next` | Skip to the next iteration |
 | `$loop.count` | Current iteration number (1-based); total count after loop ends |
 | `$loop.active` | `true` while the loop is running, `false` after it ends |
 | `$loop.index` | Current iteration index (0-based) |
 
-There is no `break` method. `$loop.return` (with no argument) is the
-plain "exit this loop" form; `$loop.return value` is the "exit this
-loop carrying a value" form. After either, `$loop.active` is `false`
-and `$loop.count` is the number of iterations that actually ran.
+`$loop.return` and `$loop.break` are two names for the same operation
+— exit this loop. Both accept the optional value form (`.return value`
+or `.break value`); both leave `$loop.active` false and
+`$loop.count` equal to the iterations that ran. Pick whichever name
+reads better in context. For the prefix-free top-level form (no
+`$loop` reference needed, multi-level exit), see [break](#break-riker).
 
 **`return` (without `$loop.`) is a function exit, not a loop exit.**
 A bare `return` inside a loop body returns from the enclosing
 function. There's no special mechanism — `return` works the same
-inside or outside a loop. Use `$loop.return` when you want to exit
-just the loop; use `return` when you want to return from the
-enclosing function.
+inside or outside a loop. Use `$loop.return` (or `$loop.break`) when
+you want to exit just the loop; use `return` when you want to return
+from the enclosing function.
+
+---
+
+## `break` (Riker)
+
+```
+vibecode: {
+	"section": "break_bwc",
+	"form": "bwc",
+	"shape": "[{\"bwc\": \"break\"}, {\"value\": N}?]",
+	"arg": "optional_positive_integer_level_count_default_1",
+	"function_boundary": "does_not_escape_user_defined_functions_or_closures_named_via_dollar",
+	"block_boundary": "DOES_escape_through_do_end_blocks_passed_to_method_calls_per_user_examples",
+	"named_loop_targeting_form": "tbd_break_loop_var_as_alternative_to_level_count",
+	"history": "added_post_soft_lock_2026-05-17_as_deliberate_v1_addition_per_scotty_section"
+}
+```
+
+`break` exits a loop without a `$loop` reference. The plain form exits
+the innermost enclosing loop; `break N` exits N enclosing loops.
+
+```
+$people.each do($person)
+    break
+end
+```
+
+`break 2` walks out of two loops at once:
+
+```
+$people.each do($person)
+    $person.addresses.each do($address)
+        break 2
+    end
+end
+```
+
+After `break N`, control resumes after the N-th enclosing loop. The
+intervening loop objects' `$loop.active` becomes `false` and their
+`$loop.count` reflects the iterations that actually ran.
+
+### Function boundary
+
+`break` does **not** escape function boundaries. If a function
+definition encloses a loop and contains `break`, that `break` exits
+the loop inside the function; it does not affect any loop in the
+caller.
+
+```
+function &process_each($list) do
+    $list.each do($item)
+        break          # exits the .each inside process_each
+    end
+end
+
+$outer.each do($x)
+    &process_each($outer)   # break inside process_each does NOT
+                            # exit this .each
+end
+```
+
+`break` **does** flow through `do ... end` blocks passed as
+arguments to methods like `.each`, `.times`, `.upto`. Those are
+blocks, not function definitions — they execute in the caller's
+lexical context. The first example above relies on this.
+
+### Argument validation
+
+- `break 1` is equivalent to bare `break`.
+- `break 0` raises `kiera.uno/exception/error/invalid_argument` —
+  break by zero levels is nonsense and almost always a bug.
+- `break N` where N exceeds the number of enclosing loops raises
+  `kiera.uno/exception/error/invalid_argument`. Use named-loop
+  targeting (TBD, see open questions) when the depth might vary.
+- The level argument is evaluated as a normal integer expression;
+  `break $depth` works with a variable. If the runtime value is not a
+  positive integer the same `invalid_argument` is raised.
+
+### Interaction with structural blocks
+
+If `break` (or `break N`) exits a loop, the loop's `after` structural
+block does **not** run — `after` only runs after a complete iteration
+sweep. The `between` block does not run on the iteration that
+breaks. The `noloop` block remains a no-op (it only runs when the
+loop body didn't run at all).
+
+### Open question: named-loop targeting
+
+Loops can be named with `as $name` (see
+[Naming a loop with `as`](#naming-a-loop-with-as-quinn)). A natural
+extension is `break $outer` to target a specific loop by name, which
+survives refactoring that changes nesting depth. Whether to ship this
+in V1 alongside `break N` is TBD. Both can coexist; the level-count
+form covers the common case and is what was scoped in the
+post-lock addition.
 
 ---
 

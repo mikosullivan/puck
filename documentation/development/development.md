@@ -15,6 +15,14 @@ from them. When the two disagree, vibecode wins.
 
 - [V0.01: "hello-world"](#v001-hello-world)
   - [Definition of done](#definition-of-done)
+- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello)
+  - [Definition of done (V0.02)](#definition-of-done-v002)
+- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout)
+  - [Definition of done (V0.03)](#definition-of-done-v003)
+- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes)
+  - [Definition of done (V0.04)](#definition-of-done-v004)
+- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization)
+  - [Definition of done (V0.05)](#definition-of-done-v005)
 - [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach)
   - [Bootstrap path](#bootstrap-path)
   - [One product named Bryton, not "bryton-lite"](#one-product-named-bryton-not-bryton-lite)
@@ -48,6 +56,28 @@ from them. When the two disagree, vibecode wins.
   - [Step 3: Verify](#step-3-verify)
   - [Phase 1 test plan](#phase-1-test-plan)
   - [Test layout](#test-layout)
+- [V0.02 phase 0: source-side workbench](#v002-phase-0-source-side-workbench)
+  - [Step 0.1: Confirm the lexer tokenizes the fixture](#step-01-confirm-the-lexer-tokenizes-the-fixture)
+  - [Step 0.2: Confirm the parser produces a clean AST](#step-02-confirm-the-parser-produces-a-clean-ast)
+  - [Step 0.3: Observe the transpiler's current output](#step-03-observe-the-transpilers-current-output)
+  - [Step 0.4: Confirm engine.run handles a hand-built canonical tree](#step-04-confirm-enginerun-handles-a-hand-built-canonical-tree)
+  - [V0.02 phase 0 test plan](#v002-phase-0-test-plan)
+- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source)
+  - [V0.02 Step 1: Inventory](#v002-step-1-inventory)
+  - [V0.02 Step 2: Fill the gaps](#v002-step-2-fill-the-gaps)
+  - [V0.02 Step 3: Verify](#v002-step-3-verify)
+  - [V0.02 phase 1 test plan](#v002-phase-1-test-plan)
+  - [V0.02 test layout](#v002-test-layout)
+  - [V0.02 open questions](#v002-open-questions)
+- [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench)
+  - [V0.03 phase 0 test plan](#v003-phase-0-test-plan)
+- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source)
+  - [V0.03 Step 1: Inventory](#v003-step-1-inventory)
+  - [V0.03 Step 2: Fill the gaps](#v003-step-2-fill-the-gaps)
+  - [V0.03 Step 3: Verify](#v003-step-3-verify)
+  - [V0.03 phase 1 test plan](#v003-phase-1-test-plan)
+  - [V0.03 test layout](#v003-test-layout)
+  - [V0.03 open questions](#v003-open-questions)
 - [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution)
   - [What the slice introduces](#what-the-slice-introduces)
   - [Permissions: default restrictive, opt-in via flags](#permissions-default-restrictive-opt-in-via-flags)
@@ -126,6 +156,319 @@ V0.01 is done when all four are true:
 
 That's the entirety of V0.01. Soft feature lock applies — no additional
 scope without explicit unlock.
+
+---
+
+## V0.02: "kscript-source-hello" (Uhura)
+
+```
+vibecode: {"version": "0.02", "codename": "kscript-source-hello", "goal":
+"execute a kscript source program end_to_end through the transpiler and return a literal value to the test harness",
+"medium": "kscript_source_text", "fixture":
+"'hello'.to_string", "fixture_path":
+"tests/kscript/fixtures/hello_world.kscript", "expected_return": "hello",
+"expected_canonical_ksj": "[[{\"value\": \"hello\"}, \"to_string\"]]",
+"observation":
+"test_harness_captures_last_statement_value_through_engine_run_source; no_stdout_io",
+"covers": ["kscript_lexer", "kscript_parser",
+"transpiler_to_canonical_ksj", "source_to_runtime_pipeline_wiring"],
+"reuses_from_v001": ["bootstrap", "materialize", "lookup_method",
+"transition", "dispatch", "string_class_to_string"],
+"deferred_to_later": ["stdout_io", "sys_references",
+"additional_classes_or_methods",
+"full_transpiler_realignment_for_all_kscript_constructs"]}
+```
+
+V0.02 ships hello-world in KScript source. Same semantic program as V0.01
+— `'hello'.to_string` evaluated and the result returned to the harness —
+now expressed as KScript source text and executed through the lexer →
+parser → transpiler → canonical KScriptJSON → V0.01 engine pipeline.
+
+The source fixture is the single line `'hello'.to_string`. The expected
+transpiled KSJ is `[[{"value": "hello"}, "to_string"]]` — exactly the
+V0.01 hand-written fixture. This equivalence is load-bearing: it proves
+the transpiler emits canonical KSJ and that the source-text and JSON
+paths converge on the same runtime tree.
+
+V0.02 reuses every engine layer V0.01 built: bootstrap, materialize,
+lookup_method, transition, dispatch. The new work is on the source side
+— the existing lexer/parser scaffolding gets exercised against the
+fixture, the transpiler gets realigned to emit canonical KSJ for the
+AST shape hello-world produces, and a thin source-side entry point
+combines transpile + dispatch.
+
+The transpiler realignment is **scoped to the hello-world AST nodes
+only**. The full transpiler retrofit is incremental — later slices
+realign more AST node types as later versions exercise them. Per
+"don't generalize ahead of the test."
+
+### Definition of done (V0.02)
+
+```
+vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
+{"source_fixture_parses":
+"tests_kscript_fixtures_hello_world_kscript_lexes_and_parses_without_error",
+"transpiler_emits_canonical_ksj":
+"transpiler_output_for_the_fixture_deep_equals_the_v001_hand_written_fixture",
+"source_side_entry_point_exists":
+"engine_run_source_path_or_equivalent_takes_a_kscript_file_through_to_dispatch",
+"returns_hello":
+"engine_run_source_of_the_fixture_returns_a_value_whose_payload_equals_hello"}}
+```
+
+V0.02 is done when all four are true:
+
+1. **The source fixture parses.** `'hello'.to_string` lexes and parses
+   without error using the existing `kscript.lexer` and `kscript.parser`
+   modules.
+2. **The transpiler emits canonical KSJ.** Running the source through
+   the transpiler produces a Lua table deep-equal to the V0.01
+   hand-written `[[{"value": "hello"}, "to_string"]]` fixture.
+3. **A source-side entry point exists.** A function in the engine
+   (working name: `engine.run_source(path)`) reads a `.kscript` file,
+   transpiles to canonical KSJ, and dispatches the result. The internal
+   `engine.run(path)` (KSJ file) is refactored to share an
+   `engine.run_tree(tree)` helper so both source and KSJ paths converge
+   on the same dispatch loop.
+4. **The harness receives `"hello"`.** `engine.run_source(fixture_path)`
+   returns a value whose `.payload == "hello"`.
+
+That's the entirety of V0.02. Soft feature lock applies — same posture
+as V0.01.
+
+---
+
+## V0.03: "kscript-with-stdout" (Janeway)
+
+```
+vibecode: {"version": "0.03", "codename": "kscript-with-stdout", "goal":
+"execute puts_hello_from_kscript_source_and_observe_the_string_arrive_on_stdout",
+"medium": "kscript_source_text", "fixture":
+"puts 'hello'", "fixture_path":
+"tests/kscript/fixtures/puts_hello.kscript", "expected_canonical_ksj":
+"[[{\"bwc\": \"puts\"}, {\"value\": \"hello\"}]]", "expected_stdout":
+"hello\\n", "observation":
+"test_harness_captures_stdout_via_injected_sink; payload_match_on_captured_buffer",
+"covers": ["bwc_dispatch_in_engine_lua",
+"stdout_faucet_object_and_role", "puts_bwc_implementation",
+"transpiler_realignment_for_bwc_statement_shape",
+"engine_run_source_extended_to_accept_stdout_sink_injection"],
+"reuses_from_prior": ["json_parser", "bootstrap", "materialize",
+"lookup_method", "transition", "dispatch", "engine_run_source",
+"engine_run_tree"], "first_real_io": true,
+"deferred_to_later": ["stdin_faucet", "stderr_faucet", "file_io",
+"network_io", "additional_classes_beyond_string",
+"variables_assignment_control_flow",
+"full_transpiler_realignment_for_unrelated_ast_types"]}
+```
+
+V0.03 is the first slice with real I/O. The program `puts 'hello'`,
+written as KScript source, executes through the V0.02 source pipeline
+and writes `hello\n` to a stdout sink the test harness observes. No
+return-value capture this time — the observable is the stdout buffer.
+
+This is also the first slice that exercises a **cross-role call into
+engine-supplied infrastructure**. The `puts` bwc is owned by an engine
+role (working name: `stdout` role); user code in the `user` role calls
+into it, the dispatcher transitions, the bwc writes to the sink, and
+control returns. The same machinery V0.01 proved for the string class
+is reused for the stdout role — no new role primitives are introduced.
+
+V0.03 introduces three pieces the engine doesn't have yet:
+
+1. **bwc registry.** `engine.lua` gains a table mapping bwc names to
+   handler functions (owned by their respective engine roles). The
+   V0.01 dispatcher only handles `[receiver, method, args?]` for value
+   receivers; V0.03 extends it to `[{bwc: name}, arg?]` for bwc
+   receivers.
+2. **stdout faucet/sink.** An engine-supplied object representing
+   "where text written by the program goes." Following
+   [roles.md](../kscript/roles.md), it has its own role (`stdout`).
+   For test injection, the engine exposes an `env.stdout` override
+   parameter to `engine.run_source` / `engine.run_tree`, defaulting to
+   `io.write` for production use.
+3. **`puts` bwc handler.** A function under the `stdout` role that
+   takes a single argument, coerces to string, appends a newline,
+   writes to the stdout sink. The dispatcher's role transition handles
+   the cross-role bookkeeping automatically.
+
+The transpiler also gets one more realignment: the bwc-call statement
+shape. V0.02 realigned literal + method-call + expression-statement;
+V0.03 realigns the bwc-call form `[{bwc: "puts"}, {value: "hello"}]`.
+
+### Definition of done (V0.03)
+
+```
+vibecode: {"scope_status": "drafted_2026-05-17", "done_criteria":
+{"source_fixture_parses_and_transpiles_to_canonical_bwc_form":
+"transpiler_output_for_puts_hello_deep_equals_expected_canonical_ksj",
+"bwc_registry_has_puts_after_bootstrap":
+"engine_bootstrap_registers_puts_bwc_owned_by_stdout_role",
+"engine_dispatches_bwc_statements":
+"dispatcher_recognizes_bwc_receiver_form_and_routes_to_handler_via_role_transition",
+"stdout_sink_receives_hello_newline":
+"with_injected_capture_sink_engine_run_source_of_fixture_produces_buffer_equal_to_hello_newline"}}
+```
+
+V0.03 is done when all four are true:
+
+1. **Source fixture parses and transpiles.** `puts 'hello'` lexes,
+   parses, and transpiles to `[[{"bwc": "puts"}, {"value": "hello"}]]`
+   exactly (deep-equal via the V0.02 `assert.deep_equal` helper).
+2. **bwc registry has `puts` after bootstrap.** `engine.bwcs.puts`
+   exists, owned by `engine.roles.stdout`, callable via the dispatcher.
+3. **Engine dispatches bwc statements.** Handing a bwc-shape statement
+   to `engine.dispatch` resolves the handler, transitions to `stdout`
+   role, calls it, restores.
+4. **Stdout sink receives `"hello\n"`.** A test that injects a capture
+   buffer as `env.stdout` and calls
+   `engine.run_source("tests/kscript/fixtures/puts_hello.kscript", env)`
+   ends with `env.stdout_buffer == "hello\n"`.
+
+That's the entirety of V0.03. Soft feature lock applies.
+
+---
+
+## V0.04: "kscript-with-hashes" (Data)
+
+```
+vibecode: {"version": "0.04", "codename": "kscript-with-hashes",
+"plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
+"will_be_detailed_after": "v003_ships",
+"goal":
+"kscript_can_construct_a_hash_literal_read_a_key_and_iterate_in_insertion_order",
+"medium": "kscript_source_text", "candidate_fixture":
+"{name: 'Picard'}.name", "candidate_expected_return": "Picard",
+"alt_fixture_for_iteration_check":
+"{name: 'Picard', rank: 'Captain'}.each($k, $v) do; puts $k; end",
+"covers_candidates": ["hash_class_registration",
+"hash_literal_materialization_preserving_insertion_order",
+"key_access_method_name_tbd_bracket_or_get",
+"hash_class_each_for_iteration",
+"transpiler_realignment_for_hash_literal_shape"],
+"reuses_from_prior": ["bootstrap", "materialize", "lookup_method",
+"transition", "dispatch", "engine_run_source", "json_parser_ordered_hash_support",
+"bwc_dispatch_if_iteration_fixture_chosen"],
+"deferred_to_later": ["hash_mutation_methods_set_delete",
+"hash_equality_semantics", "hash_with_non_string_keys_if_ever",
+"arrays_as_separate_class"]}
+```
+
+V0.04 introduces the hash data structure. The minimum: a hash literal
+evaluates, a key lookup returns the value, and the harness observes the
+result. Order preservation is load-bearing because Kiera hashes have
+significant key order (per [kscriptjson.md](../kscript/kscriptjson.md)
+"Hash key order").
+
+**Why this is its own slice rather than bundled with V0.03.** Hashes
+have their own non-trivial design questions — the key-access method
+shape (`$h.name` vs `$h['name']` vs `$h.get('name')`), iteration
+semantics, order preservation. Bundling them with stdout obscures both.
+
+**Candidate fixture:** `{name: 'Picard'}.name` returning `"Picard"`.
+This is the simplest possible hash exercise — one key, one access.
+Iteration (`.each`) is plausibly a V0.04 stretch goal but probably
+belongs in V0.05 or later if it complicates the slice.
+
+**Key risks (to confirm during planning):**
+
+- **Hash key-access method shape.** Whether `$h.name` and `$h['name']`
+  are the same call in canonical KSJ or distinct. Currently spec'd
+  as different sugars but the transpiler / dispatcher may need to
+  unify or distinguish — Phase 1 inventory clarifies.
+- **Ordered-hash plumbing.** `kscript.json.new_hash` already provides
+  ordered storage; the engine has to use it consistently for
+  hash-literal materialization. Mixing plain Lua tables and ordered
+  hashes is a source of subtle bugs.
+- **Hash class registration.** Engine grows a second built-in class
+  (string was the first); the bootstrap path becomes "classes table
+  has N entries" rather than "one class for strings only."
+- **Transpiler shape for hash literals.** Per kscriptjson.md, hash
+  literals serialize as `{"hash": [[key, expr], ...]}`. Transpiler
+  realignment is needed for the hash-literal AST node.
+
+**Definition of done (V0.04)** — to be detailed when V0.03 ships and
+V0.04 is selected. Expected shape:
+
+1. Source fixture parses and transpiles to canonical hash form.
+2. Hash class registered in bootstrap, owned by an engine role.
+3. Hash literal materializes preserving insertion order.
+4. Key access returns the expected value.
+5. Harness observes the returned value.
+
+---
+
+## V0.05: "kscript-with-json-serialization" (Geordi)
+
+```
+vibecode: {"version": "0.05",
+"codename": "kscript-with-json-serialization",
+"plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
+"will_be_detailed_after": "v004_ships",
+"goal":
+"kscript_can_serialize_a_hash_or_array_or_primitive_to_a_json_string_via_to_json_method",
+"medium": "kscript_source_text", "candidate_fixture":
+"{name: 'Picard', rank: 'Captain'}.to_json", "candidate_expected_return":
+"{\"name\":\"Picard\",\"rank\":\"Captain\"}",
+"covers_candidates": ["to_json_method_on_hash_class",
+"to_json_method_on_string_class_already_present",
+"to_json_method_on_array_class_if_arrays_landed_in_v004",
+"json_encoder_reuse_from_kscript_json_lua_existing_module",
+"round_trip_property_check_against_json_parse_added_in_v001"],
+"reuses_from_prior": ["bootstrap", "materialize", "lookup_method",
+"transition", "dispatch", "engine_run_source", "hash_class_from_v004",
+"json_encode_from_kscript_json_lua"],
+"deferred_to_later": ["from_json_parsing_into_kscript_objects",
+"pretty_print_option", "custom_serialization_for_user_defined_classes",
+"streaming_serialization_for_large_structures"]}
+```
+
+V0.05 closes the loop on hashes by giving them a serialization story.
+With V0.05 in place, KScript programs can produce JSON output —
+unlocking real interop with external systems and (more importantly for
+the roadmap) giving Bryton a credible Xeme-emission story.
+
+**Reuses existing infrastructure.** `kscript.json.encode` (already in
+the engine) does the actual JSON formatting. V0.05's work is mostly
+about wiring: registering `to_json` methods on the built-in classes,
+making sure ordered hashes serialize with their keys in order, and
+proving round-trip equivalence with `kscript.json.parse` (added in
+V0.01 phase 1).
+
+**Candidate fixture:**
+`{name: 'Picard', rank: 'Captain'}.to_json` returning
+`{"name":"Picard","rank":"Captain"}`. The round-trip check —
+`kscript.json.parse(result)` deep-equals the original hash — is the
+load-bearing assertion.
+
+**Key risks (to confirm during planning):**
+
+- **Method ownership.** `to_json` lives on each built-in class, not on
+  a universal "object" base — V0.05 registers it on string, hash, and
+  (if landed) array. The plan should be explicit about which classes
+  get it in this slice and which wait.
+- **Number formatting.** `json.encode` distinguishes integer (`%.0f`)
+  from float (`%.17g`). KScript number type design touches this. If
+  numbers haven't been formalized by V0.05, the slice scope narrows to
+  what the fixture exercises (strings, hashes).
+- **Null and missing-value handling.** `M.null` exists; user code has
+  no way to construct it yet (no `null` literal exposed). V0.05 should
+  decide whether to expose it (probably no — defer).
+- **Round-trip vs string equality.** Direct string equality on
+  serialized JSON is fragile (whitespace, key order ambiguity in non-
+  ordered consumers). The test asserts both: the literal string for
+  the canonical form, AND `parse(encode(x)) deep_equals x`.
+
+**Definition of done (V0.05)** — to be detailed when V0.04 ships and
+V0.05 is selected. Expected shape:
+
+1. `to_json` method registered on string and hash classes (and array if
+   present), owned by their existing class roles.
+2. Fixture transpiles, dispatches, returns a string value.
+3. Returned string deep-equals the expected literal JSON.
+4. `kscript.json.parse(result)` deep-equals the original hash (round-
+   trip).
+5. Hash key order preserved through serialization.
 
 ---
 
@@ -224,6 +567,25 @@ is deferred until needed. The lock can be broken — but only deliberately,
 never casually. Companion discipline to `no-bolt-on-additions`: that rule
 guards spec quality; this lock guards build momentum.
 
+### Deliberate post-lock additions
+
+```
+vibecode: {"additions_since_lock":
+[{"date": "2026-05-17", "feature":
+"break_bwc_with_optional_level_count", "version_target": "v1",
+"spec_locations": ["documentation/kscript/loops.md#break-riker",
+"documentation/kscript/kscriptjson.md_control_flow_break_section"],
+"rationale":
+"loop_exit_without_loop_object_reference; multi_level_exit; explicit_user_request",
+"side_effects":
+["$loop.return_and_$loop.break_now_aliased",
+"kscript_md_line_683_updated_to_reflect_aliasing"]}]}
+```
+
+Running log of features that broke the soft lock. Each entry names
+what landed, when, and where the spec lives. The lock is a budget,
+not a wall — but the budget should be visible.
+
 ---
 
 ## V1 scope (after 0.01)
@@ -264,9 +626,13 @@ vibecode: {"approach": "walking_skeleton", "principle":
 [{"v": "0.01", "name": "hello_world_ksj", "proves":
 "json_parser; ksj_interpreter; stdlib_minimum"}, {"v": "0.02", "name":
 "hello_world_kscript", "proves":
-"kscript_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.0X",
-"name": "kscript_stdout_and_hashes_and_json_serialization", "proves":
-"sys_references; stdout_sink; hash_class; json_serialize_method"},
+"kscript_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
+"name": "kscript_with_stdout", "proves":
+"bwc_dispatch; stdout_faucet_and_role; puts_bwc"}, {"v": "0.04",
+"name": "kscript_with_hashes", "proves":
+"hash_class; hash_literal; key_access; ordered_iteration"}, {"v": "0.05",
+"name": "kscript_with_json_serialization", "proves":
+"to_json_method_on_built_in_classes; round_trip_with_json_parse"},
 {"v": "0.0X", "name": "kscript_cli", "proves":
 "os_executable_kscript_files; shebang_support; permission_flag_machinery_with_default_restrictive_posture"},
 {"v": "0.1", "name": "bryton", "proves":
@@ -290,10 +656,12 @@ continuous threads, used from V0.01 onward.
 
 V0.01 (hello-world in KScriptJSON) and V0.02 (hello-world in KScript
 source, via the new transpiler) bracket the engine's bootstrapping.
-**V0.1 is the first named user-facing milestone — Bryton.** It arrives
-after a handful of V0.0X engine-feature slices (stdout, hashes, JSON
-serialization) that Bryton needs as prerequisites. Beyond V0.1, slice
-numbers are assigned when the prior is green.
+V0.03, V0.04, and V0.05 are atomic prerequisites Bryton needs: real
+stdout, hash data structures, and JSON serialization. They were once
+bundled as a single V0.0X slice; splitting them keeps each slice tiny
+and end-to-end runnable. **V0.1 is the first named user-facing
+milestone — Bryton.** Beyond V0.1, slice numbers are assigned when the
+prior is green.
 
 Bryton is no longer listed as a continuous thread — it's a discrete
 V0.1 deliverable. Jasmine (logging) remains a continuous thread,
@@ -1409,6 +1777,674 @@ Existing scaffolding under `tests/kscript/lexer/`, `tests/kscript/parser/`,
 and `tests/kscript/transpiler/` is V0.02+ territory; not exercised by
 V0.01 directly but already uses the same framework so the patterns
 above mirror what's there.
+
+---
+
+## V0.02 phase 0: source-side workbench (Saavik)
+
+```
+vibecode: {"phase": 0, "version": "0.02", "purpose":
+"characterize_existing_lexer_parser_transpiler_state_against_v002_fixture; no_realignment_work_yet",
+"steps_count": 4, "acceptance":
+"all_four_workbench_checks_pass_and_produce_a_concrete_gap_list_for_phase_1; no_engine_code_changed",
+"tactic":
+"exercise_existing_pipeline_with_v002_fixture_string; observe_each_layer_output",
+"differs_from_v001_phase_0":
+"v001_phase_0_verified_lua_environment_and_json_lua_existed; v002_phase_0_verifies_existing_kscript_source_pipeline_handles_the_fixture_input"}
+```
+
+V0.02's workbench is the existing KScript source pipeline (lexer →
+parser → transpiler). Before realigning the transpiler, Phase 0
+characterizes what each layer produces today for the V0.02 fixture
+string. The output is a concrete gap list driving Phase 1 step 2.
+
+Phase 0 changes no engine code. It exists to surface surprises before
+implementation.
+
+### Step 0.1: Confirm the lexer tokenizes the fixture
+
+```
+vibecode: {"step": "0.1", "name": "lexer_check",
+"input": "'hello'.to_string",
+"expected_token_kinds_in_order":
+["string_literal", "dot", "identifier"],
+"tool": "kscript.tokenize from init.lua",
+"acceptance":
+"no_lex_error; token_sequence_includes_string_literal_hello_then_dot_then_identifier_to_string"}
+```
+
+`kscript.tokenize("'hello'.to_string")` returns a token sequence
+covering the literal, the dot, and the identifier `to_string`. Existing
+lexer tests under `tests/kscript/lexer/` exercise each form
+individually; this step confirms the combination tokenizes cleanly.
+
+### Step 0.2: Confirm the parser produces a clean AST
+
+```
+vibecode: {"step": "0.2", "name": "parser_check",
+"input": "'hello'.to_string",
+"expected_program_shape":
+"program_node_with_one_statement_node_representing_a_method_call_on_a_string_literal",
+"tool": "kscript.parse from init.lua",
+"acceptance":
+"no_parse_error; ast_shape_documented_for_phase_1_inventory"}
+```
+
+`kscript.parse("'hello'.to_string")` returns an AST. Step 0.2 documents
+the exact `kind` of the top-level node, the method-call node, and the
+literal node so Phase 1 step 1 can compare directly.
+
+### Step 0.3: Observe the transpiler's current output
+
+```
+vibecode: {"step": "0.3", "name": "transpiler_baseline",
+"input": "'hello'.to_string",
+"tool": "kscript.transpile from init.lua",
+"expected":
+"captures_actual_current_output_for_comparison_to_canonical_in_phase_1",
+"acceptance":
+"transpile_completes_without_error; output_recorded_as_phase_1_baseline; current_shape_is_pre_canonical_and_that_is_expected"}
+```
+
+`kscript.transpile("'hello'.to_string")` returns a Lua table. The
+current output is pre-canonical — it matches `interpreter.lua`'s
+consumption shape, not `kscriptjson.md`'s `[receiver, method, args?]`
+shape. Phase 0 captures what comes out today; the diff against canonical
+is computed in Phase 1.
+
+### Step 0.4: Confirm engine.run handles a hand-built canonical tree
+
+```
+vibecode: {"step": "0.4", "name": "engine_tree_entry_check",
+"action":
+"build_the_v001_canonical_tree_in_lua_pass_to_a_run_tree_helper_or_equivalent_path",
+"acceptance":
+"end_to_end_returns_value_with_payload_hello_using_a_lua_built_tree_not_a_file",
+"note":
+"validates_the_run_tree_internal_split_before_phase_1_wires_it_to_transpiler_output"}
+```
+
+The V0.01 engine takes a path (`engine.run(path)`) — it reads the file,
+parses JSON, then iterates. To wire the transpiler in, the file-read +
+JSON-parse step has to be separable from the dispatch loop. Step 0.4
+confirms (or, if needed, introduces) a callable
+`engine.run_tree(tree)` that takes a pre-built canonical KSJ Lua table
+and returns the same result the file-based path would.
+
+If the V0.01 implementation already factored this out, Step 0.4 is a
+one-line test. If not, Step 0.4 adds the helper purely as refactoring
+(behavior unchanged for the existing path).
+
+### V0.02 phase 0 test plan
+
+```
+vibecode: {"phase_0_tests":
+[{"id": "T2.0.1", "verifies":
+"lexer_handles_v002_fixture_string", "tool":
+"tests/kscript/v002/test_lexer_check.lua", "level": "unit"},
+{"id": "T2.0.2", "verifies":
+"parser_returns_ast_for_v002_fixture_string", "tool":
+"tests/kscript/v002/test_parser_check.lua", "level": "unit"},
+{"id": "T2.0.3", "verifies":
+"transpiler_completes_without_error_for_v002_fixture_string; current_output_captured_for_phase_1_comparison",
+"tool": "tests/kscript/v002/test_transpiler_baseline.lua",
+"level": "unit"}, {"id": "T2.0.4", "verifies":
+"engine_run_tree_returns_value_for_hand_built_canonical_tree",
+"tool": "tests/kscript/v002/test_engine_run_tree.lua",
+"level": "unit"}]}
+```
+
+| ID | Level | Verifies | Tool |
+|---|---|---|---|
+| T2.0.1 | unit | Lexer handles the fixture string | `test_lexer_check.lua` |
+| T2.0.2 | unit | Parser returns an AST for the fixture | `test_parser_check.lua` |
+| T2.0.3 | unit | Transpiler completes for the fixture; baseline captured | `test_transpiler_baseline.lua` |
+| T2.0.4 | unit | `engine.run_tree` returns expected value for a hand-built tree | `test_engine_run_tree.lua` |
+
+All four must pass (or the underlying issues must be resolved) before
+V0.02 phase 1 begins.
+
+---
+
+## V0.02 phase 1: hello-world from KScript source (Hoshi)
+
+```
+vibecode: {"phase": 1, "version": "0.02", "fixture_path":
+"tests/kscript/fixtures/hello_world.kscript", "fixture_content":
+"'hello'.to_string", "runner_path":
+"tests/kscript/run.lua", "acceptance":
+"fixture_transpiles_to_canonical_ksj_and_engine_run_source_returns_value_payload_hello",
+"required_work":
+["transpiler_realignment_for_hello_world_ast_only",
+"engine_run_source_entry_point",
+"engine_run_tree_internal_helper_if_not_already_present",
+"deep_equal_assert_helper"], "reuses_from_v001":
+["bootstrap", "materialize", "lookup_method", "transition", "dispatch"],
+"out_of_scope":
+["full_transpiler_retrofit", "interpreter_lua_removal",
+"renaming_or_deprecation_of_existing_kscript_run_source_in_init_lua",
+"sys_references_or_stdout_io",
+"additional_classes_or_methods_beyond_to_string"],
+"tactic":
+"minimal_realignment_just_for_hello_world_ast; later_slices_extend",
+"canon":
+"kscriptjson_md_is_canonical; transpiler_output_must_match_v001_hand_written_fixture_for_this_ast"}
+```
+
+Three steps. Same shape as V0.01 Phase 1: inventory, fill gaps, verify.
+
+### V0.02 Step 1: Inventory
+
+```
+vibecode: {"step": 1, "name": "inventory", "actions":
+["catalog_existing_lexer_parser_transpiler_against_v002_fixture",
+"document_ast_shape_for_method_call_on_string_literal",
+"document_current_transpiler_output_for_that_ast",
+"compute_diff_to_canonical_ksj_target",
+"identify_which_transpiler_test_files_will_need_updating"],
+"output":
+"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}
+```
+
+Read the existing `lexer.lua`, `parser.lua`, and `transpiler.lua` with
+the V0.02 fixture in mind. Document:
+
+- The exact AST node `kind` returned for `'hello'.to_string`.
+- The exact Lua-table shape the current transpiler emits for that AST
+  node.
+- The diff between that shape and the canonical
+  `[[{"value": "hello"}, "to_string"]]`.
+- The set of existing transpiler tests under
+  `tests/kscript/transpiler/` that assert on the pre-canonical shape
+  for the AST nodes we'll realign. These will need updating in Step 2.
+
+Output: a short text summary of the gap (which fields differ, which
+wrapper objects are present in one but not the other) plus the list of
+transpiler tests requiring updates.
+
+### V0.02 Step 2: Fill the gaps
+
+```
+vibecode: {"step": 2, "name": "fill_gaps", "scope":
+"transpiler_path_for_hello_world_ast_only; not_full_realignment",
+"work_items":
+["transpiler_emit_canonical_for_string_literal_expression",
+"transpiler_emit_canonical_for_method_call_expression",
+"transpiler_emit_canonical_for_top_level_expression_statement_wrapper",
+"engine_run_tree_helper_extracted_from_engine_run_if_not_already",
+"engine_run_source_function_combining_transpile_and_run_tree",
+"support_assert_deep_equal_helper_added"], "non_work":
+["other_ast_node_types_left_pre_canonical",
+"interpreter_lua_and_its_tests_left_untouched",
+"existing_transpiler_tests_updated_only_for_realigned_paths"]}
+```
+
+For each gap from Step 1, add only what V0.02 needs:
+
+- **Transpiler.** Realign the path covering the AST nodes the V0.02
+  fixture produces — likely the string-literal expression, the
+  method-call expression, and the top-level expression-statement
+  wrapper. Other AST node types (assignment, if, while, bwc, function
+  definition, etc.) stay pre-canonical for now.
+- **Engine wiring.** Add `engine.run_source(path)` that reads a
+  `.kscript` file, transpiles to canonical KSJ, and iterates the
+  dispatch loop. If `engine.run` doesn't already separate file-read
+  from dispatch, extract `engine.run_tree(tree)` and refactor
+  `engine.run` to call it. `engine.run_source(path)` also calls
+  `engine.run_tree`.
+- **Existing transpiler tests.** Any tests asserting on the
+  pre-canonical shape for AST nodes we realign will fail; update those
+  tests to the canonical shape. Tests for AST nodes we don't touch
+  stay as-is.
+- **Assertion helper.** Add `assert.deep_equal(got, expected, msg)` to
+  `tests/kscript/support/assert.lua` for table equality with a
+  first-divergent-path failure message. Needed by T2.1 and useful for
+  every later slice that compares trees.
+
+Anything beyond this — realigning the bwc path, the assignment path,
+the if path, etc. — is later work. The principle: realign as later
+slices exercise each AST node, not all at once.
+
+### V0.02 Step 3: Verify
+
+```
+vibecode: {"step": 3, "name": "verify", "actions":
+["create_kscript_source_fixture",
+"run_via_engine_run_source",
+"compare_returned_value_payload_to_hello",
+"compare_transpiled_tree_to_v001_hand_written_canonical_fixture"],
+"pass_condition":
+"return_value_payload_equals_hello_and_transpiled_tree_deep_equals_v001_fixture_tree",
+"fail_condition":
+"any_deviation; failure_message_names_which_layer_blocked"}
+```
+
+Create `tests/kscript/fixtures/hello_world.kscript` containing
+`'hello'.to_string`. Run it via `engine.run_source(path)`. Verify two
+things:
+
+1. The returned value has `payload == "hello"`.
+2. The transpiled tree (captured before dispatch) deep-equals the V0.01
+   hand-written `[[{"value": "hello"}, "to_string"]]` tree — the
+   round-trip equivalence check that proves canonical alignment.
+
+If either fails, the message must identify which layer blocked: parse
+error, transpiler shape mismatch, dispatch failure, engine context
+problem. Loop back to Step 2 for that layer.
+
+When V0.02 passes, the next slice from the roadmap is selected and
+planned in the same shape.
+
+### V0.02 phase 1 test plan
+
+```
+vibecode: {"phase_1_tests":
+[{"id": "T2.1", "verifies":
+"transpiler_emits_canonical_ksj_for_v002_fixture_deep_equal_to_v001_hand_written_tree",
+"level": "unit"}, {"id": "T2.2", "verifies":
+"engine_run_tree_returns_payload_hello_for_v001_canonical_tree",
+"level": "unit"}, {"id": "T2.3", "verifies":
+"engine_run_source_returns_payload_hello_for_v002_kscript_fixture_file",
+"level": "integration_end_to_end"}, {"id": "T2.4", "verifies":
+"ctx_back_to_user_after_engine_run_source_returns",
+"level": "unit_observability_check"}, {"id": "T2.5", "verifies":
+"existing_v001_engine_run_path_still_returns_payload_hello_for_v001_ksj_fixture",
+"level": "regression_check"}, {"id": "T2.6", "verifies":
+"existing_pre_canonical_transpiler_paths_for_unrelated_ast_types_unchanged_and_their_tests_still_pass",
+"level": "regression_check"}]}
+```
+
+Six tests for V0.02 phase 1. Each lives under `tests/kscript/v002/`
+using the same framework (`support.runner` + `support.assert`).
+
+| ID | Level | Verifies | How |
+|---|---|---|---|
+| T2.1 | unit | Transpiler emits canonical for the fixture | `assert.deep_equal(kscript.transpile("'hello'.to_string"), {{ {value="hello"}, "to_string" }})` |
+| T2.2 | unit | `engine.run_tree` returns payload `"hello"` | Hand-build the canonical tree in Lua, pass to `engine.run_tree`, assert on result |
+| T2.3 | integration | `engine.run_source` returns payload `"hello"` from the source fixture file | `engine.run_source("tests/kscript/fixtures/hello_world.kscript")` |
+| T2.4 | unit | ctx restored to user after `engine.run_source` returns | Mirror of V0.01 T1.7's second assertion |
+| T2.5 | regression | `engine.run` of V0.01 KSJ fixture still works | Identical to V0.01 T1.7 — must not regress |
+| T2.6 | regression | Pre-canonical transpiler tests for unrelated AST types still pass | The unchanged transpiler test files continue to pass; the changed ones reflect canonical output |
+
+T2.5 and T2.6 are regression checks: the engine's KSJ-file path and the
+unchanged transpiler paths must continue to work after V0.02's
+realignment. If either breaks, that's a sign V0.02 reached further than
+its declared scope.
+
+All six pass = V0.02 done.
+
+### V0.02 test layout
+
+```
+vibecode: {"test_directory": "tests/kscript/v002/",
+"fixture_path": "tests/kscript/fixtures/hello_world.kscript",
+"entry_point_change":
+"tests_kscript_run_lua_extended_to_require_v002_test_modules",
+"transpiler_test_updates":
+"tests_kscript_transpiler_test_files_updated_only_for_realigned_ast_nodes",
+"support_helper_addition":
+"tests_kscript_support_assert_lua_gains_deep_equal_helper"}
+```
+
+| Path | Contents |
+|---|---|
+| `tests/kscript/fixtures/hello_world.kscript` | KScript source fixture (sibling of `hello_world.ksj`) |
+| `tests/kscript/v002/` | Phase 0 and Phase 1 unit + integration tests |
+| `tests/kscript/run.lua` | Extended to require V0.02 test modules |
+| `tests/kscript/support/assert.lua` | Gains a `deep_equal` helper |
+| `tests/kscript/transpiler/test_*.lua` | Updated only for AST nodes realigned in V0.02 |
+
+### V0.02 open questions
+
+```
+vibecode: {"open_questions":
+["api_naming_for_source_side_entry_point",
+"deep_equal_assert_helper_signature_and_first_divergent_path_format",
+"whether_existing_kscript_run_source_in_init_lua_should_be_renamed_or_deprecated_in_v002_or_later",
+"how_much_transpiler_test_churn_in_practice"]}
+```
+
+- **API naming.** `engine.run_source(path)` is the working name.
+  Alternatives: `engine.run_kscript(path)`, `kscript.run_source(path)`,
+  `kscript.execute_file(path)`. Decision can wait until the function is
+  written — easy to rename.
+- **`assert.deep_equal` signature.** Existing `support/assert.lua` uses
+  descriptive failure messages. The deep_equal helper should surface
+  the first divergent path on mismatch (e.g.,
+  `mismatch at [1][2]: expected "to_string", got "tostring"`). Exact
+  message format settled when implemented.
+- **Legacy `M.run(source, env)` in `init.lua`.** Currently goes through
+  the pre-canonical pipeline + `interpreter.lua`. Out of scope for V0.02
+  — flagged for renaming or deprecation in a later slice once the
+  transpiler is more broadly realigned.
+- **Transpiler test churn.** Phase 0 step 3 will quantify how many
+  existing transpiler tests assert on output shape that V0.02 changes.
+  Expected to be small (only the string-literal and method-call paths)
+  but worth confirming before Phase 1 starts.
+
+---
+
+## V0.03 phase 0: stdout-and-bwc workbench (Tuvok)
+
+```
+vibecode: {"phase": 0, "version": "0.03", "purpose":
+"verify_existing_pipeline_state_for_bwc_dispatch_and_stdout_injection_before_writing_v003_code",
+"steps_count": 3, "acceptance":
+"all_three_workbench_checks_pass; phase_1_inventory_has_concrete_baseline; no_engine_code_changed",
+"tactic":
+"exercise_existing_lexer_parser_transpiler_with_puts_hello_fixture_and_characterize_engine_role_for_handling_bwc_statements_and_stdout_injection",
+"differs_from_v002_phase_0":
+"v002_focused_on_method_call_ast; v003_focuses_on_bwc_call_ast_and_engine_extension_points_for_stdout"}
+```
+
+V0.03's workbench characterizes the pipeline state for the `puts`
+fixture. Three steps — fewer than V0.02 because the lexer/parser/
+transpiler are by V0.03 already exercised by both V0.01 and V0.02 work.
+The new questions are bwc-specific and stdout-injection-specific.
+
+### V0.03 Step 0.1: Confirm the source pipeline handles the puts fixture
+
+```
+vibecode: {"step": "0.1", "name": "source_pipeline_baseline",
+"input": "puts 'hello'", "tools":
+["kscript.tokenize", "kscript.parse", "kscript.transpile"],
+"acceptance":
+"all_three_run_without_error; current_transpiler_output_for_puts_call_recorded_as_phase_1_baseline; ast_node_kind_for_bwc_call_documented"}
+```
+
+Run `kscript.tokenize("puts 'hello'")`, `kscript.parse(...)`, and
+`kscript.transpile(...)`. Record the AST node `kind` for the bwc-call
+form and the current transpiler output. The current output is
+pre-canonical (matches `interpreter.lua`'s legacy bwc shape, e.g.,
+`[{bwc:'puts'}, '&', {args:[{value:'hello'}]}]`); the canonical target
+is `[{bwc:'puts'}, {value:'hello'}]`. The diff drives Phase 1 step 2.
+
+### V0.03 Step 0.2: Confirm engine.run_source accepts an env override
+
+```
+vibecode: {"step": "0.2", "name": "env_injection_check",
+"action":
+"run_v002_fixture_through_engine_run_source_with_an_env_table_argument_and_verify_no_error",
+"acceptance":
+"engine_run_source_accepts_optional_env_argument_or_can_be_extended_to_accept_one_without_breaking_v002_signature"}
+```
+
+`engine.run_source(path, env)` is the working signature; the V0.02 plan
+defines the function without specifying `env`. Step 0.2 confirms (or
+flags the need for) a second optional argument that V0.03 will use for
+the stdout capture buffer. The `env` table mirrors the existing
+`interpreter.new(env)` pattern from `interpreter.lua`: a place for the
+host to override engine-visible knobs (initially just `env.stdout`).
+
+If `engine.run_source` doesn't yet accept `env`, V0.03 phase 1 step 2
+extends it — purely additive, no V0.02 regression.
+
+### V0.03 Step 0.3: Pre-canonical legacy bwc handling, for reference
+
+```
+vibecode: {"step": "0.3", "name": "legacy_bwc_reference",
+"action":
+"read_interpreter_lua_to_observe_how_puts_was_handled_in_the_pre_canonical_pipeline",
+"acceptance":
+"summary_recorded_of_legacy_puts_implementation_for_v003_phase_1_to_borrow_what_is_useful_without_inheriting_the_pre_canonical_shape"}
+```
+
+`interpreter.lua` already has a `puts` bwc handler (it predates V0.01).
+Step 0.3 reads that implementation as a reference for the V0.03
+implementation — particularly the stdout-override pattern via
+`env.stdout`. V0.03 adopts that pattern verbatim; the canonical KSJ
+shape is different but the host-level capture mechanism doesn't need
+to change.
+
+### V0.03 phase 0 test plan
+
+```
+vibecode: {"phase_0_tests":
+[{"id": "T3.0.1", "verifies":
+"source_pipeline_completes_for_puts_hello_fixture_and_baseline_output_captured",
+"tool": "tests/kscript/v003/test_source_baseline.lua", "level": "unit"},
+{"id": "T3.0.2", "verifies":
+"engine_run_source_signature_compatible_with_optional_env_argument",
+"tool": "tests/kscript/v003/test_env_signature.lua", "level": "unit"}]}
+```
+
+| ID | Level | Verifies | Tool |
+|---|---|---|---|
+| T3.0.1 | unit | Source pipeline completes for `puts 'hello'`; baseline transpiler output captured | `test_source_baseline.lua` |
+| T3.0.2 | unit | `engine.run_source` accepts (or can accept) an `env` argument compatibly | `test_env_signature.lua` |
+
+Step 0.3 is reference reading, not a test. Both T3.0.x must pass
+before V0.03 phase 1 begins.
+
+---
+
+## V0.03 phase 1: puts-hello from KScript source (Paris)
+
+```
+vibecode: {"phase": 1, "version": "0.03", "fixture_path":
+"tests/kscript/fixtures/puts_hello.kscript", "fixture_content":
+"puts 'hello'", "runner_path": "tests/kscript/run.lua",
+"acceptance":
+"fixture_transpiles_to_canonical_bwc_form_and_engine_run_source_with_capture_sink_produces_stdout_buffer_hello_newline",
+"required_work":
+["transpiler_realignment_for_bwc_call_statement",
+"engine_bwc_registry_with_puts_handler_owned_by_stdout_role",
+"engine_stdout_role_in_role_registry",
+"engine_dispatch_extended_to_recognize_bwc_receiver_form",
+"engine_run_source_accepts_env_stdout_override",
+"capture_sink_helper_for_tests"],
+"reuses_from_prior":
+["bootstrap", "materialize", "lookup_method", "transition",
+"dispatch_for_method_call_form", "engine_run_source", "engine_run_tree",
+"assert_deep_equal"], "out_of_scope":
+["stdin_faucet", "stderr_faucet", "file_io", "variables_assignment",
+"control_flow", "full_transpiler_retrofit_for_unrelated_bwcs"],
+"tactic":
+"minimal_extension_just_for_puts_with_one_string_argument; other_bwcs_and_multi_argument_bwc_calls_left_for_later"}
+```
+
+Three steps. Same shape as V0.01/V0.02 Phase 1: inventory, fill gaps,
+verify.
+
+### V0.03 Step 1: Inventory
+
+```
+vibecode: {"step": 1, "name": "inventory", "actions":
+["read_existing_transpiler_to_see_how_bwc_calls_are_emitted_today",
+"read_existing_interpreter_lua_puts_handler_for_reference",
+"document_canonical_target_shape_per_kscriptjson_md",
+"identify_engine_dispatch_branch_that_needs_extending_for_bwc_receiver_form",
+"identify_transpiler_tests_that_will_need_updating_for_realigned_bwc_emit"],
+"output":
+"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}
+```
+
+Read the existing `transpiler.lua` for its bwc-call output shape, the
+existing `interpreter.lua` for its `puts` handler (lines around the
+`puts = function(interp, args) ... end` definition), and
+`kscriptjson.md` for the canonical bwc-call shape
+(`[{bwc: "name"}, arg?]`). Document:
+
+- Current transpiler output for `puts 'hello'`.
+- Target canonical shape per kscriptjson.md.
+- The diff (likely the `'&'` sigil and `{args: [...]}` wrapper drop
+  away in canonical form).
+- Which existing transpiler tests assert on the pre-canonical bwc
+  shape and will need updating.
+- The dispatcher branch in `engine.lua` that currently handles
+  `[value, method, args]` — V0.03 adds a sibling branch for
+  `[{bwc: name}, arg?]`.
+
+### V0.03 Step 2: Fill the gaps
+
+```
+vibecode: {"step": 2, "name": "fill_gaps", "scope":
+"bwc_dispatch_and_stdout_injection_only; not_other_bwcs_not_multi_argument_handling",
+"work_items":
+["transpiler_emit_canonical_for_bwc_call_statement",
+"engine_bootstrap_extended_to_register_stdout_role_and_puts_bwc",
+"engine_dispatch_extended_to_branch_on_bwc_receiver_form",
+"engine_run_source_extended_to_accept_env_stdout_override",
+"engine_run_tree_passed_env_through_to_dispatch_chain",
+"assert_helper_for_capture_buffer_in_support_assert_lua_if_useful",
+"existing_transpiler_tests_for_bwc_paths_updated_to_canonical_shape"],
+"non_work":
+["other_bwcs_beyond_puts", "multi_argument_bwc_calls",
+"keyword_argument_bwc_calls", "stderr_separation",
+"flushing_or_buffering_strategies",
+"interpreter_lua_or_its_tests_modified"]}
+```
+
+For each gap from Step 1, add only what V0.03 needs:
+
+- **Transpiler.** Realign the bwc-call path to emit the canonical
+  `[{bwc: name}, arg?]` shape. Existing transpiler tests for bwc paths
+  get updated; tests for unrelated paths stay as-is.
+- **Engine bootstrap.** Add an `stdout` role to `engine.roles` and an
+  `engine.bwcs` table mapping `"puts"` to a handler function. The
+  handler is owned by the `stdout` role (assigned as
+  `bwcs.puts.owning_role = engine.roles.stdout`, or via a parallel
+  registry — exact shape decided during implementation; not
+  load-bearing for the plan).
+- **Engine dispatch.** Extend `engine.dispatch` to branch on the
+  receiver form: if `statement[1]` is `{bwc: <name>}`, look up the
+  handler in `engine.bwcs`, run inside `engine.transition` to the
+  handler's owning role, pass the materialized arg.
+- **Engine run_source signature.** Accept `(path, env)` with `env`
+  optional. `env.stdout` overrides the default sink (which writes to
+  `io.stdout` for production use). `engine.run_tree(tree, env)`
+  follows the same pattern.
+- **Test capture sink.** A small Lua-side helper builds an `env` with
+  `env.stdout = function(s) buf[#buf+1] = s end` and exposes the
+  concatenated buffer for the test assertion. Lives under
+  `tests/kscript/v003/` or extends `tests/kscript/support/` if reused.
+
+Per the no-bolt-on principle: anything beyond `puts` with one string
+argument (a second bwc, two arguments, kwargs, escapes inside the
+string, etc.) is later work.
+
+### V0.03 Step 3: Verify
+
+```
+vibecode: {"step": 3, "name": "verify", "actions":
+["create_kscript_source_fixture",
+"build_capture_sink_env",
+"run_via_engine_run_source_with_env",
+"assert_captured_stdout_equals_hello_newline",
+"separately_assert_transpiled_tree_matches_canonical_bwc_shape"],
+"pass_condition":
+"captured_stdout_buffer_equals_hello_newline_and_transpiled_tree_deep_equals_canonical_target",
+"fail_condition":
+"any_deviation; failure_message_names_which_layer_blocked"}
+```
+
+Create `tests/kscript/fixtures/puts_hello.kscript` containing
+`puts 'hello'`. Build a capture-sink `env`. Run via
+`engine.run_source(path, env)`. Verify:
+
+1. The captured buffer equals `"hello\n"`.
+2. The transpiled tree (captured before dispatch) deep-equals
+   `[[{"bwc": "puts"}, {"value": "hello"}]]`.
+
+If either fails, the message must identify which layer blocked. Loop
+back to Step 2 for that layer.
+
+When V0.03 passes, V0.04 is selected from the roadmap and planned at
+the same detail level as V0.02 and V0.03.
+
+### V0.03 phase 1 test plan
+
+```
+vibecode: {"phase_1_tests":
+[{"id": "T3.1", "verifies":
+"transpiler_emits_canonical_bwc_form_for_puts_hello_deep_equal_to_expected_target",
+"level": "unit"}, {"id": "T3.2", "verifies":
+"engine_bootstrap_registers_stdout_role_and_puts_bwc",
+"level": "unit"}, {"id": "T3.3", "verifies":
+"engine_dispatch_routes_bwc_statement_to_handler_via_role_transition",
+"level": "unit"}, {"id": "T3.4", "verifies":
+"engine_run_source_accepts_env_with_stdout_override",
+"level": "unit"}, {"id": "T3.5", "verifies":
+"transition_to_stdout_role_observed_during_puts_dispatch",
+"level": "unit_observability_check"}, {"id": "T3.6", "verifies":
+"end_to_end_puts_hello_source_produces_hello_newline_in_capture_buffer",
+"level": "integration_end_to_end"}, {"id": "T3.7", "verifies":
+"v001_engine_run_and_v002_engine_run_source_paths_still_pass_for_their_prior_fixtures",
+"level": "regression_check"}]}
+```
+
+Seven tests for V0.03 phase 1. Each lives under `tests/kscript/v003/`
+using the same framework. T3.5 is the load-bearing role test (mirror of
+V0.01 T1.8): a spy on the `puts` handler records
+`engine.ctx.current_role` at call time; assert it was `stdout`, not
+`user`.
+
+| ID | Level | Verifies | How |
+|---|---|---|---|
+| T3.1 | unit | Transpiler emits canonical bwc form | `assert.deep_equal(kscript.transpile("puts 'hello'"), {{ {bwc="puts"}, {value="hello"} }})` |
+| T3.2 | unit | Bootstrap registers stdout role and `puts` | `engine.roles.stdout` exists; `engine.bwcs.puts` is a function |
+| T3.3 | unit | Dispatch routes bwc to handler | Hand-build `[{bwc:"puts"}, {value:"x"}]`; pass to `engine.dispatch` with a capture env; assert capture has `"x\n"` |
+| T3.4 | unit | `env.stdout` override accepted | `engine.run_source(path, {stdout = capture})` runs without error |
+| T3.5 | unit | Transition to stdout role observed during dispatch | Spy on `puts` handler records role at call time; assert it was `stdout` |
+| T3.6 | integration | End-to-end via source file | `engine.run_source("tests/kscript/fixtures/puts_hello.kscript", env)` leaves `env` buffer == `"hello\n"` |
+| T3.7 | regression | V0.01 and V0.02 fixtures still work | Run V0.01 `hello_world.ksj` via `engine.run` and V0.02 `hello_world.kscript` via `engine.run_source`; both still return payload `"hello"` |
+
+All seven pass = V0.03 done.
+
+### V0.03 test layout
+
+```
+vibecode: {"test_directory": "tests/kscript/v003/",
+"fixture_path": "tests/kscript/fixtures/puts_hello.kscript",
+"entry_point_change":
+"tests_kscript_run_lua_extended_to_require_v003_test_modules",
+"capture_sink_helper":
+"tests_kscript_v003_support_capture_lua_or_inlined_per_test",
+"transpiler_test_updates":
+"tests_kscript_transpiler_test_files_for_bwc_paths_updated_only"}
+```
+
+| Path | Contents |
+|---|---|
+| `tests/kscript/fixtures/puts_hello.kscript` | Source fixture for V0.03 |
+| `tests/kscript/v003/` | Phase 0 and Phase 1 tests |
+| `tests/kscript/run.lua` | Extended to require V0.03 test modules |
+| `tests/kscript/transpiler/test_*.lua` | Updated only for bwc paths realigned in V0.03 |
+
+### V0.03 open questions
+
+```
+vibecode: {"open_questions":
+["bwc_handler_calling_convention",
+"bwc_owning_role_attachment_mechanism",
+"capture_sink_signature",
+"stderr_vs_stdout_split",
+"sys_role_check_after_v003"]}
+```
+
+- **bwc handler calling convention.** V0.01 method handlers take
+  `(receiver, args)`. bwc handlers don't have a receiver — they're
+  callable entities themselves. Options: `(args)`, `(env, args)`,
+  `(interp, args)`. Recommendation: match the existing
+  `interpreter.lua` pattern `(interp, args)` so the engine instance is
+  available for stdout writes. Settled during implementation.
+- **bwc owning_role attachment.** Either store the role on the bwc
+  entry directly (`engine.bwcs.puts = {fn=..., owning_role=...}`) or
+  via a parallel table (`engine.bwc_roles = {puts = engine.roles.stdout}`).
+  First is more self-contained; second composes with the existing
+  bwcs-as-functions shape. Settled during implementation.
+- **Capture sink signature.** `env.stdout(s)` taking a single string,
+  matching `interpreter.lua`. Buffer reconstruction happens in the
+  test helper, not in the engine.
+- **stderr.** Out of scope for V0.03. When stderr arrives, the same
+  pattern duplicates: `engine.roles.stderr` + an `eprint` or similar
+  bwc + `env.stderr` override.
+- **Sys-role consistency check.** Per V0.01's role footprint, `%role`
+  was supposed to be implemented as a system method but the V0.01
+  shipping code didn't include it (the hello-world fixture didn't
+  exercise it, so it passed). V0.03 doesn't need `%role` either, but
+  the gap is worth tracking — fix when first slice that needs it
+  arrives.
 
 ---
 
