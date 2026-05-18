@@ -6,11 +6,11 @@
 vibecode: {
 	"section": "overview",
 	"role": "introduces the four reserved pass-through fields in all Puckverse JSON objects",
-	"key_concepts": ["vibecode", "comment", "misc", "enterprise", "pass-through", "always_present"]
+	"key_concepts": ["vibecode", "comment", "misc", "corporate", "pass-through", "always_present"]
 }
 
 The Puckverse reserves four keys in every JSON hash: `vibecode`, `comment`, `misc`, and
-`enterprise`. All four travel silently with any object — passed through transparently by
+`corporate`. All four travel silently with any object — passed through transparently by
 engines, firewalls, and network transport without being stripped, validated, or modified.
 An object's schema does not need to declare them; they are always present by convention.
 
@@ -212,7 +212,7 @@ puts($report)
 <a id="pass-through"></a>
 ## 8 Pass-Through
 
-All four reserved fields (`vibecode`, `comment`, `misc`, `enterprise`) are always passed through. Engines, firewalls, and network
+All four reserved fields (`vibecode`, `comment`, `misc`, `corporate`) are always passed through. Engines, firewalls, and network
 transport do not strip or modify them. The whole point is that any consumer reading the
 object — at any point in its journey through the system — has access to whatever was
 placed in these fields.
@@ -225,7 +225,7 @@ placed in these fields.
 `comment` carries human-readable notes alongside the object. It is for things you want
 to say to a human reader — a quick explanation of why something is done a certain way,
 a caveat, a TODO. It is not AI documentation (`vibecode`) and not formal metadata
-(`enterprise`).
+(`corporate`).
 
 ```json
 {
@@ -256,17 +256,17 @@ systems. That is expected and acceptable; it is what `misc` is for.
 
 ---
 
-<a id="enterprise"></a>
-## 11 `enterprise`
+<a id="corporate"></a>
+## 11 `corporate`
 
-`enterprise` fills the same pass-through role as `misc`, but is reserved for formally
-defined standards. Content in `enterprise` should follow agreed-upon schemas or
+`corporate` fills the same pass-through role as `misc`, but is reserved for formally
+defined standards. Content in `corporate` should follow agreed-upon schemas or
 namespacing conventions so that different systems can rely on what they find there.
 
 ```json
 {
     "foo": "bar",
-    "enterprise": {
+    "corporate": {
         "acme.com/audit": {
             "created_by": "picard",
             "approved_by": "riker"
@@ -275,5 +275,5 @@ namespacing conventions so that different systems can rely on what they find the
 }
 ```
 
-The distinction between `misc` and `enterprise` is governance, not mechanics. Both travel
+The distinction between `misc` and `corporate` is governance, not mechanics. Both travel
 with the object in exactly the same way.

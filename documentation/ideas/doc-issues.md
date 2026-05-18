@@ -28,18 +28,14 @@ found so far.
 ## 2 Still open
 
 <a id="better-name-needed-for-xemes-enterprise-field"></a>
-### 2.1 Better name needed for Xeme's `enterprise` field
+### 2.1 Better name needed for Xeme's `enterprise` field — RESOLVED 2026-05-18
 
-The `enterprise` reserved field in
-[Xeme](../charlie/bryton/xeme/xeme.md) (a Puck-wide convention for
-organization-level pass-through data — licensing, audit hooks,
-deployment markers, etc.) needs a better name. The word
-"enterprise" carries enterprise-software/sales connotations the
-project wants to avoid. Alternatives proposed and rejected:
-`org`, `tenant`, `installation`, `account`, `extension`, `ext`,
-`custom`. Miko hasn't seen one that feels right yet. Leaving
-`enterprise` in place as a placeholder until a better word
-surfaces.
+Renamed `enterprise` → `corporate` across the docs. Earlier
+alternatives that were rejected (recorded for posterity): `org`,
+`tenant`, `installation`, `account`, `extension`, `ext`, `custom`.
+The original concern was that "enterprise" carries enterprise-software /
+sales connotations the project wants to avoid; "corporate" is a
+clearer governance label without that baggage.
 
 
 

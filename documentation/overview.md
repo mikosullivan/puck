@@ -230,7 +230,7 @@ network transport:
   threaded throughout these docs).
 - **`comment`** — human-readable notes.
 - **`misc`** — informal ad-hoc data the framework doesn't interpret.
-- **`enterprise`** — formally defined standards / org-specific
+- **`corporate`** — formally defined standards / org-specific
   metadata.
 
 See [vibecode.md](ecoverse/vibecode.md).

@@ -222,7 +222,7 @@ on those meanings.
 | `meta` | hash | Metadata about the Xeme itself — see [Meta field](#meta-field) below. |
 | `io` | hash | Captured I/O streams — see [I/O field](#io-field) below. |
 | `misc` | hash | Arbitrary application-specific extras. Puck-wide convention; pass-through. |
-| `enterprise` | hash | Enterprise-specific data (licensing, audit, org tags, etc.). Puck-wide convention; pass-through. **Name TBD — a better word than "enterprise" is wanted; none of the proposed alternatives (`org`, `tenant`, `installation`, etc.) felt right. See [doc-issues.md](../../../ideas/doc-issues.md).** |
+| `corporate` | hash | Organization-level data (licensing, audit, org tags, etc.). Puck-wide convention; pass-through. |
 | `vibecode` | hash | AI-readable annotations (design notes, commentary). Puck-wide convention; consumed by AI tooling. |
 
 The top-level surface deliberately stays small. Less-commonly-
@@ -230,7 +230,7 @@ attended fields live one level deeper under `meta` and `io`,
 keeping the outer structure focused on the verdict and what
 matters per Xeme.
 
-The last three (`misc`, `enterprise`, `vibecode`) are **Puck-wide
+The last three (`misc`, `corporate`, `vibecode`) are **Puck-wide
 conventions** — they appear on Puck objects generally, not just
 Xemes. Xeme inherits them as part of being a Puck-shaped
 structure. None of them carry semantics that Xeme processors

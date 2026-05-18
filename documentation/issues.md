@@ -416,12 +416,12 @@ available." Suggestion: decide explicitly — the role-crossing case
 is the common one.
 
 <a id="33-vibecode-reserved-field-count-off-by-one-low-resolved-2026-05-17-all-three-reserved-fields-all-four-reserved-fields-vibecode-comment-misc-enterprise"></a>
-### 7.4 33. Vibecode reserved-field count off by one [LOW] [RESOLVED 2026-05-17 — "All three reserved fields" → "All four reserved fields (`vibecode`, `comment`, `misc`, `enterprise`)".]
+### 7.4 33. Vibecode reserved-field count off by one [LOW] [RESOLVED 2026-05-17 — "All three reserved fields" → "All four reserved fields (`vibecode`, `comment`, `misc`, `corporate`)". (Field later renamed from `enterprise` to `corporate` on 2026-05-18.)]
 
 **File:** [vibecode.md:1-3, 247-267, 203](documentation/ecoverse/vibecode.md)
 
 Introduces FOUR reserved keys (`vibecode`, `comment`, `misc`,
-`enterprise`); line 203 says "all three reserved fields are always
+`corporate`); line 203 says "all three reserved fields are always
 passed through." Suggestion: fix "three" → "four."
 
 <a id="34-memory-note-says-signingmd-blockchainmd-file-isnt-at-the-new-location-low-resolved-2026-05-17-moved-documentationcharlieblockchainblockchainmd-documentationblockchainmd-updated-three-external-link-references-versioningmd-2-bindingsmd-puckmd-the-blockchain-server-infrastructure-dockerfile-blockchainjson-scripts-nginxconf-flytoml-lua-is-still-under-documentationcharlieblockchain-flagged-as-needing-a-separate-restructure-since-its-codeinfra-not-docs"></a>

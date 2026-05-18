@@ -63,7 +63,7 @@ These are project-wide, not personal preferences — follow them in any file you
 
 - **Vibecode blocks.** Most documentation sections begin with a `vibecode:` JSON block giving AI-readable context for the surrounding prose. When adding or editing a documentation section, include or update its vibecode block. The development plan explicitly states vibecode blocks are the source of truth where prose disagrees with them.
 - **UNS (Universal Namespace)** for class names: a URL without `https://`, e.g. `foo.com/character`. Built-ins are under `puck.uno/...`.
-- **Reserved pass-through fields** on every Puckverse object: `vibecode`, `comment`, `misc`, `enterprise`. Always passed through; never stripped or validated. See [documentation/ecoverse/vibecode.md](documentation/ecoverse/vibecode.md).
+- **Reserved pass-through fields** on every Puckverse object: `vibecode`, `comment`, `misc`, `corporate`. Always passed through; never stripped or validated. See [documentation/ecoverse/vibecode.md](documentation/ecoverse/vibecode.md).
 - **Module headers in Lua code** are JSON `--[[ {...} ]]` blocks describing role, pipeline, exports, and dependencies. Per-function headers describe `in`/`out`/`note`. Match this style in new Lua code.
 - **Field names use underscores; file names use dashes.** `fail_fast` in JSON, `foo-bar.md` on disk.
 - **MIT license** for any code distributed through the ecosystem.
