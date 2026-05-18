@@ -771,15 +771,58 @@ object via `as`, control methods, structural `before` / `between` /
 ~~~json
 {"vibecode": {
 	"section": "as_keyword",
-	"purpose": "bind_block_object_for_explicit_return_value_control",
-	"syntax": "if (foo) as $if",
-	"scope": "named_object_accessible_across_all_branches",
-	"return": "$if.return 'value' or implicit last_statement"
+	"purpose": "bind_a_handle_to_the_block_invocation; api_surface_depends_on_caller",
+	"syntax": "block_declaration as $name",
+	"placement_rule": "as_immediately_follows_the_block_declaration_not_the_receiver",
+	"handle_richness": {
+		"plain_method_call": "thin_closure_or_call_like_handle",
+		"loop": "rich_loop_object_with_count_active_return_break_next",
+		"if_elsif_else": "branch_handle_with_explicit_return"
+	},
+	"unifying_principle": "same_syntax_caller_decides_api_surface"
 }}
 ~~~
 
-Any block can be named with `as`. The name binds to a block object that gives explicit
-control over the block's return value.
+`as $name` binds a **handle to the block's invocation**. The handle's
+API surface depends on **who is calling the block** — same syntax, same
+meaning ("give me a handle on this block"), different richness based on
+context.
+
+<a id="placement"></a>
+### 14.1 Placement
+
+`as $name` **always immediately follows the block declaration** — never
+the receiver. Examples:
+
+```
+if (foo) as $if              # if/elsif/else block
+while ($foo) as $loop        # while body (opens implicitly)
+$bar.each($foo) as $loop     # block opened by .each
+5.times do($i) as $loop      # explicit do(...) block
+$foo.action do($i) as $call  # plain method call with do(...)
+```
+
+In the last two, `as` follows `do(...)` — not `5.times` or
+`$foo.action`. The block is what `as` names.
+
+<a id="handle-api-by-caller"></a>
+### 14.2 Handle API by caller
+
+The handle's methods depend on who's invoking the block. Three common
+shapes:
+
+| Caller | Handle is | Why |
+|---|---|---|
+| `if` / `elsif` / `else` | branch handle with `.return` | The block runs once; explicit return-value control is the useful affordance. |
+| Loops (`while`, `.each`, `.times`, etc.) | **loop object** with `.count`, `.active`, `.index`, `.next`, `.return`, `.break` | The block runs repeatedly; iteration state and per-iteration control are the useful affordances. |
+| Plain method call (`$foo.action do(...) as $X`) | thin closure/call-like handle (basically `%call`) | The block runs once at the method's discretion; only the basics are exposed. |
+
+Same `as $name` form in all three cases. The difference in API is
+genuine information about what kind of context the block is running in —
+not a contradiction.
+
+<a id="if-elsif-else"></a>
+### 14.3 `if` / `elsif` / `else`
 
 ```
 $gup =
@@ -792,24 +835,38 @@ $gup =
     end
 ```
 
-`as` is declared on the opening statement of the construct. The named object is accessible
-across all branches (elsif, else).
+`as` is declared on the opening `if`. The named handle is accessible
+across all branches (`elsif`, `else`). If `$if.return` is not called,
+the block returns the value of its last statement.
 
-If `$if.return` is not called, the block returns the value of the last statement evaluated.
-The `as` form is most useful when you need explicit control over the return value.
-
-The same pattern applies to any block:
+<a id="loops-1"></a>
+### 14.4 Loops
 
 ```
-while(&foo) as $loop
+while (&foo) as $loop
     $loop.count
 end
 ```
 
-`$loop.return` and `$loop.break` are aliases — both exit the loop, both
-accept an optional value (`$loop.return value` or `$loop.break value`).
+The loop object exposes `.count`, `.active`, `.index`, `.next`,
+`.return`, and `.break` — see [loops.md § Loop object methods](loops.md#loop-object-methods).
+`$loop.return` and `$loop.break` are aliases.
+
 For the prefix-free `break` / `break N` bwc form (no `$loop` reference
 needed; supports multi-level exit), see [loops.md § break](loops.md#break).
+
+<a id="plain-method-call"></a>
+### 14.5 Plain method call
+
+```
+$foo.action do($i) as $call
+    $call.return $i + 1   # exit the block early with a value
+end
+```
+
+For a one-shot block passed to an ordinary method, the handle is just
+what the method needs to invoke and (optionally) accept a return value.
+It's the same shape as the engine's `%call` reference.
 
 ---
 

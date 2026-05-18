@@ -126,12 +126,15 @@ they behave the same as `.each` over the corresponding range and accept
 	"section": "naming_with_as",
 	"binds": "loop_object",
 	"scope_default": "loop_block",
-	"to_retain_after_loop": "pre_declare_variable_in_outer_scope"
+	"to_retain_after_loop": "pre_declare_variable_in_outer_scope",
+	"placement_rule": "as_immediately_follows_the_block_declaration_not_the_receiver",
+	"unifying_principle": "see_charlie_md_the_as_keyword_for_the_general_block_handle_rule"
 }}
 ~~~
 
 Any of the three loop forms can be named with `as` to bind a **loop
-object** for the duration of the loop:
+object** for the duration of the loop. `as $name` always appears
+immediately after the block declaration:
 
 ```
 $bar.each($foo) as $loop
@@ -143,17 +146,29 @@ end
 By default, the loop object is scoped to the loop block. To retain it
 after the loop, pre-declare the variable in the outer scope.
 
-The same form works on `while` and the numeric helpers:
+For `while`, `as` follows the condition (the body opens implicitly):
 
 ```
 while($foo) as $loop
     # $loop available inside the body
 end
+```
 
-5.times as $loop do($i)
+For numeric helpers that take an explicit `do(...)` block, `as` follows
+the `do(...)` — the block declaration — not the receiver:
+
+```
+5.times do($i) as $loop
     # both $i (index from times) and $loop (loop object) available
 end
 ```
+
+This placement is the general rule: `as` modifies the **block**, not the
+receiver. In the loop case, the caller (the loop machinery) hands you a
+rich loop object; in a plain method call, the caller hands you a thin
+closure-style handle. Same syntax, different richness — see
+[charlie.md § The `as` Keyword](charlie.md#the-as-keyword) for the
+unified rule.
 
 ---
 
