@@ -353,7 +353,7 @@ end
     "function_boundary": "does_not_escape_user_defined_functions_or_closures",
     "block_boundary": "DOES_escape_through_do_end_blocks_passed_to_method_calls",
     "history": "added_post_soft_lock_2026-05-17_as_deliberate_v1_addition",
-    "see": "documentation/charlie/loops.md#break-riker"
+    "see": "documentation/charlie/loops.md#break"
 }}
 ~~~
 
