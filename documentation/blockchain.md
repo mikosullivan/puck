@@ -16,6 +16,7 @@
 - [The Problem](#the-problem)
 - [Design Principles](#design-principles)
 - [The Open Ledger](#the-open-ledger)
+- [Authority Blocks](#authority-blocks)
 - [Trust Delegation](#trust-delegation)
 - [How Puck Vouches for an Object](#how-puck-vouches-for-an-object)
 - [The Blockchain as Registry](#the-blockchain-as-registry)
@@ -86,33 +87,38 @@ verify the entire system.
 <a id="the-open-ledger"></a>
 ## 5 The Open Ledger
 
-The Puck blockchain is an open, append-only ledger of signed records about objects in the
-Puck distributed object system. Its purpose is to provide independently verifiable provenance
-— anyone can confirm that a given object was fetched from its UNS address at a specific time
-and signed by a specific key, without trusting Puck.uno or any other central authority.
+The Puck blockchain is an open, append-only ledger of signed records about objects
+in the Puck distributed object system. Its purpose is to provide independently
+verifiable provenance. Anyone can confirm that a given object was fetched from
+its UNS address at a specific time and signed by a specific key.
 
-The chain is open. Anyone can post records, including creating their own authority blocks with
-their own signing keys. An authority block is not a claim of ownership over the chain — it is
-the anchor of a web of trust rooted in a particular key. Puck.uno's authority block
-establishes Puck's own trust chain. A third party such as a security auditor or partner
-organisation can post their own authority block and build an independent chain of endorsements,
-delegations, and provenance records signed by their own key.
 
-Trust is determined by whose authority block and signing key you choose to trust, not by who
-is allowed to write to the ledger. The ledger is the record; the trust model is layered on top.
+---
 
-Any entity can post their own authority block and establish their own web of trust, completely
-independent of Puck. A company running internal Charlie infrastructure could run their own
-chain, publish their own libraries, and configure their engines to trust their own authority
-block instead of (or in addition to) Puck's.
+<a id="authority-blocks"></a>
+## 6 Authority Blocks
 
-Engines can be configured to trust multiple authority blocks, enabling hybrid models: trust
-Puck for public libraries, trust an internal root for private ones.
+An **authority block** is the anchor of a trust chain on the ledger.
+It's a signed record that establishes a public key as a known
+identity — every endorsement, delegation, or provenance record
+signed by that key chains back to its authority block.
+
+**Trust is determined by whose authority block you choose to trust**,
+not by who is allowed to write to the ledger. The ledger is the
+record; the trust model is layered on top.
+
+Anyone can post an authority block. Puck.uno posts the first one (its
+key is baked into engines), but a security auditor, a partner
+organisation, or a company running internal Charlie infrastructure
+can post their own and build an independent trust chain rooted in
+their own key. Engines can be configured to trust multiple authority
+blocks — Puck's for public libraries, an internal root for private
+ones.
 
 ---
 
 <a id="trust-delegation"></a>
-## 6 Trust Delegation
+## 7 Trust Delegation
 
 A `delegate` block extends trust to another entity. Puck.uno can post a `delegate` block
 that says: "I trust this entity's endorsements." The delegation references the trusted
@@ -135,7 +141,7 @@ on. Engines following the chain extend trust transitively.
 ---
 
 <a id="how-puck-vouches-for-an-object"></a>
-## 7 How Puck Vouches for an Object
+## 8 How Puck Vouches for an Object
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Puck will sign them. The domain owner must explicitly request signing through puck.uno.
@@ -154,7 +160,7 @@ object is trusted.
 ---
 
 <a id="the-blockchain-as-registry"></a>
-## 8 The Blockchain as Registry
+## 9 The Blockchain as Registry
 
 The blockchain serves as the permanent, decentralized registry for published objects.
 Once a block is posted, it is available forever regardless of what happens to any
@@ -170,7 +176,7 @@ chain directly. The API handles lookup by UNS address and returns the signed blo
 ---
 
 <a id="chain-design"></a>
-## 9 Chain Design
+## 10 Chain Design
 
 The Puck blockchain is a permissioned append-only ledger. There is no mining, no
 proof-of-work, and no gas. Records are written directly by authorised signers. Validity
@@ -193,7 +199,7 @@ the SHA-256 of the preceding record.
 ---
 
 <a id="record-types-grammar-v10"></a>
-## 10 Record Types — Grammar v1.0
+## 11 Record Types — Grammar v1.0
 
 All blocks must include a `grammar` field in their payload referencing the grammar block
 by hash. The hash is authoritative for machine verification; the version string is for
@@ -439,7 +445,7 @@ consumers decide how to respond.
 ---
 
 <a id="the-signing-scheme"></a>
-## 11 The Signing Scheme
+## 12 The Signing Scheme
 
 To sign a record:
 
@@ -457,7 +463,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="trust-tiers"></a>
-## 12 Trust Tiers
+## 13 Trust Tiers
 
 | Source | Trust level |
 |--------|-------------|
@@ -469,7 +475,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="what-each-party-manages"></a>
-## 13 What Each Party Manages
+## 14 What Each Party Manages
 
 | Party | Responsibility |
 |-------|---------------|
@@ -481,7 +487,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="api"></a>
-## 14 API
+## 15 API
 
 All blockchain services are hosted at `blockchain.puck.uno`.
 
@@ -490,7 +496,7 @@ By default it operates through the API at `blockchain.puck.uno`. The endpoints b
 describe the intended shape; the final API spec will be a separate document.
 
 <a id="submit-domain-owner-puck"></a>
-### 14.1 Submit (domain owner → Puck)
+### 15.1 Submit (domain owner → Puck)
 
 `POST https://blockchain.puck.uno/v1/submit`
 
@@ -512,7 +518,7 @@ Response:
 ```
 
 <a id="fetch-engine-puck"></a>
-### 14.2 Fetch (engine → Puck)
+### 15.2 Fetch (engine → Puck)
 
 `GET https://blockchain.puck.uno/v1/object/<uns>`
 
@@ -525,7 +531,7 @@ the signature client-side using the baked-in public key.
 `effective_date` is on or before the given date.
 
 <a id="root-block"></a>
-### 14.3 Root block
+### 15.3 Root block
 
 `GET https://blockchain.puck.uno/v1/authority`
 
@@ -535,7 +541,7 @@ key matches the chain.
 ---
 
 <a id="versioning"></a>
-## 15 Versioning
+## 16 Versioning
 
 The Puck ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
@@ -550,7 +556,7 @@ constraint, you get the most recently posted version. When you request with a da
 you get the most recently posted version that falls within that range.
 
 <a id="effective-date"></a>
-### 15.1 Effective Date
+### 16.1 Effective Date
 
 A signer may set an `effective_date` on an endorsement to declare the date that
 should be used for version ordering in place of `posted`. This allows historical objects
@@ -560,7 +566,7 @@ today with `effective_date` set to its original release date.
 `effective_date` is optional. Omitting it means `posted` governs.
 
 <a id="tombstone-and-birthstone"></a>
-### 15.2 Tombstone and Birthstone
+### 16.2 Tombstone and Birthstone
 
 A **tombstone** is an upper bound: "give me the latest version on or before this date."
 Setting a tombstone pins resolution to a point in time — useful for reproducible builds.
@@ -573,7 +579,7 @@ Useful for excluding objects published before a known-good baseline.
 ```
 
 <a id="dependency-resolution"></a>
-### 15.3 Dependency Resolution
+### 16.3 Dependency Resolution
 
 Each object may declare its own dependencies — by UNS name — along with an optional
 date range per dependency. When the gateway resolves a request, it traverses the
@@ -587,7 +593,7 @@ the intended range.
 ---
 
 <a id="use-case-third-party-endorsement"></a>
-## 16 Use Case: Third-Party Endorsement
+## 17 Use Case: Third-Party Endorsement
 
 **Scenario:** Castle Security is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
@@ -697,7 +703,7 @@ Castle Security's public key (configured by the contractor). Neither party neede
 coordinate with the other. The shared ledger is what ties them together.
 
 <a id="collaboration-puck-delegates-to-castle-security"></a>
-### 16.1 Collaboration: Puck Delegates to Castle Security
+### 17.1 Collaboration: Puck Delegates to Castle Security
 
 Although Puck and Castle Security can operate completely independently, there is a deeper
 collaboration available through trust delegation.
@@ -740,7 +746,7 @@ Any engine or toolchain that knows how to read the chain gains access to that tr
 infrastructure with no additional setup.
 
 <a id="partnership-goal"></a>
-### 16.2 Partnership Goal
+### 17.2 Partnership Goal
 
 Puck is actively seeking a partner in this space — a company analogous to Castle Security
 whose endorsements and deprecations would be surfaced directly through the
@@ -758,7 +764,7 @@ care about.
 ---
 
 <a id="design-notes"></a>
-## 17 Design Notes
+## 18 Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Puck is
@@ -793,7 +799,7 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 ---
 
 <a id="license"></a>
-## 18 License
+## 19 License
 
 Code should identify the open source license with which it is
 distributed. Code that fails to do so should not be distributed
@@ -804,7 +810,7 @@ must always include a `license` field. A provenance endorsement that omits
 ---
 
 <a id="open-issues"></a>
-## 19 Open Issues
+## 20 Open Issues
 
 **Software namespace identifier bloat.** As `puck.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.
