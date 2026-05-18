@@ -304,9 +304,5 @@ isn't decided yet.
   Integration with `keyring`? OAuth flow for interactive use?
 - **Type stubs.** Auto-generate `.pyi` stubs from a remote class's
   definition so editors and type-checkers know the method signatures?
-- **Null flavors.** The protocol allows `null` values to carry a
-  flavor field (see [nulls.md](../charlie/built-in-classes/nulls.md)).
-  Python has only one `None`. Wrap flavored nulls in a sentinel
-  object, or expose flavor via a side channel?
 - **Threading.** Is the module-level default puck thread-safe?
   Per-thread default pucks?
