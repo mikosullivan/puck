@@ -30,6 +30,9 @@ This repository is the working source: design docs, the engine in progress, test
 Puck is kept under **1 MB** — engine, standard library, and docs all together. That
 would fit on an old 3.5" floppy disk with room to spare.
 
+The Charlie engine is written in [**Lua**](https://www.lua.org/), itself a famously
+lightweight and transportable language — small enough to embed in nearly anything.
+
 ## The Puck community
 
 Puck is guided by four core principles:
