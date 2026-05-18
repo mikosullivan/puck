@@ -26,12 +26,7 @@ serving on top.
 <a id="status"></a>
 ## 1 Status
 
-Spec in development. Material previously filed under the
-[Dogberry wishlist](../../ideas/dogberry-wishlist.md) (Sammy
-Method Selectors section, error pages, etc.) applies here and
-will be ported in as this doc fills out. Until that port is
-done, treat the wishlist as the source of truth for Sammy's
-shape.
+Spec in development.
 
 ---
 
