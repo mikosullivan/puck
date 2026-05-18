@@ -170,9 +170,15 @@ They are in charge of which objects get submitted and when.
 3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
    fields directly in the endorsement entry
 
-The object must include a valid open source license. Puck will
-not sign software that doesn't declare one. The license is exposed
-as a `license` field on the object served at its UNS URL:
+
+When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
+verifies Puck's signature using the baked-in public key. If the signature is valid, the
+object is trusted.
+
+The object must include a valid open source license. Any
+[SPDX license identifier](https://spdx.org/licenses/) is
+accepted.The license is exposed as a `license` field on the object
+served at its UNS URL:
 
 ```json
 {
@@ -183,25 +189,15 @@ as a `license` field on the object served at its UNS URL:
 }
 ```
 
-Any [SPDX license identifier](https://spdx.org/licenses/) is
-accepted. Puck reads the `license` field at fetch time and embeds
-it verbatim in the provenance endorsement.
-
-When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
-verifies Puck's signature using the baked-in public key. If the signature is valid, the
-object is trusted.
-
 ---
 
 <a id="chain-design"></a>
 ## 11 Chain Design
 
 The Puck blockchain is an **open** append-only ledger. There is no mining, no
-proof-of-work, no gas, and no gatekeeper deciding who can write. Anyone can post a
-record; each record carries its signer's signature, and validity is determined by
-signature verification and hash chaining. Trust in a given record comes from trusting
-its signer (see [Authority Blocks](#authority-blocks)) — not from whether the writer
-was "permitted" to post.
+proof-of-work, and no gas. Anyone can post a record. Trust in a given record comes
+from trusting its signer
+(see [Authority Blocks](#authority-blocks)).
 
 Each record in the chain is a JSON object with the following envelope fields:
 
@@ -214,59 +210,28 @@ Each record in the chain is a JSON object with the following envelope fields:
 - `signature` — Ed25519 signature (base64) over the record with the `signature` field
   omitted, keys sorted alphabetically, minified JSON
 
-Records are never modified or deleted. The chain is valid if every `prev_hash` matches
-the SHA-256 of the preceding record.
+Records are never modified or deleted.
 
 ---
 
 <a id="record-types-grammar-v10"></a>
 ## 12 Record Types — Grammar v1.0
 
-All blocks must include a `grammar` field in their payload referencing the grammar block
-by hash. The hash is authoritative for machine verification; the version string is for
-human readability:
+All blocks must include a `grammar` field in their payload referencing a grammar block
+by hash and version string:
 
 ```json
 "grammar": {"hash": "a3f9c2...", "version": "1.0"}
 ```
 
-A `grammar` field pointing to an unrecognised hash is valid — consumers that do not
-recognise the grammar may choose to reject or accept such blocks at their discretion.
-
-**grammar** — defines a block grammar version; posted first so all subsequent blocks
-can reference it by `record_hash`.
-
-```json
-{
-  "intent": "grammar",
-  "version": "1.0",
-  "description": "Puck blockchain block grammar version 1.0",
-  "grammar": {"hash": "self", "version": "1.0"},
-  "envelope": {
-    "fields": ["intent", "prev_hash", "posted", "signer", "payload", "signature"],
-    "required": ["intent", "prev_hash", "posted", "signer", "payload", "signature"]
-  },
-  "payload_common": {
-    "fields": ["intent", "grammar", "vibecode"],
-    "required": ["intent", "grammar"],
-    "encouraged": ["vibecode"]
-  },
-  "intent_values": ["authority", "grammar", "endorse", "mirror", "delegate", "deprecate", "revoke"],
-  "endorsement_values": ["canonical", "provenance", "license-verified", "security", "audit"]
-}
-```
-
-The grammar block uses `{"hash": "self", "version": "1.0"}` for its own `grammar` field
-since it cannot reference itself before it exists. This is the only block that will ever
-use `"self"`. A grammar may optionally include an `inherits` field pointing to a parent
-grammar block, allowing domain-specific grammars (DSLs) to extend the base without
-duplicating it.
-
-The canonical posting order for any chain is: grammar block first, authority block second.
-This eliminates all bootstrapping problems — every block from the authority onward has a
-real grammar hash.
+Grammar blocks will help keep the block syntax consistent while
+allowing for evolution in the syntax. Puck.uno will post the first
+grammar block.
 
 ---
+
+<a id="authority-blocks"></a>
+## 12 Authority blocks
 
 **authority** — anchor of trust; establishes a signer's identity and public key on the
 chain. Any entity may post their own authority block.
