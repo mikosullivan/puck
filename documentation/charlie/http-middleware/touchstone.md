@@ -96,6 +96,7 @@ where it's bound for brevity) exposes everything about the
 incoming request through a few clearly-scoped accessors. The
 request is **immutable** — built once at the start of the
 transaction, frozen before any handler runs.
+([Possible nanny code?](../../overview.md#no-nanny-code))
 
 <a id="requeststeps"></a>
 ### 4.1 `$request.steps`
