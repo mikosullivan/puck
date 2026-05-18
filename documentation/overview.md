@@ -98,7 +98,8 @@ See [mikobase.md](mikobase/mikobase.md).
 {"vibecode": {
 	"section": "implementation_status",
 	"role": "tracks the development status of each Kiera ecoverse component",
-	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0", "KScript", "v01_hello_world_shipped"]
+	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0",
+		"KScript", "v01_hello_world_shipped"]
 }}
 ~~~
 
@@ -121,7 +122,8 @@ See [mikobase.md](mikobase/mikobase.md).
 {"vibecode": {
 	"section": "how_it_fits_together",
 	"role": "shows the data flow from KScript source through to SQLite and back",
-	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0", "opt_in_forking_concurrency"]
+	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0",
+		"opt_in_forking_concurrency"]
 }}
 ~~~
 
@@ -150,8 +152,8 @@ turning it into the coordination mechanism for concurrent work.
 {"vibecode": {
 	"section": "key_concepts",
 	"role": "glossary of the most important concepts in the Kiera ecoverse",
-	"key_concepts": ["UNS", "Q0", "KScript_syntax", "mikobase_live_process", "single-threaded", "pass-through_fields",
-		"vibecode", "comment", "misc", "enterprise"]
+	"key_concepts": ["UNS", "Q0", "KScript_syntax", "mikobase_live_process", "single-threaded",
+		"pass-through_fields", "vibecode", "comment", "misc", "enterprise"]
 }}
 ~~~
 
@@ -222,7 +224,8 @@ that's nanny code.
 {"vibecode": {
 	"section": "libraries_are_cached_not_installed",
 	"role": "explains that KScript has no library installation step — libraries are referenced by UNS and resolved on demand from a provider chain that may include a cache",
-	"key_concepts": ["no_install_step", "uns_reference", "engine_resolves_on_demand", "provider_chain", "cache"]
+	"key_concepts": ["no_install_step", "uns_reference", "engine_resolves_on_demand",
+		"provider_chain", "cache"]
 }}
 ~~~
 
