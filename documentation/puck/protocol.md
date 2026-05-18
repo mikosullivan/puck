@@ -311,3 +311,51 @@ Most Puck classes pick one shape or the other. Mixed forms (some
 fields carried, some server-resolved) are allowed; the protocol
 doesn't care.
 
+---
+
+<a id="client-experience-python-sketch"></a>
+## 5 Client experience: Python (sketch)
+
+A Python client wraps everything above. The developer doesn't see
+URLs, body envelopes, or marshaling — they get a Python class that
+behaves like any other Python class:
+
+```python
+import puck
+
+# Fetches the class definition from https://puck.uno/geo
+# and returns a Python class wrapping it.
+Geo = puck.lookup('puck.uno/geo')
+
+# Instantiating produces a Python object holding the dynamic puck
+# (class + bucket). No remote call yet — just an object in memory.
+hq = Geo(lat=37.7980, lon=-122.4626)
+
+# A method call becomes the POST we specced above. The wrapper
+# builds the URL, serializes the body, sends it, and unmarshals
+# the response.
+report = hq.weather
+
+# Returns that are themselves dynamic pucks come back as Python
+# objects you can keep calling methods on. The chained shape
+# reads like a local-object chain.
+representative = hq.congressional_district.representative
+```
+
+The Python wrapper does three things behind that surface:
+
+- **Class loading.** `puck.lookup(uns)` fetches the class definition
+  JSON from the class's UNS URL and constructs a Python class with
+  the declared methods (and the appropriate signatures).
+- **Wire dispatch.** Every method call becomes the POST shape from
+  §3 — URL is `https://{class}/{method}`, body is `class` +
+  `bucket` + optional `params`.
+- **Return unmarshaling.** Primitive returns come back as native
+  Python values. Dynamic-puck returns come back as wrapped Python
+  objects whose own method calls fire further POSTs.
+
+That's the feel from Python. **For the full client spec** — module
+layout, configuration, error mapping, properties-vs-methods,
+version-window context managers, sync/async, open questions — see
+[python.md](python.md).
+
