@@ -9,7 +9,8 @@
 		"manufactured_methods"],
 	"audience": ["developers_in_any_language", "puck_client_implementors",
 		"puck_server_implementors"],
-	"example_universe": "Star Trek"
+	"example_universe": "Star Trek",
+	"example_language": "Python"
 }}
 ~~~
 
@@ -32,25 +33,27 @@ the protocol is not Charlie-specific.
 Suppose `puck.uno/color` publishes a `Color` class. The workflow is:
 **resolve the class by UNS, instantiate it, then use it.**
 
-~~~charlie
-# Resolve the class via the puck
-$color_class = %puck['puck.uno/color']
+```python
+import puck
 
-# Instantiate — same syntax as any local class
-$crimson = $color_class.new('#dc143c')
+# Resolve the class via the puck
+Color = puck.lookup('puck.uno/color')
+
+# Instantiate — same syntax as any local Python class
+crimson = Color('#dc143c')
 
 # Call the class's manufactured methods
-$crimson.hex             # '#dc143c'
-$crimson.rgb             # {red: 220, green: 20, blue: 60}
-$crimson.name            # 'crimson'
-$crimson.darken(0.2)     # returns a new Color, 20% darker
-$crimson.complementary   # the color wheel opposite
-~~~
+crimson.hex             # '#dc143c'
+crimson.rgb             # {'red': 220, 'green': 20, 'blue': 60}
+crimson.name            # 'crimson'
+crimson.darken(0.2)     # returns a new Color, 20% darker
+crimson.complementary   # the color wheel opposite
+```
 
 Nothing in those method calls signals "remote." The puck handles the
 dispatch behind the scenes — looking up where `puck.uno/color` is hosted,
 sending the call, deserializing the result. The same shape works from
-Python, JavaScript, or any other language that wires up a Puck client; the
+JavaScript, Ruby, or any other language that wires up a Puck client; the
 specifics differ only in syntax.
 
 The methods (`hex`, `rgb`, `name`, `darken`, `complementary`, ...) are
