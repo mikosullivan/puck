@@ -7,7 +7,8 @@
 	"status": "in_development_starting_with_class_definitions",
 	"key_concepts": ["json_wire_format", "class_definition_json",
 		"shared_shape_with_charlie_and_mikobase",
-		"remote_methods_block", "method_params_and_returns"],
+		"remote_methods_block", "method_params_and_returns",
+		"self_contained_vs_pk_reference_instances"],
 	"audience": ["puck_protocol_designers", "puck_server_implementors",
 		"puck_client_implementors_in_any_language"],
 	"example_universe": "Star Trek",
@@ -143,8 +144,76 @@ Geo is two numbers, a CensusDistrict reference is one UNS string, a
 Color is one hex code. The wire payload is mostly HTTP/JSON
 envelope; the object data itself rarely amounts to much.
 
-Larger objects (records with dozens of fields, attachments, binary
-blobs, etc.) are the exception. When they become a real cost in a
-deployment, optimizations like server-side caching or
-references-by-handle can be layered in — but for the common case,
-"every call carries its instance" stays simple and stateless.
+---
+
+<a id="reference-style-instances"></a>
+## 3 Reference-style instances
+
+The Geo example in §1–2 carries all of its state in fields (`lat`
+and `lon`) — every call sends those numbers across the wire. That's
+fine when the object's full state is small and the client can
+plausibly know it.
+
+But many objects only make sense **server-side**. A row in a
+database, a record in a registry, a long-lived account — these live
+somewhere; the client has no way to hold their full state and
+shouldn't need to. For these, a Puck class can carry just enough
+information to identify the object — typically a single primary-key
+field — and let the server resolve everything else.
+
+Example: a Starfleet starship class keyed by registry number:
+
+```json
+{
+    "name": "starfleet.com/starship",
+    "fields": {
+        "registry": {"class": "string", "required": true}
+    },
+    "methods": {
+        "name":             {"returns": {"class": "string"}},
+        "captain":          {"returns": {"class": "starfleet.com/officer"}},
+        "current_location": {"returns": {"class": "puck.uno/geo"}}
+    }
+}
+```
+
+The class declares one field — `registry`, the primary key. The
+server holds the actual data (name, captain, location, crew, mission
+logs, everything). A client asking about a ship sends just the
+registry:
+
+```json
+{
+    "instance": {
+        "class": "starfleet.com/starship",
+        "registry": "NCC-1701-D"
+    },
+    "method": "captain"
+}
+```
+
+The server resolves `NCC-1701-D` against its database, finds the
+Enterprise-D, and returns the captain as a `starfleet.com/officer`
+reference — itself probably another PK-only object the client can
+make further calls on.
+
+**Same wire shape, different sized payload.** From the protocol's
+perspective, the Geo and Starship examples are identical: instance
+hash + method + optional params. The only difference is how much of
+the instance actually fits in the hash. Class designers choose
+between the two patterns:
+
+- **Self-contained instance** (Geo) — the object's full state is
+  the fields. Server holds no per-instance state; client and server
+  agree on the data each call. Good when the state is small enough
+  to ship per-call and the client is the canonical owner.
+- **Reference by primary key** (Starship) — the object's fields
+  are just identifiers; the server holds the data. Good when the
+  state is too big to ship per-call, when the data lives in a
+  database the client can't replicate, or when the server is the
+  canonical owner of the value.
+
+Most Puck classes pick one shape or the other. Mixed forms (some
+fields carried, some server-resolved) are allowed; the protocol
+doesn't care.
+
