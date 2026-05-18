@@ -232,8 +232,9 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 Charlie has constructs whose syntax breaks into multiple labeled
 sub-sections inside a single `end` — `if` / `elsif` / `else`, loops
 with `before` / `between` / `after` / `noloop`, `begin` / `ensure` /
-`end`, and so on. Whether such a shape is desirable depends on **what
-kind of boundary** each label represents:
+`end`, and so on. (`elsif` and `elseif` are accepted as synonyms;
+they transpile to the same CharlieJSON.) Whether such a shape is
+desirable depends on **what kind of boundary** each label represents:
 
 - **Phase-marker boundaries** — each section runs at a *different
   time* in the construct's lifecycle. The sections are orthogonal
