@@ -252,9 +252,7 @@ Charlie's three primitive literals:
 
 - **`true`** and **`false`** — Boolean values. Standard truthy/falsey rules
   apply in conditional contexts.
-- **`null`** — the absence of a value. `null` is a real value, not a missing
-  variable; method calls on it raise. Use
-  [safe navigation](#safe-navigation) (`&.`) when you expect null.
+- **`null`** — the absence of a value. Regarded as falsey.
 
 ~~~charlie
 $active   = true
@@ -262,13 +260,9 @@ $retired  = false
 $nickname = null
 ~~~
 
-**Charlie implements null flavors.** A `null` value can carry a
-**`flavor`** field describing *why* it's null (`unknown`, `not_applicable`,
-`not_provided`, etc.). All flavors compare equal to plain `null`; the
-flavor is metadata that downstream code can branch on when it matters.
-See [nulls.md](built-in-classes/nulls.md) for the full spec and
-[nulls.md § Null Flavors](built-in-classes/nulls.md#null-flavors) for
-the flavor model.
+Charlie implements null flavors. See [nulls.md](built-in-classes/nulls.md)
+for the full spec and [nulls.md § Null Flavors](built-in-classes/nulls.md#null-flavors)
+for the flavor model.
 
 ---
 
@@ -578,19 +572,15 @@ similar languages use.
 ~~~json
 {"vibecode": {
 	"section": "end_marker",
-	"marker": "__END__",
-	"behavior": "everything_after_is_ignored",
-	"must_be": "at_start_of_line_optionally_with_trailing_whitespace",
-	"must_not_be_inside": ["string_literal", "heredoc_body", "comment"],
-	"data_access": "not_supported; trailing_content_is_discarded_entirely",
-	"status": "spec_requirement_not_yet_implemented",
-	"borrowed_from": ["perl", "ruby"]
+	"role": "everything after a bare __END__ line is ignored by the parser",
+	"key_concepts": ["must_be_on_own_line",
+		"must_not_be_inside_string_or_heredoc",
+		"borrowed_from_perl_and_ruby"]
 }}
 ~~~
 
-A line containing only `__END__` (optionally followed by trailing whitespace)
-terminates the script. Everything in the file after that line is ignored by
-the parser.
+A line containing only `__END__` terminates the script. Everything after it
+is ignored by the parser.
 
 ```
 $foo = 'hello'
@@ -599,52 +589,13 @@ __END__
 this and everything else in the file is ignored
 ```
 
-Borrowed from Perl and Ruby, both of which use the same marker for the same
-purpose.
+Two rules:
 
-<a id="rules"></a>
-#### 5.8.1 Rules
+- **Must be on its own line.** `foo __END__ bar` does not trigger.
+- **Must not be inside a string literal or heredoc body.** In those
+  contexts, `__END__` is literal text.
 
-- **Must be at the start of a line.** `foo __END__ bar` on a single line does
-  not trigger; the marker only fires when `__END__` is the first non-whitespace
-  content on a line.
-- **Must not be inside a string literal, heredoc body, or comment.** Inside
-  those, `__END__` is literal text. The lexer suppresses the marker check
-  while in those states.
-- **Trailing whitespace allowed** on the marker line; anything else is not
-  treated as a marker line.
-
-<a id="what-charlie-doesnt-do"></a>
-#### 5.8.2 What Charlie doesn't do
-
-Perl exposes post-`__END__` content via the `DATA` filehandle; Ruby exposes
-it via the `DATA` constant. **Charlie discards the trailing content
-entirely.** A future `__DATA__` marker could surface it if a use case shows
-up, but `__END__` alone means "throw the rest away."
-
-<a id="status"></a>
-#### 5.8.3 Status
-
-Spec requirement; **not yet implemented in the canonical Lua engine.** The
-change is small — a ~10–15-line addition in `lexer.lua` that emits EOF on
-a top-level `__END__` line and suppresses the check while in
-heredoc/string/comment state. No parser, transpiler, or interpreter
-changes.
-
-<a id="compliant-engine-behavior-for-the-unimplemented-state"></a>
-#### 5.8.4 Compliant-engine behavior for the unimplemented state
-
-Until an engine implements `__END__`, it treats the marker as ordinary
-input — i.e., as a bare identifier on a line, which is a parse error in
-most positions. This is the expected behavior of any Charlie-conforming
-engine that hasn't yet shipped `__END__`: not silent acceptance, not a
-custom error class, just whatever the parser would normally do with
-`__END__` as an unrecognized identifier in that position.
-
-When an engine implements the feature, it follows the rules above
-(top-of-line, not inside strings/heredocs/comments, trailing whitespace
-ok) and discards content after the marker per the "What Charlie doesn't
-do" section.
+Borrowed from Perl and Ruby.
 
 ---
 
