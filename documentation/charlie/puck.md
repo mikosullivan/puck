@@ -3,10 +3,10 @@
 ~~~json
 {"vibecode": {
 	"doc": "charlie-puck",
-	"role": "spec for the Charlie-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote function, restrict; the protocol itself is documented language-agnostic in puck/puck.md",
+	"role": "spec for the Charlie-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote function; the protocol itself is documented language-agnostic in puck/puck.md",
 	"key_concepts": ["%puck_system_method", "puck_bracket_lookup_shorthand",
 		"%puck.call_remote_invocation", "remote_function_sugar",
-		"restrict_do_block", "puck_scoping_via_%chain"],
+		"puck_scoping_via_%chain"],
 	"example_universe": "Star Trek"
 }}
 ~~~
@@ -134,30 +134,18 @@ forwarded automatically in both.
 
 ---
 
-<a id="restrict-do-end"></a>
-## 4 `restrict do ... end`
+<a id="versioning"></a>
+## 4 Versioning
 
-`restrict` is the canonical Charlie way to scope `%puck` to a narrower
-version window for a block of code:
+The Puck protocol takes a deliberately light approach to versioning
+— see [puck/protocol.md § Versioning](../puck/protocol.md#versioning).
+Charlie doesn't add a `restrict` block or any other syntax for
+version windows; to use a specific API version, look it up at its
+versioned UNS:
 
 ~~~charlie
-%puck                                  # outer puck (no extra restriction)
-
-%puck.restrict(upper: 'may 3, 2023') do
-    %puck                              # narrower derived puck, in effect inside the block
-end
-
-%puck                                  # back to the outer puck
+$geo = %puck['puck.uno/geo/v2']
 ~~~
 
-`restrict` does two things at once:
-
-1. **Derives** a narrower puck from the current one (per the protocol's
-   one-way ratchet — narrower or equal, never broader; see
-   [puck/puck.md § Deriving a narrower puck](../puck/puck.md#deriving-a-narrower-puck)).
-2. **Installs** the derived puck as the active `%puck` in `%chain` for
-   the duration of the block.
-
-Nested `restrict` calls compose. When each block returns, the prior
-scope's puck takes over. Same shape as `%chain.isolate do ... end` and
-other scoped-block primitives.
+Charlie's blockchain-signed versioning of library identity is a
+separate story; see [blockchain.md](../blockchain.md).

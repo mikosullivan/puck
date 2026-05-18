@@ -356,6 +356,35 @@ The Python wrapper does three things behind that surface:
 
 That's the feel from Python. **For the full client spec** — module
 layout, configuration, error mapping, properties-vs-methods,
-version-window context managers, sync/async, open questions — see
-[python.md](python.md).
+sync/async, open questions — see [python.md](python.md).
+
+---
+
+<a id="versioning"></a>
+## 6 Versioning
+
+The Puck protocol supports versioning **only loosely.** Two
+recommended paths:
+
+- **Simple APIs:** commit to keeping your API consistent for as
+  long as you serve it. A class published at `puck.uno/geo` keeps
+  the same fields and method signatures over time. Clients can
+  rely on the URL meaning what it meant when they wrote the call.
+
+- **APIs that need to evolve:** use a `vN/` segment in the UNS.
+  `puck.uno/geo/v1`, `puck.uno/geo/v2`, etc. — each version is a
+  distinct UNS with its own class definition. Clients pick which
+  version they want and stay on it.
+
+These two conventions cover the common cases. If the community
+wants a more fine-grained mechanism — request-time version pinning,
+narrowing windows, per-instance attestations — that's a
+conversation to have once a real use case shows up.
+
+**Distinct from Charlie's blockchain-signed versioning.** Charlie
+has its own versioning story for library identity and signed
+attestations; see [blockchain.md](../blockchain.md). That's about
+who published which code. The Puck protocol's versioning here is
+just about how UNS owners structure their URLs as their APIs
+evolve.
 

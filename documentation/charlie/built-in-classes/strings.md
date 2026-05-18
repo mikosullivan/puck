@@ -36,14 +36,9 @@
 }}
 ~~~
 
-**All strings in Charlie are normalized to UTF-8.** Whatever encoding input arrives in —
-from files, network streams, OS calls, foreign-function returns, anywhere — the engine
-transcodes it to UTF-8 at the boundary before the value becomes a Charlie string. By the
-time user code sees a string, the encoding is guaranteed; there's no charset to query,
-no decode step to remember, and no way to hold a Charlie string in any other encoding.
+Strings are immutable. A method might return a new string, but none mutate in place.
 
-Strings are immutable. Every method returns a new string (or a value of another type);
-none mutate in place.
+All strings in Charlie are normalized to UTF-8.
 
 ---
 

@@ -3,12 +3,12 @@
 ~~~json
 {"vibecode": {
 	"doc": "puck-python",
-	"role": "design sketch for the general shape of a Python implementation of the Puck protocol; covers package layout, lookup, instantiation, method dispatch, return-value handling, errors, version windows, and open questions",
+	"role": "design sketch for the general shape of a Python implementation of the Puck protocol; covers package layout, lookup, instantiation, method dispatch, return-value handling, errors, versioning, and open questions",
 	"status": "sketch_no_implementation_yet",
 	"key_concepts": ["python_puck_client", "module_level_default_puck",
 		"class_lookup_and_instantiation", "attribute_method_dispatch",
 		"primitive_and_object_returns", "error_to_exception_mapping",
-		"restrict_context_manager", "sync_first_async_later"],
+		"versioning_via_vN_uns_segment", "sync_first_async_later"],
 	"audience": ["python_developers", "puck_client_implementors"],
 	"example_universe": "Star Trek",
 	"example_language": "Python"
@@ -38,7 +38,7 @@ Python library.
 - [Properties vs methods](#properties-vs-methods)
 - [Return values](#return-values)
 - [Errors](#errors)
-- [Version windows: `restrict`](#version-windows-restrict)
+- [Versioning](#versioning)
 - [Sync vs async](#sync-vs-async)
 - [Open questions](#open-questions)
 
@@ -77,10 +77,9 @@ class, instantiate, call methods.
 <a id="getting-a-puck"></a>
 ## 4 Getting a puck
 
-**Module-level default.** `puck.lookup(...)`, `puck.restrict(...)`,
-etc. operate on a module-level default puck configured from the
-environment (env vars, config file, or programmatic setup at import
-time):
+**Module-level default.** `puck.lookup(...)` and friends operate on
+a module-level default puck configured from the environment (env
+vars, config file, or programmatic setup at import time):
 
 ```python
 import puck
@@ -89,8 +88,7 @@ Geo = puck.lookup('puck.uno/geo')   # uses the module default puck
 ```
 
 **Explicit puck.** When a script needs more than one puck (different
-endpoints, different version windows, different credentials), construct
-them explicitly:
+endpoints, different credentials), construct them explicitly:
 
 ```python
 prod = puck.Puck(endpoint='https://puck.acme.com', ...)
@@ -122,7 +120,7 @@ is: instantiate it, subclass it (if the package supports that),
 introspect it.
 
 **Failure case.** If the UNS doesn't resolve (unknown, withdrawn,
-outside the puck's version window), `lookup` raises
+or a version segment that doesn't exist), `lookup` raises
 `puck.NotFoundError`.
 
 ---
@@ -253,26 +251,22 @@ except puck.RemoteError as e:
 
 ---
 
-<a id="version-windows-restrict"></a>
-## 11 Version windows: `restrict`
+<a id="versioning"></a>
+## 11 Versioning
 
-The protocol's version-window narrowing (see
-[puck.md § Deriving a narrower puck](puck.md)) is exposed as a Python
-**context manager**:
+The Puck protocol takes a deliberately light approach to
+versioning (see [protocol.md § Versioning](protocol.md#versioning)).
+The Python client doesn't expose a per-call version-window
+context manager — there's nothing for it to wrap. To use a specific
+API version, look up the class at its versioned UNS:
 
 ```python
-with puck.restrict(upper='2023-05-03'):
-    Geo = puck.lookup('puck.uno/geo')
-    hq = Geo(lat=37.7980, lon=-122.4626)
-    hq.weather                       # served from the 2023-05-03 snapshot
+Geo = puck.lookup('puck.uno/geo/v2')
 ```
 
-Inside the `with` block, the module-level puck is a derived puck
-with the narrower window. On exit, the previous puck is restored.
-
-`restrict` calls nest. Both `upper` and `lower` accept ISO date
-strings, `datetime` objects, or `None` (meaning "leave that bound
-unchanged from the parent").
+Charlie's blockchain-signed versioning of library identity is a
+separate story; if you need that, see
+[blockchain.md](../blockchain.md).
 
 ---
 
