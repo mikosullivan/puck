@@ -7,7 +7,7 @@
 	"audience": ["humans_landing_on_github", "AIs_orienting_to_the_repo"],
 	"key_concepts": ["Puck_ecoverse", "Puck_protocol", "Charlie", "Mikobase",
 		"design_heavy_implementation_early", "canonical_specs_live_under_documentation",
-		"four_guiding_principles"],
+		"four_guiding_principles", "lightweight_under_1mb"],
 	"notes": ["umbrella_name_is_Puck",
 		"directory_named_mikobase_for_historical_reasons_see_CLAUDE_md",
 		"deeper_specs_organized_under_documentation_directory"]
@@ -24,6 +24,10 @@ This repository is the working source: design docs, the engine in progress, test
 - **[Puck (the object protocol)](documentation/puck/puck.md)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
 - **[Charlie](documentation/charlie/charlie.md)** — a lightweight, embeddable language.
 - **[Mikobase](documentation/mikobase/mikobase.md)** — a live, portable object store. Class-based, NoSQL; queries are JSON.
+
+## Lightweight
+
+Puck is kept under **1 MB** — engine, standard library, and docs all together. That's less than would fit on an old 3.5" floppy disk (1.44 MB).
 
 ## The Puck community
 
