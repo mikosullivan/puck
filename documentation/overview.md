@@ -259,37 +259,3 @@ See [vibecode.md](ecoverse/vibecode.md).
 | Worldlet (packaged mikobase) | Format spec exists; import/export to be implemented alongside the Mikobase engines. |
 | Forking (opt-in Charlie feature) | Early design; not in active development. |
 | Puck protocol | Early design. |
-
----
-
-<a id="how-it-fits-together"></a>
-## 7 How It Fits Together
-
-~~~json
-{"vibecode": {
-	"section": "how_it_fits_together",
-	"role": "shows the data flow from Charlie source through to SQLite and back",
-	"key_concepts": ["Charlie_to_CharlieJSON", "interpreter", "mikobase", "SQLite", "Q0",
-		"opt_in_forking_concurrency"]
-}}
-~~~
-
-```
-Developer writes Charlie
-        ↓
-Transpiles to CharlieJSON
-        ↓
-Charlie interpreter runs it
-        ↓
-Reads/writes to a Mikobase (object store)
-        ↓
-Mikobase is backed by SQLite (memory or file) — or directly on a worldlet
-        ↓
-Queries expressed in Q0 (JSON)
-        ↓
-Remote objects resolved through Puck (UNS → object)
-```
-
-When the opt-in forking feature is enabled, multiple Charlie
-processes share a mikobase, turning it into the coordination
-mechanism for concurrent work.
