@@ -112,9 +112,8 @@ explicitly send them in as paramters. See [roles.md](charlie/roles.md).
 - **[Classes and inheritance](charlie/charlie.md#classes).**
   `class 'UNS' ... end` defines a class with fields, properties,
   methods, and helpers. Bare/anonymous classes
-  (`class\n    inherits ... end`) for cases like
-  [Robinson](charlie/http-middleware/robinson.md) page files where
-  identity comes from location.
+  (`class\n    inherits ... end`) for cases where identity comes
+  from location rather than UNS.
 - **[Functions and closures](charlie/charlie.md#functions).**
   `function &name(args) ... end` for named functions; closures
   capture lexical scope; functions don't. Parameters carry metadata
