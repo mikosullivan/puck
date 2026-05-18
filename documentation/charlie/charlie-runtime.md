@@ -1,6 +1,7 @@
 # Charlie
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -21,7 +22,8 @@ Charlie has been in development conceptually for approximately twenty years.
 
 ---
 
-## Host Language: Why Lua
+<a id="host-language-why-lua"></a>
+## 2 Host Language: Why Lua
 
 ```
 vibecode: {
@@ -49,7 +51,8 @@ choice is deliberate; the reasoning:
   portability without doing the work itself: if a system can run
   Lua, it can run Kiera.
 
-### Why not Python
+<a id="why-not-python"></a>
+### 2.1 Why not Python
 
 Python is also a solid candidate — installed everywhere, possibly
 the biggest software community of any language. But **Python is
@@ -58,7 +61,8 @@ its full footprint conflicts with the design goal of keeping Kiera
 light. A small, reliable cross-OS footprint matters more than a
 larger ecosystem.
 
-### Why not C
+<a id="why-not-c"></a>
+### 2.2 Why not C
 
 C is the "obvious" choice in the sense that you *can* write very
 efficient systems in it. But C's syntax is complicated and the
@@ -68,7 +72,8 @@ gets us most of the way without it.
 
 ---
 
-## Philosophy
+<a id="philosophy"></a>
+## 3 Philosophy
 
 ```
 vibecode: {
@@ -86,7 +91,8 @@ vibecode: {
 }
 ```
 
-### Charlie Written in Charlie
+<a id="charlie-written-in-charlie"></a>
+### 3.1 Charlie Written in Charlie
 
 Everything that can be written in Charlie should be written in Charlie. The Lua layer
 exists for things that cannot be expressed in Charlie at all — the interpreter loop,
@@ -114,7 +120,8 @@ This makes much of the engine visible and inspectable. A developer who wants to 
 how a feature works can read Charlie source rather than implementation source. Bugs in
 the standard library are fixable without touching the host language.
 
-#### Lua reference implementation
+<a id="lua-reference-implementation"></a>
+#### 3.1.1 Lua reference implementation
 
 The Lua reference implementation provides the kernel above plus:
 
@@ -125,7 +132,8 @@ The Charlie parser is a hand-written recursive descent parser written in Charlie
 directly — this is the bootstrapping constraint. Once the parser is working, future
 rewrites can use Charlie.
 
-### Dependencies (Lua reference implementation)
+<a id="dependencies-lua-reference-implementation"></a>
+### 3.2 Dependencies (Lua reference implementation)
 
 The Lua implementation requires Lua plus two C libraries:
 
@@ -137,7 +145,8 @@ The Lua implementation requires Lua plus two C libraries:
 Performance concerns are addressed by optimizing the interpreter, not by abandoning
 the principle.
 
-### Error Messages
+<a id="error-messages"></a>
+### 3.3 Error Messages
 
 Sometimes complexity is unavoidable. When it is, the key to helping the developer is good
 error messages. If something goes wrong, Charlie should pinpoint the problem precisely and
@@ -145,7 +154,8 @@ explain the mistake clearly. A confusing error message is a bug.
 
 ---
 
-## Design Principles
+<a id="design-principles"></a>
+## 4 Design Principles
 
 ```
 vibecode: {
@@ -159,7 +169,8 @@ vibecode: {
 }
 ```
 
-### Lightweight and Embeddable
+<a id="lightweight-and-embeddable"></a>
+### 4.1 Lightweight and Embeddable
 
 The Charlie interpreter must be embeddable in every major language (Python, Ruby, etc.)
 as a library dependency. It ships with mikobase support built in, which means SQLite is a
@@ -175,7 +186,8 @@ the security model, and the full object system.
 This matters because Charlie will run inside engines — for dynamic firewall rules, trigger
 records, and other engine-level logic. Every engine needs to run it.
 
-### No Threading or Forking
+<a id="no-threading-or-forking"></a>
+### 4.2 No Threading or Forking
 
 Charlie does not support threading, forking, or concurrency primitives. It is
 single-threaded by design. The host language handles concurrency; Charlie runs within a
@@ -186,7 +198,8 @@ mikobases, and the multi-process coordination model are opt-in Charlie features 
 engine grants on request (off by default) — see
 [ideas/plusplus/threads.md](../ideas/plusplus/threads.md).
 
-### Timeouts
+<a id="timeouts"></a>
+### 4.3 Timeouts
 
 Charlie does not use threads, but untrusted code must not be allowed to run indefinitely.
 A function downloaded from a remote Kiera object — `%kiera['borg.com/riker']` — might
@@ -234,7 +247,8 @@ When running untrusted code, the engine is responsible for wrapping execution in
 `%utils.timeout` (or an equivalent native-level bound) from the embedding side.
 Charlie code inside cannot extend or escape that outer timeout.
 
-#### The `unwind:` option
+<a id="the-unwind-option"></a>
+#### 4.3.1 The `unwind:` option
 
 For *cooperative* code that wants a polite "time's up, clean up and exit"
 signal — not the security-boundary form — pass `unwind: true`:
@@ -262,7 +276,8 @@ execution is inside an inner `unwind: true` block, the outer's `timeout_handle`
 bubbles up uncatchably and bypasses the inner's `begin`/`ensure`. The inner's
 mode applies only when the inner's own deadline fires.
 
-#### The `?` form: `%utils.timeout?`
+<a id="the-form-utilstimeout"></a>
+#### 4.3.2 The `?` form: `%utils.timeout?`
 
 `%utils.timeout?` (with the `?` suffix) is the **tolerant form** that returns
 the timeout flag as a value instead of raising it at the boundary:
@@ -290,7 +305,8 @@ otherwise be `catch('error/timeout')` wrapping around
 `%utils.timeout` — the common "try for N seconds, move on if not" pattern,
 compressed into the method name.
 
-#### The `?` form combines with `unwind:`
+<a id="the-form-combines-with-unwind"></a>
+#### 4.3.3 The `?` form combines with `unwind:`
 
 `unwind:` controls *what fires inside the block* when the deadline hits;
 the `?` form controls *what happens at the boundary* when a timeout flag
@@ -308,7 +324,8 @@ the timeout, `%utils.timeout?` returns `null` (nothing escaped). If the
 block doesn't catch, the `?` form converts the escaping timeout to a return
 value.
 
-#### Spec: compliant engine requirements
+<a id="spec-compliant-engine-requirements"></a>
+#### 4.3.4 Spec: compliant engine requirements
 
 A compliant engine must:
 
@@ -329,7 +346,8 @@ A compliant engine must:
   timeout at the native level, since the interpreter-level timeout cannot fire during a
   native blocking call
 
-#### Lua reference implementation
+<a id="lua-reference-implementation-1"></a>
+#### 4.3.5 Lua reference implementation
 
 `%utils.timeout` is implemented using `debug.sethook`. A hook is registered that
 fires every N VM instructions and checks `os.time()` against the deadline. When
@@ -357,7 +375,8 @@ expressions, and `begin`/`ensure` re-raises `timeout_handle`-tagged errors.
 `unwind: true` mode is deliberately suppressible by user code — that's the
 cooperative-timeout contract.
 
-### CharlieJSON as the Runtime Format
+<a id="charliejson-as-the-runtime-format"></a>
+### 4.4 CharlieJSON as the Runtime Format
 
 Charlie programs are written in Charlie and transpiled to CharlieJSON for execution.
 CharlieJSON is easy to store, transmit, and parse in any language — which makes Charlie
@@ -371,7 +390,8 @@ is the language; CharlieJSON is the wire format.
 
 ---
 
-## Relationship to Other Systems
+<a id="relationship-to-other-systems"></a>
+## 5 Relationship to Other Systems
 
 ```
 vibecode: {
@@ -391,7 +411,8 @@ vibecode: {
 
 ---
 
-## Primitives
+<a id="primitives"></a>
+## 6 Primitives
 
 ```
 vibecode: {
@@ -406,13 +427,15 @@ vibecode: {
 }
 ```
 
-### Charlie as an Extension of JSON
+<a id="charlie-as-an-extension-of-json"></a>
+### 6.1 Charlie as an Extension of JSON
 
 Think of Charlie as an extension of JSON. Primitives work like in JSON: strings, numbers,
 booleans, null, arrays, and objects. Charlie builds on these rather than introducing new
 ones.
 
-### Types
+<a id="types"></a>
+### 6.2 Types
 
 | Type | Examples |
 |---|---|
@@ -423,7 +446,8 @@ ones.
 | Array | `[1, 2, 3]` |
 | Hash | `{key: 'value'}` |
 
-### Strings
+<a id="strings"></a>
+### 6.3 Strings
 
 All strings in Charlie are UTF-8. There is no other encoding. Strings are immutable —
 operations on a string return a new string; the original is never modified.
@@ -433,7 +457,8 @@ engine must convert all incoming strings to UTF-8 before passing them to Charlie
 The reference Lua implementation converts whatever encodings Lua natively supports.
 Strings arriving in unsupported encodings should raise an error at the boundary.
 
-### Hashes
+<a id="hashes"></a>
+### 6.4 Hashes
 
 Hash key order is significant. `{foo: true, bar: true}` and `{bar: true, foo: true}` are
 distinct values. The order in which keys are written is the order in which they are stored
@@ -443,18 +468,21 @@ in the same order.
 This matters for serialization, comparison, and anywhere key order carries semantic weight
 (e.g., field ordering in a record schema).
 
-### Numbers
+<a id="numbers"></a>
+### 6.5 Numbers
 
 There is no distinction between integers and floats — there is only `number`. JSON makes
 no such distinction, and neither does Charlie. The interpreter handles numeric
 representation internally, using integer or float arithmetic as appropriate for
 efficiency.
 
-### Truthiness
+<a id="truthiness"></a>
+### 6.6 Truthiness
 
 `null` and `false` are falsy. Everything else is truthy — including `0` and `''`.
 
-### `null`, `true`, and `false` as Classes
+<a id="null-true-and-false-as-classes"></a>
+### 6.7 `null`, `true`, and `false` as Classes
 
 In most languages, `null`, `true`, and `false` are global singletons whose underlying
 classes cannot be instantiated. In Charlie, the underlying classes are fully instantiable
@@ -472,7 +500,8 @@ $my_null = %kiera['kiera.uno/null'].new   # same thing
 falsey. Any instance of `kiera.uno/true` is always truthy. Any instance of `kiera.uno/false`
 is always falsey. Subclassing or adding methods cannot change this.
 
-### Null Flavors
+<a id="null-flavors"></a>
+### 6.8 Null Flavors
 
 The most compelling use case for subclassing `kiera.uno/null` is null flavors — a concept
 from HL7, the healthcare data standard. In HL7, null values carry a reason: "unknown",
@@ -505,7 +534,8 @@ end
 The same subclassing pattern applies to `kiera.uno/true` and `kiera.uno/false`, though
 null flavors are the primary use case.
 
-### Operators
+<a id="operators"></a>
+### 6.9 Operators
 
 The following operators are methods that any class can implement:
 
@@ -515,7 +545,8 @@ The following operators are methods that any class can implement:
 
 `1 + 2` is equivalent to `1.+(2)`. Classes can override these for custom types.
 
-### Boolean Operators
+<a id="boolean-operators"></a>
+### 6.10 Boolean Operators
 
 `and`, `or`, and `not` are core bwcs implemented in Lua. They use short-circuit evaluation
 and cannot be overridden. Symbol shortcuts:
@@ -526,7 +557,8 @@ and cannot be overridden. Symbol shortcuts:
 | `or` | `\|\|` |
 | `not` | `!` |
 
-### Core bwcs
+<a id="core-bwcs"></a>
+### 6.11 Core bwcs
 
 The following bwcs are implemented in Lua and cannot be overridden:
 
@@ -547,13 +579,15 @@ not as standalone statements. The lexer/parser recognizes them as
 keywords; the loop runner consumes them. Outside a loop body their
 appearance is a parse error.
 
-### `self`
+<a id="self"></a>
+### 6.12 `self`
 
 `self` is a bwc shortcut for `%self`, which returns the current object instance.
 
 ---
 
-## Variables
+<a id="variables"></a>
+## 7 Variables
 
 ```
 vibecode: {
@@ -575,7 +609,8 @@ around other use cases in the future.
 
 ---
 
-## Exceptions and Warnings
+<a id="exceptions-and-warnings"></a>
+## 8 Exceptions and Warnings
 
 ```
 vibecode: {
@@ -610,7 +645,8 @@ either or both properties. The word "exception" is doing double duty here as
 the umbrella *and* the default-behavior class; in practice no one talks about
 the umbrella, so the ambiguity stays out of the way.
 
-### Shared shape
+<a id="shared-shape"></a>
+### 8.1 Shared shape
 
 Every flag is a Charlie object with:
 
@@ -635,7 +671,8 @@ end
 This matches the universal Charlie object model (class stack + bucket). Exceptions,
 errors, and warnings are regular objects following that model — no special accessors.
 
-### The two top-level classes
+<a id="the-two-top-level-classes"></a>
+### 8.2 The two top-level classes
 
 | Class | Propagation |
 |---|---|
@@ -661,7 +698,8 @@ Subclasses override one or both properties as needed:
   it into a user-facing `error/timeout` (see
   [Timeouts](#timeouts)).
 
-### Error vs exception
+<a id="error-vs-exception"></a>
+### 8.3 Error vs exception
 
 `kiera.uno/error` is a **semantic marker**, not a behavioral
 distinction. Both `exception` and `error` carry stack traces, both unwind,
@@ -698,7 +736,8 @@ to the same hash; serialization for the wire format used by
 [versioning.md](versioning.md) follows the same shape (with field
 trimming as the doc describes).
 
-### Raising standard flags
+<a id="raising-standard-flags"></a>
+### 8.4 Raising standard flags
 
 Each of the standard flag classes has a shortcut method on `%chain`. All take an
 id and a bucket; the class is implied by the method:
@@ -735,7 +774,8 @@ Why these live on `%chain`: raising any flag is a chain-flow event — exception
 unwind the chain, warnings travel up it, aborts terminate it. The chain owns the
 flow-control surface.
 
-### Raising custom flags
+<a id="raising-custom-flags"></a>
+### 8.5 Raising custom flags
 
 For custom flag classes (a specific exception subclass, a Sinatra redirect, a
 custom warning, etc.), use the standard object-instantiation pattern:
@@ -757,7 +797,8 @@ call `.raise`.
 This pattern is uniform with how every other object is created in Charlie: `.new`,
 configure, use. Nothing special.
 
-### Class hierarchy
+<a id="class-hierarchy"></a>
+### 8.6 Class hierarchy
 
 ```
 kiera.uno/warning
@@ -802,7 +843,8 @@ Custom flag classes can extend any concrete class — `foo.com/error/network`,
 `foo.com/warning/validation`, etc. A custom class inherits its parent's
 profile unless it overrides.
 
-### `return`, `exit`, `abort`
+<a id="return-exit-abort"></a>
+### 8.7 `return`, `exit`, `abort`
 
 These are Charlie flow primitives:
 
@@ -851,7 +893,8 @@ it; roles the engine launches with restricted surfaces may not.
 This means code running under a role without abort capability can only
 abort itself, not the process that contains it.
 
-### Catching exceptions
+<a id="catching-exceptions"></a>
+### 8.8 Catching exceptions
 
 `catch()` matches **user-territory exceptions** — classes whose `catcher`
 property is "user." That's `kiera.uno/exception`, `kiera.uno/error`,
@@ -917,7 +960,8 @@ If an exception doesn't match any class given to `catch()`, it continues
 unwinding up the stack until something does match (or nothing does and it
 propagates to the engine top).
 
-### Heeding warnings
+<a id="heeding-warnings"></a>
+### 8.9 Heeding warnings
 
 `heed()` matches **non-unwinding events** — warnings:
 
@@ -954,14 +998,16 @@ $warning.warn         # short form, on the warning object
 %chain.warn $warning  # equivalent — pass the object instead of (id, bucket)
 ```
 
-### Auto-recording into Jasmine
+<a id="auto-recording-into-jasmine"></a>
+### 8.10 Auto-recording into Jasmine
 
 Anything that propagates *out of* a `.entry do` block — error, exception, or
 warning that wasn't heeded — is **automatically recorded into the entry** before
 the entry flushes. Errors include their stack trace; plain exceptions don't.
 See [jasmine.md § Automatic exception recording](jasmine/jasmine.md#automatic-exception-recording).
 
-### Cleanup with `begin` / `ensure`
+<a id="cleanup-with-begin-ensure"></a>
+### 8.11 Cleanup with `begin` / `ensure`
 
 The `begin` bwc creates a scoped variable region. Variables declared inside the
 begin block aren't visible outside it:
@@ -1035,7 +1081,8 @@ familiarity argument carried the day.
 
 ---
 
-## Structured Non-Local Control Flow
+<a id="structured-non-local-control-flow"></a>
+## 9 Structured Non-Local Control Flow
 
 ```
 vibecode: {
@@ -1069,7 +1116,8 @@ user-facing surface — next, return, raise, catch, ensure, `as`
 to name the underlying mechanism so implementations don't grow N
 parallel control-flow machineries.
 
-### The exception family, extended
+<a id="the-exception-family-extended"></a>
+### 9.1 The exception family, extended
 
 The [exception class hierarchy](#exceptions-and-warnings-romulan-senator)
 already covers function returns and exits as exception subclasses
@@ -1115,7 +1163,8 @@ Names may rearrange when the spec gets a unifying pass; what matters at
 the architecture level is that they are declared subclasses of
 `kiera.uno/exception` and participate in the same machinery.
 
-### Handler registration via `as`
+<a id="handler-registration-via-as"></a>
+### 9.2 Handler registration via `as`
 
 `as $name` is the **handler-registration syntax**. When a construct
 opens a block with `as`, the runtime registers a handler on its
@@ -1138,7 +1187,8 @@ A bare `return` does **not** target intermediate `as $if` / `as $loop`
 handlers — it unwinds straight through them to the function's
 handler.
 
-### Target matching
+<a id="target-matching"></a>
+### 9.3 Target matching
 
 A control value carries a `target` field — the id of the handler
 it's meant for. The unwinder walks the handler stack from innermost
@@ -1170,7 +1220,8 @@ handler doesn't match (its id is `$loop_b.id`), so the control
 re-propagates. The outer loop's handler matches; the outer loop
 exits.
 
-### `ensure` blocks
+<a id="ensure-blocks"></a>
+### 9.4 `ensure` blocks
 
 `ensure` blocks register **pass-through** handlers: they run on any
 control that crosses them, then re-propagate the original control.
@@ -1183,7 +1234,8 @@ The only exception is `abort` (engine-fatal) — its
 intentional asymmetry that keeps untrusted code from using `ensure`
 to delay an engine kill.
 
-### Stale handlers
+<a id="stale-handlers"></a>
+### 9.5 Stale handlers
 
 A loop object (or any `as $name` block object) captured in a closure
 and called after its construct has exited is **stale** — its handler
@@ -1205,7 +1257,8 @@ The stale-handler raise is a normal catchable error (default
 `catcher=user`, `unwinds=yes`), so user code can decide what to do
 with it.
 
-### Cross-role boundaries — open
+<a id="cross-role-boundaries-open"></a>
+### 9.6 Cross-role boundaries — open
 
 ```
 vibecode: {
@@ -1241,7 +1294,8 @@ Worth settling when the role-boundary mechanics in roles.md get
 their next pass. The implementation can keep the choice in one
 place (the unwinder's boundary check) once it's made.
 
-### What this buys the implementation
+<a id="what-this-buys-the-implementation"></a>
+### 9.7 What this buys the implementation
 
 ```
 vibecode: {
@@ -1275,7 +1329,8 @@ absorbs control then becomes a thin layer over the same primitive.
 
 ---
 
-## Conditional Constructs Share One Primitive
+<a id="conditional-constructs-share-one-primitive"></a>
+## 10 Conditional Constructs Share One Primitive
 
 ```
 vibecode: {
@@ -1302,7 +1357,8 @@ truthiness, and decide what to do with the body. They differ only in
 A single shared primitive handles the inner mechanic; `if` and
 `while` differ only in how they orchestrate calls to it.
 
-### The shared primitive
+<a id="the-shared-primitive"></a>
+### 10.1 The shared primitive
 
 ```
 function cond_run_once(cond_expr, body)
@@ -1318,7 +1374,8 @@ end
 one body, report whether it matched. Both `if` and `while` are built
 on top.
 
-### `if` as one shape
+<a id="if-as-one-shape"></a>
+### 10.2 `if` as one shape
 
 `if` calls `cond_run_once` sequentially against each branch's
 condition, stopping at the first match. If no branch matches and an
@@ -1338,7 +1395,8 @@ end
 `branches` is the list of `if`/`elsif` clauses; each has a `cond`
 and `body`.
 
-### `while` as another shape
+<a id="while-as-another-shape"></a>
+### 10.3 `while` as another shape
 
 `while` calls `cond_run_once` repeatedly until it returns false. The
 body lives inside `cond_run_once`'s `execute_body` call, so it runs
@@ -1357,7 +1415,8 @@ The empty Lua `while`-body is intentional: `cond_run_once` handles
 both the test and the action; the loop wrapper just calls it until
 it reports done.
 
-### What this buys the implementation
+<a id="what-this-buys-the-implementation-1"></a>
+### 10.4 What this buys the implementation
 
 ```
 vibecode: {
@@ -1384,7 +1443,8 @@ orchestration logic. Condition evaluation, body execution, control
 flow, handler registration, role transitions on cross-boundary
 calls — all shared.
 
-### Extensibility
+<a id="extensibility"></a>
+### 10.5 Extensibility
 
 The same primitive lines up for several construct shapes that may
 or may not land in Charlie:
@@ -1405,7 +1465,8 @@ these; it just naturally accommodates them because the core
 insight — "evaluate one condition, optionally run one body, report
 the outcome" — is the same shape.
 
-### What this does NOT cover
+<a id="what-this-does-not-cover"></a>
+### 10.6 What this does NOT cover
 
 `.each` and the numeric iteration helpers (`.times`, `.upto`,
 `.downto`) are **not** built on `cond_run_once`. They have no
@@ -1421,7 +1482,8 @@ mechanism but not the **condition-evaluation** mechanism.
 
 ---
 
-## Block Parameter Binding
+<a id="block-parameter-binding"></a>
+## 11 Block Parameter Binding
 
 ```
 vibecode: {
@@ -1440,7 +1502,8 @@ the argument list and populate the new scope. The mechanic is one
 primitive; the constructs differ only in where their params and
 args come from.
 
-### The shared primitive
+<a id="the-shared-primitive-1"></a>
+### 11.1 The shared primitive
 
 ```
 function bind_params(param_specs, arg_values, scope)
@@ -1458,7 +1521,8 @@ value list, populate the target scope. Default values, missing-arg
 errors, type checks (if any), and variadic handling all live here
 — in one place — instead of in every construct that takes a block.
 
-### Constructs
+<a id="constructs"></a>
+### 11.2 Constructs
 
 | Construct | What it binds |
 |---|---|
@@ -1473,7 +1537,8 @@ errors, type checks (if any), and variadic handling all live here
 "argument" is the construct's runtime object (loop, if-block, etc.)
 that the runtime creates before invoking the block.
 
-### What this buys the implementation
+<a id="what-this-buys-the-implementation-2"></a>
+### 11.3 What this buys the implementation
 
 - **One parameter-binding path.** Default values, missing-arg
   errors, type messages all live in one place; updating any of
@@ -1486,7 +1551,8 @@ that the runtime creates before invoking the block.
   behind the same primitive — that doc describes the surface;
   `bind_params` is the runtime implementation.
 
-### Open
+<a id="open"></a>
+### 11.4 Open
 
 - **Two parameter spec docs exist** — `parameters.md` and `params.md`.
   These cover overlapping ground (one focuses on metadata and lazy
@@ -1499,7 +1565,8 @@ that the runtime creates before invoking the block.
 
 ---
 
-## Unified Name Resolution
+<a id="unified-name-resolution"></a>
+## 12 Unified Name Resolution
 
 ```
 vibecode: {
@@ -1519,7 +1586,8 @@ namespace (or a chain of namespaces tried in order), return the
 value or null. The sigil determines which namespace chain to
 consult; the lookup mechanism itself is one function.
 
-### The shared primitive
+<a id="the-shared-primitive-2"></a>
+### 12.1 The shared primitive
 
 ```
 function lookup(name, namespace_chain)
@@ -1536,7 +1604,8 @@ end
 first hit wins. Cross-namespace fallback (lexical scope walking, MRO
 for method dispatch) is just a longer chain.
 
-### Constructs
+<a id="constructs-1"></a>
+### 12.2 Constructs
 
 | Reference shape | Namespace chain |
 |---|---|
@@ -1548,7 +1617,8 @@ for method dispatch) is just a longer chain.
 | `$obj.foo` (method dispatch) | `obj`'s class's methods, then the class hierarchy walked outward |
 | bucket key access | a single bucket (no chain) |
 
-### What this buys the implementation
+<a id="what-this-buys-the-implementation-3"></a>
+### 12.3 What this buys the implementation
 
 - **One name-resolution path.** Sigil parsing produces a namespace
   chain; the chain goes into `lookup`; the value (or null) comes
@@ -1562,7 +1632,8 @@ for method dispatch) is just a longer chain.
   separate "resolve method on this class" logic, method dispatch is
   `lookup(method_name, class_method_chain)`.
 
-### Open
+<a id="open-1"></a>
+### 12.4 Open
 
 - **Whether `lookup` is exposed to user code or kept internal.** A
   user-facing `%kiera.lookup` (or similar) might be useful for
@@ -1574,7 +1645,8 @@ for method dispatch) is just a longer chain.
 
 ---
 
-## Typed Structured Events
+<a id="typed-structured-events"></a>
+## 13 Typed Structured Events
 
 ```
 vibecode: {
@@ -1604,7 +1676,8 @@ involve a unifying pass through several docs to align terminology
 and emission paths. Filed as an architecture direction rather than
 an immediate-action item.
 
-### The shared shape
+<a id="the-shared-shape"></a>
+### 13.1 The shared shape
 
 Every event is `{class, id, bucket}` plus the same emission path
 through `%chain` (or its equivalent). Already true today for
@@ -1612,7 +1685,8 @@ exceptions and warnings per
 [Exceptions and Warnings](#exceptions-and-warnings-romulan-senator);
 extends to change signals and log entries with no schema change.
 
-### Behaviors
+<a id="behaviors"></a>
+### 13.2 Behaviors
 
 | Behavior | What the runtime does | Used by |
 |---|---|---|
@@ -1627,7 +1701,8 @@ something with `behavior=unwinding`; `%chain.warn` raises something
 with `behavior=heedable`; the engine emits change signals with
 `behavior=signal`; Jasmine entries are `behavior=log`.
 
-### The shared primitive
+<a id="the-shared-primitive-3"></a>
+### 13.3 The shared primitive
 
 ```
 function emit_event(event)
@@ -1644,7 +1719,8 @@ end
 One emission function; the runtime path is selected from the
 event's class metadata, not from which `%chain.X` method was called.
 
-### What this buys the implementation
+<a id="what-this-buys-the-implementation-4"></a>
+### 13.4 What this buys the implementation
 
 - **One emission path.** No separate functions for raising vs.
   warning vs. signaling vs. logging.
@@ -1656,7 +1732,8 @@ event's class metadata, not from which `%chain.X` method was called.
 - **Adding a new event kind = adding a new behavior.** No new
   emission machinery, no new dispatch path.
 
-### Open
+<a id="open-2"></a>
+### 13.5 Open
 
 ```
 vibecode: {
@@ -1688,7 +1765,8 @@ vibecode: {
 
 ---
 
-## Object Model
+<a id="object-model"></a>
+## 14 Object Model
 
 ```
 vibecode: {
@@ -1703,7 +1781,8 @@ vibecode: {
 }
 ```
 
-### Two-Property Objects
+<a id="two-property-objects"></a>
+### 14.1 Two-Property Objects
 
 Every object has exactly two fundamental properties:
 
@@ -1714,7 +1793,8 @@ Everything else — methods, accessors, helpers — is behavior layered on top o
 primitives. This maps directly to how mikobase records work: class + bucket. The mental
 model is consistent across the language and the object store.
 
-### `%bucket`
+<a id="bucket"></a>
+### 14.2 `%bucket`
 
 `%bucket` is a system method that returns the object's private data hash. All instance
 data lives here.
@@ -1771,7 +1851,8 @@ classes leave `uns` alone.
 This is a convention, not enforcement. The runtime treats the bucket as a flat
 hash; `uns` is just a reserved key by community agreement.
 
-### The Class Stack
+<a id="the-class-stack"></a>
+### 14.3 The Class Stack
 
 Method calls are resolved top-down through the class stack:
 
@@ -1806,7 +1887,8 @@ class 'color'
 end
 ```
 
-### The `object` Helper
+<a id="the-object-helper"></a>
+### 14.4 The `object` Helper
 
 Every object has a reserved helper called `object` that cannot be overridden. It exposes
 meta information about the object:
@@ -1833,7 +1915,8 @@ The trailing `?` is the Charlie convention for predicate methods (boolean-return
 
 More meta information will be added as needed.
 
-### Explicit Class Dispatch
+<a id="explicit-class-dispatch"></a>
+### 14.5 Explicit Class Dispatch
 
 To call a method from a specific class in the stack, use `object.call_with`. The class
 must be present in the object's class stack:
@@ -1847,7 +1930,8 @@ This is a rare use case — normal method resolution handles the common case.
 
 ---
 
-## Garbage Collection
+<a id="garbage-collection"></a>
+## 15 Garbage Collection
 
 ```
 vibecode: {
@@ -1859,7 +1943,8 @@ vibecode: {
 }
 ```
 
-### Perfect garbage collection
+<a id="perfect-garbage-collection"></a>
+### 15.1 Perfect garbage collection
 
 Charlie uses what might be called perfect garbage collection: when an object becomes
 unreachable, the runtime immediately collects it and calls a standard cleanup method on
@@ -1869,7 +1954,8 @@ happens at a known, deterministic moment.
 No weak references are needed. No special lifetime annotations. No manual memory
 management.
 
-### How it works
+<a id="how-it-works"></a>
+### 15.2 How it works
 
 Objects live in object space. They do not know what references them — they simply exist
 until nothing holds them.
@@ -1882,7 +1968,8 @@ Because this is a root trace rather than reference counting, cycles are handled
 automatically. Two objects that reference each other but are held by nothing else are
 both unreachable from roots — both are collected.
 
-### `$foo.object.close`
+<a id="fooobjectclose"></a>
+### 15.3 `$foo.object.close`
 
 `close` is a standard method defined on every object. The runtime calls it when the
 object is collected. User code cannot call it directly — it can only be invoked by the
@@ -1899,14 +1986,16 @@ class 'myapp.com/connection'
 end
 ```
 
-### The rule
+<a id="the-rule"></a>
+### 15.4 The rule
 
 Objects die when they become unreachable from roots. That's the whole model — one rule
 covers every object in the system.
 
 ---
 
-## Helpers
+<a id="helpers"></a>
+## 16 Helpers
 
 ```
 vibecode: {
@@ -1925,7 +2014,8 @@ without polluting the main method namespace of an object.
 The base helper class defines a single field: `@reference`, which points back to the
 parent object. Inside a helper method, `self.reference` accesses the parent.
 
-### Defining a helper
+<a id="defining-a-helper"></a>
+### 16.1 Defining a helper
 
 The `helper` bwc inside a class definition creates a lazily initialized helper:
 
@@ -1954,7 +2044,8 @@ end
 
 The helper is not created until first accessed.
 
-### `object` as a Reserved Helper
+<a id="object-as-a-reserved-helper"></a>
+### 16.2 `object` as a Reserved Helper
 
 `object` is a built-in helper present on every object. It cannot be overridden. It is
 the home for primitive introspection operations that are rarely needed day-to-day,
@@ -1962,7 +2053,8 @@ keeping them out of the main method namespace.
 
 ---
 
-## Classes
+<a id="classes"></a>
+## 17 Classes
 
 ```
 vibecode: {
@@ -1983,7 +2075,8 @@ Classes are objects. Like functions, they live wherever they are stored. There i
 class registry and no namespacing system like `Foo::Bar`. A class's identity comes from the
 reference held to it, not from a declared name. To use a class, you need a reference to it.
 
-### `%kiera`
+<a id="kiera"></a>
+### 17.1 `%kiera`
 
 `%kiera` is a system method that provides access to the global Kiera object namespace.
 `%kiera[UNS]` returns the object registered at that UNS address — which may be a class,
@@ -2000,13 +2093,15 @@ and how remote objects can be retrieved via `%kiera` is a Kiera design question 
 Class definition syntax is a DSL — it uses the same dispatcher/bwc mechanism as any
 other DSL. There are no special parser rules for class definitions.
 
-### Instantiation
+<a id="instantiation"></a>
+### 17.2 Instantiation
 
 ```
 $my_class.new(...)
 ```
 
-### Defining a class
+<a id="defining-a-class"></a>
+### 17.3 Defining a class
 
 The standard form:
 
@@ -2022,7 +2117,8 @@ $myclass = %kiera['kiera.uno/object'].subclass do
 end
 ```
 
-### Subclassing
+<a id="subclassing"></a>
+### 17.4 Subclassing
 
 ```
 $new_class = $my_class.subclass do
@@ -2031,7 +2127,8 @@ end
 
 Subclassing is always a method call on the parent class object.
 
-### Properties
+<a id="properties"></a>
+### 17.5 Properties
 
 Properties are private instance variables declared with `property`. They are not
 accessible from outside the class unless accessors are declared.
@@ -2050,7 +2147,8 @@ properties are just typed sugar over bucket access.
 
 A `default:` option is reserved for a future revision; not in v1.
 
-### Abstract Classes
+<a id="abstract-classes"></a>
+### 17.6 Abstract Classes
 
 A class declared `abstract true` cannot be directly instantiated. It must be subclassed.
 Attempting to call `.new` on an abstract class raises an exception.
@@ -2061,7 +2159,8 @@ $myclass = class
 end
 ```
 
-### Initializer
+<a id="initializer"></a>
+### 17.7 Initializer
 
 `init` is the method called when a new instance is created. It is defined using
 `function &init(...)` inside the class block:
@@ -2073,7 +2172,8 @@ function &init($name, $birthdate)
 end
 ```
 
-### Methods
+<a id="methods"></a>
+### 17.8 Methods
 
 Methods are defined inside the class block using `function &name(...)`:
 
@@ -2083,7 +2183,8 @@ function &greet()
 end
 ```
 
-### Full Example
+<a id="full-example"></a>
+### 17.9 Full Example
 
 ```
 $person = class
@@ -2107,7 +2208,8 @@ $p = $person.new(name: 'Jean-Luc', birthdate: '2305-07-13')
 $p.greet   # "Hello, I am Jean-Luc"
 ```
 
-### Subclass Example
+<a id="subclass-example"></a>
+### 17.10 Subclass Example
 
 ```
 $officer = $person.subclass do
@@ -2125,7 +2227,8 @@ end
 
 ---
 
-## Functions
+<a id="functions"></a>
+## 18 Functions
 
 ```
 vibecode: {
@@ -2150,7 +2253,8 @@ objects. In Charlie, all functions are already objects.
 
 See `charlie.md` for function definition and call syntax.
 
-### Blocks and Yielding
+<a id="blocks-and-yielding"></a>
+### 18.1 Blocks and Yielding
 
 A `do...end` block passed to a function call is a closure. Multiple blocks can be chained.
 Inside the function, `%call.blocks` is an array of the passed blocks in order.
@@ -2201,7 +2305,8 @@ block 0.
 
 If you want named blocks, pass functions as named parameters instead.
 
-### Bare Word Commands
+<a id="bare-word-commands"></a>
+### 18.2 Bare Word Commands
 
 A bare word command (bwc) is an unqualified word used as a method call. When the
 interpreter encounters a bwc, it looks in `%scope` to find the correct association.
@@ -2214,7 +2319,8 @@ Resolution order:
    so DSL mappings can override scope variables.
 3. **Scope variables** — the normal lexical scope.
 
-### DSL Receivers
+<a id="dsl-receivers"></a>
+### 18.3 DSL Receivers
 
 The dispatcher object has a `dsl` hash. Entries map bare words inside the yielded block
 to objects — a bwc resolves to a method call on the mapped object.
@@ -2242,7 +2348,8 @@ yielded block — any nested function calls or blocks inside that block run with
 
 ---
 
-## Scoping
+<a id="scoping"></a>
+## 19 Scoping
 
 ```
 vibecode: {
@@ -2263,7 +2370,8 @@ is no special closure type — any function becomes a closure when passed a scop
 
 ---
 
-## System Methods
+<a id="system-methods"></a>
+## 20 System Methods
 
 ```
 vibecode: {
@@ -2287,7 +2395,8 @@ different scopes may return different objects.
 System methods are defined only by the engine at boot time. User code cannot create new
 `%`-prefixed methods.
 
-### `%chain`
+<a id="chain"></a>
+### 20.1 `%chain`
 
 > **Use `%chain` sparingly.** It is ambient state that is invisible in function signatures
 > and can carry security-sensitive information. Prefer explicit arguments when possible.
@@ -2300,7 +2409,8 @@ requiring it to be threaded through every function signature.
 `%chain` has two main components: `misc` for arbitrary values, and `stack` for the
 call stack.
 
-#### Block vs function isolation
+<a id="block-vs-function-isolation"></a>
+#### 20.1.1 Block vs function isolation
 
 `%chain` does **not** isolate at block boundaries. A write to `%chain['foo']` inside an
 `if`, loop, or bare block persists after the block ends — chain flows freely through
@@ -2332,7 +2442,8 @@ asymmetry: incoming data needs role labeling (so the object travels explicitly w
 role), while outgoing handles can be ambient (writes don't carry a role label, so the
 chain-replacement pattern works cleanly).
 
-#### Misc values
+<a id="misc-values"></a>
+#### 20.1.2 Misc values
 
 ```
 %chain.misc['foo'] = 'bar'
@@ -2341,7 +2452,8 @@ chain-replacement pattern works cleanly).
 
 `%chain['foo']` is shorthand for `%chain.misc['foo']`.
 
-#### Sandboxing
+<a id="sandboxing"></a>
+#### 20.1.3 Sandboxing
 
 Each component can be cleared within a block, hiding it from code running inside:
 
@@ -2365,7 +2477,8 @@ end
 After each block, the original values are restored. `%chain.clear()` will clear all
 components, including any added in future.
 
-#### Explicit scope block
+<a id="explicit-scope-block"></a>
+#### 20.1.4 Explicit scope block
 
 `%chain.scope do...end` creates an explicit scope boundary:
 
@@ -2381,7 +2494,8 @@ end
 %chain['foo']       # 'bar'
 ```
 
-#### Clean scope
+<a id="clean-scope"></a>
+#### 20.1.5 Clean scope
 
 `%chain.scope(inherit:false)` starts with an empty chain, inheriting nothing:
 
@@ -2397,7 +2511,8 @@ end
 
 ---
 
-### `%engine`
+<a id="engine"></a>
+### 20.2 `%engine`
 
 `%engine` is a method that returns the engine object — the gateway through which the
 top-level script accesses resources provided by the host (capabilities, configuration,
@@ -2437,7 +2552,8 @@ out what it needs, then passes those resources down to functions explicitly as p
 Closures defined at the top level can reference `%engine` directly if useful — their
 auto-capture lets them. Functions need things passed explicitly.
 
-### Function and closure opacity
+<a id="function-and-closure-opacity"></a>
+### 20.3 Function and closure opacity
 
 **Once a function or closure is defined, it exposes nothing about its internals to its
 caller.** This is a general default that applies to every callable in the language. A
@@ -2479,7 +2595,8 @@ Not in v1; flagged if a real debugging story needs it.
 
 ---
 
-### `%call`
+<a id="call"></a>
+### 20.4 `%call`
 
 `%call` returns the call object for the current function or closure. Inside a closure,
 `%call` refers to the closure call. Inside a function, it refers to the function call.
@@ -2504,7 +2621,8 @@ end
 
 `%call.blocks` is an array of `do...end` blocks passed to the current function, in order.
 
-### Caller Objects
+<a id="caller-objects"></a>
+### 20.5 Caller Objects
 
 `$foo.caller` returns a caller object — a reusable, configurable pending call to `$foo`.
 Parameters are set as properties, blocks are attached with `do`, and the call is executed
@@ -2523,13 +2641,15 @@ Caller objects are first-class — they can be passed around, further configured
 executed by whoever holds them. Setting a param before passing restricts what the receiver
 needs to supply.
 
-#### Setting params
+<a id="setting-params"></a>
+#### 20.5.1 Setting params
 
 ```
 $caller.gup = 'bear'
 ```
 
-#### Attaching blocks
+<a id="attaching-blocks"></a>
+#### 20.5.2 Attaching blocks
 
 Official form:
 
@@ -2548,7 +2668,8 @@ end
 Multiple anonymous blocks are available via `$caller.blocks`, which is an array. For
 anything beyond simple cases, use named params instead.
 
-#### Executing
+<a id="executing"></a>
+#### 20.5.3 Executing
 
 ```
 $caller.call
@@ -2558,7 +2679,8 @@ Locking and freezing a caller before passing it around is deferred for later des
 
 ---
 
-### The `&` Method
+<a id="the-method"></a>
+### 20.6 The `&` Method
 
 Any class can define a `&` method to make its instances invokable with the `&` sigil.
 `&` means "do the main thing on this object."
@@ -2577,7 +2699,8 @@ syntax is designed.
 
 ---
 
-## Jail
+<a id="jail"></a>
+## 21 Jail
 
 ```
 vibecode: {
@@ -2600,7 +2723,8 @@ that explicitly inspects the call stack can see it.
 Jail fits naturally with the object-capability security model: pass a jail instead of the
 full object when the recipient only needs a subset of its capabilities.
 
-### Internal structure
+<a id="internal-structure"></a>
+### 21.1 Internal structure
 
 A jail stores the wrapped object in `%bucket`:
 
@@ -2611,7 +2735,8 @@ A jail stores the wrapped object in `%bucket`:
 
 External code cannot reach `@prisoner` directly through the jail — that is the point.
 
-### Creating a jail
+<a id="creating-a-jail"></a>
+### 21.2 Creating a jail
 
 ```
 $jail = $foo.object.jail(:greet, :save)
@@ -2629,7 +2754,8 @@ $bar = $foo.object.jail(:call)
 
 ---
 
-## Freezing
+<a id="freezing"></a>
+## 22 Freezing
 
 ```
 vibecode: {
@@ -2648,7 +2774,8 @@ vibecode: {
 Freezing locks an object against modification. Charlie breaks this into two independent
 axes — the class stack and bucket — rather than conflating them into a single freeze.
 
-### The three freeze operations
+<a id="the-three-freeze-operations"></a>
+### 22.1 The three freeze operations
 
 ```
 $foo.object.freeze          # freeze both classes and bucket
@@ -2659,7 +2786,8 @@ $foo.object.bucket.freeze  # freeze %bucket only
 Any of these can be called by whoever holds a reference to the object — freezing is not
 restricted to the object itself.
 
-### Permanent vs. temporary
+<a id="permanent-vs-temporary"></a>
+### 22.2 Permanent vs. temporary
 
 Without a block, a freeze is permanent. There is no `unfreeze` method. Once frozen, that
 axis stays frozen for the lifetime of the object.
@@ -2681,7 +2809,8 @@ $foo.object.bucket.freeze do
 end
 ```
 
-### What each freeze prevents
+<a id="what-each-freeze-prevents"></a>
+### 22.3 What each freeze prevents
 
 **Classes freeze** — the class stack cannot be modified. No classes can be added or
 removed, and `object.define` is blocked. The methods the object has
@@ -2690,7 +2819,8 @@ at freeze time are the methods it will always have.
 **Bucket freeze** — `%bucket` becomes read-only. Any attempt to write to `@foo` or
 otherwise modify the bucket hash raises an error.
 
-### `$foo.object.bucket`
+<a id="fooobjectbucket"></a>
+### 22.4 `$foo.object.bucket`
 
 `$foo.object.bucket` returns a jail wrapping `%bucket` with only `:freeze` permitted.
 It gives external code the ability to freeze the object's bucket without exposing
@@ -2703,7 +2833,8 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 
 ---
 
-## Change Signals
+<a id="change-signals"></a>
+## 23 Change Signals
 
 ```
 vibecode: {
@@ -2719,7 +2850,8 @@ vibecode: {
 }
 ```
 
-### What a change is
+<a id="what-a-change-is"></a>
+### 23.1 What a change is
 
 A change is a hash key being assigned a new object:
 
@@ -2731,7 +2863,8 @@ Scalars do not change. Assigning `2` where `1` was does not change the number `1
 replaces a reference. Only hashes produce change events, because only hashes hold
 references that can be reassigned.
 
-### Listening to field changes
+<a id="listening-to-field-changes"></a>
+### 23.2 Listening to field changes
 
 ```
 $foo.object.listen field: 'bar', :on_change do($change)
@@ -2747,7 +2880,8 @@ $change.old_value  # the previous object
 $change.new_value  # the newly assigned object
 ```
 
-### Signal propagation
+<a id="signal-propagation"></a>
+### 23.3 Signal propagation
 
 When a hash key is reassigned, the signal propagates automatically up through every
 object that holds the changed object. Given:
@@ -2764,7 +2898,8 @@ $foo['bar']['gup']['baz']['bear'] = 1
 Each object in the chain automatically re-signals its own listeners when it hears a
 signal from an object it holds.
 
-### The signal stack
+<a id="the-signal-stack"></a>
+### 23.4 The signal stack
 
 Signals are processed through a central stack, one at a time, in order. In Charlie's
 single-threaded execution model, there is always either zero or one signal being
@@ -2787,7 +2922,8 @@ to a log, update a counter. They do not reassign hash keys, so they generate no 
 signals. Cycles only arise when a listener reassigns a hash key, which is the unusual
 case.
 
-### Underlying hot records
+<a id="underlying-hot-records"></a>
+### 23.5 Underlying hot records
 
 The change signal system is the mechanism that makes hot mikobase records work. When a hot
 connection returns a record, the runtime automatically registers listeners up the

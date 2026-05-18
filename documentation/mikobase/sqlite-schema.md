@@ -1,6 +1,7 @@
 # SQLite Schema
 
-## `records`
+<a id="records"></a>
+## 1 `records`
 
 vibecode: {
 	"section": "records_table",
@@ -27,7 +28,8 @@ begin
 end;
 ```
 
-## `records_history`
+<a id="records_history"></a>
+## 2 `records_history`
 
 vibecode: {
 	"section": "records_history_table",
@@ -79,7 +81,8 @@ begin
 end;
 ```
 
-## Views
+<a id="views"></a>
+## 3 Views
 
 vibecode: {
 	"section": "views",
@@ -114,7 +117,8 @@ where row_num = 1
 and active = 1;
 ```
 
-## `files`
+<a id="files"></a>
+## 4 `files`
 
 vibecode: {
 	"section": "files_table",
@@ -144,7 +148,8 @@ begin
 end;
 ```
 
-## `file_chunks`
+<a id="file_chunks"></a>
+## 5 `file_chunks`
 
 vibecode: {
 	"section": "file_chunks_table",
@@ -174,7 +179,8 @@ begin
 end;
 ```
 
-## Notes
+<a id="notes"></a>
+## 6 Notes
 
 vibecode: {
 	"section": "notes",

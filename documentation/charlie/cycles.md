@@ -1,6 +1,7 @@
 # Cycles
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -24,7 +25,8 @@ than the hardware level.
 
 ---
 
-## Syntax
+<a id="syntax"></a>
+## 2 Syntax
 
 ```
 vibecode: {
@@ -53,7 +55,8 @@ The `#cycles` block returns a cycles object with two fields:
 
 ---
 
-## Nested Cycles
+<a id="nested-cycles"></a>
+## 3 Nested Cycles
 
 ```
 vibecode: {
@@ -88,7 +91,8 @@ call increments all counters currently on the stack.
 
 ---
 
-## Counting Rules
+<a id="counting-rules"></a>
+## 4 Counting Rules
 
 ```
 vibecode: {
@@ -115,7 +119,8 @@ caching, or context switching.
 
 ---
 
-## Implementation Note
+<a id="implementation-note"></a>
+## 5 Implementation Note
 
 ```
 vibecode: {

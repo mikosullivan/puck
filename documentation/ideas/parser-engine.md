@@ -2,7 +2,8 @@
 
 **Status:** Filed as a forward direction. Not in v1.
 
-## Context
+<a id="context"></a>
+## 1 Context
 
 In v1, each parser is hand-rolled:
 
@@ -17,7 +18,8 @@ The hand-rolled approach keeps each parser purpose-built and
 small. Schemas (the Uma model) cover the "user-defined markup
 language" case without requiring grammar authoring.
 
-## When to revisit
+<a id="when-to-revisit"></a>
+## 2 When to revisit
 
 If we find ourselves accumulating hand-rolled parsers — say
 we add a few more parsers for new file formats, query
@@ -27,9 +29,11 @@ adds up. At some point a common parser engine pays for itself.
 Trigger to reconsider: **4 or 5 distinct hand-rolled parsers
 in the framework**, with the prospect of more.
 
-## Options if we revisit
+<a id="options-if-we-revisit"></a>
+## 3 Options if we revisit
 
-### Bundle LPeg
+<a id="bundle-lpeg"></a>
+### 3.1 Bundle LPeg
 
 - Roberto Ierusalimschy's PEG engine for Lua. Battle-tested,
   ~80–100 KB compiled, ~15 years of maintenance.
@@ -39,7 +43,8 @@ in the framework**, with the prospect of more.
   grammar errors might surface awkwardly across the Charlie/Lua
   boundary.
 
-### Roll our own PEG (or parser-combinator) engine in Charlie
+<a id="roll-our-own-peg-or-parser-combinator-engine-in-charlie"></a>
+### 3.2 Roll our own PEG (or parser-combinator) engine in Charlie
 
 - ~500–1500 lines of Charlie for a usable engine.
 - Pros: stays in our ecosystem; no native dependency; we
@@ -48,7 +53,8 @@ in the framework**, with the prospect of more.
 - Likely the right choice if we revisit — keeps the framework
   self-contained.
 
-### Parser combinators
+<a id="parser-combinators"></a>
+### 3.3 Parser combinators
 
 - Same effective result as PEG with a different API style.
 - Composable primitives (literal, alternation, sequence, etc.)
@@ -58,7 +64,8 @@ in the framework**, with the prospect of more.
 - Cons: parser-combinator engines can be slow for large inputs
   without aggressive optimization.
 
-## Constraint: don't displace the schema model
+<a id="constraint-dont-displace-the-schema-model"></a>
+## 4 Constraint: don't displace the schema model
 
 Whatever engine lands, **Uma's schema-driven approach stays
 the user-facing way to define tag-based markup languages.**
@@ -72,7 +79,8 @@ where a real grammar is appropriate (mini-languages, DSLs,
 custom query syntaxes) — that's a bonus. But the schema-as-
 config story stays the headline.
 
-## Status
+<a id="status"></a>
+## 5 Status
 
 Not committed. Revisit when we have 4–5 hand-rolled parsers and
 can see the curve bending.

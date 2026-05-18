@@ -2,7 +2,8 @@
 
 Not yet specified. A topic to refine in a future conversation.
 
-## The Question
+<a id="the-question"></a>
+## 1 The Question
 
 Different subsystems treat UNS names differently:
 
@@ -30,7 +31,8 @@ of these need a UNS and which don't. Worth pinning explicitly:
 - How does UNS interact with class equality, comparison, serialization,
   and reflection?
 
-## When to Revisit
+<a id="when-to-revisit"></a>
+## 2 When to Revisit
 
 When the next conversation surfaces a concrete case where the answer
 isn't obvious — or when the mikobase storage format, Charlie class

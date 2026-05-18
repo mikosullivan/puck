@@ -1,6 +1,7 @@
 # Charlie
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -35,7 +36,8 @@ community norm is: run your code through the formatter before complaining about 
 
 ---
 
-## Transpilation
+<a id="transpilation"></a>
+## 2 Transpilation
 
 ```
 vibecode: {
@@ -50,7 +52,8 @@ format.
 
 ---
 
-## Strings
+<a id="strings"></a>
+## 3 Strings
 
 ```
 vibecode: {
@@ -63,12 +66,14 @@ vibecode: {
 }
 ```
 
-### Default to single quotes
+<a id="default-to-single-quotes"></a>
+### 3.1 Default to single quotes
 
 Use single quotes unless interpolation is needed. All documentation examples follow this
 convention.
 
-### Single-quoted strings
+<a id="single-quoted-strings"></a>
+### 3.2 Single-quoted strings
 
 Not interpolated. What you write is what you get:
 
@@ -76,7 +81,8 @@ Not interpolated. What you write is what you get:
 'hello world'
 ```
 
-### Colon shorthand
+<a id="colon-shorthand"></a>
+### 3.3 Colon shorthand
 
 `:foo` is shorthand for `'foo'`. No symbol type — just a convenient way to write short
 strings:
@@ -86,7 +92,8 @@ strings:
 :get     # same as 'get'
 ```
 
-### Bare word keys
+<a id="bare-word-keys"></a>
+### 3.4 Bare word keys
 
 Bare words used as hash keys or keyword argument names are also strings. All three forms
 are identical:
@@ -106,7 +113,8 @@ The same applies to keyword arguments in function calls:
 Hash keys must be strings. Numbers, booleans, objects, and all other types are invalid as
 hash keys — using one is an error.
 
-### Double-quoted strings
+<a id="double-quoted-strings"></a>
+### 3.5 Double-quoted strings
 
 Interpolated. Variables and expressions can be embedded:
 
@@ -118,7 +126,8 @@ Interpolated. Variables and expressions can be embedded:
 
 `$variable` interpolates directly. `#{}` interpolates any expression.
 
-### Heredocs
+<a id="heredocs"></a>
+### 3.6 Heredocs
 
 ```
 $string = <<'EOF'
@@ -140,7 +149,8 @@ own damn fault and they deserve it.
 
 ---
 
-## Variables
+<a id="variables"></a>
+## 4 Variables
 
 ```
 vibecode: {
@@ -164,7 +174,8 @@ intentionally unsupported pattern. Future use cases will be designed around this
 
 ---
 
-## Blocks
+<a id="blocks"></a>
+## 5 Blocks
 
 ```
 vibecode: {
@@ -180,7 +191,8 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ---
 
-## Multi-section blocks
+<a id="multi-section-blocks"></a>
+## 6 Multi-section blocks
 
 ```
 vibecode: {
@@ -246,7 +258,8 @@ prefer a form where each path stands on its own.
 
 ---
 
-## When `do` is Required
+<a id="when-do-is-required"></a>
+## 7 When `do` is Required
 
 ```
 vibecode: {
@@ -320,7 +333,8 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 
 ---
 
-## Statement Termination
+<a id="statement-termination"></a>
+## 8 Statement Termination
 
 ```
 vibecode: {
@@ -368,7 +382,8 @@ similar languages use.
 
 ---
 
-## The `__END__` Marker
+<a id="the-__end__-marker"></a>
+## 9 The `__END__` Marker
 
 ```
 vibecode: {
@@ -397,7 +412,8 @@ this and everything else in the file is ignored
 Borrowed from Perl and Ruby, both of which use the same marker for the same
 purpose.
 
-### Rules
+<a id="rules"></a>
+### 9.1 Rules
 
 - **Must be at the start of a line.** `foo __END__ bar` on a single line does
   not trigger; the marker only fires when `__END__` is the first non-whitespace
@@ -408,14 +424,16 @@ purpose.
 - **Trailing whitespace allowed** on the marker line; anything else is not
   treated as a marker line.
 
-### What Charlie doesn't do
+<a id="what-charlie-doesnt-do"></a>
+### 9.2 What Charlie doesn't do
 
 Perl exposes post-`__END__` content via the `DATA` filehandle; Ruby exposes
 it via the `DATA` constant. **Charlie discards the trailing content
 entirely.** A future `__DATA__` marker could surface it if a use case shows
 up, but `__END__` alone means "throw the rest away."
 
-### Status
+<a id="status"></a>
+### 9.3 Status
 
 Spec requirement; **not yet implemented in the canonical Lua engine.** The
 change is small — a ~10–15-line addition in `lexer.lua` that emits EOF on
@@ -423,7 +441,8 @@ a top-level `__END__` line and suppresses the check while in
 heredoc/string/comment state. No parser, transpiler, or interpreter
 changes.
 
-### Compliant-engine behavior for the unimplemented state
+<a id="compliant-engine-behavior-for-the-unimplemented-state"></a>
+### 9.4 Compliant-engine behavior for the unimplemented state
 
 Until an engine implements `__END__`, it treats the marker as ordinary
 input — i.e., as a bare identifier on a line, which is a parse error in
@@ -439,7 +458,8 @@ do" section.
 
 ---
 
-## Functions
+<a id="functions"></a>
+## 10 Functions
 
 ```
 vibecode: {
@@ -454,7 +474,8 @@ vibecode: {
 }
 ```
 
-### Definition
+<a id="definition"></a>
+### 10.1 Definition
 
 There are two kinds of stored callable: **functions** and **closures**. They differ in
 whether they capture the lexical scope at the point of creation.
@@ -491,7 +512,8 @@ end
 
 After any of these forms, `$foo` refers to the function object and `&foo` calls it.
 
-### Inline do blocks
+<a id="inline-do-blocks"></a>
+### 10.2 Inline do blocks
 
 Inline `do` blocks passed to method calls (`.each`, route handlers, etc.) behave like
 closures — they capture the outer lexical scope:
@@ -504,7 +526,8 @@ $items.each($item) do
 end
 ```
 
-### Scope summary
+<a id="scope-summary"></a>
+### 10.3 Scope summary
 
 | Form | Captures outer scope? |
 |------|-----------------------|
@@ -513,7 +536,8 @@ end
 | `function &f(...) ... end` | No (sugar for function) |
 | inline `do ... end` block | Yes |
 
-### Calling
+<a id="calling"></a>
+### 10.4 Calling
 
 The `&` sigil calls a function. All of the following are equivalent call forms:
 
@@ -527,7 +551,8 @@ The `&` sigil calls a function. All of the following are equivalent call forms:
 `$foo` refers to the function object. `&foo` runs it. This distinction is intentional —
 it makes passing functions as objects unambiguous.
 
-### Remote functions
+<a id="remote-functions"></a>
+### 10.5 Remote functions
 
 `remote function` declares a method that delegates to `%kiera.call`. It is shorthand
 for an explicit remote dispatch — the two forms are equivalent:
@@ -548,7 +573,8 @@ for the full `%kiera.call` design.
 
 ---
 
-## Classes
+<a id="classes"></a>
+## 11 Classes
 
 ```
 vibecode: {
@@ -562,7 +588,8 @@ vibecode: {
 }
 ```
 
-### Definition
+<a id="definition-1"></a>
+### 11.1 Definition
 
 A class is defined with the `class` keyword and a UNS name. The block contains schema
 declarations and method definitions:
@@ -582,7 +609,8 @@ class 'foo.com/character'
 end
 ```
 
-### Anonymous (bare) class
+<a id="anonymous-bare-class"></a>
+### 11.2 Anonymous (bare) class
 
 The UNS name may be omitted. A bare `class ... end` block produces an
 **anonymous class** — a class with no UNS identity of its own. The class
@@ -615,7 +643,8 @@ $page_class = class
 end
 ```
 
-### Schema declarations
+<a id="schema-declarations"></a>
+### 11.3 Schema declarations
 
 Schema declarations define the class's structure. They map directly to the JSON class
 definition stored in the mikobase.
@@ -627,7 +656,8 @@ definition stored in the mikobase.
 | `field :name, ...` | Declare a field |
 | `join :a, :b` | Required, unique-in-combination, immutable fields |
 
-### `field`
+<a id="field"></a>
+### 11.4 `field`
 
 `field` declares a field with a name and keyword options. The options map directly to the
 JSON field definition:
@@ -641,7 +671,8 @@ field :homeworld, class: 'kiera.uno/reference', allowed_class: 'foo.com/planet'
 Built-in type names are strings — `:string` and `'string'` are identical. UNS names use
 the quoted form by convention since they contain dots and slashes.
 
-### `property`
+<a id="property"></a>
+### 11.5 `property`
 
 `property` declares a `%bucket`-backed accessor — instance state that lives in the object,
 not in the mikobase schema. It does not appear in the JSON class definition. The first
@@ -656,7 +687,8 @@ property @nickname, :set        # creates a setter: $obj.nickname=()
 property @nickname, :get, :set  # creates both
 ```
 
-### Abstract classes
+<a id="abstract-classes"></a>
+### 11.6 Abstract classes
 
 `abstract true` prevents direct instantiation. Subclasses may still be instantiated:
 
@@ -666,7 +698,8 @@ class 'kiera.uno/mikobase'
 end
 ```
 
-### Join classes
+<a id="join-classes"></a>
+### 11.7 Join classes
 
 `join` marks the listed fields as required, unique in combination, and immutable after write:
 
@@ -679,7 +712,8 @@ class 'foo.com/appearance'
 end
 ```
 
-### Helpers
+<a id="helpers"></a>
+### 11.8 Helpers
 
 `helper` creates a lazily initialized helper object namespaced off the parent:
 
@@ -696,7 +730,8 @@ $character.stats.average
 
 ---
 
-## Loops
+<a id="loops"></a>
+## 12 Loops
 
 All loop forms — `while`, `.each`, and the numeric iteration helpers
 (`.times`, `.upto`, `.downto`) — and everything about them (loop
@@ -705,7 +740,8 @@ object via `as`, control methods, structural `before` / `between` /
 
 ---
 
-## The `as` Keyword
+<a id="the-as-keyword"></a>
+## 13 The `as` Keyword
 
 ```
 vibecode: {
@@ -752,7 +788,8 @@ needed; supports multi-level exit), see [loops.md § break](loops.md#break).
 
 ---
 
-## Return and Emit
+<a id="return-and-emit"></a>
+## 14 Return and Emit
 
 ```
 vibecode: {
@@ -763,7 +800,8 @@ vibecode: {
 }
 ```
 
-### `return`
+<a id="return"></a>
+### 14.1 `return`
 
 `return` exits the current function, raising `kiera.uno/return`. Inside a
 closure, `return` propagates through the closure boundary and exits the calling function.
@@ -774,7 +812,8 @@ $my_closure = closure() do
 end
 ```
 
-### `%call.return`
+<a id="callreturn"></a>
+### 14.2 `%call.return`
 
 `%call.return` exits the current call — function or closure — and returns a value from
 it. Inside a closure, it exits the closure without affecting the calling function.
@@ -795,7 +834,8 @@ The distinction:
 
 ---
 
-## Safe Navigation
+<a id="safe-navigation"></a>
+## 15 Safe Navigation
 
 ```
 vibecode: {
@@ -816,7 +856,8 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 
 ---
 
-## Pipe Operator
+<a id="pipe-operator"></a>
+## 16 Pipe Operator
 
 ```
 vibecode: {
@@ -833,7 +874,8 @@ The `|` operator chains operations left-to-right. Each stage passes its result a
 first positional argument to the next. Pipes are syntactic sugar — the transpiler desugars
 them into ordinary nested calls in CharlieJSON.
 
-### Basic pipe
+<a id="basic-pipe"></a>
+### 16.1 Basic pipe
 
 ```
 &baz |
@@ -855,7 +897,8 @@ Pipes can appear on the same line or split across lines:
 
 Both forms are identical. The multi-line form is preferred for long chains.
 
-### Null-safe pipe (`|&`)
+<a id="null-safe-pipe"></a>
+### 16.2 Null-safe pipe (`|&`)
 
 `|&` activates null propagation for the remainder of the chain. Once used, every
 subsequent stage short-circuits to `null` if its input is `null`:
@@ -876,7 +919,8 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 
 ---
 
-## Unicode Method Names
+<a id="unicode-method-names"></a>
+## 17 Unicode Method Names
 
 ```
 vibecode: {
@@ -902,7 +946,8 @@ any valid Unicode identifier as a method name.
 
 ---
 
-## Method Naming Conventions
+<a id="method-naming-conventions"></a>
+## 18 Method Naming Conventions
 
 ```
 vibecode: {
@@ -912,7 +957,8 @@ vibecode: {
 }
 ```
 
-### The `?` suffix
+<a id="the-suffix"></a>
+### 18.1 The `?` suffix
 
 The `?` suffix is a Kiera convention, not a language-enforced
 contract — the charlie parser doesn't treat names ending in `?`

@@ -6,7 +6,8 @@ Marina is the codeword for a design exploration of Kiera, Q0, and class definiti
 
 # Part 1: Kiera
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 Kiera is a remote object system designed to be simpler and more intuitive than systems like
 REST. Classes in Kiera are identified by UNS strings — a URL without the `https://`
@@ -26,7 +27,8 @@ between the two systems. A class definition bucket written for Mikobase is valid
 
 ---
 
-## Implicit Class from Context
+<a id="implicit-class-from-context"></a>
+## 2 Implicit Class from Context
 
 Every Kiera object (hash/dict) has a `class` field, either explicit or implied by context.
 When `class` is absent, the Kiera interpreter determines the class from the surrounding
@@ -38,7 +40,8 @@ defined. For now, implicit class rules are documented ad-hoc where they apply.
 
 ---
 
-## Getting a Class
+<a id="getting-a-class"></a>
+## 3 Getting a Class
 
 `kiera.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
 local class object. The class definition includes fields and remote methods. Parameters may
@@ -54,7 +57,8 @@ clss = kiera.get_class('kiera.uno/color')    # equivalent
 clss = kiera.get_class('kiera.uno/color', cutoff='2026-09-21')  # with params
 ```
 
-## Creating an Object
+<a id="creating-an-object"></a>
+## 4 Creating an Object
 
 `clss.new(**fields)` creates a new instance of the class with the given field values. The
 resulting object behaves like any local object — fields are accessible as properties and
@@ -76,7 +80,8 @@ This is equivalent to `kiera[uns].new(**fields)`.
 
 ---
 
-## Method Calls
+<a id="method-calls"></a>
+## 5 Method Calls
 
 When a method is called on a Kiera object, the **entire object** is serialized and sent to
 the method's URL. A response is received and returned to the caller.
@@ -84,7 +89,8 @@ the method's URL. A response is received and returned to the caller.
 The class definition specifies each method's required and optional parameters, and what to
 expect in the response.
 
-## Request Structure
+<a id="request-structure"></a>
+## 6 Request Structure
 
 A Kiera request is a JSON object with the following fields:
 
@@ -122,7 +128,8 @@ The response structure is not yet defined.
 
 ---
 
-## Value Objects and Stored Objects
+<a id="value-objects-and-stored-objects"></a>
+## 7 Value Objects and Stored Objects
 
 All Kiera objects are the same type — they carry their field values with every method call.
 There is no formal Stored Object class.
@@ -148,7 +155,8 @@ character = kiera.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40
 
 ---
 
-## `kiera: true`
+<a id="kiera-true"></a>
+## 8 `kiera: true`
 
 A class definition with `"kiera": true` signals that remote method calls may be made using
 objects of that class.
@@ -162,14 +170,16 @@ objects of that class.
 
 ---
 
-## `kiera.uno/exception`
+<a id="kieraunoexception"></a>
+## 9 `kiera.uno/exception`
 
 The base class for all exceptions in Kiera. `kiera.uno/error` is a subclass of
 `kiera.uno/exception`. Further details of the exception hierarchy are not yet defined.
 
 ---
 
-## `kiera.uno/error`
+<a id="kieraunoerror"></a>
+## 10 `kiera.uno/error`
 
 The base class for all errors. An error object is a first-class object with
 `"class": "kiera.uno/error"` (or a subclass).
@@ -186,7 +196,8 @@ Error objects propagate upward through expression chains without further evaluat
 
 ---
 
-## `kiera.uno/query`
+<a id="kieraunoquery"></a>
+## 11 `kiera.uno/query`
 
 `kiera.uno/query` is the base class for the Kiera expression language. It defines a set of
 general-purpose operators usable in any Kiera context.
@@ -194,17 +205,20 @@ general-purpose operators usable in any Kiera context.
 `mikobase.com/q0` inherits `kiera.uno/query` and extends it with Mikobase-specific
 operators for accessing record data.
 
-### Expression Format
+<a id="expression-format"></a>
+### 11.1 Expression Format
 
 An expression is either a **literal** (any JSON scalar or array) or an **operator object**
 (a single-key JSON object whose key names the operation).
 
-### Current Timestamp
+<a id="current-timestamp"></a>
+### 11.2 Current Timestamp
 
 `{"now": true}` returns the current timestamp at the moment the query is executed, frozen
 once at the start of execution.
 
-### Arithmetic
+<a id="arithmetic"></a>
+### 11.3 Arithmetic
 
 | Operator | Description |
 |---|---|
@@ -214,7 +228,8 @@ once at the start of execution.
 | `{"divide": [a, b]}` | Division — returns `null` on division by zero |
 | `{"mod": [a, b]}` | Modulo (remainder) |
 
-### String
+<a id="string"></a>
+### 11.4 String
 
 | Operator | Description |
 |---|---|
@@ -224,7 +239,8 @@ once at the start of execution.
 | `{"trim": expr}` | Strip leading and trailing whitespace |
 | `{"length": expr}` | Character count |
 
-### Array Aggregation
+<a id="array-aggregation"></a>
+### 11.5 Array Aggregation
 
 | Operator | Description |
 |---|---|
@@ -235,7 +251,8 @@ once at the start of execution.
 
 Non-numeric elements are ignored. Empty or all-non-numeric arrays return `null`.
 
-### Selection
+<a id="selection"></a>
+### 11.6 Selection
 
 | Operator | Description |
 |---|---|
@@ -244,7 +261,8 @@ Non-numeric elements are ignored. Empty or all-non-numeric arrays return `null`.
 
 Returns `null` if no element meets the condition.
 
-### Date and Time
+<a id="date-and-time"></a>
+### 11.7 Date and Time
 
 Timestamps are ISO 8601 strings with millisecond precision.
 
@@ -272,7 +290,8 @@ Timestamp component extraction (return integers):
 | `{"minute": expr}` | Minute (0–59) |
 | `{"second": expr}` | Second (0–59) |
 
-### Comparison
+<a id="comparison"></a>
+### 11.8 Comparison
 
 Take a two-element array. Return a boolean. Work for numbers, strings (lexicographic), and
 timestamps (chronological). Comparing values of different types returns `null`.
@@ -286,7 +305,8 @@ timestamps (chronological). Comparing values of different types returns `null`.
 | `{"gte": [a, b]}` | `>=` | Greater than or equal |
 | `{"lte": [a, b]}` | `<=` | Less than or equal |
 
-### Boolean
+<a id="boolean"></a>
+### 11.9 Boolean
 
 | Operator | Alias | Description |
 |---|---|---|
@@ -294,7 +314,8 @@ timestamps (chronological). Comparing values of different types returns `null`.
 | `{"or": [...]}` | `\|\|` | True if any is truthy |
 | `{"not": expr}` | `!` | Logical negation |
 
-### Conditional
+<a id="conditional"></a>
+### 11.10 Conditional
 
 `cond` — array of `[condition, value]` pairs evaluated in order. Optional trailing default.
 
@@ -316,7 +337,8 @@ timestamps (chronological). Comparing values of different types returns `null`.
 
 `else_expr` is optional; defaults to `null`.
 
-### Null Handling
+<a id="null-handling"></a>
+### 11.11 Null Handling
 
 - Any operator receiving a `null` input returns `null`, except `if` and `cond` where `null`
   is treated as falsy.
@@ -330,7 +352,8 @@ timestamps (chronological). Comparing values of different types returns `null`.
 This section documents a design for functions, methods, and method invocation developed
 as part of Marina.
 
-## Functions
+<a id="functions"></a>
+## 12 Functions
 
 Functions are anonymous — they have no name of their own. They can live anywhere you can
 store a value: in a class field definition, in a record's bucket, anywhere.
@@ -354,7 +377,8 @@ Parameters are referenced inside the body via `{"param": "name"}`.
 
 `kiera.uno/function` is the base type for functions.
 
-## Methods
+<a id="methods"></a>
+## 13 Methods
 
 `kiera.uno/method` is a subclass of `kiera.uno/function`. A method automatically receives
 `"this"` bound to the object in its defining context.
@@ -378,7 +402,8 @@ definition declares additional explicit params for callers to supply.
 
 Inside a method body, `{"param": "this"}` refers to the object itself. `{"param": ["this", "field"]}` navigates into a field on it.
 
-## `kiera.uno/call`
+<a id="kieraunocall"></a>
+## 14 `kiera.uno/call`
 
 A method invocation is a first-class object of class `kiera.uno/call`:
 
@@ -396,7 +421,8 @@ calling a method on `this` — the implicit receiver in the current context.
 
 All params are named. There are no positional arguments.
 
-### `calls` — Method Chains
+<a id="calls-method-chains"></a>
+### 14.1 `calls` — Method Chains
 
 `calls` is an array of `kiera.uno/call` objects forming a pipeline. The receiver of each
 step is implicitly the result of the previous step. Only the first step requires an explicit
@@ -414,7 +440,8 @@ step is implicitly the result of the previous step. Only the first step requires
 
 This is equivalent to nested calls where each call's receiver is the previous result.
 
-## `{"path": expr}`
+<a id="path-expr"></a>
+## 15 `{"path": expr}`
 
 `{"path": "field"}` accesses a field on `this`. `{"path": ["field"]}` is equivalent.
 
@@ -431,7 +458,8 @@ These two forms are equivalent:
 {"method": "decimal", "params": {"start": 1, "end": 3}}
 ```
 
-## `{"return": value}`
+<a id="return-value"></a>
+## 16 `{"return": value}`
 
 `{"return": value}` creates a propagating signal — a special exception type — that bubbles
 up through the call stack until something catches it, such as a function call boundary.
@@ -441,14 +469,16 @@ This is the mechanism for early exit from a `calls` chain or nested expression.
 "rgb": {"return": [{"path": "red"}, {"path": "green"}, {"path": "blue"}]}
 ```
 
-## Lazy Method Dispatch
+<a id="lazy-method-dispatch"></a>
+## 17 Lazy Method Dispatch
 
 Method calls are evaluated lazily at runtime (duck typing). The interpreter does not
 require a compile-time definition of what methods exist on what types. If the receiver has
 the named method, it is called. If not, the result is a `kiera.uno/error` that propagates
 up through the expression chain.
 
-## Example: `kiera.uno/color`
+<a id="example-kieraunocolor"></a>
+## 18 Example: `kiera.uno/color`
 
 ```json
 {
@@ -480,12 +510,14 @@ up through the expression chain.
 
 This is the expression language for `mikobase.com/q0`, which inherits `kiera.uno/query`.
 
-## `mikobase.com/q0` Operators
+<a id="mikobasecomq0-operators"></a>
+## 19 `mikobase.com/q0` Operators
 
 These operators are specific to the Mikobase record model and reference data from the
 current record being evaluated.
 
-### Bucket Fields
+<a id="bucket-fields"></a>
+### 19.1 Bucket Fields
 
 `{"field": "key"}` returns the value of a top-level field in the record's `bucket`.
 
@@ -498,7 +530,8 @@ current record being evaluated.
 
 If the field or path does not exist, the result is `null`.
 
-### Record Metadata
+<a id="record-metadata"></a>
+### 19.2 Record Metadata
 
 `{"record": "..."}` returns metadata about the current record.
 
@@ -510,7 +543,8 @@ If the field or path does not exist, the result is `null`.
 
 ---
 
-## Calculated Fields in Class Definitions
+<a id="calculated-fields-in-class-definitions"></a>
+## 20 Calculated Fields in Class Definitions
 
 A calculated field is declared in a class definition using `"calculate"` instead of
 `"class"`. Calculated fields are read-only — they are never stored in `bucket`.
@@ -574,13 +608,15 @@ calculated field defined by a parent class.
 
 ---
 
-## Foreign Query Fields
+<a id="foreign-query-fields"></a>
+## 21 Foreign Query Fields
 
 A foreign query field returns all active records of another class that reference this
 record. It is declared using `"foreign"` and optionally `"field"`. The explicit class name
 `"class": "mikobase.com/lookup"` may also be included.
 
-### Explicit field
+<a id="explicit-field"></a>
+### 21.1 Explicit field
 
 ```json
 "appearances": {"foreign": "borg.com/appearance", "field": "person"}
@@ -589,7 +625,8 @@ record. It is declared using `"foreign"` and optionally `"field"`. The explicit 
 - `foreign` — the UNS class name to query
 - `field` — the field in the foreign class whose value must match this record's pk
 
-### Join inference
+<a id="join-inference"></a>
+### 21.2 Join inference
 
 If the foreign class has a `join` clause, `field` may be omitted. The engine inspects the
 join fields and finds the one whose `allowed_class` matches the class being defined.
@@ -601,7 +638,8 @@ join fields and finds the one whose `allowed_class` matches the class being defi
 `field` is required if the foreign class has no `join` clause or if more than one join
 field matches (ambiguous).
 
-### General rules
+<a id="general-rules"></a>
+### 21.3 General rules
 
 Foreign query fields are read-only, never stored, and lazily evaluated.
 
@@ -609,7 +647,8 @@ Foreign query fields are read-only, never stored, and lazily evaluated.
 
 # Part 4: Q0 Advanced Features
 
-## Placeholders
+<a id="placeholders"></a>
+## 22 Placeholders
 
 Placeholders allow query templates to be reused with minimal changes. They are defined at
 the top level of a query (or inside a `then` block) and referenced anywhere in the query
@@ -642,13 +681,15 @@ Placeholders can themselves reference other placeholders:
 }
 ```
 
-### Scoping and Inheritance
+<a id="scoping-and-inheritance"></a>
+### 22.1 Scoping and Inheritance
 
 Placeholders defined in an outer query are inherited by all nested `then` blocks. An inner
 `then` block may define its own `placeholders` that shadow inherited ones with the same
 name.
 
-### Placeholder Validation
+<a id="placeholder-validation"></a>
+### 22.2 Placeholder Validation
 
 ```python
 engine.validate(query)               # shorthand
@@ -656,7 +697,8 @@ engine.validator.run_all(query)      # equivalent
 engine.validator.placeholders(query) # placeholder checks only
 ```
 
-### Rules
+<a id="rules"></a>
+### 22.3 Rules
 
 - Placeholders are resolved each time they are encountered during execution, not eagerly.
 - Circular references are an error only if the circular reference is actually reached.
@@ -667,7 +709,8 @@ engine.validator.placeholders(query) # placeholder checks only
 
 ---
 
-## `return` Clause in `select`
+<a id="return-clause-in-select"></a>
+## 23 `return` Clause in `select`
 
 `return` is an optional dict evaluated for each record in the resultset. When present, the
 resultset yields a new dict instead of the standard record dict.

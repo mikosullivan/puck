@@ -11,7 +11,8 @@ This file is the technical development plan for Kiera. Vibecode blocks are
 the canonical source; surrounding prose is human-readable narrative derived
 from them. When the two disagree, vibecode wins.
 
-## Contents
+<a id="contents"></a>
+## 1 Contents
 
 - [V0.01: "hello-world"](#v001-hello-world)
   - [Definition of done](#definition-of-done)
@@ -94,7 +95,8 @@ from them. When the two disagree, vibecode wins.
 
 ---
 
-## V0.01: "hello-world"
+<a id="v001-hello-world"></a>
+## 2 V0.01: "hello-world"
 
 ```
 vibecode: {"version": "0.01", "codename": "hello-world", "goal":
@@ -128,7 +130,8 @@ string class with `to_string` — but each layer can be minimal. The point
 is to prove the engine integrates end-to-end before any single layer is
 built out fully.
 
-### Definition of done
+<a id="definition-of-done"></a>
+### 2.1 Definition of done
 
 ```
 vibecode: {"scope_status": "confirmed_2026-05-15", "done_criteria":
@@ -160,7 +163,8 @@ scope without explicit unlock.
 
 ---
 
-## V0.02: "charlie-source-hello"
+<a id="v002-charlie-source-hello"></a>
+## 3 V0.02: "charlie-source-hello"
 
 ```
 vibecode: {"version": "0.02", "codename": "charlie-source-hello", "goal":
@@ -203,7 +207,8 @@ only**. The full transpiler retrofit is incremental — later slices
 realign more AST node types as later versions exercise them. Per
 "don't generalize ahead of the test."
 
-### Definition of done (V0.02)
+<a id="definition-of-done-v002"></a>
+### 3.1 Definition of done (V0.02)
 
 ```
 vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
@@ -239,7 +244,8 @@ as V0.01.
 
 ---
 
-## V0.03: "charlie-with-stdout"
+<a id="v003-charlie-with-stdout"></a>
+## 4 V0.03: "charlie-with-stdout"
 
 ```
 vibecode: {"version": "0.03", "codename": "charlie-with-stdout", "goal":
@@ -298,7 +304,8 @@ The transpiler also gets one more realignment: the bwc-call statement
 shape. V0.02 realigned literal + method-call + expression-statement;
 V0.03 realigns the bwc-call form `[{bwc: "puts"}, {value: "hello"}]`.
 
-### Definition of done (V0.03)
+<a id="definition-of-done-v003"></a>
+### 4.1 Definition of done (V0.03)
 
 ```
 vibecode: {"scope_status": "drafted_2026-05-17", "done_criteria":
@@ -332,7 +339,8 @@ That's the entirety of V0.03. Soft feature lock applies.
 
 ---
 
-## V0.04: "charlie-with-hashes"
+<a id="v004-charlie-with-hashes"></a>
+## 5 V0.04: "charlie-with-hashes"
 
 ```
 vibecode: {"version": "0.04", "codename": "charlie-with-hashes",
@@ -401,7 +409,8 @@ V0.04 is selected. Expected shape:
 
 ---
 
-## V0.05: "charlie-with-json-serialization"
+<a id="v005-charlie-with-json-serialization"></a>
+## 6 V0.05: "charlie-with-json-serialization"
 
 ```
 vibecode: {"version": "0.05",
@@ -475,7 +484,8 @@ V0.05 is selected. Expected shape:
 
 ---
 
-## Testing strategy: two-tier approach
+<a id="testing-strategy-two-tier-approach"></a>
+## 7 Testing strategy: two-tier approach
 
 ```
 vibecode: {"section": "testing_strategy", "model": "two_tier",
@@ -528,7 +538,8 @@ Tier 1 thing — written in Lua, tested in Lua. Once Bryton works
 (its V0.1 acceptance tests pass under Tier 1), it becomes the tool
 for Tier 2.
 
-### Bootstrap path
+<a id="bootstrap-path"></a>
+### 7.1 Bootstrap path
 
 | Phase | Engine tests | Charlie-behavior tests | Bryton tests |
 |---|---|---|---|
@@ -543,7 +554,8 @@ Charlie test files) and on Lua (its V0.1 runner is in Lua), but is
 itself tested by Lua. There's no spot where "testing X requires X
 to already work."
 
-### One product named Bryton, not "bryton-lite"
+<a id="one-product-named-bryton-not-bryton-lite"></a>
+### 7.2 One product named Bryton, not "bryton-lite"
 
 V0.1 Bryton (Lua-implemented, strict feature subset) and an eventual
 Charlie-hosted Bryton are the same product at different stages, not
@@ -556,7 +568,8 @@ compiler, different stage.
 
 ---
 
-## Feature soft-lock
+<a id="feature-soft-lock"></a>
+## 8 Feature soft-lock
 
 ```
 vibecode: {"lock": "soft", "scope": "all_kiera_features", "rationale":
@@ -570,7 +583,8 @@ is deferred until needed. The lock can be broken — but only deliberately,
 never casually. Companion discipline to `no-bolt-on-additions`: that rule
 guards spec quality; this lock guards build momentum.
 
-### Deliberate post-lock additions
+<a id="deliberate-post-lock-additions"></a>
+### 8.1 Deliberate post-lock additions
 
 ```
 vibecode: {"additions_since_lock":
@@ -591,7 +605,8 @@ not a wall — but the budget should be visible.
 
 ---
 
-## V1 scope (after 0.01)
+<a id="v1-scope-after-001"></a>
+## 9 V1 scope (after 0.01)
 
 ```
 vibecode: {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
@@ -621,7 +636,8 @@ production).
 
 ---
 
-## Walking-skeleton roadmap
+<a id="walking-skeleton-roadmap"></a>
+## 10 Walking-skeleton roadmap
 
 ```
 vibecode: {"approach": "walking_skeleton", "principle":
@@ -672,7 +688,8 @@ used wherever a layer needs to surface diagnostic output.
 
 ---
 
-## Role system: baking from the start
+<a id="role-system-baking-from-the-start"></a>
+## 11 Role system: baking from the start
 
 ```
 vibecode: {"principle": "roles_are_core_not_bolt_on", "reason":
@@ -794,7 +811,8 @@ possible scale; every later slice exercises more of the model.
 
 ---
 
-## Engine startup and invocation
+<a id="engine-startup-and-invocation"></a>
+## 12 Engine startup and invocation
 
 ```
 vibecode: {"section": "engine_startup_and_invocation", "scope":
@@ -811,7 +829,8 @@ slices. It answers two related questions that came up while scoping
 V0.01: **how do you start a CharlieJSON script** and **how does the engine load
 allowed objects into the outermost CharlieJSON block**.
 
-### Host vs. engine
+<a id="host-vs-engine"></a>
+### 12.1 Host vs. engine
 
 ```
 vibecode: {"host_vs_engine": {"engine":
@@ -837,7 +856,8 @@ another (which emerges from normal function dispatch, no separate
 engine API needed). Each host invokes the same `engine.run()` entry
 point; what differs is who triggers it and what they pass in.
 
-### V0.01 invocation chain
+<a id="v001-invocation-chain"></a>
+### 12.2 V0.01 invocation chain
 
 ```
 vibecode: {"v001_invocation_chain": [{"step": 1, "name":
@@ -868,7 +888,8 @@ Top-level shape:
    return value.
 6. **Runner compares to expected `"hello"`** and reports PASS or FAIL.
 
-### V0.01 engine bootstrap sequence
+<a id="v001-engine-bootstrap-sequence"></a>
+### 12.3 V0.01 engine bootstrap sequence
 
 ```
 vibecode: {"v001_bootstrap_sequence": [{"step": 1, "name":
@@ -923,7 +944,8 @@ coming back:
 6. **Return to host.** The captured last-value is returned to the host
    (in V0.01, the Lua test runner) as a Lua return value.
 
-### Program model
+<a id="program-model"></a>
+### 12.4 Program model
 
 ```
 vibecode: {"program_model_v001": {"shape":
@@ -942,7 +964,8 @@ entry-point declaration — the outermost array IS the entry point.
 Statements can define functions and call them, but for V0.01 the
 program is just one statement.
 
-### What user CharlieJSON can see in V0.01
+<a id="what-user-charliejson-can-see-in-v001"></a>
+### 12.5 What user CharlieJSON can see in V0.01
 
 ```
 vibecode: {"v001_visibility": {"directly_referenceable_by_name":
@@ -971,7 +994,8 @@ loaded explicitly at all — they're available only through the
 dispatcher's class-lookup mechanism for values the engine itself
 created.
 
-### How later slices grow the lifecycle
+<a id="how-later-slices-grow-the-lifecycle"></a>
+### 12.6 How later slices grow the lifecycle
 
 ```
 vibecode: {"growth_path": {"v002": {"bootstrap_change":
@@ -1026,7 +1050,8 @@ code cannot escape. Flagged as an open item.
 
 ---
 
-## Lua-side implementation sketch
+<a id="lua-side-implementation-sketch"></a>
+## 13 Lua-side implementation sketch
 
 ```
 vibecode: {"section": "lua_implementation_sketch", "status":
@@ -1046,7 +1071,8 @@ structures, key procedures, and a pseudo-code skeleton. It is a
 existing code already does something workable, use it; where it
 doesn't, the shapes below are the proposal.
 
-### Data structures (Lua tables)
+<a id="data-structures-lua-tables"></a>
+### 13.1 Data structures (Lua tables)
 
 ```
 vibecode: {"data_structures": {"role_object":
@@ -1119,7 +1145,8 @@ reference, not the contents).
   restore this table's fields via Lua locals (closures), not via a
   separate stack data structure — Lua's own call stack does the work.
 
-### Key procedures
+<a id="key-procedures"></a>
+### 13.2 Key procedures
 
 ```
 vibecode: {"procedures": {"engine.run":
@@ -1149,7 +1176,8 @@ Five procedures cover V0.01:
   function on the value's class. Looks up the class via `value.type`
   in `engine.classes`, then the method name in `class.methods`.
 
-### Pseudo-code skeleton
+<a id="pseudo-code-skeleton"></a>
+### 13.3 Pseudo-code skeleton
 
 ```
 vibecode: {"pseudo_code_status":
@@ -1251,7 +1279,8 @@ end
 return engine
 ```
 
-### Notes on the sketch
+<a id="notes-on-the-sketch"></a>
+### 13.4 Notes on the sketch
 
 ```
 vibecode: {"sketch_notes": ["plain_tables_only_no_metatables_v001",
@@ -1288,7 +1317,8 @@ A few specifics worth flagging:
 
 ---
 
-## V0.01 phase 0: Lua workbench
+<a id="v001-phase-0-lua-workbench"></a>
+## 14 V0.01 phase 0: Lua workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.01", "purpose":
@@ -1304,7 +1334,8 @@ has to be verified. Six steps, each independently runnable. If a step
 fails, fix that before moving on. **No Charlie or CharlieJSON execution
 happens in Phase 0** — this is purely Lua-level sanity.
 
-### Step 0.1: Confirm Lua 5.4
+<a id="step-01-confirm-lua-54"></a>
+### 14.1 Step 0.1: Confirm Lua 5.4
 
 ```
 vibecode: {"step": "0.1", "name": "confirm_lua_5_4", "action":
@@ -1316,7 +1347,8 @@ vibecode: {"step": "0.1", "name": "confirm_lua_5_4", "action":
 If a different major version is installed, install Lua 5.4 before
 proceeding.
 
-### Step 0.2: Run a sanity hello in pure Lua
+<a id="step-02-run-a-sanity-hello-in-pure-lua"></a>
+### 14.2 Step 0.2: Run a sanity hello in pure Lua
 
 ```
 vibecode: {"step": "0.2", "name": "lua_hello",
@@ -1335,7 +1367,8 @@ print("hello from lua")
 Run: `lua tests/sanity/lua_hello.lua`. Expected stdout: `hello from lua`
 followed by a newline. Exit code 0.
 
-### Step 0.3: Verify package.path resolves engine modules
+<a id="step-03-verify-packagepath-resolves-engine-modules"></a>
+### 14.3 Step 0.3: Verify package.path resolves engine modules
 
 ```
 vibecode: {"step": "0.3", "name": "package_path_check", "action":
@@ -1373,7 +1406,8 @@ runner.test("charlie.json loaded as a table", function()
 end)
 ```
 
-### Step 0.4: Verify the existing test framework
+<a id="step-04-verify-the-existing-test-framework"></a>
+### 14.4 Step 0.4: Verify the existing test framework
 
 ```
 vibecode: {"step": "0.4", "name": "verify_existing_test_framework",
@@ -1433,7 +1467,8 @@ To verify failure reporting, temporarily change one assertion to
 something false (`assert_.equal(1, 2)`), re-run, expect `.F`, a failure
 description in the summary, and exit 1.
 
-### Step 0.5: Verify json.lua loads and parses
+<a id="step-05-verify-jsonlua-loads-and-parses"></a>
+### 14.5 Step 0.5: Verify json.lua loads and parses
 
 ```
 vibecode: {"step": "0.5", "name": "json_parse_sanity",
@@ -1467,7 +1502,8 @@ If `json.lua`'s API differs (different function name, returns wrapped
 result, etc.), this is where we discover it — and the
 [V0.01 phase 1 inventory step](#step-1-inventory) starts here.
 
-### Step 0.6: Verify file reading
+<a id="step-06-verify-file-reading"></a>
+### 14.6 Step 0.6: Verify file reading
 
 ```
 vibecode: {"step": "0.6", "name": "file_read_sanity",
@@ -1501,7 +1537,8 @@ end)
 When all six steps pass, the workbench is verified and Phase 1 can
 begin.
 
-### Phase 0 test plan
+<a id="phase-0-test-plan"></a>
+### 14.7 Phase 0 test plan
 
 ```
 vibecode: {"phase_0_tests":
@@ -1541,7 +1578,8 @@ All six must pass before V0.01 phase 1 begins.
 
 ---
 
-## V0.01 phase 1: hello-world in CharlieJSON
+<a id="v001-phase-1-hello-world-in-charliejson"></a>
+## 15 V0.01 phase 1: hello-world in CharlieJSON
 
 ```
 vibecode: {"phase": 1, "version": "0.01", "fixture_path":
@@ -1593,7 +1631,8 @@ text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is V0.02
 work; when it lands, the transpiler must also emit canonical CharlieJSON
 so the source→runtime pipeline is end-to-end canonical.
 
-### Step 1: Inventory
+<a id="step-1-inventory"></a>
+### 15.1 Step 1: Inventory
 
 ```
 vibecode: {"step": 1, "name": "inventory", "actions":
@@ -1619,7 +1658,8 @@ Output: a short gap list — "the JSON parser handles these forms / doesn't
 handle these; the interpreter executes these CharlieJSON shapes / doesn't
 execute these; this is what's needed to clear V0.01."
 
-### Step 2: Fill the gaps
+<a id="step-2-fill-the-gaps"></a>
+### 15.2 Step 2: Fill the gaps
 
 ```
 vibecode: {"step": 2, "name": "fill_gaps", "scope":
@@ -1656,7 +1696,8 @@ Anything beyond these — `sys` references like `%stdout`, real I/O, any
 class beyond string, any method beyond `to_string` — is later work, not
 this one's.
 
-### Step 3: Verify
+<a id="step-3-verify"></a>
+### 15.3 Step 3: Verify
 
 ```
 vibecode: {"step": 3, "name": "verify", "actions":
@@ -1679,7 +1720,8 @@ to fix; loop back to Step 2.
 When V0.01 passes, V0.02 (hello-world in Charlie source, via the transpiler)
 is selected from the roadmap and planned in the same three-step shape.
 
-### Phase 1 test plan
+<a id="phase-1-test-plan"></a>
+### 15.4 Phase 1 test plan
 
 ```
 vibecode: {"phase_1_tests":
@@ -1756,7 +1798,8 @@ would still pass.
 
 All eight pass = V0.01 done.
 
-### Test layout
+<a id="test-layout"></a>
+### 15.5 Test layout
 
 ```
 vibecode: {"test_framework":
@@ -1795,7 +1838,8 @@ above mirror what's there.
 
 ---
 
-## V0.02 phase 0: source-side workbench
+<a id="v002-phase-0-source-side-workbench"></a>
+## 16 V0.02 phase 0: source-side workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.02", "purpose":
@@ -1816,7 +1860,8 @@ string. The output is a concrete gap list driving Phase 1 step 2.
 Phase 0 changes no engine code. It exists to surface surprises before
 implementation.
 
-### Step 0.1: Confirm the lexer tokenizes the fixture
+<a id="step-01-confirm-the-lexer-tokenizes-the-fixture"></a>
+### 16.1 Step 0.1: Confirm the lexer tokenizes the fixture
 
 ```
 vibecode: {"step": "0.1", "name": "lexer_check",
@@ -1833,7 +1878,8 @@ covering the literal, the dot, and the identifier `to_string`. Existing
 lexer tests under `tests/charlie/lexer/` exercise each form
 individually; this step confirms the combination tokenizes cleanly.
 
-### Step 0.2: Confirm the parser produces a clean AST
+<a id="step-02-confirm-the-parser-produces-a-clean-ast"></a>
+### 16.2 Step 0.2: Confirm the parser produces a clean AST
 
 ```
 vibecode: {"step": "0.2", "name": "parser_check",
@@ -1849,7 +1895,8 @@ vibecode: {"step": "0.2", "name": "parser_check",
 the exact `kind` of the top-level node, the method-call node, and the
 literal node so Phase 1 step 1 can compare directly.
 
-### Step 0.3: Observe the transpiler's current output
+<a id="step-03-observe-the-transpilers-current-output"></a>
+### 16.3 Step 0.3: Observe the transpiler's current output
 
 ```
 vibecode: {"step": "0.3", "name": "transpiler_baseline",
@@ -1867,7 +1914,8 @@ consumption shape, not `charliejson.md`'s `[receiver, method, args?]`
 shape. Phase 0 captures what comes out today; the diff against canonical
 is computed in Phase 1.
 
-### Step 0.4: Confirm engine.run handles a hand-built canonical tree
+<a id="step-04-confirm-enginerun-handles-a-hand-built-canonical-tree"></a>
+### 16.4 Step 0.4: Confirm engine.run handles a hand-built canonical tree
 
 ```
 vibecode: {"step": "0.4", "name": "engine_tree_entry_check",
@@ -1890,7 +1938,8 @@ If the V0.01 implementation already factored this out, Step 0.4 is a
 one-line test. If not, Step 0.4 adds the helper purely as refactoring
 (behavior unchanged for the existing path).
 
-### V0.02 phase 0 test plan
+<a id="v002-phase-0-test-plan"></a>
+### 16.5 V0.02 phase 0 test plan
 
 ```
 vibecode: {"phase_0_tests":
@@ -1921,7 +1970,8 @@ V0.02 phase 1 begins.
 
 ---
 
-## V0.02 phase 1: hello-world from Charlie source
+<a id="v002-phase-1-hello-world-from-charlie-source"></a>
+## 17 V0.02 phase 1: hello-world from Charlie source
 
 ```
 vibecode: {"phase": 1, "version": "0.02", "fixture_path":
@@ -1948,7 +1998,8 @@ vibecode: {"phase": 1, "version": "0.02", "fixture_path":
 
 Three steps. Same shape as V0.01 Phase 1: inventory, fill gaps, verify.
 
-### V0.02 Step 1: Inventory
+<a id="v002-step-1-inventory"></a>
+### 17.1 V0.02 Step 1: Inventory
 
 ```
 vibecode: {"step": 1, "name": "inventory", "actions":
@@ -1977,7 +2028,8 @@ Output: a short text summary of the gap (which fields differ, which
 wrapper objects are present in one but not the other) plus the list of
 transpiler tests requiring updates.
 
-### V0.02 Step 2: Fill the gaps
+<a id="v002-step-2-fill-the-gaps"></a>
+### 17.2 V0.02 Step 2: Fill the gaps
 
 ```
 vibecode: {"step": 2, "name": "fill_gaps", "scope":
@@ -2020,7 +2072,8 @@ Anything beyond this — realigning the bwc path, the assignment path,
 the if path, etc. — is later work. The principle: realign as later
 slices exercise each AST node, not all at once.
 
-### V0.02 Step 3: Verify
+<a id="v002-step-3-verify"></a>
+### 17.3 V0.02 Step 3: Verify
 
 ```
 vibecode: {"step": 3, "name": "verify", "actions":
@@ -2050,7 +2103,8 @@ problem. Loop back to Step 2 for that layer.
 When V0.02 passes, the next slice from the roadmap is selected and
 planned in the same shape.
 
-### V0.02 phase 1 test plan
+<a id="v002-phase-1-test-plan"></a>
+### 17.4 V0.02 phase 1 test plan
 
 ```
 vibecode: {"phase_1_tests":
@@ -2088,7 +2142,8 @@ its declared scope.
 
 All six pass = V0.02 done.
 
-### V0.02 test layout
+<a id="v002-test-layout"></a>
+### 17.5 V0.02 test layout
 
 ```
 vibecode: {"test_directory": "tests/charlie/v002/",
@@ -2109,7 +2164,8 @@ vibecode: {"test_directory": "tests/charlie/v002/",
 | `tests/charlie/support/assert.lua` | Gains a `deep_equal` helper |
 | `tests/charlie/transpiler/test_*.lua` | Updated only for AST nodes realigned in V0.02 |
 
-### V0.02 open questions
+<a id="v002-open-questions"></a>
+### 17.6 V0.02 open questions
 
 ```
 vibecode: {"open_questions":
@@ -2139,7 +2195,8 @@ vibecode: {"open_questions":
 
 ---
 
-## V0.03 phase 0: stdout-and-bwc workbench
+<a id="v003-phase-0-stdout-and-bwc-workbench"></a>
+## 18 V0.03 phase 0: stdout-and-bwc workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.03", "purpose":
@@ -2157,7 +2214,8 @@ fixture. Three steps — fewer than V0.02 because the lexer/parser/
 transpiler are by V0.03 already exercised by both V0.01 and V0.02 work.
 The new questions are bwc-specific and stdout-injection-specific.
 
-### V0.03 Step 0.1: Confirm the source pipeline handles the puts fixture
+<a id="v003-step-01-confirm-the-source-pipeline-handles-the-puts-fixture"></a>
+### 18.1 V0.03 Step 0.1: Confirm the source pipeline handles the puts fixture
 
 ```
 vibecode: {"step": "0.1", "name": "source_pipeline_baseline",
@@ -2174,7 +2232,8 @@ pre-canonical (matches `interpreter.lua`'s legacy bwc shape, e.g.,
 `[{bwc:'puts'}, '&', {args:[{value:'hello'}]}]`); the canonical target
 is `[{bwc:'puts'}, {value:'hello'}]`. The diff drives Phase 1 step 2.
 
-### V0.03 Step 0.2: Confirm engine.run_source accepts an env override
+<a id="v003-step-02-confirm-enginerun_source-accepts-an-env-override"></a>
+### 18.2 V0.03 Step 0.2: Confirm engine.run_source accepts an env override
 
 ```
 vibecode: {"step": "0.2", "name": "env_injection_check",
@@ -2194,7 +2253,8 @@ host to override engine-visible knobs (initially just `env.stdout`).
 If `engine.run_source` doesn't yet accept `env`, V0.03 phase 1 step 2
 extends it — purely additive, no V0.02 regression.
 
-### V0.03 Step 0.3: Pre-canonical legacy bwc handling, for reference
+<a id="v003-step-03-pre-canonical-legacy-bwc-handling-for-reference"></a>
+### 18.3 V0.03 Step 0.3: Pre-canonical legacy bwc handling, for reference
 
 ```
 vibecode: {"step": "0.3", "name": "legacy_bwc_reference",
@@ -2211,7 +2271,8 @@ implementation — particularly the stdout-override pattern via
 shape is different but the host-level capture mechanism doesn't need
 to change.
 
-### V0.03 phase 0 test plan
+<a id="v003-phase-0-test-plan"></a>
+### 18.4 V0.03 phase 0 test plan
 
 ```
 vibecode: {"phase_0_tests":
@@ -2233,7 +2294,8 @@ before V0.03 phase 1 begins.
 
 ---
 
-## V0.03 phase 1: puts-hello from Charlie source
+<a id="v003-phase-1-puts-hello-from-charlie-source"></a>
+## 19 V0.03 phase 1: puts-hello from Charlie source
 
 ```
 vibecode: {"phase": 1, "version": "0.03", "fixture_path":
@@ -2261,7 +2323,8 @@ vibecode: {"phase": 1, "version": "0.03", "fixture_path":
 Three steps. Same shape as V0.01/V0.02 Phase 1: inventory, fill gaps,
 verify.
 
-### V0.03 Step 1: Inventory
+<a id="v003-step-1-inventory"></a>
+### 19.1 V0.03 Step 1: Inventory
 
 ```
 vibecode: {"step": 1, "name": "inventory", "actions":
@@ -2290,7 +2353,8 @@ existing `interpreter.lua` for its `puts` handler (lines around the
   `[value, method, args]` — V0.03 adds a sibling branch for
   `[{bwc: name}, arg?]`.
 
-### V0.03 Step 2: Fill the gaps
+<a id="v003-step-2-fill-the-gaps"></a>
+### 19.2 V0.03 Step 2: Fill the gaps
 
 ```
 vibecode: {"step": 2, "name": "fill_gaps", "scope":
@@ -2339,7 +2403,8 @@ Per the no-bolt-on principle: anything beyond `puts` with one string
 argument (a second bwc, two arguments, kwargs, escapes inside the
 string, etc.) is later work.
 
-### V0.03 Step 3: Verify
+<a id="v003-step-3-verify"></a>
+### 19.3 V0.03 Step 3: Verify
 
 ```
 vibecode: {"step": 3, "name": "verify", "actions":
@@ -2368,7 +2433,8 @@ back to Step 2 for that layer.
 When V0.03 passes, V0.04 is selected from the roadmap and planned at
 the same detail level as V0.02 and V0.03.
 
-### V0.03 phase 1 test plan
+<a id="v003-phase-1-test-plan"></a>
+### 19.4 V0.03 phase 1 test plan
 
 ```
 vibecode: {"phase_1_tests":
@@ -2407,7 +2473,8 @@ V0.01 T1.8): a spy on the `puts` handler records
 
 All seven pass = V0.03 done.
 
-### V0.03 test layout
+<a id="v003-test-layout"></a>
+### 19.5 V0.03 test layout
 
 ```
 vibecode: {"test_directory": "tests/charlie/v003/",
@@ -2427,7 +2494,8 @@ vibecode: {"test_directory": "tests/charlie/v003/",
 | `tests/charlie/run.lua` | Extended to require V0.03 test modules |
 | `tests/charlie/transpiler/test_*.lua` | Updated only for bwc paths realigned in V0.03 |
 
-### V0.03 open questions
+<a id="v003-open-questions"></a>
+### 19.6 V0.03 open questions
 
 ```
 vibecode: {"open_questions":
@@ -2460,7 +2528,8 @@ vibecode: {"open_questions":
 
 ---
 
-## V0.0X: Charlie command-line execution
+<a id="v00x-charlie-command-line-execution"></a>
+## 20 V0.0X: Charlie command-line execution
 
 ```
 vibecode: {"slice": "v0_0x_charlie_cli", "codename":
@@ -2482,7 +2551,8 @@ test file is "an ordinary executable"). This slice introduces
 `charlie` as an OS-level command and pins down the permission model
 for Charlie code launched at the CLI.
 
-### What the slice introduces
+<a id="what-the-slice-introduces"></a>
+### 20.1 What the slice introduces
 
 ```
 vibecode: {"introduces": ["charlie_command_line_launcher",
@@ -2522,7 +2592,8 @@ vibecode: {"introduces": ["charlie_command_line_launcher",
   or alarm.
 - The permission-flag machinery described below.
 
-### Permissions: default restrictive, opt-in via flags
+<a id="permissions-default-restrictive-opt-in-via-flags"></a>
+### 20.2 Permissions: default restrictive, opt-in via flags
 
 ```
 vibecode: {"permission_model": "default_restrictive_opt_in_via_flags",
@@ -2543,7 +2614,8 @@ posture: a `.charlie` program invoked via the CLI gets only the minimum
 roles and faucets, with everything else opt-in via flags. This mirrors
 Deno's local-script model.
 
-#### Always on (every CLI invocation)
+<a id="always-on-every-cli-invocation"></a>
+#### 20.2.1 Always on (every CLI invocation)
 
 | Capability | Role | Why default |
 |---|---|---|
@@ -2556,7 +2628,8 @@ Deno's local-script model.
 | stderr object | `stderr` faucet | Diagnostics |
 | `argv` | `cli_args` faucet | The program needs to see its own arguments |
 
-#### Off by default, grant via flag
+<a id="off-by-default-grant-via-flag"></a>
+#### 20.2.2 Off by default, grant via flag
 
 | Flag (repeatable where listed) | Grants | Role created |
 |---|---|---|
@@ -2572,7 +2645,8 @@ Deno's local-script model.
 trust myself." Without it, Charlie at the CLI runs sandboxed by
 default — the developer has to think about what the program needs.
 
-#### Examples
+<a id="examples"></a>
+#### 20.2.3 Examples
 
 ```bash
 ./hello.charlie
@@ -2588,7 +2662,8 @@ charlie --allow-all ./my_local_tool.charlie
 # everything; for trusted local scripts
 ```
 
-### Installation
+<a id="installation"></a>
+### 20.3 Installation
 
 ```
 vibecode: {"installation_model":
@@ -2652,7 +2727,8 @@ to ship.
 System-level install (`/usr/local/bin/charlie`, distribution packages,
 homebrew formula, etc.) is a V1+ deployment concern, not V0.0X work.
 
-### Bryton interaction
+<a id="bryton-interaction"></a>
+### 20.4 Bryton interaction
 
 ```
 vibecode: {"bryton_invocation": "charlie_dash_dash_allow_all_per_test",
@@ -2665,7 +2741,8 @@ fixtures, network to hit a service-under-test, etc.). Per-test
 permission narrowing is a later Bryton feature (configurable via a
 future `bryton.json` setting; out of scope for V0.1).
 
-### Open questions
+<a id="open-questions"></a>
+### 20.5 Open questions
 
 ```
 vibecode: {"open_questions_v00x_cli":
@@ -2694,7 +2771,8 @@ vibecode: {"open_questions_v00x_cli":
 
 ---
 
-## V0.1: Bryton
+<a id="v01-bryton"></a>
+## 21 V0.1: Bryton
 
 ```
 vibecode: {"version": "0.1", "codename": "bryton", "goal":
@@ -2750,7 +2828,8 @@ internals; that's fixed at V0.01. Bryton is for testing **Charlie
 code with Charlie code** (or, in V0.1, with any script that emits
 Xeme), layered on top of the engine.
 
-### V0.1 prerequisites
+<a id="v01-prerequisites"></a>
+### 21.1 V0.1 prerequisites
 
 ```
 vibecode: {"v01_prerequisites":
@@ -2780,11 +2859,13 @@ The V0.0X slices that fill these gaps are unscoped in this plan until
 each is the next active slice. The current direction is to attempt
 them in roughly the order shown; each unblocks the next.
 
-### V0.1 phase plan
+<a id="v01-phase-plan"></a>
+### 21.2 V0.1 phase plan
 
 Three phases, same three-step shape as V0.01:
 
-#### Phase 0: Lua-host workbench for Bryton
+<a id="phase-0-lua-host-workbench-for-bryton"></a>
+#### 21.2.1 Phase 0: Lua-host workbench for Bryton
 
 ```
 vibecode: {"v01_phase_0_purpose":
@@ -2805,7 +2886,8 @@ vibecode: {"v01_phase_0_purpose":
   installed. Test: walking a known fixture directory produces the
   expected file list.
 
-#### Phase 1: runner implementation
+<a id="phase-1-runner-implementation"></a>
+#### 21.2.2 Phase 1: runner implementation
 
 ```
 vibecode: {"v01_phase_1_steps":
@@ -2835,7 +2917,8 @@ Build the runner step by step, each independently testable:
    directory path arg, walks, runs each file, aggregates, reports,
    exits 0 if all passed / 1 if any failed.
 
-#### Phase 2: acceptance tests
+<a id="phase-2-acceptance-tests"></a>
+#### 21.2.3 Phase 2: acceptance tests
 
 ```
 vibecode: {"v01_phase_2_tests":
@@ -2860,7 +2943,8 @@ prerequisites being complete.
 
 When all three pass, V0.1 Bryton ships.
 
-### V0.1 test layout
+<a id="v01-test-layout"></a>
+### 21.3 V0.1 test layout
 
 ```
 vibecode: {"v01_test_layout":
@@ -2880,7 +2964,8 @@ vibecode: {"v01_test_layout":
 
 ---
 
-## Methodology
+<a id="methodology"></a>
+## 22 Methodology
 
 ```
 vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
@@ -2908,7 +2993,8 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 
 ---
 
-## Open
+<a id="open"></a>
+## 23 Open
 
 ```
 vibecode: {"open": ["test_runner_decision", "fixture_layout",

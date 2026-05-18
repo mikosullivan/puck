@@ -1,6 +1,7 @@
 # Project Overview
 
-## What Is This?
+<a id="what-is-this"></a>
+## 1 What Is This?
 
 ~~~json
 {"vibecode": {
@@ -26,7 +27,8 @@ the pieces fit together at runtime.
 
 ---
 
-## Kiera
+<a id="kiera"></a>
+## 2 Kiera
 
 ~~~json
 {"vibecode": {
@@ -44,7 +46,8 @@ objects regardless of where they physically live.
 
 See [kiera.md](kiera/kiera.md) for the full protocol spec.
 
-### Features
+<a id="features"></a>
+### 2.1 Features
 
 - **UNS (Universal Namespace).** Every class and well-known object has
   a URL-shaped global address — your domain gives you a unique
@@ -77,7 +80,8 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
 
 ---
 
-## Charlie
+<a id="charlie"></a>
+## 3 Charlie
 
 ~~~json
 {"vibecode": {
@@ -98,7 +102,8 @@ else without external runtime dependencies beyond the engine itself.
 See [charlie.md](charlie/charlie.md) for the language reference and
 [charliejson.md](charlie/charliejson.md) for the runtime format.
 
-### Features
+<a id="features-1"></a>
+### 3.1 Features
 
 - **CharlieJSON as the canonical runtime format.** Charlie source
   transpiles to CharlieJSON (a JSON-shaped representation the engine
@@ -134,7 +139,8 @@ See [charlie.md](charlie/charlie.md) for the language reference and
 
 ---
 
-## Mikobase
+<a id="mikobase"></a>
+## 4 Mikobase
 
 ~~~json
 {"vibecode": {
@@ -154,7 +160,8 @@ services) are supported.
 
 See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
-### Features
+<a id="features-2"></a>
+### 4.1 Features
 
 - **Q0 JSON-based query language.** Every query is a JSON object:
   `{"action": "select", "class": "foo.com/character"}`. SQL-shaped
@@ -184,7 +191,8 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
 ---
 
-## Cross-cutting design principles
+<a id="cross-cutting-design-principles"></a>
+## 5 Cross-cutting design principles
 
 ~~~json
 {"vibecode": {
@@ -195,7 +203,8 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 }}
 ~~~
 
-### No nanny code
+<a id="no-nanny-code"></a>
+### 5.1 No nanny code
 
 Kiera follows a principle borrowed from Perl: **the system gives you
 enough rope to hang yourself.** When the system declines to do
@@ -210,7 +219,8 @@ The first is what we avoid. The second and third stay. When in doubt:
 if a developer wants to do something legitimate that the API blocks
 without giving them a way through, that's nanny code.
 
-### Reserved pass-through fields
+<a id="reserved-pass-through-fields"></a>
+### 5.2 Reserved pass-through fields
 
 Every Kieraverse object has four reserved keys that travel with it
 silently — never stripped, never modified by engines, firewalls, or
@@ -227,7 +237,8 @@ See [vibecode.md](ecoverse/vibecode.md).
 
 ---
 
-## Implementation Status
+<a id="implementation-status"></a>
+## 6 Implementation Status
 
 ~~~json
 {"vibecode": {
@@ -251,7 +262,8 @@ See [vibecode.md](ecoverse/vibecode.md).
 
 ---
 
-## How It Fits Together
+<a id="how-it-fits-together"></a>
+## 7 How It Fits Together
 
 ~~~json
 {"vibecode": {

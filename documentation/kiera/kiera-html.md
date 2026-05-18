@@ -8,7 +8,8 @@ The HTML format is intended for serving objects at their UNS URL — a human vis
 `borg.com/parser` in a browser sees a readable page; a machine reading the same page
 can reconstruct the JSON exactly.
 
-## Design Goal: AI Cold-Start
+<a id="design-goal-ai-cold-start"></a>
+## 1 Design Goal: AI Cold-Start
 
 **An AI agent that visits a Kiera class page with no prior knowledge of Kiera should
 be able to understand what the page is, what the object does, and how to use Kiera —
@@ -42,7 +43,8 @@ See `json.html` in this directory for a worked example.
 
 ---
 
-## Data Attributes
+<a id="data-attributes"></a>
+## 2 Data Attributes
 
 The machine-readable structure is carried entirely in `data-kiera-*` attributes. The
 visible HTML is purely for display and has no effect on conversion.
@@ -64,7 +66,8 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 
 ---
 
-## Type Mapping
+<a id="type-mapping"></a>
+## 3 Type Mapping
 
 | JSON type | `data-kiera-type` | Value location |
 |-----------|-------------------|----------------|
@@ -77,7 +80,8 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 
 ---
 
-## Conversion Rules
+<a id="conversion-rules"></a>
+## 4 Conversion Rules
 
 **JSON → HTML**
 
@@ -105,7 +109,8 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 
 ---
 
-## UNS Values as Links
+<a id="uns-values-as-links"></a>
+## 5 UNS Values as Links
 
 When a scalar string value is a UNS address, the display text may be wrapped in an
 `<a>` tag linking to the UNS URL. The `data-kiera-value` attribute still holds the
@@ -122,7 +127,8 @@ bare UNS string; the link is display-only and does not affect conversion.
 
 ---
 
-## Vibecode
+<a id="vibecode"></a>
+## 6 Vibecode
 
 Any element may carry a `data-vibecode` attribute containing a minified JSON
 specification of that element's semantics. Vibecode is supplementary — it does not
@@ -161,7 +167,8 @@ after `,` or `:`, with flush-left continuations.
 
 ---
 
-## Notes
+<a id="notes"></a>
+## 7 Notes
 
 - Key order in the JSON is preserved by DOM order. Parsers must iterate child elements
   in order, not sort them.

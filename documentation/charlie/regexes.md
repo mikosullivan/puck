@@ -1,6 +1,7 @@
 # Patterns
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 vibecode: {
 	"section": "overview",
@@ -17,7 +18,8 @@ Lua patterns do not support alternation (`|`), named captures, lookahead, or `{n
 quantifiers. If you need those features, restructure the logic in Charlie rather than
 reaching for a more powerful pattern language.
 
-## Pattern Engine
+<a id="pattern-engine"></a>
+## 2 Pattern Engine
 
 vibecode: {
 	"section": "pattern_engine",
@@ -40,7 +42,8 @@ Named captures and other RE2-specific features are not supported with the defaul
 engine. If a richer engine is plugged in, those features become available automatically
 — no changes to the calling code required.
 
-### Pattern syntax
+<a id="pattern-syntax"></a>
+### 2.1 Pattern syntax
 
 | Pattern | Meaning |
 |---|---|
@@ -63,7 +66,8 @@ engine. If a richer engine is plugged in, those features become available automa
 
 ---
 
-## Methods
+<a id="methods"></a>
+## 3 Methods
 
 vibecode: {
 	"section": "methods",
@@ -71,7 +75,8 @@ vibecode: {
 	"key_concepts": ["match", "match_boolean", "chaining", "negation", "null_safe_navigation", "Match_object"]
 }
 
-### `$string.match(pattern)`
+<a id="stringmatchpattern"></a>
+### 3.1 `$string.match(pattern)`
 
 Returns a `Match` object if the pattern matches, or `null` if it does not. Use safe
 navigation to handle the null case:
@@ -80,7 +85,8 @@ navigation to handle the null case:
 $string.match('pattern')&.text
 ```
 
-### `$string.match?(pattern)`
+<a id="stringmatchpattern-1"></a>
+### 3.2 `$string.match?(pattern)`
 
 Returns a boolean. Does not allocate a match object — use this when you only need to
 know whether the pattern matched:
@@ -90,7 +96,8 @@ if $string.match?('%d+')
 end
 ```
 
-### Chaining
+<a id="chaining"></a>
+### 3.3 Chaining
 
 `.match()` can be chained. Each call narrows the result, operating on the text of the
 previous match:
@@ -99,7 +106,8 @@ previous match:
 $string.match('blah blah').match('blue')
 ```
 
-### Negation
+<a id="negation"></a>
+### 3.4 Negation
 
 ```
 $string.match('pattern', not:true)
@@ -107,7 +115,8 @@ $string.match('pattern', not:true)
 
 ---
 
-## Match Object
+<a id="match-object"></a>
+## 4 Match Object
 
 vibecode: {
 	"section": "match_object",
@@ -126,7 +135,8 @@ vibecode: {
 | `$match.matches` | All matches as an array of Match objects |
 | `$match.count` | Number of matches |
 
-### String Conversion
+<a id="string-conversion"></a>
+### 4.1 String Conversion
 
 A `Match` object converts to its matched text when used in a string context:
 

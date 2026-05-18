@@ -11,7 +11,8 @@ serving on top.
 
 ---
 
-## Status
+<a id="status"></a>
+## 1 Status
 
 Spec in development. Material previously filed under the
 [Dogberry wishlist](../../ideas/dogberry-wishlist.md) (Sinatra
@@ -22,7 +23,8 @@ shape.
 
 ---
 
-## Quick example
+<a id="quick-example"></a>
+## 2 Quick example
 
 ```
 $server = %['kiera.uno/sinatra'].new()
@@ -45,7 +47,8 @@ $server.run() do($request)
 end
 ```
 
-## What's in scope
+<a id="whats-in-scope"></a>
+## 3 What's in scope
 
 Small-case use:
 
@@ -64,7 +67,8 @@ Small-case use:
 - A standard `response` constructor.
 - Static file serving via a directory object (see below).
 
-## Route patterns
+<a id="route-patterns"></a>
+## 4 Route patterns
 
 A route pattern is a path string with two kinds of named captures:
 
@@ -172,7 +176,8 @@ have matched `/user/edit` (capturing `edit` as the id) — and
 the literal route would never be reached. This is the same
 first-response-wins rule as the handler chain itself.
 
-### Method-agnostic registration
+<a id="method-agnostic-registration"></a>
+### 4.1 Method-agnostic registration
 
 `$server.all_methods(pattern) do ... end` registers a path
 selector that matches the pattern regardless of the request
@@ -191,7 +196,8 @@ needs to behave differently for different methods. (REST style
 prefers distinct per-method registrations; `all_methods` is for
 the cases where one response really is right for every verb.)
 
-### The `path()` primitive
+<a id="the-path-primitive"></a>
+### 4.2 The `path()` primitive
 
 The per-method selectors and `all_methods` are sugar for a
 single primitive:
@@ -234,7 +240,8 @@ No further compound sugar (no `post_and_get`, no
 `all_methods` plus the primitive cover the space without
 ballooning the method-name surface.
 
-### Explicit 405: `$server.reject`
+<a id="explicit-405-serverreject"></a>
+### 4.3 Explicit 405: `$server.reject`
 
 For REST-conscious deployments that want strict
 `405 Method Not Allowed` semantics (rather than the default 404
@@ -273,7 +280,8 @@ behavior, matching Ruby Sinatra). Reject lets the developer
 upgrade specific paths to strict-405 semantics without changing
 the global default.
 
-### Auto-OPTIONS
+<a id="auto-options"></a>
+### 4.4 Auto-OPTIONS
 
 Sinatra ships with a **built-in default handler** that responds
 to `OPTIONS /path` with `204 No Content` and an `Allow:` header
@@ -327,7 +335,8 @@ one.
 form) is not handled by the default. Register
 `$server.options('*')` manually if needed.
 
-### Methods-per-path index
+<a id="methods-per-path-index"></a>
+### 4.5 Methods-per-path index
 
 Both auto-OPTIONS and [`$server.reject`](#explicit-405-serverreject)
 need to know "which methods are registered for path X" to
@@ -368,7 +377,8 @@ The index is internal — handler code doesn't see it. It exists
 so the two `Allow:`-emitting features stay cheap on the common
 path.
 
-## Request, transaction, sessions, body buffering
+<a id="request-transaction-sessions-body-buffering"></a>
+## 5 Request, transaction, sessions, body buffering
 
 All of these are universal HTTP infrastructure and live in
 [Touchstone](touchstone.md):
@@ -388,7 +398,8 @@ All of these are universal HTTP infrastructure and live in
 
 Sinatra inherits these unchanged.
 
-## Static file serving
+<a id="static-file-serving"></a>
+## 6 Static file serving
 
 Sinatra **has no filesystem dependency by default.** A bare `.new()`
 gives a routes-only server that never touches a filesystem — ideal
@@ -440,7 +451,8 @@ listings explicitly when they're wanted; otherwise the
 directory's inventory stays hidden, on the same "no dangerous
 defaults" principle as the per-extension rule above.
 
-## Concurrency
+<a id="concurrency"></a>
+## 7 Concurrency
 
 **Sinatra is single-threaded. One request at a time.** The accept
 loop reads a request, runs the handler synchronously, writes the
@@ -490,7 +502,8 @@ These are deliberate trade-offs. Sinatra is meant for small,
 fast, predictable services; cases that need concurrency move
 to Robinson or a deployer-level multi-process setup.
 
-## Handlers
+<a id="handlers"></a>
+## 8 Handlers
 
 The handler chain, three-stage dispatch (`before` / `process` /
 `after`), the `$transaction` object, per-handler state, uncaught
@@ -519,7 +532,8 @@ the Sinatra-specific fallback when no handler returned a response.
 See [The three stages](touchstone.md#the-three-stages) in
 Touchstone for how that slots into the dispatch flow.
 
-## CSRF Protection and CSP
+<a id="csrf-protection-and-csp"></a>
+## 9 CSRF Protection and CSP
 
 Both are universal HTTP security features and live in
 [Touchstone](touchstone.md):
@@ -532,14 +546,16 @@ Both are universal HTTP security features and live in
 
 Sinatra inherits both unchanged.
 
-## What's out of scope
+<a id="whats-out-of-scope"></a>
+## 10 What's out of scope
 
 The fancier features Robinson covers (multi-site dispatch,
 filesystem trees, admin authentication, factory message overrides,
 canonical redirects) do **not** apply to Sinatra. If you need
 those, use Robinson.
 
-## Candidates for v1
+<a id="candidates-for-v1"></a>
+## 11 Candidates for v1
 
 The features below are tempting to add. Each is a v1 candidate
 **if and only if it proves light** — a short, clean implementation
@@ -553,7 +569,8 @@ probably doesn't belong in core.
 As each is evaluated, it either gets promoted to scope (with a
 full spec section above) or moved to add-on territory.
 
-### Comfort middleware
+<a id="comfort-middleware"></a>
+### 11.1 Comfort middleware
 
 - **Cookies API / sessions.** **Promoted to scope** — see
   [`$transaction.session`](#sessions). Basic JSON-hash cookie
@@ -576,7 +593,8 @@ full spec section above) or moved to add-on territory.
   explicit registrations) and the developer fills in the policy.
 - **Rate limiting.** Reverse proxy or add-on.
 
-### HTTP "correctness" niceties
+<a id="http-correctness-niceties"></a>
+### 11.2 HTTP "correctness" niceties
 
 - **Auto-HEAD from GET.** Tempting and small, but it implies
   "Sinatra knows your GET is side-effect-free," which it doesn't.
@@ -588,7 +606,8 @@ full spec section above) or moved to add-on territory.
 - **HTTP method override** (Rails-style `_method` form field).
   Pure historical wart.
 
-### Routing power
+<a id="routing-power"></a>
+### 11.3 Routing power
 
 - **Before/after request hooks and middleware chain.**
   **Promoted to scope** — see [Handlers](#handlers). The
@@ -601,7 +620,8 @@ full spec section above) or moved to add-on territory.
 - **Mount / sub-app composition.** Use path prefixes manually.
 - **URL reverse routing / named routes.** Path strings are paths.
 
-### Response sugar
+<a id="response-sugar"></a>
+### 11.4 Response sugar
 
 - **Status code symbols** (`:ok`, `:not_found`). Integer 200 is fine.
 - **Auto-JSON-from-hash return.** Forces a JSON encoder into the
@@ -609,33 +629,38 @@ full spec section above) or moved to add-on territory.
   `response.json(...)` is honest.
 - **Pretty-print JSON by default.** No.
 
-### Body / serialization
+<a id="body-serialization"></a>
+### 11.5 Body / serialization
 
 - **XML, YAML, form-urlencoded-via-magic body parsers.** Multipart
   is already in because uploads need it. Everything else is the
   handler's problem.
 - **Built-in gzip / brotli compression.** Reverse proxy.
 
-### Observability
+<a id="observability"></a>
+### 11.6 Observability
 
 - **A logger interface separate from Jasmine.** Jasmine is the
   logging surface. Don't expose a second one.
 - **Metrics / Prometheus endpoints.** Add-on territory.
 
-### Testing
+<a id="testing"></a>
+### 11.7 Testing
 
 - **A built-in test client / mock request builder.** Bryton plus
   a real loopback socket is the path. No test-only mode inside
   the server.
 
-### Streaming / async
+<a id="streaming-async"></a>
+### 11.8 Streaming / async
 
 (Already ruled out by single-threaded — see [Concurrency](#concurrency).
 Long-polling, WebSockets, SSE not viable in core.)
 
 ---
 
-## Add-ons
+<a id="add-ons"></a>
+## 12 Add-ons
 
 Sinatra is designed to be extended by add-ons — installable
 packages that layer additional behavior on top of the core
@@ -673,7 +698,8 @@ Community add-ons are welcomed and expected.
 
 ---
 
-## The response object
+<a id="the-response-object"></a>
+## 13 The response object
 
 The response constructor (`response.new($status, $headers, $body)`),
 the convenience helpers (`response.html`, `response.json`, etc.),
@@ -686,13 +712,15 @@ Sinatra inherits them unchanged.
 
 ---
 
-## To be ported from the wishlist
+<a id="to-be-ported-from-the-wishlist"></a>
+## 14 To be ported from the wishlist
 
 - Detailed registration semantics
 - Error page rendering
 - Implicit-last-value return convention
 
-## Open issues
+<a id="open-issues"></a>
+## 15 Open issues
 
 (none currently)
 

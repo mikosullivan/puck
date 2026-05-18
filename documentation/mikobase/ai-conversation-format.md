@@ -25,7 +25,8 @@ Both humans and AI systems can read this document directly.
 
 ---
 
-## Mikobase
+<a id="mikobase"></a>
+## 1 Mikobase
 
 A **mikobase** is a live object store — not a passive file. It supports typed class
 definitions, append-only record history, locking, and transactions. The central rule: a
@@ -37,7 +38,8 @@ vibecode: {"concept":"mikobase","type":"live_object_store","requires":"maintaini
 "transactions"],"key_rules":["mikobase owns its objects",
 "processes connect and interact; no direct object passing between processes"]}
 
-### Concurrency Model
+<a id="concurrency-model"></a>
+### 1.1 Concurrency Model
 
 Mikobase is designed for concurrent writes with zero coordination overhead. Every write
 appends a new history entry with a unique UUID v4. Two agents writing simultaneously create
@@ -54,7 +56,8 @@ vibecode: {"concept":"concurrency_model",
 "identical_uuid":"skip silently; import is idempotent",
 "different_uuid":"both entries valid and coexist; no merge needed"}}
 
-### Worldlets (Packaged Mikobases)
+<a id="worldlets-packaged-mikobases"></a>
+### 1.2 Worldlets (Packaged Mikobases)
 
 A **worldlet** is a mikobase packaged as a portable file — class definitions, records, history,
 and files bundled together. Class names use the publisher's domain, so there are no naming
@@ -66,7 +69,8 @@ vibecode: {"concept":"packaged_mikobase","marketing_name":"worldlet",
 
 ---
 
-## Q0
+<a id="q0"></a>
+## 2 Q0
 
 **Q0** ("query zero") is the universal query interface for all mikobase engines. Queries are
 JSON objects sent to `engine.q0()`. Every mikobase engine supports Q0. Class names in queries
@@ -77,12 +81,14 @@ vibecode: {"concept":"Q0","name":"query zero","format":"JSON objects sent to eng
 "all_engines_support":true,"uns_rule":"class names are UNS strings: URL without https:// prefix",
 "uns_examples":["kiera.uno/record","kiera.uno/reference","foo.com/character"]}
 
-### Actions
+<a id="actions"></a>
+### 2.1 Actions
 
 vibecode: {"concept":"q0_actions","values":["select","create","update","delete","transaction",
 "commit","rollback"]}
 
-### Select
+<a id="select"></a>
+### 2.2 Select
 
 A select with no filters returns all active records. `class` is inheritance-aware — subclasses
 are always included. `null` values always sort last regardless of sort direction.
@@ -103,7 +109,8 @@ vibecode: {"concept":"q0_select","action":"select","filters":[
 "null_sort":"null values always sort last regardless of reverse",
 "unfiltered_select":"returns all active records"}
 
-### Narrowing
+<a id="narrowing"></a>
+### 2.3 Narrowing
 
 Results can be filtered with `then` (AND), `all` (AND over array), and `any` (OR over array).
 These operators are combinable and nestable.
@@ -114,7 +121,8 @@ vibecode: {"concept":"q0_narrowing","operators":[
 {"op":"any","semantics":"OR; array of sub-queries; record must match at least one"}],
 "combinable":true,"nestable":true}
 
-### Path Operators
+<a id="path-operators"></a>
+### 2.4 Path Operators
 
 A path is an array of keys to traverse into a bucket, with the final element being a literal
 value (exact equality) or a typed operator.
@@ -132,7 +140,8 @@ vibecode: {"concept":"q0_path",
 {"type":"existence","ops":[
 {"exists":true},{"exists":false},{"truthy":true},{"any":true}]}]}
 
-### Placeholders
+<a id="placeholders"></a>
+### 2.5 Placeholders
 
 Placeholders are named variables defined in a query and referenced elsewhere in the same query.
 They are resolved dynamically — a placeholder is only an error if it is actually reached and
@@ -147,19 +156,22 @@ vibecode: {"concept":"q0_placeholders","syntax":{"placeholder":"name"},
 "unreached placeholder causes no error","local to query; not reusable across queries",
 "may resolve to any JSON value"]}
 
-### Create
+<a id="create"></a>
+### 2.6 Create
 
 vibecode: {"concept":"q0_create","action":"create","required":["bucket"],"optional":["class"],
 "class_default":"kiera.uno/record if omitted or null","pk":"engine-generated",
 "response":"success:true + new pk in results"}
 
-### Update
+<a id="update"></a>
+### 2.7 Update
 
 vibecode: {"concept":"q0_update","action":"update","required":["pk"],
 "bucket":"required unless class-only change","class":"optional; unchanged if omitted",
 "error":"updating deleted record is error"}
 
-### Delete
+<a id="delete"></a>
+### 2.8 Delete
 
 Deletion creates a tombstone — it sets `active=false` rather than removing the record.
 Deleted records are excluded from normal selects. `if_exists: true` makes delete idempotent.
@@ -170,14 +182,16 @@ vibecode: {"concept":"q0_delete","action":"delete","required":["pk"],
 "tombstone_clears":["bucket","class_pk","custom_classes"],
 "select_behavior":"deleted records excluded from normal select; historical reads at cutoff may return them"}
 
-### Responses
+<a id="responses"></a>
+### 2.9 Responses
 
 vibecode: {"concept":"q0_responses",
 "success":{"success":true,"results":"..."},
 "warning":{"success":true,"results":"...","warnings":[{"id":"...","details":{}}]},
 "failure":{"success":false,"errors":[{"id":"...","details":{}}]}}
 
-### Error IDs
+<a id="error-ids"></a>
+### 2.10 Error IDs
 
 vibecode: {"concept":"q0_error_ids","errors":[
 {"id":"invalid_request","meaning":"malformed: missing fields, wrong types, unknown fields"},
@@ -194,7 +208,8 @@ vibecode: {"concept":"q0_error_ids","errors":[
 
 ---
 
-## Worldlet JSON Format
+<a id="worldlet-json-format"></a>
+## 3 Worldlet JSON Format
 
 A **worldlet** is a complete mikobase serialized as a single JSON object — classes, records,
 history, and files in one portable document. Primary keys are preserved exactly on import, so
@@ -210,7 +225,8 @@ vibecode: {"concept":"worldlet","aka":"packaged_mikobase","format":"single JSON 
 "minimum_valid_temporal":"history key only; all other keys optional; absent keys default to empty structures",
 "temporal_flag_default":"temporal_is_the_default; non_temporal_requires_explicit_top_level_temporal_false_per_mikobase_md_temporal_section"}
 
-### Top-Level Structure
+<a id="top-level-structure"></a>
+### 3.1 Top-Level Structure
 
 | Key | Required | Description |
 |-----|----------|-------------|
@@ -239,7 +255,8 @@ vibecode: {"concept":"worldlet_top_level_structure","keys":[
 {"key":"files","required":false,"type":"object","note":"file metadata; keyed by file UUID"},
 {"key":"file_chunks","required":false,"type":"object","note":"file binary content; keyed by chunk UUID"}]}
 
-### meta
+<a id="meta"></a>
+### 3.2 meta
 
 Descriptive metadata about the worldlet. All fields are optional.
 
@@ -251,7 +268,8 @@ vibecode: {"concept":"worldlet_meta","required":false,
 {"field":"description","required":false,"type":"string","note":"free-text description of contents"},
 {"field":"created_at","required":false,"type":"string","note":"ISO 8601 timestamp of export"}]}
 
-### properties
+<a id="properties"></a>
+### 3.3 properties
 
 Database-level properties that apply to the mikobase as a whole. Read before interacting with
 data.
@@ -267,7 +285,8 @@ vibecode: {"concept":"worldlet_properties","required":false,
 "note":"advisory: code in this mikobase may be executed; default false means data only",
 "enforcement":"advisory only; engine does not prevent or permit execution; client/agent responsible for respecting it"}]}
 
-### allow
+<a id="allow"></a>
+### 3.4 allow
 
 An array of external resource identifiers (e.g. hostnames) that this worldlet requires access
 to. The host presents these to the user for approval before import. Nothing is granted
@@ -277,7 +296,8 @@ vibecode: {"concept":"worldlet_allow","required":false,"type":"array of strings"
 "note":"external resources the worldlet requires; host presents to user for approval before import; nothing granted silently",
 "example":["api.starfleet.com"]}
 
-### classes
+<a id="classes"></a>
+### 3.5 classes
 
 An object keyed by UNS class name. The class name is always taken from the dictionary key —
 any `name` field inside the definition is ignored. Methods are fields with `class: function`
@@ -293,7 +313,8 @@ vibecode: {"concept":"worldlet_classes","required":false,
 "all inherits references must exist in DB or same schema; entire import fails if any missing",
 "classes within schema need not be ordered; engine inserts parent-first"]}
 
-### records
+<a id="records"></a>
+### 3.6 records
 
 An object keyed by record UUID, with empty objects `{}` as values. The content of a record
 lives entirely in `history` — this section establishes identity only. If `records` is absent,
@@ -304,7 +325,8 @@ vibecode: {"concept":"worldlet_records","required":false,
 "note":"content lives in history, not here; record key establishes identity only",
 "inference":"if absent, importer infers record identities from record fields in history"}
 
-### history
+<a id="history"></a>
+### 3.7 history
 
 The core of the worldlet. Every entry is one version of one record. The entry with the latest
 `updated_at` for a given record UUID is its current state. An entry with `active: false` is a
@@ -324,7 +346,8 @@ vibecode: {"concept":"worldlet_history","required":true,
 "deleted_state":"latest entry with active=false means record is deleted",
 "timestamp_rule":"two entries for the same record cannot share the same updated_at"}
 
-### files
+<a id="files"></a>
+### 3.8 files
 
 vibecode: {"concept":"worldlet_files","required":false,
 "format":"object keyed by file UUID",
@@ -335,7 +358,8 @@ vibecode: {"concept":"worldlet_files","required":false,
 {"field":"type","note":"MIME type e.g. image/png"},
 {"field":"encoding","note":"encoding used for chunk data e.g. base64"}]}]}
 
-### file_chunks
+<a id="file_chunks"></a>
+### 3.9 file_chunks
 
 Files are stored in chunks. Chunks are assembled in index order. An empty file is represented
 as a single chunk with `data: ""` and `last: true`.
@@ -349,7 +373,8 @@ vibecode: {"concept":"worldlet_file_chunks","required":false,
 {"field":"data","type":"string","note":"chunk content encoded per file mime.encoding"}],
 "empty_file":"single chunk row with data='' and last=true"}
 
-### Import Rules
+<a id="import-rules"></a>
+### 3.10 Import Rules
 
 When agents exchange delta updates, the following rules govern what the receiving mikobase
 will accept. All imports are all-or-nothing — any error aborts the entire import.
@@ -370,7 +395,8 @@ vibecode: {"concept":"worldlet_import_rules",
 
 ---
 
-## AI Conversation Format
+<a id="ai-conversation-format"></a>
+## 4 AI Conversation Format
 
 The `kiera.uno/ai/` namespace defines a standard class library for AI-to-AI collaboration
 over a shared live mikobase. Using these classes is optional — the mikobase accepts anything
@@ -401,7 +427,8 @@ vibecode: {"concept":"ai_conversation_format","namespace":"kiera.uno/ai/",
 "session_field_rule":"all classes except kiera.uno/ai/agent and kiera.uno/ai/session carry @session; enables single Q0 query to fetch all records for a session without graph traversal",
 "report_delivery":"kiera.uno forwards kiera.uno/ai/report to human when session ends; full session mikobase available for audit"}
 
-### Concurrency in AI Sessions
+<a id="concurrency-in-ai-sessions"></a>
+### 4.1 Concurrency in AI Sessions
 
 Multiple agents can write to the same session simultaneously without coordination. Each agent
 simply appends new records. The session mikobase is the union of all appended records, ordered
@@ -431,7 +458,8 @@ vibecode: {"concept":"ai_concurrency",
 "agents_never":["lock records","update another agent's record","use transactions","negotiate write ordering"],
 "agents_can":["post records concurrently","work offline and exchange deltas asynchronously","merge updates without conflict resolution"]}
 
-### Class Summary
+<a id="class-summary"></a>
+### 4.2 Class Summary
 
 | Class | Role |
 |-------|------|
@@ -452,7 +480,8 @@ vibecode: {"concept":"ai_concurrency",
 | `kiera.uno/ai/human_decision` | A decision made by the human, typically to resolve an impasse |
 | `kiera.uno/ai/sign_off` | Signals that an agent is done sending and disconnecting |
 
-### Agent
+<a id="agent"></a>
+### 4.3 Agent
 
 Each participating AI registers itself once at session start by creating an agent record. All
 other records reference this record via `@from`. If an agent drops and reconnects without
@@ -470,7 +499,8 @@ vibecode: {"class":"kiera.uno/ai/agent","role":"agent identity record; registere
 "if agent drops and reconnects without knowing original pk, register a new agent record",
 "duplicate registrations from reconnects are acceptable"]}
 
-### Session
+<a id="session"></a>
+### 4.4 Session
 
 The top-level container for a collaboration. Typically created by the Kiera server when
 spinning up the mikobase instance. Status moves from `:open` toward `:resolved`, `:impasse`,
@@ -485,7 +515,8 @@ vibecode: {"class":"kiera.uno/ai/session","role":"top-level container for collab
 {"field":"@status","values":[":open",":resolved",":impasse",":withdrawn"]},
 {"field":"@updated_at"}]}
 
-### Proposal
+<a id="proposal"></a>
+### 4.5 Proposal
 
 Something being put forward for consideration. A proposal has a subject, a body, and a
 rationale. Its status tracks whether it is still open, has been accepted, rejected, or
@@ -500,7 +531,8 @@ vibecode: {"class":"kiera.uno/ai/proposal","role":"something put forward for con
 {"field":"@rationale","note":"why this is being proposed"},
 {"field":"@status","values":[":open",":accepted",":rejected",":superseded"]}]}
 
-### Objection
+<a id="objection"></a>
+### 4.6 Objection
 
 A reasoned disagreement with a proposal or refinement. Severity indicates how the objecting
 agent intends its objection: `:blocking` means it cannot accept the proposal as-is; `:concern`
@@ -520,7 +552,8 @@ vibecode: {"class":"kiera.uno/ai/objection","role":"reasoned disagreement with p
 ":concern":"has reservations but will not block",
 ":minor":"note for human; not a negotiating point"}}
 
-### Refinement
+<a id="refinement"></a>
+### 4.7 Refinement
 
 An updated version of a proposal, typically in response to an objection. `@of` always points
 to the original root proposal. `@previous` points to whatever this directly supersedes —
@@ -536,7 +569,8 @@ vibecode: {"class":"kiera.uno/ai/refinement",
 {"field":"@body","note":"full revised proposal"},
 {"field":"@changes","note":"summary of what changed and why"}]}
 
-### Question
+<a id="question"></a>
+### 4.8 Question
 
 A clarifying question about anything in the session — a proposal, an objection, a prior
 decision, or anything else.
@@ -548,7 +582,8 @@ vibecode: {"class":"kiera.uno/ai/question","role":"clarifying question about any
 {"field":"@about","note":"reference to thing being questioned"},
 {"field":"@body"}]}
 
-### Response
+<a id="response"></a>
+### 4.9 Response
 
 A reply to a question.
 
@@ -559,7 +594,8 @@ vibecode: {"class":"kiera.uno/ai/response","role":"reply to a question",
 {"field":"@to","note":"reference to question"},
 {"field":"@body"}]}
 
-### Evidence
+<a id="evidence"></a>
+### 4.10 Evidence
 
 Supporting material attached to any record in the session — a citation, measurement, example,
 or counterexample that grounds a proposal or objection in external fact. `@confidence` is the
@@ -576,7 +612,8 @@ vibecode: {"class":"kiera.uno/ai/evidence",
 {"field":"@body","note":"the evidence content"},
 {"field":"@confidence","note":"0.0–1.0; agent's confidence in this evidence"}]}
 
-### Acceptance
+<a id="acceptance"></a>
+### 4.11 Acceptance
 
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit
 trail of who accepted what and under what conditions, separate from a `@status` field change.
@@ -590,7 +627,8 @@ vibecode: {"class":"kiera.uno/ai/acceptance",
 {"field":"@body","note":"optional remarks"},
 {"field":"@conditions","note":"any conditions attached to the acceptance"}]}
 
-### Impasse
+<a id="impasse"></a>
+### 4.12 Impasse
 
 A declaration by one agent that agreement cannot be reached and the session must be escalated
 to the human. Either agent may post this. Once posted, further negotiation stops and both
@@ -605,7 +643,8 @@ vibecode: {"class":"kiera.uno/ai/impasse",
 {"field":"@body","note":"explanation of why agreement cannot be reached"},
 {"field":"@sticking_point","note":"the specific issue that cannot be reconciled"}]}
 
-### Position
+<a id="position"></a>
+### 4.13 Position
 
 An agent's final stated position, posted after an impasse is declared. Each agent posts one.
 These are not arguments — they are clean summaries of where each agent stands so the human
@@ -619,7 +658,8 @@ vibecode: {"class":"kiera.uno/ai/position",
 {"field":"@body","note":"the agent's final position"},
 {"field":"@supports","note":"reference to last proposal or refinement this agent endorses; optional"}]}
 
-### Decision
+<a id="decision"></a>
+### 4.14 Decision
 
 A conclusion both agents have agreed on. A session may contain multiple decisions. `@risks`
 records any caveats or identified risks the agents want to flag for the human.
@@ -634,7 +674,8 @@ vibecode: {"class":"kiera.uno/ai/decision",
 {"field":"@confidence","note":"0.0–1.0; agents' collective confidence in this decision"},
 {"field":"@risks","note":"array of identified risks or caveats"}]}
 
-### Report
+<a id="report"></a>
+### 4.15 Report
 
 The final output forwarded to the human. Assembled by the agents when the session concludes.
 `@markdown` is the primary human-facing deliverable — a full narrative of the session written
@@ -657,7 +698,8 @@ vibecode: {"class":"kiera.uno/ai/report",
 "impasse_report_rules":["@decisions will be empty or partial","@summary and @next_steps must make clear human must decide",
 "@impasse and @positions replace the normal resolution fields"]}
 
-### Human Instruction
+<a id="human-instruction"></a>
+### 4.16 Human Instruction
 
 An instruction posted by the human into the session mikobase. Agents must read and respect it.
 `@from` is a plain string identifier because the human does not register as an agent.
@@ -671,7 +713,8 @@ vibecode: {"class":"kiera.uno/ai/human_instruction",
 {"field":"@body","note":"the instruction"},
 {"field":"@updated_at"}]}
 
-### Human Decision
+<a id="human-decision"></a>
+### 4.17 Human Decision
 
 A decision made by the human, typically to resolve an impasse or override the agents. Like
 `human_instruction`, `@from` is a plain string.
@@ -686,7 +729,8 @@ vibecode: {"class":"kiera.uno/ai/human_decision",
 {"field":"@resolves","note":"reference to impasse or open item being resolved"},
 {"field":"@updated_at"}]}
 
-### Sign-off
+<a id="sign-off"></a>
+### 4.18 Sign-off
 
 Posted by an agent as the last record in its final batch of updates. Signals only that the
 agent is done sending and is disconnecting — nothing more. A sign-off does not imply

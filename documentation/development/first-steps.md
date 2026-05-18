@@ -21,7 +21,8 @@ hard to fail at.
 
 ---
 
-## Step 1: Run the existing test suite
+<a id="step-1-run-the-existing-test-suite"></a>
+## 1 Step 1: Run the existing test suite
 
 From the project root:
 
@@ -46,7 +47,8 @@ problem and Step 2 is where you'll fix it.
 
 ---
 
-## Step 2: Read the engine source
+<a id="step-2-read-the-engine-source"></a>
+## 2 Step 2: Read the engine source
 
 Open these files in your editor in this order:
 
@@ -90,7 +92,8 @@ needs to be brought into line on.
 
 ---
 
-## Step 3: Write the V0.01 fixture
+<a id="step-3-write-the-v001-fixture"></a>
+## 3 Step 3: Write the V0.01 fixture
 
 Create the file `tests/charlie/fixtures/hello_world.ksj`. Contents,
 exactly:
@@ -117,7 +120,8 @@ Expected output: the literal JSON string, and `1` line.
 
 ---
 
-## Step 4: First sanity test — parse the fixture
+<a id="step-4-first-sanity-test-parse-the-fixture"></a>
+## 4 Step 4: First sanity test — parse the fixture
 
 Create `tests/charlie/v001/test_fixture_parse.lua`:
 
@@ -169,7 +173,8 @@ inventory should have told you which.
 
 ---
 
-## Step 5: Engine entry point
+<a id="step-5-engine-entry-point"></a>
+## 5 Step 5: Engine entry point
 
 In `code/charlie/lua/charlie/`, create `engine.lua` (or evolve whatever
 top-level entry already lives there) so that `require("charlie")`
@@ -227,7 +232,8 @@ whatever was passing before.
 
 ---
 
-## Step 6: Pick the first real implementation slice
+<a id="step-6-pick-the-first-real-implementation-slice"></a>
+## 6 Step 6: Pick the first real implementation slice
 
 At this point the engine loads, parses, and returns the parsed tree.
 **It doesn't execute anything yet.** The V0.01 acceptance test
@@ -269,7 +275,8 @@ V0.01.
 
 ---
 
-## What this doc does NOT cover
+<a id="what-this-doc-does-not-cover"></a>
+## 7 What this doc does NOT cover
 
 ```
 vibecode: {"out_of_scope_for_first_steps":

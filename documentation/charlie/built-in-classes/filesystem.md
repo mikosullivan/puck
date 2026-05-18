@@ -6,7 +6,8 @@ it. The underlying real path is never exposed to Charlie code.
 
 ---
 
-## The Jail
+<a id="the-jail"></a>
+## 1 The Jail
 
 ```
 vibecode: {
@@ -44,7 +45,8 @@ $jail['readme.txt'].read
 
 ---
 
-## File Objects
+<a id="file-objects"></a>
+## 2 File Objects
 
 ```
 vibecode: {
@@ -65,7 +67,8 @@ path alone.
 $file = $jail['docs/readme.txt']
 ```
 
-### Operations
+<a id="operations"></a>
+### 2.1 Operations
 
 ```
 $file.read              # returns file contents as a string
@@ -109,7 +112,8 @@ in the caller's scope. That's the same class users catch from
 `%utils.timeout`, so a single `catch` clause can handle either source.
 Without `timeout:`, the call waits indefinitely.
 
-### Permissions Are Downgrade-Only
+<a id="permissions-are-downgrade-only"></a>
+### 2.2 Permissions Are Downgrade-Only
 
 A file object's read and write permissions can be **ratcheted off but never
 on**. Assigning `false` to `.readable` or `.writable` succeeds; assigning
@@ -123,13 +127,15 @@ from — a file from a read-only jail starts read-only. The ratchet can
 take permissions away from there, but a file from a read-only jail can
 never gain write through any API.
 
-### Operations that return a new file object
+<a id="operations-that-return-a-new-file-object"></a>
+### 2.3 Operations that return a new file object
 
 ```
 $new_file = $file.copy('other/path.txt')   # copies file; returns new file object at destination
 ```
 
-### Operations that mutate the object's path
+<a id="operations-that-mutate-the-objects-path"></a>
+### 2.4 Operations that mutate the object's path
 
 ```
 $file.move('new/path.txt')   # moves the file; updates $file's path in place
@@ -140,7 +146,8 @@ leave the path unchanged.
 
 ---
 
-## Directory Objects
+<a id="directory-objects"></a>
+## 3 Directory Objects
 
 ```
 vibecode: {
@@ -159,7 +166,8 @@ A directory object holds its path relative to the jail root.
 $dir = $jail.dir('docs/shakespeare')
 ```
 
-### Operations
+<a id="operations-1"></a>
+### 3.1 Operations
 
 ```
 $dir.children            # all entries — files and directories
@@ -172,7 +180,8 @@ $dir.create              # creates the directory
 $dir.delete              # deletes the directory
 ```
 
-### Navigating
+<a id="navigating"></a>
+### 3.2 Navigating
 
 ```
 $dir['hamlet.txt']       # returns a file object
@@ -190,7 +199,8 @@ $text = $jail.dir('docs').dir('shakespeare')['hamlet.txt'].read
 
 ---
 
-## Jail Permissions
+<a id="jail-permissions"></a>
+## 4 Jail Permissions
 
 ```
 vibecode: {
@@ -223,7 +233,8 @@ never something that quietly happens.
 
 ---
 
-## Deriving Restricted Jails
+<a id="deriving-restricted-jails"></a>
+## 5 Deriving Restricted Jails
 
 ```
 vibecode: {
@@ -254,7 +265,8 @@ derived jail can never have more permissions than the object it was
 derived from. Requesting `'rw'` from a read-only source either fails or
 silently returns a read-only jail (TBD).
 
-### Why This Exists
+<a id="why-this-exists"></a>
+### 5.1 Why This Exists
 
 The primary use case is **passing a capability to a callee** without
 exposing the original object:
@@ -280,7 +292,8 @@ or temporary mutation:
 - **Hand a file to logging code that should never write**: derive a
   read-only jail or set `$file.writable = false` on a fresh reference.
 
-### Relationship to the Property Ratchet
+<a id="relationship-to-the-property-ratchet"></a>
+### 5.2 Relationship to the Property Ratchet
 
 The property ratchet (`$file.readable = false`) mutates the existing
 object permanently. The jail derivation (`$file.jail('r')`) creates a
@@ -292,7 +305,8 @@ something to other code that should only see a restricted view.
 
 ---
 
-## Authorizing Untrusted Paths
+<a id="authorizing-untrusted-paths"></a>
+## 6 Authorizing Untrusted Paths
 
 ```
 vibecode: {
@@ -339,7 +353,8 @@ resolution. Callers don't normalize beforehand. (URL decoding,
 query-string parsing, and other non-FS concerns are upstream — by the
 time you call `use_path`, the string is just a path.)
 
-### Rules
+<a id="rules"></a>
+### 6.1 Rules
 
 - **Explicit elevation.** Untrusted strings only reach the filesystem
   through `use_path` — never silently. The call site is conspicuous;
@@ -362,7 +377,8 @@ time you call `use_path`, the string is just a path.)
 
 ---
 
-## Iteration
+<a id="iteration"></a>
+## 7 Iteration
 
 ```
 vibecode: {
@@ -388,7 +404,8 @@ end
 
 ---
 
-## Notes
+<a id="notes"></a>
+## 8 Notes
 
 ```
 vibecode: {

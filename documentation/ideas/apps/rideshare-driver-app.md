@@ -9,7 +9,8 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-## Goals
+<a id="goals"></a>
+## 1 Goals
 
 - Build the **driver app first**, since Miko is the most reliable
   user (he's actually a rideshare driver). Eat our own dog food.
@@ -23,7 +24,8 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-## What kiera.uno/geo Provides
+<a id="what-kieraunogeo-provides"></a>
+## 2 What kiera.uno/geo Provides
 
 Everything map-related routes through `kiera.uno/geo`:
 
@@ -45,7 +47,8 @@ maps. No Google Maps, no Mapbox, no separate provider keys.
 
 ---
 
-## What kiera.uno/geo Does NOT Provide
+<a id="what-kieraunogeo-does-not-provide"></a>
+## 3 What kiera.uno/geo Does NOT Provide
 
 Everything ride-business-specific lives in the rideshare's **own
 backend** (which is a separate system from kiera.uno/geo):
@@ -69,7 +72,8 @@ only with the driver-PWA side and its use of kiera.uno/geo.
 
 ---
 
-## Tech Stack
+<a id="tech-stack"></a>
+## 4 Tech Stack
 
 - **Frontend**: PWA. HTML/CSS/JS in a service-worker-enabled web
   app. Mobile-first, designed for phones in a vehicle dash mount.
@@ -88,9 +92,11 @@ only with the driver-PWA side and its use of kiera.uno/geo.
 
 ---
 
-## Major Screens
+<a id="major-screens"></a>
+## 5 Major Screens
 
-### Status / Main (idle)
+<a id="status-main-idle"></a>
+### 5.1 Status / Main (idle)
 
 The driver's home screen when not on a ride.
 
@@ -129,7 +135,8 @@ The driver's home screen when not on a ride.
 The map embed updates as the driver moves. The driver can pan/zoom
 inside the iframe if they want to look around.
 
-### Incoming Ride Request
+<a id="incoming-ride-request"></a>
+### 5.2 Incoming Ride Request
 
 A modal that appears (with push notification if backgrounded) when
 the rideshare backend matches this driver with a pickup.
@@ -147,7 +154,8 @@ the rideshare backend matches this driver with a pickup.
 If the driver accepts, the rideshare backend confirms and transitions
 the ride to "en route." The app moves to the "To Pickup" screen.
 
-### To Pickup (en route to rider)
+<a id="to-pickup-en-route-to-rider"></a>
+### 5.3 To Pickup (en route to rider)
 
 Active navigation screen — the driver is driving to the pickup
 location.
@@ -172,7 +180,8 @@ ETA recalculates periodically (every minute, or on significant
 location change). Each recalc is a `$geo.eta_to(pickup_coords)`
 call from the driver's current location.
 
-### Arrived at Pickup
+<a id="arrived-at-pickup"></a>
+### 5.4 Arrived at Pickup
 
 Driver pulls up; app detects arrival (proximity to pickup coords).
 
@@ -184,7 +193,8 @@ Driver pulls up; app detects arrival (proximity to pickup coords).
 - **Start Trip** button — driver presses when the rider is in the
   car.
 
-### In Trip (en route to drop-off)
+<a id="in-trip-en-route-to-drop-off"></a>
+### 5.5 In Trip (en route to drop-off)
 
 Same shape as "To Pickup" but routed to the drop-off coords.
 
@@ -194,7 +204,8 @@ Same shape as "To Pickup" but routed to the drop-off coords.
 - **End Trip** button.
 - **Trip duration** running timer.
 
-### End Trip
+<a id="end-trip"></a>
+### 5.6 End Trip
 
 Driver pulls up at drop-off; presses End Trip.
 
@@ -203,18 +214,21 @@ Driver pulls up at drop-off; presses End Trip.
 - Notes (optional).
 - Returns to Status / Main screen.
 
-### Earnings
+<a id="earnings"></a>
+### 5.7 Earnings
 
 A separate screen showing recent rides, totals, payout status. Pure
 rideshare-backend data; no kiera.uno/geo involvement.
 
-### Settings / Profile
+<a id="settings-profile"></a>
+### 5.8 Settings / Profile
 
 Vehicle info, documents, driver preferences. Rideshare-backend data.
 
 ---
 
-## kiera.uno/geo Usage Summary
+<a id="kieraunogeo-usage-summary"></a>
+## 6 kiera.uno/geo Usage Summary
 
 Cross-referenced from the screens above:
 
@@ -235,7 +249,8 @@ list needs to actually work well for v1 to ship.
 
 ---
 
-## Validation: Does kiera.uno/geo Have What's Needed?
+<a id="validation-does-kieraunogeo-have-whats-needed"></a>
+## 7 Validation: Does kiera.uno/geo Have What's Needed?
 
 Cross-checking the table above against the geo spec:
 
@@ -250,7 +265,8 @@ Cross-checking the table above against the geo spec:
 | `$map.navigation = true` | ✅ Spec'd — toggles navigation features in the rendered map |
 | `$map.voice = true` | ✅ Spec'd — toggles voice prompts during navigation |
 
-### Gap surfaced
+<a id="gap-surfaced"></a>
+### 7.1 Gap surfaced
 
 - **Programmatic destination control**. Setting `$map.navigation = true`
   gives the rendered map a destination-entry UI for users. But the
@@ -267,13 +283,15 @@ features.
 
 ---
 
-## PWA Limitations to Design Around
+<a id="pwa-limitations-to-design-around"></a>
+## 8 PWA Limitations to Design Around
 
 PWAs are not native apps; some things that "just work" on iOS/Android
 require workarounds in a PWA. The driver app is particularly sensitive
 to a few of these:
 
-### Background location
+<a id="background-location"></a>
+### 8.1 Background location
 
 Native apps can track location in the background. PWAs cannot
 (deliberately — browser privacy protection). For a driver app this
@@ -289,7 +307,8 @@ means:
   driver location updates. New ride matching pauses; existing rides
   continue using last known position.
 
-### Push notifications
+<a id="push-notifications"></a>
+### 8.2 Push notifications
 
 Web Push API works on Android (Chrome, Firefox, Edge) and recently on
 iOS (Safari 16.4+, requires PWA installed to home screen). For a
@@ -302,13 +321,15 @@ driver:
   with clear "you must install this to receive ride requests"
   messaging.
 
-### Wake lock
+<a id="wake-lock"></a>
+### 8.3 Wake lock
 
 Screen Wake Lock API keeps the screen from sleeping. Supported on
 Android Chrome and recent iOS Safari. Critical for the driver — a
 dimmed/locked screen mid-ride is a usability disaster.
 
-### Offline behavior
+<a id="offline-behavior"></a>
+### 8.4 Offline behavior
 
 Spotty cell coverage is real (rural roads, parking garages, etc.).
 The app needs:
@@ -320,7 +341,8 @@ The app needs:
 - **Queued state changes** ("ride ended" if pressed while offline)
   uploaded when connectivity returns.
 
-### Battery
+<a id="battery"></a>
+### 8.5 Battery
 
 Drivers run their phones 8–12+ hours a day. The app needs to be
 battery-conscious:
@@ -332,7 +354,8 @@ battery-conscious:
 
 ---
 
-## What's Out of Scope for v1
+<a id="whats-out-of-scope-for-v1"></a>
+## 9 What's Out of Scope for v1
 
 To keep the v1 scope honest:
 
@@ -350,7 +373,8 @@ To keep the v1 scope honest:
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 10 Open Questions
 
 - **Authentication mechanism.** PWAs don't have great native
   patterns for this. Probably an OAuth flow on first launch +
@@ -375,7 +399,8 @@ To keep the v1 scope honest:
 
 ---
 
-## Why This Validates the Geo Service
+<a id="why-this-validates-the-geo-service"></a>
+## 11 Why This Validates the Geo Service
 
 If this app ships and works well, that's strong evidence the
 kiera.uno/geo service is sufficient for real driver use. The doc

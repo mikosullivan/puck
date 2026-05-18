@@ -12,7 +12,8 @@ parse JSON can consume them.
 
 ---
 
-## Required field
+<a id="required-field"></a>
+## 1 Required field
 
 Every Xeme has a `success` field. Three valid values:
 
@@ -34,7 +35,8 @@ resolution).
 
 ---
 
-## Groups and leaves
+<a id="groups-and-leaves"></a>
+## 2 Groups and leaves
 
 A Xeme is either a **leaf** or a **group**, distinguished by the
 presence of `nested`:
@@ -70,7 +72,8 @@ about.
 }
 ```
 
-### Validation: group + `errors` or `nulls` raises a warning
+<a id="validation-group-errors-or-nulls-raises-a-warning"></a>
+### 2.1 Validation: group + `errors` or `nulls` raises a warning
 
 `errors` and `nulls` are **leaf-only concerns** — they explain why
 this Xeme's verdict isn't a plain success, which only makes sense
@@ -89,7 +92,8 @@ issue. Only `errors` and `nulls` are leaf-only.
 
 ---
 
-## Resolution
+<a id="resolution"></a>
+## 3 Resolution
 
 Before a Xeme is **valid**, it must be **resolved** — its
 parent-child relationships must be consistent.
@@ -130,7 +134,8 @@ own: false, children: [true, null]    →  group resolves to false
 This is the **least-good-result** rule, with the parent's `null`
 treated as "no opinion, defer to children."
 
-### Explicit fail on a group is allowed
+<a id="explicit-fail-on-a-group-is-allowed"></a>
+### 3.1 Explicit fail on a group is allowed
 
 A producer **can** explicitly set a group's `success` to `false`
 even when all its children pass:
@@ -150,7 +155,8 @@ It's bad form — a group's success should usually come from its
 children — but the format allows it. No nanny code for that; the
 validator doesn't warn.
 
-### Mixed nodes (general case)
+<a id="mixed-nodes-general-case"></a>
+### 3.2 Mixed nodes (general case)
 
 For non-Bryton consumers that produce Xemes carrying both their
 own success and children (Jasmine entries are the working
@@ -165,7 +171,8 @@ parent-null case as open until pinned down.
 
 ---
 
-## Keep Xemes small
+<a id="keep-xemes-small"></a>
+## 4 Keep Xemes small
 
 A Xeme should carry **only the information that's actually
 relevant**. Most Xemes won't populate most reserved fields. Empty
@@ -194,7 +201,8 @@ fields.
 
 ---
 
-## Reserved fields
+<a id="reserved-fields"></a>
+## 5 Reserved fields
 
 Beyond the required `success`, Xemes use a small set of **reserved
 fields**. Producers aren't required to include any of them, but
@@ -233,7 +241,8 @@ Producers can add additional fields beyond these reserved names.
 The reserved set is closed at the spec level; anything else is the
 producer's namespace.
 
-### Meta field
+<a id="meta-field"></a>
+### 5.1 Meta field
 
 The `meta` hash holds **metadata about the Xeme itself** — fields
 that are about the result-as-record rather than the verdict-as-
@@ -280,7 +289,8 @@ timestamp — they share the run's timestamp by inheritance.
 Producers can add deeper timestamps if they want; not the default.
 
 
-### I/O field
+<a id="io-field"></a>
+### 5.2 I/O field
 
 The `io` hash holds **captured I/O streams**. Mostly relevant for
 runtime-failure Xemes where the runner captured the test
@@ -293,7 +303,8 @@ Conventional keys inside `io`:
 | `stdout` | string | Captured stdout. |
 | `stderr` | string | Captured stderr. |
 
-### Location field
+<a id="location-field"></a>
+### 5.3 Location field
 
 The `location` field is a hash that records where the Xeme was
 produced — file, line, source-level metadata. Common keys (by
@@ -338,7 +349,8 @@ above are the *conventionally-named* ones; everything else inside
 
 Producers decide what makes sense in context.
 
-#### Location tags
+<a id="location-tags"></a>
+#### 5.3.1 Location tags
 
 `location.tags` is a hash describing **tags declared at this
 location** (a tagged directory's bryton.json, a tagged file,
@@ -375,7 +387,8 @@ Tags enable consumers to group, filter, or report by tag — "show
 me all failing tests tagged 'integration'," "summarize
 performance by tag," etc.
 
-### Errors and nulls
+<a id="errors-and-nulls"></a>
+### 5.4 Errors and nulls
 
 Two parallel fields describe why a Xeme's verdict isn't a plain
 success:
@@ -435,7 +448,8 @@ verdict, `errors`/`nulls` are for flat descriptors of why the
 verdict is what it is. The two don't mimic each other because
 they're solving different problems.
 
-### Tags
+<a id="tags"></a>
+### 5.5 Tags
 
 Top-level `tags` is a hash describing **tags about this run's
 result**. Keys are tag names; values are opaque metadata that
@@ -474,7 +488,8 @@ The value semantics are the same as `location.tags` — falsy
 values mean the tag is absent; producers should omit falsy
 entries in output.
 
-### Class field
+<a id="class-field"></a>
+### 5.6 Class field
 
 Working convention: **UNS-style identifier without the domain
 prefix.** Examples:
@@ -494,7 +509,8 @@ Third-party Xeme producers can use their own UNS prefix:
 
 ---
 
-## Jasmine entries are Xemes
+<a id="jasmine-entries-are-xemes"></a>
+## 6 Jasmine entries are Xemes
 
 [Jasmine](../../jasmine/jasmine.md) entries follow the Xeme format. A
 Jasmine log is a stream of Xemes (one per entry), each potentially
@@ -551,7 +567,8 @@ two formats remain structurally different.
 
 ---
 
-## Trimming
+<a id="trimming"></a>
+## 7 Trimming
 
 A test run that mostly passes produces a tree full of successful
 leaves you don't usually care about. **Trimming** is a defined
@@ -597,7 +614,8 @@ After:
 The successful leaves are gone. The failed leaf survives, along
 with its ancestors.
 
-### Rules
+<a id="rules"></a>
+### 7.1 Rules
 
 Applied bottom-up to a resolved Xeme tree:
 
@@ -611,7 +629,8 @@ Applied bottom-up to a resolved Xeme tree:
   - Otherwise — keep the group. If the trimmed `nested` is empty,
     drop the `nested` field (per the "keep Xemes small" rule).
 
-### Specific scenarios
+<a id="specific-scenarios"></a>
+### 7.2 Specific scenarios
 
 - **Everything passed.** The whole tree trims to a single Xeme
   `{"success": true}`. Still valid, still meaningful — "the suite
@@ -621,7 +640,8 @@ Applied bottom-up to a resolved Xeme tree:
   stays as `{"success": false}` with no `nested`. Still
   meaningful — the producer wanted to mark it failed.
 
-### What trimming preserves
+<a id="what-trimming-preserves"></a>
+### 7.3 What trimming preserves
 
 Trimming is a **reduction**, not a transformation. It doesn't
 change any `success` values, doesn't rewrite fields, doesn't
@@ -631,7 +651,8 @@ trims it agree on every value that's still there.
 
 ---
 
-## Streaming and partial Xemes
+<a id="streaming-and-partial-xemes"></a>
+## 8 Streaming and partial Xemes
 
 A Xeme can be emitted incrementally. A test runner can write a
 parent Xeme with `success: null` and `nested: []`, append children
@@ -644,7 +665,8 @@ doesn't define the wire protocol.)
 
 ---
 
-## Icons
+<a id="icons"></a>
+## 9 Icons
 
 A canonical **icon set** ships with the Xeme spec under
 [`icons/`](icons/). Each Xeme `class` maps to an SVG (or GIF) at
@@ -653,7 +675,8 @@ load-bearing — most Bryton output is text — but they make result
 visualization dramatically more readable in UIs that surface
 them, so the set is considered a **core part of the spec**.
 
-### Layout
+<a id="layout"></a>
+### 9.1 Layout
 
 The icon set splits at the top level into three directories:
 
@@ -687,7 +710,8 @@ the result-icon lookup tries:
 First match wins. Walking up the class path means a missing
 specific icon falls back to a sensible parent automatically.
 
-### What's in the set
+<a id="whats-in-the-set"></a>
+### 9.2 What's in the set
 
 **Under `tests/`** (Xeme class icons):
 
@@ -713,7 +737,8 @@ specific icon falls back to a sensible parent automatically.
   `warning.svg`.
 - `sort/up.svg`, `sort/down.svg`, `sort/none.svg`.
 
-### Why it ships with the spec
+<a id="why-it-ships-with-the-spec"></a>
+### 9.3 Why it ships with the spec
 
 Letting each consumer ship its own icon set would lead to
 inconsistent visual representation of the same Xeme classes
@@ -725,7 +750,8 @@ override individual ones.
 Most projects won't think about icons day-to-day. The set is
 here when it's wanted.
 
-## What Xeme is not
+<a id="what-xeme-is-not"></a>
+## 10 What Xeme is not
 
 - **Not a programming-language class.** Xeme is a data format.
   Bryton or any consumer can wrap it in a builder class for
@@ -738,15 +764,18 @@ here when it's wanted.
 
 ---
 
-## Examples
+<a id="examples"></a>
+## 11 Examples
 
-### Simplest
+<a id="simplest"></a>
+### 11.1 Simplest
 
 ```json
 {"success": true}
 ```
 
-### Test failure with errors
+<a id="test-failure-with-errors"></a>
+### 11.2 Test failure with errors
 
 ```json
 {
@@ -769,7 +798,8 @@ here when it's wanted.
 }
 ```
 
-### Runner-level result tree
+<a id="runner-level-result-tree"></a>
+### 11.3 Runner-level result tree
 
 ```json
 {
@@ -802,7 +832,8 @@ here when it's wanted.
 }
 ```
 
-### Runtime crash
+<a id="runtime-crash"></a>
+### 11.4 Runtime crash
 
 ```json
 {
@@ -817,7 +848,8 @@ here when it's wanted.
 }
 ```
 
-### Missing test
+<a id="missing-test"></a>
+### 11.5 Missing test
 
 ```json
 {

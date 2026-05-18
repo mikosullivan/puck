@@ -10,7 +10,8 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-## Why it's interesting
+<a id="why-its-interesting"></a>
+## 1 Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
   object is expected ([Sinatra static serving](../../charlie/http-middleware/sinatra.md#static-file-serving),
@@ -29,13 +30,15 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-## The two superpowers
+<a id="the-two-superpowers"></a>
+## 2 The two superpowers
 
 The dir/file/permissions surface is trivial — most filesystems
 have it. What makes a mikobase-backed filesystem genuinely
 different is two properties POSIX can't offer.
 
-### Transactions
+<a id="transactions"></a>
+### 2.1 Transactions
 
 POSIX filesystems can't do multi-file atomic operations. You can't
 atomically rename a directory while updating its children. Tools
@@ -48,7 +51,8 @@ needs all-or-nothing semantics is free:
 - **Atomic log + index updates.** A Jasmine entry plus any
   derived index can land together or not at all.
 
-### Time-travel reads
+<a id="time-travel-reads"></a>
+### 2.2 Time-travel reads
 
 "What was `/etc/config.json` on 2026-03-15 at 14:22?" is a
 question almost no filesystem can answer. ZFS/Btrfs snapshots are
@@ -66,7 +70,8 @@ carry a timestamp parameter:
   reading /foo/bar." Timestamped reads replay against the exact
   state the operation saw.
 
-### The combination is more than the sum
+<a id="the-combination-is-more-than-the-sum"></a>
+### 2.3 The combination is more than the sum
 
 "Atomic deploys with instant rollback" is a real product
 feature. So is "log entries that are reproducible because the
@@ -74,7 +79,8 @@ world they describe is still queryable." Filesystem-backed
 systems spend enormous engineering effort getting crude
 approximations of either; mikobase-as-filesystem inherits both.
 
-## POSIX access via SSH and SSHFS
+<a id="posix-access-via-ssh-and-sshfs"></a>
+## 3 POSIX access via SSH and SSHFS
 
 A clean way to handle POSIX-tool compatibility: **expose the
 mikobase as an SSH endpoint.** No kernel module to build, no
@@ -108,7 +114,8 @@ What this approach still doesn't handle perfectly:
 
 For the vast majority of POSIX use, SSH + SSHFS is plenty.
 
-## In-memory mode
+<a id="in-memory-mode"></a>
+## 4 In-memory mode
 
 A mikobase doesn't have to be disk-backed. **An in-memory
 mikobase that lives in the process's own memory** can present the
@@ -148,7 +155,8 @@ unmount/reboot. An in-memory mikobase is process-owned and dies
 with the process. Different scope; better-targeted for the cases
 above.
 
-## FSO and the path forward
+<a id="fso-and-the-path-forward"></a>
+## 5 FSO and the path forward
 
 By the time the broader **FSO (file system objects)** abstraction
 is finished — directory objects, file objects, DirJails, the
@@ -157,14 +165,16 @@ mikobase-backed filesystem implementation should be a small
 additional step. Not committed yet; flagged as a likely outcome
 of the work that's already happening for other reasons.
 
-## Other concerns
+<a id="other-concerns"></a>
+## 6 Other concerns
 
 - **Performance overhead** of transactional storage compared to
   raw POSIX. Bulk file ingestion might want a fast path.
 - **Storage growth.** Time-travel implies keeping history.
   Bounded by retention policy; needs to be configurable.
 
-## As a versioning tool
+<a id="as-a-versioning-tool"></a>
+## 7 As a versioning tool
 
 Time-travel + a labeling layer makes mikobase-as-filesystem a
 linear-history version control system. Auto-recorded changes,
@@ -193,7 +203,8 @@ The killer combo: mikobase-as-filesystem + Sinatra + Jasmine →
 every request log is reproducible against the exact filesystem
 state that served it."
 
-## Storage shape: chunks vs deltas
+<a id="storage-shape-chunks-vs-deltas"></a>
+## 8 Storage shape: chunks vs deltas
 
 The current mikobase plan stores files in **chunks**. Great for
 static collections (e.g., a Shakespeare-image archive — flagged
@@ -234,13 +245,15 @@ Fossil, Subversion). Trade-offs to design:
 
 The storage layer becomes **content-aware** rather than uniform.
 
-## Open questions / things to vibe on
+<a id="open-questions-things-to-vibe-on"></a>
+## 9 Open questions / things to vibe on
 
 (To be filled in.)
 
 ---
 
-## Out of scope for now
+<a id="out-of-scope-for-now"></a>
+## 10 Out of scope for now
 
 Brainstorm only. No commitments. The point is to capture the idea
 and let it ripen.

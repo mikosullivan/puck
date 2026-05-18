@@ -17,7 +17,8 @@ selectors compile to.
 
 ---
 
-## Structure
+<a id="structure"></a>
+## 1 Structure
 
 A selector is a hash with these reserved keys:
 
@@ -38,7 +39,8 @@ Nanny should flag a warning on that.
 
 ---
 
-## Atts
+<a id="atts"></a>
+## 2 Atts
 
 Each entry in `atts` describes an attribute constraint:
 
@@ -64,7 +66,8 @@ Each entry in `atts` describes an attribute constraint:
 
 ---
 
-## Combinators
+<a id="combinators"></a>
+## 3 Combinators
 
 Three combinator keys mirror the CSS subset Uma supports in v1:
 
@@ -82,7 +85,8 @@ defers to its combinator for the next level.
 
 ---
 
-## Result selection
+<a id="result-selection"></a>
+## 4 Result selection
 
 By default, the result is the **innermost matched element** —
 matches CSS's "rightmost selector is what you get" rule.
@@ -98,7 +102,8 @@ matches CSS's "rightmost selector is what you get" rule.
 
 → returns tables that are descendants of divs.
 
-### Return marker
+<a id="return-marker"></a>
+### 4.1 Return marker
 
 `"return": true` at any level **overrides the default** — the
 result becomes matches at the marked level instead of innermost.
@@ -118,7 +123,8 @@ without giving up the descendant constraint.
 → returns divs that have a table descendant. (CSS equivalent:
 `div:has(table)`.)
 
-### Multiple return markers
+<a id="multiple-return-markers"></a>
+### 4.2 Multiple return markers
 
 If multiple levels carry `"return": true`, the **outermost wins**.
 Deeper markers are ignored. A `kiera.uno/uma/warning/multiple_return_markers`
@@ -143,9 +149,11 @@ button.
 
 ---
 
-## Examples
+<a id="examples"></a>
+## 5 Examples
 
-### Basic
+<a id="basic"></a>
+### 5.1 Basic
 
 ```
 # CSS: div
@@ -161,7 +169,8 @@ button.
 {"tags": ["a"], "atts": {"href": {"starts_with": "https"}}}
 ```
 
-### Combinators
+<a id="combinators-1"></a>
+### 5.2 Combinators
 
 ```
 # CSS: div table  (descendant)
@@ -183,7 +192,8 @@ button.
 }
 ```
 
-### Chained
+<a id="chained"></a>
+### 5.3 Chained
 
 ```
 # CSS: div > p + span
@@ -198,7 +208,8 @@ button.
 }
 ```
 
-### Return marker
+<a id="return-marker-1"></a>
+### 5.4 Return marker
 
 ```
 # CSS: section:has(h1)
@@ -221,7 +232,8 @@ button.
 
 ---
 
-## Mapping table: CSS ↔ Astro
+<a id="mapping-table-css-astro"></a>
+## 6 Mapping table: CSS ↔ Astro
 
 | CSS | Astro |
 |---|---|
@@ -244,7 +256,8 @@ machinery then operates on Astro.
 
 ---
 
-## Open questions
+<a id="open-questions"></a>
+## 7 Open questions
 
 - **Top-level OR via array?** A top-level selector list (CSS:
   `h1, h2, h3`) is currently `"tags": ["h1", "h2", "h3"]` —

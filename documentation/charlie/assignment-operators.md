@@ -1,6 +1,7 @@
 # Assignment Operators
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -21,7 +22,8 @@ to pass a **receiver object** as an extra parameter.
 
 ---
 
-## The Receiver Object
+<a id="the-receiver-object"></a>
+## 2 The Receiver Object
 
 ```
 vibecode: {
@@ -53,7 +55,8 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 
 ---
 
-## Operator Classes
+<a id="operator-classes"></a>
+## 3 Operator Classes
 
 ```
 vibecode: {
@@ -72,7 +75,8 @@ Assignment operator classes set `is_assignment: true`. The interpreter detects t
 passes the receiver as the final parameter. Classes that need the current value call
 `$receiver.get`; all classes write back via `$receiver.set`.
 
-### `=`
+<a id="section-3-1"></a>
+### 3.1 `=`
 
 ```
 class 'charlie.uno/assign'
@@ -84,7 +88,8 @@ class 'charlie.uno/assign'
 end
 ```
 
-### `+=`
+<a id="section-3-2"></a>
+### 3.2 `+=`
 
 ```
 class 'charlie.uno/assign_add'
@@ -96,7 +101,8 @@ class 'charlie.uno/assign_add'
 end
 ```
 
-### `||=`
+<a id="section-3-3"></a>
+### 3.3 `||=`
 
 ```
 class 'charlie.uno/assign_or'
@@ -110,7 +116,8 @@ class 'charlie.uno/assign_or'
 end
 ```
 
-### `&&=`
+<a id="section-3-4"></a>
+### 3.4 `&&=`
 
 ```
 class 'charlie.uno/assign_and'
@@ -126,7 +133,8 @@ end
 
 ---
 
-## Built-in Assignment Operators
+<a id="built-in-assignment-operators"></a>
+## 4 Built-in Assignment Operators
 
 ```
 vibecode: {
@@ -150,7 +158,8 @@ vibecode: {
 
 ---
 
-## Increment and Decrement
+<a id="increment-and-decrement"></a>
+## 5 Increment and Decrement
 
 ```
 vibecode: {
@@ -186,7 +195,8 @@ $word++      # 'ab'  (if String defines incremented)
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 6 Open Questions
 
 - Should `++` and `--` ever be added as prefix operators? Currently postfix only.
 - What should `String.incremented` and `String.decremented` do? Not yet defined.

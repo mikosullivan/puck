@@ -6,7 +6,8 @@ found so far.
 
 ---
 
-## Fixed during the sweep
+<a id="fixed-during-the-sweep"></a>
+## 1 Fixed during the sweep
 
 - **`geolocation.md`** — `kiera.uno/error/unreachable` →
   `kiera.uno/exception/error/unreachable`. (Stale short-form of
@@ -23,9 +24,11 @@ found so far.
 
 ---
 
-## Still open
+<a id="still-open"></a>
+## 2 Still open
 
-### Better name needed for Xeme's `enterprise` field
+<a id="better-name-needed-for-xemes-enterprise-field"></a>
+### 2.1 Better name needed for Xeme's `enterprise` field
 
 The `enterprise` reserved field in
 [Xeme](../charlie/bryton/xeme/xeme.md) (a Kiera-wide convention for
@@ -40,7 +43,8 @@ surfaces.
 
 
 
-### `ideas/marina.md` uses the old error hierarchy
+<a id="ideasmarinamd-uses-the-old-error-hierarchy"></a>
+### 2.2 `ideas/marina.md` uses the old error hierarchy
 
 The file defines `kiera.uno/error` as a subclass of
 `kiera.uno/exception` (lines 18, 167, 172–178). Under the current
@@ -56,7 +60,8 @@ model?
 
 ---
 
-## Verified clean (no fix needed)
+<a id="verified-clean-no-fix-needed"></a>
+## 3 Verified clean (no fix needed)
 
 The Explore-agent sweep confirmed these areas are already
 consistent with recent design decisions:
@@ -76,7 +81,8 @@ consistent with recent design decisions:
 
 ---
 
-## Sweep status
+<a id="sweep-status"></a>
+## 4 Sweep status
 
 **Paused before completion.** The categories above were swept;
 the rest of the documentation tree (especially the larger files

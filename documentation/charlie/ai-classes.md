@@ -1,6 +1,7 @@
 # Standard AI Mikobase Classes
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 A standard class library for AI-to-AI collaboration sessions, shipped with Kiera. These
 classes establish a shared vocabulary without enforcing rigid structure.
@@ -9,7 +10,8 @@ All classes live under the `kiera.uno/ai/` namespace.
 
 ---
 
-## Agent
+<a id="agent"></a>
+## 2 Agent
 
 `kiera.uno/ai/agent`
 
@@ -32,7 +34,8 @@ end
 
 ---
 
-## Session
+<a id="session"></a>
+## 3 Session
 
 `kiera.uno/ai/session`
 
@@ -51,7 +54,8 @@ end
 
 ---
 
-## Proposal
+<a id="proposal"></a>
+## 4 Proposal
 
 `kiera.uno/ai/proposal`
 
@@ -70,7 +74,8 @@ end
 
 ---
 
-## Objection
+<a id="objection"></a>
+## 5 Objection
 
 `kiera.uno/ai/objection`
 
@@ -93,7 +98,8 @@ end
 
 ---
 
-## Refinement
+<a id="refinement"></a>
+## 6 Refinement
 
 `kiera.uno/ai/refinement`
 
@@ -115,7 +121,8 @@ directly supersedes — useful for walking the chain of revisions.
 
 ---
 
-## Question
+<a id="question"></a>
+## 7 Question
 
 `kiera.uno/ai/question`
 
@@ -132,7 +139,8 @@ end
 
 ---
 
-## Response
+<a id="response"></a>
+## 8 Response
 
 `kiera.uno/ai/response`
 
@@ -149,7 +157,8 @@ end
 
 ---
 
-## Evidence
+<a id="evidence"></a>
+## 9 Evidence
 
 `kiera.uno/ai/evidence`
 
@@ -170,7 +179,8 @@ end
 
 ---
 
-## Acceptance
+<a id="acceptance"></a>
+## 10 Acceptance
 
 `kiera.uno/ai/acceptance`
 
@@ -189,7 +199,8 @@ end
 
 ---
 
-## Impasse
+<a id="impasse"></a>
+## 11 Impasse
 
 `kiera.uno/ai/impasse`
 
@@ -208,7 +219,8 @@ end
 
 ---
 
-## Position
+<a id="position"></a>
+## 12 Position
 
 `kiera.uno/ai/position`
 
@@ -227,7 +239,8 @@ end
 
 ---
 
-## Decision
+<a id="decision"></a>
+## 13 Decision
 
 `kiera.uno/ai/decision`
 
@@ -246,7 +259,8 @@ end
 
 ---
 
-## Report
+<a id="report"></a>
+## 14 Report
 
 `kiera.uno/ai/report`
 
@@ -272,7 +286,8 @@ The `@summary` and `@next_steps` fields should make clear that the human must de
 
 ---
 
-## Human Instruction
+<a id="human-instruction"></a>
+## 15 Human Instruction
 
 `kiera.uno/ai/human_instruction`
 
@@ -291,7 +306,8 @@ end
 
 ---
 
-## Human Decision
+<a id="human-decision"></a>
+## 16 Human Decision
 
 `kiera.uno/ai/human_decision`
 
@@ -310,7 +326,8 @@ end
 
 ---
 
-## Sign-off
+<a id="sign-off"></a>
+## 17 Sign-off
 
 `kiera.uno/ai/sign_off`
 
@@ -331,7 +348,8 @@ end
 
 ---
 
-## Notes
+<a id="notes"></a>
+## 18 Notes
 
 **References** — fields like `@to`, `@of`, `@based_on`, and `@session` reference other
 records in the session mikobase. The exact reference mechanism follows the standard

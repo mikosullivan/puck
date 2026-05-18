@@ -5,7 +5,8 @@ small, fixed set of methods that the engine guarantees about every object
 regardless of class — truthiness classification, null detection, and similar
 introspection that doesn't belong to any one class but applies uniformly to all.
 
-## Methods
+<a id="methods"></a>
+## 1 Methods
 
 ```
 vibecode: {
@@ -31,7 +32,8 @@ regardless of what classes, fields, or methods user code attaches to the object.
 
 ---
 
-### `bool`
+<a id="bool"></a>
+### 1.1 `bool`
 
 ```
 vibecode: {
@@ -57,7 +59,8 @@ false.object.bool     # false
 null.object.bool      # null
 ```
 
-### `truthy?`
+<a id="truthy"></a>
+### 1.2 `truthy?`
 
 ```
 vibecode: {
@@ -83,7 +86,8 @@ null.object.truthy?        # false
 The Ruby idiom `def ready?; @ready ? true : false; end` is just
 `@ready.object.truthy?` in Charlie.
 
-### `null?`
+<a id="null"></a>
+### 1.3 `null?`
 
 ```
 vibecode: {
@@ -105,7 +109,8 @@ false.object.null?    # false
 "hello".object.null?  # false
 ```
 
-### `defined?`
+<a id="defined"></a>
+### 1.4 `defined?`
 
 ```
 vibecode: {
@@ -131,7 +136,8 @@ null.object.defined?     # false  ← only null is undefined
 
 ---
 
-## Identity Guarantees
+<a id="identity-guarantees"></a>
+## 2 Identity Guarantees
 
 ```
 vibecode: {
@@ -155,7 +161,8 @@ overrides.
 
 ---
 
-## Why `.object`
+<a id="why-object"></a>
+## 3 Why `.object`
 
 ```
 vibecode: {
@@ -180,14 +187,16 @@ The cost is one extra dot per call. Worth it for the clarity.
 
 ---
 
-## Naming Conventions
+<a id="naming-conventions"></a>
+## 4 Naming Conventions
 
 A small set of method names carry agreed-upon meanings across the project.
 These are **conventions**, not framework features — the runtime doesn't
 enforce them and individual classes implement them however makes sense.
 They exist so a reader sees the name and knows what it signals.
 
-### `destroy`
+<a id="destroy"></a>
+### 4.1 `destroy`
 
 A method named `destroy` on a class indicates that calling it **closes
 the object down and renders it useless**. What "useless" means in

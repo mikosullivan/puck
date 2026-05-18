@@ -30,7 +30,8 @@ this doc focuses on the loop-specific use.
 
 ---
 
-## `while`
+<a id="while"></a>
+## 1 `while`
 
 ```
 vibecode: {
@@ -56,7 +57,8 @@ for the rule.
 
 ---
 
-## `.each`
+<a id="each"></a>
+## 2 `.each`
 
 ```
 vibecode: {
@@ -78,7 +80,8 @@ end
 
 ---
 
-## Numeric iteration helpers
+<a id="numeric-iteration-helpers"></a>
+## 3 Numeric iteration helpers
 
 ```
 vibecode: {
@@ -115,7 +118,8 @@ they behave the same as `.each` over the corresponding range and accept
 
 ---
 
-## Naming a loop with `as`
+<a id="naming-a-loop-with-as"></a>
+## 4 Naming a loop with `as`
 
 ```
 vibecode: {
@@ -156,7 +160,8 @@ end
 
 ---
 
-## Loop object methods
+<a id="loop-object-methods"></a>
+## 5 Loop object methods
 
 ```
 vibecode: {
@@ -192,7 +197,8 @@ from the enclosing function.
 
 ---
 
-## `break`
+<a id="break"></a>
+## 6 `break`
 
 ```
 vibecode: {
@@ -230,7 +236,8 @@ After `break N`, control resumes after the N-th enclosing loop. The
 intervening loop objects' `$loop.active` becomes `false` and their
 `$loop.count` reflects the iterations that actually ran.
 
-### Function boundary
+<a id="function-boundary"></a>
+### 6.1 Function boundary
 
 `break` does **not** escape function boundaries. If a function
 definition encloses a loop and contains `break`, that `break` exits
@@ -255,7 +262,8 @@ arguments to methods like `.each`, `.times`, `.upto`. Those are
 blocks, not function definitions — they execute in the caller's
 lexical context. The first example above relies on this.
 
-### Argument validation
+<a id="argument-validation"></a>
+### 6.2 Argument validation
 
 - `break 1` is equivalent to bare `break`.
 - `break 0` raises `kiera.uno/error/invalid_argument` —
@@ -267,7 +275,8 @@ lexical context. The first example above relies on this.
   `break $depth` works with a variable. If the runtime value is not a
   positive integer the same `invalid_argument` is raised.
 
-### Interaction with structural blocks
+<a id="interaction-with-structural-blocks"></a>
+### 6.3 Interaction with structural blocks
 
 If `break` (or `break N`) exits a loop, the loop's `after` structural
 block does **not** run — `after` only runs after a complete iteration
@@ -275,7 +284,8 @@ sweep. The `between` block does not run on the iteration that
 breaks. The `noloop` block remains a no-op (it only runs when the
 loop body didn't run at all).
 
-### Open question: named-loop targeting
+<a id="open-question-named-loop-targeting"></a>
+### 6.4 Open question: named-loop targeting
 
 Loops can be named with `as $name` (see
 [Naming a loop with `as`](#naming-a-loop-with-as-quinn)). A natural
@@ -287,7 +297,8 @@ post-lock addition.
 
 ---
 
-## Structural blocks
+<a id="structural-blocks"></a>
+## 7 Structural blocks
 
 ```
 vibecode: {
@@ -331,7 +342,8 @@ without an extra emptiness check around the loop.
 
 ---
 
-## Not in Charlie
+<a id="not-in-charlie"></a>
+## 8 Not in Charlie
 
 ```
 vibecode: {

@@ -1,6 +1,7 @@
 # Forking and Concurrency
 
-## Design Rationale
+<a id="design-rationale"></a>
+## 1 Design Rationale
 
 Traditional threads share a memory space and leave access management to the developer —
 locks, mutexes, semaphores. These primitives are easy to misuse and the bugs they produce
@@ -17,7 +18,8 @@ A mikobase can.
 
 ---
 
-## Threading Model
+<a id="threading-model"></a>
+## 2 Threading Model
 
 Strictly speaking, the forking feature does not provide threads. Instead, it provides an
 easy way for processes to talk to each other.
@@ -33,7 +35,8 @@ See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
 
 ---
 
-## `%forks` and `%tmp`
+<a id="forks-and-tmp"></a>
+## 3 `%forks` and `%tmp`
 
 Forking is a standard Charlie feature, but it requires explicit engine permission. The
 engine grants it by providing `%forks` and optionally `%tmp` — both are `null` if the
@@ -64,7 +67,8 @@ or vice versa. A process that needs to set up a socket server needs both.
 `%forks` is a system method (like `%call` and `%chain`) that returns the fork manager for
 the current context.
 
-### Spawning forks
+<a id="spawning-forks"></a>
+### 3.1 Spawning forks
 
 `%forks.run` spawns a fork immediately, returns a process object, and does not block.
 The returned process object is the same object stored in the `%forks` pool:
@@ -87,7 +91,8 @@ end
 $process == %forks[:foo]   # true — same object
 ```
 
-### Spawning multiple identical forks
+<a id="spawning-multiple-identical-forks"></a>
+### 3.2 Spawning multiple identical forks
 
 `times:` spawns N identical forks running the same block:
 
@@ -98,7 +103,8 @@ end
 
 This is equivalent to calling `%forks.run` in a loop four times.
 
-### Passing mikobases into a fork
+<a id="passing-mikobases-into-a-fork"></a>
+### 3.3 Passing mikobases into a fork
 
 Forks are separate processes and cannot inherit the parent scope. Data must be passed in
 explicitly. `mikobase:` and `mikobases:` are equivalent and merge — both accept a single mikobase or
@@ -115,7 +121,8 @@ end
 Forks do not belong to mikobases. A process simply holds references to mikobase objects and can
 reference as many as needed.
 
-### `%forks.pool`
+<a id="forkspool"></a>
+### 3.4 `%forks.pool`
 
 `%forks.pool` is a structured concurrency boundary. It runs its block and waits for all
 forks spawned within it to complete before returning. The caller blocks until the pool
@@ -132,7 +139,8 @@ end
 `%forks.pool` is the standard way to coordinate a group of forks. It replaces manual
 `%forks.wait` calls in the common case.
 
-### Waiting and checking
+<a id="waiting-and-checking"></a>
+### 3.5 Waiting and checking
 
 ```
 %forks.wait    # block until all forks complete
@@ -142,7 +150,8 @@ end
 
 `%forks.wait` is still available for cases that need explicit control outside a pool.
 
-### Detaching
+<a id="detaching"></a>
+### 3.6 Detaching
 
 `%forks.detach` spawns a fork that runs independently. It is not tracked by `%forks.pool`
 or `%forks.wait` and the caller does not wait for it.
@@ -154,7 +163,8 @@ end
 
 ---
 
-## `object.fork` — Forking a Single Object
+<a id="objectfork-forking-a-single-object"></a>
+## 4 `object.fork` — Forking a Single Object
 
 `object.fork` spawns N forks that all share a single object's `%bucket`. The object is
 passed into each fork as a block parameter:
@@ -176,7 +186,8 @@ the object in as the block parameter. The caller sees none of that machinery.
 
 ---
 
-## Sharing `%bucket` Through a Mikobase
+<a id="sharing-bucket-through-a-mikobase"></a>
+## 5 Sharing `%bucket` Through a Mikobase
 
 Setting `include_private = true` on a mikobase causes `%bucket` to be backed by the mikobase for
 any fork that connects to it. The fork's `@foo` reads and writes go directly to a live
@@ -195,7 +206,8 @@ end
 
 ---
 
-## Example: Parallel Report Generation
+<a id="example-parallel-report-generation"></a>
+## 6 Example: Parallel Report Generation
 
 A company needs to generate monthly reports for 50 clients. Each report requires several
 database queries. Running them serially takes minutes; in parallel, seconds.
@@ -234,7 +246,8 @@ shuts down cleanly when its block exits.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 7 Open Questions
 
 - How are forks spawned at the process/OS level? (true OS fork, thread, coroutine?)
 - How does a fork signal failure to the manager?
@@ -242,7 +255,8 @@ shuts down cleanly when its block exits.
 
 ---
 
-## Future: Fork Restrictions
+<a id="future-fork-restrictions"></a>
+## 8 Future: Fork Restrictions
 
 There should be a way to indicate that a forked process may not itself fork. This will be
 part of the security model — untrusted code running inside a fork should not be able to

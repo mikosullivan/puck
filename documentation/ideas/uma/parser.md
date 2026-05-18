@@ -11,7 +11,8 @@ this parser feeds.
 
 ---
 
-## Scope
+<a id="scope"></a>
+## 1 Scope
 
 **In scope:**
 - Parse well-formed HTML5-style input into an element tree.
@@ -42,7 +43,8 @@ a bundled library instead.
 
 ---
 
-## Architecture
+<a id="architecture"></a>
+## 2 Architecture
 
 Two layers, with **all tag knowledge supplied externally** via
 a schema config:
@@ -86,7 +88,8 @@ schema knows nothing about parsing at all (it's just data).
 
 ---
 
-## Tokenizer
+<a id="tokenizer"></a>
+## 3 Tokenizer
 
 Single linear pass over the input string. Splits on:
 
@@ -128,7 +131,8 @@ for `<!--`) might be worth it if it simplifies the tree-builder.
 
 ---
 
-## Tree builder
+<a id="tree-builder"></a>
+## 4 Tree builder
 
 State machine over the token stream. States:
 
@@ -163,7 +167,8 @@ On `</tagname>`:
 On reaching EOF with a non-empty stack: **malformed input; raise
 a flag** (unclosed tags).
 
-### Schema-driven behavior
+<a id="schema-driven-behavior"></a>
+### 4.1 Schema-driven behavior
 
 **All tag knowledge comes from the schema config.** The parser
 queries the schema for:
@@ -196,7 +201,8 @@ job is "read schema, follow its rules," not "know HTML."
 
 ---
 
-## Output: the element tree
+<a id="output-the-element-tree"></a>
+## 5 Output: the element tree
 
 Each element node carries:
 
@@ -228,7 +234,8 @@ serializer's `tidy` step strip them.
 
 ---
 
-## Schemas other than HTML5
+<a id="schemas-other-than-html5"></a>
+## 6 Schemas other than HTML5
 
 Because all tag knowledge lives in the schema config, the same
 parser engine can parse any markup language that fits the
@@ -249,7 +256,8 @@ The parser engine doesn't care. Provide a schema that lists the
 tags, their voidness, their nesting rules, their opaque-content
 flags — and the parser produces a tree following those rules.
 
-### A DSL for defining schemas (open)
+<a id="a-dsl-for-defining-schemas-open"></a>
+### 6.1 A DSL for defining schemas (open)
 
 Writing schema configs by hand in JSON is tolerable but
 verbose. A DSL for **defining** these schemas — not for writing
@@ -286,7 +294,8 @@ needs to consume schemas, regardless of how they're written.
 
 ---
 
-## Error handling
+<a id="error-handling"></a>
+## 7 Error handling
 
 Malformed input raises a flag rather than attempting recovery.
 Specific flag classes (all under `kiera.uno/uma/error/`):
@@ -307,7 +316,8 @@ case.
 
 ---
 
-## Performance
+<a id="performance"></a>
+## 8 Performance
 
 Rough budget:
 
@@ -326,7 +336,8 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-## Open questions
+<a id="open-questions"></a>
+## 9 Open questions
 
 - **Tokenizer implementation language.** Pure Charlie? Lua-native
   helper for the inner loop? Pure Charlie is simpler to
@@ -351,7 +362,8 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-## Why a hand-rolled parser is worth it
+<a id="why-a-hand-rolled-parser-is-worth-it"></a>
+## 10 Why a hand-rolled parser is worth it
 
 If we bundle gumbo: ~150–200k of native code, well-tested,
 correct on real-world HTML. Pros: zero maintenance burden,
@@ -371,7 +383,8 @@ adapter outside core.
 
 ---
 
-## Next steps
+<a id="next-steps"></a>
+## 11 Next steps
 
 - Pin the token type set.
 - Decide schema vs. parser-code for implicit-close rules.

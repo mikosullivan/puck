@@ -17,7 +17,8 @@ shape; for now this file is a workspace.
 
 ---
 
-## Concept
+<a id="concept"></a>
+## 1 Concept
 
 ```
 vibecode: {
@@ -40,7 +41,8 @@ At its simplest, shasta is barely more than a router. What makes it
 interesting is the **transformation layer**: parameters in the request
 tell shasta what to do to the resource before returning it.
 
-### Parameter shape
+<a id="parameter-shape"></a>
+### 1.1 Parameter shape
 
 Parameters are passed as a JSON object in the query string:
 
@@ -55,7 +57,8 @@ the client.
 (Image transformation is one example. More categories of transformation
 TBD as the brainstorm develops.)
 
-### Generalization: fetch and execute Charlie
+<a id="generalization-fetch-and-execute-charlie"></a>
+### 1.2 Generalization: fetch and execute Charlie
 
 The transformation idea extends beyond images. Shasta can also fetch
 **Charlie source** from lune, execute it, and return the result to the

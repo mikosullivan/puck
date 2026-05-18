@@ -16,9 +16,11 @@ list feels complete, we sort by priority and decide what's in for v1.
 
 ---
 
-## Design Goals
+<a id="design-goals"></a>
+## 1 Design Goals
 
-### Scales Down Small, Scales Up Large
+<a id="scales-down-small-scales-up-large"></a>
+### 1.1 Scales Down Small, Scales Up Large
 
 Robinson is intended to be a **common scalable solution** — the same framework
 serves a tiny personal site, an internal tool, and a moderately high-traffic
@@ -62,7 +64,8 @@ Each is a small-case default with a large-case opt-in (or vice versa: a
 clean-slate default with a convenience opt-in). The pattern repeats across
 the design.
 
-### No Dangerous Defaults
+<a id="no-dangerous-defaults"></a>
+### 1.2 No Dangerous Defaults
 
 Robinson never ships with defaults that could harm the developer or
 their users. For features that carry risk — admin access, forking,
@@ -83,7 +86,8 @@ cheap (often one keyword), but the choice is theirs to make explicitly.
 Every opt-in in the design follows this rule — that's why the pattern
 repeats.
 
-### Dogfooding: kiera.uno
+<a id="dogfooding-kierauno"></a>
+### 1.3 Dogfooding: kiera.uno
 
 Robinson will be used for the Kiera project's own public site (kiera.uno)
 **as much as possible**. The Kiera ecoverse is its own first serious user.
@@ -97,9 +101,11 @@ target range covers.
 
 ---
 
-## Features
+<a id="features"></a>
+## 2 Features
 
-### Settings Hierarchy
+<a id="settings-hierarchy"></a>
+### 2.1 Settings Hierarchy
 
 Everything in Robinson rests in a settings cascade with five levels:
 
@@ -128,7 +134,8 @@ Open: directory-level settings probably live in a per-directory file (a la
 `.htaccess`), but the format and conventions are TBD. Multiple nested directories
 each get their own chance to override.
 
-### Storage-Agnostic Page Resolution
+<a id="storage-agnostic-page-resolution"></a>
+### 2.2 Storage-Agnostic Page Resolution
 
 Pages live wherever they are stored. The installation does not require a
 filesystem; pages can come from:
@@ -143,7 +150,8 @@ The installation asks "give me the page for this URL" and the site (or whoever
 owns page storage at that level) answers. Robinson itself doesn't care which
 backend a site uses.
 
-### Installation Object
+<a id="installation-object"></a>
+### 2.3 Installation Object
 
 A Robinson **installation** is the HTTP-facing process — the thing that gets
 called over HTTP. It owns:
@@ -162,7 +170,8 @@ defaults below and sites above. Whether the process is reached via a reverse
 proxy, a direct TCP bind, or another transport is an implementation detail; the
 installation's job is "speak HTTP and dispatch."
 
-#### `installation.json`
+<a id="installationjson"></a>
+#### 2.3.1 `installation.json`
 
 The Robinson installation reads its configuration from `installation.json`.
 The shape (initial version):
@@ -214,7 +223,8 @@ Open:
   valid `site.json` — almost certainly a startup error, but worth
   pinning the exact behavior (fail-fast vs. skip-with-warning)
 
-### Request Handlers (Middleware Chain)
+<a id="request-handlers-middleware-chain"></a>
+### 2.4 Request Handlers (Middleware Chain)
 
 Every installation has **one or more request handlers** registered in an
 **ordered hash**, keyed by nickname. Each handler is a modular object that can
@@ -286,7 +296,8 @@ Open:
   $h`) appends at the end. Positional insertion (`insert_before`,
   `insert_after`) and removal need their own conventions — TBD.
 
-### Concurrency Model
+<a id="concurrency-model"></a>
+### 2.5 Concurrency Model
 
 **Default behavior: single process, one request at a time, no forking.** No
 opt-out from this; it's just what running Robinson means in the absence of
@@ -310,7 +321,8 @@ This layered default-no means a Robinson installation never accidentally
 spawns child processes. The host controls the capability; the developer
 controls the policy; both must agree.
 
-#### Prefork-Pool Model (when forking is enabled)
+<a id="prefork-pool-model-when-forking-is-enabled"></a>
+#### 2.5.1 Prefork-Pool Model (when forking is enabled)
 
 With both gates open, the main Robinson process becomes a supervisor:
 
@@ -328,7 +340,8 @@ This closes the entire category of vulnerabilities that plagued mod_perl and
 CGI-Perl, where the persistent interpreter occasionally leaked data from one
 request into another.
 
-#### Worker Recycling (opt-in within the opt-in)
+<a id="worker-recycling-opt-in-within-the-opt-in"></a>
+#### 2.5.2 Worker Recycling (opt-in within the opt-in)
 
 A third configuration option (working name: `recycle_workers`) lets developers
 opt into the classic prefork-pool behavior: each worker handles many requests
@@ -359,7 +372,8 @@ Open:
 - What happens to in-flight requests during a graceful shutdown — wait, kill
   after a grace period, drop immediately?
 
-### Sinatra Method Selectors
+<a id="sinatra-method-selectors"></a>
+### 2.6 Sinatra Method Selectors
 
 > **Feature lock.** Sinatra is locked for v1. It's intended for **simple
 > cases** — single-file sites, microservices, small internal tools — not
@@ -416,7 +430,8 @@ Three things are happening:
   registration matched. Without a fallback block (or with one that doesn't
   return a response), an unmatched request becomes a 404.
 
-#### `sinatra: true` Is Just Sugar
+<a id="sinatra-true-is-just-sugar"></a>
+#### 2.6.1 `sinatra: true` Is Just Sugar
 
 The opt-in keyword is shorthand for what you could do manually: instantiate a
 Sinatra handler, add it to the handler hash under the `'sinatra'` key, and
@@ -427,7 +442,8 @@ keyword just saves you the three lines.
 If another handler wants to expose its own server-object shortcuts later,
 it'll use the same delegation mechanism. There's no privileged path here.
 
-#### Built-in Error Pages
+<a id="built-in-error-pages"></a>
+#### 2.6.2 Built-in Error Pages
 
 The Sinatra handler ships with a **standard set of error pages** — 404, 500,
 and the other common HTTP status conditions — rendered with plain, sensible
@@ -484,7 +500,8 @@ Open:
 - **A method-agnostic `all(...)` or `any(...)`**: convenience for routes
   that handle every HTTP method, or stay strictly per-method?
 
-### JSON URL Parameters
+<a id="json-url-parameters"></a>
+### 2.7 JSON URL Parameters
 
 Robinson will natively support the
 [ecoverse JSON URL convention](../kiera/json-urls.md): machine-generated
@@ -507,7 +524,8 @@ collisions, cache-key canonicalization, edge cases) are TBD —
 captured in [json-urls.md](../kiera/json-urls.md) as a topic to revisit
 when the JSON-URL convention is fully spec'd.
 
-### Closure Interface and Response Objects
+<a id="closure-interface-and-response-objects"></a>
+### 2.8 Closure Interface and Response Objects
 
 Handler closures (the `do ... end` blocks passed to `$server.get`,
 `$server.post`, etc., and similarly the catch-all on `$server.run`) take a
@@ -530,7 +548,8 @@ not how Robinson plumbs information forward.
 Returning `null` is how a handler declines (passes to the next handler in
 the chain). Anything else must be a response.
 
-#### The `response` Bareword DSL
+<a id="the-response-bareword-dsl"></a>
+#### 2.8.1 The `response` Bareword DSL
 
 Inside handler closures, the bare identifier `response` is a DSL alias for
 the response class. So instead of:
@@ -552,7 +571,8 @@ end
 The DSL is scoped to handler closures specifically — it's not a global
 alias. Outside a handler closure, you go through `%kiera[...]` as usual.
 
-#### Constructor Shape (Sketch)
+<a id="constructor-shape-sketch"></a>
+#### 2.8.2 Constructor Shape (Sketch)
 
 The response constructor takes three positional arguments:
 
@@ -569,7 +589,8 @@ response.new(<status>, <options>, <body>)
   appropriate content type. Serialization handled by Robinson; charset
   appended automatically per the UTF-8 rules.
 
-#### Implicit Last-Value Return
+<a id="implicit-last-value-return"></a>
+#### 2.8.3 Implicit Last-Value Return
 
 The simple case ends with the response expression — no `%call.return`
 needed, because closures return their last value naturally:
@@ -608,7 +629,8 @@ Open:
   raises on mutation)? Frozen-object enforcement matches the no-nanny
   principle better — fail loudly if a handler tries to mutate.
 
-### Robinson Handler (Filesystem-Tree Pages)
+<a id="robinson-handler-filesystem-tree-pages"></a>
+### 2.9 Robinson Handler (Filesystem-Tree Pages)
 
 A separate handler for sites structured along an actual file tree. Every
 file in a directory tree corresponds to a page at the matching URL path —
@@ -619,7 +641,8 @@ for customizing the request and response than CGI ever offered.
 the name of a Ruby library still running unotate.com, named after the
 author's old high school.)
 
-#### Terminology: "Installation" Means Two Different Things
+<a id="terminology-installation-means-two-different-things"></a>
+#### 2.9.1 Terminology: "Installation" Means Two Different Things
 
 Two scoped meanings of "installation" coexist and shouldn't be confused:
 
@@ -637,7 +660,8 @@ A single Robinson installation can host multiple Robinson instances if it
 wants (one per site, or several within one site rooted at different
 subpaths) — each pinned to its own root directory.
 
-#### Design Pressure: Keep the Basic Install Simple
+<a id="design-pressure-keep-the-basic-install-simple"></a>
+#### 2.9.2 Design Pressure: Keep the Basic Install Simple
 
 The previous Robinson (Ruby) eventually accumulated so many bells and
 whistles that it *felt* too complicated, even when each individual feature
@@ -659,7 +683,8 @@ Robinson must guard against this. Two rules:
 This is a design pressure, not a hard rule about what features exist. Many
 features will still land in Robinson — but the front door stays narrow.
 
-#### Page File Contract
+<a id="page-file-contract"></a>
+#### 2.9.3 Page File Contract
 
 `.charlie` files in the tree are page files. Each one's last expression
 must be a class inheriting from `kiera.uno/Robinson/page` with a `process`
@@ -692,7 +717,8 @@ site root is configured at injection time with `read + execute` (plus
 Other file types in the tree (images, static HTML, CSS, JS, etc.) are
 served as-is, with content type inferred from extension.
 
-#### Path Resolution
+<a id="path-resolution"></a>
+#### 2.9.4 Path Resolution
 
 URLs map to files inside the site's root directory using **jail-based
 lookup**. The site root is exposed to Robinson as a
@@ -757,7 +783,8 @@ Open:
   `.git/` and `.env` should presumably never be served. `.well-known/`
   probably should.
 
-#### Reserved Filename Prefix: `robinson.`
+<a id="reserved-filename-prefix-robinson"></a>
+#### 2.9.5 Reserved Filename Prefix: `robinson.`
 
 Robinson **refuses to respond to any HTTP request whose target name
 starts with `robinson.`**. The prefix is a reserved namespace for
@@ -805,12 +832,14 @@ Open:
   spec'd in detail. URL decoding is upstream (HTTP layer, when
   `$request.path` is built), not part of `use_path`.
 
-#### Sites
+<a id="sites"></a>
+#### 2.9.6 Sites
 
 A Robinson installation can have **zero or more site objects**. A site
 typically represents a single URL — `unotate.com`, for example.
 
-##### Domain Mapping
+<a id="domain-mapping"></a>
+##### 2.9.6.1 Domain Mapping
 
 A site declares its domains in `site.json` under a `domains` hash.
 At least one domain is required:
@@ -875,7 +904,8 @@ Open:
 - **What "zero sites" means**: a Robinson instance with no sites —
   declines every request? Returns a 404? Spec it when we get there.
 
-#### Empty Site Welcome Page
+<a id="empty-site-welcome-page"></a>
+#### 2.9.7 Empty Site Welcome Page
 
 When a Robinson site has **zero servable files**, requests get a
 built-in welcome page instead of a 404. Purely a first-run convenience
@@ -919,7 +949,8 @@ Open:
   JSON or HTML? Probably HTML; empty-site is a setup scenario, not an
   API scenario.
 
-#### Factory Message Pages
+<a id="factory-message-pages"></a>
+#### 2.9.8 Factory Message Pages
 
 > **Feature lock.** This subsection is closed to new features. The
 > previous Robinson iteration went down a rabbit hole on customized
@@ -941,7 +972,8 @@ This is a **deliberately narrow** version of the broader "auxiliary site"
 concept (see Deferred Ideas below). One specific directory name, one-deep
 fallback, one template per content type.
 
-##### The Templates
+<a id="the-templates"></a>
+##### 2.9.8.1 The Templates
 
 The factory ships these files in `messages/`:
 
@@ -952,7 +984,8 @@ The factory ships these files in `messages/`:
   "<text>"}`. Served when the request accepts JSON.
 - **`message.txt`** — Plain text, status and message appended at the end.
 
-##### Content Negotiation (Non-200 Responses)
+<a id="content-negotiation-non-200-responses"></a>
+##### 2.9.8.2 Content Negotiation (Non-200 Responses)
 
 When returning a non-200 response, Robinson matches the request's
 `Accept` header against the available templates and picks the best fit:
@@ -968,7 +1001,8 @@ HTML anyway. The client gets a valid HTTP response and deals with it.
 Scope: this targets **error responses (4xx, 5xx)**. Redirects (3xx)
 typically have no body and bypass this machinery.
 
-##### "No Coddling" Stance on JSON Errors
+<a id="no-coddling-stance-on-json-errors"></a>
+##### 2.9.8.3 "No Coddling" Stance on JSON Errors
 
 The JSON shape is deliberately simple — `{"status": <code>, "message":
 "<text>"}`. Robinson does not add error sentinels, "is_error" flags, or
@@ -983,7 +1017,8 @@ Warning to site authors: a site-level `message.json` ships its entire
 contents to the world. Don't put anything in that file that you don't
 want public.
 
-##### Admin Exception Display (v1 core)
+<a id="admin-exception-display-v1-core"></a>
+##### 2.9.8.4 Admin Exception Display (v1 core)
 
 When an exception is raised during request handling, the exception info
 can be displayed *to authenticated admins only*. `message.html` carries
@@ -1020,7 +1055,8 @@ Open:
   collapsible sections, etc. — keep it tight; this isn't a debugging
   UI, it's an inline log dump.
 
-##### Open Questions
+<a id="open-questions"></a>
+##### 2.9.8.5 Open Questions
 
 - **Placeholder syntax** for templates: simple `{status}` / `{message}`
   substitution, or something more structured? Keep it tight either way.
@@ -1035,7 +1071,8 @@ Open:
 - **Other shipped categories beyond `messages/`**: probably none — keep
   the factory tight.
 
-#### Admin Authentication
+<a id="admin-authentication"></a>
+#### 2.9.9 Admin Authentication
 
 A ready-made tool for authenticating admins and recognizing them across
 subsequent requests on a site. Robinson ships this — auth is hard to get
@@ -1126,7 +1163,8 @@ Open:
   Ideas): when admin-site or admin-handler is revisited, admin auth is
   the gate.
 
-#### Deferred Ideas
+<a id="deferred-ideas"></a>
+#### 2.9.10 Deferred Ideas
 
 These are captured for future consideration but **not planned for v1**.
 The reasoning is that they each have either a simpler alternative or no
@@ -1164,14 +1202,16 @@ Specifics to be filled in as features are described.
 
 ---
 
-## Open Questions / Cross-Cutting Concerns
+<a id="open-questions-cross-cutting-concerns"></a>
+## 3 Open Questions / Cross-Cutting Concerns
 
 (For things that affect multiple features, design tensions, or "we'll figure it out
 when we get there" notes.)
 
 ---
 
-## Prioritization
+<a id="prioritization"></a>
+## 4 Prioritization
 
 (Empty for now. Filled in once the feature list stabilizes — typically with three
 buckets: in v1, deferred to later, dropped or unlikely.)

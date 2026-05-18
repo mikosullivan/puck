@@ -1,6 +1,7 @@
 # Class Definition Format
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 vibecode: {
 	"section": "overview",
@@ -13,7 +14,8 @@ A class definition is stored as a record in `records_history` with `class_pk` po
 
 The class definition is stored in the `bucket` field.
 
-## Universal Namespace
+<a id="universal-namespace"></a>
+## 2 Universal Namespace
 
 vibecode: {
 	"section": "universal_namespace",
@@ -31,7 +33,8 @@ Examples:
 - `foo.com/bar`
 - `mycompany.com/character`
 
-## Schema
+<a id="schema"></a>
+## 3 Schema
 
 vibecode: {
 	"section": "schema",
@@ -45,7 +48,8 @@ each value is the class definition. The `name` field is not repeated inside the 
 When a schema is imported, the class name is always taken from the dict key. Any `name` field
 explicitly set inside a class definition is ignored and overwritten with the key value.
 
-### Import Rules
+<a id="import-rules"></a>
+### 3.1 Import Rules
 
 - Importing a class that does not yet exist creates a new record.
 - Importing a class that already exists appends a new `records_history` row with the updated
@@ -75,7 +79,8 @@ explicitly set inside a class definition is ignored and overwritten with the key
 }
 ```
 
-## Class Name
+<a id="class-name"></a>
+## 4 Class Name
 
 vibecode: {
 	"section": "class_name",
@@ -98,7 +103,8 @@ Built-in classes seeded as database records:
 - `kiera.uno/reference` — reference to another record
 - `kiera.uno/dbfile` — file attachment
 
-## Record Classes
+<a id="record-classes"></a>
+## 5 Record Classes
 
 vibecode: {
 	"section": "record_classes",
@@ -109,7 +115,8 @@ vibecode: {
 All classes defined in the `classes` schema are record classes — they can be assigned to
 records in `records_history`. There is no separate declaration required.
 
-## Inheritance
+<a id="inheritance"></a>
+## 6 Inheritance
 
 vibecode: {
 	"section": "inheritance",
@@ -134,7 +141,8 @@ Only one parent is allowed.
 Validation of a record always uses the latest active version of its class definition at the time
 of the write. Previously written records are not retroactively invalidated by class changes.
 
-## Fields
+<a id="fields"></a>
+## 7 Fields
 
 vibecode: {
 	"section": "fields",
@@ -157,7 +165,8 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 }
 ```
 
-## Field Types
+<a id="field-types"></a>
+## 8 Field Types
 
 vibecode: {
 	"section": "field_types",
@@ -178,7 +187,8 @@ vibecode: {
 | `"kiera.uno/dbfile"` | File attachment |
 | any UNS class name | Reference to a named class defined elsewhere in the schema |
 
-## Inline vs. Named Field Types
+<a id="inline-vs-named-field-types"></a>
+## 9 Inline vs. Named Field Types
 
 vibecode: {
 	"section": "inline_vs_named_field_types",
@@ -240,7 +250,8 @@ that type:
 "labels": {"class": "hash", "of": "string"}
 ```
 
-## Common Field Settings
+<a id="common-field-settings"></a>
+## 10 Common Field Settings
 
 vibecode: {
 	"section": "common_field_settings",
@@ -255,7 +266,8 @@ vibecode: {
 | `default` | all scalar types | Value to use when the field is absent on create |
 | `instantiate` | `hash` only | If `true`, auto-create the nested object when absent, then apply sub-field defaults |
 
-## String Settings
+<a id="string-settings"></a>
+## 11 String Settings
 
 vibecode: {
 	"section": "string_settings",
@@ -269,7 +281,8 @@ vibecode: {
 | `max_length` | Maximum character length |
 | `collapse` | If `true`, trim leading/trailing whitespace and collapse internal whitespace runs to one space |
 
-## Number Settings
+<a id="number-settings"></a>
+## 12 Number Settings
 
 vibecode: {
 	"section": "number_settings",
@@ -286,7 +299,8 @@ vibecode: {
 | `integer_only` | If `true`, reject fractional values |
 | `multiple_of` | Value must be a multiple of this number |
 
-## Array and Hash Settings
+<a id="array-and-hash-settings"></a>
+## 13 Array and Hash Settings
 
 vibecode: {
 	"section": "array_and_hash_settings",
@@ -299,7 +313,8 @@ vibecode: {
 | `min_elements` | Minimum number of elements (array) or keys (hash) |
 | `max_elements` | Maximum number of elements (array) or keys (hash) |
 
-## Typed Arrays
+<a id="typed-arrays"></a>
+## 14 Typed Arrays
 
 vibecode: {
 	"section": "typed_arrays",
@@ -317,7 +332,8 @@ A typed array uses `"class": "array"` with an `"of"` key specifying the element 
 
 An untyped array uses `"class": "array"` with no `"of"`.
 
-## Reference Fields
+<a id="reference-fields"></a>
+## 15 Reference Fields
 
 vibecode: {
 	"section": "reference_fields",
@@ -337,7 +353,8 @@ are present they are merged. Any record of the specified class or a subclass is 
 }
 ```
 
-## Object Representation
+<a id="object-representation"></a>
+## 16 Object Representation
 
 vibecode: {
 	"section": "object_representation",
@@ -373,7 +390,8 @@ The shorthand for `kiera.uno/reference` is a plain string containing the target 
 
 The shorthand for `kiera.uno/dbfile` is a plain string containing the target `file_pk`.
 
-## File Fields
+<a id="file-fields"></a>
+## 17 File Fields
 
 vibecode: {
 	"section": "file_fields",
@@ -383,7 +401,8 @@ vibecode: {
 
 `kiera.uno/dbfile` fields support only `required`. No other constraints.
 
-## Field Ordering
+<a id="field-ordering"></a>
+## 18 Field Ordering
 
 vibecode: {
 	"section": "field_ordering",
@@ -397,7 +416,8 @@ Records returned from queries present fields in this order:
 2. Fields defined in the class itself, in definition order
 3. Fields not defined in any class, in their stored order
 
-## Unique Constraints
+<a id="unique-constraints"></a>
+## 19 Unique Constraints
 
 vibecode: {
 	"section": "unique_constraints",
@@ -434,7 +454,8 @@ that class:
 - A unique constraint violation on `create` or `update` is a write-time error.
 - Multiple independent `uniques` constraints may be declared.
 
-## Joins
+<a id="joins"></a>
+## 20 Joins
 
 vibecode: {
 	"section": "joins",
@@ -469,7 +490,8 @@ semantics — direction is determined by which field holds which reference.
 
 Additional fields beyond those listed in `join` may be defined and updated normally.
 
-## Unknown Fields
+<a id="unknown-fields"></a>
+## 21 Unknown Fields
 
 vibecode: {
 	"section": "unknown_fields",

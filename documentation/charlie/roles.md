@@ -23,7 +23,8 @@ follows the role model described here.
 
 ---
 
-## Motivation
+<a id="motivation"></a>
+## 1 Motivation
 
 The previous model classified every value and every running function as
 either *trusted* or *untrusted*, based on its source. The model worked but
@@ -43,7 +44,8 @@ own role, and cross-role interaction is the security-relevant event.
 
 ---
 
-## Core Concept
+<a id="core-concept"></a>
+## 2 Core Concept
 
 ```
 vibecode: {
@@ -69,7 +71,8 @@ each role on its own terms.
 
 ---
 
-## The `%role` System Method
+<a id="the-role-system-method"></a>
+## 3 The `%role` System Method
 
 ```
 vibecode: {
@@ -89,7 +92,8 @@ $current = %role    # the role currently in effect
 
 ---
 
-## Engine Startup: Initial Roles
+<a id="engine-startup-initial-roles"></a>
+## 4 Engine Startup: Initial Roles
 
 ```
 vibecode: {
@@ -132,7 +136,8 @@ reference syntax is TBD.
 
 ---
 
-## Role Transitions
+<a id="role-transitions"></a>
+## 5 Role Transitions
 
 ```
 vibecode: {
@@ -171,7 +176,8 @@ lifetime; A doesn't lose state because it called B.
 
 ---
 
-## What Is NOT Checked at a Boundary
+<a id="what-is-not-checked-at-a-boundary"></a>
+## 6 What Is NOT Checked at a Boundary
 
 ```
 vibecode: {
@@ -221,7 +227,8 @@ the narrowing easy.
 
 ---
 
-## `%chain.isolate do ... end`
+<a id="chainisolate-do-end"></a>
+## 7 `%chain.isolate do ... end`
 
 ```
 vibecode: {
@@ -275,7 +282,8 @@ another function.
 
 ---
 
-## Exceptions and Alarms
+<a id="exceptions-and-alarms"></a>
+## 8 Exceptions and Alarms
 
 ```
 vibecode: {
@@ -325,7 +333,8 @@ revisitation.
 
 ---
 
-## How Objects Get Their Owning Role
+<a id="how-objects-get-their-owning-role"></a>
+## 9 How Objects Get Their Owning Role
 
 ```
 vibecode: {
@@ -360,7 +369,8 @@ value; it doesn't change because the value's location changed.
 
 ---
 
-## Faucets
+<a id="faucets"></a>
+## 10 Faucets
 
 ```
 vibecode: {
@@ -394,7 +404,8 @@ The `user` role pulling data from database D ends up holding values that
 are owned by role-D — not by `user`. User-role code can *hold* the
 values but doesn't *own* them.
 
-### Filesystem: dirjails
+<a id="filesystem-dirjails"></a>
+### 10.1 Filesystem: dirjails
 
 ```
 vibecode: {
@@ -447,7 +458,8 @@ its members are other identities, each with their own role.
 in `hsa` while "what it's connected to" lives in `relationships`. The
 role model uses the same structural split.)
 
-### Other faucets
+<a id="other-faucets"></a>
+### 10.2 Other faucets
 
 The model extends naturally to other faucet kinds. The same baseline
 rule applies: **engine-supplied, has its own distinct role, data pulled
@@ -475,7 +487,8 @@ through it inherits that role**.
 
 ---
 
-## Cross-Role Trust
+<a id="cross-role-trust"></a>
+## 11 Cross-Role Trust
 
 ```
 vibecode: {
@@ -503,12 +516,14 @@ revocation, runtime adjustability.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 12 Open Questions
 
 The model is solid enough to adopt; these are refinements within an
 established framework, not blockers.
 
-### Cross-role trust mechanics
+<a id="cross-role-trust-mechanics"></a>
+### 12.1 Cross-role trust mechanics
 
 - Syntax for declaring "role A trusts role B."
 - Where the declaration lives — in the role's definition, in `%chain`,
@@ -519,7 +534,8 @@ established framework, not blockers.
   A→C), but should be explicit.
 - Revocation and scoping — can trust be temporary (block-scoped)?
 
-### Owning-role propagation
+<a id="owning-role-propagation"></a>
+### 12.2 Owning-role propagation
 
 - When a value owned by role D is used to produce a derived value (a
   substring, a hash containing it, a function-of-it), does the derived
@@ -528,7 +544,8 @@ established framework, not blockers.
   [ideas/string-provenance.md](../ideas/security/string-provenance.md). Worth
   aligning rather than designing in parallel.
 
-### Granularity of source-derived roles
+<a id="granularity-of-source-derived-roles"></a>
+### 12.3 Granularity of source-derived roles
 
 - One role per database? Per connection? Per query? Per record?
 - Same question for network sources, file sources, etc.
@@ -547,7 +564,8 @@ meaningful security properties. Candidate consolidations:
 - STDIN + env-vars + CLI-args → one `system-input` role.
 - Engine-supplied capabilities → one `kiera` (or `engine`) role.
 
-### Role lifecycle
+<a id="role-lifecycle"></a>
+### 12.4 Role lifecycle
 
 - When a source becomes unreachable (db disconnected, endpoint deleted),
   what happens to its role?
@@ -555,7 +573,8 @@ meaningful security properties. Candidate consolidations:
 - Persistence — does a role survive process restart? Probably not, but
   the values owned by such a role might be stored across restarts.
 
-### Interaction with existing mechanisms
+<a id="interaction-with-existing-mechanisms"></a>
+### 12.5 Interaction with existing mechanisms
 
 - Jail permissions (filesystem read/write/execute) — roles cover the
   "who can do this" question; jails cover the "what bounded scope"
@@ -567,7 +586,8 @@ meaningful security properties. Candidate consolidations:
   writes from role A to a database whose owning role is B are gated by
   A's trust of B.
 
-### Sink-side security
+<a id="sink-side-security"></a>
+### 12.6 Sink-side security
 
 The model so far focuses on what comes *in* through faucets (role-tagging
 of pulled values, source-side semantics). The sink side — sending
@@ -583,7 +603,8 @@ information *out* — has its own implications:
 
 To explore in a future round.
 
-### Default trust setup at startup
+<a id="default-trust-setup-at-startup"></a>
+### 12.7 Default trust setup at startup
 
 - Does the engine establish any default trust at boot — e.g., `user`
   trusts the stdlib's role, or trusts certain built-in capability
@@ -592,7 +613,8 @@ To explore in a future round.
 
 ---
 
-## Related Documents
+<a id="related-documents"></a>
+## 13 Related Documents
 
 - [kiera.md](../kiera/kiera.md) — the kiera object model, which builds on role
   concepts (per-getter roles, version windows, etc.).

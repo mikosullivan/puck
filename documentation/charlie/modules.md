@@ -1,6 +1,7 @@
 # Modules
 
-## Status
+<a id="status"></a>
+## 1 Status
 
 ```
 vibecode: {
@@ -15,7 +16,8 @@ problem. Further experience with the language may refine or replace it.
 
 ---
 
-## The Problem
+<a id="the-problem"></a>
+## 2 The Problem
 
 ```
 vibecode: {
@@ -43,7 +45,8 @@ call.
 
 ---
 
-## The Approach
+<a id="the-approach"></a>
+## 3 The Approach
 
 ```
 vibecode: {
@@ -78,7 +81,8 @@ The mutual-call problem dissolves. It was always just a method call on `self`.
 
 ---
 
-## Implicit Top-Level Module
+<a id="implicit-top-level-module"></a>
+## 4 Implicit Top-Level Module
 
 ```
 vibecode: {
@@ -109,7 +113,8 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 
 ---
 
-## Invoking a File
+<a id="invoking-a-file"></a>
+## 5 Invoking a File
 
 ```
 vibecode: {
@@ -161,7 +166,8 @@ relative-vs-absolute paths) is TBD.
 
 ---
 
-## Syntax
+<a id="syntax"></a>
+## 6 Syntax
 
 ```
 vibecode: {
@@ -193,7 +199,8 @@ The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and v
 
 ---
 
-## What `&foo` Means Inside a Module
+<a id="what-foo-means-inside-a-module"></a>
+## 7 What `&foo` Means Inside a Module
 
 ```
 vibecode: {
@@ -221,7 +228,8 @@ don't see outer variables, but they can call sibling methods through `self`.
 
 ---
 
-## Nesting
+<a id="nesting"></a>
+## 8 Nesting
 
 ```
 vibecode: {
@@ -252,7 +260,8 @@ To call across module boundaries, pass a reference explicitly as a parameter.
 
 ---
 
-## Relationship to Classes
+<a id="relationship-to-classes"></a>
+## 9 Relationship to Classes
 
 ```
 vibecode: {
@@ -296,7 +305,8 @@ single-instance, anonymous, and have no schema requirements.
 
 ---
 
-## Why Not Just Use a Class?
+<a id="why-not-just-use-a-class"></a>
+## 10 Why Not Just Use a Class?
 
 ```
 vibecode: {
@@ -313,7 +323,8 @@ the lighter intent.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 11 Open Questions
 
 - Can a module be assigned to a variable and passed around as an object from outside?
 - Does a module's anonymous class inherit from `kiera.uno/object` directly?

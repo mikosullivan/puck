@@ -3,7 +3,8 @@
 `null` is a bare word method that returns an instance of the `kiera.uno/null`
 class.
 
-## Too Long, Didn't Read
+<a id="too-long-didnt-read"></a>
+## 1 Too Long, Didn't Read
 
 `null` returns a new instance of `kiera.uno/null`. You do not get the same null
 object every time. Every null object has a `flavor` field to which you can
@@ -12,7 +13,8 @@ assign anything.
 Claude got pretty wordy in this document but it's a nice read if you're into
 the finer points of null.
 
-## Construction
+<a id="construction"></a>
+## 2 Construction
 
 ```
 vibecode: {
@@ -36,7 +38,8 @@ A program that tries to redefine these names raises a runtime error.
 
 ---
 
-## Equality
+<a id="equality"></a>
+## 3 Equality
 
 ```
 vibecode: {
@@ -82,7 +85,8 @@ end
 
 ---
 
-## Identity Guarantees
+<a id="identity-guarantees"></a>
+## 4 Identity Guarantees
 
 ```
 vibecode: {
@@ -122,14 +126,16 @@ The same applies symmetrically to `true` and `false`. The mechanism is
 
 ---
 
-## Null Flavors
+<a id="null-flavors"></a>
+## 5 Null Flavors
 
 Null flavors let a program distinguish *why* a value is null, not just that it is
 null. The rest of this section explains the problem they solve, how the canonical
 healthcare standard (HL7) handles it, and Kiera's deliberately simple
 implementation.
 
-### Background: The Challenge
+<a id="background-the-challenge"></a>
+### 5.1 Background: The Challenge
 
 ```
 vibecode: {
@@ -174,7 +180,8 @@ multiple systems:
 Wherever distinguishing absence reasons matters, a single `NULL` forces awkward
 sentinel values, side-channel error codes, or out-of-band state tracking.
 
-### Background: How HL7 Handles It
+<a id="background-how-hl7-handles-it"></a>
+### 5.2 Background: How HL7 Handles It
 
 ```
 vibecode: {
@@ -236,7 +243,8 @@ Other systems take similar approaches at different scales:
 The pattern across all of these: when "missing" matters, distinguishing reasons
 pays off.
 
-### Kiera's Approach
+<a id="kieras-approach"></a>
+### 5.3 Kiera's Approach
 
 ```
 vibecode: {
@@ -273,7 +281,8 @@ applications this is fine; if interop matters in a specific domain (healthcare,
 finance, etc.), that domain's conventions can be defined and adopted as community
 standards on top of the Kiera primitive.
 
-### The `flavor` Field
+<a id="the-flavor-field"></a>
+### 5.4 The `flavor` Field
 
 ```
 vibecode: {
@@ -295,7 +304,8 @@ $y.flavor          # null
 
 The flavor field is mutable. Assigning a new flavor replaces the previous one.
 
-### Standard Flavors
+<a id="standard-flavors"></a>
+### 5.5 Standard Flavors
 
 ```
 vibecode: {
@@ -379,7 +389,8 @@ code that needs more specific reasons uses its own flavor values
 (symbols, strings, structured objects) without going through the
 canonical namespace.
 
-### When to Use a Flavor
+<a id="when-to-use-a-flavor"></a>
+### 5.6 When to Use a Flavor
 
 A flavor is only useful if **callers will actually branch on it**.
 The rule: *return a flavored null only when someone is expected to
@@ -408,7 +419,8 @@ chain slot is empty is an example: there's nothing for callers to
 distinguish ("no kiera here" is the whole story; no further branch
 is implied).
 
-### Flavor Propagation
+<a id="flavor-propagation"></a>
+### 5.7 Flavor Propagation
 
 ```
 vibecode: {
@@ -445,7 +457,8 @@ if $x == null
 end
 ```
 
-### Use Cases
+<a id="use-cases"></a>
+### 5.8 Use Cases
 
 ```
 vibecode: {
@@ -469,7 +482,8 @@ Null flavors carry information that single-NULL systems lose. Common application
 - **`%chain.misc` lookups.** Distinguish "this chain value was never set" from
   "explicitly cleared" from "cleared at security boundary."
 
-### Serialization
+<a id="serialization"></a>
+### 5.9 Serialization
 
 ```
 vibecode: {
@@ -529,7 +543,8 @@ string flavors round-trip cleanly. Hash flavors round-trip if the hash is itself
 serializable. Flavors holding live objects (functions, capabilities, etc.) cannot
 survive serialization — the engine raises if asked to serialize one.
 
-### Relation to the Trust Model
+<a id="relation-to-the-trust-model"></a>
+### 5.10 Relation to the Trust Model
 
 ```
 vibecode: {

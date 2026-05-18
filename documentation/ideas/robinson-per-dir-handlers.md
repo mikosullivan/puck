@@ -23,7 +23,8 @@ Brainstorm paused. Resume points when picking this back up:
 
 ---
 
-## Concept
+<a id="concept"></a>
+## 1 Concept
 
 ```
 vibecode: {
@@ -40,7 +41,8 @@ A directory in a Robinson tree may contain a file named
 along the path from the site root to the resolved page file gets a chance
 to see the request.
 
-### Traversal
+<a id="traversal"></a>
+### 1.1 Traversal
 
 For a request to `/blog/posts/my-post`, the chain along the path is:
 
@@ -55,7 +57,8 @@ runs in directory order from outer to inner.
 Files at intermediate directories without a `robinson.charlie` are
 simply skipped — no requirement that every directory have one.
 
-### Non-public by construction
+<a id="non-public-by-construction"></a>
+### 1.2 Non-public by construction
 
 `robinson.charlie` matches the [reserved `robinson.*` prefix rule](../charlie/http-middleware/robinson.md#reserved-filename-prefix-robinson)
 that already blocks request-boundary access. These files exist on
@@ -63,7 +66,8 @@ disk to be loaded by Robinson, never to be served as URLs.
 
 ---
 
-## File shape
+<a id="file-shape"></a>
+## 2 File shape
 
 ```
 vibecode: {
@@ -102,7 +106,8 @@ defines `class 'UNS' ... end`). One spec fix covers both.
 
 ---
 
-## The two-trip pattern
+<a id="the-two-trip-pattern"></a>
+## 3 The two-trip pattern
 
 ```
 vibecode: {
@@ -135,7 +140,8 @@ across page files and dir handlers.
 
 ---
 
-## Framework organization
+<a id="framework-organization"></a>
+## 4 Framework organization
 
 ```
 vibecode: {
@@ -148,7 +154,8 @@ vibecode: {
 }
 ```
 
-### Surface syntax: `$next` callable vs `yield`
+<a id="surface-syntax-next-callable-vs-yield"></a>
+### 4.1 Surface syntax: `$next` callable vs `yield`
 
 The Ruby version was painful because `yield` is opaque — the framework
 can't tell from outside whether the method yielded, threading state
@@ -184,7 +191,8 @@ of problems that made the Ruby version awful. **Not locked** — the
 original example earlier in this doc uses `yield $transaction`; both
 shapes are still on the table.
 
-### Framework code: recursive single-handler step
+<a id="framework-code-recursive-single-handler-step"></a>
+### 4.2 Framework code: recursive single-handler step
 
 One function, three method-presence checks, one recursive call:
 
@@ -226,7 +234,8 @@ to detect — the chain just stops where it stops.
 
 ---
 
-## Composition across handlers
+<a id="composition-across-handlers"></a>
+## 5 Composition across handlers
 
 ```
 vibecode: {
@@ -283,7 +292,8 @@ The shape:
 
 ---
 
-## `pass_through` — the wrapping primitive
+<a id="pass_through-the-wrapping-primitive"></a>
+## 6 `pass_through` — the wrapping primitive
 
 ```
 vibecode: {
@@ -326,7 +336,8 @@ This is the same shape as:
 - Lisp's `unwind-protect`
 - Express middleware's `(req, res, next) => { setup; next(); teardown; }`
 
-### Why this is more powerful than process_request + process_response
+<a id="why-this-is-more-powerful-than-process_request-process_response"></a>
+### 6.1 Why this is more powerful than process_request + process_response
 
 | Concern | Two-method version | `pass_through` |
 |---|---|---|
@@ -335,7 +346,8 @@ This is the same shape as:
 | `ensure` semantics | Need explicit error handling in `process_response` | Teardown after `yield` runs naturally via `ensure` |
 | Reads like the lifecycle | No | Yes |
 
-### Open questions
+<a id="open-questions"></a>
+### 6.2 Open questions
 
 - ~~**Coexistence with `process_request` / `process_response`.**~~
   **Resolved 2026-05-17.** All three methods coexist as independent
@@ -360,7 +372,8 @@ This is the same shape as:
 
 ---
 
-## Open questions (tracked as the brainstorm continues)
+<a id="open-questions-tracked-as-the-brainstorm-continues"></a>
+## 7 Open questions (tracked as the brainstorm continues)
 
 - **What does each `robinson.charlie` return / do?** Inspect-only,
   modify the request/transaction, short-circuit with a response,

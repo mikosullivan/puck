@@ -7,7 +7,8 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 
 ---
 
-## Reference
+<a id="reference"></a>
+## 1 Reference
 
 ```
 vibecode: {
@@ -44,7 +45,8 @@ vibecode: {
 
 ---
 
-## Shorthands
+<a id="shorthands"></a>
+## 2 Shorthands
 
 ```
 vibecode: {
@@ -82,7 +84,8 @@ for the hot path.
 
 ---
 
-## `%stdout` and `%stderr`
+<a id="stdout-and-stderr"></a>
+## 3 `%stdout` and `%stderr`
 
 `%stdout` and `%stderr` are handles to standard output and standard
 error. They are **always present** — code can write to them
@@ -107,7 +110,8 @@ handle is always there; whether the bytes go anywhere depends on
 the engine's configuration. Debug-style writes can be sprinkled
 in without context-specific guards.
 
-### Capture
+<a id="capture"></a>
+### 3.1 Capture
 
 Any process with the handle can capture output written through it:
 
@@ -124,7 +128,8 @@ capture buffer; the captured text is the value of the block.
 Capture is just a method on the handle — no separate engine grant
 required beyond `%stdout` itself being granted.
 
-### Tee mode (engine-only)
+<a id="tee-mode-engine-only"></a>
+### 3.2 Tee mode (engine-only)
 
 The engine can optionally configure `%stdout` / `%stderr` so that
 captured bytes flow to *both* the capture buffer and the original
@@ -145,7 +150,8 @@ giving scripts control over whether captured output is also
 visible at the original destination. Not in v1; flagged if demand
 surfaces.
 
-### Security posture
+<a id="security-posture"></a>
+### 3.3 Security posture
 
 The engine is the policy point: it grants `%stdout` / `%stderr`,
 or it doesn't. Once granted, the handle is fully usable —
@@ -160,7 +166,8 @@ boundary.
 
 ---
 
-## `%utils.timer`
+<a id="utilstimer"></a>
+## 4 `%utils.timer`
 
 Times a block and returns the elapsed time in seconds.
 
@@ -185,7 +192,8 @@ is granted.
 
 ---
 
-## `%utils.timeout`
+<a id="utilstimeout"></a>
+## 5 `%utils.timeout`
 
 Wraps a block with a time limit. When the deadline hits, the
 timeout fires a **two-stage** flag sequence:
@@ -217,7 +225,8 @@ inside the block, the timeout is genuinely unstoppable from
 inside. By making the caller-side flag a normal error, the
 caller gets familiar `catch`/`ensure` semantics.
 
-### The `unwind:` option
+<a id="the-unwind-option"></a>
+### 5.1 The `unwind:` option
 
 For cooperative code that wants the timeout to behave like a
 polite "time's up — clean up and exit," pass `unwind: true`:
@@ -246,7 +255,8 @@ uncatchable bubble-up.
 | Default | `timeout_handle` (uncatchable, no unwind) | `error/timeout` (catchable) |
 | `unwind: true` | `error/timeout` (catchable, unwinds) | propagates from the block |
 
-### The `?` form: `%utils.timeout?`
+<a id="the-form-utilstimeout"></a>
+### 5.2 The `?` form: `%utils.timeout?`
 
 `%utils.timeout?` (with the `?` suffix) is the **tolerant form**
 that returns the timeout flag as a value instead of raising it
@@ -292,7 +302,8 @@ itself catches the timeout, `%utils.timeout?` returns `null`
 converts the escaping timeout to a return value. The developer
 can choose to handle it inside the block or outside.
 
-### Nested timeouts
+<a id="nested-timeouts"></a>
+### 5.3 Nested timeouts
 
 Nested `%utils.timeout` calls budget against their parent:
 `effective_timeout = min(requested, remaining_parent_budget)`.
@@ -307,7 +318,8 @@ execution is inside an inner `unwind: true` block, the outer's
 `begin`/`ensure`. The inner's mode applies only when the inner's
 own deadline fires.
 
-### Availability
+<a id="availability"></a>
+### 5.4 Availability
 
 `%utils.timeout` is `null` if the engine did not grant `%utils`.
 Guard with `if %utils` if the caller can't assume the namespace
@@ -315,11 +327,13 @@ is granted.
 
 ---
 
-## `%utils.json`
+<a id="utilsjson"></a>
+## 6 `%utils.json`
 
 JSON parsing helpers. Two variants:
 
-### `%utils.json.parse(string)`
+<a id="utilsjsonparsestring"></a>
+### 6.1 `%utils.json.parse(string)`
 
 Strict parser. Returns the parsed value (hash, array, string,
 number, boolean, or `kiera.uno/null`) on success. Raises
@@ -330,7 +344,8 @@ $data = %utils.json.parse('{"name": "Picard", "rank": "Captain"}')
 $data['name']    # 'Picard'
 ```
 
-### `%utils.json.parse?(string)`
+<a id="utilsjsonparsestring-1"></a>
+### 6.2 `%utils.json.parse?(string)`
 
 Tolerant parser. Same as `parse` on success. **Returns null
 instead of raising** when the string isn't valid JSON.
@@ -360,7 +375,8 @@ return is the trade-off for the cleaner API; richer disambiguation
 (via null flavors) is filed as a possible refinement but not in
 v1.
 
-### Availability
+<a id="availability-1"></a>
+### 6.3 Availability
 
 `%utils.json.parse` and `%utils.json.parse?` are `null` if the
 engine did not grant `%utils`. Guard with `if %utils` if the

@@ -10,7 +10,8 @@ runner-spec sections.
 
 ---
 
-## `bryton.json` per directory
+<a id="brytonjson-per-directory"></a>
+## 1 `bryton.json` per directory
 
 Any directory in the test tree may contain an optional
 `bryton.json` file with per-directory configuration.
@@ -31,7 +32,8 @@ The most common use is the **`files` hash**, which controls:
 }
 ```
 
-### `files` semantics
+<a id="files-semantics"></a>
+### 1.1 `files` semantics
 
 - **Order** — entries in `files` run in their listed (JSON-object)
   order. So `simple.charlie` runs first, then `details/` (a
@@ -46,7 +48,8 @@ The most common use is the **`files` hash**, which controls:
 - **Unlisted entries run after listed ones**, in undefined order
   (unless `explicit: true` is set — see below).
 
-### Per-file overrides
+<a id="per-file-overrides"></a>
+### 1.2 Per-file overrides
 
 A file's value in `files` can be a hash instead of `true`/`false`,
 allowing the file to override specific settings for that one
@@ -87,7 +90,8 @@ If a future need surfaces a setting that genuinely should be
 per-file overrideable, it joins the list deliberately — additions
 to settled specs go through review, not casual accretion.
 
-### `explicit: true` — only run what's listed
+<a id="explicit-true-only-run-whats-listed"></a>
+### 1.3 `explicit: true` — only run what's listed
 
 By default, unlisted entries run after listed ones. Setting
 `explicit: true` at the same level as `files` changes that:
@@ -121,7 +125,8 @@ Xeme produced, no entry in the report).
   with regular `files` entries. Explicit doesn't change that
   behavior.
 
-### Why `false` produces an explicit skip
+<a id="why-false-produces-an-explicit-skip"></a>
+### 1.4 Why `false` produces an explicit skip
 
 A file marked `false` isn't silently dropped — it's a deliberate
 skip, and the report says so. This is the *slob pattern* at work
@@ -138,7 +143,8 @@ for files that aren't tests yet.
 
 ---
 
-## `dev.*` files — silent ignore
+<a id="dev-files-silent-ignore"></a>
+## 2 `dev.*` files — silent ignore
 
 Executable files whose name starts with `dev.` are **silently
 ignored** by the runner. They don't appear in the test tree at
@@ -170,7 +176,8 @@ acknowledgment.
 
 ---
 
-## Aggregator directories
+<a id="aggregator-directories"></a>
+## 3 Aggregator directories
 
 A directory can serve as an **aggregator** by listing test trees
 that live elsewhere on the filesystem. Paths in `files` are
@@ -198,7 +205,8 @@ they came from on disk. Resolution propagates failures from any
 external tree up through the aggregator, the same way it does for
 local children.
 
-### Use cases
+<a id="use-cases"></a>
+### 3.1 Use cases
 
 - A meta-test directory pulling together test trees from multiple
   sibling projects in a monorepo.
@@ -209,13 +217,15 @@ local children.
 
 ---
 
-## Dynamic configuration via executable `bryton.*`
+<a id="dynamic-configuration-via-executable-bryton"></a>
+## 4 Dynamic configuration via executable `bryton.*`
 
 A directory's effective config can be **generated dynamically** by
 an executable file matching the pattern `bryton.*` (e.g.,
 `bryton.rb`, `bryton.sh`, `bryton.charlie`).
 
-### Lookup order
+<a id="lookup-order"></a>
+### 4.1 Lookup order
 
 When the runner enters a directory, it determines that directory's
 config in this order:
@@ -231,7 +241,8 @@ The first executable wins. **Multiple `bryton.*` executables in
 one directory is sloppy**; the runner doesn't try to disambiguate.
 If you have more than one, clean them up.
 
-### Use case: dynamic aggregation
+<a id="use-case-dynamic-aggregation"></a>
+### 4.2 Use case: dynamic aggregation
 
 The motivating example: writing an aggregator that finds test
 directories by convention rather than hand-maintaining a list.
@@ -268,7 +279,8 @@ just an example of what a developer might do with dynamic config.
 The Bryton spec doesn't define any particular marker convention;
 that's up to the developer.
 
-### Why this is worth the cost
+<a id="why-this-is-worth-the-cost"></a>
+### 4.3 Why this is worth the cost
 
 Static-config alternatives (a hand-maintained `bryton.json`
 listing every test root) get stale as projects move around.
@@ -282,7 +294,8 @@ same shape as a static file. The lookup rule is one extra step;
 the rest of the runner doesn't care whether the config came from
 a static file or a script.
 
-### Security considerations
+<a id="security-considerations"></a>
+### 4.4 Security considerations
 
 The runner executes a script in any directory it walks that has a
 `bryton.*` executable. This is no worse than executing test files
@@ -291,7 +304,8 @@ aware of: don't run Bryton against untrusted directory trees.
 
 ---
 
-## Fail-fast
+<a id="fail-fast"></a>
+## 5 Fail-fast
 
 Setting `fail_fast: true` in any `bryton.json` tells the runner
 to **stop launching new tests as soon as one fails or returns no
@@ -303,7 +317,8 @@ verdict.**
 }
 ```
 
-### What triggers fail-fast
+<a id="what-triggers-fail-fast"></a>
+### 5.1 What triggers fail-fast
 
 A child Xeme triggers fail-fast when its `success` is not `true`.
 That covers two cases:
@@ -318,7 +333,8 @@ Only `success: true` lets the run continue. **Skipped Xemes
 the verdict, so they don't trigger fail-fast either, regardless
 of their `success` value.
 
-### Propagation
+<a id="propagation"></a>
+### 5.2 Propagation
 
 `fail_fast` propagates down the directory chain. Set it once at
 the root of the test tree and it applies to every subdirectory.
@@ -335,7 +351,8 @@ explicitly — useful when you want a particular subtree to run to
 completion (collecting all failures) even though the overall run
 is fail-fast.
 
-### `fail_fast: "children"` — split behavior
+<a id="fail_fast-children-split-behavior"></a>
+### 5.3 `fail_fast: "children"` — split behavior
 
 A third value, `"children"`, gives the directory split behavior:
 
@@ -359,7 +376,8 @@ A child can still override its inherited `fail_fast: true` by
 setting `fail_fast: false` (or another `"children"`) explicitly,
 same as with the regular boolean form.
 
-### What "stops" means
+<a id="what-stops-means"></a>
+### 5.4 What "stops" means
 
 When fail-fast fires, the runner **stops launching new tests**.
 Tests already in progress run to completion. (In the v1
@@ -367,7 +385,8 @@ single-process model, this just means the current test finishes
 and no new one starts.) The final Xeme reflects all tests that
 ran up to that point.
 
-### Mode interaction with parallel (future)
+<a id="mode-interaction-with-parallel-future"></a>
+### 5.5 Mode interaction with parallel (future)
 
 When parallel execution lands, fail-fast adapts to the
 fork-pool model. The rule:
@@ -398,7 +417,8 @@ Consequences worth knowing:
   else (in-flight handling, draining, reporting) follows from
   that.
 
-### Inside test scripts
+<a id="inside-test-scripts"></a>
+### 5.6 Inside test scripts
 
 Fail-fast should be respected **inside individual test files**
 too — not just by the runner between files. A test script that
@@ -413,7 +433,8 @@ script-side behaviors stay coordinated.
 
 ---
 
-## What counts as a successful script execution
+<a id="what-counts-as-a-successful-script-execution"></a>
+## 6 What counts as a successful script execution
 
 For the runner to treat a script execution as successful, **two
 rules must both be met**:
@@ -461,7 +482,8 @@ guessing.
 
 ---
 
-## Test script output: Xeme vs human
+<a id="test-script-output-xeme-vs-human"></a>
+## 7 Test script output: Xeme vs human
 
 A test script needs to output two different things depending on
 context:
@@ -472,7 +494,8 @@ context:
   structure that the runner can parse and assemble into the
   result tree.
 
-### The `in_run` flag
+<a id="the-in_run-flag"></a>
+### 7.1 The `in_run` flag
 
 The runner signals "I'm invoking you" by setting **`in_run: true`
 inside BRYTON** before invoking each test script. The script
@@ -490,7 +513,8 @@ end
 BRYTON (used for default values) won't have it, so direct CLI
 invocations get human output as expected.
 
-### Why a flag, not BRYTON's presence
+<a id="why-a-flag-not-brytons-presence"></a>
+### 7.2 Why a flag, not BRYTON's presence
 
 A natural-seeming alternative — "if BRYTON env var exists, output
 Xeme" — would break the workflow where a developer sets BRYTON in
@@ -503,7 +527,8 @@ hold whatever the developer wants for defaults; the runner-vs-CLI
 distinction is signaled by one specific key that only the runner
 sets.
 
-### What "human-readable" output looks like
+<a id="what-human-readable-output-looks-like"></a>
+### 7.3 What "human-readable" output looks like
 
 - **Success:** the literal string `[success]` (or similar — exact
   format spec'd by the testing-tools layer).
@@ -517,7 +542,8 @@ script emits Xeme JSON regardless of failure/success state.
 
 ---
 
-## The runner ignores any pre-existing `BRYTON`
+<a id="the-runner-ignores-any-pre-existing-bryton"></a>
+## 8 The runner ignores any pre-existing `BRYTON`
 
 When the runner starts, it **ignores whatever `BRYTON` was set
 in the invoking shell**. It builds BRYTON entirely from the
@@ -543,7 +569,8 @@ ignored for runner-driven runs.
 
 ---
 
-## Personal config: `~/.config/bryton/config.json`
+<a id="personal-config-configbrytonconfigjson"></a>
+## 9 Personal config: `~/.config/bryton/config.json`
 
 A developer can set **personal defaults** for how scripts run
 when invoked directly at the CLI. These live in
@@ -561,7 +588,8 @@ The initial standardized shape:
 This says: "when I run a test directly, default to fail-fast and
 trimmed output."
 
-## Tags
+<a id="tags"></a>
+## 10 Tags
 
 Tags are per-node metadata used for selective test runs. A node
 (directory or file) can declare its tags via the `tags` field:
@@ -576,7 +604,8 @@ Tags are per-node metadata used for selective test runs. A node
 }
 ```
 
-### Value semantics
+<a id="value-semantics"></a>
+### 10.1 Value semantics
 
 | Value | Meaning |
 |---|---|
@@ -588,7 +617,8 @@ developer metadata that Bryton ignores. The falsy form is handy
 when juggling many tags in active editing — set a value to
 `false` to temporarily disable a tag without deleting the entry.
 
-### Per-node, not propagated
+<a id="per-node-not-propagated"></a>
+### 10.2 Per-node, not propagated
 
 **Tags are strictly per-node.** They do not propagate down the
 directory chain. A directory tagged "integration" describes
@@ -598,7 +628,8 @@ This matches the general posture across Xeme and Bryton: **node
 metadata describes the node, not its contents.** Same as `class`,
 `errors`, `location`, `name`. Tags follow the same rule.
 
-### Tag-based selection
+<a id="tag-based-selection"></a>
+### 10.3 Tag-based selection
 
 When the runner is invoked with a tag filter (mechanism TBD — CLI
 flag, env var, or similar), it walks the tree and runs nodes
@@ -611,7 +642,8 @@ it just identifies the matching nodes and runs them. The
 directory structure already provides scope; the tag adds
 orthogonal metadata for which subtrees to include.
 
-### Tags travel with results
+<a id="tags-travel-with-results"></a>
+### 10.4 Tags travel with results
 
 When a tagged node produces a Xeme, **its tags are included in
 the Xeme's `location.tags`** (see
@@ -631,7 +663,8 @@ Tags don't propagate in the Xeme tree any more than they do in
 `bryton.json` — a tagged directory's Xeme carries the tags, but
 its children's Xemes don't automatically inherit them.
 
-## Which bryton.json keys propagate
+<a id="which-brytonjson-keys-propagate"></a>
+## 11 Which bryton.json keys propagate
 
 The settings that flow down from a parent directory's
 `bryton.json` to its subdirectories (the **allow-list**):
@@ -649,7 +682,8 @@ Settings **not** on the allow-list are directory-local:
 - Custom developer top-level fields — local by default; put
   inside `bryton_env` if propagation is wanted.
 
-### Trim propagation
+<a id="trim-propagation"></a>
+### 11.1 Trim propagation
 
 The `trim` setting (default `false`) tells consumers to **remove
 successful leaves** from the Xeme tree — see
@@ -674,7 +708,8 @@ The default stays `false` because most workflows want to see all
 results during development — trim is for production CI runs and
 mass-testing scenarios where only failures matter.
 
-## Official precedence: building BRYTON
+<a id="official-precedence-building-bryton"></a>
+## 12 Official precedence: building BRYTON
 
 BRYTON is built by overlaying layers in a fixed precedence order.
 Lowest layer first; each subsequent layer overrides the previous
@@ -697,7 +732,8 @@ chain being built fresh on each run from project-controlled and
 user-controlled sources, not from whatever happened to be in the
 shell.
 
-### Examples
+<a id="examples"></a>
+### 12.1 Examples
 
 **Direct CLI invocation (no runner):**
 
@@ -736,7 +772,8 @@ the developer's. But `trim` survived because no bryton.json
 contradicted it. **Projects enforce what they care about;
 personal config fills the rest.**
 
-### Why this resolves the can of worms
+<a id="why-this-resolves-the-can-of-worms"></a>
+### 12.2 Why this resolves the can of worms
 
 - **One precedence chain** that applies in both direct and
   runner-driven cases. No special cases.
@@ -764,7 +801,8 @@ The standardized field set starts small (`fail_fast`, `trim`) and
 grows deliberately as new tests-affecting defaults emerge.
 Additions go through review, not casual accretion.
 
-### Three tiers of configuration
+<a id="three-tiers-of-configuration"></a>
+### 12.3 Three tiers of configuration
 
 | Tier | Where | Scope | Who reads it |
 |---|---|---|---|
@@ -772,7 +810,8 @@ Additions go through review, not casual accretion.
 | **Personal** | `~/.config/bryton/config.json` | This developer | Scripts when run directly at CLI |
 | **Built-in** | Hard-coded defaults | Universal | Everyone, as final fallback |
 
-### Resolution order
+<a id="resolution-order"></a>
+### 12.4 Resolution order
 
 - **Run by the runner** (`in_run: true` in BRYTON): use BRYTON
   settings. Personal config is **ignored** by the runner — same
@@ -781,7 +820,8 @@ Additions go through review, not casual accretion.
   reads personal config and applies its defaults.
 - **No personal config present**: built-in defaults apply.
 
-### Per-language reading tools
+<a id="per-language-reading-tools"></a>
+### 12.5 Per-language reading tools
 
 Each language used for Bryton tests (Charlie, Ruby, Python,
 JavaScript, etc.) will have a small utility/library that reads
@@ -794,7 +834,8 @@ is minimal.
 
 ---
 
-## Scripts don't need libraries
+<a id="scripts-dont-need-libraries"></a>
+## 13 Scripts don't need libraries
 
 **The first-contact promise: a script that emits Xeme JSON to
 stdout IS a Bryton test, period.** No library imports, no
@@ -810,7 +851,8 @@ That's a complete, working Bryton test. No `require 'bryton'`, no
 `import bryton`, no nothing. The runner sees the trailing JSON,
 parses it, and assembles it into the result tree.
 
-### What the libraries add (when present)
+<a id="what-the-libraries-add-when-present"></a>
+### 13.1 What the libraries add (when present)
 
 The per-language libraries are **convenience**, not requirement.
 They give scripts that opt in:
@@ -824,7 +866,8 @@ They give scripts that opt in:
 - Auto-generation of UUIDs, timestamps, locations.
 - Pretty human-readable output when not in a runner.
 
-### What bare-bones scripts give up
+<a id="what-bare-bones-scripts-give-up"></a>
+### 13.2 What bare-bones scripts give up
 
 A script that doesn't use a library:
 
@@ -837,7 +880,8 @@ A script that doesn't use a library:
 That's all fine. The script still runs. It still produces a
 valid Xeme. It still works in the runner.
 
-### Why this matters
+<a id="why-this-matters"></a>
+### 13.3 Why this matters
 
 Bryton is **first-contact territory** — one of the surfaces where
 a developer encounters Kiera before deciding whether to commit to

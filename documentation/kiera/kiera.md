@@ -13,7 +13,8 @@ See [ideas/marina.md](../ideas/marina.md) for a prior design exploration.
 
 ---
 
-## `%kiera`
+<a id="kiera"></a>
+## 1 `%kiera`
 
 vibecode: {
 	"section": "kiera_system_method",
@@ -46,7 +47,8 @@ per role boundary, not globally. The two statements are consistent: the
 engine's per-role policy is what determines whether crossing into role B
 yields a kiera or null.
 
-### Shorthand for built-in classes
+<a id="shorthand-for-built-in-classes"></a>
+### 1.1 Shorthand for built-in classes
 
 Bare names in `%kiera[...]` — any key without a domain — resolve to `kiera.uno/...`:
 
@@ -62,7 +64,8 @@ Bare names in `%kiera[...]` — any key without a domain — resolve to `kiera.u
 
 ---
 
-## The Kiera Object
+<a id="the-kiera-object"></a>
+## 2 The Kiera Object
 
 ```
 vibecode: {
@@ -83,7 +86,8 @@ whatever kiera `%kiera` returns at the moment — usually the
 engine-provided one. The model supports any number, and code that
 constructs alternate kieras for specific purposes can do so.
 
-### Structure: Getters and Faucets
+<a id="structure-getters-and-faucets"></a>
+### 2.1 Structure: Getters and Faucets
 
 A kiera **holds one or more getters**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
@@ -111,7 +115,8 @@ Kiera
     └── Internal-network faucet
 ```
 
-### Roles: Per-Getter, Not Per-Faucet
+<a id="roles-per-getter-not-per-faucet"></a>
+### 2.2 Roles: Per-Getter, Not Per-Faucet
 
 **Each getter has its own role.** Objects served through a getter get
 that getter's role. Different getters in the same kiera produce
@@ -125,7 +130,8 @@ cache. Both are faucets inside the same getter, both produce objects
 with the getter's role. The same UNS hands back identically-tagged
 objects regardless of cache state.
 
-### Version Window
+<a id="version-window"></a>
+### 2.3 Version Window
 
 ```
 vibecode: {
@@ -173,7 +179,8 @@ Lookup semantics:
 - If no version exists in the allowed span, lookup behaves as if the
   UNS isn't there (returns null-flavored `not_found`).
 
-### Deriving a Narrower Kiera
+<a id="deriving-a-narrower-kiera"></a>
+### 2.4 Deriving a Narrower Kiera
 
 A kiera can produce a **derived kiera with a narrower window**, but
 never a broader one. The one-way ratchet:
@@ -193,7 +200,8 @@ not derived from the engine's kiera. That fresh kiera's timespan can be
 whatever the constructor chooses. The framework's stance: don't pass a
 faucet to code you don't trust to use it however it wants.
 
-### `restrict do ... end`
+<a id="restrict-do-end"></a>
+### 2.5 `restrict do ... end`
 
 `restrict` is the canonical way to scope `%kiera` to a narrower window
 for a block of code:
@@ -219,7 +227,8 @@ Nested `restrict` calls compose. When each block returns, the prior
 scope's kiera takes over. Same shape as `%chain.isolate do ... end` and
 other scoped-block primitives.
 
-### Lookup Mechanism
+<a id="lookup-mechanism"></a>
+### 2.6 Lookup Mechanism
 
 A kiera exposes a **lookup method** as its public API. (Working name
 TBD — likely `.lookup($uns)`; the actual name will be settled when the
@@ -253,7 +262,8 @@ intentionally simple. Engines or developers needing UNS-prefix matching,
 regex routing, dispatch tables, or fallback policies can subclass kiera
 and override the lookup method.
 
-### Provenance Checking
+<a id="provenance-checking"></a>
+### 2.7 Provenance Checking
 
 Provenance is **per-faucet**, not per-kiera. Each faucet has its own
 policy about how to sign off on provenance for the objects it serves. A
@@ -281,7 +291,8 @@ Typical cases:
   objects" pattern: local cache holds the artifact, distant
   verification mechanism holds proof.
 
-### The Engine Decides the Policy
+<a id="the-engine-decides-the-policy"></a>
+### 2.8 The Engine Decides the Policy
 
 **The engine controls which kiera `%kiera` returns**, and that kiera's
 configuration determines everything about provenance policy, getters,
@@ -299,7 +310,8 @@ the result and the checks.
 
 ---
 
-## `%kiera.call`
+<a id="kieracall"></a>
+## 3 `%kiera.call`
 
 vibecode: {
 	"section": "kiera_call",
@@ -322,7 +334,8 @@ The three arguments are:
 the same chain the calling function is running under. `%role` is reserved for possible
 future use and is not part of early versions.
 
-### Return value and error model
+<a id="return-value-and-error-model"></a>
+### 3.1 Return value and error model
 
 - **Return**: the remote method's return value, marshaled back as a Kiera object
   reference (or a primitive value, if the remote method returned one). The caller
@@ -344,7 +357,8 @@ future use and is not part of early versions.
 
 ---
 
-## `remote function`
+<a id="remote-function"></a>
+## 4 `remote function`
 
 vibecode: {
 	"section": "remote_function",
@@ -371,7 +385,8 @@ explicit `%kiera.call` form and the `remote function` shorthand are interchangea
 
 ---
 
-## `kiera.uno` Namespace
+<a id="kierauno-namespace"></a>
+## 5 `kiera.uno` Namespace
 
 vibecode: {
 	"section": "kiera_uno_namespace",
@@ -379,7 +394,8 @@ vibecode: {
 	"key_concepts": ["kiera.uno/null", "kiera.uno/true", "kiera.uno/false", "kiera.uno/mikobase", "kiera.uno/flag", "kiera.uno/record", "kiera.uno/reference", "kiera.uno/dbfile"]
 }
 
-### Language and Runtime
+<a id="language-and-runtime"></a>
+### 5.1 Language and Runtime
 
 | Class | Description |
 |---|---|
@@ -405,7 +421,8 @@ vibecode: {
 | `kiera.uno/security` | Security violation (engine-caught, does not unwind) |
 | `kiera.uno/timeout_handle` | Internal abort fired *inside* a `%utils.timeout` block; bubbles to the block boundary, does not unwind, not user-catchable |
 
-### Object Store
+<a id="object-store"></a>
+### 5.2 Object Store
 
 | Class | Description |
 |---|---|

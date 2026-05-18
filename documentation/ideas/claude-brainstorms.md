@@ -10,7 +10,8 @@ read each.
 
 ---
 
-## 1. Time-travel debugger for Charlie
+<a id="1-time-travel-debugger-for-charlie"></a>
+## 1 1. Time-travel debugger for Charlie
 
 Mikobase already supports time-travel reads (querying state as
 of any past timestamp). A debugger could exploit this:
@@ -25,7 +26,8 @@ mikobase-shaped during a debug run. Heavy but feasible.
 
 ---
 
-## 2. Visual Xeme tree renderer
+<a id="2-visual-xeme-tree-renderer"></a>
+## 2 2. Visual Xeme tree renderer
 
 The icons we just spent time organizing are a contract waiting
 for a client. A browser-based (or desktop) viewer that:
@@ -41,7 +43,8 @@ the icon-fallback rule once, in one place.
 
 ---
 
-## 3. Test analytics service
+<a id="3-test-analytics-service"></a>
+## 3 3. Test analytics service
 
 A hosted service that consumes Xeme trees over time and surfaces:
 
@@ -59,7 +62,8 @@ service.
 
 ---
 
-## 4. Jasmine → notifications service
+<a id="4-jasmine-notifications-service"></a>
+## 4 4. Jasmine → notifications service
 
 A hosted service that consumes Jasmine entries and routes
 attention-worthy events to email / SMS / Slack / Pushover / etc.
@@ -76,7 +80,8 @@ competing with it.
 
 ---
 
-## 5. TryCharlie — browser playground
+<a id="5-trycharlie-browser-playground"></a>
+## 5 5. TryCharlie — browser playground
 
 A web page where someone can type Charlie and see it run. Mimics
 TryRuby, Replit, the various "play with this language" pages.
@@ -93,7 +98,8 @@ Aligns with the first-contact strategy memory.
 
 ---
 
-## 6. Kiera CLI tool
+<a id="6-kiera-cli-tool"></a>
+## 6 6. Kiera CLI tool
 
 A unified command-line tool — `kiera` — for everyday Kiera
 operations. Like `kubectl` for Kubernetes or `gh` for GitHub.
@@ -112,7 +118,8 @@ specific scripts. Discoverable via `kiera --help`.
 
 ---
 
-## 7. Universal logger sidecar
+<a id="7-universal-logger-sidecar"></a>
+## 7 7. Universal logger sidecar
 
 A small daemon — `kiera-log` — that reads Jasmine entries on
 stdin (or a Unix socket) and routes them to whatever's configured
@@ -127,7 +134,8 @@ ship as part of the core toolset.
 
 ---
 
-## 8. Federated mikobases
+<a id="8-federated-mikobases"></a>
+## 8 8. Federated mikobases
 
 Multiple mikobases can be queried as a single virtual store. The
 federation layer:
@@ -146,7 +154,8 @@ posture.
 
 ---
 
-## 9. Time-bounded objects
+<a id="9-time-bounded-objects"></a>
+## 9 9. Time-bounded objects
 
 A class capability: objects with an explicit lifetime. The
 mikobase auto-collects them after their TTL expires.
@@ -167,7 +176,8 @@ is collectible after timestamp X."
 
 ---
 
-## 10. Lazy mikobase records
+<a id="10-lazy-mikobase-records"></a>
+## 10 10. Lazy mikobase records
 
 A record whose value is computed on demand by a function, not
 stored. The mikobase keeps the recipe (the function + its
@@ -191,7 +201,8 @@ hard parts.
 
 ---
 
-## Status
+<a id="status"></a>
+## 11 Status
 
 All ten are speculative. Some overlap with already-flagged
 future work; others are new threads. None are commitments.

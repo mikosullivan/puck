@@ -9,7 +9,8 @@ of defaults stack up and the deepest layer wins.
 
 ---
 
-## Construction
+<a id="construction"></a>
+## 1 Construction
 
 Pass an array of hashes, ordered from most-general to
 most-specific:
@@ -30,7 +31,8 @@ references them; it doesn't copy.
 
 ---
 
-## Reads
+<a id="reads"></a>
+## 2 Reads
 
 `$mh['key']` walks the array **from end to start** and returns
 the value from the first hash that has the key:
@@ -48,7 +50,8 @@ A key whose value is `null` in a layer **still counts as found**
 — it shadows any value above. This lets a deeper layer
 explicitly clear an inherited value.
 
-### `$mh.has?(key)`
+<a id="mhhaskey"></a>
+### 2.1 `$mh.has?(key)`
 
 Returns `true` if any layer in the array has the key (regardless
 of its value), `false` otherwise. Useful when you need to
@@ -56,7 +59,8 @@ distinguish "key absent" from "key set to null."
 
 ---
 
-## Writes
+<a id="writes"></a>
+## 3 Writes
 
 `$mh['key'] = value` always writes to the **last hash in the
 array** — the most-specific layer:
@@ -76,7 +80,8 @@ references — meta-hash is a view, not an owner).
 
 ---
 
-## `$mh.extend(hash)`
+<a id="mhextendhash"></a>
+## 4 `$mh.extend(hash)`
 
 Returns a **new meta-hash** with the given hash appended as the
 new bottom (most-specific) layer:
@@ -99,7 +104,8 @@ with its own settings.
 
 ---
 
-## `$mh.flatten`
+<a id="mhflatten"></a>
+## 5 `$mh.flatten`
 
 Returns a single regular hash representing the merged view at
 the current state. Most-specific layer takes precedence; earlier
@@ -117,7 +123,8 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Use cases
+<a id="use-cases"></a>
+## 6 Use cases
 
 - **HTTP middleware settings cascade.** Touchstone → Robinson →
   server → site → dir levels → file. Each level overlays the
@@ -135,7 +142,8 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Implementation note
+<a id="implementation-note"></a>
+## 7 Implementation note
 
 The class is intentionally tiny — read, write, has?, extend,
 flatten are the entire surface, and each is straightforward.
@@ -146,7 +154,8 @@ problem to memoize.
 
 ---
 
-## What's not in the v1 surface
+<a id="whats-not-in-the-v1-surface"></a>
+## 8 What's not in the v1 surface
 
 - **Iteration order semantics** when the same key exists in
   multiple layers — `$mh.each` returns the merged view (deepest

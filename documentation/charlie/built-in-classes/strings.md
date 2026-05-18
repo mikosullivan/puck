@@ -1,6 +1,7 @@
 # String Methods
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -18,7 +19,8 @@ UTF-8 at system boundaries before passing them to Charlie.
 
 ---
 
-## Operators
+<a id="operators"></a>
+## 2 Operators
 
 ```
 vibecode: {
@@ -40,7 +42,8 @@ vibecode: {
 
 ---
 
-## Testing
+<a id="testing"></a>
+## 3 Testing
 
 ```
 vibecode: {
@@ -64,7 +67,8 @@ vibecode: {
 
 ---
 
-## Case
+<a id="case"></a>
+## 4 Case
 
 ```
 vibecode: {
@@ -81,7 +85,8 @@ vibecode: {
 
 ---
 
-## Whitespace
+<a id="whitespace"></a>
+## 5 Whitespace
 
 ```
 vibecode: {
@@ -102,7 +107,8 @@ vibecode: {
 
 ---
 
-## Prefix and Suffix
+<a id="prefix-and-suffix"></a>
+## 6 Prefix and Suffix
 
 ```
 vibecode: {
@@ -120,7 +126,8 @@ vibecode: {
 
 ---
 
-## Search and Replace
+<a id="search-and-replace"></a>
+## 7 Search and Replace
 
 ```
 vibecode: {
@@ -139,7 +146,8 @@ vibecode: {
 | `match($pattern)` | Match or nil | Return the first match object for `$pattern`, or nil if no match. The match object carries the matched string and any capture groups. |
 | `replace($pattern, $replacement, $scope = :all)` | String | Replace occurrences of `$pattern` with `$replacement`. `$pattern` may be a string or regex. `$scope` controls which matches are replaced: `:all` (default) replaces every match, `:first` replaces only the first, `:last` replaces only the last. Returns the original string unchanged if no match is found. |
 
-### replace scope options
+<a id="replace-scope-options"></a>
+### 7.1 replace scope options
 
 | Scope | Behaviour |
 |-------|-----------|
@@ -159,7 +167,8 @@ $foo.replace('xyz', 'bar')          -> 'Mike Stuart Mike'
 
 ---
 
-## Formatting
+<a id="formatting"></a>
+## 8 Formatting
 
 ```
 vibecode: {
@@ -177,7 +186,8 @@ vibecode: {
 
 ---
 
-## Splitting
+<a id="splitting"></a>
+## 9 Splitting
 
 ```
 vibecode: {
@@ -194,7 +204,8 @@ vibecode: {
 
 ---
 
-## Size
+<a id="size"></a>
+## 10 Size
 
 ```
 vibecode: {
@@ -212,7 +223,8 @@ vibecode: {
 
 ---
 
-## Conversion
+<a id="conversion"></a>
+## 11 Conversion
 
 ```
 vibecode: {
@@ -234,7 +246,8 @@ vibecode: {
 
 ---
 
-## End-Anchored Slicing
+<a id="end-anchored-slicing"></a>
+## 12 End-Anchored Slicing
 
 ```
 vibecode: {
@@ -295,7 +308,8 @@ parser must handle this disambiguation.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 13 Open Questions
 
 - `[]` with `:end`: resolved — see End-Anchored Slicing section.
 - `match` return type: the Match object API is not yet designed.

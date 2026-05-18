@@ -1,6 +1,7 @@
 # Mikobase
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 vibecode: {
 	"section": "overview",
@@ -22,7 +23,8 @@ services) are supported, but worldlets drive design decisions.
 
 ---
 
-## v1 Scope
+<a id="v1-scope"></a>
+## 2 v1 Scope
 
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
@@ -63,7 +65,8 @@ focused:
 
 ---
 
-## Temporal vs Non-temporal Mode
+<a id="temporal-vs-non-temporal-mode"></a>
+## 3 Temporal vs Non-temporal Mode
 
 vibecode: {
 	"section": "temporal_mode",
@@ -100,7 +103,8 @@ audit past versions of its records probably doesn't need a temporal database
 either. Non-temporal isn't a niche mode; it's the right choice for any
 workload where version history adds clutter without payoff.
 
-### Single read and write paths
+<a id="single-read-and-write-paths"></a>
+### 3.1 Single read and write paths
 
 The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
 
@@ -115,21 +119,24 @@ For SQLite-backed mikobases, the retrieval abstraction can be a database view na
 `SELECT * FROM records` depending on mode. The engine queries the view; the database
 itself encodes the mode.
 
-### Temporal-only operations on a non-temporal database
+<a id="temporal-only-operations-on-a-non-temporal-database"></a>
+### 3.2 Temporal-only operations on a non-temporal database
 
 Operations that only make sense on a temporal database — rollback, version-at-timestamp,
 history scans, audit queries — raise an exception when called on a non-temporal database.
 No silent degradation, no empty results. The caller knows immediately that the operation
 isn't supported.
 
-### Changing modes later
+<a id="changing-modes-later"></a>
+### 3.3 Changing modes later
 
 The flag is immutable at the database level. To convert a non-temporal database to
 temporal (or vice versa), import the data into a new database created with the desired
 mode. A future engine release may add a refactor tool, but the chosen mode is permanent
 for the database it was set on.
 
-### Worldlets and the temporal flag
+<a id="worldlets-and-the-temporal-flag"></a>
+### 3.4 Worldlets and the temporal flag
 
 A worldlet is a **serialized export** of a mikobase, not a mikobase itself
 (see [Export formats](#export-formats) below). The worldlet JSON captures
@@ -147,7 +154,8 @@ isn't specified and isn't a priority to resolve.
 
 ---
 
-## Export formats
+<a id="export-formats"></a>
+## 4 Export formats
 
 ```
 vibecode: {
@@ -171,7 +179,8 @@ Mikobase v1 will support at least two export formats:
 | **Worldlet** (JSON) | Format defined — [worldlet.md](worldlets/worldlet.md) | Single JSON document; portable; human-readable; suitable for sharing, AI conversation captures, snapshots |
 | (Second format) | TBD | A second export format is planned; shape not yet specified |
 
-### Worldlets play two roles
+<a id="worldlets-play-two-roles"></a>
+### 4.1 Worldlets play two roles
 
 Worldlet JSON is **both** an export format (from any engine) **and**
 the live storage of the [`kiera.uno/mikobase/worldlet`](#class-hierarchy-olympic)
@@ -195,7 +204,8 @@ serialization-cost. Both engines speak the same `kiera.uno/mikobase`
 interface; Charlie code that doesn't care which backend it's on works
 identically against either.
 
-### Import / export functions
+<a id="import-export-functions"></a>
+### 4.2 Import / export functions
 
 The pipeline between an engine-backed mikobase and an export format is
 exactly two functions per format:
@@ -235,7 +245,8 @@ import in particular:
 
 ---
 
-## Single-process vs. cross-fork use
+<a id="single-process-vs-cross-fork-use"></a>
+## 5 Single-process vs. cross-fork use
 
 vibecode: {
 	"section": "single_process_vs_cross_fork",
@@ -250,7 +261,8 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 
 ---
 
-## The Maintaining Process
+<a id="the-maintaining-process"></a>
+## 6 The Maintaining Process
 
 vibecode: {
 	"section": "maintaining_process",
@@ -270,7 +282,8 @@ connecting to a live process, not reading from a file.
 
 ---
 
-## Object Ownership
+<a id="object-ownership"></a>
+## 7 Object Ownership
 
 vibecode: {
 	"section": "object_ownership",
@@ -283,7 +296,8 @@ they connect to the mikobase and interact with whatever is already there.
 
 ---
 
-## Class Hierarchy
+<a id="class-hierarchy"></a>
+## 8 Class Hierarchy
 
 vibecode: {
 	"section": "class_hierarchy",
@@ -311,7 +325,8 @@ Charlie code interacts only with the `kiera.uno/mikobase` interface and is unawa
 
 ---
 
-## Managed Mikobase Server (`kiera.uno/mikobase/server`)
+<a id="managed-mikobase-server-kieraunomikobaseserver"></a>
+## 9 Managed Mikobase Server (`kiera.uno/mikobase/server`)
 
 vibecode: {
 	"section": "managed_mikobase_server",
@@ -339,7 +354,8 @@ the block exits will cause the server to wait before shutting down.
 
 ---
 
-## HTTP Mikobase
+<a id="http-mikobase"></a>
+## 10 HTTP Mikobase
 
 vibecode: {
 	"section": "http_mikobase",
@@ -355,7 +371,8 @@ Serving a mikobase over HTTP doesn't require the forking feature. A single-proce
 can serve a mikobase, and other Charlie processes — including forks from the opt-in
 forking feature — can connect to it as a shared mikobase.
 
-### Unix Domain Sockets (preferred)
+<a id="unix-domain-sockets-preferred"></a>
+### 10.1 Unix Domain Sockets (preferred)
 
 For local communication, Charlie steers developers toward Unix domain sockets. They use a
 file path instead of a port number, bypass the network stack entirely, and access is
@@ -367,7 +384,8 @@ $server = %kiera['kiera.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/v
 $server.start
 ```
 
-### TCP (for network access)
+<a id="tcp-for-network-access"></a>
+### 10.2 TCP (for network access)
 
 Port-based listening is supported when the mikobase needs to be reachable over a network:
 
@@ -379,7 +397,8 @@ $server.start
 Unix domain sockets are the default and recommended approach for local use. TCP is for
 cases where remote access is explicitly needed.
 
-### Authentication
+<a id="authentication"></a>
+### 10.3 Authentication
 
 The `auth:` parameter is required — there is no default. Three options:
 
@@ -418,13 +437,15 @@ $server = %kiera['kiera.uno/mikobase/http'].new(
 )
 ```
 
-### POSTable Updates
+<a id="postable-updates"></a>
+### 10.4 POSTable Updates
 
 `kiera.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
 without opening a live connection. This is a distinct ingress mode — not a replacement
 for hot/cold connections or Q0, but a stateless path for depositing history entries.
 
-#### The payload is a worldlet
+<a id="the-payload-is-a-worldlet"></a>
+#### 10.4.1 The payload is a worldlet
 
 The request body is a standard worldlet JSON object. A history-only worldlet is a valid
 payload. No new wire format is needed — the worldlet format already supports this.
@@ -445,7 +466,8 @@ Content-Type: application/json
 }
 ```
 
-#### Engine behaviour on receipt
+<a id="engine-behaviour-on-receipt"></a>
+#### 10.4.2 Engine behaviour on receipt
 
 1. Validate the worldlet shape and all UUID v4 constraints.
 2. For each history entry: skip if an identical entry already exists; reject if an entry
@@ -453,7 +475,8 @@ Content-Type: application/json
 3. If all entries pass, append them and recompute current state. If any entry fails,
    reject the entire payload — no partial writes.
 
-#### Response
+<a id="response"></a>
+#### 10.4.3 Response
 
 The response reports what happened to each entry:
 
@@ -465,13 +488,15 @@ The response reports what happened to each entry:
 }
 ```
 
-#### Authorization
+<a id="authorization"></a>
+#### 10.4.4 Authorization
 
 In v1, authorization is coarse-grained: either a caller may POST updates to this
 mikobase or it may not. The `post_updates` auth flag is set when configuring the server.
 Fine-grained per-class or per-record permissions are deferred to a future version.
 
-#### Use cases
+<a id="use-cases"></a>
+#### 10.4.5 Use cases
 
 - **Worldlet deltas** — the natural format for AI-to-AI update exchanges
 - **Offline agents** — work from a snapshot, submit results later
@@ -481,14 +506,16 @@ Fine-grained per-class or per-record permissions are deferred to a future versio
 - **AI-to-AI mail** — a message is a mikobase update
 - **Audit-native APIs** — every integration call is already a history entry
 
-#### Deferred
+<a id="deferred"></a>
+#### 10.4.6 Deferred
 
 Signatures, replay protection, timestamp authority, distributed merge, and fine-grained
 permissions are not part of v1.
 
 ---
 
-## Hot and Cold Connections
+<a id="hot-and-cold-connections"></a>
+## 11 Hot and Cold Connections
 
 vibecode: {
 	"section": "hot_and_cold_connections",
@@ -499,7 +526,8 @@ vibecode: {
 Every connection to a mikobase is either **cold** (the default) or **hot**. The mode is set
 at connection time and applies to all objects retrieved through that connection.
 
-### Cold (default)
+<a id="cold-default"></a>
+### 11.1 Cold (default)
 
 A cold connection returns local copies of records. You fetch a record, work with it
 locally, and save it back explicitly:
@@ -515,7 +543,8 @@ $record.save
 Cold is the default because most database interaction is traditional, and accidentally
 using a cold connection is safe — you just work with a local copy.
 
-### Hot
+<a id="hot"></a>
+### 11.2 Hot
 
 A hot connection returns live objects. Every read and write is a round trip to the mikobase,
 with locking applied automatically. There is no local copy and no explicit save:
@@ -530,7 +559,8 @@ $mikobase['results'] << $result   # atomic write, one round trip
 Hot connections are the correct choice when multiple forks share a mikobase — every operation
 needs to be atomic and consistent across concurrent readers and writers.
 
-### Local mikobases
+<a id="local-mikobases"></a>
+### 11.3 Local mikobases
 
 The same `hot:` parameter applies to local mikobases:
 
@@ -542,7 +572,8 @@ $mikobase = %kiera['mikobase/sqlite'].new('/path/to/db', hot: true)
 On a local mikobase, hot means every field access hits SQLite directly. Cold means load the
 record into memory, work with it locally, save explicitly.
 
-### Multiple connections, different modes
+<a id="multiple-connections-different-modes"></a>
+### 11.4 Multiple connections, different modes
 
 Two connections to the same mikobase can have different modes:
 
@@ -554,7 +585,8 @@ $cold = %kiera['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :p
 This is valid — for example, one hot connection for fork coordination and one cold
 connection for bulk record processing.
 
-### Per-query override
+<a id="per-query-override"></a>
+### 11.5 Per-query override
 
 The connection mode can be overridden on any individual query. The query-level setting
 takes precedence over the connection default:
@@ -569,7 +601,8 @@ $record = $mikobase.q0({...}, hot: false)
 
 ---
 
-## Locking
+<a id="locking"></a>
+## 12 Locking
 
 vibecode: {
 	"section": "locking",
@@ -588,7 +621,8 @@ automatically. There is no explicit lock/unlock API in normal usage.
 
 ---
 
-## Transactions
+<a id="transactions"></a>
+## 13 Transactions
 
 vibecode: {
 	"section": "transactions",
@@ -606,7 +640,8 @@ Mikobases support transactions using the following model:
 
 ---
 
-## `%bucket` in the Mikobase
+<a id="bucket-in-the-mikobase"></a>
+## 14 `%bucket` in the Mikobase
 
 vibecode: {
 	"section": "bucket_in_mikobase",
@@ -631,7 +666,8 @@ end
 
 ---
 
-## Record Change Signals
+<a id="record-change-signals"></a>
+## 15 Record Change Signals
 
 vibecode: {
 	"section": "record_change_signals",
@@ -639,7 +675,8 @@ vibecode: {
 	"key_concepts": ["listen", "before_save", "after_save", "change_object", "Q0_query_target", "network_boundary"]
 }
 
-### Listening to records
+<a id="listening-to-records"></a>
+### 15.1 Listening to records
 
 A process can register listeners on the mikobase for specific records or Q0 queries:
 
@@ -671,7 +708,8 @@ $change.class     # its class
 $change.fields    # hash of changed fields: {field: {old:, new:}}
 ```
 
-### `before_save` and `after_save`
+<a id="before_save-and-after_save"></a>
+### 15.2 `before_save` and `after_save`
 
 **`:before_save`** fires within the transaction, before the commit. If the handler raises
 an error, the entire transaction is rolled back. This is the mechanism for enforcing
@@ -681,7 +719,8 @@ consistency rules.
 cancelled. This is the mechanism for side effects — notifications, derived records,
 background work.
 
-### Signals stay within the mikobase
+<a id="signals-stay-within-the-mikobase"></a>
+### 15.3 Signals stay within the mikobase
 
 By default, `:before_save` signals are dispatched within the mikobase process only. They are
 not forwarded over the network to remote clients. This is intentional — a network round
@@ -691,7 +730,8 @@ Pre-save validation is the developer's responsibility. The recommended approach 
 validate on the client side before saving, or to register `:before_save` handlers as
 part of the mikobase server's own setup code.
 
-### Listener matching
+<a id="listener-matching"></a>
+### 15.4 Listener matching
 
 A listener fires when the record being saved matches its target:
 
@@ -699,14 +739,16 @@ A listener fires when the record being saved matches its target:
 - A Q0 query target matches any record that satisfies the query after the change is
   applied. This includes records transitioning into the match set.
 
-### Future: remote validation
+<a id="future-remote-validation"></a>
+### 15.5 Future: remote validation
 
 The current design puts remote validation responsibility on the developer. 
 A future addition could provide a structured layer on top of `:before_save` signals — a declarative way to attach remote validation to the :before_save process.
 
 ---
 
-## Packaged Mikobases
+<a id="packaged-mikobases"></a>
+## 16 Packaged Mikobases
 
 vibecode: {
 	"section": "packaged_mikobases",
@@ -715,7 +757,8 @@ vibecode: {
 		"use_cases", "lifecycle"]
 }
 
-### Worldlets
+<a id="worldlets"></a>
+### 16.1 Worldlets
 
 A **worldlet** is the marketing name for a packaged mikobase. The technical concept and
 implementation are always referred to as a "packaged mikobase" in internal documentation
@@ -743,7 +786,8 @@ Traditional systems separate code, data, APIs, and runtime. A packaged mikobase 
 A library says: "here are functions you can call."
 A packaged mikobase says: "here is a functioning object ecosystem you can import."
 
-### Contents
+<a id="contents"></a>
+### 16.2 Contents
 
 A packaged mikobase may include:
 
@@ -759,7 +803,8 @@ Class names inside a packaged mikobase use UNS — the publisher's domain provid
 unique namespace automatically. A mikobase published by `borg.com` installs classes like
 `borg.com/character`, `borg.com/ship`, etc. No registration required, no collision possible.
 
-### Format
+<a id="format"></a>
+### 16.3 Format
 
 A packaged mikobase is a single file. The format is not yet defined in detail, but the
 contents are:
@@ -770,7 +815,8 @@ contents are:
 
 The format design should happen alongside the CharlieJSON format discussion.
 
-### Capabilities Manifest
+<a id="capabilities-manifest"></a>
+### 16.4 Capabilities Manifest
 
 A packaged mikobase declares what it needs before it is installed. The host asks the user to
 approve these capabilities explicitly — nothing is granted silently.
@@ -789,7 +835,8 @@ This connects directly to Charlie's security model. The capabilities declaration
 essentially an upfront jail configuration — the mikobase runs with only the permissions
 it declared. Undeclared capabilities are unavailable.
 
-### Lifecycle
+<a id="lifecycle"></a>
+### 16.5 Lifecycle
 
 ```
 Author packages mikobase
@@ -812,7 +859,8 @@ installing it locally:
 send packaged mikobase → remote mikobase → execute → return result
 ```
 
-### Use Cases
+<a id="use-cases-1"></a>
+### 16.6 Use Cases
 
 **Open-source object systems** — publish a mikobase the way you publish a library.
 Anyone who imports it gets the full schema and behavior, not just a data dump.
@@ -829,7 +877,8 @@ there, and get a result back. The computation travels with its data.
 **Installable data models** — a recipe manager, a home inventory, a CRM, a research
 notebook. Publish a mikobase; others install a working system, not a blank schema.
 
-### What Is Not Yet Designed
+<a id="what-is-not-yet-designed"></a>
+### 16.7 What Is Not Yet Designed
 
 - The packaged mikobase file format (depends on CharlieJSON format design)
 - The capabilities manifest syntax and enforcement mechanism

@@ -1,6 +1,7 @@
 # Charlie Pipe Operator Design
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 vibecode: {
 	"section": "overview",
@@ -14,7 +15,8 @@ This provides a more readable and intuitive alternative to deeply nested express
 
 ---
 
-## Basic Pipe Operator
+<a id="basic-pipe-operator"></a>
+## 2 Basic Pipe Operator
 
 vibecode: {
 	"section": "basic_pipe_operator",
@@ -22,13 +24,15 @@ vibecode: {
 	"key_concepts": ["pipe_operator", "single_argument", "desugaring", "a_pipe_b"]
 }
 
-### Syntax
+<a id="syntax"></a>
+### 2.1 Syntax
 
 ```charlie
 a | b
 ```
 
-### Semantics
+<a id="semantics"></a>
+### 2.2 Semantics
 
 The pipe operator passes the result of the left-hand expression as the **first positional argument** to the right-hand expression. The right-hand side may also accept additional positional or named arguments at the call site; the piped value occupies the first positional slot and the rest of the arguments are bound normally.
 
@@ -60,7 +64,8 @@ Same shape as Elixir's `|>`, F#'s `|>`, R's `%>%`.
 
 ---
 
-## Chaining Pipes
+<a id="chaining-pipes"></a>
+## 3 Chaining Pipes
 
 vibecode: {
 	"section": "chaining_pipes",
@@ -84,7 +89,8 @@ desugars to:
 
 ---
 
-## Example: Method Calls
+<a id="example-method-calls"></a>
+## 4 Example: Method Calls
 
 vibecode: {
 	"section": "example_method_calls",
@@ -110,7 +116,8 @@ This allows writing code in the same order as execution.
 
 ---
 
-## Design Principle
+<a id="design-principle"></a>
+## 5 Design Principle
 
 vibecode: {
 	"section": "design_principle",
@@ -124,7 +131,8 @@ Each stage receives exactly one input: the result of the previous stage.
 
 ---
 
-## Null-Safe Pipe Operator (`|&`)
+<a id="null-safe-pipe-operator"></a>
+## 6 Null-Safe Pipe Operator (`|&`)
 
 vibecode: {
 	"section": "null_safe_pipe_operator",
@@ -132,7 +140,8 @@ vibecode: {
 	"key_concepts": ["|&_operator", "null_propagation_mode", "null_safe_chaining", "once_set_all_subsequent"]
 }
 
-### Motivation
+<a id="motivation"></a>
+### 6.1 Motivation
 
 Charlie supports null-safe chaining in method calls:
 
@@ -146,7 +155,8 @@ The pipe system introduces a similar concept.
 
 ---
 
-## Syntax
+<a id="syntax-1"></a>
+## 7 Syntax
 
 vibecode: {
 	"section": "null_safe_syntax",
@@ -160,7 +170,8 @@ a |& b
 
 ---
 
-## Semantics
+<a id="semantics-1"></a>
+## 8 Semantics
 
 vibecode: {
 	"section": "null_safe_semantics",
@@ -172,7 +183,8 @@ The `|&` operator enables **null propagation mode** for the remainder of the pip
 
 Once `|&` is used, all subsequent pipe stages automatically become null-safe.
 
-### Example
+<a id="example"></a>
+### 8.1 Example
 
 ```charlie
 &foo |&
@@ -190,7 +202,8 @@ is equivalent to:
 
 ---
 
-## Execution Model
+<a id="execution-model"></a>
+## 9 Execution Model
 
 vibecode: {
 	"section": "execution_model",
@@ -220,7 +233,8 @@ return &gup(y)
 
 ---
 
-## Design Rule
+<a id="design-rule"></a>
+## 10 Design Rule
 
 vibecode: {
 	"section": "null_safe_design_rule",
@@ -234,7 +248,8 @@ This avoids repetition while keeping intent clear.
 
 ---
 
-## Summary
+<a id="summary"></a>
+## 11 Summary
 
 vibecode: {
 	"section": "summary",
@@ -249,7 +264,8 @@ vibecode: {
 
 ---
 
-## Future Considerations (Optional)
+<a id="future-considerations-optional"></a>
+## 12 Future Considerations (Optional)
 
 vibecode: {
 	"section": "future_considerations",

@@ -5,7 +5,8 @@ first instance) where a deeper layer needs to **truly remove**
 an inherited key, not just shadow it with null. JSON has no
 delete marker; Charlie hashes are ours and could.
 
-## Why this matters
+<a id="why-this-matters"></a>
+## 1 Why this matters
 
 In a meta-hash cascade, the current spec says:
 
@@ -24,9 +25,11 @@ need to remove certain keys from the inherited chain. A null
 value isn't quite right (caller can tell there was *something*
 called that key via `has_key?`); a delete marker is.
 
-## Two candidate designs
+<a id="two-candidate-designs"></a>
+## 2 Two candidate designs
 
-### A — Null flavor
+<a id="a-null-flavor"></a>
+### 2.1 A — Null flavor
 
 Add `kiera.uno/null/flavor/deleted` to the existing
 null-flavor system. Hashes hold it as a value at a key like any
@@ -43,7 +46,8 @@ Cons:
 - Serialization: needs a JSON representation per the broader
   null-flavor serialization plan.
 
-### B — Dedicated singleton sentinel
+<a id="b-dedicated-singleton-sentinel"></a>
+### 2.2 B — Dedicated singleton sentinel
 
 Define `kiera.uno/hash/deleted` (or `%delete`) as its own
 sentinel, not a null. Hashes can hold it; meta-hash special-cases
@@ -57,7 +61,8 @@ Cons:
 - New top-level concept; one more thing to learn.
 - Doesn't compose with anything else.
 
-## Edge cases either design has to answer
+<a id="edge-cases-either-design-has-to-answer"></a>
+## 3 Edge cases either design has to answer
 
 - **Iteration on a plain hash.** Does `$h.keys` include keys
   whose value is a deletion marker? Probably yes — the hash
@@ -72,13 +77,15 @@ Cons:
   Probably keyed off the null-flavor or sentinel registration
   rather than special-cased in the hash serializer.
 
-## Preference (not committed)
+<a id="preference-not-committed"></a>
+## 4 Preference (not committed)
 
 A (null flavor) leans cleaner — leverages an existing pattern,
 adds nothing structurally new, fits the rest of the
 null-as-typed-thing model.
 
-## Status
+<a id="status"></a>
+## 5 Status
 
 Not in v1. Filed for reconsideration when either meta-hash
 genuinely needs it (more than `%chain`'s security barrier, which

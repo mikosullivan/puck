@@ -9,13 +9,15 @@ specified. This doc covers them one at a time.
 
 ---
 
-## `%utils.memory`
+<a id="utilsmemory"></a>
+## 1 `%utils.memory`
 
 Read-only introspection of the current process's memory usage,
 plus an opt-in soft-limit mechanism for graceful handling of
 pressure.
 
-### Basic introspection
+<a id="basic-introspection"></a>
+### 1.1 Basic introspection
 
 ```
 %utils.memory.used        # bytes currently used by this process
@@ -35,7 +37,8 @@ else
 end
 ```
 
-### `%utils.memory.raise`
+<a id="utilsmemoryraise"></a>
+### 1.2 `%utils.memory.raise`
 
 A settable soft threshold:
 
@@ -66,7 +69,8 @@ heap is genuinely tight.
 
 Setting `%utils.memory.raise = null` disables the threshold.
 
-### Implementation: Lua does the work
+<a id="implementation-lua-does-the-work"></a>
+### 1.3 Implementation: Lua does the work
 
 Charlie engines run on Lua, which already tracks memory
 continuously for its own garbage collector. The `used` / `limit` /
@@ -82,14 +86,16 @@ engine adds the threshold/limit hooks; that's the whole surface.
 
 ---
 
-## `%utils.tempdir`
+<a id="utilstempdir"></a>
+## 2 `%utils.tempdir`
 
 Creates a temporary directory scoped to a block. The directory is
 created on entry, exposed to the block as a DirJail, and **deleted
 when the block exits** (whether normally, via early return, or via
 exception).
 
-### Shape
+<a id="shape"></a>
+### 2.1 Shape
 
 ```
 %utils.tempdir do($jail)
@@ -103,7 +109,8 @@ The block receives a DirJail object — composable with anything that
 takes a directory (e.g., `$server.static $jail`, a Jasmine
 directory store writing here transiently, etc.).
 
-### Properties
+<a id="properties"></a>
+### 2.2 Properties
 
 - **Block-scoped lifetime.** Created on block entry, deleted on
   block exit. No cleanup boilerplate, no leak from a forgotten
@@ -122,7 +129,8 @@ directory store writing here transiently, etc.).
   engine-granted capabilities. This is the no-dangerous-defaults
   pattern.
 
-### Concerns to keep in mind
+<a id="concerns-to-keep-in-mind"></a>
+### 2.3 Concerns to keep in mind
 
 - **Crash mid-block.** If the process hard-crashes while inside
   the block, the OS's `/tmp` cleanup sweeps eventually handle the
@@ -147,7 +155,8 @@ directory store writing here transiently, etc.).
   default; the warning is here so the implications of overriding
   that default are clear.
 
-### Implementation: disk-backed, not in-memory
+<a id="implementation-disk-backed-not-in-memory"></a>
+### 2.4 Implementation: disk-backed, not in-memory
 
 The tempdir is backed by a real OS temporary directory (`/tmp` or
 equivalent), not by an in-memory mikobase. The motivating
@@ -161,7 +170,8 @@ vanishes with me" cases where the data is small (see
 [Mikobase as filesystem § In-memory mode](../ideas/apps/mikobase-as-filesystem.md#in-memory-mode)),
 but `%utils.tempdir` isn't one of them.
 
-### V1 status
+<a id="v1-status"></a>
+### 2.5 V1 status
 
 **Open question — is this a v1 feature?** The capability is well
 shaped and would be useful, but it requires the dirjail/directory

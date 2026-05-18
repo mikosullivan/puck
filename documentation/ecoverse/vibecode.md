@@ -1,6 +1,7 @@
 # Reserved Pass-Through Fields
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 vibecode: {
 	"section": "overview",
@@ -15,7 +16,8 @@ An object's schema does not need to declare them; they are always present by con
 
 ---
 
-## `vibecode`
+<a id="vibecode"></a>
+## 2 `vibecode`
 
 `vibecode` carries AI-readable context alongside the object it describes. It is passed
 through transparently — not stripped, not validated, not modified by engines, firewalls,
@@ -24,7 +26,8 @@ it needs.
 
 ---
 
-## Structure
+<a id="structure"></a>
+## 3 Structure
 
 `vibecode` is a free-form hash. There is no required schema. Useful fields include:
 
@@ -38,7 +41,8 @@ Other fields may be added as needed. The structure is intentionally open.
 
 ---
 
-## Example
+<a id="example"></a>
+## 4 Example
 
 ```json
 {
@@ -63,7 +67,8 @@ Other fields may be added as needed. The structure is intentionally open.
 
 ---
 
-## Where It Applies
+<a id="where-it-applies"></a>
+## 5 Where It Applies
 
 `vibecode` can appear in any JSON hash in the Kieraverse — any object, anywhere:
 
@@ -79,7 +84,8 @@ There is no object too small to carry `vibecode`.
 
 ---
 
-## Remote Classes
+<a id="remote-classes"></a>
+## 6 Remote Classes
 
 `vibecode` is especially valuable on remote classes. When an AI is asked to instantiate
 a class from `borg.com/person` and do something with it, it downloads the class definition
@@ -94,7 +100,8 @@ good `vibecode`.
 
 ---
 
-## In Charlie: `%document` and `%vibecode`
+<a id="in-charlie-document-and-vibecode"></a>
+## 7 In Charlie: `%document` and `%vibecode`
 
 `%document` is the general mechanism for saving documentation into the CharlieJSON
 command array. It takes a MIME type and a heredoc or string:
@@ -114,7 +121,8 @@ EOF
 EOF
 ```
 
-### Shorthand type names
+<a id="shorthand-type-names"></a>
+### 7.1 Shorthand type names
 
 A few popular MIME types have shorthand aliases:
 
@@ -136,7 +144,8 @@ EOF
 EOF
 ```
 
-### `%vibecode`
+<a id="vibecode-1"></a>
+### 7.2 `%vibecode`
 
 `%vibecode` is a further shorthand for `%document 'vibecode'`:
 
@@ -200,7 +209,8 @@ puts($report)
 
 ---
 
-## Pass-Through
+<a id="pass-through"></a>
+## 8 Pass-Through
 
 All four reserved fields (`vibecode`, `comment`, `misc`, `enterprise`) are always passed through. Engines, firewalls, and network
 transport do not strip or modify them. The whole point is that any consumer reading the
@@ -209,7 +219,8 @@ placed in these fields.
 
 ---
 
-## `comment`
+<a id="comment"></a>
+## 9 `comment`
 
 `comment` carries human-readable notes alongside the object. It is for things you want
 to say to a human reader — a quick explanation of why something is done a certain way,
@@ -225,7 +236,8 @@ a caveat, a TODO. It is not AI documentation (`vibecode`) and not formal metadat
 
 ---
 
-## `misc`
+<a id="misc"></a>
+## 10 `misc`
 
 `misc` is a free-rider field for informal, ad hoc use. It has no defined schema and no
 governance — any system or developer can put whatever they need there. Over time, `misc`
@@ -244,7 +256,8 @@ systems. That is expected and acceptable; it is what `misc` is for.
 
 ---
 
-## `enterprise`
+<a id="enterprise"></a>
+## 11 `enterprise`
 
 `enterprise` fills the same pass-through role as `misc`, but is reserved for formally
 defined standards. Content in `enterprise` should follow agreed-upon schemas or

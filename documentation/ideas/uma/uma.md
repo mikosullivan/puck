@@ -7,7 +7,8 @@ implementation's spec.
 
 ---
 
-## Purpose
+<a id="purpose"></a>
+## 1 Purpose
 
 `kiera.uno/uma` is an HTML document builder and DOM helper, ported
 from Ruby Uma. It wraps a parsed HTML5 document (via an underlying
@@ -22,7 +23,8 @@ convenience helpers on top.
 
 ---
 
-## Implementation: lean on Lua
+<a id="implementation-lean-on-lua"></a>
+## 2 Implementation: lean on Lua
 
 For HTML and XML, **prefer existing Lua libraries** rather than
 building from scratch. The Ruby version sits on top of Nokogiri;
@@ -44,7 +46,8 @@ forces it.
 
 ---
 
-## Core Object Model
+<a id="core-object-model"></a>
+## 3 Core Object Model
 
 `%['kiera.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
 around the underlying parsed HTML document.
@@ -68,7 +71,8 @@ The instance exposes common document sections directly:
 
 ---
 
-## Builder Pattern
+<a id="builder-pattern"></a>
+## 4 Builder Pattern
 
 The core API. Each method call on an element creates a child of
 that tag name, with the block receiving the new child for further
@@ -88,7 +92,8 @@ end
 - `$el['attr'] = value` — set an attribute via hash-style access.
 - `$el.text 'content'` — set text content (HTML-escaped).
 
-### Aliases
+<a id="aliases"></a>
+### 4.1 Aliases
 
 Some tag-name methods are aliases for `<input>` with specific
 types:
@@ -99,7 +104,8 @@ $body.checkbox    # <input type="checkbox">
 $body.hidden      # <input type="hidden">
 ```
 
-### Special table behavior
+<a id="special-table-behavior"></a>
+### 4.2 Special table behavior
 
 Calling `.tr` on a `<table>` automatically ensures a `<tbody>`
 exists and inserts the row there:
@@ -114,7 +120,8 @@ end
 
 ---
 
-## Schema Enforcement
+<a id="schema-enforcement"></a>
+## 5 Schema Enforcement
 
 Uma enforces the HTML schema defined in [html5.json](history/html5.json).
 Schema violations raise flags:
@@ -131,7 +138,8 @@ The schema lives in `html5.json` and is normalized at startup
 
 ---
 
-## Selectors: CSS and Astro
+<a id="selectors-css-and-astro"></a>
+## 6 Selectors: CSS and Astro
 
 Uma element trees are searchable two ways:
 
@@ -156,7 +164,8 @@ $uma.body.find_last('input[type=submit]')           # last match (or null)
 The matching machinery always operates on Astro internally. CSS
 strings get compiled to Astro on the way in.
 
-### Supported selectors (v1)
+<a id="supported-selectors-v1"></a>
+### 6.1 Supported selectors (v1)
 
 | Selector | Example | Matches |
 |---|---|---|
@@ -176,7 +185,8 @@ strings get compiled to Astro on the way in.
 | Adjacent sibling | `h1 + p` | `<p>` immediately following an `<h1>` |
 | Selector list | `h1, h2, h3` | Any element matching any of the listed selectors |
 
-### Not in v1
+<a id="not-in-v1"></a>
+### 6.2 Not in v1
 
 | Selector | Reason |
 |---|---|
@@ -186,7 +196,8 @@ strings get compiled to Astro on the way in.
 | `:hover`, `:focus`, `:checked`, etc. | Dynamic state — doesn't apply to a static DOM tree |
 | `::before`, `::after` | Rendering concerns, not DOM |
 
-### `match_css?` — the fragment predicate
+<a id="match_css-the-fragment-predicate"></a>
+### 6.3 `match_css?` — the fragment predicate
 
 Every Uma element node has a `match_css?` method that tests a
 **single compound selector fragment** against itself — no
@@ -220,7 +231,8 @@ Non-element nodes (text nodes, etc.) implement `match_css?` to
 return false — text doesn't have classes, IDs, or attributes, so
 no CSS selector matches it.
 
-### Implementation: layered
+<a id="implementation-layered"></a>
+### 6.4 Implementation: layered
 
 ```
 high-level:  find / find_first / find_last  ← takes full selector strings
@@ -249,7 +261,8 @@ real-time matching.
 
 ---
 
-## Helpers
+<a id="helpers"></a>
+## 7 Helpers
 
 - **`$el.id`** / **`$el.id = '...'`** — convenience wrappers for
   the `id` attribute.
@@ -264,7 +277,8 @@ real-time matching.
 
 ---
 
-## Document-Level Operations
+<a id="document-level-operations"></a>
+## 8 Document-Level Operations
 
 - **`$uma.title`** / **`$uma.title = 'New title'`** — read or
   write the document `<title>`. Writing also propagates to any
@@ -279,7 +293,8 @@ real-time matching.
 
 ---
 
-## Import
+<a id="import"></a>
+## 9 Import
 
 `$uma.import($other_docs...)` imports content from source
 documents into placeholders in the target:
@@ -292,7 +307,8 @@ then merge in fragment documents.
 
 ---
 
-## JSON Rendering
+<a id="json-rendering"></a>
+## 10 JSON Rendering
 
 Helpers that render JSON-like data into HTML tables and text
 containers:
@@ -310,14 +326,16 @@ A bundled stylesheet is available:
 
 ---
 
-## String Wrapping Utility
+<a id="string-wrapping-utility"></a>
+## 11 String Wrapping Utility
 
 - **`%['kiera.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
   long strings with configurable width and separator text.
 
 ---
 
-## The schema: html5.json
+<a id="the-schema-html5json"></a>
+## 12 The schema: html5.json
 
 [html5.json](history/html5.json) is the normalized source of
 truth for the tag model. The format:
@@ -341,7 +359,8 @@ truth for the tag model. The format:
 All schema entries reference the **WHATWG HTML Standard**
 (<https://html.spec.whatwg.org/>) as the source of truth.
 
-### Builder behavior
+<a id="builder-behavior"></a>
+### 12.1 Builder behavior
 
 A builder loads `html5.json`, recursively resolves `include`s,
 deep-merges fragments, and produces a final tag-definition hash.
@@ -357,7 +376,8 @@ For each tag:
 The result is stored on each Uma instance and consulted at runtime
 for element creation and attribute validation.
 
-### Editing html5.json
+<a id="editing-html5json"></a>
+### 12.2 Editing html5.json
 
 - Empty hash values stay on one line as `{}` rather than
   expanding across multiple lines.
@@ -368,9 +388,11 @@ for element creation and attribute validation.
 
 ---
 
-## Power-user features
+<a id="power-user-features"></a>
+## 13 Power-user features
 
-### `set_tag_mod` (deferred)
+<a id="set_tag_mod-deferred"></a>
+### 13.1 `set_tag_mod` (deferred)
 
 The Ruby version exposes `set_tag_mod(tag_name, mod)` to extend
 matching elements with Ruby modules — `'*'` applies to every
@@ -382,7 +404,8 @@ case.
 
 ---
 
-## Errors
+<a id="errors"></a>
+## 14 Errors
 
 Uma raises flags from the `kiera.uno/uma/error/` family:
 
@@ -394,7 +417,8 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-## Posture
+<a id="posture"></a>
+## 15 Posture
 
 - **Strict schema validation by default.** Catches authoring
   mistakes rather than accommodating messy real-world HTML.
@@ -406,6 +430,7 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-## To be specified
+<a id="to-be-specified"></a>
+## 16 To be specified
 
 (Open questions accumulate here as design discussion continues.)

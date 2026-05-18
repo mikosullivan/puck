@@ -14,13 +14,15 @@ boundaries — and explains why it was set aside.
 
 ---
 
-## The Alternative Design
+<a id="the-alternative-design"></a>
+## 1 The Alternative Design
 
 The idea: alarms travel up the call stack past **ordinary** catch
 handlers, but can be intercepted at **role boundaries** via a
 specially-installed catcher.
 
-### Mechanism
+<a id="mechanism"></a>
+### 1.1 Mechanism
 
 - When code crosses a role boundary (calling a function owned by a
   different role), the runtime automatically installs a **boundary
@@ -39,7 +41,8 @@ trampolines past that function's own catch blocks and lands in the
 caller's boundary catcher. The caller (the boundary owner) sees a
 regular exception in their own scope and can handle it.
 
-### Use Cases This Would Enable
+<a id="use-cases-this-would-enable"></a>
+### 1.2 Use Cases This Would Enable
 
 - **Graceful recovery from foreign-role failures.** When `user` calls
   `bob`'s function and `bob` triggers an alarm, `user` could catch
@@ -55,7 +58,8 @@ regular exception in their own scope and can handle it.
 
 ---
 
-## Why It Was Dropped (For Now)
+<a id="why-it-was-dropped-for-now"></a>
+## 2 Why It Was Dropped (For Now)
 
 The use cases are real but narrow. Most of what they accomplish can
 be done with **regular exceptions**:
@@ -88,7 +92,8 @@ semantics.
 
 ---
 
-## When to Revisit
+<a id="when-to-revisit"></a>
+## 3 When to Revisit
 
 - If a real-world use case for boundary-level alarm recovery
   surfaces that *can't* be cleanly expressed with regular exceptions.

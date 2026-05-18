@@ -8,13 +8,15 @@ customization (Robinson-shaped) layers on later in a separate doc.
 
 ---
 
-## What it is
+<a id="what-it-is"></a>
+## 1 What it is
 
 Customers point their Jasmine producers at our ingest endpoint. We
 store the entries; the customer reads them back. Free tier, paid
 tiers.
 
-## Core flow
+<a id="core-flow"></a>
+## 2 Core flow
 
 1. Customer signs up, gets an API key.
 2. Customer configures their Jasmine log with a webhook store
@@ -24,7 +26,8 @@ tiers.
 5. Customer reads them (dashboard, API, or direct mikobase
    access).
 
-## What we deliberately are not
+<a id="what-we-deliberately-are-not"></a>
+## 3 What we deliberately are not
 
 - Not a log search engine with its own query DSL. Mikobase is the
   query layer.
@@ -33,7 +36,8 @@ tiers.
 - Not feature-rich for v1. Basic ingest, basic storage, basic
   read access.
 
-## Open structural questions
+<a id="open-structural-questions"></a>
+## 4 Open structural questions
 
 - **Ingest endpoint shape.** POST URL, auth mechanism, single
   entry vs batch, rate limiting.
@@ -47,12 +51,14 @@ tiers.
 
 Each gets specified when we focus on it.
 
-## Strategic note
+<a id="strategic-note"></a>
+## 5 Strategic note
 
 Free tier exists primarily to support Kiera's first-contact
 strategy. Not a P&L item.
 
-## Out of scope for now
+<a id="out-of-scope-for-now"></a>
+## 6 Out of scope for now
 
 Future product, not a current commitment. Real work starts when
 Jasmine itself is solid.

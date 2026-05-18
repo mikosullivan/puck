@@ -1,6 +1,7 @@
 # Firewall Rules
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -23,7 +24,8 @@ Rules apply to entire records. There is no field-level filtering.
 
 ---
 
-## Two Types of Rules
+<a id="two-types-of-rules"></a>
+## 2 Two Types of Rules
 
 **Static rules** — described in this document. A JSON structure that expresses conditions
 using Q0.
@@ -33,7 +35,8 @@ Not yet designed.
 
 ---
 
-## Static Rule Structure
+<a id="static-rule-structure"></a>
+## 3 Static Rule Structure
 
 A rule has three required fields:
 
@@ -55,7 +58,8 @@ A rule has three required fields:
 }
 ```
 
-### `on`
+<a id="on"></a>
+### 3.1 `on`
 
 Specifies which operations the rule covers. Accepts a single value or an array.
 
@@ -64,7 +68,8 @@ Valid values:
 - `"read"` — shorthand for `"select"`
 - `"write"` — shorthand for `["create", "update", "delete"]`
 
-### `direction`
+<a id="direction"></a>
+### 3.2 `direction`
 
 Required. No default — omitting it is a validation error.
 
@@ -74,7 +79,8 @@ Required. No default — omitting it is a validation error.
 | `"outgoing"` | Applies to results going out from the engine |
 | `"both"`     | Applies in both directions |
 
-### `allow`
+<a id="allow"></a>
+### 3.3 `allow`
 
 A Q0 filter defining which records are permitted. Uses the same syntax as a Q0 select
 query but without the `action` field — the operation is already declared in `on`.
@@ -84,7 +90,8 @@ or the query fails with an error.
 
 ---
 
-## Default Behavior
+<a id="default-behavior"></a>
+## 4 Default Behavior
 
 - If no rules cover an operation, everything passes — the engine is transparent for that
   operation, subject to class-level restrictions (see below).
@@ -97,7 +104,8 @@ or the query fails with an error.
 
 ---
 
-## Class-Level Pass-Through Restriction
+<a id="class-level-pass-through-restriction"></a>
+## 5 Class-Level Pass-Through Restriction
 
 A class definition can declare:
 
@@ -123,7 +131,8 @@ is an error, not a policy decision.
 
 ---
 
-## Rule Validation
+<a id="rule-validation"></a>
+## 6 Rule Validation
 
 Rules are validated before the engine processes anything — at startup, or whenever the
 rule set is loaded. A rule set that fails validation raises an error and halts the engine.
@@ -137,7 +146,8 @@ The validator checks:
 
 ---
 
-## Example: Read-Only Access to a Class
+<a id="example-read-only-access-to-a-class"></a>
+## 7 Example: Read-Only Access to a Class
 
 ```json
 {
@@ -153,7 +163,8 @@ The validator checks:
 
 Only `borg.com/person` records are returned. No writes are restricted by this rule.
 
-## Example: Read and Write Access, Write Gated by Callback
+<a id="example-read-and-write-access-write-gated-by-callback"></a>
+## 8 Example: Read and Write Access, Write Gated by Callback
 
 ```json
 {

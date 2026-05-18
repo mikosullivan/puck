@@ -7,7 +7,8 @@ strategic role and probably the same infrastructure.
 
 ---
 
-## The Idea
+<a id="the-idea"></a>
+## 1 The Idea
 
 Customers get a hosted [[mikobase]] instance they can read from
 and write to via the standard mikobase API. We handle hosting,
@@ -19,7 +20,8 @@ production workloads.
 
 ---
 
-## Why a Free Tier
+<a id="why-a-free-tier"></a>
+## 2 Why a Free Tier
 
 Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-kiera):
 **a free tier is an adoption lever for the Kiera ecoverse.**
@@ -40,9 +42,11 @@ for the rest of the ecoverse.
 
 ---
 
-## Shape (sketched, not committed)
+<a id="shape-sketched-not-committed"></a>
+## 3 Shape (sketched, not committed)
 
-### Free tier
+<a id="free-tier"></a>
+### 3.1 Free tier
 
 - One mikobase instance per account.
 - Small storage cap (e.g., 100 MB; TBD).
@@ -50,23 +54,27 @@ for the rest of the ecoverse.
 - Browser dashboard for inspecting data.
 - Public URL (with auth) so the customer's apps can connect.
 
-### Paid tiers
+<a id="paid-tiers"></a>
+### 3.2 Paid tiers
 
 - Larger storage caps.
 - More instances per account.
 - Better SLA, backups, support.
 - Eventually: replication, read replicas, multi-region.
 
-### Enterprise
+<a id="enterprise"></a>
+### 3.3 Enterprise
 
 - Dedicated infra, custom limits, compliance audits, optional
   self-hosted appliance.
 
 ---
 
-## Synergies
+<a id="synergies"></a>
+## 4 Synergies
 
-### With the logging service
+<a id="with-the-logging-service"></a>
+### 4.1 With the logging service
 
 The [logging service](logging-service.md) already runs per-customer
 mikobases as its storage backend. **Same infrastructure, two
@@ -74,14 +82,16 @@ products.** A customer of the logging service could plausibly get
 direct mikobase access to their log data as part of their plan —
 or sign up for both products with a single account.
 
-### With Kiera adoption
+<a id="with-kiera-adoption"></a>
+### 4.2 With Kiera adoption
 
 Every Kiera tutorial, demo, and example needs a place to put
 data. A free mikobase service is the obvious answer:
 "`%kiera['logs.kiera.uno/mikobase'].new(account: '...')` — done."
 No setup, no infra, just a working data store.
 
-### With other future products
+<a id="with-other-future-products"></a>
+### 4.3 With other future products
 
 Any future Kiera service that needs a customer-facing database
 backend (CMS-style products, structured-data services, etc.) can
@@ -89,7 +99,8 @@ ride on the same infrastructure.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 5 Open Questions
 
 - **Endpoint shape.** What's the API URL pattern? Per-customer
   subdomain? Path-based?
@@ -106,7 +117,8 @@ ride on the same infrastructure.
 
 ---
 
-## Out of Scope for Now
+<a id="out-of-scope-for-now"></a>
+## 6 Out of Scope for Now
 
 Future product. Not a current commitment. Real planning when
 mikobase itself is solid and there's a clear sense of who would

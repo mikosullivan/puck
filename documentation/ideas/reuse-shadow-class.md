@@ -8,7 +8,8 @@ for the established shadow-class concept this idea builds on.
 
 ---
 
-## The idea
+<a id="the-idea"></a>
+## 1 The idea
 
 The shadow class is normally a per-object hidden thing — you
 `object.define` methods on it to customize one specific instance,
@@ -44,7 +45,8 @@ The original singleton becomes a *template* — a fully-built,
 fully-configured instance whose customizations are visible to any
 new object spawned from its shadow.
 
-## Why it's interesting
+<a id="why-its-interesting"></a>
+## 2 Why it's interesting
 
 - **Prototype-style inheritance for free.** Same mechanism that
   supports per-instance methods now supports "make more like this
@@ -60,7 +62,8 @@ new object spawned from its shadow.
   semantics — it's still a class with methods. We just stop
   treating it as one-off-only.
 
-## Open questions
+<a id="open-questions"></a>
+## 3 Open questions
 
 - **Bucket state.** Does `$foo.object.shadow.new()` start with a
   fresh empty bucket, or copy $foo's bucket as initial state?
@@ -82,7 +85,8 @@ new object spawned from its shadow.
   name — but shadows historically don't have names because
   they're implicit per-object.
 
-## Related: cloning the entire class stack
+<a id="related-cloning-the-entire-class-stack"></a>
+## 4 Related: cloning the entire class stack
 
 A sister idea, also already baked into the existing object model:
 clone the full class stack of one object onto another.
@@ -117,7 +121,8 @@ $db2.object.classes = $db1.object.classes
 No factory function. No DSL. No "decorator pattern" framework.
 The class stack IS the decoration; copying it IS the cloning.
 
-## Status
+<a id="status"></a>
+## 5 Status
 
 Filed as exploration. No commitment to spec, implement, or even
 keep the idea in mind during v1 design. Both features

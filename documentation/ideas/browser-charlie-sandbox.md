@@ -16,7 +16,8 @@ Brainstorm in progress.
 
 ---
 
-## Why
+<a id="why"></a>
+## 1 Why
 
 ```
 vibecode: {
@@ -46,7 +47,8 @@ let people experience Charlie before buying into the whole system.
 
 ---
 
-## Architecture: three independent artifacts
+<a id="architecture-three-independent-artifacts"></a>
+## 2 Architecture: three independent artifacts
 
 ```
 vibecode: {
@@ -65,7 +67,8 @@ Three distinct artifacts, each with its own job, all independently
 shippable. The browser sandbox uses one (the WASM engine); the other
 two are for adjacent purposes that compose freely with it.
 
-### Artifact 1: WASM-compiled Lua engine — the browser sandbox
+<a id="artifact-1-wasm-compiled-lua-engine-the-browser-sandbox"></a>
+### 2.1 Artifact 1: WASM-compiled Lua engine — the browser sandbox
 
 The canonical Lua reference engine compiled to WASM (Fengari, lua.vm.js,
 wasm-lua, or similar). Run the same engine bytes in the browser as on
@@ -80,7 +83,8 @@ the server.
 
 This is the **primary browser sandbox approach**.
 
-### Artifact 2: TS CharlieJSON-only engine — community and portability
+<a id="artifact-2-ts-charliejson-only-engine-community-and-portability"></a>
+### 2.2 Artifact 2: TS CharlieJSON-only engine — community and portability
 
 A TypeScript engine that **consumes canonical CharlieJSON** and
 executes it. No Charlie source parser. No transpiler. Just the
@@ -107,7 +111,8 @@ the Lua engine and this TS engine; both must return a value with
 `payload == "hello"`. Same fixture, same expected output. The Lua
 engine's existing tests (now 213/213) become the conformance suite.
 
-### Artifact 3: TS source parser — already in V2 extension plans
+<a id="artifact-3-ts-source-parser-already-in-v2-extension-plans"></a>
+### 2.3 Artifact 3: TS source parser — already in V2 extension plans
 
 A TS-only Charlie parser, planned in
 [vscode-extension-v2.md](vscode-extension-v2.md) for the formatter
@@ -120,7 +125,8 @@ work. Source → CharlieJSON.
   contexts where the WASM payload is too heavy or where pure-JS is
   required (some embedded JS environments don't support WASM).
 
-### What was rejected
+<a id="what-was-rejected"></a>
+### 2.4 What was rejected
 
 A **hybrid** (TS parser handing CharlieJSON to a WASM-Lua engine) was on the
 table but rejected as too much glue for not enough benefit. Each side
@@ -130,7 +136,8 @@ saving meaningful effort.
 
 ---
 
-## Why Charlie is particularly well-suited
+<a id="why-charlie-is-particularly-well-suited"></a>
+## 3 Why Charlie is particularly well-suited
 
 ```
 vibecode: {
@@ -158,7 +165,8 @@ vibecode: {
 
 ---
 
-## Open questions
+<a id="open-questions"></a>
+## 4 Open questions
 
 - **Which architectural option?** Native TS reimplementation vs WASM
   Lua vs hybrid. Each has real trade-offs; no clear winner without

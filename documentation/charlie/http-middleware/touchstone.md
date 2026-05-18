@@ -13,7 +13,8 @@ for a base class.
 
 ---
 
-## Status
+<a id="status"></a>
+## 1 Status
 
 Spec in development. The shape fills in as Sinatra and Robinson
 surface their requirements — Touchstone is where shared behavior
@@ -21,9 +22,11 @@ crystallizes once both descendants need the same thing.
 
 ---
 
-## Responsibilities
+<a id="responsibilities"></a>
+## 2 Responsibilities
 
-### Content-type factory defaults
+<a id="content-type-factory-defaults"></a>
+### 2.1 Content-type factory defaults
 
 Touchstone ships a factory map from common file extensions to
 `Content-Type` values (`.css` → `text/css`, `.png` → `image/png`,
@@ -31,14 +34,16 @@ Touchstone ships a factory map from common file extensions to
 share this map when serving files; developers can override
 per-server.
 
-### Jasmine integration
+<a id="jasmine-integration"></a>
+### 2.2 Jasmine integration
 
 Touchstone wires up [Jasmine](../jasmine/jasmine.md) logging. The ambient
 `%chain.log` mechanism, the nested call-frame trees, and the
 configured stores all flow through Touchstone — its descendants
 don't reimplement any of it.
 
-### Other shared infrastructure
+<a id="other-shared-infrastructure"></a>
+### 2.3 Other shared infrastructure
 
 To be detailed as it crystallizes. Likely includes: TLS handling
 (or lack thereof), connection management, request parsing,
@@ -46,7 +51,8 @@ response writing, error-page rendering scaffolding.
 
 ---
 
-## The transaction object
+<a id="the-transaction-object"></a>
+## 3 The transaction object
 
 Every request creates a single `$transaction` object that
 threads through every handler method in the chain. It exposes:
@@ -72,7 +78,8 @@ the handler chain that processes the transaction.
 
 ---
 
-## The request object
+<a id="the-request-object"></a>
+## 4 The request object
 
 `$transaction.request` (or `$request` inside handler closures
 where it's bound for brevity) exposes everything about the
@@ -80,7 +87,8 @@ incoming request through a few clearly-scoped accessors. The
 request is **immutable** — built once at the start of the
 transaction, frozen before any handler runs.
 
-### `$request.steps`
+<a id="requeststeps"></a>
+### 4.1 `$request.steps`
 
 Hash of the request's path segments, keyed by **both** position
 and (where applicable) nickname.
@@ -125,7 +133,8 @@ their value at microservice scale. The committed minimum:
 literal segments, single-segment `{name}` placeholders, and
 named splat (`*name`). Anything beyond is contingent on cost.
 
-### `$request.params`, `$request.param_array`, `$request.param_hash`
+<a id="requestparams-requestparam_array-requestparam_hash"></a>
+### 4.2 `$request.params`, `$request.param_array`, `$request.param_hash`
 
 These three are **computed on demand.** None of them is parsed
 at request-build time — each is produced (and memoized) the
@@ -135,7 +144,8 @@ don't pay for the form-field decode of `params`. The request
 stays immutable; lazy fields are still part of the request's
 frozen shape, they just defer their work until asked.
 
-#### `$request.params`
+<a id="requestparams"></a>
+#### 4.2.1 `$request.params`
 
 A merged hash of **query string + form fields + uploaded files** —
 the structured params, however the client sent them. Files come
@@ -155,7 +165,8 @@ Path placeholders are *not* in `params` — they live on
 are part of the route, params are everything else the client
 submitted.
 
-#### `$request.param_array`
+<a id="requestparam_array"></a>
+#### 4.2.2 `$request.param_array`
 
 Returns an **array of `[name, value]` pairs** preserving order
 and duplicates. This is the answer to a longstanding weakness in
@@ -171,7 +182,8 @@ $request.param_array           # [['tag', 'red'], ['tag', 'blue'], ['tag', 'gree
 Use `params` for the common case; reach for `param_array` when
 you actually need to see every submission in order.
 
-#### `$request.param_hash`
+<a id="requestparam_hash"></a>
+#### 4.2.3 `$request.param_hash`
 
 Returns the **parsed JSON object from the query string** when the
 query string is valid JSON, per the
@@ -193,7 +205,8 @@ services receive machine-generated URLs with structured
 parameters, while traditional `?key=value` URLs from
 non-Kiera-aware clients still work through `$request.params`.
 
-### `$request.body`
+<a id="requestbody"></a>
+### 4.3 `$request.body`
 
 The raw request body, **potentially huge.** Exposed as a
 streaming handle rather than slurped into memory — the developer
@@ -212,7 +225,8 @@ contract.
 
 ---
 
-## Sessions
+<a id="sessions"></a>
+## 5 Sessions
 
 `$transaction.session` is a hash-like handle on the session
 cookie. Reading and writing behaves like an ordinary Charlie
@@ -292,7 +306,8 @@ different add-on that handles richer session semantics.
 
 ---
 
-## Body buffering
+<a id="body-buffering"></a>
+## 6 Body buffering
 
 Touchstone buffers incoming bodies; it does not stream-process
 them. Two backing stores are available:
@@ -345,7 +360,8 @@ limits, etc. Not in v1; flagged if demand surfaces.
 
 ---
 
-## The handler chain
+<a id="the-handler-chain"></a>
+## 7 The handler chain
 
 Touchstone processes each request through an **ordered chain of
 handlers** registered on `$server.handlers`. Handlers are Kiera
@@ -364,7 +380,8 @@ $server.handlers << %['foo.bar/auth']
 $server.handlers << %['foo.bar/metrics']
 ```
 
-### The three stages
+<a id="the-three-stages"></a>
+### 7.1 The three stages
 
 Touchstone walks `$server.handlers` three times per request:
 
@@ -397,7 +414,8 @@ The CSRF guard handler has both `before` (verify token) and
 entry) and `after` (flush log entry). Sinatra's path selectors
 have just `process`.
 
-### One Handler class, one dispatcher
+<a id="one-handler-class-one-dispatcher"></a>
+### 7.2 One Handler class, one dispatcher
 
 The implementation collapses to a single `Handler` base class
 and a single dispatcher function:
@@ -423,7 +441,8 @@ that as a user-facing surface — there's just one flat
 `$server.handlers` array — but the machinery is in place if
 needed.
 
-### Per-transaction state
+<a id="per-transaction-state"></a>
+### 7.3 Per-transaction state
 
 Each handler is **instantiated fresh per transaction.**
 Touchstone calls `.new()` on the handler at the start of every
@@ -437,7 +456,8 @@ Cross-*handler* state (handler A's `before` talking to handler
 B's `after`) is deliberately *not* a first-class concept. If two
 handlers need to coordinate, package them as a single handler.
 
-### Uncaught exceptions become 5xx responses
+<a id="uncaught-exceptions-become-5xx-responses"></a>
+### 7.4 Uncaught exceptions become 5xx responses
 
 If any handler method (`before`, `process`, or `after`) raises
 an exception that nobody catches, Touchstone catches it at the
@@ -463,7 +483,8 @@ Observability handlers (logging, metrics, tracing) are most
 valuable on the error path; running stage 3 only on the happy
 path would defeat them.
 
-### Handler attribution on exceptions
+<a id="handler-attribution-on-exceptions"></a>
+### 7.5 Handler attribution on exceptions
 
 When an exception fires during dispatch, the Jasmine entry
 records **which handler was running when it fired** — by name
@@ -482,7 +503,8 @@ This information is then surfaced by descendant frameworks in
 their admin error displays — see, for example,
 [Robinson's admin error reporting](robinson.md#error-handling).
 
-### Cleanup errors don't mask the original
+<a id="cleanup-errors-dont-mask-the-original"></a>
+### 7.6 Cleanup errors don't mask the original
 
 If an `ensure` block raises during cleanup while another
 exception is unwinding, the cleanup error doesn't replace the
@@ -497,7 +519,8 @@ visible. Operators reading the log see "here's what failed, and
 also here's what failed during cleanup," not just the second
 one.
 
-### Developer-controlled status codes
+<a id="developer-controlled-status-codes"></a>
+### 7.7 Developer-controlled status codes
 
 If a handler wants a specific status code on a failure that
 isn't covered by the mapping table, raise a response directly
@@ -511,7 +534,8 @@ The response is taken as the request's response; stage 3 runs
 against it. No 500 fallback is applied because Touchstone
 already has a response.
 
-### Short-circuiting
+<a id="short-circuiting"></a>
+### 7.8 Short-circuiting
 
 A `before` method can prevent stage 2 from running by either
 raising a response-producing exception (a redirect, for example)
@@ -533,7 +557,8 @@ handler's `before` runs.
 
 ---
 
-## The response object
+<a id="the-response-object"></a>
+## 8 The response object
 
 A handler returns a response object. The bare constructor is
 the full-control form:
@@ -607,7 +632,8 @@ response.new(200,
 For the common cases, helpers wrap the constructor with
 sensible defaults for status, content-type, etc.
 
-### Helpers
+<a id="helpers"></a>
+### 8.1 Helpers
 
 ```
 response.html($status, $body)
@@ -632,7 +658,8 @@ and unambiguity.
 Anything that doesn't fit one of these helpers falls back to
 `response.new(...)` for full control.
 
-### Redirects
+<a id="redirects"></a>
+### 8.2 Redirects
 
 Redirects are **exceptions**, not return values. Raising one
 unwinds the call stack and produces a redirect response — the
@@ -678,7 +705,8 @@ choice prevents the wrong default from being silently picked.
 
 ---
 
-## CSRF Protection
+<a id="csrf-protection"></a>
+## 9 CSRF Protection
 
 CSRF (Cross-Site Request Forgery) protection is built in and
 **off by default**. Enable it with one line:
@@ -707,7 +735,8 @@ two methods:
 The session cookie is the carrier; the form field (or header)
 is the second factor. Standard synchronizer-token pattern.
 
-### Per-route opt-out
+<a id="per-route-opt-out"></a>
+### 9.1 Per-route opt-out
 
 Some POSTs legitimately come from third parties without a token
 — webhooks, bearer-token API clients, public ingestion endpoints.
@@ -726,7 +755,8 @@ kwarg only suppresses verification for that specific route. (The
 registrations; Robinson exposes the same opt-out via its own
 page-config mechanism.)
 
-### AJAX path
+<a id="ajax-path"></a>
+### 9.2 AJAX path
 
 JavaScript clients that POST JSON instead of forms read the
 token from `$transaction.session['csrf_token']` (delivered to
@@ -735,7 +765,8 @@ in the rendered HTML, or however the developer chooses to
 surface it) and send it back as the `X-CSRF-Token` header. The
 guard accepts either form field or header.
 
-### Limits of the HTML scanner
+<a id="limits-of-the-html-scanner"></a>
+### 9.3 Limits of the HTML scanner
 
 The injection step uses a narrow purpose-built scanner — it
 finds `<form method=POST>` opening tags and injects the hidden
@@ -747,7 +778,8 @@ a token injected. Server-side rendered HTML covers the common
 case; pages assembled client-side need the AJAX header path
 instead.
 
-### Why this is in core (not an add-on)
+<a id="why-this-is-in-core-not-an-add-on"></a>
+### 9.4 Why this is in core (not an add-on)
 
 CSRF is a class of attack that most developers know about but
 many don't actually implement. Opt-in features that
@@ -765,7 +797,8 @@ cookie machinery is shared.
 
 ---
 
-## Content Security Policy
+<a id="content-security-policy"></a>
+## 10 Content Security Policy
 
 CSP is the strong defense-in-depth against XSS — it tells the
 browser which sources are allowed for scripts, styles, images,
@@ -807,7 +840,8 @@ Each directive key is **auto-vivified on access** — you can
 always `<<` into any directive without pre-initializing it. The
 value is a list of sources.
 
-### Header emission rule
+<a id="header-emission-rule"></a>
+### 10.1 Header emission rule
 
 The `Content-Security-Policy` header is emitted **if any
 directive has at least one source**. Empty directives are
@@ -823,7 +857,8 @@ $response.csp.clear
 `.clear` empties the hash, so no directives have any sources, so
 no header is emitted.
 
-### Keyword quoting
+<a id="keyword-quoting"></a>
+### 10.2 Keyword quoting
 
 CSP wraps certain keywords in single quotes in the actual header:
 `'self'`, `'none'`, `'unsafe-inline'`, `'unsafe-eval'`,
@@ -838,7 +873,8 @@ The auto-quote list is the fixed set of CSP keywords plus the
 patterns `nonce-*` and `sha{256,384,512}-*`. Anything else is
 treated as a source expression and emitted as-is.
 
-### Serialization
+<a id="serialization"></a>
+### 10.3 Serialization
 
 On response build, Touchstone walks `$response.csp` and produces
 a single `Content-Security-Policy` header. Directives are joined
@@ -852,7 +888,8 @@ Directive order in the header follows the order they were first
 added; sources within a directive follow insertion order. Both
 are stable but neither carries semantic meaning to the browser.
 
-### What's not in core
+<a id="whats-not-in-core"></a>
+### 10.4 What's not in core
 
 - **No `Content-Security-Policy-Report-Only` mode.** If demand
   surfaces, the natural API is `$response.csp_report_only` as a
@@ -868,7 +905,8 @@ are stable but neither carries semantic meaning to the browser.
 
 ---
 
-## Not for direct use
+<a id="not-for-direct-use"></a>
+## 11 Not for direct use
 
 Static file serving is **not** a Touchstone responsibility.
 Sinatra and Robinson each handle static files in their own way —

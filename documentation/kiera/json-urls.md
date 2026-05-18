@@ -23,7 +23,8 @@ https://www.kiera.uno/something?{"map":true,"nw":[40.7,-74.0],"se":[40.8,-73.9]}
 `?%7B%22map%22%3Atrue%7D` — but the conceptual form is the JSON body
 after the `?`.)
 
-## Why
+<a id="why"></a>
+## 1 Why
 
 For machine-generated URLs, JSON has real advantages over the
 traditional key-value query string:
@@ -42,7 +43,8 @@ traditional key-value query string:
   the universal data carrier. URL params being JSON is consistent
   with that.
 
-## When to use it
+<a id="when-to-use-it"></a>
+## 2 When to use it
 
 **Rule of thumb: if a machine generates the URL for one of our
 services on kiera.uno, it should use the JSON form.** That covers
@@ -97,7 +99,8 @@ useful interaction.
 The convention is a **preference, not a hard rule**. Services may
 support both forms where it makes sense.
 
-## Trade-offs and caveats
+<a id="trade-offs-and-caveats"></a>
+## 3 Trade-offs and caveats
 
 Things to keep in mind:
 
@@ -123,7 +126,8 @@ Things to keep in mind:
   them. Worth normalizing on the server side (parse + re-serialize)
   before doing cache lookups.
 
-## Implementation guidance
+<a id="implementation-guidance"></a>
+## 4 Implementation guidance
 
 When Kiera services emit URLs that take parameters:
 
@@ -139,14 +143,16 @@ When Kiera services receive a URL with parameters:
 3. Either way, the handler ends up with a hash of parameters to
    work with.
 
-## Scope
+<a id="scope"></a>
+## 5 Scope
 
 Applies to every Kiera service that generates URLs with parameters.
 The first concrete instance is the `kiera.uno/geo` map embeds (iframe
 `src`, image URLs, etc.), but the same convention applies to anything
 else in the ecoverse that emits URLs containing structured params.
 
-## Dogberry support
+<a id="dogberry-support"></a>
+## 6 Dogberry support
 
 **[Dogberry](../ideas/dogberry.md) is currently undefined** — see the
 brainstorm doc for the current shape (transforming proxy that fetches

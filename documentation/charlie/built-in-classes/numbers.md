@@ -1,6 +1,7 @@
 # Number Methods
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -16,7 +17,8 @@ Charlie uses a single Number class for all numeric values, integer and floating-
 alike. Methods that only make sense for integers (such as `even?` and `odd?`) are defined
 on Number but raise an error if called on a non-integer value.
 
-### Numeric literals
+<a id="numeric-literals"></a>
+### 1.1 Numeric literals
 
 Underscores in numeric literals are ignored by the lexer. Use them freely as digit
 separators for readability:
@@ -31,7 +33,8 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 
 ---
 
-## Arithmetic
+<a id="arithmetic"></a>
+## 2 Arithmetic
 
 ```
 vibecode: {
@@ -52,7 +55,8 @@ vibecode: {
 
 ---
 
-## Comparison
+<a id="comparison"></a>
+## 3 Comparison
 
 ```
 vibecode: {
@@ -73,7 +77,8 @@ vibecode: {
 
 ---
 
-## Testing
+<a id="testing"></a>
+## 4 Testing
 
 ```
 vibecode: {
@@ -99,7 +104,8 @@ vibecode: {
 
 ---
 
-## Rounding
+<a id="rounding"></a>
+## 5 Rounding
 
 ```
 vibecode: {
@@ -123,7 +129,8 @@ step to round to. If omitted, it defaults to `1`.
 
 `multiple` must be a non-zero number. Passing `0` raises an error.
 
-### Midpoint rule
+<a id="midpoint-rule"></a>
+### 5.1 Midpoint rule
 
 When a value falls exactly halfway between two multiples, Charlie rounds half away from
 zero:
@@ -133,7 +140,8 @@ zero:
 -5.round(multiple:10)  -> -10
 ```
 
-### Examples
+<a id="examples"></a>
+### 5.2 Examples
 
 ```
 $foo = 2.5
@@ -163,7 +171,8 @@ $foo.round_down(multiple: 10) -> -10
 
 ---
 
-## Bitwise
+<a id="bitwise"></a>
+## 6 Bitwise
 
 ```
 vibecode: {
@@ -180,7 +189,8 @@ vibecode: {
 
 ---
 
-## Math
+<a id="math"></a>
+## 7 Math
 
 ```
 vibecode: {
@@ -199,7 +209,8 @@ vibecode: {
 
 ---
 
-## Conversion
+<a id="conversion"></a>
+## 8 Conversion
 
 ```
 vibecode: {
@@ -221,14 +232,16 @@ vibecode: {
 
 ---
 
-## Iteration
+<a id="iteration"></a>
+## 9 Iteration
 
 Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
 [loops.md § Numeric iteration helpers](../loops.md#numeric-iteration-helpers).
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 10 Open Questions
 
 - Should `sqrt` of a negative number raise an error or return a special value?
 - Should `to_string` accept a format argument (e.g. number of decimal places)?

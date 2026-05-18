@@ -1,6 +1,7 @@
 # Parameter System
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -29,7 +30,8 @@ the runtime binds them).
 
 ---
 
-## Basic Definition
+<a id="basic-definition"></a>
+## 2 Basic Definition
 
 ```
 vibecode: {
@@ -59,7 +61,8 @@ Each parameter has two names:
 
 ---
 
-## Inline Metadata Declaration
+<a id="inline-metadata-declaration"></a>
+## 3 Inline Metadata Declaration
 
 ```
 vibecode: {
@@ -102,7 +105,8 @@ $foo.params['bar'].lazy = true
 
 ---
 
-## Known Metadata Properties
+<a id="known-metadata-properties"></a>
+## 4 Known Metadata Properties
 
 ```
 vibecode: {
@@ -122,7 +126,8 @@ vibecode: {
 
 ---
 
-## Public and Private Names
+<a id="public-and-private-names"></a>
+## 5 Public and Private Names
 
 ```
 vibecode: {
@@ -161,7 +166,8 @@ can only use public names.
 
 ---
 
-## Required and Optional Parameters
+<a id="required-and-optional-parameters"></a>
+## 6 Required and Optional Parameters
 
 ```
 vibecode: {
@@ -218,7 +224,8 @@ Setting a `default` implicitly makes the parameter optional, so writing
 
 ---
 
-## Type Constraints
+<a id="type-constraints"></a>
+## 7 Type Constraints
 
 ```
 vibecode: {
@@ -257,7 +264,8 @@ $foo.params['bar'].nullable = true
 
 ---
 
-## Lazy Parameters
+<a id="lazy-parameters"></a>
+## 8 Lazy Parameters
 
 ```
 vibecode: {
@@ -304,7 +312,8 @@ short-circuit evaluation with no special parser support.
 
 ---
 
-## Rest Positional Parameters: `*args`
+<a id="rest-positional-parameters-args"></a>
+## 9 Rest Positional Parameters: `*args`
 
 ```
 vibecode: {
@@ -332,7 +341,8 @@ If no extra positional arguments are passed, `$args` is an empty array.
 
 ---
 
-## Rest Named Parameters: `**opts`
+<a id="rest-named-parameters-opts"></a>
+## 10 Rest Named Parameters: `**opts`
 
 ```
 vibecode: {
@@ -364,7 +374,8 @@ are quietly absorbed into the hash.
 
 ---
 
-## Combined Rest Parameters
+<a id="combined-rest-parameters"></a>
+## 11 Combined Rest Parameters
 
 ```
 vibecode: {
@@ -393,7 +404,8 @@ At most one `*args` and one `**opts` per signature.
 
 ---
 
-## Call-Site Splat Expansion
+<a id="call-site-splat-expansion"></a>
+## 12 Call-Site Splat Expansion
 
 ```
 vibecode: {
@@ -426,7 +438,8 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 
 ---
 
-## Calling Functions
+<a id="calling-functions"></a>
+## 13 Calling Functions
 
 ```
 vibecode: {
@@ -459,7 +472,8 @@ formatter-enforced.
 
 ---
 
-## Positional-Until-Named Rule
+<a id="positional-until-named-rule"></a>
+## 14 Positional-Until-Named Rule
 
 ```
 vibecode: {
@@ -484,7 +498,8 @@ argument appears, all remaining arguments must be named.
 
 ---
 
-## Valid Calls
+<a id="valid-calls"></a>
+## 15 Valid Calls
 
 Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 `$phrase` is implicitly optional via propagation):
@@ -499,7 +514,8 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 
 ---
 
-## Invalid Calls
+<a id="invalid-calls"></a>
+## 16 Invalid Calls
 
 ```
 vibecode: {
@@ -522,7 +538,8 @@ vibecode: {
 
 ---
 
-## Argument Binding Algorithm
+<a id="argument-binding-algorithm"></a>
+## 17 Argument Binding Algorithm
 
 ```
 vibecode: {
@@ -557,7 +574,8 @@ order:
 
 ---
 
-## Definition Errors
+<a id="definition-errors"></a>
+## 18 Definition Errors
 
 ```
 vibecode: {
@@ -587,7 +605,8 @@ $foo = function(**a, **b)
 
 ---
 
-## Programmatic Access
+<a id="programmatic-access"></a>
+## 19 Programmatic Access
 
 ```
 vibecode: {
@@ -616,7 +635,8 @@ frameworks, validators, and generated functions.
 
 ---
 
-## Freezing Functions
+<a id="freezing-functions"></a>
+## 20 Freezing Functions
 
 ```
 vibecode: {
@@ -648,7 +668,8 @@ modification.
 
 ---
 
-## Style Guidelines
+<a id="style-guidelines"></a>
+## 21 Style Guidelines
 
 ```
 vibecode: {
@@ -711,7 +732,8 @@ $foo = function($required1,
 
 ---
 
-## Summary
+<a id="summary"></a>
+## 22 Summary
 
 ```
 vibecode: {
@@ -739,7 +761,8 @@ vibecode: {
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 23 Open Questions
 
 - Should type checking be enforced at definition time (static) or call
   time (dynamic)? Current assumption: call time.

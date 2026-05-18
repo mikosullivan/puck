@@ -25,12 +25,14 @@ just not picking from it yet.
 
 ---
 
-## Sketch: the nanny helper
+<a id="sketch-the-nanny-helper"></a>
+## 1 Sketch: the nanny helper
 
 (Written down while it was fresh. Not an official spec; still
 deferred. Refined further as real use cases land.)
 
-### Shape
+<a id="shape"></a>
+### 1.1 Shape
 
 A nanny is essentially a **hash of warning names → booleans**.
 Keys are warning names (strings, chosen by the author). Values
@@ -40,7 +42,8 @@ are booleans: `true` means the warning is active (it will fire);
 **The default for any unknown key is `true`.** Warnings are
 active until explicitly silenced.
 
-### Developer API (configuring)
+<a id="developer-api-configuring"></a>
+### 1.2 Developer API (configuring)
 
 Hash-style access on the nanny:
 
@@ -52,7 +55,8 @@ $foo.nanny['some_warning']           # read current value
 
 That's the whole surface for configuration.
 
-### Author API (reporting concerns)
+<a id="author-api-reporting-concerns"></a>
+### 1.3 Author API (reporting concerns)
 
 Inside the code that has the nanny:
 
@@ -67,7 +71,8 @@ The `warn` method checks the hash:
   the nanny is wired to (stderr, Jasmine, etc. — TBD).
 - If the value is `false`, the warning is suppressed silently.
 
-### Naming convention
+<a id="naming-convention"></a>
+### 1.4 Naming convention
 
 Warning names are author-chosen strings. There's no central
 registry; each author picks names that describe their concerns
@@ -80,7 +85,8 @@ clearly. Suggested guidelines (not enforced):
 - Discoverable via `$foo.nanny.keys` (or similar enumeration —
   TBD).
 
-### What's not in the sketch
+<a id="whats-not-in-the-sketch"></a>
+### 1.5 What's not in the sketch
 
 - **Where emitted warnings actually go.** stderr? Jasmine?
   Engine-configurable? Defer until we know.
@@ -97,7 +103,8 @@ shape will develop as actual use cases accumulate.
 
 ---
 
-## What's a "nanny"?
+<a id="whats-a-nanny"></a>
+## 2 What's a "nanny"?
 
 In Mikobase's no-nanny-code philosophy, a **nanny** is the part of
 the framework that watches for likely misconfigurations or risky
@@ -113,11 +120,13 @@ nanny *thing*.
 
 ---
 
-## What would "first-class object" mean?
+<a id="what-would-first-class-object-mean"></a>
+## 3 What would "first-class object" mean?
 
 A few possible shapes (not mutually exclusive):
 
-### Option A: A system method
+<a id="option-a-a-system-method"></a>
+### 3.1 Option A: A system method
 
 `%nanny`, accessible like `%chain`, `%role`, `%engine`. Lives in
 the chain (or wherever it makes sense) and provides a unified API
@@ -130,7 +139,8 @@ for:
 Code anywhere in the call chain can ping the nanny without
 threading anything through signatures.
 
-### Option B: A class
+<a id="option-b-a-class"></a>
+### 3.2 Option B: A class
 
 `kiera.uno/nanny` — a type you can instantiate and attach to
 objects, chains, or applications. Each instance carries its own set
@@ -138,13 +148,15 @@ of silenced warnings. Useful if different parts of the program
 should have different nanny tolerances (production stricter than
 development, or per-tenant configs).
 
-### Option C: A property on every object
+<a id="option-c-a-property-on-every-object"></a>
+### 3.3 Option C: A property on every object
 
 Every framework object exposes `.nanny`, returning the nanny that
 governs it. Could be a shared nanny by default, but objects (or
 their owning roles) can install their own.
 
-### Option D: Some hybrid
+<a id="option-d-some-hybrid"></a>
+### 3.4 Option D: Some hybrid
 
 The most likely shape — `%nanny` for ambient access, backed by a
 `kiera.uno/nanny` class so it can be instantiated, with sensible
@@ -152,7 +164,8 @@ defaults that fall through to a system-wide nanny.
 
 ---
 
-## Why this might be worth promoting
+<a id="why-this-might-be-worth-promoting"></a>
+## 4 Why this might be worth promoting
 
 A few benefits a first-class nanny could give us:
 
@@ -176,7 +189,8 @@ A few benefits a first-class nanny could give us:
 
 ---
 
-## Open design questions
+<a id="open-design-questions"></a>
+## 5 Open design questions
 
 - **Where does the nanny *live*?** Chain-scoped (so role-boundary
   wipes refresh it)? Object-scoped (so each object carries its
@@ -207,7 +221,8 @@ A few benefits a first-class nanny could give us:
 
 ---
 
-## What to figure out first
+<a id="what-to-figure-out-first"></a>
+## 6 What to figure out first
 
 Before deep design, the load-bearing question is probably **what's
 the developer-facing API**:
@@ -223,7 +238,8 @@ scoping, etc.).
 
 ---
 
-## Out of scope for now
+<a id="out-of-scope-for-now"></a>
+## 7 Out of scope for now
 
 This is exploration, not commitment. Filed so the idea has a home
 while we iterate. Real spec when the design crystalizes.

@@ -17,7 +17,8 @@ material here may be folded into [kiera.md](../kiera/kiera.md).
 
 ---
 
-## Kiera Object vs. `%kiera`
+<a id="kiera-object-vs-kiera"></a>
+## 1 Kiera Object vs. `%kiera`
 
 A **kiera** (lowercase, the object) is distinct from **`%kiera`** (the
 system method). A kiera is a kind of object that knows how to resolve
@@ -56,7 +57,8 @@ windows. The engine decides what to hand in at startup; scoped
 derivations (via `restrict do ... end`) can override that for a
 block.
 
-### `restrict do ... end`
+<a id="restrict-do-end"></a>
+### 1.1 `restrict do ... end`
 
 `restrict` is the canonical way to scope `%kiera` to a narrower
 window for a block of code:
@@ -87,7 +89,8 @@ is in effect again.
 Same shape as the other scoped-block primitives in the framework
 (`%chain.isolate do ... end`, `%chain.scope do ... end`, etc.).
 
-## Version Window
+<a id="version-window"></a>
+## 2 Version Window
 
 Each kiera carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
@@ -115,7 +118,8 @@ This turns the timespan from a configuration knob into a structural
 sandbox — if the engine confines user code to a specific window, the
 window can't be widened from within the runtime.
 
-### Deriving a Narrower Kiera
+<a id="deriving-a-narrower-kiera"></a>
+### 2.1 Deriving a Narrower Kiera
 
 A kiera can produce a **derived kiera with a narrower window**, but
 never a broader one. The one-way ratchet:
@@ -137,7 +141,8 @@ subdirjail permissions ratchet, etc.). The deriver is producing a
 new kiera, which they own; the new kiera's window is bounded by
 what the parent allowed.
 
-### What the Narrowing Rule Does NOT Prevent
+<a id="what-the-narrowing-rule-does-not-prevent"></a>
+### 2.2 What the Narrowing Rule Does NOT Prevent
 
 **Code with access to a network faucet (or any other faucet) can
 construct its own kiera from scratch.** That fresh kiera isn't
@@ -171,7 +176,8 @@ Lookup semantics:
 - If no version exists in the allowed span, lookup behaves as if
   the UNS isn't there (returns null-flavored `not_found`).
 
-### Implication for getter walking
+<a id="implication-for-getter-walking"></a>
+### 2.3 Implication for getter walking
 
 The version window changes the lookup mechanic. **The kiera may need
 to consult all its getters to find the latest version within bounds**,
@@ -193,7 +199,8 @@ order-based first-wins is fine.
 
 ---
 
-## What a Kiera Does
+<a id="what-a-kiera-does"></a>
+## 3 What a Kiera Does
 
 A kiera **holds one or more getters**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
@@ -211,7 +218,8 @@ actual fetching:
   service, a database, a local file tree) might have just one
   faucet.
 
-### Lookup
+<a id="lookup"></a>
+### 3.1 Lookup
 
 A kiera exposes a **lookup method** as its public API. (Working name
 TBD — likely `.lookup($uns)` or similar; the actual name will be
@@ -231,7 +239,8 @@ didn't match" and "the registered value is intentionally null."
 that the kiera may consult all getters rather than short-circuiting
 on first hit — finding the latest requires checking each.)
 
-#### The `explicit`-null rule for sources
+<a id="the-explicit-null-rule-for-sources"></a>
+#### 3.1.1 The `explicit`-null rule for sources
 
 If a kiera faucet reaches a UNS where the registered value is
 intentionally null, **the source must mark that null as
@@ -254,7 +263,8 @@ intentionally simple. Engines or developers needing UNS-prefix
 matching, regex routing, dispatch tables, or fallback policies can
 subclass kiera and override the lookup method.
 
-### Roles: per-getter, not per-faucet
+<a id="roles-per-getter-not-per-faucet"></a>
+### 3.2 Roles: per-getter, not per-faucet
 
 **Each getter has its own role.** Objects served through a getter
 get that getter's role. Different getters in the same kiera produce
@@ -287,7 +297,8 @@ affects role assignment.
 
 ---
 
-## Provenance Checking
+<a id="provenance-checking"></a>
+## 4 Provenance Checking
 
 Provenance is **per-faucet**, not per-kiera. Each faucet has its own
 policy about how to sign off on provenance for the objects it serves.
@@ -303,14 +314,16 @@ is a separate concern handled by the role model and capability-
 passing mechanics; the faucet's job is just "is this really from
 where it says it's from?"
 
-### Case 1: Actual fetch from the URL
+<a id="case-1-actual-fetch-from-the-url"></a>
+### 4.1 Case 1: Actual fetch from the URL
 
 An **HTTPS faucet** that fetches from the URL claimed by the UNS.
 TLS handles the certificate verification at the network layer; the
 response by construction came from the verified server. No
 additional check needed at this faucet's layer.
 
-### Case 2: Cache
+<a id="case-2-cache"></a>
+### 4.2 Case 2: Cache
 
 A **cache faucet** that looks up the object in a local cache
 directory rather than re-fetching every time.
@@ -329,7 +342,8 @@ produce identically-tagged objects.
 filesystem write access to the cache can plant malicious code that
 inherits cache-level authority. Case 3 addresses this.
 
-### Case 3: Cache plus signature verification
+<a id="case-3-cache-plus-signature-verification"></a>
+### 4.3 Case 3: Cache plus signature verification
 
 A **cache faucet with a stricter provenance policy** — same source as
 case 2 (the cache directory), but the faucet additionally verifies
@@ -354,7 +368,8 @@ it on.
 
 ---
 
-## The Engine Decides the Policy
+<a id="the-engine-decides-the-policy"></a>
+## 5 The Engine Decides the Policy
 
 **The engine controls which kiera `%kiera` returns**, and that kiera's
 configuration determines everything about provenance policy:
@@ -376,7 +391,8 @@ the result and the checks.
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 6 Open Questions
 
 - **Does `%kiera` always return the same kiera object across calls?**
   Resolved: no. `%kiera` is scoped. By default it returns the

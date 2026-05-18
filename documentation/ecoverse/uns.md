@@ -3,7 +3,8 @@
 A simple naming scheme for identifying things in a globally
 unambiguous way.
 
-## Too Long, Didn't Read
+<a id="too-long-didnt-read"></a>
+## 1 Too Long, Didn't Read
 
 A UNS is just a URL without the protocol. It's a way to identify
 an object without the noise of protocols:
@@ -32,7 +33,8 @@ Read on for more.
 
 ---
 
-## Introduction
+<a id="introduction"></a>
+## 2 Introduction
 
 Software systems hit namespace collisions all the time — two
 libraries that both want to define a `User` class, two services
@@ -65,7 +67,8 @@ noise. That's the main motivation for UNS. The naming idea isn't
 new — domain-prefixed identifiers have been around for decades.
 UNS just cuts down the noise.
 
-## Pancake simple
+<a id="pancake-simple"></a>
+## 3 Pancake simple
 
 The whole concept is barely an invention — it's a thin
 formalization of what people already do with domain-prefixed
@@ -73,9 +76,11 @@ names. The value is in **everyone agreeing on the same shape** so
 identifiers parse and compare consistently across tools and
 systems.
 
-## Specification
+<a id="specification"></a>
+## 4 Specification
 
-### Valid characters
+<a id="valid-characters"></a>
+### 4.1 Valid characters
 
 UNS is meant to travel across filesystems, URLs, shell commands,
 and any other context where strings get passed around. The basic
@@ -101,13 +106,15 @@ character developers can use however suits their namespace. When
 a UNS is converted to a URL, the portion after `?` is preserved
 as the URL's query string.
 
-### Bare domains are valid
+<a id="bare-domains-are-valid"></a>
+### 4.2 Bare domains are valid
 
 A UNS doesn't need a path. `kiera.uno`, `example.org`, and
 `miko.dev` are all valid UNSes on their own. The path is optional;
 it just adds specificity below the domain.
 
-### Disallowed patterns
+<a id="disallowed-patterns"></a>
+### 4.3 Disallowed patterns
 
 Even within the allowed character set, certain patterns aren't
 valid:
@@ -120,7 +127,8 @@ valid:
 - Bare domain names without a dot — `localhost/foo` is not a
   valid UNS. The domain must contain at least one dot.
 
-### Validation algorithm
+<a id="validation-algorithm"></a>
+### 4.4 Validation algorithm
 
 To validate a candidate UNS:
 
@@ -146,7 +154,8 @@ DNS lookup. Developers can use UNSes built around domains they
 own privately, test domains, future domains, or anything else
 that looks structurally correct.
 
-### Case sensitivity
+<a id="case-sensitivity"></a>
+### 4.5 Case sensitivity
 
 **UNS is case-sensitive.** `kiera.uno/Foo` and `kiera.uno/foo`
 are distinct identifiers. Tools comparing UNSes do a byte-for-byte
@@ -158,44 +167,52 @@ doesn't change the technical rule — if you write a UNS with
 uppercase letters, that's the UNS, and only an exact match
 identifies the same thing.
 
-### Why so strict
+<a id="why-so-strict"></a>
+### 4.6 Why so strict
 
 UNS is used as the structure of the **caching directory** (and
 similar filesystem-backed contexts). A UNS that survives
 validation can be turned directly into a path on disk without
 escaping or sanitization. The strictness is what makes that safe.
 
-## Norms
+<a id="norms"></a>
+## 5 Norms
 
-### Keep UNSes short
+<a id="keep-unses-short"></a>
+### 5.1 Keep UNSes short
 
 UNSes are meant to be **human-readable**. Always prefer the
 shorter form when one is available. The norms below are mostly
 specific applications of this general principle.
 
-### Prefer lowercase
+<a id="prefer-lowercase"></a>
+### 5.2 Prefer lowercase
 
 Uppercase letters are allowed but lowercase is preferred.
 `kiera.uno/jasmine` reads better than `Kiera.uno/Jasmine`, and
 mixing cases invites the "is `Foo` the same UNS as `foo`?"
 confusion.
 
-### Skip `www.`
+<a id="skip-www"></a>
+### 5.3 Skip `www.`
 
 Prefer `kiera.uno` over `www.kiera.uno`. The `www.` prefix is
 noise from a different era. UNS is about cutting noise, so leave
 it off.
 
-### Skip trailing slashes
+<a id="skip-trailing-slashes"></a>
+### 5.4 Skip trailing slashes
 
 `kiera.uno/foo/` and `kiera.uno/foo` are technically different
 UNSes (UNS is byte-for-byte case-sensitive), but the trailing
 slash is usually just noise. Omit it unless you have a specific
 reason to keep it.
 
-## Use in Kiera
+<a id="use-in-kiera"></a>
+## 6 Use in Kiera
 
-### Parser is a core Charlie requirement
+<a id="parser-is-a-core-charlie-requirement"></a>
+### 6.1 Parser is a core Charlie requirement
 
 A UNS parser/validator is a **core requirement** of any Charlie
 implementation. Every host needs to be able to take a string and
@@ -205,7 +222,8 @@ convenience — Kiera leans on UNS heavily enough (caching, class
 lookup, identifier handling) that lacking one would break the
 runtime.
 
-### UNS doubles as URL
+<a id="uns-doubles-as-url"></a>
+### 6.2 UNS doubles as URL
 
 Kiera often treats a UNS as **synonymous with a URL**. Many
 objects in the ecoverse live at the address their UNS points to —
@@ -228,7 +246,8 @@ nginx) will redirect to `https://kiera.uno/foo/` — costing an
 extra round trip. Noted here so the friction is acknowledged;
 not considered a significant problem at present.
 
-## First-contact angle
+<a id="first-contact-angle"></a>
+## 7 First-contact angle
 
 UNS is one of the lowest-friction ways someone might encounter
 Kiera. It's small, self-contained, and useful on its own — you

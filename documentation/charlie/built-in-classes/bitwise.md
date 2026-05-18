@@ -1,6 +1,7 @@
 # Bitwise Object
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -15,7 +16,8 @@ Bitwise operations are exposed through a dedicated bitwise object rather than as
 methods on Number. This keeps the Number class uncluttered and makes bitwise intent
 explicit at the call site.
 
-## Access
+<a id="access"></a>
+## 2 Access
 
 ```
 vibecode: {
@@ -35,7 +37,8 @@ $n.bitwise.or(456)
 
 ---
 
-## Open Questions
+<a id="open-questions"></a>
+## 3 Open Questions
 
 - Do operations take a second Number argument, or does the bitwise object wrap the value
   and chain? e.g. `$a.bitwise.or($b)` vs `$a.bitwise.or($b).and($c)`
@@ -46,7 +49,8 @@ $n.bitwise.or(456)
 
 ---
 
-## Methods
+<a id="methods"></a>
+## 4 Methods
 
 ```
 vibecode: {

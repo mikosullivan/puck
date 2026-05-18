@@ -1,8 +1,10 @@
 # Issues
 
-## Open issues
+<a id="open-issues"></a>
+## 1 Open issues
 
-### Expand Canonical Tag Coverage To Match Runtime Spec
+<a id="expand-canonical-tag-coverage-to-match-runtime-spec"></a>
+### 1.1 Expand Canonical Tag Coverage To Match Runtime Spec
 - opened: 2026-04-02
 - level: high
 
@@ -10,7 +12,8 @@
 
 Concern: the normalized source of truth cannot fully regenerate the runtime tag surface without additional canonical tag entries or canonical rule sources for these tags.
 
-### Correct Canonical Document-Structure Rules For Root Tags
+<a id="correct-canonical-document-structure-rules-for-root-tags"></a>
+### 1.2 Correct Canonical Document-Structure Rules For Root Tags
 - opened: 2026-04-02
 - level: high
 
@@ -18,7 +21,8 @@ Concern: the normalized source of truth cannot fully regenerate the runtime tag 
 
 Concern: denormalization from canon can produce structurally invalid parent/child rules unless the root/head model is corrected and expanded.
 
-### Add Canonical Metadata For Missing Attribute Semantics
+<a id="add-canonical-metadata-for-missing-attribute-semantics"></a>
+### 1.3 Add Canonical Metadata For Missing Attribute Semantics
 - opened: 2026-04-02
 - level: medium
 
@@ -27,7 +31,8 @@ The canonical file includes reusable attribute groups (`default`, `remote`, `for
 Concern: canon does not yet capture enough normalized attribute semantics to reliably regenerate the richer runtime schema for many HTML5 elements.
 
 
-### Encode More HTML5 Content-Model Constraints In Canon
+<a id="encode-more-html5-content-model-constraints-in-canon"></a>
+### 1.4 Encode More HTML5 Content-Model Constraints In Canon
 - opened: 2026-04-02
 - level: medium
 

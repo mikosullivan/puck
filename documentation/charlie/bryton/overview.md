@@ -12,7 +12,8 @@ JSON line is a complete, working Bryton test.
 
 ---
 
-## Architecture
+<a id="architecture"></a>
+## 1 Architecture
 
 Bryton consists of three cooperating parts:
 
@@ -35,9 +36,11 @@ the contract between them.
 
 ---
 
-## Core principles
+<a id="core-principles"></a>
+## 2 Core principles
 
-### Tests are runnable scripts
+<a id="tests-are-runnable-scripts"></a>
+### 2.1 Tests are runnable scripts
 
 Every test file is an ordinary executable. You can run it
 directly at the CLI like any script — no special runner, no
@@ -50,7 +53,8 @@ bryton.charlie ./test_foo.charlie   # also works
 bryton.charlie path/to/dir    # runs everything in a directory
 ```
 
-### Test files don't need a library
+<a id="test-files-dont-need-a-library"></a>
+### 2.2 Test files don't need a library
 
 **A script that emits Xeme JSON to stdout IS a Bryton test.** No
 imports, no boilerplate, no setup. This is the first-contact
@@ -66,7 +70,8 @@ Per-language libraries (when present) make scripts richer:
 assertion helpers, fail-fast support, personal config reading,
 human-readable output for direct invocations. **All optional.**
 
-### Tree-shaped results from tree-shaped tests
+<a id="tree-shaped-results-from-tree-shaped-tests"></a>
+### 2.3 Tree-shaped results from tree-shaped tests
 
 Tests live in a directory tree. Each file produces a Xeme; each
 directory produces a Xeme that contains its children's Xemes via
@@ -78,7 +83,8 @@ The structure of the result tree mirrors the structure of the
 test tree. Run a single file → one Xeme. Run a directory → one
 Xeme with nested results. Same data shape, different scope.
 
-### Bottom-up scaling
+<a id="bottom-up-scaling"></a>
+### 2.4 Bottom-up scaling
 
 The development workflow Bryton is designed for:
 
@@ -94,7 +100,8 @@ hierarchy of the filesystem.
 
 ---
 
-## Configuration
+<a id="configuration"></a>
+## 3 Configuration
 
 Three layers, in precedence order (lowest to highest):
 
@@ -115,7 +122,8 @@ for the full chain.
 
 ---
 
-## Priorities (from initial design discussion)
+<a id="priorities-from-initial-design-discussion"></a>
+## 4 Priorities (from initial design discussion)
 
 - **Ordered testing** ✅ — via `files` hash in
   [bryton.json](runner.md#brytonjson-per-directory).
@@ -131,7 +139,8 @@ for the full chain.
 
 ---
 
-## What ships in v1
+<a id="what-ships-in-v1"></a>
+## 5 What ships in v1
 
 - The runner (language-agnostic).
 - Xeme spec + canonical icon set.
@@ -155,7 +164,8 @@ What's deferred to future versions:
 
 ---
 
-## Where to read more
+<a id="where-to-read-more"></a>
+## 6 Where to read more
 
 - **[Xeme](xeme/xeme.md)** — the JSON result format. Required
   reading for anyone writing tools that produce or consume

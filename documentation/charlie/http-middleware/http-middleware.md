@@ -6,20 +6,23 @@ set that are **available as libraries** — resolved on demand through
 the Kiera object model the same way any other library is, with no
 install step.
 
-### Ships with Kiera
+<a id="ships-with-kiera"></a>
+### 0.1 Ships with Kiera
 
 | Class | UNS | Use case |
 |---|---|---|
 | **Touchstone** | `kiera.uno/touchstone` | Base class. Content-type defaults, Jasmine integration, shared HTTP plumbing. Sinatra (and any HTTP middleware library) inherits from it; not for direct instantiation. |
 | **Sinatra** | `kiera.uno/sinatra` | Small sites, microservices, single-file apps. Route handlers as closures, Ruby-Sinatra-style. |
 
-### Available as a library through Kiera
+<a id="available-as-a-library-through-kiera"></a>
+### 0.2 Available as a library through Kiera
 
 | Class | UNS | Use case |
 |---|---|---|
 | **Robinson** | `kiera.uno/robinson` | Filesystem-tree-served sites. Pages live as files in a directory tree; URL paths map to file paths. **Not bundled — Kiera resolves and caches it on first use** (see [kiera.md](../../kiera/kiera.md) for the resolution + caching model). |
 
-### Deferred
+<a id="deferred"></a>
+### 0.3 Deferred
 
 | Class | UNS | Use case |
 |---|---|---|
@@ -30,7 +33,8 @@ Sinatra is enough to serve HTTP responses; everything beyond is
 opt-in via library resolution. A Charlie program that doesn't need
 Robinson never pulls Robinson in.
 
-## Architecture
+<a id="architecture"></a>
+## 1 Architecture
 
 **No layered servers.** Sinatra and Robinson are not "handlers
 inside Dogberry" — they're standalone servers. You pick the one
@@ -64,7 +68,8 @@ keeps each server simple and self-contained; Dogberry's eventual
 shape will be designed without being constrained to slot Sinatra
 and Robinson in as components.
 
-## Picking one
+<a id="picking-one"></a>
+## 2 Picking one
 
 - **Sinatra** if your app is mostly a handful of routes — closures
   that respond to HTTP methods and paths. Default for "I just need
@@ -80,9 +85,11 @@ The three are not competing for the same use cases. They occupy
 different points in the spectrum from "ad-hoc per-route code" to
 "content-as-files" to (eventually, whatever Dogberry becomes).
 
-## Shared facilities
+<a id="shared-facilities"></a>
+## 3 Shared facilities
 
-### Jasmine logging
+<a id="jasmine-logging"></a>
+### 3.1 Jasmine logging
 
 [Jasmine](../jasmine/jasmine.md) — Kiera's JSONL-based logging format — is
 available to **both Sinatra and Robinson**. The ambient

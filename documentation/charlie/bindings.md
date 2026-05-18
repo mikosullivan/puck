@@ -7,7 +7,8 @@ that prevents arbitrary Charlie code from accessing Lua directly.
 
 ---
 
-## Why bindings exist
+<a id="why-bindings-exist"></a>
+## 1 Why bindings exist
 
 Charlie is designed so user-level code **cannot reach into Lua**.
 That seal is a load-bearing security property — without it,
@@ -27,7 +28,8 @@ they consume any other capability.
 
 ---
 
-## Install: operator-only, not runtime
+<a id="install-operator-only-not-runtime"></a>
+## 2 Install: operator-only, not runtime
 
 A binding includes Lua code. Loading it gives the engine new
 Lua-level functionality. **This is a privileged operation** — the
@@ -50,7 +52,8 @@ binding install as more like adding a system service.
 
 ---
 
-## How a Charlie class uses a binding
+<a id="how-a-charlie-class-uses-a-binding"></a>
+## 3 How a Charlie class uses a binding
 
 A class declares its binding dependency, and the engine raises a
 clear error at class-load time if the binding isn't installed. The
@@ -73,7 +76,8 @@ The flow:
 
 ---
 
-## Naming convention
+<a id="naming-convention"></a>
+## 4 Naming convention
 
 Bindings live under `kiera.uno/binding/...`:
 
@@ -88,7 +92,8 @@ gumbo for another HTML parser) without renaming the binding.
 
 ---
 
-## Core bindings (ship with every engine)
+<a id="core-bindings-ship-with-every-engine"></a>
+## 5 Core bindings (ship with every engine)
 
 Every engine ships with this baseline set:
 
@@ -110,19 +115,22 @@ Probably ship (still TBD):
 | `kiera.uno/binding/compress` | gzip/zlib (HTTP content encoding, log compression) |
 | `kiera.uno/binding/encoding` | base64, hex, URL encoding, UTF-8 utilities |
 
-### HTTP client is non-negotiable
+<a id="http-client-is-non-negotiable"></a>
+### 5.1 HTTP client is non-negotiable
 
 Kiera's remote-object IPC depends on HTTP client. Every engine
 needs this binding — without it, `%kiera` lookups against remote
 objects don't work. It's not optional.
 
-### Filesystem includes locking
+<a id="filesystem-includes-locking"></a>
+### 5.2 Filesystem includes locking
 
 `kiera.uno/binding/fs` must include POSIX-style file locking
 (`flock`/`fcntl`). Jasmine's directory store and several other
 parts of the framework depend on it for concurrency.
 
-### About `crypto`
+<a id="about-crypto"></a>
+### 5.3 About `crypto`
 
 The name `crypto` here is the **standard software-engineering
 term for cryptographic primitives** — hashing (SHA-256, etc.),
@@ -141,11 +149,13 @@ Kiera uses these primitives for:
 
 ---
 
-## Non-core bindings
+<a id="non-core-bindings"></a>
+## 6 Non-core bindings
 
 Bindings that don't ship by default but the operator can install:
 
-### Postgres driver
+<a id="postgres-driver"></a>
+### 6.1 Postgres driver
 
 **`kiera.uno/binding/postgres`** — Postgres driver for mikobase
 backends and other database needs. **Non-core but top-priority.**
@@ -156,7 +166,8 @@ deployments install.
 A working Ruby Pg implementation already exists and serves as the
 reference for the Charlie binding.
 
-### Others
+<a id="others"></a>
+### 6.2 Others
 
 Anything else outside the core set: DNS-specific work (SRV/MX/TXT
 records), email (SMTP), WebSockets standalone, image processing,
@@ -164,7 +175,8 @@ PDF generation, gRPC, etc. — all third-party binding territory.
 
 ---
 
-## Common driver grammar (planned)
+<a id="common-driver-grammar-planned"></a>
+## 7 Common driver grammar (planned)
 
 Inspired by Perl's **DBI** (Database Interface), where drivers
 (DBD::SQLite, DBD::mysql, DBD::Pg) all implement a uniform
@@ -189,7 +201,8 @@ SQLite binding spec.
 
 ---
 
-## Open questions
+<a id="open-questions"></a>
+## 8 Open questions
 
 Deferred from the initial design conversation; will be addressed
 as bindings get spec'd:

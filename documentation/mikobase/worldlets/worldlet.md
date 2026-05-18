@@ -1,6 +1,7 @@
 # Worldlet Format
 
-## Overview
+<a id="overview"></a>
+## 1 Overview
 
 ```
 vibecode: {
@@ -24,7 +25,8 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 
 ---
 
-## Top-Level Structure
+<a id="top-level-structure"></a>
+## 2 Top-Level Structure
 
 ```
 vibecode: {
@@ -72,7 +74,8 @@ entries, see
 
 ---
 
-## `meta`
+<a id="meta"></a>
+## 3 `meta`
 
 ```
 vibecode: {
@@ -104,7 +107,8 @@ Descriptive information about the worldlet.
 
 ---
 
-## `format` and `format_version`
+<a id="format-and-format_version"></a>
+## 4 `format` and `format_version`
 
 ```
 vibecode: {
@@ -136,7 +140,8 @@ Both are optional for backwards compatibility but should be included in all new 
 
 ---
 
-## `properties`
+<a id="properties"></a>
+## 5 `properties`
 
 ```
 vibecode: {
@@ -174,7 +179,8 @@ shape (each record carries its current bucket directly, no history block). See
 
 ---
 
-## `allow`
+<a id="allow"></a>
+## 6 `allow`
 
 ```
 vibecode: {
@@ -195,7 +201,8 @@ The format and full capability vocabulary are not yet fully designed.
 
 ---
 
-## `extensions`
+<a id="extensions"></a>
+## 7 `extensions`
 
 ```
 vibecode: {
@@ -218,7 +225,8 @@ unrecognised `extensions` key.
 
 ---
 
-## `classes`
+<a id="classes"></a>
+## 8 `classes`
 
 ```
 vibecode: {
@@ -299,7 +307,8 @@ See [class-definition.md](../../charlie/class-definition.md) for the full class 
 
 ---
 
-## `records`
+<a id="records"></a>
+## 9 `records`
 
 ```
 vibecode: {
@@ -331,7 +340,8 @@ is no separate history block and no per-version entries.
 
 ---
 
-## `files`
+<a id="files"></a>
+## 10 `files`
 
 ```
 vibecode: {
@@ -366,7 +376,8 @@ hash, timestamp, and MIME type.
 
 ---
 
-## `file_chunks`
+<a id="file_chunks"></a>
+## 11 `file_chunks`
 
 A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
 or more chunks. Chunks are assembled in `index` order to reconstruct the file.
@@ -391,7 +402,8 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 
 ---
 
-## Import Rules
+<a id="import-rules"></a>
+## 12 Import Rules
 
 ```
 vibecode: {
@@ -400,12 +412,14 @@ vibecode: {
 }
 ```
 
-### UUID constraints
+<a id="uuid-constraints"></a>
+### 12.1 UUID constraints
 
 All keys in `records`, `files`, and `file_chunks` must be UUID v4 strings. The importer
 rejects any worldlet containing a malformed UUID.
 
-### Conflict policy
+<a id="conflict-policy"></a>
+### 12.2 Conflict policy
 
 When a record being imported has the same UUID as one already in the target mikobase:
 
@@ -414,13 +428,15 @@ When a record being imported has the same UUID as one already in the target miko
 
 The same rule applies to `files` and `file_chunks` entries.
 
-### Reference encoding
+<a id="reference-encoding"></a>
+### 12.3 Reference encoding
 
 Reference fields in `bucket` are plain UUID strings. The class definition declares the
 field type — a field with class `kiera.uno/reference` or `kiera.uno/dbfile` tells the
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
-### The `class` field
+<a id="the-class-field"></a>
+### 12.4 The `class` field
 
 In all Kiera-compliant hashes, the `class` field is reserved to indicate the class or
 classes the hash belongs to. This applies to Q0 queries, record entries, class
@@ -429,7 +445,8 @@ definitions, and any other Kiera-level objects.
 Bucket objects are not Kiera-compliant. The `class` field has no special meaning inside
 a bucket and may be used freely as an application field.
 
-### Validation
+<a id="validation"></a>
+### 12.5 Validation
 
 The importer validates the following before writing anything:
 
@@ -439,14 +456,16 @@ The importer validates the following before writing anything:
 - All `file` values in `file_chunks` reference a UUID present in `files`.
 - The target mikobase is non-temporal.
 
-### Atomicity
+<a id="atomicity"></a>
+### 12.6 Atomicity
 
 Import is all-or-nothing. If any validation error or conflict error occurs, nothing is
 written to the target mikobase. Partial imports do not happen.
 
 ---
 
-## Minimal Valid Example
+<a id="minimal-valid-example"></a>
+## 13 Minimal Valid Example
 
 The smallest possible worldlet — one record, no schema, no files:
 
@@ -467,7 +486,8 @@ The smallest possible worldlet — one record, no schema, no files:
 
 ---
 
-## Complete Example
+<a id="complete-example"></a>
+## 14 Complete Example
 
 ```json
 {

@@ -2,7 +2,8 @@
 
 **Status:** Forward-looking note. Not in v1.
 
-## Purpose
+<a id="purpose"></a>
+## 1 Purpose
 
 A Kiera.uno-hosted service that validates and tidies HTML
 documents. Two related operations:
@@ -15,7 +16,8 @@ documents. Two related operations:
   cleaned-up version that's well-formed and structurally
   valid. The HTML version of "format my code, please."
 
-## Where it fits
+<a id="where-it-fits"></a>
+## 2 Where it fits
 
 - **Uma** (especially the `kiera.uno/uma/html5` subclass) is
   the local first-pass tool — it parses, manipulates, and
@@ -28,7 +30,8 @@ documents. Two related operations:
   large documents, for CI pipelines that gate on validation,
   and for cleaning up ingested HTML from untrusted sources.
 
-## Why a service rather than embedded
+<a id="why-a-service-rather-than-embedded"></a>
+## 3 Why a service rather than embedded
 
 - A full HTML5 validator is large (hundreds of K) and
   changes over time as the spec evolves.
@@ -38,7 +41,8 @@ documents. Two related operations:
 - Centralizes spec-version tracking — clients automatically
   get the current standard without per-app updates.
 
-## Possible API shape (sketch)
+<a id="possible-api-shape-sketch"></a>
+## 4 Possible API shape (sketch)
 
 ```
 $result = %['kiera.uno/html5-validator'].validate($html)
@@ -49,7 +53,8 @@ $result.tidied           # cleaned-up version (optional, configurable)
 
 Or as a Sinatra-style HTTP endpoint with a JSON request/response.
 
-## Open
+<a id="open"></a>
+## 5 Open
 
 - Hosting and access model — free tier, paid tier, on-premises?
 - Spec version selection (validate against HTML5.x specifically?
@@ -59,7 +64,8 @@ Or as a Sinatra-style HTTP endpoint with a JSON request/response.
 - Relationship to Bryton — could a `bryton-html-valid` xeme
   type wrap this for "did my page validate?" tests.
 
-## Status
+<a id="status"></a>
+## 6 Status
 
 Filed for future. The Uma side ships first; the validator
 service follows once Uma's user base needs heavier-weight

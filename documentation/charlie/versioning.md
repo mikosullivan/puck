@@ -20,7 +20,8 @@ For now, timestamp versioning is the only versioning system.
 
 ---
 
-## Why Date-Pinned
+<a id="why-date-pinned"></a>
+## 1 Why Date-Pinned
 
 vibecode: {
 	"section": "why_date_pinned",
@@ -48,7 +49,8 @@ Three concrete benefits:
 
 ---
 
-## The Cutoff in %chain
+<a id="the-cutoff-in-chain"></a>
+## 2 The Cutoff in %chain
 
 vibecode: {
 	"section": "cutoff_in_chain",
@@ -85,7 +87,8 @@ gone.
 
 ---
 
-## Out-of-Range Exceptions
+<a id="out-of-range-exceptions"></a>
+## 3 Out-of-Range Exceptions
 
 vibecode: {
 	"section": "out_of_range_exceptions",
@@ -117,7 +120,8 @@ In each case, the integrity of the deployment is in question. The exception is t
 treated with the same severity as any other security exception, not as ordinary control
 flow.
 
-### Forensic payload
+<a id="forensic-payload"></a>
+### 3.1 Forensic payload
 
 The exception carries a structured payload describing exactly what happened:
 
@@ -131,7 +135,8 @@ This is the information a security responder or audit log needs to investigate.
 
 ---
 
-## Resolution Rules
+<a id="resolution-rules"></a>
+## 4 Resolution Rules
 
 vibecode: {
 	"section": "resolution_rules",
@@ -167,7 +172,8 @@ the trust placed in the provider.
 
 ---
 
-## Semver as a Label
+<a id="semver-as-a-label"></a>
+## 5 Semver as a Label
 
 vibecode: {
 	"section": "semver_as_a_label",
@@ -192,7 +198,8 @@ asked for; whether it ever does more is a question for future demand.
 
 ---
 
-## What This Replaces
+<a id="what-this-replaces"></a>
+## 6 What This Replaces
 
 vibecode: {
 	"section": "what_this_replaces",
@@ -221,7 +228,8 @@ should be high.
 
 ---
 
-## Relationship to the Blockchain
+<a id="relationship-to-the-blockchain"></a>
+## 7 Relationship to the Blockchain
 
 vibecode: {
 	"section": "relationship_to_blockchain",

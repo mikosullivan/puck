@@ -19,7 +19,8 @@ Brainstorm in progress.
 
 ---
 
-## Why this is interesting
+<a id="why-this-is-interesting"></a>
+## 1 Why this is interesting
 
 ```
 vibecode: {
@@ -31,7 +32,8 @@ vibecode: {
 }
 ```
 
-### AIs authoring CharlieJSON directly
+<a id="ais-authoring-charliejson-directly"></a>
+### 1.1 AIs authoring CharlieJSON directly
 
 CharlieJSON is structured JSON. Structured JSON is what language models
 reliably produce — strict shape, no whitespace/indent concerns, no
@@ -45,7 +47,8 @@ CharlieJSON is the cleaner artifact for machines to author and consume.
 This doesn't displace Charlie source as the human-facing form; it
 introduces a parallel convention for the AI-to-AI channel.
 
-### Script-sending as a different medium from mikobase
+<a id="script-sending-as-a-different-medium-from-mikobase"></a>
+### 1.2 Script-sending as a different medium from mikobase
 
 Mikobase and script-messages serve different purposes:
 
@@ -58,7 +61,8 @@ They complement rather than overlap. One AI might both write data to
 a shared mikobase AND send another AI a script that operates on that
 data.
 
-### Blockchain + roles = safe acceptance
+<a id="blockchain-roles-safe-acceptance"></a>
+### 1.3 Blockchain + roles = safe acceptance
 
 The script-message form needs two things to be workable:
 
@@ -81,7 +85,8 @@ the recipient's sandbox with the recipient's role choices.
 
 ---
 
-## Relationship to existing pieces
+<a id="relationship-to-existing-pieces"></a>
+## 2 Relationship to existing pieces
 
 - **[ai-conversation-format.md](../mikobase/ai-conversation-format.md)** —
   already defines the temporal-worldlet format for AI conversations.
@@ -96,7 +101,8 @@ the recipient's sandbox with the recipient's role choices.
 
 ---
 
-## Open questions
+<a id="open-questions"></a>
+## 3 Open questions
 
 - **Wire format.** Is a script-message a bare CharlieJSON document with a
   signature wrapper? A small worldlet shaped specifically for
