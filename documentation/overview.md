@@ -104,6 +104,11 @@ See [charlie.md](charlie/charlie.md) for the language reference.
 <a id="features-1"></a>
 ### 3.1 Features
 
+- **Built for running untrusted code.** Functions only have
+access to what is explicitely sent to them as parameters.
+They do not have universal access to file systems or network
+connections. They can only use resources like that if you
+explicitly send them in as paramters. See [roles.md](charlie/roles.md).
 - **Classes and inheritance.** `class 'UNS' ... end` defines a class
   with fields, properties, methods, and helpers. Bare/anonymous
   classes (`class\n    inherits ... end`) for cases like Robinson
@@ -117,17 +122,13 @@ See [charlie.md](charlie/charlie.md) for the language reference.
   context per engine. The opt-in forking feature spawns isolated
   Charlie processes that coordinate through shared Mikobases — no
   shared-memory primitives, no locks.
-- **Role-based security.** Every value is owned by a role. Calling
-  into another role's code is a security boundary: `%chain` wipes,
-  the new role's capabilities apply. See [roles.md](charlie/roles.md).
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception.
 - **Built-in HTTP middleware family.** Touchstone provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). Sammy and Robinson are sibling middleware frameworks built
-  on Touchstone for route-style and filesystem-tree-style serving
-  respectively.
+  CSP). Sammy is a built-in framework on Touchstone for
+  route-style serving.
 
 ---
 
