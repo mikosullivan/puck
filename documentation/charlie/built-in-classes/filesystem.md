@@ -1,5 +1,15 @@
 # Filesystem Access in Charlie
 
+~~~json
+{"vibecode": {
+	"doc": "filesystem",
+	"role": "spec for Charlie filesystem access via host-injected jail objects — directory-scoped handles that hide the real path; covers files, directories, copy/move/delete, and sub-jails",
+	"key_concepts": ["jail_object", "directory_scoped_handle", "real_path_hidden",
+		"subscript_sugar", "sub_jails"],
+	"example_universe": "Narnia"
+}}
+~~~
+
 Charlie filesystem access is provided through **jail objects** — directory-scoped handles
 injected by the host. A jail gives access to a specific directory tree and nothing outside
 it. The underlying real path is never exposed to Charlie code.

@@ -9,7 +9,8 @@
 	"language": "Charlie",
 	"runtime_format": "CharlieJSON",
 	"influences": ["Ruby", "Perl"],
-	"conventions": ["share_as_charlie_not_ksj", "formatter_enforces_style"]
+	"conventions": ["share_as_charlie_not_ksj", "formatter_enforces_style"],
+	"example_universe": "Shakespeare"
 }}
 ~~~
 
@@ -131,7 +132,7 @@ are identical:
 The same applies to keyword arguments in function calls:
 
 ```
-&greet(name: 'Jean-Luc')    # name: is 'name'
+&greet(name: 'Hamlet')      # name: is 'name'
 ```
 
 Hash keys must be strings. Numbers, booleans, objects, and all other types are invalid as

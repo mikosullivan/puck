@@ -9,7 +9,8 @@
 	"type": "string",
 	"encoding": "utf8",
 	"mutable": false,
-	"key_facts": ["all_methods_return_new_string", "engine_validates_utf8_at_boundary"]
+	"key_facts": ["all_methods_return_new_string", "engine_validates_utf8_at_boundary"],
+	"example_universe": "Narnia"
 }}
 ~~~
 

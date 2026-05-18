@@ -8,7 +8,8 @@
 	"section": "overview",
 	"type": "Array",
 	"notes": ["ordered_collection", "zero_based_indexing",
-		"set_theory_methods_use_unicode_symbols_with_named_aliases"]
+		"set_theory_methods_use_unicode_symbols_with_named_aliases"],
+	"example_universe": "Narnia"
 }}
 ~~~
 
