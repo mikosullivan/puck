@@ -5,90 +5,226 @@
 ~~~json
 {"vibecode": {
 	"section": "what_is_this",
-	"role": "introduces the Kiera ecoverse and its three core components",
-	"key_concepts": ["Kiera_ecoverse", "Mikobase", "KScript", "Kiera_protocol", "Q0", "UNS"]
+	"role": "introduces the Kiera ecoverse organized around its three core packages",
+	"key_concepts": ["Kiera_ecoverse", "Kiera_protocol", "KScript", "Mikobase"]
 }}
 ~~~
 
-This project is the **Kiera ecoverse** — a suite of interconnected tools for storing,
-querying, and programming with objects across different languages and systems. The core
-components are:
+This project is the **Kiera ecoverse** — a suite of interconnected
+software for storing, querying, and programming with objects across
+different languages and systems. The ecoverse is organized around
+**three core packages**:
 
-- **Mikobase** — a live, portable object store with a class-based model and a JSON query language (Q0)
-- **KScript** — a lightweight, embeddable programming language
-- **Kiera** — a protocol for working with remote objects across languages and systems
+- **Kiera** — the object protocol (UNS-addressed remote objects)
+- **KScript** — the programming language
+- **Mikobase** — the live object store
+
+Each package has its own features and its own canonical specs. The
+sections below walk through each package and its core features, then
+cover cross-cutting design principles, implementation status, and how
+the pieces fit together at runtime.
 
 ---
 
-## The Components (Vic Las Vegas)
+## Kiera (Quark)
 
 ~~~json
 {"vibecode": {
-	"section": "the_components",
-	"role": "summarizes each major component: Mikobase, KScript, Kiera, and Packaged Mikobases",
-	"key_concepts": ["Mikobase", "KScript", "Kiera", "packaged_mikobases", "UNS", "Q0", "KScriptJSON"]
+	"section": "kiera_package",
+	"role": "describes the Kiera protocol and its features: UNS, %kiera lookup and call, version window, library resolution, blockchain",
+	"key_concepts": ["object_protocol", "UNS", "kiera_lookup", "remote_method_invocation",
+		"version_window", "library_resolution_through_kiera", "blockchain_identity"]
 }}
 ~~~
 
-### Mikobase
+Kiera is a **protocol for working with objects across languages and
+systems**. It gives every object in the ecoverse a global address (a
+UNS) and a uniform way to retrieve, query, and invoke methods on
+objects regardless of where they physically live.
 
-A mikobase is a live object store. You define classes, store records, and query them using
-**Q0** — a JSON-based query language. It is NoSQL and class-based.
+See [kiera.md](kiera/kiera.md) for the full protocol spec.
 
-Key ideas:
-- Records have a class, a stable identity, and an append-only version history
-- Class names use **UNS** (Universal Namespace) — a URL without `https://`, e.g. `foo.com/character`
-- Queries are JSON objects: `{"action": "select", "class": "foo.com/character"}`
-- A mikobase can be in-memory, file-backed, or served over HTTP
-- A mikobase is always a live process — not a passive file
+### Features
 
-The first implementation is a Python SQLite engine. See [requirements.md](mikobase/requirements.md)
-and [q0.md](mikobase/q0.md).
+- **UNS (Universal Namespace).** Every class and well-known object has
+  a URL-shaped global address — your domain gives you a unique
+  namespace (`foo.com/character`); built-ins live under
+  `kiera.uno/...`. UNS is naming/identity, not type hierarchy:
+  `kiera.uno/touchstone/error/x` is not a subclass of
+  `kiera.uno/error/x` unless explicitly declared.
+- **`%kiera[UNS]` lookup.** KScript code retrieves objects by UNS:
+  `%kiera['foo.com/character']`. The kiera (the resolver object)
+  walks a configured chain of providers — local cache, network
+  sources, blockchain attestations — and returns the right thing or
+  null.
+- **`%kiera.call` remote method invocation.** Explicit cross-process /
+  cross-host method calls with `%chain` forwarded automatically and a
+  defined error model (target-not-found, transport, auth, propagated
+  remote exceptions).
+- **Version window.** Each kiera carries an immutable `[lower, upper]`
+  timestamp window that bounds which versions of an object are
+  eligible to be returned. Derived kieras can narrow the window
+  (one-way ratchet); you can't broaden it. Enables reproducible
+  builds and historical queries.
+- **Libraries are cached, not installed.** KScript has no install
+  step, no lockfile, no manifest. Libraries are referenced by UNS in
+  source code and resolved on demand through the provider chain.
+  Cached locally on first use; subsequent references hit the cache.
+- **Blockchain identity and provenance.** The Kiera blockchain
+  provides cryptographically anchored identity and signed
+  attestations for library versions — see
+  [blockchain.md](blockchain.md).
 
-### KScript
+---
 
-KScript is the programming language of the Kiera ecoverse. It handles computation and
-control flow — the things Q0 deliberately does not do.
+## KScript (Bashir)
 
-Key ideas:
-- Lightweight and embeddable — small enough to run inside a mikobase engine
-- Single-threaded by design
-- Humans write KScript; it transpiles to **KScriptJSON** for execution
-- Classes, functions, closures, exceptions, and a security model are all built in
-- Mikobases are KScript's object store
+~~~json
+{"vibecode": {
+	"section": "kscript_package",
+	"role": "describes the KScript language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
+	"key_concepts": ["lightweight_embeddable_language", "KScriptJSON_runtime_format",
+		"classes_with_inheritance", "functions_closures",
+		"single_threaded_by_default_forking_opt_in", "role_based_security",
+		"exception_handling", "multi_syntax_architecture_preserved"]
+}}
+~~~
 
-See [kscript/kscript.md](kscript/kscript.md) for the language reference and
-[kscript/kscriptjson.md](kscript/kscriptjson.md) for the runtime format.
+KScript is a **lightweight, embeddable programming language**. It
+handles computation and control flow — the things Q0 deliberately
+doesn't do. Designed to run inside a Mikobase engine, a browser, a
+CLI, or anywhere else without external runtime dependencies beyond
+the engine itself.
 
-### Forking (opt-in KScript feature)
+See [kscript.md](kscript/kscript.md) for the language reference and
+[kscriptjson.md](kscript/kscriptjson.md) for the runtime format.
 
-KScript is single-threaded by default. **Forking** is an opt-in feature
-the engine grants on request: a script that doesn't need it sees `%forks`
-and `%tmp` as `null` and runs as a normal single-threaded program. A
-script that does use forking spawns isolated KScript processes that
-coordinate through shared mikobases — no shared-memory primitives, no
-locks. (Previously documented as a separate language variant called
-"KScript++"; that's been merged into KScript.)
+### Features
 
-See [ideas/plusplus/threads.md](ideas/plusplus/threads.md) for the design
-notes.
+- **KScriptJSON as the canonical runtime format.** KScript source
+  transpiles to KScriptJSON (a JSON-shaped representation the engine
+  executes directly). The format isn't bytecode — it's a full
+  representation of the program. The source-vs-runtime separation
+  preserves the architectural option for alternate source syntaxes
+  fanning into the same canonical form.
+- **Classes and inheritance.** `class 'UNS' ... end` defines a class
+  with fields, properties, methods, and helpers. Bare/anonymous
+  classes (`class\n    inherits ... end`) for cases like Robinson
+  page files where identity comes from location.
+- **Functions and closures.** `function &name(args) ... end` for
+  named functions; closures capture lexical scope; functions don't.
+  Parameters carry metadata via a uniform hash form (`{lazy: true,
+  classes: ['string']}`); first-class param manipulation via
+  `$foo.params['bar']`.
+- **Single-threaded by default; forking opt-in.** One execution
+  context per engine. The opt-in forking feature spawns isolated
+  KScript processes that coordinate through shared Mikobases — no
+  shared-memory primitives, no locks.
+- **Role-based security.** Every value is owned by a role. Calling
+  into another role's code is a security boundary: `%chain` wipes,
+  the new role's capabilities apply. Replaces the older binary
+  trust/untrust model. See [roles.md](kscript/roles.md).
+- **Exception handling.** Standard `catch`/`raise` for user-territory
+  exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
+  engine-aware flag-raising. Stack traces on every exception.
+- **Built-in HTTP middleware family.** Touchstone provides the
+  per-request infrastructure (transactions, sessions, body buffering,
+  CSP). Sinatra and Robinson are sibling middleware frameworks built
+  on Touchstone for route-style and filesystem-tree-style serving
+  respectively. Dogberry is a transforming proxy planned alongside.
 
-### Kiera
+---
 
-Kiera is a protocol for working with objects across different languages and systems.
-All class names use UNS strings. `%kiera[UNS]` in KScript retrieves a registered object
-by its UNS address. Remote methods are called via `%kiera.call($object, :method, params)`.
+## Mikobase (O'Brien)
 
-See [kiera.md](kiera/kiera.md).
+~~~json
+{"vibecode": {
+	"section": "mikobase_package",
+	"role": "describes the Mikobase object store and its features: Q0 query language, class-based NoSQL, temporal mode, three v1 engines, worldlets as export format, live process model",
+	"key_concepts": ["live_object_store", "Q0_JSON_query_language", "class_based_NoSQL",
+		"temporal_vs_non_temporal_mode", "three_v1_engines",
+		"worldlets_as_export_format", "live_process_not_passive_file"]
+}}
+~~~
 
-### Packaged Mikobases
+Mikobase is a **live object store** — in memory, file-backed, or
+served over a network. It supports class definitions, record history,
+transactions, locking, and a JSON query language. Worldlets are the
+primary use case for Mikobase; other use cases (microservices, larger
+services) are supported.
 
-A mikobase can also be packaged as a portable, self-contained file — a complete object
-environment bundling class definitions, KScript behavior, seed records, and a capabilities
-manifest. A packaged mikobase can be shared, imported into any running mikobase, or sent
-to a remote system for execution via Kiera.
+See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
-See [mikobase.md](mikobase/mikobase.md).
+### Features
+
+- **Q0 JSON-based query language.** Every query is a JSON object:
+  `{"action": "select", "class": "foo.com/character"}`. SQL-shaped
+  semantics on top of a class-based model. Engines translate Q0 to
+  SQL on the SQLite engines or to JSON-traversal on the worldlet
+  engine.
+- **Class-based, NoSQL.** Records have a class, a stable UUID
+  identity, and a typed `bucket` of fields. Class definitions live in
+  the mikobase itself.
+- **Temporal vs non-temporal mode.** A per-database flag chosen at
+  initialization. Temporal mode keeps an append-only history of every
+  write; non-temporal mode overwrites in place. Worldlets that don't
+  need history opt out via `"temporal": false`.
+- **Three v1 engines.** SQLite file-backed, SQLite in-memory
+  (`:memory:`), and a worldlet-direct engine that operates on
+  worldlet JSON in place — built for very short-lived workloads (AI
+  conversations) where SQLite import/export overhead would dominate.
+- **Worldlets as an export format.** A worldlet is a serialized
+  export of a mikobase — a single portable JSON document containing
+  classes, records, history (in temporal mode), and files.
+  Round-trips through import/export, sharable, can be the live
+  storage of the worldlet-direct engine.
+- **Live process model.** A mikobase is not a passive file — it
+  requires a maintaining process. Connecting to a mikobase means
+  connecting to a live process, whether in-memory locally, a server
+  on the same machine, or a remote service over HTTP.
+
+---
+
+## Cross-cutting design principles (Kira Nerys)
+
+~~~json
+{"vibecode": {
+	"section": "design_principles",
+	"role": "the design principles that span all three packages: no nanny code, safe-defaults-with-explicit-overrides, and the four reserved pass-through fields on every object",
+	"key_concepts": ["no_nanny_code", "safe_defaults_with_explicit_overrides",
+		"security_guarantees_not_nanny", "four_reserved_pass_through_fields"]
+}}
+~~~
+
+### No nanny code
+
+Kiera follows a principle borrowed from Perl: **the system gives you
+enough rope to hang yourself.** When the system declines to do
+something by default, there are ways to override it if you choose:
+
+- **Nanny code** says "you can't, because I think you shouldn't."
+- **Safe defaults** say "you have to be explicit if you want to."
+- **Security guarantees** say "you can't, because allowing this would
+  break the trust model the rest of the system depends on."
+
+The first is what we avoid. The second and third stay. When in doubt:
+if a developer wants to do something legitimate that the API blocks
+without giving them a way through, that's nanny code.
+
+### Reserved pass-through fields
+
+Every Kieraverse object has four reserved keys that travel with it
+silently — never stripped, never modified by engines, firewalls, or
+network transport:
+
+- **`vibecode`** — AI-readable structured context (the JSON blocks
+  threaded throughout these docs).
+- **`comment`** — human-readable notes.
+- **`misc`** — informal ad-hoc data the framework doesn't interpret.
+- **`enterprise`** — formally defined standards / org-specific
+  metadata.
+
+See [vibecode.md](ecoverse/vibecode.md).
 
 ---
 
@@ -136,126 +272,13 @@ KScript interpreter runs it
         ↓
 Reads/writes to a Mikobase (object store)
         ↓
-Mikobase is backed by SQLite (memory or file)
+Mikobase is backed by SQLite (memory or file) — or directly on a worldlet
         ↓
 Queries expressed in Q0 (JSON)
+        ↓
+Remote objects resolved through Kiera (UNS → object)
 ```
 
-When the opt-in forking feature is enabled, multiple KScript processes share a mikobase,
-turning it into the coordination mechanism for concurrent work.
-
----
-
-## Key Concepts (Iden Hologram)
-
-~~~json
-{"vibecode": {
-	"section": "key_concepts",
-	"role": "glossary of the most important concepts in the Kiera ecoverse",
-	"key_concepts": ["UNS", "Q0", "KScript_syntax", "mikobase_live_process", "single-threaded",
-		"pass-through_fields", "vibecode", "comment", "misc", "enterprise"]
-}}
-~~~
-
-**UNS (Universal Namespace)** — class names are URLs without `https://`. Your domain
-gives you a globally unique namespace: `mycompany.com/character`. Built-in classes use
-`kiera.uno/...`.
-
-**Q0** — the query language. Every query is a JSON object. `select`, `create`, `update`,
-`delete`. Engines translate Q0 to SQL or forward it over HTTP.
-
-**KScript** — `$foo` is a variable, `&foo` calls it as a function, `$$foo` is the
-variable object. Blocks end with `end`. Classes use a DSL. Safe navigation with `&.`.
-Code is shared as KScript source; KScriptJSON is the compiled runtime form.
-
-**Mikobase** — not a passive file. Always a live process. Objects in the mikobase are always
-alive as long as the process is running.
-
-**KScript is single-threaded by default.** One execution context, no concurrency
-primitives. Concurrency arrives via an opt-in forking feature (engine-granted; off by
-default).
-
-**Reserved pass-through fields** — every Kieraverse object has four reserved keys that
-travel with it silently: `vibecode` (AI-readable context), `comment` (human-readable
-notes), `misc` (informal ad hoc data), and `enterprise` (formally defined standards).
-All four are always passed through; never stripped. See [vibecode.md](ecoverse/vibecode.md).
-
-**Libraries are cached, not installed** — KScript has no install step. Libraries are
-referenced by UNS in source code and resolved on the fly. See the section below.
-
-**No nanny code** — the system declines to second-guess deliberate developer choices.
-Restrictions exist for safety, not for paternalism, and every restriction has an
-explicit override. See "No Nanny Code" below.
-
----
-
-## No Nanny Code (Photonics)
-
-~~~json
-{"vibecode": {
-	"section": "no_nanny_code",
-	"role": "states the design principle that Kiera avoids paternalistic API restrictions; safe defaults and security guarantees remain, but blocking legitimate operations because the designer disapproves is rejected",
-	"key_concepts": ["no_paternalism", "explicit_override_for_every_safe_default",
-		"security_guarantees_are_not_nanny_code", "structural_rules_are_not_nanny_code",
-		"borrowed_from_perl_enough_rope"]
-}}
-~~~
-
-Kiera follows a principle borrowed from Perl: **the system gives you enough rope to
-hang yourself.** When the system declines to do something by default, there are
-ways to override it if you choose.
-
-The clean way to phrase it:
-
-- **Nanny code** says "you can't, because I think you shouldn't."
-- **Safe defaults** say "you have to be explicit if you want to."
-- **Security guarantees** say "you can't, because allowing this would break the
-  trust model the rest of the system depends on."
-
-The first is what we avoid. The second and third stay. When in doubt: if a developer
-wants to do something legitimate that the API blocks without giving them a way through,
-that's nanny code.
-
----
-
-## Libraries Are Cached, Not Installed (Reggie)
-
-~~~json
-{"vibecode": {
-	"section": "libraries_are_cached_not_installed",
-	"role": "explains that KScript has no library installation step — libraries are referenced by UNS and resolved on demand from a provider chain that may include a cache",
-	"key_concepts": ["no_install_step", "uns_reference", "engine_resolves_on_demand",
-		"provider_chain", "cache"]
-}}
-~~~
-
-KScript has no library installation step. There is no `kscript install foo.com/bar`,
-no `package.json`, no lockfile, no manifest. A library is **referenced** directly in
-source code by its UNS:
-
-```
-%kiera['foo.com/bar'].new
-```
-
-When the engine encounters that reference, it resolves the UNS through whatever
-**provider chain** it has been configured with. A typical chain checks a local cache
-first, then one or more remote providers; if the library isn't cached, the engine
-fetches it on the fly and stores it for future use. Subsequent references to the same
-UNS hit the cache with no network round-trip.
-
-The provider chain is the engine's concern, not the script's. A developer's machine
-might check a local cache, then a corporate mirror, then the canonical UNS host. A
-locked-down production engine might be restricted to a single trusted source. The
-script is unaware of where its libraries came from.
-
-The cache holds **multiple versions** of the same library side by side. Versioning in
-Kiera is **date-pinned**: the kiera object carries a cutoff timestamp (the *version
-window*) that governs the entire library tree it serves, and each `(UNS, version, date)`
-triple is its own cached artifact. Different programs running through the same engine
-with different kiera cutoffs each get the appropriate version with no cross-interference.
-See [kiera.md](kiera/kiera.md) and [versioning.md](kscript/versioning.md) for the full model.
-
-This is a design intent for how remote object resolution will work in KScript. Today's
-engines resolve only the built-in `kiera.uno/...` classes; remote resolution is not yet
-implemented. When it lands, it will work this way — there will be no install step, at
-least not initially.
+When the opt-in forking feature is enabled, multiple KScript
+processes share a mikobase, turning it into the coordination
+mechanism for concurrent work.
