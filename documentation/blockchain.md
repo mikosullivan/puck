@@ -38,7 +38,6 @@
   - [Collaboration: Puck Delegates to Castle Security](#collaboration-puck-delegates-to-castle-security)
   - [Partnership Goal](#partnership-goal)
 - [Design Notes](#design-notes)
-- [License](#license)
 - [Open Issues](#open-issues)
 
 ---
@@ -69,8 +68,8 @@ A UNS string alone proves neither. It is just a name.
 ## 4 The Solution
 
 Software authors publish their packages at URLs they control, served
-over HTTPS. The TLS certificate they already have is their only
-credential — no key registration, no account setup.
+over HTTPS. The TLS certificate they already have is the only
+credential they need.
 
 When they want to publish a snapshot of their package, they tell a
 service at Puck.uno to record it. Puck.uno does two things:
@@ -170,6 +169,24 @@ They are in charge of which objects get submitted and when.
    the real domain owner
 3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
    fields directly in the endorsement entry
+
+**The object must include a valid open source license.** Puck will
+not sign software that doesn't declare one. The license is exposed
+as a `license` field on the object served at its UNS URL:
+
+```json
+{
+    "name":    "borg.com/foo",
+    "version": "1.2.0",
+    "license": "MIT",
+    ...
+}
+```
+
+Any [SPDX license identifier](https://spdx.org/licenses/) is
+accepted. Puck reads the `license` field at fetch time and embeds
+it verbatim in the provenance endorsement; an endorsement that
+omits `license` is invalid.
 
 When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
 verifies Puck's signature using the baked-in public key. If the signature is valid, the
@@ -723,8 +740,8 @@ coordinate with the other. The shared ledger is what ties them together.
 <a id="collaboration-puck-delegates-to-castle-security"></a>
 ### 18.1 Collaboration: Puck Delegates to Castle Security
 
-Although Puck and Castle Security can operate completely independently, there is a deeper
-collaboration available through trust delegation.
+Although Puck and Castle Security can operate completely independently,
+collaborating could be a mutually beneficial arrangement.
 
 Puck posts a `delegate` block naming Castle Security as a trusted endorser:
 
@@ -753,8 +770,13 @@ provenance — exactly as they would accept blocks signed by Puck directly.
 
 This offloads the fetch-and-sign work from Puck entirely. Castle Security becomes an
 operational partner: they fetch, they sign, they post, and they add their security
-endorsement in the same pass. Puck's role shrinks to maintaining the authority block
-and the delegation record.
+endorsement in the same pass.
+
+This removes friction for developers who need to ship within government specifications.
+They do not need to know anything about the partner's internal processes or query a
+separate API. The blockchain.puck.uno response tells them everything: where the object
+came from, that it hasn't been modified, and whether it meets the security criteria they
+care about.
 
 The broader opportunity is significant. The Puck blockchain is not limited to Charlie
 objects — it can store Python libraries, Go modules, or any signed artifact. A company
@@ -768,16 +790,7 @@ infrastructure with no additional setup.
 
 Puck is actively seeking a partner in this space — a company analogous to Castle Security
 whose endorsements and deprecations would be surfaced directly through the
-`blockchain.puck.uno` API. When such a partnership is in place, a developer calling
-the fetch endpoint would receive not just Puck's provenance block but also the
-partner's security assessment in the same response — one API call, one result,
-government-grade confidence included.
-
-This removes friction for developers who need to ship within government specifications.
-They do not need to know anything about the partner's internal processes or query a
-separate API. The blockchain.puck.uno response tells them everything: where the object
-came from, that it hasn't been modified, and whether it meets the security criteria they
-care about.
+`blockchain.puck.uno` API.
 
 ---
 
@@ -816,19 +829,8 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 
 ---
 
-<a id="license"></a>
-## 20 License
-
-Code should identify the open source license with which it is
-distributed. Code that fails to do so should not be distributed
-in the ecoverse. Provenance endorsements that sign a software artifact
-must always include a `license` field. A provenance endorsement that omits
-`license` is invalid.
-
----
-
 <a id="open-issues"></a>
-## 21 Open Issues
+## 20 Open Issues
 
 **Software namespace identifier bloat.** As `puck.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.
