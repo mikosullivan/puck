@@ -3,8 +3,8 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"format": "CharlieJSON",
 	"alias": "ksj",
@@ -12,8 +12,8 @@ vibecode: {
 	"not": "bytecode",
 	"convention": "share_as_charlie_source_ksj_is_runtime_artifact",
 	"bootstrap_note": "parser_must_be_written_directly_in_ksj"
-}
-```
+}}
+~~~
 
 CharlieJSON (informally: ksj) is the canonical runtime format for Charlie programs. It is
 not bytecode — it is a full representation of the program as a JSON data structure. Charlie
@@ -38,8 +38,8 @@ itself before the parser exists.
 <a id="core-principle"></a>
 ## 2 Core Principle
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "core_principle",
 	"value_receiver_form": "[receiver, method, args?]",
 	"bwc_receiver_form": "[{bwc: name}, args?]",
@@ -47,8 +47,8 @@ vibecode: {
 	"method": "string_naming_method_or_operator_required_for_value_receivers_omitted_for_bwc_receivers",
 	"args": "optional_keyword_hash_or_single_positional_expression",
 	"two_shapes": "value_receiver_shape_for_method_calls_operators_assignment; bwc_shape_for_built_in_commands_where_the_bwc_name_is_the_call"
-}
-```
+}}
+~~~
 
 Every statement begins with a receiver. The receiver determines the shape:
 
@@ -68,14 +68,14 @@ arguments or a single expression for positional calls.
 <a id="comments"></a>
 ## 3 Comments
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "comments",
 	"form": "{\"comment\": \"...\"}",
 	"behavior": "no_op_ignored_by_interpreter",
 	"placement": "anywhere_in_statement_array"
-}
-```
+}}
+~~~
 
 A `{"comment": "..."}` object anywhere in a statement array is a human-readable no-op.
 It is ignored by the interpreter.
@@ -92,8 +92,8 @@ It is ignored by the interpreter.
 <a id="expressions"></a>
 ## 4 Expressions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "expressions",
 	"forms": {
 		"literal": "{\"value\": ...}",
@@ -108,8 +108,8 @@ vibecode: {
 		"closure": "{\"closure\": {\"params\": [...], \"body\": [...]}}"
 	},
 	"hash_note": "pairs_preserve_insertion_order"
-}
-```
+}}
+~~~
 
 Expressions are JSON objects that produce a value.
 
@@ -180,16 +180,16 @@ A `function` does not capture the outer scope. A `closure` does.
 <a id="statements"></a>
 ## 5 Statements
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "statements",
 	"forms": ["assignment", "method_calls", "function_calls", "bwc_calls", "operators"],
 	"assignment_form": "[{\"var\": \"foo\"}, \"=\", expr]",
 	"method_call_form": "[receiver, \"method\", {kw_args}]",
 	"function_call_form": "[{\"var\": \"foo\"}, \"call\", {kw_args}]",
 	"operator_form": "[receiver, \"op\", operand]"
-}
-```
+}}
+~~~
 
 <a id="assignment"></a>
 ### 5.1 Assignment
@@ -282,15 +282,15 @@ Charlie equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 <a id="control-flow"></a>
 ## 6 Control Flow
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "control_flow",
 	"constructs": ["if_elsif_else", "while"],
 	"if_form": "[{\"bwc\": \"if\"}, {\"branches\": [...], \"else\": [...]}]",
 	"while_form": "[{\"bwc\": \"while\"}, {\"cond\": expr, \"body\": [...]}]",
 	"notes": ["branches_and_else_are_optional"]
-}
-```
+}}
+~~~
 
 <a id="if-elsif-else"></a>
 ### 6.1 If / elsif / else
@@ -345,8 +345,8 @@ end
 <a id="break"></a>
 ### 6.3 Break
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "break_bwc",
     "form": "[{\"bwc\": \"break\"}, level_expr?]",
     "level_expr": "optional_integer_expression_default_1",
@@ -354,8 +354,8 @@ vibecode: {
     "block_boundary": "DOES_escape_through_do_end_blocks_passed_to_method_calls",
     "history": "added_post_soft_lock_2026-05-17_as_deliberate_v1_addition",
     "see": "documentation/charlie/loops.md#break-riker"
-}
-```
+}}
+~~~
 
 `break` exits the innermost enclosing loop. With an integer argument,
 exits N enclosing loops. Does not escape user-defined function or
@@ -392,14 +392,14 @@ about `break $named_loop` as a targeting alternative.
 <a id="blocks"></a>
 ## 7 Blocks
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "blocks",
 	"form": "block key in args object",
 	"structure": "{\"block\": {\"params\": [...], \"body\": [...]}}",
 	"charlie_equivalent": "$items.each($item) do...end"
-}
-```
+}}
+~~~
 
 A block is a closure passed to a method call. It is attached to the call via a `block` key
 in the args object:
@@ -425,15 +425,15 @@ end
 <a id="function-and-closure-definitions"></a>
 ## 8 Function and Closure Definitions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "function_and_closure_definitions",
 	"function_form": "{\"function\": {\"params\": [...], \"body\": [...]}}",
 	"closure_form": "{\"closure\": {\"params\": [...], \"body\": [...]}}",
 	"named_function_is": "assignment_of_function_to_var",
 	"difference": "closure_captures_scope_function_does_not"
-}
-```
+}}
+~~~
 
 Since `function &foo` is sugar for `$foo = function(...)`, a named function definition
 is just an assignment:
@@ -481,13 +481,13 @@ end
 <a id="return"></a>
 ## 9 Return
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "return",
 	"form": "[{\"bwc\": \"return\"}, expr]",
 	"no_value_form": "[{\"bwc\": \"return\"}]"
-}
-```
+}}
+~~~
 
 ```json
 [{"bwc": "return"}, {"var": "result"}]
@@ -506,14 +506,14 @@ Return with no value:
 <a id="exception-handling"></a>
 ## 10 Exception Handling
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "exception_handling",
 	"constructs": ["catch", "raise"],
 	"catch_form": "[{\"var\": \"e\"}, \"=\", [{\"bwc\": \"catch\"}, {\"class\": ..., \"body\": [...]}]]",
 	"raise_form": "[{\"bwc\": \"raise\"}, class_string_expr]"
-}
-```
+}}
+~~~
 
 <a id="catch"></a>
 ### 10.1 catch
@@ -546,14 +546,14 @@ Charlie equivalent: `raise 'borg.com/exception/assimilation'`
 <a id="system-methods"></a>
 ## 11 System Methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "system_methods",
 	"expression_form": "{\"sys\": \"name\"}",
 	"call_pattern": "[receiver, method, args?]",
 	"example_chain_set": "[{\"sys\": \"chain\"}, \"set\", {\"key\": ..., \"value\": ...}]"
-}
-```
+}}
+~~~
 
 System methods appear as expressions using `{"sys": "name"}` and follow the same
 `[receiver, method, args?]` call pattern:
@@ -575,8 +575,8 @@ Charlie equivalent: `%chain['user']`
 <a id="document-statements"></a>
 ## 12 Document Statements
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "document_statements",
 	"types": ["%vibecode", "%document"],
 	"forms": {
@@ -584,8 +584,8 @@ vibecode: {
 		"document": "{\"document\": {\"type\": \"text/markdown\", \"content\": \"...\"}}"
 	},
 	"runtime_behavior": "no_op"
-}
-```
+}}
+~~~
 
 `%vibecode`, `%comment`, and other `%document` statements are saved as statement objects
 in the program array. They are no-ops at runtime.
@@ -603,14 +603,14 @@ in the program array. They are no-ops at runtime.
 <a id="source-position-annotations"></a>
 ## 13 Source Position Annotations
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "source_position_annotations",
 	"purpose": "preserve_charlie_source_line_numbers_through_transpilation_to_charliejson",
 	"use_case": "include_line_numbers_in_jasmine_log_entries_and_error_messages",
 	"shape": "optional_line_field_on_charliejson_nodes"
-}
-```
+}}
+~~~
 
 When Charlie source is transpiled to CharlieJSON, **line-number
 information from the original source is preserved** so that downstream
@@ -670,13 +670,13 @@ position is genuinely unknown.
 <a id="known-gaps"></a>
 ## 14 Known Gaps
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "known_gaps",
 	"gaps": ["hash_key_order", "class_definitions_not_yet_designed_in_ksj"],
 	"hash_key_order": "significant_two_hashes_equal_only_if_same_keys_same_values_same_order"
-}
-```
+}}
+~~~
 
 <a id="hash-key-order"></a>
 ### 14.1 Hash key order
