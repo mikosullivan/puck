@@ -25,6 +25,10 @@ Any language that can speak JSON over HTTP can be a Puck client.
 [charlie/puck.md](../charlie/puck.md)) and is the primary client today, but
 the protocol is not Charlie-specific.
 
+For the formal wire-protocol spec — class definitions, request and
+response shapes, dynamic vs stored objects, versioning — see
+[protocol.md](protocol.md).
+
 ---
 
 <a id="example-a-remote-geo-class"></a>
