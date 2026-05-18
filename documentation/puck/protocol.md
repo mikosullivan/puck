@@ -8,7 +8,8 @@
 	"key_concepts": ["json_wire_format", "class_definition_json",
 		"shared_shape_with_charlie_and_mikobase",
 		"remote_methods_block", "method_params_and_returns",
-		"self_contained_vs_pk_reference_instances"],
+		"self_contained_vs_pk_reference_instances",
+		"method_dispatch_via_url", "instance_body_is_class_plus_bucket"],
 	"audience": ["puck_protocol_designers", "puck_server_implementors",
 		"puck_client_implementors_in_any_language"],
 	"example_universe": "Star Trek",
@@ -91,45 +92,60 @@ correctly.
 <a id="invoking-a-method"></a>
 ## 2 Invoking a method
 
-To invoke a remote method, **the client sends the entire instance
-to the server**, along with the method name and the params hash.
-The request body is a JSON object with three top-level keys:
+A method call is a **POST to a URL that encodes the class and the
+method**, with a body that carries the instance's `class` and
+`bucket` (the field-value hash):
 
-- **`instance`** — the full object being called on, including its
-  `class` UNS and all field values.
-- **`method`** — name of the method to invoke.
-- **`params`** *(optional)* — hash of named arguments. Omit when
-  the method takes none.
+- **URL** — `https://{class-uns}/{method}`. The method name lives
+  in the URL, not the body.
+- **Body** — JSON with `class` (the UNS of the instance's class)
+  and `bucket` (the field-value hash), plus `params` if the method
+  takes any named arguments.
 
 For example, calling `weather` on a Geo instance pointing at
 Starfleet HQ in San Francisco:
 
+```
+POST https://puck.uno/geo/weather
+```
+
+with body:
+
 ```json
 {
-    "instance": {
-        "class": "puck.uno/geo",
+    "class": "puck.uno/geo",
+    "bucket": {
         "lat": 37.7980,
         "lon": -122.4626
-    },
-    "method": "weather"
+    }
 }
 ```
 
 And calling `map_image(zoom=14)` on the same instance:
 
+```
+POST https://puck.uno/geo/map_image
+```
+
+with body:
+
 ```json
 {
-    "instance": {
-        "class": "puck.uno/geo",
+    "class": "puck.uno/geo",
+    "bucket": {
         "lat": 37.7980,
         "lon": -122.4626
     },
-    "method": "map_image",
     "params": {
         "zoom": 14
     }
 }
 ```
+
+The `class` in the body looks redundant with the URL, but it's the
+canonical declaration of what the bucket conforms to — useful for
+validation, for forwarding the call to another handler without
+re-parsing the URL, and for logs and replay.
 
 **The server is stateless with respect to instance identity.** It
 keeps no handles, no sessions, no per-instance state between calls.
@@ -179,16 +195,21 @@ Example: a Starfleet starship class keyed by registry number:
 
 The class declares one field — `registry`, the primary key. The
 server holds the actual data (name, captain, location, crew, mission
-logs, everything). A client asking about a ship sends just the
-registry:
+logs, everything). A client asking for the ship's captain hits the
+captain method's URL and sends just the registry in the bucket:
+
+```
+POST https://starfleet.com/starship/captain
+```
+
+with body:
 
 ```json
 {
-    "instance": {
-        "class": "starfleet.com/starship",
+    "class": "starfleet.com/starship",
+    "bucket": {
         "registry": "NCC-1701-D"
-    },
-    "method": "captain"
+    }
 }
 ```
 
@@ -197,11 +218,12 @@ Enterprise-D, and returns the captain as a `starfleet.com/officer`
 reference — itself probably another PK-only object the client can
 make further calls on.
 
-**Same wire shape, different sized payload.** From the protocol's
-perspective, the Geo and Starship examples are identical: instance
-hash + method + optional params. The only difference is how much of
-the instance actually fits in the hash. Class designers choose
-between the two patterns:
+**Same wire shape, different sized bucket.** From the protocol's
+perspective, the Geo and Starship examples are identical: a URL
+that names class + method, and a body with `class`, `bucket`, and
+optional `params`. The only difference is how much of the instance
+actually fits in the bucket. Class designers choose between the
+two patterns:
 
 - **Self-contained instance** (Geo) — the object's full state is
   the fields. Server holds no per-instance state; client and server
