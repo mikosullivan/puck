@@ -421,7 +421,7 @@ object** with `$server.static`:
 $server.static $dir
 ```
 
-The `$dir` is a directory object (Puck's filesystem abstraction).
+The `$dir` is a [directory object](../built-in-classes/filesystem.md#directory-objects) (Puck's filesystem abstraction).
 Sammy doesn't know or care what backs it — could be a real
 filesystem path, an in-memory tree, a remote source, a tarball,
 anything that implements the directory interface. Sammy just
