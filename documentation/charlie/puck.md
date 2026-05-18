@@ -49,16 +49,16 @@ Bare names in `%puck[...]` — any key without a domain — resolve to
 <a id="scoping-via-chain"></a>
 ### 1.2 Scoping via `%chain`
 
-`%puck` is scoped via `%chain` — the current puck lives in the chain.
-Because `%chain` is wiped at role boundaries (see [roles.md](roles.md)),
-the current puck does not propagate across role boundaries; **each role
-gets its own world.** When there is no puck in the chain, `%puck`
-returns plain `null`.
+`%puck` is scoped via `%chain` — the current Puck client lives in the
+chain. Because `%chain` is wiped at role boundaries (see
+[roles.md](roles.md)), the current client does not propagate across
+role boundaries; **each role gets its own world.** When there is no
+client in the chain, `%puck` returns plain `null`.
 
-**The engine decides what puck (if any) populates each role boundary.**
-The engine may install a puck on entry to a new role — typically a
-restricted/derived puck per the role's trust profile — or it may leave
-`%puck` null for that role. Per-role policy, not global.
+**The engine decides what Puck client (if any) populates each role
+boundary.** The engine may install a client on entry to a new role —
+typically a restricted client per the role's trust profile — or it
+may leave `%puck` null for that role. Per-role policy, not global.
 
 ---
 
@@ -87,7 +87,7 @@ shape, error catalog), see [puck/puck.md § Remote method invocation](../puck/pu
 ### 2.1 Return and error handling in Charlie
 
 - **Return value** — the remote method's result, marshaled back as a
-  puck object reference (or a primitive). Callers don't see "this was
+  Puck object reference (or a primitive). Callers don't see "this was
   remote"; the value behaves like any local call result.
 - **Exceptions** — the protocol error catalog
   (`puck.uno/error/not_found`, `puck.uno/error/transport`,
