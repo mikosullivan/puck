@@ -8,7 +8,8 @@
 	"key_concepts": ["json_wire_format", "class_definition_json",
 		"shared_shape_with_charlie_and_mikobase",
 		"remote_methods_block", "method_params_and_returns",
-		"self_contained_vs_pk_reference_instances",
+		"dynamic_objects_are_pucks_on_the_wire",
+		"stored_objects_live_on_servers_referenced_by_dynamic_objects",
 		"method_dispatch_via_url", "instance_body_is_class_plus_bucket"],
 	"audience": ["puck_protocol_designers", "puck_server_implementors",
 		"puck_client_implementors_in_any_language"],
@@ -33,8 +34,29 @@ losslessly.
 
 ---
 
+<a id="dynamic-and-stored-objects"></a>
+## 1 Dynamic and stored objects
+
+Two terms used throughout this doc:
+
+- **Dynamic objects** — the pucks themselves. They live for the
+  duration of a process and are what actually moves across the
+  wire. Every request and response carries dynamic objects.
+- **Stored objects** — long-lived data that lives on a server (a
+  database row, a registry entry, a file in a content store).
+  Stored objects don't themselves cross the wire; a dynamic object
+  can carry a reference to one.
+
+The Geo example in §2–3 below is a **dynamic object** whose entire
+state is its fields (`lat`, `lon`) — nothing behind it on any
+server. The Starship example in §4 is a dynamic object that holds
+just a primary key (`registry`) and is a reference to a **stored
+object** — the actual ship data on the Starfleet server.
+
+---
+
 <a id="class-definition"></a>
-## 1 Class definition
+## 2 Class definition
 
 A Puck class is defined in JSON, using the **same shape Charlie and
 Mikobase use** (see [class-definition.md](../charlie/class-definition.md)
@@ -90,7 +112,7 @@ correctly.
 ---
 
 <a id="invoking-a-method"></a>
-## 2 Invoking a method
+## 3 Invoking a method
 
 A method call is **typically a POST** to a URL that encodes the
 class and the method, with a body that carries the instance's
@@ -166,22 +188,25 @@ envelope; the object data itself rarely amounts to much.
 
 ---
 
-<a id="reference-style-instances"></a>
-## 3 Reference-style instances
+<a id="stored-objects"></a>
+## 4 Stored objects
 
-The Geo example in §1–2 carries all of its state in fields (`lat`
-and `lon`) — every call sends those numbers across the wire. That's
-fine when the object's full state is small and the client can
-plausibly know it.
+The Geo example in §2–3 is a **dynamic object** that carries all
+of its state in fields (`lat` and `lon`) — there's nothing behind
+it on any server. Every call ships those numbers and that's it.
 
-But many objects only make sense **server-side**. A row in a
-database, a record in a registry, a long-lived account — these live
-somewhere; the client has no way to hold their full state and
-shouldn't need to. For these, a Puck class can carry just enough
-information to identify the object — typically a single primary-key
-field — and let the server resolve everything else.
+But many objects only make sense **server-side**: a row in a
+database, a record in a registry, a long-lived account. These are
+**stored objects** — they live on a server, and they're too big or
+too sensitive or too database-bound to ship in full. For these, a
+Puck class defines a dynamic object that carries just enough to
+**reference** the stored one — typically a single primary-key
+field — and lets the server resolve everything else.
 
-Example: a Starfleet starship class keyed by registry number:
+Example: a Starfleet starship class keyed by registry number. The
+dynamic puck has one field; the stored object (the actual ship
+record, with name, captain, mission logs, crew list) lives in the
+Starfleet database.
 
 ```json
 {
@@ -197,10 +222,10 @@ Example: a Starfleet starship class keyed by registry number:
 }
 ```
 
-The class declares one field — `registry`, the primary key. The
-server holds the actual data (name, captain, location, crew, mission
-logs, everything). A client asking for the ship's captain hits the
-captain method's URL and sends just the registry in the bucket:
+The dynamic class declares one field — `registry`, the primary
+key — and three methods. The server holds the stored object. A
+client asking for the ship's captain hits the captain method's URL
+and sends just the dynamic puck (class + one-key bucket):
 
 ```
 POST https://starfleet.com/starship/captain
@@ -225,19 +250,18 @@ make further calls on.
 **Same wire shape, different sized bucket.** From the protocol's
 perspective, the Geo and Starship examples are identical: a URL
 that names class + method, and a body with `class`, `bucket`, and
-optional `params`. The only difference is how much of the instance
-actually fits in the bucket. Class designers choose between the
-two patterns:
+optional `params`. The only difference is what the dynamic object
+represents:
 
-- **Self-contained instance** (Geo) — the object's full state is
-  the fields. Server holds no per-instance state; client and server
-  agree on the data each call. Good when the state is small enough
-  to ship per-call and the client is the canonical owner.
-- **Reference by primary key** (Starship) — the object's fields
-  are just identifiers; the server holds the data. Good when the
-  state is too big to ship per-call, when the data lives in a
-  database the client can't replicate, or when the server is the
-  canonical owner of the value.
+- **Dynamic-only** (Geo) — the dynamic object is the whole thing.
+  Its fields are its full state. Nothing is stored anywhere; the
+  client is the canonical holder. Good when state is small enough
+  to ship per call.
+- **Dynamic + stored** (Starship) — the dynamic object is a
+  reference; the real value is a stored object on the server. The
+  bucket carries identifiers only. Good when the underlying data
+  is too big to ship per call, lives in a database the client
+  can't replicate, or is owned by the server.
 
 Most Puck classes pick one shape or the other. Mixed forms (some
 fields carried, some server-resolved) are allowed; the protocol
