@@ -18,10 +18,7 @@ Charlie is the programming language of the Puck ecoverse. Programs are written i
 and transpiled to CharlieJSON for execution. CharlieJSON is the canonical runtime format;
 Charlie is the human-facing form.
 
-Charlie's style is influenced by Ruby with some Perl mixed in.
-
-By convention, code is shared as Charlie, not as CharlieJSON. CharlieJSON is a runtime
-artifact, not a source format.
+Charlie's style is influenced by Ruby with some Perl and Bash mixed in.
 
 ---
 
@@ -70,11 +67,18 @@ format.
 Charlie is the **canonical surface syntax** — the one users see and write today. The
 language architecture deliberately separates the surface syntax from the canonical
 runtime form ([CharlieJSON](charliejson.md)), preserving the possibility of alternate
-surface syntaxes that also transpile to CharlieJSON. The original design ambition was
-multiple coexisting source syntaxes for the same semantic core; the project scoped down
-to a single canonical surface (Charlie) for clarity, but the multi-syntax option
-remains architecturally open through the Charlie-source → CharlieJSON layer. No
-alternate surface syntaxes are planned for v1.
+grammars that also transpile to CharlieJSON. To, for example, if you want a
+grammar that looks like Python, you could design it:
+
+~~~text
+if $foo
+	&do_something
+~~~
+
+Then just write some code that transpilers your grammar to CharlieJSON.
+
+I don't have any plans to develop alternate grammars, but the options is
+there if the community wants to develop it.
 
 ---
 
@@ -110,8 +114,8 @@ Not interpolated. What you write is what you get:
 <a id="colon-shorthand"></a>
 ### 4.3 Colon shorthand
 
-`:foo` is shorthand for `'foo'`. No symbol type — just a convenient way to write short
-strings:
+`:foo` is shorthand for `'foo'`.  Charlie does not have a symbol type,
+but sometimes it's handy to have something look symboly.
 
 ```
 :foo     # same as 'foo'
@@ -171,7 +175,7 @@ EOF
 
 Leading whitespace is stripped to the least-indented line. If a developer mixes tabs and
 spaces then that's sloppy and I won't take the blame for it. Ugly results will be their
-own damn fault and they deserve it.
+own fault and they deserve it.
 
 ---
 
@@ -206,7 +210,11 @@ puts $prince + ': ' + $soliloquy
 
 `$$foo` returns the variable object itself. Variable objects can be passed around like any
 other object, but deliberately do not expose their value. Pass-by-reference is an
-intentionally unsupported pattern. Future use cases will be designed around this.
+intentionally unsupported pattern. Future use cases may prpmpt us to revisit this
+decision.
+
+See [no nanny code](../overview.md#no-nanny-code) for the broader principle that keeps
+"intentionally unsupported" decisions like this open to revisit.
 
 ---
 
