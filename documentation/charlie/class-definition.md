@@ -3,11 +3,13 @@
 <a id="overview"></a>
 ## 1 Overview
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "explains how class definitions are stored in the mikobase",
 	"key_concepts": ["records_history", "class_pk", "bucket", "puck.uno/record/class"]
-}
+}}
+~~~
 
 A class definition is stored as a record in `records_history` with `class_pk` pointing to the
 `puck.uno/record/class` record.
@@ -17,11 +19,13 @@ The class definition is stored in the `bucket` field.
 <a id="universal-namespace"></a>
 ## 2 Universal Namespace
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "universal_namespace",
 	"role": "defines the UNS naming convention for class names",
 	"key_concepts": ["UNS", "domain-scoped_namespacing", "globally_unique_class_names"]
-}
+}}
+~~~
 
 Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
 globally unique namespace so developers using their own domains cannot accidentally collide.
@@ -36,11 +40,13 @@ Examples:
 <a id="schema"></a>
 ## 3 Schema
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "schema",
 	"role": "describes the top-level schema format and import rules",
 	"key_concepts": ["classes_dict", "import_rules", "dependency_resolution", "parent-first_insertion"]
-}
+}}
+~~~
 
 A full schema is a JSON object with a `classes` dict. Each key is the UNS class name and
 each value is the class definition. The `name` field is not repeated inside the definition.
@@ -82,11 +88,13 @@ explicitly set inside a class definition is ignored and overwritten with the key
 <a id="class-name"></a>
 ## 4 Class Name
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "class_name",
 	"role": "specifies the name field format and lists built-in seeded classes",
 	"key_concepts": ["UNS_name_field", "built-in_classes", "puck.uno/record", "puck.uno/reference", "puck.uno/dbfile"]
-}
+}}
+~~~
 
 Every class definition has a `name` field containing a UNS string.
 
@@ -106,11 +114,13 @@ Built-in classes seeded as database records:
 <a id="record-classes"></a>
 ## 5 Record Classes
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "record_classes",
 	"role": "states that all schema-defined classes are record classes with no separate declaration",
 	"key_concepts": ["record_class", "schema_classes", "assignable_to_records"]
-}
+}}
+~~~
 
 All classes defined in the `classes` schema are record classes — they can be assigned to
 records in `records_history`. There is no separate declaration required.
@@ -118,11 +128,13 @@ records in `records_history`. There is no separate declaration required.
 <a id="inheritance"></a>
 ## 6 Inheritance
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "inheritance",
 	"role": "documents single-parent explicit inheritance via the inherits field",
 	"key_concepts": ["inherits_field", "single_parent", "explicit_only", "no_path-implied_inheritance", "write-time_validation"]
-}
+}}
+~~~
 
 A class inherits all field definitions from its parent class. Subclasses may override or extend
 inherited fields.
@@ -144,11 +156,13 @@ of the write. Previously written records are not retroactively invalidated by cl
 <a id="fields"></a>
 ## 7 Fields
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "fields",
 	"role": "defines field definition syntax and field name conventions",
 	"key_concepts": ["fields_object", "field_definition", "snake_case", "class_constraint", "required", "collapse"]
-}
+}}
+~~~
 
 A class definition may include a `fields` object. Each key is a field name, and each value is a
 field definition object.
@@ -168,11 +182,13 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 <a id="field-types"></a>
 ## 8 Field Types
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "field_types",
 	"role": "enumerates all valid field type classes including primitives and UNS references",
 	"key_concepts": ["string", "number", "boolean", "hash", "array", "puck.uno/reference", "puck.uno/dbfile", "UNS_class_reference"]
-}
+}}
+~~~
 
 | Class | Description |
 |---|---|
@@ -190,11 +206,13 @@ vibecode: {
 <a id="inline-vs-named-field-types"></a>
 ## 9 Inline vs. Named Field Types
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "inline_vs_named_field_types",
 	"role": "explains when constraints are inline vs. referenced by UNS name; hash of and default behavior",
 	"key_concepts": ["inline_constraints", "UNS_reference", "hash_of", "hash_default", "anonymous_nested_objects"]
-}
+}}
+~~~
 
 Only basic types (`string`, `number`, `boolean`, `url`, `timestamp`, `hash`, `array`) may
 have constraints defined inline in the field definition.
@@ -253,11 +271,13 @@ that type:
 <a id="common-field-settings"></a>
 ## 10 Common Field Settings
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "common_field_settings",
 	"role": "lists settings that apply to all or most field types",
 	"key_concepts": ["required", "unique", "default", "instantiate"]
-}
+}}
+~~~
 
 | Setting | Applies to | Description |
 |---|---|---|
@@ -269,11 +289,13 @@ vibecode: {
 <a id="string-settings"></a>
 ## 11 String Settings
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "string_settings",
 	"role": "lists constraints specific to string fields",
 	"key_concepts": ["min_length", "max_length", "collapse"]
-}
+}}
+~~~
 
 | Setting | Description |
 |---|---|
@@ -284,11 +306,13 @@ vibecode: {
 <a id="number-settings"></a>
 ## 12 Number Settings
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "number_settings",
 	"role": "lists constraints specific to numeric fields",
 	"key_concepts": ["min", "max", "gt", "lt", "gte", "lte", "integer_only", "multiple_of"]
-}
+}}
+~~~
 
 | Setting | Description |
 |---|---|
@@ -302,11 +326,13 @@ vibecode: {
 <a id="array-and-hash-settings"></a>
 ## 13 Array and Hash Settings
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "array_and_hash_settings",
 	"role": "lists element/key count constraints shared by array and hash types",
 	"key_concepts": ["min_elements", "max_elements"]
-}
+}}
+~~~
 
 | Setting | Description |
 |---|---|
@@ -316,11 +342,13 @@ vibecode: {
 <a id="typed-arrays"></a>
 ## 14 Typed Arrays
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "typed_arrays",
 	"role": "documents the of key for specifying element types in arrays",
 	"key_concepts": ["array_of", "typed_array", "untyped_array", "inline_element_constraints"]
-}
+}}
+~~~
 
 A typed array uses `"class": "array"` with an `"of"` key specifying the element type. `"of"` may be a plain class name string or a full inline field definition when element-level constraints are needed.
 
@@ -335,11 +363,13 @@ An untyped array uses `"class": "array"` with no `"of"`.
 <a id="reference-fields"></a>
 ## 15 Reference Fields
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "reference_fields",
 	"role": "documents allowed_class and allowed_classes constraints on reference fields",
 	"key_concepts": ["puck.uno/reference", "allowed_class", "allowed_classes", "subclass_valid"]
-}
+}}
+~~~
 
 A `puck.uno/reference` field may optionally constrain which record classes it may point to
 using `allowed_class` (single UNS name) and/or `allowed_classes` (array of UNS names). If both
@@ -356,11 +386,13 @@ are present they are merged. Any record of the specified class or a subclass is 
 <a id="object-representation"></a>
 ## 16 Object Representation
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "object_representation",
 	"role": "defines hash form and shorthand form for object classes like reference and dbfile",
 	"key_concepts": ["hash_form", "shorthand_form", "puck.uno/reference_shorthand", "puck.uno/dbfile_shorthand", "record_pk_string"]
-}
+}}
+~~~
 
 Every object class can always be represented as a hash. Some object classes additionally
 define a shorthand form for convenience. Both forms must always be accepted wherever that
@@ -393,22 +425,26 @@ The shorthand for `puck.uno/dbfile` is a plain string containing the target `fil
 <a id="file-fields"></a>
 ## 17 File Fields
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "file_fields",
 	"role": "notes that dbfile fields only support the required constraint",
 	"key_concepts": ["puck.uno/dbfile", "required_only", "no_other_constraints"]
-}
+}}
+~~~
 
 `puck.uno/dbfile` fields support only `required`. No other constraints.
 
 <a id="field-ordering"></a>
 ## 18 Field Ordering
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "field_ordering",
 	"role": "specifies the canonical field order in query results",
 	"key_concepts": ["ancestor_fields_first", "definition_order", "undefined_fields_last"]
-}
+}}
+~~~
 
 Records returned from queries present fields in this order:
 
@@ -419,11 +455,13 @@ Records returned from queries present fields in this order:
 <a id="unique-constraints"></a>
 ## 19 Unique Constraints
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "unique_constraints",
 	"role": "documents single-field and multi-field unique constraints",
 	"key_concepts": ["unique_true", "uniques_array", "multi-field_unique", "null_excluded", "write-time_error"]
-}
+}}
+~~~
 
 A single field is made unique with `"unique": true` in the field definition:
 
@@ -457,11 +495,13 @@ that class:
 <a id="joins"></a>
 ## 20 Joins
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "joins",
 	"role": "documents the join shorthand that enforces required, unique, and immutable on a set of fields",
 	"key_concepts": ["join_array", "required_fields", "unique_combined", "immutable_fields", "join_semantics"]
-}
+}}
+~~~
 
 `join` is a class-level shorthand for defining join-style relationships between records. It
 is an array of two or more field names.
@@ -493,11 +533,13 @@ Additional fields beyond those listed in `join` may be defined and updated norma
 <a id="unknown-fields"></a>
 ## 21 Unknown Fields
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "unknown_fields",
 	"role": "states that undefined fields are stored as-is without validation",
 	"key_concepts": ["unknown_fields", "no_validation", "stored_as-is", "open_schema"]
-}
+}}
+~~~
 
 If a record's bucket contains a field not defined in its class, that field is stored as-is
 without validation.

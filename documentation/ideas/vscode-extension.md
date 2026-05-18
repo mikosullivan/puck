@@ -1,15 +1,15 @@
 # Charlie VS Code Extension
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "subsystem": "vscode_charlie_extension",
     "canonical_location": "ideas/ until firm enough to promote to formatter.md or a new dedicated vscode-extension.md",
     "scope": "first_contact_polished_self_contained_vs_code_extension_for_charlie_files",
     "co_authoring": "claude_capturing_miko_decisions_in_realtime"
-}
-```
+}}
+~~~
 
 Brainstorm in progress.
 
@@ -18,8 +18,8 @@ Brainstorm in progress.
 <a id="architectural-constraint"></a>
 ## 1 Architectural constraint
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "architectural_constraint",
     "rule_1": "extension_must_be_completely_independent_no_puck_install_required",
     "rule_2": "battle_tested_approach_not_experimental",
@@ -28,8 +28,8 @@ vibecode: {
                    "language_server_requiring_charlie_lsp_process",
                    "wasm_artifact_compiled_from_charlie"],
     "implication": "self_contained_typescript_javascript_vs_code_extension"
-}
-```
+}}
+~~~
 
 The extension must work for someone who has never installed Puck. They
 install the extension from the VS Code Marketplace, open a `.charlie`
@@ -52,15 +52,15 @@ buying into the whole system.
 <a id="settings-location"></a>
 ## 2 Settings location
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "settings_location",
     "decision": "use_vs_code_built_in_settings_json",
     "rationale": "simplicity; standard_vs_code_pattern; integrated_with_settings_ui",
     "decided_2026-05-17": true,
     "diverges_from_formatter_md": "formatter_md_says_extension_reads_external_charlie_style_toml; this_brainstorm_supersedes_for_the_vs_code_extension_specifically; future_charlie_fmt_cli_can_still_use_external_file_or_can_align"
-}
-```
+}}
+~~~
 
 The extension's user preferences live in **VS Code's own `settings.json`**.
 
@@ -89,8 +89,8 @@ defer.
 <a id="formatter-v1-spec"></a>
 ## 3 Formatter v1 spec
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "formatter_v1",
     "approach": "line_based_regex_rules_no_ast",
     "rationale": "battle_tested; handles_syntactically_broken_files; no_parallel_charlie_parser_in_typescript_to_maintain; can_evolve_to_parser_based_later",
@@ -105,8 +105,8 @@ vibecode: {
                         "hash_splat_preference",
                         "comment_and_vibecode_reformatting",
                         "folding_markers"]
-}
-```
+}}
+~~~
 
 <a id="public-api"></a>
 ### 3.1 Public API
@@ -172,14 +172,14 @@ vscode/syntax/
 <a id="user-preferences-shape"></a>
 ### 3.4 User preferences shape
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "preferences_shape",
     "decided_2026-05-17": true,
     "shape": "flat_at_top_polymorphic_values_per_feedback_flat_at_top_data_structures",
     "rationale": "common_settings_at_outer_level; truthiness_carries_meaning_to_allow_evolution_without_key_fragmentation"
-}
-```
+}}
+~~~
 
 Conceptually:
 
@@ -290,14 +290,14 @@ pattern but in TS.
 <a id="marketplace-polish-vasquez"></a>
 ### 3.8 Marketplace polish (Vasquez)
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "marketplace_polish",
     "logo": "tbd_image_will_be_supplied_later; declared_in_package_json_icon_field; typical_128x128_or_256x256_png",
     "site_links": "package_json_homepage_and_repository_urls_pending_site_url_decision",
     "purpose": "first_contact_polish_for_marketplace_listing_and_extensions_sidebar"
-}
-```
+}}
+~~~
 
 Two polish items that show up in the Marketplace listing and the
 Extensions sidebar:

@@ -3,15 +3,15 @@
 <a id="philosophy"></a>
 ## 1 Philosophy
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "philosophy",
 	"model": "personal_formatter_not_team_policy",
 	"no_canonical_style": true,
 	"no_project_level_config": true,
 	"social_contract": "run_formatter_before_complaining_about_formatting"
-}
-```
+}}
+~~~
 
 Formatting is a personal view, not a shared contract. Code is written and shared however
 the author wrote it. When you receive someone else's code and want it formatted
@@ -29,15 +29,15 @@ If someone's code bothers you, format it to your taste before forming an opinion
 <a id="cli"></a>
 ## 2 CLI
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "cli",
 	"command": "charlie fmt",
 	"in_place": true,
 	"glob_support": true,
 	"check_flag": "--check exits_nonzero_if_not_matching_personal_style"
-}
-```
+}}
+~~~
 
 ```
 charlie fmt file.charlie
@@ -63,14 +63,14 @@ Exits non-zero if the file does not match your personal style. Useful for pre-sa
 <a id="style-configuration"></a>
 ## 3 Style Configuration
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "style_configuration",
 	"config_file": "~/.config/charlie/style.toml",
 	"scope": "personal_not_project",
 	"status": "exact_options_defined_as_formatter_is_implemented"
-}
-```
+}}
+~~~
 
 Personal style lives in `~/.config/charlie/style.toml`. Example:
 
@@ -87,15 +87,15 @@ The exact set of configurable options will be defined as the formatter is implem
 <a id="vs-code-integration"></a>
 ## 4 VS Code Integration
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "vscode_integration",
 	"features": ["format_on_save", "format_document_ShiftAltF"],
 	"file_extension": ".charlie",
 	"config_source": "~/.config/charlie/style.toml",
 	"project_settings_needed": false
-}
-```
+}}
+~~~
 
 The Charlie VS Code extension integrates the formatter directly:
 
@@ -110,13 +110,13 @@ project-level VS Code settings are needed.
 <a id="tooling-roadmap"></a>
 ## 5 Tooling Roadmap
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "tooling_roadmap",
 	"tools": ["charlie fmt", "vscode_format_on_save", "charlie lint"],
 	"lint_status": "optional_separate_from_formatting"
-}
-```
+}}
+~~~
 
 | Tool | Description |
 |---|---|

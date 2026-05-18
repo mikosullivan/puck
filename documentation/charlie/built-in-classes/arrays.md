@@ -3,14 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"type": "Array",
 	"notes": ["ordered_collection", "zero_based_indexing",
 		"set_theory_methods_use_unicode_symbols_with_named_aliases"]
-}
-```
+}}
+~~~
 
 Arrays are ordered collections. Indices are zero-based. Array methods that return a new
 array do not mutate the original.
@@ -20,8 +20,8 @@ array do not mutate the original.
 <a id="set-theory"></a>
 ## 2 Set Theory
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "set_theory",
 	"unicode_methods": ["⊂", "⊆", "∪", "∩", "∅?"],
 	"binary_operators": ["∈", "∉"],
@@ -30,8 +30,8 @@ vibecode: {
 		"⊂": "proper_subset_of?", "⊆": "subset_of?",
 		"∪": "union", "∩": "intersection", "∅?": "empty?"
 	}
-}
-```
+}}
+~~~
 
 Charlie supports set-theory operations on arrays using Unicode symbols. Each symbol has
 a plain-English alias.
@@ -120,8 +120,8 @@ $a.empty?              -> false
 <a id="elements"></a>
 ## 3 Elements
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "elements",
 	"method": "elements",
 	"returns": "Array of element objects",
@@ -129,8 +129,8 @@ vibecode: {
 		"deleted_element_raises_on_any_method_call",
 		"index_is_zero_based",
 		"move_methods_clamp_at_boundaries"]
-}
-```
+}}
+~~~
 
 `elements` returns an array of **element objects**, one per element in the array. Each
 element object is a live reference: it knows its current index and stays in sync with the
@@ -199,8 +199,8 @@ $els[1].value   # raises exception — element has been deleted
 <a id="searching-find"></a>
 ## 4 Searching: `find`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "find",
 	"method": "find",
 	"returns": "Array of Element objects (subset of $arr.elements)",
@@ -208,8 +208,8 @@ vibecode: {
 	"notes": ["always_returns_array_never_single_element",
 		"empty_array_when_no_matches",
 		"results_are_live_element_objects"]
-}
-```
+}}
+~~~
 
 `find` is the unified search method on arrays. It **always
 returns an array of Element objects** — never a single element,

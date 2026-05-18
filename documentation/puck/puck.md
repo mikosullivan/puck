@@ -16,11 +16,13 @@ See [ideas/marina.md](../ideas/marina.md) for a prior design exploration.
 <a id="puck"></a>
 ## 1 `%puck`
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "puck_system_method",
 	"role": "documents the %puck system method for accessing the global Puck object namespace",
 	"key_concepts": ["%puck", "UNS_lookup", "built-in_objects", "puck.uno_default_namespace", "bare_name_shorthand"]
-}
+}}
+~~~
 
 `%puck` is a Charlie system method that returns a **puck object** — see
 "The Puck Object" below for the full model. `%puck[UNS]` is a shorthand that
@@ -67,14 +69,14 @@ Bare names in `%puck[...]` — any key without a domain — resolve to `puck.uno
 <a id="the-puck-object"></a>
 ## 2 The Puck Object
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "puck_object",
     "role": "documents the puck object — what %puck returns — including its structure (getters + faucets), version window, lookup mechanism, and per-getter roles",
     "key_concepts": ["puck_holds_getters", "getters_hold_faucets", "per_getter_role",
         "version_window_immutable", "narrowing_only_derivation", "restrict_do_end"]
-}
-```
+}}
+~~~
 
 A **puck** (lowercase, the object) is distinct from **`%puck`** (the
 system method). A puck is a kind of object that knows how to resolve
@@ -133,14 +135,14 @@ objects regardless of cache state.
 <a id="version-window"></a>
 ### 2.3 Version Window
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "puck_version_window",
     "properties": ["upper", "lower"],
     "immutable_after_creation": true,
     "supersedes": "%chain.cutoff"
-}
-```
+}}
+~~~
 
 Each puck carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
@@ -313,11 +315,13 @@ the result and the checks.
 <a id="puckcall"></a>
 ## 3 `%puck.call`
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "puck_call",
 	"role": "documents the %puck.call method for explicit remote method invocation",
 	"key_concepts": ["%puck.call", "remote_method_call", "target_object", "method_symbol", "keyword_params", "%chain_forwarding"]
-}
+}}
+~~~
 
 `%puck.call` makes an explicit remote method call on a Puck object:
 
@@ -360,11 +364,13 @@ future use and is not part of early versions.
 <a id="remote-function"></a>
 ## 4 `remote function`
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "remote_function",
 	"role": "documents the remote function syntactic sugar for delegating to %puck.call",
 	"key_concepts": ["remote_function", "syntactic_sugar", "%puck.call_delegation", "interchangeable_forms"]
-}
+}}
+~~~
 
 `remote function` is a shorthand for defining a method that delegates to `%puck.call`.
 Inside a class definition, this:
@@ -388,11 +394,13 @@ explicit `%puck.call` form and the `remote function` shorthand are interchangeab
 <a id="puckuno-namespace"></a>
 ## 5 `puck.uno` Namespace
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "puck_uno_namespace",
 	"role": "catalogs all built-in classes in the puck.uno namespace",
 	"key_concepts": ["puck.uno/null", "puck.uno/true", "puck.uno/false", "puck.uno/mikobase", "puck.uno/flag", "puck.uno/record", "puck.uno/reference", "puck.uno/dbfile"]
-}
+}}
+~~~
 
 <a id="language-and-runtime"></a>
 ### 5.1 Language and Runtime

@@ -9,16 +9,16 @@ it. The underlying real path is never exposed to Charlie code.
 <a id="the-jail"></a>
 ## 1 The Jail
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "the_jail",
 	"concept": "directory_scoped_handle_injected_by_host",
 	"real_path": "never_exposed_to_charlie_code",
 	"access": "%engine['name']",
 	"subscript_sugar": "$jail['path'] == $jail.file('path')",
 	"jail_is_directory": true
-}
-```
+}}
+~~~
 
 A jail is itself a directory object rooted at the injected path. All operations are
 relative to that root.
@@ -48,8 +48,8 @@ $jail['readme.txt'].read
 <a id="file-objects"></a>
 ## 2 File Objects
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "file_objects",
 	"operations": ["read", "write", "append", "delete", "exists?", "name", "path",
 		"size", "sha256", "copy", "move", "execute"],
@@ -57,8 +57,8 @@ vibecode: {
 	"move_mutates": "object_path_in_place",
 	"execute_returns": "integer_exit_code",
 	"notes": ["move_is_only_operation_that_changes_objects_own_path"]
-}
-```
+}}
+~~~
 
 A file object holds its path relative to the jail root. All operations work from that
 path alone.
@@ -149,16 +149,16 @@ leave the path unchanged.
 <a id="directory-objects"></a>
 ## 3 Directory Objects
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "directory_objects",
 	"operations": ["children", "files", "dirs", "exists?", "name", "path",
 		"create", "delete"],
 	"subscript": "$dir['name'] returns file or directory object based_on_what_exists",
 	"lazy": "object_created_without_hitting_filesystem_failure_on_actual_operation",
 	"chaining": "$jail.dir('a').dir('b')['file.txt'].read"
-}
-```
+}}
+~~~
 
 A directory object holds its path relative to the jail root.
 
@@ -202,15 +202,15 @@ $text = $jail.dir('docs').dir('shakespeare')['hamlet.txt'].read
 <a id="jail-permissions"></a>
 ## 4 Jail Permissions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "jail_permissions",
     "permissions": ["read", "write", "execute"],
     "execute_default": false,
     "set_by": "host_at_injection_time",
     "violation": "permission_error_regardless_of_disk_state"
-}
-```
+}}
+~~~
 
 A jail carries explicit permissions for what operations are allowed within it.
 **Execution is a permission that is off by default** — any attempt to invoke a
@@ -236,16 +236,16 @@ never something that quietly happens.
 <a id="deriving-restricted-jails"></a>
 ## 5 Deriving Restricted Jails
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "deriving_restricted_jails",
     "method": ".jail(perms)",
     "available_on": ["jails", "directory_objects", "file_objects"],
     "produces": "new_jail_with_reduced_permissions",
     "permissions_bounded_by_source": true,
     "use_case": "pass_capability_to_callee_without_giving_them_original_object"
-}
-```
+}}
+~~~
 
 Any jail, directory object, or file object can produce a **derived jail**
 with a specified subset of its own permissions:
@@ -308,16 +308,16 @@ something to other code that should only see a restricted view.
 <a id="authorizing-untrusted-paths"></a>
 ## 6 Authorizing Untrusted Paths
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "authorizing_untrusted_paths",
     "method": "$dir.use_path",
     "returns": "file_or_directory_entry_at_resolved_path",
     "accepts": "trusted_or_untrusted_strings",
     "normalization": "automatic_inside_use_path",
     "unsafe_path_behavior": "yields_non_existent_entry"
-}
-```
+}}
+~~~
 
 **Untrusted strings cannot be used as paths directly.** Passing an untrusted
 string to a directory's `[]` operator fails with a trust error. There is no
@@ -380,13 +380,13 @@ time you call `use_path`, the string is just a path.)
 <a id="iteration"></a>
 ## 7 Iteration
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "iteration",
 	"iterables": ["children", "files", "dirs"],
 	"pattern": "$dir.X.each do($item) end"
-}
-```
+}}
+~~~
 
 ```
 $dir.children.each do($child)
@@ -407,14 +407,14 @@ end
 <a id="notes"></a>
 ## 8 Notes
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "notes",
 	"path_restriction": "relative_to_jail_root_only",
 	"rejected": ["absolute_paths", "dotdot_traversal"],
 	"api_status": "basics_covered_more_may_be_added"
-}
-```
+}}
+~~~
 
 - All paths are relative to the jail root. Absolute paths and `..` traversal are rejected
   by the runtime.

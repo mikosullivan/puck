@@ -3,14 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"categories": ["method_operators", "binary_operators", "unary_operators",
 		"ternary_operator"],
 	"notes": ["ternary_is_single_special_case_not_registered_in_scope"]
-}
-```
+}}
+~~~
 
 Charlie has three categories of operators:
 
@@ -24,14 +24,14 @@ Charlie has three categories of operators:
 <a id="method-operators"></a>
 ## 2 Method Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "method_operators",
 	"examples": ["+", "-", "==", "[]"],
 	"resolution": "through_receiver_type_method_table",
 	"form": "$foo + $bar == $foo.+($bar)"
-}
-```
+}}
+~~~
 
 Operators like `+`, `-`, `==`, and `[]` are methods on specific types. `$foo + $bar`
 is a method call on `$foo` with `$bar` as the argument. The interpreter resolves these
@@ -44,16 +44,16 @@ See the individual type docs for the operators each type supports.
 <a id="binary-operators"></a>
 ## 3 Binary Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "binary_operators",
 	"registration": "scope.operators['name'] = 'uns_class'",
 	"resolution_order": "method_on_receiver_first_then_scope_operators",
 	"evaluator_contract": "evaluate method with two lazy params",
 	"precedence": "left_to_right_no_precedence_table_use_parens",
 	"short_circuit": "via_lazy_params_caller_controls_evaluation"
-}
-```
+}}
+~~~
 
 A binary operator sits between two expressions:
 
@@ -143,14 +143,14 @@ The evaluator class follows the same contract as built-in operators — implemen
 <a id="unary-operators"></a>
 ## 4 Unary Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "unary_operators",
 	"registration": "scope.unary_operators['name'] = 'uns_class'",
 	"evaluator_contract": "evaluate method with one lazy param",
 	"built_in": ["not", "!"]
-}
-```
+}}
+~~~
 
 A unary operator sits before a single expression:
 
@@ -181,8 +181,8 @@ end
 <a id="built-in-operators"></a>
 ## 5 Built-in Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "built_in_operators",
 	"binary": {
 		"and/&&": "charlie.uno/and",
@@ -195,8 +195,8 @@ vibecode: {
 	"unary": {
 		"not/!": "charlie.uno/not"
 	}
-}
-```
+}}
+~~~
 
 <a id="binary"></a>
 ### 5.1 Binary
@@ -222,15 +222,15 @@ vibecode: {
 <a id="ternary-operator"></a>
 ## 6 Ternary Operator
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "ternary_operator",
 	"operator": "?:",
 	"implementation": "handled_by_parser_not_scope_operator_tables",
 	"overrideable": false,
 	"desugars_to": "if_expression"
-}
-```
+}}
+~~~
 
 `?:` is a single special case handled directly by the parser. It is not registered in
 the scope operator tables and cannot be overridden.

@@ -1,7 +1,7 @@
 # AI-to-AI script messaging
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "subsystem": "ai_script_messaging",
@@ -12,8 +12,8 @@ vibecode: {
                       "charlie/charliejson.md"],
     "related_memories": ["project_blockchain", "feedback_first_contact_strategy"],
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
-}
-```
+}}
+~~~
 
 Brainstorm in progress.
 
@@ -22,15 +22,15 @@ Brainstorm in progress.
 <a id="why-this-is-interesting"></a>
 ## 1 Why this is interesting
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "motivation",
     "angles": ["ais_authoring_ksj_more_naturally_than_source",
                 "script_as_message_medium_distinct_from_shared_store",
                 "blockchain_provides_provenance",
                 "role_model_provides_capability_gating"]
-}
-```
+}}
+~~~
 
 <a id="ais-authoring-charliejson-directly"></a>
 ### 1.1 AIs authoring CharlieJSON directly

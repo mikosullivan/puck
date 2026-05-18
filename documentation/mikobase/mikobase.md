@@ -3,11 +3,13 @@
 <a id="overview"></a>
 ## 1 Overview
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "introduces the mikobase as a live object store with Q0, class definitions, history, and locking",
 	"key_concepts": ["mikobase", "object_store", "live_process", "Q0", "shared_objects"]
-}
+}}
+~~~
 
 An mikobase is a full object store — in memory, file-backed, or served over a network.
 It supports Q0 queries, class definitions, record history, transactions, and locking.
@@ -68,11 +70,13 @@ focused:
 <a id="temporal-vs-non-temporal-mode"></a>
 ## 3 Temporal vs Non-temporal Mode
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "temporal_mode",
 	"role": "specifies the per-database mode flag that controls whether records keep version history",
 	"key_concepts": ["temporal", "non_temporal", "mode_flag", "history", "worldlet", "immutable_at_init"]
-}
+}}
+~~~
 
 A mikobase is either **temporal** (every write appends a history row; older versions are
 recoverable) or **non-temporal** (each record is stored as a single object; writes
@@ -157,15 +161,15 @@ isn't specified and isn't a priority to resolve.
 <a id="export-formats"></a>
 ## 4 Export formats
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "export_formats",
     "role": "frames worldlets as one of multiple serialized export formats of a mikobase; the live mikobase is always engine-backed (currently SQLite)",
     "key_concepts": ["export_format_not_engine", "worldlet_as_one_format",
                      "second_export_format_tbd", "import_function_needed",
                      "live_mikobase_is_always_sqlite_backed_in_v1"]
-}
-```
+}}
+~~~
 
 A mikobase is always **live and engine-backed** (see
 [Class Hierarchy](#class-hierarchy-olympic)). **Exports** serialize a
@@ -248,11 +252,13 @@ import in particular:
 <a id="single-process-vs-cross-fork-use"></a>
 ## 5 Single-process vs. cross-fork use
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "single_process_vs_cross_fork",
 	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are Charlie features (cross-fork requires the opt-in forking feature)",
 	"key_concepts": ["Charlie", "local_object_store", "fork_sharing", "opt_in_forking"]
-}
+}}
+~~~
 
 Mikobases are a Charlie feature — a mikobase is a useful local object store on its own.
 Sharing a mikobase between forked processes uses the opt-in **forking** feature of Charlie
@@ -264,11 +270,13 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 <a id="the-maintaining-process"></a>
 ## 6 The Maintaining Process
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "maintaining_process",
 	"role": "explains that a mikobase always requires a live process; not a passive file",
 	"key_concepts": ["live_process", "maintaining_process", "in-memory", "server_process", "remote_service"]
-}
+}}
+~~~
 
 A mikobase is not a passive data store — it requires a process to maintain it. "Always alive"
 means alive for as long as the maintaining process is running. That process might be:
@@ -285,11 +293,13 @@ connecting to a live process, not reading from a file.
 <a id="object-ownership"></a>
 ## 7 Object Ownership
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "object_ownership",
 	"role": "states that the mikobase owns objects; processes connect and interact, not pass objects directly",
 	"key_concepts": ["mikobase_ownership", "connect_and_interact", "no_direct_passing"]
-}
+}}
+~~~
 
 The mikobase owns its objects. Processes do not pass objects to each other directly — instead,
 they connect to the mikobase and interact with whatever is already there.
@@ -299,12 +309,14 @@ they connect to the mikobase and interact with whatever is already there.
 <a id="class-hierarchy"></a>
 ## 8 Class Hierarchy
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "class_hierarchy",
 	"role": "lists all mikobase implementation classes and their relationships",
 	"key_concepts": ["puck.uno/mikobase", "puck.uno/mikobase/memory", "puck.uno/mikobase/sqlite",
 		"puck.uno/mikobase/http", "puck.uno/mikobase/server", "abstract_base_class"]
-}
+}}
+~~~
 
 | Class | Description |
 |---|---|
@@ -328,11 +340,13 @@ Charlie code interacts only with the `puck.uno/mikobase` interface and is unawar
 <a id="managed-mikobase-server-puckunomikobaseserver"></a>
 ## 9 Managed Mikobase Server (`puck.uno/mikobase/server`)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "managed_mikobase_server",
 	"role": "documents the server class that manages mikobase lifetime around a fork pool",
 	"key_concepts": ["puck.uno/mikobase/server", "fork_coordination", "block_scoped_lifetime", "clean_shutdown"]
-}
+}}
+~~~
 
 `puck.uno/mikobase/server` is a managed mikobase server designed for fork-based coordination.
 It starts a server process, yields the mikobase to a block, waits for all forks spawned in
@@ -357,11 +371,13 @@ the block exits will cause the server to wait before shutting down.
 <a id="http-mikobase"></a>
 ## 10 HTTP Mikobase
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "http_mikobase",
 	"role": "documents the HTTP transport wrapper including Unix sockets, TCP, and authentication options",
 	"key_concepts": ["puck.uno/mikobase/http", "Unix_domain_sockets", "TCP", "auth_peer", "auth_token", "auth_open"]
-}
+}}
+~~~
 
 `puck.uno/mikobase/http` wraps any mikobase and exposes it over HTTP. The mikobase's locking model
 handles concurrent connections — the HTTP server is a transport layer only. Connection-level
@@ -517,11 +533,13 @@ permissions are not part of v1.
 <a id="hot-and-cold-connections"></a>
 ## 11 Hot and Cold Connections
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "hot_and_cold_connections",
 	"role": "defines hot vs cold connection modes and per-query overrides",
 	"key_concepts": ["cold_connection", "hot_connection", "local_copy", "live_object", "per-query_override", "hot_true"]
-}
+}}
+~~~
 
 Every connection to a mikobase is either **cold** (the default) or **hot**. The mode is set
 at connection time and applies to all objects retrieved through that connection.
@@ -604,11 +622,13 @@ $record = $mikobase.q0({...}, hot: false)
 <a id="locking"></a>
 ## 12 Locking
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "locking",
 	"role": "describes automatic shared/exclusive locking model for reads and writes",
 	"key_concepts": ["shared_lock", "exclusive_lock", "automatic_locking", "no_explicit_lock_api"]
-}
+}}
+~~~
 
 Mikobase access follows database-style locking:
 
@@ -624,11 +644,13 @@ automatically. There is no explicit lock/unlock API in normal usage.
 <a id="transactions"></a>
 ## 13 Transactions
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "transactions",
 	"role": "documents the nested transaction model with commit, rollback, and auto-rollback on exit",
 	"key_concepts": ["transaction", "nested_transactions", "commit", "rollback", "auto-rollback", "exit"]
-}
+}}
+~~~
 
 Mikobases support transactions using the following model:
 
@@ -643,11 +665,13 @@ Mikobases support transactions using the following model:
 <a id="bucket-in-the-mikobase"></a>
 ## 14 `%bucket` in the Mikobase
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "bucket_in_mikobase",
 	"role": "explains how %bucket can be backed by a mikobase for transparent fork coordination",
 	"key_concepts": ["%bucket", "include_private", "mikobase_backed", "fork_private_vars", "@foo"]
-}
+}}
+~~~
 
 Setting `include_private = true` on a mikobase causes `%bucket` to be backed by the mikobase for
 any fork that connects to it. The fork's `@foo` reads and writes go directly to a live
@@ -669,11 +693,13 @@ end
 <a id="record-change-signals"></a>
 ## 15 Record Change Signals
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "record_change_signals",
 	"role": "documents the listener system for before_save and after_save signals on records",
 	"key_concepts": ["listen", "before_save", "after_save", "change_object", "Q0_query_target", "network_boundary"]
-}
+}}
+~~~
 
 <a id="listening-to-records"></a>
 ### 15.1 Listening to records
@@ -750,12 +776,14 @@ A future addition could provide a structured layer on top of `:before_save` sign
 <a id="packaged-mikobases"></a>
 ## 16 Packaged Mikobases
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "packaged_mikobases",
 	"role": "describes the packaged mikobase format: bundled schema, Charlie, records, and capabilities",
 	"key_concepts": ["packaged_mikobase", "worldlet", "capabilities_manifest", "portable_distribution",
 		"use_cases", "lifecycle"]
-}
+}}
+~~~
 
 <a id="worldlets"></a>
 ### 16.1 Worldlets

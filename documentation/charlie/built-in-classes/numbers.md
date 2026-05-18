@@ -3,15 +3,15 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"type": "number",
 	"unified": true,
 	"notes": ["single_class_for_integers_and_floats",
 		"integer_only_methods_raise_if_called_on_float"]
-}
-```
+}}
+~~~
 
 Charlie uses a single Number class for all numeric values, integer and floating-point
 alike. Methods that only make sense for integers (such as `even?` and `odd?`) are defined
@@ -36,13 +36,13 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 <a id="arithmetic"></a>
 ## 2 Arithmetic
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "arithmetic",
 	"operators": ["+", "-", "*", "/", "%", "**"],
 	"returns": "Number"
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -58,13 +58,13 @@ vibecode: {
 <a id="comparison"></a>
 ## 3 Comparison
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "comparison",
 	"operators": ["==", "!=", "<", "<=", ">", ">="],
 	"returns": "Boolean"
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -80,15 +80,15 @@ vibecode: {
 <a id="testing"></a>
 ## 4 Testing
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "testing",
 	"methods": ["zero?", "positive?", "negative?", "integer?", "even?", "odd?",
 		"finite?", "infinite?", "nan?"],
 	"returns": "Boolean",
 	"notes": ["even_and_odd_raise_if_not_integer", "finite_infinite_nan_for_float_safety"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -107,16 +107,16 @@ vibecode: {
 <a id="rounding"></a>
 ## 5 Rounding
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "rounding",
 	"methods": ["round", "round_up", "round_down"],
 	"param": "multiple",
 	"param_default": 1,
 	"midpoint_rule": "half_away_from_zero",
 	"notes": ["multiple_must_be_nonzero", "passing_0_raises_error"]
-}
-```
+}}
+~~~
 
 All rounding methods operate on **multiples**. The `multiple` parameter specifies the
 step to round to. If omitted, it defaults to `1`.
@@ -174,14 +174,14 @@ $foo.round_down(multiple: 10) -> -10
 <a id="bitwise"></a>
 ## 6 Bitwise
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "bitwise",
 	"method": "bitwise",
 	"returns": "Bitwise object",
 	"notes": ["see_bitwise_md_for_full_api"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -192,14 +192,14 @@ vibecode: {
 <a id="math"></a>
 ## 7 Math
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "math",
 	"methods": ["abs", "square_root", "√"],
 	"returns": "Number",
 	"notes": ["sqrt_symbol_is_alias_for_square_root"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -212,13 +212,13 @@ vibecode: {
 <a id="conversion"></a>
 ## 8 Conversion
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "conversion",
 	"methods": ["to_string", "to_integer"],
 	"notes": ["to_integer_truncates_toward_zero"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|

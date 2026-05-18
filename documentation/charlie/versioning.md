@@ -1,11 +1,13 @@
 # Versioning
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "explains the date-pinned library versioning model and its propagation through %chain",
 	"key_concepts": ["date_pinned", "cutoff", "chain_propagation", "out_of_range_exception",
 		"security_boundary", "deterministic_resolution"]
-}
+}}
+~~~
 
 In Puck, libraries are versioned **by date**, not by semantic version. A single timestamp
 governs the entire library tree — set it once at the top of the call chain, and every
@@ -23,11 +25,13 @@ For now, timestamp versioning is the only versioning system.
 <a id="why-date-pinned"></a>
 ## 1 Why Date-Pinned
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "why_date_pinned",
 	"role": "explains the rationale for date-based versioning over semver",
 	"key_concepts": ["one_number_replaces_a_tree", "test_pinning", "transitive_simplification"]
-}
+}}
+~~~
 
 The model is built around a simple observation: **if your tests passed on 3 May, the
 library tree as it existed on 3 May is the tree your code is known to work with.**
@@ -52,12 +56,14 @@ Three concrete benefits:
 <a id="the-cutoff-in-chain"></a>
 ## 2 The Cutoff in %chain
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "cutoff_in_chain",
 	"role": "documents how the version cutoff lives on the puck object and applies to UNS lookups",
 	"key_concepts": ["puck_version_window", "upper_property", "lower_property",
 		"immutable_after_creation", "narrowing_only_derivation"]
-}
+}}
+~~~
 
 The version cutoff lives on the **puck object** as part of its **version
 window** (see [puck.md](../puck/puck.md) — Version Window). The engine sets it
@@ -90,13 +96,15 @@ gone.
 <a id="out-of-range-exceptions"></a>
 ## 3 Out-of-Range Exceptions
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "out_of_range_exceptions",
 	"role": "documents the security exception raised when a library lookup falls outside the cutoff; out_of_range follows the standard security-exception model",
 	"key_concepts": ["security_exception", "default_uncatchable_by_charlie",
 		"bubbles_to_engine", "no_graceful_unwind", "forensic_payload",
 		"integrity_alarm_not_dependency_error"]
-}
+}}
+~~~
 
 When a library lookup returns nothing dated within the puck's
 `[lower, upper]` window, the engine raises `puck.uno/error/out_of_range`.
@@ -138,12 +146,14 @@ This is the information a security responder or audit log needs to investigate.
 <a id="resolution-rules"></a>
 ## 4 Resolution Rules
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "resolution_rules",
 	"role": "documents how the cache and provider chain pick a library version given a cutoff",
 	"key_concepts": ["latest_on_or_before_cutoff", "cache_indexed_by_uns_version_date",
 		"providers_consulted_in_order"]
-}
+}}
+~~~
 
 For a lookup `%puck['foo.com/bar']` under a puck with window `[L, U]`:
 
@@ -175,11 +185,13 @@ the trust placed in the provider.
 <a id="semver-as-a-label"></a>
 ## 5 Semver as a Label
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "semver_as_a_label",
 	"role": "clarifies that for now semantic versions are human-readable labels not used in resolution; resolution may be extended to consider semver in a future release if demand justifies it",
 	"key_concepts": ["semver_optional", "human_communication_today", "future_resolution_possible"]
-}
+}}
+~~~
 
 A library may declare a semantic version like `2.1.45`. **Today, this is information,
 not a constraint the runtime acts on.** It is useful for humans reading changelogs,
@@ -201,12 +213,14 @@ asked for; whether it ever does more is a question for future demand.
 <a id="what-this-replaces"></a>
 ## 6 What This Replaces
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "what_this_replaces",
 	"role": "explicitly contrasts date-pinning with conventional dependency management",
 	"key_concepts": ["no_lockfile", "no_manifest", "no_constraint_solver",
 		"no_transitive_resolution"]
-}
+}}
+~~~
 
 The model intentionally starts without:
 
@@ -231,11 +245,13 @@ should be high.
 <a id="relationship-to-the-blockchain"></a>
 ## 7 Relationship to the Blockchain
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "relationship_to_blockchain",
 	"role": "clarifies that date-pinning works without a blockchain; chain just provides cryptographic date anchoring when available",
 	"key_concepts": ["chain_anchors_dates_when_present", "non_chain_providers_also_work"]
-}
+}}
+~~~
 
 The Puck blockchain (currently deferred from production — see
 [blockchain.md](../blockchain.md)) provides a cryptographically anchored

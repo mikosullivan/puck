@@ -8,14 +8,14 @@ introspection that doesn't belong to any one class but applies uniformly to all.
 <a id="methods"></a>
 ## 1 Methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "methods",
 	"role": "documents the four engine-controlled methods on the universal .object helper: bool plus three derived predicates",
 	"key_concepts": ["bool_is_underlying_property", "predicates_derived_from_bool",
 		"all_four_engine_enforced_and_read_only"]
-}
-```
+}}
+~~~
 
 The current set:
 
@@ -35,13 +35,13 @@ regardless of what classes, fields, or methods user code attaches to the object.
 <a id="bool"></a>
 ### 1.1 `bool`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "bool",
 	"returns": "tri_value",
 	"role": "underlying tri-value classification; the other three predicates are derived from this"
-}
-```
+}}
+~~~
 
 Returns the engine's tri-value classification of the value:
 
@@ -62,13 +62,13 @@ null.object.bool      # null
 <a id="truthy"></a>
 ### 1.2 `truthy?`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "truthy",
 	"returns": "strict_boolean",
 	"role": "predicate that collapses false and null into not-truthy; matches if-statement branching"
-}
-```
+}}
+~~~
 
 Returns strict `true` if `bool` is `true`; otherwise strict `false`.
 
@@ -89,13 +89,13 @@ The Ruby idiom `def ready?; @ready ? true : false; end` is just
 <a id="null"></a>
 ### 1.3 `null?`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "null",
 	"returns": "strict_boolean",
 	"role": "predicate for testing whether a value is null"
-}
-```
+}}
+~~~
 
 Returns strict `true` if `bool` is `null`; otherwise strict `false`.
 
@@ -112,13 +112,13 @@ false.object.null?    # false
 <a id="defined"></a>
 ### 1.4 `defined?`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "defined",
 	"returns": "strict_boolean",
 	"role": "predicate for testing whether a value is non-null (true or false)"
-}
-```
+}}
+~~~
 
 Returns strict `true` if `bool` is `true` or `false`; strict `false` if `bool` is
 `null`. Equivalent to `not(null?)`.
@@ -139,12 +139,12 @@ null.object.defined?     # false  ← only null is undefined
 <a id="identity-guarantees"></a>
 ## 2 Identity Guarantees
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "identity_guarantees",
 	"role": "states that all four .object methods are read-only and engine-controlled; user code cannot override them"
-}
-```
+}}
+~~~
 
 The values returned by these four methods are determined at object creation and
 cannot be changed by user code. The engine maintains them at a level user code
@@ -164,12 +164,12 @@ overrides.
 <a id="why-object"></a>
 ## 3 Why `.object`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "why_dot_object",
 	"role": "explains the design choice to namespace these methods under .object rather than directly on every value"
-}
-```
+}}
+~~~
 
 The methods could have been put directly on every value (`$foo.truthy?`), but
 that would mix engine-controlled methods into every object's normal method

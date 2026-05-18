@@ -20,14 +20,14 @@ class is **opt-in**: code that wants three-valued logic explicitly calls into it
 <a id="status"></a>
 ## 1 Status
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "status",
 	"priority": "low",
 	"target_release": "first_production",
 	"implementation": "pure_charlie_in_stdlib"
-}
-```
+}}
+~~~
 
 Low priority but slated for the first production release. Will be implemented in
 **pure Charlie** as part of the standard library — partly because three-valued
@@ -39,15 +39,15 @@ the language runtime. Implementation will live at `code/charlie/stdlib/trilean.c
 <a id="the-model"></a>
 ## 2 The Model
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "the_model",
 	"name": "Kleene three-valued logic",
 	"alias": "K3 strong Kleene",
 	"used_by": "SQL WHERE clause evaluation",
 	"key_concepts": ["null_means_unknown", "result_depends_on_operand_dominance"]
-}
-```
+}}
+~~~
 
 The three values are `true`, `false`, and `null`. `null` represents "could be true,
 could be false, we don't know."
@@ -86,12 +86,12 @@ strong Kleene logic, K3, or SQL three-valued logic).
 <a id="operators"></a>
 ## 3 Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "operators",
 	"role": "documents the full set of three-valued operators with their truth tables"
-}
-```
+}}
+~~~
 
 All operators are static methods on the `puck.uno/trilean` class, called as
 `%puck['trilean'].<op>(...)`.
@@ -220,15 +220,15 @@ null?" use `$x.object.null?`, never `eq(x, null)`.
 <a id="lazy-second-argument"></a>
 ## 4 Lazy Second Argument
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "lazy_second_argument",
 	"role": "documents the do-block form of binary trilean operators that defers evaluation of the second argument when the first short-circuits the result",
 	"key_concepts": ["short_circuit_per_operator_family",
 		"do_block_form_for_lazy_second_argument",
 		"three_families_each_with_dominant_value"]
-}
-```
+}}
+~~~
 
 Every binary trilean operator can short-circuit when its first argument has the
 operator's **dominant value** — the value that fully determines the result without
@@ -335,12 +335,12 @@ set.
 <a id="usage"></a>
 ## 6 Usage
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "usage",
 	"role": "shows typical Charlie code calling into the trilean class"
-}
-```
+}}
+~~~
 
 Constructing trilean expressions:
 
@@ -374,12 +374,12 @@ about three-valued logic at all.
 <a id="why-pure-charlie"></a>
 ## 7 Why Pure Charlie
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "why_pure_charlie",
 	"role": "explains the choice to implement trilean in stdlib Charlie rather than the runtime"
-}
-```
+}}
+~~~
 
 Two reasons:
 

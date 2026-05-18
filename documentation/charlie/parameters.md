@@ -3,8 +3,8 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "overview",
     "concept": "every_parameter_is_an_object_with_a_metadata_hash",
     "declaration_forms": ["inline_in_signature", "programmatic_on_function_object"],
@@ -12,8 +12,8 @@ vibecode: {
     "consolidated_from": ["parameters.md_metadata_focus",
                            "params.md_call_site_focus"],
     "consolidated_on": "2026-05-17"
-}
-```
+}}
+~~~
 
 Every parameter in a Charlie function is an object with a metadata hash.
 That metadata controls how the parameter behaves — whether it is evaluated
@@ -33,15 +33,15 @@ the runtime binds them).
 <a id="basic-definition"></a>
 ## 2 Basic Definition
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "basic_definition",
     "signature_form": "function($private1, $private2, ...)",
     "params_order": "left_to_right",
     "names": {"private": "with_$_inside_the_function",
               "public": "without_$_at_the_call_site_default_is_private_minus_$"}
-}
-```
+}}
+~~~
 
 A function's parameters are declared in its signature, left to right:
 
@@ -64,14 +64,14 @@ Each parameter has two names:
 <a id="inline-metadata-declaration"></a>
 ## 3 Inline Metadata Declaration
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "inline_declaration",
     "syntax": "$param: {key: value, key: value}",
     "spacing_convention": "colon_space; no_space_before_comma; space_after_comma",
     "example": "function &evaluate($left: {lazy: true}, $right: {lazy: true})"
-}
-```
+}}
+~~~
 
 Metadata is attached to a parameter using a hash literal after the
 parameter name:
@@ -108,12 +108,12 @@ $foo.params['bar'].lazy = true
 <a id="known-metadata-properties"></a>
 ## 4 Known Metadata Properties
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "known_metadata_properties",
     "properties": ["lazy", "classes", "optional", "default", "nullable", "public"]
-}
-```
+}}
+~~~
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -129,15 +129,15 @@ vibecode: {
 <a id="public-and-private-names"></a>
 ## 5 Public and Private Names
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "public_private",
     "mapping": "public_to_private",
     "default_public": "strip_leading_$_from_private_name",
     "call_binding": "public_only",
     "override_via": "public_metadata_property"
-}
-```
+}}
+~~~
 
 Each parameter has a private name (used inside the function) and a public
 name (used at the call site for keyword arguments).
@@ -169,15 +169,15 @@ can only use public names.
 <a id="required-and-optional-parameters"></a>
 ## 6 Required and Optional Parameters
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "optional_params",
     "default": "required",
     "opt_out": "optional: true",
     "propagation_rule": "once_one_param_is_optional_all_following_are_implicitly_optional",
     "rationale": "positional_calls_need_unambiguous_truncation_point"
-}
-```
+}}
+~~~
 
 Parameters are **required by default**. To make one optional, set
 `optional: true` in its metadata:
@@ -227,15 +227,15 @@ Setting a `default` implicitly makes the parameter optional, so writing
 <a id="type-constraints"></a>
 ## 7 Type Constraints
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "type_constraints",
     "property": "classes",
     "accepted_forms": ["built_in_type_strings", "full_UNS_addresses"],
     "enforcement": "raises_exception_at_call_time_on_type_mismatch",
     "nil_handling": "rejected_by_default_when_classes_set; nullable_true_permits_it"
-}
-```
+}}
+~~~
 
 `classes` accepts an array of accepted type names. Built-in type names are
 strings; user-defined class names use the full UNS address:
@@ -267,15 +267,15 @@ $foo.params['bar'].nullable = true
 <a id="lazy-parameters"></a>
 ## 8 Lazy Parameters
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "lazy_params",
     "option": "lazy: true",
     "effect": "argument_wrapped_in_zero_arg_block",
     "use_cases": ["binary_operators", "deferred_evaluation", "short_circuit"],
     "call_syntax": "$param.call_to_evaluate"
-}
-```
+}}
+~~~
 
 A `lazy: true` parameter is the mechanism behind binary operator
 evaluators and any other construct that needs deferred evaluation.
@@ -315,14 +315,14 @@ short-circuit evaluation with no special parser support.
 <a id="rest-positional-parameters-args"></a>
 ## 9 Rest Positional Parameters: `*args`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "rest_positional",
     "syntax": "*args",
     "binding": "array_of_remaining_positional_arguments",
     "position": "after_normal_positional; before_double_star_named_rest"
-}
-```
+}}
+~~~
 
 A `*args` parameter captures all remaining positional arguments into an
 array:
@@ -344,14 +344,14 @@ If no extra positional arguments are passed, `$args` is an empty array.
 <a id="rest-named-parameters-opts"></a>
 ## 10 Rest Named Parameters: `**opts`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "rest_named",
     "syntax": "**opts",
     "binding": "hash_of_remaining_named_arguments_keyed_by_public_name",
     "position": "last_in_signature"
-}
-```
+}}
+~~~
 
 A `**opts` parameter captures all remaining named arguments into a hash,
 keyed by their public names:
@@ -377,14 +377,14 @@ are quietly absorbed into the hash.
 <a id="combined-rest-parameters"></a>
 ## 11 Combined Rest Parameters
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "combined_rest",
     "supports": ["normal", "*args", "**opts"],
     "order_in_signature": "normal -> *args -> **opts",
     "constraint": "at_most_one_*args_and_one_**opts"
-}
-```
+}}
+~~~
 
 A signature can combine normal parameters, `*args`, and `**opts` — in
 that order:
@@ -407,13 +407,13 @@ At most one `*args` and one `**opts` per signature.
 <a id="call-site-splat-expansion"></a>
 ## 12 Call-Site Splat Expansion
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "call_site_splat",
     "forms": ["*array_for_positional", "**hash_for_named"],
     "sigil_note": "*$args_and_*args_are_equivalent; the_$_is_optional_at_the_call_site"
-}
-```
+}}
+~~~
 
 At the call site, `*` expands an array into positional arguments and `**`
 expands a hash into named arguments. The `$` is optional in either form.
@@ -441,15 +441,15 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 <a id="calling-functions"></a>
 ## 13 Calling Functions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "calling",
     "call_types": ["positional", "named", "mixed"],
     "named_format": "public_name: value",
     "style_preference":
         "no_parens_when_return_value_unused; parens_when_return_value_captured_per_formatter_md"
-}
-```
+}}
+~~~
 
 A function can be called positionally, with named arguments, or with a
 mix:
@@ -475,13 +475,13 @@ formatter-enforced.
 <a id="positional-until-named-rule"></a>
 ## 14 Positional-Until-Named Rule
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "positional_named_rule",
     "rule": "positional_until_named",
     "constraint": "no_positional_after_named"
-}
-```
+}}
+~~~
 
 Arguments are positional until the first named argument. After a named
 argument appears, all remaining arguments must be named.
@@ -517,13 +517,13 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 <a id="invalid-calls"></a>
 ## 16 Invalid Calls
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "invalid_calls",
     "error_types": ["positional_after_named", "duplicate_assignment",
                     "unknown_named_when_no_**opts", "type_mismatch_when_classes_set"]
-}
-```
+}}
+~~~
 
 ```
 # Positional after named
@@ -541,8 +541,8 @@ vibecode: {
 <a id="argument-binding-algorithm"></a>
 ## 17 Argument Binding Algorithm
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "binding_algorithm",
     "ordered_steps": ["bind_positional_left_to_right",
                        "enforce_no_positional_after_named",
@@ -551,8 +551,8 @@ vibecode: {
                        "unknown_named_to_**opts_or_error",
                        "fill_optional_with_default_or_nil",
                        "enforce_classes_type_constraints"]
-}
-```
+}}
+~~~
 
 When a call is made, the runtime binds arguments to parameters in this
 order:
@@ -577,13 +577,13 @@ order:
 <a id="definition-errors"></a>
 ## 18 Definition Errors
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "definition_errors",
     "types": ["duplicate_public_name", "public_private_collision",
               "multiple_*args", "multiple_**opts"]
-}
-```
+}}
+~~~
 
 These errors are raised when the function is defined (not when called):
 
@@ -608,15 +608,15 @@ $foo = function(**a, **b)
 <a id="programmatic-access"></a>
 ## 19 Programmatic Access
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "programmatic_access",
     "api": "$foo.params['bar'].lazy = true",
     "storage": "params hash in %bucket",
     "key_format": "parameter_name_without_dollar_sign",
     "use_cases": ["frameworks", "validators", "generated_functions"]
-}
-```
+}}
+~~~
 
 Every function object exposes a `params` hash in `%bucket`. Each key is a
 parameter name (without `$`); each value is the param metadata object.
@@ -638,15 +638,15 @@ frameworks, validators, and generated functions.
 <a id="freezing-functions"></a>
 ## 20 Freezing Functions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "freezing_functions",
     "concern": "functions_are_mutable_params_can_be_modified_by_anyone_with_reference",
     "freeze_all": "$foo.object.freeze",
     "freeze_params_only": "$foo.object.bucket.freeze",
     "note": "params_lives_in_%bucket_so_bucket_freeze_suffices"
-}
-```
+}}
+~~~
 
 Since functions are mutable objects, `params` can be modified by anyone
 with a reference to the function. Before passing a function around,
@@ -671,8 +671,8 @@ modification.
 <a id="style-guidelines"></a>
 ## 21 Style Guidelines
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "style",
     "guidelines": ["required_first_optional_last", "avoid_aliasing",
                    "prefer_positional_for_simple_cases",
@@ -680,8 +680,8 @@ vibecode: {
                    "prefer_hash_splat_for_calls_with_several_named_args"],
     "nanny_note":
         "permissive_call_shape_mixing_declared_param_names_with_**opts_absorbed_names_in_arbitrary_order_is_allowed_but_carries_silent_typo_risk; hash_splat_style_recommended_as_partial_mitigation_per_slob_principle_developer_choice_visibly_recorded"
-}
-```
+}}
+~~~
 
 - **Required parameters first, optional last.** Since `optional: true`
   propagates forward, putting a required parameter after an optional one
@@ -735,15 +735,15 @@ $foo = function($required1,
 <a id="summary"></a>
 ## 22 Summary
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "summary",
     "core_rules": ["positional_until_named", "optional_propagates_forward",
                     "public_names_for_call_site_binding",
                     "no_duplicate_binding", "*args_and_**opts_supported",
                     "metadata_hash_form_equivalent_to_programmatic"]
-}
-```
+}}
+~~~
 
 - Parameters are objects; metadata is a hash on each one.
 - Inline metadata and programmatic access are equivalent.

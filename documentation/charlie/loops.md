@@ -1,7 +1,7 @@
 # Loops
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"doc": "loops",
 	"role": "all_loop_constructs_in_charlie_in_one_place",
 	"loop_forms": ["while_block", "each_iteration_method", "numeric_helpers_times_upto_downto"],
@@ -13,8 +13,8 @@ vibecode: {
 	"notes": ["structural_blocks_have_no_access_to_iteration_variable",
 		"as_keyword_is_a_general_block_mechanism_see_charlie_md_the_as_keyword_section",
 		"break_bwc_added_post_soft_lock_2026-05-17_as_deliberate_v1_addition"]
-}
-```
+}}
+~~~
 
 Charlie has three ways to loop:
 
@@ -33,13 +33,13 @@ this doc focuses on the loop-specific use.
 <a id="while"></a>
 ## 1 `while`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "while",
 	"shape": "while_condition_body_end",
 	"semantics": "evaluate_condition_before_each_iteration; loop_while_truthy"
-}
-```
+}}
+~~~
 
 `while` repeats its body while the condition expression is truthy. The
 condition is re-evaluated before each iteration.
@@ -60,13 +60,13 @@ for the rule.
 <a id="each"></a>
 ## 2 `.each`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "each",
 	"shape": "collection.each(loop_var) do ... end",
 	"semantics": "bind_loop_var_to_each_element_in_turn"
-}
-```
+}}
+~~~
 
 Collections provide `.each` to iterate over their elements:
 
@@ -83,15 +83,15 @@ end
 <a id="numeric-iteration-helpers"></a>
 ## 3 Numeric iteration helpers
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "numeric_helpers",
 	"methods": ["times", "upto", "downto"],
 	"returns": "nil",
 	"index_base_for_times": "zero_based",
 	"upto_downto_inclusive": true
-}
-```
+}}
+~~~
 
 Number values expose three iteration helpers. None of them return a
 useful value; their job is the side effect of running the block.
@@ -121,14 +121,14 @@ they behave the same as `.each` over the corresponding range and accept
 <a id="naming-a-loop-with-as"></a>
 ## 4 Naming a loop with `as`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "naming_with_as",
 	"binds": "loop_object",
 	"scope_default": "loop_block",
 	"to_retain_after_loop": "pre_declare_variable_in_outer_scope"
-}
-```
+}}
+~~~
 
 Any of the three loop forms can be named with `as` to bind a **loop
 object** for the duration of the loop:
@@ -163,14 +163,14 @@ end
 <a id="loop-object-methods"></a>
 ## 5 Loop object methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "loop_object_methods",
 	"control_methods": ["next", "return", "break"],
 	"aliases": {"return": "break"},
 	"state_readers": ["count", "active", "index"]
-}
-```
+}}
+~~~
 
 | Method | Description |
 |---|---|
@@ -200,8 +200,8 @@ from the enclosing function.
 <a id="break"></a>
 ## 6 `break`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "break_bwc",
 	"form": "bwc",
 	"shape": "[{\"bwc\": \"break\"}, {\"value\": N}?]",
@@ -210,8 +210,8 @@ vibecode: {
 	"block_boundary": "DOES_escape_through_do_end_blocks_passed_to_method_calls_per_user_examples",
 	"named_loop_targeting_form": "tbd_break_loop_var_as_alternative_to_level_count",
 	"history": "added_post_soft_lock_2026-05-17_as_deliberate_v1_addition_per_scotty_section"
-}
-```
+}}
+~~~
 
 `break` exits a loop without a `$loop` reference. The plain form exits
 the innermost enclosing loop; `break N` exits N enclosing loops.
@@ -300,15 +300,15 @@ post-lock addition.
 <a id="structural-blocks"></a>
 ## 7 Structural blocks
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "structural_blocks",
 	"blocks": ["before", "between", "after", "noloop"],
 	"access_to_iteration_variable": false,
 	"notes": ["structural_blocks_are_optional;
 		each_runs_at_a_defined_phase_of_the_loop"]
-}
-```
+}}
+~~~
 
 Loops support four optional structural blocks. None of them have
 access to the iteration variable — they exist at the loop's structural
@@ -345,13 +345,13 @@ without an extra emptiness check around the loop.
 <a id="not-in-charlie"></a>
 ## 8 Not in Charlie
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"not_in_charlie": ["for_in_form_iteration_is_each_only",
 		"redo_retry_no_iteration_restart_construct",
 		"outer_function_return_uses_plain_return_no_special_construct"]
-}
-```
+}}
+~~~
 
 These were considered and explicitly excluded:
 

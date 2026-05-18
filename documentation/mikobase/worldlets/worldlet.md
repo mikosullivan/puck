@@ -3,12 +3,12 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"topic": "worldlet_format"
-}
-```
+}}
+~~~
 
 A worldlet is a complete mikobase — classes, records, and files — packaged as a single
 JSON object. It is the standard format for sharing and distributing mikobases.
@@ -28,12 +28,12 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 <a id="top-level-structure"></a>
 ## 2 Top-Level Structure
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "top_level_structure",
 	"topic": "worldlet_format"
-}
-```
+}}
+~~~
 
 ```json
 {
@@ -77,13 +77,13 @@ entries, see
 <a id="meta"></a>
 ## 3 `meta`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "meta",
 	"fields": ["name", "author", "version"],
 	"purpose": "descriptive_metadata_about_the_worldlet"
-}
-```
+}}
+~~~
 
 Descriptive information about the worldlet.
 
@@ -110,13 +110,13 @@ Descriptive information about the worldlet.
 <a id="format-and-format_version"></a>
 ## 4 `format` and `format_version`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "format_and_format_version",
 	"fields": ["format", "format_version"],
 	"purpose": "format_identity_and_versioning"
-}
-```
+}}
+~~~
 
 Two optional top-level strings that identify the document type and spec version.
 
@@ -143,13 +143,13 @@ Both are optional for backwards compatibility but should be included in all new 
 <a id="properties"></a>
 ## 5 `properties`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "properties",
 	"fields": ["executable", "temporal"],
 	"purpose": "database_level_metadata_readable_by_any_client_or_agent"
-}
-```
+}}
+~~~
 
 Database-level properties that describe the mikobase itself. Any client or agent
 connecting to or importing the worldlet should read these before interacting with
@@ -182,13 +182,13 @@ shape (each record carries its current bucket directly, no history block). See
 <a id="allow"></a>
 ## 6 `allow`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "allow",
 	"type": "array",
 	"purpose": "external_resources_requiring_host_approval_before_import"
-}
-```
+}}
+~~~
 
 An array of external resources the worldlet requires access to. The host presents these to
 the user for approval before importing. Nothing is granted silently.
@@ -204,13 +204,13 @@ The format and full capability vocabulary are not yet fully designed.
 <a id="extensions"></a>
 ## 7 `extensions`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "extensions",
 	"purpose": "reserved_for_future_security_and_registry_metadata",
 	"status": "reserved"
-}
-```
+}}
+~~~
 
 A reserved top-level object for future extension metadata — signatures, canonicalization
 algorithm declarations, registry information, and similar. The structure of this object
@@ -228,14 +228,14 @@ unrecognised `extensions` key.
 <a id="classes"></a>
 ## 8 `classes`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "classes",
 	"format": "dict_keyed_by_uns_class_name",
 	"methods_as": "fields_with_class_function_and_charlie_key",
 	"see": "class-definition.md"
-}
-```
+}}
+~~~
 
 The schema, using the standard class definition format. Each key is a UNS class name; each
 value is the class definition. All classes defined here are record classes.
@@ -310,13 +310,13 @@ See [class-definition.md](../../charlie/class-definition.md) for the full class 
 <a id="records"></a>
 ## 9 `records`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "records",
 	"format": "dict_keyed_by_uuid",
 	"fields": ["class", "created_at", "bucket"]
-}
-```
+}}
+~~~
 
 A dict of records, keyed by record UUID. Each entry carries the record's class, its
 creation timestamp, and its current bucket directly. Worldlets are non-temporal — there
@@ -343,13 +343,13 @@ is no separate history block and no per-version entries.
 <a id="files"></a>
 ## 10 `files`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "files",
 	"format": "dict_keyed_by_file_uuid",
 	"fields": ["sha256", "created_at", "mime.type", "mime.encoding"]
-}
-```
+}}
+~~~
 
 A dict of file records, keyed by file UUID. Describes each attached file — its integrity
 hash, timestamp, and MIME type.
@@ -405,12 +405,12 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 <a id="import-rules"></a>
 ## 12 Import Rules
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "import_rules",
 	"purpose": "defines_uuid_constraints_conflict_policy_validation_and_atomicity"
-}
-```
+}}
+~~~
 
 <a id="uuid-constraints"></a>
 ### 12.1 UUID constraints

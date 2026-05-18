@@ -1,12 +1,12 @@
 # First Steps
 
-```
-vibecode: {"doc": "first_steps", "purpose":
+~~~json
+{"vibecode": {"doc": "first_steps", "purpose":
 "concrete_file_by_file_actions_to_start_v001; companion_to_high_level_development_plan",
 "audience": "developer_sitting_down_to_start_implementation",
 "position": "between_reading_development_md_and_writing_engine_code",
-"scope": "first_six_concrete_steps_only; remainder_emerges_as_each_completes"}
-```
+"scope": "first_six_concrete_steps_only; remainder_emerges_as_each_completes"}}
+~~~
 
 The [development plan](development.md) describes V0.01 at the phase
 level — what each layer needs, why the roles bake in from the start,
@@ -278,12 +278,12 @@ V0.01.
 <a id="what-this-doc-does-not-cover"></a>
 ## 7 What this doc does NOT cover
 
-```
-vibecode: {"out_of_scope_for_first_steps":
+~~~json
+{"vibecode": {"out_of_scope_for_first_steps":
 ["v002_charlie_text_parser_and_transpiler", "v00X_stdout_hashes_json_serialization",
 "v00X_charlie_cli", "v01_bryton", "lua_host_optimizations",
-"performance_tuning", "error_message_polish"]}
-```
+"performance_tuning", "error_message_polish"]}}
+~~~
 
 This doc covers only the first six concrete actions. Once V0.01
 passes, the next slice (V0.02, Charlie-text → CharlieJSON transpiler)

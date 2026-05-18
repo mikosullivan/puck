@@ -3,14 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"concept": "bitwise_operations_via_dedicated_wrapper_object",
 	"access": "$n.bitwise",
 	"rationale": "keeps_Number_class_uncluttered_makes_intent_explicit"
-}
-```
+}}
+~~~
 
 Bitwise operations are exposed through a dedicated bitwise object rather than as direct
 methods on Number. This keeps the Number class uncluttered and makes bitwise intent
@@ -19,14 +19,14 @@ explicit at the call site.
 <a id="access"></a>
 ## 2 Access
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "access",
 	"method": "bitwise",
 	"returns": "Bitwise object",
 	"example": "$n.bitwise.or(456)"
-}
-```
+}}
+~~~
 
 Call `.bitwise` on any Number to get a bitwise object wrapping that value:
 
@@ -52,15 +52,15 @@ $n.bitwise.or(456)
 <a id="methods"></a>
 ## 4 Methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "methods",
 	"methods": ["or", "and", "xor", "not", "shift_left", "shift_right",
 		"nand", "nor", "xnor"],
 	"aliases": {"shift_left": "<<", "shift_right": ">>"},
 	"notes": ["not_is_unary", "assumes_twos_complement_for_negative_numbers"]
-}
-```
+}}
+~~~
 
 | Method | Alias | Description |
 |--------|-------|-------------|

@@ -1,11 +1,11 @@
 # Development Plan
 
-```
-vibecode: {"doc": "development_plan", "status": "active", "current_version":
+~~~json
+{"vibecode": {"doc": "development_plan", "status": "active", "current_version":
 "0.01", "current_codename": "hello-world", "v001_scope_status":
 "confirmed_2026-05-15", "feature_lock": "soft", "source_of_truth":
-"vibecode_blocks"}
-```
+"vibecode_blocks"}}
+~~~
 
 This file is the technical development plan for Puck. Vibecode blocks are
 the canonical source; surrounding prose is human-readable narrative derived
@@ -98,8 +98,8 @@ from them. When the two disagree, vibecode wins.
 <a id="v001-hello-world"></a>
 ## 2 V0.01: "hello-world"
 
-```
-vibecode: {"version": "0.01", "codename": "hello-world", "goal":
+~~~json
+{"vibecode": {"version": "0.01", "codename": "hello-world", "goal":
 "execute a minimal charliejson program end_to_end and return a literal value to the test harness",
 "medium": "charliejson_hand_written; not_charlie_source", "fixture":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "expected_return": "hello",
@@ -107,8 +107,8 @@ vibecode: {"version": "0.01", "codename": "hello-world", "goal":
 "covers": ["json_parser", "ksj_interpreter", "statement_dispatch",
 "literal_materialization_with_owning_role", "method_dispatch_with_role_transition",
 "string_class_minimum_with_to_string"], "deferred_to_later":
-["charlie_text_parser", "transpiler", "stdout_io", "sys_references"]}
-```
+["charlie_text_parser", "transpiler", "stdout_io", "sys_references"]}}
+~~~
 
 The first runnable version. A single `.ksj` file containing the CharlieJSON
 encoding of "evaluate `"hello".to_string`" executes through the engine
@@ -133,16 +133,16 @@ built out fully.
 <a id="definition-of-done"></a>
 ### 2.1 Definition of done
 
-```
-vibecode: {"scope_status": "confirmed_2026-05-15", "done_criteria":
+~~~json
+{"vibecode": {"scope_status": "confirmed_2026-05-15", "done_criteria":
 {"fixture_runs": "[[{\"value\": \"hello\"}, \"to_string\"]]_parses_and_executes",
 "runs_under_a_role":
 "program_executes_in_user_role; dispatch_transitions_to_stdlib_role_and_back",
 "has_a_string_class":
 "minimum_built_in_string_class_with_to_string_returning_self; owned_by_engine_role",
 "returns_hello":
-"last_statement_return_value_equals_string_hello_observed_by_harness"}}
-```
+"last_statement_return_value_equals_string_hello_observed_by_harness"}}}
+~~~
 
 V0.01 is done when all four are true:
 
@@ -166,8 +166,8 @@ scope without explicit unlock.
 <a id="v002-charlie-source-hello"></a>
 ## 3 V0.02: "charlie-source-hello"
 
-```
-vibecode: {"version": "0.02", "codename": "charlie-source-hello", "goal":
+~~~json
+{"vibecode": {"version": "0.02", "codename": "charlie-source-hello", "goal":
 "execute a charlie source program end_to_end through the transpiler and return a literal value to the test harness",
 "medium": "charlie_source_text", "fixture":
 "'hello'.to_string", "fixture_path":
@@ -181,8 +181,8 @@ vibecode: {"version": "0.02", "codename": "charlie-source-hello", "goal":
 "transition", "dispatch", "string_class_to_string"],
 "deferred_to_later": ["stdout_io", "sys_references",
 "additional_classes_or_methods",
-"full_transpiler_realignment_for_all_charlie_constructs"]}
-```
+"full_transpiler_realignment_for_all_charlie_constructs"]}}
+~~~
 
 V0.02 ships hello-world in Charlie source. Same semantic program as V0.01
 — `'hello'.to_string` evaluated and the result returned to the harness —
@@ -210,8 +210,8 @@ realign more AST node types as later versions exercise them. Per
 <a id="definition-of-done-v002"></a>
 ### 3.1 Definition of done (V0.02)
 
-```
-vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
+~~~json
+{"vibecode": {"scope_status": "drafted_2026-05-16", "done_criteria":
 {"source_fixture_parses":
 "tests_charlie_fixtures_hello_world_charlie_lexes_and_parses_without_error",
 "transpiler_emits_canonical_ksj":
@@ -219,8 +219,8 @@ vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
 "source_side_entry_point_exists":
 "engine_run_source_path_or_equivalent_takes_a_charlie_file_through_to_dispatch",
 "returns_hello":
-"engine_run_source_of_the_fixture_returns_a_value_whose_payload_equals_hello"}}
-```
+"engine_run_source_of_the_fixture_returns_a_value_whose_payload_equals_hello"}}}
+~~~
 
 V0.02 is done when all four are true:
 
@@ -247,8 +247,8 @@ as V0.01.
 <a id="v003-charlie-with-stdout"></a>
 ## 4 V0.03: "charlie-with-stdout"
 
-```
-vibecode: {"version": "0.03", "codename": "charlie-with-stdout", "goal":
+~~~json
+{"vibecode": {"version": "0.03", "codename": "charlie-with-stdout", "goal":
 "execute puts_hello_from_charlie_source_and_observe_the_string_arrive_on_stdout",
 "medium": "charlie_source_text", "fixture":
 "puts 'hello'", "fixture_path":
@@ -266,8 +266,8 @@ vibecode: {"version": "0.03", "codename": "charlie-with-stdout", "goal":
 "deferred_to_later": ["stdin_faucet", "stderr_sink", "file_io",
 "network_io", "additional_classes_beyond_string",
 "variables_assignment_control_flow",
-"full_transpiler_realignment_for_unrelated_ast_types"]}
-```
+"full_transpiler_realignment_for_unrelated_ast_types"]}}
+~~~
 
 V0.03 is the first slice with real I/O. The program `puts 'hello'`,
 written as Charlie source, executes through the V0.02 source pipeline
@@ -307,8 +307,8 @@ V0.03 realigns the bwc-call form `[{bwc: "puts"}, {value: "hello"}]`.
 <a id="definition-of-done-v003"></a>
 ### 4.1 Definition of done (V0.03)
 
-```
-vibecode: {"scope_status": "drafted_2026-05-17", "done_criteria":
+~~~json
+{"vibecode": {"scope_status": "drafted_2026-05-17", "done_criteria":
 {"source_fixture_parses_and_transpiles_to_canonical_bwc_form":
 "transpiler_output_for_puts_hello_deep_equals_expected_canonical_ksj",
 "bwc_registry_has_puts_after_bootstrap":
@@ -316,8 +316,8 @@ vibecode: {"scope_status": "drafted_2026-05-17", "done_criteria":
 "engine_dispatches_bwc_statements":
 "dispatcher_recognizes_bwc_receiver_form_and_routes_to_handler_via_role_transition",
 "stdout_sink_receives_hello_newline":
-"with_injected_capture_sink_engine_run_source_of_fixture_produces_buffer_equal_to_hello_newline"}}
-```
+"with_injected_capture_sink_engine_run_source_of_fixture_produces_buffer_equal_to_hello_newline"}}}
+~~~
 
 V0.03 is done when all four are true:
 
@@ -342,8 +342,8 @@ That's the entirety of V0.03. Soft feature lock applies.
 <a id="v004-charlie-with-hashes"></a>
 ## 5 V0.04: "charlie-with-hashes"
 
-```
-vibecode: {"version": "0.04", "codename": "charlie-with-hashes",
+~~~json
+{"vibecode": {"version": "0.04", "codename": "charlie-with-hashes",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "v003_ships",
 "goal":
@@ -362,8 +362,8 @@ vibecode: {"version": "0.04", "codename": "charlie-with-hashes",
 "bwc_dispatch_if_iteration_fixture_chosen"],
 "deferred_to_later": ["hash_mutation_methods_set_delete",
 "hash_equality_semantics", "hash_with_non_string_keys_if_ever",
-"arrays_as_separate_class"]}
-```
+"arrays_as_separate_class"]}}
+~~~
 
 V0.04 introduces the hash data structure. The minimum: a hash literal
 evaluates, a key lookup returns the value, and the harness observes the
@@ -412,8 +412,8 @@ V0.04 is selected. Expected shape:
 <a id="v005-charlie-with-json-serialization"></a>
 ## 6 V0.05: "charlie-with-json-serialization"
 
-```
-vibecode: {"version": "0.05",
+~~~json
+{"vibecode": {"version": "0.05",
 "codename": "charlie-with-json-serialization",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "v004_ships",
@@ -432,8 +432,8 @@ vibecode: {"version": "0.05",
 "json_encode_from_charlie_json_lua"],
 "deferred_to_later": ["from_json_parsing_into_charlie_objects",
 "pretty_print_option", "custom_serialization_for_user_defined_classes",
-"streaming_serialization_for_large_structures"]}
-```
+"streaming_serialization_for_large_structures"]}}
+~~~
 
 V0.05 closes the loop on hashes by giving them a serialization story.
 With V0.05 in place, Charlie programs can produce JSON output —
@@ -487,8 +487,8 @@ V0.05 is selected. Expected shape:
 <a id="testing-strategy-two-tier-approach"></a>
 ## 7 Testing strategy: two-tier approach
 
-```
-vibecode: {"section": "testing_strategy", "model": "two_tier",
+~~~json
+{"vibecode": {"section": "testing_strategy", "model": "two_tier",
 "tier_1": {"name": "lua_side_tests", "scope":
 "engine_internals_and_bryton_runner_itself", "framework":
 "tests_charlie_support_runner_and_support_assert", "permanence":
@@ -502,8 +502,8 @@ vibecode: {"section": "testing_strategy", "model": "two_tier",
 "one_product_named_bryton_versioned_v01_minimum_v0X_grows_features",
 "no_circularity":
 "lua_independent_of_charlie_tier_1_self_contained;
-bryton_depends_on_charlie_and_lua_but_is_tested_by_lua"}
-```
+bryton_depends_on_charlie_and_lua_but_is_tested_by_lua"}}
+~~~
 
 Testing in Puck operates on two tiers, each with its own tooling and
 its own permanent home.
@@ -571,12 +571,12 @@ compiler, different stage.
 <a id="feature-soft-lock"></a>
 ## 8 Feature soft-lock
 
-```
-vibecode: {"lock": "soft", "scope": "all_puck_features", "rationale":
+~~~json
+{"vibecode": {"lock": "soft", "scope": "all_puck_features", "rationale":
 "prevent design accretion during implementation; defer non-essential work to V2+",
 "override": "explicit; via deliberate decision, not casual addition",
-"companion_to": ["no_bolt_on_additions"]}
-```
+"companion_to": ["no_bolt_on_additions"]}}
+~~~
 
 A soft lock is in place on new features. Anything not already specced as V1
 is deferred until needed. The lock can be broken — but only deliberately,
@@ -586,8 +586,8 @@ guards spec quality; this lock guards build momentum.
 <a id="deliberate-post-lock-additions"></a>
 ### 8.1 Deliberate post-lock additions
 
-```
-vibecode: {"additions_since_lock":
+~~~json
+{"vibecode": {"additions_since_lock":
 [{"date": "2026-05-17", "feature":
 "break_bwc_with_optional_level_count", "version_target": "v1",
 "spec_locations": ["documentation/charlie/loops.md#break-riker",
@@ -596,8 +596,8 @@ vibecode: {"additions_since_lock":
 "loop_exit_without_loop_object_reference; multi_level_exit; explicit_user_request",
 "side_effects":
 ["$loop.return_and_$loop.break_now_aliased",
-"charlie_md_line_683_updated_to_reflect_aliasing"]}]}
-```
+"charlie_md_line_683_updated_to_reflect_aliasing"]}]}}
+~~~
 
 Running log of features that broke the soft lock. Each entry names
 what landed, when, and where the spec lives. The lock is a budget,
@@ -608,14 +608,14 @@ not a wall — but the budget should be visible.
 <a id="v1-scope-after-001"></a>
 ## 9 V1 scope (after 0.01)
 
-```
-vibecode: {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
+~~~json
+{"vibecode": {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
 "sinatra", "trivet", "uma", "bryton", "jasmine", "puck_identity",
 "deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
 "external_service; charlie_client_is_thin_http", "v1_http_path":
 "sinatra_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
-"handler_implements_directly; no_declarative_role_policy"}
-```
+"handler_implements_directly; no_declarative_role_policy"}}
+~~~
 
 V1 ships Puck.uno as a deployable service. The HTTP layer that ships with
 V1 is Sinatra (built on Touchstone); the V1 HTTP path is Sinatra-style
@@ -639,8 +639,8 @@ production).
 <a id="walking-skeleton-roadmap"></a>
 ## 10 Walking-skeleton roadmap
 
-```
-vibecode: {"approach": "walking_skeleton", "principle":
+~~~json
+{"vibecode": {"approach": "walking_skeleton", "principle":
 "each_phase_runnable_end_to_end; expand_outward_feature_by_feature", "phases":
 [{"v": "0.01", "name": "hello_world_ksj", "proves":
 "json_parser; ksj_interpreter; stdlib_minimum"}, {"v": "0.02", "name":
@@ -665,8 +665,8 @@ vibecode: {"approach": "walking_skeleton", "principle":
 "puck_identity; blockchain_api_client"}, {"v": "0.0X", "name":
 "first_deployment", "proves": "puck_uno_hosting; ops"}, {"v": "0.0X",
 "name": "first_hosted_service", "proves":
-"service_on_stack_pattern"}], "continuous_threads": ["jasmine"]}
-```
+"service_on_stack_pattern"}], "continuous_threads": ["jasmine"]}}
+~~~
 
 Development proceeds in vertical slices. Each slice is a runnable end-to-end
 demo proving a thin band of the stack. The order follows dependencies —
@@ -691,16 +691,16 @@ used wherever a layer needs to surface diagnostic output.
 <a id="role-system-baking-from-the-start"></a>
 ## 11 Role system: baking from the start
 
-```
-vibecode: {"principle": "roles_are_core_not_bolt_on", "reason":
+~~~json
+{"vibecode": {"principle": "roles_are_core_not_bolt_on", "reason":
 "every_value_must_be_role_tagged_from_creation; retrofit_touches_every_value_creation_path_and_every_method_call_path",
 "applies_from": "v001", "spec_doc": "documentation/roles.md",
 "v001_primitives": ["role_registry", "owning_role_on_every_value",
 "role_transition_on_method_call", "role_system_method",
 "chain_wipe_on_cross_role_call"], "v001_deferred": ["faucets", "jails",
 "cross_role_trust_declarations", "alarms_with_sink_side_checks",
-"source_side_propagation", "chain_isolate_developer_facing"]}
-```
+"source_side_propagation", "chain_isolate_developer_facing"]}}
+~~~
 
 Roles are not a bolt-on to Charlie — they are part of the engine's core
 architecture from V0.01 onward. The role spec lives in
@@ -716,15 +716,15 @@ Easier to bake the primitives in from the first slice and grow outward.
 **V0.01 role footprint.** The minimum to support hello-world's single
 cross-role call (`user` → string-class role → `user`):
 
-```
-vibecode: {"v001_role_footprint": {"registry_entries_min":
+~~~json
+{"vibecode": {"v001_role_footprint": {"registry_entries_min":
 ["user", "stdlib"], "value_layer":
 "every_value_carries_owning_role_slot_immutable_after_creation",
 "dispatcher_layer":
 "on_method_call_compare_method_owning_role_to_current; if_differ_save_state_set_new_role_wipe_chain_run_restore",
 "sys_methods_implemented": ["role"], "chain_state":
-"empty_placeholder_but_wipeable_on_boundary"}}
-```
+"empty_placeholder_but_wipeable_on_boundary"}}}
+~~~
 
 - **Role registry.** Engine maintains a name → role-object map.
   Populated at startup with `user` and the engine role owning the
@@ -745,8 +745,8 @@ vibecode: {"v001_role_footprint": {"registry_entries_min":
 
 **Role-system growth path:**
 
-```
-vibecode: {"growth_path": [{"slice": "v0.01", "adds":
+~~~json
+{"vibecode": {"growth_path": [{"slice": "v0.01", "adds":
 "core_primitives_registry_owning_role_transition_role_chain_wipe"},
 {"slice": "v0.02", "adds":
 "transpiler_role; ksj_emitted_tagged_with_caller_role"},
@@ -773,8 +773,8 @@ vibecode: {"growth_path": [{"slice": "v0.01", "adds":
 "when_first_slice_has_values_worth_narrowing", "cross_role_trust_declarations":
 "when_first_slice_needs_to_grant_trust", "alarms_vs_exceptions":
 "when_first_slice_has_sinks_that_must_hard_stop", "source_side_propagation":
-"when_string_provenance_question_settles"}}
-```
+"when_string_provenance_question_settles"}}}
+~~~
 
 | Slice | Role additions |
 |---|---|
@@ -814,13 +814,13 @@ possible scale; every later slice exercises more of the model.
 <a id="engine-startup-and-invocation"></a>
 ## 12 Engine startup and invocation
 
-```
-vibecode: {"section": "engine_startup_and_invocation", "scope":
+~~~json
+{"vibecode": {"section": "engine_startup_and_invocation", "scope":
 "how_a_ksj_program_actually_runs_from_invocation_through_return",
 "applies_from": "v001", "covers": ["host_vs_engine_distinction",
 "invocation_chain", "bootstrap_sequence", "program_model",
-"what_user_ksj_can_see", "how_later_slices_extend"]}
-```
+"what_user_ksj_can_see", "how_later_slices_extend"]}}
+~~~
 
 This section spells out the lifecycle of a CharlieJSON run end-to-end: who
 launches it, what the engine does before user code executes, what user
@@ -832,15 +832,15 @@ allowed objects into the outermost CharlieJSON block**.
 <a id="host-vs-engine"></a>
 ### 12.1 Host vs. engine
 
-```
-vibecode: {"host_vs_engine": {"engine":
+~~~json
+{"vibecode": {"host_vs_engine": {"engine":
 "the_library_that_runs_ksj; located_under_code_charlie_lua",
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
 "v001_host": "lua_test_runner_invoked_from_command_line",
 "later_hosts": ["standalone_cli_via_v00x_charlie_cli_slice",
 "sinatra_request_handler_v003_plus",
-"one_running_ksj_calling_another_via_function_dispatch"]}}
-```
+"one_running_ksj_calling_another_via_function_dispatch"]}}}
+~~~
 
 The **engine** is the Lua library at `code/charlie/lua/` that knows how
 to parse and execute CharlieJSON. The **host** is whatever calls into the
@@ -859,8 +859,8 @@ point; what differs is who triggers it and what they pass in.
 <a id="v001-invocation-chain"></a>
 ### 12.2 V0.01 invocation chain
 
-```
-vibecode: {"v001_invocation_chain": [{"step": 1, "name":
+~~~json
+{"vibecode": {"v001_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
 "lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.ksj"},
 {"step": 2, "name": "runner_loads_engine_as_lua_library",
@@ -871,8 +871,8 @@ vibecode: {"v001_invocation_chain": [{"step": 1, "name":
 "covered_in_next_subsection": true}, {"step": 5, "name":
 "engine_returns_last_statement_value_to_runner_as_lua_value"},
 {"step": 6, "name":
-"runner_compares_to_expected_string_hello_and_reports_pass_or_fail"}]}
-```
+"runner_compares_to_expected_string_hello_and_reports_pass_or_fail"}]}}
+~~~
 
 Top-level shape:
 
@@ -891,8 +891,8 @@ Top-level shape:
 <a id="v001-engine-bootstrap-sequence"></a>
 ### 12.3 V0.01 engine bootstrap sequence
 
-```
-vibecode: {"v001_bootstrap_sequence": [{"step": 1, "name":
+~~~json
+{"vibecode": {"v001_bootstrap_sequence": [{"step": 1, "name":
 "create_role_registry", "creates": ["user", "stdlib"],
 "role_object_v001":
 "name_only_no_methods_no_state_no_trust_web"}, {"step": 2, "name":
@@ -906,8 +906,8 @@ vibecode: {"v001_bootstrap_sequence": [{"step": 1, "name":
 "execute_top_level_statements", "iterates":
 "each_statement_in_top_level_array_of_parsed_tree", "captures":
 "last_statement_return_value"}, {"step": 6, "name":
-"return_to_host", "returns": "captured_last_value_as_lua_value"}]}
-```
+"return_to_host", "returns": "captured_last_value_as_lua_value"}]}}
+~~~
 
 What happens between `engine.run(path)` being called and the result
 coming back:
@@ -947,14 +947,14 @@ coming back:
 <a id="program-model"></a>
 ### 12.4 Program model
 
-```
-vibecode: {"program_model_v001": {"shape":
+~~~json
+{"vibecode": {"program_model_v001": {"shape":
 "top_level_array_of_statements", "entry_point":
 "the_outermost_array_itself_no_main_function",
 "result_of_program":
 "value_of_last_top_level_statement", "execution":
-"statements_run_in_order"}}
-```
+"statements_run_in_order"}}}
+~~~
 
 A CharlieJSON program is a **top-level array of statements**. The engine
 executes them in order. The "result" of the program is the value of
@@ -967,16 +967,16 @@ program is just one statement.
 <a id="what-user-charliejson-can-see-in-v001"></a>
 ### 12.5 What user CharlieJSON can see in V0.01
 
-```
-vibecode: {"v001_visibility": {"directly_referenceable_by_name":
+~~~json
+{"vibecode": {"v001_visibility": {"directly_referenceable_by_name":
 "nothing", "implicitly_available":
 ["string_class_via_literal_materialization",
 "to_string_via_method_dispatch_on_string_values"],
 "explicitly_unavailable_v001":
 ["sys_references_percent_stdout_percent_role_etc",
 "other_built_in_classes_integer_hash_array",
-"faucets", "jails", "trust_declarations"]}}
-```
+"faucets", "jails", "trust_declarations"]}}}
+~~~
 
 The V0.01 fixture doesn't reference any object by name. It only:
 
@@ -997,8 +997,8 @@ created.
 <a id="how-later-slices-grow-the-lifecycle"></a>
 ### 12.6 How later slices grow the lifecycle
 
-```
-vibecode: {"growth_path": {"v002": {"bootstrap_change":
+~~~json
+{"vibecode": {"growth_path": {"v002": {"bootstrap_change":
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
 "runner_may_optionally_transpile_charlie_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
@@ -1013,8 +1013,8 @@ vibecode: {"growth_path": {"v002": {"bootstrap_change":
 "faucets_generally":
 "each_added_to_faucet_registry_with_own_role; pulled_objects_inherit_faucet_role"},
 "v1_open":
-"engine_capability_allow_list_for_running_untrusted_code"}
-```
+"engine_capability_allow_list_for_running_untrusted_code"}}
+~~~
 
 V0.02 (transpiler) doesn't change the bootstrap sequence — the
 transpiler runs before the engine is invoked (probably as a runner-side
@@ -1053,16 +1053,16 @@ code cannot escape. Flagged as an open item.
 <a id="lua-side-implementation-sketch"></a>
 ## 13 Lua-side implementation sketch
 
-```
-vibecode: {"section": "lua_implementation_sketch", "status":
+~~~json
+{"vibecode": {"section": "lua_implementation_sketch", "status":
 "candidate_shape; to_be_reconciled_with_existing_code_during_inventory",
 "language": "lua_5_4_assumed", "style":
 "plain_tables_no_metatables_for_v001; closures_for_role_transition_save_restore",
 "deliberately_not_specified":
 ["module_layout_within_code_charlie_lua_charlie_directory",
 "naming_conventions_for_internal_locals",
-"exact_signature_of_existing_json_lua"]}
-```
+"exact_signature_of_existing_json_lua"]}}
+~~~
 
 This section sketches the engine's internal Lua shape for V0.01: data
 structures, key procedures, and a pseudo-code skeleton. It is a
@@ -1074,8 +1074,8 @@ doesn't, the shapes below are the proposal.
 <a id="data-structures-lua-tables"></a>
 ### 13.1 Data structures (Lua tables)
 
-```
-vibecode: {"data_structures": {"role_object":
+~~~json
+{"vibecode": {"data_structures": {"role_object":
 "{name = string}", "role_registry":
 "engine.roles = {[name] = role_object, ...}", "value":
 "{type = string, owning_role = role_object, payload = any_lua_value}",
@@ -1083,8 +1083,8 @@ vibecode: {"data_structures": {"role_object":
 "{name = string, owning_role = role_object, methods = {[name] = lua_function}}",
 "class_registry": "engine.classes = {[name] = class_object, ...}",
 "execution_context":
-"{current_role = role_object, chain = lua_table_placeholder}"}}
-```
+"{current_role = role_object, chain = lua_table_placeholder}"}}}
+~~~
 
 Every internal object is a plain Lua table — no metatables in V0.01.
 References between tables are Lua's normal table-reference semantics
@@ -1148,8 +1148,8 @@ reference, not the contents).
 <a id="key-procedures"></a>
 ### 13.2 Key procedures
 
-```
-vibecode: {"procedures": {"engine.run":
+~~~json
+{"vibecode": {"procedures": {"engine.run":
 "(path) -> last_statement_value; entry_point",
 "engine.bootstrap":
 "() -> nil; populates_roles_classes_ctx", "engine.dispatch":
@@ -1157,8 +1157,8 @@ vibecode: {"procedures": {"engine.run":
 "engine.materialize": "(expr) -> value; turns_ksj_expression_into_value",
 "engine.transition":
 "(new_role, fn) -> result; save_restore_ctx_around_fn_call",
-"engine.lookup_method": "(value, method_name) -> method_fn"}}
-```
+"engine.lookup_method": "(value, method_name) -> method_fn"}}}
+~~~
 
 Five procedures cover V0.01:
 
@@ -1179,10 +1179,10 @@ Five procedures cover V0.01:
 <a id="pseudo-code-skeleton"></a>
 ### 13.3 Pseudo-code skeleton
 
-```
-vibecode: {"pseudo_code_status":
-"illustrative_target_shape; not_committed_until_reconciled_with_existing_engine"}
-```
+~~~json
+{"vibecode": {"pseudo_code_status":
+"illustrative_target_shape; not_committed_until_reconciled_with_existing_engine"}}
+~~~
 
 ```lua
 local engine = {}
@@ -1282,14 +1282,14 @@ return engine
 <a id="notes-on-the-sketch"></a>
 ### 13.4 Notes on the sketch
 
-```
-vibecode: {"sketch_notes": ["plain_tables_only_no_metatables_v001",
+~~~json
+{"vibecode": {"sketch_notes": ["plain_tables_only_no_metatables_v001",
 "role_objects_shared_by_reference_across_owning_role_fields",
 "transition_uses_lua_call_stack_via_closure_no_explicit_transition_stack",
 "chain_is_initialized_to_empty_table_wipe_means_replace_with_fresh_table",
 "errors_use_lua_error_for_v001_no_charlie_exception_machinery_yet",
-"json_parse_assumed_to_return_nested_lua_tables_arrays_indexed_from_1"]}
-```
+"json_parse_assumed_to_return_nested_lua_tables_arrays_indexed_from_1"]}}
+~~~
 
 A few specifics worth flagging:
 
@@ -1320,14 +1320,14 @@ A few specifics worth flagging:
 <a id="v001-phase-0-lua-workbench"></a>
 ## 14 V0.01 phase 0: Lua workbench
 
-```
-vibecode: {"phase": 0, "version": "0.01", "purpose":
+~~~json
+{"vibecode": {"phase": 0, "version": "0.01", "purpose":
 "set_up_and_verify_lua_dev_environment_before_writing_any_engine_code",
 "explicitly_excludes": "executing_charlie_or_ksj; only_lua_level_sanity",
 "steps_count": 6, "acceptance":
 "all_six_workbench_steps_pass; no_engine_code_written", "tactic":
-"verify_the_workbench_before_building_in_it"}
-```
+"verify_the_workbench_before_building_in_it"}}
+~~~
 
 Before writing any engine code, the Lua-side development environment
 has to be verified. Six steps, each independently runnable. If a step
@@ -1337,11 +1337,11 @@ happens in Phase 0** — this is purely Lua-level sanity.
 <a id="step-01-confirm-lua-54"></a>
 ### 14.1 Step 0.1: Confirm Lua 5.4
 
-```
-vibecode: {"step": "0.1", "name": "confirm_lua_5_4", "action":
+~~~json
+{"vibecode": {"step": "0.1", "name": "confirm_lua_5_4", "action":
 "run_lua_dash_v_from_project_root", "expected_stdout_contains":
-"Lua_5_4", "remedy_if_fail": "install_lua_5_4"}
-```
+"Lua_5_4", "remedy_if_fail": "install_lua_5_4"}}
+~~~
 
 `lua -v` from the project root. Expected: a line containing `Lua 5.4`.
 If a different major version is installed, install Lua 5.4 before
@@ -1350,13 +1350,13 @@ proceeding.
 <a id="step-02-run-a-sanity-hello-in-pure-lua"></a>
 ### 14.2 Step 0.2: Run a sanity hello in pure Lua
 
-```
-vibecode: {"step": "0.2", "name": "lua_hello",
+~~~json
+{"vibecode": {"step": "0.2", "name": "lua_hello",
 "fixture_path": "tests/sanity/lua_hello.lua", "fixture_content":
 "print(\"hello from lua\")\n", "run":
 "lua tests/sanity/lua_hello.lua", "expected_stdout":
-"hello from lua\\n", "expected_exit_code": 0}
-```
+"hello from lua\\n", "expected_exit_code": 0}}
+~~~
 
 Create `tests/sanity/lua_hello.lua`:
 
@@ -1370,11 +1370,11 @@ followed by a newline. Exit code 0.
 <a id="step-03-verify-packagepath-resolves-engine-modules"></a>
 ### 14.3 Step 0.3: Verify package.path resolves engine modules
 
-```
-vibecode: {"step": "0.3", "name": "package_path_check", "action":
+~~~json
+{"vibecode": {"step": "0.3", "name": "package_path_check", "action":
 "set_package_path_prefix_to_code_charlie_lua; require_a_known_engine_module_no_error",
-"expected": "require_call_returns_a_table_without_error"}
-```
+"expected": "require_call_returns_a_table_without_error"}}
+~~~
 
 The engine lives under `code/charlie/lua/`. Lua needs to find modules
 when `require("charlie.X")` is called. The convention:
@@ -1409,8 +1409,8 @@ end)
 <a id="step-04-verify-the-existing-test-framework"></a>
 ### 14.4 Step 0.4: Verify the existing test framework
 
-```
-vibecode: {"step": "0.4", "name": "verify_existing_test_framework",
+~~~json
+{"vibecode": {"step": "0.4", "name": "verify_existing_test_framework",
 "existing_runner_module": "tests/charlie/support/runner.lua",
 "existing_assert_module": "tests/charlie/support/assert.lua",
 "existing_entry_point": "tests/charlie/run.lua",
@@ -1419,8 +1419,8 @@ vibecode: {"step": "0.4", "name": "verify_existing_test_framework",
 "() returns true_if_all_passed"}, "assert_api":
 ["equal", "not_equal", "is_nil", "not_nil", "is_true", "is_false",
 "kind", "count", "parse_error"], "verification":
-"write_one_trivial_test_that_uses_runner_and_assert; require_it_from_run_lua_or_a_v001_entry_point; confirm_passes_and_fails_are_reported_correctly"}
-```
+"write_one_trivial_test_that_uses_runner_and_assert; require_it_from_run_lua_or_a_v001_entry_point; confirm_passes_and_fails_are_reported_correctly"}}
+~~~
 
 The project already has a Lua test framework under
 `tests/charlie/support/`:
@@ -1470,14 +1470,14 @@ description in the summary, and exit 1.
 <a id="step-05-verify-jsonlua-loads-and-parses"></a>
 ### 14.5 Step 0.5: Verify json.lua loads and parses
 
-```
-vibecode: {"step": "0.5", "name": "json_parse_sanity",
+~~~json
+{"vibecode": {"step": "0.5", "name": "json_parse_sanity",
 "fixture_path": "tests/sanity/test_json_parse.lua",
 "requires_module": "charlie.json", "parses": "{\"a\": 1}",
 "expected": "lua_table_with_a_equals_1", "side_effect":
 "discovers_json_lua_actual_api_for_inventory_step",
-"framework_used": "tests/charlie/support/runner_and_assert"}
-```
+"framework_used": "tests/charlie/support/runner_and_assert"}}
+~~~
 
 The existing `code/charlie/lua/charlie/json.lua` is assumed to provide
 a `parse` function. This step confirms it (and surfaces any API
@@ -1505,13 +1505,13 @@ result, etc.), this is where we discover it — and the
 <a id="step-06-verify-file-reading"></a>
 ### 14.6 Step 0.6: Verify file reading
 
-```
-vibecode: {"step": "0.6", "name": "file_read_sanity",
+~~~json
+{"vibecode": {"step": "0.6", "name": "file_read_sanity",
 "fixture_path": "tests/charlie/fixtures/_sanity_text.txt",
 "fixture_content": "ok\\n", "test_file":
 "tests/sanity/test_file_read.lua",
-"framework_used": "tests/charlie/support/runner_and_assert"}
-```
+"framework_used": "tests/charlie/support/runner_and_assert"}}
+~~~
 
 The engine has to read CharlieJSON files from disk; this step confirms that
 works.
@@ -1540,8 +1540,8 @@ begin.
 <a id="phase-0-test-plan"></a>
 ### 14.7 Phase 0 test plan
 
-```
-vibecode: {"phase_0_tests":
+~~~json
+{"vibecode": {"phase_0_tests":
 [{"id": "T0.1", "verifies": "lua_5_4_installed", "tool":
 "command_line_lua_dash_v", "framework": "none"}, {"id": "T0.2",
 "verifies": "pure_lua_script_runs_and_prints", "tool":
@@ -1557,8 +1557,8 @@ vibecode: {"phase_0_tests":
 "support_runner_and_assert"}, {"id": "T0.6", "verifies":
 "file_io_read_returns_expected_bytes", "tool":
 "tests/sanity/test_file_read.lua", "framework":
-"support_runner_and_assert"}]}
-```
+"support_runner_and_assert"}]}}
+~~~
 
 T0.1 and T0.2 are pre-framework — Lua isn't even confirmed working
 yet, so they can't depend on `support/runner.lua`. T0.3 onward use the
@@ -1581,8 +1581,8 @@ All six must pass before V0.01 phase 1 begins.
 <a id="v001-phase-1-hello-world-in-charliejson"></a>
 ## 15 V0.01 phase 1: hello-world in CharlieJSON
 
-```
-vibecode: {"phase": 1, "version": "0.01", "fixture_path":
+~~~json
+{"vibecode": {"phase": 1, "version": "0.01", "fixture_path":
 "tests/charlie/fixtures/hello_world.ksj", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
 "tests/charlie/run.lua", "acceptance":
@@ -1601,8 +1601,8 @@ vibecode: {"phase": 1, "version": "0.01", "fixture_path":
 ["charlie_text_parser", "transpiler_emitting_canonical_ksj"],
 "deferred_to_later":
 ["sys_references_including_stdout", "stdout_io",
-"any_method_beyond_to_string", "any_class_beyond_string"]}
-```
+"any_method_beyond_to_string", "any_class_beyond_string"]}}
+~~~
 
 The first concrete development task. Work splits into three steps. The
 tactic is **inventory then fill gaps** — but with an important caveat:
@@ -1634,13 +1634,13 @@ so the source→runtime pipeline is end-to-end canonical.
 <a id="step-1-inventory"></a>
 ### 15.1 Step 1: Inventory
 
-```
-vibecode: {"step": 1, "name": "inventory", "actions":
+~~~json
+{"vibecode": {"step": 1, "name": "inventory", "actions":
 ["read_existing_json_lua", "read_existing_interpreter_lua",
 "note_state_of_json_parser", "note_state_of_ksj_executor",
 "confirm_text_side_modules_exist_as_scaffolding_only"], "output":
-"state_of_engine_doc; gap_list_for_v001"}
-```
+"state_of_engine_doc; gap_list_for_v001"}}
+~~~
 
 Read what's already in `code/charlie/lua/charlie/`: in particular `json.lua`
 and `interpreter.lua`. Note the state of each:
@@ -1661,8 +1661,8 @@ execute these; this is what's needed to clear V0.01."
 <a id="step-2-fill-the-gaps"></a>
 ### 15.2 Step 2: Fill the gaps
 
-```
-vibecode: {"step": 2, "name": "fill_gaps", "scope":
+~~~json
+{"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "only_what_v001_needs; not_full_ksj_spec",
 "json_parser_forms": ["json_object", "json_array", "json_string",
 "json_string_escapes_min"], "ksj_executor_forms":
@@ -1673,8 +1673,8 @@ vibecode: {"step": 2, "name": "fill_gaps", "scope":
 "owning_role_slot_on_every_value", "role_transition_save_and_restore",
 "chain_wipe_at_boundary_even_if_chain_is_empty_placeholder",
 "role_system_method_returning_current_role"], "stdlib_forms":
-["string_class_with_to_string_returning_self_owned_by_stdlib_role"]}
-```
+["string_class_with_to_string_returning_self_owned_by_stdlib_role"]}}
+~~~
 
 For each gap in the inventory, add only what V0.01 needs.
 **Don't generalize ahead of the test.** The required surface is tiny:
@@ -1699,14 +1699,14 @@ this one's.
 <a id="step-3-verify"></a>
 ### 15.3 Step 3: Verify
 
-```
-vibecode: {"step": 3, "name": "verify", "actions":
+~~~json
+{"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_ksj_fixture_file", "run_via_engine",
 "capture_last_statement_return_value", "compare_to_expected_string_hello"],
 "pass_condition":
 "return_value_equals_hello_and_no_exception_raised", "fail_condition":
-"any_deviation; failure_message_should_name_which_layer_blocked"}
-```
+"any_deviation; failure_message_should_name_which_layer_blocked"}}
+~~~
 
 Create the fixture at `tests/charlie/fixtures/hello_world.ksj` containing
 the CharlieJSON encoding, run it via the engine, capture the last
@@ -1723,8 +1723,8 @@ is selected from the roadmap and planned in the same three-step shape.
 <a id="phase-1-test-plan"></a>
 ### 15.4 Phase 1 test plan
 
-```
-vibecode: {"phase_1_tests":
+~~~json
+{"vibecode": {"phase_1_tests":
 [{"id": "T1.1", "verifies":
 "json_parse_handles_the_ksj_fixture_structure", "level": "unit"},
 {"id": "T1.2", "verifies":
@@ -1741,8 +1741,8 @@ vibecode: {"phase_1_tests":
 "engine_run_on_fixture_file_returns_value_whose_payload_is_hello",
 "level": "integration_end_to_end"}, {"id": "T1.8", "verifies":
 "role_transition_actually_happened_during_dispatch", "level":
-"unit_observability_check"}]}
-```
+"unit_observability_check"}]}}
+~~~
 
 Seven unit tests plus one end-to-end integration test verify Phase 1.
 Each test is a Lua file under `tests/charlie/v001/` using the existing
@@ -1801,8 +1801,8 @@ All eight pass = V0.01 done.
 <a id="test-layout"></a>
 ### 15.5 Test layout
 
-```
-vibecode: {"test_framework":
+~~~json
+{"vibecode": {"test_framework":
 "project_existing_at_tests_charlie_support_runner_and_assert; do_not_invent_a_new_one",
 "file_naming_convention":
 "test_topic_dot_lua_matching_existing_lexer_parser_transpiler_files",
@@ -1815,8 +1815,8 @@ vibecode: {"test_framework":
 "tests/charlie/run.lua":
 "shared_entry_point_requires_all_test_modules_and_calls_runner_report",
 "tests/charlie/support/":
-"existing_runner_and_assert_modules_unchanged"}}
-```
+"existing_runner_and_assert_modules_unchanged"}}}
+~~~
 
 The project uses its existing test framework — `tests/charlie/support/runner.lua`
 (provides `suite`, `test`, `report`) and `tests/charlie/support/assert.lua`
@@ -1841,16 +1841,16 @@ above mirror what's there.
 <a id="v002-phase-0-source-side-workbench"></a>
 ## 16 V0.02 phase 0: source-side workbench
 
-```
-vibecode: {"phase": 0, "version": "0.02", "purpose":
+~~~json
+{"vibecode": {"phase": 0, "version": "0.02", "purpose":
 "characterize_existing_lexer_parser_transpiler_state_against_v002_fixture; no_realignment_work_yet",
 "steps_count": 4, "acceptance":
 "all_four_workbench_checks_pass_and_produce_a_concrete_gap_list_for_phase_1; no_engine_code_changed",
 "tactic":
 "exercise_existing_pipeline_with_v002_fixture_string; observe_each_layer_output",
 "differs_from_v001_phase_0":
-"v001_phase_0_verified_lua_environment_and_json_lua_existed; v002_phase_0_verifies_existing_charlie_source_pipeline_handles_the_fixture_input"}
-```
+"v001_phase_0_verified_lua_environment_and_json_lua_existed; v002_phase_0_verifies_existing_charlie_source_pipeline_handles_the_fixture_input"}}
+~~~
 
 V0.02's workbench is the existing Charlie source pipeline (lexer →
 parser → transpiler). Before realigning the transpiler, Phase 0
@@ -1863,15 +1863,15 @@ implementation.
 <a id="step-01-confirm-the-lexer-tokenizes-the-fixture"></a>
 ### 16.1 Step 0.1: Confirm the lexer tokenizes the fixture
 
-```
-vibecode: {"step": "0.1", "name": "lexer_check",
+~~~json
+{"vibecode": {"step": "0.1", "name": "lexer_check",
 "input": "'hello'.to_string",
 "expected_token_kinds_in_order":
 ["string_literal", "dot", "identifier"],
 "tool": "charlie.tokenize from init.lua",
 "acceptance":
-"no_lex_error; token_sequence_includes_string_literal_hello_then_dot_then_identifier_to_string"}
-```
+"no_lex_error; token_sequence_includes_string_literal_hello_then_dot_then_identifier_to_string"}}
+~~~
 
 `charlie.tokenize("'hello'.to_string")` returns a token sequence
 covering the literal, the dot, and the identifier `to_string`. Existing
@@ -1881,15 +1881,15 @@ individually; this step confirms the combination tokenizes cleanly.
 <a id="step-02-confirm-the-parser-produces-a-clean-ast"></a>
 ### 16.2 Step 0.2: Confirm the parser produces a clean AST
 
-```
-vibecode: {"step": "0.2", "name": "parser_check",
+~~~json
+{"vibecode": {"step": "0.2", "name": "parser_check",
 "input": "'hello'.to_string",
 "expected_program_shape":
 "program_node_with_one_statement_node_representing_a_method_call_on_a_string_literal",
 "tool": "charlie.parse from init.lua",
 "acceptance":
-"no_parse_error; ast_shape_documented_for_phase_1_inventory"}
-```
+"no_parse_error; ast_shape_documented_for_phase_1_inventory"}}
+~~~
 
 `charlie.parse("'hello'.to_string")` returns an AST. Step 0.2 documents
 the exact `kind` of the top-level node, the method-call node, and the
@@ -1898,15 +1898,15 @@ literal node so Phase 1 step 1 can compare directly.
 <a id="step-03-observe-the-transpilers-current-output"></a>
 ### 16.3 Step 0.3: Observe the transpiler's current output
 
-```
-vibecode: {"step": "0.3", "name": "transpiler_baseline",
+~~~json
+{"vibecode": {"step": "0.3", "name": "transpiler_baseline",
 "input": "'hello'.to_string",
 "tool": "charlie.transpile from init.lua",
 "expected":
 "captures_actual_current_output_for_comparison_to_canonical_in_phase_1",
 "acceptance":
-"transpile_completes_without_error; output_recorded_as_phase_1_baseline; current_shape_is_pre_canonical_and_that_is_expected"}
-```
+"transpile_completes_without_error; output_recorded_as_phase_1_baseline; current_shape_is_pre_canonical_and_that_is_expected"}}
+~~~
 
 `charlie.transpile("'hello'.to_string")` returns a Lua table. The
 current output is pre-canonical — it matches `interpreter.lua`'s
@@ -1917,15 +1917,15 @@ is computed in Phase 1.
 <a id="step-04-confirm-enginerun-handles-a-hand-built-canonical-tree"></a>
 ### 16.4 Step 0.4: Confirm engine.run handles a hand-built canonical tree
 
-```
-vibecode: {"step": "0.4", "name": "engine_tree_entry_check",
+~~~json
+{"vibecode": {"step": "0.4", "name": "engine_tree_entry_check",
 "action":
 "build_the_v001_canonical_tree_in_lua_pass_to_a_run_tree_helper_or_equivalent_path",
 "acceptance":
 "end_to_end_returns_value_with_payload_hello_using_a_lua_built_tree_not_a_file",
 "note":
-"validates_the_run_tree_internal_split_before_phase_1_wires_it_to_transpiler_output"}
-```
+"validates_the_run_tree_internal_split_before_phase_1_wires_it_to_transpiler_output"}}
+~~~
 
 The V0.01 engine takes a path (`engine.run(path)`) — it reads the file,
 parses JSON, then iterates. To wire the transpiler in, the file-read +
@@ -1941,8 +1941,8 @@ one-line test. If not, Step 0.4 adds the helper purely as refactoring
 <a id="v002-phase-0-test-plan"></a>
 ### 16.5 V0.02 phase 0 test plan
 
-```
-vibecode: {"phase_0_tests":
+~~~json
+{"vibecode": {"phase_0_tests":
 [{"id": "T2.0.1", "verifies":
 "lexer_handles_v002_fixture_string", "tool":
 "tests/charlie/v002/test_lexer_check.lua", "level": "unit"},
@@ -1955,8 +1955,8 @@ vibecode: {"phase_0_tests":
 "level": "unit"}, {"id": "T2.0.4", "verifies":
 "engine_run_tree_returns_value_for_hand_built_canonical_tree",
 "tool": "tests/charlie/v002/test_engine_run_tree.lua",
-"level": "unit"}]}
-```
+"level": "unit"}]}}
+~~~
 
 | ID | Level | Verifies | Tool |
 |---|---|---|---|
@@ -1973,8 +1973,8 @@ V0.02 phase 1 begins.
 <a id="v002-phase-1-hello-world-from-charlie-source"></a>
 ## 17 V0.02 phase 1: hello-world from Charlie source
 
-```
-vibecode: {"phase": 1, "version": "0.02", "fixture_path":
+~~~json
+{"vibecode": {"phase": 1, "version": "0.02", "fixture_path":
 "tests/charlie/fixtures/hello_world.charlie", "fixture_content":
 "'hello'.to_string", "runner_path":
 "tests/charlie/run.lua", "acceptance":
@@ -1993,24 +1993,24 @@ vibecode: {"phase": 1, "version": "0.02", "fixture_path":
 "tactic":
 "minimal_realignment_just_for_hello_world_ast; later_slices_extend",
 "canon":
-"charliejson_md_is_canonical; transpiler_output_must_match_v001_hand_written_fixture_for_this_ast"}
-```
+"charliejson_md_is_canonical; transpiler_output_must_match_v001_hand_written_fixture_for_this_ast"}}
+~~~
 
 Three steps. Same shape as V0.01 Phase 1: inventory, fill gaps, verify.
 
 <a id="v002-step-1-inventory"></a>
 ### 17.1 V0.02 Step 1: Inventory
 
-```
-vibecode: {"step": 1, "name": "inventory", "actions":
+~~~json
+{"vibecode": {"step": 1, "name": "inventory", "actions":
 ["catalog_existing_lexer_parser_transpiler_against_v002_fixture",
 "document_ast_shape_for_method_call_on_string_literal",
 "document_current_transpiler_output_for_that_ast",
 "compute_diff_to_canonical_ksj_target",
 "identify_which_transpiler_test_files_will_need_updating"],
 "output":
-"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}
-```
+"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}}
+~~~
 
 Read the existing `lexer.lua`, `parser.lua`, and `transpiler.lua` with
 the V0.02 fixture in mind. Document:
@@ -2031,8 +2031,8 @@ transpiler tests requiring updates.
 <a id="v002-step-2-fill-the-gaps"></a>
 ### 17.2 V0.02 Step 2: Fill the gaps
 
-```
-vibecode: {"step": 2, "name": "fill_gaps", "scope":
+~~~json
+{"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "transpiler_path_for_hello_world_ast_only; not_full_realignment",
 "work_items":
 ["transpiler_emit_canonical_for_string_literal_expression",
@@ -2043,8 +2043,8 @@ vibecode: {"step": 2, "name": "fill_gaps", "scope":
 "support_assert_deep_equal_helper_added"], "non_work":
 ["other_ast_node_types_left_pre_canonical",
 "interpreter_lua_and_its_tests_left_untouched",
-"existing_transpiler_tests_updated_only_for_realigned_paths"]}
-```
+"existing_transpiler_tests_updated_only_for_realigned_paths"]}}
+~~~
 
 For each gap from Step 1, add only what V0.02 needs:
 
@@ -2075,8 +2075,8 @@ slices exercise each AST node, not all at once.
 <a id="v002-step-3-verify"></a>
 ### 17.3 V0.02 Step 3: Verify
 
-```
-vibecode: {"step": 3, "name": "verify", "actions":
+~~~json
+{"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_charlie_source_fixture",
 "run_via_engine_run_source",
 "compare_returned_value_payload_to_hello",
@@ -2084,8 +2084,8 @@ vibecode: {"step": 3, "name": "verify", "actions":
 "pass_condition":
 "return_value_payload_equals_hello_and_transpiled_tree_deep_equals_v001_fixture_tree",
 "fail_condition":
-"any_deviation; failure_message_names_which_layer_blocked"}
-```
+"any_deviation; failure_message_names_which_layer_blocked"}}
+~~~
 
 Create `tests/charlie/fixtures/hello_world.charlie` containing
 `'hello'.to_string`. Run it via `engine.run_source(path)`. Verify two
@@ -2106,8 +2106,8 @@ planned in the same shape.
 <a id="v002-phase-1-test-plan"></a>
 ### 17.4 V0.02 phase 1 test plan
 
-```
-vibecode: {"phase_1_tests":
+~~~json
+{"vibecode": {"phase_1_tests":
 [{"id": "T2.1", "verifies":
 "transpiler_emits_canonical_ksj_for_v002_fixture_deep_equal_to_v001_hand_written_tree",
 "level": "unit"}, {"id": "T2.2", "verifies":
@@ -2120,8 +2120,8 @@ vibecode: {"phase_1_tests":
 "existing_v001_engine_run_path_still_returns_payload_hello_for_v001_ksj_fixture",
 "level": "regression_check"}, {"id": "T2.6", "verifies":
 "existing_pre_canonical_transpiler_paths_for_unrelated_ast_types_unchanged_and_their_tests_still_pass",
-"level": "regression_check"}]}
-```
+"level": "regression_check"}]}}
+~~~
 
 Six tests for V0.02 phase 1. Each lives under `tests/charlie/v002/`
 using the same framework (`support.runner` + `support.assert`).
@@ -2145,16 +2145,16 @@ All six pass = V0.02 done.
 <a id="v002-test-layout"></a>
 ### 17.5 V0.02 test layout
 
-```
-vibecode: {"test_directory": "tests/charlie/v002/",
+~~~json
+{"vibecode": {"test_directory": "tests/charlie/v002/",
 "fixture_path": "tests/charlie/fixtures/hello_world.charlie",
 "entry_point_change":
 "tests_charlie_run_lua_extended_to_require_v002_test_modules",
 "transpiler_test_updates":
 "tests_charlie_transpiler_test_files_updated_only_for_realigned_ast_nodes",
 "support_helper_addition":
-"tests_charlie_support_assert_lua_gains_deep_equal_helper"}
-```
+"tests_charlie_support_assert_lua_gains_deep_equal_helper"}}
+~~~
 
 | Path | Contents |
 |---|---|
@@ -2167,13 +2167,13 @@ vibecode: {"test_directory": "tests/charlie/v002/",
 <a id="v002-open-questions"></a>
 ### 17.6 V0.02 open questions
 
-```
-vibecode: {"open_questions":
+~~~json
+{"vibecode": {"open_questions":
 ["api_naming_for_source_side_entry_point",
 "deep_equal_assert_helper_signature_and_first_divergent_path_format",
 "whether_existing_charlie_run_source_in_init_lua_should_be_renamed_or_deprecated_in_v002_or_later",
-"how_much_transpiler_test_churn_in_practice"]}
-```
+"how_much_transpiler_test_churn_in_practice"]}}
+~~~
 
 - **API naming.** `engine.run_source(path)` is the working name.
   Alternatives: `engine.run_charlie(path)`, `charlie.run_source(path)`,
@@ -2198,16 +2198,16 @@ vibecode: {"open_questions":
 <a id="v003-phase-0-stdout-and-bwc-workbench"></a>
 ## 18 V0.03 phase 0: stdout-and-bwc workbench
 
-```
-vibecode: {"phase": 0, "version": "0.03", "purpose":
+~~~json
+{"vibecode": {"phase": 0, "version": "0.03", "purpose":
 "verify_existing_pipeline_state_for_bwc_dispatch_and_stdout_injection_before_writing_v003_code",
 "steps_count": 3, "acceptance":
 "all_three_workbench_checks_pass; phase_1_inventory_has_concrete_baseline; no_engine_code_changed",
 "tactic":
 "exercise_existing_lexer_parser_transpiler_with_puts_hello_fixture_and_characterize_engine_role_for_handling_bwc_statements_and_stdout_injection",
 "differs_from_v002_phase_0":
-"v002_focused_on_method_call_ast; v003_focuses_on_bwc_call_ast_and_engine_extension_points_for_stdout"}
-```
+"v002_focused_on_method_call_ast; v003_focuses_on_bwc_call_ast_and_engine_extension_points_for_stdout"}}
+~~~
 
 V0.03's workbench characterizes the pipeline state for the `puts`
 fixture. Three steps — fewer than V0.02 because the lexer/parser/
@@ -2217,13 +2217,13 @@ The new questions are bwc-specific and stdout-injection-specific.
 <a id="v003-step-01-confirm-the-source-pipeline-handles-the-puts-fixture"></a>
 ### 18.1 V0.03 Step 0.1: Confirm the source pipeline handles the puts fixture
 
-```
-vibecode: {"step": "0.1", "name": "source_pipeline_baseline",
+~~~json
+{"vibecode": {"step": "0.1", "name": "source_pipeline_baseline",
 "input": "puts 'hello'", "tools":
 ["charlie.tokenize", "charlie.parse", "charlie.transpile"],
 "acceptance":
-"all_three_run_without_error; current_transpiler_output_for_puts_call_recorded_as_phase_1_baseline; ast_node_kind_for_bwc_call_documented"}
-```
+"all_three_run_without_error; current_transpiler_output_for_puts_call_recorded_as_phase_1_baseline; ast_node_kind_for_bwc_call_documented"}}
+~~~
 
 Run `charlie.tokenize("puts 'hello'")`, `charlie.parse(...)`, and
 `charlie.transpile(...)`. Record the AST node `kind` for the bwc-call
@@ -2235,13 +2235,13 @@ is `[{bwc:'puts'}, {value:'hello'}]`. The diff drives Phase 1 step 2.
 <a id="v003-step-02-confirm-enginerun_source-accepts-an-env-override"></a>
 ### 18.2 V0.03 Step 0.2: Confirm engine.run_source accepts an env override
 
-```
-vibecode: {"step": "0.2", "name": "env_injection_check",
+~~~json
+{"vibecode": {"step": "0.2", "name": "env_injection_check",
 "action":
 "run_v002_fixture_through_engine_run_source_with_an_env_table_argument_and_verify_no_error",
 "acceptance":
-"engine_run_source_accepts_optional_env_argument_or_can_be_extended_to_accept_one_without_breaking_v002_signature"}
-```
+"engine_run_source_accepts_optional_env_argument_or_can_be_extended_to_accept_one_without_breaking_v002_signature"}}
+~~~
 
 `engine.run_source(path, env)` is the working signature; the V0.02 plan
 defines the function without specifying `env`. Step 0.2 confirms (or
@@ -2256,13 +2256,13 @@ extends it — purely additive, no V0.02 regression.
 <a id="v003-step-03-pre-canonical-legacy-bwc-handling-for-reference"></a>
 ### 18.3 V0.03 Step 0.3: Pre-canonical legacy bwc handling, for reference
 
-```
-vibecode: {"step": "0.3", "name": "legacy_bwc_reference",
+~~~json
+{"vibecode": {"step": "0.3", "name": "legacy_bwc_reference",
 "action":
 "read_interpreter_lua_to_observe_how_puts_was_handled_in_the_pre_canonical_pipeline",
 "acceptance":
-"summary_recorded_of_legacy_puts_implementation_for_v003_phase_1_to_borrow_what_is_useful_without_inheriting_the_pre_canonical_shape"}
-```
+"summary_recorded_of_legacy_puts_implementation_for_v003_phase_1_to_borrow_what_is_useful_without_inheriting_the_pre_canonical_shape"}}
+~~~
 
 `interpreter.lua` already has a `puts` bwc handler (it predates V0.01).
 Step 0.3 reads that implementation as a reference for the V0.03
@@ -2274,15 +2274,15 @@ to change.
 <a id="v003-phase-0-test-plan"></a>
 ### 18.4 V0.03 phase 0 test plan
 
-```
-vibecode: {"phase_0_tests":
+~~~json
+{"vibecode": {"phase_0_tests":
 [{"id": "T3.0.1", "verifies":
 "source_pipeline_completes_for_puts_hello_fixture_and_baseline_output_captured",
 "tool": "tests/charlie/v003/test_source_baseline.lua", "level": "unit"},
 {"id": "T3.0.2", "verifies":
 "engine_run_source_signature_compatible_with_optional_env_argument",
-"tool": "tests/charlie/v003/test_env_signature.lua", "level": "unit"}]}
-```
+"tool": "tests/charlie/v003/test_env_signature.lua", "level": "unit"}]}}
+~~~
 
 | ID | Level | Verifies | Tool |
 |---|---|---|---|
@@ -2297,8 +2297,8 @@ before V0.03 phase 1 begins.
 <a id="v003-phase-1-puts-hello-from-charlie-source"></a>
 ## 19 V0.03 phase 1: puts-hello from Charlie source
 
-```
-vibecode: {"phase": 1, "version": "0.03", "fixture_path":
+~~~json
+{"vibecode": {"phase": 1, "version": "0.03", "fixture_path":
 "tests/charlie/fixtures/puts_hello.charlie", "fixture_content":
 "puts 'hello'", "runner_path": "tests/charlie/run.lua",
 "acceptance":
@@ -2317,8 +2317,8 @@ vibecode: {"phase": 1, "version": "0.03", "fixture_path":
 ["stdin_faucet", "stderr_sink", "file_io", "variables_assignment",
 "control_flow", "full_transpiler_retrofit_for_unrelated_bwcs"],
 "tactic":
-"minimal_extension_just_for_puts_with_one_string_argument; other_bwcs_and_multi_argument_bwc_calls_left_for_later"}
-```
+"minimal_extension_just_for_puts_with_one_string_argument; other_bwcs_and_multi_argument_bwc_calls_left_for_later"}}
+~~~
 
 Three steps. Same shape as V0.01/V0.02 Phase 1: inventory, fill gaps,
 verify.
@@ -2326,16 +2326,16 @@ verify.
 <a id="v003-step-1-inventory"></a>
 ### 19.1 V0.03 Step 1: Inventory
 
-```
-vibecode: {"step": 1, "name": "inventory", "actions":
+~~~json
+{"vibecode": {"step": 1, "name": "inventory", "actions":
 ["read_existing_transpiler_to_see_how_bwc_calls_are_emitted_today",
 "read_existing_interpreter_lua_puts_handler_for_reference",
 "document_canonical_target_shape_per_charliejson_md",
 "identify_engine_dispatch_branch_that_needs_extending_for_bwc_receiver_form",
 "identify_transpiler_tests_that_will_need_updating_for_realigned_bwc_emit"],
 "output":
-"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}
-```
+"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}}
+~~~
 
 Read the existing `transpiler.lua` for its bwc-call output shape, the
 existing `interpreter.lua` for its `puts` handler (lines around the
@@ -2356,8 +2356,8 @@ existing `interpreter.lua` for its `puts` handler (lines around the
 <a id="v003-step-2-fill-the-gaps"></a>
 ### 19.2 V0.03 Step 2: Fill the gaps
 
-```
-vibecode: {"step": 2, "name": "fill_gaps", "scope":
+~~~json
+{"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "bwc_dispatch_and_stdout_injection_only; not_other_bwcs_not_multi_argument_handling",
 "work_items":
 ["transpiler_emit_canonical_for_bwc_call_statement",
@@ -2371,8 +2371,8 @@ vibecode: {"step": 2, "name": "fill_gaps", "scope":
 ["other_bwcs_beyond_puts", "multi_argument_bwc_calls",
 "keyword_argument_bwc_calls", "stderr_separation",
 "flushing_or_buffering_strategies",
-"interpreter_lua_or_its_tests_modified"]}
-```
+"interpreter_lua_or_its_tests_modified"]}}
+~~~
 
 For each gap from Step 1, add only what V0.03 needs:
 
@@ -2406,8 +2406,8 @@ string, etc.) is later work.
 <a id="v003-step-3-verify"></a>
 ### 19.3 V0.03 Step 3: Verify
 
-```
-vibecode: {"step": 3, "name": "verify", "actions":
+~~~json
+{"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_charlie_source_fixture",
 "build_capture_sink_env",
 "run_via_engine_run_source_with_env",
@@ -2416,8 +2416,8 @@ vibecode: {"step": 3, "name": "verify", "actions":
 "pass_condition":
 "captured_stdout_buffer_equals_hello_newline_and_transpiled_tree_deep_equals_canonical_target",
 "fail_condition":
-"any_deviation; failure_message_names_which_layer_blocked"}
-```
+"any_deviation; failure_message_names_which_layer_blocked"}}
+~~~
 
 Create `tests/charlie/fixtures/puts_hello.charlie` containing
 `puts 'hello'`. Build a capture-sink `env`. Run via
@@ -2436,8 +2436,8 @@ the same detail level as V0.02 and V0.03.
 <a id="v003-phase-1-test-plan"></a>
 ### 19.4 V0.03 phase 1 test plan
 
-```
-vibecode: {"phase_1_tests":
+~~~json
+{"vibecode": {"phase_1_tests":
 [{"id": "T3.1", "verifies":
 "transpiler_emits_canonical_bwc_form_for_puts_hello_deep_equal_to_expected_target",
 "level": "unit"}, {"id": "T3.2", "verifies":
@@ -2452,8 +2452,8 @@ vibecode: {"phase_1_tests":
 "end_to_end_puts_hello_source_produces_hello_newline_in_capture_buffer",
 "level": "integration_end_to_end"}, {"id": "T3.7", "verifies":
 "v001_engine_run_and_v002_engine_run_source_paths_still_pass_for_their_prior_fixtures",
-"level": "regression_check"}]}
-```
+"level": "regression_check"}]}}
+~~~
 
 Seven tests for V0.03 phase 1. Each lives under `tests/charlie/v003/`
 using the same framework. T3.5 is the load-bearing role test (mirror of
@@ -2476,16 +2476,16 @@ All seven pass = V0.03 done.
 <a id="v003-test-layout"></a>
 ### 19.5 V0.03 test layout
 
-```
-vibecode: {"test_directory": "tests/charlie/v003/",
+~~~json
+{"vibecode": {"test_directory": "tests/charlie/v003/",
 "fixture_path": "tests/charlie/fixtures/puts_hello.charlie",
 "entry_point_change":
 "tests_charlie_run_lua_extended_to_require_v003_test_modules",
 "capture_sink_helper":
 "tests_charlie_v003_support_capture_lua_or_inlined_per_test",
 "transpiler_test_updates":
-"tests_charlie_transpiler_test_files_for_bwc_paths_updated_only"}
-```
+"tests_charlie_transpiler_test_files_for_bwc_paths_updated_only"}}
+~~~
 
 | Path | Contents |
 |---|---|
@@ -2497,15 +2497,15 @@ vibecode: {"test_directory": "tests/charlie/v003/",
 <a id="v003-open-questions"></a>
 ### 19.6 V0.03 open questions
 
-```
-vibecode: {"open_questions":
+~~~json
+{"vibecode": {"open_questions":
 ["bwc_handler_calling_convention",
 "capture_sink_signature",
 "stderr_vs_stdout_split",
 "sys_role_check_after_v003"],
 "resolved":
-["bwc_owning_role_attachment_mechanism_resolved_2026-05-17_as_struct_per_bwc_fn_and_owning_role"]}
-```
+["bwc_owning_role_attachment_mechanism_resolved_2026-05-17_as_struct_per_bwc_fn_and_owning_role"]}}
+~~~
 
 - **bwc handler calling convention.** V0.01 method handlers take
   `(receiver, args)`. bwc handlers don't have a receiver — they're
@@ -2531,8 +2531,8 @@ vibecode: {"open_questions":
 <a id="v00x-charlie-command-line-execution"></a>
 ## 20 V0.0X: Charlie command-line execution
 
-```
-vibecode: {"slice": "v0_0x_charlie_cli", "codename":
+~~~json
+{"vibecode": {"slice": "v0_0x_charlie_cli", "codename":
 "charlie_cli", "position_in_roadmap":
 "after_v005_charlie_with_json_serialization; before_v01_bryton",
 "goal":
@@ -2541,8 +2541,8 @@ vibecode: {"slice": "v0_0x_charlie_cli", "codename":
 "permission_posture":
 "default_restrictive; opt_in_via_flags_deno_shape",
 "aligns_with":
-["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}
-```
+["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}}
+~~~
 
 Hard prerequisite for [V0.1 Bryton](#v01-bryton) — Bryton
 subprocess-invokes test files (per the
@@ -2554,8 +2554,8 @@ for Charlie code launched at the CLI.
 <a id="what-the-slice-introduces"></a>
 ### 20.1 What the slice introduces
 
-```
-vibecode: {"introduces": ["charlie_command_line_launcher",
+~~~json
+{"vibecode": {"introduces": ["charlie_command_line_launcher",
 "shebang_support", "argument_passing_into_charlie",
 "stderr_sink_and_role",
 "routing_convention_engine_errors_to_stderr_program_output_to_stdout",
@@ -2569,8 +2569,8 @@ vibecode: {"introduces": ["charlie_command_line_launcher",
 "wire_up_faucets_for_any_granted_flags",
 "invoke_engine_run_on_the_file",
 "emit_program_output_to_stdout_and_stderr_appropriately",
-"exit_with_appropriate_code"]}
-```
+"exit_with_appropriate_code"]}}
+~~~
 
 - A `charlie` command-line launcher — a small script taking a
   `.charlie` file path as its first argument, invoking the engine,
@@ -2595,8 +2595,8 @@ vibecode: {"introduces": ["charlie_command_line_launcher",
 <a id="permissions-default-restrictive-opt-in-via-flags"></a>
 ### 20.2 Permissions: default restrictive, opt-in via flags
 
-```
-vibecode: {"permission_model": "default_restrictive_opt_in_via_flags",
+~~~json
+{"vibecode": {"permission_model": "default_restrictive_opt_in_via_flags",
 "defaults_always_on": ["user_role", "clock_role_plus_clock_object",
 "randomizer_role_plus_random_source",
 "utils_role_plus_percent_utils_namespace",
@@ -2605,8 +2605,8 @@ vibecode: {"permission_model": "default_restrictive_opt_in_via_flags",
 "cli_args_role_plus_argv"], "off_by_default_grant_via_flag":
 ["filesystem_dirjails", "network_faucets", "env_vars", "puck",
 "all_at_once_convenience"], "rationale_links":
-["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}
-```
+["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}}
+~~~
 
 Following the role-based security model in [roles.md](../charlie/roles.md) and the
 no-dangerous-defaults discipline, the CLI uses a **default-restrictive**
@@ -2665,8 +2665,8 @@ charlie --allow-all ./my_local_tool.charlie
 <a id="installation"></a>
 ### 20.3 Installation
 
-```
-vibecode: {"installation_model":
+~~~json
+{"vibecode": {"installation_model":
 "project_local_bin_plus_path; no_system_install",
 "launcher_path_in_repo": "bin/charlie",
 "user_action_once":
@@ -2677,8 +2677,8 @@ vibecode: {"installation_model":
 "each_repo_has_its_own_bin; path_order_picks_the_winner",
 "easy_backout":
 "remove_path_line_from_rc_file; nothing_else_to_clean_up",
-"system_install_status": "v1_plus_deployment_concern; not_v00x_work"}
-```
+"system_install_status": "v1_plus_deployment_concern; not_v00x_work"}}
+~~~
 
 The `charlie` launcher lives at `bin/charlie` inside the repo. There
 is **no system-level install** in V0.0X — root access is not required,
@@ -2730,10 +2730,10 @@ homebrew formula, etc.) is a V1+ deployment concern, not V0.0X work.
 <a id="bryton-interaction"></a>
 ### 20.4 Bryton interaction
 
-```
-vibecode: {"bryton_invocation": "charlie_dash_dash_allow_all_per_test",
-"rationale": "test_files_typically_need_broad_access; per_test_narrowing_is_later_bryton_feature_out_of_scope_for_v01"}
-```
+~~~json
+{"vibecode": {"bryton_invocation": "charlie_dash_dash_allow_all_per_test",
+"rationale": "test_files_typically_need_broad_access; per_test_narrowing_is_later_bryton_feature_out_of_scope_for_v01"}}
+~~~
 
 Bryton subprocess-invokes test files using `charlie --allow-all` by
 default. Test files typically need broad access (filesystem to read
@@ -2744,14 +2744,14 @@ future `bryton.json` setting; out of scope for V0.1).
 <a id="open-questions"></a>
 ### 20.5 Open questions
 
-```
-vibecode: {"open_questions_v00x_cli":
+~~~json
+{"vibecode": {"open_questions_v00x_cli":
 ["exact_flag_syntax_long_only_vs_short_forms_equals_vs_separate_args",
 "default_for_puck_role_off_seems_right_but_puck_is_central",
 "determinism_flag_for_clock_and_randomizer_seed_for_test_reproducibility_v2_plus",
 "cross_platform_shebang_behavior_linux_macos_wsl",
-"whether_engine_reading_the_dot_charlie_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}
-```
+"whether_engine_reading_the_dot_charlie_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}}
+~~~
 
 - **Exact flag syntax.** Long-only or short forms? `--allow-fs=./`
   versus `--allow-fs ./`? Settled in this slice.
@@ -2774,8 +2774,8 @@ vibecode: {"open_questions_v00x_cli":
 <a id="v01-bryton"></a>
 ## 21 V0.1: Bryton
 
-```
-vibecode: {"version": "0.1", "codename": "bryton", "goal":
+~~~json
+{"vibecode": {"version": "0.1", "codename": "bryton", "goal":
 "first_usable_bryton_runner_executes_a_directory_of_test_files_and_aggregates_xeme_results",
 "directive": "keep_very_light_per_user_instruction_2026-05-15",
 "includes": ["runner_walks_directory_recursively_any_order",
@@ -2792,8 +2792,8 @@ vibecode: {"version": "0.1", "codename": "bryton", "goal":
 "lua_side_engine_tests_which_continue_to_use_tests_charlie_support_runner",
 "spec_links":
 ["documentation/charlie/bryton/overview.md",
-"documentation/charlie/bryton/runner.md"]}
-```
+"documentation/charlie/bryton/runner.md"]}}
+~~~
 
 V0.1 is the first usable **Bryton** — see
 [bryton/overview.md](../charlie/bryton/overview.md) and
@@ -2831,16 +2831,16 @@ Xeme), layered on top of the engine.
 <a id="v01-prerequisites"></a>
 ### 21.1 V0.1 prerequisites
 
-```
-vibecode: {"v01_prerequisites":
+~~~json
+{"vibecode": {"v01_prerequisites":
 ["v001_engine_can_run_ksj_end_to_end",
 "v00X_charlie_text_parser_and_transpiler_so_test_files_can_be_charlie_source",
 "v00X_hash_class_so_charlie_tests_can_construct_xemes",
 "v00X_stdout_writing_so_charlie_tests_can_emit_xemes",
 "v00X_json_serialization_method_on_hashes_so_tests_can_emit_their_xemes",
 "lua_host_subprocess_invocation_io_popen",
-"lua_host_directory_walk_find_via_io_popen_or_lfs"]}
-```
+"lua_host_directory_walk_find_via_io_popen_or_lfs"]}}
+~~~
 
 Several slices in the V0.0X range have to land before V0.1 can ship:
 
@@ -2867,12 +2867,12 @@ Three phases, same three-step shape as V0.01:
 <a id="phase-0-lua-host-workbench-for-bryton"></a>
 #### 21.2.1 Phase 0: Lua-host workbench for Bryton
 
-```
-vibecode: {"v01_phase_0_purpose":
+~~~json
+{"vibecode": {"v01_phase_0_purpose":
 "verify_lua_host_capabilities_bryton_needs_before_writing_bryton_code",
 "steps_count": 3, "acceptance":
-"all_three_pass_no_bryton_code_written_yet"}
-```
+"all_three_pass_no_bryton_code_written_yet"}}
+~~~
 
 - **Step 0.1: subprocess invocation.** `io.popen` runs a command and
   captures stdout. Sanity test: `io.popen("echo hello"):read("*a")`
@@ -2889,8 +2889,8 @@ vibecode: {"v01_phase_0_purpose":
 <a id="phase-1-runner-implementation"></a>
 #### 21.2.2 Phase 1: runner implementation
 
-```
-vibecode: {"v01_phase_1_steps":
+~~~json
+{"vibecode": {"v01_phase_1_steps":
 [{"step": 1, "name": "walk_directory_collect_test_files"},
 {"step": 2, "name": "run_one_file_as_subprocess_capture_stdout"},
 {"step": 3, "name": "parse_captured_stdout_as_xeme_json"},
@@ -2898,8 +2898,8 @@ vibecode: {"v01_phase_1_steps":
 "aggregate_pass_fail_counts_across_multiple_tests"},
 {"step": 5, "name": "print_flat_summary_and_failure_list"},
 {"step": 6, "name":
-"wire_steps_1_through_5_as_bryton_dot_lua_entry_point"}]}
-```
+"wire_steps_1_through_5_as_bryton_dot_lua_entry_point"}]}}
+~~~
 
 Build the runner step by step, each independently testable:
 
@@ -2920,13 +2920,13 @@ Build the runner step by step, each independently testable:
 <a id="phase-2-acceptance-tests"></a>
 #### 21.2.3 Phase 2: acceptance tests
 
-```
-vibecode: {"v01_phase_2_tests":
+~~~json
+{"vibecode": {"v01_phase_2_tests":
 [{"id": "TB.1", "verifies": "trivial_pass_case"},
 {"id": "TB.2", "verifies": "trivial_fail_case_message_surfaces"},
 {"id": "TB.3", "verifies":
-"mixed_directory_correct_aggregate_and_failures_listed"}]}
-```
+"mixed_directory_correct_aggregate_and_failures_listed"}]}}
+~~~
 
 | ID | Verifies | Setup |
 |---|---|---|
@@ -2946,15 +2946,15 @@ When all three pass, V0.1 Bryton ships.
 <a id="v01-test-layout"></a>
 ### 21.3 V0.1 test layout
 
-```
-vibecode: {"v01_test_layout":
+~~~json
+{"vibecode": {"v01_test_layout":
 {"runner_implementation_under":
 "code/bryton/lua/bryton/",
 "v01_acceptance_fixtures_under":
 "tests/bryton/v01/fixtures/",
 "v01_acceptance_tests_under":
-"tests/bryton/v01/"}}
-```
+"tests/bryton/v01/"}}}
+~~~
 
 | Path | Contents |
 |---|---|
@@ -2967,15 +2967,15 @@ vibecode: {"v01_test_layout":
 <a id="methodology"></a>
 ## 22 Methodology
 
-```
-vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
+~~~json
+{"vibecode": {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 "each_phase_runnable", "tests_drive_roadmap",
 "soft_lock_applies_until_explicit_unlock",
 "phase_completion_requires_acceptance_criterion_passing",
 "inventory_before_implement; never_rewrite_without_understanding",
 "minimal_surface_per_slice; not_full_spec_upfront",
-"ksj_is_runtime_format; charlie_text_is_for_humans"]}
-```
+"ksj_is_runtime_format; charlie_text_is_for_humans"]}}
+~~~
 
 - Vibecode blocks are canonical; prose is derivative.
 - Each phase ends runnable.
@@ -2996,15 +2996,15 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 <a id="open"></a>
 ## 23 Open
 
-```
-vibecode: {"open": ["test_runner_decision", "fixture_layout",
+~~~json
+{"vibecode": {"open": ["test_runner_decision", "fixture_layout",
 "vibecode_attachment_form", "bootstrap_parser_in_ksj",
 "chain_placeholder_form_in_v001",
 "top_level_return_path_to_harness",
 "engine_capability_allow_list_v1_plus"],
 "resolved":
-["string_class_role_name_resolved_2026-05-17_as_stdlib_for_all_built_in_classes"]}
-```
+["string_class_role_name_resolved_2026-05-17_as_stdlib_for_all_built_in_classes"]}}
+~~~
 
 - **Test runner.** Use the existing `tests/charlie/run.lua` or evolve it?
   To be decided during Step 1 (inventory) of V0.01.

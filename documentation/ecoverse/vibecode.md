@@ -3,11 +3,13 @@
 <a id="overview"></a>
 ## 1 Overview
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "introduces the four reserved pass-through fields in all Puckverse JSON objects",
 	"key_concepts": ["vibecode", "comment", "misc", "corporate", "pass-through", "always_present"]
-}
+}}
+~~~
 
 The Puckverse reserves four keys in every JSON hash: `vibecode`, `comment`, `misc`, and
 `corporate`. All four travel silently with any object — passed through transparently by

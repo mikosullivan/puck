@@ -3,15 +3,15 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"language": "Charlie",
 	"runtime_format": "CharlieJSON",
 	"influences": ["Ruby", "Perl"],
 	"conventions": ["share_as_charlie_not_ksj", "formatter_enforces_style"]
-}
-```
+}}
+~~~
 
 Charlie is the programming language of the Puck ecoverse. Programs are written in Charlie
 and transpiled to CharlieJSON for execution. CharlieJSON is the canonical runtime format;
@@ -46,15 +46,14 @@ alternate surface syntaxes are planned for v1.
 }}
 ~~~
 
-Puck ships a **Charlie formatter as a VS Code extension** that lets every developer
-configure formatting (tabs vs. spaces, brace placement, alignment, line width) however
-they want.
+To avoid debates about tabs-vs-spaces and other bickering, a
+Charlie VS Code extentsion if available (link here when it actually
+exists). That extension allows you to format Charlie to your own
+preference. The rule is simple:
 
-The community norm is the two-rule pattern:
 
-- **Submit code formatted however you want.** Don't yield to anyone else's preferences.
-- **Run downloaded code through your formatter.** Don't ask anyone else to yield to
-  yours.
+- Submit code formatted however you want.
+- Run downloaded code through your formatter.
 
 That's it. No house style, no enforced repo-wide config, no formatting nits in code
 review. Tabs-vs-spaces is a settings file each developer owns, not a debate.
@@ -64,13 +63,13 @@ review. Tabs-vs-spaces is a settings file each developer owns, not a debate.
 <a id="transpilation"></a>
 ## 3 Transpilation
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "transpilation",
 	"target": "CharlieJSON",
 	"notes": ["see_charliejson_md_for_format"]
-}
-```
+}}
+~~~
 
 Charlie compiles to CharlieJSON. See [charliejson.md](charliejson.md) for the CharlieJSON
 format.
@@ -80,16 +79,16 @@ format.
 <a id="strings"></a>
 ## 4 Strings
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "strings",
 	"quote_styles": ["single_not_interpolated", "double_interpolated", "heredoc"],
 	"colon_shorthand": ":foo == 'foo'",
 	"bare_word_keys": "equivalent_to_string_keys_in_hashes_and_kwargs",
 	"interpolation_forms": ["$variable", "#{}"],
 	"heredoc_strips_leading_whitespace": true
-}
-```
+}}
+~~~
 
 <a id="default-to-single-quotes"></a>
 ### 4.1 Default to single quotes
@@ -177,14 +176,14 @@ own damn fault and they deserve it.
 <a id="variables"></a>
 ## 5 Variables
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "variables",
 	"sigil": "$",
 	"variable_object": "$$foo returns variable object not value",
 	"notes": ["pass_by_reference_unsupported", "variable_object_does_not_expose_value"]
-}
-```
+}}
+~~~
 
 Variables are prefixed with `$`, Perl-style:
 
@@ -202,14 +201,14 @@ intentionally unsupported pattern. Future use cases will be designed around this
 <a id="blocks"></a>
 ## 6 Blocks
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "blocks",
 	"closed_with": "end",
 	"scope": "every_block_creates_new_inherited_scope",
 	"applies_to": ["if", "else", "loop_bodies", "bare_blocks"]
-}
-```
+}}
+~~~
 
 Blocks are closed with `end`, Ruby-style. Every block creates a new inherited scope.
 This applies to all blocks without exception — `if`, `else`, loop bodies, and bare blocks.
@@ -219,16 +218,16 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 <a id="multi-section-blocks"></a>
 ## 7 Multi-section blocks
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "multi_section_blocks",
 	"principle": "multi_boundary_blocks_are_acceptable_when_each_boundary_marks_a_distinct_structural_phase_of_the_constructs_run; not_when_boundaries_mark_conditional_alternatives",
 	"kind_1_phase_markers_acceptable": ["loop_before_between_after_noloop",
 		"begin_ensure_end_or_equivalent"],
 	"kind_2_conditional_alternatives_avoid": ["if_elsif_else"],
 	"rationale": "phase_markers_have_no_clean_replacement_outside_the_construct; conditional_alternatives_have_clean_replacements_via_sequential_ifs_or_lookup_tables_or_polymorphism"
-}
-```
+}}
+~~~
 
 Charlie has constructs whose syntax breaks into multiple labeled
 sub-sections inside a single `end` — `if` / `elsif` / `else`, loops
@@ -286,13 +285,13 @@ prefer a form where each path stands on its own.
 <a id="when-do-is-required"></a>
 ## 8 When `do` is Required
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "do_keyword",
 	"required_for": "block_passed_as_argument_to_function_call",
 	"not_used_for": ["control_structures", "definitions"]
-}
-```
+}}
+~~~
 
 The `do` keyword marks **a block being passed as an argument to a function
 call**. That is its only role.
@@ -361,15 +360,15 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 <a id="statement-termination"></a>
 ## 9 Statement Termination
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "statement_termination",
 	"implicit_terminator": "newline",
 	"explicit_terminator": "semicolon",
 	"continuation_signals": ["trailing_comma", "trailing_binary_operator",
 		"leading_dot", "leading_binary_operator"]
-}
-```
+}}
+~~~
 
 A statement is terminated by a newline. To put multiple statements on one line,
 separate them with semicolons:
@@ -410,8 +409,8 @@ similar languages use.
 <a id="the-__end__-marker"></a>
 ## 10 The `__END__` Marker
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "end_marker",
 	"marker": "__END__",
 	"behavior": "everything_after_is_ignored",
@@ -420,8 +419,8 @@ vibecode: {
 	"data_access": "not_supported; trailing_content_is_discarded_entirely",
 	"status": "spec_requirement_not_yet_implemented",
 	"borrowed_from": ["perl", "ruby"]
-}
-```
+}}
+~~~
 
 A line containing only `__END__` (optionally followed by trailing whitespace)
 terminates the script. Everything in the file after that line is ignored by
@@ -486,8 +485,8 @@ do" section.
 <a id="functions"></a>
 ## 11 Functions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "functions",
 	"callables": ["function", "closure"],
 	"function_captures_scope": false,
@@ -496,8 +495,8 @@ vibecode: {
 	"call_sigil": "&",
 	"inline_do_blocks": "behave_like_closures",
 	"remote_function": "delegates_to_%puck.call"
-}
-```
+}}
+~~~
 
 <a id="definition"></a>
 ### 11.1 Definition
@@ -601,8 +600,8 @@ for the full `%puck.call` design.
 <a id="classes"></a>
 ## 12 Classes
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "classes",
 	"definition_keyword": "class",
 	"class_name_format": "UNS",
@@ -610,8 +609,8 @@ vibecode: {
 	"field_types": ["built_in_string_names", "UNS_addresses"],
 	"property": "bucket_backed_accessor_not_in_json_schema",
 	"helper": "lazily_initialized_namespaced_sub_object"
-}
-```
+}}
+~~~
 
 <a id="definition-1"></a>
 ### 12.1 Definition
@@ -768,15 +767,15 @@ object via `as`, control methods, structural `before` / `between` /
 <a id="the-as-keyword"></a>
 ## 14 The `as` Keyword
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "as_keyword",
 	"purpose": "bind_block_object_for_explicit_return_value_control",
 	"syntax": "if (foo) as $if",
 	"scope": "named_object_accessible_across_all_branches",
 	"return": "$if.return 'value' or implicit last_statement"
-}
-```
+}}
+~~~
 
 Any block can be named with `as`. The name binds to a block object that gives explicit
 control over the block's return value.
@@ -816,14 +815,14 @@ needed; supports multi-level exit), see [loops.md § break](loops.md#break).
 <a id="return-and-emit"></a>
 ## 15 Return and Emit
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "return_and_emit",
 	"return": "exits_current_function_propagates_through_closures",
 	"call_return": "%call.return exits current call only closure or function",
 	"distinction": "return=exits_calling_function, %call.return=exits_current_call"
-}
-```
+}}
+~~~
 
 <a id="return"></a>
 ### 15.1 `return`
@@ -862,14 +861,14 @@ The distinction:
 <a id="safe-navigation"></a>
 ## 16 Safe Navigation
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "safe_navigation",
 	"operator": "&.",
 	"behavior": "short_circuits_to_null_if_receiver_is_null",
 	"example": "$foo&.bar.gup"
-}
-```
+}}
+~~~
 
 `&.` is the safe navigation operator. If the receiver is `null`, the entire chain
 short-circuits to `null` rather than raising an error:
@@ -884,16 +883,16 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 <a id="pipe-operator"></a>
 ## 17 Pipe Operator
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "pipe_operator",
 	"operator": "|",
 	"null_safe_variant": "|&",
 	"behavior": "passes_result_as_first_positional_arg_to_next_stage",
 	"implementation": "syntactic_sugar_desugared_by_transpiler",
 	"null_safe_note": "once_used_all_subsequent_stages_short_circuit_on_null"
-}
-```
+}}
+~~~
 
 The `|` operator chains operations left-to-right. Each stage passes its result as the
 first positional argument to the next. Pipes are syntactic sugar — the transpiler desugars
@@ -947,14 +946,14 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 <a id="unicode-method-names"></a>
 ## 18 Unicode Method Names
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "unicode_method_names",
 	"feature": "any_valid_unicode_identifier_allowed_as_method_name",
 	"example": "$foo.√ is alias for square_root",
 	"requirement": "compliant_engine_must_accept_unicode_method_names"
-}
-```
+}}
+~~~
 
 Charlie identifiers, including method names, may contain Unicode characters. This allows
 methods to be named with mathematical or symbolic notation where it improves readability.
@@ -974,13 +973,13 @@ any valid Unicode identifier as a method name.
 <a id="method-naming-conventions"></a>
 ## 19 Method Naming Conventions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "method_naming_conventions",
 	"question_mark_suffix": "method returns truthy_or_falsey; truthy form is whatever's most useful",
 	"examples": ["isa?", "null?", "defined?", "parse?", "timeout?"]
-}
-```
+}}
+~~~
 
 <a id="the-suffix"></a>
 ### 19.1 The `?` suffix
@@ -1023,13 +1022,13 @@ A method may have both forms (`parse` strict + `parse?`
 tolerant). When both exist, they typically produce the same
 successful result; only their failure behavior differs.
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "what_is_not_yet_designed",
 	"status": "partial_spec",
 	"notes": ["document_captures_decisions_made_so_far"]
-}
-```
+}}
+~~~
 
 Most of Charlie is not yet fully specified. The above captures decisions made so far.
 Further design will be added as Charlie develops.

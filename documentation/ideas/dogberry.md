@@ -1,7 +1,7 @@
 # Dogberry
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "canonical_location": "ideas/ until firm enough to promote to documentation/charlie/http-middleware/",
@@ -9,8 +9,8 @@ vibecode: {
     "what_is_not": ["not_robinson", "not_role_based_access_control"],
     "preexisting_file": "documentation/charlie/http-middleware/dogberry.md_is_stale_per_project_memory_pending_review_or_replacement_by_this_doc",
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
-}
-```
+}}
+~~~
 
 Brainstorm in progress. Sections will be added as the design takes
 shape; for now this file is a workspace.
@@ -20,8 +20,8 @@ shape; for now this file is a workspace.
 <a id="concept"></a>
 ## 1 Concept
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "concept",
     "category": "transforming_proxy",
     "shape": "public_facing_server_that_fetches_resources_from_other_web_servers_and_returns_them_to_the_client",
@@ -29,8 +29,8 @@ vibecode: {
     "minimum_role": "router_that_forwards_requests_to_lune_and_returns_lune_responses_to_client",
     "value_add": "transformations_applied_to_the_fetched_resource_before_returning_to_client",
     "parameter_passing": "json_object_in_query_string_e_g_petunia_png_question_mark_rotate_90_brightness_122"
-}
-```
+}}
+~~~
 
 Dogberry ("shasta" in this doc) is a public-facing server that reads
 from other web servers ("lune"). On request, shasta fetches a resource

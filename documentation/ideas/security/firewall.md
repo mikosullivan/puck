@@ -3,11 +3,11 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview"
-}
-```
+}}
+~~~
 
 Firewall rules are built into every engine, the same way Q0 is. They are not a separate
 engine type — any engine can be configured as a firewall by giving it rules. An engine with

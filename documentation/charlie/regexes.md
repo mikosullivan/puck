@@ -3,12 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "introduces Charlie pattern matching using Lua patterns by default",
 	"key_concepts": ["Lua_patterns", "default_engine", "no_alternation", "no_named_captures",
 		"no_quantifier_range", "restructure_in_charlie"]
-}
+}}
+~~~
 
 Charlie uses Lua's built-in pattern matching by default. Lua patterns cover the common
 use cases cleanly — character classes, quantifiers, captures, anchors — without the
@@ -21,11 +23,13 @@ reaching for a more powerful pattern language.
 <a id="pattern-engine"></a>
 ## 2 Pattern Engine
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "pattern_engine",
 	"role": "documents the swappable central pattern engine object and available alternative engines",
 	"key_concepts": ["swappable_engine", "central_engine_object", "RE2", "PCRE2", "named_captures", "transparent_routing"]
-}
+}}
+~~~
 
 The pattern engine is not hardwired. A central engine object tracks which pattern library
 is in use. The default is Lua's built-in patterns, but a different engine — RE2, PCRE2,
@@ -69,11 +73,13 @@ engine. If a richer engine is plugged in, those features become available automa
 <a id="methods"></a>
 ## 3 Methods
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "methods",
 	"role": "documents match, match?, and chaining methods on strings",
 	"key_concepts": ["match", "match_boolean", "chaining", "negation", "null_safe_navigation", "Match_object"]
-}
+}}
+~~~
 
 <a id="stringmatchpattern"></a>
 ### 3.1 `$string.match(pattern)`
@@ -118,12 +124,14 @@ $string.match('pattern', not:true)
 <a id="match-object"></a>
 ## 4 Match Object
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "match_object",
 	"role": "documents all properties of the Match object returned by string.match",
 	"key_concepts": ["Match.text", "Match.start", "Match.end", "Match.groups", "Match.matches",
 		"Match.count", "string_conversion"]
-}
+}}
+~~~
 
 | Property | Description |
 |---|---|

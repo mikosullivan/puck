@@ -3,16 +3,16 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"language": "Charlie",
 	"complements": "Q0",
 	"q0_role": "query_and_filter",
 	"charlie_role": "computation_and_control_flow",
 	"development_history": "~20 years conceptual"
-}
-```
+}}
+~~~
 
 Charlie is the programming language of the Puck ecoverse. It handles computation and
 control flow — the things Q0 deliberately does not do. Q0 is a query and filter language;
@@ -25,8 +25,8 @@ Charlie has been in development conceptually for approximately twenty years.
 <a id="host-language-why-lua"></a>
 ## 2 Host Language: Why Lua
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "host_language_why_lua",
 	"choice": "lua",
 	"reasons": ["tiny_footprint_and_wide_install_base",
@@ -34,8 +34,8 @@ vibecode: {
 		"cross_os_reliability_already_solved_by_lua",
 		"python_too_monolithic_for_pucks_light_footprint_goal",
 		"c_efficient_but_too_painful_to_debug"]
-}
-```
+}}
+~~~
 
 The reference engine for Charlie is implemented in Lua 5.4. The
 choice is deliberate; the reasoning:
@@ -75,8 +75,8 @@ gets us most of the way without it.
 <a id="philosophy"></a>
 ## 3 Philosophy
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "philosophy",
 	"core_principle": "everything_that_can_be_written_in_charlie_should_be",
 	"lua_role": "interpreter_loop_memory_management_external_bindings_only",
@@ -88,8 +88,8 @@ vibecode: {
 	"lua_reference_deps": ["SQLite", "libmicrohttpd"],
 	"size_target": "500k_for_charlie_own_code_excluding_deps",
 	"threading": "not_supported_single_threaded_by_design"
-}
-```
+}}
+~~~
 
 <a id="charlie-written-in-charlie"></a>
 ### 3.1 Charlie Written in Charlie
@@ -157,8 +157,8 @@ explain the mistake clearly. A confusing error message is a bug.
 <a id="design-principles"></a>
 ## 4 Design Principles
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "design_principles",
 	"principles": ["lightweight_and_embeddable", "no_threading_or_forking",
 		"timeouts_via_%utils.timeout", "charliejson_as_runtime_format"],
@@ -166,8 +166,8 @@ vibecode: {
 	"sqlite_required": true,
 	"timeout_mechanism": "debug.sethook_in_lua_fires_every_N_vm_instructions",
 	"timeout_nested_budgeting": "min(requested, remaining_parent_budget)"
-}
-```
+}}
+~~~
 
 <a id="lightweight-and-embeddable"></a>
 ### 4.1 Lightweight and Embeddable
@@ -393,14 +393,14 @@ is the language; CharlieJSON is the wire format.
 <a id="relationship-to-other-systems"></a>
 ## 5 Relationship to Other Systems
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "relationship_to_other_systems",
 	"q0": "selects_and_filters_records_complementary_not_overlapping",
 	"puck": "charlie_is_programming_language_component_of_puck_ecoverse",
 	"charliejson": "runtime_format_charlie_compiles_to"
-}
-```
+}}
+~~~
 
 - **Q0** — Charlie and Q0 are complementary. Q0 selects and filters records. Charlie
   computes, controls flow, and implements behavior. They are not the same language and are
@@ -414,8 +414,8 @@ vibecode: {
 <a id="primitives"></a>
 ## 6 Primitives
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "primitives",
 	"types": ["String", "Number", "Boolean", "Null", "Array", "Hash"],
 	"strings": "utf8_immutable_encoded_at_engine_boundary",
@@ -424,8 +424,8 @@ vibecode: {
 	"truthiness": "null_and_false_are_falsy_everything_else_truthy_including_0_and_empty_string",
 	"null_true_false": "fully_instantiable_and_subclassable_classes",
 	"null_flavors": "hl7_concept_subclass_puck.uno/null_for_domain_specific_nulls"
-}
-```
+}}
+~~~
 
 <a id="charlie-as-an-extension-of-json"></a>
 ### 6.1 Charlie as an Extension of JSON
@@ -589,15 +589,15 @@ appearance is a parse error.
 <a id="variables"></a>
 ## 7 Variables
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "variables",
 	"sigil": "$",
 	"first_class": true,
 	"variable_object": "$$foo returns variable object not value",
 	"pass_by_reference": "intentionally_unsupported"
-}
-```
+}}
+~~~
 
 Variables are prefixed with `$`. They are first-class objects.
 
@@ -612,8 +612,8 @@ around other use cases in the future.
 <a id="exceptions-and-warnings"></a>
 ## 8 Exceptions and Warnings
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "exceptions_and_warnings",
 	"shared_shape": ["class", "id", "bucket"],
 	"raise_methods": ["%chain.warn", "%chain.throw", "%chain.error",
@@ -629,8 +629,8 @@ vibecode: {
 	"catch": "catch() matches by class AND filters by catcher=user",
 	"heed": "heed() matches warnings (non-unwinding)",
 	"abort_capability": "tied_to_scope_untrusted_code_cannot_abort_process"
-}
-```
+}}
+~~~
 
 The framework's flow-modifying events come in two top-level classes:
 **warnings** (observational, non-unwinding, never user-catchable via `catch`)
@@ -1084,8 +1084,8 @@ familiarity argument carried the day.
 <a id="structured-non-local-control-flow"></a>
 ## 9 Structured Non-Local Control Flow
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "structured_non_local_control_flow",
 	"principle": "every_named_non_local_exit_is_a_typed_exception_unwinding_until_a_registered_handler_matches",
 	"unifies": ["loop_next", "loop_return",
@@ -1097,8 +1097,8 @@ vibecode: {
 		"error/stale_handler"],
 	"working_names": true,
 	"open_questions": ["cross_role_boundary_propagation_policy"]
-}
-```
+}}
+~~~
 
 Charlie's loop controls (`$loop.next`, `$loop.return`), function
 returns (plain `return`), block returns (`$if.return value` on an
@@ -1260,16 +1260,16 @@ with it.
 <a id="cross-role-boundaries-open"></a>
 ### 9.6 Cross-role boundaries — open
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "cross_role_boundaries",
 	"status": "open_question_to_settle_when_role_boundary_semantics_solidify",
 	"the_question": "what_happens_when_a_loop_or_block_or_function_control_would_propagate_from_one_role_into_another",
 	"plausible_answers": ["block_at_the_boundary_and_convert_to_a_catchable_error_in_the_outer_role",
 		"silently_propagate_across_the_boundary_using_the_outer_roles_handler_stack",
 		"a_third_option_that_falls_out_of_role_boundary_design_later"]
-}
-```
+}}
+~~~
 
 A control raised inside one role can in principle propagate across
 a role boundary (per [roles.md](roles.md)) and look for a handler in
@@ -1297,15 +1297,15 @@ place (the unwinder's boundary check) once it's made.
 <a id="what-this-buys-the-implementation"></a>
 ### 9.7 What this buys the implementation
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"implementation_payoff": ["single_Control_type",
 		"single_throw_function", "single_stack_walking_unwinder",
 		"loop_runner_about_twenty_lua_lines",
 		"ensure_is_one_pcall_plus_re_raise",
 		"cross_role_boundary_check_lives_in_one_place_once_policy_settles"]
-}
-```
+}}
+~~~
 
 - **One Control type, one throw function, one unwinder.** Not
   separate machinery for next vs. return vs. catch.
@@ -1332,16 +1332,16 @@ absorbs control then becomes a thin layer over the same primitive.
 <a id="conditional-constructs-share-one-primitive"></a>
 ## 10 Conditional Constructs Share One Primitive
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "conditional_constructs_share_one_primitive",
 	"principle": "if_and_while_share_one_condition_body_primitive_at_runtime; they_differ_only_in_orchestration",
 	"shared_primitive_name": "cond_run_once",
 	"if_orchestration": "call_sequentially_through_elsif_branches_stop_on_first_match",
 	"while_orchestration": "call_in_a_loop_until_false",
 	"extensible_to": ["unless", "until", "do_while", "pattern_match_case_clauses"]
-}
-```
+}}
+~~~
 
 `if` and `while` are kindred constructs at the runtime level. Both
 take a condition expression and a body, evaluate the condition for
@@ -1418,14 +1418,14 @@ it reports done.
 <a id="what-this-buys-the-implementation-1"></a>
 ### 10.4 What this buys the implementation
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"sharing_payoff": ["one_condition_evaluation_path",
 		"one_body_execution_path",
 		"constructs_differ_only_in_orchestration_a_one_liner_each",
 		"new_conditional_shapes_layer_on_for_free"]
-}
-```
+}}
+~~~
 
 - **One condition-evaluation path.** `eval(cond_expr)` plus
   `truthy(value)` lives in one place. Both constructs reuse it.
@@ -1485,16 +1485,16 @@ mechanism but not the **condition-evaluation** mechanism.
 <a id="block-parameter-binding"></a>
 ## 11 Block Parameter Binding
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "block_parameter_binding",
 	"principle": "every_construct_that_takes_a_block_with_parameters_binds_names_to_values_via_one_shared_primitive",
 	"shared_primitive": "bind_params",
 	"unifies": ["function_definition_params", "closure_params",
 		"do_block_params", "catch_binding", "as_binding"],
 	"differences_between_constructs": "the_caller_supplies_a_different_arg_list; the_primitive_is_the_same"
-}
-```
+}}
+~~~
 
 Every construct that opens a block with named parameters does the
 same thing before running the body: pair the parameter list with
@@ -1568,16 +1568,16 @@ that the runtime creates before invoking the block.
 <a id="unified-name-resolution"></a>
 ## 12 Unified Name Resolution
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "unified_name_resolution",
 	"principle": "every_named_reference_resolves_through_one_lookup_primitive_parameterized_by_namespace_chain",
 	"shared_primitive": "lookup",
 	"unifies": ["lexical_variables", "instance_vars", "sys_methods",
 		"puck_uns_lookups", "chain_entries", "method_dispatch",
 		"bucket_lookups"]
-}
-```
+}}
+~~~
 
 Every named reference in Charlie — `$foo`, `@foo`, `%foo`,
 `puck.uno/foo` via `%puck[...]`, `%chain.foo`, `$obj.foo` for
@@ -1648,8 +1648,8 @@ for method dispatch) is just a longer chain.
 <a id="typed-structured-events"></a>
 ## 13 Typed Structured Events
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "typed_structured_events",
 	"principle": "exceptions_warnings_change_signals_and_log_entries_share_one_shape_and_one_emission_primitive_differing_only_in_runtime_behavior",
 	"shared_shape": ["class", "id", "bucket"],
@@ -1657,8 +1657,8 @@ vibecode: {
 	"behaviors": ["unwinding", "heedable", "signal", "log"],
 	"largest_restructuring_of_the_three": true,
 	"status": "candidate_for_future_unifying_pass"
-}
-```
+}}
+~~~
 
 Four subsystems in Charlie emit typed structured events:
 **exceptions**, **warnings**, **change signals**, and **Jasmine log
@@ -1735,15 +1735,15 @@ event's class metadata, not from which `%chain.X` method was called.
 <a id="open-2"></a>
 ### 13.5 Open
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"events_open": [
 		"unifying_terminology_event_vs_signal_vs_flag",
 		"reconciling_the_emission_apis_chain_error_chain_warn_etc_under_one_emit_function",
 		"whether_jasmine_log_sink_registration_fits_the_observer_pattern_or_needs_its_own_path",
 		"whether_change_signal_observers_are_the_same_objects_as_heeders_or_different"]
-}
-```
+}}
+~~~
 
 - **Terminology.** Current docs call the family "flags" in places,
   "events" and "signals" elsewhere. A unifying pass would pick one
@@ -1768,8 +1768,8 @@ vibecode: {
 <a id="object-model"></a>
 ## 14 Object Model
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "object_model",
 	"two_properties": ["classes", "bucket"],
 	"classes": "class_stack_array_resolved_top_down",
@@ -1778,8 +1778,8 @@ vibecode: {
 	"shadow_class": "implicit_always_first_in_resolution_not_in_object_classes",
 	"object_helper": "reserved_built_in_cannot_be_overridden",
 	"explicit_dispatch": "$class.object.call_with($foo, 'method', args)"
-}
-```
+}}
+~~~
 
 <a id="two-property-objects"></a>
 ### 14.1 Two-Property Objects
@@ -1933,15 +1933,15 @@ This is a rare use case — normal method resolution handles the common case.
 <a id="garbage-collection"></a>
 ## 15 Garbage Collection
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "garbage_collection",
 	"model": "perfect_gc_immediate_collection_on_unreachable",
 	"mechanism": "root_trace_not_reference_counting",
 	"cycles": "handled_automatically",
 	"close_method": "called_by_gc_not_user_code"
-}
-```
+}}
+~~~
 
 <a id="perfect-garbage-collection"></a>
 ### 15.1 Perfect garbage collection
@@ -1997,16 +1997,16 @@ covers every object in the system.
 <a id="helpers"></a>
 ## 16 Helpers
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "helpers",
 	"base_class": "puck.uno/helper",
 	"purpose": "namespace_methods_without_polluting_main_object_namespace",
 	"access": "self.reference points back to parent object",
 	"initialization": "lazy_not_created_until_first_accessed",
 	"reserved_helper": "object built_in_present_on_every_object_cannot_be_overridden"
-}
-```
+}}
+~~~
 
 A helper is an instance of `puck.uno/helper`. It provides a way to namespace methods
 without polluting the main method namespace of an object.
@@ -2056,8 +2056,8 @@ keeping them out of the main method namespace.
 <a id="classes"></a>
 ## 17 Classes
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "classes",
 	"identity": "from_reference_held_not_declared_name",
 	"no_global_registry": true,
@@ -2068,8 +2068,8 @@ vibecode: {
 	"abstract": "abstract true prevents direct instantiation",
 	"initializer": "init method",
 	"methods": "function &name() inside class block"
-}
-```
+}}
+~~~
 
 Classes are objects. Like functions, they live wherever they are stored. There is no global
 class registry and no namespacing system like `Foo::Bar`. A class's identity comes from the
@@ -2230,8 +2230,8 @@ end
 <a id="functions"></a>
 ## 18 Functions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "functions",
 	"first_class": true,
 	"no_lambda_syntax": "all_functions_already_objects",
@@ -2241,8 +2241,8 @@ vibecode: {
 	"dsl_receivers": "dispatcher.dsl maps bare words to objects in yielded block",
 	"caller_objects": "$foo.caller reusable configurable pending call",
 	"amp_method": "any_class_can_define_& to_make_instances_invokable"
-}
-```
+}}
+~~~
 
 Functions are first-class objects. They can be assigned to variables, passed as arguments,
 and assigned to class methods. There is no concept of a named function — a function is just
@@ -2351,15 +2351,15 @@ yielded block — any nested function calls or blocks inside that block run with
 <a id="scoping"></a>
 ## 19 Scoping
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "scoping",
 	"scope_per_block": true,
 	"applies_to": ["if", "else", "loop_bodies", "bare_blocks"],
 	"first_class_scopes": true,
 	"closure_mechanism": "pass_scope_object_explicitly_to_function"
-}
-```
+}}
+~~~
 
 Every block creates a new scope that inherits from its parent. This applies to all blocks
 without exception — `if`, `else`, loop bodies, and bare blocks all create new scopes.
@@ -2373,8 +2373,8 @@ is no special closure type — any function becomes a closure when passed a scop
 <a id="system-methods"></a>
 ## 20 System Methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "system_methods",
 	"prefix": "%",
 	"not": "global_variables",
@@ -2385,8 +2385,8 @@ vibecode: {
 		"%engine": "gateway_to_host_resources_top_level_only_non_capturable",
 		"%call": "current_call_object_function_or_closure"
 	}
-}
-```
+}}
+~~~
 
 Charlie has a small number of system methods, prefixed with `%`. These are not global
 variables — they are methods that return a scope-aware object. The same method call in
@@ -2702,16 +2702,16 @@ syntax is designed.
 <a id="jail"></a>
 ## 21 Jail
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "jail",
 	"concept": "capability_restricting_proxy_wraps_object_exposes_only_allowed_methods",
 	"creation": "$foo.object.jail(:method1, :method2)",
 	"storage": "prisoner and allowed in %bucket",
 	"security_model": "object_capability",
 	"callable_jail": "when prisoner is function jail with :call is callable"
-}
-```
+}}
+~~~
 
 A jail is a capability-restricting proxy object. It wraps another object and exposes only
 a specified list of allowed methods. Calls to allowed methods are forwarded transparently
@@ -2757,8 +2757,8 @@ $bar = $foo.object.jail(:call)
 <a id="freezing"></a>
 ## 22 Freezing
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "freezing",
 	"axes": ["classes", "bucket"],
 	"operations": ["$foo.object.freeze", "$foo.object.classes.freeze",
@@ -2768,8 +2768,8 @@ vibecode: {
 	"classes_freeze_prevents": "class_stack_modification_object_define_blocked",
 	"bucket_freeze_prevents": "%bucket_writes",
 	"object_bucket_returns": "jail_wrapping_%bucket_with_only_freeze_permitted"
-}
-```
+}}
+~~~
 
 Freezing locks an object against modification. Charlie breaks this into two independent
 axes — the class stack and bucket — rather than conflating them into a single freeze.
@@ -2836,8 +2836,8 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 <a id="change-signals"></a>
 ## 23 Change Signals
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "change_signals",
 	"trigger": "hash_key_assigned_new_object",
 	"listener_api": "$foo.object.listen field: 'bar', :on_change do($change) end",
@@ -2847,8 +2847,8 @@ vibecode: {
 	"deduplication": "object_can_appear_on_stack_at_most_once",
 	"lazy_check": "skip_signal_if_nothing_listens",
 	"hot_records": "mechanism_behind_automatic_mikobase_saves_on_write"
-}
-```
+}}
+~~~
 
 <a id="what-a-change-is"></a>
 ### 23.1 What a change is

@@ -10,8 +10,8 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 <a id="reference"></a>
 ## 1 Reference
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "reference",
 	"prefix": "%",
 	"availability": "always_available_without_import",
@@ -19,8 +19,8 @@ vibecode: {
 	"methods": ["%chain", "%engine", "%forks", "%tmp", "%puck", "%call", "%bucket",
 		"%self", "%scope", "%process", "%now",
 		"%document", "%vibecode", "%role", "%utils", "%stdout", "%stderr", "%sys"]
-}
-```
+}}
+~~~
 
 | Method | Description |
 |--------|-------------|
@@ -48,8 +48,8 @@ vibecode: {
 <a id="shorthands"></a>
 ## 2 Shorthands
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "shorthands",
 	"mappings": {
 		"$foo": "%scope['foo']",
@@ -60,8 +60,8 @@ vibecode: {
 		"%document 'text' <<EOF": "%document 'text/plain' <<EOF",
 		"%document 'markdown' <<EOF": "%document 'text/markdown' <<EOF"
 	}
-}
-```
+}}
+~~~
 
 Several system methods have shorthands used so frequently that the long form is rarely
 written:

@@ -3,11 +3,13 @@
 <a id="overview"></a>
 ## 1 Overview
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"role": "introduces the mikobase engine requirements: clients, engines, Q0, and the Python SQLite implementation",
 	"key_concepts": ["mikobase_engine", "clients", "engines", "Q0", "chained_engines", "Python_SQLite"]
-}
+}}
+~~~
 
 A mikobase is the object store layer of the Puck ecoverse. It defines a protocol by which
 clients in various programming languages can access objects in a live object store. It is
@@ -34,11 +36,13 @@ is out of scope for now — only the engine is being developed at this stage.
 <a id="universal-namespace"></a>
 ## 2 Universal Namespace
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "universal_namespace",
 	"role": "defines UNS class naming for the requirements context",
 	"key_concepts": ["UNS", "domain_namespace", "puck.uno_built-ins", "foo.com_examples"]
-}
+}}
+~~~
 
 Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
 globally unique namespace.
@@ -57,12 +61,14 @@ Examples:
 <a id="object-model"></a>
 ## 3 Object Model
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "object_model",
 	"role": "specifies the record, class, bucket, custom_classes, and built-in class model",
 	"key_concepts": ["records", "classes", "bucket", "custom_classes", "built-in_classes",
 		"record_pk", "append-only_history", "tombstone"]
-}
+}}
+~~~
 
 <a id="records"></a>
 ### 3.1 Records
@@ -114,11 +120,13 @@ The following classes are seeded as database records on initialization:
 <a id="database-properties"></a>
 ## 4 Database Properties
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "database_properties",
 	"role": "documents metadata properties of the database instance itself, readable by any client",
 	"key_concepts": ["database_metadata", "executable", "advisory", "client_readable"]
-}
+}}
+~~~
 
 A mikobase may declare properties about itself that any client can read upon connecting.
 These are database-level metadata, not record-level data.
@@ -141,11 +149,13 @@ Default: `false`.
 <a id="connection"></a>
 ## 5 Connection
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "connection",
 	"role": "documents connection modes rw/r/w, cutoff timestamps, and the Python API",
 	"key_concepts": ["connection_modes", "rw", "r", "cutoff_timestamp", "read-only_historical", "Python_API"]
-}
+}}
+~~~
 
 Connections are opened with an explicit mode. There is no default mode.
 
@@ -184,12 +194,14 @@ with mb.connect('/path/to/database.db', 'r', cutoff='2026-01-01T00:00:00.000') a
 <a id="queries"></a>
 ## 6 Queries
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "queries",
 	"role": "documents engine.q0() API, lazy resultsets, response shapes, and convenience methods",
 	"key_concepts": ["engine.q0", "lazy_resultset", "select_response", "create_response", "delete_response",
 		"record_dict_shape", "convenience_methods"]
-}
+}}
+~~~
 
 All queries are sent via `engine.q0()`, which accepts a Q0 dict.
 
@@ -260,11 +272,13 @@ The base engine also provides convenience methods that build Q0 dicts internally
 <a id="records-as-python-objects"></a>
 ## 7 Records as Python Objects
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "records_as_python_objects",
 	"role": "describes future client behavior: wrapping dicts into typed Python objects via decorator",
 	"key_concepts": ["future_client", "mikobase_record_decorator", "class_registration", "field_ordering"]
-}
+}}
+~~~
 
 *This section describes future client behaviour. The client is out of scope for the current
 implementation — only the engine is being developed at this stage.*
@@ -298,12 +312,14 @@ Records returned from queries present fields in this order:
 <a id="transactions"></a>
 ## 8 Transactions
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "transactions",
 	"role": "documents the future Python transaction API with nesting, commit, and exit",
 	"key_concepts": ["engine.transaction", "nested_transactions", "commit", "exit", "auto-rollback",
 		"context_manager", "future_client"]
-}
+}}
+~~~
 
 *This section describes future client behaviour. The client is out of scope for the current
 implementation — only the engine is being developed at this stage.*
@@ -334,11 +350,13 @@ Rules:
 <a id="error-handling"></a>
 ## 9 Error Handling
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "error_handling",
 	"role": "documents error return policy: engine never raises, always returns dict with errors array",
 	"key_concepts": ["no_exceptions_from_engine", "success_false", "errors_array", "MikobaseError", "error_id"]
-}
+}}
+~~~
 
 - The engine never raises exceptions. It catches all internal errors (including SQLite
   exceptions) and returns a response dict with `"success": false` and an `"errors"` array.
@@ -356,12 +374,14 @@ raise MikobaseError(errors=[
 <a id="sqlite-engine"></a>
 ## 10 SQLite Engine
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "sqlite_engine",
 	"role": "SQLite-specific implementation details: locking, schema init, historical reads, Q0 translation",
 	"key_concepts": ["SQLite", "tenancy", "locking", "schema_initialization", "historical_reads",
 		"Q0_to_SQL", "json_extract", "recursive_CTE", "validation"]
-}
+}}
+~~~
 
 <a id="tenancy"></a>
 ### 10.1 Tenancy
@@ -451,12 +471,14 @@ Correctness takes priority over efficiency.
 <a id="engine-architecture"></a>
 ## 11 Engine Architecture
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "engine_architecture",
 	"role": "defines package structure, base engine interface, and validator design",
 	"key_concepts": ["package_structure", "base_engine", "q0_method", "validator", "run_all",
 		"placeholders_check", "uns_check", "fields_check", "action_check"]
-}
+}}
+~~~
 
 <a id="package-structure"></a>
 ### 11.1 Package Structure
@@ -526,12 +548,14 @@ check reports warnings when redundant field pairs are used together (`class` + `
 <a id="file-storage"></a>
 ## 12 File Storage
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "file_storage",
 	"role": "documents file deduplication by sha256, chunk ordering, and immutability rules",
 	"key_concepts": ["files_table", "file_chunks_table", "sha256_deduplication", "chunk_index",
 		"last_chunk", "immutable_once_written"]
-}
+}}
+~~~
 
 Files are stored in `files` (identity and metadata) and `file_chunks` (binary content).
 
@@ -546,11 +570,13 @@ Files are stored in `files` (identity and metadata) and `file_chunks` (binary co
 <a id="schema-import-and-export"></a>
 ## 13 Schema Import and Export
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "schema_import_and_export",
 	"role": "documents import_schema and export_schema methods including file variants",
 	"key_concepts": ["import_schema", "import_schema_file", "export_schema", "export_schema_file"]
-}
+}}
+~~~
 
 The engine provides methods for importing and exporting schemas.
 
@@ -571,12 +597,14 @@ See [class-definition.md](../charlie/class-definition.md) for schema format and 
 <a id="general-guidelines"></a>
 ## 14 General Guidelines
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "general_guidelines",
 	"role": "implementation constraints: stdlib only, sqlite3, pytest, broad Python compatibility",
 	"key_concepts": ["stdlib_only", "sqlite3", "pytest", "broad_Python_compat", "no_logging",
 		"temp_files_for_tests", "auto-rollback_on_exit"]
-}
+}}
+~~~
 
 - Use Python's standard library only — no third-party dependencies for the SQLite engine.
 - Use `sqlite3` from the standard library for SQLite access.

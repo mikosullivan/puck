@@ -1,7 +1,7 @@
 # Robinson per-directory `robinson.charlie` handlers
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "paused_2026-05-17_returning_to_issues_walkthrough",
     "started": "2026-05-17",
     "subsystem": "robinson",
@@ -12,8 +12,8 @@ vibecode: {
     },
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime",
     "resume_here": "the_design_is_pretty_well_developed_through_composition_and_framework_organization; outstanding_decisions_are_yield_vs_next_callable_and_where_handler_placeholder_match_values_come_from"
-}
-```
+}}
+~~~
 
 Brainstorm paused. Resume points when picking this back up:
 
@@ -26,15 +26,15 @@ Brainstorm paused. Resume points when picking this back up:
 <a id="concept"></a>
 ## 1 Concept
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "concept",
     "what": "per_directory_handler_files_named_robinson_charlie",
     "trigger": "every_request_traversing_a_directory_runs_any_robinson_charlie_in_that_directory",
     "traversal_order": "root_to_leaf",
     "non_public": "automatic_via_existing_robinson_dot_star_reserved_prefix_rule"
-}
-```
+}}
+~~~
 
 A directory in a Robinson tree may contain a file named
 `robinson.charlie`. When a request is processed, each `robinson.charlie`
@@ -69,14 +69,14 @@ disk to be loaded by Robinson, never to be served as URLs.
 <a id="file-shape"></a>
 ## 2 File shape
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "file_shape",
     "form": "anonymous_class_same_form_as_page_files",
     "base_class_uns": "tbd_likely_puck_uno_robinson_dir_handler_or_similar",
     "syntax_dependency": "uses_the_bare_anonymous_class_form_per_audit_issue_26; same_syntax_gap_as_page_files; one_fix_covers_both"
-}
-```
+}}
+~~~
 
 A `robinson.charlie` file follows the same shape as a page file: the
 file's last expression is an **anonymous class** that inherits from a
@@ -109,8 +109,8 @@ defines `class 'UNS' ... end`). One spec fix covers both.
 <a id="the-two-trip-pattern"></a>
 ## 3 The two-trip pattern
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "two_trip_pattern",
     "methods_so_far": ["process_request", "process_response"],
     "more_methods": "tbd",
@@ -118,8 +118,8 @@ vibecode: {
     "response_trip_order": "leaf_to_root_inner_first",
     "shape": "onion_each_dir_handler_wraps_its_descendants",
     "argument_to_process_response": "request_not_response; response_accessible_via_transaction_or_response_reference_same_as_page_files"
-}
-```
+}}
+~~~
 
 Each `robinson.charlie` exposes two phase methods (more to come):
 
@@ -143,16 +143,16 @@ across page files and dir handlers.
 <a id="framework-organization"></a>
 ## 4 Framework organization
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "framework_organization",
     "design_goal": "avoid_the_ruby_dogberry_pain_of_optional_yields_interacting_with_optional_pass_through_methods_across_a_chain",
     "diagnosis": "ruby_yield_is_opaque_to_the_caller; framework_cannot_detect_short_circuit_or_thread_state_cleanly_through_yield",
     "two_axes": ["surface_syntax_what_developer_writes",
                  "framework_code_how_dispatcher_orchestrates"],
     "lean": "explicit_next_callable_parameter_over_yield_keyword; lean_only_not_locked_as_of_2026-05-17"
-}
-```
+}}
+~~~
 
 <a id="surface-syntax-next-callable-vs-yield"></a>
 ### 4.1 Surface syntax: `$next` callable vs `yield`
@@ -237,13 +237,13 @@ to detect — the chain just stops where it stops.
 <a id="composition-across-handlers"></a>
 ## 5 Composition across handlers
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "composition_across_handlers",
     "shape": "nested_per_handler_each_handler_wraps_everything_below_it",
     "resolved": "2026-05-17"
-}
-```
+}}
+~~~
 
 When there are multiple `robinson.charlie` handlers along a path, each
 one's three methods nest the next one's full sequence inside its own
@@ -295,8 +295,8 @@ The shape:
 <a id="pass_through-the-wrapping-primitive"></a>
 ## 6 `pass_through` — the wrapping primitive
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "pass_through",
     "shape": "context_manager_wraps_inner_chain_with_yield_in_the_middle",
     "method_signature": "pass_through($transaction)",
@@ -305,8 +305,8 @@ vibecode: {
         "resource_lifecycle_reads_top_to_bottom_in_one_place; state_stays_in_local_variables; ensure_semantics_apply_naturally_so_teardown_runs_even_if_inner_chain_raises",
     "syntax_note":
         "the_class_methods_do_end_block_shown_in_the_example_is_illustrative; final_class_method_definition_syntax_tbd_see_audit_15"
-}
-```
+}}
+~~~
 
 A class method that **surrounds** the inner chain. Setup runs before
 the yield, the inner handlers and page file run during the yield,

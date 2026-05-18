@@ -25,14 +25,14 @@ the finer points of null.
 <a id="construction"></a>
 ## 2 Construction
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "construction",
 	"creation_method": "null",
 	"per_call": "fresh_instance",
 	"override": "not_allowed"
-}
-```
+}}
+~~~
 
 Each invocation of the bare word `null` allocates a fresh instance of
 `puck.uno/null`. There is no singleton; `$x = null; $y = null` produces two
@@ -50,14 +50,14 @@ A program that tries to redefine these names raises a runtime error.
 <a id="equality"></a>
 ## 3 Equality
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "equality",
 	"value_equality": "all_nulls_equal_regardless_of_flavor",
 	"identity_equality": "distinct_instances_distinct_under_triple_equals",
 	"flavor_comparison": "explicit_via_flavor_field"
-}
-```
+}}
+~~~
 
 Equality on null is value-based: any null equals any other null under `==`, even if
 their flavors differ. To compare flavors, read the `flavor` field directly.
@@ -97,15 +97,15 @@ end
 <a id="identity-guarantees"></a>
 ## 4 Identity Guarantees
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "identity_guarantees",
 	"role": "states the engine-level guarantee that null/true/false instances always answer equality and predicate checks consistent with what they were created as; the mechanism is the read-only .object.bool property",
 	"key_concepts": ["once_null_always_null", "user_code_cannot_redefine_identity",
 		"layering_other_classes_and_fields_remains_open",
 		"mechanism_is_dot_object_dot_bool_read_only"]
-}
-```
+}}
+~~~
 
 The engine guarantees that any value created by `null`, `true`, or `false`
 **always answers equality and identity checks consistent with what it was
@@ -146,12 +146,12 @@ implementation.
 <a id="background-the-challenge"></a>
 ### 5.1 Background: The Challenge
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "background_the_challenge",
 	"role": "explains why a single NULL is insufficient — distinguishing reasons for missing data is often the most important information at the point of consumption"
-}
-```
+}}
+~~~
 
 In most languages and databases, "missing" is one thing. A field is `null`, a row
 returns `NULL`, a function returns `nil`. That's the end of the story.
@@ -192,13 +192,13 @@ sentinel values, side-channel error codes, or out-of-band state tracking.
 <a id="background-how-hl7-handles-it"></a>
 ### 5.2 Background: How HL7 Handles It
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "background_hl7",
 	"role": "documents the canonical example of null flavors in HL7 v3 and FHIR healthcare standards",
 	"key_concepts": ["formal_vocabulary", "hierarchy_of_reasons", "interop_across_systems"]
-}
-```
+}}
+~~~
 
 HL7 (Health Level 7), the standards body for healthcare interoperability, has
 developed the most-formalized treatment of this problem. Both HL7 v3 and FHIR
@@ -255,13 +255,13 @@ pays off.
 <a id="pucks-approach"></a>
 ### 5.3 Puck's Approach
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "puck_approach",
 	"role": "summarizes the deliberately-simple Puck implementation: a single flavor field that accepts anything, with a small optional canonical vocabulary",
 	"key_concepts": ["one_flavor_field", "free_form_value", "canonical_set_optional"]
-}
-```
+}}
+~~~
 
 Puck takes the simplest possible approach to the same problem.
 
@@ -293,14 +293,14 @@ standards on top of the Puck primitive.
 <a id="the-flavor-field"></a>
 ### 5.4 The `flavor` Field
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "flavor_field",
 	"field": "flavor",
 	"type": "any",
 	"default": "null"
-}
-```
+}}
+~~~
 
 Every null instance has a `flavor` field. It defaults to `null` (an unflavored
 null) and accepts any value via assignment. Reading the flavor of a default null
@@ -316,15 +316,15 @@ The flavor field is mutable. Assigning a new flavor replaces the previous one.
 <a id="standard-flavors"></a>
 ### 5.5 Standard Flavors
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "standard_flavors",
 	"namespace": "puck.uno/null/flavor",
 	"intent": "shared_vocabulary_for_common_cases_application_specific_flavors_remain_free",
 	"organization": "patterned_after_http_status_codes_with_numeric_codes_alongside_names",
 	"classes": ["2xx_intentional", "3xx_redirection", "4xx_caller_reason", "5xx_provider_reason", "6xx_domain_extensions"]
-}
-```
+}}
+~~~
 
 Canonical flavors live under the `puck.uno/null/flavor/` namespace.
 They are intended for ecosystem interop — application-specific flavors
@@ -431,13 +431,13 @@ is implied).
 <a id="flavor-propagation"></a>
 ### 5.7 Flavor Propagation
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "flavor_propagation",
 	"rule": "operations_that_consume_null_discard_its_flavor",
 	"rationale": "flavor_describes_why_this_value_is_null_does_not_extend_to_replacement_value"
-}
-```
+}}
+~~~
 
 Operations that consume a null and produce a non-null value **discard the flavor**.
 The flavor describes why a particular null was null; once that null has been
@@ -469,12 +469,12 @@ end
 <a id="use-cases"></a>
 ### 5.8 Use Cases
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "use_cases",
 	"role": "shows where null flavors are most useful in the Puck ecoverse"
-}
-```
+}}
+~~~
 
 Null flavors carry information that single-NULL systems lose. Common applications:
 
@@ -494,15 +494,15 @@ Null flavors carry information that single-NULL systems lose. Common application
 <a id="serialization"></a>
 ### 5.9 Serialization
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "serialization",
 	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_custom_classes",
 	"key_concepts": ["round_trip_preserves_flavor",
 		"unflavored_uses_native_null", "flavored_uses_custom_classes_uuid_marker",
 		"keeps_bucket_namespace_open"]
-}
-```
+}}
+~~~
 
 Flavor survives serialization. A flavored null written to a Mikobase record,
 a worldlet, or any other persistent form retains its flavor and reconstitutes
@@ -555,12 +555,12 @@ survive serialization — the engine raises if asked to serialize one.
 <a id="relation-to-the-trust-model"></a>
 ### 5.10 Relation to the Trust Model
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "relation_to_trust_model",
 	"trust": "flavor_independent_of_trust_and_source"
-}
-```
+}}
+~~~
 
 A flavored null is a `puck.uno/null` instance with a populated field. It
 participates in the role model like any other value (see

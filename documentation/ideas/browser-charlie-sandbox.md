@@ -1,7 +1,7 @@
 # Charlie in the browser
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "subsystem": "browser_charlie_engine",
@@ -9,8 +9,8 @@ vibecode: {
     "related_docs": ["vscode-extension.md", "vscode-extension-v2.md"],
     "related_memories": ["feedback_first_contact_strategy"],
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
-}
-```
+}}
+~~~
 
 Brainstorm in progress.
 
@@ -19,14 +19,14 @@ Brainstorm in progress.
 <a id="why"></a>
 ## 1 Why
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "motivation",
     "use_cases": ["online_sandbox_playground", "spec_docs_with_live_runnable_examples",
                    "tutorials_and_learning", "browser_repl", "zero_install_marketing_demos"],
     "first_contact_alignment": "matches_feedback_first_contact_strategy_user_experiences_charlie_before_installing"
-}
-```
+}}
+~~~
 
 A Charlie engine that runs entirely in the browser unlocks:
 
@@ -50,8 +50,8 @@ let people experience Charlie before buying into the whole system.
 <a id="architecture-three-independent-artifacts"></a>
 ## 2 Architecture: three independent artifacts
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "architectural_decisions",
     "decided_2026-05-17": true,
     "for_browser_sandbox": "wasm_compiled_lua_engine",
@@ -60,8 +60,8 @@ vibecode: {
     "rejected": "hybrid_ts_parser_plus_wasm_lua_engine_too_much_glue",
     "all_three_artifacts_independent_and_can_ship_separately": true,
     "composition_possible": "ts_parser_plus_ts_engine_gives_full_source_to_result_pipeline_in_pure_js"
-}
-```
+}}
+~~~
 
 Three distinct artifacts, each with its own job, all independently
 shippable. The browser sandbox uses one (the WASM engine); the other
@@ -139,14 +139,14 @@ saving meaningful effort.
 <a id="why-charlie-is-particularly-well-suited"></a>
 ## 3 Why Charlie is particularly well-suited
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "good_fit",
     "factors": ["role_model_is_a_perfect_sandbox_fit",
                  "currently_tiny_stdlib_means_small_payload",
                  "engine_already_designed_for_untrusted_code"]
-}
-```
+}}
+~~~
 
 - **The role model is a perfect sandbox fit.** Charlie already has a
   role-based capability system designed for "run untrusted code with

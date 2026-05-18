@@ -1,7 +1,7 @@
 # Roles
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "overview",
     "role": "the official security model for Charlie: every object owned by a role, code runs as the owning role of the function-object executing it, security boundaries are cross-role calls, faucets are the only way to pull objects in, jails are the explicit narrowing mechanism",
     "key_concepts": ["one_role_per_executing_function", "objects_owned_by_role", "boundary_is_cross_role_call",
@@ -9,8 +9,8 @@ vibecode: {
         "jails_explicit_narrowing", "no_method_level_gating"],
     "supersedes": ["binary_trust_model", "%chain.trust", "%chain.allow_abort_escalation",
         "%chain.allow_catch_security_exceptions"]
-}
-```
+}}
+~~~
 
 The role model is Charlie's security model. **Every object is owned by a
 role**: functions, data values, classes, instances, everything. Code itself
@@ -47,13 +47,13 @@ own role, and cross-role interaction is the security-relevant event.
 <a id="core-concept"></a>
 ## 2 Core Concept
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "core_concept",
     "key_properties": ["code_runs_under_exactly_one_role", "all_other_roles_untrusted_by_default",
         "boundary_equals_cross_role_call", "no_global_trusted_tier"]
-}
-```
+}}
+~~~
 
 Key properties:
 
@@ -74,13 +74,13 @@ each role on its own terms.
 <a id="the-role-system-method"></a>
 ## 3 The `%role` System Method
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "role_system_method",
     "method": "%role",
     "returns": "current_role"
-}
-```
+}}
+~~~
 
 `%role` returns the role the current code is running under. Same shape as
 `%chain`, `%puck`, `%self` — a system method, always available, context
@@ -95,13 +95,13 @@ $current = %role    # the role currently in effect
 <a id="engine-startup-initial-roles"></a>
 ## 4 Engine Startup: Initial Roles
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "engine_startup_roles",
     "minimum": ["user", "stdlib", "clock", "randomizer", "utils"],
     "engine_dependent": ["dirjails", "network_faucets", "stdin", "env_vars", "cli_args", "puck"]
-}
-```
+}}
+~~~
 
 When the engine launches a Charlie instance, it wires up all the roles
 necessary for the objects it's about to pass into the runtime. At minimum:
@@ -139,15 +139,15 @@ reference syntax is TBD.
 <a id="role-transitions"></a>
 ## 5 Role Transitions
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "role_transitions",
     "rule": "functions_always_run_as_their_owner",
     "transition_is_implicit_on_call": true,
     "elevation_via_trickery_is_impossible": true,
     "chain_wiped_at_boundary": true
-}
-```
+}}
+~~~
 
 **Functions always run as their owner.** When code running under role A
 calls a function-object owned by role B, that function runs as B for the
@@ -179,13 +179,13 @@ lifetime; A doesn't lose state because it called B.
 <a id="what-is-not-checked-at-a-boundary"></a>
 ## 6 What Is NOT Checked at a Boundary
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "no_method_level_gating",
     "rule": "anything_with_object_access_can_call_any_method",
     "narrowing_mechanism": "wrap_in_jail_before_passing"
-}
-```
+}}
+~~~
 
 **Anything with access to an object can call any of its methods. Full
 stop.** The role of the caller does not gate which methods can be
@@ -230,15 +230,15 @@ the narrowing easy.
 <a id="chainisolate-do-end"></a>
 ## 7 `%chain.isolate do ... end`
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "chain_isolate",
     "method": "%chain.isolate",
     "form": "do_block",
     "creates": "fresh_ephemeral_role_for_block_duration",
     "wipes": "%chain"
-}
-```
+}}
+~~~
 
 A voluntary, inline version of the cross-role chain wipe. Lets code drop
 its own ambient context for a bounded block:
@@ -285,13 +285,13 @@ another function.
 <a id="exceptions-and-alarms"></a>
 ## 8 Exceptions and Alarms
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "exceptions_and_alarms",
     "regular_exceptions": "travel_up_stack_catchable_normal_unwinding",
     "alarms": "fatal_no_unwinding_go_straight_to_engine"
-}
-```
+}}
+~~~
 
 Two error categories with distinct behaviors:
 
@@ -336,14 +336,14 @@ revisitation.
 <a id="how-objects-get-their-owning-role"></a>
 ## 9 How Objects Get Their Owning Role
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "object_ownership_assignment",
     "external_objects": "owned_by_faucets_role",
     "internal_objects": "owned_by_creating_role",
     "engine_builtins": "owned_by_engine_assigned_role"
-}
-```
+}}
+~~~
 
 Three rules:
 
@@ -372,15 +372,15 @@ value; it doesn't change because the value's location changed.
 <a id="faucets"></a>
 ## 10 Faucets
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "faucets",
     "definition": "any_resource_through_which_objects_enter_the_runtime",
     "rule": "faucets_are_the_only_inbound_path",
     "examples": ["filesystem_dirjail", "database_connection", "http_client", "stdin", "env_vars",
         "cli_args"]
-}
-```
+}}
+~~~
 
 The Puck vocabulary for source-side resources is **faucet** — any
 resource through which objects are pulled into the runtime. Examples: a
@@ -407,14 +407,14 @@ values but doesn't *own* them.
 <a id="filesystem-dirjails"></a>
 ### 10.1 Filesystem: dirjails
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "dirjails",
     "definition": "directory_object_that_hides_its_real_path",
     "rule": "dirjails_are_only_filesystem_faucets",
     "subdirjail_ownership": "deriver_owns_wrapper_objects_through_still_have_source_role"
-}
-```
+}}
+~~~
 
 The filesystem-flavored jail is called a **dirjail** — to distinguish it
 from the broader "jail" concept (a capability-restricting wrapper around
@@ -490,15 +490,15 @@ through it inherits that role**.
 <a id="cross-role-trust"></a>
 ## 11 Cross-Role Trust
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "cross_role_trust",
     "directed": true,
     "per_pair": true,
     "optional": true,
     "details_tbd": true
-}
-```
+}}
+~~~
 
 A role can choose to **trust other roles**. Trust is:
 

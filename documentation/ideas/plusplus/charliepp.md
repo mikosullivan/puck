@@ -3,11 +3,11 @@
 <a id="status"></a>
 ## 1 Status
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "status"
-}
-```
+}}
+~~~
 
 **Retired.** Charlie++ has been merged into Charlie. Forking is now a standard Charlie
 feature, engine-granted via `%forks` and `%tmp`. There is no longer a separate Charlie++

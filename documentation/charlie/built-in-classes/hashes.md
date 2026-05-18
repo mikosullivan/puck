@@ -3,14 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"type": "Hash",
 	"notes": ["ordered_key_value_pairs", "key_order_is_significant",
 		"two_hashes_equal_only_if_same_keys_same_values_same_order"]
-}
-```
+}}
+~~~
 
 Hashes are ordered collections of key-value pairs. Key order is significant — two hashes
 with the same keys and values but different insertion order are distinct. Keys are
@@ -21,13 +21,13 @@ typically symbols or strings.
 <a id="basic-methods"></a>
 ## 2 Basic Methods
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "basic_methods",
 	"methods": ["[]", "[]=", "has_key?", "keys", "values", "length",
 		"empty?", "any?", "delete"]
-}
-```
+}}
+~~~
 
 <a id="and"></a>
 ### 2.1 `[]` and `[]=`
@@ -141,8 +141,8 @@ middle leaves no gap.
 <a id="elements"></a>
 ## 3 Elements
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "elements",
 	"method": "elements",
 	"returns": "Array of element objects",
@@ -151,8 +151,8 @@ vibecode: {
 		"index_is_zero_based_position_in_key_order",
 		"key_rename_preserves_position",
 		"move_methods_clamp_at_boundaries"]
-}
-```
+}}
+~~~
 
 `elements` returns an array of **element objects**, one per key-value pair in the hash.
 Each element object is a live reference: it knows its current key, value, and position,

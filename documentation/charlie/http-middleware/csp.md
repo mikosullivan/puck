@@ -1,13 +1,13 @@
 # Content Security Policy
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "overview",
     "scope": "ecoverse_wide",
     "policy": "any_service_giving_out_html_must_also_provide_csp_header_info_for_remote_references",
     "consumer_choice": "use_csp_info_or_not_their_call"
-}
-```
+}}
+~~~
 
 **Ecoverse-wide policy.** Whenever a Puck service gives out HTML that
 references remote objects — JavaScript libraries, stylesheets, fonts,

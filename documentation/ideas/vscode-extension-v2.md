@@ -1,15 +1,15 @@
 # Charlie VS Code Extension — V2 ideas
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "future_planning_not_v1_work",
     "started": "2026-05-17",
     "subsystem": "vscode_charlie_extension",
     "parent_doc": "vscode-extension.md (V1 spec)",
     "purpose": "park_features_deferred_from_v1_and_speculate_about_the_architectural_jump",
     "co_authoring": "claude_capturing_decisions_in_realtime"
-}
-```
+}}
+~~~
 
 V1 is a self-contained TypeScript extension with line-based regex
 formatting — six small rules, masked-string pre-pass, no Charlie parser
@@ -24,15 +24,15 @@ unlock features v1 can't reach.
 <a id="the-architectural-jump"></a>
 ## 1 The architectural jump
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "architectural_jump",
     "v1_constraint": "line_based_regex_no_parser",
     "v2_options": ["typescript_charlie_parser_embedded",
                     "language_server_protocol_with_charlie_server"],
     "tradeoff": "lsp_unlocks_more_features_but_requires_a_running_charlie_capable_server_which_re_introduces_the_puck_dependency_unless_the_server_is_also_in_typescript"
-}
-```
+}}
+~~~
 
 Two shapes for v2 to consider — they're not mutually exclusive but each
 costs:
@@ -95,8 +95,8 @@ parser in an LSP layer.
 <a id="features-deferred-from-v1"></a>
 ## 2 Features deferred from V1
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "deferred_features",
     "from_v1": ["structural_reindent", "line_wrapping_at_max_length",
                  "arithmetic_and_comparison_operator_spacing",
@@ -104,8 +104,8 @@ vibecode: {
                  "hash_splat_preference",
                  "vibecode_block_internal_formatting",
                  "folding_markers"]
-}
-```
+}}
+~~~
 
 <a id="structural-re-indent"></a>
 ### 2.1 Structural re-indent

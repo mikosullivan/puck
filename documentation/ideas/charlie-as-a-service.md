@@ -1,7 +1,7 @@
 # Charlie as a Service (server-side execution)
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "subsystem": "server_side_charlie_execution",
@@ -12,8 +12,8 @@ vibecode: {
                       "charlie/roles.md"],
     "relationship_to_dogberry": "near_cousin_dogberry_fetches_script_from_a_third_site_lune; this_pattern_takes_script_as_request_body_directly",
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
-}
-```
+}}
+~~~
 
 Brainstorm in progress. The flip: instead of clients downloading
 Charlie and running it locally (browser sandbox, VS Code extension,
@@ -25,8 +25,8 @@ server returns results.**
 <a id="why"></a>
 ## 1 Why
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "motivation",
     "use_cases": ["heavier_playground_than_browser_can_handle",
                    "authoritative_execution_by_known_trusted_engine",
@@ -34,8 +34,8 @@ vibecode: {
                    "webhook_handlers_that_receive_executable_payloads",
                    "ci_style_validation",
                    "stateful_sessions_across_multiple_script_submissions"]
-}
-```
+}}
+~~~
 
 Use cases where server-side execution beats client-side:
 
@@ -62,8 +62,8 @@ Use cases where server-side execution beats client-side:
 <a id="relationship-to-dogberry-distinct-service"></a>
 ## 2 Relationship to Dogberry — distinct service
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "vs_dogberry",
     "decided_2026-05-17": true,
     "decision": "its_own_distinct_service_not_a_dogberry_variant",
@@ -72,8 +72,8 @@ vibecode: {
     "shared_machinery_with_dogberry": ["engine_run_source", "role_capability_gating",
                                           "stdout_capture_sink", "request_response_shape"],
     "naming": "service_name_tbd; brainstorm_doc_uses_charlie_as_a_service_as_placeholder"
-}
-```
+}}
+~~~
 
 This service has the same execution machinery as Dogberry but a
 different identity. Dogberry fetches a script from a third URL (lune);
@@ -143,13 +143,13 @@ Service" as a placeholder, not a final name.
 <a id="playground-capability-menu"></a>
 ## 5 Playground capability menu
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "playground_capability_menu",
     "purpose": "tier_options_for_what_resources_submitted_scripts_can_use_to_make_the_playground_interesting_to_play_with",
     "design_principle": "each_capability_is_a_role_grant_via_roles_md_machinery; opting_in_is_a_server_side_endpoint_choice"
-}
-```
+}}
+~~~
 
 If the service is also a playground, the *interesting* part is what
 the submitted scripts get to do. Each capability is a role grant per

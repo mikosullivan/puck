@@ -3,14 +3,14 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"operators": ["=", "+=", "-=", "*=", "/=", "%=", "**=", "||=", "&&=", "++", "--"],
 	"model": "all_desugar_to_simple_assignment_via_receiver_object",
 	"extension_point": "assignment_operator_classes_registered_in_scope"
-}
-```
+}}
+~~~
 
 Assignment operators write a value back to a target. All compound forms desugar to a
 simple assignment at the transpiler level. The runtime never sees compound assignment —
@@ -25,15 +25,15 @@ to pass a **receiver object** as an extra parameter.
 <a id="the-receiver-object"></a>
 ## 2 The Receiver Object
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "receiver_object",
 	"role": "encapsulates_write_back_to_assignment_target",
 	"methods": ["get", "set"],
 	"targets": ["simple_variable", "object_property", "array_index"],
 	"note": "operator_does_not_need_to_know_target_type"
-}
-```
+}}
+~~~
 
 The receiver is a thin object that encapsulates how to read from and write to the
 assignment target, regardless of what that target is.
@@ -58,8 +58,8 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 <a id="operator-classes"></a>
 ## 3 Operator Classes
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "operator_classes",
 	"flag": "is_assignment: true",
 	"effect": "interpreter_passes_receiver_as_extra_param",
@@ -68,8 +68,8 @@ vibecode: {
 		"+=":  "evaluate($left, $right, $receiver)",
 		"||=": "evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver)"
 	}
-}
-```
+}}
+~~~
 
 Assignment operator classes set `is_assignment: true`. The interpreter detects this and
 passes the receiver as the final parameter. Classes that need the current value call
@@ -136,13 +136,13 @@ end
 <a id="built-in-assignment-operators"></a>
 ## 4 Built-in Assignment Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "built_in_assignment_operators",
 	"registered_in": "scope.operators",
 	"all_have": "is_assignment: true"
-}
-```
+}}
+~~~
 
 | Operator | Class | Desugars to |
 |----------|-------|-------------|
@@ -161,15 +161,15 @@ vibecode: {
 <a id="increment-and-decrement"></a>
 ## 5 Increment and Decrement
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "increment_decrement",
 	"operators": ["++", "--"],
 	"form": "postfix_only",
 	"mechanism": "calls_incremented_or_decremented_method_on_receiver_value",
 	"extensible": "any_class_can_support_by_defining_incremented_and_decremented"
-}
-```
+}}
+~~~
 
 `++` and `--` are postfix-only. They call `incremented` or `decremented` on the current
 value and assign the result back via the receiver:

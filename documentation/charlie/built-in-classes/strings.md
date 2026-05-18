@@ -3,15 +3,15 @@
 <a id="overview"></a>
 ## 1 Overview
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "overview",
 	"type": "string",
 	"encoding": "utf8",
 	"mutable": false,
 	"key_facts": ["all_methods_return_new_string", "engine_validates_utf8_at_boundary"]
-}
-```
+}}
+~~~
 
 Strings are immutable UTF-8 sequences. Every method returns a new string (or a value of
 another type); none mutate in place. A compliant engine must ensure all strings are valid
@@ -22,8 +22,8 @@ UTF-8 at system boundaries before passing them to Charlie.
 <a id="operators"></a>
 ## 2 Operators
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "operators",
 	"operators": ["+", "*", "[]"],
 	"notes": ["right_operand_coerced_to_string_for_plus",
@@ -31,8 +31,8 @@ vibecode: {
 		"subscript_supports_offset_and_length",
 		"end_anchored_slicing_via_colon_end",
 		"indices_are_unicode_codepoints_not_bytes"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -45,15 +45,15 @@ vibecode: {
 <a id="testing"></a>
 ## 3 Testing
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "testing",
 	"returns": "Boolean",
 	"methods": ["==", "include?", "match?", "starts_with?", "start_with?",
 		"ends_with?", "end_with?"],
 	"notes": ["start_with_and_end_with_are_aliases"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -70,13 +70,13 @@ vibecode: {
 <a id="case"></a>
 ## 4 Case
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "case",
 	"methods": ["upper_case", "lower_case"],
 	"returns": "String"
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -88,15 +88,15 @@ vibecode: {
 <a id="whitespace"></a>
 ## 5 Whitespace
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "whitespace",
 	"methods": ["left_strip", "right_strip", "collapse", "chomp"],
 	"returns": "String",
 	"notes": ["collapse_strips_and_normalizes_internal_whitespace",
 		"chomp_removes_trailing_newlines_and_carriage_returns"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -110,14 +110,14 @@ vibecode: {
 <a id="prefix-and-suffix"></a>
 ## 6 Prefix and Suffix
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "prefix_and_suffix",
 	"methods": ["delete_prefix", "delete_suffix"],
 	"returns": "String",
 	"notes": ["returns_string_unchanged_if_prefix_or_suffix_not_present"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -129,8 +129,8 @@ vibecode: {
 <a id="search-and-replace"></a>
 ## 7 Search and Replace
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "search_and_replace",
 	"methods": ["match", "replace"],
 	"replace_scope_options": [":all", ":first", ":last"],
@@ -138,8 +138,8 @@ vibecode: {
 		"replace_pattern_may_be_string_or_regex",
 		"default_scope_is_all",
 		"returns_original_if_no_match"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -170,14 +170,14 @@ $foo.replace('xyz', 'bar')          -> 'Mike Stuart Mike'
 <a id="formatting"></a>
 ## 8 Formatting
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "formatting",
 	"methods": ["left_justify", "right_justify"],
 	"returns": "String",
 	"notes": ["pads_with_spaces", "no_op_if_already_at_or_above_width"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -189,14 +189,14 @@ vibecode: {
 <a id="splitting"></a>
 ## 9 Splitting
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "splitting",
 	"methods": ["lines"],
 	"returns": "Array",
 	"notes": ["line_endings_stripped_from_each_element"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -207,14 +207,14 @@ vibecode: {
 <a id="size"></a>
 ## 10 Size
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "size",
 	"methods": ["length", "size"],
 	"returns": "Number",
 	"notes": ["counts_unicode_codepoints_not_bytes", "size_is_alias_for_length"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -226,15 +226,15 @@ vibecode: {
 <a id="conversion"></a>
 ## 11 Conversion
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "conversion",
 	"methods": ["to_number", "hex", "reverse"],
 	"notes": ["to_number_raises_if_invalid",
 		"hex_parses_hexadecimal_integer",
 		"reverse_returns_characters_in_reverse_order"]
-}
-```
+}}
+~~~
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -249,16 +249,16 @@ vibecode: {
 <a id="end-anchored-slicing"></a>
 ## 12 End-Anchored Slicing
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "end_anchored_slicing",
 	"concept": "end_object_wraps_string_for_right_indexed_access",
 	"access": "$str.end[$offset] or $str.end[$offset, $length]",
 	"sugar": "$str[n, :end] and $str[n, $length, :end]",
 	"implementation": "$str.end[$offset, $length] == $str.reverse[$offset, $length].reverse",
 	"parser_note": "end_after_dot_is_method_name_not_block_closing_keyword"
-}
-```
+}}
+~~~
 
 `end` is a method on String that returns an **end object** — a thin wrapper that holds a
 reference to the string and provides end-anchored slicing via its own `[]` method.

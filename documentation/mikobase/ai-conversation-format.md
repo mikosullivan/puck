@@ -1,7 +1,9 @@
 # AI2AI — Collaborative Protocol for AI Agents
 
-vibecode: {"doc":"mikobase-ai-reference","audience":"human+ai","product":"ai2ai",
-"sections":["mikobase","q0","worldlet_json_format","ai_conversation_format"]}
+~~~json
+{"vibecode": {"doc":"mikobase-ai-reference","audience":"human+ai","product":"ai2ai",
+"sections":["mikobase","q0","worldlet_json_format","ai_conversation_format"]}}
+~~~
 
 **AI2AI** is a protocol for two AI agents to collaborate on a task, reach conclusions, and
 deliver a report to a human. It is the first product of the Puck ecoverse — a broader
@@ -33,10 +35,12 @@ definitions, append-only record history, locking, and transactions. The central 
 mikobase owns its objects. Processes connect to it and interact with it directly; they do not
 pass objects between each other.
 
-vibecode: {"concept":"mikobase","type":"live_object_store","requires":"maintaining_process",
+~~~json
+{"vibecode": {"concept":"mikobase","type":"live_object_store","requires":"maintaining_process",
 "not":"passive_file","supports":["Q0","class_definitions","record_history","locking",
 "transactions"],"key_rules":["mikobase owns its objects",
-"processes connect and interact; no direct object passing between processes"]}
+"processes connect and interact; no direct object passing between processes"]}}
+~~~
 
 <a id="concurrency-model"></a>
 ### 1.1 Concurrency Model
@@ -49,12 +53,14 @@ between concurrent writers at the application level.
 The session history is the union of all appended records from all agents, ordered by
 `updated_at`. No merge algorithm is needed.
 
-vibecode: {"concept":"concurrency_model",
+~~~json
+{"vibecode": {"concept":"concurrency_model",
 "rule":"every write appends a new history entry with unique UUID v4; concurrent writes never collide",
 "session_history":"union of all appended records; complete set of all facts produced by all agents",
 "conflict_resolution":{
 "identical_uuid":"skip silently; import is idempotent",
-"different_uuid":"both entries valid and coexist; no merge needed"}}
+"different_uuid":"both entries valid and coexist; no merge needed"}}}
+~~~
 
 <a id="worldlets-packaged-mikobases"></a>
 ### 1.2 Worldlets (Packaged Mikobases)
@@ -63,9 +69,11 @@ A **worldlet** is a mikobase packaged as a portable file — class definitions, 
 and files bundled together. Class names use the publisher's domain, so there are no naming
 collisions between publishers.
 
-vibecode: {"concept":"packaged_mikobase","marketing_name":"worldlet",
+~~~json
+{"vibecode": {"concept":"packaged_mikobase","marketing_name":"worldlet",
 "contains":["class definitions","records","history","files"],
-"uns_note":"class names use publisher domain; no collision possible"}
+"uns_note":"class names use publisher domain; no collision possible"}}
+~~~
 
 ---
 
@@ -77,15 +85,19 @@ JSON objects sent to `engine.q0()`. Every mikobase engine supports Q0. Class nam
 are UNS strings — a URL without the `https://` prefix (e.g. `puck.uno/record`,
 `foo.com/character`).
 
-vibecode: {"concept":"Q0","name":"query zero","format":"JSON objects sent to engine.q0()",
+~~~json
+{"vibecode": {"concept":"Q0","name":"query zero","format":"JSON objects sent to engine.q0()",
 "all_engines_support":true,"uns_rule":"class names are UNS strings: URL without https:// prefix",
-"uns_examples":["puck.uno/record","puck.uno/reference","foo.com/character"]}
+"uns_examples":["puck.uno/record","puck.uno/reference","foo.com/character"]}}
+~~~
 
 <a id="actions"></a>
 ### 2.1 Actions
 
-vibecode: {"concept":"q0_actions","values":["select","create","update","delete","transaction",
-"commit","rollback"]}
+~~~json
+{"vibecode": {"concept":"q0_actions","values":["select","create","update","delete","transaction",
+"commit","rollback"]}}
+~~~
 
 <a id="select"></a>
 ### 2.2 Select
@@ -93,7 +105,8 @@ vibecode: {"concept":"q0_actions","values":["select","create","update","delete",
 A select with no filters returns all active records. `class` is inheritance-aware — subclasses
 are always included. `null` values always sort last regardless of sort direction.
 
-vibecode: {"concept":"q0_select","action":"select","filters":[
+~~~json
+{"vibecode": {"concept":"q0_select","action":"select","filters":[
 {"field":"pk","type":"string","effect":"select single record by primary key"},
 {"field":"classes","type":"string|array",
 "note":"inheritance-aware; subclasses always included; scalar or array; class is reserved in Puck hashes and must not be used as a select filter"},
@@ -107,7 +120,8 @@ vibecode: {"concept":"q0_select","action":"select","filters":[
 {"qualifier":"case-sensitive","default":true,"effect":"case-insensitive sort if false"},
 {"qualifier":"collapse","default":false,"effect":"normalize whitespace before sort"}],
 "null_sort":"null values always sort last regardless of reverse",
-"unfiltered_select":"returns all active records"}
+"unfiltered_select":"returns all active records"}}
+~~~
 
 <a id="narrowing"></a>
 ### 2.3 Narrowing
@@ -115,11 +129,13 @@ vibecode: {"concept":"q0_select","action":"select","filters":[
 Results can be filtered with `then` (AND), `all` (AND over array), and `any` (OR over array).
 These operators are combinable and nestable.
 
-vibecode: {"concept":"q0_narrowing","operators":[
+~~~json
+{"vibecode": {"concept":"q0_narrowing","operators":[
 {"op":"then","semantics":"AND; nestable; add not:true to negate; only matching records survive"},
 {"op":"all","semantics":"AND; array of sub-queries; record must match every sub-query"},
 {"op":"any","semantics":"OR; array of sub-queries; record must match at least one"}],
-"combinable":true,"nestable":true}
+"combinable":true,"nestable":true}}
+~~~
 
 <a id="path-operators"></a>
 ### 2.4 Path Operators
@@ -127,7 +143,8 @@ vibecode: {"concept":"q0_narrowing","operators":[
 A path is an array of keys to traverse into a bucket, with the final element being a literal
 value (exact equality) or a typed operator.
 
-vibecode: {"concept":"q0_path",
+~~~json
+{"vibecode": {"concept":"q0_path",
 "format":"array; all but last are hash keys to traverse into bucket; last is literal or operator",
 "literal":"exact equality match",
 "operators":[
@@ -138,7 +155,8 @@ vibecode: {"concept":"q0_path",
 {"type":"array","ops":[
 {"includes":"..."},{"includes_all":"[...]"},{"includes_any":"[...]"}]},
 {"type":"existence","ops":[
-{"exists":true},{"exists":false},{"truthy":true},{"any":true}]}]}
+{"exists":true},{"exists":false},{"truthy":true},{"any":true}]}]}}
+~~~
 
 <a id="placeholders"></a>
 ### 2.5 Placeholders
@@ -147,28 +165,34 @@ Placeholders are named variables defined in a query and referenced elsewhere in 
 They are resolved dynamically — a placeholder is only an error if it is actually reached and
 undefined. They are local to the query and cannot be reused across queries.
 
-vibecode: {"concept":"q0_placeholders","syntax":{"placeholder":"name"},
+~~~json
+{"vibecode": {"concept":"q0_placeholders","syntax":{"placeholder":"name"},
 "define_at":"top level of query or inside then block",
 "reference":"anywhere in query including nested then blocks",
 "scoping":"outer placeholders inherited by nested then; inner can shadow; cannot remove inherited",
 "resolution":"dynamic at moment encountered; not upfront",
 "rules":["circular ref is error only if reached","undefined placeholder is error only if reached",
 "unreached placeholder causes no error","local to query; not reusable across queries",
-"may resolve to any JSON value"]}
+"may resolve to any JSON value"]}}
+~~~
 
 <a id="create"></a>
 ### 2.6 Create
 
-vibecode: {"concept":"q0_create","action":"create","required":["bucket"],"optional":["class"],
+~~~json
+{"vibecode": {"concept":"q0_create","action":"create","required":["bucket"],"optional":["class"],
 "class_default":"puck.uno/record if omitted or null","pk":"engine-generated",
-"response":"success:true + new pk in results"}
+"response":"success:true + new pk in results"}}
+~~~
 
 <a id="update"></a>
 ### 2.7 Update
 
-vibecode: {"concept":"q0_update","action":"update","required":["pk"],
+~~~json
+{"vibecode": {"concept":"q0_update","action":"update","required":["pk"],
 "bucket":"required unless class-only change","class":"optional; unchanged if omitted",
-"error":"updating deleted record is error"}
+"error":"updating deleted record is error"}}
+~~~
 
 <a id="delete"></a>
 ### 2.8 Delete
@@ -176,24 +200,29 @@ vibecode: {"concept":"q0_update","action":"update","required":["pk"],
 Deletion creates a tombstone — it sets `active=false` rather than removing the record.
 Deleted records are excluded from normal selects. `if_exists: true` makes delete idempotent.
 
-vibecode: {"concept":"q0_delete","action":"delete","required":["pk"],
+~~~json
+{"vibecode": {"concept":"q0_delete","action":"delete","required":["pk"],
 "mechanism":"tombstone; sets active=false",
 "if_exists":"true makes delete idempotent; returns success:true, deleted:false for already-deleted",
 "tombstone_clears":["bucket","class_pk","custom_classes"],
-"select_behavior":"deleted records excluded from normal select; historical reads at cutoff may return them"}
+"select_behavior":"deleted records excluded from normal select; historical reads at cutoff may return them"}}
+~~~
 
 <a id="responses"></a>
 ### 2.9 Responses
 
-vibecode: {"concept":"q0_responses",
+~~~json
+{"vibecode": {"concept":"q0_responses",
 "success":{"success":true,"results":"..."},
 "warning":{"success":true,"results":"...","warnings":[{"id":"...","details":{}}]},
-"failure":{"success":false,"errors":[{"id":"...","details":{}}]}}
+"failure":{"success":false,"errors":[{"id":"...","details":{}}]}}}
+~~~
 
 <a id="error-ids"></a>
 ### 2.10 Error IDs
 
-vibecode: {"concept":"q0_error_ids","errors":[
+~~~json
+{"vibecode": {"concept":"q0_error_ids","errors":[
 {"id":"invalid_request","meaning":"malformed: missing fields, wrong types, unknown fields"},
 {"id":"class-not-found","meaning":"class path does not resolve to known class"},
 {"id":"record_not_found","meaning":"target pk does not exist"},
@@ -204,7 +233,8 @@ vibecode: {"concept":"q0_error_ids","errors":[
 {"id":"action-not-supported","meaning":"action not implemented by this engine"},
 {"id":"request-too-large","meaning":"request exceeds engine size limit"},
 {"id":"transaction-not-found","meaning":"unknown transaction id"},
-{"id":"transaction-invalidated","meaning":"transaction id invalidated by ancestor rollback"}]}
+{"id":"transaction-invalidated","meaning":"transaction id invalidated by ancestor rollback"}]}}
+~~~
 
 ---
 
@@ -218,12 +248,14 @@ all references remain valid. This document describes the **temporal** worldlet s
 [worldlet.md](worldlets/worldlet.md). In the temporal shape, `history` is required;
 all other top-level keys are optional and default to empty structures when absent.
 
-vibecode: {"concept":"worldlet","aka":"packaged_mikobase","format":"single JSON object",
+~~~json
+{"vibecode": {"concept":"worldlet","aka":"packaged_mikobase","format":"single JSON object",
 "purpose":"complete portable mikobase: classes, records, history, files",
 "applies_to_mode":"temporal_worldlets_only; non_temporal_shape_lives_in_worldlet_md",
 "import_behavior":"PKs preserved exactly; references remain valid after import",
 "minimum_valid_temporal":"history key only; all other keys optional; absent keys default to empty structures",
-"temporal_flag_default":"temporal_is_the_default; non_temporal_requires_explicit_top_level_temporal_false_per_mikobase_md_temporal_section"}
+"temporal_flag_default":"temporal_is_the_default; non_temporal_requires_explicit_top_level_temporal_false_per_mikobase_md_temporal_section"}}
+~~~
 
 <a id="top-level-structure"></a>
 ### 3.1 Top-Level Structure
@@ -242,7 +274,8 @@ vibecode: {"concept":"worldlet","aka":"packaged_mikobase","format":"single JSON 
 | `files` | no | File metadata; keyed by file UUID. |
 | `file_chunks` | no | File binary content; keyed by chunk UUID. |
 
-vibecode: {"concept":"worldlet_top_level_structure","keys":[
+~~~json
+{"vibecode": {"concept":"worldlet_top_level_structure","keys":[
 {"key":"format","required":false,"type":"string","value":"worldlet","note":"fixed string; identifies document type; unknown value → refuse import"},
 {"key":"format_version","required":false,"type":"string","value":"1.0","note":"semver; unknown value → warn and attempt import; absent → attempt without warning"},
 {"key":"meta","required":false,"type":"object","note":"descriptive metadata about the worldlet"},
@@ -253,20 +286,23 @@ vibecode: {"concept":"worldlet_top_level_structure","keys":[
 {"key":"records","required":false,"type":"object","note":"record identity objects; keyed by UUID; optional — inferred from history if absent"},
 {"key":"history","required":true,"type":"object","note":"all record versions; keyed by history UUID"},
 {"key":"files","required":false,"type":"object","note":"file metadata; keyed by file UUID"},
-{"key":"file_chunks","required":false,"type":"object","note":"file binary content; keyed by chunk UUID"}]}
+{"key":"file_chunks","required":false,"type":"object","note":"file binary content; keyed by chunk UUID"}]}}
+~~~
 
 <a id="meta"></a>
 ### 3.2 meta
 
 Descriptive metadata about the worldlet. All fields are optional.
 
-vibecode: {"concept":"worldlet_meta","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_meta","required":false,
 "fields":[
 {"field":"name","required":false,"type":"string","note":"human-readable name"},
 {"field":"author","required":false,"type":"string","note":"UNS domain of publisher"},
 {"field":"version","required":false,"type":"string","note":"semver string"},
 {"field":"description","required":false,"type":"string","note":"free-text description of contents"},
-{"field":"created_at","required":false,"type":"string","note":"ISO 8601 timestamp of export"}]}
+{"field":"created_at","required":false,"type":"string","note":"ISO 8601 timestamp of export"}]}}
+~~~
 
 <a id="properties"></a>
 ### 3.3 properties
@@ -279,11 +315,13 @@ executed. Default is `false` (data only); allowing execution requires a positive
 The engine does not enforce this — the importing client or agent is responsible for
 respecting it.
 
-vibecode: {"concept":"worldlet_properties","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_properties","required":false,
 "fields":[
 {"field":"executable","type":"boolean","default":false,
 "note":"advisory: code in this mikobase may be executed; default false means data only",
-"enforcement":"advisory only; engine does not prevent or permit execution; client/agent responsible for respecting it"}]}
+"enforcement":"advisory only; engine does not prevent or permit execution; client/agent responsible for respecting it"}]}}
+~~~
 
 <a id="allow"></a>
 ### 3.4 allow
@@ -292,9 +330,11 @@ An array of external resource identifiers (e.g. hostnames) that this worldlet re
 to. The host presents these to the user for approval before import. Nothing is granted
 silently.
 
-vibecode: {"concept":"worldlet_allow","required":false,"type":"array of strings",
+~~~json
+{"vibecode": {"concept":"worldlet_allow","required":false,"type":"array of strings",
 "note":"external resources the worldlet requires; host presents to user for approval before import; nothing granted silently",
-"example":["api.starfleet.com"]}
+"example":["api.starfleet.com"]}}
+~~~
 
 <a id="classes"></a>
 ### 3.5 classes
@@ -303,7 +343,8 @@ An object keyed by UNS class name. The class name is always taken from the dicti
 any `name` field inside the definition is ignored. Methods are fields with `class: function`
 and a `charlie` key. Import does not delete classes absent from the schema.
 
-vibecode: {"concept":"worldlet_classes","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_classes","required":false,
 "format":"object keyed by UNS class name; value is class definition",
 "name_rule":"name is always taken from dict key; any name field inside definition is ignored and overwritten",
 "methods":"defined as fields with class:function and a charlie key containing Charlie source",
@@ -311,7 +352,8 @@ vibecode: {"concept":"worldlet_classes","required":false,
 "importing existing class appends new history row",
 "import does not delete classes absent from schema",
 "all inherits references must exist in DB or same schema; entire import fails if any missing",
-"classes within schema need not be ordered; engine inserts parent-first"]}
+"classes within schema need not be ordered; engine inserts parent-first"]}}
+~~~
 
 <a id="records"></a>
 ### 3.6 records
@@ -320,10 +362,12 @@ An object keyed by record UUID, with empty objects `{}` as values. The content o
 lives entirely in `history` — this section establishes identity only. If `records` is absent,
 the importer infers record identities from the `record` fields in history entries.
 
-vibecode: {"concept":"worldlet_records","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_records","required":false,
 "format":"object keyed by record UUID; value is empty object {}",
 "note":"content lives in history, not here; record key establishes identity only",
-"inference":"if absent, importer infers record identities from record fields in history"}
+"inference":"if absent, importer infers record identities from record fields in history"}}
+~~~
 
 <a id="history"></a>
 ### 3.7 history
@@ -333,7 +377,8 @@ The core of the worldlet. Every entry is one version of one record. The entry wi
 tombstone — the record is considered deleted. No two entries for the same record may share the
 same `updated_at`.
 
-vibecode: {"concept":"worldlet_history","required":true,
+~~~json
+{"vibecode": {"concept":"worldlet_history","required":true,
 "format":"object keyed by history UUID; each value is one version of one record",
 "fields":[
 {"field":"record","type":"string","note":"UUID of the record this version belongs to"},
@@ -344,19 +389,22 @@ vibecode: {"concept":"worldlet_history","required":true,
 {"field":"bucket","type":"object","note":"field values at this version; omitted on tombstone"}],
 "current_state":"entry with latest updated_at for a given record UUID is the current state",
 "deleted_state":"latest entry with active=false means record is deleted",
-"timestamp_rule":"two entries for the same record cannot share the same updated_at"}
+"timestamp_rule":"two entries for the same record cannot share the same updated_at"}}
+~~~
 
 <a id="files"></a>
 ### 3.8 files
 
-vibecode: {"concept":"worldlet_files","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_files","required":false,
 "format":"object keyed by file UUID",
 "fields":[
 {"field":"sha256","type":"string","note":"SHA-256 hash of complete file content; used for deduplication and integrity"},
 {"field":"updated_at","type":"string","note":"ISO 8601 timestamp"},
 {"field":"mime","type":"object","fields":[
 {"field":"type","note":"MIME type e.g. image/png"},
-{"field":"encoding","note":"encoding used for chunk data e.g. base64"}]}]}
+{"field":"encoding","note":"encoding used for chunk data e.g. base64"}]}]}}
+~~~
 
 <a id="file_chunks"></a>
 ### 3.9 file_chunks
@@ -364,14 +412,16 @@ vibecode: {"concept":"worldlet_files","required":false,
 Files are stored in chunks. Chunks are assembled in index order. An empty file is represented
 as a single chunk with `data: ""` and `last: true`.
 
-vibecode: {"concept":"worldlet_file_chunks","required":false,
+~~~json
+{"vibecode": {"concept":"worldlet_file_chunks","required":false,
 "format":"object keyed by chunk UUID",
 "fields":[
 {"field":"file","type":"string","note":"UUID of parent file record"},
 {"field":"index","type":"integer","note":"zero-based chunk position; chunks assembled in index order"},
 {"field":"last","type":"boolean","note":"true on final chunk; file with no last=true chunk is incomplete"},
 {"field":"data","type":"string","note":"chunk content encoded per file mime.encoding"}],
-"empty_file":"single chunk row with data='' and last=true"}
+"empty_file":"single chunk row with data='' and last=true"}}
+~~~
 
 <a id="import-rules"></a>
 ### 3.10 Import Rules
@@ -379,7 +429,8 @@ vibecode: {"concept":"worldlet_file_chunks","required":false,
 When agents exchange delta updates, the following rules govern what the receiving mikobase
 will accept. All imports are all-or-nothing — any error aborts the entire import.
 
-vibecode: {"concept":"worldlet_import_rules",
+~~~json
+{"vibecode": {"concept":"worldlet_import_rules",
 "uuid_constraint":"all keys in records/history/files/file_chunks and all record reference values must be UUID v4; malformed UUID → reject",
 "conflict_policy":[
 {"case":"history entry UUID already exists with identical content","action":"skip silently; import is idempotent"},
@@ -391,7 +442,8 @@ vibecode: {"concept":"worldlet_import_rules",
 "all file values in file_chunks reference a UUID in files",
 "updated_at is ISO 8601 with millisecond precision",
 "no two history entries for same record share same updated_at"],
-"atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}
+"atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}}
+~~~
 
 ---
 
@@ -416,16 +468,20 @@ allows a single Q0 query to fetch all records for a session without graph traver
 **Report delivery:** `puck.uno` forwards `puck.uno/ai/report` to the human when the session
 ends. The full session mikobase remains available for audit.
 
-vibecode: {"concept":"ai_conversation_format_execution_policy",
+~~~json
+{"vibecode": {"concept":"ai_conversation_format_execution_policy",
 "rule":"code stored in the mikobase must not be executed by AI agents",
-"rationale":"the mikobase is a communication and audit medium; code present in records is data to be read and interpreted, not instructions to run"}
+"rationale":"the mikobase is a communication and audit medium; code present in records is data to be read and interpreted, not instructions to run"}}
+~~~
 
-vibecode: {"concept":"ai_conversation_format","namespace":"puck.uno/ai/",
+~~~json
+{"vibecode": {"concept":"ai_conversation_format","namespace":"puck.uno/ai/",
 "purpose":"standard class library for AI-to-AI collaboration via shared live mikobase",
 "usage":"optional convention; mikobase accepts anything; common vocabulary makes output readable without prior coordination",
 "from_field_rule":"@from on all records is foreign key to puck.uno/ai/agent primary key; not UNS directly",
 "session_field_rule":"all classes except puck.uno/ai/agent and puck.uno/ai/session carry @session; enables single Q0 query to fetch all records for a session without graph traversal",
-"report_delivery":"puck.uno forwards puck.uno/ai/report to human when session ends; full session mikobase available for audit"}
+"report_delivery":"puck.uno forwards puck.uno/ai/report to human when session ends; full session mikobase available for audit"}}
+~~~
 
 <a id="concurrency-in-ai-sessions"></a>
 ### 4.1 Concurrency in AI Sessions
@@ -452,11 +508,13 @@ by `updated_at`.
 - The session now contains both as siblings, in timestamp order.
 - No merge algorithm needed. Both agents' perspectives are preserved.
 
-vibecode: {"concept":"ai_concurrency",
+~~~json
+{"vibecode": {"concept":"ai_concurrency",
 "rule":"concurrent writes never collide; each agent appends independently with unique UUID v4",
 "session_union":"complete set of all records from all agents; ordered by updated_at",
 "agents_never":["lock records","update another agent's record","use transactions","negotiate write ordering"],
-"agents_can":["post records concurrently","work offline and exchange deltas asynchronously","merge updates without conflict resolution"]}
+"agents_can":["post records concurrently","work offline and exchange deltas asynchronously","merge updates without conflict resolution"]}}
+~~~
 
 <a id="class-summary"></a>
 ### 4.2 Class Summary
@@ -488,7 +546,8 @@ other records reference this record via `@from`. If an agent drops and reconnect
 knowing its original primary key, it registers a new agent record — duplicate registrations
 from reconnects are acceptable.
 
-vibecode: {"class":"puck.uno/ai/agent","role":"agent identity record; registered once at session start",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/agent","role":"agent identity record; registered once at session start",
 "fields":[
 {"field":"@name","note":"human-readable name for this agent"},
 {"field":"@uns","note":"UNS address of agent if it has one"},
@@ -497,7 +556,8 @@ vibecode: {"class":"puck.uno/ai/agent","role":"agent identity record; registered
 {"field":"@registered_at"}],
 "registration_rules":["one registration per agent per session",
 "if agent drops and reconnects without knowing original pk, register a new agent record",
-"duplicate registrations from reconnects are acceptable"]}
+"duplicate registrations from reconnects are acceptable"]}}
+~~~
 
 <a id="session"></a>
 ### 4.4 Session
@@ -506,14 +566,16 @@ The top-level container for a collaboration. Typically created by the Puck serve
 spinning up the mikobase instance. Status moves from `:open` toward `:resolved`, `:impasse`,
 or `:withdrawn`.
 
-vibecode: {"class":"puck.uno/ai/session","role":"top-level container for collaboration",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/session","role":"top-level container for collaboration",
 "created_by":"Puck server when spinning up mikobase instance for two agents",
 "fields":[
 {"field":"@agenda","note":"what the session is here to resolve"},
 {"field":"@participants","note":"array of agent record primary keys"},
 {"field":"@human","note":"UNS or identifier of human owner"},
 {"field":"@status","values":[":open",":resolved",":impasse",":withdrawn"]},
-{"field":"@updated_at"}]}
+{"field":"@updated_at"}]}}
+~~~
 
 <a id="proposal"></a>
 ### 4.5 Proposal
@@ -522,14 +584,16 @@ Something being put forward for consideration. A proposal has a subject, a body,
 rationale. Its status tracks whether it is still open, has been accepted, rejected, or
 superseded by a refinement.
 
-vibecode: {"class":"puck.uno/ai/proposal","role":"something put forward for consideration",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/proposal","role":"something put forward for consideration",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@subject","note":"short title"},
 {"field":"@body","note":"proposal content"},
 {"field":"@rationale","note":"why this is being proposed"},
-{"field":"@status","values":[":open",":accepted",":rejected",":superseded"]}]}
+{"field":"@status","values":[":open",":accepted",":rejected",":superseded"]}]}}
+~~~
 
 <a id="objection"></a>
 ### 4.6 Objection
@@ -539,7 +603,8 @@ agent intends its objection: `:blocking` means it cannot accept the proposal as-
 means it has reservations but will not block; `:minor` is a note for the human rather than a
 negotiating point.
 
-vibecode: {"class":"puck.uno/ai/objection","role":"reasoned disagreement with proposal or refinement",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/objection","role":"reasoned disagreement with proposal or refinement",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
@@ -550,7 +615,8 @@ vibecode: {"class":"puck.uno/ai/objection","role":"reasoned disagreement with pr
 "severity_semantics":{
 ":blocking":"objecting agent cannot accept proposal as-is",
 ":concern":"has reservations but will not block",
-":minor":"note for human; not a negotiating point"}}
+":minor":"note for human; not a negotiating point"}}}
+~~~
 
 <a id="refinement"></a>
 ### 4.7 Refinement
@@ -559,7 +625,8 @@ An updated version of a proposal, typically in response to an objection. `@of` a
 to the original root proposal. `@previous` points to whatever this directly supersedes —
 useful for walking the full chain of revisions.
 
-vibecode: {"class":"puck.uno/ai/refinement",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/refinement",
 "role":"updated version of proposal, typically in response to objection",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
@@ -567,7 +634,8 @@ vibecode: {"class":"puck.uno/ai/refinement",
 {"field":"@of","note":"reference to original proposal; always points to the root proposal"},
 {"field":"@previous","note":"reference to immediately preceding proposal or refinement; walk chain via this field"},
 {"field":"@body","note":"full revised proposal"},
-{"field":"@changes","note":"summary of what changed and why"}]}
+{"field":"@changes","note":"summary of what changed and why"}]}}
+~~~
 
 <a id="question"></a>
 ### 4.8 Question
@@ -575,24 +643,28 @@ vibecode: {"class":"puck.uno/ai/refinement",
 A clarifying question about anything in the session — a proposal, an objection, a prior
 decision, or anything else.
 
-vibecode: {"class":"puck.uno/ai/question","role":"clarifying question about anything in session",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/question","role":"clarifying question about anything in session",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@about","note":"reference to thing being questioned"},
-{"field":"@body"}]}
+{"field":"@body"}]}}
+~~~
 
 <a id="response"></a>
 ### 4.9 Response
 
 A reply to a question.
 
-vibecode: {"class":"puck.uno/ai/response","role":"reply to a question",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/response","role":"reply to a question",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@to","note":"reference to question"},
-{"field":"@body"}]}
+{"field":"@body"}]}}
+~~~
 
 <a id="evidence"></a>
 ### 4.10 Evidence
@@ -601,7 +673,8 @@ Supporting material attached to any record in the session — a citation, measur
 or counterexample that grounds a proposal or objection in external fact. `@confidence` is the
 posting agent's own assessment of the evidence's reliability.
 
-vibecode: {"class":"puck.uno/ai/evidence",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/evidence",
 "role":"supporting material grounding a proposal or objection in external fact",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
@@ -610,7 +683,8 @@ vibecode: {"class":"puck.uno/ai/evidence",
 {"field":"@kind","values":[":fact",":example",":counterexample",":citation",":measurement"]},
 {"field":"@source","note":"URL or description of source"},
 {"field":"@body","note":"the evidence content"},
-{"field":"@confidence","note":"0.0–1.0; agent's confidence in this evidence"}]}
+{"field":"@confidence","note":"0.0–1.0; agent's confidence in this evidence"}]}}
+~~~
 
 <a id="acceptance"></a>
 ### 4.11 Acceptance
@@ -618,14 +692,16 @@ vibecode: {"class":"puck.uno/ai/evidence",
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit
 trail of who accepted what and under what conditions, separate from a `@status` field change.
 
-vibecode: {"class":"puck.uno/ai/acceptance",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/acceptance",
 "role":"explicit record of one agent accepting a proposal or refinement; creates audit trail",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@of","note":"reference to proposal or refinement being accepted"},
 {"field":"@body","note":"optional remarks"},
-{"field":"@conditions","note":"any conditions attached to the acceptance"}]}
+{"field":"@conditions","note":"any conditions attached to the acceptance"}]}}
+~~~
 
 <a id="impasse"></a>
 ### 4.12 Impasse
@@ -634,14 +710,16 @@ A declaration by one agent that agreement cannot be reached and the session must
 to the human. Either agent may post this. Once posted, further negotiation stops and both
 agents move to posting a `position` record summarizing where they stand.
 
-vibecode: {"class":"puck.uno/ai/impasse",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/impasse",
 "role":"declaration by one agent that agreement cannot be reached; triggers escalation to human",
 "effect":"further negotiation stops; both agents post a puck.uno/ai/position record; session status → :impasse",
 "fields":[
 {"field":"@from","note":"primary key of agent declaring impasse"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@body","note":"explanation of why agreement cannot be reached"},
-{"field":"@sticking_point","note":"the specific issue that cannot be reconciled"}]}
+{"field":"@sticking_point","note":"the specific issue that cannot be reconciled"}]}}
+~~~
 
 <a id="position"></a>
 ### 4.13 Position
@@ -650,13 +728,15 @@ An agent's final stated position, posted after an impasse is declared. Each agen
 These are not arguments — they are clean summaries of where each agent stands so the human
 can make an informed decision.
 
-vibecode: {"class":"puck.uno/ai/position",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/position",
 "role":"agent final stated position after impasse declared; one per agent; not an argument",
 "fields":[
 {"field":"@from","note":"primary key of agent record"},
 {"field":"@session","note":"reference to session record"},
 {"field":"@body","note":"the agent's final position"},
-{"field":"@supports","note":"reference to last proposal or refinement this agent endorses; optional"}]}
+{"field":"@supports","note":"reference to last proposal or refinement this agent endorses; optional"}]}}
+~~~
 
 <a id="decision"></a>
 ### 4.14 Decision
@@ -664,7 +744,8 @@ vibecode: {"class":"puck.uno/ai/position",
 A conclusion both agents have agreed on. A session may contain multiple decisions. `@risks`
 records any caveats or identified risks the agents want to flag for the human.
 
-vibecode: {"class":"puck.uno/ai/decision",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/decision",
 "role":"conclusion both agents agreed on; session may have multiple",
 "fields":[
 {"field":"@session","note":"reference to session record"},
@@ -672,7 +753,8 @@ vibecode: {"class":"puck.uno/ai/decision",
 {"field":"@based_on","note":"reference to proposal or refinement that was accepted"},
 {"field":"@agreed_by","note":"array of agent record primary keys"},
 {"field":"@confidence","note":"0.0–1.0; agents' collective confidence in this decision"},
-{"field":"@risks","note":"array of identified risks or caveats"}]}
+{"field":"@risks","note":"array of identified risks or caveats"}]}}
+~~~
 
 <a id="report"></a>
 ### 4.15 Report
@@ -684,7 +766,8 @@ When a session ends in impasse, `@decisions` will be empty or partial, and `@imp
 `@positions` will be populated instead. The `@summary` and `@next_steps` fields must make
 clear that the human needs to decide.
 
-vibecode: {"class":"puck.uno/ai/report",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/report",
 "role":"final output forwarded to human; assembled when session concludes",
 "fields":[
 {"field":"@summary","note":"executive summary; what human needs to read first"},
@@ -696,7 +779,8 @@ vibecode: {"class":"puck.uno/ai/report",
 {"field":"@positions","note":"array of position records; present only if session ended in impasse"},
 {"field":"@markdown","note":"full human-readable narrative of the session in Markdown; primary deliverable forwarded to human"}],
 "impasse_report_rules":["@decisions will be empty or partial","@summary and @next_steps must make clear human must decide",
-"@impasse and @positions replace the normal resolution fields"]}
+"@impasse and @positions replace the normal resolution fields"]}}
+~~~
 
 <a id="human-instruction"></a>
 ### 4.16 Human Instruction
@@ -704,14 +788,16 @@ vibecode: {"class":"puck.uno/ai/report",
 An instruction posted by the human into the session mikobase. Agents must read and respect it.
 `@from` is a plain string identifier because the human does not register as an agent.
 
-vibecode: {"class":"puck.uno/ai/human_instruction",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/human_instruction",
 "role":"instruction posted by human into session mikobase; agents must read and respect it",
 "from_field_note":"@from is string identifier; human does not register as agent",
 "fields":[
 {"field":"@session","note":"reference to session record"},
 {"field":"@from","note":"identifier of human; string, not agent record pk"},
 {"field":"@body","note":"the instruction"},
-{"field":"@updated_at"}]}
+{"field":"@updated_at"}]}}
+~~~
 
 <a id="human-decision"></a>
 ### 4.17 Human Decision
@@ -719,7 +805,8 @@ vibecode: {"class":"puck.uno/ai/human_instruction",
 A decision made by the human, typically to resolve an impasse or override the agents. Like
 `human_instruction`, `@from` is a plain string.
 
-vibecode: {"class":"puck.uno/ai/human_decision",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/human_decision",
 "role":"decision made by human; typically resolves impasse or overrides agents",
 "from_field_note":"@from is string identifier; human does not register as agent",
 "fields":[
@@ -727,7 +814,8 @@ vibecode: {"class":"puck.uno/ai/human_decision",
 {"field":"@from","note":"identifier of human; string, not agent record pk"},
 {"field":"@body","note":"the decision"},
 {"field":"@resolves","note":"reference to impasse or open item being resolved"},
-{"field":"@updated_at"}]}
+{"field":"@updated_at"}]}}
+~~~
 
 <a id="sign-off"></a>
 ### 4.18 Sign-off
@@ -737,15 +825,19 @@ agent is done sending and is disconnecting — nothing more. A sign-off does not
 resolution, agreement, success, or any particular session outcome. Session status is a
 separate concern and must be set explicitly.
 
-vibecode: {"class":"puck.uno/ai/sign_off",
+~~~json
+{"vibecode": {"class":"puck.uno/ai/sign_off",
 "role":"final record in an agent's last batch; means only that the agent is hanging up",
 "semantics":"carries no implication about resolution, agreement, or session outcome; session status is a separate concern",
 "protocol":"posted as the last record in the final update batch",
 "fields":[
 {"field":"@from","note":"primary key of the agent record"},
 {"field":"@session","note":"reference to session record"},
-{"field":"@body","note":"optional closing remarks"}]}
+{"field":"@body","note":"optional closing remarks"}]}}
+~~~
 
-vibecode: {"concept":"references",
-"note":"fields like @to, @of, @based_on reference other records in session mikobase via standard mikobase record linking pattern"}
+~~~json
+{"vibecode": {"concept":"references",
+"note":"fields like @to, @of, @based_on reference other records in session mikobase via standard mikobase record linking pattern"}}
+~~~
 

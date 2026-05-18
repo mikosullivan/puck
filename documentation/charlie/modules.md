@@ -3,13 +3,13 @@
 <a id="status"></a>
 ## 1 Status
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "status",
 	"design_status": "provisional",
 	"rationale": "adopted_to_solve_mutual_function_reference_problem"
-}
-```
+}}
+~~~
 
 Provisional design. The approach is adopted for now to solve the mutual function reference
 problem. Further experience with the language may refine or replace it.
@@ -19,13 +19,13 @@ problem. Further experience with the language may refine or replace it.
 <a id="the-problem"></a>
 ## 2 The Problem
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "the_problem",
 	"problem": "functions_cannot_call_each_other_at_same_scope_level",
 	"cause": "functions_do_not_capture_outer_scope"
-}
-```
+}}
+~~~
 
 Functions in Charlie do not capture outer scope. This means two functions defined at the
 same level cannot call each other:
@@ -48,14 +48,14 @@ call.
 <a id="the-approach"></a>
 ## 3 The Approach
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "the_approach",
 	"concept": "module_is_object_functions_become_methods",
 	"bare_call_resolution": "&foo inside module == self.foo",
 	"effect": "mutual_function_calls_work_as_plain_method_calls_on_self"
-}
-```
+}}
+~~~
 
 A module is an object. Functions defined inside it are methods on that object. `&foo`
 inside a module method is syntactic sugar for `self.foo` — the same rule that already
@@ -84,14 +84,14 @@ The mutual-call problem dissolves. It was always just a method call on `self`.
 <a id="implicit-top-level-module"></a>
 ## 4 Implicit Top-Level Module
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "implicit_top_level_module",
 	"concept": "every_program_wrapped_in_implicit_top_level_module",
 	"effect": "top_level_functions_can_call_each_other",
 	"notes": ["not_special_same_rules_as_any_module", "no_explicit_module_block_needed"]
-}
-```
+}}
+~~~
 
 Every Charlie program is implicitly wrapped in a top-level module. Functions defined at
 the top level of a file are methods on the top-level module object. This means top-level
@@ -116,16 +116,16 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 <a id="invoking-a-file"></a>
 ## 5 Invoking a File
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
     "section": "invoking_a_file",
     "model": "file_invoked_like_a_function_call",
     "scope": "own_implicit_top_level_module",
     "return_value": "last_evaluated_expression",
     "early_exit": "%call.return",
     "vocabulary": "invoke_distinct_from_load_which_means_slurp_bytes"
-}
-```
+}}
+~~~
 
 A file is **invoked** by being called, just like a function. The file's body runs
 in its own scope (its own implicit top-level module — same rules as any module).
@@ -169,15 +169,15 @@ relative-vs-absolute paths) is TBD.
 <a id="syntax"></a>
 ## 6 Syntax
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "syntax",
 	"sigil": "#module",
 	"behavior": "creates_and_instantiates_anonymous_object",
 	"body": "same_structure_as_class_body",
 	"available_inside": ["fields", "helpers", "properties", "class_machinery"]
-}
-```
+}}
+~~~
 
 ```
 #module
@@ -202,16 +202,16 @@ The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and v
 <a id="what-foo-means-inside-a-module"></a>
 ## 7 What `&foo` Means Inside a Module
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "what_ampfoo_means_inside_a_module",
 	"resolution": ["1_look_up_foo_as_method_on_self", "2_call_if_found",
 		"3_raise_if_not_found"],
 	"notes": ["same_as_inside_class_method_body",
 		"dollar_foo_variable_still_invisible",
 		"function_isolation_rule_intact"]
-}
-```
+}}
+~~~
 
 Inside any module method, a bare function call `&foo` resolves as follows:
 
@@ -231,13 +231,13 @@ don't see outer variables, but they can call sibling methods through `self`.
 <a id="nesting"></a>
 ## 8 Nesting
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "nesting",
 	"behavior": "inner_module_is_own_object_with_own_self",
 	"cross_boundary_calls": "not_possible_via_ampfoo_must_pass_reference_explicitly"
-}
-```
+}}
+~~~
 
 Modules can be nested. An inner module is its own object with its own `self`. Functions
 inside the inner module cannot see the outer module's methods via `&name` — `self` is
@@ -263,15 +263,15 @@ To call across module boundaries, pass a reference explicitly as a parameter.
 <a id="relationship-to-classes"></a>
 ## 9 Relationship to Classes
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "relationship_to_classes",
 	"module_is": "sugar_for_anonymous_class_defined_and_instantiated_in_one_step",
 	"use_formal_class_when": ["uns_name_needed", "schema_needed",
 		"multiple_instances_needed", "inheritance_needed"],
 	"use_module_when": "local_grouping_of_functions_single_instance_no_schema"
-}
-```
+}}
+~~~
 
 A module is syntactic sugar for an anonymous class that is defined and instantiated in
 one step and never named. The two are equivalent in the object system:
@@ -308,13 +308,13 @@ single-instance, anonymous, and have no schema requirements.
 <a id="why-not-just-use-a-class"></a>
 ## 10 Why Not Just Use a Class?
 
-```
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "why_not_just_use_a_class",
 	"answer": "module_is_lighter_syntax_signals_lighter_intent",
 	"signals": "grouping_functions_not_modeling_data"
-}
-```
+}}
+~~~
 
 You could. A module is just a lighter syntax for the same thing. The `#module` form
 exists because the common case — grouping functions, not modeling data — doesn't need
