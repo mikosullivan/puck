@@ -164,10 +164,11 @@ normalizes paths before Sammy sees them.
 
 **Route precedence: first match wins, by registration order.**
 Each `$server.get/.post/.put/...` registration adds a path
-selector Handler to `$server.handlers`. The dispatcher walks
-the array in registration order — the first selector whose
-method-and-pattern matches the incoming request is the one
-that runs. No specificity ranking, no longest-prefix heuristic.
+selector Handler to [`$server.handlers`](#handlers). The
+dispatcher walks the array in registration order — the first
+selector whose method-and-pattern matches the incoming request
+is the one that runs. No specificity ranking, no longest-prefix
+heuristic.
 The developer orders their registrations deliberately:
 more-specific routes before more-general ones.
 
@@ -182,7 +183,8 @@ $server.get('/user/{id}')   do($request) ... end    # placeholder
 If the placeholder route had been registered first, it would
 have matched `/user/edit` (capturing `edit` as the id) — and
 the literal route would never be reached. This is the same
-first-response-wins rule as the handler chain itself.
+first-response-wins rule as the
+[handler chain](touchstone.md#the-handler-chain) itself.
 
 <a id="method-agnostic-registration"></a>
 ### 4.1 Method-agnostic registration
@@ -311,7 +313,8 @@ supported).
 
 **It's a handler, not a special dispatch path.** At construction,
 Sammy appends a final-position OPTIONS-matching handler to the
-handler chain. The chain's normal first-match-wins rule applies:
+[handler chain](touchstone.md#the-handler-chain). The chain's
+normal first-match-wins rule applies:
 explicit `$server.options(path) do ... end` registrations live
 earlier in the chain and win. This is the path for CORS
 preflight responses, where the handler sets
@@ -503,8 +506,8 @@ thread-level.** Three deployment paths:
   inside Sammy. Spawn the work externally (a worker, a queue)
   if needed.
 - **Per-request timeouts via threading.** Handler timeouts come
-  from `%utils.timeout` wrapping the handler call, not from a
-  reaper thread.
+  from [`%utils.timeout`](../utils.md) wrapping the handler call,
+  not from a reaper thread.
 
 These are deliberate trade-offs. Sammy is meant for small,
 fast, predictable services; cases that need concurrency move
@@ -648,16 +651,16 @@ full spec section above) or moved to add-on territory.
 <a id="observability"></a>
 ### 11.6 Observability
 
-- **A logger interface separate from Jasmine.** Jasmine is the
-  logging surface. Don't expose a second one.
+- **A logger interface separate from [Jasmine](../jasmine/jasmine.md).**
+  Jasmine is the logging surface. Don't expose a second one.
 - **Metrics / Prometheus endpoints.** Add-on territory.
 
 <a id="testing"></a>
 ### 11.7 Testing
 
-- **A built-in test client / mock request builder.** Bryton plus
-  a real loopback socket is the path. No test-only mode inside
-  the server.
+- **A built-in test client / mock request builder.**
+  [Bryton](../bryton/overview.md) plus a real loopback socket
+  is the path. No test-only mode inside the server.
 
 <a id="streaming-async"></a>
 ### 11.8 Streaming / async
