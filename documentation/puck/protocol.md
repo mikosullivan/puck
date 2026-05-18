@@ -68,10 +68,12 @@ fields and three remote methods:
   values for the fields.
 - **`methods`** — operations a client can invoke on an instance.
   Each method definition has:
-  - **`params`** *(optional)* — keyword parameters, in the same
+  - **`params`** *(optional)* — named parameters, each in the same
     shape as a field definition (`class`, `required`, `default`,
     `min`, `max`, etc.). Omit when the method takes no args
-    (`weather`, `census_district` above).
+    (`weather`, `census_district` above). **All Puck params are
+    named**: on the wire they're always a JSON hash keyed by name.
+    There are no positional placeholders.
   - **`returns`** — the type of the value the method produces, also
     in field-definition shape. The `class` can be a primitive
     (`string`, `number`, ...) or a UNS for a Puck class — in which

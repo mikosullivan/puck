@@ -22,7 +22,7 @@ is about how a Python package would wrap it idiomatically.
 
 The goal: a Python developer can `pip install puck`, point at a Puck
 server, and use remote objects with the same shape they'd use any
-Python library — no special syntax, no manual JSON wrangling.
+Python library.
 
 ---
 
@@ -137,8 +137,10 @@ hq = Geo(lat=37.7980, lon=-122.4626)
 ```
 
 The client library translates this to a wire-level `.new(...)` call
-on the remote class. Keyword arguments become keyword params on the
-wire; positional arguments become positional params.
+on the remote class. **All Puck params are named** — every keyword
+arg you pass becomes a named entry in the wire-level params hash.
+Puck has no positional-parameter concept; the Python wrapper only
+emits keyword args on the wire.
 
 The returned `hq` is a Python object holding a reference to the
 remote instance (a UNS for the instance, opaque to the developer).
@@ -152,9 +154,13 @@ Method calls look like ordinary Python:
 
 ```python
 hq.weather                  # no-arg method (see Properties vs methods below)
-hq.darken(0.2)              # method with one positional arg
-hq.move(dx=5, dy=10)        # method with keyword args
+hq.map_image(zoom=14)       # method with one keyword arg
+hq.move(dx=5, dy=10)        # method with multiple keyword args
 ```
+
+Puck has no positional-parameter concept — every arg on the wire is
+a named entry in a JSON hash. Python callers always pass keyword
+args; positional calls at the Python level aren't supported.
 
 Each call:
 
