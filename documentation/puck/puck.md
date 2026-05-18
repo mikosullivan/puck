@@ -1,240 +1,249 @@
-# Puck
-
-Puck is a foreign object API — a protocol for working with remote objects across different
-languages and systems. It is the umbrella that holds the mikobase, Charlie, and Q0 together.
-See [overview.md](../overview.md) for the full picture.
-
-Class names in Puck use UNS strings (URLs without the `https://` prefix), providing a
-globally unique namespace. For example: `puck.uno/mikobase`, `foo.com/character`.
-
-The mikobase, Q0, and the object model are all Puck components under the `puck.uno` namespace.
-
-See [ideas/marina.md](../ideas/marina.md) for a prior design exploration.
-
----
-
-<a id="puck"></a>
-## 1 `%puck`
+# Puck (the Protocol)
 
 ~~~json
 {"vibecode": {
-	"section": "puck_system_method",
-	"role": "documents the %puck system method for accessing the global Puck object namespace",
-	"key_concepts": ["%puck", "UNS_lookup", "built-in_objects", "puck.uno_default_namespace", "bare_name_shorthand"]
+	"doc": "puck",
+	"role": "language-agnostic spec for the Puck remote-object protocol: UNS addressing, the puck resolver object, version windows, lookup mechanism, provenance, remote method invocation, and the puck.uno built-in namespace; usable from any language that can speak JSON over HTTP",
+	"key_concepts": ["language_agnostic_protocol", "UNS_addresses",
+		"puck_resolver_object", "getters_and_faucets", "version_window",
+		"one_way_ratchet_narrowing", "lookup_mechanism", "provenance_per_faucet",
+		"remote_method_invocation", "puck_uno_builtin_namespace"],
+	"audience": ["developers_in_any_language", "puck_client_implementors",
+		"puck_server_implementors", "charlie_users_who_want_the_underlying_model"],
+	"example_universe": "Star Trek"
 }}
 ~~~
 
-`%puck` is a Charlie system method that returns a **puck object** — see
-"The Puck Object" below for the full model. `%puck[UNS]` is a shorthand that
-returns the object registered at that UNS address (the puck's lookup method
-in convenience form).
+Puck is a **language-agnostic protocol for working with remote objects**.
+Look up an object by global address, call its methods, get back values
+that look local. Any language that can speak JSON over HTTP can speak
+Puck.
 
-In the first version, only a predefined set of built-in objects are available. When
-remote object retrieval lands, libraries will be resolved on demand — the engine pulls
-from a configurable chain of providers (typically a local cache first, then remote
-sources), with no install step. See [overview.md — Libraries Are Cached, Not Installed](../overview.md#libraries-are-cached-not-installed).
+[Charlie](../charlie/charlie.md) ships first-class Puck integration —
+`%puck`, `%puck.call`, `remote function`, `restrict` — and is the
+primary client implementation today. But the protocol is independent
+of Charlie. The examples below show the same lookup from Charlie,
+Python, and a raw HTTP request.
 
-`%puck` is scoped via `%chain` (the current puck lives in the chain).
-Because `%chain` is wiped at role boundaries (see [roles.md](../charlie/roles.md)),
-the current puck does not propagate across role boundaries; each role gets
-its own world. When there is no puck in the chain, `%puck` returns plain
-null.
-
-**The engine decides what puck (if any) populates each role boundary.**
-The engine may install a puck for a new role on entry — typically a
-restricted/derived puck per the role's trust profile — or it may leave
-`%puck` null for that role. The "engine controls policy" framing in
-[The Engine Decides the Policy](#the-engine-decides-the-policy) applies
-per role boundary, not globally. The two statements are consistent: the
-engine's per-role policy is what determines whether crossing into role B
-yields a puck or null.
-
-<a id="shorthand-for-built-in-classes"></a>
-### 1.1 Shorthand for built-in classes
-
-Bare names in `%puck[...]` — any key without a domain — resolve to `puck.uno/...`:
-
-```
-%puck['null']         # same as %puck['puck.uno/null']
-%puck['true']         # same as %puck['puck.uno/true']
-%puck['mikobase/memory']  # same as %puck['puck.uno/mikobase/memory']
-```
-
-`puck.uno` is the default namespace for `%puck` lookups.
+For Charlie-specific syntax and integration, see
+[charlie/puck.md](../charlie/puck.md).
 
 ---
+
+<a id="contents"></a>
+## 1 Contents
+
+- [What it does](#what-it-does)
+- [UNS — addresses](#uns--addresses)
+- [Lookup: first contact](#lookup-first-contact)
+- [The puck object](#the-puck-object)
+  - [Structure: getters and faucets](#structure-getters-and-faucets)
+  - [Roles: per-getter, not per-faucet](#roles-per-getter-not-per-faucet)
+  - [Version window](#version-window)
+  - [Deriving a narrower puck](#deriving-a-narrower-puck)
+  - [Lookup mechanism](#lookup-mechanism)
+  - [Provenance checking](#provenance-checking)
+  - [The engine decides the policy](#the-engine-decides-the-policy)
+- [Remote method invocation](#remote-method-invocation)
+  - [Error catalog](#error-catalog)
+- [`puck.uno` namespace](#puckuno-namespace)
+- [Charlie integration](#charlie-integration)
+
+---
+
+<a id="what-it-does"></a>
+## 2 What it does
+
+A Puck **client**:
+
+- Looks up an object by **UNS** (a global URL-shaped address).
+- Calls a method on it remotely — request goes out, response comes back.
+- Treats the result like a local value.
+
+A Puck **server**:
+
+- Registers objects under UNS addresses.
+- Responds to lookup and method-call requests.
+- Hands back signed or cached attestations as configured.
+
+The wire format is JSON. There is no constraint on the language at
+either end; client and server can be written in different languages
+entirely.
+
+---
+
+<a id="uns-addresses"></a>
+## 3 UNS — addresses
+
+Every Puck object has a global URL-shaped address called a **UNS**
+(Universal Namespace identifier). Examples:
+
+- `puck.uno/mikobase/memory` — a built-in (the puck.uno namespace
+  hosts the language- and runtime-level classes; see
+  [`puck.uno` namespace](#puckuno-namespace) below).
+- `starfleet.com/character` — owned by whoever controls `starfleet.com`.
+- `acme.org/widget` — owned by whoever controls `acme.org`.
+
+UNS is **naming and identity, not type hierarchy.**
+`puck.uno/touchstone/error/x` is not a subclass of `puck.uno/error/x`
+unless the class explicitly declares the inheritance. Full UNS spec:
+[ecoverse/uns.md](../ecoverse/uns.md).
+
+---
+
+<a id="lookup-first-contact"></a>
+## 4 Lookup: first contact
+
+The minimum a client does: ask the puck for an object by UNS, then call
+a method on it.
+
+**In [Charlie](../charlie/charlie.md):**
+
+~~~charlie
+$officer = %puck['starfleet.com/character/picard']
+$officer.greet(name: 'Number One')
+~~~
+
+**In Python (sketch — the client library isn't built yet):**
+
+```python
+import puck
+
+p = puck.connect()                                       # get the local puck
+officer = p.lookup('starfleet.com/character/picard')     # resolve UNS to object
+officer.greet(name='Number One')                         # remote method call
+```
+
+**At the wire (any language that can POST JSON):**
+
+```sh
+# Look up the object's metadata
+curl https://puck.example.com/lookup \
+    -H 'Content-Type: application/json' \
+    -d '{"uns": "starfleet.com/character/picard"}'
+
+# Call a method on it
+curl https://puck.example.com/call \
+    -H 'Content-Type: application/json' \
+    -d '{
+        "uns": "starfleet.com/character/picard",
+        "method": "greet",
+        "params": {"name": "Number One"}
+    }'
+```
+
+The Charlie and Python forms hide the JSON; the curl form exposes it.
+All three are doing the same thing: ask the puck to resolve the UNS,
+then ask it to dispatch a method.
 
 ---
 
 <a id="the-puck-object"></a>
-## 2 The Puck Object
+## 5 The puck object
 
-~~~json
-{"vibecode": {
-    "section": "puck_object",
-    "role": "documents the puck object — what %puck returns — including its structure (getters + faucets), version window, lookup mechanism, and per-getter roles",
-    "key_concepts": ["puck_holds_getters", "getters_hold_faucets", "per_getter_role",
-        "version_window_immutable", "narrowing_only_derivation", "restrict_do_end"]
-}}
-~~~
+A **puck** (lowercase, the object) is the client-side resolver. It
+knows how to map a UNS to its registered object, applying whatever
+policy the engine configured at creation time.
 
-A **puck** (lowercase, the object) is distinct from **`%puck`** (the
-system method). A puck is a kind of object that knows how to resolve
-UNS addresses to their registered objects. `%puck` is the system-method
-handle through which user code gets a puck object back.
-
-**You can have any number of pucks.** "The puck" is shorthand for
-whatever puck `%puck` returns at the moment — usually the
-engine-provided one. The model supports any number, and code that
-constructs alternate pucks for specific purposes can do so.
+You can have any number of pucks; "the puck" is shorthand for whichever
+one the current process uses by default. Client libraries typically
+expose one default puck and allow constructing alternates.
 
 <a id="structure-getters-and-faucets"></a>
-### 2.1 Structure: Getters and Faucets
+### 5.1 Structure: getters and faucets
 
 A puck **holds one or more getters**, each representing a logical
-source for objects (e.g., the `foo.com/*` namespace, a corporate
-internal registry, a local-only namespace). The puck is the lookup
-orchestrator; the getters are the per-source units.
+source for objects (a remote namespace, a corporate internal registry,
+a local-only namespace).
 
-Each getter may internally use one or more **faucets** to do the actual
-fetching:
+Each getter may use one or more **faucets** to do the actual fetching:
 
 - A typical remote-namespace getter has a **download faucet** (HTTPS to
-  the source) plus a **cache faucet** (local cache directory). First-time
-  lookups go through download (and populate the cache); subsequent
-  lookups hit the cache.
+  the source) plus a **cache faucet** (local cache). First-time lookups
+  go through download; subsequent lookups hit the cache.
 - A getter that talks to a local resource might have just one faucet.
 
 ```
 Puck
-├── Getter for foo.com/*       (role: foo-com-getter)
+├── Getter for starfleet.com/*    (role: starfleet-com-getter)
 │   ├── HTTPS download faucet
 │   └── Cache faucet
-├── Getter for bar.com/*       (role: bar-com-getter)
+├── Getter for vulcan.org/*       (role: vulcan-org-getter)
 │   ├── HTTPS download faucet
 │   └── Cache faucet
-└── Getter for internal/*      (role: internal-getter)
+└── Getter for internal/*         (role: internal-getter)
     └── Internal-network faucet
 ```
 
 <a id="roles-per-getter-not-per-faucet"></a>
-### 2.2 Roles: Per-Getter, Not Per-Faucet
+### 5.2 Roles: per-getter, not per-faucet
 
-**Each getter has its own role.** Objects served through a getter get
-that getter's role. Different getters in the same puck produce
-differently-tagged objects, because they're genuinely different logical
-sources.
+**Each getter has its own role.** Objects served through a getter
+inherit that getter's role. Different getters in the same puck produce
+differently-tagged objects, because they're genuinely different sources.
 
-**Faucets inside a getter share the getter's role.** This resolves the
-download-vs-cache problem: Charlie caches remote objects on demand —
-first-time fetches go through download, subsequent fetches through
-cache. Both are faucets inside the same getter, both produce objects
-with the getter's role. The same UNS hands back identically-tagged
-objects regardless of cache state.
+**Faucets inside a getter share the getter's role.** Charlie caches
+remote objects on demand — first-time fetches go through download,
+subsequent fetches through cache — but both faucets are inside the same
+getter and both produce objects with the same role. The same UNS hands
+back identically-tagged objects regardless of cache state.
 
 <a id="version-window"></a>
-### 2.3 Version Window
-
-~~~json
-{"vibecode": {
-    "section": "puck_version_window",
-    "properties": ["upper", "lower"],
-    "immutable_after_creation": true,
-    "supersedes": "%chain.cutoff"
-}}
-~~~
+### 5.3 Version window
 
 Each puck carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
-lives on the puck object itself; the engine sets it when the puck is
-created. (This replaces the earlier `%chain.cutoff` design.)
+lives on the puck object itself; the engine sets it at creation time.
 
 The window has two read-only properties:
 
 - **`upper`** — the latest acceptable timestamp. The puck returns the
-  latest version of an object that is on or before `upper`. Without
-  `upper`, the puck returns the latest existing version, full stop.
+  latest version on or before `upper`. Without `upper`, the puck
+  returns the latest existing version.
 - **`lower`** — the earliest acceptable timestamp. Versions older than
   `lower` are not returned. Without `lower`, the floor is effectively
   negative infinity.
 
-Both can be read:
-
-```
-$bound = %puck.upper             # read the upper bound
-```
-
-But **both are immutable once the puck exists.** The engine sets them
-at creation time, and no API can change them afterward — `%puck.upper = ...`
-and `%puck.lower = ...` are not valid; the assignment raises. This turns
-the timespan from a configuration knob into a structural sandbox. To get
-a puck with a narrower window, **derive** one (see
-[Deriving a Narrower Puck](#deriving-a-narrower-puck)) or use
-[`restrict do ... end`](#restrict-do--end) for block-scoped narrowing.
+Both are **immutable once the puck exists.** The engine sets them at
+creation; no API can change them afterward. To get a puck with a
+narrower window, **derive** one (see
+[Deriving a narrower puck](#deriving-a-narrower-puck)).
 
 Lookup semantics:
 
-- Default (no bounds set) — return the latest version that exists.
+- Default (no bounds) — return the latest version that exists.
 - `upper` only — return the latest version on or before `upper`.
 - `lower` only — return the latest version on or after `lower`.
 - Both set — return the latest version in `[lower, upper]`.
 - If no version exists in the allowed span, lookup behaves as if the
-  UNS isn't there (returns null-flavored `not_found`).
+  UNS isn't there.
 
 <a id="deriving-a-narrower-puck"></a>
-### 2.4 Deriving a Narrower Puck
+### 5.4 Deriving a narrower puck
 
-A puck can produce a **derived puck with a narrower window**, but
-never a broader one. The one-way ratchet:
+A puck can produce a **derived puck with a narrower window**, never
+broader. The one-way ratchet:
 
-- The derived puck's `upper` must be ≤ parent's `upper`.
-- The derived puck's `lower` must be ≥ parent's `lower`.
-- Equivalently: the derived puck's window is a subset of the parent's
-  window.
+- Derived `upper` ≤ parent's `upper`.
+- Derived `lower` ≥ parent's `lower`.
+- Equivalently: the derived window is a subset of the parent's window.
 
-Same shape as the other "derived capabilities can only be more
+Same shape as the other "derived capabilities are only more
 restricted" patterns in the framework (file permissions, subdirjail
 permissions, etc.).
 
 **What this rule does NOT prevent:** code with access to a network
 faucet (or any other faucet) can construct its own puck from scratch,
-not derived from the engine's puck. That fresh puck's timespan can be
+not derived from the engine's puck. That fresh puck's window can be
 whatever the constructor chooses. The framework's stance: don't pass a
 faucet to code you don't trust to use it however it wants.
 
-<a id="restrict-do-end"></a>
-### 2.5 `restrict do ... end`
-
-`restrict` is the canonical way to scope `%puck` to a narrower window
-for a block of code:
-
-```
-%puck                                  # outer puck (no extra restriction)
-
-%puck.restrict(upper: 'may 3, 2023') do
-    %puck                              # narrower derived puck, in effect inside the block
-end
-
-%puck                                  # back to the outer puck
-```
-
-`restrict` does two things at once:
-
-1. **Derives** a narrower puck from the current one (per the one-way
-   ratchet — narrower or equal, never broader).
-2. **Installs** the derived puck as the active `%puck` in `%chain` for
-   the duration of the block.
-
-Nested `restrict` calls compose. When each block returns, the prior
-scope's puck takes over. Same shape as `%chain.isolate do ... end` and
-other scoped-block primitives.
-
 <a id="lookup-mechanism"></a>
-### 2.6 Lookup Mechanism
+### 5.5 Lookup mechanism
 
-A puck exposes a **lookup method** as its public API. (Working name
-TBD — likely `.lookup($uns)`; the actual name will be settled when the
-class is spec'd in detail. `%puck[UNS]` is sugar for it.)
+A puck exposes a **lookup method** as its public API. (The Charlie
+sugar `%puck[UNS]` is shorthand for it; client libraries in other
+languages will expose it under whatever idiomatic name fits.)
 
 **Base implementation:** the puck walks its getters, asking each one
 for the latest version of the UNS that falls within the puck's
@@ -245,39 +254,33 @@ within the window, lookup returns a null with the flavor
 tell the difference between "lookup didn't match" and "the registered
 value is intentionally null."
 
-Note: finding the latest requires consulting all getters, not
-short-circuiting on first hit. Order matters only for tie-breaking when
-multiple getters return versions with the same timestamp — pick the
-first (same UNS at the same timestamp means the same object).
+Finding the latest requires consulting all getters, not short-circuiting
+on first hit. Order matters only for tie-breaking when multiple getters
+return versions with the same timestamp — pick the first.
 
-**The `explicit`-null rule for sources.** If a puck faucet reaches a
-UNS where the registered value is intentionally null, the source must
-mark that null as `puck.uno/null/flavor/explicit` (code 200).
-Otherwise the puck treats an unflavored null as "lookup didn't find
-this UNS" and falls through to the next getter. At the puck-lookup
-layer, unflavored null means "no result"; `explicit` is how a source
-positively affirms "yes, this UNS exists; the registered value is
-null."
+**The `explicit`-null rule for sources.** If a faucet reaches a UNS
+where the registered value is intentionally null, the source must mark
+that null as `puck.uno/null/flavor/explicit`. Otherwise the puck treats
+an unflavored null as "lookup didn't find this UNS" and falls through
+to the next getter.
 
 **Subclassable for fancier dispatch.** The base implementation is
-intentionally simple. Engines or developers needing UNS-prefix matching,
-regex routing, dispatch tables, or fallback policies can subclass puck
-and override the lookup method.
+intentionally simple. Engines or developers needing UNS-prefix
+matching, regex routing, dispatch tables, or fallback policies can
+subclass puck and override the lookup method.
 
 <a id="provenance-checking"></a>
-### 2.7 Provenance Checking
+### 5.6 Provenance checking
 
 Provenance is **per-faucet**, not per-puck. Each faucet has its own
-policy about how to sign off on provenance for the objects it serves. A
-puck may hold one strict-policy faucet (verifies signatures against a
-blockchain attestation) alongside a permissive-policy faucet (trusts
-the cache directory's self-asserted contents) — same puck, different
-per-faucet rules.
+policy for verifying that an object it serves actually came from the
+namespace authority that UNS claims. A puck may hold one strict-policy
+faucet (verifies signatures against a blockchain attestation) alongside
+a permissive-policy faucet (trusts the cache directory's self-asserted
+contents) — same puck, different per-faucet rules.
 
-A faucet's responsibility is provenance — verifying that an object it
-returns for a UNS actually came from the namespace authority that UNS
-claims. Whether the code itself is safe to run is a separate concern
-handled by the role model.
+A faucet's responsibility is provenance. Whether the code itself is
+safe to *run* is a separate concern handled by the role model.
 
 Typical cases:
 
@@ -285,125 +288,107 @@ Typical cases:
   verification at the network layer; the response by construction came
   from the verified server.
 - **Cache.** The cache holds objects placed there by an earlier
-  download step. The runtime trusts the cache implicitly. Simple,
-  matches how npm/pip/gem/Cargo work.
+  download step. The runtime trusts the cache implicitly. Matches how
+  npm/pip/gem/Cargo work.
 - **Cache plus signature verification.** Additionally verifies
   cryptographic signatures (e.g., against the
-  [Puck blockchain](../blockchain.md)). This is the "two distant
-  objects" pattern: local cache holds the artifact, distant
-  verification mechanism holds proof.
+  [Puck blockchain](../blockchain.md)). Local cache holds the artifact,
+  distant verification mechanism holds proof.
 
 <a id="the-engine-decides-the-policy"></a>
-### 2.8 The Engine Decides the Policy
+### 5.7 The engine decides the policy
 
-**The engine controls which puck `%puck` returns**, and that puck's
+**The engine controls which puck is the default**, and that puck's
 configuration determines everything about provenance policy, getters,
 faucets, version window, etc.
 
-Different engines hand in different pucks. A strict, security-
-sensitive deployment hands user code a puck that requires signatures
-and blockchain attestations. A relaxed developer playground hands user
-code a puck that just trusts the cache. The Charlie code is the same;
-the puck differs.
+Different engines hand in different pucks. A strict, security-sensitive
+deployment hands user code a puck that requires signatures and
+blockchain attestations. A relaxed developer playground hands user code
+a puck that just trusts the cache. The client code is the same; the
+puck differs.
 
 User code typically doesn't reason about which puck it got. It calls
-`%puck['some.com/uns']`, and whatever the engine set up determines
-the result and the checks.
+`lookup(some_uns)`, and whatever the engine configured determines the
+result and the checks.
 
 ---
 
-<a id="puckcall"></a>
-## 3 `%puck.call`
+<a id="remote-method-invocation"></a>
+## 6 Remote method invocation
 
-~~~json
-{"vibecode": {
-	"section": "puck_call",
-	"role": "documents the %puck.call method for explicit remote method invocation",
-	"key_concepts": ["%puck.call", "remote_method_call", "target_object", "method_symbol", "keyword_params", "%chain_forwarding"]
-}}
+A method call on a Puck object is a JSON request to the server hosting
+the UNS. The protocol-level shape:
+
+**Request:**
+
+```json
+{
+    "uns":    "starfleet.com/character/picard",
+    "method": "greet",
+    "params": {"name": "Number One"},
+    "chain":  { ...current-caller %chain context... }
+}
+```
+
+**Response:**
+
+```json
+{
+    "ok":     true,
+    "result": "Hello, Number One."
+}
+```
+
+The client wraps this in whatever idiomatic surface fits the language.
+In Charlie:
+
+~~~charlie
+%puck.call($officer, :greet, name: 'Number One')
 ~~~
 
-`%puck.call` makes an explicit remote method call on a Puck object:
+In a hypothetical Python client:
 
-```
-%puck.call($person, :save, name: 'Jean-Luc')
-```
-
-The three arguments are:
-1. The target object
-2. The method name (a symbol)
-3. Any keyword parameters to pass
-
-`%puck.call` automatically forwards the current `%chain` context to the remote call —
-the same chain the calling function is running under. `%role` is reserved for possible
-future use and is not part of early versions.
-
-<a id="return-value-and-error-model"></a>
-### 3.1 Return value and error model
-
-- **Return**: the remote method's return value, marshaled back as a Puck object
-  reference (or a primitive value, if the remote method returned one). The caller
-  doesn't see "this was remote" — the value comes back like any local call.
-- **Target lookup failure**: if the target object can't be resolved (UNS unknown,
-  withdrawn, outside the current puck's version window), `%puck.call` raises
-  `puck.uno/error/not_found`.
-- **Method not found**: if the target exists but doesn't expose the named method,
-  raises `puck.uno/error/method_not_found`.
-- **Transport failure**: network errors, timeout, refused connections, etc., raise
-  `puck.uno/error/transport` with the underlying cause in the bucket.
-- **Remote exception**: if the remote method itself raises, that exception
-  propagates to the caller as if it were thrown locally. The remote stack trace is
-  preserved (per the stack-trace shape in
-  [charlie-runtime.md](../charlie/charlie-runtime.md#all-exceptions-carry-a-stack-trace)).
-  Caller handles with `catch` as usual.
-- **Authorization failure**: if the remote rejects the call (signature invalid,
-  role not trusted, etc.), raises `puck.uno/error/auth`.
-
----
-
-<a id="remote-function"></a>
-## 4 `remote function`
-
-~~~json
-{"vibecode": {
-	"section": "remote_function",
-	"role": "documents the remote function syntactic sugar for delegating to %puck.call",
-	"key_concepts": ["remote_function", "syntactic_sugar", "%puck.call_delegation", "interchangeable_forms"]
-}}
-~~~
-
-`remote function` is a shorthand for defining a method that delegates to `%puck.call`.
-Inside a class definition, this:
-
-```
-remote function &save(name:)
-end
+```python
+officer.greet(name='Number One')
+# or, explicit form:
+puck.call(officer, 'greet', name='Number One')
 ```
 
-is equivalent to generating a wrapper that calls:
+The chain context is forwarded automatically; the caller doesn't have
+to assemble it.
 
-```
-%puck.call(self, :save, name: name)
-```
+<a id="error-catalog"></a>
+### 6.1 Error catalog
 
-It is purely syntactic sugar — there is no separate remote dispatch mechanism. The
-explicit `%puck.call` form and the `remote function` shorthand are interchangeable.
+When a remote call fails, the response carries a typed error from the
+catalog below. Client libraries raise these as language-native
+exceptions (in Charlie, ordinary catchable exceptions under
+`puck.uno/error/*`):
+
+| UNS | Meaning |
+|---|---|
+| `puck.uno/error/not_found` | Target UNS doesn't resolve (unknown, withdrawn, outside the puck's version window). |
+| `puck.uno/error/method_not_found` | Target exists but doesn't expose the named method. |
+| `puck.uno/error/transport` | Network error, timeout, refused connection, etc. The underlying cause is in the error's bucket. |
+| `puck.uno/error/auth` | Remote rejected the call (signature invalid, role not trusted, etc.). |
+| (remote exception) | If the remote method itself raises, that exception propagates to the caller as if thrown locally, with the remote stack trace preserved. |
+
+The shape of the error response is the same regardless of which client
+language is calling — these are protocol-level errors.
 
 ---
 
 <a id="puckuno-namespace"></a>
-## 5 `puck.uno` Namespace
+## 7 `puck.uno` Namespace
 
-~~~json
-{"vibecode": {
-	"section": "puck_uno_namespace",
-	"role": "catalogs all built-in classes in the puck.uno namespace",
-	"key_concepts": ["puck.uno/null", "puck.uno/true", "puck.uno/false", "puck.uno/mikobase", "puck.uno/flag", "puck.uno/record", "puck.uno/reference", "puck.uno/dbfile"]
-}}
-~~~
+`puck.uno` is the namespace for **language- and runtime-level classes**
+shipped as part of Puck itself. Implementations of these classes are
+either built into the host engine or resolvable through the standard
+puck.
 
 <a id="language-and-runtime"></a>
-### 5.1 Language and Runtime
+### 7.1 Language and runtime
 
 | Class | Description |
 |---|---|
@@ -422,7 +407,11 @@ explicit `%puck.call` form and the `remote function` shorthand are interchangeab
 | `puck.uno/warning` | Observational, non-unwinding; emitted via `%chain.warn`, collected via `heed()` |
 | `puck.uno/exception` | Umbrella for everything raised. Also itself a concrete user-catchable class (unwinds; carries stack trace). All other classes in this block are declared subclasses; UNS naming is flat, inheritance is declared (see [charlie-runtime.md § Catching exceptions](../charlie/charlie-runtime.md#catching-exceptions)). |
 | `puck.uno/error` | Semantic-marker subclass of exception — same behavior; the name signals "this is an error condition" |
-| `puck.uno/error/timeout` | Caller-facing timeout error raised at the `%utils.timeout` boundary (user-catchable, unwinds) |
+| `puck.uno/error/not_found` | Lookup target UNS doesn't resolve (see [Error catalog](#error-catalog)) |
+| `puck.uno/error/method_not_found` | Target object doesn't expose the requested method |
+| `puck.uno/error/transport` | Network / transport failure during a Puck call |
+| `puck.uno/error/auth` | Authorization rejection from a remote call |
+| `puck.uno/error/timeout` | Caller-facing timeout error raised at the `%utils.timeout` boundary |
 | `puck.uno/exit` | Graceful process exit (engine-caught, unwinds stack, runs GC) |
 | `puck.uno/return` | Function return (caught at function boundary, unwinds) |
 | `puck.uno/abort` | Violent termination (engine-caught, does not unwind) |
@@ -430,7 +419,7 @@ explicit `%puck.call` form and the `remote function` shorthand are interchangeab
 | `puck.uno/timeout_handle` | Internal abort fired *inside* a `%utils.timeout` block; bubbles to the block boundary, does not unwind, not user-catchable |
 
 <a id="object-store"></a>
-### 5.2 Object Store
+### 7.2 Object store
 
 | Class | Description |
 |---|---|
@@ -438,3 +427,16 @@ explicit `%puck.call` form and the `remote function` shorthand are interchangeab
 | `puck.uno/record/class` | Class definitions |
 | `puck.uno/reference` | Record reference |
 | `puck.uno/dbfile` | File attachment |
+
+---
+
+<a id="charlie-integration"></a>
+## 8 Charlie integration
+
+Charlie programs interact with Puck through dedicated system methods
+and syntax: `%puck`, `%puck[UNS]`, `%puck.call`, `remote function`, and
+`restrict do ... end`. Full Charlie-side spec lives in
+[charlie/puck.md](../charlie/puck.md).
+
+Client libraries in other languages will expose the same underlying
+operations under language-idiomatic names. The protocol stays the same.

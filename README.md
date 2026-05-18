@@ -31,7 +31,7 @@ Puck is kept under **1 MB** — engine, standard library, and docs all together.
 would fit on an old 3.5" floppy disk with room to spare.
 
 The Charlie engine is written in [**Lua**](https://www.lua.org/), itself a famously
-lightweight and transportable language — small enough to embed in nearly anything.
+lightweight and transportable language.
 
 ## The Puck community
 
