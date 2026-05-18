@@ -109,26 +109,31 @@ access to what is explicitely sent to them as parameters.
 They do not have universal access to file systems or network
 connections. They can only use resources like that if you
 explicitly send them in as paramters. See [roles.md](charlie/roles.md).
-- **Classes and inheritance.** `class 'UNS' ... end` defines a class
-  with fields, properties, methods, and helpers. Bare/anonymous
-  classes (`class\n    inherits ... end`) for cases like Robinson
-  page files where identity comes from location.
-- **Functions and closures.** `function &name(args) ... end` for
-  named functions; closures capture lexical scope; functions don't.
-  Parameters carry metadata via a uniform hash form (`{lazy: true,
-  classes: ['string']}`); first-class param manipulation via
-  `$foo.params['bar']`.
+- **[Classes and inheritance](charlie/charlie.md#classes).**
+  `class 'UNS' ... end` defines a class with fields, properties,
+  methods, and helpers. Bare/anonymous classes
+  (`class\n    inherits ... end`) for cases like
+  [Robinson](charlie/http-middleware/robinson.md) page files where
+  identity comes from location.
+- **[Functions and closures](charlie/charlie.md#functions).**
+  `function &name(args) ... end` for named functions; closures
+  capture lexical scope; functions don't. Parameters carry metadata
+  via a uniform hash form (`{lazy: true, classes: ['string']}`);
+  first-class param manipulation via `$foo.params['bar']`.
 - **Single-threaded; forking opt-in.** One execution
   context per engine. The opt-in forking feature spawns isolated
-  Charlie processes that coordinate through shared Mikobases — no
-  shared-memory primitives, no locks.
+  Charlie processes that coordinate through shared
+  [Mikobases](mikobase/mikobase.md) — no shared-memory primitives,
+  no locks.
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
-  engine-aware flag-raising. Stack traces on every exception.
-- **Built-in HTTP middleware family.** Touchstone provides the
+  engine-aware flag-raising. Stack traces on every exception. See
+  [charlie-runtime.md](charlie/charlie-runtime.md).
+- **Built-in [HTTP middleware](charlie/http-middleware/http-middleware.md) family.**
+  [Touchstone](charlie/http-middleware/touchstone.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). Sammy is a built-in framework on Touchstone for
-  route-style serving.
+  CSP). [Sammy](charlie/http-middleware/sammy.md) is a built-in
+  framework on Touchstone for route-style serving.
 
 ---
 
