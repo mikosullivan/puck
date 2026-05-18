@@ -949,6 +949,44 @@ while (&foo) as $loop
 end
 ```
 
+A `.each` over a collection, using `$loop.count` for 1-based
+numbering:
+
+~~~charlie
+$plays = ['Hamlet', 'Othello', 'Macbeth', 'King Lear']
+
+$plays.each($play) as $loop
+    puts $loop.count + '. ' + $play
+end
+# 1. Hamlet
+# 2. Othello
+# 3. Macbeth
+# 4. King Lear
+~~~
+
+A `.times` loop that exits early with a value via `$loop.break`. The
+named loop expression evaluates to whatever `.break` was called with:
+
+~~~charlie
+$found = 5.times do($i) as $loop
+    if $plays[$i].is_tragedy?
+        $loop.break $plays[$i]    # exit loop; expression is $plays[$i]
+    end
+end
+# $found is the first tragedy found, or null if .break was never reached
+~~~
+
+A `.next` to skip an iteration without exiting the loop:
+
+~~~charlie
+$plays.each($play) as $loop
+    if $play.is_comedy?
+        $loop.next                # skip comedies; continue with the next $play
+    end
+    stage($play)
+end
+~~~
+
 The loop object exposes `.count`, `.active`, `.index`, `.next`,
 `.return`, and `.break` — see [loops.md § Loop object methods](loops.md#loop-object-methods).
 `$loop.return` and `$loop.break` are aliases.
