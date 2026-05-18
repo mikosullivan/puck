@@ -9,7 +9,6 @@
 		"manufactured_methods"],
 	"audience": ["developers_in_any_language", "puck_client_implementors",
 		"puck_server_implementors"],
-	"example_universe": "Star Trek",
 	"example_language": "Python"
 }}
 ~~~
@@ -27,36 +26,33 @@ the protocol is not Charlie-specific.
 
 ---
 
-<a id="example-a-remote-color-class"></a>
-## 1 Example: a remote `Color` class
+<a id="example-a-remote-geo-class"></a>
+## 1 Example: a remote `Geo` class
 
-Suppose `puck.uno/color` publishes a `Color` class. The workflow is:
-**resolve the class by UNS, instantiate it, then use it.**
+`puck.uno/geo` publishes a `Geo` class — a geolocation service. It's
+**inherently remote**: the data (weather feeds, census databases, map
+tiles) lives on the server side. There's no local implementation of
+`Geo` to fall back on; without Puck, the class isn't usable at all.
+
+The workflow is the standard one: **resolve the class by UNS,
+instantiate it, then use it.**
 
 ```python
 import puck
 
 # Resolve the class via the puck
-Color = puck.lookup('puck.uno/color')
+Geo = puck.lookup('puck.uno/geo')
 
-# Instantiate — same syntax as any local Python class
-crimson = Color('#dc143c')
+# Instantiate with a location — Starfleet HQ, San Francisco
+hq = Geo(lat=37.7980, lon=-122.4626)
 
 # Call the class's manufactured methods
-crimson.hex             # '#dc143c'
-crimson.rgb             # {'red': 220, 'green': 20, 'blue': 60}
-crimson.name            # 'crimson'
-crimson.darken(0.2)     # returns a new Color, 20% darker
-crimson.complementary   # the color wheel opposite
+hq.weather                  # current weather report at that location
+hq.census_district          # census district info for that point
+hq.map_image(zoom=14)       # PNG map image centered on the point
 ```
 
-Nothing in those method calls signals "remote." The puck handles the
-dispatch behind the scenes — looking up where `puck.uno/color` is hosted,
-sending the call, deserializing the result. The same shape works from
-JavaScript, Ruby, or any other language that wires up a Puck client; the
-specifics differ only in syntax.
-
-The methods (`hex`, `rgb`, `name`, `darken`, `complementary`, ...) are
-**manufactured by the `Color` class itself** — Puck doesn't define them.
-Puck only carries the call across the wire. What methods a remote class
-exposes is up to the class.
+Each of those methods makes a remote call to the server that hosts
+`puck.uno/geo`. The same shape works from JavaScript, Ruby, or any
+other language that wires up a Puck client; the specifics differ
+only in syntax.
