@@ -14,10 +14,11 @@ route handlers. Closures register against HTTP-method + path pairs;
 unmatched requests fall through to a catch-all.
 
 Named after **Sammy Davis Jr.**; the route-handler design is inspired
-by **Ruby Sinatra**.
+by [**Ruby Sinatra**](https://sinatrarb.com/).
 
 Built on [Touchstone](touchstone.md), which provides content-type
-defaults, Jasmine integration, and shared HTTP plumbing. Sammy
+defaults, [Jasmine](../jasmine/jasmine.md) integration, and shared
+HTTP plumbing. Sammy
 adds the route-handler layer and its own approach to static file
 serving on top.
 
