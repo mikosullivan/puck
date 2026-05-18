@@ -9,8 +9,32 @@
 }}
 ~~~
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+- [Agent](#agent)
+- [Session](#session)
+- [Proposal](#proposal)
+- [Objection](#objection)
+- [Refinement](#refinement)
+- [Question](#question)
+- [Response](#response)
+- [Evidence](#evidence)
+- [Acceptance](#acceptance)
+- [Impasse](#impasse)
+- [Position](#position)
+- [Decision](#decision)
+- [Report](#report)
+- [Human Instruction](#human-instruction)
+- [Human Decision](#human-decision)
+- [Sign-off](#sign-off)
+- [Notes](#notes)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 A standard class library for AI-to-AI collaboration sessions, shipped with Puck. These
 classes establish a shared vocabulary without enforcing rigid structure.
@@ -20,7 +44,7 @@ All classes live under the `puck.uno/ai/` namespace.
 ---
 
 <a id="agent"></a>
-## 2 Agent
+## 3 Agent
 
 `puck.uno/ai/agent`
 
@@ -44,7 +68,7 @@ end
 ---
 
 <a id="session"></a>
-## 3 Session
+## 4 Session
 
 `puck.uno/ai/session`
 
@@ -64,7 +88,7 @@ end
 ---
 
 <a id="proposal"></a>
-## 4 Proposal
+## 5 Proposal
 
 `puck.uno/ai/proposal`
 
@@ -84,7 +108,7 @@ end
 ---
 
 <a id="objection"></a>
-## 5 Objection
+## 6 Objection
 
 `puck.uno/ai/objection`
 
@@ -108,7 +132,7 @@ end
 ---
 
 <a id="refinement"></a>
-## 6 Refinement
+## 7 Refinement
 
 `puck.uno/ai/refinement`
 
@@ -131,7 +155,7 @@ directly supersedes — useful for walking the chain of revisions.
 ---
 
 <a id="question"></a>
-## 7 Question
+## 8 Question
 
 `puck.uno/ai/question`
 
@@ -149,7 +173,7 @@ end
 ---
 
 <a id="response"></a>
-## 8 Response
+## 9 Response
 
 `puck.uno/ai/response`
 
@@ -167,7 +191,7 @@ end
 ---
 
 <a id="evidence"></a>
-## 9 Evidence
+## 10 Evidence
 
 `puck.uno/ai/evidence`
 
@@ -189,7 +213,7 @@ end
 ---
 
 <a id="acceptance"></a>
-## 10 Acceptance
+## 11 Acceptance
 
 `puck.uno/ai/acceptance`
 
@@ -209,7 +233,7 @@ end
 ---
 
 <a id="impasse"></a>
-## 11 Impasse
+## 12 Impasse
 
 `puck.uno/ai/impasse`
 
@@ -229,7 +253,7 @@ end
 ---
 
 <a id="position"></a>
-## 12 Position
+## 13 Position
 
 `puck.uno/ai/position`
 
@@ -249,7 +273,7 @@ end
 ---
 
 <a id="decision"></a>
-## 13 Decision
+## 14 Decision
 
 `puck.uno/ai/decision`
 
@@ -269,7 +293,7 @@ end
 ---
 
 <a id="report"></a>
-## 14 Report
+## 15 Report
 
 `puck.uno/ai/report`
 
@@ -296,7 +320,7 @@ The `@summary` and `@next_steps` fields should make clear that the human must de
 ---
 
 <a id="human-instruction"></a>
-## 15 Human Instruction
+## 16 Human Instruction
 
 `puck.uno/ai/human_instruction`
 
@@ -316,7 +340,7 @@ end
 ---
 
 <a id="human-decision"></a>
-## 16 Human Decision
+## 17 Human Decision
 
 `puck.uno/ai/human_decision`
 
@@ -336,7 +360,7 @@ end
 ---
 
 <a id="sign-off"></a>
-## 17 Sign-off
+## 18 Sign-off
 
 `puck.uno/ai/sign_off`
 
@@ -358,7 +382,7 @@ end
 ---
 
 <a id="notes"></a>
-## 18 Notes
+## 19 Notes
 
 **References** — fields like `@to`, `@of`, `@based_on`, and `@session` reference other
 records in the session mikobase. The exact reference mechanism follows the standard

@@ -26,11 +26,33 @@ list feels complete, we sort by priority and decide what's in for v1.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Design Goals](#design-goals)
+  - [Scales Down Small, Scales Up Large](#scales-down-small-scales-up-large)
+  - [No Dangerous Defaults](#no-dangerous-defaults)
+  - [Dogfooding: puck.uno](#dogfooding-puckuno)
+- [Features](#features)
+  - [Settings Hierarchy](#settings-hierarchy)
+  - [Storage-Agnostic Page Resolution](#storage-agnostic-page-resolution)
+  - [Installation Object](#installation-object)
+  - [Request Handlers (Middleware Chain)](#request-handlers-middleware-chain)
+  - [Concurrency Model](#concurrency-model)
+  - [Sammy Method Selectors](#sammy-method-selectors)
+  - [JSON URL Parameters](#json-url-parameters)
+  - [Closure Interface and Response Objects](#closure-interface-and-response-objects)
+  - [Robinson Handler (Filesystem-Tree Pages)](#robinson-handler-filesystem-tree-pages)
+- [Open Questions / Cross-Cutting Concerns](#open-questions-cross-cutting-concerns)
+- [Prioritization](#prioritization)
+
+---
+
 <a id="design-goals"></a>
-## 1 Design Goals
+## 2 Design Goals
 
 <a id="scales-down-small-scales-up-large"></a>
-### 1.1 Scales Down Small, Scales Up Large
+### 2.1 Scales Down Small, Scales Up Large
 
 Robinson is intended to be a **common scalable solution** — the same framework
 serves a tiny personal site, an internal tool, and a moderately high-traffic
@@ -75,7 +97,7 @@ clean-slate default with a convenience opt-in). The pattern repeats across
 the design.
 
 <a id="no-dangerous-defaults"></a>
-### 1.2 No Dangerous Defaults
+### 2.2 No Dangerous Defaults
 
 Robinson never ships with defaults that could harm the developer or
 their users. For features that carry risk — admin access, forking,
@@ -97,7 +119,7 @@ Every opt-in in the design follows this rule — that's why the pattern
 repeats.
 
 <a id="dogfooding-puckuno"></a>
-### 1.3 Dogfooding: puck.uno
+### 2.3 Dogfooding: puck.uno
 
 Robinson will be used for the Puck project's own public site (puck.uno)
 **as much as possible**. The Puck ecoverse is its own first serious user.
@@ -112,10 +134,10 @@ target range covers.
 ---
 
 <a id="features"></a>
-## 2 Features
+## 3 Features
 
 <a id="settings-hierarchy"></a>
-### 2.1 Settings Hierarchy
+### 3.1 Settings Hierarchy
 
 Everything in Robinson rests in a settings cascade with five levels:
 
@@ -145,7 +167,7 @@ Open: directory-level settings probably live in a per-directory file (a la
 each get their own chance to override.
 
 <a id="storage-agnostic-page-resolution"></a>
-### 2.2 Storage-Agnostic Page Resolution
+### 3.2 Storage-Agnostic Page Resolution
 
 Pages live wherever they are stored. The installation does not require a
 filesystem; pages can come from:
@@ -161,7 +183,7 @@ owns page storage at that level) answers. Robinson itself doesn't care which
 backend a site uses.
 
 <a id="installation-object"></a>
-### 2.3 Installation Object
+### 3.3 Installation Object
 
 A Robinson **installation** is the HTTP-facing process — the thing that gets
 called over HTTP. It owns:
@@ -181,7 +203,7 @@ proxy, a direct TCP bind, or another transport is an implementation detail; the
 installation's job is "speak HTTP and dispatch."
 
 <a id="installationjson"></a>
-#### 2.3.1 `installation.json`
+#### 3.3.1 `installation.json`
 
 The Robinson installation reads its configuration from `installation.json`.
 The shape (initial version):
@@ -234,7 +256,7 @@ Open:
   pinning the exact behavior (fail-fast vs. skip-with-warning)
 
 <a id="request-handlers-middleware-chain"></a>
-### 2.4 Request Handlers (Middleware Chain)
+### 3.4 Request Handlers (Middleware Chain)
 
 Every installation has **one or more request handlers** registered in an
 **ordered hash**, keyed by nickname. Each handler is a modular object that can
@@ -307,7 +329,7 @@ Open:
   `insert_after`) and removal need their own conventions — TBD.
 
 <a id="concurrency-model"></a>
-### 2.5 Concurrency Model
+### 3.5 Concurrency Model
 
 **Default behavior: single process, one request at a time, no forking.** No
 opt-out from this; it's just what running Robinson means in the absence of
@@ -332,7 +354,7 @@ spawns child processes. The host controls the capability; the developer
 controls the policy; both must agree.
 
 <a id="prefork-pool-model-when-forking-is-enabled"></a>
-#### 2.5.1 Prefork-Pool Model (when forking is enabled)
+#### 3.5.1 Prefork-Pool Model (when forking is enabled)
 
 With both gates open, the main Robinson process becomes a supervisor:
 
@@ -351,7 +373,7 @@ CGI-Perl, where the persistent interpreter occasionally leaked data from one
 request into another.
 
 <a id="worker-recycling-opt-in-within-the-opt-in"></a>
-#### 2.5.2 Worker Recycling (opt-in within the opt-in)
+#### 3.5.2 Worker Recycling (opt-in within the opt-in)
 
 A third configuration option (working name: `recycle_workers`) lets developers
 opt into the classic prefork-pool behavior: each worker handles many requests
@@ -383,7 +405,7 @@ Open:
   after a grace period, drop immediately?
 
 <a id="sammy-method-selectors"></a>
-### 2.6 Sammy Method Selectors
+### 3.6 Sammy Method Selectors
 
 > **Feature lock.** Sammy is locked for v1. It's intended for **simple
 > cases** — single-file sites, microservices, small internal tools — not
@@ -441,7 +463,7 @@ Three things are happening:
   return a response), an unmatched request becomes a 404.
 
 <a id="sammy-true-is-just-sugar"></a>
-#### 2.6.1 `sammy: true` Is Just Sugar
+#### 3.6.1 `sammy: true` Is Just Sugar
 
 The opt-in keyword is shorthand for what you could do manually: instantiate a
 Sammy handler, add it to the handler hash under the `'sammy'` key, and
@@ -453,7 +475,7 @@ If another handler wants to expose its own server-object shortcuts later,
 it'll use the same delegation mechanism. There's no privileged path here.
 
 <a id="built-in-error-pages"></a>
-#### 2.6.2 Built-in Error Pages
+#### 3.6.2 Built-in Error Pages
 
 The Sammy handler ships with a **standard set of error pages** — 404, 500,
 and the other common HTTP status conditions — rendered with plain, sensible
@@ -511,7 +533,7 @@ Open:
   that handle every HTTP method, or stay strictly per-method?
 
 <a id="json-url-parameters"></a>
-### 2.7 JSON URL Parameters
+### 3.7 JSON URL Parameters
 
 Robinson will natively support the
 [ecoverse JSON URL convention](../puck/json-urls.md): machine-generated
@@ -535,7 +557,7 @@ captured in [json-urls.md](../puck/json-urls.md) as a topic to revisit
 when the JSON-URL convention is fully spec'd.
 
 <a id="closure-interface-and-response-objects"></a>
-### 2.8 Closure Interface and Response Objects
+### 3.8 Closure Interface and Response Objects
 
 Handler closures (the `do ... end` blocks passed to `$server.get`,
 `$server.post`, etc., and similarly the catch-all on `$server.run`) take a
@@ -559,7 +581,7 @@ Returning `null` is how a handler declines (passes to the next handler in
 the chain). Anything else must be a response.
 
 <a id="the-response-bareword-dsl"></a>
-#### 2.8.1 The `response` Bareword DSL
+#### 3.8.1 The `response` Bareword DSL
 
 Inside handler closures, the bare identifier `response` is a DSL alias for
 the response class. So instead of:
@@ -582,7 +604,7 @@ The DSL is scoped to handler closures specifically — it's not a global
 alias. Outside a handler closure, you go through `%puck[...]` as usual.
 
 <a id="constructor-shape-sketch"></a>
-#### 2.8.2 Constructor Shape (Sketch)
+#### 3.8.2 Constructor Shape (Sketch)
 
 The response constructor takes three positional arguments:
 
@@ -600,7 +622,7 @@ response.new(<status>, <options>, <body>)
   appended automatically per the UTF-8 rules.
 
 <a id="implicit-last-value-return"></a>
-#### 2.8.3 Implicit Last-Value Return
+#### 3.8.3 Implicit Last-Value Return
 
 The simple case ends with the response expression — no `%call.return`
 needed, because closures return their last value naturally:
@@ -640,7 +662,7 @@ Open:
   principle better — fail loudly if a handler tries to mutate.
 
 <a id="robinson-handler-filesystem-tree-pages"></a>
-### 2.9 Robinson Handler (Filesystem-Tree Pages)
+### 3.9 Robinson Handler (Filesystem-Tree Pages)
 
 A separate handler for sites structured along an actual file tree. Every
 file in a directory tree corresponds to a page at the matching URL path —
@@ -652,7 +674,7 @@ the name of a Ruby library still running unotate.com, named after the
 author's old high school.)
 
 <a id="terminology-installation-means-two-different-things"></a>
-#### 2.9.1 Terminology: "Installation" Means Two Different Things
+#### 3.9.1 Terminology: "Installation" Means Two Different Things
 
 Two scoped meanings of "installation" coexist and shouldn't be confused:
 
@@ -671,7 +693,7 @@ wants (one per site, or several within one site rooted at different
 subpaths) — each pinned to its own root directory.
 
 <a id="design-pressure-keep-the-basic-install-simple"></a>
-#### 2.9.2 Design Pressure: Keep the Basic Install Simple
+#### 3.9.2 Design Pressure: Keep the Basic Install Simple
 
 The previous Robinson (Ruby) eventually accumulated so many bells and
 whistles that it *felt* too complicated, even when each individual feature
@@ -694,7 +716,7 @@ This is a design pressure, not a hard rule about what features exist. Many
 features will still land in Robinson — but the front door stays narrow.
 
 <a id="page-file-contract"></a>
-#### 2.9.3 Page File Contract
+#### 3.9.3 Page File Contract
 
 `.charlie` files in the tree are page files. Each one's last expression
 must be a class inheriting from `puck.uno/Robinson/page` with a `process`
@@ -728,7 +750,7 @@ Other file types in the tree (images, static HTML, CSS, JS, etc.) are
 served as-is, with content type inferred from extension.
 
 <a id="path-resolution"></a>
-#### 2.9.4 Path Resolution
+#### 3.9.4 Path Resolution
 
 URLs map to files inside the site's root directory using **jail-based
 lookup**. The site root is exposed to Robinson as a
@@ -794,7 +816,7 @@ Open:
   probably should.
 
 <a id="reserved-filename-prefix-robinson"></a>
-#### 2.9.5 Reserved Filename Prefix: `robinson.`
+#### 3.9.5 Reserved Filename Prefix: `robinson.`
 
 Robinson **refuses to respond to any HTTP request whose target name
 starts with `robinson.`**. The prefix is a reserved namespace for
@@ -843,13 +865,13 @@ Open:
   `$request.path` is built), not part of `use_path`.
 
 <a id="sites"></a>
-#### 2.9.6 Sites
+#### 3.9.6 Sites
 
 A Robinson installation can have **zero or more site objects**. A site
 typically represents a single URL — `unotate.com`, for example.
 
 <a id="domain-mapping"></a>
-##### 2.9.6.1 Domain Mapping
+##### 3.9.6.1 Domain Mapping
 
 A site declares its domains in `site.json` under a `domains` hash.
 At least one domain is required:
@@ -915,7 +937,7 @@ Open:
   declines every request? Returns a 404? Spec it when we get there.
 
 <a id="empty-site-welcome-page"></a>
-#### 2.9.7 Empty Site Welcome Page
+#### 3.9.7 Empty Site Welcome Page
 
 When a Robinson site has **zero servable files**, requests get a
 built-in welcome page instead of a 404. Purely a first-run convenience
@@ -960,7 +982,7 @@ Open:
   API scenario.
 
 <a id="factory-message-pages"></a>
-#### 2.9.8 Factory Message Pages
+#### 3.9.8 Factory Message Pages
 
 > **Feature lock.** This subsection is closed to new features. The
 > previous Robinson iteration went down a rabbit hole on customized
@@ -983,7 +1005,7 @@ concept (see Deferred Ideas below). One specific directory name, one-deep
 fallback, one template per content type.
 
 <a id="the-templates"></a>
-##### 2.9.8.1 The Templates
+##### 3.9.8.1 The Templates
 
 The factory ships these files in `messages/`:
 
@@ -995,7 +1017,7 @@ The factory ships these files in `messages/`:
 - **`message.txt`** — Plain text, status and message appended at the end.
 
 <a id="content-negotiation-non-200-responses"></a>
-##### 2.9.8.2 Content Negotiation (Non-200 Responses)
+##### 3.9.8.2 Content Negotiation (Non-200 Responses)
 
 When returning a non-200 response, Robinson matches the request's
 `Accept` header against the available templates and picks the best fit:
@@ -1012,7 +1034,7 @@ Scope: this targets **error responses (4xx, 5xx)**. Redirects (3xx)
 typically have no body and bypass this machinery.
 
 <a id="no-coddling-stance-on-json-errors"></a>
-##### 2.9.8.3 "No Coddling" Stance on JSON Errors
+##### 3.9.8.3 "No Coddling" Stance on JSON Errors
 
 The JSON shape is deliberately simple — `{"status": <code>, "message":
 "<text>"}`. Robinson does not add error sentinels, "is_error" flags, or
@@ -1028,7 +1050,7 @@ contents to the world. Don't put anything in that file that you don't
 want public.
 
 <a id="admin-exception-display-v1-core"></a>
-##### 2.9.8.4 Admin Exception Display (v1 core)
+##### 3.9.8.4 Admin Exception Display (v1 core)
 
 When an exception is raised during request handling, the exception info
 can be displayed *to authenticated admins only*. `message.html` carries
@@ -1066,7 +1088,7 @@ Open:
   UI, it's an inline log dump.
 
 <a id="open-questions"></a>
-##### 2.9.8.5 Open Questions
+##### 3.9.8.5 Open Questions
 
 - **Placeholder syntax** for templates: simple `{status}` / `{message}`
   substitution, or something more structured? Keep it tight either way.
@@ -1082,7 +1104,7 @@ Open:
   the factory tight.
 
 <a id="admin-authentication"></a>
-#### 2.9.9 Admin Authentication
+#### 3.9.9 Admin Authentication
 
 A ready-made tool for authenticating admins and recognizing them across
 subsequent requests on a site. Robinson ships this — auth is hard to get
@@ -1174,7 +1196,7 @@ Open:
   the gate.
 
 <a id="deferred-ideas"></a>
-#### 2.9.10 Deferred Ideas
+#### 3.9.10 Deferred Ideas
 
 These are captured for future consideration but **not planned for v1**.
 The reasoning is that they each have either a simpler alternative or no
@@ -1213,7 +1235,7 @@ Specifics to be filled in as features are described.
 ---
 
 <a id="open-questions-cross-cutting-concerns"></a>
-## 3 Open Questions / Cross-Cutting Concerns
+## 4 Open Questions / Cross-Cutting Concerns
 
 (For things that affect multiple features, design tensions, or "we'll figure it out
 when we get there" notes.)
@@ -1221,7 +1243,7 @@ when we get there" notes.)
 ---
 
 <a id="prioritization"></a>
-## 4 Prioritization
+## 5 Prioritization
 
 (Empty for now. Filled in once the feature list stabilizes — typically with three
 buckets: in v1, deferred to later, dropped or unlikely.)

@@ -20,8 +20,27 @@ directory-tree interface backed by mikobase data?
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Why it's interesting](#why-its-interesting)
+- [The two superpowers](#the-two-superpowers)
+  - [Transactions](#transactions)
+  - [Time-travel reads](#time-travel-reads)
+  - [The combination is more than the sum](#the-combination-is-more-than-the-sum)
+- [POSIX access via SSH and SSHFS](#posix-access-via-ssh-and-sshfs)
+- [In-memory mode](#in-memory-mode)
+- [FSO and the path forward](#fso-and-the-path-forward)
+- [Other concerns](#other-concerns)
+- [As a versioning tool](#as-a-versioning-tool)
+- [Storage shape: chunks vs deltas](#storage-shape-chunks-vs-deltas)
+- [Open questions / things to vibe on](#open-questions-things-to-vibe-on)
+- [Out of scope for now](#out-of-scope-for-now)
+
+---
+
 <a id="why-its-interesting"></a>
-## 1 Why it's interesting
+## 2 Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
   object is expected ([Sammy static serving](../../charlie/http-middleware/sammy.md#static-file-serving),
@@ -41,14 +60,14 @@ directory-tree interface backed by mikobase data?
 ---
 
 <a id="the-two-superpowers"></a>
-## 2 The two superpowers
+## 3 The two superpowers
 
 The dir/file/permissions surface is trivial — most filesystems
 have it. What makes a mikobase-backed filesystem genuinely
 different is two properties POSIX can't offer.
 
 <a id="transactions"></a>
-### 2.1 Transactions
+### 3.1 Transactions
 
 POSIX filesystems can't do multi-file atomic operations. You can't
 atomically rename a directory while updating its children. Tools
@@ -62,7 +81,7 @@ needs all-or-nothing semantics is free:
   derived index can land together or not at all.
 
 <a id="time-travel-reads"></a>
-### 2.2 Time-travel reads
+### 3.2 Time-travel reads
 
 "What was `/etc/config.json` on 2026-03-15 at 14:22?" is a
 question almost no filesystem can answer. ZFS/Btrfs snapshots are
@@ -81,7 +100,7 @@ carry a timestamp parameter:
   state the operation saw.
 
 <a id="the-combination-is-more-than-the-sum"></a>
-### 2.3 The combination is more than the sum
+### 3.3 The combination is more than the sum
 
 "Atomic deploys with instant rollback" is a real product
 feature. So is "log entries that are reproducible because the
@@ -90,7 +109,7 @@ systems spend enormous engineering effort getting crude
 approximations of either; mikobase-as-filesystem inherits both.
 
 <a id="posix-access-via-ssh-and-sshfs"></a>
-## 3 POSIX access via SSH and SSHFS
+## 4 POSIX access via SSH and SSHFS
 
 A clean way to handle POSIX-tool compatibility: **expose the
 mikobase as an SSH endpoint.** No kernel module to build, no
@@ -125,7 +144,7 @@ What this approach still doesn't handle perfectly:
 For the vast majority of POSIX use, SSH + SSHFS is plenty.
 
 <a id="in-memory-mode"></a>
-## 4 In-memory mode
+## 5 In-memory mode
 
 A mikobase doesn't have to be disk-backed. **An in-memory
 mikobase that lives in the process's own memory** can present the
@@ -166,7 +185,7 @@ with the process. Different scope; better-targeted for the cases
 above.
 
 <a id="fso-and-the-path-forward"></a>
-## 5 FSO and the path forward
+## 6 FSO and the path forward
 
 By the time the broader **FSO (file system objects)** abstraction
 is finished — directory objects, file objects, DirJails, the
@@ -176,7 +195,7 @@ additional step. Not committed yet; flagged as a likely outcome
 of the work that's already happening for other reasons.
 
 <a id="other-concerns"></a>
-## 6 Other concerns
+## 7 Other concerns
 
 - **Performance overhead** of transactional storage compared to
   raw POSIX. Bulk file ingestion might want a fast path.
@@ -184,7 +203,7 @@ of the work that's already happening for other reasons.
   Bounded by retention policy; needs to be configurable.
 
 <a id="as-a-versioning-tool"></a>
-## 7 As a versioning tool
+## 8 As a versioning tool
 
 Time-travel + a labeling layer makes mikobase-as-filesystem a
 linear-history version control system. Auto-recorded changes,
@@ -214,7 +233,7 @@ every request log is reproducible against the exact filesystem
 state that served it."
 
 <a id="storage-shape-chunks-vs-deltas"></a>
-## 8 Storage shape: chunks vs deltas
+## 9 Storage shape: chunks vs deltas
 
 The current mikobase plan stores files in **chunks**. Great for
 static collections (e.g., a Shakespeare-image archive — flagged
@@ -256,14 +275,14 @@ Fossil, Subversion). Trade-offs to design:
 The storage layer becomes **content-aware** rather than uniform.
 
 <a id="open-questions-things-to-vibe-on"></a>
-## 9 Open questions / things to vibe on
+## 10 Open questions / things to vibe on
 
 (To be filled in.)
 
 ---
 
 <a id="out-of-scope-for-now"></a>
-## 10 Out of scope for now
+## 11 Out of scope for now
 
 Brainstorm only. No commitments. The point is to capture the idea
 and let it ripen.

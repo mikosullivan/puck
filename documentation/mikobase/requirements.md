@@ -1,7 +1,51 @@
 # Mikobase Engine Requirements
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+- [Universal Namespace](#universal-namespace)
+- [Object Model](#object-model)
+  - [Records](#records)
+  - [Classes](#classes)
+  - [`bucket`](#bucket)
+  - [`custom_classes`](#custom_classes)
+  - [Built-in Classes](#built-in-classes)
+- [Database Properties](#database-properties)
+  - [`executable`](#executable)
+- [Connection](#connection)
+  - [Python API](#python-api)
+- [Queries](#queries)
+  - [`select` responses](#select-responses)
+  - [`create`, `update`, `delete` responses](#create-update-delete-responses)
+  - [Record dict shape](#record-dict-shape)
+  - [Convenience methods](#convenience-methods)
+- [Records as Python Objects](#records-as-python-objects)
+  - [Field Ordering](#field-ordering)
+- [Transactions](#transactions)
+- [Error Handling](#error-handling)
+- [SQLite Engine](#sqlite-engine)
+  - [Tenancy](#tenancy)
+  - [Locking](#locking)
+  - [Schema Initialization](#schema-initialization)
+  - [Schema](#schema)
+  - [Database Initialization](#database-initialization)
+  - [Historical Reads](#historical-reads)
+  - [Q0 Execution Strategy](#q0-execution-strategy)
+  - [Validation](#validation)
+- [Engine Architecture](#engine-architecture)
+  - [Package Structure](#package-structure)
+  - [Base Engine](#base-engine)
+  - [Validator](#validator)
+- [File Storage](#file-storage)
+- [Schema Import and Export](#schema-import-and-export)
+- [General Guidelines](#general-guidelines)
+- [Open Questions](#open-questions)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 ~~~json
 {"vibecode": {
@@ -34,7 +78,7 @@ is out of scope for now — only the engine is being developed at this stage.
 ---
 
 <a id="universal-namespace"></a>
-## 2 Universal Namespace
+## 3 Universal Namespace
 
 ~~~json
 {"vibecode": {
@@ -59,7 +103,7 @@ Examples:
 ---
 
 <a id="object-model"></a>
-## 3 Object Model
+## 4 Object Model
 
 ~~~json
 {"vibecode": {
@@ -71,7 +115,7 @@ Examples:
 ~~~
 
 <a id="records"></a>
-### 3.1 Records
+### 4.1 Records
 
 - Records are the primary data objects in a mikobase.
 - Every record has a stable identity (`record_pk`) and an append-only version history.
@@ -80,7 +124,7 @@ Examples:
 - Historical reads use a cutoff timestamp to view the state of records at a past point in time.
 
 <a id="classes"></a>
-### 3.2 Classes
+### 4.2 Classes
 
 - Every record has a class. The default class is `puck.uno/record`.
 - Classes are themselves stored as records with class `puck.uno/record/class`.
@@ -90,13 +134,13 @@ Examples:
 - All classes defined in the schema are record classes — they can be assigned to records.
 
 <a id="bucket"></a>
-### 3.3 `bucket`
+### 4.3 `bucket`
 
 - Each record version stores its payload in `bucket`, a JSON object.
 - Fields not defined in the class are stored as-is without validation.
 
 <a id="custom_classes"></a>
-### 3.4 `custom_classes`
+### 4.4 `custom_classes`
 
 - `custom_classes` maps UUID marker keys to class references for nested objects in `bucket`.
 - A UUID marker key is embedded inside a nested object in `bucket` with value `true`.
@@ -106,7 +150,7 @@ Examples:
 - `custom_classes` values have the shape `{"class": "foo.com/bar"}`.
 
 <a id="built-in-classes"></a>
-### 3.5 Built-in Classes
+### 4.5 Built-in Classes
 
 The following classes are seeded as database records on initialization:
 
@@ -118,7 +162,7 @@ The following classes are seeded as database records on initialization:
 ---
 
 <a id="database-properties"></a>
-## 4 Database Properties
+## 5 Database Properties
 
 ~~~json
 {"vibecode": {
@@ -132,7 +176,7 @@ A mikobase may declare properties about itself that any client can read upon con
 These are database-level metadata, not record-level data.
 
 <a id="executable"></a>
-### 4.1 `executable`
+### 5.1 `executable`
 
 A boolean advisory indicating that code stored in this mikobase may be executed.
 Allowing execution requires a positive assertion — the default is `false`, meaning
@@ -147,7 +191,7 @@ Default: `false`.
 ---
 
 <a id="connection"></a>
-## 5 Connection
+## 6 Connection
 
 ~~~json
 {"vibecode": {
@@ -171,7 +215,7 @@ Opening a connection with a cutoff timestamp makes the entire connection read-on
 snapshot).
 
 <a id="python-api"></a>
-### 5.1 Python API
+### 6.1 Python API
 
 A Python client illustrates the shape of the conceptual API:
 
@@ -192,7 +236,7 @@ with mb.connect('/path/to/database.db', 'r', cutoff='2026-01-01T00:00:00.000') a
 ---
 
 <a id="queries"></a>
-## 6 Queries
+## 7 Queries
 
 ~~~json
 {"vibecode": {
@@ -206,7 +250,7 @@ with mb.connect('/path/to/database.db', 'r', cutoff='2026-01-01T00:00:00.000') a
 All queries are sent via `engine.q0()`, which accepts a Q0 dict.
 
 <a id="select-responses"></a>
-### 6.1 `select` responses
+### 7.1 `select` responses
 
 `select` returns a lazy resultset object. It fetches one record at a time from the SQLite
 cursor rather than loading all results into memory.
@@ -228,7 +272,7 @@ else:
 ```
 
 <a id="create-update-delete-responses"></a>
-### 6.2 `create`, `update`, `delete` responses
+### 7.2 `create`, `update`, `delete` responses
 
 These actions return a plain dict with `success`, `errors`, and `results`.
 
@@ -245,7 +289,7 @@ These actions return a plain dict with `success`, `errors`, and `results`.
 ```
 
 <a id="record-dict-shape"></a>
-### 6.3 Record dict shape
+### 7.3 Record dict shape
 
 Each record dict yielded by a `select` resultset has the following fields:
 
@@ -260,7 +304,7 @@ Each record dict yielded by a `select` resultset has the following fields:
 ```
 
 <a id="convenience-methods"></a>
-### 6.4 Convenience methods
+### 7.4 Convenience methods
 
 The base engine also provides convenience methods that build Q0 dicts internally:
 
@@ -270,7 +314,7 @@ The base engine also provides convenience methods that build Q0 dicts internally
 ---
 
 <a id="records-as-python-objects"></a>
-## 7 Records as Python Objects
+## 8 Records as Python Objects
 
 ~~~json
 {"vibecode": {
@@ -299,7 +343,7 @@ class Character:
 ```
 
 <a id="field-ordering"></a>
-### 7.1 Field Ordering
+### 8.1 Field Ordering
 
 Records returned from queries present fields in this order:
 
@@ -310,7 +354,7 @@ Records returned from queries present fields in this order:
 ---
 
 <a id="transactions"></a>
-## 8 Transactions
+## 9 Transactions
 
 ~~~json
 {"vibecode": {
@@ -348,7 +392,7 @@ Rules:
 ---
 
 <a id="error-handling"></a>
-## 9 Error Handling
+## 10 Error Handling
 
 ~~~json
 {"vibecode": {
@@ -372,7 +416,7 @@ raise MikobaseError(errors=[
 ---
 
 <a id="sqlite-engine"></a>
-## 10 SQLite Engine
+## 11 SQLite Engine
 
 ~~~json
 {"vibecode": {
@@ -384,36 +428,36 @@ raise MikobaseError(errors=[
 ~~~
 
 <a id="tenancy"></a>
-### 10.1 Tenancy
+### 11.1 Tenancy
 
 Each SQLite database file is a single logical database. There is no tenant concept.
 
 <a id="locking"></a>
-### 10.2 Locking
+### 11.2 Locking
 
 - `rw` mode acquires an exclusive lock immediately on `connect()`.
 - `r` mode acquires a shared lock immediately on `connect()`.
 
 <a id="schema-initialization"></a>
-### 10.3 Schema Initialization
+### 11.3 Schema Initialization
 
 On `connect()`, the engine checks whether the `records` table exists. If it does not, the
 engine runs the full schema initialization and seeds the built-in class records. This makes
 `connect()` idempotent — connecting to an uninitialized database automatically sets it up.
 
 <a id="schema"></a>
-### 10.4 Schema
+### 11.4 Schema
 
 See [sqlite-schema.md](sqlite-schema.md) and [sqlite.sql](sqlite.sql).
 
 <a id="database-initialization"></a>
-### 10.5 Database Initialization
+### 11.5 Database Initialization
 
 Built-in classes are recognized by the engine directly by their UNS name. No records are
 seeded for them on initialization. The `records` table starts empty.
 
 <a id="historical-reads"></a>
-### 10.6 Historical Reads
+### 11.6 Historical Reads
 
 When a connection is opened with a cutoff timestamp, the engine uses a direct parameterized
 query against `records_history` with the cutoff injected as a parameter:
@@ -426,7 +470,7 @@ Present-time queries use the `current_records` view. Historical queries bypass t
 query `records_history` directly with the cutoff timestamp.
 
 <a id="q0-execution-strategy"></a>
-### 10.7 Q0 Execution Strategy
+### 11.7 Q0 Execution Strategy
 
 The engine should translate Q0 operations to SQL where efficient and practical:
 
@@ -456,7 +500,7 @@ where class in (select name from subclasses);
 Correctness takes priority over efficiency.
 
 <a id="validation"></a>
-### 10.8 Validation
+### 11.8 Validation
 
 - Record writes are validated against the latest active class definition at write time.
 - Previously written records are not retroactively invalidated by class changes.
@@ -469,7 +513,7 @@ Correctness takes priority over efficiency.
 ---
 
 <a id="engine-architecture"></a>
-## 11 Engine Architecture
+## 12 Engine Architecture
 
 ~~~json
 {"vibecode": {
@@ -481,7 +525,7 @@ Correctness takes priority over efficiency.
 ~~~
 
 <a id="package-structure"></a>
-### 11.1 Package Structure
+### 12.1 Package Structure
 
 ```
 lib/
@@ -503,7 +547,7 @@ documentation/
 Additional engines (e.g. `postgres.py`, `http.py`) are added as new files in `lib/mikobase/engine/`.
 
 <a id="base-engine"></a>
-### 11.2 Base Engine
+### 12.2 Base Engine
 
 `engine/base.py` defines the abstract base class that all engines must implement.
 
@@ -519,7 +563,7 @@ override these with more efficient engine-specific implementations:
 - `validate(query)` — convenience shorthand for `engine.validator.run_all(query)`
 
 <a id="validator"></a>
-### 11.3 Validator
+### 12.3 Validator
 
 Every engine exposes a `validator` property that returns a `Validator` instance. The
 `Validator` class lives in `engine/validator.py`.
@@ -546,7 +590,7 @@ check reports warnings when redundant field pairs are used together (`class` + `
 ---
 
 <a id="file-storage"></a>
-## 12 File Storage
+## 13 File Storage
 
 ~~~json
 {"vibecode": {
@@ -568,7 +612,7 @@ Files are stored in `files` (identity and metadata) and `file_chunks` (binary co
 ---
 
 <a id="schema-import-and-export"></a>
-## 13 Schema Import and Export
+## 14 Schema Import and Export
 
 ~~~json
 {"vibecode": {
@@ -595,7 +639,7 @@ See [class-definition.md](../charlie/class-definition.md) for schema format and 
 ---
 
 <a id="general-guidelines"></a>
-## 14 General Guidelines
+## 15 General Guidelines
 
 ~~~json
 {"vibecode": {
@@ -617,7 +661,7 @@ See [class-definition.md](../charlie/class-definition.md) for schema format and 
 ---
 
 <a id="open-questions"></a>
-## 15 Open Questions
+## 16 Open Questions
 
 - Class registration mechanism: explicit `mikobase.register()` call vs. automatic discovery
   via decorator at definition time.

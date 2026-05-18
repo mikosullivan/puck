@@ -13,14 +13,49 @@ A logging format. Named after one of Miko's cats.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+  - [Terminology](#terminology)
+- [Differences from JSONL](#differences-from-jsonl)
+  - [Malformed lines are silently ignored](#malformed-lines-are-silently-ignored)
+- [Specification](#specification)
+  - [Required fields](#required-fields)
+  - [Conventional fields](#conventional-fields)
+- [Loggers and entries](#loggers-and-entries)
+  - [Creating a logger](#creating-a-logger)
+  - [The engine-granted main logger: `%chain.log`](#the-engine-granted-main-logger-chainlog)
+  - [The ambient idiom](#the-ambient-idiom)
+  - [No null check needed](#no-null-check-needed)
+  - [Lifecycle (entries)](#lifecycle-entries)
+  - [Automatic exception recording](#automatic-exception-recording)
+  - [Automatic warning capture](#automatic-warning-capture)
+  - [Logger failure cascade](#logger-failure-cascade)
+  - [Nested call frames](#nested-call-frames)
+  - [Why this design](#why-this-design)
+  - [Empty entries are omitted](#empty-entries-are-omitted)
+  - [Source line numbers in frames](#source-line-numbers-in-frames)
+  - [Interaction with %chain's role-boundary wipe](#interaction-with-chains-role-boundary-wipe)
+- [Stores](#stores)
+  - [Constructing a Jasmine log](#constructing-a-jasmine-log)
+  - [Directory store: file layout](#directory-store-file-layout)
+  - [Reaping](#reaping)
+  - [Concurrency: the format's emergent gift](#concurrency-the-formats-emergent-gift)
+  - [Reaper coordination](#reaper-coordination)
+  - [Purge](#purge)
+- [Open Questions](#open-questions)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 Jasmine is a logging format derived from **JSONL** (JSON Lines) with
 a few tweaks specific to the Puck ecoverse.
 
 <a id="terminology"></a>
-### 1.1 Terminology
+### 2.1 Terminology
 
 - A **log** is a collection of entries. Typically a single file
   appended to over time, but conceptually any stream of entries.
@@ -61,10 +96,10 @@ ecoverse needs. The tweaks are detailed below.
 ---
 
 <a id="differences-from-jsonl"></a>
-## 2 Differences from JSONL
+## 3 Differences from JSONL
 
 <a id="malformed-lines-are-silently-ignored"></a>
-### 2.1 Malformed lines are silently ignored
+### 3.1 Malformed lines are silently ignored
 
 If a line cannot be parsed as JSON, **Jasmine readers skip it
 without error**. Strict JSONL implementations vary — some halt on a
@@ -94,10 +129,10 @@ include their own integrity mechanisms (checksums in the JSON,
 sequence numbers, etc.).
 
 <a id="specification"></a>
-## 3 Specification
+## 4 Specification
 
 <a id="required-fields"></a>
-### 3.1 Required fields
+### 4.1 Required fields
 
 Every Jasmine entry **must contain two fields**:
 
@@ -128,7 +163,7 @@ Format conventions:
   millisecond precision is the working assumption).
 
 <a id="conventional-fields"></a>
-### 3.2 Conventional fields
+### 4.2 Conventional fields
 
 Beyond the required `uuid` and `timestamp`, Jasmine reserves certain
 top-level field names for specific kinds of structured content.
@@ -137,7 +172,7 @@ them, they should follow the documented shape so consumers can rely
 on it.
 
 <a id="success-outcome-flag"></a>
-#### 3.2.1 `success` (outcome flag)
+#### 4.2.1 `success` (outcome flag)
 
 For operations that have a meaningful pass/fail outcome (a request
 handled, a job run, a transaction completed), the entry carries a
@@ -172,7 +207,7 @@ needed for failure cases; failure is the default.
 ```
 
 <a id="web-requestresponse-data"></a>
-#### 3.2.2 `web` (request/response data)
+#### 4.2.2 `web` (request/response data)
 
 When Jasmine is used to log HTTP traffic (Robinson's primary case),
 each entry carries a top-level **`web`** field. The `web` field
@@ -210,7 +245,7 @@ like IP/user-agent, etc.) is its own spec — to be filled in as
 Robinson's logging needs become more concrete.
 
 <a id="loggers-and-entries"></a>
-## 4 Loggers and entries
+## 5 Loggers and entries
 
 Two distinct concepts:
 
@@ -222,7 +257,7 @@ Two distinct concepts:
   `.entry do ... end` primitive — and gets flushed on block exit.
 
 <a id="creating-a-logger"></a>
-### 4.1 Creating a logger
+### 5.1 Creating a logger
 
 ```
 $log = %['puck.uno/jasmine'].new(dir: $some_dirjail)
@@ -237,7 +272,7 @@ end
 A developer can create many loggers and use each explicitly.
 
 <a id="the-engine-granted-main-logger-chainlog"></a>
-### 4.2 The engine-granted main logger: `%chain.log`
+### 5.2 The engine-granted main logger: `%chain.log`
 
 There is a special "main" logger that lives at **`%chain.log`** —
 the ambient logging access point for the chain. **`%chain.log` is
@@ -264,7 +299,7 @@ the other end.
 `%chain.log` if real demand surfaces. Not in v1.)
 
 <a id="the-ambient-idiom"></a>
-### 4.3 The ambient idiom
+### 5.3 The ambient idiom
 
 When `%chain.log` is granted, the ambient pattern is:
 
@@ -286,7 +321,7 @@ entry object itself, available for code that wants explicit
 access. Most code doesn't need it and omits the parameter.
 
 <a id="no-null-check-needed"></a>
-### 4.4 No null check needed
+### 5.4 No null check needed
 
 Because `%chain.log` is always a logger (real or dev/null), code
 can write to it unconditionally:
@@ -308,7 +343,7 @@ code articulates what *would* be logged at each point — readable
 notes that don't rot.
 
 <a id="lifecycle-entries"></a>
-### 4.5 Lifecycle (entries)
+### 5.5 Lifecycle (entries)
 
 - **Created** by `.entry do(...) ... end` on a logger.
 - **Mutated** throughout the block: writes via `%chain.log[...]`
@@ -322,7 +357,7 @@ internally, so per-request logging Just Works for handler code; the
 developer didn't have to write the wrapper themselves.
 
 <a id="automatic-exception-recording"></a>
-### 4.6 Automatic exception recording
+### 5.6 Automatic exception recording
 
 When an exception propagates out of a `.entry do` block, Jasmine
 **records the exception into the entry before flushing**. The
@@ -369,7 +404,7 @@ and the auto-recording correctly surfaces it rather than hiding
 it.
 
 <a id="automatic-warning-capture"></a>
-### 4.7 Automatic warning capture
+### 5.7 Automatic warning capture
 
 **`.entry do` implicitly heeds all warnings raised inside it.**
 Any `%chain.warn` (or `.raise` on a warning object) anywhere
@@ -413,7 +448,7 @@ catch-all at the entry boundary; explicit `heed`s inside are
 finer-grained collectors that get first crack.
 
 <a id="logger-failure-cascade"></a>
-### 4.8 Logger failure cascade
+### 5.8 Logger failure cascade
 
 If Jasmine itself fails to record (downstream service down, disk
 full, store rejected the entry, etc.), the original event is
@@ -438,7 +473,7 @@ the failure is silently absorbed — at that point the host
 environment is too broken for Jasmine to help.
 
 <a id="nested-call-frames"></a>
-### 4.9 Nested call frames
+### 5.9 Nested call frames
 
 **When an entry is active (we're inside a `.entry do` block), every
 Charlie function call gets its own fresh nested entry.** The called
@@ -498,7 +533,7 @@ returns, the framework appends the entry to the parent's `calls`
 (if non-empty). User code just writes to `%chain.log` as normal.
 
 <a id="why-this-design"></a>
-### 4.10 Why this design
+### 5.10 Why this design
 
 This solves several things at once:
 
@@ -519,7 +554,7 @@ This solves several things at once:
   Their entries nest under their own call frames.
 
 <a id="empty-entries-are-omitted"></a>
-### 4.11 Empty entries are omitted
+### 5.11 Empty entries are omitted
 
 If a function doesn't write anything to its `%chain.log`, **no
 frame is appended** to the parent's `calls` array on return. This
@@ -537,7 +572,7 @@ opt-in mode (a configuration flag, a per-request setting, etc.).
 Not in scope for v1; noted here so the option isn't forgotten.
 
 <a id="source-line-numbers-in-frames"></a>
-### 4.12 Source line numbers in frames
+### 5.12 Source line numbers in frames
 
 For code that originated from Charlie source (rather than being
 hand-written CharlieJSON), each call frame can include the source
@@ -556,7 +591,7 @@ hand-written CharlieJSON, generated code with no known source
 line), the field is absent. Tools just check for presence.
 
 <a id="interaction-with-chains-role-boundary-wipe"></a>
-### 4.13 Interaction with %chain's role-boundary wipe
+### 5.13 Interaction with %chain's role-boundary wipe
 
 The nested-frame design naturally handles cross-role calls: the
 called role sees a fresh `%chain.log`, just as it sees a wiped
@@ -582,7 +617,7 @@ The security properties are intact:
 ---
 
 <a id="stores"></a>
-## 5 Stores
+## 6 Stores
 
 Jasmine separates **what to log** (entries, the format) from **where
 they live** (the store). Stores are pluggable; one Jasmine producer
@@ -610,7 +645,7 @@ Only the directory store ships in v1. The others remain pluggable
 extension points; community or future work can fill them in.
 
 <a id="constructing-a-jasmine-log"></a>
-### 5.1 Constructing a Jasmine log
+### 6.1 Constructing a Jasmine log
 
 There is one class — **`puck.uno/jasmine`** — for all Jasmine logs.
 The constructor takes keyword arguments that configure which
@@ -660,7 +695,7 @@ the nanny is on by default to catch real bugs, but it doesn't
 override developer choice when the developer explicitly opts in.
 
 <a id="directory-store-file-layout"></a>
-### 5.2 Directory store: file layout
+### 6.2 Directory store: file layout
 
 The directory store organizes entries by **calendar date**. Each
 day's entries go into a file named with the date:
@@ -695,7 +730,7 @@ filename-date semantics (e.g., to enforce UTC across a fleet), we
 can address it then.
 
 <a id="reaping"></a>
-### 5.3 Reaping
+### 6.3 Reaping
 
 The directory store supports a **reaping** pattern: a routine that
 walks the file looking for unreaped entries, yields each to a
@@ -720,7 +755,7 @@ Single-byte change preserves the file's overall structure (no
 length shifts, no offset corruption).
 
 <a id="concurrency-the-formats-emergent-gift"></a>
-### 5.4 Concurrency: the format's emergent gift
+### 6.4 Concurrency: the format's emergent gift
 
 Because reaping only modifies single bytes in the middle of the
 file (and only on lines that aren't being touched by writers),
@@ -763,7 +798,7 @@ Notes on edge cases:
   next run or runs a separate per-file reap pass.
 
 <a id="reaper-coordination"></a>
-### 5.5 Reaper coordination
+### 6.5 Reaper coordination
 
 To prevent multiple reapers from processing the same entries, the
 directory store uses a **sentinel lock file** named `reap.lock`
@@ -810,7 +845,7 @@ serialization (e.g., the next reap cycle won't run for a long time).
 Exact API for this TBD.
 
 <a id="purge"></a>
-### 5.6 Purge
+### 6.6 Purge
 
 The reaper marks entries as processed but **does not delete files**.
 Over time the directory accumulates files whose entries are entirely
@@ -831,7 +866,7 @@ different schedules. A typical setup might run reaping frequently
 a week). They don't need to coordinate with each other directly.
 
 <a id="locking"></a>
-#### 5.6.1 Locking
+#### 6.6.1 Locking
 
 Purge acquires `write.lock` **per file**, not for the whole purge
 run. For each candidate file:
@@ -866,7 +901,7 @@ cycle isn't useful. The wait is brief in practice because each lock
 acquisition only spans a single file's scan + possible unlink.
 
 <a id="what-counts-as-empty"></a>
-#### 5.6.2 What counts as "empty"
+#### 6.6.2 What counts as "empty"
 
 A file is eligible for purge when **no line in it can be parsed as
 a Jasmine entry** — every line is either malformed, a reaped entry
@@ -905,7 +940,7 @@ becomes eligible regardless once the date rolls over.
 ---
 
 <a id="open-questions"></a>
-## 6 Open Questions
+## 7 Open Questions
 
 The Jasmine spec is intentionally kept light at this stage. The big
 structural decisions are settled (JSONL baseline, malformed-line

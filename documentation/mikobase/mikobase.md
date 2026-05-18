@@ -1,7 +1,55 @@
 # Mikobase
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+- [v1 Scope](#v1-scope)
+- [Temporal vs Non-temporal Mode](#temporal-vs-non-temporal-mode)
+  - [Single read and write paths](#single-read-and-write-paths)
+  - [Temporal-only operations on a non-temporal database](#temporal-only-operations-on-a-non-temporal-database)
+  - [Changing modes later](#changing-modes-later)
+  - [Worldlets and the temporal flag](#worldlets-and-the-temporal-flag)
+- [Export formats](#export-formats)
+  - [Worldlets play two roles](#worldlets-play-two-roles)
+  - [Import / export functions](#import-export-functions)
+- [Single-process vs. cross-fork use](#single-process-vs-cross-fork-use)
+- [The Maintaining Process](#the-maintaining-process)
+- [Object Ownership](#object-ownership)
+- [Class Hierarchy](#class-hierarchy)
+- [Managed Mikobase Server (`puck.uno/mikobase/server`)](#managed-mikobase-server-puckunomikobaseserver)
+- [HTTP Mikobase](#http-mikobase)
+  - [Unix Domain Sockets (preferred)](#unix-domain-sockets-preferred)
+  - [TCP (for network access)](#tcp-for-network-access)
+  - [Authentication](#authentication)
+  - [POSTable Updates](#postable-updates)
+- [Hot and Cold Connections](#hot-and-cold-connections)
+  - [Cold (default)](#cold-default)
+  - [Hot](#hot)
+  - [Local mikobases](#local-mikobases)
+  - [Multiple connections, different modes](#multiple-connections-different-modes)
+  - [Per-query override](#per-query-override)
+- [Locking](#locking)
+- [Transactions](#transactions)
+- [`%bucket` in the Mikobase](#bucket-in-the-mikobase)
+- [Record Change Signals](#record-change-signals)
+  - [Listening to records](#listening-to-records)
+  - [`before_save` and `after_save`](#before_save-and-after_save)
+  - [Signals stay within the mikobase](#signals-stay-within-the-mikobase)
+  - [Listener matching](#listener-matching)
+  - [Future: remote validation](#future-remote-validation)
+- [Packaged Mikobases](#packaged-mikobases)
+  - [Worldlets](#worldlets)
+  - [Format](#format)
+  - [Capabilities Manifest](#capabilities-manifest)
+  - [Lifecycle](#lifecycle)
+  - [Use Cases](#use-cases-1)
+  - [What Is Not Yet Designed](#what-is-not-yet-designed)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 ~~~json
 {"vibecode": {
@@ -26,7 +74,7 @@ services) are supported, but worldlets drive design decisions.
 ---
 
 <a id="v1-scope"></a>
-## 2 v1 Scope
+## 3 v1 Scope
 
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
@@ -68,7 +116,7 @@ focused:
 ---
 
 <a id="temporal-vs-non-temporal-mode"></a>
-## 3 Temporal vs Non-temporal Mode
+## 4 Temporal vs Non-temporal Mode
 
 ~~~json
 {"vibecode": {
@@ -108,7 +156,7 @@ either. Non-temporal isn't a niche mode; it's the right choice for any
 workload where version history adds clutter without payoff.
 
 <a id="single-read-and-write-paths"></a>
-### 3.1 Single read and write paths
+### 4.1 Single read and write paths
 
 The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
 
@@ -124,7 +172,7 @@ For SQLite-backed mikobases, the retrieval abstraction can be a database view na
 itself encodes the mode.
 
 <a id="temporal-only-operations-on-a-non-temporal-database"></a>
-### 3.2 Temporal-only operations on a non-temporal database
+### 4.2 Temporal-only operations on a non-temporal database
 
 Operations that only make sense on a temporal database — rollback, version-at-timestamp,
 history scans, audit queries — raise an exception when called on a non-temporal database.
@@ -132,7 +180,7 @@ No silent degradation, no empty results. The caller knows immediately that the o
 isn't supported.
 
 <a id="changing-modes-later"></a>
-### 3.3 Changing modes later
+### 4.3 Changing modes later
 
 The flag is immutable at the database level. To convert a non-temporal database to
 temporal (or vice versa), import the data into a new database created with the desired
@@ -140,7 +188,7 @@ mode. A future engine release may add a refactor tool, but the chosen mode is pe
 for the database it was set on.
 
 <a id="worldlets-and-the-temporal-flag"></a>
-### 3.4 Worldlets and the temporal flag
+### 4.4 Worldlets and the temporal flag
 
 A worldlet is a **serialized export** of a mikobase, not a mikobase itself
 (see [Export formats](#export-formats) below). The worldlet JSON captures
@@ -159,7 +207,7 @@ isn't specified and isn't a priority to resolve.
 ---
 
 <a id="export-formats"></a>
-## 4 Export formats
+## 5 Export formats
 
 ~~~json
 {"vibecode": {
@@ -184,7 +232,7 @@ Mikobase v1 will support at least two export formats:
 | (Second format) | TBD | A second export format is planned; shape not yet specified |
 
 <a id="worldlets-play-two-roles"></a>
-### 4.1 Worldlets play two roles
+### 5.1 Worldlets play two roles
 
 Worldlet JSON is **both** an export format (from any engine) **and**
 the live storage of the [`puck.uno/mikobase/worldlet`](#class-hierarchy-olympic)
@@ -209,7 +257,7 @@ interface; Charlie code that doesn't care which backend it's on works
 identically against either.
 
 <a id="import-export-functions"></a>
-### 4.2 Import / export functions
+### 5.2 Import / export functions
 
 The pipeline between an engine-backed mikobase and an export format is
 exactly two functions per format:
@@ -250,7 +298,7 @@ import in particular:
 ---
 
 <a id="single-process-vs-cross-fork-use"></a>
-## 5 Single-process vs. cross-fork use
+## 6 Single-process vs. cross-fork use
 
 ~~~json
 {"vibecode": {
@@ -268,7 +316,7 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 ---
 
 <a id="the-maintaining-process"></a>
-## 6 The Maintaining Process
+## 7 The Maintaining Process
 
 ~~~json
 {"vibecode": {
@@ -291,7 +339,7 @@ connecting to a live process, not reading from a file.
 ---
 
 <a id="object-ownership"></a>
-## 7 Object Ownership
+## 8 Object Ownership
 
 ~~~json
 {"vibecode": {
@@ -307,7 +355,7 @@ they connect to the mikobase and interact with whatever is already there.
 ---
 
 <a id="class-hierarchy"></a>
-## 8 Class Hierarchy
+## 9 Class Hierarchy
 
 ~~~json
 {"vibecode": {
@@ -338,7 +386,7 @@ Charlie code interacts only with the `puck.uno/mikobase` interface and is unawar
 ---
 
 <a id="managed-mikobase-server-puckunomikobaseserver"></a>
-## 9 Managed Mikobase Server (`puck.uno/mikobase/server`)
+## 10 Managed Mikobase Server (`puck.uno/mikobase/server`)
 
 ~~~json
 {"vibecode": {
@@ -369,7 +417,7 @@ the block exits will cause the server to wait before shutting down.
 ---
 
 <a id="http-mikobase"></a>
-## 10 HTTP Mikobase
+## 11 HTTP Mikobase
 
 ~~~json
 {"vibecode": {
@@ -388,7 +436,7 @@ can serve a mikobase, and other Charlie processes — including forks from the o
 forking feature — can connect to it as a shared mikobase.
 
 <a id="unix-domain-sockets-preferred"></a>
-### 10.1 Unix Domain Sockets (preferred)
+### 11.1 Unix Domain Sockets (preferred)
 
 For local communication, Charlie steers developers toward Unix domain sockets. They use a
 file path instead of a port number, bypass the network stack entirely, and access is
@@ -401,7 +449,7 @@ $server.start
 ```
 
 <a id="tcp-for-network-access"></a>
-### 10.2 TCP (for network access)
+### 11.2 TCP (for network access)
 
 Port-based listening is supported when the mikobase needs to be reachable over a network:
 
@@ -414,7 +462,7 @@ Unix domain sockets are the default and recommended approach for local use. TCP 
 cases where remote access is explicitly needed.
 
 <a id="authentication"></a>
-### 10.3 Authentication
+### 11.3 Authentication
 
 The `auth:` parameter is required — there is no default. Three options:
 
@@ -454,14 +502,14 @@ $server = %puck['puck.uno/mikobase/http'].new(
 ```
 
 <a id="postable-updates"></a>
-### 10.4 POSTable Updates
+### 11.4 POSTable Updates
 
 `puck.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
 without opening a live connection. This is a distinct ingress mode — not a replacement
 for hot/cold connections or Q0, but a stateless path for depositing history entries.
 
 <a id="the-payload-is-a-worldlet"></a>
-#### 10.4.1 The payload is a worldlet
+#### 11.4.1 The payload is a worldlet
 
 The request body is a standard worldlet JSON object. A history-only worldlet is a valid
 payload. No new wire format is needed — the worldlet format already supports this.
@@ -483,7 +531,7 @@ Content-Type: application/json
 ```
 
 <a id="engine-behaviour-on-receipt"></a>
-#### 10.4.2 Engine behaviour on receipt
+#### 11.4.2 Engine behaviour on receipt
 
 1. Validate the worldlet shape and all UUID v4 constraints.
 2. For each history entry: skip if an identical entry already exists; reject if an entry
@@ -492,7 +540,7 @@ Content-Type: application/json
    reject the entire payload — no partial writes.
 
 <a id="response"></a>
-#### 10.4.3 Response
+#### 11.4.3 Response
 
 The response reports what happened to each entry:
 
@@ -505,14 +553,14 @@ The response reports what happened to each entry:
 ```
 
 <a id="authorization"></a>
-#### 10.4.4 Authorization
+#### 11.4.4 Authorization
 
 In v1, authorization is coarse-grained: either a caller may POST updates to this
 mikobase or it may not. The `post_updates` auth flag is set when configuring the server.
 Fine-grained per-class or per-record permissions are deferred to a future version.
 
 <a id="use-cases"></a>
-#### 10.4.5 Use cases
+#### 11.4.5 Use cases
 
 - **Worldlet deltas** — the natural format for AI-to-AI update exchanges
 - **Offline agents** — work from a snapshot, submit results later
@@ -523,7 +571,7 @@ Fine-grained per-class or per-record permissions are deferred to a future versio
 - **Audit-native APIs** — every integration call is already a history entry
 
 <a id="deferred"></a>
-#### 10.4.6 Deferred
+#### 11.4.6 Deferred
 
 Signatures, replay protection, timestamp authority, distributed merge, and fine-grained
 permissions are not part of v1.
@@ -531,7 +579,7 @@ permissions are not part of v1.
 ---
 
 <a id="hot-and-cold-connections"></a>
-## 11 Hot and Cold Connections
+## 12 Hot and Cold Connections
 
 ~~~json
 {"vibecode": {
@@ -545,7 +593,7 @@ Every connection to a mikobase is either **cold** (the default) or **hot**. The 
 at connection time and applies to all objects retrieved through that connection.
 
 <a id="cold-default"></a>
-### 11.1 Cold (default)
+### 12.1 Cold (default)
 
 A cold connection returns local copies of records. You fetch a record, work with it
 locally, and save it back explicitly:
@@ -562,7 +610,7 @@ Cold is the default because most database interaction is traditional, and accide
 using a cold connection is safe — you just work with a local copy.
 
 <a id="hot"></a>
-### 11.2 Hot
+### 12.2 Hot
 
 A hot connection returns live objects. Every read and write is a round trip to the mikobase,
 with locking applied automatically. There is no local copy and no explicit save:
@@ -578,7 +626,7 @@ Hot connections are the correct choice when multiple forks share a mikobase — 
 needs to be atomic and consistent across concurrent readers and writers.
 
 <a id="local-mikobases"></a>
-### 11.3 Local mikobases
+### 12.3 Local mikobases
 
 The same `hot:` parameter applies to local mikobases:
 
@@ -591,7 +639,7 @@ On a local mikobase, hot means every field access hits SQLite directly. Cold mea
 record into memory, work with it locally, save explicitly.
 
 <a id="multiple-connections-different-modes"></a>
-### 11.4 Multiple connections, different modes
+### 12.4 Multiple connections, different modes
 
 Two connections to the same mikobase can have different modes:
 
@@ -604,7 +652,7 @@ This is valid — for example, one hot connection for fork coordination and one 
 connection for bulk record processing.
 
 <a id="per-query-override"></a>
-### 11.5 Per-query override
+### 12.5 Per-query override
 
 The connection mode can be overridden on any individual query. The query-level setting
 takes precedence over the connection default:
@@ -620,7 +668,7 @@ $record = $mikobase.q0({...}, hot: false)
 ---
 
 <a id="locking"></a>
-## 12 Locking
+## 13 Locking
 
 ~~~json
 {"vibecode": {
@@ -642,7 +690,7 @@ automatically. There is no explicit lock/unlock API in normal usage.
 ---
 
 <a id="transactions"></a>
-## 13 Transactions
+## 14 Transactions
 
 ~~~json
 {"vibecode": {
@@ -663,7 +711,7 @@ Mikobases support transactions using the following model:
 ---
 
 <a id="bucket-in-the-mikobase"></a>
-## 14 `%bucket` in the Mikobase
+## 15 `%bucket` in the Mikobase
 
 ~~~json
 {"vibecode": {
@@ -691,7 +739,7 @@ end
 ---
 
 <a id="record-change-signals"></a>
-## 15 Record Change Signals
+## 16 Record Change Signals
 
 ~~~json
 {"vibecode": {
@@ -702,7 +750,7 @@ end
 ~~~
 
 <a id="listening-to-records"></a>
-### 15.1 Listening to records
+### 16.1 Listening to records
 
 A process can register listeners on the mikobase for specific records or Q0 queries:
 
@@ -735,7 +783,7 @@ $change.fields    # hash of changed fields: {field: {old:, new:}}
 ```
 
 <a id="before_save-and-after_save"></a>
-### 15.2 `before_save` and `after_save`
+### 16.2 `before_save` and `after_save`
 
 **`:before_save`** fires within the transaction, before the commit. If the handler raises
 an error, the entire transaction is rolled back. This is the mechanism for enforcing
@@ -746,7 +794,7 @@ cancelled. This is the mechanism for side effects — notifications, derived rec
 background work.
 
 <a id="signals-stay-within-the-mikobase"></a>
-### 15.3 Signals stay within the mikobase
+### 16.3 Signals stay within the mikobase
 
 By default, `:before_save` signals are dispatched within the mikobase process only. They are
 not forwarded over the network to remote clients. This is intentional — a network round
@@ -757,7 +805,7 @@ validate on the client side before saving, or to register `:before_save` handler
 part of the mikobase server's own setup code.
 
 <a id="listener-matching"></a>
-### 15.4 Listener matching
+### 16.4 Listener matching
 
 A listener fires when the record being saved matches its target:
 
@@ -766,7 +814,7 @@ A listener fires when the record being saved matches its target:
   applied. This includes records transitioning into the match set.
 
 <a id="future-remote-validation"></a>
-### 15.5 Future: remote validation
+### 16.5 Future: remote validation
 
 The current design puts remote validation responsibility on the developer. 
 A future addition could provide a structured layer on top of `:before_save` signals — a declarative way to attach remote validation to the :before_save process.
@@ -774,7 +822,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 ---
 
 <a id="packaged-mikobases"></a>
-## 16 Packaged Mikobases
+## 17 Packaged Mikobases
 
 ~~~json
 {"vibecode": {
@@ -786,7 +834,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 ~~~
 
 <a id="worldlets"></a>
-### 16.1 Worldlets
+### 17.1 Worldlets
 
 A **worldlet** is the marketing name for a packaged mikobase. The technical concept and
 implementation are always referred to as a "packaged mikobase" in internal documentation
@@ -814,8 +862,8 @@ Traditional systems separate code, data, APIs, and runtime. A packaged mikobase 
 A library says: "here are functions you can call."
 A packaged mikobase says: "here is a functioning object ecosystem you can import."
 
-<a id="contents"></a>
-### 16.2 Contents
+<a id="contents-1"></a>
+### 17.2 Contents
 
 A packaged mikobase may include:
 
@@ -832,7 +880,7 @@ unique namespace automatically. A mikobase published by `borg.com` installs clas
 `borg.com/character`, `borg.com/ship`, etc. No registration required, no collision possible.
 
 <a id="format"></a>
-### 16.3 Format
+### 17.3 Format
 
 A packaged mikobase is a single file. The format is not yet defined in detail, but the
 contents are:
@@ -844,7 +892,7 @@ contents are:
 The format design should happen alongside the CharlieJSON format discussion.
 
 <a id="capabilities-manifest"></a>
-### 16.4 Capabilities Manifest
+### 17.4 Capabilities Manifest
 
 A packaged mikobase declares what it needs before it is installed. The host asks the user to
 approve these capabilities explicitly — nothing is granted silently.
@@ -864,7 +912,7 @@ essentially an upfront jail configuration — the mikobase runs with only the pe
 it declared. Undeclared capabilities are unavailable.
 
 <a id="lifecycle"></a>
-### 16.5 Lifecycle
+### 17.5 Lifecycle
 
 ```
 Author packages mikobase
@@ -888,7 +936,7 @@ send packaged mikobase → remote mikobase → execute → return result
 ```
 
 <a id="use-cases-1"></a>
-### 16.6 Use Cases
+### 17.6 Use Cases
 
 **Open-source object systems** — publish a mikobase the way you publish a library.
 Anyone who imports it gets the full schema and behavior, not just a data dump.
@@ -906,7 +954,7 @@ there, and get a result back. The computation travels with its data.
 notebook. Publish a mikobase; others install a working system, not a blank schema.
 
 <a id="what-is-not-yet-designed"></a>
-### 16.7 What Is Not Yet Designed
+### 17.7 What Is Not Yet Designed
 
 - The packaged mikobase file format (depends on CharlieJSON format design)
 - The capabilities manifest syntax and enforcement mechanism

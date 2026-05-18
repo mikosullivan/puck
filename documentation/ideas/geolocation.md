@@ -14,15 +14,38 @@ in as the design develops.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+  - [Remote-first service pattern](#remote-first-service-pattern)
+  - [Coordinates](#coordinates)
+  - [Remote call semantics](#remote-call-semantics)
+- [OSM Stewardship](#osm-stewardship)
+- [Services](#services)
+  - [General pattern: everything returned is a Puck object](#general-pattern-everything-returned-is-a-puck-object)
+  - [`$geo.address`](#geoaddress)
+  - [`$geo.distance_to`](#geodistance_to)
+  - [`$geo.postal_code`](#geopostal_code)
+  - [`$geo.census`](#geocensus)
+  - [Map and Navigator](#map-and-navigator)
+  - [Maps (existing detail — pending reorganization)](#maps-existing-detail-pending-reorganization)
+  - [Configuration properties](#configuration-properties)
+  - [Feature properties](#feature-properties)
+  - [`$geo.businesses`](#geobusinesses)
+- [Open Questions](#open-questions)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 One of the Puck-provided services available at puck.uno launch will
 be **`puck.uno/geo`** — a geolocation service in the `puck.uno`
 namespace.
 
 <a id="remote-first-service-pattern"></a>
-### 1.1 Remote-first service pattern
+### 2.1 Remote-first service pattern
 
 `puck.uno/geo` is intended as an **example of a class that is only used
 remotely**. There is very little Charlie in the class definition; all
@@ -40,7 +63,7 @@ own remote-first services can use it as a template for what a
 remote-only class looks like in Charlie.
 
 <a id="coordinates"></a>
-### 1.2 Coordinates
+### 2.2 Coordinates
 
 A geo instance carries three coordinate fields:
 
@@ -50,7 +73,7 @@ A geo instance carries three coordinate fields:
   but mostly ignored in practice by current methods.
 
 <a id="remote-call-semantics"></a>
-### 1.3 Remote call semantics
+### 2.3 Remote call semantics
 
 Standard Puck remote-call mechanics apply (see [puck.md](../puck/puck.md)):
 
@@ -68,7 +91,7 @@ Standard Puck remote-call mechanics apply (see [puck.md](../puck/puck.md)):
 ---
 
 <a id="osm-stewardship"></a>
-## 2 OSM Stewardship
+## 3 OSM Stewardship
 
 The geo service is built on top of OpenStreetMap's freely-available
 data and services (Nominatim for geocoding, Overpass for tag queries).
@@ -139,7 +162,7 @@ see it more than once per cache TTL. That's the whole architecture
 ---
 
 <a id="services"></a>
-## 3 Services
+## 4 Services
 
 Methods on a `puck.uno/geo` instance are remote calls that compute
 location-derived information from the instance's `lat`/`long`/`alt`.
@@ -147,7 +170,7 @@ The puck.uno server holds the implementations, the data sources, and
 the caches. This section catalogs the services as they get spec'd.
 
 <a id="general-pattern-everything-returned-is-a-puck-object"></a>
-### 3.1 General pattern: everything returned is a Puck object
+### 4.1 General pattern: everything returned is a Puck object
 
 **Anything a `puck.uno/geo` method returns is itself a Puck
 remote-first object.** Addresses, business listings, census handles —
@@ -178,13 +201,13 @@ as latency: the first call to a lazy method has a round-trip cost
 the eager fields don't.
 
 <a id="geoaddress"></a>
-### 3.2 `$geo.address`
+### 4.2 `$geo.address`
 
 Returns the best-guess street address for the geo instance's
 coordinates.
 
 <a id="data-source"></a>
-#### 3.2.1 Data source
+#### 4.2.1 Data source
 
 [Nominatim](https://nominatim.openstreetmap.org/), OpenStreetMap's
 official geocoding service. We prefer OSM over Google or other
@@ -200,7 +223,7 @@ address string), a structured `address` sub-object with components
 and metadata like `place_rank` and `osm_id`.
 
 <a id="call-flow"></a>
-#### 3.2.2 Call flow
+#### 4.2.2 Call flow
 
 1. Client calls `$geo.address`. The local stub sends the entire `$geo`
    object to the puck.uno server via `%puck.call` (per standard
@@ -215,7 +238,7 @@ and metadata like `place_rank` and `osm_id`.
 5. The server returns a structured **address object** to the client.
 
 <a id="return-shape"></a>
-#### 3.2.3 Return shape
+#### 4.2.3 Return shape
 
 A structured address object, not a bare string. Both forms are
 available:
@@ -237,7 +260,7 @@ callers branch on whether the field is meaningfully absent vs. just
 missing data.
 
 <a id="error-cases"></a>
-#### 3.2.4 Error cases
+#### 4.2.4 Error cases
 
 - **No address at this coordinate** (middle of an ocean, etc.): the
   call returns a null with flavor
@@ -251,7 +274,7 @@ missing data.
   programming error, not a service issue.
 
 <a id="granularity-shortcuts"></a>
-#### 3.2.5 Granularity shortcuts
+#### 4.2.5 Granularity shortcuts
 
 The same cached OSM response backs several common-case projections,
 each its own method on the geo instance. Cheap once the address is
@@ -268,7 +291,7 @@ cached (no extra OSM request):
   directly, but the data bundle does)
 
 <a id="geodistance_to"></a>
-### 3.3 `$geo.distance_to`
+### 4.3 `$geo.distance_to`
 
 Returns the **linear (haversine) distance** between two geo points,
 in meters.
@@ -287,7 +310,7 @@ For real driving distance / time / turn-by-turn directions, see the
 navigation service below (separate topic).
 
 <a id="geopostal_code"></a>
-### 3.4 `$geo.postal_code`
+### 4.4 `$geo.postal_code`
 
 Returns the local postal code string for the geo instance's
 coordinates. Backed by the same cached Nominatim response as
@@ -320,7 +343,7 @@ fares in markets that price that way, and cross-checking
 rider-supplied addresses.
 
 <a id="geocensus"></a>
-### 3.5 `$geo.census`
+### 4.5 `$geo.census`
 
 Returns a `puck.uno/geo/census` object — a **very light handle**
 representing the census geography that contains the geo instance's
@@ -329,7 +352,7 @@ coordinates. The handle itself holds just enough to identify the area
 data is fetched via remote methods on the object.
 
 <a id="data-sources"></a>
-#### 3.5.1 Data sources
+#### 4.5.1 Data sources
 
 - **United States:** the [US Census Bureau](https://www.census.gov/data/developers.html)
   APIs.
@@ -348,7 +371,7 @@ data is fetched via remote methods on the object.
   `puck.uno/null/flavor/not_implemented`.
 
 <a id="geographic-granularity-us"></a>
-#### 3.5.2 Geographic granularity (US)
+#### 4.5.2 Geographic granularity (US)
 
 Census data is reported at hierarchical levels:
 
@@ -366,7 +389,7 @@ target whichever level the caller wants. **Tract is the default
 analytical level** — most data and most use cases land there.
 
 <a id="call-flow-1"></a>
-#### 3.5.3 Call flow
+#### 4.5.3 Call flow
 
 1. Client calls `$geo.census`. Client sends the geo instance to
    puck.uno.
@@ -378,7 +401,7 @@ analytical level** — most data and most use cases land there.
    data is fetched yet.**
 
 <a id="handle-contents"></a>
-#### 3.5.4 Handle contents
+#### 4.5.4 Handle contents
 
 The local instance carries only enough to identify the area:
 
@@ -390,7 +413,7 @@ $census.geography_ids     # hash: { block: ..., tract: ..., county: ..., state: 
 That's essentially it. Everything else is a remote method.
 
 <a id="remote-methods-on-puckunogeocensus"></a>
-#### 3.5.5 Remote methods on `puck.uno/geo/census`
+#### 4.5.5 Remote methods on `puck.uno/geo/census`
 
 The full method catalog is its own spec, but the shape is:
 
@@ -415,7 +438,7 @@ warrant it (e.g., a `puck.uno/geo/census/boundary` for the area's
 geometric outline); that's per-method.
 
 <a id="caching"></a>
-#### 3.5.6 Caching
+#### 4.5.6 Caching
 
 The geocoder result (coords → census IDs) caches with a long TTL
 (~90 days) — census geography is very stable.
@@ -427,7 +450,7 @@ Aggressive caching plus the per-stat lazy fetch keeps the load on
 Census Bureau APIs manageable and respects their rate limits.
 
 <a id="privacy-posture"></a>
-#### 3.5.7 Privacy posture
+#### 4.5.7 Privacy posture
 
 Same model as other geo services:
 
@@ -438,7 +461,7 @@ Same model as other geo services:
   same operational discretion.
 
 <a id="why-lightweight"></a>
-#### 3.5.8 Why lightweight
+#### 4.5.8 Why lightweight
 
 Demographic data is large in aggregate (potentially dozens of fields
 per area, plus historical years). Most callers want one or two
@@ -451,7 +474,7 @@ This is the same reasoning that applies to any Puck service handle
 representing a large or structured remote dataset.
 
 <a id="map-and-navigator"></a>
-### 3.6 Map and Navigator
+### 4.6 Map and Navigator
 
 The map system splits into **two services**:
 
@@ -469,7 +492,7 @@ it's a map property. If it's a button, voice line, or other thing
 *around* the map, it's a navigator property.**
 
 <a id="example-configuring-a-navigator"></a>
-#### 3.6.1 Example: configuring a navigator
+#### 4.6.1 Example: configuring a navigator
 
 ```
 $navigator = %['puck.uno/geo/navigator'].new()
@@ -496,7 +519,7 @@ $html = $navigator.html
 ```
 
 <a id="the-ambiguous-pair-rule"></a>
-#### 3.6.2 The ambiguous-pair rule
+#### 4.6.2 The ambiguous-pair rule
 
 Some concepts have both a *state* and a *control* aspect — day/night
 is the canonical example.
@@ -511,7 +534,7 @@ is still set; the state can be changed programmatically without the
 button being present.
 
 <a id="map-mode"></a>
-#### 3.6.3 Map mode
+#### 4.6.3 Map mode
 
 The map renders in one of three modes, settable via `$map.mode`:
 
@@ -548,7 +571,7 @@ properties (`view` for flat/perspective, `orientation` for
 north_up/heading_up). Three-way single selector is simpler.
 
 <a id="standalone-map-use"></a>
-#### 3.6.4 Standalone map use
+#### 4.6.4 Standalone map use
 
 If you just want to embed a map without any of the navigator
 chrome, instantiate `puck.uno/geo/map` directly:
@@ -565,7 +588,7 @@ cases — articles, dashboards, anywhere the surrounding UI is the
 developer's job.
 
 <a id="curated-styles-and-skins"></a>
-#### 3.6.5 Curated styles and skins
+#### 4.6.5 Curated styles and skins
 
 puck.uno hosts a **curated set of popular styles and skins** for
 the map system — not a general repository, but more than just one
@@ -588,7 +611,7 @@ are referenced like any other URL in `$map.styles`,
 they want or roll their own.
 
 <a id="document-reorganization-pending"></a>
-#### 3.6.6 Document reorganization pending
+#### 4.6.6 Document reorganization pending
 
 Much of the existing detail below this section currently treats
 everything as `$map.X`. Per the split above, the property surface
@@ -600,7 +623,7 @@ mentally route it.
 ---
 
 <a id="maps-existing-detail-pending-reorganization"></a>
-### 3.7 Maps (existing detail — pending reorganization)
+### 4.7 Maps (existing detail — pending reorganization)
 
 A `puck.uno/geo/map` represents a rectangular geographic region —
 the primitive for map services (embedding, tile retrieval, etc.).
@@ -609,14 +632,14 @@ are out of scope for now; the bounding-box rectangle is the canonical
 primitive.
 
 <a id="definition-two-opposite-corners"></a>
-#### 3.7.1 Definition: two opposite corners
+#### 4.7.1 Definition: two opposite corners
 
 A map is defined by **two opposite corner coordinates**. The canonical
 convention is **northwest (NW) and southeast (SE)** — top-left and
 bottom-right of the rectangle as drawn with north up.
 
 <a id="liberal-corner-pair-handling"></a>
-#### 3.7.2 Liberal corner-pair handling
+#### 4.7.2 Liberal corner-pair handling
 
 The service is liberal in what it accepts. Callers can pass **any two
 opposite corners** — NW/SE, NE/SW, or even in either order — and the
@@ -636,7 +659,7 @@ Funny-shaped regions (non-rectangular outlines) are a separate topic
 and not in scope here.
 
 <a id="configurable-properties"></a>
-#### 3.7.3 Configurable properties
+#### 4.7.3 Configurable properties
 
 A map object holds more than just its NW/SE corners. Two kinds of
 properties live on a map: **configuration properties** that take
@@ -653,7 +676,7 @@ on. **User-preference defaults are TBD** and will get sorted out
 during a separate pass.
 
 <a id="configuration-properties"></a>
-### 3.8 Configuration properties
+### 4.8 Configuration properties
 
 ```
 $map.iconset = 'puck.uno/iconset'
@@ -922,7 +945,7 @@ configurable properties accumulate, the per-call payload grows. Not
 a problem yet; worth noting so the design doesn't drift into bloat.
 
 <a id="embedding-posture-csp-friendly"></a>
-#### 3.8.1 Embedding posture: CSP-friendly
+#### 4.8.1 Embedding posture: CSP-friendly
 
 When map services emit HTML for embedding (iframes, image tags, or
 anything that references remote resources at render time), the
@@ -934,7 +957,7 @@ the service provides the information needed to construct a
 Consumers can use that info or not — but it's always provided.
 
 <a id="mapimage_url"></a>
-#### 3.8.2 `$map.image_url`
+#### 4.8.2 `$map.image_url`
 
 Returns a URL pointing to puck.uno's static-map service. The
 developer plops it directly into `<img src="...">` and is done — no
@@ -977,7 +1000,7 @@ adding `img-src https://puck.uno` to a site's CSP is what's needed
 to allow the embed.
 
 <a id="maphtml"></a>
-#### 3.8.3 `$map.html`
+#### 4.8.3 `$map.html`
 
 Returns HTML for an **entire map-driven interface** — not just a map.
 The HTML includes the map tile area plus all the controls associated
@@ -1003,7 +1026,7 @@ loads puck.uno's map library (registers the custom elements);
 each `<puck-map-interface>` tag becomes a fully-functional map UI.
 
 <a id="controls-are-not-overlaid-on-the-map-by-default"></a>
-##### 3.8.3.1 Controls are NOT overlaid on the map (by default)
+##### 4.8.3.1 Controls are NOT overlaid on the map (by default)
 
 A deliberate design choice: in the factory skin, controls (orientation
 toggle, navigation input, layer selector, etc.) live in their own
@@ -1021,7 +1044,7 @@ including overlay-style placements if they prefer that look. The
 factory skin's no-overlay layout is a default opinion, not a hard rule.
 
 <a id="skins"></a>
-##### 3.8.3.2 Skins
+##### 4.8.3.2 Skins
 
 The map interface is **skinnable from the ground up**. The HTML
 returned by `$map.html` follows a skin — by default, a factory skin
@@ -1134,7 +1157,7 @@ the rendered DOM. Treats every feature uniformly; no special-case
 exceptions.
 
 <a id="why-skins-from-day-one"></a>
-##### 3.8.3.3 Why skins from day one
+##### 4.8.3.3 Why skins from day one
 
 It's almost as easy to support skins as to not. The library has to
 find the map area, the controls, etc. anyway; making the layout itself
@@ -1148,7 +1171,7 @@ every remote call. Modest skins are fine; gigantic ones bloat each
 call. Same payload caution as `styles`.
 
 <a id="feature-properties"></a>
-### 3.9 Feature properties
+### 4.9 Feature properties
 
 Each candidate button or feature has its own boolean property on the
 map. The rule is universal:
@@ -1234,7 +1257,7 @@ feature appear; a property at `false` causes the slot's element to
 be stripped out of the rendered DOM entirely.
 
 <a id="why-not-iframe-anymore"></a>
-##### 3.9.0.1 Why not iframe (anymore)
+##### 4.9.0.1 Why not iframe (anymore)
 
 Earlier drafts of this spec used an iframe form. Iframes give strong
 isolation, but they make it harder for the rest of the app to talk
@@ -1251,7 +1274,7 @@ iframe just the permissions it needs to interact with its parent
 in scope for v1; noted here so the option isn't forgotten.
 
 <a id="data-flow"></a>
-##### 3.9.0.2 Data flow
+##### 4.9.0.2 Data flow
 
 puck.uno serves the script and the map library; the library runs in
 the parent page's DOM. **Map tiles are fetched by the end user's
@@ -1259,7 +1282,7 @@ browser directly from OSM tile servers**, not proxied through
 puck.uno — per the stewardship policy above.
 
 <a id="csp"></a>
-##### 3.9.0.3 CSP
+##### 4.9.0.3 CSP
 
 The parent site adds `script-src https://puck.uno` (for the loader)
 and `img-src https://*.tile.openstreetmap.org` (or wherever the map
@@ -1271,14 +1294,14 @@ Per the [ecoverse CSP policy](../charlie/csp.md), `$map.html` makes the CSP
 info available alongside the HTML — exact bundling format TBD.
 
 <a id="privacy-and-osm-stewardship"></a>
-##### 3.9.0.4 Privacy and OSM stewardship
+##### 4.9.0.4 Privacy and OSM stewardship
 
 Same as elsewhere in this doc: no per-user logging of coordinates,
 coord-coarsened cache keys, attribution to OSM in the rendered map
 UI, rate-limited tile fetches from OSM servers.
 
 <a id="communication-with-the-rest-of-the-app"></a>
-##### 3.9.0.5 Communication with the rest of the app
+##### 4.9.0.5 Communication with the rest of the app
 
 Since the map is in the parent page's DOM, the parent app's JS can
 do all the obvious things directly:
@@ -1295,7 +1318,7 @@ the map library's documented JS API — to be spec'd separately as
 that surface develops.
 
 <a id="locale-aware-formatting"></a>
-#### 3.9.1 Locale-aware formatting
+#### 4.9.1 Locale-aware formatting
 
 `display_name` is OSM's locale-neutral format. Optional formatting
 based on country and requested locale:
@@ -1309,7 +1332,7 @@ The server reformats from the structured fields per the requested
 locale's conventions.
 
 <a id="confidence-and-provenance"></a>
-#### 3.9.2 Confidence and provenance
+#### 4.9.2 Confidence and provenance
 
 The address object exposes:
 
@@ -1320,7 +1343,7 @@ The address object exposes:
   follow up with deeper OSM queries against the same record.
 
 <a id="multiple-candidates"></a>
-#### 3.9.3 Multiple candidates
+#### 4.9.3 Multiple candidates
 
 Sometimes a lat/long sits near a boundary or in a complex area. The
 primary `$geo.address` returns the best single match. For ambiguous
@@ -1328,7 +1351,7 @@ cases, `$geo.candidates` returns a list of plausible matches with the
 primary first.
 
 <a id="privacy-posture-1"></a>
-#### 3.9.4 Privacy posture
+#### 4.9.4 Privacy posture
 
 The puck.uno server sees every coordinate every client looks up. The
 operating commitment:
@@ -1348,7 +1371,7 @@ trusting that operational data isn't retained beyond what's needed for
 the service to function.
 
 <a id="geobusinesses"></a>
-### 3.10 `$geo.businesses`
+### 4.10 `$geo.businesses`
 
 Returns nearby businesses around the geo instance's coordinates, sorted
 by distance.
@@ -1361,7 +1384,7 @@ them (drive-thru filters, open-now-as-default, walking-time prominence,
 etc.).
 
 <a id="data-source-1"></a>
-#### 3.10.1 Data source
+#### 4.10.1 Data source
 
 OSM's [Overpass API](https://overpass-api.de/), which lets us query OSM
 tags within a radius of a point. The relevant OSM tag families for
@@ -1388,7 +1411,7 @@ out;
 ```
 
 <a id="call-signature"></a>
-#### 3.10.2 Call signature
+#### 4.10.2 Call signature
 
 ```
 $geo.businesses                              # 100 m radius default
@@ -1399,7 +1422,7 @@ $geo.businesses(radius: 250, limit: 10)      # cap result count
 ```
 
 <a id="return-shape-1"></a>
-#### 3.10.3 Return shape
+#### 4.10.3 Return shape
 
 A list of **`puck.uno/geo/business`** objects, **sorted by distance
 from the query point** (closest first). Each is a remote-first Puck
@@ -1437,7 +1460,7 @@ Sorted-by-distance default is non-negotiable for the driver use case:
 you want the closest thing first.
 
 <a id="server-side-caching"></a>
-#### 3.10.4 Server-side caching
+#### 4.10.4 Server-side caching
 
 Businesses change slowly (weeks to months for openings/closings).
 Aggressive cache:
@@ -1456,7 +1479,7 @@ caching plus a self-rate-limit on the puck.uno side, we stay under
 their threshold. If volume warrants, self-host an Overpass instance.
 
 <a id="driver-life-category-shortcuts"></a>
-#### 3.10.5 Driver-life category shortcuts
+#### 4.10.5 Driver-life category shortcuts
 
 Heavy-use categories get their own one-liner methods on the geo
 instance, each preset on top of `businesses`:
@@ -1476,7 +1499,7 @@ Each maps internally to one or more OSM categories with the right
 defaults. Drivers don't have to remember which OSM tag means what.
 
 <a id="drive-thru-filter"></a>
-#### 3.10.6 Drive-thru filter
+#### 4.10.6 Drive-thru filter
 
 A driver between rides can't easily park. `drive_thru:` restricts to
 drive-thru-capable businesses:
@@ -1490,7 +1513,7 @@ Worth its weight in gold to a driver. From OSM's `drive_through=yes`
 tag.
 
 <a id="default-behavior-on-category-shortcuts"></a>
-#### 3.10.7 Default behavior on category shortcuts
+#### 4.10.7 Default behavior on category shortcuts
 
 For driver-life shortcuts (`food`, `coffee`, `gas`, etc.), **`open_now`
 defaults to `true`**. A 24-hour gas station vs. one that closed at 11
@@ -1499,7 +1522,7 @@ form doesn't filter unless asked, but the convenience shortcuts assume
 "I want one right now."
 
 <a id="walking-time"></a>
-#### 3.10.8 Walking time
+#### 4.10.8 Walking time
 
 "100 meters" is abstract; "1 minute walk" is actionable. The business
 object surfaces `walking_time` prominently (`distance / ~80 m/min` as
@@ -1507,7 +1530,7 @@ the standard walking-pace estimate). Distance stays in the response
 for callers who want it, but walking_time is the human-readable form.
 
 <a id="pickup-verification"></a>
-#### 3.10.9 Pickup verification
+#### 4.10.9 Pickup verification
 
 When a driver gets a pickup address, calling `$geo.businesses(radius:
 30)` on the destination coords surfaces what's actually there:
@@ -1518,7 +1541,7 @@ When a driver gets a pickup address, calling `$geo.businesses(radius:
 Cheap sanity check before driving over.
 
 <a id="grouped-response-option"></a>
-#### 3.10.10 Grouped response option
+#### 4.10.10 Grouped response option
 
 Instead of one flat list, an alternative shape buckets by category:
 
@@ -1533,7 +1556,7 @@ Useful when a driver is scanning options across categories rather than
 picking one.
 
 <a id="closes_in-for-filtered-results"></a>
-#### 3.10.11 `closes_in` for filtered results
+#### 4.10.11 `closes_in` for filtered results
 
 For `open_now`-filtered results, a business that closes in 10 minutes
 is materially different from one open until 2 AM. Each business
@@ -1541,7 +1564,7 @@ carries a `closes_in` field — a duration (null for 24h places). A
 driver can see at a glance "this place is open but closing soon."
 
 <a id="coverage-indicator"></a>
-#### 3.10.12 Coverage indicator
+#### 4.10.12 Coverage indicator
 
 OSM coverage varies wildly by region. The response includes a
 `coverage` indicator so callers know whether an empty result means
@@ -1555,7 +1578,7 @@ Computed server-side from the density of OSM features in the queried
 area.
 
 <a id="privacy-posture-2"></a>
-#### 3.10.13 Privacy posture
+#### 4.10.13 Privacy posture
 
 Same operational commitment as `$geo.address`: no raw-coord logging,
 coord-keyed cache (not user-keyed), no retention beyond cache TTL.
@@ -1565,6 +1588,6 @@ stays opaque — only cache hit/miss counts in coarsened-coord buckets.
 ---
 
 <a id="open-questions"></a>
-## 4 Open Questions
+## 5 Open Questions
 
 (To be filled in.)

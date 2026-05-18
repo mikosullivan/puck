@@ -23,8 +23,36 @@ follows the role model described here.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Motivation](#motivation)
+- [Core Concept](#core-concept)
+- [The `%role` System Method](#the-role-system-method)
+- [Engine Startup: Initial Roles](#engine-startup-initial-roles)
+- [Role Transitions](#role-transitions)
+- [What Is NOT Checked at a Boundary](#what-is-not-checked-at-a-boundary)
+- [`%chain.isolate do ... end`](#chainisolate-do-end)
+- [Exceptions and Alarms](#exceptions-and-alarms)
+- [How Objects Get Their Owning Role](#how-objects-get-their-owning-role)
+- [Faucets](#faucets)
+  - [Filesystem: dirjails](#filesystem-dirjails)
+  - [Other faucets](#other-faucets)
+- [Cross-Role Trust](#cross-role-trust)
+- [Open Questions](#open-questions)
+  - [Cross-role trust mechanics](#cross-role-trust-mechanics)
+  - [Owning-role propagation](#owning-role-propagation)
+  - [Granularity of source-derived roles](#granularity-of-source-derived-roles)
+  - [Role lifecycle](#role-lifecycle)
+  - [Interaction with existing mechanisms](#interaction-with-existing-mechanisms)
+  - [Sink-side security](#sink-side-security)
+  - [Default trust setup at startup](#default-trust-setup-at-startup)
+- [Related Documents](#related-documents)
+
+---
+
 <a id="motivation"></a>
-## 1 Motivation
+## 2 Motivation
 
 The previous model classified every value and every running function as
 either *trusted* or *untrusted*, based on its source. The model worked but
@@ -45,7 +73,7 @@ own role, and cross-role interaction is the security-relevant event.
 ---
 
 <a id="core-concept"></a>
-## 2 Core Concept
+## 3 Core Concept
 
 ~~~json
 {"vibecode": {
@@ -72,7 +100,7 @@ each role on its own terms.
 ---
 
 <a id="the-role-system-method"></a>
-## 3 The `%role` System Method
+## 4 The `%role` System Method
 
 ~~~json
 {"vibecode": {
@@ -93,7 +121,7 @@ $current = %role    # the role currently in effect
 ---
 
 <a id="engine-startup-initial-roles"></a>
-## 4 Engine Startup: Initial Roles
+## 5 Engine Startup: Initial Roles
 
 ~~~json
 {"vibecode": {
@@ -137,7 +165,7 @@ reference syntax is TBD.
 ---
 
 <a id="role-transitions"></a>
-## 5 Role Transitions
+## 6 Role Transitions
 
 ~~~json
 {"vibecode": {
@@ -177,7 +205,7 @@ lifetime; A doesn't lose state because it called B.
 ---
 
 <a id="what-is-not-checked-at-a-boundary"></a>
-## 6 What Is NOT Checked at a Boundary
+## 7 What Is NOT Checked at a Boundary
 
 ~~~json
 {"vibecode": {
@@ -228,7 +256,7 @@ the narrowing easy.
 ---
 
 <a id="chainisolate-do-end"></a>
-## 7 `%chain.isolate do ... end`
+## 8 `%chain.isolate do ... end`
 
 ~~~json
 {"vibecode": {
@@ -283,7 +311,7 @@ another function.
 ---
 
 <a id="exceptions-and-alarms"></a>
-## 8 Exceptions and Alarms
+## 9 Exceptions and Alarms
 
 ~~~json
 {"vibecode": {
@@ -334,7 +362,7 @@ revisitation.
 ---
 
 <a id="how-objects-get-their-owning-role"></a>
-## 9 How Objects Get Their Owning Role
+## 10 How Objects Get Their Owning Role
 
 ~~~json
 {"vibecode": {
@@ -370,7 +398,7 @@ value; it doesn't change because the value's location changed.
 ---
 
 <a id="faucets"></a>
-## 10 Faucets
+## 11 Faucets
 
 ~~~json
 {"vibecode": {
@@ -405,7 +433,7 @@ are owned by role-D — not by `user`. User-role code can *hold* the
 values but doesn't *own* them.
 
 <a id="filesystem-dirjails"></a>
-### 10.1 Filesystem: dirjails
+### 11.1 Filesystem: dirjails
 
 ~~~json
 {"vibecode": {
@@ -459,7 +487,7 @@ in `hsa` while "what it's connected to" lives in `relationships`. The
 role model uses the same structural split.)
 
 <a id="other-faucets"></a>
-### 10.2 Other faucets
+### 11.2 Other faucets
 
 The model extends naturally to other faucet kinds. The same baseline
 rule applies: **engine-supplied, has its own distinct role, data pulled
@@ -488,7 +516,7 @@ through it inherits that role**.
 ---
 
 <a id="cross-role-trust"></a>
-## 11 Cross-Role Trust
+## 12 Cross-Role Trust
 
 ~~~json
 {"vibecode": {
@@ -517,13 +545,13 @@ revocation, runtime adjustability.
 ---
 
 <a id="open-questions"></a>
-## 12 Open Questions
+## 13 Open Questions
 
 The model is solid enough to adopt; these are refinements within an
 established framework, not blockers.
 
 <a id="cross-role-trust-mechanics"></a>
-### 12.1 Cross-role trust mechanics
+### 13.1 Cross-role trust mechanics
 
 - Syntax for declaring "role A trusts role B."
 - Where the declaration lives — in the role's definition, in `%chain`,
@@ -535,7 +563,7 @@ established framework, not blockers.
 - Revocation and scoping — can trust be temporary (block-scoped)?
 
 <a id="owning-role-propagation"></a>
-### 12.2 Owning-role propagation
+### 13.2 Owning-role propagation
 
 - When a value owned by role D is used to produce a derived value (a
   substring, a hash containing it, a function-of-it), does the derived
@@ -545,7 +573,7 @@ established framework, not blockers.
   aligning rather than designing in parallel.
 
 <a id="granularity-of-source-derived-roles"></a>
-### 12.3 Granularity of source-derived roles
+### 13.3 Granularity of source-derived roles
 
 - One role per database? Per connection? Per query? Per record?
 - Same question for network sources, file sources, etc.
@@ -565,7 +593,7 @@ meaningful security properties. Candidate consolidations:
 - Engine-supplied capabilities → one `puck` (or `engine`) role.
 
 <a id="role-lifecycle"></a>
-### 12.4 Role lifecycle
+### 13.4 Role lifecycle
 
 - When a source becomes unreachable (db disconnected, endpoint deleted),
   what happens to its role?
@@ -574,7 +602,7 @@ meaningful security properties. Candidate consolidations:
   the values owned by such a role might be stored across restarts.
 
 <a id="interaction-with-existing-mechanisms"></a>
-### 12.5 Interaction with existing mechanisms
+### 13.5 Interaction with existing mechanisms
 
 - Jail permissions (filesystem read/write/execute) — roles cover the
   "who can do this" question; jails cover the "what bounded scope"
@@ -587,7 +615,7 @@ meaningful security properties. Candidate consolidations:
   A's trust of B.
 
 <a id="sink-side-security"></a>
-### 12.6 Sink-side security
+### 13.6 Sink-side security
 
 The model so far focuses on what comes *in* through faucets (role-tagging
 of pulled values, source-side semantics). The sink side — sending
@@ -604,7 +632,7 @@ information *out* — has its own implications:
 To explore in a future round.
 
 <a id="default-trust-setup-at-startup"></a>
-### 12.7 Default trust setup at startup
+### 13.7 Default trust setup at startup
 
 - Does the engine establish any default trust at boot — e.g., `user`
   trusts the stdlib's role, or trusts certain built-in capability
@@ -614,7 +642,7 @@ To explore in a future round.
 ---
 
 <a id="related-documents"></a>
-## 13 Related Documents
+## 14 Related Documents
 
 - [puck.md](../puck/puck.md) — the puck object model, which builds on role
   concepts (per-getter roles, version windows, etc.).

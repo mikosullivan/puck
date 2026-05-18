@@ -27,7 +27,8 @@ This repository is the working source: design docs, the engine in progress, test
 
 ## Lightweight
 
-Puck is kept under **1 MB** — engine, standard library, and docs all together. That's less than would fit on an old 3.5" floppy disk (1.44 MB).
+Puck is kept under **1 MB** — engine, standard library, and docs all together. That
+would fit on an old 3.5" floppy disk with room to spare.
 
 ## The Puck community
 

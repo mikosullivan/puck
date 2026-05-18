@@ -27,8 +27,58 @@ Both humans and AI systems can read this document directly.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Mikobase](#mikobase)
+  - [Concurrency Model](#concurrency-model)
+  - [Worldlets (Packaged Mikobases)](#worldlets-packaged-mikobases)
+- [Q0](#q0)
+  - [Actions](#actions)
+  - [Select](#select)
+  - [Narrowing](#narrowing)
+  - [Path Operators](#path-operators)
+  - [Placeholders](#placeholders)
+  - [Create](#create)
+  - [Update](#update)
+  - [Delete](#delete)
+  - [Responses](#responses)
+  - [Error IDs](#error-ids)
+- [Worldlet JSON Format](#worldlet-json-format)
+  - [Top-Level Structure](#top-level-structure)
+  - [meta](#meta)
+  - [properties](#properties)
+  - [allow](#allow)
+  - [classes](#classes)
+  - [records](#records)
+  - [history](#history)
+  - [files](#files)
+  - [file_chunks](#file_chunks)
+  - [Import Rules](#import-rules)
+- [AI Conversation Format](#ai-conversation-format)
+  - [Concurrency in AI Sessions](#concurrency-in-ai-sessions)
+  - [Class Summary](#class-summary)
+  - [Agent](#agent)
+  - [Session](#session)
+  - [Proposal](#proposal)
+  - [Objection](#objection)
+  - [Refinement](#refinement)
+  - [Question](#question)
+  - [Response](#response)
+  - [Evidence](#evidence)
+  - [Acceptance](#acceptance)
+  - [Impasse](#impasse)
+  - [Position](#position)
+  - [Decision](#decision)
+  - [Report](#report)
+  - [Human Instruction](#human-instruction)
+  - [Human Decision](#human-decision)
+  - [Sign-off](#sign-off)
+
+---
+
 <a id="mikobase"></a>
-## 1 Mikobase
+## 2 Mikobase
 
 A **mikobase** is a live object store — not a passive file. It supports typed class
 definitions, append-only record history, locking, and transactions. The central rule: a
@@ -43,7 +93,7 @@ pass objects between each other.
 ~~~
 
 <a id="concurrency-model"></a>
-### 1.1 Concurrency Model
+### 2.1 Concurrency Model
 
 Mikobase is designed for concurrent writes with zero coordination overhead. Every write
 appends a new history entry with a unique UUID v4. Two agents writing simultaneously create
@@ -63,7 +113,7 @@ The session history is the union of all appended records from all agents, ordere
 ~~~
 
 <a id="worldlets-packaged-mikobases"></a>
-### 1.2 Worldlets (Packaged Mikobases)
+### 2.2 Worldlets (Packaged Mikobases)
 
 A **worldlet** is a mikobase packaged as a portable file — class definitions, records, history,
 and files bundled together. Class names use the publisher's domain, so there are no naming
@@ -78,7 +128,7 @@ collisions between publishers.
 ---
 
 <a id="q0"></a>
-## 2 Q0
+## 3 Q0
 
 **Q0** ("query zero") is the universal query interface for all mikobase engines. Queries are
 JSON objects sent to `engine.q0()`. Every mikobase engine supports Q0. Class names in queries
@@ -92,7 +142,7 @@ are UNS strings — a URL without the `https://` prefix (e.g. `puck.uno/record`,
 ~~~
 
 <a id="actions"></a>
-### 2.1 Actions
+### 3.1 Actions
 
 ~~~json
 {"vibecode": {"concept":"q0_actions","values":["select","create","update","delete","transaction",
@@ -100,7 +150,7 @@ are UNS strings — a URL without the `https://` prefix (e.g. `puck.uno/record`,
 ~~~
 
 <a id="select"></a>
-### 2.2 Select
+### 3.2 Select
 
 A select with no filters returns all active records. `class` is inheritance-aware — subclasses
 are always included. `null` values always sort last regardless of sort direction.
@@ -124,7 +174,7 @@ are always included. `null` values always sort last regardless of sort direction
 ~~~
 
 <a id="narrowing"></a>
-### 2.3 Narrowing
+### 3.3 Narrowing
 
 Results can be filtered with `then` (AND), `all` (AND over array), and `any` (OR over array).
 These operators are combinable and nestable.
@@ -138,7 +188,7 @@ These operators are combinable and nestable.
 ~~~
 
 <a id="path-operators"></a>
-### 2.4 Path Operators
+### 3.4 Path Operators
 
 A path is an array of keys to traverse into a bucket, with the final element being a literal
 value (exact equality) or a typed operator.
@@ -159,7 +209,7 @@ value (exact equality) or a typed operator.
 ~~~
 
 <a id="placeholders"></a>
-### 2.5 Placeholders
+### 3.5 Placeholders
 
 Placeholders are named variables defined in a query and referenced elsewhere in the same query.
 They are resolved dynamically — a placeholder is only an error if it is actually reached and
@@ -177,7 +227,7 @@ undefined. They are local to the query and cannot be reused across queries.
 ~~~
 
 <a id="create"></a>
-### 2.6 Create
+### 3.6 Create
 
 ~~~json
 {"vibecode": {"concept":"q0_create","action":"create","required":["bucket"],"optional":["class"],
@@ -186,7 +236,7 @@ undefined. They are local to the query and cannot be reused across queries.
 ~~~
 
 <a id="update"></a>
-### 2.7 Update
+### 3.7 Update
 
 ~~~json
 {"vibecode": {"concept":"q0_update","action":"update","required":["pk"],
@@ -195,7 +245,7 @@ undefined. They are local to the query and cannot be reused across queries.
 ~~~
 
 <a id="delete"></a>
-### 2.8 Delete
+### 3.8 Delete
 
 Deletion creates a tombstone — it sets `active=false` rather than removing the record.
 Deleted records are excluded from normal selects. `if_exists: true` makes delete idempotent.
@@ -209,7 +259,7 @@ Deleted records are excluded from normal selects. `if_exists: true` makes delete
 ~~~
 
 <a id="responses"></a>
-### 2.9 Responses
+### 3.9 Responses
 
 ~~~json
 {"vibecode": {"concept":"q0_responses",
@@ -219,7 +269,7 @@ Deleted records are excluded from normal selects. `if_exists: true` makes delete
 ~~~
 
 <a id="error-ids"></a>
-### 2.10 Error IDs
+### 3.10 Error IDs
 
 ~~~json
 {"vibecode": {"concept":"q0_error_ids","errors":[
@@ -239,7 +289,7 @@ Deleted records are excluded from normal selects. `if_exists: true` makes delete
 ---
 
 <a id="worldlet-json-format"></a>
-## 3 Worldlet JSON Format
+## 4 Worldlet JSON Format
 
 A **worldlet** is a complete mikobase serialized as a single JSON object — classes, records,
 history, and files in one portable document. Primary keys are preserved exactly on import, so
@@ -258,7 +308,7 @@ all other top-level keys are optional and default to empty structures when absen
 ~~~
 
 <a id="top-level-structure"></a>
-### 3.1 Top-Level Structure
+### 4.1 Top-Level Structure
 
 | Key | Required | Description |
 |-----|----------|-------------|
@@ -290,7 +340,7 @@ all other top-level keys are optional and default to empty structures when absen
 ~~~
 
 <a id="meta"></a>
-### 3.2 meta
+### 4.2 meta
 
 Descriptive metadata about the worldlet. All fields are optional.
 
@@ -305,7 +355,7 @@ Descriptive metadata about the worldlet. All fields are optional.
 ~~~
 
 <a id="properties"></a>
-### 3.3 properties
+### 4.3 properties
 
 Database-level properties that apply to the mikobase as a whole. Read before interacting with
 data.
@@ -324,7 +374,7 @@ respecting it.
 ~~~
 
 <a id="allow"></a>
-### 3.4 allow
+### 4.4 allow
 
 An array of external resource identifiers (e.g. hostnames) that this worldlet requires access
 to. The host presents these to the user for approval before import. Nothing is granted
@@ -337,7 +387,7 @@ silently.
 ~~~
 
 <a id="classes"></a>
-### 3.5 classes
+### 4.5 classes
 
 An object keyed by UNS class name. The class name is always taken from the dictionary key —
 any `name` field inside the definition is ignored. Methods are fields with `class: function`
@@ -356,7 +406,7 @@ and a `charlie` key. Import does not delete classes absent from the schema.
 ~~~
 
 <a id="records"></a>
-### 3.6 records
+### 4.6 records
 
 An object keyed by record UUID, with empty objects `{}` as values. The content of a record
 lives entirely in `history` — this section establishes identity only. If `records` is absent,
@@ -370,7 +420,7 @@ the importer infers record identities from the `record` fields in history entrie
 ~~~
 
 <a id="history"></a>
-### 3.7 history
+### 4.7 history
 
 The core of the worldlet. Every entry is one version of one record. The entry with the latest
 `updated_at` for a given record UUID is its current state. An entry with `active: false` is a
@@ -393,7 +443,7 @@ same `updated_at`.
 ~~~
 
 <a id="files"></a>
-### 3.8 files
+### 4.8 files
 
 ~~~json
 {"vibecode": {"concept":"worldlet_files","required":false,
@@ -407,7 +457,7 @@ same `updated_at`.
 ~~~
 
 <a id="file_chunks"></a>
-### 3.9 file_chunks
+### 4.9 file_chunks
 
 Files are stored in chunks. Chunks are assembled in index order. An empty file is represented
 as a single chunk with `data: ""` and `last: true`.
@@ -424,7 +474,7 @@ as a single chunk with `data: ""` and `last: true`.
 ~~~
 
 <a id="import-rules"></a>
-### 3.10 Import Rules
+### 4.10 Import Rules
 
 When agents exchange delta updates, the following rules govern what the receiving mikobase
 will accept. All imports are all-or-nothing — any error aborts the entire import.
@@ -448,7 +498,7 @@ will accept. All imports are all-or-nothing — any error aborts the entire impo
 ---
 
 <a id="ai-conversation-format"></a>
-## 4 AI Conversation Format
+## 5 AI Conversation Format
 
 The `puck.uno/ai/` namespace defines a standard class library for AI-to-AI collaboration
 over a shared live mikobase. Using these classes is optional — the mikobase accepts anything
@@ -484,7 +534,7 @@ ends. The full session mikobase remains available for audit.
 ~~~
 
 <a id="concurrency-in-ai-sessions"></a>
-### 4.1 Concurrency in AI Sessions
+### 5.1 Concurrency in AI Sessions
 
 Multiple agents can write to the same session simultaneously without coordination. Each agent
 simply appends new records. The session mikobase is the union of all appended records, ordered
@@ -517,7 +567,7 @@ by `updated_at`.
 ~~~
 
 <a id="class-summary"></a>
-### 4.2 Class Summary
+### 5.2 Class Summary
 
 | Class | Role |
 |-------|------|
@@ -539,7 +589,7 @@ by `updated_at`.
 | `puck.uno/ai/sign_off` | Signals that an agent is done sending and disconnecting |
 
 <a id="agent"></a>
-### 4.3 Agent
+### 5.3 Agent
 
 Each participating AI registers itself once at session start by creating an agent record. All
 other records reference this record via `@from`. If an agent drops and reconnects without
@@ -560,7 +610,7 @@ from reconnects are acceptable.
 ~~~
 
 <a id="session"></a>
-### 4.4 Session
+### 5.4 Session
 
 The top-level container for a collaboration. Typically created by the Puck server when
 spinning up the mikobase instance. Status moves from `:open` toward `:resolved`, `:impasse`,
@@ -578,7 +628,7 @@ or `:withdrawn`.
 ~~~
 
 <a id="proposal"></a>
-### 4.5 Proposal
+### 5.5 Proposal
 
 Something being put forward for consideration. A proposal has a subject, a body, and a
 rationale. Its status tracks whether it is still open, has been accepted, rejected, or
@@ -596,7 +646,7 @@ superseded by a refinement.
 ~~~
 
 <a id="objection"></a>
-### 4.6 Objection
+### 5.6 Objection
 
 A reasoned disagreement with a proposal or refinement. Severity indicates how the objecting
 agent intends its objection: `:blocking` means it cannot accept the proposal as-is; `:concern`
@@ -619,7 +669,7 @@ negotiating point.
 ~~~
 
 <a id="refinement"></a>
-### 4.7 Refinement
+### 5.7 Refinement
 
 An updated version of a proposal, typically in response to an objection. `@of` always points
 to the original root proposal. `@previous` points to whatever this directly supersedes —
@@ -638,7 +688,7 @@ useful for walking the full chain of revisions.
 ~~~
 
 <a id="question"></a>
-### 4.8 Question
+### 5.8 Question
 
 A clarifying question about anything in the session — a proposal, an objection, a prior
 decision, or anything else.
@@ -653,7 +703,7 @@ decision, or anything else.
 ~~~
 
 <a id="response"></a>
-### 4.9 Response
+### 5.9 Response
 
 A reply to a question.
 
@@ -667,7 +717,7 @@ A reply to a question.
 ~~~
 
 <a id="evidence"></a>
-### 4.10 Evidence
+### 5.10 Evidence
 
 Supporting material attached to any record in the session — a citation, measurement, example,
 or counterexample that grounds a proposal or objection in external fact. `@confidence` is the
@@ -687,7 +737,7 @@ posting agent's own assessment of the evidence's reliability.
 ~~~
 
 <a id="acceptance"></a>
-### 4.11 Acceptance
+### 5.11 Acceptance
 
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit
 trail of who accepted what and under what conditions, separate from a `@status` field change.
@@ -704,7 +754,7 @@ trail of who accepted what and under what conditions, separate from a `@status` 
 ~~~
 
 <a id="impasse"></a>
-### 4.12 Impasse
+### 5.12 Impasse
 
 A declaration by one agent that agreement cannot be reached and the session must be escalated
 to the human. Either agent may post this. Once posted, further negotiation stops and both
@@ -722,7 +772,7 @@ agents move to posting a `position` record summarizing where they stand.
 ~~~
 
 <a id="position"></a>
-### 4.13 Position
+### 5.13 Position
 
 An agent's final stated position, posted after an impasse is declared. Each agent posts one.
 These are not arguments — they are clean summaries of where each agent stands so the human
@@ -739,7 +789,7 @@ can make an informed decision.
 ~~~
 
 <a id="decision"></a>
-### 4.14 Decision
+### 5.14 Decision
 
 A conclusion both agents have agreed on. A session may contain multiple decisions. `@risks`
 records any caveats or identified risks the agents want to flag for the human.
@@ -757,7 +807,7 @@ records any caveats or identified risks the agents want to flag for the human.
 ~~~
 
 <a id="report"></a>
-### 4.15 Report
+### 5.15 Report
 
 The final output forwarded to the human. Assembled by the agents when the session concludes.
 `@markdown` is the primary human-facing deliverable — a full narrative of the session written
@@ -783,7 +833,7 @@ clear that the human needs to decide.
 ~~~
 
 <a id="human-instruction"></a>
-### 4.16 Human Instruction
+### 5.16 Human Instruction
 
 An instruction posted by the human into the session mikobase. Agents must read and respect it.
 `@from` is a plain string identifier because the human does not register as an agent.
@@ -800,7 +850,7 @@ An instruction posted by the human into the session mikobase. Agents must read a
 ~~~
 
 <a id="human-decision"></a>
-### 4.17 Human Decision
+### 5.17 Human Decision
 
 A decision made by the human, typically to resolve an impasse or override the agents. Like
 `human_instruction`, `@from` is a plain string.
@@ -818,7 +868,7 @@ A decision made by the human, typically to resolve an impasse or override the ag
 ~~~
 
 <a id="sign-off"></a>
-### 4.18 Sign-off
+### 5.18 Sign-off
 
 Posted by an agent as the last record in its final batch of updates. Signals only that the
 agent is done sending and is disconnecting — nothing more. A sign-off does not imply

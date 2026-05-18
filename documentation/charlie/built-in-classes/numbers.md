@@ -1,7 +1,26 @@
 # Number Methods
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+  - [Numeric literals](#numeric-literals)
+- [Arithmetic](#arithmetic)
+- [Comparison](#comparison)
+- [Testing](#testing)
+- [Rounding](#rounding)
+  - [Midpoint rule](#midpoint-rule)
+  - [Examples](#examples)
+- [Bitwise](#bitwise)
+- [Math](#math)
+- [Conversion](#conversion)
+- [Iteration](#iteration)
+- [Open Questions](#open-questions)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 ~~~json
 {"vibecode": {
@@ -18,7 +37,7 @@ alike. Methods that only make sense for integers (such as `even?` and `odd?`) ar
 on Number but raise an error if called on a non-integer value.
 
 <a id="numeric-literals"></a>
-### 1.1 Numeric literals
+### 2.1 Numeric literals
 
 Underscores in numeric literals are ignored by the lexer. Use them freely as digit
 separators for readability:
@@ -34,7 +53,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 ---
 
 <a id="arithmetic"></a>
-## 2 Arithmetic
+## 3 Arithmetic
 
 ~~~json
 {"vibecode": {
@@ -56,7 +75,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 ---
 
 <a id="comparison"></a>
-## 3 Comparison
+## 4 Comparison
 
 ~~~json
 {"vibecode": {
@@ -78,7 +97,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 ---
 
 <a id="testing"></a>
-## 4 Testing
+## 5 Testing
 
 ~~~json
 {"vibecode": {
@@ -105,7 +124,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 ---
 
 <a id="rounding"></a>
-## 5 Rounding
+## 6 Rounding
 
 ~~~json
 {"vibecode": {
@@ -130,7 +149,7 @@ step to round to. If omitted, it defaults to `1`.
 `multiple` must be a non-zero number. Passing `0` raises an error.
 
 <a id="midpoint-rule"></a>
-### 5.1 Midpoint rule
+### 6.1 Midpoint rule
 
 When a value falls exactly halfway between two multiples, Charlie rounds half away from
 zero:
@@ -141,7 +160,7 @@ zero:
 ```
 
 <a id="examples"></a>
-### 5.2 Examples
+### 6.2 Examples
 
 ```
 $foo = 2.5
@@ -172,7 +191,7 @@ $foo.round_down(multiple: 10) -> -10
 ---
 
 <a id="bitwise"></a>
-## 6 Bitwise
+## 7 Bitwise
 
 ~~~json
 {"vibecode": {
@@ -190,7 +209,7 @@ $foo.round_down(multiple: 10) -> -10
 ---
 
 <a id="math"></a>
-## 7 Math
+## 8 Math
 
 ~~~json
 {"vibecode": {
@@ -210,7 +229,7 @@ $foo.round_down(multiple: 10) -> -10
 ---
 
 <a id="conversion"></a>
-## 8 Conversion
+## 9 Conversion
 
 ~~~json
 {"vibecode": {
@@ -233,7 +252,7 @@ $foo.round_down(multiple: 10) -> -10
 ---
 
 <a id="iteration"></a>
-## 9 Iteration
+## 10 Iteration
 
 Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
 [loops.md § Numeric iteration helpers](../loops.md#numeric-iteration-helpers).
@@ -241,7 +260,7 @@ Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
 ---
 
 <a id="open-questions"></a>
-## 10 Open Questions
+## 11 Open Questions
 
 - Should `sqrt` of a negative number raise an error or return a special value?
 - Should `to_string` accept a format argument (e.g. number of decimal places)?

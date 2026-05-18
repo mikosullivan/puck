@@ -203,9 +203,8 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 <a id="no-nanny-code"></a>
 ### 5.1 No nanny code
 
-Puck follows a principle borrowed from Perl: **the system gives you
-enough rope to hang yourself.** When the system declines to do
-something by default, there are ways to override it if you choose:
+Puck provides safe defaults but there are ways to override those
+defaults if you choose:
 
 - **Nanny code** says "you can't, because I think you shouldn't."
 - **Safe defaults** say "you have to be explicit if you want to."

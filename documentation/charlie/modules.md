@@ -1,7 +1,24 @@
 # Modules
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Status](#status)
+- [The Problem](#the-problem)
+- [The Approach](#the-approach)
+- [Implicit Top-Level Module](#implicit-top-level-module)
+- [Invoking a File](#invoking-a-file)
+- [Syntax](#syntax)
+- [What `&foo` Means Inside a Module](#what-foo-means-inside-a-module)
+- [Nesting](#nesting)
+- [Relationship to Classes](#relationship-to-classes)
+- [Why Not Just Use a Class?](#why-not-just-use-a-class)
+- [Open Questions](#open-questions)
+
+---
+
 <a id="status"></a>
-## 1 Status
+## 2 Status
 
 ~~~json
 {"vibecode": {
@@ -17,7 +34,7 @@ problem. Further experience with the language may refine or replace it.
 ---
 
 <a id="the-problem"></a>
-## 2 The Problem
+## 3 The Problem
 
 ~~~json
 {"vibecode": {
@@ -46,7 +63,7 @@ call.
 ---
 
 <a id="the-approach"></a>
-## 3 The Approach
+## 4 The Approach
 
 ~~~json
 {"vibecode": {
@@ -82,7 +99,7 @@ The mutual-call problem dissolves. It was always just a method call on `self`.
 ---
 
 <a id="implicit-top-level-module"></a>
-## 4 Implicit Top-Level Module
+## 5 Implicit Top-Level Module
 
 ~~~json
 {"vibecode": {
@@ -114,7 +131,7 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 ---
 
 <a id="invoking-a-file"></a>
-## 5 Invoking a File
+## 6 Invoking a File
 
 ~~~json
 {"vibecode": {
@@ -167,7 +184,7 @@ relative-vs-absolute paths) is TBD.
 ---
 
 <a id="syntax"></a>
-## 6 Syntax
+## 7 Syntax
 
 ~~~json
 {"vibecode": {
@@ -200,7 +217,7 @@ The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and v
 ---
 
 <a id="what-foo-means-inside-a-module"></a>
-## 7 What `&foo` Means Inside a Module
+## 8 What `&foo` Means Inside a Module
 
 ~~~json
 {"vibecode": {
@@ -229,7 +246,7 @@ don't see outer variables, but they can call sibling methods through `self`.
 ---
 
 <a id="nesting"></a>
-## 8 Nesting
+## 9 Nesting
 
 ~~~json
 {"vibecode": {
@@ -261,7 +278,7 @@ To call across module boundaries, pass a reference explicitly as a parameter.
 ---
 
 <a id="relationship-to-classes"></a>
-## 9 Relationship to Classes
+## 10 Relationship to Classes
 
 ~~~json
 {"vibecode": {
@@ -306,7 +323,7 @@ single-instance, anonymous, and have no schema requirements.
 ---
 
 <a id="why-not-just-use-a-class"></a>
-## 10 Why Not Just Use a Class?
+## 11 Why Not Just Use a Class?
 
 ~~~json
 {"vibecode": {
@@ -324,7 +341,7 @@ the lighter intent.
 ---
 
 <a id="open-questions"></a>
-## 11 Open Questions
+## 12 Open Questions
 
 - Can a module be assigned to a variable and passed around as an object from outside?
 - Does a module's anonymous class inherit from `puck.uno/object` directly?

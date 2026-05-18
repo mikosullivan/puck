@@ -20,8 +20,27 @@ this parser feeds.
 
 ---
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Scope](#scope)
+- [Architecture](#architecture)
+- [Tokenizer](#tokenizer)
+- [Tree builder](#tree-builder)
+  - [Schema-driven behavior](#schema-driven-behavior)
+- [Output: the element tree](#output-the-element-tree)
+- [Schemas other than HTML5](#schemas-other-than-html5)
+  - [A DSL for defining schemas (open)](#a-dsl-for-defining-schemas-open)
+- [Error handling](#error-handling)
+- [Performance](#performance)
+- [Open questions](#open-questions)
+- [Why a hand-rolled parser is worth it](#why-a-hand-rolled-parser-is-worth-it)
+- [Next steps](#next-steps)
+
+---
+
 <a id="scope"></a>
-## 1 Scope
+## 2 Scope
 
 **In scope:**
 - Parse well-formed HTML5-style input into an element tree.
@@ -53,7 +72,7 @@ a bundled library instead.
 ---
 
 <a id="architecture"></a>
-## 2 Architecture
+## 3 Architecture
 
 Two layers, with **all tag knowledge supplied externally** via
 a schema config:
@@ -98,7 +117,7 @@ schema knows nothing about parsing at all (it's just data).
 ---
 
 <a id="tokenizer"></a>
-## 3 Tokenizer
+## 4 Tokenizer
 
 Single linear pass over the input string. Splits on:
 
@@ -141,7 +160,7 @@ for `<!--`) might be worth it if it simplifies the tree-builder.
 ---
 
 <a id="tree-builder"></a>
-## 4 Tree builder
+## 5 Tree builder
 
 State machine over the token stream. States:
 
@@ -177,7 +196,7 @@ On reaching EOF with a non-empty stack: **malformed input; raise
 a flag** (unclosed tags).
 
 <a id="schema-driven-behavior"></a>
-### 4.1 Schema-driven behavior
+### 5.1 Schema-driven behavior
 
 **All tag knowledge comes from the schema config.** The parser
 queries the schema for:
@@ -211,7 +230,7 @@ job is "read schema, follow its rules," not "know HTML."
 ---
 
 <a id="output-the-element-tree"></a>
-## 5 Output: the element tree
+## 6 Output: the element tree
 
 Each element node carries:
 
@@ -244,7 +263,7 @@ serializer's `tidy` step strip them.
 ---
 
 <a id="schemas-other-than-html5"></a>
-## 6 Schemas other than HTML5
+## 7 Schemas other than HTML5
 
 Because all tag knowledge lives in the schema config, the same
 parser engine can parse any markup language that fits the
@@ -266,7 +285,7 @@ tags, their voidness, their nesting rules, their opaque-content
 flags — and the parser produces a tree following those rules.
 
 <a id="a-dsl-for-defining-schemas-open"></a>
-### 6.1 A DSL for defining schemas (open)
+### 7.1 A DSL for defining schemas (open)
 
 Writing schema configs by hand in JSON is tolerable but
 verbose. A DSL for **defining** these schemas — not for writing
@@ -304,7 +323,7 @@ needs to consume schemas, regardless of how they're written.
 ---
 
 <a id="error-handling"></a>
-## 7 Error handling
+## 8 Error handling
 
 Malformed input raises a flag rather than attempting recovery.
 Specific flag classes (all under `puck.uno/uma/error/`):
@@ -326,7 +345,7 @@ case.
 ---
 
 <a id="performance"></a>
-## 8 Performance
+## 9 Performance
 
 Rough budget:
 
@@ -346,7 +365,7 @@ for parsing megabytes of scraped wild-world HTML.
 ---
 
 <a id="open-questions"></a>
-## 9 Open questions
+## 10 Open questions
 
 - **Tokenizer implementation language.** Pure Charlie? Lua-native
   helper for the inner loop? Pure Charlie is simpler to
@@ -372,7 +391,7 @@ for parsing megabytes of scraped wild-world HTML.
 ---
 
 <a id="why-a-hand-rolled-parser-is-worth-it"></a>
-## 10 Why a hand-rolled parser is worth it
+## 11 Why a hand-rolled parser is worth it
 
 If we bundle gumbo: ~150–200k of native code, well-tested,
 correct on real-world HTML. Pros: zero maintenance burden,
@@ -393,7 +412,7 @@ adapter outside core.
 ---
 
 <a id="next-steps"></a>
-## 11 Next steps
+## 12 Next steps
 
 - Pin the token type set.
 - Decide schema vs. parser-code for implicit-close rules.

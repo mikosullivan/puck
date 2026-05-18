@@ -1,7 +1,26 @@
 # Reserved Pass-Through Fields
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+- [`vibecode`](#vibecode)
+- [Structure](#structure)
+- [Example](#example)
+- [Where It Applies](#where-it-applies)
+- [Remote Classes](#remote-classes)
+- [In Charlie: `%document` and `%vibecode`](#in-charlie-document-and-vibecode)
+  - [Shorthand type names](#shorthand-type-names)
+  - [`%vibecode`](#vibecode-1)
+- [Pass-Through](#pass-through)
+- [`comment`](#comment)
+- [`misc`](#misc)
+- [`corporate`](#corporate)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 ~~~json
 {"vibecode": {
@@ -19,7 +38,7 @@ An object's schema does not need to declare them; they are always present by con
 ---
 
 <a id="vibecode"></a>
-## 2 `vibecode`
+## 3 `vibecode`
 
 `vibecode` carries AI-readable context alongside the object it describes. It is passed
 through transparently — not stripped, not validated, not modified by engines, firewalls,
@@ -29,7 +48,7 @@ it needs.
 ---
 
 <a id="structure"></a>
-## 3 Structure
+## 4 Structure
 
 `vibecode` is a free-form hash. There is no required schema. Useful fields include:
 
@@ -44,7 +63,7 @@ Other fields may be added as needed. The structure is intentionally open.
 ---
 
 <a id="example"></a>
-## 4 Example
+## 5 Example
 
 ```json
 {
@@ -70,7 +89,7 @@ Other fields may be added as needed. The structure is intentionally open.
 ---
 
 <a id="where-it-applies"></a>
-## 5 Where It Applies
+## 6 Where It Applies
 
 `vibecode` can appear in any JSON hash in the Puckverse — any object, anywhere:
 
@@ -87,7 +106,7 @@ There is no object too small to carry `vibecode`.
 ---
 
 <a id="remote-classes"></a>
-## 6 Remote Classes
+## 7 Remote Classes
 
 `vibecode` is especially valuable on remote classes. When an AI is asked to instantiate
 a class from `borg.com/person` and do something with it, it downloads the class definition
@@ -103,7 +122,7 @@ good `vibecode`.
 ---
 
 <a id="in-charlie-document-and-vibecode"></a>
-## 7 In Charlie: `%document` and `%vibecode`
+## 8 In Charlie: `%document` and `%vibecode`
 
 `%document` is the general mechanism for saving documentation into the CharlieJSON
 command array. It takes a MIME type and a heredoc or string:
@@ -124,7 +143,7 @@ EOF
 ```
 
 <a id="shorthand-type-names"></a>
-### 7.1 Shorthand type names
+### 8.1 Shorthand type names
 
 A few popular MIME types have shorthand aliases:
 
@@ -147,7 +166,7 @@ EOF
 ```
 
 <a id="vibecode-1"></a>
-### 7.2 `%vibecode`
+### 8.2 `%vibecode`
 
 `%vibecode` is a further shorthand for `%document 'vibecode'`:
 
@@ -212,7 +231,7 @@ puts($report)
 ---
 
 <a id="pass-through"></a>
-## 8 Pass-Through
+## 9 Pass-Through
 
 All four reserved fields (`vibecode`, `comment`, `misc`, `corporate`) are always passed through. Engines, firewalls, and network
 transport do not strip or modify them. The whole point is that any consumer reading the
@@ -222,7 +241,7 @@ placed in these fields.
 ---
 
 <a id="comment"></a>
-## 9 `comment`
+## 10 `comment`
 
 `comment` carries human-readable notes alongside the object. It is for things you want
 to say to a human reader — a quick explanation of why something is done a certain way,
@@ -239,7 +258,7 @@ a caveat, a TODO. It is not AI documentation (`vibecode`) and not formal metadat
 ---
 
 <a id="misc"></a>
-## 10 `misc`
+## 11 `misc`
 
 `misc` is a free-rider field for informal, ad hoc use. It has no defined schema and no
 governance — any system or developer can put whatever they need there. Over time, `misc`
@@ -259,7 +278,7 @@ systems. That is expected and acceptable; it is what `misc` is for.
 ---
 
 <a id="corporate"></a>
-## 11 `corporate`
+## 12 `corporate`
 
 `corporate` fills the same pass-through role as `misc`, but is reserved for formally
 defined standards. Content in `corporate` should follow agreed-upon schemas or

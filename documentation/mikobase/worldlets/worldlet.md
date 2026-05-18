@@ -1,7 +1,33 @@
 # Worldlet Format
 
+<a id="contents"></a>
+## 1 Contents
+
+- [Overview](#overview)
+- [Top-Level Structure](#top-level-structure)
+- [`meta`](#meta)
+- [`format` and `format_version`](#format-and-format_version)
+- [`properties`](#properties)
+- [`allow`](#allow)
+- [`extensions`](#extensions)
+- [`classes`](#classes)
+- [`records`](#records)
+- [`files`](#files)
+- [`file_chunks`](#file_chunks)
+- [Import Rules](#import-rules)
+  - [UUID constraints](#uuid-constraints)
+  - [Conflict policy](#conflict-policy)
+  - [Reference encoding](#reference-encoding)
+  - [The `class` field](#the-class-field)
+  - [Validation](#validation)
+  - [Atomicity](#atomicity)
+- [Minimal Valid Example](#minimal-valid-example)
+- [Complete Example](#complete-example)
+
+---
+
 <a id="overview"></a>
-## 1 Overview
+## 2 Overview
 
 ~~~json
 {"vibecode": {
@@ -26,7 +52,7 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 ---
 
 <a id="top-level-structure"></a>
-## 2 Top-Level Structure
+## 3 Top-Level Structure
 
 ~~~json
 {"vibecode": {
@@ -75,7 +101,7 @@ entries, see
 ---
 
 <a id="meta"></a>
-## 3 `meta`
+## 4 `meta`
 
 ~~~json
 {"vibecode": {
@@ -108,7 +134,7 @@ Descriptive information about the worldlet.
 ---
 
 <a id="format-and-format_version"></a>
-## 4 `format` and `format_version`
+## 5 `format` and `format_version`
 
 ~~~json
 {"vibecode": {
@@ -141,7 +167,7 @@ Both are optional for backwards compatibility but should be included in all new 
 ---
 
 <a id="properties"></a>
-## 5 `properties`
+## 6 `properties`
 
 ~~~json
 {"vibecode": {
@@ -180,7 +206,7 @@ shape (each record carries its current bucket directly, no history block). See
 ---
 
 <a id="allow"></a>
-## 6 `allow`
+## 7 `allow`
 
 ~~~json
 {"vibecode": {
@@ -202,7 +228,7 @@ The format and full capability vocabulary are not yet fully designed.
 ---
 
 <a id="extensions"></a>
-## 7 `extensions`
+## 8 `extensions`
 
 ~~~json
 {"vibecode": {
@@ -226,7 +252,7 @@ unrecognised `extensions` key.
 ---
 
 <a id="classes"></a>
-## 8 `classes`
+## 9 `classes`
 
 ~~~json
 {"vibecode": {
@@ -308,7 +334,7 @@ See [class-definition.md](../../charlie/class-definition.md) for the full class 
 ---
 
 <a id="records"></a>
-## 9 `records`
+## 10 `records`
 
 ~~~json
 {"vibecode": {
@@ -341,7 +367,7 @@ is no separate history block and no per-version entries.
 ---
 
 <a id="files"></a>
-## 10 `files`
+## 11 `files`
 
 ~~~json
 {"vibecode": {
@@ -377,7 +403,7 @@ hash, timestamp, and MIME type.
 ---
 
 <a id="file_chunks"></a>
-## 11 `file_chunks`
+## 12 `file_chunks`
 
 A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
 or more chunks. Chunks are assembled in `index` order to reconstruct the file.
@@ -403,7 +429,7 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 ---
 
 <a id="import-rules"></a>
-## 12 Import Rules
+## 13 Import Rules
 
 ~~~json
 {"vibecode": {
@@ -413,13 +439,13 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 ~~~
 
 <a id="uuid-constraints"></a>
-### 12.1 UUID constraints
+### 13.1 UUID constraints
 
 All keys in `records`, `files`, and `file_chunks` must be UUID v4 strings. The importer
 rejects any worldlet containing a malformed UUID.
 
 <a id="conflict-policy"></a>
-### 12.2 Conflict policy
+### 13.2 Conflict policy
 
 When a record being imported has the same UUID as one already in the target mikobase:
 
@@ -429,14 +455,14 @@ When a record being imported has the same UUID as one already in the target miko
 The same rule applies to `files` and `file_chunks` entries.
 
 <a id="reference-encoding"></a>
-### 12.3 Reference encoding
+### 13.3 Reference encoding
 
 Reference fields in `bucket` are plain UUID strings. The class definition declares the
 field type — a field with class `puck.uno/reference` or `puck.uno/dbfile` tells the
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
 <a id="the-class-field"></a>
-### 12.4 The `class` field
+### 13.4 The `class` field
 
 In all Puck-compliant hashes, the `class` field is reserved to indicate the class or
 classes the hash belongs to. This applies to Q0 queries, record entries, class
@@ -446,7 +472,7 @@ Bucket objects are not Puck-compliant. The `class` field has no special meaning 
 a bucket and may be used freely as an application field.
 
 <a id="validation"></a>
-### 12.5 Validation
+### 13.5 Validation
 
 The importer validates the following before writing anything:
 
@@ -457,7 +483,7 @@ The importer validates the following before writing anything:
 - The target mikobase is non-temporal.
 
 <a id="atomicity"></a>
-### 12.6 Atomicity
+### 13.6 Atomicity
 
 Import is all-or-nothing. If any validation error or conflict error occurs, nothing is
 written to the target mikobase. Partial imports do not happen.
@@ -465,7 +491,7 @@ written to the target mikobase. Partial imports do not happen.
 ---
 
 <a id="minimal-valid-example"></a>
-## 13 Minimal Valid Example
+## 14 Minimal Valid Example
 
 The smallest possible worldlet — one record, no schema, no files:
 
@@ -487,7 +513,7 @@ The smallest possible worldlet — one record, no schema, no files:
 ---
 
 <a id="complete-example"></a>
-## 14 Complete Example
+## 15 Complete Example
 
 ```json
 {
