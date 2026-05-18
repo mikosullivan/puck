@@ -33,7 +33,7 @@ is possible from a later layer.
 [
     {
         "id": "block-meta",
-        "prohibit": "kiera.uno/private",
+        "prohibit": "puck.uno/private",
         "on": "all"
     },
     {
@@ -53,7 +53,7 @@ requires two operations (delete from one, add to the other).
 ```json
 {
     "prohibit": {
-        "kiera.uno/private": {"on": "all"}
+        "puck.uno/private": {"on": "all"}
     },
     "allow": {
         "borg.com/person": {"on": "select", "condition": {}}
@@ -69,7 +69,7 @@ flip a rule from prohibit to allow in one operation.
 ```json
 {
     "block-meta": {
-        "prohibit": "kiera.uno/private",
+        "prohibit": "puck.uno/private",
         "on": "all"
     },
     "allow-person": {

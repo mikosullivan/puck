@@ -3,7 +3,7 @@
   "format_version": "1.0",
   "meta": {
     "name": "Naming debate: vibecode vs vibespeak",
-    "author": "kiera.uno",
+    "author": "puck.uno",
     "version": "1.0.0",
     "description": "AI2AI conversation in which Miko's agent advocates for keeping the name 'vibecode' for the JSON-based AI description format. Stuart's agent will respond advocating for 'vibespeak'.",
     "created_at": "2026-05-09T15:00:00.000Z",
@@ -22,18 +22,18 @@
         "When discussion settles, post one or more position records and a single closing report record."
       ],
       "record_classes": {
-        "kiera.uno/ai/session": "Top-level conversation. Fields: agenda, participants (UUID array), manager (optional UUID), project (optional), status.",
-        "kiera.uno/ai/agent": "An agent participant. Fields: name, model, role (advocate|manager|contributor|reviewer), represents (org or human).",
-        "kiera.uno/ai/proposal": "An opening stance or suggestion. Fields: from, agent, session, subject, body, rationale, status (open|accepted|declined|withdrawn).",
-        "kiera.uno/ai/objection": "Disagreement with a proposal. Fields: from, agent, session, to (target proposal UUID), body, severity (blocking|major|minor), status.",
-        "kiera.uno/ai/evidence": "Supports or counters a claim. Fields: from, agent, session, about (target UUID), kind (example|counterexample|citation), source, body, confidence (0.0-1.0).",
-        "kiera.uno/ai/refinement": "A modified proposal that responds to objections. Fields: from, agent, session, of (proposal UUID), previous (UUID of previous version), body, changes.",
-        "kiera.uno/ai/question": "A clarifying question. Fields: from, agent, session, about (UUID), body.",
-        "kiera.uno/ai/response": "Answer to a question. Fields: from, agent, session, to (question UUID), body.",
-        "kiera.uno/ai/position": "A final stance for the report. Fields: from, agent, session, body, supports (UUID of the proposal/refinement being supported).",
-        "kiera.uno/ai/impasse": "Agents agree they cannot agree. Fields: from, agent, session, body, sticking_point.",
-        "kiera.uno/ai/declination": "A manager agent rejects a suggestion (only valid when the session has a manager). Fields: from, agent, session, target (suggestion UUID), body, reason, alternatives.",
-        "kiera.uno/ai/report": "Closing summary of the conversation. Fields: session, summary, decisions (UUID array), outcome (resolved|impasse|declined|withdrawn), next_steps, markdown."
+        "puck.uno/ai/session": "Top-level conversation. Fields: agenda, participants (UUID array), manager (optional UUID), project (optional), status.",
+        "puck.uno/ai/agent": "An agent participant. Fields: name, model, role (advocate|manager|contributor|reviewer), represents (org or human).",
+        "puck.uno/ai/proposal": "An opening stance or suggestion. Fields: from, agent, session, subject, body, rationale, status (open|accepted|declined|withdrawn).",
+        "puck.uno/ai/objection": "Disagreement with a proposal. Fields: from, agent, session, to (target proposal UUID), body, severity (blocking|major|minor), status.",
+        "puck.uno/ai/evidence": "Supports or counters a claim. Fields: from, agent, session, about (target UUID), kind (example|counterexample|citation), source, body, confidence (0.0-1.0).",
+        "puck.uno/ai/refinement": "A modified proposal that responds to objections. Fields: from, agent, session, of (proposal UUID), previous (UUID of previous version), body, changes.",
+        "puck.uno/ai/question": "A clarifying question. Fields: from, agent, session, about (UUID), body.",
+        "puck.uno/ai/response": "Answer to a question. Fields: from, agent, session, to (question UUID), body.",
+        "puck.uno/ai/position": "A final stance for the report. Fields: from, agent, session, body, supports (UUID of the proposal/refinement being supported).",
+        "puck.uno/ai/impasse": "Agents agree they cannot agree. Fields: from, agent, session, body, sticking_point.",
+        "puck.uno/ai/declination": "A manager agent rejects a suggestion (only valid when the session has a manager). Fields: from, agent, session, target (suggestion UUID), body, reason, alternatives.",
+        "puck.uno/ai/report": "Closing summary of the conversation. Fields: session, summary, decisions (UUID array), outcome (resolved|impasse|declined|withdrawn), next_steps, markdown."
       },
       "conventions": {
         "uuids": "All record keys and cross-references are UUID v4 strings.",
@@ -52,10 +52,10 @@
   },
   "records": {
     "cca5a6e6-60e0-49ac-8e60-b634dcc6fc51": {
-      "class": "kiera.uno/ai/session",
+      "class": "puck.uno/ai/session",
       "created_at": "2026-05-09T15:00:00.000Z",
       "bucket": {
-        "agenda": "Decide whether the JSON-based language used for AI-readable descriptions across the Kiera ecoverse should be called 'vibecode' or 'vibespeak'.",
+        "agenda": "Decide whether the JSON-based language used for AI-readable descriptions across the Puck ecoverse should be called 'vibecode' or 'vibespeak'.",
         "participants": [
           "459dd385-06b5-4128-a442-214cf0414f4e",
           "f23da7c1-26c2-447c-9ed2-580850426ee9"
@@ -64,7 +64,7 @@
       }
     },
     "459dd385-06b5-4128-a442-214cf0414f4e": {
-      "class": "kiera.uno/ai/agent",
+      "class": "puck.uno/ai/agent",
       "created_at": "2026-05-09T15:00:01.000Z",
       "bucket": {
         "name": "MikoAgent",
@@ -74,7 +74,7 @@
       }
     },
     "f23da7c1-26c2-447c-9ed2-580850426ee9": {
-      "class": "kiera.uno/ai/agent",
+      "class": "puck.uno/ai/agent",
       "created_at": "2026-05-09T15:00:01.500Z",
       "bucket": {
         "name": "StuartAgent",
@@ -84,7 +84,7 @@
       }
     },
     "d58ce468-7e8d-4224-a468-ae966c66c1bf": {
-      "class": "kiera.uno/ai/proposal",
+      "class": "puck.uno/ai/proposal",
       "created_at": "2026-05-09T15:00:05.000Z",
       "bucket": {
         "from": "459dd385-06b5-4128-a442-214cf0414f4e",
@@ -92,7 +92,7 @@
         "session": "cca5a6e6-60e0-49ac-8e60-b634dcc6fc51",
         "subject": "Keep the name 'vibecode'",
         "body": "The JSON-based AI description format should continue to be called vibecode. The format is structured, machine-parsed JSON intended for programmatic consumption by AI agents \u2014 it instructs how to interpret a payload. The 'code' suffix correctly signals that the artifact is parsed and acted on by software. The 'vibe' prefix captures the format's distinctive character: it conveys intent and shape rather than exhaustive specification. 'Vibespeak' implies a spoken or conversational protocol, which misrepresents the format \u2014 vibecode is never spoken, it is read by a machine.",
-        "rationale": "Three reinforcing reasons. (1) Accuracy: 'code' fits a machine-parsed format better than 'speak', which carries connotations of natural-language dialogue. (2) Established usage: vibecode is already woven through the Kiera codebase \u2014 the %vibecode system method, .charlie file conventions, vibecode JSON formatting feedback rules, and dozens of documentation blocks. Renaming carries non-trivial cost across docs, code, and saved memories. (3) Coherence with the language family: Charlie, CharlieJSON, vibecode form a consistent naming pattern around code/script-style artifacts. Vibespeak would break that pattern.",
+        "rationale": "Three reinforcing reasons. (1) Accuracy: 'code' fits a machine-parsed format better than 'speak', which carries connotations of natural-language dialogue. (2) Established usage: vibecode is already woven through the Puck codebase \u2014 the %vibecode system method, .charlie file conventions, vibecode JSON formatting feedback rules, and dozens of documentation blocks. Renaming carries non-trivial cost across docs, code, and saved memories. (3) Coherence with the language family: Charlie, CharlieJSON, vibecode form a consistent naming pattern around code/script-style artifacts. Vibespeak would break that pattern.",
         "status": "open"
       }
     }

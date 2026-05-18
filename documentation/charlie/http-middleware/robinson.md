@@ -1,19 +1,19 @@
 # Robinson
 
-`kiera.uno/robinson` — a filesystem-tree HTTP server. Page files
+`puck.uno/robinson` — a filesystem-tree HTTP server. Page files
 live in directory trees; URL paths map to file paths. Designed
 for content-shaped sites where each URL corresponds to a file.
 
-**Robinson is not bundled with Kiera.** It's a **library available
-through Kiera** — when Charlie code references
-`%['kiera.uno/robinson']`, Kiera's resolver fetches it from its UNS
+**Robinson is not bundled with Puck.** It's a **library available
+through Puck** — when Charlie code references
+`%['puck.uno/robinson']`, Puck's resolver fetches it from its UNS
 source on first use and caches it locally; subsequent references
 hit the cache. Programs that don't use Robinson never pull it in.
-See [kiera.md](../../kiera/kiera.md) for the resolution + caching
+See [puck.md](../../puck/puck.md) for the resolution + caching
 model that governs all library resolution.
 
 Built on [Touchstone](touchstone.md) (which **does** ship with
-Kiera), Robinson inherits the transaction model, request/response
+Puck), Robinson inherits the transaction model, request/response
 objects, sessions, body buffering, the handler chain, CSRF guard,
 CSP, and the response constructor. Robinson adds multi-site
 dispatch, directory-handler trees (pages, factory, admin), and
@@ -167,7 +167,7 @@ mechanisms aren't special cases — they're just chain order.
 ## 3 Quick example
 
 ```
-$server = %['kiera.uno/robinson'].new(dir: $jail)
+$server = %['puck.uno/robinson'].new(dir: $jail)
 $server.run()
 ```
 
@@ -276,11 +276,11 @@ tree. URL paths map to files within it.
 
 A `.charlie` file in the tree is a page file. Its last
 expression must be a class inheriting from
-`kiera.uno/robinson/page` with a `process` method:
+`puck.uno/robinson/page` with a `process` method:
 
 ```
 class
-    inherits 'kiera.uno/robinson/page'
+    inherits 'puck.uno/robinson/page'
 
     function process($request) do
         response.html(200, '<h1>Hello from ' + $request.path + '</h1>')
@@ -606,10 +606,10 @@ Cascade assembly catches a few common slipups:
 
 | Situation | Warning class | Effect |
 |---|---|---|
-| `<embed>` with target attribute that has no matching `<target>` | `kiera.uno/robinson/warning/orphan_embed` | Embed is dropped |
-| `<embed>` with no target attribute, but no default `<target>` upstream | `kiera.uno/robinson/warning/orphan_embed` | Embed is dropped |
-| `<target>` that no `<embed>` filled | `kiera.uno/robinson/warning/unfilled_target` | Target element stripped from response |
-| Multiple unnamed `<target>`s at the same layer | `kiera.uno/robinson/warning/multiple_default_targets` | Only the first acts as default; later ones unfilled |
+| `<embed>` with target attribute that has no matching `<target>` | `puck.uno/robinson/warning/orphan_embed` | Embed is dropped |
+| `<embed>` with no target attribute, but no default `<target>` upstream | `puck.uno/robinson/warning/orphan_embed` | Embed is dropped |
+| `<target>` that no `<embed>` filled | `puck.uno/robinson/warning/unfilled_target` | Target element stripped from response |
+| Multiple unnamed `<target>`s at the same layer | `puck.uno/robinson/warning/multiple_default_targets` | Only the first acts as default; later ones unfilled |
 
 All warnings flow through Jasmine via the entry-heed mechanism.
 

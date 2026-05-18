@@ -14,7 +14,7 @@ vibecode: {
 }
 ```
 
-Charlie is the programming language of the Kiera ecoverse. It handles computation and
+Charlie is the programming language of the Puck ecoverse. It handles computation and
 control flow — the things Q0 deliberately does not do. Q0 is a query and filter language;
 Charlie is where actual programming lives.
 
@@ -32,7 +32,7 @@ vibecode: {
 	"reasons": ["tiny_footprint_and_wide_install_base",
 		"more_contributor_involvement_than_we_would_get_with_c",
 		"cross_os_reliability_already_solved_by_lua",
-		"python_too_monolithic_for_kieras_light_footprint_goal",
+		"python_too_monolithic_for_pucks_light_footprint_goal",
 		"c_efficient_but_too_painful_to_debug"]
 }
 ```
@@ -44,12 +44,12 @@ choice is deliberate; the reasoning:
   that asking users to install it (if they don't already have it)
   is a minor ask, not a barrier.
 - **More involvement than we'd get with C.** Lua isn't a barrier
-  for contributors who want to patch the Kiera libraries. We expect
+  for contributors who want to patch the Puck libraries. We expect
   more involvement from a Lua codebase than from a C codebase.
 - **Cross-OS portability is already solved.** Lua works on essentially
-  every operating system that runs anything. Kiera inherits that
+  every operating system that runs anything. Puck inherits that
   portability without doing the work itself: if a system can run
-  Lua, it can run Kiera.
+  Lua, it can run Puck.
 
 <a id="why-not-python"></a>
 ### 2.1 Why not Python
@@ -57,7 +57,7 @@ choice is deliberate; the reasoning:
 Python is also a solid candidate — installed everywhere, possibly
 the biggest software community of any language. But **Python is
 monolithic.** It's a much larger system than Lua, and pulling in
-its full footprint conflicts with the design goal of keeping Kiera
+its full footprint conflicts with the design goal of keeping Puck
 light. A small, reliable cross-OS footprint matters more than a
 larger ecosystem.
 
@@ -82,7 +82,7 @@ vibecode: {
 	"lua_role": "interpreter_loop_memory_management_external_bindings_only",
 	"exception": "move_to_lua_if_unwieldy_or_too_slow",
 	"kernel_required": ["interpreter_loop", "gc", "core_bwcs",
-		"primitive_types", "kiera.uno/object", "kiera.uno/helper",
+		"primitive_types", "puck.uno/object", "puck.uno/helper",
 		"system_methods_%call_%chain_%bucket"],
 	"goal": "standard_library_written_in_charlie_visible_and_inspectable",
 	"lua_reference_deps": ["SQLite", "libmicrohttpd"],
@@ -109,11 +109,11 @@ A compliant Charlie engine must provide a minimal kernel:
 - Memory management and garbage collection
 - Core bwcs: `if`, `while`, `and`, `or`, `not`
 - Primitive types: string, number, boolean, null, array, hash
-- `kiera.uno/object` — the root class, foundation of the object system
-- `kiera.uno/helper` — the base helper class
+- `puck.uno/object` — the root class, foundation of the object system
+- `puck.uno/helper` — the base helper class
 - System methods: `%call`, `%chain`, `%bucket`
 
-Everything built on top of these — `kiera.uno/loop`, exception classes, the standard
+Everything built on top of these — `puck.uno/loop`, exception classes, the standard
 library, helper implementations — should be written in Charlie where possible.
 
 This makes much of the engine visible and inspectable. A developer who wants to understand
@@ -137,10 +137,10 @@ rewrites can use Charlie.
 
 The Lua implementation requires Lua plus two C libraries:
 
-- **SQLite** — used by the mikobase implementation; both `kiera.uno/mikobase/memory` (in-memory
-  mode) and `kiera.uno/mikobase/sqlite` (file-backed mode) run on SQLite
-- **libmicrohttpd** — embedded HTTP server powering `kiera.uno/mikobase/http` and
-  `kiera.uno/mikobase/server`; handles concurrent connections at the C level
+- **SQLite** — used by the mikobase implementation; both `puck.uno/mikobase/memory` (in-memory
+  mode) and `puck.uno/mikobase/sqlite` (file-backed mode) run on SQLite
+- **libmicrohttpd** — embedded HTTP server powering `puck.uno/mikobase/http` and
+  `puck.uno/mikobase/server`; handles concurrent connections at the C level
 
 Performance concerns are addressed by optimizing the interpreter, not by abandoning
 the principle.
@@ -202,7 +202,7 @@ engine grants on request (off by default) — see
 ### 4.3 Timeouts
 
 Charlie does not use threads, but untrusted code must not be allowed to run indefinitely.
-A function downloaded from a remote Kiera object — `%kiera['borg.com/riker']` — might
+A function downloaded from a remote Puck object — `%puck['borg.com/riker']` — might
 be an infinite loop or a crypto miner. The `%utils.timeout` method wraps a block with a
 hard time limit:
 
@@ -215,20 +215,20 @@ end
 If the block does not complete within the specified number of seconds, the
 timeout fires a **two-stage** flag sequence:
 
-1. **Inside the block:** `kiera.uno/timeout_handle` is raised.
+1. **Inside the block:** `puck.uno/timeout_handle` is raised.
    This is not an exception — it does not unwind. `begin`/`ensure` blocks inside
    the timeout do not run, no Charlie-level cleanup is attempted inside. The
    `timeout_handle` bubbles straight up to the timeout block's boundary,
    ignoring all user-level `catch` and `ensure` along the way.
 2. **At the timeout block's boundary:** the timeout mechanism intercepts the
-   `timeout_handle` and re-raises a `kiera.uno/error/timeout`
+   `timeout_handle` and re-raises a `puck.uno/error/timeout`
    in the caller's scope. This is a normal catchable error — the caller can
-   `catch('kiera.uno/error/timeout')` (or any ancestor
+   `catch('puck.uno/error/timeout')` (or any ancestor
    like `exception` or `error`) and handle it cleanly. If the caller doesn't
    catch, the timeout error propagates up the stack like any other.
 
 ```
-catch('kiera.uno/error/timeout')
+catch('puck.uno/error/timeout')
     %utils.timeout(5) do
         &slow_thing
     end
@@ -260,12 +260,12 @@ end
 ```
 
 With `unwind: true`, the two-stage mechanism collapses to one: when the
-deadline fires, a `kiera.uno/error/timeout` is raised **directly
+deadline fires, a `puck.uno/error/timeout` is raised **directly
 inside the block** (no `timeout_handle`), unwinds the stack like any normal
 exception, runs `begin`/`ensure`, and propagates outward.
 
 **This is not a security boundary.** Code inside the block can
-`catch('kiera.uno/error/timeout')` and keep running. That's the
+`catch('puck.uno/error/timeout')` and keep running. That's the
 point — cooperative code is trusted to honor the timeout. Use `unwind: true`
 when you control the code inside the block and want cleanup; use the default
 when you don't.
@@ -360,10 +360,10 @@ block's mode:
   propagates through Charlie-level frames without running any `ensure` blocks
   until it reaches the `%utils.timeout` boundary. There, the timeout's wrapping
   code intercepts the `timeout_handle` and translates it into a
-  `kiera.uno/error/timeout` raised normally in the caller's scope.
+  `puck.uno/error/timeout` raised normally in the caller's scope.
 - **`unwind: true` mode:** the error is untagged (or tagged as a normal
   exception). It's caught by ordinary `pcall`, runs `ensure`, and is exposed
-  to user `catch` as a `kiera.uno/error/timeout` directly inside
+  to user `catch` as a `puck.uno/error/timeout` directly inside
   the block. No boundary translation needed.
 
 The hook is cleared after the block completes (whether normally or via timeout).
@@ -397,7 +397,7 @@ is the language; CharlieJSON is the wire format.
 vibecode: {
 	"section": "relationship_to_other_systems",
 	"q0": "selects_and_filters_records_complementary_not_overlapping",
-	"kiera": "charlie_is_programming_language_component_of_kiera_ecoverse",
+	"puck": "charlie_is_programming_language_component_of_puck_ecoverse",
 	"charliejson": "runtime_format_charlie_compiles_to"
 }
 ```
@@ -405,8 +405,8 @@ vibecode: {
 - **Q0** — Charlie and Q0 are complementary. Q0 selects and filters records. Charlie
   computes, controls flow, and implements behavior. They are not the same language and are
   not meant to overlap.
-- **Kiera** — Charlie is the programming language component of the Kiera ecoverse,
-  alongside the Kiera object model and `kiera.uno/query`.
+- **Puck** — Charlie is the programming language component of the Puck ecoverse,
+  alongside the Puck object model and `puck.uno/query`.
 - **CharlieJSON** — The runtime format Charlie compiles to. See [charliejson.md](charliejson.md).
 
 ---
@@ -423,7 +423,7 @@ vibecode: {
 	"numbers": "no_int_float_distinction_single_number_type",
 	"truthiness": "null_and_false_are_falsy_everything_else_truthy_including_0_and_empty_string",
 	"null_true_false": "fully_instantiable_and_subclassable_classes",
-	"null_flavors": "hl7_concept_subclass_kiera.uno/null_for_domain_specific_nulls"
+	"null_flavors": "hl7_concept_subclass_puck.uno/null_for_domain_specific_nulls"
 }
 ```
 
@@ -492,31 +492,31 @@ The bwcs `null`, `true`, and `false` always return a standard instance of their 
 classes. This behavior cannot be changed. But you can create instances directly:
 
 ```
-$my_null = %kiera['null'].new
-$my_null = %kiera['kiera.uno/null'].new   # same thing
+$my_null = %puck['null'].new
+$my_null = %puck['puck.uno/null'].new   # same thing
 ```
 
-**Truthiness is immutable.** Any instance of `kiera.uno/null` or its subclasses is always
-falsey. Any instance of `kiera.uno/true` is always truthy. Any instance of `kiera.uno/false`
+**Truthiness is immutable.** Any instance of `puck.uno/null` or its subclasses is always
+falsey. Any instance of `puck.uno/true` is always truthy. Any instance of `puck.uno/false`
 is always falsey. Subclassing or adding methods cannot change this.
 
 <a id="null-flavors"></a>
 ### 6.8 Null Flavors
 
-The most compelling use case for subclassing `kiera.uno/null` is null flavors — a concept
+The most compelling use case for subclassing `puck.uno/null` is null flavors — a concept
 from HL7, the healthcare data standard. In HL7, null values carry a reason: "unknown",
 "not applicable", "masked for privacy", "not asked". Plain `null` loses this information;
 null flavors preserve it.
 
-In Charlie, you can subclass `kiera.uno/null` to create domain-specific null types:
+In Charlie, you can subclass `puck.uno/null` to create domain-specific null types:
 
 ```
 class 'myapp.com/null/unknown'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 
 class 'myapp.com/null/not_applicable'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 ```
 
@@ -524,14 +524,14 @@ Instances of these classes are falsey in all conditionals, but carry type inform
 that code can inspect when needed:
 
 ```
-$val = %kiera['myapp.com/null/unknown'].new
+$val = %puck['myapp.com/null/unknown'].new
 
 if($val)
     # never entered — $val is falsey
 end
 ```
 
-The same subclassing pattern applies to `kiera.uno/true` and `kiera.uno/false`, though
+The same subclassing pattern applies to `puck.uno/true` and `puck.uno/false`, though
 null flavors are the primary use case.
 
 <a id="operators"></a>
@@ -618,7 +618,7 @@ vibecode: {
 	"shared_shape": ["class", "id", "bucket"],
 	"raise_methods": ["%chain.warn", "%chain.throw", "%chain.error",
 		"%chain.exit", "%chain.abort"],
-	"top_level_classes": ["kiera.uno/warning", "kiera.uno/exception"],
+	"top_level_classes": ["puck.uno/warning", "puck.uno/exception"],
 	"exception_subclasses": ["error", "error/timeout",
 		"exit", "return", "abort",
 		"security", "timeout_handle"],
@@ -701,7 +701,7 @@ Subclasses override one or both properties as needed:
 <a id="error-vs-exception"></a>
 ### 8.3 Error vs exception
 
-`kiera.uno/error` is a **semantic marker**, not a behavioral
+`puck.uno/error` is a **semantic marker**, not a behavioral
 distinction. Both `exception` and `error` carry stack traces, both unwind,
 both are user-catchable. The class names exist to convey developer intent:
 
@@ -712,8 +712,8 @@ both are user-catchable. The class names exist to convey developer intent:
   signals to readers that this is a failure condition, not a routine
   flow-control event.
 
-`catch('kiera.uno/exception')` catches both (error is-a exception).
-`catch('kiera.uno/error')` catches only errors and their subclasses.
+`catch('puck.uno/exception')` catches both (error is-a exception).
+`catch('puck.uno/error')` catches only errors and their subclasses.
 
 **All exceptions carry a stack trace.** Trace capture cost is small in
 practice and the debug value of having a trace on every exception (especially
@@ -725,7 +725,7 @@ frame is a hash with at minimum:
 
 | Field | Type | Description |
 |---|---|---|
-| `class` | string (UNS) | The owning role / class of the function-object whose call frame this is. For top-level scripts, the engine fills in a synthetic UNS (e.g., `kiera.uno/script/<name>`). |
+| `class` | string (UNS) | The owning role / class of the function-object whose call frame this is. For top-level scripts, the engine fills in a synthetic UNS (e.g., `puck.uno/script/<name>`). |
 | `method` | string | The method or function name (e.g., `greet`, `init`, or `<top-level>`). |
 | `line` | integer | The source line number within the function (1-based). Null for engine-internal frames. |
 
@@ -744,25 +744,25 @@ id and a bucket; the class is implied by the method:
 
 ```
 %chain.warn 'redundant_fields', {fields: ['sort', 'sorts']}
-    # class: kiera.uno/warning
+    # class: puck.uno/warning
     # does not unwind
 
 %chain.throw 'cache_miss', {key: 'user:42'}
-    # class: kiera.uno/exception
+    # class: puck.uno/exception
     # unwinds, carries stack trace
 
 %chain.error 'connection_refused', {host: 'db1', port: 5432}
-    # class: kiera.uno/error
+    # class: puck.uno/error
     # unwinds, carries stack trace
     # the "error" subclass is a semantic marker — same behavior as throw,
     # just a name indicating "this is an error" for readers
 
 %chain.exit 'normal', {code: 0}
-    # class: kiera.uno/exit
+    # class: puck.uno/exit
     # unwinds (graceful shutdown), runs ensure and close
 
 %chain.abort 'unrecoverable', {reason: 'bad_state'}
-    # class: kiera.uno/abort
+    # class: puck.uno/abort
     # does NOT unwind — engine terminates, no ensure runs
 ```
 
@@ -781,7 +781,7 @@ For custom flag classes (a specific exception subclass, a Sinatra redirect, a
 custom warning, etc.), use the standard object-instantiation pattern:
 
 ```
-$f = %['kiera.uno/sinatra/redirect/302'].new('temporary')
+$f = %['puck.uno/sinatra/redirect/302'].new('temporary')
 $f['whatever'] = 'dude'
 $f.raise
 ```
@@ -801,16 +801,16 @@ configure, use. Nothing special.
 ### 8.6 Class hierarchy
 
 ```
-kiera.uno/warning
-kiera.uno/exception
-    kiera.uno/error
-        kiera.uno/error/timeout
+puck.uno/warning
+puck.uno/exception
+    puck.uno/error
+        puck.uno/error/timeout
         # other built-in and developer-defined errors live here
-    kiera.uno/exit
-    kiera.uno/return
-    kiera.uno/abort
-    kiera.uno/security
-    kiera.uno/timeout_handle
+    puck.uno/exit
+    puck.uno/return
+    puck.uno/abort
+    puck.uno/security
+    puck.uno/timeout_handle
 ```
 
 | Class | Catcher | Unwinds |
@@ -825,9 +825,9 @@ kiera.uno/exception
 | `security` | engine | no |
 | `timeout_handle` | timeout block boundary | no |
 
-- `kiera.uno/warning` is observational. Emitted via `%chain.warn`, collected
+- `puck.uno/warning` is observational. Emitted via `%chain.warn`, collected
   via `heed()`, never user-catchable through `catch()`.
-- `kiera.uno/exception` is the umbrella for everything raised. By default,
+- `puck.uno/exception` is the umbrella for everything raised. By default,
   exceptions are user-catchable and they unwind; the subclasses listed above
   override one or both of those properties.
 - `error` is a subclass of `exception` — same default profile, but carries a
@@ -848,15 +848,15 @@ profile unless it overrides.
 
 These are Charlie flow primitives:
 
-- **`return`** raises `kiera.uno/return`. Function call boundaries
+- **`return`** raises `puck.uno/return`. Function call boundaries
   automatically catch it and extract the return value. Early returns from nested
   blocks work naturally — no special non-local-return machinery needed; the
   interpreter uses the same unwind mechanism for all flow that unwinds.
-- **`exit`** raises `kiera.uno/exit`. Graceful: unwinds the stack,
+- **`exit`** raises `puck.uno/exit`. Graceful: unwinds the stack,
   runs `begin`/`ensure` blocks, runs `close` on objects (see
   [Garbage Collection](#garbage-collection)), and cleans up before the process
   ends. Equivalent to `%chain.exit` or `%process.exit`.
-- **`abort`** raises `kiera.uno/abort`. **Violent**: the engine
+- **`abort`** raises `puck.uno/abort`. **Violent**: the engine
   terminates the execution unit immediately. The stack is not unwound,
   `begin`/`ensure` does not run, `close` is not called, GC does not run.
   Equivalent to `%chain.abort` or `%process.abort`.
@@ -882,7 +882,7 @@ termination, no Charlie-level code is trusted to run during cleanup).
 
 Abort is a capability granted per role. The `user` role typically holds
 it; roles the engine launches with restricted surfaces may not.
-`kiera.uno/abort` propagates to role boundaries:
+`puck.uno/abort` propagates to role boundaries:
 
 - At a boundary into a role **with** abort capability, the process
   terminates.
@@ -897,8 +897,8 @@ abort itself, not the process that contains it.
 ### 8.8 Catching exceptions
 
 `catch()` matches **user-territory exceptions** — classes whose `catcher`
-property is "user." That's `kiera.uno/exception`, `kiera.uno/error`,
-`kiera.uno/error/timeout`, and any developer-defined class with
+property is "user." That's `puck.uno/exception`, `puck.uno/error`,
+`puck.uno/error/timeout`, and any developer-defined class with
 `catcher: user`. Engine-territory subclasses (`exit`, `return`, `abort`,
 `security`, `timeout_handle`) are not catchable from user code; the
 engine catches them before user catch handlers see them, even though
@@ -937,19 +937,19 @@ that declared themselves user-catchable. This is the idiomatic "catch
 whatever the user might throw" form.
 
 **Note on the hierarchy.** `catch()` is filtered by both class match *and*
-the `catcher` property. So `catch('kiera.uno/exception')` matches `exception`,
+the `catcher` property. So `catch('puck.uno/exception')` matches `exception`,
 `error`, and `error/timeout` (all `catcher: user`), but **not** `exit`,
 `abort`, `security`, `return`, or `timeout_handle` — those are declared
 subclasses of `exception` but have engine-or-other catchers, and `catch`
 never sees them. The engine catches engine-territory subclasses before user
 catch handlers run. Custom subclasses match their declared parent:
-`catch('kiera.uno/error')` matches `foo.com/error/network`
+`catch('puck.uno/error')` matches `foo.com/error/network`
 because the latter is declared as a subclass of error.
 
 **UNS naming is flat; inheritance is declared.** The class names above
-(`kiera.uno/error`, `kiera.uno/exit`, `kiera.uno/abort`, etc.) all live
-at the top of the `kiera.uno/` namespace — there is no `kiera.uno/exception/`
-prefix in the UNS. Their relationship to `kiera.uno/exception` is by
+(`puck.uno/error`, `puck.uno/exit`, `puck.uno/abort`, etc.) all live
+at the top of the `puck.uno/` namespace — there is no `puck.uno/exception/`
+prefix in the UNS. Their relationship to `puck.uno/exception` is by
 **declared inheritance**, not by UNS path. Catch behavior, subclass
 matching, and the abstract-vs-concrete distinction all follow declared
 inheritance — not UNS-prefix matching. (See
@@ -1108,7 +1108,7 @@ non-local exit is a typed value that unwinds the call stack until a
 registered handler matches it. The shape reuses the exception system
 described in [Exceptions and Warnings](#exceptions-and-warnings-romulan-senator);
 loop and block controls are additional subclasses of
-`kiera.uno/exception`.
+`puck.uno/exception`.
 
 This is a runtime-architecture statement, not a new feature spec. The
 user-facing surface — next, return, raise, catch, ensure, `as`
@@ -1126,15 +1126,15 @@ loop and block controls:
 
 | Class | Raised by | Carries |
 |---|---|---|
-| `kiera.uno/error` | `raise` (default) | message + bucket |
-| `kiera.uno/return` | plain `return value` | the return value |
-| `kiera.uno/exit` | `%chain.exit` | the exit code |
-| `kiera.uno/abort` | `%chain.abort` | engine-fatal; not unwinding via user code |
-| `kiera.uno/security` | role violation | engine-tagged |
-| `kiera.uno/timeout_handle` | timeout | engine-tagged |
-| `kiera.uno/loop/next` | `$loop.next` | target loop id |
-| `kiera.uno/loop/return` | `$loop.return` (optionally with a value) | target loop id + optional value |
-| `kiera.uno/block/return` | `$if.return value` (and any `as $name` block) | target block id + value |
+| `puck.uno/error` | `raise` (default) | message + bucket |
+| `puck.uno/return` | plain `return value` | the return value |
+| `puck.uno/exit` | `%chain.exit` | the exit code |
+| `puck.uno/abort` | `%chain.abort` | engine-fatal; not unwinding via user code |
+| `puck.uno/security` | role violation | engine-tagged |
+| `puck.uno/timeout_handle` | timeout | engine-tagged |
+| `puck.uno/loop/next` | `$loop.next` | target loop id |
+| `puck.uno/loop/return` | `$loop.return` (optionally with a value) | target loop id + optional value |
+| `puck.uno/block/return` | `$if.return value` (and any `as $name` block) | target block id + value |
 
 All inherit the standard exception shape: class, id, bucket. The
 [`catcher` and `unwinds` properties](#exceptions-and-warnings-romulan-senator)
@@ -1156,12 +1156,12 @@ mechanism above:
   blocks run on the way through.
 
 The class names (`loop/return`, `block/return`, etc.) are working names.
-They live at the top of the `kiera.uno/` namespace (`kiera.uno/loop/return`,
-`kiera.uno/block/return`) and are declared subclasses of
-`kiera.uno/exception` — UNS placement and inheritance are independent.
+They live at the top of the `puck.uno/` namespace (`puck.uno/loop/return`,
+`puck.uno/block/return`) and are declared subclasses of
+`puck.uno/exception` — UNS placement and inheritance are independent.
 Names may rearrange when the spec gets a unifying pass; what matters at
 the architecture level is that they are declared subclasses of
-`kiera.uno/exception` and participate in the same machinery.
+`puck.uno/exception` and participate in the same machinery.
 
 <a id="handler-registration-via-as"></a>
 ### 9.2 Handler registration via `as`
@@ -1241,7 +1241,7 @@ A loop object (or any `as $name` block object) captured in a closure
 and called after its construct has exited is **stale** — its handler
 is no longer on the runtime's stack. Calling
 `.next`/`.return` on a stale handler raises
-`kiera.uno/error/stale_handler` instead of the control it
+`puck.uno/error/stale_handler` instead of the control it
 would have raised.
 
 ```
@@ -1574,13 +1574,13 @@ vibecode: {
 	"principle": "every_named_reference_resolves_through_one_lookup_primitive_parameterized_by_namespace_chain",
 	"shared_primitive": "lookup",
 	"unifies": ["lexical_variables", "instance_vars", "sys_methods",
-		"kiera_uns_lookups", "chain_entries", "method_dispatch",
+		"puck_uns_lookups", "chain_entries", "method_dispatch",
 		"bucket_lookups"]
 }
 ```
 
 Every named reference in Charlie — `$foo`, `@foo`, `%foo`,
-`kiera.uno/foo` via `%kiera[...]`, `%chain.foo`, `$obj.foo` for
+`puck.uno/foo` via `%puck[...]`, `%chain.foo`, `$obj.foo` for
 method dispatch, `bucket.foo` — is a lookup: given a name and a
 namespace (or a chain of namespaces tried in order), return the
 value or null. The sigil determines which namespace chain to
@@ -1612,7 +1612,7 @@ for method dispatch) is just a longer chain.
 | `$foo` | current lexical scope, then enclosing scope, then enclosing's enclosing, etc. up to the function's top |
 | `@foo` | the current instance's bucket |
 | `%foo` | the engine's sys-method table |
-| `kiera.uno/foo` via `%kiera[...]` | the current kiera's getter table (single namespace) |
+| `puck.uno/foo` via `%puck[...]` | the current puck's getter table (single namespace) |
 | `%chain.foo` | the current frame's `%chain` entries |
 | `$obj.foo` (method dispatch) | `obj`'s class's methods, then the class hierarchy walked outward |
 | bucket key access | a single bucket (no chain) |
@@ -1636,7 +1636,7 @@ for method dispatch) is just a longer chain.
 ### 12.4 Open
 
 - **Whether `lookup` is exposed to user code or kept internal.** A
-  user-facing `%kiera.lookup` (or similar) might be useful for
+  user-facing `%puck.lookup` (or similar) might be useful for
   introspection; might be unwanted as engine internal. TBD.
 - **Stop conditions for upward scope walks.** Lexical scope walking
   stops at the function boundary; method dispatch stops at the root
@@ -1817,12 +1817,12 @@ is the developer's responsibility.
 Serialization is straightforward — `%bucket` is the object's data, so exporting it
 exports the object's state.
 
-**Buckets are not Kiera hashes.** The global Kiera hash-key standard (snake_case
+**Buckets are not Puck hashes.** The global Puck hash-key standard (snake_case
 names, JSON-shaped data) does not apply to object buckets. Buckets are internal
 storage with their own conventions; class designers pick whatever keys make sense
 for their state.
 
-**The `uns` bucket-key convention.** A Kiera-wide convention reserves the bucket
+**The `uns` bucket-key convention.** A Puck-wide convention reserves the bucket
 key `uns` for a sub-hash organized by UNS strings. When a bucket has an `uns`
 key, the value is understood as a hash of "things keyed by UNS" — each entry's
 key is a class UNS and its value is whatever state that UNS-keyed entity wants
@@ -1833,8 +1833,8 @@ to store.
     foo: 'bar',           # host class's own state
     baz: 42,
     uns: {
-        'kiera.uno/trivet/node': {parent: ..., children: ..., id: ...},
-        'kiera.uno/uma/text':    {...},
+        'puck.uno/trivet/node': {parent: ..., children: ..., id: ...},
+        'puck.uno/uma/text':    {...},
     }
 }
 ```
@@ -1897,7 +1897,7 @@ meta information about the object:
 $foo.object.classes      # the explicit class stack (base class + any additional classes)
                          # does not include the shadow class
 
-$foo.object.isa? 'kiera.uno/color'    # true if 'kiera.uno/color' is in the class stack
+$foo.object.isa? 'puck.uno/color'    # true if 'puck.uno/color' is in the class stack
                                        # (the object's class or any superclass)
 ```
 
@@ -1906,7 +1906,7 @@ matches any class in the stack. Use it to check class membership without caring 
 the exact resolution path:
 
 ```
-if $foo.object.isa? 'kiera.uno/error'
+if $foo.object.isa? 'puck.uno/error'
     # $foo is an error of some kind
 end
 ```
@@ -2000,7 +2000,7 @@ covers every object in the system.
 ```
 vibecode: {
 	"section": "helpers",
-	"base_class": "kiera.uno/helper",
+	"base_class": "puck.uno/helper",
 	"purpose": "namespace_methods_without_polluting_main_object_namespace",
 	"access": "self.reference points back to parent object",
 	"initialization": "lazy_not_created_until_first_accessed",
@@ -2008,7 +2008,7 @@ vibecode: {
 }
 ```
 
-A helper is an instance of `kiera.uno/helper`. It provides a way to namespace methods
+A helper is an instance of `puck.uno/helper`. It provides a way to namespace methods
 without polluting the main method namespace of an object.
 
 The base helper class defines a single field: `@reference`, which points back to the
@@ -2061,8 +2061,8 @@ vibecode: {
 	"section": "classes",
 	"identity": "from_reference_held_not_declared_name",
 	"no_global_registry": true,
-	"kiera_namespace": "%kiera[UNS] to access registered objects",
-	"definition": "$myclass = class...end or %kiera['kiera.uno/object'].subclass do...end",
+	"puck_namespace": "%puck[UNS] to access registered objects",
+	"definition": "$myclass = class...end or %puck['puck.uno/object'].subclass do...end",
 	"subclassing": "$new_class = $my_class.subclass do...end",
 	"properties": "declared with property @foo :get :set default:",
 	"abstract": "abstract true prevents direct instantiation",
@@ -2075,20 +2075,20 @@ Classes are objects. Like functions, they live wherever they are stored. There i
 class registry and no namespacing system like `Foo::Bar`. A class's identity comes from the
 reference held to it, not from a declared name. To use a class, you need a reference to it.
 
-<a id="kiera"></a>
-### 17.1 `%kiera`
+<a id="puck"></a>
+### 17.1 `%puck`
 
-`%kiera` is a system method that provides access to the global Kiera object namespace.
-`%kiera[UNS]` returns the object registered at that UNS address — which may be a class,
+`%puck` is a system method that provides access to the global Puck object namespace.
+`%puck[UNS]` returns the object registered at that UNS address — which may be a class,
 but is not limited to classes.
 
 ```
-%kiera['kiera.uno/mikobase/memory'].new
-%kiera['kiera.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
+%puck['puck.uno/mikobase/memory'].new
+%puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
 ```
 
-In the first version, `%kiera` only resolves a predefined set of built-in objects. When
-and how remote objects can be retrieved via `%kiera` is a Kiera design question for later.
+In the first version, `%puck` only resolves a predefined set of built-in objects. When
+and how remote objects can be retrieved via `%puck` is a Puck design question for later.
 
 Class definition syntax is a DSL — it uses the same dispatcher/bwc mechanism as any
 other DSL. There are no special parser rules for class definitions.
@@ -2113,7 +2113,7 @@ end
 For developers who need explicit access to the root class:
 
 ```
-$myclass = %kiera['kiera.uno/object'].subclass do
+$myclass = %puck['puck.uno/object'].subclass do
 end
 ```
 

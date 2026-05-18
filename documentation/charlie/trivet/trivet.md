@@ -1,6 +1,6 @@
 # Trivet
 
-`kiera.uno/trivet` — a generic tree library for Charlie. Provides
+`puck.uno/trivet` — a generic tree library for Charlie. Provides
 hierarchical node structures with parent/child relationships,
 traversal, query, and mutation. Ported from the Ruby Trivet gem.
 
@@ -25,17 +25,17 @@ over directly; method naming follows Charlie conventions.
 
 Three classes form the Trivet surface:
 
-- **`kiera.uno/trivet/node`** — a single node in a tree. Has an
+- **`puck.uno/trivet/node`** — a single node in a tree. Has an
   optional id, a parent reference, and a children collection.
   All node methods live here.
-- **`kiera.uno/trivet/child_set`** — a thin **subclass of Array**
+- **`puck.uno/trivet/child_set`** — a thin **subclass of Array**
   that holds a node's children. It inherits everything from
   Array (length, indexing, `.find`, `.elements`, iteration, etc.)
   and overrides the mutation methods (`push`, `pop`, `shift`,
   `unshift`, `insert`, `delete_at`) to keep parent pointers in
   sync. Each override calls super to do the array work and then
   updates the affected child's `parent` accordingly.
-- **`kiera.uno/trivet/document`** — a separate, non-node class
+- **`puck.uno/trivet/document`** — a separate, non-node class
   that holds a tree's root. **Not** a node itself, not in the
   tree. Used to attach metadata to a tree, or to have a stable
   outside-of-tree handle when the root might be replaced. Always
@@ -57,7 +57,7 @@ into nodes; non-node children are leaves.
 ## 3 Construction
 
 ```
-$food = %['kiera.uno/trivet/node'].new('food')
+$food = %['puck.uno/trivet/node'].new('food')
 
 $food.node('spices') do($spices)
     $spices.node('paprika')
@@ -145,7 +145,7 @@ behavior:
 
 ```
 class
-    inherits 'kiera.uno/trivet/node'
+    inherits 'puck.uno/trivet/node'
 
     function id=($new_id) do
         @attributes['id'] = $new_id
@@ -198,7 +198,7 @@ $paprika.rehome($pepper, index: 'last')
 
 `rehome` does, in order:
 
-1. **Validate.** Cycle check (raise `kiera.uno/trivet/error/cycle`
+1. **Validate.** Cycle check (raise `puck.uno/trivet/error/cycle`
    if the move would create a loop). `allow_child?` check on the
    new parent (raise / call `on_prohibited_child`). Any other
    pre-mutation guards.
@@ -251,7 +251,7 @@ reads as "pepper gains a child" rather than the more clinical
 
 A tree, by definition, has no cycles. Any operation that would
 make a node its own descendant — directly or transitively —
-**raises `kiera.uno/trivet/error/cycle`**. This applies to every
+**raises `puck.uno/trivet/error/cycle`**. This applies to every
 reparenting path — meaning every `rehome` call, and therefore
 every sugar method that delegates to it (`parent=`,
 `set_parent`, `add`, `prepend`, `insert`, etc.).
@@ -439,7 +439,7 @@ use query on a tree of bare trivet nodes, subclass and override
 
 ```
 class
-    inherits 'kiera.uno/trivet/node'
+    inherits 'puck.uno/trivet/node'
 
     function match?($qobj) do
         # return truthy if this node matches the query
@@ -514,10 +514,10 @@ overriding `allow_child?`:
 
 ```
 class
-    inherits 'kiera.uno/trivet/node'
+    inherits 'puck.uno/trivet/node'
 
     function allow_child?($candidate) do
-        return $candidate.object.isa?('kiera.uno/trivet/node')
+        return $candidate.object.isa?('puck.uno/trivet/node')
     end
 end
 ```
@@ -535,7 +535,7 @@ everything).
 
 `$node.child_class` lets the node specify what class new
 children should be when created via `$node.node(id)`. Default
-is `kiera.uno/trivet/node`; subclasses override to make their
+is `puck.uno/trivet/node`; subclasses override to make their
 `node` builder produce the same subclass.
 
 ---
@@ -572,12 +572,12 @@ food
 <a id="document"></a>
 ## 12 Document
 
-`kiera.uno/trivet/document` is **not** a node. It is a separate
+`puck.uno/trivet/document` is **not** a node. It is a separate
 container class that holds a tree's root and exists outside the
 tree's parent/child structure.
 
 ```
-$doc = %['kiera.uno/trivet/document'].new
+$doc = %['puck.uno/trivet/document'].new
 $doc.root = $food         # the food tree's root is now held by $doc
 $food.parent              # null — root has no Node parent
 $food.document            # returns $doc
@@ -670,7 +670,7 @@ already contain unrelated state, and the rest of the host's
 class stack might write to that bucket too.
 
 To avoid collisions, Trivet keeps its state under a **single
-reserved bucket key**: `uns`. This is a Kiera-wide convention
+reserved bucket key**: `uns`. This is a Puck-wide convention
 (not specific to Trivet) — if a bucket contains an `uns` key,
 it's understood to hold a sub-hash organized by UNS strings.
 Each UNS-keyed entry inside is its own piece of state.
@@ -680,8 +680,8 @@ Each UNS-keyed entry inside is its own piece of state.
     real_property_1: ...,           # host class's own state
     real_property_2: ...,
     uns: {
-        'kiera.uno/trivet/node': {parent: ..., children: ..., id: ...},
-        'kiera.uno/uma/text':    {...},   # if also a Uma text node
+        'puck.uno/trivet/node': {parent: ..., children: ..., id: ...},
+        'puck.uno/uma/text':    {...},   # if also a Uma text node
         ...
     }
 }
@@ -697,7 +697,7 @@ One reserved key is much easier to remember and audit than
 classes get the rest of the bucket for their own use; mix-in
 platters get the `uns` slot.
 
-**Buckets are not Kiera hashes.** The global Kiera hash-key
+**Buckets are not Puck hashes.** The global Puck hash-key
 standard (snake_case names, JSON-shaped data) doesn't apply to
 object buckets — buckets are internal storage with their own
 conventions, of which `uns` is one. Bucket keys can be anything

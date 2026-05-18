@@ -127,7 +127,7 @@ without giving up the descendant constraint.
 ### 4.2 Multiple return markers
 
 If multiple levels carry `"return": true`, the **outermost wins**.
-Deeper markers are ignored. A `kiera.uno/uma/warning/multiple_return_markers`
+Deeper markers are ignored. A `puck.uno/uma/warning/multiple_return_markers`
 warning is emitted via `%chain.warn` (Jasmine catches it
 automatically). The query still runs deterministically; the
 warning surfaces the smell.

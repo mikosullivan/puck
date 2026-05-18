@@ -12,7 +12,7 @@
     "pipe-based function composition",
     "exception handling with catch",
     "chain context scoping",
-    "null flavors (subclassing kiera.uno/null)",
+    "null flavors (subclassing puck.uno/null)",
     "hot connections for real-time record updates"
   ]
 }
@@ -66,7 +66,7 @@ class 'starfleet.com/officer'
     field :rank,     class: :string,  required: true
     field :serial,   class: :string,  required: true, unique: true
     field :active,   class: :boolean, default: true
-    field :starship, class: 'kiera.uno/reference', allowed_class: 'starfleet.com/ship'
+    field :starship, class: 'puck.uno/reference', allowed_class: 'starfleet.com/ship'
 
     %vibecode <<EOF
     {
@@ -108,7 +108,7 @@ class 'starfleet.com/officer'
       "purpose": "Assign the officer to a ship",
       "params":  {"ship": "a starfleet.com/ship record"},
       "returns": "self, enabling pipe chaining",
-      "note":    "writes to @starship which is a kiera.uno/reference field — stores a reference to the ship record, not the ship itself"
+      "note":    "writes to @starship which is a puck.uno/reference field — stores a reference to the ship record, not the ship itself"
     }
     EOF
 
@@ -159,7 +159,7 @@ end
 }
 EOF
 
-$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
+$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
 
 %vibecode <<EOF
 {
@@ -401,13 +401,13 @@ end
 %vibecode <<EOF
 {
   "purpose": "Define a domain-specific null type for classified information",
-  "pattern": "null flavor — subclass of kiera.uno/null that is falsey but carries type information",
+  "pattern": "null flavor — subclass of puck.uno/null that is falsey but carries type information",
   "note":    "any instance of this class evaluates as false in conditionals, but code can inspect its class to know WHY the value is null"
 }
 EOF
 
 class 'starfleet.com/null/classified'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 
 %vibecode <<EOF
@@ -417,7 +417,7 @@ end
 }
 EOF
 
-$classified = %kiera['starfleet.com/null/classified'].new
+$classified = %puck['starfleet.com/null/classified'].new
 
 if ($classified)
     puts('never reached — classified is falsey')
@@ -432,7 +432,7 @@ end
 }
 EOF
 
-$hot = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
+$hot = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
 
 $picard = $hot.q0({
     vibecode: {

@@ -90,7 +90,7 @@ TryRuby, Replit, the various "play with this language" pages.
 - Persistent saved snippets for sharing.
 - Pre-loaded mikobase examples, blockchain examples,
   Sinatra/Bryton skeletons.
-- A real first-contact surface: someone reads a Kiera article,
+- A real first-contact surface: someone reads a Puck article,
   clicks a "try it" link, and 30 seconds later is running Charlie
   in their browser.
 
@@ -98,30 +98,30 @@ Aligns with the first-contact strategy memory.
 
 ---
 
-<a id="6-kiera-cli-tool"></a>
-## 6 6. Kiera CLI tool
+<a id="6-puck-cli-tool"></a>
+## 6 6. Puck CLI tool
 
-A unified command-line tool — `kiera` — for everyday Kiera
+A unified command-line tool — `puck` — for everyday Puck
 operations. Like `kubectl` for Kubernetes or `gh` for GitHub.
 
 ```
-kiera object get foo.com/widget/42
-kiera mikobase create scratch
-kiera mikobase sync source=... target=...
-kiera class show kiera.uno/jasmine
-kiera blockchain verify
-kiera test run            # wraps bryton
+puck object get foo.com/widget/42
+puck mikobase create scratch
+puck mikobase sync source=... target=...
+puck class show puck.uno/jasmine
+puck blockchain verify
+puck test run            # wraps bryton
 ```
 
 Single entry point for what's currently a constellation of
-specific scripts. Discoverable via `kiera --help`.
+specific scripts. Discoverable via `puck --help`.
 
 ---
 
 <a id="7-universal-logger-sidecar"></a>
 ## 7 7. Universal logger sidecar
 
-A small daemon — `kiera-log` — that reads Jasmine entries on
+A small daemon — `puck-log` — that reads Jasmine entries on
 stdin (or a Unix socket) and routes them to whatever's configured
 (local files, the hosted logging service, syslog, Slack, etc.).
 
@@ -149,7 +149,7 @@ remote shared mikobase, and a third-party mikobase the user has
 access to. None merge physically; the view is a join.
 
 Hard to do well (cross-mikobase joins are nontrivial) but
-philosophically aligned with Kiera's "objects everywhere"
+philosophically aligned with Puck's "objects everywhere"
 posture.
 
 ---
@@ -161,7 +161,7 @@ A class capability: objects with an explicit lifetime. The
 mikobase auto-collects them after their TTL expires.
 
 ```
-$token = %['kiera.uno/auth/token'].new(
+$token = %['puck.uno/auth/token'].new(
     expires_at: %now + 3600,
     user: $user
 )

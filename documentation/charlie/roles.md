@@ -83,7 +83,7 @@ vibecode: {
 ```
 
 `%role` returns the role the current code is running under. Same shape as
-`%chain`, `%kiera`, `%self` — a system method, always available, context
+`%chain`, `%puck`, `%self` — a system method, always available, context
 aware.
 
 ```
@@ -99,7 +99,7 @@ $current = %role    # the role currently in effect
 vibecode: {
     "section": "engine_startup_roles",
     "minimum": ["user", "stdlib", "clock", "randomizer", "utils"],
-    "engine_dependent": ["dirjails", "network_faucets", "stdin", "env_vars", "cli_args", "kiera"]
+    "engine_dependent": ["dirjails", "network_faucets", "stdin", "env_vars", "cli_args", "puck"]
 }
 ```
 
@@ -127,7 +127,7 @@ necessary for the objects it's about to pass into the runtime. At minimum:
   regardless of which specific method was called.
 
 Engines will typically wire up more depending on what they're exposing:
-roles for STDIN, env vars, CLI args, the kiera, each dirjail, each
+roles for STDIN, env vars, CLI args, the puck, each dirjail, each
 network faucet, etc. The minimum above is what every engine has; the rest
 varies by engine configuration.
 
@@ -262,7 +262,7 @@ Mechanics:
 - **Outer scope is still captured.** The block is a closure, so
   outer-scope variables are still in scope. `%chain.isolate` isolates
   the *chain*, not the closure's captured locals.
-- **System methods still work.** `%kiera`, `%now`, etc. remain available.
+- **System methods still work.** `%puck`, `%now`, etc. remain available.
   The isolation is chain-and-role, not full capability.
 - **Original chain restored on return.** When the block ends, the outer
   role takes over again with its original `%chain` intact.
@@ -355,7 +355,7 @@ Three rules:
   created them — i.e., the role currently executing at the moment of
   creation. A function defined inside role A's code is owned by A. An
   instance from `$class.new(...)` called from A is owned by A.
-- **Engine-supplied built-ins** (stdlib, `%kiera`-resolved capabilities,
+- **Engine-supplied built-ins** (stdlib, `%puck`-resolved capabilities,
   etc.): assigned roles by the engine at startup, before any user code
   runs.
 
@@ -382,7 +382,7 @@ vibecode: {
 }
 ```
 
-The Kiera vocabulary for source-side resources is **faucet** — any
+The Puck vocabulary for source-side resources is **faucet** — any
 resource through which objects are pulled into the runtime. Examples: a
 filesystem dirjail, a database connection, an HTTP client, a socket, an
 IPC channel.
@@ -481,8 +481,8 @@ through it inherits that role**.
 - **Network faucets.** Engine-granted, distinct role, responses pulled
   through are owned by the faucet's role. HTTP is the worked example so
   far; other protocols follow the same shape.
-- **Kiera.** See [kiera.md](../kiera/kiera.md) for the full kiera model;
-  internally a kiera holds getters, which hold faucets, with per-getter
+- **Puck.** See [puck.md](../puck/puck.md) for the full puck model;
+  internally a puck holds getters, which hold faucets, with per-getter
   roles.
 
 ---
@@ -562,7 +562,7 @@ meaningful security properties. Candidate consolidations:
 - All filesystem faucets → one `fs` role.
 - All network faucets → one `net` role.
 - STDIN + env-vars + CLI-args → one `system-input` role.
-- Engine-supplied capabilities → one `kiera` (or `engine`) role.
+- Engine-supplied capabilities → one `puck` (or `engine`) role.
 
 <a id="role-lifecycle"></a>
 ### 12.4 Role lifecycle
@@ -616,7 +616,7 @@ To explore in a future round.
 <a id="related-documents"></a>
 ## 13 Related Documents
 
-- [kiera.md](../kiera/kiera.md) — the kiera object model, which builds on role
+- [puck.md](../puck/puck.md) — the puck object model, which builds on role
   concepts (per-getter roles, version windows, etc.).
 - [ideas/catchable-alarms.md](../ideas/catchable-alarms.md) — preserved
   alternate design where alarms could be caught at role boundaries.

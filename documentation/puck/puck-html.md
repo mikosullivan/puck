@@ -1,6 +1,6 @@
-# Kiera HTML Format
+# Puck HTML Format
 
-JSON and HTML are both official formats for Kiera objects. An object can be expressed
+JSON and HTML are both official formats for Puck objects. An object can be expressed
 in either form and converted between them losslessly. Neither is preferred over the
 other.
 
@@ -11,20 +11,20 @@ can reconstruct the JSON exactly.
 <a id="design-goal-ai-cold-start"></a>
 ## 1 Design Goal: AI Cold-Start
 
-**An AI agent that visits a Kiera class page with no prior knowledge of Kiera should
-be able to understand what the page is, what the object does, and how to use Kiera —
+**An AI agent that visits a Puck class page with no prior knowledge of Puck should
+be able to understand what the page is, what the object does, and how to use Puck —
 from the page alone.**
 
 This context is page-level information about the system, not data belonging to the
-object itself. It lives in a `<meta name="kiera:vibecode">` tag in the `<head>`:
+object itself. It lives in a `<meta name="puck:vibecode">` tag in the `<head>`:
 
 ```html
-<meta name="kiera:vibecode" content='{"ecoverse":"kiera",
-"ecoverse_description":"Kiera is a distributed object system...",
+<meta name="puck:vibecode" content='{"ecoverse":"puck",
+"ecoverse_description":"Puck is a distributed object system...",
 "this_page":"class definition — describes a type with typed fields and callable methods",
 "how_to_use":"...",
-"verification":"object provenance and integrity can be verified via blockchain.kiera.uno",
-"ecoverse_info":"kiera.uno/vibecode"}'>
+"verification":"object provenance and integrity can be verified via blockchain.puck.uno",
+"ecoverse_info":"puck.uno/vibecode"}'>
 ```
 
 Because it is page metadata and not object data, it does not appear in the JSON
@@ -33,11 +33,11 @@ doing JSON conversion ignores it.
 
 The meta tag must include:
 
-- What Kiera is — a brief description of the distributed object system and UNS addresses
+- What Puck is — a brief description of the distributed object system and UNS addresses
 - What this page is — a class definition with fields and methods
 - How to use it — fetch from the UNS address, read fields and methods sections
-- Where to verify — the blockchain API at `blockchain.kiera.uno`
-- Where to learn more — `kiera.uno/vibecode`
+- Where to verify — the blockchain API at `blockchain.puck.uno`
+- Where to learn more — `puck.uno/vibecode`
 
 See `json.html` in this directory for a worked example.
 
@@ -46,17 +46,17 @@ See `json.html` in this directory for a worked example.
 <a id="data-attributes"></a>
 ## 2 Data Attributes
 
-The machine-readable structure is carried entirely in `data-kiera-*` attributes. The
+The machine-readable structure is carried entirely in `data-puck-*` attributes. The
 visible HTML is purely for display and has no effect on conversion.
 
 | Attribute | Purpose |
 |-----------|---------|
-| `data-kiera-type` | The type of this node: `hash`, `array`, `string`, `number`, `boolean`, or `null` |
-| `data-kiera-key` | The key name when this node is a value inside a parent hash |
-| `data-kiera-value` | The scalar value for `string`, `number`, and `boolean` nodes |
+| `data-puck-type` | The type of this node: `hash`, `array`, `string`, `number`, `boolean`, or `null` |
+| `data-puck-key` | The key name when this node is a value inside a parent hash |
+| `data-puck-value` | The scalar value for `string`, `number`, and `boolean` nodes |
 | `data-vibecode` | A JSON object providing a compact specification of this element. Parsed and included as a `"vibecode"` key in the element's JSON object. |
 
-Array items carry no `data-kiera-key`. Their position in the DOM is their position in
+Array items carry no `data-puck-key`. Their position in the DOM is their position in
 the array.
 
 When `data-vibecode` is present on an element, its value is parsed as JSON and included
@@ -69,13 +69,13 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 <a id="type-mapping"></a>
 ## 3 Type Mapping
 
-| JSON type | `data-kiera-type` | Value location |
+| JSON type | `data-puck-type` | Value location |
 |-----------|-------------------|----------------|
-| `{}` hash | `hash` | Child elements with `data-kiera-key` |
+| `{}` hash | `hash` | Child elements with `data-puck-key` |
 | `[]` array | `array` | Child elements in DOM order |
-| `"string"` | `string` | `data-kiera-value` attribute |
-| `123` number | `number` | `data-kiera-value` attribute |
-| `true`/`false` | `boolean` | `data-kiera-value` attribute |
+| `"string"` | `string` | `data-puck-value` attribute |
+| `123` number | `number` | `data-puck-value` attribute |
+| `true`/`false` | `boolean` | `data-puck-value` attribute |
 | `null` | `null` | No value attribute needed |
 
 ---
@@ -85,27 +85,27 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 
 **JSON → HTML**
 
-1. The root object becomes an element with `data-kiera-type="hash"`.
-2. Each key-value pair becomes a child element with `data-kiera-key` set to the key
-   name and `data-kiera-type` set to the value's type.
-3. For scalar values, `data-kiera-value` holds the raw value as a string.
+1. The root object becomes an element with `data-puck-type="hash"`.
+2. Each key-value pair becomes a child element with `data-puck-key` set to the key
+   name and `data-puck-type` set to the value's type.
+3. For scalar values, `data-puck-value` holds the raw value as a string.
 4. For hash and array values, recurse into child elements.
 5. If an object has a `"vibecode"` key, serialize its value as the `data-vibecode`
-   attribute on that element. Do not emit it as a child element with `data-kiera-key`.
+   attribute on that element. Do not emit it as a child element with `data-puck-key`.
 6. Display content (labels, badges, layout) may be added freely — it is ignored during
    conversion back to JSON.
 
 **HTML → JSON**
 
-1. Find the root element with `data-kiera-type`.
-2. For `hash`: collect all direct structural children with `data-kiera-key` as
+1. Find the root element with `data-puck-type`.
+2. For `hash`: collect all direct structural children with `data-puck-key` as
    key-value pairs.
 3. For `array`: collect all direct structural children in DOM order.
-4. For `string`, `number`, `boolean`: read `data-kiera-value`.
+4. For `string`, `number`, `boolean`: read `data-puck-value`.
 5. For `null`: value is `null`.
 6. If `data-vibecode` is present, parse it as JSON and include it as the `"vibecode"`
    key in that element's object.
-7. Ignore all elements without `data-kiera-type` — they are display-only.
+7. Ignore all elements without `data-puck-type` — they are display-only.
 
 ---
 
@@ -113,14 +113,14 @@ round-tripping of vibecode — the `"vibecode"` key in JSON maps directly to the
 ## 5 UNS Values as Links
 
 When a scalar string value is a UNS address, the display text may be wrapped in an
-`<a>` tag linking to the UNS URL. The `data-kiera-value` attribute still holds the
+`<a>` tag linking to the UNS URL. The `data-puck-value` attribute still holds the
 bare UNS string; the link is display-only and does not affect conversion.
 
 ```html
-<div data-kiera-type="string" data-kiera-value="kiera.uno/tag/parsing" class="kiera-field">
+<div data-puck-type="string" data-puck-value="puck.uno/tag/parsing" class="puck-field">
   <div class="field-key">[0]</div>
   <div class="field-value">
-    <a href="https://kiera.uno/tag/parsing" target="_blank">kiera.uno/tag/parsing</a>
+    <a href="https://puck.uno/tag/parsing" target="_blank">puck.uno/tag/parsing</a>
   </div>
 </div>
 ```
@@ -132,22 +132,22 @@ bare UNS string; the link is display-only and does not affect conversion.
 
 Any element may carry a `data-vibecode` attribute containing a minified JSON
 specification of that element's semantics. Vibecode is supplementary — it does not
-replace the `data-kiera-*` attribute structure, but provides a compact formal summary
+replace the `data-puck-*` attribute structure, but provides a compact formal summary
 that tools and AI agents can read without traversing the full tree.
 
 Vibecode on the root element describes the object as a whole:
 
 ```html
-<div data-kiera-type="hash"
-     data-vibecode='{"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+<div data-puck-type="hash"
+     data-vibecode='{"class":"puck.uno/class","name":"borg.com/parser","version":"2.1.0",
 "description":"Parses structured text input into a normalised output hash.",
-"tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]}'>
+"tags":["puck.uno/tag/parsing","puck.uno/tag/text","puck.uno/tag/validation"]}'>
 ```
 
 Vibecode on a section element describes that section:
 
 ```html
-<div data-kiera-key="fields" data-kiera-type="hash"
+<div data-puck-key="fields" data-puck-type="hash"
      data-vibecode='{"section":"fields","input":{"type":"string","required":true},
 "output":{"type":"hash","required":true},"max_length":{"type":"number","required":false,
 "default":65536}}'>
@@ -156,7 +156,7 @@ Vibecode on a section element describes that section:
 Vibecode on a method element describes that method:
 
 ```html
-<div data-kiera-key="parse" data-kiera-type="hash"
+<div data-puck-key="parse" data-puck-type="hash"
      data-vibecode='{"method":"parse","returns":"hash","args":{"text":{"type":"string",
 "required":true},"options":{"type":"hash","required":false}}}'>
 ```
@@ -173,6 +173,6 @@ after `,` or `:`, with flush-left continuations.
 - Key order in the JSON is preserved by DOM order. Parsers must iterate child elements
   in order, not sort them.
 - The `class` attribute on HTML elements is used for styling only and has no meaning
-  in the Kiera HTML format.
+  in the Puck HTML format.
 - There is no required element type. A `<div>`, `<span>`, `<tr>`, or any other element
-  may carry `data-kiera-*` attributes. The format is element-agnostic.
+  may carry `data-puck-*` attributes. The format is element-agnostic.

@@ -1,4 +1,4 @@
-$server = %kiera['kiera.uno/dogberry'].new()
+$server = %puck['puck.uno/dogberry'].new()
 
 $server.select('/') do($request, $response)
 end

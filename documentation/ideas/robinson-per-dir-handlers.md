@@ -73,7 +73,7 @@ disk to be loaded by Robinson, never to be served as URLs.
 vibecode: {
     "section": "file_shape",
     "form": "anonymous_class_same_form_as_page_files",
-    "base_class_uns": "tbd_likely_kiera_uno_robinson_dir_handler_or_similar",
+    "base_class_uns": "tbd_likely_puck_uno_robinson_dir_handler_or_similar",
     "syntax_dependency": "uses_the_bare_anonymous_class_form_per_audit_issue_26; same_syntax_gap_as_page_files; one_fix_covers_both"
 }
 ```
@@ -81,12 +81,12 @@ vibecode: {
 A `robinson.charlie` file follows the same shape as a page file: the
 file's last expression is an **anonymous class** that inherits from a
 Robinson-supplied base class. The base class for directory handlers is
-distinct from `kiera.uno/robinson/page` (working name TBD —
-e.g., `kiera.uno/robinson/dir_handler`).
+distinct from `puck.uno/robinson/page` (working name TBD —
+e.g., `puck.uno/robinson/dir_handler`).
 
 ```
 class
-    inherits 'kiera.uno/robinson/dir_handler'
+    inherits 'puck.uno/robinson/dir_handler'
 
     function process_request($transaction) do
         # runs as the request travels root -> leaf
@@ -387,8 +387,8 @@ This is the same shape as:
   handlers fire inside the `pages/` directory handler's `process`,
   or are they peers in the chain alongside the global Handler list?
 - **Per-directory class shape.** Is `robinson.charlie` a class
-  inheriting from a `kiera.uno/robinson/dir_handler` base (parallel to
-  page files inheriting from `kiera.uno/robinson/page`), or a
+  inheriting from a `puck.uno/robinson/dir_handler` base (parallel to
+  page files inheriting from `puck.uno/robinson/page`), or a
   function, or something else?
 - **Multiple trees.** If a site has `pages/` and `admin/` and both
   contain `robinson.charlie` at corresponding levels, do both fire

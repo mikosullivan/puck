@@ -183,7 +183,7 @@ Mikobase v1 will support at least two export formats:
 ### 4.1 Worldlets play two roles
 
 Worldlet JSON is **both** an export format (from any engine) **and**
-the live storage of the [`kiera.uno/mikobase/worldlet`](#class-hierarchy-olympic)
+the live storage of the [`puck.uno/mikobase/worldlet`](#class-hierarchy-olympic)
 engine. From a SQLite-backed mikobase, exporting to a worldlet
 serializes the database; from the worldlet engine, the worldlet IS the
 database (no serialization step).
@@ -200,7 +200,7 @@ This means:
   workloads where import/export overhead would dominate.
 
 The choice of engine is the choice between persistence-cost and
-serialization-cost. Both engines speak the same `kiera.uno/mikobase`
+serialization-cost. Both engines speak the same `puck.uno/mikobase`
 interface; Charlie code that doesn't care which backend it's on works
 identically against either.
 
@@ -226,8 +226,8 @@ import in particular:
 
 - Method signature and ownership: instance method on the mikobase
   (`$mb.export_worldlet()`, `$mb.import_worldlet(json)`), free function
-  (`%kiera['kiera.uno/mikobase'].import_worldlet(json)`), or a
-  constructor (`kiera.uno/mikobase.from_worldlet(json) → mikobase`).
+  (`%puck['puck.uno/mikobase'].import_worldlet(json)`), or a
+  constructor (`puck.uno/mikobase.from_worldlet(json) → mikobase`).
 - Schema mapping for the temporal flag (the worldlet's
   `"temporal": false` must produce the corresponding SQLite schema for
   the SQLite engines).
@@ -302,18 +302,18 @@ they connect to the mikobase and interact with whatever is already there.
 vibecode: {
 	"section": "class_hierarchy",
 	"role": "lists all mikobase implementation classes and their relationships",
-	"key_concepts": ["kiera.uno/mikobase", "kiera.uno/mikobase/memory", "kiera.uno/mikobase/sqlite",
-		"kiera.uno/mikobase/http", "kiera.uno/mikobase/server", "abstract_base_class"]
+	"key_concepts": ["puck.uno/mikobase", "puck.uno/mikobase/memory", "puck.uno/mikobase/sqlite",
+		"puck.uno/mikobase/http", "puck.uno/mikobase/server", "abstract_base_class"]
 }
 
 | Class | Description |
 |---|---|
-| `kiera.uno/mikobase` | Abstract base class (`abstract true`); full Q0 interface, locking, transactions |
-| `kiera.uno/mikobase/memory` | SQLite in-memory database (`:memory:`) |
-| `kiera.uno/mikobase/sqlite` | SQLite file-backed database |
-| `kiera.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (AI2AI conversations, scratch sessions) where import/export cost would dominate |
-| `kiera.uno/mikobase/http` | HTTP server that exposes a mikobase over the network |
-| `kiera.uno/mikobase/server` | Managed mikobase server for fork-based coordination |
+| `puck.uno/mikobase` | Abstract base class (`abstract true`); full Q0 interface, locking, transactions |
+| `puck.uno/mikobase/memory` | SQLite in-memory database (`:memory:`) |
+| `puck.uno/mikobase/sqlite` | SQLite file-backed database |
+| `puck.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (AI2AI conversations, scratch sessions) where import/export cost would dominate |
+| `puck.uno/mikobase/http` | HTTP server that exposes a mikobase over the network |
+| `puck.uno/mikobase/server` | Managed mikobase server for fork-based coordination |
 
 The two SQLite implementations run on the same backend — the only difference is
 whether SQLite is pointed at memory or a file. Q0 is just SQL in both cases, with
@@ -321,25 +321,25 @@ no separate in-memory query engine needed. The worldlet engine is a third backen
 that implements Q0 against the worldlet's JSON structure directly (no SQLite
 involvement).
 
-Charlie code interacts only with the `kiera.uno/mikobase` interface and is unaware of the backend.
+Charlie code interacts only with the `puck.uno/mikobase` interface and is unaware of the backend.
 
 ---
 
-<a id="managed-mikobase-server-kieraunomikobaseserver"></a>
-## 9 Managed Mikobase Server (`kiera.uno/mikobase/server`)
+<a id="managed-mikobase-server-puckunomikobaseserver"></a>
+## 9 Managed Mikobase Server (`puck.uno/mikobase/server`)
 
 vibecode: {
 	"section": "managed_mikobase_server",
 	"role": "documents the server class that manages mikobase lifetime around a fork pool",
-	"key_concepts": ["kiera.uno/mikobase/server", "fork_coordination", "block_scoped_lifetime", "clean_shutdown"]
+	"key_concepts": ["puck.uno/mikobase/server", "fork_coordination", "block_scoped_lifetime", "clean_shutdown"]
 }
 
-`kiera.uno/mikobase/server` is a managed mikobase server designed for fork-based coordination.
+`puck.uno/mikobase/server` is a managed mikobase server designed for fork-based coordination.
 It starts a server process, yields the mikobase to a block, waits for all forks spawned in
 that block to complete, then shuts the server down cleanly:
 
 ```
-%kiera['kiera.uno/mikobase/server'].run as $mikobase
+%puck['puck.uno/mikobase/server'].run as $mikobase
     %forks.pool do
         %forks.run(mikobase: $mikobase, times: 4) do($mikobase)
         end
@@ -360,10 +360,10 @@ the block exits will cause the server to wait before shutting down.
 vibecode: {
 	"section": "http_mikobase",
 	"role": "documents the HTTP transport wrapper including Unix sockets, TCP, and authentication options",
-	"key_concepts": ["kiera.uno/mikobase/http", "Unix_domain_sockets", "TCP", "auth_peer", "auth_token", "auth_open"]
+	"key_concepts": ["puck.uno/mikobase/http", "Unix_domain_sockets", "TCP", "auth_peer", "auth_token", "auth_open"]
 }
 
-`kiera.uno/mikobase/http` wraps any mikobase and exposes it over HTTP. The mikobase's locking model
+`puck.uno/mikobase/http` wraps any mikobase and exposes it over HTTP. The mikobase's locking model
 handles concurrent connections — the HTTP server is a transport layer only. Connection-level
 concurrency lives in the C layer, not in Charlie.
 
@@ -379,8 +379,8 @@ file path instead of a port number, bypass the network stack entirely, and acces
 controlled by filesystem permissions — faster and more secure than TCP for local use.
 
 ```
-$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db')
-$server = %kiera['kiera.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
+$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db')
+$server = %puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
 $server.start
 ```
 
@@ -390,7 +390,7 @@ $server.start
 Port-based listening is supported when the mikobase needs to be reachable over a network:
 
 ```
-$server = %kiera['kiera.uno/mikobase/http'].new(mikobase: $mikobase, port: 8080, auth: :token, token: 'mysecrettoken')
+$server = %puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, port: 8080, auth: :token, token: 'mysecrettoken')
 $server.start
 ```
 
@@ -407,7 +407,7 @@ process's identity (UID, GID, PID). No shared secrets, no setup. Only available 
 Unix domain sockets.
 
 ```
-$server = %kiera['kiera.uno/mikobase/http'].new(
+$server = %puck['puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :peer
@@ -418,7 +418,7 @@ $server = %kiera['kiera.uno/mikobase/http'].new(
 handshake. Works for both Unix sockets and TCP.
 
 ```
-$server = %kiera['kiera.uno/mikobase/http'].new(
+$server = %puck['puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :token,
@@ -430,7 +430,7 @@ $server = %kiera['kiera.uno/mikobase/http'].new(
 Use only in controlled environments.
 
 ```
-$server = %kiera['kiera.uno/mikobase/http'].new(
+$server = %puck['puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :open
@@ -440,7 +440,7 @@ $server = %kiera['kiera.uno/mikobase/http'].new(
 <a id="postable-updates"></a>
 ### 10.4 POSTable Updates
 
-`kiera.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
+`puck.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
 without opening a live connection. This is a distinct ingress mode — not a replacement
 for hot/cold connections or Q0, but a stateless path for depositing history entries.
 
@@ -533,7 +533,7 @@ A cold connection returns local copies of records. You fetch a record, work with
 locally, and save it back explicitly:
 
 ```
-$mikobase = %kiera['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
+$mikobase = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
 
 $record = $mikobase.q0(...)
 $record['foo'] = 'bar'
@@ -550,7 +550,7 @@ A hot connection returns live objects. Every read and write is a round trip to t
 with locking applied automatically. There is no local copy and no explicit save:
 
 ```
-$mikobase = %kiera['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
+$mikobase = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
 
 $mikobase['clients'].shift   # atomic read-and-remove, one round trip
 $mikobase['results'] << $result   # atomic write, one round trip
@@ -565,8 +565,8 @@ needs to be atomic and consistent across concurrent readers and writers.
 The same `hot:` parameter applies to local mikobases:
 
 ```
-$mikobase = %kiera['mikobase/memory'].new(hot: true)
-$mikobase = %kiera['mikobase/sqlite'].new('/path/to/db', hot: true)
+$mikobase = %puck['mikobase/memory'].new(hot: true)
+$mikobase = %puck['mikobase/sqlite'].new('/path/to/db', hot: true)
 ```
 
 On a local mikobase, hot means every field access hits SQLite directly. Cold means load the
@@ -578,8 +578,8 @@ record into memory, work with it locally, save explicitly.
 Two connections to the same mikobase can have different modes:
 
 ```
-$hot  = %kiera['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
-$cold = %kiera['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
+$hot  = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
+$cold = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
 ```
 
 This is valid — for example, one hot connection for fork coordination and one cold
@@ -654,7 +654,7 @@ any fork that connects to it. The fork's `@foo` reads and writes go directly to 
 object in the mikobase — child forks don't need to reference the mikobase explicitly at all.
 
 ```
-$mikobase = %kiera['kiera.uno/mikobase/memory'].new
+$mikobase = %puck['puck.uno/mikobase/memory'].new
 $mikobase.include_private = true
 
 %forks.run(mikobase:$mikobase) do($mikobase)
@@ -852,7 +852,7 @@ Classes, records, and Charlie installed
 Mikobase runs inside recipient's environment
 ```
 
-A packaged mikobase can also be sent to a remote system for execution via Kiera, without
+A packaged mikobase can also be sent to a remote system for execution via Puck, without
 installing it locally:
 
 ```

@@ -884,7 +884,7 @@ valid Xeme. It still works in the runner.
 ### 13.3 Why this matters
 
 Bryton is **first-contact territory** — one of the surfaces where
-a developer encounters Kiera before deciding whether to commit to
+a developer encounters Puck before deciding whether to commit to
 more of it. Forcing a library import before they can write a test
 would be a friction tax at the wrong moment. The promise "just
 print JSON" is real, and the libraries are strictly value-add.

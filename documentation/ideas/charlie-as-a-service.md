@@ -161,7 +161,7 @@ endpoint (or per user, or per tier).
 
 The most Charlie-flavored capability. Server hosts mikobases loaded
 with interesting data; scripts query them via Q0 with read-only access.
-Exposed as `%kiera['kiera.uno/play/<name>']`.
+Exposed as `%puck['puck.uno/play/<name>']`.
 
 Candidate datasets:
 
@@ -181,7 +181,7 @@ Read-only, server-cached; cheap per request, real-feeling data.
 Things that need API keys the user shouldn't have to bring. Server
 holds the keys; script gets a wrapped client. Rate-limited per session.
 
-- **LLM access** — `%kiera['kiera.uno/play/llm'].complete(...)`.
+- **LLM access** — `%puck['puck.uno/play/llm'].complete(...)`.
 - **Image generation.**
 - **Weather, geocoding, currency conversion, translation, Wikipedia
   search.**

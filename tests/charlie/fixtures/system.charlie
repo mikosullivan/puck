@@ -16,18 +16,18 @@ end
 %chain.clear do
 end
 
-$null_class  = %kiera['kiera.uno/null']
-$true_class  = %kiera['kiera.uno/true']
-$false_class = %kiera['kiera.uno/false']
-$hive_class  = %kiera['kiera.uno/mikobase/memory']
+$null_class  = %puck['puck.uno/null']
+$true_class  = %puck['puck.uno/true']
+$false_class = %puck['puck.uno/false']
+$hive_class  = %puck['puck.uno/mikobase/memory']
 
-$my_null = %kiera['kiera.uno/null'].new
+$my_null = %puck['puck.uno/null'].new
 
 class 'myapp.com/null/unknown'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 
-$unknown = %kiera['myapp.com/null/unknown'].new
+$unknown = %puck['myapp.com/null/unknown'].new
 
 if ($unknown)
     puts('never reached')

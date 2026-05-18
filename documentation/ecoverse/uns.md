@@ -12,7 +12,7 @@ an object without the noise of protocols:
 So this:
 
 ```
-https://kiera.uno/jasmine
+https://puck.uno/jasmine
 https://example.org/widgets/blue
 https://miko.dev/projects/mikobase
 ```
@@ -20,7 +20,7 @@ https://miko.dev/projects/mikobase
 becomes a little less noisy:
 
 ```
-kiera.uno/jasmine
+puck.uno/jasmine
 example.org/widgets/blue
 miko.dev/projects/mikobase
 ```
@@ -53,7 +53,7 @@ UNS does the same thing. A UNS identifier is **a URL without the
 protocol**:
 
 ```
-kiera.uno/jasmine
+puck.uno/jasmine
 example.org/widgets/blue
 miko.dev/projects/mikobase
 ```
@@ -109,7 +109,7 @@ as the URL's query string.
 <a id="bare-domains-are-valid"></a>
 ### 4.2 Bare domains are valid
 
-A UNS doesn't need a path. `kiera.uno`, `example.org`, and
+A UNS doesn't need a path. `puck.uno`, `example.org`, and
 `miko.dev` are all valid UNSes on their own. The path is optional;
 it just adds specificity below the domain.
 
@@ -157,7 +157,7 @@ that looks structurally correct.
 <a id="case-sensitivity"></a>
 ### 4.5 Case sensitivity
 
-**UNS is case-sensitive.** `kiera.uno/Foo` and `kiera.uno/foo`
+**UNS is case-sensitive.** `puck.uno/Foo` and `puck.uno/foo`
 are distinct identifiers. Tools comparing UNSes do a byte-for-byte
 match; no case folding.
 
@@ -189,27 +189,27 @@ specific applications of this general principle.
 ### 5.2 Prefer lowercase
 
 Uppercase letters are allowed but lowercase is preferred.
-`kiera.uno/jasmine` reads better than `Kiera.uno/Jasmine`, and
+`puck.uno/jasmine` reads better than `Puck.uno/Jasmine`, and
 mixing cases invites the "is `Foo` the same UNS as `foo`?"
 confusion.
 
 <a id="skip-www"></a>
 ### 5.3 Skip `www.`
 
-Prefer `kiera.uno` over `www.kiera.uno`. The `www.` prefix is
+Prefer `puck.uno` over `www.puck.uno`. The `www.` prefix is
 noise from a different era. UNS is about cutting noise, so leave
 it off.
 
 <a id="skip-trailing-slashes"></a>
 ### 5.4 Skip trailing slashes
 
-`kiera.uno/foo/` and `kiera.uno/foo` are technically different
+`puck.uno/foo/` and `puck.uno/foo` are technically different
 UNSes (UNS is byte-for-byte case-sensitive), but the trailing
 slash is usually just noise. Omit it unless you have a specific
 reason to keep it.
 
-<a id="use-in-kiera"></a>
-## 6 Use in Kiera
+<a id="use-in-puck"></a>
+## 6 Use in Puck
 
 <a id="parser-is-a-core-charlie-requirement"></a>
 ### 6.1 Parser is a core Charlie requirement
@@ -218,31 +218,31 @@ A UNS parser/validator is a **core requirement** of any Charlie
 implementation. Every host needs to be able to take a string and
 answer "is this a valid UNS?" and "what's the canonical form?"
 without depending on external libraries. The parser is not a
-convenience — Kiera leans on UNS heavily enough (caching, class
+convenience — Puck leans on UNS heavily enough (caching, class
 lookup, identifier handling) that lacking one would break the
 runtime.
 
 <a id="uns-doubles-as-url"></a>
 ### 6.2 UNS doubles as URL
 
-Kiera often treats a UNS as **synonymous with a URL**. Many
+Puck often treats a UNS as **synonymous with a URL**. Many
 objects in the ecoverse live at the address their UNS points to —
-the UNS `kiera.uno/jasmine` is also the address from which the
+the UNS `puck.uno/jasmine` is also the address from which the
 corresponding object can be fetched.
 
 When a UNS is used as a URL this way, **the protocol is always
-HTTPS.** No need to write it out; Kiera doesn't speak plain HTTP
+HTTPS.** No need to write it out; Puck doesn't speak plain HTTP
 for these.
 
-This is a Kiera convention layered on top of UNS. UNS itself is
+This is a Puck convention layered on top of UNS. UNS itself is
 just a naming scheme; the "many UNSes also resolve as live HTTPS
-URLs" convention belongs to Kiera, not to UNS in general.
+URLs" convention belongs to Puck, not to UNS in general.
 
 **Trailing-slash friction.** The "no trailing slash" norm runs
-into a quirk when a UNS becomes a URL. A UNS like `kiera.uno/foo`
-becomes `https://kiera.uno/foo`, but if the resource on the
+into a quirk when a UNS becomes a URL. A UNS like `puck.uno/foo`
+becomes `https://puck.uno/foo`, but if the resource on the
 server is actually a directory, a typical HTTP server (Apache,
-nginx) will redirect to `https://kiera.uno/foo/` — costing an
+nginx) will redirect to `https://puck.uno/foo/` — costing an
 extra round trip. Noted here so the friction is acknowledged;
 not considered a significant problem at present.
 
@@ -250,9 +250,9 @@ not considered a significant problem at present.
 ## 7 First-contact angle
 
 UNS is one of the lowest-friction ways someone might encounter
-Kiera. It's small, self-contained, and useful on its own — you
+Puck. It's small, self-contained, and useful on its own — you
 can adopt UNS for namespacing without using anything else from
 the ecoverse. Someone who likes the idea can start using UNS in
-their own systems immediately, and discover the rest of Kiera
+their own systems immediately, and discover the rest of Puck
 later if they're interested. Aligns with the broader first-contact
 strategy.

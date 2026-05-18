@@ -7,7 +7,7 @@ vibecode: {
 		"security_boundary", "deterministic_resolution"]
 }
 
-In Kiera, libraries are versioned **by date**, not by semantic version. A single timestamp
+In Puck, libraries are versioned **by date**, not by semantic version. A single timestamp
 governs the entire library tree — set it once at the top of the call chain, and every
 library lookup down the stack inherits it. This eliminates per-library version manifests,
 lockfiles, and constraint-resolver complexity. The same date plus the same source code
@@ -54,34 +54,34 @@ Three concrete benefits:
 
 vibecode: {
 	"section": "cutoff_in_chain",
-	"role": "documents how the version cutoff lives on the kiera object and applies to UNS lookups",
-	"key_concepts": ["kiera_version_window", "upper_property", "lower_property",
+	"role": "documents how the version cutoff lives on the puck object and applies to UNS lookups",
+	"key_concepts": ["puck_version_window", "upper_property", "lower_property",
 		"immutable_after_creation", "narrowing_only_derivation"]
 }
 
-The version cutoff lives on the **kiera object** as part of its **version
-window** (see [kiera.md](../kiera/kiera.md) — Version Window). The engine sets it
-when creating the kiera, and it is **immutable thereafter**:
+The version cutoff lives on the **puck object** as part of its **version
+window** (see [puck.md](../puck/puck.md) — Version Window). The engine sets it
+when creating the puck, and it is **immutable thereafter**:
 
 ```
-%kiera.upper = 'may 3, 2026'    # set at kiera creation; immutable after
-%kiera.lower = 'may 3, 2018'    # optional floor; also immutable
+%puck.upper = 'may 3, 2026'    # set at puck creation; immutable after
+%puck.lower = 'may 3, 2018'    # optional floor; also immutable
 ```
 
 The window's `upper` is the version cutoff in the binary-trust sense.
-Once the engine creates the kiera with its `upper` set, every
-`%kiera['foo.com/bar']` lookup is bounded by that cutoff. User code
-cannot widen the window — assignments to `%kiera.upper` or `%kiera.lower`
-are not allowed once the kiera exists.
+Once the engine creates the puck with its `upper` set, every
+`%puck['foo.com/bar']` lookup is bounded by that cutoff. User code
+cannot widen the window — assignments to `%puck.upper` or `%puck.lower`
+are not allowed once the puck exists.
 
-To run a narrower window inside a block, use `%kiera.restrict do ... end`
-(see [kiera.md](../kiera/kiera.md) — `restrict do ... end`). The restricted kiera
+To run a narrower window inside a block, use `%puck.restrict do ... end`
+(see [puck.md](../puck/puck.md) — `restrict do ... end`). The restricted puck
 must be narrower than or equal to the parent; widening is impossible.
 
 **Historical note.** The cutoff previously lived on `%chain` as
 `%chain.cutoff`. Under the current model (the role-based security model
-in [roles.md](roles.md)), the cutoff has moved to the kiera object,
-which is the natural unit of configuration — a kiera knows its own
+in [roles.md](roles.md)), the cutoff has moved to the puck object,
+which is the natural unit of configuration — a puck knows its own
 window and applies it during lookup. The `%chain.cutoff` mechanism is
 gone.
 
@@ -98,8 +98,8 @@ vibecode: {
 		"integrity_alarm_not_dependency_error"]
 }
 
-When a library lookup returns nothing dated within the kiera's
-`[lower, upper]` window, the engine raises `kiera.uno/error/out_of_range`.
+When a library lookup returns nothing dated within the puck's
+`[lower, upper]` window, the engine raises `puck.uno/error/out_of_range`.
 This is an **alarm** under the role model (see
 [roles.md](roles.md) — Exceptions and Alarms): always fatal, no
 unwinding, no `finally` blocks, no catch handlers from Charlie code. The
@@ -114,7 +114,7 @@ out-of-range exception means one of the following has happened:
 - The cache or provider chain has been tampered with — a library has been backdated,
   removed, or replaced
 - The versioning system itself has a flaw — a bug in the resolver, cache corruption,
-  the kiera's window not being applied correctly
+  the puck's window not being applied correctly
 
 In each case, the integrity of the deployment is in question. The exception is therefore
 treated with the same severity as any other security exception, not as ordinary control
@@ -145,16 +145,16 @@ vibecode: {
 		"providers_consulted_in_order"]
 }
 
-For a lookup `%kiera['foo.com/bar']` under a kiera with window `[L, U]`:
+For a lookup `%puck['foo.com/bar']` under a puck with window `[L, U]`:
 
-1. The kiera walks its getters (per [kiera.md](../kiera/kiera.md) — Lookup
+1. The puck walks its getters (per [puck.md](../puck/puck.md) — Lookup
    Mechanism), each consulting its faucets (cache first, then remote
    source typically). Each getter reports the **latest version of
    `foo.com/bar` within `[L, U]`** that it has.
-2. The kiera returns the latest result across all getters' responses.
+2. The puck returns the latest result across all getters' responses.
    Finding the latest requires consulting all getters, not
    short-circuiting on first hit.
-3. In a future release, the kiera will check the signature of the
+3. In a future release, the puck will check the signature of the
    library against a key library. That feature is not in initial
    development.
 4. If no getter returns a match, the out-of-range alarm is raised.
@@ -212,14 +212,14 @@ The model intentionally starts without:
 
 - **Manifest / package.json / Cargo.toml** — there is no per-program file declaring
   dependencies or version ranges. Dependencies are whatever the source code references
-  via `%kiera[...]`.
+  via `%puck[...]`.
 - **Lockfile** — the cutoff timestamp is the lockfile.
 - **Semver constraint solver** — not present today. A future release may add semver-based
   selection alongside the date model if demand justifies it; for now, each lookup is a
   flat query against the cutoff.
 - **Transitive version conflicts** — a library deep in the call stack cannot pin a
   different version than the rest of the tree, because every lookup uses the same
-  kiera (and therefore the same window).
+  puck (and therefore the same window).
 
 The design starts from a position of not needing these mechanisms. Adding any of them
 later is possible — but each one increases the burden on every script (versions to
@@ -237,7 +237,7 @@ vibecode: {
 	"key_concepts": ["chain_anchors_dates_when_present", "non_chain_providers_also_work"]
 }
 
-The Kiera blockchain (currently deferred from production — see
+The Puck blockchain (currently deferred from production — see
 [blockchain.md](../blockchain.md)) provides a cryptographically anchored
 `posted` timestamp for every library version. When a chain is available, the cutoff
 is genuinely tamper-evident — a library's date cannot be forged.

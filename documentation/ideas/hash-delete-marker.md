@@ -31,7 +31,7 @@ called that key via `has_key?`); a delete marker is.
 <a id="a-null-flavor"></a>
 ### 2.1 A — Null flavor
 
-Add `kiera.uno/null/flavor/deleted` to the existing
+Add `puck.uno/null/flavor/deleted` to the existing
 null-flavor system. Hashes hold it as a value at a key like any
 other null. Meta-hash recognizes the flavor specifically: the
 key is treated as truly absent for both `[]` and `has_key?`.
@@ -49,7 +49,7 @@ Cons:
 <a id="b-dedicated-singleton-sentinel"></a>
 ### 2.2 B — Dedicated singleton sentinel
 
-Define `kiera.uno/hash/deleted` (or `%delete`) as its own
+Define `puck.uno/hash/deleted` (or `%delete`) as its own
 sentinel, not a null. Hashes can hold it; meta-hash special-cases
 it.
 

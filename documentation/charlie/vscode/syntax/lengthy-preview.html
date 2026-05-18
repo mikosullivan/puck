@@ -61,7 +61,7 @@
     <span class="kw">field</span> <span class="sym">:rank</span>,     <span class="kw">class</span>: <span class="sym">:string</span>,  required: <span class="con">true</span>
     <span class="kw">field</span> <span class="sym">:serial</span>,   <span class="kw">class</span>: <span class="sym">:string</span>,  required: <span class="con">true</span>, unique: <span class="con">true</span>
     <span class="kw">field</span> <span class="sym">:active</span>,   <span class="kw">class</span>: <span class="sym">:boolean</span>, default: <span class="con">true</span>
-    <span class="kw">field</span> <span class="sym">:starship</span>, <span class="kw">class</span>: <span class="str">'kiera.uno/reference'</span>, allowed_class: <span class="str">'starfleet.com/ship'</span>
+    <span class="kw">field</span> <span class="sym">:starship</span>, <span class="kw">class</span>: <span class="str">'puck.uno/reference'</span>, allowed_class: <span class="str">'starfleet.com/ship'</span>
 
     <span class="kw">helper</span> <span class="sym">:record</span>
         <span class="kw">function</span> <span class="fn">&amp;summary</span>
@@ -94,7 +94,7 @@
 
 <span class="cmt"># Connect to the mikobase</span>
 
-<span class="var">$mikobase</span> <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'kiera.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>)
+<span class="var">$mikobase</span> <span class="op">=</span> <span class="sys">%puck</span>[<span class="str">'puck.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>)
 
 <span class="var">$mikobase</span>.listen <span class="str">'starfleet.com/officer'</span>, <span class="sym">:after_save</span> <span class="kw">do</span>(<span class="var">$change</span>)
     <span class="var">$officer</span> <span class="op">=</span> <span class="var">$change</span>.record
@@ -217,10 +217,10 @@ puts(<span class="var">$report</span>)
 <span class="cmt"># Null flavors</span>
 
 <span class="kw">class</span> <span class="str">'starfleet.com/null/classified'</span>
-    <span class="kw">inherits</span> <span class="str">'kiera.uno/null'</span>
+    <span class="kw">inherits</span> <span class="str">'puck.uno/null'</span>
 <span class="kw">end</span>
 
-<span class="var">$classified</span> <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'starfleet.com/null/classified'</span>].new
+<span class="var">$classified</span> <span class="op">=</span> <span class="sys">%puck</span>[<span class="str">'starfleet.com/null/classified'</span>].new
 
 <span class="kw">if</span> (<span class="var">$classified</span>)
     puts(<span class="str">'never reached — classified is falsey'</span>)
@@ -228,7 +228,7 @@ puts(<span class="var">$report</span>)
 
 <span class="cmt"># Hot connection for real-time updates</span>
 
-<span class="var">$hot</span>    <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'kiera.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>, hot: <span class="con">true</span>)
+<span class="var">$hot</span>    <span class="op">=</span> <span class="sys">%puck</span>[<span class="str">'puck.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>, hot: <span class="con">true</span>)
 <span class="var">$picard</span> <span class="op">=</span> <span class="var">$hot</span>.q0({action: <span class="sym">:select</span>, then: {path: [<span class="str">'serial'</span>, <span class="str">'SP-937-215'</span>]}}).first
 <span class="var">$picard</span>[<span class="str">'rank'</span>] <span class="op">=</span> <span class="str">'Admiral'</span>
 </pre>

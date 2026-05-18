@@ -6,11 +6,11 @@
 vibecode: {
 	"section": "overview",
 	"role": "explains how class definitions are stored in the mikobase",
-	"key_concepts": ["records_history", "class_pk", "bucket", "kiera.uno/record/class"]
+	"key_concepts": ["records_history", "class_pk", "bucket", "puck.uno/record/class"]
 }
 
 A class definition is stored as a record in `records_history` with `class_pk` pointing to the
-`kiera.uno/record/class` record.
+`puck.uno/record/class` record.
 
 The class definition is stored in the `bucket` field.
 
@@ -28,8 +28,8 @@ globally unique namespace so developers using their own domains cannot accidenta
 
 Examples:
 
-- `kiera.uno/record`
-- `kiera.uno/reference`
+- `puck.uno/record`
+- `puck.uno/reference`
 - `foo.com/bar`
 - `mycompany.com/character`
 
@@ -85,7 +85,7 @@ explicitly set inside a class definition is ignored and overwritten with the key
 vibecode: {
 	"section": "class_name",
 	"role": "specifies the name field format and lists built-in seeded classes",
-	"key_concepts": ["UNS_name_field", "built-in_classes", "kiera.uno/record", "kiera.uno/reference", "kiera.uno/dbfile"]
+	"key_concepts": ["UNS_name_field", "built-in_classes", "puck.uno/record", "puck.uno/reference", "puck.uno/dbfile"]
 }
 
 Every class definition has a `name` field containing a UNS string.
@@ -98,10 +98,10 @@ Every class definition has a `name` field containing a UNS string.
 
 Built-in classes seeded as database records:
 
-- `kiera.uno/record` — base class for all records
-- `kiera.uno/record/class` — class for class definitions
-- `kiera.uno/reference` — reference to another record
-- `kiera.uno/dbfile` — file attachment
+- `puck.uno/record` — base class for all records
+- `puck.uno/record/class` — class for class definitions
+- `puck.uno/reference` — reference to another record
+- `puck.uno/dbfile` — file attachment
 
 <a id="record-classes"></a>
 ## 5 Record Classes
@@ -171,7 +171,7 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 vibecode: {
 	"section": "field_types",
 	"role": "enumerates all valid field type classes including primitives and UNS references",
-	"key_concepts": ["string", "number", "boolean", "hash", "array", "kiera.uno/reference", "kiera.uno/dbfile", "UNS_class_reference"]
+	"key_concepts": ["string", "number", "boolean", "hash", "array", "puck.uno/reference", "puck.uno/dbfile", "UNS_class_reference"]
 }
 
 | Class | Description |
@@ -183,8 +183,8 @@ vibecode: {
 | `"timestamp"` | ISO 8601 timestamp string with millisecond precision |
 | `"hash"` | Anonymous nested object with its own inline field definitions |
 | `"array"` | Untyped array |
-| `"kiera.uno/reference"` | Reference to another record |
-| `"kiera.uno/dbfile"` | File attachment |
+| `"puck.uno/reference"` | Reference to another record |
+| `"puck.uno/dbfile"` | File attachment |
 | any UNS class name | Reference to a named class defined elsewhere in the schema |
 
 <a id="inline-vs-named-field-types"></a>
@@ -338,16 +338,16 @@ An untyped array uses `"class": "array"` with no `"of"`.
 vibecode: {
 	"section": "reference_fields",
 	"role": "documents allowed_class and allowed_classes constraints on reference fields",
-	"key_concepts": ["kiera.uno/reference", "allowed_class", "allowed_classes", "subclass_valid"]
+	"key_concepts": ["puck.uno/reference", "allowed_class", "allowed_classes", "subclass_valid"]
 }
 
-A `kiera.uno/reference` field may optionally constrain which record classes it may point to
+A `puck.uno/reference` field may optionally constrain which record classes it may point to
 using `allowed_class` (single UNS name) and/or `allowed_classes` (array of UNS names). If both
 are present they are merged. Any record of the specified class or a subclass is valid.
 
 ```json
 {
-    "class": "kiera.uno/reference",
+    "class": "puck.uno/reference",
     "allowed_class": "foo.com/planet",
     "allowed_classes": ["foo.com/moon", "foo.com/station"]
 }
@@ -359,14 +359,14 @@ are present they are merged. Any record of the specified class or a subclass is 
 vibecode: {
 	"section": "object_representation",
 	"role": "defines hash form and shorthand form for object classes like reference and dbfile",
-	"key_concepts": ["hash_form", "shorthand_form", "kiera.uno/reference_shorthand", "kiera.uno/dbfile_shorthand", "record_pk_string"]
+	"key_concepts": ["hash_form", "shorthand_form", "puck.uno/reference_shorthand", "puck.uno/dbfile_shorthand", "record_pk_string"]
 }
 
 Every object class can always be represented as a hash. Some object classes additionally
 define a shorthand form for convenience. Both forms must always be accepted wherever that
 class is expected.
 
-For example, `kiera.uno/reference` in hash form and shorthand form:
+For example, `puck.uno/reference` in hash form and shorthand form:
 
 ```json
 { "homeworld": {"pk": "92677339-df86-4f68-9397-999e40cf2c40"} }
@@ -376,9 +376,9 @@ For example, `kiera.uno/reference` in hash form and shorthand form:
 { "homeworld": "92677339-df86-4f68-9397-999e40cf2c40" }
 ```
 
-The shorthand for `kiera.uno/reference` is a plain string containing the target `record_pk`.
+The shorthand for `puck.uno/reference` is a plain string containing the target `record_pk`.
 
-`kiera.uno/dbfile` follows the same pattern — hash form and shorthand form:
+`puck.uno/dbfile` follows the same pattern — hash form and shorthand form:
 
 ```json
 { "avatar": {"pk": "92677339-df86-4f68-9397-999e40cf2c40"} }
@@ -388,7 +388,7 @@ The shorthand for `kiera.uno/reference` is a plain string containing the target 
 { "avatar": "92677339-df86-4f68-9397-999e40cf2c40" }
 ```
 
-The shorthand for `kiera.uno/dbfile` is a plain string containing the target `file_pk`.
+The shorthand for `puck.uno/dbfile` is a plain string containing the target `file_pk`.
 
 <a id="file-fields"></a>
 ## 17 File Fields
@@ -396,10 +396,10 @@ The shorthand for `kiera.uno/dbfile` is a plain string containing the target `fi
 vibecode: {
 	"section": "file_fields",
 	"role": "notes that dbfile fields only support the required constraint",
-	"key_concepts": ["kiera.uno/dbfile", "required_only", "no_other_constraints"]
+	"key_concepts": ["puck.uno/dbfile", "required_only", "no_other_constraints"]
 }
 
-`kiera.uno/dbfile` fields support only `required`. No other constraints.
+`puck.uno/dbfile` fields support only `required`. No other constraints.
 
 <a id="field-ordering"></a>
 ## 18 Field Ordering
@@ -439,8 +439,8 @@ that class:
 {
     "name": "borg.com/appearance",
     "fields": {
-        "person":  {"class": "kiera.uno/reference", "required": true},
-        "episode": {"class": "kiera.uno/reference", "required": true}
+        "person":  {"class": "puck.uno/reference", "required": true},
+        "episode": {"class": "puck.uno/reference", "required": true}
     },
     "uniques": [
         ["person", "episode"]
@@ -470,9 +470,9 @@ is an array of two or more field names.
 {
     "name": "borg.com/appearance",
     "fields": {
-        "person":    {"class": "kiera.uno/reference", "allowed_class": "borg.com/person"},
-        "episode":   {"class": "kiera.uno/reference", "allowed_class": "borg.com/episode"},
-        "character": {"class": "kiera.uno/reference", "allowed_class": "borg.com/character"}
+        "person":    {"class": "puck.uno/reference", "allowed_class": "borg.com/person"},
+        "episode":   {"class": "puck.uno/reference", "allowed_class": "borg.com/episode"},
+        "character": {"class": "puck.uno/reference", "allowed_class": "borg.com/character"}
     },
     "join": ["person", "episode", "character"]
 }

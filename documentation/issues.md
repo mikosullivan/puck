@@ -26,7 +26,7 @@ Out of scope for this tracker: anything in `documentation/ideas/`
 - **Resolved: 46** — see each issue heading below for the per-issue resolution note.
 - **Deferred: 3** — issues that touch larger unsettled designs:
   - **#10 (filesystem.md "Authorizing Untrusted Paths" section)** — small inline `untrusted()`/`trusted string` fixes applied; the larger filesystem section needs the role model's filesystem story to settle first.
-  - **#14 (operator namespace `charlie.uno` vs `kiera.uno`)** — deferred pending operator-registration design pass.
+  - **#14 (operator namespace `charlie.uno` vs `puck.uno`)** — deferred pending operator-registration design pass.
   - **#41 (`scope.operators` namespace)** — entangled with #14; resolved together when operator subsystem is revisited.
 
 Engine + test suite: **213/213 passing** after all changes.
@@ -37,7 +37,7 @@ Engine + test suite: **213/213 passing** after all changes.
 - **Mikobase v1 engine list expanded to three** (sqlite-file, sqlite-memory, worldlet-direct). The worldlet-direct engine operates on worldlet JSON in place — built for AI2AI conversations where SQLite import/export overhead would dominate.
 - **Worldlets reframed as one of (at least) two export formats**, not a kind of mikobase. The second format is TBD.
 - **Mikobase overview gained explicit framing**: worldlets are the primary use case, microservices probably want non-temporal too.
-- **Exception namespace flattened** (`kiera.uno/exception/X` → `kiera.uno/X`); umbrella preserved; UNS-no-inheritance principle saved as a memory and noted in canonical spec.
+- **Exception namespace flattened** (`puck.uno/exception/X` → `puck.uno/X`); umbrella preserved; UNS-no-inheritance principle saved as a memory and noted in canonical spec.
 - **`stdlib` role** added to roles.md as enumerated minimum; replaces TBD `string_class_role` in engine.lua.
 - **`%role` backfilled** into engine.lua with 6 new tests (213/213 passing).
 - **Parameter spec consolidated** into one canonical `parameters.md` (with `optional: true` opt-out, hash-spacing convention, hash-splat style preference).
@@ -154,20 +154,20 @@ deliberately and why.
 <a id="c-cross-cutting-issues-multiple-files"></a>
 ## 4 C. Cross-cutting issues (multiple files)
 
-<a id="9-exceptionerror-class-hierarchy-is-forked-across-7-files-high-resolved-2026-05-17-flattened-to-kieraunox-umbrella-kieraunoexception-kept"></a>
-### 4.1 9. Exception/error class hierarchy is forked across ~7 files [HIGH] [RESOLVED 2026-05-17 — flattened to `kiera.uno/X`, umbrella `kiera.uno/exception` kept]
+<a id="9-exceptionerror-class-hierarchy-is-forked-across-7-files-high-resolved-2026-05-17-flattened-to-puckunox-umbrella-puckunoexception-kept"></a>
+### 4.1 9. Exception/error class hierarchy is forked across ~7 files [HIGH] [RESOLVED 2026-05-17 — flattened to `puck.uno/X`, umbrella `puck.uno/exception` kept]
 
-**Canonical:** `kiera.uno/exception/error/timeout` — [charlie-runtime.md:745-765](documentation/charlie/charlie-runtime.md#L745-L765)
+**Canonical:** `puck.uno/exception/error/timeout` — [charlie-runtime.md:745-765](documentation/charlie/charlie-runtime.md#L745-L765)
 
-**Diverging shorthand `kiera.uno/error/...`:**
+**Diverging shorthand `puck.uno/error/...`:**
 - [utils.md:47](documentation/charlie/utils.md#L47)
 - [versioning.md:99](documentation/charlie/versioning.md#L99)
 - [jasmine.md:311](documentation/charlie/jasmine/jasmine.md#L311)
 - [charlie-runtime.md:1792](documentation/charlie/charlie-runtime.md#L1792) (itself)
 
-**Subsystem-minted roots:** `kiera.uno/touchstone/error/*`, `kiera.uno/robinson/warning/*`, `kiera.uno/trivet/error/cycle`
+**Subsystem-minted roots:** `puck.uno/touchstone/error/*`, `puck.uno/robinson/warning/*`, `puck.uno/trivet/error/cycle`
 
-**Also:** [kiera/kiera.md:363-364](documentation/kiera/kiera.md#L363-L364) lists `kiera.uno/exception` twice as two different classes.
+**Also:** [puck/puck.md:363-364](documentation/puck/puck.md#L363-L364) lists `puck.uno/exception` twice as two different classes.
 
 Suggestion: decide on one root, or document the shorthand as sugar.
 
@@ -218,15 +218,15 @@ the fork: "two parameter spec docs exist… Reconciling them is a
 separate task." Suggestion: merge into one canonical doc; move the
 other to `ideas/`.
 
-<a id="14-operator-namespace-inconsistent-charlieuno-vs-kierauno-high"></a>
-### 4.6 14. Operator namespace inconsistent: `charlie.uno/` vs `kiera.uno/` [HIGH]
+<a id="14-operator-namespace-inconsistent-charlieuno-vs-puckuno-high"></a>
+### 4.6 14. Operator namespace inconsistent: `charlie.uno/` vs `puck.uno/` [HIGH]
 
 **Files:**
 - `charlie.uno/...` — [operators.md:66ff](documentation/charlie/operators.md#L66), [assignment-operators.md:78ff](documentation/charlie/assignment-operators.md#L78)
-- `kiera.uno/...` (the rest of the stdlib) — [parameters.md:134](documentation/charlie/parameters.md#L134), [charlie-runtime.md](documentation/charlie/charlie-runtime.md)
+- `puck.uno/...` (the rest of the stdlib) — [parameters.md:134](documentation/charlie/parameters.md#L134), [charlie-runtime.md](documentation/charlie/charlie-runtime.md)
 
 `charlie.uno/` is never defined as a separate namespace. Suggestion:
-unify on `kiera.uno/`.
+unify on `puck.uno/`.
 
 ---
 
@@ -306,13 +306,13 @@ a defined logic system.
 <a id="e-subsystem-vs-subsystem-and-dead-references"></a>
 ## 6 E. Subsystem-vs-subsystem and dead references
 
-<a id="22-brytonxeme-disagree-on-runner-error-class-prefix-medium-resolved-2026-05-17-honored-xememds-own-working-convention-at-line-479-480-uns-style-identifier-without-domain-prefix-replaced-kieraunoresultfailureruntime-brytonruntime-and-kieraunoresultnull-brytonnull-in-xememd-runnermd-was-already-consistent-the-runtime-middle-segment-is-reserved-for-runner-level-failures-test-missing-crashed-timeout-unparseable-exception-test-payload-failures-like-assertion-or-connection_refused-live-under-bryton-directly-without-runtime"></a>
-### 6.1 22. Bryton/Xeme disagree on runner-error class prefix [MEDIUM] [RESOLVED 2026-05-17 — honored xeme.md's own working convention at line 479-480 (UNS-style identifier without domain prefix). Replaced `kiera.uno/result/failure/runtime/*` → `bryton/runtime/*` and `kiera.uno/result/null/*` → `bryton/null/*` in xeme.md. runner.md was already consistent. The `runtime/` middle segment is reserved for runner-level failures (test missing, crashed, timeout, unparseable, exception); test-payload failures like assertion or connection_refused live under `bryton/` directly without `runtime/`.]
+<a id="22-brytonxeme-disagree-on-runner-error-class-prefix-medium-resolved-2026-05-17-honored-xememds-own-working-convention-at-line-479-480-uns-style-identifier-without-domain-prefix-replaced-puckunoresultfailureruntime-brytonruntime-and-puckunoresultnull-brytonnull-in-xememd-runnermd-was-already-consistent-the-runtime-middle-segment-is-reserved-for-runner-level-failures-test-missing-crashed-timeout-unparseable-exception-test-payload-failures-like-assertion-or-connection_refused-live-under-bryton-directly-without-runtime"></a>
+### 6.1 22. Bryton/Xeme disagree on runner-error class prefix [MEDIUM] [RESOLVED 2026-05-17 — honored xeme.md's own working convention at line 479-480 (UNS-style identifier without domain prefix). Replaced `puck.uno/result/failure/runtime/*` → `bryton/runtime/*` and `puck.uno/result/null/*` → `bryton/null/*` in xeme.md. runner.md was already consistent. The `runtime/` middle segment is reserved for runner-level failures (test missing, crashed, timeout, unparseable, exception); test-payload failures like assertion or connection_refused live under `bryton/` directly without `runtime/`.]
 
 **Files:** [runner.md:440-444](documentation/charlie/bryton/runner.md#L440-L444), [xeme.md:808, 823](documentation/charlie/bryton/xeme/xeme.md)
 
 runner.md: `class: "bryton/runtime/missing"`. xeme.md: same concept
-uses `kiera.uno/result/failure/runtime/crashed`. Suggestion: pick one
+uses `puck.uno/result/failure/runtime/crashed`. Suggestion: pick one
 prefix for `errors[].class` and propagate.
 
 <a id="23-xememd-promised-jasmine-will-be-flattened-to-this-shape-it-wasnt-medium-resolved-2026-05-17-soften-not-apply-the-jasmine-flattening-alignment-in-xememd-is-now-labeled-proposed-not-yet-applied-with-an-explicit-pointer-to-jasminemd-as-the-current-canonical-shape-the-actual-flattening-of-jasminemd-is-deferred-substantial-rewrite-the-spec-is-at-least-honest-about-current-state"></a>
@@ -387,8 +387,8 @@ scope). Suggestion: promote a minimal Uma spec into canonical
 <a id="f-ecosystem-repo-accuracy"></a>
 ## 7 F. Ecosystem / repo accuracy
 
-<a id="30-readme-overview-promise-python-mikobase-engine-that-doesnt-exist-medium-resolved-2026-05-17-readmemd-repo-layout-row-rewritten-to-reflect-actual-state-charlie-lua-engine-shipped-mikobasekieradogberry-placeholders-overviewmd-status-table-rewritten-removed-python-mikobase-references-added-rows-for-charlie-lua-reference-engine-v001-shipped-213-tests-passing-and-the-three-planned-mikobase-engines-sqlite-file-sqlite-memory-worldlet-direct"></a>
-### 7.1 30. README + overview promise Python Mikobase engine that doesn't exist [MEDIUM] [RESOLVED 2026-05-17 — README.md repo-layout row rewritten to reflect actual state (Charlie Lua engine shipped; Mikobase/Kiera/Dogberry placeholders). overview.md status table rewritten: removed Python Mikobase references; added rows for Charlie Lua reference engine (V0.01 shipped, 213 tests passing) and the three planned Mikobase engines (SQLite file, SQLite memory, worldlet-direct).]
+<a id="30-readme-overview-promise-python-mikobase-engine-that-doesnt-exist-medium-resolved-2026-05-17-readmemd-repo-layout-row-rewritten-to-reflect-actual-state-charlie-lua-engine-shipped-mikobasepuckdogberry-placeholders-overviewmd-status-table-rewritten-removed-python-mikobase-references-added-rows-for-charlie-lua-reference-engine-v001-shipped-213-tests-passing-and-the-three-planned-mikobase-engines-sqlite-file-sqlite-memory-worldlet-direct"></a>
+### 7.1 30. README + overview promise Python Mikobase engine that doesn't exist [MEDIUM] [RESOLVED 2026-05-17 — README.md repo-layout row rewritten to reflect actual state (Charlie Lua engine shipped; Mikobase/Puck/Dogberry placeholders). overview.md status table rewritten: removed Python Mikobase references; added rows for Charlie Lua reference engine (V0.01 shipped, 213 tests passing) and the three planned Mikobase engines (SQLite file, SQLite memory, worldlet-direct).]
 
 **Files:** [README.md:25](README.md#L25), [overview.md:99-107](documentation/overview.md#L99-L107); [code/mikobase/](code/mikobase/) (empty)
 
@@ -396,21 +396,21 @@ CLAUDE.md confirms V0.01 walking-skeleton target is the Lua Charlie
 engine, not Python Mikobase. Suggestion: update README and overview
 to reflect current state; mark Mikobase engine as design only.
 
-<a id="31-kieralower-examples-violate-immutability-stated-50-lines-later-medium-resolved-2026-05-17-dropped-the-assignment-examples-that-violated-the-immutability-rule-replaced-with-a-read-only-property-framing-properties-can-be-read-x-kieraupper-assignment-raises-pointed-to-deriving-a-narrower-kiera-and-restrict-doend-as-the-canonical-ways-to-narrow-the-window"></a>
-### 7.2 31. `%kiera.lower = ...` examples violate immutability stated 50 lines later [MEDIUM] [RESOLVED 2026-05-17 — dropped the assignment examples that violated the immutability rule. Replaced with a read-only-property framing: properties can be read (`$x = %kiera.upper`); assignment raises. Pointed to "Deriving a Narrower Kiera" and `restrict do...end` as the canonical ways to narrow the window.]
+<a id="31-pucklower-examples-violate-immutability-stated-50-lines-later-medium-resolved-2026-05-17-dropped-the-assignment-examples-that-violated-the-immutability-rule-replaced-with-a-read-only-property-framing-properties-can-be-read-x-puckupper-assignment-raises-pointed-to-deriving-a-narrower-puck-and-restrict-doend-as-the-canonical-ways-to-narrow-the-window"></a>
+### 7.2 31. `%puck.lower = ...` examples violate immutability stated 50 lines later [MEDIUM] [RESOLVED 2026-05-17 — dropped the assignment examples that violated the immutability rule. Replaced with a read-only-property framing: properties can be read (`$x = %puck.upper`); assignment raises. Pointed to "Deriving a Narrower Puck" and `restrict do...end` as the canonical ways to narrow the window.]
 
-**File:** [kiera/kiera.md:135-138, 184-194 vs 147-149](documentation/kiera/kiera.md)
+**File:** [puck/puck.md:135-138, 184-194 vs 147-149](documentation/puck/puck.md)
 
-Both properties are described as "immutable once the kiera exists"
+Both properties are described as "immutable once the puck exists"
 right after assignment examples. Suggestion: drop the assignment
 examples since they directly violate the immutability rule.
 
-<a id="32-kiera-propagation-undefined-at-role-boundaries-medium-resolved-2026-05-17-added-a-clarifying-paragraph-to-the-early-kiera-section-the-engine-decides-what-kiera-if-any-populates-each-role-boundary-this-reconciles-the-two-earlier-statements-wiped-at-role-boundaries-early-engine-controls-later-both-are-per-role-boundary-not-globally-contradictory"></a>
-### 7.3 32. `%kiera` propagation undefined at role boundaries [MEDIUM] [RESOLVED 2026-05-17 — added a clarifying paragraph to the early `%kiera` section: the engine decides what kiera (if any) populates each role boundary. This reconciles the two earlier statements ("wiped at role boundaries" early; "engine controls" later) — both are per-role-boundary, not globally contradictory.]
+<a id="32-puck-propagation-undefined-at-role-boundaries-medium-resolved-2026-05-17-added-a-clarifying-paragraph-to-the-early-puck-section-the-engine-decides-what-puck-if-any-populates-each-role-boundary-this-reconciles-the-two-earlier-statements-wiped-at-role-boundaries-early-engine-controls-later-both-are-per-role-boundary-not-globally-contradictory"></a>
+### 7.3 32. `%puck` propagation undefined at role boundaries [MEDIUM] [RESOLVED 2026-05-17 — added a clarifying paragraph to the early `%puck` section: the engine decides what puck (if any) populates each role boundary. This reconciles the two earlier statements ("wiped at role boundaries" early; "engine controls" later) — both are per-role-boundary, not globally contradictory.]
 
-**File:** [kiera/kiera.md:35-38 vs 268-282](documentation/kiera/kiera.md)
+**File:** [puck/puck.md:35-38 vs 268-282](documentation/puck/puck.md)
 
-Lines 35-38: "wiped at role boundaries, returns null when no kiera
+Lines 35-38: "wiped at role boundaries, returns null when no puck
 in `%chain`." Lines 268-282: "engine controls; universally
 available." Suggestion: decide explicitly — the role-crossing case
 is the common one.
@@ -424,25 +424,25 @@ Introduces FOUR reserved keys (`vibecode`, `comment`, `misc`,
 `enterprise`); line 203 says "all three reserved fields are always
 passed through." Suggestion: fix "three" → "four."
 
-<a id="34-memory-note-says-signingmd-blockchainmd-file-isnt-at-the-new-location-low-resolved-2026-05-17-moved-documentationcharlieblockchainblockchainmd-documentationblockchainmd-updated-three-external-link-references-versioningmd-2-bindingsmd-kieramd-the-blockchain-server-infrastructure-dockerfile-blockchainjson-scripts-nginxconf-flytoml-lua-is-still-under-documentationcharlieblockchain-flagged-as-needing-a-separate-restructure-since-its-codeinfra-not-docs"></a>
-### 7.5 34. Memory note says signing.md → blockchain.md; file isn't at the new location [LOW] [RESOLVED 2026-05-17 — moved `documentation/charlie/blockchain/blockchain.md` → `documentation/blockchain.md`. Updated three external link references (versioning.md ×2, bindings.md, kiera.md). The blockchain SERVER infrastructure (Dockerfile, blockchain.json, scripts, nginx.conf, fly.toml, lua/) is still under `documentation/charlie/blockchain/` — flagged as needing a separate restructure since it's code/infra, not docs.]
+<a id="34-memory-note-says-signingmd-blockchainmd-file-isnt-at-the-new-location-low-resolved-2026-05-17-moved-documentationcharlieblockchainblockchainmd-documentationblockchainmd-updated-three-external-link-references-versioningmd-2-bindingsmd-puckmd-the-blockchain-server-infrastructure-dockerfile-blockchainjson-scripts-nginxconf-flytoml-lua-is-still-under-documentationcharlieblockchain-flagged-as-needing-a-separate-restructure-since-its-codeinfra-not-docs"></a>
+### 7.5 34. Memory note says signing.md → blockchain.md; file isn't at the new location [LOW] [RESOLVED 2026-05-17 — moved `documentation/charlie/blockchain/blockchain.md` → `documentation/blockchain.md`. Updated three external link references (versioning.md ×2, bindings.md, puck.md). The blockchain SERVER infrastructure (Dockerfile, blockchain.json, scripts, nginx.conf, fly.toml, lua/) is still under `documentation/charlie/blockchain/` — flagged as needing a separate restructure since it's code/infra, not docs.]
 
 **Files:** `documentation/blockchain.md` (does not exist); [documentation/charlie/blockchain/blockchain.md](documentation/charlie/blockchain/blockchain.md) (does exist)
 
 Either move the file as the memory note says, or update the memory.
 
-<a id="35-kieraunovibcode-typo-missing-e-low-resolved-2026-05-17-fixed-in-kiera-htmlmd-and-json-htmljsonhtml-via-global-sed-issuesmd-retains-the-typo-in-the-audit-finding-context-for-historical-reference"></a>
-### 7.6 35. `kiera.uno/vibcode` typo (missing 'e') [LOW] [RESOLVED 2026-05-17 — fixed in kiera-html.md and json-html/json.html via global sed. issues.md retains the typo in the audit-finding context for historical reference.]
+<a id="35-puckunovibcode-typo-missing-e-low-resolved-2026-05-17-fixed-in-puck-htmlmd-and-json-htmljsonhtml-via-global-sed-issuesmd-retains-the-typo-in-the-audit-finding-context-for-historical-reference"></a>
+### 7.6 35. `puck.uno/vibcode` typo (missing 'e') [LOW] [RESOLVED 2026-05-17 — fixed in puck-html.md and json-html/json.html via global sed. issues.md retains the typo in the audit-finding context for historical reference.]
 
-**Files:** [kiera-html.md:26, 39](documentation/kiera/kiera-html.md), json.html:16
+**Files:** [puck-html.md:26, 39](documentation/puck/puck-html.md), json.html:16
 
 Every other doc uses "vibecode." Suggestion: fix typo before
-`kiera.uno` is live (it will become a real addressable UNS).
+`puck.uno` is live (it will become a real addressable UNS).
 
 <a id="36-dogberry-described-in-implementation-detail-in-json-urlsmd-medium-resolved-2026-05-17-replaced-the-implementation-detail-dogberry-support-section-in-json-urlsmd-with-a-tbd-when-dogberry-lands-framing-stale-link-to-dogberry-wishlistmd-deleted-file-replaced-with-link-to-ideasdogberrymd-the-current-brainstorm"></a>
 ### 7.7 36. Dogberry described in implementation detail in json-urls.md [MEDIUM] [RESOLVED 2026-05-17 — replaced the implementation-detail Dogberry-support section in json-urls.md with a "TBD when Dogberry lands" framing. Stale link to `dogberry-wishlist.md` (deleted file) replaced with link to `ideas/dogberry.md` (the current brainstorm).]
 
-**Files:** [kiera/json-urls.md:78, 149-156](documentation/kiera/json-urls.md)
+**Files:** [puck/json-urls.md:78, 149-156](documentation/puck/json-urls.md)
 
 Project memory explicitly says "Dogberry is undefined" and "do NOT
 describe it as role-based access control." json-urls.md:149-156
@@ -478,13 +478,13 @@ frames) even if extensions are TBD.
 Doc says branches and else are both optional; never says what the
 empty form evaluates to.
 
-<a id="40-kieracall-referenced-but-signature-unspecified-medium-resolved-2026-05-17-added-return-value-and-error-model-subsection-to-kieramds-kieracall-section-specifies-the-return-value-shape-and-the-canonical-error-classes-for-the-five-common-failure-modes-target-lookup-failure-kieraunoerrornot_found-method-not-found-transport-failure-remote-exception-propagation-authorization-failure-signature-was-already-in-the-section-chain-forwarding-was-already-in-the-section"></a>
-### 8.4 40. `%kiera.call` referenced but signature unspecified [MEDIUM] [RESOLVED 2026-05-17 — added "Return value and error model" subsection to kiera.md's `%kiera.call` section. Specifies the return value shape and the canonical error classes for the five common failure modes: target lookup failure (`kiera.uno/error/not_found`), method not found, transport failure, remote exception propagation, authorization failure. Signature was already in the section; chain forwarding was already in the section.]
+<a id="40-puckcall-referenced-but-signature-unspecified-medium-resolved-2026-05-17-added-return-value-and-error-model-subsection-to-puckmds-puckcall-section-specifies-the-return-value-shape-and-the-canonical-error-classes-for-the-five-common-failure-modes-target-lookup-failure-puckunoerrornot_found-method-not-found-transport-failure-remote-exception-propagation-authorization-failure-signature-was-already-in-the-section-chain-forwarding-was-already-in-the-section"></a>
+### 8.4 40. `%puck.call` referenced but signature unspecified [MEDIUM] [RESOLVED 2026-05-17 — added "Return value and error model" subsection to puck.md's `%puck.call` section. Specifies the return value shape and the canonical error classes for the five common failure modes: target lookup failure (`puck.uno/error/not_found`), method not found, transport failure, remote exception propagation, authorization failure. Signature was already in the section; chain forwarding was already in the section.]
 
 **File:** [charlie.md:505-521](documentation/charlie/charlie.md#L505-L521)
 
-`remote function` delegates to `%kiera.call(self, :save, name: name)`.
-Neither system-methods.md nor charlie-runtime.md defines `%kiera.call`.
+`remote function` delegates to `%puck.call(self, :save, name: name)`.
+Neither system-methods.md nor charlie-runtime.md defines `%puck.call`.
 The in-scope spec leaves the call signature, error model, and
 `%chain` forwarding unspecified.
 
@@ -556,12 +556,12 @@ Vibecode paths point at `documentation/bryton/...`; real path is
 resolves to `documentation/overview.md` (which exists but is the
 project overview, not Bryton's).
 
-<a id="49-hardcoded-homemikoprojectsmikobaseworkingbin-in-v00x-cli-pseudocode-low-resolved-2026-05-17-replaced-hardcoded-developer-specific-homemikoprojectsmikobaseworkingbin-with-generic-pathtokieraworkingbin-an-inline-replace-with-your-local-checkout-path-comment"></a>
-### 8.13 49. Hardcoded `/home/miko/projects/mikobase/working/bin` in V0.0X CLI pseudocode [LOW] [RESOLVED 2026-05-17 — replaced hardcoded developer-specific `/home/miko/projects/mikobase/working/bin` with generic `/path/to/kiera/working/bin` + an inline "replace with your local checkout path" comment.]
+<a id="49-hardcoded-homemikoprojectsmikobaseworkingbin-in-v00x-cli-pseudocode-low-resolved-2026-05-17-replaced-hardcoded-developer-specific-homemikoprojectsmikobaseworkingbin-with-generic-pathtopuckworkingbin-an-inline-replace-with-your-local-checkout-path-comment"></a>
+### 8.13 49. Hardcoded `/home/miko/projects/mikobase/working/bin` in V0.0X CLI pseudocode [LOW] [RESOLVED 2026-05-17 — replaced hardcoded developer-specific `/home/miko/projects/mikobase/working/bin` with generic `/path/to/puck/working/bin` + an inline "replace with your local checkout path" comment.]
 
 **File:** [development.md:2576](documentation/development/development.md#L2576)
 
-Repo lives at `/home/miko/projects/kiera/working/`. CLAUDE.md
+Repo lives at `/home/miko/projects/puck/working/`. CLAUDE.md
 acknowledges the historical `mikobase` directory name but this is a
 copy/paste from a developer's actual rc file.
 

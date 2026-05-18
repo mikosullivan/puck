@@ -269,7 +269,7 @@ the importer.
             "rank":   {"class": "string",  "required": true},
             "serial": {"class": "string",  "required": true, "unique": true},
             "active": {"class": "boolean", "default": true},
-            "photo":  {"class": "kiera.uno/dbfile"},
+            "photo":  {"class": "puck.uno/dbfile"},
 
             "summary": {
                 "class": "function",
@@ -432,17 +432,17 @@ The same rule applies to `files` and `file_chunks` entries.
 ### 12.3 Reference encoding
 
 Reference fields in `bucket` are plain UUID strings. The class definition declares the
-field type — a field with class `kiera.uno/reference` or `kiera.uno/dbfile` tells the
+field type — a field with class `puck.uno/reference` or `puck.uno/dbfile` tells the
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
 <a id="the-class-field"></a>
 ### 12.4 The `class` field
 
-In all Kiera-compliant hashes, the `class` field is reserved to indicate the class or
+In all Puck-compliant hashes, the `class` field is reserved to indicate the class or
 classes the hash belongs to. This applies to Q0 queries, record entries, class
-definitions, and any other Kiera-level objects.
+definitions, and any other Puck-level objects.
 
-Bucket objects are not Kiera-compliant. The `class` field has no special meaning inside
+Bucket objects are not Puck-compliant. The `class` field has no special meaning inside
 a bucket and may be used freely as an application field.
 
 <a id="validation"></a>
@@ -475,14 +475,14 @@ The smallest possible worldlet — one record, no schema, no files:
     "format_version": "1.0",
     "records": {
         "e1b2c3d4-0001-0001-0001-000000000001": {
-            "class":  "kiera.uno/record",
+            "class":  "puck.uno/record",
             "bucket": {"note": "hello"}
         }
     }
 }
 ```
 
-`classes` is omitted — `kiera.uno/record` is a built-in class.
+`classes` is omitted — `puck.uno/record` is a built-in class.
 
 ---
 
@@ -535,7 +535,7 @@ The smallest possible worldlet — one record, no schema, no files:
                 "rank":   {"class": "string",  "required": true},
                 "serial": {"class": "string",  "required": true, "unique": true},
                 "active": {"class": "boolean", "default": true},
-                "photo":  {"class": "kiera.uno/dbfile"},
+                "photo":  {"class": "puck.uno/dbfile"},
 
                 "summary": {
                     "class": "function",

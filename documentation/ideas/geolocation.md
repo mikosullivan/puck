@@ -1,6 +1,6 @@
 # Geolocation
 
-**Status:** designing. Spec for the launch of kiera.uno — to be filled
+**Status:** designing. Spec for the launch of puck.uno — to be filled
 in as the design develops.
 
 ---
@@ -8,22 +8,22 @@ in as the design develops.
 <a id="overview"></a>
 ## 1 Overview
 
-One of the Kiera-provided services available at kiera.uno launch will
-be **`kiera.uno/geo`** — a geolocation service in the `kiera.uno`
+One of the Puck-provided services available at puck.uno launch will
+be **`puck.uno/geo`** — a geolocation service in the `puck.uno`
 namespace.
 
 <a id="remote-first-service-pattern"></a>
 ### 1.1 Remote-first service pattern
 
-`kiera.uno/geo` is intended as an **example of a class that is only used
+`puck.uno/geo` is intended as an **example of a class that is only used
 remotely**. There is very little Charlie in the class definition; all
 methods are remote calls. The class on the client side is essentially a
 stub that exposes the method surface and dispatches each call to the
-kiera.uno server via `%kiera.call` (see
-[kiera.md](../kiera/kiera.md) — `remote function`).
+puck.uno server via `%puck.call` (see
+[puck.md](../puck/puck.md) — `remote function`).
 
 The actual geolocation logic — databases, caches, algorithms — lives on
-the kiera.uno servers. Clients hold the class for its method names and
+the puck.uno servers. Clients hold the class for its method names and
 let the remote do all the work.
 
 This makes `geo` a useful reference example: developers building their
@@ -43,13 +43,13 @@ A geo instance carries three coordinate fields:
 <a id="remote-call-semantics"></a>
 ### 1.3 Remote call semantics
 
-Standard Kiera remote-call mechanics apply (see [kiera.md](../kiera/kiera.md)):
+Standard Puck remote-call mechanics apply (see [puck.md](../puck/puck.md)):
 
 - The client retrieves the class definition from UNS (or cache) and
   instantiates locally. The instance lives in client memory with its
   `long`/`lat`/`alt` state.
 - On each method call, the client sends **the entire object** to the
-  kiera.uno server along with the method name and any args. For geo,
+  puck.uno server along with the method name and any args. For geo,
   that's tiny — three numbers.
 - The server receives a copy of the object, processes the call using
   the received state, and returns a response.
@@ -70,20 +70,20 @@ community.
 **Our operating commitments:**
 
 - **Cache aggressively, but don't make everything pass through us.**
-  When kiera.uno makes a call to OSM (Nominatim, Overpass, static-map
+  When puck.uno makes a call to OSM (Nominatim, Overpass, static-map
   rendering, etc.), we cache the result so OSM doesn't see the same
   query twice within the cache TTL. But not every OSM resource is
   best routed through our server; **it's a judgment call per
   resource**. The rule of thumb:
   - **Aggregable API queries** (Nominatim reverse-geocode, Overpass
-    tag queries, static-map images) → through kiera.uno with caching.
+    tag queries, static-map images) → through puck.uno with caching.
     These are query-shaped — one client request triggers one OSM
     request, the result is small and cacheable, and our cache buys
     real OSM relief.
   - **High-volume low-level traffic** (map tiles for interactive
     embeds) → **fetched directly from OSM by client browsers**, not
     proxied through us. Tiles are voluminous, OSM already has CDN
-    infrastructure for them, and routing them through kiera.uno would
+    infrastructure for them, and routing them through puck.uno would
     impose serious bandwidth costs without meaningful OSM-stewardship
     benefit. If volume ever grows to where our embeds are putting
     real pressure on OSM tile servers, we'd revisit (switch to a
@@ -95,20 +95,20 @@ community.
   limits. Nominatim asks for ≤1 request per second per IP; Overpass
   asks broadly for "be reasonable." Spikes from many simultaneous
   clients get absorbed by the cache, not pushed to OSM.
-- **Identify ourselves honestly.** Every request kiera.uno makes to
+- **Identify ourselves honestly.** Every request puck.uno makes to
   OSM-hosted services carries a User-Agent identifying the service
   and a contact URL, so OSM operators can reach us if our traffic is
   causing problems.
-- **No self-hosted mapping service.** kiera.uno does not and will not
+- **No self-hosted mapping service.** puck.uno does not and will not
   run its own Nominatim, Overpass, or tile-rendering infrastructure.
   Running a real mapping service is a big operational commitment we
-  are deliberately not taking on. kiera.uno is, and is intended to
+  are deliberately not taking on. puck.uno is, and is intended to
   remain, **a thin caching layer in front of OSM** for the queries
   we proxy — and a thin HTML/JS shell for embeds whose tiles come
   direct from OSM.
 - **Attribute OSM in client-facing responses.** Per OSM's ODbL
   license, address and POI data carries appropriate attribution. The
-  kiera.uno server includes attribution metadata in responses where
+  puck.uno server includes attribution metadata in responses where
   it's needed; client libraries can surface it where appropriate.
 - **Contribute back when we detect data gaps.** If our caching and
   query patterns reveal systematic gaps or errors in OSM data, we
@@ -119,7 +119,7 @@ The goal is simple: the geo service should be a net positive for the
 OSM ecosystem — bringing more developers into OSM-backed workflows
 without burdening OSM's volunteer-run infrastructure.
 
-**Architectural footprint, in plain terms.** kiera.uno's geo service
+**Architectural footprint, in plain terms.** puck.uno's geo service
 is a **caching HTTP proxy** in front of OSM-hosted endpoints. There
 is no PostgreSQL + PostGIS, no osm2pgsql, no Mapnik, no tile cache
 of our own. Every query ultimately resolves at OSM's servers; our
@@ -132,30 +132,30 @@ see it more than once per cache TTL. That's the whole architecture
 <a id="services"></a>
 ## 3 Services
 
-Methods on a `kiera.uno/geo` instance are remote calls that compute
+Methods on a `puck.uno/geo` instance are remote calls that compute
 location-derived information from the instance's `lat`/`long`/`alt`.
-The kiera.uno server holds the implementations, the data sources, and
+The puck.uno server holds the implementations, the data sources, and
 the caches. This section catalogs the services as they get spec'd.
 
-<a id="general-pattern-everything-returned-is-a-kiera-object"></a>
-### 3.1 General pattern: everything returned is a Kiera object
+<a id="general-pattern-everything-returned-is-a-puck-object"></a>
+### 3.1 General pattern: everything returned is a Puck object
 
-**Anything a `kiera.uno/geo` method returns is itself a Kiera
+**Anything a `puck.uno/geo` method returns is itself a Puck
 remote-first object.** Addresses, business listings, census handles —
 they're all UNS-registered classes with their own remote-method
-surface. The Kiera protocol pattern applies recursively all the way
+surface. The Puck protocol pattern applies recursively all the way
 down.
 
 The amount of locally-cached state varies by class:
 
 - Some return objects are **mid-weight** — they hold a useful set of
   fields populated from the initial server response, with additional
-  remote methods for richer data. `kiera.uno/geo/business` is in this
+  remote methods for richer data. `puck.uno/geo/business` is in this
   bucket (basic OSM data populated locally; logo etc. via remote
   methods).
 - Others are **very light** — essentially just a handle (an ID or a
   small set of keys), with all interesting data fetched lazily via
-  remote methods. `kiera.uno/geo/census` is in this bucket.
+  remote methods. `puck.uno/geo/census` is in this bucket.
 
 The right balance for each class depends on the underlying data
 source: when one round trip can fetch a useful chunk of data
@@ -194,12 +194,12 @@ and metadata like `place_rank` and `osm_id`.
 #### 3.2.2 Call flow
 
 1. Client calls `$geo.address`. The local stub sends the entire `$geo`
-   object to the kiera.uno server via `%kiera.call` (per standard
-   Kiera remote-call mechanics).
-2. The kiera.uno server checks its own **cache** for the lat/long key.
+   object to the puck.uno server via `%puck.call` (per standard
+   Puck remote-call mechanics).
+2. The puck.uno server checks its own **cache** for the lat/long key.
 3. Cache miss: the server makes a Nominatim request, respecting OSM's
    usage policy (1 request per second per IP, identifying User-Agent
-   `kiera.uno-geo/1.0`). The cache exists precisely to keep us under
+   `puck.uno-geo/1.0`). The cache exists precisely to keep us under
    OSM's rate limit and to be a good citizen.
 4. The result lands in the server cache with a TTL of ~30 days
    (addresses are stable; new construction is rare).
@@ -232,10 +232,10 @@ missing data.
 
 - **No address at this coordinate** (middle of an ocean, etc.): the
   call returns a null with flavor
-  `kiera.uno/null/flavor/not_found`. The coords are valid; OSM just
+  `puck.uno/null/flavor/not_found`. The coords are valid; OSM just
   has nothing to say.
 - **OSM unreachable or timeout**: a regular error
-  (`kiera.uno/exception/error/unreachable` or similar). Transient;
+  (`puck.uno/exception/error/unreachable` or similar). Transient;
   clients can retry.
 - **Invalid coordinates** (lat outside [-90, 90], long outside [-180,
   180]): rejected client-side before the round trip — it's a
@@ -269,8 +269,8 @@ $here.distance_to($there)    # → integer meters, straight-line
 ```
 
 This is "as the crow flies" — math on the two coordinates, not the
-actual road distance. Locally computable on the kiera.uno side (no
-remote round-trip needed beyond the initial `%kiera.call`); could
+actual road distance. Locally computable on the puck.uno side (no
+remote round-trip needed beyond the initial `%puck.call`); could
 even be done client-side eventually if we ship the formula in a
 client library.
 
@@ -299,10 +299,10 @@ canonicalize case) do that themselves.
 
 **Edge cases.** Two flavored-null outcomes:
 
-- **`kiera.uno/null/flavor/not_found`** — coords are in a region that
+- **`puck.uno/null/flavor/not_found`** — coords are in a region that
   uses postal codes, but Nominatim doesn't have one for this specific
   location (rural areas without exact mapping, ocean coords, etc.).
-- **`kiera.uno/null/flavor/not_applicable`** — coords are in a
+- **`puck.uno/null/flavor/not_applicable`** — coords are in a
   jurisdiction that doesn't use postal codes at all (some countries
   historically didn't; Ireland's Eircode is only recent; etc.).
 
@@ -313,7 +313,7 @@ rider-supplied addresses.
 <a id="geocensus"></a>
 ### 3.5 `$geo.census`
 
-Returns a `kiera.uno/geo/census` object — a **very light handle**
+Returns a `puck.uno/geo/census` object — a **very light handle**
 representing the census geography that contains the geo instance's
 coordinates. The handle itself holds just enough to identify the area
 (the relevant census ID and a country code); all actual demographic
@@ -336,7 +336,7 @@ data is fetched via remote methods on the object.
   anticipates per-country expansion (UK's ONS, Statistics Canada,
   INSEE, etc.). For coordinates outside supported countries,
   `$geo.census` returns null with flavor
-  `kiera.uno/null/flavor/not_implemented`.
+  `puck.uno/null/flavor/not_implemented`.
 
 <a id="geographic-granularity-us"></a>
 #### 3.5.2 Geographic granularity (US)
@@ -360,11 +360,11 @@ analytical level** — most data and most use cases land there.
 #### 3.5.3 Call flow
 
 1. Client calls `$geo.census`. Client sends the geo instance to
-   kiera.uno.
+   puck.uno.
 2. Server checks its cache for the geocoder result for these coords.
 3. Cache miss: server hits the Census Geocoder to get the census IDs
    (block, block group, tract, county, state) for these coords.
-4. Server returns a lightweight `kiera.uno/geo/census` object
+4. Server returns a lightweight `puck.uno/geo/census` object
    containing just those IDs and the country code. **No demographic
    data is fetched yet.**
 
@@ -380,8 +380,8 @@ $census.geography_ids     # hash: { block: ..., tract: ..., county: ..., state: 
 
 That's essentially it. Everything else is a remote method.
 
-<a id="remote-methods-on-kieraunogeocensus"></a>
-#### 3.5.5 Remote methods on `kiera.uno/geo/census`
+<a id="remote-methods-on-puckunogeocensus"></a>
+#### 3.5.5 Remote methods on `puck.uno/geo/census`
 
 The full method catalog is its own spec, but the shape is:
 
@@ -401,8 +401,8 @@ requested stat from ACS or Decennial, with its own server-side cache.
 
 When the method returns, the result is the value (e.g., a number for
 median_income, a hash for racial_breakdown). Some return values may
-themselves be Kiera objects if the data is structured enough to
-warrant it (e.g., a `kiera.uno/geo/census/boundary` for the area's
+themselves be Puck objects if the data is structured enough to
+warrant it (e.g., a `puck.uno/geo/census/boundary` for the area's
 geometric outline); that's per-method.
 
 <a id="caching"></a>
@@ -438,7 +438,7 @@ waste a lot of round-trip bytes for stats nobody asked about. The
 lightweight-handle pattern means the first call to `$geo.census` is
 cheap; subsequent stat methods pay only for what's actually used.
 
-This is the same reasoning that applies to any Kiera service handle
+This is the same reasoning that applies to any Puck service handle
 representing a large or structured remote dataset.
 
 <a id="map-and-navigator"></a>
@@ -446,11 +446,11 @@ representing a large or structured remote dataset.
 
 The map system splits into **two services**:
 
-- **`kiera.uno/geo/map`** — the map itself. A rendering surface.
+- **`puck.uno/geo/map`** — the map itself. A rendering surface.
   Holds everything that affects what gets drawn: position, zoom,
   theme, language, tile styles, overlay layers. Embeddable on its
   own when all you want is a map.
-- **`kiera.uno/geo/navigator`** — a higher-level wrapper that
+- **`puck.uno/geo/navigator`** — a higher-level wrapper that
   composes a map with surrounding chrome: buttons, voice,
   find-nearby UI, navigation behavior, skin/template. Holds the
   map as a nested `.map` property.
@@ -463,7 +463,7 @@ it's a map property. If it's a button, voice line, or other thing
 #### 3.6.1 Example: configuring a navigator
 
 ```
-$navigator = %['kiera.uno/geo/navigator'].new()
+$navigator = %['puck.uno/geo/navigator'].new()
 
 # Map: things that affect what's drawn on the rendering surface
 $navigator.map.center = [42.3601, -71.0589]
@@ -542,10 +542,10 @@ north_up/heading_up). Three-way single selector is simpler.
 #### 3.6.4 Standalone map use
 
 If you just want to embed a map without any of the navigator
-chrome, instantiate `kiera.uno/geo/map` directly:
+chrome, instantiate `puck.uno/geo/map` directly:
 
 ```
-$map = %['kiera.uno/geo/map'].new()
+$map = %['puck.uno/geo/map'].new()
 $map.center = [42.3601, -71.0589]
 $map.zoom = 14
 $html = $map.html
@@ -558,7 +558,7 @@ developer's job.
 <a id="curated-styles-and-skins"></a>
 #### 3.6.5 Curated styles and skins
 
-kiera.uno hosts a **curated set of popular styles and skins** for
+puck.uno hosts a **curated set of popular styles and skins** for
 the map system — not a general repository, but more than just one
 default. The policy:
 
@@ -573,7 +573,7 @@ default. The policy:
   hosting service. Developers with specific needs should host on
   their own infrastructure or with a specialized provider.
 
-Curated styles and skins live at well-known kiera.uno URLs and
+Curated styles and skins live at well-known puck.uno URLs and
 are referenced like any other URL in `$map.styles`,
 `$map.map_style`, or `$navigator.skin`. Developers pick the one
 they want or roll their own.
@@ -593,7 +593,7 @@ mentally route it.
 <a id="maps-existing-detail-pending-reorganization"></a>
 ### 3.7 Maps (existing detail — pending reorganization)
 
-A `kiera.uno/geo/map` represents a rectangular geographic region —
+A `puck.uno/geo/map` represents a rectangular geographic region —
 the primitive for map services (embedding, tile retrieval, etc.).
 Other ways to describe regions (center+zoom, center+radius, polygons)
 are out of scope for now; the bounding-box rectangle is the canonical
@@ -647,7 +647,7 @@ during a separate pass.
 ### 3.8 Configuration properties
 
 ```
-$map.iconset = 'kiera.uno/iconset'
+$map.iconset = 'puck.uno/iconset'
 $map.language = 'jp'
 $map.zoom = true
 $map.pan = true
@@ -700,28 +700,28 @@ $map.pan = true
   ```
   $map.styles = [
       'https://my-cdn.com/map-theme.css',           # external stylesheet
-      'https://kiera.uno/geo/default-style.css',    # factory default, if you want it back
-      '.kiera-attribution { font-size: 10px }',     # inline override
+      'https://puck.uno/geo/default-style.css',    # factory default, if you want it back
+      '.puck-attribution { font-size: 10px }',     # inline override
   ]
   ```
 
   **Factory default.** The map ships with a default styled UI backed
-  by a single stylesheet hosted at kiera.uno:
+  by a single stylesheet hosted at puck.uno:
 
   ```
-  https://kiera.uno/geo/default-style.css
+  https://puck.uno/geo/default-style.css
   ```
 
   `$map.styles` starts out containing exactly that URL. So:
   - `$map.styles << '...'` **adds on top of** the default (default
     applies, then your additions override).
   - `$map.styles = ['https://my-host.com/theme.css']` **replaces
-    entirely**. The kiera.uno default is gone unless you re-include
+    entirely**. The puck.uno default is gone unless you re-include
     the URL.
 
   The default-as-URL design keeps it visible and inspectable —
   developers can view the source, copy it as a starting point, fork
-  it, etc. Alongside the default, kiera.uno hosts a curated set of
+  it, etc. Alongside the default, puck.uno hosts a curated set of
   popular CSS styles (see
   [Curated styles and skins](#curated-styles-and-skins)); custom
   styles live on the developer's own infrastructure.
@@ -791,10 +791,10 @@ $map.pan = true
   type / pattern shape.
 
   **Factory default.** The map ships with a default vector style
-  hosted at kiera.uno:
+  hosted at puck.uno:
 
   ```
-  https://kiera.uno/geo/default-map-style.json
+  https://puck.uno/geo/default-map-style.json
   ```
 
   `$map.map_style` starts containing this URL. Override by setting a
@@ -813,8 +813,8 @@ $map.pan = true
   This separation matches the standard tile-rendering model:
   base + overlays.
 
-  **A curated set lives on kiera.uno; everything else lives
-  elsewhere.** kiera.uno hosts the default plus a small curated
+  **A curated set lives on puck.uno; everything else lives
+  elsewhere.** puck.uno hosts the default plus a small curated
   set of popular vector styles (see
   [Curated styles and skins](#curated-styles-and-skins)). Beyond
   that curated set, styles live on the developer's infrastructure
@@ -834,24 +834,24 @@ $map.pan = true
   $map.layers = []
 
   # Overlay a custom rideshare-specific layer on top
-  $map.layers = ['https://tiles.kiera.uno/rideshare/driver_amenities/{z}/{x}/{y}.png']
+  $map.layers = ['https://tiles.puck.uno/rideshare/driver_amenities/{z}/{x}/{y}.png']
 
   # Stack multiple overlays
   $map.layers = [
-      'https://tiles.kiera.uno/rideshare/driver_amenities/{z}/{x}/{y}.png',
+      'https://tiles.puck.uno/rideshare/driver_amenities/{z}/{x}/{y}.png',
       'https://tiles.example.com/traffic/{z}/{x}/{y}.png',
   ]
   ```
 
   **Why URLs rather than named identifiers.** A URL-based scheme means
-  no kiera.uno-maintained registry of "known" layer names, no
+  no puck.uno-maintained registry of "known" layer names, no
   curation overhead, and developers have explicit control over their
   tile sources (and over their compliance with each source's usage
-  policy). Third parties can host layers anywhere; kiera.uno doesn't
+  policy). Third parties can host layers anywhere; puck.uno doesn't
   need to know about them in advance.
 
   **Custom rideshare-style layers** could be hosted at
-  `https://tiles.kiera.uno/rideshare/<theme>/...` (driver amenities,
+  `https://tiles.puck.uno/rideshare/<theme>/...` (driver amenities,
   no-stopping zones, pickup-friendly areas, etc.) — but each is just
   a URL the developer plugs into `layers`. They're not a special
   category as far as the map config is concerned.
@@ -865,7 +865,7 @@ $map.pan = true
 
   **Each tile source has its own usage policy.** When developers add
   a layer URL, they're agreeing to that source's terms (rate limits,
-  attribution, API keys, etc.). kiera.uno doesn't enforce or proxy;
+  attribution, API keys, etc.). puck.uno doesn't enforce or proxy;
   the developer is responsible.
 
 - **`voice`** — enables spoken turn-by-turn prompts when the map is
@@ -906,7 +906,7 @@ Other configurable properties are expected as the design develops —
 map style, default zoom, marker behavior, etc. As they're added,
 each becomes part of the map object's state.
 
-**Aware of payload growth.** Per the standard Kiera remote-call
+**Aware of payload growth.** Per the standard Puck remote-call
 mechanic, the entire map object is sent with every remote call.
 With just NW/SE + iconset that's still tiny, but as more
 configurable properties accumulate, the per-call payload grows. Not
@@ -927,7 +927,7 @@ Consumers can use that info or not — but it's always provided.
 <a id="mapimage_url"></a>
 #### 3.8.2 `$map.image_url`
 
-Returns a URL pointing to kiera.uno's static-map service. The
+Returns a URL pointing to puck.uno's static-map service. The
 developer plops it directly into `<img src="...">` and is done — no
 script, no CSS, no library setup.
 
@@ -937,13 +937,13 @@ $map.image_url(width: 1000)                 # custom width, default height
 $map.image_url(width: 1000, height: 700)    # custom dimensions
 ```
 
-The URL shape (under kiera.uno control; exact form TBD):
+The URL shape (under puck.uno control; exact form TBD):
 
 ```
-https://kiera.uno/geo/static-map?nw=LAT,LONG&se=LAT,LONG&width=W&height=H
+https://puck.uno/geo/static-map?nw=LAT,LONG&se=LAT,LONG&width=W&height=H
 ```
 
-**kiera.uno picks the provider internally.** Almost certainly
+**puck.uno picks the provider internally.** Almost certainly
 OSM-backed, since the project is OSM-first. Developers don't see or
 care which data source produced the image. Multi-provider options
 (an explicit `$map.google.image_url`, etc.) were considered and
@@ -951,7 +951,7 @@ parked — probably never. Adds complexity for a use case most
 developers don't have.
 
 **Caching.** Static-map URLs for the same bounding box and dimensions
-return the same image, so the kiera.uno-side cache has a long TTL
+return the same image, so the puck.uno-side cache has a long TTL
 (target: 7 days, possibly longer). The OSM stewardship rules apply
 as usual on the rendering backend (rate-limited tile fetches,
 identifying User-Agent, etc. — see
@@ -964,7 +964,7 @@ developers don't have to handle attribution separately.
 **CSP info.** When this URL is provided as part of a larger HTML
 snippet (e.g., an embed code), the corresponding CSP info bundle
 (see [csp.md](../charlie/csp.md)) accompanies it. For the bare image URL alone,
-adding `img-src https://kiera.uno` to a site's CSP is what's needed
+adding `img-src https://puck.uno` to a site's CSP is what's needed
 to allow the embed.
 
 <a id="maphtml"></a>
@@ -978,10 +978,10 @@ parent page's DOM (not wrapped in an iframe) so the rest of the
 app's JS can interact with it natively.
 
 ```html
-<script src="https://kiera.uno/geo/map.js"></script>
-<kiera-map-interface nw="LAT,LONG" se="LAT,LONG" style="width: 600px; height: 400px">
+<script src="https://puck.uno/geo/map.js"></script>
+<puck-map-interface nw="LAT,LONG" se="LAT,LONG" style="width: 600px; height: 400px">
   <!-- map area + controls panels are inside this element -->
-</kiera-map-interface>
+</puck-map-interface>
 ```
 
 ```
@@ -990,8 +990,8 @@ $map.html(width: 1000, height: 700)    # custom dimensions
 ```
 
 The developer plops the snippet into their page. The script tag
-loads kiera.uno's map library (registers the custom elements);
-each `<kiera-map-interface>` tag becomes a fully-functional map UI.
+loads puck.uno's map library (registers the custom elements);
+each `<puck-map-interface>` tag becomes a fully-functional map UI.
 
 <a id="controls-are-not-overlaid-on-the-map-by-default"></a>
 ##### 3.8.3.1 Controls are NOT overlaid on the map (by default)
@@ -1017,7 +1017,7 @@ factory skin's no-overlay layout is a default opinion, not a hard rule.
 The map interface is **skinnable from the ground up**. The HTML
 returned by `$map.html` follows a skin — by default, a factory skin
 with sensible layout; optionally, one of a curated set of skins
-hosted at kiera.uno (see
+hosted at puck.uno (see
 [Curated styles and skins](#curated-styles-and-skins)); or a
 custom skin supplied by the developer:
 
@@ -1033,16 +1033,16 @@ there.
 Example skin (roughly what the factory ships):
 
 ```html
-<div class="kiera-map-interface">
-    <div class="kiera-controls-panel">
-        <div class="kiera-navigation-controls"></div>
-        <button class="kiera-orientation-toggle"></button>
-        <button class="kiera-voice-toggle"></button>
-        <div class="kiera-layer-selector"></div>
+<div class="puck-map-interface">
+    <div class="puck-controls-panel">
+        <div class="puck-navigation-controls"></div>
+        <button class="puck-orientation-toggle"></button>
+        <button class="puck-voice-toggle"></button>
+        <div class="puck-layer-selector"></div>
     </div>
-    <div class="kiera-map-area"></div>
-    <div class="kiera-turn-by-turn"></div>
-    <div class="kiera-attribution"></div>
+    <div class="puck-map-area"></div>
+    <div class="puck-turn-by-turn"></div>
+    <div class="puck-attribution"></div>
 </div>
 ```
 
@@ -1056,62 +1056,62 @@ each is reviewed.
 
 | Class | Component |
 |---|---|
-| `kiera-map-area` | The map tile area itself (the actual map) |
-| `kiera-attribution` | OSM credit (per ODbL) — required for license compliance |
+| `puck-map-area` | The map tile area itself (the actual map) |
+| `puck-attribution` | OSM credit (per ODbL) — required for license compliance |
 
 **Navigation lifecycle controls** (active when `navigation = true`):
 
 | Class | Component |
 |---|---|
-| `kiera-set-destination` | Open destination picker / search dialog |
-| `kiera-start-navigation` | Begin active turn-by-turn once destination is set |
-| `kiera-stop-navigation` | End active navigation, return to idle map |
-| `kiera-skip-turn` | Manually advance past the current turn-by-turn instruction |
-| `kiera-recalculate-route` | Force a fresh route calculation |
-| `kiera-alternate-routes` | Show 2nd/3rd best route options |
-| `kiera-avoid-tolls-toggle` | Toggle route preference for tolls/highways |
+| `puck-set-destination` | Open destination picker / search dialog |
+| `puck-start-navigation` | Begin active turn-by-turn once destination is set |
+| `puck-stop-navigation` | End active navigation, return to idle map |
+| `puck-skip-turn` | Manually advance past the current turn-by-turn instruction |
+| `puck-recalculate-route` | Force a fresh route calculation |
+| `puck-alternate-routes` | Show 2nd/3rd best route options |
+| `puck-avoid-tolls-toggle` | Toggle route preference for tolls/highways |
 
 **Navigation info displays** (active when `navigation = true`):
 
 | Class | Component |
 |---|---|
-| `kiera-turn-by-turn` | Current turn instruction display |
-| `kiera-eta-display` | ETA to destination |
-| `kiera-route-summary` | Distance + total time for the active route |
+| `puck-turn-by-turn` | Current turn instruction display |
+| `puck-eta-display` | ETA to destination |
+| `puck-route-summary` | Distance + total time for the active route |
 
 **Map view controls:**
 
 | Class | Component |
 |---|---|
-| `kiera-orientation-toggle` | North-up / heading-up toggle |
-| `kiera-zoom-in` | Zoom in (+) button |
-| `kiera-zoom-out` | Zoom out (−) button |
-| `kiera-recenter` | Recenter map on current location pin |
-| `kiera-day-night-toggle` | Switch between day and night map styles |
+| `puck-orientation-toggle` | North-up / heading-up toggle |
+| `puck-zoom-in` | Zoom in (+) button |
+| `puck-zoom-out` | Zoom out (−) button |
+| `puck-recenter` | Recenter map on current location pin |
+| `puck-day-night-toggle` | Switch between day and night map styles |
 
 **Find-nearby shortcuts** (driver-life utilities):
 
 | Class | Component |
 |---|---|
-| `kiera-find-restrooms` | Show nearby restrooms (via `$geo.restrooms`) |
-| `kiera-find-food` | Show nearby food (`$geo.food`) |
-| `kiera-find-gas` | Show nearby gas / EV charging |
-| `kiera-find-parking` | Show nearby parking |
-| `kiera-find-nearby` | Generic "find nearby" — opens a category picker for the above plus more |
+| `puck-find-restrooms` | Show nearby restrooms (via `$geo.restrooms`) |
+| `puck-find-food` | Show nearby food (`$geo.food`) |
+| `puck-find-gas` | Show nearby gas / EV charging |
+| `puck-find-parking` | Show nearby parking |
+| `puck-find-nearby` | Generic "find nearby" — opens a category picker for the above plus more |
 
 **Voice and layers:**
 
 | Class | Component |
 |---|---|
-| `kiera-voice-toggle` | Mute / unmute voice (active when `voice = true`) |
-| `kiera-layer-selector` | Toggle individual overlay layers (active when `layers` has more than one) |
+| `puck-voice-toggle` | Mute / unmute voice (active when `voice = true`) |
+| `puck-layer-selector` | Toggle individual overlay layers (active when `layers` has more than one) |
 
 **Search and feedback:**
 
 | Class | Component |
 |---|---|
-| `kiera-search` | General POI search (distinct from "set destination" — search without committing to navigate) |
-| `kiera-report-issue` | Report a problem (closed road, missing POI, etc.); could feed back to OSM as a contribution |
+| `puck-search` | General POI search (distinct from "set destination" — search without committing to navigate) |
+| `puck-report-issue` | Report a problem (closed road, missing POI, etc.); could feed back to OSM as a contribution |
 
 A skin only needs slots for features the developer wants visible. If a
 slot is omitted, that feature isn't rendered — even if the
@@ -1236,7 +1236,7 @@ react to map events and update map state. Putting the map directly
 in the DOM is materially simpler.
 
 The iframe approach remains a potential future option — particularly
-if a Permissions-Policy mechanism makes it easy to grant a kiera.uno
+if a Permissions-Policy mechanism makes it easy to grant a puck.uno
 iframe just the permissions it needs to interact with its parent
 (geolocation, focus, etc.) while preserving sandbox isolation. Not
 in scope for v1; noted here so the option isn't forgotten.
@@ -1244,15 +1244,15 @@ in scope for v1; noted here so the option isn't forgotten.
 <a id="data-flow"></a>
 ##### 3.9.0.2 Data flow
 
-kiera.uno serves the script and the map library; the library runs in
+puck.uno serves the script and the map library; the library runs in
 the parent page's DOM. **Map tiles are fetched by the end user's
 browser directly from OSM tile servers**, not proxied through
-kiera.uno — per the stewardship policy above.
+puck.uno — per the stewardship policy above.
 
 <a id="csp"></a>
 ##### 3.9.0.3 CSP
 
-The parent site adds `script-src https://kiera.uno` (for the loader)
+The parent site adds `script-src https://puck.uno` (for the loader)
 and `img-src https://*.tile.openstreetmap.org` (or wherever the map
 library is configured to fetch tiles from) to its
 `Content-Security-Policy`. Plus any `connect-src` directives the
@@ -1274,7 +1274,7 @@ UI, rate-limited tile fetches from OSM servers.
 Since the map is in the parent page's DOM, the parent app's JS can
 do all the obvious things directly:
 
-- Query the element: `document.querySelector('kiera-map')`
+- Query the element: `document.querySelector('puck-map')`
 - Attach listeners: `element.addEventListener('bounds-changed', ...)`
 - Programmatically update: `element.setAttribute('nw', '...')` (or
   property accessors; specific JS API TBD)
@@ -1321,7 +1321,7 @@ primary first.
 <a id="privacy-posture-1"></a>
 #### 3.9.4 Privacy posture
 
-The kiera.uno server sees every coordinate every client looks up. The
+The puck.uno server sees every coordinate every client looks up. The
 operating commitment:
 
 - **No raw-coord logging.** Only aggregate counts and cache keys, where
@@ -1334,7 +1334,7 @@ operating commitment:
   cache TTL.
 
 This commitment is public, documented, and part of the geo service
-spec — not an afterthought. The Kiera ecosystem benefits from users
+spec — not an afterthought. The Puck ecosystem benefits from users
 trusting that operational data isn't retained beyond what's needed for
 the service to function.
 
@@ -1392,8 +1392,8 @@ $geo.businesses(radius: 250, limit: 10)      # cap result count
 <a id="return-shape-1"></a>
 #### 3.10.3 Return shape
 
-A list of **`kiera.uno/geo/business`** objects, **sorted by distance
-from the query point** (closest first). Each is a remote-first Kiera
+A list of **`puck.uno/geo/business`** objects, **sorted by distance
+from the query point** (closest first). Each is a remote-first Puck
 object — the same protocol pattern as `$geo` itself, one level down.
 The local instance carries basic fields populated from the initial
 Overpass response; richer data is fetched lazily through the class's
@@ -1418,10 +1418,10 @@ $biz.closes_in        # duration until close; null for 24h places
 $biz.osm_id           # OSM feature ID for follow-up queries
 ```
 
-`kiera.uno/geo/business` also exposes additional **remote methods** for
+`puck.uno/geo/business` also exposes additional **remote methods** for
 richer data not in the initial Overpass payload — e.g., a method to
 fetch the business's logo (OSM exposes these for many businesses).
-The full method catalog for `kiera.uno/geo/business` is its own spec,
+The full method catalog for `puck.uno/geo/business` is its own spec,
 documented separately when ready.
 
 Sorted-by-distance default is non-negotiable for the driver use case:
@@ -1443,7 +1443,7 @@ Aggressive cache:
   The filter doesn't bust the cache.
 
 OSM's Overpass has informal usage limits ("be reasonable"). With
-caching plus a self-rate-limit on the kiera.uno side, we stay under
+caching plus a self-rate-limit on the puck.uno side, we stay under
 their threshold. If volume warrants, self-host an Overpass instance.
 
 <a id="driver-life-category-shortcuts"></a>

@@ -170,7 +170,7 @@ end
 passed into each fork as a block parameter:
 
 ```
-$color = %kiera['kiera.uno/color'].new(hex: '#ff0000')
+$color = %puck['puck.uno/color'].new(hex: '#ff0000')
 
 $color.object.fork(20) do($c)
     $c.red = 128
@@ -194,7 +194,7 @@ any fork that connects to it. The fork's `@foo` reads and writes go directly to 
 object in the mikobase — child forks don't need to reference the mikobase explicitly at all.
 
 ```
-$mikobase = %kiera['kiera.uno/mikobase/memory'].new
+$mikobase = %puck['puck.uno/mikobase/memory'].new
 $mikobase.include_private = true
 
 %forks.run(mikobase:$mikobase) do($mikobase)
@@ -213,7 +213,7 @@ A company needs to generate monthly reports for 50 clients. Each report requires
 database queries. Running them serially takes minutes; in parallel, seconds.
 
 ```
-%kiera['kiera.uno/mikobase/server'].run as $mikobase
+%puck['puck.uno/mikobase/server'].run as $mikobase
     $mikobase['clients'] = &get_client_list
     $mikobase['reports'] = []
 
@@ -238,7 +238,7 @@ database queries. Running them serially takes minutes; in parallel, seconds.
 end
 ```
 
-`kiera.uno/mikobase/server` starts a managed mikobase server and yields it as `$mikobase`. Four
+`puck.uno/mikobase/server` starts a managed mikobase server and yields it as `$mikobase`. Four
 workers are spawned via `times: 4`. Each atomically grabs a client ID from the shared
 queue (`.shift` triggers an exclusive lock), generates the report outside the lock, then
 writes the result back. The pool waits for all four workers before returning. The server

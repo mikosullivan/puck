@@ -2,7 +2,7 @@
 
 **Status:** spec for a real app Miko may build — a driver-side
 Progressive Web App for a new rideshare service. Doubles as a worked
-example of how `kiera.uno/geo` is intended to be used.
+example of how `puck.uno/geo` is intended to be used.
 
 This doc covers the driver-side app only. The companion rider-side
 app is a separate concern (different UI, mostly the same geo usage).
@@ -14,7 +14,7 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 - Build the **driver app first**, since Miko is the most reliable
   user (he's actually a rideshare driver). Eat our own dog food.
-- Use **kiera.uno/geo** for everything map-related. Validate that
+- Use **puck.uno/geo** for everything map-related. Validate that
   the service covers the real driver use case end-to-end.
 - Ship as a **Progressive Web App (PWA)** rather than native iOS/
   Android. Lower deployment friction (no app stores), single
@@ -24,10 +24,10 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-<a id="what-kieraunogeo-provides"></a>
-## 2 What kiera.uno/geo Provides
+<a id="what-puckunogeo-provides"></a>
+## 2 What puck.uno/geo Provides
 
-Everything map-related routes through `kiera.uno/geo`:
+Everything map-related routes through `puck.uno/geo`:
 
 - **Address resolution** for pickup and drop-off addresses
   (`$geo.address`).
@@ -47,11 +47,11 @@ maps. No Google Maps, no Mapbox, no separate provider keys.
 
 ---
 
-<a id="what-kieraunogeo-does-not-provide"></a>
-## 3 What kiera.uno/geo Does NOT Provide
+<a id="what-puckunogeo-does-not-provide"></a>
+## 3 What puck.uno/geo Does NOT Provide
 
 Everything ride-business-specific lives in the rideshare's **own
-backend** (which is a separate system from kiera.uno/geo):
+backend** (which is a separate system from puck.uno/geo):
 
 - Driver authentication and profile management.
 - Driver online/offline state tracking.
@@ -68,7 +68,7 @@ backend** (which is a separate system from kiera.uno/geo):
 - Rating and review system.
 
 The rideshare backend is its own beast; this doc concerns itself
-only with the driver-PWA side and its use of kiera.uno/geo.
+only with the driver-PWA side and its use of puck.uno/geo.
 
 ---
 
@@ -80,7 +80,7 @@ only with the driver-PWA side and its use of kiera.uno/geo.
 - **Framework**: TBD (could be vanilla, could be a small framework
   like Lit or Svelte). PWA capabilities are what matter; the
   framework choice is secondary.
-- **Maps and geo**: `kiera.uno/geo` services via remote calls (Charlie
+- **Maps and geo**: `puck.uno/geo` services via remote calls (Charlie
   client-side or, in non-Charlie browsers, the JSON-over-HTTP form).
 - **Real-time driver↔backend**: WebSocket connection to the
   rideshare backend for ride requests and lifecycle events.
@@ -218,7 +218,7 @@ Driver pulls up at drop-off; presses End Trip.
 ### 5.7 Earnings
 
 A separate screen showing recent rides, totals, payout status. Pure
-rideshare-backend data; no kiera.uno/geo involvement.
+rideshare-backend data; no puck.uno/geo involvement.
 
 <a id="settings-profile"></a>
 ### 5.8 Settings / Profile
@@ -227,12 +227,12 @@ Vehicle info, documents, driver preferences. Rideshare-backend data.
 
 ---
 
-<a id="kieraunogeo-usage-summary"></a>
-## 6 kiera.uno/geo Usage Summary
+<a id="puckunogeo-usage-summary"></a>
+## 6 puck.uno/geo Usage Summary
 
 Cross-referenced from the screens above:
 
-| Screen | kiera.uno/geo methods used |
+| Screen | puck.uno/geo methods used |
 |--------|---------------------------|
 | Status / Main | `$map.html` (current location, with live tracking via postMessage), `$geo.restrooms`, `$geo.coffee`, `$geo.food(drive_thru:)`, `$geo.gas` |
 | Incoming Request | `$geo.address` (resolve pickup), `$geo.distance_to`, `$geo.eta_to` |
@@ -249,8 +249,8 @@ list needs to actually work well for v1 to ship.
 
 ---
 
-<a id="validation-does-kieraunogeo-have-whats-needed"></a>
-## 7 Validation: Does kiera.uno/geo Have What's Needed?
+<a id="validation-does-puckunogeo-have-whats-needed"></a>
+## 7 Validation: Does puck.uno/geo Have What's Needed?
 
 Cross-checking the table above against the geo spec:
 
@@ -383,13 +383,13 @@ To keep the v1 scope honest:
 - **Real-time channel.** WebSocket vs Server-Sent Events. WebSocket
   is more flexible (bidirectional) but heavier; SSE is simpler if we
   only push down. Probably WebSocket for the ride-related flow.
-- **Geo result caching client-side.** The kiera.uno server already
+- **Geo result caching client-side.** The puck.uno server already
   caches; should the PWA also maintain its own client-side cache of
   recent geo results to absorb repeat queries during a ride? Probably
   yes, in IndexedDB, with short TTLs.
 - **Map provider for the iframe.** The geo spec leaves provider
-  choice to kiera.uno; for the driver app, we don't override it. But
-  we may want to negotiate a higher cache TTL on the kiera.uno side
+  choice to puck.uno; for the driver app, we don't override it. But
+  we may want to negotiate a higher cache TTL on the puck.uno side
   for areas a particular driver frequents (heuristic: same coords
   visited >N times in a week → bump TTL).
 - **Voice navigation.** Drivers don't look at the screen continuously
@@ -403,7 +403,7 @@ To keep the v1 scope honest:
 ## 11 Why This Validates the Geo Service
 
 If this app ships and works well, that's strong evidence the
-kiera.uno/geo service is sufficient for real driver use. The doc
+puck.uno/geo service is sufficient for real driver use. The doc
 above pins down exactly which geo methods the app needs; gaps surface
 as missing methods or weak performance. The validation feedback loop
 goes:

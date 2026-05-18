@@ -5,24 +5,24 @@
   <title>borg.com/parser</title>
 
   <!--
-    AI cold-start context. This is page-level metadata about the Kiera system,
+    AI cold-start context. This is page-level metadata about the Puck system,
     not data belonging to the object. It does not appear in the JSON translation.
   -->
-  <meta name="kiera:vibecode" content='{"ecoverse":"kiera",
-"ecoverse_description":"Kiera is a distributed object system. Objects are identified by UNS addresses (domain/path, e.g. borg.com/parser). Classes define types with typed fields and methods. Any domain can publish objects by serving them over HTTPS.",
+  <meta name="puck:vibecode" content='{"ecoverse":"puck",
+"ecoverse_description":"Puck is a distributed object system. Objects are identified by UNS addresses (domain/path, e.g. borg.com/parser). Classes define types with typed fields and methods. Any domain can publish objects by serving them over HTTPS.",
 "this_page":"class definition — describes a type with typed fields and callable methods",
 "how_to_use":"read the fields section to understand the object structure; read the methods section to understand available operations; fetch this class from its UNS address to use it in code",
-"verification":"object provenance and integrity can be verified via the Kiera blockchain at blockchain.kiera.uno",
-"ecoverse_info":"kiera.uno/vibecode"}'>
+"verification":"object provenance and integrity can be verified via the Puck blockchain at blockchain.puck.uno",
+"ecoverse_info":"puck.uno/vibecode"}'>
 
   <!--
-    Parsing rules for data-kiera-* attributes:
-      data-kiera-type  — type of this node: hash | array | string | number | boolean | null
-      data-kiera-key   — key name when this node is a value in a parent hash
-      data-kiera-value — scalar value for string/number/boolean nodes
+    Parsing rules for data-puck-* attributes:
+      data-puck-type  — type of this node: hash | array | string | number | boolean | null
+      data-puck-key   — key name when this node is a value in a parent hash
+      data-puck-value — scalar value for string/number/boolean nodes
       data-vibecode    — parsed as JSON; included as "vibecode" key in this element's JSON object
-      Array items carry no data-kiera-key; DOM order is array order.
-      Display-only elements (no data-kiera-type) are ignored by parsers.
+      Array items carry no data-puck-key; DOM order is array order.
+      Display-only elements (no data-puck-type) are ignored by parsers.
   -->
 
   <style>
@@ -66,20 +66,20 @@
       margin: 2rem 0 0.5rem 0;
     }
 
-    .kiera-object {
+    .puck-object {
       border: 1px solid #e0e0e0;
       border-radius: 6px;
       overflow: hidden;
       margin-bottom: 0.5rem;
     }
 
-    .kiera-field {
+    .puck-field {
       display: grid;
       grid-template-columns: 200px 1fr;
       border-bottom: 1px solid #f0f0f0;
     }
 
-    .kiera-field:last-child {
+    .puck-field:last-child {
       border-bottom: none;
     }
 
@@ -108,12 +108,12 @@
       padding: 0;
     }
 
-    .kiera-nested { padding: 0; }
+    .puck-nested { padding: 0; }
 
-    .kiera-nested .kiera-field { border-bottom: 1px solid #f0f0f0; }
-    .kiera-nested .kiera-field:last-child { border-bottom: none; }
-    .kiera-nested .field-key { padding-left: 2rem; background: #f7f7f7; }
-    .kiera-nested .kiera-nested .field-key { padding-left: 3.5rem; background: #f4f4f4; }
+    .puck-nested .puck-field { border-bottom: 1px solid #f0f0f0; }
+    .puck-nested .puck-field:last-child { border-bottom: none; }
+    .puck-nested .field-key { padding-left: 2rem; background: #f7f7f7; }
+    .puck-nested .puck-nested .field-key { padding-left: 3.5rem; background: #f4f4f4; }
 
     .badge {
       display: inline-block;
@@ -200,7 +200,7 @@
   <!-- ═══ PAGE HEADER ══════════════════════════════════════════════════════ -->
 
   <h1>borg.com/parser</h1>
-  <div class="meta-line">class: kiera.uno/class &nbsp;·&nbsp; version: 2.1.0 &nbsp;·&nbsp; signed by: kiera.uno</div>
+  <div class="meta-line">class: puck.uno/class &nbsp;·&nbsp; version: 2.1.0 &nbsp;·&nbsp; signed by: puck.uno</div>
   <div class="description">
     Parses structured text input into a normalised output hash. Supports strict and lenient
     modes, configurable depth limits, and optional schema validation on output.
@@ -210,54 +210,54 @@
 
   <div class="vibecode-block">
     <div class="vibecode-label">vibecode</div>
-    <pre>{"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+    <pre>{"class":"puck.uno/class","name":"borg.com/parser","version":"2.1.0",
 "description":"Parses structured text input into a normalised output hash.",
-"tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]}</pre>
+"tags":["puck.uno/tag/parsing","puck.uno/tag/text","puck.uno/tag/validation"]}</pre>
   </div>
 
   <div class="section-header">Core fields</div>
 
-  <div data-kiera-type="hash" class="kiera-object"
-       data-vibecode='{"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+  <div data-puck-type="hash" class="puck-object"
+       data-vibecode='{"class":"puck.uno/class","name":"borg.com/parser","version":"2.1.0",
 "description":"Parses structured text input into a normalised output hash.",
-"tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]}'>
+"tags":["puck.uno/tag/parsing","puck.uno/tag/text","puck.uno/tag/validation"]}'>
 
-    <div data-kiera-key="name" data-kiera-type="string" data-kiera-value="borg.com/parser" class="kiera-field">
+    <div data-puck-key="name" data-puck-type="string" data-puck-value="borg.com/parser" class="puck-field">
       <div class="field-key">name</div>
       <div class="field-value">borg.com/parser <span class="badge type-string">string</span></div>
     </div>
 
-    <div data-kiera-key="class" data-kiera-type="string" data-kiera-value="kiera.uno/class" class="kiera-field">
+    <div data-puck-key="class" data-puck-type="string" data-puck-value="puck.uno/class" class="puck-field">
       <div class="field-key">class</div>
-      <div class="field-value">kiera.uno/class <span class="badge type-string">string</span></div>
+      <div class="field-value">puck.uno/class <span class="badge type-string">string</span></div>
     </div>
 
-    <div data-kiera-key="version" data-kiera-type="string" data-kiera-value="2.1.0" class="kiera-field">
+    <div data-puck-key="version" data-puck-type="string" data-puck-value="2.1.0" class="puck-field">
       <div class="field-key">version</div>
       <div class="field-value">2.1.0 <span class="badge type-string">string</span></div>
     </div>
 
-    <div data-kiera-key="description" data-kiera-type="string"
-         data-kiera-value="Parses structured text input into a normalised output hash." class="kiera-field">
+    <div data-puck-key="description" data-puck-type="string"
+         data-puck-value="Parses structured text input into a normalised output hash." class="puck-field">
       <div class="field-key">description</div>
       <div class="field-value">Parses structured text input into a normalised output hash. <span class="badge type-string">string</span></div>
     </div>
 
-    <div data-kiera-key="tags" data-kiera-type="array" class="kiera-field">
+    <div data-puck-key="tags" data-puck-type="array" class="puck-field">
       <div class="field-key">tags <span class="badge type-array">array</span></div>
       <div class="field-value is-array">
-        <div class="kiera-nested">
-          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/parsing" class="kiera-field">
+        <div class="puck-nested">
+          <div data-puck-type="string" data-puck-value="puck.uno/tag/parsing" class="puck-field">
             <div class="field-key">[0]</div>
-            <div class="field-value"><a href="https://kiera.uno/tag/parsing" target="_blank">kiera.uno/tag/parsing</a> <span class="badge type-string">string</span></div>
+            <div class="field-value"><a href="https://puck.uno/tag/parsing" target="_blank">puck.uno/tag/parsing</a> <span class="badge type-string">string</span></div>
           </div>
-          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/text" class="kiera-field">
+          <div data-puck-type="string" data-puck-value="puck.uno/tag/text" class="puck-field">
             <div class="field-key">[1]</div>
-            <div class="field-value"><a href="https://kiera.uno/tag/text" target="_blank">kiera.uno/tag/text</a> <span class="badge type-string">string</span></div>
+            <div class="field-value"><a href="https://puck.uno/tag/text" target="_blank">puck.uno/tag/text</a> <span class="badge type-string">string</span></div>
           </div>
-          <div data-kiera-type="string" data-kiera-value="kiera.uno/tag/validation" class="kiera-field">
+          <div data-puck-type="string" data-puck-value="puck.uno/tag/validation" class="puck-field">
             <div class="field-key">[2]</div>
-            <div class="field-value"><a href="https://kiera.uno/tag/validation" target="_blank">kiera.uno/tag/validation</a> <span class="badge type-string">string</span></div>
+            <div class="field-value"><a href="https://puck.uno/tag/validation" target="_blank">puck.uno/tag/validation</a> <span class="badge type-string">string</span></div>
           </div>
         </div>
       </div>
@@ -277,27 +277,27 @@
 
   <div class="section-header">Fields</div>
 
-  <div data-kiera-key="fields" data-kiera-type="hash" class="kiera-object"
+  <div data-puck-key="fields" data-puck-type="hash" class="puck-object"
        data-vibecode='{"section":"fields","input":{"type":"string","required":true},
 "output":{"type":"hash","required":true},"max_length":{"type":"number","required":false,
 "default":65536},"strict":{"type":"boolean","required":false,"default":false},
 "schema":{"type":"string","required":false,"default":null}}'>
-    <div class="kiera-nested">
+    <div class="puck-nested">
 
-      <div data-kiera-key="input" data-kiera-type="hash" class="kiera-field">
+      <div data-puck-key="input" data-puck-type="hash" class="puck-field">
         <div class="field-key">input <span class="badge mod-required">required</span></div>
         <div class="field-value is-hash">
-          <div class="kiera-nested">
-            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+          <div class="puck-nested">
+            <div data-puck-key="type" data-puck-type="string" data-puck-value="string" class="puck-field">
               <div class="field-key">type</div>
               <div class="field-value">string <span class="badge type-string">string</span></div>
             </div>
-            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="true" class="kiera-field">
+            <div data-puck-key="required" data-puck-type="boolean" data-puck-value="true" class="puck-field">
               <div class="field-key">required</div>
               <div class="field-value">true <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="description" data-kiera-type="string"
-                 data-kiera-value="Raw text to parse. Must be valid UTF-8." class="kiera-field">
+            <div data-puck-key="description" data-puck-type="string"
+                 data-puck-value="Raw text to parse. Must be valid UTF-8." class="puck-field">
               <div class="field-key">description</div>
               <div class="field-value">Raw text to parse. Must be valid UTF-8. <span class="badge type-string">string</span></div>
             </div>
@@ -305,20 +305,20 @@
         </div>
       </div>
 
-      <div data-kiera-key="output" data-kiera-type="hash" class="kiera-field">
+      <div data-puck-key="output" data-puck-type="hash" class="puck-field">
         <div class="field-key">output <span class="badge mod-required">required</span></div>
         <div class="field-value is-hash">
-          <div class="kiera-nested">
-            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+          <div class="puck-nested">
+            <div data-puck-key="type" data-puck-type="string" data-puck-value="hash" class="puck-field">
               <div class="field-key">type</div>
               <div class="field-value">hash <span class="badge type-hash">hash</span></div>
             </div>
-            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="true" class="kiera-field">
+            <div data-puck-key="required" data-puck-type="boolean" data-puck-value="true" class="puck-field">
               <div class="field-key">required</div>
               <div class="field-value">true <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="description" data-kiera-type="string"
-                 data-kiera-value="Normalised output. Keys depend on the input schema." class="kiera-field">
+            <div data-puck-key="description" data-puck-type="string"
+                 data-puck-value="Normalised output. Keys depend on the input schema." class="puck-field">
               <div class="field-key">description</div>
               <div class="field-value">Normalised output. Keys depend on the input schema. <span class="badge type-string">string</span></div>
             </div>
@@ -326,24 +326,24 @@
         </div>
       </div>
 
-      <div data-kiera-key="max_length" data-kiera-type="hash" class="kiera-field">
+      <div data-puck-key="max_length" data-puck-type="hash" class="puck-field">
         <div class="field-key">max_length <span class="badge mod-optional">optional</span></div>
         <div class="field-value is-hash">
-          <div class="kiera-nested">
-            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="number" class="kiera-field">
+          <div class="puck-nested">
+            <div data-puck-key="type" data-puck-type="string" data-puck-value="number" class="puck-field">
               <div class="field-key">type</div>
               <div class="field-value">number <span class="badge type-number">number</span></div>
             </div>
-            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+            <div data-puck-key="required" data-puck-type="boolean" data-puck-value="false" class="puck-field">
               <div class="field-key">required</div>
               <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="default" data-kiera-type="number" data-kiera-value="65536" class="kiera-field">
+            <div data-puck-key="default" data-puck-type="number" data-puck-value="65536" class="puck-field">
               <div class="field-key">default</div>
               <div class="field-value">65536 <span class="badge type-number">number</span></div>
             </div>
-            <div data-kiera-key="description" data-kiera-type="string"
-                 data-kiera-value="Maximum input size in bytes. Inputs exceeding this limit raise an error." class="kiera-field">
+            <div data-puck-key="description" data-puck-type="string"
+                 data-puck-value="Maximum input size in bytes. Inputs exceeding this limit raise an error." class="puck-field">
               <div class="field-key">description</div>
               <div class="field-value">Maximum input size in bytes. Inputs exceeding this limit raise an error. <span class="badge type-string">string</span></div>
             </div>
@@ -351,24 +351,24 @@
         </div>
       </div>
 
-      <div data-kiera-key="strict" data-kiera-type="hash" class="kiera-field">
+      <div data-puck-key="strict" data-puck-type="hash" class="puck-field">
         <div class="field-key">strict <span class="badge mod-optional">optional</span></div>
         <div class="field-value is-hash">
-          <div class="kiera-nested">
-            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="boolean" class="kiera-field">
+          <div class="puck-nested">
+            <div data-puck-key="type" data-puck-type="string" data-puck-value="boolean" class="puck-field">
               <div class="field-key">type</div>
               <div class="field-value">boolean <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+            <div data-puck-key="required" data-puck-type="boolean" data-puck-value="false" class="puck-field">
               <div class="field-key">required</div>
               <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="default" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+            <div data-puck-key="default" data-puck-type="boolean" data-puck-value="false" class="puck-field">
               <div class="field-key">default</div>
               <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="description" data-kiera-type="string"
-                 data-kiera-value="When true, unknown keys in input raise an error rather than being silently ignored." class="kiera-field">
+            <div data-puck-key="description" data-puck-type="string"
+                 data-puck-value="When true, unknown keys in input raise an error rather than being silently ignored." class="puck-field">
               <div class="field-key">description</div>
               <div class="field-value">When true, unknown keys in input raise an error rather than being silently ignored. <span class="badge type-string">string</span></div>
             </div>
@@ -376,24 +376,24 @@
         </div>
       </div>
 
-      <div data-kiera-key="schema" data-kiera-type="hash" class="kiera-field">
+      <div data-puck-key="schema" data-puck-type="hash" class="puck-field">
         <div class="field-key">schema <span class="badge mod-optional">optional</span></div>
         <div class="field-value is-hash">
-          <div class="kiera-nested">
-            <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+          <div class="puck-nested">
+            <div data-puck-key="type" data-puck-type="string" data-puck-value="string" class="puck-field">
               <div class="field-key">type</div>
               <div class="field-value">string <span class="badge type-string">string</span></div>
             </div>
-            <div data-kiera-key="required" data-kiera-type="boolean" data-kiera-value="false" class="kiera-field">
+            <div data-puck-key="required" data-puck-type="boolean" data-puck-value="false" class="puck-field">
               <div class="field-key">required</div>
               <div class="field-value">false <span class="badge type-boolean">boolean</span></div>
             </div>
-            <div data-kiera-key="default" data-kiera-type="null" class="kiera-field">
+            <div data-puck-key="default" data-puck-type="null" class="puck-field">
               <div class="field-key">default</div>
               <div class="field-value">null <span class="badge type-null">null</span></div>
             </div>
-            <div data-kiera-key="description" data-kiera-type="string"
-                 data-kiera-value="UNS address of a schema object to validate output against. Null disables validation." class="kiera-field">
+            <div data-puck-key="description" data-puck-type="string"
+                 data-puck-value="UNS address of a schema object to validate output against. Null disables validation." class="puck-field">
               <div class="field-key">description</div>
               <div class="field-value">UNS address of a schema object to validate output against. Null disables validation. <span class="badge type-string">string</span></div>
             </div>
@@ -408,10 +408,10 @@
 
   <div class="section-header">Methods</div>
 
-  <div data-kiera-key="methods" data-kiera-type="hash">
+  <div data-puck-key="methods" data-puck-type="hash">
 
     <!-- parse() -->
-    <div data-kiera-key="parse" data-kiera-type="hash" class="method-block"
+    <div data-puck-key="parse" data-puck-type="hash" class="method-block"
          data-vibecode='{"method":"parse","returns":"hash","args":{"text":{"type":"string",
 "required":true},"options":{"type":"hash","required":false}}}'>
       <div class="method-header">
@@ -427,46 +427,46 @@
         <pre>{"method":"parse","returns":"hash","args":{"text":{"type":"string",
 "required":true},"options":{"type":"hash","required":false}}}</pre>
       </div>
-      <div class="kiera-nested">
-        <div data-kiera-key="description" data-kiera-type="string"
-             data-kiera-value="Parse the input string and return a normalised output hash." class="kiera-field">
+      <div class="puck-nested">
+        <div data-puck-key="description" data-puck-type="string"
+             data-puck-value="Parse the input string and return a normalised output hash." class="puck-field">
           <div class="field-key">description</div>
           <div class="field-value">Parse the input string and return a normalised output hash. <span class="badge type-string">string</span></div>
         </div>
-        <div data-kiera-key="returns" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+        <div data-puck-key="returns" data-puck-type="string" data-puck-value="hash" class="puck-field">
           <div class="field-key">returns</div>
           <div class="field-value">hash <span class="badge type-hash">hash</span></div>
         </div>
-        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+        <div data-puck-key="args" data-puck-type="hash" class="puck-field">
           <div class="field-key">args <span class="badge type-hash">hash</span></div>
           <div class="field-value is-hash">
-            <div class="kiera-nested">
-              <div data-kiera-key="text" data-kiera-type="hash" class="kiera-field">
+            <div class="puck-nested">
+              <div data-puck-key="text" data-puck-type="hash" class="puck-field">
                 <div class="field-key">text <span class="badge mod-required">required</span></div>
                 <div class="field-value is-hash">
-                  <div class="kiera-nested">
-                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+                  <div class="puck-nested">
+                    <div data-puck-key="type" data-puck-type="string" data-puck-value="string" class="puck-field">
                       <div class="field-key">type</div>
                       <div class="field-value">string <span class="badge type-string">string</span></div>
                     </div>
-                    <div data-kiera-key="description" data-kiera-type="string"
-                         data-kiera-value="The text to parse." class="kiera-field">
+                    <div data-puck-key="description" data-puck-type="string"
+                         data-puck-value="The text to parse." class="puck-field">
                       <div class="field-key">description</div>
                       <div class="field-value">The text to parse. <span class="badge type-string">string</span></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div data-kiera-key="options" data-kiera-type="hash" class="kiera-field">
+              <div data-puck-key="options" data-puck-type="hash" class="puck-field">
                 <div class="field-key">options <span class="badge mod-optional">optional</span></div>
                 <div class="field-value is-hash">
-                  <div class="kiera-nested">
-                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="hash" class="kiera-field">
+                  <div class="puck-nested">
+                    <div data-puck-key="type" data-puck-type="string" data-puck-value="hash" class="puck-field">
                       <div class="field-key">type</div>
                       <div class="field-value">hash <span class="badge type-hash">hash</span></div>
                     </div>
-                    <div data-kiera-key="description" data-kiera-type="string"
-                         data-kiera-value="Runtime overrides for strict and max_length." class="kiera-field">
+                    <div data-puck-key="description" data-puck-type="string"
+                         data-puck-value="Runtime overrides for strict and max_length." class="puck-field">
                       <div class="field-key">description</div>
                       <div class="field-value">Runtime overrides for strict and max_length. <span class="badge type-string">string</span></div>
                     </div>
@@ -480,7 +480,7 @@
     </div>
 
     <!-- validate() -->
-    <div data-kiera-key="validate" data-kiera-type="hash" class="method-block"
+    <div data-puck-key="validate" data-puck-type="hash" class="method-block"
          data-vibecode='{"method":"validate","returns":"boolean","args":{"text":{"type":"string","required":true}}}'>
       <div class="method-header">
         validate <span class="badge mod-returns">→ boolean</span>
@@ -493,30 +493,30 @@
         <div class="vibecode-label">vibecode</div>
         <pre>{"method":"validate","returns":"boolean","args":{"text":{"type":"string","required":true}}}</pre>
       </div>
-      <div class="kiera-nested">
-        <div data-kiera-key="description" data-kiera-type="string"
-             data-kiera-value="Check whether the input is valid without performing a full parse." class="kiera-field">
+      <div class="puck-nested">
+        <div data-puck-key="description" data-puck-type="string"
+             data-puck-value="Check whether the input is valid without performing a full parse." class="puck-field">
           <div class="field-key">description</div>
           <div class="field-value">Check whether the input is valid without performing a full parse. <span class="badge type-string">string</span></div>
         </div>
-        <div data-kiera-key="returns" data-kiera-type="string" data-kiera-value="boolean" class="kiera-field">
+        <div data-puck-key="returns" data-puck-type="string" data-puck-value="boolean" class="puck-field">
           <div class="field-key">returns</div>
           <div class="field-value">boolean <span class="badge type-boolean">boolean</span></div>
         </div>
-        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+        <div data-puck-key="args" data-puck-type="hash" class="puck-field">
           <div class="field-key">args <span class="badge type-hash">hash</span></div>
           <div class="field-value is-hash">
-            <div class="kiera-nested">
-              <div data-kiera-key="text" data-kiera-type="hash" class="kiera-field">
+            <div class="puck-nested">
+              <div data-puck-key="text" data-puck-type="hash" class="puck-field">
                 <div class="field-key">text <span class="badge mod-required">required</span></div>
                 <div class="field-value is-hash">
-                  <div class="kiera-nested">
-                    <div data-kiera-key="type" data-kiera-type="string" data-kiera-value="string" class="kiera-field">
+                  <div class="puck-nested">
+                    <div data-puck-key="type" data-puck-type="string" data-puck-value="string" class="puck-field">
                       <div class="field-key">type</div>
                       <div class="field-value">string <span class="badge type-string">string</span></div>
                     </div>
-                    <div data-kiera-key="description" data-kiera-type="string"
-                         data-kiera-value="The text to validate." class="kiera-field">
+                    <div data-puck-key="description" data-puck-type="string"
+                         data-puck-value="The text to validate." class="puck-field">
                       <div class="field-key">description</div>
                       <div class="field-value">The text to validate. <span class="badge type-string">string</span></div>
                     </div>
@@ -530,7 +530,7 @@
     </div>
 
     <!-- reset() -->
-    <div data-kiera-key="reset" data-kiera-type="hash" class="method-block"
+    <div data-puck-key="reset" data-puck-type="hash" class="method-block"
          data-vibecode='{"method":"reset","returns":null,"args":{}}'>
       <div class="method-header">
         reset <span class="badge mod-returns">→ null</span>
@@ -543,17 +543,17 @@
         <div class="vibecode-label">vibecode</div>
         <pre>{"method":"reset","returns":null,"args":{}}</pre>
       </div>
-      <div class="kiera-nested">
-        <div data-kiera-key="description" data-kiera-type="string"
-             data-kiera-value="Reset the parser to its initial state." class="kiera-field">
+      <div class="puck-nested">
+        <div data-puck-key="description" data-puck-type="string"
+             data-puck-value="Reset the parser to its initial state." class="puck-field">
           <div class="field-key">description</div>
           <div class="field-value">Reset the parser to its initial state. <span class="badge type-string">string</span></div>
         </div>
-        <div data-kiera-key="returns" data-kiera-type="null" class="kiera-field">
+        <div data-puck-key="returns" data-puck-type="null" class="puck-field">
           <div class="field-key">returns</div>
           <div class="field-value">null <span class="badge type-null">null</span></div>
         </div>
-        <div data-kiera-key="args" data-kiera-type="hash" class="kiera-field">
+        <div data-puck-key="args" data-puck-type="hash" class="puck-field">
           <div class="field-key">args <span class="badge type-hash">hash</span></div>
           <div class="field-value">— none —</div>
         </div>
@@ -566,18 +566,18 @@
 
   <div class="section-header">Signature</div>
 
-  <div data-kiera-key="signature" data-kiera-type="hash" class="kiera-object">
-    <div class="kiera-nested">
-      <div data-kiera-key="algorithm" data-kiera-type="string" data-kiera-value="Ed25519" class="kiera-field">
+  <div data-puck-key="signature" data-puck-type="hash" class="puck-object">
+    <div class="puck-nested">
+      <div data-puck-key="algorithm" data-puck-type="string" data-puck-value="Ed25519" class="puck-field">
         <div class="field-key">algorithm</div>
         <div class="field-value">Ed25519 <span class="badge type-string">string</span></div>
       </div>
-      <div data-kiera-key="signer" data-kiera-type="string" data-kiera-value="kiera.uno" class="kiera-field">
+      <div data-puck-key="signer" data-puck-type="string" data-puck-value="puck.uno" class="puck-field">
         <div class="field-key">signer</div>
-        <div class="field-value">kiera.uno <span class="badge type-string">string</span></div>
+        <div class="field-value">puck.uno <span class="badge type-string">string</span></div>
       </div>
-      <div data-kiera-key="value" data-kiera-type="string"
-           data-kiera-value="base64encodedsignaturegoeshere==" class="kiera-field">
+      <div data-puck-key="value" data-puck-type="string"
+           data-puck-value="base64encodedsignaturegoeshere==" class="puck-field">
         <div class="field-key">value</div>
         <div class="field-value sig-value">base64encodedsignaturegoeshere==</div>
       </div>
@@ -591,17 +591,17 @@
   <div class="vibecode-block" style="margin-bottom:2rem;">
     <div class="vibecode-label">lossless translation</div>
     <pre>{
-    "vibecode": {"class":"kiera.uno/class","name":"borg.com/parser","version":"2.1.0",
+    "vibecode": {"class":"puck.uno/class","name":"borg.com/parser","version":"2.1.0",
         "description":"Parses structured text input into a normalised output hash.",
-        "tags":["kiera.uno/tag/parsing","kiera.uno/tag/text","kiera.uno/tag/validation"]},
+        "tags":["puck.uno/tag/parsing","puck.uno/tag/text","puck.uno/tag/validation"]},
     "name": "borg.com/parser",
-    "class": "kiera.uno/class",
+    "class": "puck.uno/class",
     "version": "2.1.0",
     "description": "Parses structured text input into a normalised output hash.",
     "tags": [
-        "kiera.uno/tag/parsing",
-        "kiera.uno/tag/text",
-        "kiera.uno/tag/validation"
+        "puck.uno/tag/parsing",
+        "puck.uno/tag/text",
+        "puck.uno/tag/validation"
     ],
     "fields": {
         "vibecode": {"section":"fields","input":{"type":"string","required":true},
@@ -665,7 +665,7 @@
     },
     "signature": {
         "algorithm": "Ed25519",
-        "signer": "kiera.uno",
+        "signer": "puck.uno",
         "value": "base64encodedsignaturegoeshere=="
     }
 }</pre>

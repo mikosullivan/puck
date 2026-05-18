@@ -38,7 +38,7 @@ sense for its context and passes it to the engine at startup. Two examples:
 When a Charlie script is run from the command line, the CLI host applies this default:
 
 1. Start with an open policy — any signed object from any domain is permitted
-2. Read `~/.config/kiera/trust.json` if it exists
+2. Read `~/.config/puck/trust.json` if it exists
 3. Apply any restrictions or domain-specific settings found there
 
 The personal config can only restrict the open policy — narrow permissions, add domains

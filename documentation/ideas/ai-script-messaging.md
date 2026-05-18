@@ -108,7 +108,7 @@ the recipient's sandbox with the recipient's role choices.
   signature wrapper? A small worldlet shaped specifically for
   script-carrying? A new envelope format (e.g., `{author, signature,
   intent, script, requested_capabilities}`)? Open.
-- **Transport.** HTTP? Direct peer-to-peer? Mediated by Kiera as a
+- **Transport.** HTTP? Direct peer-to-peer? Mediated by Puck as a
   resolver? Asynchronous queue?
 - **Synchronous vs asynchronous reception.** Does the recipient
   execute immediately, or queue for later inspection? Does the

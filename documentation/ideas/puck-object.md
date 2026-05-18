@@ -1,57 +1,57 @@
-# Kiera Objects (brainstorm — folded into official doc)
+# Puck Objects (brainstorm — folded into official doc)
 
 > **Status: this brainstorm has been folded into the official
-> [documentation/kiera.md](../kiera/kiera.md).** The kiera-object model is
-> now part of the canonical Kiera documentation. This file is preserved
+> [documentation/puck.md](../puck/puck.md).** The puck-object model is
+> now part of the canonical Puck documentation. This file is preserved
 > as a historical record of how the design developed.
 >
-> For the current spec, read [documentation/kiera.md](../kiera/kiera.md)
-> (specifically the "The Kiera Object" section and below).
+> For the current spec, read [documentation/puck.md](../puck/puck.md)
+> (specifically the "The Puck Object" section and below).
 
 ---
 
 **(Original status:)** brainstorming. Captures notes from the role-model
-discussion about what a kiera *is* as an object, distinct from the
-`%kiera` system method that returns one. Once the model stabilizes,
-material here may be folded into [kiera.md](../kiera/kiera.md).
+discussion about what a puck *is* as an object, distinct from the
+`%puck` system method that returns one. Once the model stabilizes,
+material here may be folded into [puck.md](../puck/puck.md).
 
 ---
 
-<a id="kiera-object-vs-kiera"></a>
-## 1 Kiera Object vs. `%kiera`
+<a id="puck-object-vs-puck"></a>
+## 1 Puck Object vs. `%puck`
 
-A **kiera** (lowercase, the object) is distinct from **`%kiera`** (the
-system method). A kiera is a kind of object that knows how to resolve
-UNS addresses to their registered objects. `%kiera` is the
-system-method handle through which user code gets a kiera object back.
+A **puck** (lowercase, the object) is distinct from **`%puck`** (the
+system method). A puck is a kind of object that knows how to resolve
+UNS addresses to their registered objects. `%puck` is the
+system-method handle through which user code gets a puck object back.
 
-**`%kiera` is scoped via `%chain`.** What it returns depends on
-context. The current kiera lives in `%chain` — `%kiera` reads from
+**`%puck` is scoped via `%chain`.** What it returns depends on
+context. The current puck lives in `%chain` — `%puck` reads from
 there. Because `%chain` is wiped at role boundaries (see
-[roles.md](../charlie/roles.md)), the current kiera does not propagate across
+[roles.md](../charlie/roles.md)), the current puck does not propagate across
 boundaries; each role gets its own world.
 
-- Outside any `restrict` block, in the outer role, `%kiera` returns
+- Outside any `restrict` block, in the outer role, `%puck` returns
   whatever the engine placed in the chain at program start
-  (typically the engine-provided default kiera).
-- Inside a `restrict do ... end` block, `%kiera` returns the derived
-  (narrower) kiera that `restrict` installed in the chain for the
+  (typically the engine-provided default puck).
+- Inside a `restrict do ... end` block, `%puck` returns the derived
+  (narrower) puck that `restrict` installed in the chain for the
   block's duration.
 - After the block returns, the prior chain value is restored.
-- **When there is no kiera in the chain, `%kiera` returns plain
+- **When there is no puck in the chain, `%puck` returns plain
   null** — no flavor, no fallback, no error. The caller deals with
   it however they want.
 
-This is why `%kiera` does not always return the same object.
+This is why `%puck` does not always return the same object.
 
-**You can have any number of kieras.** When the docs say "the kiera,"
-that's shorthand for whatever kiera `%kiera` returns at the moment —
+**You can have any number of pucks.** When the docs say "the puck,"
+that's shorthand for whatever puck `%puck` returns at the moment —
 usually the engine-provided one. The model supports any number, and
-code that constructs alternate kieras for specific purposes
+code that constructs alternate pucks for specific purposes
 (different cutoffs, different getter sets, different policies) can
 do so.
 
-Different kieras can have different search paths, different
+Different pucks can have different search paths, different
 provenance-checking policies, different roles, and different version
 windows. The engine decides what to hand in at startup; scoped
 derivations (via `restrict do ... end`) can override that for a
@@ -60,30 +60,30 @@ block.
 <a id="restrict-do-end"></a>
 ### 1.1 `restrict do ... end`
 
-`restrict` is the canonical way to scope `%kiera` to a narrower
+`restrict` is the canonical way to scope `%puck` to a narrower
 window for a block of code:
 
 ```
-%kiera                                  # outer kiera (no extra restriction)
+%puck                                  # outer puck (no extra restriction)
 
-%kiera.restrict(upper: 'may 3, 2023') do
-    %kiera                              # narrower derived kiera, in effect inside the block
+%puck.restrict(upper: 'may 3, 2023') do
+    %puck                              # narrower derived puck, in effect inside the block
 end
 
-%kiera                                  # back to the outer kiera
+%puck                                  # back to the outer puck
 ```
 
 `restrict` does two things at once:
 
-1. **Derives** a narrower kiera from the current one (per the
+1. **Derives** a narrower puck from the current one (per the
    one-way ratchet — narrower or equal, never broader).
-2. **Installs** the derived kiera as the active `%kiera` for the
+2. **Installs** the derived puck as the active `%puck` for the
    duration of the block.
 
 Nested `restrict` calls compose — narrowing further from inside an
 already-narrowed scope is fine, subject to the ratchet. When the
-innermost block returns, the next-outer scope's kiera takes over;
-when the outermost `restrict` returns, the engine's original kiera
+innermost block returns, the next-outer scope's puck takes over;
+when the outermost `restrict` returns, the engine's original puck
 is in effect again.
 
 Same shape as the other scoped-block primitives in the framework
@@ -92,41 +92,41 @@ Same shape as the other scoped-block primitives in the framework
 <a id="version-window"></a>
 ## 2 Version Window
 
-Each kiera carries a **version window** — two timestamps that bound
+Each puck carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
-lives on the kiera object itself; the engine sets it when the kiera
+lives on the puck object itself; the engine sets it when the puck
 is created. (This replaces the earlier `%chain.cutoff` design.)
 
 ```
-%kiera.lower = 'may 3, 2018'      # versions must be on or after
-%kiera.upper = 'may 3, 2028'      # versions must be on or before
+%puck.lower = 'may 3, 2018'      # versions must be on or after
+%puck.upper = 'may 3, 2028'      # versions must be on or before
 ```
 
 The two properties:
 
-- **`upper`** — the latest acceptable timestamp. The kiera returns
+- **`upper`** — the latest acceptable timestamp. The puck returns
   the latest version of an object that is on or before `upper`.
-  Without `upper`, the kiera returns the latest existing version,
+  Without `upper`, the puck returns the latest existing version,
   full stop.
 - **`lower`** — the earliest acceptable timestamp. Versions older
   than `lower` are not returned. Without `lower`, the floor is
   effectively negative infinity.
 
-**Both properties are immutable once the kiera exists.** The engine
+**Both properties are immutable once the puck exists.** The engine
 sets them at creation time, and no API can change them afterward.
 This turns the timespan from a configuration knob into a structural
 sandbox — if the engine confines user code to a specific window, the
 window can't be widened from within the runtime.
 
-<a id="deriving-a-narrower-kiera"></a>
-### 2.1 Deriving a Narrower Kiera
+<a id="deriving-a-narrower-puck"></a>
+### 2.1 Deriving a Narrower Puck
 
-A kiera can produce a **derived kiera with a narrower window**, but
+A puck can produce a **derived puck with a narrower window**, but
 never a broader one. The one-way ratchet:
 
-- The derived kiera's `upper` must be ≤ parent's `upper`.
-- The derived kiera's `lower` must be ≥ parent's `lower`.
-- Equivalently: the derived kiera's window is a subset of the
+- The derived puck's `upper` must be ≤ parent's `upper`.
+- The derived puck's `lower` must be ≥ parent's `lower`.
+- Equivalently: the derived puck's window is a subset of the
   parent's window.
 
 So given a parent with `[2018, 2028]`, valid derivations include
@@ -138,26 +138,26 @@ parent.
 This follows the broader "derived capabilities can only be more
 restricted" pattern in the framework (file permissions ratchet,
 subdirjail permissions ratchet, etc.). The deriver is producing a
-new kiera, which they own; the new kiera's window is bounded by
+new puck, which they own; the new puck's window is bounded by
 what the parent allowed.
 
 <a id="what-the-narrowing-rule-does-not-prevent"></a>
 ### 2.2 What the Narrowing Rule Does NOT Prevent
 
 **Code with access to a network faucet (or any other faucet) can
-construct its own kiera from scratch.** That fresh kiera isn't
-derived from the engine's kiera — it's built directly on the
+construct its own puck from scratch.** That fresh puck isn't
+derived from the engine's puck — it's built directly on the
 faucet — and its timespan can be whatever the constructor chooses.
 
-This is intentional. The kiera-derivation rule constrains how an
-*existing* kiera can be narrowed; it doesn't and cannot prevent
-code that already holds raw faucets from building a separate kiera
+This is intentional. The puck-derivation rule constrains how an
+*existing* puck can be narrowed; it doesn't and cannot prevent
+code that already holds raw faucets from building a separate puck
 around them.
 
 The framework's stance: **the nanny stays out of this.** Don't pass
 a network faucet (or any other faucet) to code you don't trust to
 use it however it wants. The authority is in the faucet, not in the
-kiera. If you want a callee to be unable to make HTTPS calls, don't
+puck. If you want a callee to be unable to make HTTPS calls, don't
 give them a network faucet in the first place. Use jails to
 restrict what passes across role boundaries.
 
@@ -179,15 +179,15 @@ Lookup semantics:
 <a id="implication-for-getter-walking"></a>
 ### 2.3 Implication for getter walking
 
-The version window changes the lookup mechanic. **The kiera may need
+The version window changes the lookup mechanic. **The puck may need
 to consult all its getters to find the latest version within bounds**,
 rather than short-circuiting on first hit. Each getter reports its
-latest-within-window for the UNS; the kiera returns the latest of
+latest-within-window for the UNS; the puck returns the latest of
 those responses.
 
 This is materially different from "first hit wins" — a later-in-order
 getter that holds a newer version overrides an earlier getter that
-holds an older one. Order of getters in the kiera matters less for
+holds an older one. Order of getters in the puck matters less for
 priority; the window decides what's returned.
 
 **Tie-breaking** when two getters return versions with the same
@@ -199,12 +199,12 @@ order-based first-wins is fine.
 
 ---
 
-<a id="what-a-kiera-does"></a>
-## 3 What a Kiera Does
+<a id="what-a-puck-does"></a>
+## 3 What a Puck Does
 
-A kiera **holds one or more getters**, each representing a logical
+A puck **holds one or more getters**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
-internal registry, a local-only namespace, etc.). The kiera is the
+internal registry, a local-only namespace, etc.). The puck is the
 lookup orchestrator; the getters are the per-source units.
 
 Each getter may internally use one or more **faucets** to do the
@@ -221,39 +221,39 @@ actual fetching:
 <a id="lookup"></a>
 ### 3.1 Lookup
 
-A kiera exposes a **lookup method** as its public API. (Working name
+A puck exposes a **lookup method** as its public API. (Working name
 TBD — likely `.lookup($uns)` or similar; the actual name will be
 settled when the class is spec'd in detail.)
 
-**Base implementation:** the kiera walks its getters, asking each
-one for the latest version of the UNS that falls within the kiera's
-[lower, upper] window. The kiera then returns the latest result
+**Base implementation:** the puck walks its getters, asking each
+one for the latest version of the UNS that falls within the puck's
+[lower, upper] window. The puck then returns the latest result
 across all getters' responses. If no getter has any version of the
 UNS within the window, lookup returns a null with the flavor
-`kiera.uno/null/flavor/not_found` (per the HTTP-style null-flavor
+`puck.uno/null/flavor/not_found` (per the HTTP-style null-flavor
 scheme in [nulls.md](../charlie/built-in-classes/nulls.md)). Callers
 can inspect `flavor.code` to tell the difference between "lookup
 didn't match" and "the registered value is intentionally null."
 
 (See the **Version Window** section above for window semantics. Note
-that the kiera may consult all getters rather than short-circuiting
+that the puck may consult all getters rather than short-circuiting
 on first hit — finding the latest requires checking each.)
 
 <a id="the-explicit-null-rule-for-sources"></a>
 #### 3.1.1 The `explicit`-null rule for sources
 
-If a kiera faucet reaches a UNS where the registered value is
+If a puck faucet reaches a UNS where the registered value is
 intentionally null, **the source must mark that null as
-`kiera.uno/null/flavor/explicit`** (code 200). Otherwise the kiera
+`puck.uno/null/flavor/explicit`** (code 200). Otherwise the puck
 treats an unflavored null as "lookup didn't find this UNS" and
 falls through to the next getter.
 
-In other words: at the kiera-lookup layer, **unflavored null means
+In other words: at the puck-lookup layer, **unflavored null means
 "no result"**, and `explicit` is how a source positively affirms
 "yes, this UNS exists; the registered value is null." Same pattern
 as HTTP 200 with an empty body vs. HTTP 404.
 
-The obligation lands on the source. Kiera-native sources serialize
+The obligation lands on the source. Puck-native sources serialize
 null flavors through naturally; non-native sources (generic HTTPS,
 third-party protocols) need their faucet implementation to
 translate appropriately.
@@ -261,13 +261,13 @@ translate appropriately.
 **Subclassable for fancier dispatch.** The base implementation is
 intentionally simple. Engines or developers needing UNS-prefix
 matching, regex routing, dispatch tables, or fallback policies can
-subclass kiera and override the lookup method.
+subclass puck and override the lookup method.
 
 <a id="roles-per-getter-not-per-faucet"></a>
 ### 3.2 Roles: per-getter, not per-faucet
 
 **Each getter has its own role.** Objects served through a getter
-get that getter's role. Different getters in the same kiera produce
+get that getter's role. Different getters in the same puck produce
 differently-tagged objects, because they're genuinely different
 logical sources.
 
@@ -279,7 +279,7 @@ getter, both produce objects with the getter's role. The same UNS
 hands back identically-tagged objects regardless of cache state.
 
 ```
-Kiera
+Puck
 ├── Getter for foo.com/*       (role: foo-com-getter)
 │   ├── HTTPS download faucet
 │   └── Cache faucet
@@ -290,7 +290,7 @@ Kiera
     └── Internal-network faucet
 ```
 
-The engine sets up the kiera with its getters. Each getter gets its
+The engine sets up the puck with its getters. Each getter gets its
 own role assigned by the engine at creation time. Objects flow
 through getters and inherit the getter's role; cache state never
 affects role assignment.
@@ -300,12 +300,12 @@ affects role assignment.
 <a id="provenance-checking"></a>
 ## 4 Provenance Checking
 
-Provenance is **per-faucet**, not per-kiera. Each faucet has its own
+Provenance is **per-faucet**, not per-puck. Each faucet has its own
 policy about how to sign off on provenance for the objects it serves.
-A kiera may hold one strict-policy faucet (verifies signatures
+A puck may hold one strict-policy faucet (verifies signatures
 against a blockchain attestation) alongside a permissive-policy
 faucet (trusts the cache directory's self-asserted contents) — same
-kiera, different per-faucet rules.
+puck, different per-faucet rules.
 
 A faucet's responsibility is **provenance** — verifying that an
 object it returns for a UNS actually came from the namespace
@@ -352,18 +352,18 @@ layer their own checks; this is one such layering.
 
 Examples:
 
-- **Kiera blockchain** ([blockchain.md](../charlie/blockchain/blockchain.md)) holds
+- **Puck blockchain** ([blockchain.md](../charlie/blockchain/blockchain.md)) holds
   signed attestations from UNS authorities. Cached objects are
   verified against blockchain entries before being trusted.
 - Traditional public-key signing infrastructures (the source signs
-  releases; the kiera holds the public key and verifies).
+  releases; the puck holds the public key and verifies).
 - Third-party signature registries.
 
 This is the "two distant objects" pattern: the local cache holds the
 artifact, the distant verification mechanism holds proof. To attack,
 both must be compromised.
 
-The simple-case kiera doesn't include this. Strict-case kieras layer
+The simple-case puck doesn't include this. Strict-case pucks layer
 it on.
 
 ---
@@ -371,22 +371,22 @@ it on.
 <a id="the-engine-decides-the-policy"></a>
 ## 5 The Engine Decides the Policy
 
-**The engine controls which kiera `%kiera` returns**, and that kiera's
+**The engine controls which puck `%puck` returns**, and that puck's
 configuration determines everything about provenance policy:
 
-- Which sources the kiera consults.
+- Which sources the puck consults.
 - What provenance checks are required.
 - How strict the checks are.
 - Whether failed checks are warnings or hard rejections.
 
-Different engines hand in different kieras. A strict, security-
-sensitive deployment hands user code a kiera that requires signatures
+Different engines hand in different pucks. A strict, security-
+sensitive deployment hands user code a puck that requires signatures
 and blockchain attestations. A relaxed developer playground hands
-user code a kiera that just trusts the cache. The Charlie code is the
-same; the kiera differs.
+user code a puck that just trusts the cache. The Charlie code is the
+same; the puck differs.
 
-User code typically doesn't reason about which kiera it got. It calls
-`%kiera['some.com/uns']`, and whatever the engine set up determines
+User code typically doesn't reason about which puck it got. It calls
+`%puck['some.com/uns']`, and whatever the engine set up determines
 the result and the checks.
 
 ---
@@ -394,18 +394,18 @@ the result and the checks.
 <a id="open-questions"></a>
 ## 6 Open Questions
 
-- **Does `%kiera` always return the same kiera object across calls?**
-  Resolved: no. `%kiera` is scoped. By default it returns the
-  engine-provided kiera; inside a `restrict do ... end` block, it
-  returns the derived (narrower) kiera. See the `restrict` section
+- **Does `%puck` always return the same puck object across calls?**
+  Resolved: no. `%puck` is scoped. By default it returns the
+  engine-provided puck; inside a `restrict do ... end` block, it
+  returns the derived (narrower) puck. See the `restrict` section
   above.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
   [roles.md](../charlie/roles.md).)
-- **Where the version cutoff lives.** Resolved: on the kiera object
+- **Where the version cutoff lives.** Resolved: on the puck object
   itself. See "Version Cutoff" section above.
-- **Granularity of kiera-source roles** — one role per **getter**
-  inside the kiera. Faucets *inside* a getter (download + cache)
+- **Granularity of puck-source roles** — one role per **getter**
+  inside the puck. Faucets *inside* a getter (download + cache)
   share the getter's role to keep cache state from changing the
   tag. Aligns with the broader granularity question in
   [roles.md](../charlie/roles.md).

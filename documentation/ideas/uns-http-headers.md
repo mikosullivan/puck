@@ -1,7 +1,7 @@
 # UNS HTTP Headers (idea)
 
 **Status:** speculative, outside current development plans. Filed
-to capture the idea in case it ties into Kiera later.
+to capture the idea in case it ties into Puck later.
 
 ---
 
@@ -14,7 +14,7 @@ their keys. The official-headers vs X-headers split disappears —
 everything custom lives inside `uns`, namespaced by UNS.
 
 ```
-uns: {"kiera.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
+uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 ```
 
 <a id="why-its-interesting"></a>
@@ -23,12 +23,12 @@ uns: {"kiera.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"
 - **Namespacing.** UNS identifiers eliminate header-name
   collisions cleanly. RFC 6648 deprecated `X-` prefixes without
   putting anything in their place; UNS fills that gap.
-- **One header to parse.** Aligns with Kiera's "minimize HTTP
+- **One header to parse.** Aligns with Puck's "minimize HTTP
   headers" preference. One parse step yields the whole bag.
 - **Structured values.** Arrays, nested objects, booleans, nulls
   — all natural inside JSON. Standard headers tend to invent
   ad-hoc microsyntaxes for structure.
-- **Consistency with Kiera's JSON-everywhere posture** (Charlie,
+- **Consistency with Puck's JSON-everywhere posture** (Charlie,
   mikobase records, JSON URL params, etc.).
 
 <a id="coexistence-and-long-term-vision"></a>
@@ -54,7 +54,7 @@ plan, just the direction the idea points.
   inspection.
 - **Encoding.** JSON inside a header value has its own escaping
   rules; needs spec.
-- **Adoption path.** Only useful if both ends speak it. Kiera
+- **Adoption path.** Only useful if both ends speak it. Puck
   services can do this with each other freely; broader adoption
   needs a story.
 
@@ -72,7 +72,7 @@ group. The rough path:
    text or XML (xml2rfc).
 2. **Build reference implementations.** The IETF values "running
    code." At least one working implementation, ideally two
-   independent ones, demonstrates the idea is real. A Kiera
+   independent ones, demonstrates the idea is real. A Puck
    service handling `uns` headers natively would be one.
 3. **Engage with httpbis.** Post the draft to the working group's
    mailing list. Present at an IETF meeting (three per year,
@@ -99,15 +99,15 @@ consensus.
   stream — describes the idea without claiming standards-track
   status. Faster, less consensus required, but carries less
   weight.
-- **De facto standard.** Skip IETF entirely. Ship `uns` in Kiera
+- **De facto standard.** Skip IETF entirely. Ship `uns` in Puck
   services, document it openly, build broad adoption first. If
   enough of the ecosystem uses it, standardization becomes
   retroactive paperwork rather than a gate.
 - **W3C / WHATWG.** Relevant if browser support becomes part of
   the story.
 
-**For Kiera specifically, the de facto path is probably the right
-opener.** Make `uns` work within the Kiera ecoverse, prove the
+**For Puck specifically, the de facto path is probably the right
+opener.** Make `uns` work within the Puck ecoverse, prove the
 value, accumulate adopters. Approach IETF only once there's a
 real ecosystem behind it — empty proposals get politely ignored;
 proposals with demonstrated traction get serious consideration.

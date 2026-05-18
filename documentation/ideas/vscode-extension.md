@@ -21,7 +21,7 @@ Brainstorm in progress.
 ```
 vibecode: {
     "section": "architectural_constraint",
-    "rule_1": "extension_must_be_completely_independent_no_kiera_install_required",
+    "rule_1": "extension_must_be_completely_independent_no_puck_install_required",
     "rule_2": "battle_tested_approach_not_experimental",
     "context": "first_contact_situation_for_charlie; syntax_must_show_up_nice_and_clean",
     "rules_out": ["subprocess_to_charlie_fmt_cli",
@@ -31,14 +31,14 @@ vibecode: {
 }
 ```
 
-The extension must work for someone who has never installed Kiera. They
+The extension must work for someone who has never installed Puck. They
 install the extension from the VS Code Marketplace, open a `.charlie`
 file, and everything works. No external runtime, no CLI dependency, no
 language server process.
 
 This rules out:
-- Subprocess calls to `charlie fmt` (requires Kiera installed)
-- Language Server Protocol with a Charlie-based server (requires Kiera)
+- Subprocess calls to `charlie fmt` (requires Puck installed)
+- Language Server Protocol with a Charlie-based server (requires Puck)
 - WASM artifacts compiled from Charlie (complex build, not battle-tested
   for editor extensions)
 
@@ -309,8 +309,8 @@ Extensions sidebar:
   URLs in `package.json`. These render as clickable links in the
   Marketplace listing and in the Extensions sidebar's "More Info"
   panel.
-  - `homepage`: **`https://kiera.uno`** (cert/DNS propagation pending
-    per [[project_kiera_uno_cert_pending]]).
+  - `homepage`: **`https://puck.uno`** (cert/DNS propagation pending
+    per [[project_puck_uno_cert_pending]]).
   - `repository` and `bugs` URLs: TBD.
 
 <a id="v1-caveats-absorbed-into-scope"></a>

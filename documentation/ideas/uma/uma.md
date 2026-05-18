@@ -10,7 +10,7 @@ implementation's spec.
 <a id="purpose"></a>
 ## 1 Purpose
 
-`kiera.uno/uma` is an HTML document builder and DOM helper, ported
+`puck.uno/uma` is an HTML document builder and DOM helper, ported
 from Ruby Uma. It wraps a parsed HTML5 document (via an underlying
 Lua HTML library), adds convenience methods for creating and
 editing elements, and enforces a project-defined HTML schema built
@@ -49,7 +49,7 @@ forces it.
 <a id="core-object-model"></a>
 ## 3 Core Object Model
 
-`%['kiera.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
+`%['puck.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
 around the underlying parsed HTML document.
 
 If no HTML is supplied, Uma builds a default HTML5 document with
@@ -58,9 +58,9 @@ place.
 
 Convenience constructors:
 
-- `%['kiera.uno/uma'].basic()` — same as `.new()` with no args;
+- `%['puck.uno/uma'].basic()` — same as `.new()` with no args;
   creates a default HTML5 document.
-- `%['kiera.uno/uma'].new($raw_html)` — parses an existing
+- `%['puck.uno/uma'].new($raw_html)` — parses an existing
   document.
 
 The instance exposes common document sections directly:
@@ -126,11 +126,11 @@ end
 Uma enforces the HTML schema defined in [html5.json](history/html5.json).
 Schema violations raise flags:
 
-- **`kiera.uno/uma/error/unknown_child`** — attempting to create a
+- **`puck.uno/uma/error/unknown_child`** — attempting to create a
   tag that isn't valid in the current parent.
-- **`kiera.uno/uma/error/unknown_att`** — setting an attribute
+- **`puck.uno/uma/error/unknown_att`** — setting an attribute
   that isn't in the schema.
-- **`kiera.uno/uma/error/empty_element`** — adding a child to a
+- **`puck.uno/uma/error/empty_element`** — adding a child to a
   void element (`<br>`, `<img>`, etc.).
 
 The schema lives in `html5.json` and is normalized at startup
@@ -321,7 +321,7 @@ Useful for debugging and admin UIs.
 
 A bundled stylesheet is available:
 
-- **`%['kiera.uno/uma'].json_css`** — returns the CSS used by the
+- **`%['puck.uno/uma'].json_css`** — returns the CSS used by the
   JSON rendering helpers.
 
 ---
@@ -329,7 +329,7 @@ A bundled stylesheet is available:
 <a id="string-wrapping-utility"></a>
 ## 11 String Wrapping Utility
 
-- **`%['kiera.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
+- **`%['puck.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
   long strings with configurable width and separator text.
 
 ---
@@ -407,11 +407,11 @@ case.
 <a id="errors"></a>
 ## 14 Errors
 
-Uma raises flags from the `kiera.uno/uma/error/` family:
+Uma raises flags from the `puck.uno/uma/error/` family:
 
-- `kiera.uno/uma/error/unknown_child` — child tag not allowed.
-- `kiera.uno/uma/error/unknown_att` — attribute not allowed.
-- `kiera.uno/uma/error/empty_element` — child added to void.
+- `puck.uno/uma/error/unknown_child` — child tag not allowed.
+- `puck.uno/uma/error/unknown_att` — attribute not allowed.
+- `puck.uno/uma/error/empty_element` — child added to void.
 
 All catchable via `catch()` with the appropriate class.
 

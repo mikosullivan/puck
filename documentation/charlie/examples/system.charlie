@@ -5,8 +5,8 @@
     "%chain — request-scoped key/value context inherited by child scopes",
     "%chain.scope — isolated scope block where %chain changes stay local",
     "%chain.misc.clear and %chain.clear — scope clearing variants",
-    "%kiera class lookup for well-known types",
-    "null flavors — subclasses of kiera.uno/null that are falsey but typed",
+    "%puck class lookup for well-known types",
+    "null flavors — subclasses of puck.uno/null that are falsey but typed",
     "untrusted() — wraps a function to run in a sandboxed environment",
     ".object.jail(:call) — restricts a function object to only the :call method",
     "%process.exit — terminates the process"
@@ -62,35 +62,35 @@ end
 
 %vibecode <<EOF
 {
-  "purpose": "Class lookups via %kiera — retrieve well-known Kieraverse class objects by UNS address",
-  "note":    "these are class objects (not instances); used to call .new or inspect the class; kiera.uno/mikobase/memory is the in-memory hive"
+  "purpose": "Class lookups via %puck — retrieve well-known Puckverse class objects by UNS address",
+  "note":    "these are class objects (not instances); used to call .new or inspect the class; puck.uno/mikobase/memory is the in-memory hive"
 }
 EOF
 
-$null_class  = %kiera['kiera.uno/null']
-$true_class  = %kiera['kiera.uno/true']
-$false_class = %kiera['kiera.uno/false']
-$hive_class  = %kiera['kiera.uno/mikobase/memory']
+$null_class  = %puck['puck.uno/null']
+$true_class  = %puck['puck.uno/true']
+$false_class = %puck['puck.uno/false']
+$hive_class  = %puck['puck.uno/mikobase/memory']
 
 %vibecode <<EOF
 {
   "purpose": "Instantiate a standard null value",
-  "note":    "kiera.uno/null is the base null class; $my_null is falsey in conditionals; prefer typed null subclasses when the reason for null matters"
+  "note":    "puck.uno/null is the base null class; $my_null is falsey in conditionals; prefer typed null subclasses when the reason for null matters"
 }
 EOF
 
-$my_null = %kiera['kiera.uno/null'].new
+$my_null = %puck['puck.uno/null'].new
 
 %vibecode <<EOF
 {
   "purpose": "Null flavor — domain-specific null subclass that is falsey but carries type information",
-  "pattern": "inherit from kiera.uno/null to create a typed null; code can check the class to know WHY a value is absent",
-  "note":    "myapp.com/null/unknown evaluates as false in conditionals but is a distinct class from kiera.uno/null"
+  "pattern": "inherit from puck.uno/null to create a typed null; code can check the class to know WHY a value is absent",
+  "note":    "myapp.com/null/unknown evaluates as false in conditionals but is a distinct class from puck.uno/null"
 }
 EOF
 
 class 'myapp.com/null/unknown'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 
 %vibecode <<EOF
@@ -100,7 +100,7 @@ end
 }
 EOF
 
-$unknown = %kiera['myapp.com/null/unknown'].new
+$unknown = %puck['myapp.com/null/unknown'].new
 
 if ($unknown)
     puts('never reached')
@@ -109,7 +109,7 @@ end
 %vibecode <<EOF
 {
   "purpose": "untrusted() — wraps a function to execute in a sandboxed environment",
-  "note":    "use when running code from untrusted sources (e.g. downloaded Kiera functions); the sandbox restricts access to system resources; &foo is called normally but executes under sandbox constraints"
+  "note":    "use when running code from untrusted sources (e.g. downloaded Puck functions); the sandbox restricts access to system resources; &foo is called normally but executes under sandbox constraints"
 }
 EOF
 

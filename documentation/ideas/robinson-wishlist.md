@@ -86,17 +86,17 @@ cheap (often one keyword), but the choice is theirs to make explicitly.
 Every opt-in in the design follows this rule — that's why the pattern
 repeats.
 
-<a id="dogfooding-kierauno"></a>
-### 1.3 Dogfooding: kiera.uno
+<a id="dogfooding-puckuno"></a>
+### 1.3 Dogfooding: puck.uno
 
-Robinson will be used for the Kiera project's own public site (kiera.uno)
-**as much as possible**. The Kiera ecoverse is its own first serious user.
+Robinson will be used for the Puck project's own public site (puck.uno)
+**as much as possible**. The Puck ecoverse is its own first serious user.
 This sets a useful pressure on the design: the framework has to work well
 enough for a real public-facing site before we can ship our own. We feel any
 rough edges before anyone else does.
 
-Practical consequence: kiera.uno's needs are the de-facto v1 requirement set.
-If Robinson can serve kiera.uno well, it can serve the kinds of sites the
+Practical consequence: puck.uno's needs are the de-facto v1 requirement set.
+If Robinson can serve puck.uno well, it can serve the kinds of sites the
 target range covers.
 
 ---
@@ -143,7 +143,7 @@ filesystem; pages can come from:
 - A filesystem (the common case for larger installations)
 - A mikobase (e.g., for IPC scenarios where no filesystem is needed)
 - In-memory registrations (e.g., for testing or embedded scenarios)
-- Remote fetches via the Kiera protocol
+- Remote fetches via the Puck protocol
 - Generated on the fly
 
 The installation asks "give me the page for this URL" and the site (or whoever
@@ -233,7 +233,7 @@ implement up to three optional methods.
 The hash representation is a convenience for developers: handlers are referred
 to by nickname (`$server.handlers['csrf']`, `$server.handlers['sinatra']`)
 rather than by position. The keys are purely labels — Robinson doesn't
-interpret them or enforce any pattern. Because Kiera hashes are order-sensitive
+interpret them or enforce any pattern. Because Puck hashes are order-sensitive
 (see [hashes.md](../charlie/built-in-classes/hashes.md)), the handlers still
 have a well-defined processing order; the hash just gives each one a memorable
 identifier.
@@ -359,7 +359,7 @@ So three layers of opt-in to reach the lowest-isolation / highest-performance
 mode: engine grants `%forks`, developer sets `enable_forking = true`,
 developer sets `recycle_workers = true`. Each layer defaults to "no." This is
 "secure by default, opt out for performance," consistent with the overall
-Kiera no-nanny-code principle: safe defaults with explicit, greppable
+Puck no-nanny-code principle: safe defaults with explicit, greppable
 overrides.
 
 Open:
@@ -383,12 +383,12 @@ Open:
 > **not** apply to Sinatra-only servers. May revisit if a real use case
 > surfaces; for now, Sinatra's surface is what's specified here.
 
-A bare `%kiera['kiera.uno/Robinson'].new()` returns an **empty server** — no
+A bare `%puck['puck.uno/Robinson'].new()` returns an **empty server** — no
 handlers, no routes, nothing registered. To get the Ruby-Sinatra-style
 method-selector API, opt into the **Sinatra handler**:
 
 ```
-$server = %kiera['kiera.uno/Robinson'].new(sinatra: true)
+$server = %puck['puck.uno/Robinson'].new(sinatra: true)
 
 $server.get('/') do($request)
     response.new(200, {content_type: 'text/plain'}, 'Hello world')
@@ -504,7 +504,7 @@ Open:
 ### 2.7 JSON URL Parameters
 
 Robinson will natively support the
-[ecoverse JSON URL convention](../kiera/json-urls.md): machine-generated
+[ecoverse JSON URL convention](../puck/json-urls.md): machine-generated
 URLs that pass parameters as a JSON object in the query string
 (`?{"map":true}`) rather than as conventional `?key=value` pairs.
 
@@ -521,7 +521,7 @@ Handlers see one parameter hash; the URL form is transparent to them.
 
 Specific rules for mixing (parser order, precedence on key
 collisions, cache-key canonicalization, edge cases) are TBD —
-captured in [json-urls.md](../kiera/json-urls.md) as a topic to revisit
+captured in [json-urls.md](../puck/json-urls.md) as a topic to revisit
 when the JSON-URL convention is fully spec'd.
 
 <a id="closure-interface-and-response-objects"></a>
@@ -544,7 +544,7 @@ hash, possibly explicit context-passing). Mutating the request itself is
 not how Robinson plumbs information forward.
 
 **The closure must return a response object** — an instance of
-`kiera.uno/Robinson/response` (or whatever the final UNS turns out to be).
+`puck.uno/Robinson/response` (or whatever the final UNS turns out to be).
 Returning `null` is how a handler declines (passes to the next handler in
 the chain). Anything else must be a response.
 
@@ -556,7 +556,7 @@ the response class. So instead of:
 
 ```
 $server.get('/') do($request)
-    %kiera['kiera.uno/Robinson/response'].new(200, {content_type: 'text/plain'}, 'Hello world')
+    %puck['puck.uno/Robinson/response'].new(200, {content_type: 'text/plain'}, 'Hello world')
 end
 ```
 
@@ -569,7 +569,7 @@ end
 ```
 
 The DSL is scoped to handler closures specifically — it's not a global
-alias. Outside a handler closure, you go through `%kiera[...]` as usual.
+alias. Outside a handler closure, you go through `%puck[...]` as usual.
 
 <a id="constructor-shape-sketch"></a>
 #### 2.8.2 Constructor Shape (Sketch)
@@ -687,7 +687,7 @@ features will still land in Robinson — but the front door stays narrow.
 #### 2.9.3 Page File Contract
 
 `.charlie` files in the tree are page files. Each one's last expression
-must be a class inheriting from `kiera.uno/Robinson/page` with a `process`
+must be a class inheriting from `puck.uno/Robinson/page` with a `process`
 method. Robinson invokes the file, takes the returned class, instantiates
 it, calls `process($request)`, and uses the returned response as the
 page's response.
@@ -701,7 +701,7 @@ Invocation uses the Charlie runtime's general
 invoked like a function call, runs in its own scope, returns the value of
 its last expression. Robinson doesn't need a special invoker — it just
 uses the standard invocation and expects the value to be a
-`kiera.uno/Robinson/page` subclass. (Page files that return something
+`puck.uno/Robinson/page` subclass. (Page files that return something
 else get a clear error.)
 
 Note the deliberate distinction: Robinson **invokes** the file (runs it as
@@ -858,7 +858,7 @@ other listed domain receive a **301 permanent redirect** to the
 canonical (same path, same query string). So a request to
 `idocs.com/foo?bar=baz` redirects to `www.idocs.com/foo?bar=baz`.
 
-Kiera hashes preserve insertion order, so the "first key is canonical"
+Puck hashes preserve insertion order, so the "first key is canonical"
 rule works the same as it would with an array.
 
 Compared to nginx or Apache — where canonical redirects are separate
@@ -1027,7 +1027,7 @@ admin requests with the same content that goes to the error logs
 (logging spec'd separately).
 
 This is a **core v1 requirement**, not a deferred extension. Dogfooding
-kiera.uno on Robinson means we'll hit exceptions during early
+puck.uno on Robinson means we'll hit exceptions during early
 development and need them visible without surgery. The feature pays for
 itself immediately.
 

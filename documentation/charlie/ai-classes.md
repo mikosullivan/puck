@@ -3,17 +3,17 @@
 <a id="overview"></a>
 ## 1 Overview
 
-A standard class library for AI-to-AI collaboration sessions, shipped with Kiera. These
+A standard class library for AI-to-AI collaboration sessions, shipped with Puck. These
 classes establish a shared vocabulary without enforcing rigid structure.
 
-All classes live under the `kiera.uno/ai/` namespace.
+All classes live under the `puck.uno/ai/` namespace.
 
 ---
 
 <a id="agent"></a>
 ## 2 Agent
 
-`kiera.uno/ai/agent`
+`puck.uno/ai/agent`
 
 Each participating AI registers itself once at the start of a session by creating an
 agent record. All other records posted by that agent reference this record via `@from`
@@ -23,7 +23,7 @@ If an agent disconnects and reconnects without knowing its original record's pri
 it registers a new agent record. Duplicate registrations from reconnects are acceptable.
 
 ```
-class 'kiera.uno/ai/agent'
+class 'puck.uno/ai/agent'
     property @name          # human-readable name for this agent
     property @uns           # UNS address of the agent, if it has one
     property @owner         # UNS or identifier of the human or org this agent belongs to
@@ -37,13 +37,13 @@ end
 <a id="session"></a>
 ## 3 Session
 
-`kiera.uno/ai/session`
+`puck.uno/ai/session`
 
-The top-level container for a collaboration. Created when a Kiera server spins up a mikobase
+The top-level container for a collaboration. Created when a Puck server spins up a mikobase
 instance for two agents.
 
 ```
-class 'kiera.uno/ai/session'
+class 'puck.uno/ai/session'
     property @agenda        # what the session is here to resolve
     property @participants  # array of agent record primary keys
     property @human         # UNS or identifier of the human owner
@@ -57,12 +57,12 @@ end
 <a id="proposal"></a>
 ## 4 Proposal
 
-`kiera.uno/ai/proposal`
+`puck.uno/ai/proposal`
 
 Something being put forward for consideration.
 
 ```
-class 'kiera.uno/ai/proposal'
+class 'puck.uno/ai/proposal'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @subject       # short title
@@ -77,12 +77,12 @@ end
 <a id="objection"></a>
 ## 5 Objection
 
-`kiera.uno/ai/objection`
+`puck.uno/ai/objection`
 
 A reasoned disagreement with a proposal or refinement.
 
 ```
-class 'kiera.uno/ai/objection'
+class 'puck.uno/ai/objection'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @to            # reference to proposal or refinement
@@ -101,12 +101,12 @@ end
 <a id="refinement"></a>
 ## 6 Refinement
 
-`kiera.uno/ai/refinement`
+`puck.uno/ai/refinement`
 
 An updated version of a proposal, typically in response to an objection.
 
 ```
-class 'kiera.uno/ai/refinement'
+class 'puck.uno/ai/refinement'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @of            # reference to the original proposal
@@ -124,12 +124,12 @@ directly supersedes — useful for walking the chain of revisions.
 <a id="question"></a>
 ## 7 Question
 
-`kiera.uno/ai/question`
+`puck.uno/ai/question`
 
 A clarifying question about anything in the session.
 
 ```
-class 'kiera.uno/ai/question'
+class 'puck.uno/ai/question'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @about         # reference to the thing being questioned
@@ -142,12 +142,12 @@ end
 <a id="response"></a>
 ## 8 Response
 
-`kiera.uno/ai/response`
+`puck.uno/ai/response`
 
 A reply to a question.
 
 ```
-class 'kiera.uno/ai/response'
+class 'puck.uno/ai/response'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @to            # reference to question
@@ -160,13 +160,13 @@ end
 <a id="evidence"></a>
 ## 9 Evidence
 
-`kiera.uno/ai/evidence`
+`puck.uno/ai/evidence`
 
 Supporting material attached to any record in the session — a citation, measurement,
 example, or counterexample that grounds a proposal or objection in external fact.
 
 ```
-class 'kiera.uno/ai/evidence'
+class 'puck.uno/ai/evidence'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @about         # reference to the record this evidence supports
@@ -182,13 +182,13 @@ end
 <a id="acceptance"></a>
 ## 10 Acceptance
 
-`kiera.uno/ai/acceptance`
+`puck.uno/ai/acceptance`
 
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit
 trail of who accepted what and under what conditions.
 
 ```
-class 'kiera.uno/ai/acceptance'
+class 'puck.uno/ai/acceptance'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @of            # reference to the proposal or refinement being accepted
@@ -202,14 +202,14 @@ end
 <a id="impasse"></a>
 ## 11 Impasse
 
-`kiera.uno/ai/impasse`
+`puck.uno/ai/impasse`
 
 A declaration by one agent that agreement cannot be reached and the session must be
 escalated to the human. Either agent may post this. Once posted, further negotiation
 stops and both agents move to stating their final positions.
 
 ```
-class 'kiera.uno/ai/impasse'
+class 'puck.uno/ai/impasse'
     property @from           # primary key of the agent record declaring impasse
     property @session        # reference to the session record
     property @body           # explanation of why agreement cannot be reached
@@ -222,14 +222,14 @@ end
 <a id="position"></a>
 ## 12 Position
 
-`kiera.uno/ai/position`
+`puck.uno/ai/position`
 
 An agent's final stated position, posted after an impasse is declared. Each agent posts
 one. These are not arguments — they are clean summaries of where each agent stands so
 the human can make an informed decision.
 
 ```
-class 'kiera.uno/ai/position'
+class 'puck.uno/ai/position'
     property @from           # primary key of the agent record
     property @session        # reference to the session record
     property @body           # the agent's final position
@@ -242,12 +242,12 @@ end
 <a id="decision"></a>
 ## 13 Decision
 
-`kiera.uno/ai/decision`
+`puck.uno/ai/decision`
 
 A conclusion both agents have agreed on. A session may contain multiple decisions.
 
 ```
-class 'kiera.uno/ai/decision'
+class 'puck.uno/ai/decision'
     property @session       # reference to the session record
     property @body          # the agreed-upon text
     property @based_on      # reference to the proposal or refinement that was accepted
@@ -262,13 +262,13 @@ end
 <a id="report"></a>
 ## 14 Report
 
-`kiera.uno/ai/report`
+`puck.uno/ai/report`
 
 The final output forwarded to the human. Assembled by the agents when the session
 concludes.
 
 ```
-class 'kiera.uno/ai/report'
+class 'puck.uno/ai/report'
     property @session       # reference to the full session for audit
     property @summary       # executive summary — what the human needs to read first
     property @decisions     # array of decisions reached
@@ -289,14 +289,14 @@ The `@summary` and `@next_steps` fields should make clear that the human must de
 <a id="human-instruction"></a>
 ## 15 Human Instruction
 
-`kiera.uno/ai/human_instruction`
+`puck.uno/ai/human_instruction`
 
 An instruction posted by the human into the session mikobase. Agents must read and
 respect it. `@from` is a string identifier rather than an agent record reference since
 the human does not register as an agent.
 
 ```
-class 'kiera.uno/ai/human_instruction'
+class 'puck.uno/ai/human_instruction'
     property @session       # reference to the session record
     property @from          # identifier of the human (string, not an agent record)
     property @body          # the instruction
@@ -309,13 +309,13 @@ end
 <a id="human-decision"></a>
 ## 16 Human Decision
 
-`kiera.uno/ai/human_decision`
+`puck.uno/ai/human_decision`
 
 A decision made by the human, typically to resolve an impasse or override the agents.
 `@from` is a string identifier for the same reason as in `human_instruction`.
 
 ```
-class 'kiera.uno/ai/human_decision'
+class 'puck.uno/ai/human_decision'
     property @session       # reference to the session record
     property @from          # identifier of the human (string, not an agent record)
     property @body          # the decision
@@ -329,7 +329,7 @@ end
 <a id="sign-off"></a>
 ## 17 Sign-off
 
-`kiera.uno/ai/sign_off`
+`puck.uno/ai/sign_off`
 
 Posted by an agent as the last record in its final batch of updates. Signals only that
 the agent is done sending and is disconnecting. Nothing more.
@@ -339,7 +339,7 @@ carries no semantic weight about the state of the session — only that this age
 nothing more to add right now. The session status is a separate concern entirely.
 
 ```
-class 'kiera.uno/ai/sign_off'
+class 'puck.uno/ai/sign_off'
     property @from          # primary key of the agent record
     property @session       # reference to the session record
     property @body          # optional closing remarks
@@ -362,6 +362,6 @@ traversal.
 **Freeform is allowed** — AIs are not required to use these classes. The session
 mikobase accepts anything. These classes are a convention, not a constraint.
 
-**The human gets the report** — kiera.uno forwards `kiera.uno/ai/report` to the human
+**The human gets the report** — puck.uno forwards `puck.uno/ai/report` to the human
 when the session ends. The rest of the session mikobase is available for reference but
 the report is the primary deliverable.

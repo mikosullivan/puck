@@ -1,6 +1,6 @@
 # Sinatra
 
-`kiera.uno/sinatra` — a small-site HTTP server with Ruby-Sinatra-style
+`puck.uno/sinatra` — a small-site HTTP server with Ruby-Sinatra-style
 route handlers. Closures register against HTTP-method + path pairs;
 unmatched requests fall through to a catch-all.
 
@@ -27,7 +27,7 @@ shape.
 ## 2 Quick example
 
 ```
-$server = %['kiera.uno/sinatra'].new()
+$server = %['puck.uno/sinatra'].new()
 
 $server.get('/') do($request)
     response.new(200, {'Content-Type': 'text/plain'}, 'Hello world')
@@ -394,7 +394,7 @@ All of these are universal HTTP infrastructure and live in
 - [Sessions](touchstone.md#sessions) — `$transaction.session`
   hash, domain configuration, default cookie attributes.
 - [Body buffering](touchstone.md#body-buffering) — memory and
-  FSO modes, `kiera.uno/touchstone/error/sinatra/cannot_store_files`.
+  FSO modes, `puck.uno/touchstone/error/sinatra/cannot_store_files`.
 
 Sinatra inherits these unchanged.
 
@@ -413,7 +413,7 @@ object** with `$server.static`:
 $server.static $dir
 ```
 
-The `$dir` is a directory object (Kiera's filesystem abstraction).
+The `$dir` is a directory object (Puck's filesystem abstraction).
 Sinatra doesn't know or care what backs it — could be a real
 filesystem path, an in-memory tree, a remote source, a tarball,
 anything that implements the directory interface. Sinatra just
@@ -586,7 +586,7 @@ full spec section above) or moved to add-on territory.
   shouldn't own, and a permissive default would be a security
   hole. **Will need revisiting.** If the page-as-API story
   ([Robinson](robinson.md)) leads developers to commonly expose
-  Kiera endpoints to third-party JS, a `$server.cors(...)`
+  Puck endpoints to third-party JS, a `$server.cors(...)`
   helper may be worth designing — but as a deliberate addition,
   not casual accretion. Until that pattern is real, the
   framework provides the override slot (auto-OPTIONS yields to

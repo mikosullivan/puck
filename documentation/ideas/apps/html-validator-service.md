@@ -1,11 +1,11 @@
-# Kiera.uno HTML validator and tidying service
+# Puck.uno HTML validator and tidying service
 
 **Status:** Forward-looking note. Not in v1.
 
 <a id="purpose"></a>
 ## 1 Purpose
 
-A Kiera.uno-hosted service that validates and tidies HTML
+A Puck.uno-hosted service that validates and tidies HTML
 documents. Two related operations:
 
 - **Validate** — given an HTML document, check it against the
@@ -19,7 +19,7 @@ documents. Two related operations:
 <a id="where-it-fits"></a>
 ## 2 Where it fits
 
-- **Uma** (especially the `kiera.uno/uma/html5` subclass) is
+- **Uma** (especially the `puck.uno/uma/html5` subclass) is
   the local first-pass tool — it parses, manipulates, and
   serializes HTML. Uma's schema-driven approach catches many
   issues at construction time.
@@ -45,7 +45,7 @@ documents. Two related operations:
 ## 4 Possible API shape (sketch)
 
 ```
-$result = %['kiera.uno/html5-validator'].validate($html)
+$result = %['puck.uno/html5-validator'].validate($html)
 $result.valid?           # boolean
 $result.violations       # array of structured violation reports
 $result.tidied           # cleaned-up version (optional, configurable)

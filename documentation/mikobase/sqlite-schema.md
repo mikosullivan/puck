@@ -70,11 +70,11 @@ when new.active = 1 and new.bucket is not null
 begin
 	select raise(fail, 'duplicate class name')
 	where
-		new.class = 'kiera.uno/record/class'
+		new.class = 'puck.uno/record/class'
 		and exists (
 			select 1 from current_records
 			where
-				class = 'kiera.uno/record/class'
+				class = 'puck.uno/record/class'
 				and record_pk != new.record_pk
 				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
 		);
@@ -197,7 +197,7 @@ vibecode: {
 - Historical reads use an `updated_at` cutoff timestamp to find the latest row at or before that point in time.
 - `unique(record_pk, updated_at)` prevents timestamp collisions within a record's history.
 - The `class` column stores the UNS class name directly. There is no foreign key to `records` — the engine validates class existence at write time.
-- Built-in classes (`kiera.uno/record`, `kiera.uno/record/class`, etc.) are recognized by the engine and do not need stored records.
+- Built-in classes (`puck.uno/record`, `puck.uno/record/class`, etc.) are recognized by the engine and do not need stored records.
 - Empty files are represented by a single `file_chunks` row with `content = ''` and `last = 1`.
 - Class name uniqueness is enforced by the `records_history_unique_class_name` trigger via `current_records`.
 - The `current_records` view uses `instance_pk desc` as a tie-breaker when two rows share the same `updated_at`.

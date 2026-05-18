@@ -9,7 +9,7 @@ vibecode: {
 }
 ```
 
-**Ecoverse-wide policy.** Whenever a Kiera service gives out HTML that
+**Ecoverse-wide policy.** Whenever a Puck service gives out HTML that
 references remote objects — JavaScript libraries, stylesheets, fonts,
 images, iframes, anything fetched at render time — the service **must
 also provide the information needed to construct a
@@ -28,8 +28,8 @@ declare which origins/sources are allowed for various asset types.
 When a site embeds third-party content, getting CSP right requires
 knowing exactly which origins the third-party fetches from.
 
-If kiera.uno emits HTML that pulls in a JavaScript library from
-`https://cdn.kiera.uno/`, an iframe from `https://maps.kiera.uno/`,
+If puck.uno emits HTML that pulls in a JavaScript library from
+`https://cdn.puck.uno/`, an iframe from `https://maps.puck.uno/`,
 and a font from `https://fonts.gstatic.com/`, the embedding site
 needs to know about all of those to write a CSP that doesn't
 unintentionally break the embed. We hand them that information so
@@ -38,8 +38,8 @@ they can. They might assemble:
 ```
 Content-Security-Policy:
   default-src 'self';
-  script-src 'self' https://cdn.kiera.uno;
-  frame-src https://maps.kiera.uno;
+  script-src 'self' https://cdn.puck.uno;
+  frame-src https://maps.puck.uno;
   font-src https://fonts.gstatic.com;
 ```
 
@@ -81,8 +81,8 @@ not a burden we push onto consumers.
 <a id="scope"></a>
 ## 4 Scope
 
-This policy applies to every Kiera service that emits HTML, not
+This policy applies to every Puck service that emits HTML, not
 just geolocation. As of the writing of this doc the first concrete
-case is `kiera.uno/geo`'s map embedding, but the same rule applies
+case is `puck.uno/geo`'s map embedding, but the same rule applies
 to anything else in the ecoverse that hands out HTML with remote
 references.

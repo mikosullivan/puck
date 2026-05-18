@@ -56,11 +56,11 @@ when new.active = 1 and new.bucket is not null
 begin
 	select raise(fail, 'duplicate class name')
 	where
-		new.class = 'kiera.uno/record/class'
+		new.class = 'puck.uno/record/class'
 		and exists (
 			select 1 from current_records
 			where
-				class = 'kiera.uno/record/class'
+				class = 'puck.uno/record/class'
 				and record_pk != new.record_pk
 				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
 		);

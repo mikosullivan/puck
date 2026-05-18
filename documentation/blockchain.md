@@ -3,9 +3,9 @@
 <a id="status"></a>
 ## 1 Status
 
-**Deferred from production.** Blockchain is an official part of the Kiera ecoverse and
+**Deferred from production.** Blockchain is an official part of the Puck ecoverse and
 the design properties documented here remain the intended target. However, no chain
-implementation is in scope for the current development phase — Kiera will not run its
+implementation is in scope for the current development phase — Puck will not run its
 own blockchain server. Hosting will eventually be done by a third party (e.g. AWS or
 similar). It will be a long time before any code in this repository touches a real chain.
 
@@ -15,7 +15,7 @@ look like when it does ship.
 <a id="future-engine-settings"></a>
 ### 1.1 Future engine settings
 
-When the time comes, Kiera engines will accept configuration for **blockchain queries** —
+When the time comes, Puck engines will accept configuration for **blockchain queries** —
 which provider to consult, which authority blocks to trust as roots, cache TTLs, fallback
 behavior, and so on. The exact shape of these settings is **TBD**. Nothing in the engine
 or in any production component should assume a chain is reachable today.
@@ -30,7 +30,7 @@ You might want to start with [Use Case: Third-Party Endorsement](#use-case-third
 <a id="the-problem"></a>
 ## 2 The Problem
 
-Kiera is a distributed object system. Objects (classes, capabilities, etc.) are identified
+Puck is a distributed object system. Objects (classes, capabilities, etc.) are identified
 by UNS addresses like `borg.com/foo`. When a Charlie engine fetches and uses an object, it
 needs confidence that:
 
@@ -46,11 +46,11 @@ A UNS string alone proves neither. It is just a name.
 <a id="license"></a>
 ## 3 License
 
-The Kiera distributed object system is released under the MIT License. This must be stated
-in any overview or primer describing Kiera, including the `kiera_primer` field of authority
+The Puck distributed object system is released under the MIT License. This must be stated
+in any overview or primer describing Puck, including the `puck_primer` field of authority
 blocks.
 
-Code distributed through the Kiera ecosystem is not considered distributable unless it
+Code distributed through the Puck ecosystem is not considered distributable unless it
 carries an explicit license. Provenance endorsements that sign a software artifact must
 always include a `license` field. A provenance endorsement that omits `license` is invalid.
 
@@ -59,17 +59,17 @@ always include a `license` field. A provenance endorsement that omits `license` 
 <a id="design-principles"></a>
 ## 4 Design Principles
 
-**Kiera.uno holds one private key.** That is the only cryptographic key in the system
-that Kiera manages. Everything flows from it.
+**Puck.uno holds one private key.** That is the only cryptographic key in the system
+that Puck manages. Everything flows from it.
 
 **Domain owners manage nothing.** A publisher like `borg.com` does not need keys,
 registration, or any special setup. They serve their objects over HTTPS. The TLS
 certificate they already have is sufficient proof of domain ownership.
 
-**Kiera server operators manage nothing.** They store and distribute bytes. Trust and
+**Puck server operators manage nothing.** They store and distribute bytes. Trust and
 verification are not their concern.
 
-**Engines ship with Kiera's public key baked in.** That single key is sufficient to
+**Engines ship with Puck's public key baked in.** That single key is sufficient to
 verify the entire system.
 
 ---
@@ -77,15 +77,15 @@ verify the entire system.
 <a id="the-open-ledger"></a>
 ## 5 The Open Ledger
 
-The Kiera blockchain is an open, append-only ledger of signed records about objects in the
-Kiera distributed object system. Its purpose is to provide independently verifiable provenance
+The Puck blockchain is an open, append-only ledger of signed records about objects in the
+Puck distributed object system. Its purpose is to provide independently verifiable provenance
 — anyone can confirm that a given object was fetched from its UNS address at a specific time
-and signed by a specific key, without trusting Kiera.uno or any other central authority.
+and signed by a specific key, without trusting Puck.uno or any other central authority.
 
 The chain is open. Anyone can post records, including creating their own authority blocks with
 their own signing keys. An authority block is not a claim of ownership over the chain — it is
-the anchor of a web of trust rooted in a particular key. Kiera.uno's authority block
-establishes Kiera's own trust chain. A third party such as a security auditor or partner
+the anchor of a web of trust rooted in a particular key. Puck.uno's authority block
+establishes Puck's own trust chain. A third party such as a security auditor or partner
 organisation can post their own authority block and build an independent chain of endorsements,
 delegations, and provenance records signed by their own key.
 
@@ -93,19 +93,19 @@ Trust is determined by whose authority block and signing key you choose to trust
 is allowed to write to the ledger. The ledger is the record; the trust model is layered on top.
 
 Any entity can post their own authority block and establish their own web of trust, completely
-independent of Kiera. A company running internal Charlie infrastructure could run their own
+independent of Puck. A company running internal Charlie infrastructure could run their own
 chain, publish their own libraries, and configure their engines to trust their own authority
-block instead of (or in addition to) Kiera's.
+block instead of (or in addition to) Puck's.
 
 Engines can be configured to trust multiple authority blocks, enabling hybrid models: trust
-Kiera for public libraries, trust an internal root for private ones.
+Puck for public libraries, trust an internal root for private ones.
 
 ---
 
 <a id="trust-delegation"></a>
 ## 6 Trust Delegation
 
-A `delegate` block extends trust to another entity. Kiera.uno can post a `delegate` block
+A `delegate` block extends trust to another entity. Puck.uno can post a `delegate` block
 that says: "I trust this entity's endorsements." The delegation references the trusted
 entity's authority block by `target_hash` and lists the endorsement types it covers.
 
@@ -116,30 +116,30 @@ reading the chain should apply a delegation retroactively to any block signed by
 entity after their authority block, regardless of whether the delegation appeared before
 or after those blocks.
 
-This allows Kiera.uno to hand off stewardship — to a regional maintainer, a successor
+This allows Puck.uno to hand off stewardship — to a regional maintainer, a successor
 organisation, or any trusted party — without breaking anything for engines that already
 trust the authority block. The delegation is on the chain, permanent and auditable.
 
-Delegated trust can be chained: Kiera trusts Entity A, Entity A trusts Entity B, and so
+Delegated trust can be chained: Puck trusts Entity A, Entity A trusts Entity B, and so
 on. Engines following the chain extend trust transitively.
 
 ---
 
-<a id="how-kiera-vouches-for-an-object"></a>
-## 7 How Kiera Vouches for an Object
+<a id="how-puck-vouches-for-an-object"></a>
+## 7 How Puck Vouches for an Object
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
-Kiera will sign them. The domain owner must explicitly request signing through kiera.uno.
+Puck will sign them. The domain owner must explicitly request signing through puck.uno.
 They are in charge of which objects get submitted and when.
 
-1. The domain owner submits their object through kiera.uno
-2. Kiera fetches the object from their domain over HTTPS — TLS proves it is talking to
+1. The domain owner submits their object through puck.uno
+2. Puck fetches the object from their domain over HTTPS — TLS proves it is talking to
    the real domain owner
-3. Kiera posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
+3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
    fields directly in the endorsement entry
 
-When an engine needs `borg.com/foo`, it queries Kiera's API, receives the signed block, and
-verifies Kiera's signature using the baked-in public key. If the signature is valid, the
+When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
+verifies Puck's signature using the baked-in public key. If the signature is valid, the
 object is trusted.
 
 ---
@@ -152,10 +152,10 @@ Once a block is posted, it is available forever regardless of what happens to an
 specific server. No single server going offline can make a published library unavailable.
 
 This is not the only way to obtain objects — objects can also be fetched directly from
-Kiera servers or other sources — but it is the highest-trust path. An object on the
-blockchain was verified by Kiera at the time of posting and cannot be silently altered.
+Puck servers or other sources — but it is the highest-trust path. An object on the
+blockchain was verified by Puck at the time of posting and cannot be silently altered.
 
-Kiera provides an API over the blockchain so engines do not need to interact with the
+Puck provides an API over the blockchain so engines do not need to interact with the
 chain directly. The API handles lookup by UNS address and returns the signed block.
 
 ---
@@ -163,7 +163,7 @@ chain directly. The API handles lookup by UNS address and returns the signed blo
 <a id="chain-design"></a>
 ## 9 Chain Design
 
-The Kiera blockchain is a permissioned append-only ledger. There is no mining, no
+The Puck blockchain is a permissioned append-only ledger. There is no mining, no
 proof-of-work, and no gas. Records are written directly by authorised signers. Validity
 is determined by signature verification and hash chaining, not by computational work.
 
@@ -204,7 +204,7 @@ can reference it by `record_hash`.
 {
   "intent": "grammar",
   "version": "1.0",
-  "description": "Kiera blockchain block grammar version 1.0",
+  "description": "Puck blockchain block grammar version 1.0",
   "grammar": {"hash": "self", "version": "1.0"},
   "envelope": {
     "fields": ["intent", "prev_hash", "posted", "signer", "payload", "signature"],
@@ -241,12 +241,12 @@ Required payload fields:
 - `grammar` — reference to the grammar block
 - `note` — one-line description of this authority
 - `public_key` — the Ed25519 public key (PEM) for this authority's signatures
-- `kiera_primer` — a complete self-contained introduction to the Kiera distributed object
+- `puck_primer` — a complete self-contained introduction to the Puck distributed object
   system; the authoritative cold-start reference for any agent or tool encountering the
-  chain with no prior knowledge of Kiera; required on all authority blocks
+  chain with no prior knowledge of Puck; required on all authority blocks
 - `vibecode` — compact machine-readable summary of the authority and its role
 
-The content of `kiera_primer` and `vibecode` for the production chain will be supplied
+The content of `puck_primer` and `vibecode` for the production chain will be supplied
 by Miko. Both must be present before the authority block is posted to any production chain.
 
 ---
@@ -281,7 +281,7 @@ Provenance endorsement (signed by the publisher):
       "endorsement": "provenance",
       "name": "borg.com/parser",
       "description": "Parses structured text into a normalised output hash.",
-      "language": "kiera.uno/software/charlie",
+      "language": "puck.uno/software/charlie",
       "license": "MIT",
       "version": "2.1.0",
       "artifact_hash": "sha256:...",
@@ -347,7 +347,7 @@ matches the artifact's hash.
   "uns": "borg.com/parser",
   "version": "2.1.0",
   "artifact_hash": "sha256:8f2a3b7d1e9c4a5f...",
-  "mirror_url": "https://archive.example.org/kiera/borg.com/parser/2.1.0.charlie",
+  "mirror_url": "https://archive.example.org/puck/borg.com/parser/2.1.0.charlie",
   "notes": "Mirror of borg.com/parser 2.1.0 hosted by archive.example.org."
 }
 ```
@@ -452,8 +452,8 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 
 | Source | Trust level |
 |--------|-------------|
-| Blockchain (via Kiera API) | Highest — Kiera signed it, immutable |
-| Kiera server over HTTPS | High — TLS verified, but object could change |
+| Blockchain (via Puck API) | Highest — Puck signed it, immutable |
+| Puck server over HTTPS | High — TLS verified, but object could change |
 | Other HTTPS source | Policy-dependent |
 | Unsigned | Rejected |
 
@@ -465,30 +465,30 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 | Party | Responsibility |
 |-------|---------------|
 | `borg.com` | Serve objects over HTTPS. Nothing else. |
-| Kiera.uno | One private key. Fetch, sign, post to blockchain. |
-| Kiera server operators | Store and serve bytes. Nothing else. |
-| Charlie engines | Kiera's public key baked in. Verify on fetch. |
+| Puck.uno | One private key. Fetch, sign, post to blockchain. |
+| Puck server operators | Store and serve bytes. Nothing else. |
+| Charlie engines | Puck's public key baked in. Verify on fetch. |
 
 ---
 
 <a id="api"></a>
 ## 14 API
 
-All blockchain services are hosted at `blockchain.kiera.uno`.
+All blockchain services are hosted at `blockchain.puck.uno`.
 
-The Kiera Lua library does not include routines for querying the blockchain directly.
-By default it operates through the API at `blockchain.kiera.uno`. The endpoints below
+The Puck Lua library does not include routines for querying the blockchain directly.
+By default it operates through the API at `blockchain.puck.uno`. The endpoints below
 describe the intended shape; the final API spec will be a separate document.
 
-<a id="submit-domain-owner-kiera"></a>
-### 14.1 Submit (domain owner → Kiera)
+<a id="submit-domain-owner-puck"></a>
+### 14.1 Submit (domain owner → Puck)
 
-`POST https://blockchain.kiera.uno/v1/submit`
+`POST https://blockchain.puck.uno/v1/submit`
 
-Domain owner submits a UNS address. Kiera fetches, signs, and posts a provenance
+Domain owner submits a UNS address. Puck fetches, signs, and posts a provenance
 endorsement block.
 
-This endpoint is idempotent. If Kiera fetches the object and finds it identical to
+This endpoint is idempotent. If Puck fetches the object and finds it identical to
 the most recently posted version, it returns the existing block rather than posting
 a new one.
 
@@ -502,25 +502,25 @@ Response:
 {"status": "posted", "uns": "borg.com/foo", "record_hash": "..."}
 ```
 
-<a id="fetch-engine-kiera"></a>
-### 14.2 Fetch (engine → Kiera)
+<a id="fetch-engine-puck"></a>
+### 14.2 Fetch (engine → Puck)
 
-`GET https://blockchain.kiera.uno/v1/object/<uns>`
+`GET https://blockchain.puck.uno/v1/object/<uns>`
 
 Returns the latest provenance endorsement block for a UNS address. The engine verifies
 the signature client-side using the baked-in public key.
 
-`GET https://blockchain.kiera.uno/v1/object/<uns>?version=2.1.0` — exact version match.
+`GET https://blockchain.puck.uno/v1/object/<uns>?version=2.1.0` — exact version match.
 
-`GET https://blockchain.kiera.uno/v1/object/<uns>?at=2026-01-01` — latest version whose
+`GET https://blockchain.puck.uno/v1/object/<uns>?at=2026-01-01` — latest version whose
 `effective_date` is on or before the given date.
 
 <a id="root-block"></a>
 ### 14.3 Root block
 
-`GET https://blockchain.kiera.uno/v1/authority`
+`GET https://blockchain.puck.uno/v1/authority`
 
-Returns Kiera's authority block. Used during engine setup to verify the baked-in public
+Returns Puck's authority block. Used during engine setup to verify the baked-in public
 key matches the chain.
 
 ---
@@ -528,12 +528,12 @@ key matches the chain.
 <a id="versioning"></a>
 ## 15 Versioning
 
-The Kiera ecoverse uses **date-pinned versioning** as its general model — a single
+The Puck ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
 the call chain. The general model is documented in [versioning.md](../versioning.md);
 this section describes how the blockchain anchors dates when it is in play.
 
-Every block on the Kiera blockchain carries a `posted` timestamp assigned at insertion.
+Every block on the Puck blockchain carries a `posted` timestamp assigned at insertion.
 This is not set by the submitter — it is canonical and tamper-evident.
 
 **Default behaviour: latest within range.** When you request an object with no version
@@ -584,11 +584,11 @@ the intended range.
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
 deploying it. ChainGuard reviews the library and posts an endorsement to the chain.
 
-A collaboration between Kiera and ChainGuard could be a mutually beneficial arrangement.
+A collaboration between Puck and ChainGuard could be a mutually beneficial arrangement.
 
-**Step 1 — Kiera vouches for provenance.**
+**Step 1 — Puck vouches for provenance.**
 
-`borg.com` submits their library through kiera.uno. Kiera fetches it over HTTPS and
+`borg.com` submits their library through puck.uno. Puck fetches it over HTTPS and
 posts a provenance endorsement block with the object embedded in the `bucket`:
 
 ```json
@@ -596,7 +596,7 @@ posts a provenance endorsement block with the object embedded in the `bucket`:
   "intent": "endorse",
   "prev_hash": "...",
   "posted": "2026-05-04T09:00:00Z",
-  "signer": "kiera.uno",
+  "signer": "puck.uno",
   "payload": {
     "intent": "endorse",
     "grammar": {"hash": "...", "version": "1.0"},
@@ -624,7 +624,7 @@ This block answers one question: *did this object really come from borg.com?* No
 **Step 2 — ChainGuard establishes its identity.**
 
 ChainGuard has its own Ed25519 key pair. It posts its own authority block to the chain,
-establishing its identity independently of Kiera. No permission from Kiera is required.
+establishing its identity independently of Puck. No permission from Puck is required.
 
 ```json
 {
@@ -637,7 +637,7 @@ establishing its identity independently of Kiera. No permission from Kiera is re
     "grammar": {"hash": "...", "version": "1.0"},
     "note": "ChainGuard security audit authority — independent assessments for government contractors",
     "public_key": "-----BEGIN PUBLIC KEY-----\n...",
-    "kiera_primer": "..."
+    "puck_primer": "..."
   },
   "signature": "base64..."
 }
@@ -647,10 +647,10 @@ establishing its identity independently of Kiera. No permission from Kiera is re
 
 **Step 3 — ChainGuard reviews and endorses.**
 
-ChainGuard fetches Kiera's provenance block, reviews the `bucket` contents, and posts
+ChainGuard fetches Puck's provenance block, reviews the `bucket` contents, and posts
 an endorsement referencing that block by its `record_hash`. ChainGuard does not re-fetch
 from `borg.com` and does not re-post the source — they are endorsing the specific block
-Kiera already verified.
+Puck already verified.
 
 ```json
 {
@@ -661,7 +661,7 @@ Kiera already verified.
   "payload": {
     "intent": "endorse",
     "grammar": {"hash": "...", "version": "1.0"},
-    "target_hash": "<record_hash of Kiera's provenance block>",
+    "target_hash": "<record_hash of Puck's provenance block>",
     "endorsements": [
       {
         "endorsement": "security",
@@ -680,52 +680,52 @@ Kiera already verified.
 
 The engine fetches `borg.com/parser`. It verifies:
 
-1. Kiera's signature on the provenance block — origin confirmed, object unmodified
+1. Puck's signature on the provenance block — origin confirmed, object unmodified
 2. ChainGuard's endorsement referencing that same block — security criteria met
 
-Both checks are independent. The engine trusts Kiera's public key (baked in) and
+Both checks are independent. The engine trusts Puck's public key (baked in) and
 ChainGuard's public key (configured by the contractor). Neither party needed to
 coordinate with the other. The shared ledger is what ties them together.
 
-<a id="collaboration-kiera-delegates-to-chainguard"></a>
-### 16.1 Collaboration: Kiera Delegates to ChainGuard
+<a id="collaboration-puck-delegates-to-chainguard"></a>
+### 16.1 Collaboration: Puck Delegates to ChainGuard
 
-Although Kiera and ChainGuard can operate completely independently, there is a deeper
+Although Puck and ChainGuard can operate completely independently, there is a deeper
 collaboration available through trust delegation.
 
-Kiera posts a `delegate` block naming ChainGuard as a trusted endorser:
+Puck posts a `delegate` block naming ChainGuard as a trusted endorser:
 
 ```json
 {
   "intent": "delegate",
   "prev_hash": "...",
   "posted": "...",
-  "signer": "kiera.uno",
+  "signer": "puck.uno",
   "payload": {
     "intent": "delegate",
     "grammar": {"hash": "...", "version": "1.0"},
     "entity": "chainguard.dev",
     "endorsements": ["provenance", "security"],
     "target_hash": "<chainguard.dev authority block record_hash>",
-    "note": "Kiera delegates provenance and security trust to ChainGuard."
+    "note": "Puck delegates provenance and security trust to ChainGuard."
   },
   "signature": "base64..."
 }
 ```
 
 With this delegation in place, ChainGuard can fetch objects from domains over HTTPS
-and post provenance endorsements signed with their own key. Engines that trust Kiera's
+and post provenance endorsements signed with their own key. Engines that trust Puck's
 authority block follow the delegation chain and accept ChainGuard's blocks as trusted
-provenance — exactly as they would accept blocks signed by Kiera directly.
+provenance — exactly as they would accept blocks signed by Puck directly.
 
-This offloads the fetch-and-sign work from Kiera entirely. ChainGuard becomes an
+This offloads the fetch-and-sign work from Puck entirely. ChainGuard becomes an
 operational partner: they fetch, they sign, they post, and they add their security
-endorsement in the same pass. Kiera's role shrinks to maintaining the authority block
+endorsement in the same pass. Puck's role shrinks to maintaining the authority block
 and the delegation record.
 
-The broader opportunity is significant. The Kiera blockchain is not limited to Charlie
+The broader opportunity is significant. The Puck blockchain is not limited to Charlie
 objects — it can store Python libraries, Go modules, or any signed artifact. A company
-like ChainGuard, trusted by Kiera and trusted by governments, could position itself as
+like ChainGuard, trusted by Puck and trusted by governments, could position itself as
 a leading authority on security-cleared open source across languages and ecosystems.
 Any engine or toolchain that knows how to read the chain gains access to that trust
 infrastructure with no additional setup.
@@ -733,16 +733,16 @@ infrastructure with no additional setup.
 <a id="partnership-goal"></a>
 ### 16.2 Partnership Goal
 
-Kiera is actively seeking a partner in this space — a company analogous to ChainGuard
+Puck is actively seeking a partner in this space — a company analogous to ChainGuard
 whose endorsements and deprecations would be surfaced directly through the
-`blockchain.kiera.uno` API. When such a partnership is in place, a developer calling
-the fetch endpoint would receive not just Kiera's provenance block but also the
+`blockchain.puck.uno` API. When such a partnership is in place, a developer calling
+the fetch endpoint would receive not just Puck's provenance block but also the
 partner's security assessment in the same response — one API call, one result,
 government-grade confidence included.
 
 This removes friction for developers who need to ship within government specifications.
 They do not need to know anything about the partner's internal processes or query a
-separate API. The blockchain.kiera.uno response tells them everything: where the object
+separate API. The blockchain.puck.uno response tells them everything: where the object
 came from, that it hasn't been modified, and whether it meets the security criteria they
 care about.
 
@@ -754,12 +754,12 @@ As Stuart says, this scratches an itch.
 ## 17 Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
-choices that can be misconfigured, widely supported in every language runtime Kiera is
+choices that can be misconfigured, widely supported in every language runtime Puck is
 likely to encounter.
 
 **Alphabetically sorted canonical JSON.** Signing uses minified JSON with all keys sorted
 alphabetically at every level. This is deterministic regardless of the order in which
-fields were constructed, and is compatible with RFC 8785 (JCS). All Kiera tooling must
+fields were constructed, and is compatible with RFC 8785 (JCS). All Puck tooling must
 sort keys before signing or verifying.
 
 **Hash chaining.** Each record's `prev_hash` is the SHA-256 of the preceding record's
@@ -788,7 +788,7 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 <a id="open-issues"></a>
 ## 18 Open Issues
 
-**Software namespace identifier bloat.** As `kiera.uno/software` grows (programming
+**Software namespace identifier bloat.** As `puck.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.
 Most identifiers are just namespace declarations and don't need provenance or revocation
 the way published artifacts do. Do software identifiers belong on the chain at all, or

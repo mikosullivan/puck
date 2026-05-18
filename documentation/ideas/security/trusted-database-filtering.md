@@ -64,13 +64,13 @@ Both are forward-looking ideas; neither is designed.
 - Per-column trust policy is potentially a lot of schema metadata to
   spec; needs more thought before designing.
 - The laundering vector is real but theoretical for now — no existing
-  Kiera component marks a database as trusted.
+  Puck component marks a database as trusted.
 
 <a id="when-to-revisit"></a>
 ## 5 When to Revisit
 
 - The first time we want to mark a database as trusted.
-- If a real-world laundering exploit is identified in a Kiera-based
+- If a real-world laundering exploit is identified in a Puck-based
   application.
 - When the schema metadata story (currently TBD across the project) is
   ready to absorb per-column trust policy.

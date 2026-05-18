@@ -54,7 +54,7 @@ Each gets specified when we focus on it.
 <a id="strategic-note"></a>
 ## 5 Strategic note
 
-Free tier exists primarily to support Kiera's first-contact
+Free tier exists primarily to support Puck's first-contact
 strategy. Not a P&L item.
 
 <a id="out-of-scope-for-now"></a>

@@ -38,7 +38,7 @@ What makes it well-suited:
 <a id="sign-off-protocol"></a>
 ### 2.1 Sign-off Protocol
 
-When an agent is done sending, it posts a `kiera.uno/ai/sign_off` record as the last
+When an agent is done sending, it posts a `puck.uno/ai/sign_off` record as the last
 entry in its final batch. This means only one thing: the agent is hanging up. It carries
 no implication about resolution, agreement, or the state of the session. The session
 status is a separate concern and must be set explicitly.
@@ -60,14 +60,14 @@ entry — there is no overhead of resending the full conversation state.
 <a id="as-a-service"></a>
 ### 2.3 As a Service
 
-kiera.uno spins up a mikobase instance, hands both AIs the connection details, and
+puck.uno spins up a mikobase instance, hands both AIs the connection details, and
 steps back. The mikobase persists as long as needed and can be archived afterward.
 The human receives a link to the final state as the report.
 
 <a id="standard-classes"></a>
 ### 2.4 Standard Classes
 
-A standard class library ships with Kiera for exactly this purpose. See
+A standard class library ships with Puck for exactly this purpose. See
 [ai-classes.md](../charlie/ai-classes.md). Using them is optional but encouraged — a common
 vocabulary makes output readable by any AI or human without prior coordination.
 
@@ -86,7 +86,7 @@ mikosullivan.com/agent/main
 borg.com/agent/design
 ```
 
-Registration through kiera.uno, same as any other object. Agent identity signed and
+Registration through puck.uno, same as any other object. Agent identity signed and
 posted to the blockchain. Messages can be verified cryptographically before an agent
 engages, preventing impersonation.
 

@@ -1,12 +1,12 @@
 # Null
 
-`null` is a bare word method that returns an instance of the `kiera.uno/null`
+`null` is a bare word method that returns an instance of the `puck.uno/null`
 class.
 
 <a id="too-long-didnt-read"></a>
 ## 1 Too Long, Didn't Read
 
-`null` returns a new instance of `kiera.uno/null`. You do not get the same null
+`null` returns a new instance of `puck.uno/null`. You do not get the same null
 object every time. Every null object has a `flavor` field to which you can
 assign anything.
 
@@ -26,7 +26,7 @@ vibecode: {
 ```
 
 Each invocation of the bare word `null` allocates a fresh instance of
-`kiera.uno/null`. There is no singleton; `$x = null; $y = null` produces two
+`puck.uno/null`. There is no singleton; `$x = null; $y = null` produces two
 distinct instances.
 
 This is the simplest implementation: every null is a real object with its own
@@ -131,7 +131,7 @@ The same applies symmetrically to `true` and `false`. The mechanism is
 
 Null flavors let a program distinguish *why* a value is null, not just that it is
 null. The rest of this section explains the problem they solve, how the canonical
-healthcare standard (HL7) handles it, and Kiera's deliberately simple
+healthcare standard (HL7) handles it, and Puck's deliberately simple
 implementation.
 
 <a id="background-the-challenge"></a>
@@ -243,18 +243,18 @@ Other systems take similar approaches at different scales:
 The pattern across all of these: when "missing" matters, distinguishing reasons
 pays off.
 
-<a id="kieras-approach"></a>
-### 5.3 Kiera's Approach
+<a id="pucks-approach"></a>
+### 5.3 Puck's Approach
 
 ```
 vibecode: {
-	"section": "kiera_approach",
-	"role": "summarizes the deliberately-simple Kiera implementation: a single flavor field that accepts anything, with a small optional canonical vocabulary",
+	"section": "puck_approach",
+	"role": "summarizes the deliberately-simple Puck implementation: a single flavor field that accepts anything, with a small optional canonical vocabulary",
 	"key_concepts": ["one_flavor_field", "free_form_value", "canonical_set_optional"]
 }
 ```
 
-Kiera takes the simplest possible approach to the same problem.
+Puck takes the simplest possible approach to the same problem.
 
 Each null instance has a single `flavor` field that can be assigned anything —
 a symbol, a string, a hash, an arbitrary object. Whatever the application
@@ -265,21 +265,21 @@ $x = null
 $x.flavor = :unknown                              # standard symbol flavor
 $x.flavor = "insufficient funds"                  # string flavor
 $x.flavor = {code: :timeout, retry_after: 30}    # structured object flavor
-$x.flavor = 'kiera.uno/null/flavor/masked'        # canonical UNS flavor
+$x.flavor = 'puck.uno/null/flavor/masked'        # canonical UNS flavor
 ```
 
 There is no formal vocabulary baked into the language. There is no hierarchy. There
-is no committee. Kiera ships a small canonical set of flavors under
-`kiera.uno/null/flavor/` for ecosystem interop, but applications are free to use any
+is no committee. Puck ships a small canonical set of flavors under
+`puck.uno/null/flavor/` for ecosystem interop, but applications are free to use any
 flavor values they want.
 
-The trade-off vs. HL7's approach is deliberate: Kiera's design is lighter and more
+The trade-off vs. HL7's approach is deliberate: Puck's design is lighter and more
 flexible at the cost of giving up automatic cross-application semantic
 consistency. Two libraries might both use the symbol `:unknown` to mean different
 things, and there's no central authority that says they shouldn't. For most
 applications this is fine; if interop matters in a specific domain (healthcare,
 finance, etc.), that domain's conventions can be defined and adopted as community
-standards on top of the Kiera primitive.
+standards on top of the Puck primitive.
 
 <a id="the-flavor-field"></a>
 ### 5.4 The `flavor` Field
@@ -310,14 +310,14 @@ The flavor field is mutable. Assigning a new flavor replaces the previous one.
 ```
 vibecode: {
 	"section": "standard_flavors",
-	"namespace": "kiera.uno/null/flavor",
+	"namespace": "puck.uno/null/flavor",
 	"intent": "shared_vocabulary_for_common_cases_application_specific_flavors_remain_free",
 	"organization": "patterned_after_http_status_codes_with_numeric_codes_alongside_names",
 	"classes": ["2xx_intentional", "3xx_redirection", "4xx_caller_reason", "5xx_provider_reason", "6xx_domain_extensions"]
 }
 ```
 
-Canonical flavors live under the `kiera.uno/null/flavor/` namespace.
+Canonical flavors live under the `puck.uno/null/flavor/` namespace.
 They are intended for ecosystem interop — application-specific flavors
 remain free-form and are not constrained to this list.
 
@@ -339,40 +339,40 @@ Classes by hundred:
 
 | Code | UNS | Meaning |
 |------|-----|---------|
-| 200 | `kiera.uno/null/flavor/explicit` | This null is the intended answer — null is correct here |
-| 301 | `kiera.uno/null/flavor/moved` | Value lives at a different UNS (target in `flavor.target`) |
-| 304 | `kiera.uno/null/flavor/not_modified` | No newer value than caller's last-seen |
-| 400 | `kiera.uno/null/flavor/bad_request` | Caller asked for something malformed |
-| 401 | `kiera.uno/null/flavor/unauthorized` | Auth required and not provided |
-| 403 | `kiera.uno/null/flavor/forbidden` | Auth provided but insufficient |
-| 404 | `kiera.uno/null/flavor/not_found` | No value at this address |
-| 408 | `kiera.uno/null/flavor/timeout` | Operation exceeded its time bound |
-| 409 | `kiera.uno/null/flavor/conflict` | Concurrent state prevents the answer |
-| 410 | `kiera.uno/null/flavor/gone` | Used to exist; was permanently removed |
-| 423 | `kiera.uno/null/flavor/locked` | Resource is locked by another holder |
-| 429 | `kiera.uno/null/flavor/rate_limited` | Too many requests in window |
-| 500 | `kiera.uno/null/flavor/internal_error` | Provider failed unexpectedly |
-| 501 | `kiera.uno/null/flavor/not_implemented` | Operation not supported by this provider |
-| 502 | `kiera.uno/null/flavor/bad_gateway` | Upstream provider returned an error |
-| 503 | `kiera.uno/null/flavor/unavailable` | Provider temporarily can't answer |
-| 504 | `kiera.uno/null/flavor/gateway_timeout` | Upstream provider didn't respond in time |
-| 507 | `kiera.uno/null/flavor/insufficient_storage` | No room to fulfill |
-| 508 | `kiera.uno/null/flavor/loop_detected` | Resolution cycled |
-| 600 | `kiera.uno/null/flavor/destroyed` | Object's `destroy` was called (lifecycle) |
-| 601 | `kiera.uno/null/flavor/not_applicable` | No proper value can apply (HL7 carryover) |
-| 602 | `kiera.uno/null/flavor/unknown` | Value exists but is not known (HL7 carryover) |
-| 603 | `kiera.uno/null/flavor/masked` | Value exists but is withheld (HL7 carryover) |
-| 604 | `kiera.uno/null/flavor/not_set` | Field was never assigned |
-| 605 | `kiera.uno/null/flavor/pending` | Not yet computed (lazy / async / in-flight) |
-| 606 | `kiera.uno/null/flavor/cancelled` | Operation was explicitly cancelled |
-| 607 | `kiera.uno/null/flavor/declined` | Handler chose not to process (pass-to-next pattern) |
-| 608 | `kiera.uno/null/flavor/disconnected` | Connection lost |
+| 200 | `puck.uno/null/flavor/explicit` | This null is the intended answer — null is correct here |
+| 301 | `puck.uno/null/flavor/moved` | Value lives at a different UNS (target in `flavor.target`) |
+| 304 | `puck.uno/null/flavor/not_modified` | No newer value than caller's last-seen |
+| 400 | `puck.uno/null/flavor/bad_request` | Caller asked for something malformed |
+| 401 | `puck.uno/null/flavor/unauthorized` | Auth required and not provided |
+| 403 | `puck.uno/null/flavor/forbidden` | Auth provided but insufficient |
+| 404 | `puck.uno/null/flavor/not_found` | No value at this address |
+| 408 | `puck.uno/null/flavor/timeout` | Operation exceeded its time bound |
+| 409 | `puck.uno/null/flavor/conflict` | Concurrent state prevents the answer |
+| 410 | `puck.uno/null/flavor/gone` | Used to exist; was permanently removed |
+| 423 | `puck.uno/null/flavor/locked` | Resource is locked by another holder |
+| 429 | `puck.uno/null/flavor/rate_limited` | Too many requests in window |
+| 500 | `puck.uno/null/flavor/internal_error` | Provider failed unexpectedly |
+| 501 | `puck.uno/null/flavor/not_implemented` | Operation not supported by this provider |
+| 502 | `puck.uno/null/flavor/bad_gateway` | Upstream provider returned an error |
+| 503 | `puck.uno/null/flavor/unavailable` | Provider temporarily can't answer |
+| 504 | `puck.uno/null/flavor/gateway_timeout` | Upstream provider didn't respond in time |
+| 507 | `puck.uno/null/flavor/insufficient_storage` | No room to fulfill |
+| 508 | `puck.uno/null/flavor/loop_detected` | Resolution cycled |
+| 600 | `puck.uno/null/flavor/destroyed` | Object's `destroy` was called (lifecycle) |
+| 601 | `puck.uno/null/flavor/not_applicable` | No proper value can apply (HL7 carryover) |
+| 602 | `puck.uno/null/flavor/unknown` | Value exists but is not known (HL7 carryover) |
+| 603 | `puck.uno/null/flavor/masked` | Value exists but is withheld (HL7 carryover) |
+| 604 | `puck.uno/null/flavor/not_set` | Field was never assigned |
+| 605 | `puck.uno/null/flavor/pending` | Not yet computed (lazy / async / in-flight) |
+| 606 | `puck.uno/null/flavor/cancelled` | Operation was explicitly cancelled |
+| 607 | `puck.uno/null/flavor/declined` | Handler chose not to process (pass-to-next pattern) |
+| 608 | `puck.uno/null/flavor/disconnected` | Connection lost |
 
 Each canonical flavor exposes its code via `flavor.code` and its class
 prefix via `flavor.class`:
 
 ```
-$x.flavor                # kiera.uno/null/flavor/not_found
+$x.flavor                # puck.uno/null/flavor/not_found
 $x.flavor.code           # 404
 $x.flavor.class          # '4xx'
 ```
@@ -414,9 +414,9 @@ nulls by default. Add a flavor when:
 - Diagnostic context will be needed at a higher layer (logging,
   monitoring, debugging across role boundaries).
 
-Many cases don't qualify. `%kiera` returning a plain null when its
+Many cases don't qualify. `%puck` returning a plain null when its
 chain slot is empty is an example: there's nothing for callers to
-distinguish ("no kiera here" is the whole story; no further branch
+distinguish ("no puck here" is the whole story; no further branch
 is implied).
 
 <a id="flavor-propagation"></a>
@@ -463,7 +463,7 @@ end
 ```
 vibecode: {
 	"section": "use_cases",
-	"role": "shows where null flavors are most useful in the Kiera ecoverse"
+	"role": "shows where null flavors are most useful in the Puck ecoverse"
 }
 ```
 
@@ -517,13 +517,13 @@ bucket:
     {
         "agent_response": null,
         "user_status":   {"[uuid-1]": true, "flavor": "declined_to_answer"},
-        "device_reading": {"[uuid-2]": true, "flavor": "kiera.uno/null/timeout"}
+        "device_reading": {"[uuid-2]": true, "flavor": "puck.uno/null/timeout"}
     }
 
 custom_classes:
     {
-        "[uuid-1]": "kiera.uno/null",
-        "[uuid-2]": "kiera.uno/null"
+        "[uuid-1]": "puck.uno/null",
+        "[uuid-2]": "puck.uno/null"
     }
 ```
 
@@ -553,7 +553,7 @@ vibecode: {
 }
 ```
 
-A flavored null is a `kiera.uno/null` instance with a populated field. It
+A flavored null is a `puck.uno/null` instance with a populated field. It
 participates in the role model like any other value (see
 [roles.md](../roles.md)): the null has an owning role (from the role of
 the code that created it) and a flavor. The two are independent — flavor

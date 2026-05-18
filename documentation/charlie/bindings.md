@@ -15,7 +15,7 @@ That seal is a load-bearing security property — without it,
 untrusted code could escape the Charlie sandbox into arbitrary Lua
 and from there into the host process.
 
-But Kiera's framework needs Lua-backed functionality everywhere:
+But Puck's framework needs Lua-backed functionality everywhere:
 HTTP, filesystem, JSON, SQLite, crypto, markup parsing, etc. The
 question is how user-level Charlie classes (Uma, mikobase, Sinatra,
 etc.) get to use these Lua libraries without breaking the seal.
@@ -79,11 +79,11 @@ The flow:
 <a id="naming-convention"></a>
 ## 4 Naming convention
 
-Bindings live under `kiera.uno/binding/...`:
+Bindings live under `puck.uno/binding/...`:
 
-- `kiera.uno/binding/http`
-- `kiera.uno/binding/fs`
-- `kiera.uno/binding/json`
+- `puck.uno/binding/http`
+- `puck.uno/binding/fs`
+- `puck.uno/binding/json`
 - etc.
 
 Named after the **capability**, not the implementation. The
@@ -99,33 +99,33 @@ Every engine ships with this baseline set:
 
 | Binding | Purpose | Backing |
 |---|---|---|
-| `kiera.uno/binding/http` | HTTP client + server | libcurl + libmicrohttpd (or similar) |
-| `kiera.uno/binding/fs` | Filesystem operations including `flock`/`fcntl` locking | Lua `io` + LuaFileSystem or similar |
-| `kiera.uno/binding/json` | Parse/serialize JSON | lua-cjson or similar |
-| `kiera.uno/binding/sqlite` | SQLite driver (used by mikobase) | LuaSQLite3 or similar |
-| `kiera.uno/binding/markup` | HTML + XML parsing/serialization | gumbo bindings or similar |
-| `kiera.uno/binding/fork` | Process spawning, IPC, signals | luaposix or similar |
-| `kiera.uno/binding/crypto` | Cryptographic primitives — hashing, signing, secure random, encryption | luaossl or similar |
-| `kiera.uno/binding/time` | Clock, timestamp parsing/formatting, timezone math | OS time + Lua wrappers |
+| `puck.uno/binding/http` | HTTP client + server | libcurl + libmicrohttpd (or similar) |
+| `puck.uno/binding/fs` | Filesystem operations including `flock`/`fcntl` locking | Lua `io` + LuaFileSystem or similar |
+| `puck.uno/binding/json` | Parse/serialize JSON | lua-cjson or similar |
+| `puck.uno/binding/sqlite` | SQLite driver (used by mikobase) | LuaSQLite3 or similar |
+| `puck.uno/binding/markup` | HTML + XML parsing/serialization | gumbo bindings or similar |
+| `puck.uno/binding/fork` | Process spawning, IPC, signals | luaposix or similar |
+| `puck.uno/binding/crypto` | Cryptographic primitives — hashing, signing, secure random, encryption | luaossl or similar |
+| `puck.uno/binding/time` | Clock, timestamp parsing/formatting, timezone math | OS time + Lua wrappers |
 
 Probably ship (still TBD):
 
 | Binding | Purpose |
 |---|---|
-| `kiera.uno/binding/compress` | gzip/zlib (HTTP content encoding, log compression) |
-| `kiera.uno/binding/encoding` | base64, hex, URL encoding, UTF-8 utilities |
+| `puck.uno/binding/compress` | gzip/zlib (HTTP content encoding, log compression) |
+| `puck.uno/binding/encoding` | base64, hex, URL encoding, UTF-8 utilities |
 
 <a id="http-client-is-non-negotiable"></a>
 ### 5.1 HTTP client is non-negotiable
 
-Kiera's remote-object IPC depends on HTTP client. Every engine
-needs this binding — without it, `%kiera` lookups against remote
+Puck's remote-object IPC depends on HTTP client. Every engine
+needs this binding — without it, `%puck` lookups against remote
 objects don't work. It's not optional.
 
 <a id="filesystem-includes-locking"></a>
 ### 5.2 Filesystem includes locking
 
-`kiera.uno/binding/fs` must include POSIX-style file locking
+`puck.uno/binding/fs` must include POSIX-style file locking
 (`flock`/`fcntl`). Jasmine's directory store and several other
 parts of the framework depend on it for concurrency.
 
@@ -140,7 +140,7 @@ word has been colloquially hijacked by cryptocurrency news cycles,
 but the technical meaning predates that by decades and is what's
 intended here.
 
-Kiera uses these primitives for:
+Puck uses these primitives for:
 
 - Blockchain signing (see [blockchain.md](../blockchain.md)).
 - Mikobase file deduplication via SHA-256.
@@ -157,7 +157,7 @@ Bindings that don't ship by default but the operator can install:
 <a id="postgres-driver"></a>
 ### 6.1 Postgres driver
 
-**`kiera.uno/binding/postgres`** — Postgres driver for mikobase
+**`puck.uno/binding/postgres`** — Postgres driver for mikobase
 backends and other database needs. **Non-core but top-priority.**
 Building any real site without Postgres is going to be painful;
 expect this to be one of the first non-core bindings most
@@ -182,9 +182,9 @@ Inspired by Perl's **DBI** (Database Interface), where drivers
 (DBD::SQLite, DBD::mysql, DBD::Pg) all implement a uniform
 interface, so application code is portable across backends.
 
-**Kiera will adopt the same approach for relational drivers.** A
-common grammar for `kiera.uno/binding/sqlite`,
-`kiera.uno/binding/postgres`, and any future relational binding —
+**Puck will adopt the same approach for relational drivers.** A
+common grammar for `puck.uno/binding/sqlite`,
+`puck.uno/binding/postgres`, and any future relational binding —
 each implements the shared surface; mikobase (and other consumers)
 codes against the shared surface, not the specific driver.
 
@@ -208,7 +208,7 @@ Deferred from the initial design conversation; will be addressed
 as bindings get spec'd:
 
 - **How does a class declare its binding dependency?** Probably
-  something like `requires_binding 'kiera.uno/binding/markup'` at
+  something like `requires_binding 'puck.uno/binding/markup'` at
   class load time.
 - **What's the discovery API?** How does a deployment enumerate
   installed bindings so authors can reason about availability?

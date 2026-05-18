@@ -40,7 +40,7 @@ A Charlie engine that runs entirely in the browser unlocks:
 - **Browser REPL** — a single page that lets someone type Charlie at a
   prompt and see results.
 - **Zero-install marketing demos** — the lowest possible bar to "try
-  it." No CLI install, no Kiera setup; just click a link.
+  it." No CLI install, no Puck setup; just click a link.
 
 All of these align with the [[feedback_first_contact_strategy]] memory:
 let people experience Charlie before buying into the whole system.

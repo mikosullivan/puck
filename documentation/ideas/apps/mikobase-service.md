@@ -23,13 +23,13 @@ production workloads.
 <a id="why-a-free-tier"></a>
 ## 2 Why a Free Tier
 
-Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-kiera):
-**a free tier is an adoption lever for the Kiera ecoverse.**
+Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-puck):
+**a free tier is an adoption lever for the Puck ecoverse.**
 
 Mikobase by itself is just a database. To get someone to use it,
 they need a frictionless way to *try* it. A free hosted instance
 removes the "set up a server first" barrier. Someone curious about
-Kiera can have a working mikobase in five minutes, write some
+Puck can have a working mikobase in five minutes, write some
 data, and see what the API feels like — without committing
 anything.
 
@@ -82,18 +82,18 @@ products.** A customer of the logging service could plausibly get
 direct mikobase access to their log data as part of their plan —
 or sign up for both products with a single account.
 
-<a id="with-kiera-adoption"></a>
-### 4.2 With Kiera adoption
+<a id="with-puck-adoption"></a>
+### 4.2 With Puck adoption
 
-Every Kiera tutorial, demo, and example needs a place to put
+Every Puck tutorial, demo, and example needs a place to put
 data. A free mikobase service is the obvious answer:
-"`%kiera['logs.kiera.uno/mikobase'].new(account: '...')` — done."
+"`%puck['logs.puck.uno/mikobase'].new(account: '...')` — done."
 No setup, no infra, just a working data store.
 
 <a id="with-other-future-products"></a>
 ### 4.3 With other future products
 
-Any future Kiera service that needs a customer-facing database
+Any future Puck service that needs a customer-facing database
 backend (CMS-style products, structured-data services, etc.) can
 ride on the same infrastructure.
 

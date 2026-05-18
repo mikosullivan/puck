@@ -8,7 +8,7 @@ as a queue of pending POSTs rather than fire-and-forget calls. If the connection
 unavailable, the delta waits in the queue and is delivered when connectivity is restored.
 
 This is standard infrastructure. Most app platforms already provide a reliable outbound queue
-(Sidekiq, Celery, SQS, etc.) — there is no need to build one into Kiera. Use whatever
+(Sidekiq, Celery, SQS, etc.) — there is no need to build one into Puck. Use whatever
 queuing system your platform provides.
 
 The mikobase POST endpoint is safe to retry without any special server-side handling. If a

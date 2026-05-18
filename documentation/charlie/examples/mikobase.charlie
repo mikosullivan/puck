@@ -9,8 +9,8 @@
     "q0 update by primary key",
     "hot connection — mutations auto-persist without explicit save",
     "listen — event hook on after_save",
-    "kiera.uno/mikobase/http — HTTP server exposing the mikobase",
-    "kiera.uno/mikobase/http.connect — remote HTTP client with hot:true"
+    "puck.uno/mikobase/http — HTTP server exposing the mikobase",
+    "puck.uno/mikobase/http.connect — remote HTTP client with hot:true"
   ]
 }
 EOF
@@ -22,7 +22,7 @@ EOF
 }
 EOF
 
-$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db')
+$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db')
 
 %vibecode <<EOF
 {
@@ -94,7 +94,7 @@ $mikobase.q0({
 }
 EOF
 
-$hot_hive = %kiera['kiera.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
+$hot_hive = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
 
 %vibecode <<EOF
 {
@@ -136,11 +136,11 @@ end
 %vibecode <<EOF
 {
   "purpose": "Expose the mikobase over HTTP using Unix domain socket with peer authentication",
-  "note":    "kiera.uno/mikobase/http wraps a mikobase and serves it over HTTP; socket path and auth method are required; peer auth uses OS-level Unix socket credentials"
+  "note":    "puck.uno/mikobase/http wraps a mikobase and serves it over HTTP; socket path and auth method are required; peer auth uses OS-level Unix socket credentials"
 }
 EOF
 
-$server = %kiera['kiera.uno/mikobase/http'].new(
+$server = %puck['puck.uno/mikobase/http'].new(
     mikobase:   $mikobase,
     socket: '/var/run/myhive.sock',
     auth:   :peer
@@ -150,11 +150,11 @@ $server.start
 %vibecode <<EOF
 {
   "purpose": "Connect to a remote mikobase over HTTP — hot client connection",
-  "note":    "kiera.uno/mikobase/http.connect is the client-side counterpart to .new; hot:true means fetched records are live; auth:peer uses Unix socket credentials for authentication"
+  "note":    "puck.uno/mikobase/http.connect is the client-side counterpart to .new; hot:true means fetched records are live; auth:peer uses Unix socket credentials for authentication"
 }
 EOF
 
-$remote = %kiera['kiera.uno/mikobase/http'].connect(
+$remote = %puck['puck.uno/mikobase/http'].connect(
     socket: '/var/run/myhive.sock',
     auth:   :peer,
     hot:    true

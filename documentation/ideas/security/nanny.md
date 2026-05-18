@@ -142,7 +142,7 @@ threading anything through signatures.
 <a id="option-b-a-class"></a>
 ### 3.2 Option B: A class
 
-`kiera.uno/nanny` — a type you can instantiate and attach to
+`puck.uno/nanny` — a type you can instantiate and attach to
 objects, chains, or applications. Each instance carries its own set
 of silenced warnings. Useful if different parts of the program
 should have different nanny tolerances (production stricter than
@@ -159,7 +159,7 @@ their owning roles) can install their own.
 ### 3.4 Option D: Some hybrid
 
 The most likely shape — `%nanny` for ambient access, backed by a
-`kiera.uno/nanny` class so it can be instantiated, with sensible
+`puck.uno/nanny` class so it can be instantiated, with sensible
 defaults that fall through to a system-wide nanny.
 
 ---
@@ -196,7 +196,7 @@ A few benefits a first-class nanny could give us:
   wipes refresh it)? Object-scoped (so each object carries its
   own)? Both, with override semantics?
 - **How are warnings named?** Strings (`"no-writers"`)? Structured
-  identifiers like Kiera UNS-style? Per-feature enums?
+  identifiers like Puck UNS-style? Per-feature enums?
 - **How are warnings silenced?** Per-call (`no_writers_ok: true` at
   construction)? Per-instance (`$log.silence("no-writers")`)?
   Per-chain (`%nanny.silence(...)`)? Per-role?

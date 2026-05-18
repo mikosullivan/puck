@@ -6,17 +6,17 @@
 ~~~json
 {"vibecode": {
 	"section": "what_is_this",
-	"role": "introduces the Kiera ecoverse organized around its three core packages",
-	"key_concepts": ["Kiera_ecoverse", "Kiera_protocol", "Charlie", "Mikobase"]
+	"role": "introduces the Puck ecoverse organized around its three core packages",
+	"key_concepts": ["Puck_ecoverse", "Puck_protocol", "Charlie", "Mikobase"]
 }}
 ~~~
 
-This project is the **Kiera ecoverse** — a suite of interconnected
+This project is the **Puck ecoverse** — a suite of interconnected
 software for storing, querying, and programming with objects across
 different languages and systems. The ecoverse is organized around
 **three core packages**:
 
-- **Kiera** — the object protocol (UNS-addressed remote objects)
+- **Puck** — the object protocol (UNS-addressed remote objects)
 - **Charlie** — the programming language
 - **Mikobase** — the live object store
 
@@ -27,24 +27,24 @@ the pieces fit together at runtime.
 
 ---
 
-<a id="kiera"></a>
-## 2 Kiera
+<a id="puck"></a>
+## 2 Puck
 
 ~~~json
 {"vibecode": {
-	"section": "kiera_package",
-	"role": "describes the Kiera protocol and its features: UNS, %kiera lookup and call, version window, library resolution, blockchain",
-	"key_concepts": ["object_protocol", "UNS", "kiera_lookup", "remote_method_invocation",
-		"version_window", "library_resolution_through_kiera", "blockchain_identity"]
+	"section": "puck_package",
+	"role": "describes the Puck protocol and its features: UNS, %puck lookup and call, version window, library resolution, blockchain",
+	"key_concepts": ["object_protocol", "UNS", "puck_lookup", "remote_method_invocation",
+		"version_window", "library_resolution_through_puck", "blockchain_identity"]
 }}
 ~~~
 
-Kiera is a **protocol for working with objects across languages and
+Puck is a **protocol for working with objects across languages and
 systems**. It gives every object in the ecoverse a global address (a
 UNS) and a uniform way to retrieve, query, and invoke methods on
 objects regardless of where they physically live.
 
-See [kiera.md](kiera/kiera.md) for the full protocol spec.
+See [puck.md](puck/puck.md) for the full protocol spec.
 
 <a id="features"></a>
 ### 2.1 Features
@@ -52,28 +52,28 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
 - **UNS (Universal Namespace).** Every class and well-known object has
   a URL-shaped global address — your domain gives you a unique
   namespace (`foo.com/character`); built-ins live under
-  `kiera.uno/...`. UNS is naming/identity, not type hierarchy:
-  `kiera.uno/touchstone/error/x` is not a subclass of
-  `kiera.uno/error/x` unless explicitly declared.
-- **`%kiera[UNS]` lookup.** Charlie code retrieves objects by UNS:
-  `%kiera['foo.com/character']`. The kiera (the resolver object)
+  `puck.uno/...`. UNS is naming/identity, not type hierarchy:
+  `puck.uno/touchstone/error/x` is not a subclass of
+  `puck.uno/error/x` unless explicitly declared.
+- **`%puck[UNS]` lookup.** Charlie code retrieves objects by UNS:
+  `%puck['foo.com/character']`. The puck (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
   null.
-- **`%kiera.call` remote method invocation.** Explicit cross-process /
+- **`%puck.call` remote method invocation.** Explicit cross-process /
   cross-host method calls with `%chain` forwarded automatically and a
   defined error model (target-not-found, transport, auth, propagated
   remote exceptions).
-- **Version window.** Each kiera carries an immutable `[lower, upper]`
+- **Version window.** Each puck carries an immutable `[lower, upper]`
   timestamp window that bounds which versions of an object are
-  eligible to be returned. Derived kieras can narrow the window
+  eligible to be returned. Derived pucks can narrow the window
   (one-way ratchet); you can't broaden it. Enables reproducible
   builds and historical queries.
 - **Libraries are cached, not installed.** Charlie has no install
   step, no lockfile, no manifest. Libraries are referenced by UNS in
   source code and resolved on demand through the provider chain.
   Cached locally on first use; subsequent references hit the cache.
-- **Blockchain identity and provenance.** The Kiera blockchain
+- **Blockchain identity and provenance.** The Puck blockchain
   provides cryptographically anchored identity and signed
   attestations for library versions — see
   [blockchain.md](blockchain.md).
@@ -206,7 +206,7 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 <a id="no-nanny-code"></a>
 ### 5.1 No nanny code
 
-Kiera follows a principle borrowed from Perl: **the system gives you
+Puck follows a principle borrowed from Perl: **the system gives you
 enough rope to hang yourself.** When the system declines to do
 something by default, there are ways to override it if you choose:
 
@@ -222,7 +222,7 @@ without giving them a way through, that's nanny code.
 <a id="reserved-pass-through-fields"></a>
 ### 5.2 Reserved pass-through fields
 
-Every Kieraverse object has four reserved keys that travel with it
+Every Puckverse object has four reserved keys that travel with it
 silently — never stripped, never modified by engines, firewalls, or
 network transport:
 
@@ -243,7 +243,7 @@ See [vibecode.md](ecoverse/vibecode.md).
 ~~~json
 {"vibecode": {
 	"section": "implementation_status",
-	"role": "tracks the development status of each Kiera ecoverse component",
+	"role": "tracks the development status of each Puck ecoverse component",
 	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0",
 		"Charlie", "v01_hello_world_shipped"]
 }}
@@ -258,7 +258,7 @@ See [vibecode.md](ecoverse/vibecode.md).
 | Q0 query language | Designed; will be implemented as SQL passthrough on the SQLite engines and against the JSON structure on the worldlet engine. |
 | Worldlet (packaged mikobase) | Format spec exists; import/export to be implemented alongside the Mikobase engines. |
 | Forking (opt-in Charlie feature) | Early design; not in active development. |
-| Kiera protocol | Early design. |
+| Puck protocol | Early design. |
 
 ---
 
@@ -287,7 +287,7 @@ Mikobase is backed by SQLite (memory or file) — or directly on a worldlet
         ↓
 Queries expressed in Q0 (JSON)
         ↓
-Remote objects resolved through Kiera (UNS → object)
+Remote objects resolved through Puck (UNS → object)
 ```
 
 When the opt-in forking feature is enabled, multiple Charlie

@@ -1,7 +1,7 @@
 # Location-Based Reminder App (idea)
 
 **Status:** future idea, noted in passing. A small consumer app
-concept that would exercise `kiera.uno/geo` in ways the driver app
+concept that would exercise `puck.uno/geo` in ways the driver app
 doesn't.
 
 ---
@@ -20,8 +20,8 @@ the milk, marks the errand done.
 
 ---
 
-<a id="what-it-would-use-from-kieraunogeo"></a>
-## 2 What it would use from `kiera.uno/geo`
+<a id="what-it-would-use-from-puckunogeo"></a>
+## 2 What it would use from `puck.uno/geo`
 
 - **Continuous location monitoring** in the app (using the browser's
   Geolocation API).

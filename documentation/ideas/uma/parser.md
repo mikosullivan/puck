@@ -298,7 +298,7 @@ needs to consume schemas, regardless of how they're written.
 ## 7 Error handling
 
 Malformed input raises a flag rather than attempting recovery.
-Specific flag classes (all under `kiera.uno/uma/error/`):
+Specific flag classes (all under `puck.uno/uma/error/`):
 
 - `unbalanced_tag` — close tag without matching open, or open
   tag without close at EOF.

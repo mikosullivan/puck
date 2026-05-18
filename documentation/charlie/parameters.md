@@ -285,7 +285,7 @@ zero-argument block before the call. Inside the function, `.call`
 evaluates it:
 
 ```
-class 'kiera.uno/ander'
+class 'puck.uno/ander'
     function &evaluate($left:  {lazy: true},
                        $right: {lazy: true}) do
         if (! $left.call)

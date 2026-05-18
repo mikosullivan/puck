@@ -16,7 +16,7 @@ vibecode: {
 	"prefix": "%",
 	"availability": "always_available_without_import",
 	"user_defined": false,
-	"methods": ["%chain", "%engine", "%forks", "%tmp", "%kiera", "%call", "%bucket",
+	"methods": ["%chain", "%engine", "%forks", "%tmp", "%puck", "%call", "%bucket",
 		"%self", "%scope", "%process", "%now",
 		"%document", "%vibecode", "%role", "%utils", "%stdout", "%stderr", "%sys"]
 }
@@ -28,12 +28,12 @@ vibecode: {
 | `%engine` | Returns the engine object — the gateway to host-injected resources. The method only exists in the outermost scope; functions and closures cannot see it. The engine object itself is non-storable: it can be used directly but cannot be assigned to a variable. |
 | `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
 | `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
-| `%kiera` | Returns the current kiera object (scoped via `%chain`). The kiera resolves UNS addresses through its configured getters. `%kiera['foo.com/bar']` is a shorthand for the kiera's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no kiera is in the chain. See [kiera.md](../kiera/kiera.md) for the full kiera-object model. |
+| `%puck` | Returns the current puck object (scoped via `%chain`). The puck resolves UNS addresses through its configured getters. `%puck['foo.com/bar']` is a shorthand for the puck's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no puck is in the chain. See [puck.md](../puck/puck.md) for the full puck-object model. |
 | `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. |
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |
 | `%self` | The current object instance. `self` (bare word) is shorthand. |
 | `%scope` | The current lexical scope. Holds variables and is used for bare word command (bwc) resolution. `$foo` is shorthand for `%scope['foo']`. |
-| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises a `kiera.uno/abort` immediately (no unwind, engine terminates). Under the role model, abort behavior is governed by the alarm rules in [roles.md](roles.md). |
+| `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises a `puck.uno/abort` immediately (no unwind, engine terminates). Under the role model, abort behavior is governed by the alarm rules in [roles.md](roles.md). |
 | `%now` | Returns the current timestamp object. The returned timestamp is owned by the engine's `clock` role. |
 | `%document` | Saves a documentation block as a statement in the CharlieJSON command array. Takes a MIME type (`text/plain`, `text/markdown`, `text/vibecode`, etc.) and a heredoc or string. Shorthand type names: `text`, `markdown`, `vibecode`. All documentation rules (storage, `side` field, attachment TBD) apply regardless of type. |
 | `%vibecode` | Shorthand for `%document 'vibecode' <<EOF...`, which is shorthand for `%document 'text/vibecode' <<EOF...`. Saves an AI-readable JSON documentation block. An optional `side` field indicates attachment intent: `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. **Consumer effect of `side` is TBD** — the field is recorded in CharlieJSON for future use; no current consumer reads it. Reserved for tooling that wants to know which half of an assignment a vibecode block describes. |
@@ -55,7 +55,7 @@ vibecode: {
 		"$foo": "%scope['foo']",
 		"@foo": "%bucket['foo']",
 		"self": "%self",
-		"%['foo.com/bar']": "%kiera['foo.com/bar']",
+		"%['foo.com/bar']": "%puck['foo.com/bar']",
 		"%vibecode <<EOF": "%document 'vibecode' <<EOF",
 		"%document 'text' <<EOF": "%document 'text/plain' <<EOF",
 		"%document 'markdown' <<EOF": "%document 'text/markdown' <<EOF"
@@ -71,12 +71,12 @@ written:
 | `$foo` | `%scope['foo']` |
 | `@foo` | `%bucket['foo']` |
 | `self` | `%self` |
-| `%['foo.com/bar']` | `%kiera['foo.com/bar']` |
+| `%['foo.com/bar']` | `%puck['foo.com/bar']` |
 | `%vibecode <<EOF...EOF` | `%document 'vibecode' <<EOF...EOF` → `%document 'text/vibecode' <<EOF...EOF` |
 | `%document 'text' <<EOF...EOF` | `%document 'text/plain' <<EOF...EOF` |
 | `%document 'markdown' <<EOF...EOF` | `%document 'text/markdown' <<EOF...EOF` |
 
-The `%[...]` form is sugar for `%kiera[...]`. Kiera lookup is by far
+The `%[...]` form is sugar for `%puck[...]`. Puck lookup is by far
 the most-typed system call, and no other system method uses
 bracket-indexing syntax, so a bare `%[...]` is unambiguous. Both
 forms are valid; the long form is fine for clarity, the short form
@@ -198,20 +198,20 @@ is granted.
 Wraps a block with a time limit. When the deadline hits, the
 timeout fires a **two-stage** flag sequence:
 
-1. **Inside the block:** a `kiera.uno/timeout_handle`
+1. **Inside the block:** a `puck.uno/timeout_handle`
    is raised. It does not unwind — `begin`/`ensure` blocks inside
    the timeout do not run, no Charlie-level cleanup is attempted
    inside. It bubbles up to the `%utils.timeout` boundary,
    ignoring all user-level `catch` and `ensure` along the way.
 2. **At the boundary:** the timeout mechanism intercepts the
    `timeout_handle` and re-raises a
-   `kiera.uno/error/timeout` in the
+   `puck.uno/error/timeout` in the
    caller's scope. This is a normal catchable error — the caller
    can `catch` it (or any ancestor like `exception` or `error`)
    and handle it cleanly.
 
 ```charlie
-catch('kiera.uno/error/timeout')
+catch('puck.uno/error/timeout')
     %utils.timeout(10) do
         # work that must finish within 10 seconds
     end
@@ -238,13 +238,13 @@ end
 ```
 
 With `unwind: true`, the two-stage mechanism collapses to one:
-when the deadline fires, a `kiera.uno/error/timeout`
+when the deadline fires, a `puck.uno/error/timeout`
 is raised **directly inside the block**, unwinds the stack like
 any normal exception, runs `begin`/`ensure`, and propagates
 outward. No `timeout_handle` is involved.
 
 **This is not a security boundary.** Code inside the block can
-`catch('kiera.uno/error/timeout')` and keep running.
+`catch('puck.uno/error/timeout')` and keep running.
 That's the point — cooperative code is trusted to honor the
 timeout. The default (`unwind: false`, or omitted) is the
 security-boundary form, with `timeout_handle` doing the
@@ -336,8 +336,8 @@ JSON parsing helpers. Two variants:
 ### 6.1 `%utils.json.parse(string)`
 
 Strict parser. Returns the parsed value (hash, array, string,
-number, boolean, or `kiera.uno/null`) on success. Raises
-`kiera.uno/error/json_parse` on bad syntax.
+number, boolean, or `puck.uno/null`) on success. Raises
+`puck.uno/error/json_parse` on bad syntax.
 
 ```charlie
 $data = %utils.json.parse('{"name": "Picard", "rank": "Captain"}')

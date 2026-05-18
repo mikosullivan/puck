@@ -9,17 +9,17 @@ found so far.
 <a id="fixed-during-the-sweep"></a>
 ## 1 Fixed during the sweep
 
-- **`geolocation.md`** — `kiera.uno/error/unreachable` →
-  `kiera.uno/exception/error/unreachable`. (Stale short-form of
-  the error class; canonical form is in the `kiera.uno/exception/`
+- **`geolocation.md`** — `puck.uno/error/unreachable` →
+  `puck.uno/exception/error/unreachable`. (Stale short-form of
+  the error class; canonical form is in the `puck.uno/exception/`
   hierarchy.)
 - **`ideas/uns-required-when.md`** — two fixes:
-  - `kiera.uno/error` → `kiera.uno/exception/error`.
-  - The Dogberry-as-framework references (`kiera.uno/dogberry/page`,
-    `kiera.uno/dogberry/sinatra`) updated to the new standalone
-    model (`kiera.uno/robinson/page`, `kiera.uno/sinatra`).
+  - `puck.uno/error` → `puck.uno/exception/error`.
+  - The Dogberry-as-framework references (`puck.uno/dogberry/page`,
+    `puck.uno/dogberry/sinatra`) updated to the new standalone
+    model (`puck.uno/robinson/page`, `puck.uno/sinatra`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
-  kiera-object cutoff window. Cross-reference to [kiera.md](../kiera/kiera.md)
+  puck-object cutoff window. Cross-reference to [puck.md](../puck/puck.md)
   added alongside [versioning.md](../charlie/versioning.md).
 
 ---
@@ -31,7 +31,7 @@ found so far.
 ### 2.1 Better name needed for Xeme's `enterprise` field
 
 The `enterprise` reserved field in
-[Xeme](../charlie/bryton/xeme/xeme.md) (a Kiera-wide convention for
+[Xeme](../charlie/bryton/xeme/xeme.md) (a Puck-wide convention for
 organization-level pass-through data — licensing, audit hooks,
 deployment markers, etc.) needs a better name. The word
 "enterprise" carries enterprise-software/sales connotations the
@@ -46,10 +46,10 @@ surfaces.
 <a id="ideasmarinamd-uses-the-old-error-hierarchy"></a>
 ### 2.2 `ideas/marina.md` uses the old error hierarchy
 
-The file defines `kiera.uno/error` as a subclass of
-`kiera.uno/exception` (lines 18, 167, 172–178). Under the current
-unified-flag model, errors are `kiera.uno/exception/error`, with
-no separate `kiera.uno/error` top-level class.
+The file defines `puck.uno/error` as a subclass of
+`puck.uno/exception` (lines 18, 167, 172–178). Under the current
+unified-flag model, errors are `puck.uno/exception/error`, with
+no separate `puck.uno/error` top-level class.
 
 **Uncertainty:** marina.md is filed under `ideas/`, so the class
 hierarchy in it may be intentional historical context, or it may
@@ -74,7 +74,7 @@ consistent with recent design decisions:
 - **Deleted `hosted-logging-service.md`** — no broken links.
 - **Dogberry-as-framework framing** — the http-middleware/ docs
   correctly reflect Sinatra and Robinson as standalone servers.
-- **`%[...]` shorthand for `%kiera[...]`** — properly documented
+- **`%[...]` shorthand for `%puck[...]`** — properly documented
   in system-methods.md.
 - **`%chain.log` and `%stdout`/`%stderr` always-present** — Jasmine
   doc correctly reflects no-guard-needed model.

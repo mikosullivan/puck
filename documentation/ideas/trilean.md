@@ -8,7 +8,7 @@
 
 ---
 
-`kiera.uno/trilean` is the home for **three-valued logic** in Charlie. It provides
+`puck.uno/trilean` is the home for **three-valued logic** in Charlie. It provides
 the standard operators (`and`, `or`, `not`, `nand`, `nor`, `xor`, `xnor`,
 `implies`, `eq`) under a model where any operand can be `null` ("unknown") in
 addition to `true` and `false`.
@@ -93,8 +93,8 @@ vibecode: {
 }
 ```
 
-All operators are static methods on the `kiera.uno/trilean` class, called as
-`%kiera['trilean'].<op>(...)`.
+All operators are static methods on the `puck.uno/trilean` class, called as
+`%puck['trilean'].<op>(...)`.
 
 <a id="nota"></a>
 ### 3.1 `not(a)`
@@ -346,11 +346,11 @@ Constructing trilean expressions:
 
 ```
 %vibecode <<~VIBECODE
-{"class":"kiera.uno/dogberry/page","method":"process","purpose":"shows trilean
+{"class":"puck.uno/dogberry/page","method":"process","purpose":"shows trilean
 operators in a representative scenario","args":["request","response"]}
 VIBECODE
 
-$tri = %kiera['trilean']
+$tri = %puck['trilean']
 
 $has_consent = %db.fetch_consent($user)        # true, false, or null (unknown)
 $is_minor    = %db.fetch_is_minor($user)       # true, false, or null
@@ -414,5 +414,5 @@ The implementation lives at [code/charlie/stdlib/trilean.charlie](../../../code/
 - **`eq` is null-poisoning.** Never use `eq(x, null)` to check for null; use
   `$x.object.null?`. This is the same trap SQL programmers learn the hard way.
 - **No bare-word `tri_and` / `tri_or` aliases.** Keeping the operations
-  namespaced under `kiera.uno/trilean` avoids polluting the bare-word namespace
+  namespaced under `puck.uno/trilean` avoids polluting the bare-word namespace
   and makes their three-valued semantics explicit at every call site.

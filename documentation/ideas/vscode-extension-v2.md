@@ -30,7 +30,7 @@ vibecode: {
     "v1_constraint": "line_based_regex_no_parser",
     "v2_options": ["typescript_charlie_parser_embedded",
                     "language_server_protocol_with_charlie_server"],
-    "tradeoff": "lsp_unlocks_more_features_but_requires_a_running_charlie_capable_server_which_re_introduces_the_kiera_dependency_unless_the_server_is_also_in_typescript"
+    "tradeoff": "lsp_unlocks_more_features_but_requires_a_running_charlie_capable_server_which_re_introduces_the_puck_dependency_unless_the_server_is_also_in_typescript"
 }
 ```
 
@@ -41,7 +41,7 @@ costs:
 ### 1.1 Option A: TypeScript-based Charlie parser, still no external runtime
 
 A real Charlie parser written in TypeScript, embedded in the extension.
-Still self-contained — no external runtime, no Kiera install. Unlocks
+Still self-contained — no external runtime, no Puck install. Unlocks
 all the features that need to know about syntactic structure
 (structural re-indent, line wrapping, operator spacing with edge case
 awareness, parens-on-return-value, etc.).

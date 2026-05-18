@@ -50,9 +50,9 @@ local payload = {
     intent      = 'define-grammar',
     grammar     = {hash = 'self', version = '1.0'},
     vibecode    = {type = 'grammar', version = '1.0', signer = 'falstaff',
-                   description = 'Kiera blockchain block grammar version 1.0'},
+                   description = 'Puck blockchain block grammar version 1.0'},
     version     = '1.0',
-    description = 'Kiera blockchain block grammar version 1.0',
+    description = 'Puck blockchain block grammar version 1.0',
     inherits    = cjson.null,
     envelope    = {
         fields   = {'type', 'prev_hash', 'ts', 'signer', 'payload', 'signature'},

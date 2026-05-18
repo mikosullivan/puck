@@ -15,7 +15,7 @@ for a generalised opt-in compute payment system. Any two parties can use it: a u
 for a service by donating compute time; the recipient verifies and records the work on
 the blockchain.
 
-This is not specific to kiera.uno. Any site can offer it, accept it, or build on top of
+This is not specific to puck.uno. Any site can offer it, accept it, or build on top of
 it using a standard Charlie library.
 
 ---
@@ -43,7 +43,7 @@ it using a standard Charlie library.
   to do.
 - **Timeouts** — `%timeout` is already a first-class language feature. Mining sessions
   are naturally expressed as timed blocks.
-- **Blockchain** — already part of the Kiera ecoverse for object signing and trust. The
+- **Blockchain** — already part of the Puck ecoverse for object signing and trust. The
   same infrastructure can record and verify compute payments.
 - **Standard library** — a single well-known mining library means users recognise and
   trust the interface. Sites do not roll their own.
@@ -56,7 +56,7 @@ it using a standard Charlie library.
 <a id="use-cases"></a>
 ## 5 Use Cases
 
-- **kiera.uno services** — pay for signed object publishing by donating compute time
+- **puck.uno services** — pay for signed object publishing by donating compute time
   instead of money.
 - **Free tiers** — SaaS products offer a free tier funded by optional mining sessions.
 - **Game credits** — earn in-game currency by running a mining session.

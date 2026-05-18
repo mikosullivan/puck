@@ -47,7 +47,7 @@ A settable soft threshold:
 ```
 
 When set, the engine raises a memory-limit exception
-(`kiera.uno/error/memory_limit` or similar) when memory usage
+(`puck.uno/error/memory_limit` or similar) when memory usage
 crosses the threshold. Standard exception flow unwinds the chain,
 freeing memory along the way; handlers can catch it and turn it
 into a 503 or whatever response makes sense.

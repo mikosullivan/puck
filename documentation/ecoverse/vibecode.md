@@ -5,11 +5,11 @@
 
 vibecode: {
 	"section": "overview",
-	"role": "introduces the four reserved pass-through fields in all Kieraverse JSON objects",
+	"role": "introduces the four reserved pass-through fields in all Puckverse JSON objects",
 	"key_concepts": ["vibecode", "comment", "misc", "enterprise", "pass-through", "always_present"]
 }
 
-The Kieraverse reserves four keys in every JSON hash: `vibecode`, `comment`, `misc`, and
+The Puckverse reserves four keys in every JSON hash: `vibecode`, `comment`, `misc`, and
 `enterprise`. All four travel silently with any object — passed through transparently by
 engines, firewalls, and network transport without being stripped, validated, or modified.
 An object's schema does not need to declare them; they are always present by convention.
@@ -70,7 +70,7 @@ Other fields may be added as needed. The structure is intentionally open.
 <a id="where-it-applies"></a>
 ## 5 Where It Applies
 
-`vibecode` can appear in any JSON hash in the Kieraverse — any object, anywhere:
+`vibecode` can appear in any JSON hash in the Puckverse — any object, anywhere:
 
 - Class definitions
 - Individual methods and properties within a class

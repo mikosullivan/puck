@@ -7,7 +7,7 @@ vibecode: {"doc": "development_plan", "status": "active", "current_version":
 "vibecode_blocks"}
 ```
 
-This file is the technical development plan for Kiera. Vibecode blocks are
+This file is the technical development plan for Puck. Vibecode blocks are
 the canonical source; surrounding prose is human-readable narrative derived
 from them. When the two disagree, vibecode wins.
 
@@ -367,7 +367,7 @@ vibecode: {"version": "0.04", "codename": "charlie-with-hashes",
 
 V0.04 introduces the hash data structure. The minimum: a hash literal
 evaluates, a key lookup returns the value, and the harness observes the
-result. Order preservation is load-bearing because Kiera hashes have
+result. Order preservation is load-bearing because Puck hashes have
 significant key order (per [charliejson.md](../charlie/charliejson.md)
 "Hash key order").
 
@@ -505,7 +505,7 @@ vibecode: {"section": "testing_strategy", "model": "two_tier",
 bryton_depends_on_charlie_and_lua_but_is_tested_by_lua"}
 ```
 
-Testing in Kiera operates on two tiers, each with its own tooling and
+Testing in Puck operates on two tiers, each with its own tooling and
 its own permanent home.
 
 **Tier 1: Lua-side tests** — for the engine and other Lua-implemented
@@ -572,7 +572,7 @@ compiler, different stage.
 ## 8 Feature soft-lock
 
 ```
-vibecode: {"lock": "soft", "scope": "all_kiera_features", "rationale":
+vibecode: {"lock": "soft", "scope": "all_puck_features", "rationale":
 "prevent design accretion during implementation; defer non-essential work to V2+",
 "override": "explicit; via deliberate decision, not casual addition",
 "companion_to": ["no_bolt_on_additions"]}
@@ -610,20 +610,20 @@ not a wall — but the budget should be visible.
 
 ```
 vibecode: {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
-"sinatra", "trivet", "uma", "bryton", "jasmine", "kiera_identity",
+"sinatra", "trivet", "uma", "bryton", "jasmine", "puck_identity",
 "deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
 "external_service; charlie_client_is_thin_http", "v1_http_path":
 "sinatra_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
 "handler_implements_directly; no_declarative_role_policy"}
 ```
 
-V1 ships Kiera.uno as a deployable service. The HTTP layer that ships with
+V1 ships Puck.uno as a deployable service. The HTTP layer that ships with
 V1 is Sinatra (built on Touchstone); the V1 HTTP path is Sinatra-style
 explicit handlers. **Robinson** (the filesystem-tree page-server) is **not
-bundled with V1** — it's a library resolved through Kiera on demand, so it
+bundled with V1** — it's a library resolved through Puck on demand, so it
 can land on its own timeline without blocking V1. Programs that don't use
 Robinson never pull it in; programs that want it call
-`%['kiera.uno/robinson']` and Kiera fetches and caches it on first use.
+`%['puck.uno/robinson']` and Puck fetches and caches it on first use.
 
 Authentication is signed-request based; authorization is whatever the handler
 implements directly.
@@ -662,8 +662,8 @@ vibecode: {"approach": "walking_skeleton", "principle":
 "name": "first_uma_response", "proves":
 "trivet; uma; body_handle_to_string"}, {"v": "0.0X", "name":
 "first_signed_request", "proves":
-"kiera_identity; blockchain_api_client"}, {"v": "0.0X", "name":
-"first_deployment", "proves": "kiera_uno_hosting; ops"}, {"v": "0.0X",
+"puck_identity; blockchain_api_client"}, {"v": "0.0X", "name":
+"first_deployment", "proves": "puck_uno_hosting; ops"}, {"v": "0.0X",
 "name": "first_hosted_service", "proves":
 "service_on_stack_pattern"}], "continuous_threads": ["jasmine"]}
 ```
@@ -1027,7 +1027,7 @@ Later slices extend the lifecycle in these ways:
   handler as a host: an incoming request triggers a handler closure
   (itself CharlieJSON) to execute. Same `engine.run()`-shaped entry; the
   caller is different.
-- **Sys references** (`%stdout`, `%now`, `%role`, `%kiera`, etc.). The
+- **Sys references** (`%stdout`, `%now`, `%role`, `%puck`, etc.). The
   engine pre-populates a sys-reference table during bootstrap; user
   code reaches the objects via `{"sys": "name"}`. Each sys-referenced
   object is tagged with its owning engine role.
@@ -2603,7 +2603,7 @@ vibecode: {"permission_model": "default_restrictive_opt_in_via_flags",
 "stdin_role_plus_stdin_object", "stdout_role_plus_stdout_object",
 "stderr_role_plus_stderr_object",
 "cli_args_role_plus_argv"], "off_by_default_grant_via_flag":
-["filesystem_dirjails", "network_faucets", "env_vars", "kiera",
+["filesystem_dirjails", "network_faucets", "env_vars", "puck",
 "all_at_once_convenience"], "rationale_links":
 ["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}
 ```
@@ -2638,7 +2638,7 @@ Deno's local-script model.
 | `--allow-net=HOST[:PORT]` ⟳ | Network faucet to specific host | per-faucet role |
 | `--allow-net` | Network faucet to any host | broad `net` role |
 | `--allow-env[=NAMES]` | Env-vars faucet, optionally narrowed | `env_vars` role |
-| `--allow-kiera` | Kiera object access | `kiera` role |
+| `--allow-puck` | Puck object access | `puck` role |
 | `--allow-all` (or `-A`) | Everything above | convenience for trusted local scripts |
 
 `--allow-all` is the escape hatch for "this is my own script and I
@@ -2689,7 +2689,7 @@ To make `charlie` available as a command, the user adds the project's
 
 ```bash
 # in ~/.bashrc or ~/.zshrc
-export PATH="/path/to/kiera/working/bin:$PATH"   # replace with your local checkout path
+export PATH="/path/to/puck/working/bin:$PATH"   # replace with your local checkout path
 ```
 
 After re-sourcing the rc file (or starting a new shell),
@@ -2747,7 +2747,7 @@ future `bryton.json` setting; out of scope for V0.1).
 ```
 vibecode: {"open_questions_v00x_cli":
 ["exact_flag_syntax_long_only_vs_short_forms_equals_vs_separate_args",
-"default_for_kiera_role_off_seems_right_but_kiera_is_central",
+"default_for_puck_role_off_seems_right_but_puck_is_central",
 "determinism_flag_for_clock_and_randomizer_seed_for_test_reproducibility_v2_plus",
 "cross_platform_shebang_behavior_linux_macos_wsl",
 "whether_engine_reading_the_dot_charlie_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}
@@ -2755,9 +2755,9 @@ vibecode: {"open_questions_v00x_cli":
 
 - **Exact flag syntax.** Long-only or short forms? `--allow-fs=./`
   versus `--allow-fs ./`? Settled in this slice.
-- **Default for the `kiera` role.** Off-by-default seems right, but
-  `kiera` is so central to the platform that always-on might be more
-  first-contact-friendly. Deferred — re-examine when the kiera client
+- **Default for the `puck` role.** Off-by-default seems right, but
+  `puck` is so central to the platform that always-on might be more
+  first-contact-friendly. Deferred — re-examine when the puck client
   lands.
 - **Determinism flag for `clock`/`randomizer`** (e.g., `--seed=N`) for
   test reproducibility. V2+.

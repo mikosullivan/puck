@@ -1,34 +1,34 @@
 # HTTP Middleware
 
-Kiera covers HTTP servers in two tiers: a small set of classes that
-**ship with Kiera** (always available out of the box) and a larger
+Puck covers HTTP servers in two tiers: a small set of classes that
+**ship with Puck** (always available out of the box) and a larger
 set that are **available as libraries** — resolved on demand through
-the Kiera object model the same way any other library is, with no
+the Puck object model the same way any other library is, with no
 install step.
 
-<a id="ships-with-kiera"></a>
-### 0.1 Ships with Kiera
+<a id="ships-with-puck"></a>
+### 0.1 Ships with Puck
 
 | Class | UNS | Use case |
 |---|---|---|
-| **Touchstone** | `kiera.uno/touchstone` | Base class. Content-type defaults, Jasmine integration, shared HTTP plumbing. Sinatra (and any HTTP middleware library) inherits from it; not for direct instantiation. |
-| **Sinatra** | `kiera.uno/sinatra` | Small sites, microservices, single-file apps. Route handlers as closures, Ruby-Sinatra-style. |
+| **Touchstone** | `puck.uno/touchstone` | Base class. Content-type defaults, Jasmine integration, shared HTTP plumbing. Sinatra (and any HTTP middleware library) inherits from it; not for direct instantiation. |
+| **Sinatra** | `puck.uno/sinatra` | Small sites, microservices, single-file apps. Route handlers as closures, Ruby-Sinatra-style. |
 
-<a id="available-as-a-library-through-kiera"></a>
-### 0.2 Available as a library through Kiera
+<a id="available-as-a-library-through-puck"></a>
+### 0.2 Available as a library through Puck
 
 | Class | UNS | Use case |
 |---|---|---|
-| **Robinson** | `kiera.uno/robinson` | Filesystem-tree-served sites. Pages live as files in a directory tree; URL paths map to file paths. **Not bundled — Kiera resolves and caches it on first use** (see [kiera.md](../../kiera/kiera.md) for the resolution + caching model). |
+| **Robinson** | `puck.uno/robinson` | Filesystem-tree-served sites. Pages live as files in a directory tree; URL paths map to file paths. **Not bundled — Puck resolves and caches it on first use** (see [puck.md](../../puck/puck.md) for the resolution + caching model). |
 
 <a id="deferred"></a>
 ### 0.3 Deferred
 
 | Class | UNS | Use case |
 |---|---|---|
-| **Dogberry** | `kiera.uno/dogberry` | A more elaborate framework, planned for later releases. May turn out to be a very different sort of thing. Likely also library-resolved when it lands. |
+| **Dogberry** | `puck.uno/dogberry` | A more elaborate framework, planned for later releases. May turn out to be a very different sort of thing. Likely also library-resolved when it lands. |
 
-The point of the split: **Kiera's core stays small.** Touchstone +
+The point of the split: **Puck's core stays small.** Touchstone +
 Sinatra is enough to serve HTTP responses; everything beyond is
 opt-in via library resolution. A Charlie program that doesn't need
 Robinson never pulls Robinson in.
@@ -39,16 +39,16 @@ Robinson never pulls Robinson in.
 **No layered servers.** Sinatra and Robinson are not "handlers
 inside Dogberry" — they're standalone servers. You pick the one
 that fits your use case and use it directly. The fact that one
-ships with Kiera and the other arrives via library resolution
-doesn't change the API: both are obtained through `%kiera[...]`,
+ships with Puck and the other arrives via library resolution
+doesn't change the API: both are obtained through `%puck[...]`,
 just with different resolution paths under the hood (Sinatra is
 already in the engine's built-in table; Robinson is fetched from
 its UNS source the first time it's referenced, cached locally for
 subsequent calls).
 
 ```
-# A simple Sinatra-style app — Sinatra ships with Kiera
-$server = %['kiera.uno/sinatra'].new()
+# A simple Sinatra-style app — Sinatra ships with Puck
+$server = %['puck.uno/sinatra'].new()
 $server.get('/') do($request)
     response.new(200, {}, 'Hello world')
 end
@@ -57,8 +57,8 @@ $server.run()
 
 ```
 # A filesystem-tree-served Robinson site — Robinson is resolved
-# via Kiera on first use, then cached for subsequent runs
-$server = %['kiera.uno/robinson'].new(root: '/var/www/mysite')
+# via Puck on first use, then cached for subsequent runs
+$server = %['puck.uno/robinson'].new(root: '/var/www/mysite')
 $server.run()
 ```
 
@@ -91,7 +91,7 @@ different points in the spectrum from "ad-hoc per-route code" to
 <a id="jasmine-logging"></a>
 ### 3.1 Jasmine logging
 
-[Jasmine](../jasmine/jasmine.md) — Kiera's JSONL-based logging format — is
+[Jasmine](../jasmine/jasmine.md) — Puck's JSONL-based logging format — is
 available to **both Sinatra and Robinson**. The ambient
 `%chain.log` mechanism, the nested call-frame trees, the
 directory and webhook stores, and the wrp / detached-write modes

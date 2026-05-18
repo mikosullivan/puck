@@ -8,7 +8,7 @@ A logging format. Named after one of Miko's cats.
 ## 1 Overview
 
 Jasmine is a logging format derived from **JSONL** (JSON Lines) with
-a few tweaks specific to the Kiera ecoverse.
+a few tweaks specific to the Puck ecoverse.
 
 <a id="terminology"></a>
 ### 1.1 Terminology
@@ -216,7 +216,7 @@ Two distinct concepts:
 ### 4.1 Creating a logger
 
 ```
-$log = %['kiera.uno/jasmine'].new(dir: $some_dirjail)
+$log = %['puck.uno/jasmine'].new(dir: $some_dirjail)
 
 $log.entry do($entry)
     # %chain.log access works here if %chain.log is this logger;
@@ -326,7 +326,7 @@ exception carries.
     "uuid": "...",
     "timestamp": "...",
     "exception": {
-        "type": "kiera.uno/error/something",
+        "type": "puck.uno/error/something",
         "message": "...",
         "line": 142,
         "file": "..."
@@ -603,12 +603,12 @@ extension points; community or future work can fill them in.
 <a id="constructing-a-jasmine-log"></a>
 ### 5.1 Constructing a Jasmine log
 
-There is one class — **`kiera.uno/jasmine`** — for all Jasmine logs.
+There is one class — **`puck.uno/jasmine`** — for all Jasmine logs.
 The constructor takes keyword arguments that configure which
 store(s) the log uses. Each keyword names the kind of store:
 
 ```
-$log = %kiera['kiera.uno/jasmine'].new(dir: '/path/to/directory')
+$log = %puck['puck.uno/jasmine'].new(dir: '/path/to/directory')
 ```
 
 The example above produces **a single log object with one store** —
@@ -638,7 +638,7 @@ dropped, but the framework trusts the developer made that choice
 deliberately:
 
 ```
-$log = %kiera['kiera.uno/jasmine'].new(no_writers_ok: true)
+$log = %puck['puck.uno/jasmine'].new(no_writers_ok: true)
 # or
 $log.no_writers_ok = true
 ```

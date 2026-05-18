@@ -140,7 +140,7 @@ operations, and the documentation uses them precisely.
 
 ```
 # my-page.charlie — the file's return value is the class
-class < %kiera['kiera.uno/dogberry/page']
+class < %puck['puck.uno/dogberry/page']
     function &process($request)
         response.new(200, {content_type: 'text/html'}, '...')
     end
@@ -291,11 +291,11 @@ class '<anonymous>'
     end
 end
 
-$anon = %kiera['<anonymous>'].new
+$anon = %puck['<anonymous>'].new
 ```
 
 Formal classes (`class 'UNS' ... end`) are for objects that need:
-- A UNS name and a place in the Kieraverse
+- A UNS name and a place in the Puckverse
 - A schema (fields, types, validation)
 - Multiple instances
 - Inheritance
@@ -327,7 +327,7 @@ the lighter intent.
 ## 11 Open Questions
 
 - Can a module be assigned to a variable and passed around as an object from outside?
-- Does a module's anonymous class inherit from `kiera.uno/object` directly?
+- Does a module's anonymous class inherit from `puck.uno/object` directly?
 - Can modules be named for later reference, or are they always anonymous?
 - How does the implicit top-level module interact with `%engine` and the bootstrapping
   sequence?

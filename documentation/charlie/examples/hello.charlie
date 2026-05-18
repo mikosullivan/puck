@@ -37,7 +37,7 @@ puts($message)
 %vibecode <<EOF
 {
   "purpose": "Boolean and null literals",
-  "note":    "true and false are the boolean literals; null is the null literal — distinct from kiera.uno/null subclasses"
+  "note":    "true and false are the boolean literals; null is the null literal — distinct from puck.uno/null subclasses"
 }
 EOF
 

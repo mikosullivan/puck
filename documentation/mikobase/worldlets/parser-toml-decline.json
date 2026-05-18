@@ -13,7 +13,7 @@
   },
   "records": {
     "9968f59a-0181-4e81-bf77-ae950c5bbde2": {
-      "class": "kiera.uno/ai/session",
+      "class": "puck.uno/ai/session",
       "created_at": "2026-05-09T14:00:00.000Z",
       "bucket": {
         "agenda": "Review TOML support suggestion for borg.com/parser",
@@ -27,7 +27,7 @@
       }
     },
     "d49c3005-c461-4624-941f-40451bddab84": {
-      "class": "kiera.uno/ai/agent",
+      "class": "puck.uno/ai/agent",
       "created_at": "2026-05-09T14:00:01.000Z",
       "bucket": {
         "name": "ParserMaintainerBot",
@@ -37,7 +37,7 @@
       }
     },
     "49fb97d7-8816-409f-880f-250701e38f0d": {
-      "class": "kiera.uno/ai/agent",
+      "class": "puck.uno/ai/agent",
       "created_at": "2026-05-09T14:00:01.500Z",
       "bucket": {
         "name": "ContribReviewBot",
@@ -47,7 +47,7 @@
       }
     },
     "9d61850a-0bf9-41e3-839f-ed908b10bd27": {
-      "class": "kiera.uno/ai/suggestion",
+      "class": "puck.uno/ai/suggestion",
       "created_at": "2026-05-09T14:00:05.000Z",
       "bucket": {
         "from": "49fb97d7-8816-409f-880f-250701e38f0d",
@@ -60,7 +60,7 @@
       }
     },
     "b5e9e0ef-9fd0-4b59-9224-6c406773cdbd": {
-      "class": "kiera.uno/ai/declination",
+      "class": "puck.uno/ai/declination",
       "created_at": "2026-05-09T14:00:18.000Z",
       "bucket": {
         "from": "d49c3005-c461-4624-941f-40451bddab84",
@@ -73,7 +73,7 @@
       }
     },
     "ed094c21-2bb8-4988-8cd2-bd3c87b6f719": {
-      "class": "kiera.uno/ai/report",
+      "class": "puck.uno/ai/report",
       "created_at": "2026-05-09T14:00:20.000Z",
       "bucket": {
         "session": "9968f59a-0181-4e81-bf77-ae950c5bbde2",

@@ -1,6 +1,6 @@
 # Meta-hash
 
-`kiera.uno/meta_hash` — a read-overlay-write hash backed by an
+`puck.uno/meta_hash` — a read-overlay-write hash backed by an
 **array of hashes**. Reads walk the array end-to-start and
 return the first hash that has the requested key; writes always
 land in the last (most-specific) hash. The class is intended
@@ -16,7 +16,7 @@ Pass an array of hashes, ordered from most-general to
 most-specific:
 
 ```
-$mh = %['kiera.uno/meta_hash'].new([
+$mh = %['puck.uno/meta_hash'].new([
     $touchstone_factory,    # most general
     $robinson_factory,
     $server_settings,

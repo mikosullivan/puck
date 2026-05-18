@@ -4,19 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-The Kiera ecoverse: a designed-from-scratch suite of interconnected tools (Charlie language, Mikobase object store, Kiera remote-object protocol, etc.). The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and code under [code/](code/) is a walking skeleton.
+The Puck ecoverse: a designed-from-scratch suite of interconnected tools (Charlie language, Mikobase object store, Puck remote-object protocol, etc.). The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and code under [code/](code/) is a walking skeleton.
 
-The directory is named `mikobase` for historical reasons; the umbrella name is **Kiera**. Read [README.md](README.md) and [documentation/overview.md](documentation/overview.md) before doing substantive design work.
+The directory is named `mikobase` for historical reasons; the umbrella name is **Puck**. Read [README.md](README.md) and [documentation/overview.md](documentation/overview.md) before doing substantive design work.
 
 Current development target is **V0.01 "hello-world"** — see [documentation/development/development.md](documentation/development/development.md) for the walking-skeleton roadmap and the canonical statement of what is in/out of scope. The development plan uses a **soft feature lock**: do not expand V0.01 scope without explicit unlock.
 
 ## Repo layout (non-obvious bits)
 
 - [documentation/](documentation/) — canonical specs. Markdown here is the source of truth.
-- [code/](code/) — implementation, organized by component then host language: `code/<component>/<lang>/`. Only `code/charlie/lua/charlie/` has substantial code today; `code/mikobase/`, `code/kiera/`, `code/dogberry/` are placeholders for future work.
+- [code/](code/) — implementation, organized by component then host language: `code/<component>/<lang>/`. Only `code/charlie/lua/charlie/` has substantial code today; `code/mikobase/`, `code/puck/`, `code/dogberry/` are placeholders for future work.
 - [tests/](tests/) — mirrors `code/` shape. Only `tests/charlie/` has tests today.
 - [experiments/](experiments/) — scratch files; not part of the build or tests.
-- [domain/](domain/) — one-off Ruby script for finding available `.io` domain names ([domain/find_io.rb](domain/find_io.rb)). Unrelated to Kiera the protocol.
+- [domain/](domain/) — one-off Ruby script for finding available `.io` domain names ([domain/find_io.rb](domain/find_io.rb)). Unrelated to Puck the protocol.
 - [web/](web/) — nginx site config for the portia host. Not application code.
 - [vscode/](vscode/) — VSCode extension scaffolding for Charlie syntax highlighting.
 - `settings.json` at the repo root is **gitignored**. Any `settings.json` you see locally is a personal config and may legitimately contain hardcoded credentials — do not flag those.
@@ -62,8 +62,8 @@ Use `charlie.null` (re-exported as `json.null`) for JSON null in CharlieJSON tab
 These are project-wide, not personal preferences — follow them in any file you edit:
 
 - **Vibecode blocks.** Most documentation sections begin with a `vibecode:` JSON block giving AI-readable context for the surrounding prose. When adding or editing a documentation section, include or update its vibecode block. The development plan explicitly states vibecode blocks are the source of truth where prose disagrees with them.
-- **UNS (Universal Namespace)** for class names: a URL without `https://`, e.g. `foo.com/character`. Built-ins are under `kiera.uno/...`.
-- **Reserved pass-through fields** on every Kieraverse object: `vibecode`, `comment`, `misc`, `enterprise`. Always passed through; never stripped or validated. See [documentation/ecoverse/vibecode.md](documentation/ecoverse/vibecode.md).
+- **UNS (Universal Namespace)** for class names: a URL without `https://`, e.g. `foo.com/character`. Built-ins are under `puck.uno/...`.
+- **Reserved pass-through fields** on every Puckverse object: `vibecode`, `comment`, `misc`, `enterprise`. Always passed through; never stripped or validated. See [documentation/ecoverse/vibecode.md](documentation/ecoverse/vibecode.md).
 - **Module headers in Lua code** are JSON `--[[ {...} ]]` blocks describing role, pipeline, exports, and dependencies. Per-function headers describe `in`/`out`/`note`. Match this style in new Lua code.
 - **Field names use underscores; file names use dashes.** `fail_fast` in JSON, `foo-bar.md` on disk.
 - **MIT license** for any code distributed through the ecosystem.

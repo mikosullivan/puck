@@ -1,6 +1,6 @@
 # Touchstone
 
-`kiera.uno/touchstone` — the **base HTTP server class** that Sinatra
+`puck.uno/touchstone` — the **base HTTP server class** that Sinatra
 and Robinson inherit from. Touchstone is **not directly instantiable
 as a working server.** It holds the shared infrastructure both
 descendants need (content-type factory defaults, Jasmine
@@ -187,7 +187,7 @@ you actually need to see every submission in order.
 
 Returns the **parsed JSON object from the query string** when the
 query string is valid JSON, per the
-[JSON URL parameters convention](../../kiera/json-urls.md). Returns `null`
+[JSON URL parameters convention](../../puck/json-urls.md). Returns `null`
 if the query isn't JSON (including the case where it's a
 traditional `?key=value` form).
 
@@ -200,10 +200,10 @@ $request.param_hash            # null  (not JSON; use $request.params)
 ```
 
 Cheap: attempt `JSON.parse` on the raw query string; on success
-return the result, on failure return null. This is how Kiera
+return the result, on failure return null. This is how Puck
 services receive machine-generated URLs with structured
 parameters, while traditional `?key=value` URLs from
-non-Kiera-aware clients still work through `$request.params`.
+non-Puck-aware clients still work through `$request.params`.
 
 <a id="requestbody"></a>
 ### 4.3 `$request.body`
@@ -250,15 +250,15 @@ it on the way in, exposes it as `$transaction.session`, tracks
 mutations, and reserializes on the way out.
 
 **Configuration is required.** A server with no domain configured
-will raise `kiera.uno/touchstone/error/sinatra/no_cookie_domain`
+will raise `puck.uno/touchstone/error/sinatra/no_cookie_domain`
 the first time a handler accesses `$transaction.session`. Cookies
 without a domain are unsafe; Touchstone refuses to issue them.
 
 ```
-$server = %['kiera.uno/sinatra'].new(domain: 'example.com')
+$server = %['puck.uno/sinatra'].new(domain: 'example.com')
 
 # Optional: override the cookie name (defaults to 'session')
-$server = %['kiera.uno/sinatra'].new(domain: 'example.com',
+$server = %['puck.uno/sinatra'].new(domain: 'example.com',
                                       cookie_name: 'sid')
 ```
 
@@ -274,7 +274,7 @@ $server = %['kiera.uno/sinatra'].new(domain: 'example.com',
 To override:
 
 ```
-$server = %['kiera.uno/sinatra'].new(
+$server = %['puck.uno/sinatra'].new(
     domain: 'example.com',
     cookie_secure: false,       # local dev over HTTP
     cookie_samesite: 'Strict',
@@ -295,7 +295,7 @@ just mutates the hash; the cookie itself stays.
 sends a cookie with the configured name but its value isn't valid
 JSON, Touchstone starts the handler with an empty
 `$transaction.session` and emits a warning via Jasmine. Garbage
-cookies from non-Kiera-aware clients won't crash the server.
+cookies from non-Puck-aware clients won't crash the server.
 
 **No expiration by default.** The cookie is a session cookie in
 the HTTP sense — no `Expires` or `Max-Age`, so it goes away when
@@ -331,7 +331,7 @@ Below the limit, bodies are held in memory. Above the limit:
   live is an implementation detail.
 - **If no FSO is configured**, the body is rejected and
   Touchstone raises
-  `kiera.uno/touchstone/error/sinatra/cannot_store_files`. The
+  `puck.uno/touchstone/error/sinatra/cannot_store_files`. The
   exception carries the request's `Content-Length` and the
   configured memory limit so the caller can produce a useful
   diagnostic.
@@ -364,7 +364,7 @@ limits, etc. Not in v1; flagged if demand surfaces.
 ## 7 The handler chain
 
 Touchstone processes each request through an **ordered chain of
-handlers** registered on `$server.handlers`. Handlers are Kiera
+handlers** registered on `$server.handlers`. Handlers are Puck
 objects; each can implement up to three methods that participate
 in different stages of the transaction. This is the plug-in
 surface that lets add-ons add features — auth checks, CORS
@@ -471,7 +471,7 @@ unknown classes fall back to 500:
 
 | Exception class | Status |
 |---|---|
-| `kiera.uno/error/timeout` | 504 Gateway Timeout |
+| `puck.uno/error/timeout` | 504 Gateway Timeout |
 | (anything else, uncaught) | 500 Internal Server Error |
 
 The mapping table is small in v1 and grows as more specific
@@ -492,7 +492,7 @@ and registration position. Without this, debugging a chain of
 handlers means guessing which one threw. The handler-attribution
 field is the first thing an operator looks at.
 
-The attribution names the handler class (`kiera.uno/sinatra/csrf_guard`,
+The attribution names the handler class (`puck.uno/sinatra/csrf_guard`,
 the developer's custom Handler's UNS, the Robinson page-tree
 handler for a specific site, etc.) and its position in
 `$server.handlers`. Subsystems that compose multiple handlers

@@ -18,7 +18,7 @@ class 'starfleet.com/officer'
     field :rank,     class: :string, required: true
     field :serial,   class: :string, required: true, unique: true
     field :active,   class: :boolean, default: true
-    field :starship, class: 'kiera.uno/reference', allowed_class: 'starfleet.com/ship'
+    field :starship, class: 'puck.uno/reference', allowed_class: 'starfleet.com/ship'
 
     helper :record
         function &summary
@@ -51,7 +51,7 @@ end
 
 # Connect to the mikobase
 
-$mikobase = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
+$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
 
 $mikobase.listen 'starfleet.com/officer', :after_save do($change)
     $officer = $change.record
@@ -174,10 +174,10 @@ end
 # Null flavors
 
 class 'starfleet.com/null/classified'
-    inherits 'kiera.uno/null'
+    inherits 'puck.uno/null'
 end
 
-$classified = %kiera['starfleet.com/null/classified'].new
+$classified = %puck['starfleet.com/null/classified'].new
 
 if ($classified)
     puts('never reached — classified is falsey')
@@ -185,6 +185,6 @@ end
 
 # Hot connection for real-time updates
 
-$hot    = %kiera['kiera.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
+$hot    = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
 $picard = $hot.q0({action: :select, then: {path: ['serial', 'SP-937-215']}}).first
 $picard['rank'] = 'Admiral'

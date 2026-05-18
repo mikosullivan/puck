@@ -9,7 +9,7 @@ vibecode: {
 	"key_concepts": ["mikobase_engine", "clients", "engines", "Q0", "chained_engines", "Python_SQLite"]
 }
 
-A mikobase is the object store layer of the Kiera ecoverse. It defines a protocol by which
+A mikobase is the object store layer of the Puck ecoverse. It defines a protocol by which
 clients in various programming languages can access objects in a live object store. It is
 a NoSQL solution with a class-based object model.
 
@@ -37,7 +37,7 @@ is out of scope for now — only the engine is being developed at this stage.
 vibecode: {
 	"section": "universal_namespace",
 	"role": "defines UNS class naming for the requirements context",
-	"key_concepts": ["UNS", "domain_namespace", "kiera.uno_built-ins", "foo.com_examples"]
+	"key_concepts": ["UNS", "domain_namespace", "puck.uno_built-ins", "foo.com_examples"]
 }
 
 Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
@@ -45,10 +45,10 @@ globally unique namespace.
 
 Examples:
 
-- `kiera.uno/record`
-- `kiera.uno/record/class`
-- `kiera.uno/reference`
-- `kiera.uno/dbfile`
+- `puck.uno/record`
+- `puck.uno/record/class`
+- `puck.uno/reference`
+- `puck.uno/dbfile`
 - `foo.com/bar`
 - `mycompany.com/character`
 
@@ -76,8 +76,8 @@ vibecode: {
 <a id="classes"></a>
 ### 3.2 Classes
 
-- Every record has a class. The default class is `kiera.uno/record`.
-- Classes are themselves stored as records with class `kiera.uno/record/class`.
+- Every record has a class. The default class is `puck.uno/record`.
+- Classes are themselves stored as records with class `puck.uno/record/class`.
 - A class definition is stored in the record's `bucket` field.
 - Class names are UNS strings.
 - Inheritance is always explicit via the `inherits` field. There is no path-implied inheritance.
@@ -104,10 +104,10 @@ vibecode: {
 
 The following classes are seeded as database records on initialization:
 
-- `kiera.uno/record` — base class for all records
-- `kiera.uno/record/class` — class for class definitions
-- `kiera.uno/reference` — reference to another record by `record_pk`
-- `kiera.uno/dbfile` — file attachment
+- `puck.uno/record` — base class for all records
+- `puck.uno/record/class` — class for class definitions
+- `puck.uno/reference` — reference to another record by `record_pk`
+- `puck.uno/dbfile` — file attachment
 
 ---
 

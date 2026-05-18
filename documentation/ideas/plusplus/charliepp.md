@@ -18,7 +18,7 @@ language variant.
 
 Lua has no native fork support. When implementing forking in the Lua reference
 implementation, prefer an existing Lua library over writing a C extension from scratch.
-The goal is to avoid reimplementing Kiera in C just to handle forking.
+The goal is to avoid reimplementing Puck in C just to handle forking.
 
 ---
 
@@ -67,4 +67,4 @@ The following are Charlie features, not Charlie++:
 - `untrusted()`, `%chain` sandboxing
 - The core security model
 - Single-threaded execution context
-- Hives as local object stores, including file-backed (`kiera.uno/mikobase/sqlite`)
+- Hives as local object stores, including file-backed (`puck.uno/mikobase/sqlite`)

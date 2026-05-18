@@ -1,6 +1,6 @@
-# Kiera Presentations
+# Puck Presentations
 
-Ideas for presentations when Kiera goes live.
+Ideas for presentations when Puck goes live.
 
 ---
 

@@ -8,18 +8,18 @@ Not yet specified. A topic to refine in a future conversation.
 Different subsystems treat UNS names differently:
 
 - **Mikobase storage** requires a class to have a UNS — that's how classes
-  are identified and looked up (`%kiera['foo.com/character']`).
+  are identified and looked up (`%puck['foo.com/character']`).
 - **Charlie in-memory** does not require a UNS for a class.
   `$foo = class ... end` produces a valid anonymous class with no
   identity beyond the variable that holds it.
 - **Robinson page files** invoke to anonymous classes inheriting from
-  `kiera.uno/robinson/page`. No UNS on the page class itself — the file's
+  `puck.uno/robinson/page`. No UNS on the page class itself — the file's
   location in the tree is its identity.
 - **Other places UNS shows up**: server classes
-  (`kiera.uno/sinatra`, `kiera.uno/robinson`), built-in classes
-  (`kiera.uno/exception/error`, `kiera.uno/reference`), reference field types
+  (`puck.uno/sinatra`, `puck.uno/robinson`), built-in classes
+  (`puck.uno/exception/error`, `puck.uno/reference`), reference field types
   (`allowed_class: 'foo.com/planet'`), engine-resolved capabilities
-  (`%kiera['kiera.uno/mikobase/sqlite']`), etc.
+  (`%puck['puck.uno/mikobase/sqlite']`), etc.
 
 The framework currently has a working but uncodified intuition about which
 of these need a UNS and which don't. Worth pinning explicitly:

@@ -13,7 +13,7 @@ vibecode: {
 }
 ```
 
-Charlie is the programming language of the Kiera ecoverse. Programs are written in Charlie
+Charlie is the programming language of the Puck ecoverse. Programs are written in Charlie
 and transpiled to CharlieJSON for execution. CharlieJSON is the canonical runtime format;
 Charlie is the human-facing form.
 
@@ -470,7 +470,7 @@ vibecode: {
 	"sugar": "function &foo() == $foo = function()",
 	"call_sigil": "&",
 	"inline_do_blocks": "behave_like_closures",
-	"remote_function": "delegates_to_%kiera.call"
+	"remote_function": "delegates_to_%puck.call"
 }
 ```
 
@@ -554,7 +554,7 @@ it makes passing functions as objects unambiguous.
 <a id="remote-functions"></a>
 ### 10.5 Remote functions
 
-`remote function` declares a method that delegates to `%kiera.call`. It is shorthand
+`remote function` declares a method that delegates to `%puck.call`. It is shorthand
 for an explicit remote dispatch — the two forms are equivalent:
 
 ```
@@ -564,12 +564,12 @@ end
 
 # equivalent explicit form
 function &save(name:)
-    %kiera.call(self, :save, name: name)
+    %puck.call(self, :save, name: name)
 end
 ```
 
-`%chain` is forwarded automatically in both forms. See [kiera.md](../kiera/kiera.md)
-for the full `%kiera.call` design.
+`%chain` is forwarded automatically in both forms. See [puck.md](../puck/puck.md)
+for the full `%puck.call` design.
 
 ---
 
@@ -619,7 +619,7 @@ return, or the host that loaded the file):
 
 ```
 class
-    inherits 'kiera.uno/robinson/page'
+    inherits 'puck.uno/robinson/page'
 
     function &process($request)
         response.html(200, '<h1>Hello</h1>')
@@ -638,7 +638,7 @@ variable:
 
 ```
 $page_class = class
-    inherits 'kiera.uno/robinson/page'
+    inherits 'puck.uno/robinson/page'
     ...
 end
 ```
@@ -665,7 +665,7 @@ JSON field definition:
 ```
 field :name,      class: :string, required: true, collapse: true
 field :age,       class: :number, min: 0, integer_only: true
-field :homeworld, class: 'kiera.uno/reference', allowed_class: 'foo.com/planet'
+field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
 ```
 
 Built-in type names are strings — `:string` and `'string'` are identical. UNS names use
@@ -693,7 +693,7 @@ property @nickname, :get, :set  # creates both
 `abstract true` prevents direct instantiation. Subclasses may still be instantiated:
 
 ```
-class 'kiera.uno/mikobase'
+class 'puck.uno/mikobase'
     abstract true
 end
 ```
@@ -705,8 +705,8 @@ end
 
 ```
 class 'foo.com/appearance'
-    field :person,  class: 'kiera.uno/reference', allowed_class: 'foo.com/person'
-    field :episode, class: 'kiera.uno/reference', allowed_class: 'foo.com/episode'
+    field :person,  class: 'puck.uno/reference', allowed_class: 'foo.com/person'
+    field :episode, class: 'puck.uno/reference', allowed_class: 'foo.com/episode'
 
     join :person, :episode
 end
@@ -803,7 +803,7 @@ vibecode: {
 <a id="return"></a>
 ### 14.1 `return`
 
-`return` exits the current function, raising `kiera.uno/return`. Inside a
+`return` exits the current function, raising `puck.uno/return`. Inside a
 closure, `return` propagates through the closure boundary and exits the calling function.
 
 ```
@@ -960,7 +960,7 @@ vibecode: {
 <a id="the-suffix"></a>
 ### 18.1 The `?` suffix
 
-The `?` suffix is a Kiera convention, not a language-enforced
+The `?` suffix is a Puck convention, not a language-enforced
 contract — the charlie parser doesn't treat names ending in `?`
 specially. It's a hint to readers about how a method behaves,
 not a hook with semantics baked in. The convention is still

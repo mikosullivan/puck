@@ -1,37 +1,37 @@
 # Marina
 
-Marina is the codeword for a design exploration of Kiera, Q0, and class definitions that was set aside. These ideas were developed collaboratively and may be revisited and incorporated into the final design later.
+Marina is the codeword for a design exploration of Puck, Q0, and class definitions that was set aside. These ideas were developed collaboratively and may be revisited and incorporated into the final design later.
 
 ---
 
-# Part 1: Kiera
+# Part 1: Puck
 
 <a id="overview"></a>
 ## 1 Overview
 
-Kiera is a remote object system designed to be simpler and more intuitive than systems like
-REST. Classes in Kiera are identified by UNS strings — a URL without the `https://`
+Puck is a remote object system designed to be simpler and more intuitive than systems like
+REST. Classes in Puck are identified by UNS strings — a URL without the `https://`
 protocol prefix — providing a globally unique namespace.
 
 Examples:
 
-- `kiera.uno/query`
-- `kiera.uno/error`
-- `kiera.uno/exception`
+- `puck.uno/query`
+- `puck.uno/error`
+- `puck.uno/exception`
 
-Every popular language has a Kiera interpreter, allowing developers in different languages
+Every popular language has a Puck interpreter, allowing developers in different languages
 to work with the same remote objects in a consistent way.
 
-Mikobase is designed to conform to Kiera standards. The class definition format is shared
-between the two systems. A class definition bucket written for Mikobase is valid in Kiera.
+Mikobase is designed to conform to Puck standards. The class definition format is shared
+between the two systems. A class definition bucket written for Mikobase is valid in Puck.
 
 ---
 
 <a id="implicit-class-from-context"></a>
 ## 2 Implicit Class from Context
 
-Every Kiera object (hash/dict) has a `class` field, either explicit or implied by context.
-When `class` is absent, the Kiera interpreter determines the class from the surrounding
+Every Puck object (hash/dict) has a `class` field, either explicit or implied by context.
+When `class` is absent, the Puck interpreter determines the class from the surrounding
 context — for example, the field name it appears under, the method it was returned from, or
 the type declared in a class definition.
 
@@ -43,18 +43,18 @@ defined. For now, implicit class rules are documented ad-hoc where they apply.
 <a id="getting-a-class"></a>
 ## 3 Getting a Class
 
-`kiera.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
+`puck.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
 local class object. The class definition includes fields and remote methods. Parameters may
 be used to control which version of the definition is retrieved — for example, `cutoff`
 pins the definition to a historical point in time.
 
-The bracket shorthand `kiera[uns]` is equivalent to `kiera.get_class(uns)` with no params:
+The bracket shorthand `puck[uns]` is equivalent to `puck.get_class(uns)` with no params:
 
 ```python
-clss = kiera['kiera.uno/color']              # shorthand
-clss = kiera.get_class('kiera.uno/color')    # equivalent
+clss = puck['puck.uno/color']              # shorthand
+clss = puck.get_class('puck.uno/color')    # equivalent
 
-clss = kiera.get_class('kiera.uno/color', cutoff='2026-09-21')  # with params
+clss = puck.get_class('puck.uno/color', cutoff='2026-09-21')  # with params
 ```
 
 <a id="creating-an-object"></a>
@@ -65,25 +65,25 @@ resulting object behaves like any local object — fields are accessible as prop
 methods are callable normally.
 
 ```python
-clss = kiera['kiera.uno/color']
+clss = puck['puck.uno/color']
 color = clss.new(hex='#ff0000')
 ```
 
-`kiera.create(uns, **fields)` is a shorthand that fetches the latest class definition and
+`puck.create(uns, **fields)` is a shorthand that fetches the latest class definition and
 creates an instance in one step:
 
 ```python
-color = kiera.create('kiera.uno/color', hex='#ff0000')
+color = puck.create('puck.uno/color', hex='#ff0000')
 ```
 
-This is equivalent to `kiera[uns].new(**fields)`.
+This is equivalent to `puck[uns].new(**fields)`.
 
 ---
 
 <a id="method-calls"></a>
 ## 5 Method Calls
 
-When a method is called on a Kiera object, the **entire object** is serialized and sent to
+When a method is called on a Puck object, the **entire object** is serialized and sent to
 the method's URL. A response is received and returned to the caller.
 
 The class definition specifies each method's required and optional parameters, and what to
@@ -92,12 +92,12 @@ expect in the response.
 <a id="request-structure"></a>
 ## 6 Request Structure
 
-A Kiera request is a JSON object with the following fields:
+A Puck request is a JSON object with the following fields:
 
 ```json
 {
-    "class":  "kiera.uno/request",
-    "method": "kiera.uno/color/hex",
+    "class":  "puck.uno/request",
+    "method": "puck.uno/color/hex",
 
     "object": {
         "rgb": [122, 93, 81]
@@ -110,7 +110,7 @@ A Kiera request is a JSON object with the following fields:
 - `class` — identifies the request type. Usually redundant since the receiving URL implies
   it.
 - `method` — the method being called. Usually redundant since the URL implies it.
-- `object` — the full field values of the Kiera object being sent. The class of the object
+- `object` — the full field values of the Puck object being sent. The class of the object
   is implicit in the request context and is not repeated inside `object`.
 - `params` — method-specific arguments, separate from the object's own field values.
 
@@ -121,7 +121,7 @@ Specific rules:
   request is processed without error.
 - If `method` refers to a method that does not exist, the server returns an error object.
 - If `class` is not a request class, the server returns an error object. A subclass of
-  `kiera.uno/request` is acceptable, but the server must already know it is a subclass —
+  `puck.uno/request` is acceptable, but the server must already know it is a subclass —
   the server is not required to query the UNS to verify the inheritance relationship.
 
 The response structure is not yet defined.
@@ -131,7 +131,7 @@ The response structure is not yet defined.
 <a id="value-objects-and-stored-objects"></a>
 ## 7 Value Objects and Stored Objects
 
-All Kiera objects are the same type — they carry their field values with every method call.
+All Puck objects are the same type — they carry their field values with every method call.
 There is no formal Stored Object class.
 
 The terms **value object** and **stored object** are used informally as a shorthand:
@@ -141,68 +141,68 @@ The terms **value object** and **stored object** are used informally as a shorth
   only enough to identify it (typically a `pk`). A Mikobase record is a stored object in
   this sense.
 
-From Kiera's perspective both are the same thing — a set of fields sent whole on every
+From Puck's perspective both are the same thing — a set of fields sent whole on every
 method call. The distinction is a description of how a class is designed, not a type system
 concept.
 
 ```python
 # Value object — all data is in the object
-color = kiera.create('kiera.uno/color', hex='#ff0000')
+color = puck.create('puck.uno/color', hex='#ff0000')
 
 # Stored object — real data is on the server, object carries a pk
-character = kiera.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40cf2c40')
+character = puck.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40cf2c40')
 ```
 
 ---
 
-<a id="kiera-true"></a>
-## 8 `kiera: true`
+<a id="puck-true"></a>
+## 8 `puck: true`
 
-A class definition with `"kiera": true` signals that remote method calls may be made using
+A class definition with `"puck": true` signals that remote method calls may be made using
 objects of that class.
 
 ```json
 {
     "name": "foo.com/bar",
-    "kiera": true
+    "puck": true
 }
 ```
 
 ---
 
-<a id="kieraunoexception"></a>
-## 9 `kiera.uno/exception`
+<a id="puckunoexception"></a>
+## 9 `puck.uno/exception`
 
-The base class for all exceptions in Kiera. `kiera.uno/error` is a subclass of
-`kiera.uno/exception`. Further details of the exception hierarchy are not yet defined.
+The base class for all exceptions in Puck. `puck.uno/error` is a subclass of
+`puck.uno/exception`. Further details of the exception hierarchy are not yet defined.
 
 ---
 
-<a id="kieraunoerror"></a>
-## 10 `kiera.uno/error`
+<a id="puckunoerror"></a>
+## 10 `puck.uno/error`
 
 The base class for all errors. An error object is a first-class object with
-`"class": "kiera.uno/error"` (or a subclass).
+`"class": "puck.uno/error"` (or a subclass).
 
-`{"error": true}` is shorthand for `{"class": "kiera.uno/error"}`. The `error` field may
+`{"error": true}` is shorthand for `{"class": "puck.uno/error"}`. The `error` field may
 be any truthy value.
 
 ```json
 {"error": true}
-{"class": "kiera.uno/error"}
+{"class": "puck.uno/error"}
 ```
 
 Error objects propagate upward through expression chains without further evaluation.
 
 ---
 
-<a id="kieraunoquery"></a>
-## 11 `kiera.uno/query`
+<a id="puckunoquery"></a>
+## 11 `puck.uno/query`
 
-`kiera.uno/query` is the base class for the Kiera expression language. It defines a set of
-general-purpose operators usable in any Kiera context.
+`puck.uno/query` is the base class for the Puck expression language. It defines a set of
+general-purpose operators usable in any Puck context.
 
-`mikobase.com/q0` inherits `kiera.uno/query` and extends it with Mikobase-specific
+`mikobase.com/q0` inherits `puck.uno/query` and extends it with Mikobase-specific
 operators for accessing record data.
 
 <a id="expression-format"></a>
@@ -375,22 +375,22 @@ A function is a JSON object with a `params` block and either a `calculate` expre
 
 Parameters are referenced inside the body via `{"param": "name"}`.
 
-`kiera.uno/function` is the base type for functions.
+`puck.uno/function` is the base type for functions.
 
 <a id="methods"></a>
 ## 13 Methods
 
-`kiera.uno/method` is a subclass of `kiera.uno/function`. A method automatically receives
+`puck.uno/method` is a subclass of `puck.uno/function`. A method automatically receives
 `"this"` bound to the object in its defining context.
 
 In a class field definition, any function automatically has `"this"` bound to the instance
 of that class. This means calculated fields and methods are the same underlying thing — a
-`kiera.uno/method` — distinguished only by whether the body uses `"this"` and whether the
+`puck.uno/method` — distinguished only by whether the body uses `"this"` and whether the
 definition declares additional explicit params for callers to supply.
 
 ```json
 {
-    "name": "kiera.uno/color",
+    "name": "puck.uno/color",
     "fields": {
         "hex": {"class": "string", "required": true},
         "hex_upper": {
@@ -402,14 +402,14 @@ definition declares additional explicit params for callers to supply.
 
 Inside a method body, `{"param": "this"}` refers to the object itself. `{"param": ["this", "field"]}` navigates into a field on it.
 
-<a id="kieraunocall"></a>
-## 14 `kiera.uno/call`
+<a id="puckunocall"></a>
+## 14 `puck.uno/call`
 
-A method invocation is a first-class object of class `kiera.uno/call`:
+A method invocation is a first-class object of class `puck.uno/call`:
 
 ```json
 {
-    "class": "kiera.uno/call",
+    "class": "puck.uno/call",
     "receiver": "expression evaluating to an object",
     "method":   "method name",
     "params":   {"foo": "bar"}
@@ -424,7 +424,7 @@ All params are named. There are no positional arguments.
 <a id="calls-method-chains"></a>
 ### 14.1 `calls` — Method Chains
 
-`calls` is an array of `kiera.uno/call` objects forming a pipeline. The receiver of each
+`calls` is an array of `puck.uno/call` objects forming a pipeline. The receiver of each
 step is implicitly the result of the previous step. Only the first step requires an explicit
 `receiver`.
 
@@ -474,15 +474,15 @@ This is the mechanism for early exit from a `calls` chain or nested expression.
 
 Method calls are evaluated lazily at runtime (duck typing). The interpreter does not
 require a compile-time definition of what methods exist on what types. If the receiver has
-the named method, it is called. If not, the result is a `kiera.uno/error` that propagates
+the named method, it is called. If not, the result is a `puck.uno/error` that propagates
 up through the expression chain.
 
-<a id="example-kieraunocolor"></a>
-## 18 Example: `kiera.uno/color`
+<a id="example-puckunocolor"></a>
+## 18 Example: `puck.uno/color`
 
 ```json
 {
-    "name": "kiera.uno/color",
+    "name": "puck.uno/color",
     "fields": {
         "hex": {"class": "string", "required": true},
 
@@ -508,7 +508,7 @@ up through the expression chain.
 
 # Part 3: Q0 Expression Language
 
-This is the expression language for `mikobase.com/q0`, which inherits `kiera.uno/query`.
+This is the expression language for `mikobase.com/q0`, which inherits `puck.uno/query`.
 
 <a id="mikobasecomq0-operators"></a>
 ## 19 `mikobase.com/q0` Operators

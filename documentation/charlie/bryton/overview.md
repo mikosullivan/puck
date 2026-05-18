@@ -5,7 +5,7 @@ tool for Charlie and is **language-agnostic at the runner level**
 — it can execute and aggregate tests written in any language that
 can emit JSON.
 
-Bryton is also a **first-contact surface** for the Kiera
+Bryton is also a **first-contact surface** for the Puck
 ecoverse: someone can write a useful Bryton test in any language
 without buying into anything else. A shell script that `echo`s a
 JSON line is a complete, working Bryton test.
