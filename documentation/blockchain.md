@@ -13,7 +13,6 @@
 ## 1 Contents
 
 - [Status](#status)
-  - [Future engine settings](#future-engine-settings)
 - [The Problem](#the-problem)
 - [License](#license)
 - [Design Principles](#design-principles)
@@ -45,22 +44,18 @@
 <a id="status"></a>
 ## 2 Status
 
-**Deferred from production.** Blockchain is an official part of the Puck ecoverse and
-the design properties documented here remain the intended target. However, no chain
-implementation is in scope for the current development phase — Puck will not run its
-own blockchain server. Hosting will eventually be done by a third party (e.g. AWS or
-similar). It will be a long time before any code in this repository touches a real chain.
+**In V1.** The blockchain design described here ships as part of the
+V1 Puck ecoverse.
 
-This document continues to serve as the design specification for what the chain will
-look like when it does ship.
+**We do not provide blockchain software.** Running a blockchain
+node, hosting a chain, or building chain infrastructure is not in
+scope. Anyone who wants to operate a Puck-compatible chain is free
+to do so with whatever stack they prefer.
 
-<a id="future-engine-settings"></a>
-### 2.1 Future engine settings
-
-When the time comes, Puck engines will accept configuration for **blockchain queries** —
-which provider to consult, which authority blocks to trust as roots, cache TTLs, fallback
-behavior, and so on. The exact shape of these settings is **TBD**. Nothing in the engine
-or in any production component should assume a chain is reachable today.
+**We do provide a public API for the Puck blockchain.** The API is
+itself a Puck service — a Puck server exposing the blockchain
+operations described in this doc. Engines and applications consume
+the chain through that API; they don't talk to chain nodes directly.
 
 <a id="the-problem"></a>
 ## 3 The Problem
