@@ -34,6 +34,10 @@ Spec in development.
 <a id="quick-example"></a>
 ## 2 Quick example
 
+A complete Sammy server: instantiate, register handlers for the routes
+you care about, register a catch-all, then run. Below, four
+registrations and one accept loop:
+
 ```
 $server = %['puck.uno/sammy'].new()
 
@@ -54,6 +58,32 @@ $server.run() do($request)
     # response returned → 404
 end
 ```
+
+What each piece does:
+
+- **`%['puck.uno/sammy'].new()`** resolves the Sammy class and
+  instantiates a fresh server. No filesystem, no network, no listeners
+  yet — just an object you can hang handlers on.
+- **`$server.get('/') do($request) ... end`** registers a handler for
+  `GET /`. The block runs when a matching request arrives; `$request`
+  is the parsed HTTP request, exposing path captures, query params,
+  body, and headers.
+- **`response.new($status, $headers, $body)`** is the standard
+  response constructor. The handler returns the response object;
+  Sammy writes it to the wire. Convenience helpers
+  (`response.html(...)`, `response.json(...)`, etc.) live in
+  [Touchstone § The response object](touchstone.md#the-response-object).
+- **`{play}` in `/shakespeare/{play}/`** is a named single-segment
+  placeholder. A request to `GET /shakespeare/hamlet/` matches, and
+  `$request.steps['play']` is `'hamlet'`. Full placeholder + splat
+  syntax is covered in [§4 Route patterns](#route-patterns).
+- **Two registrations on `/shakespeare/{play}/`, one GET and one
+  POST**, illustrates that each HTTP method on the same path is its
+  own registration. There's no shared handler that switches on method.
+- **`$server.run() do ... end`** opens the listen socket and starts
+  the accept loop. The closure is the **catch-all** — Sammy calls it
+  for any request no other handler matched. If the catch-all returns
+  no response (or the body is empty), Sammy emits a 404.
 
 <a id="whats-in-scope"></a>
 ## 3 What's in scope
@@ -320,6 +350,11 @@ earlier in the chain and win. This is the path for CORS
 preflight responses, where the handler sets
 `Access-Control-Allow-*` headers the default doesn't know about.
 
+In the example below, a preflight `OPTIONS /api/users/42` hits the
+explicit handler instead of the default; the handler writes the
+three CORS headers and returns 204. Any other OPTIONS request still
+falls through to the default and gets an auto-populated Allow header.
+
 ```
 $server.options('/api/users/{id}') do($request)
     $response.headers['Access-Control-Allow-Origin'] = 'https://example.com'
@@ -424,6 +459,12 @@ object** with `$server.static`:
 $server.static $dir
 ```
 
+Once registered, a request whose path doesn't match any of your
+explicit handlers will be tried against `$dir` before the catch-all.
+A matching file in the directory is served with content-type derived
+from its extension; a path with no matching file falls through to
+the next handler (or the catch-all, or the built-in 404).
+
 The `$dir` is a [directory object](../built-in-classes/filesystem.md#directory-objects) (Puck's filesystem abstraction).
 Sammy doesn't know or care what backs it — could be a real
 filesystem path, an in-memory tree, a remote source, a tarball,
@@ -467,51 +508,9 @@ defaults" principle as the per-extension rule above.
 
 **Sammy is single-threaded. One request at a time.** The accept
 loop reads a request, runs the handler synchronously, writes the
-response, then accepts the next connection. There is no thread
-pool, no fiber pool, no async runtime — Charlie itself is
-single-threaded by design, and Sammy inherits that constraint
-directly. This keeps the implementation tiny and makes handlers
-trivial to reason about: no locking, no race conditions, no
-shared-mutable-state hazards between requests in a single
-Sammy process.
-
-**Multiple TCP connections waiting at once is fine** — they queue
-at the OS level on the listen socket. The accept loop just
-processes them serially. The same is true for a Unix domain
-socket in IPC deployments.
-
-**Scaling beyond one request at a time is process-level, not
-thread-level.** Three deployment paths:
-
-- **Externally supervised**: run N Sammy processes behind a
-  load balancer or per-Unix-socket, supervised by the host's
-  process manager (systemd, k8s, etc.). The deployer owns the
-  worker count and restart policy.
-- **Forking add-on**: install the Sammy forking add-on
-  (downloadable, not in core) and let it manage a prefork pool
-  of workers from a single `$server.run`. Each worker is itself
-  a single-threaded Sammy process; the add-on just handles
-  fork/accept distribution and worker lifecycle.
-- **Robinson**: if you want forking *and* the other features
-  Robinson provides (multi-site dispatch, admin auth, factory
-  pages), use Robinson instead of Sammy+add-on.
-
-**What this rules out for v1:**
-
-- **Long-polling and streaming responses.** Holding a connection
-  open blocks the entire server. Not supported.
-- **WebSockets.** Same reason.
-- **Background work during a request.** The handler completes
-  synchronously and returns; there's no "fire-and-forget" task
-  inside Sammy. Spawn the work externally (a worker, a queue)
-  if needed.
-- **Per-request timeouts via threading.** Handler timeouts come
-  from [`%utils.timeout`](../utils.md) wrapping the handler call,
-  not from a reaper thread.
-
-These are deliberate trade-offs. Sammy is meant for small,
-fast, predictable services; cases that need concurrency move
-to Robinson or a deployer-level multi-process setup.
+response, then accepts the next connection. Plans are underway
+for a system for managing worker processes, but that feature
+won't be in Version 1.0.
 
 <a id="handlers"></a>
 ## 8 Handlers
