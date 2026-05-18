@@ -40,7 +40,7 @@ instantiate it, then use it.**
 ```python
 import puck
 
-# Resolve the class via the puck
+# Resolve the class
 Geo = puck.lookup('puck.uno/geo')
 
 # Instantiate with a location — Starfleet HQ, San Francisco
@@ -64,7 +64,7 @@ only in syntax.
 
 A Puck method doesn't have to return a flat value. It can return an
 **instance of another Puck class** — and that returned object is itself
-remote. You call methods on it, the puck does the dispatch, the cycle
+remote. You call methods on it, Puck does the dispatch, the cycle
 continues. The fact that you're now talking to a different class (and
 possibly a different server) doesn't change how the code reads.
 

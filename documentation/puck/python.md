@@ -31,7 +31,7 @@ Python library.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [Getting a puck](#getting-a-puck)
+- [Getting a Puck client](#getting-a-client)
 - [Looking up a class](#looking-up-a-class)
 - [Instantiation](#instantiation)
 - [Calling methods](#calling-methods)
@@ -74,21 +74,22 @@ class, instantiate, call methods.
 
 ---
 
-<a id="getting-a-puck"></a>
-## 4 Getting a puck
+<a id="getting-a-client"></a>
+## 4 Getting a Puck client
 
 **Module-level default.** `puck.lookup(...)` and friends operate on
-a module-level default puck configured from the environment (env
+a module-level default client configured from the environment (env
 vars, config file, or programmatic setup at import time):
 
 ```python
 import puck
 
-Geo = puck.lookup('puck.uno/geo')   # uses the module default puck
+Geo = puck.lookup('puck.uno/geo')   # uses the module default client
 ```
 
-**Explicit puck.** When a script needs more than one puck (different
-endpoints, different credentials), construct them explicitly:
+**Explicit client.** When a script needs more than one client
+(different endpoints, different credentials), construct them
+explicitly:
 
 ```python
 prod = puck.Puck(endpoint='https://puck.acme.com', ...)
@@ -300,9 +301,9 @@ isn't decided yet.
   Per-instance vs per-class?
 - **Connection management.** Long-lived HTTPS connection (keep-alive)
   vs request-per-call. Connection pooling. Timeouts.
-- **Authentication.** Token in env var? Per-puck credential set?
+- **Authentication.** Token in env var? Per-client credential set?
   Integration with `keyring`? OAuth flow for interactive use?
 - **Type stubs.** Auto-generate `.pyi` stubs from a remote class's
   definition so editors and type-checkers know the method signatures?
-- **Threading.** Is the module-level default puck thread-safe?
-  Per-thread default pucks?
+- **Threading.** Is the module-level default client thread-safe?
+  Per-thread default clients?

@@ -20,10 +20,10 @@ syntax and system methods that wrap it.
 <a id="puck"></a>
 ## 1 `%puck`
 
-`%puck` is a Charlie system method that returns a **puck object** — the
-client-side resolver for UNS lookups. See [puck/puck.md § The puck object](../puck/puck.md#the-puck-object)
-for what a puck is and what it holds; this section covers the Charlie
-sugar around it.
+`%puck` is a Charlie system method that returns a **Puck client
+object** — the resolver for UNS lookups. See
+[puck/puck.md](../puck/puck.md) for what Puck is and how it works;
+this section covers the Charlie sugar around it.
 
 `%puck[UNS]` is shorthand for the puck's `lookup` method:
 

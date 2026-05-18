@@ -39,9 +39,9 @@ losslessly.
 
 Two terms used throughout this doc:
 
-- **Dynamic objects** — the pucks themselves. They live for the
-  duration of a process and are what actually moves across the
-  wire. Every request and response carries dynamic objects.
+- **Dynamic objects** — the objects that actually move across the
+  wire. They live for the duration of a process. Every request and
+  response carries dynamic objects.
 - **Stored objects** — long-lived data that lives on a server (a
   database row, a registry entry, a file in a content store).
   Stored objects don't themselves cross the wire; a dynamic object
@@ -189,9 +189,9 @@ string) is:
 "Starfleet HQ"
 ```
 
-For an **object return**, the body is a dynamic puck — `class`
+For an **object return**, the body is a dynamic object — `class`
 plus `bucket`. The response from `congressional_district` on the
-Geo instance from §3 returns a dynamic puck that references the
+Geo instance from §3 returns a dynamic object that references the
 stored CongressionalDistrict for that location:
 
 ```json
@@ -203,12 +203,12 @@ stored CongressionalDistrict for that location:
 }
 ```
 
-The client can use that returned puck as the body of further
+The client can use that returned object as the body of further
 calls. To know what methods the returned object exposes, the client
 should fetch the class definition from
 `https://puck.uno/congressional_district` — the class's UNS doubles
 as the URL where its JSON definition lives. To get the
-representative, the client then takes the returned puck verbatim
+representative, the client then takes the returned object verbatim
 and POSTs it to the `representative` method's URL:
 
 ```
@@ -248,7 +248,7 @@ Puck class defines a dynamic object that carries just enough to
 field — and lets the server resolve everything else.
 
 Example: a Starfleet starship class keyed by registry number. The
-dynamic puck has one field; the stored object (the actual ship
+dynamic object has one field; the stored object (the actual ship
 record, with name, captain, mission logs, crew list) lives in the
 Starfleet database.
 
@@ -269,7 +269,7 @@ Starfleet database.
 The dynamic class declares one field — `registry`, the primary
 key — and three methods. The server holds the stored object. A
 client asking for the ship's captain hits the captain method's URL
-and sends just the dynamic puck (class + one-key bucket):
+and sends just the dynamic object (class + one-key bucket):
 
 ```
 POST https://starfleet.com/starship/captain
@@ -327,7 +327,7 @@ import puck
 # and returns a Python class wrapping it.
 Geo = puck.lookup('puck.uno/geo')
 
-# Instantiating produces a Python object holding the dynamic puck
+# Instantiating produces a Python wrapper around the dynamic object
 # (class + bucket). No remote call yet — just an object in memory.
 hq = Geo(lat=37.7980, lon=-122.4626)
 
@@ -336,8 +336,8 @@ hq = Geo(lat=37.7980, lon=-122.4626)
 # the response.
 report = hq.weather
 
-# Returns that are themselves dynamic pucks come back as Python
-# objects you can keep calling methods on. The chained shape
+# Returns that are themselves dynamic objects come back as Python
+# wrappers you can keep calling methods on. The chained shape
 # reads like a local-object chain.
 representative = hq.congressional_district.representative
 ```
@@ -351,7 +351,7 @@ The Python wrapper does three things behind that surface:
   §3 — URL is `https://{class}/{method}`, body is `class` +
   `bucket` + optional `params`.
 - **Return unmarshaling.** Primitive returns come back as native
-  Python values. Dynamic-puck returns come back as wrapped Python
+  Python values. Object returns come back as wrapped Python
   objects whose own method calls fire further POSTs.
 
 That's the feel from Python. **For the full client spec** — module
