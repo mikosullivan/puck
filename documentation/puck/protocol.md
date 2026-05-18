@@ -137,3 +137,14 @@ the "same" instance from the client's perspective each re-send the
 full instance — the server reconstructs whatever it needs each time.
 Field values that a particular method doesn't actually use are
 still sent; the protocol doesn't try to optimize that away.
+
+**In practice the cost is small.** Most Puck objects are tiny — a
+Geo is two numbers, a CensusDistrict reference is one UNS string, a
+Color is one hex code. The wire payload is mostly HTTP/JSON
+envelope; the object data itself rarely amounts to much.
+
+Larger objects (records with dozens of fields, attachments, binary
+blobs, etc.) are the exception. When they become a real cost in a
+deployment, optimizations like server-side caching or
+references-by-handle can be layered in — but for the common case,
+"every call carries its instance" stays simple and stateless.
