@@ -204,8 +204,12 @@ stored CongressionalDistrict for that location:
 ```
 
 The client can use that returned puck as the body of further
-calls. To get the representative, the client takes the returned
-puck verbatim and POSTs it to the `representative` method's URL:
+calls. To know what methods the returned object exposes, the client
+should fetch the class definition from
+`https://puck.uno/congressional_district` — the class's UNS doubles
+as the URL where its JSON definition lives. To get the
+representative, the client then takes the returned puck verbatim
+and POSTs it to the `representative` method's URL:
 
 ```
 POST https://puck.uno/congressional_district/representative
