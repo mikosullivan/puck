@@ -20,9 +20,9 @@
 - [Authority Blocks](#authority-blocks)
 - [Trust Delegation](#trust-delegation)
 - [How Puck Vouches for an Object](#how-puck-vouches-for-an-object)
-- [The Blockchain as Registry](#the-blockchain-as-registry)
 - [Chain Design](#chain-design)
-- [Record Types — Grammar v1.0](#record-types-grammar-v10)
+  - [Grammar](#record-types-grammar-v10)
+- [Authority blocks](#authority-blocks)
 - [The Signing Scheme](#the-signing-scheme)
 - [Trust Tiers](#trust-tiers)
 - [What Each Party Manages](#what-each-party-manages)
@@ -162,14 +162,12 @@ on. Engines following the chain extend trust transitively.
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Puck will sign them. The domain owner must explicitly request signing through puck.uno.
-They are in charge of which objects get submitted and when.
 
-1. The domain owner submits their object through puck.uno
+1. The domain owner submits the URL of their object to blockchain.puck.uno.
 2. Puck fetches the object from their domain over HTTPS — TLS proves it is talking to
-   the real domain owner
-3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
-   fields directly in the endorsement entry
-
+   the real domain owner.
+3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding a signature
+   in the endorsement entry.
 
 When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
 verifies Puck's signature using the baked-in public key. If the signature is valid, the
@@ -177,8 +175,8 @@ object is trusted.
 
 The object must include a valid open source license. Any
 [SPDX license identifier](https://spdx.org/licenses/) is
-accepted.The license is exposed as a `license` field on the object
-served at its UNS URL:
+accepted. The license is exposed as a `license` field on the object
+served at its URL:
 
 ```json
 {
@@ -192,9 +190,9 @@ served at its UNS URL:
 ---
 
 <a id="chain-design"></a>
-## 11 Chain Design
+## 10 Chain Design
 
-The Puck blockchain is an **open** append-only ledger. There is no mining, no
+The Puck blockchain is an open append-only ledger. There is no mining, no
 proof-of-work, and no gas. Anyone can post a record. Trust in a given record comes
 from trusting its signer
 (see [Authority Blocks](#authority-blocks)).
@@ -203,6 +201,7 @@ Each record in the chain is a JSON object with the following envelope fields:
 
 - `intent` — the block's intent; well-known values: `authority`, `grammar`, `endorse`,
   `delegate`, `deprecate`, `revoke`
+- `grammar` — Description of grammar being used.
 - `prev_hash` — SHA-256 hash of the previous record (hex); `null` for the first block
 - `posted` — ISO 8601 UTC timestamp of when the record was written to the ledger
 - `signer` — UNS address of the signing entity
@@ -214,8 +213,8 @@ Records are never modified or deleted.
 
 ---
 
-<a id="record-types-grammar-v10"></a>
-## 12 Record Types — Grammar v1.0
+<a id="grammar"></a>
+### 10.1 Grammar
 
 All blocks must include a `grammar` field in their payload referencing a grammar block
 by hash and version string:
@@ -230,8 +229,8 @@ grammar block.
 
 ---
 
-<a id="authority-blocks"></a>
-## 12 Authority blocks
+<a id="authority-blocks-1"></a>
+## 11 Authority blocks
 
 **authority** — anchor of trust; establishes a signer's identity and public key on the
 chain. Any entity may post their own authority block.
@@ -431,7 +430,7 @@ consumers decide how to respond.
 ---
 
 <a id="the-signing-scheme"></a>
-## 13 The Signing Scheme
+## 12 The Signing Scheme
 
 To sign a record:
 
@@ -449,7 +448,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="trust-tiers"></a>
-## 14 Trust Tiers
+## 13 Trust Tiers
 
 | Source | Trust level |
 |--------|-------------|
@@ -461,7 +460,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="what-each-party-manages"></a>
-## 15 What Each Party Manages
+## 14 What Each Party Manages
 
 | Party | Responsibility |
 |-------|---------------|
@@ -473,7 +472,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="api"></a>
-## 16 API
+## 15 API
 
 All blockchain services are hosted at `blockchain.puck.uno`.
 
@@ -482,7 +481,7 @@ By default it operates through the API at `blockchain.puck.uno`. The endpoints b
 describe the intended shape; the final API spec will be a separate document.
 
 <a id="submit-domain-owner-puck"></a>
-### 16.1 Submit (domain owner → Puck)
+### 15.1 Submit (domain owner → Puck)
 
 `POST https://blockchain.puck.uno/v1/submit`
 
@@ -504,7 +503,7 @@ Response:
 ```
 
 <a id="fetch-engine-puck"></a>
-### 16.2 Fetch (engine → Puck)
+### 15.2 Fetch (engine → Puck)
 
 `GET https://blockchain.puck.uno/v1/object/<uns>`
 
@@ -517,7 +516,7 @@ the signature client-side using the baked-in public key.
 `effective_date` is on or before the given date.
 
 <a id="root-block"></a>
-### 16.3 Root block
+### 15.3 Root block
 
 `GET https://blockchain.puck.uno/v1/authority`
 
@@ -527,7 +526,7 @@ key matches the chain.
 ---
 
 <a id="versioning"></a>
-## 17 Versioning
+## 16 Versioning
 
 The Puck ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
@@ -542,7 +541,7 @@ constraint, you get the most recently posted version. When you request with a da
 you get the most recently posted version that falls within that range.
 
 <a id="effective-date"></a>
-### 17.1 Effective Date
+### 16.1 Effective Date
 
 A signer may set an `effective_date` on an endorsement to declare the date that
 should be used for version ordering in place of `posted`. This allows historical objects
@@ -552,7 +551,7 @@ today with `effective_date` set to its original release date.
 `effective_date` is optional. Omitting it means `posted` governs.
 
 <a id="tombstone-and-birthstone"></a>
-### 17.2 Tombstone and Birthstone
+### 16.2 Tombstone and Birthstone
 
 A **tombstone** is an upper bound: "give me the latest version on or before this date."
 Setting a tombstone pins resolution to a point in time — useful for reproducible builds.
@@ -565,7 +564,7 @@ Useful for excluding objects published before a known-good baseline.
 ```
 
 <a id="dependency-resolution"></a>
-### 17.3 Dependency Resolution
+### 16.3 Dependency Resolution
 
 Each object may declare its own dependencies — by UNS name — along with an optional
 date range per dependency. When the gateway resolves a request, it traverses the
@@ -579,7 +578,7 @@ the intended range.
 ---
 
 <a id="use-case-third-party-endorsement"></a>
-## 18 Use Case: Third-Party Endorsement
+## 17 Use Case: Third-Party Endorsement
 
 **Scenario:** Castle Security is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
@@ -689,7 +688,7 @@ Castle Security's public key (configured by the contractor). Neither party neede
 coordinate with the other. The shared ledger is what ties them together.
 
 <a id="collaboration-puck-delegates-to-castle-security"></a>
-### 18.1 Collaboration: Puck Delegates to Castle Security
+### 17.1 Collaboration: Puck Delegates to Castle Security
 
 Although Puck and Castle Security can operate completely independently,
 collaborating could be a mutually beneficial arrangement.
@@ -737,7 +736,7 @@ Any engine or toolchain that knows how to read the chain gains access to that tr
 infrastructure with no additional setup.
 
 <a id="partnership-goal"></a>
-### 18.2 Partnership Goal
+### 17.2 Partnership Goal
 
 Puck is actively seeking a partner in this space — a company analogous to Castle Security
 whose endorsements and deprecations would be surfaced directly through the
@@ -746,7 +745,7 @@ whose endorsements and deprecations would be surfaced directly through the
 ---
 
 <a id="design-notes"></a>
-## 19 Design Notes
+## 18 Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Puck is
@@ -781,7 +780,7 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 ---
 
 <a id="open-issues"></a>
-## 20 Open Issues
+## 19 Open Issues
 
 **Software namespace identifier bloat.** As `puck.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.
