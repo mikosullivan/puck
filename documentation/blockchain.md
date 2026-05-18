@@ -3,9 +3,9 @@
 ~~~json
 {"vibecode": {
 	"doc": "blockchain",
-	"role": "design spec for Puck's object-signing and blockchain registry: how UNS-addressed objects prove provenance and integrity; deferred from current production but the canonical target",
+	"role": "design spec for Puck's object-signing and blockchain registry: how UNS-addressed objects prove provenance and integrity",
 	"key_concepts": ["object_signing", "uns_provenance", "authority_blocks",
-		"third_party_endorsement", "deferred_from_production", "engine_chain_settings"]
+		"third_party_endorsement", "engine_chain_settings"]
 }}
 ~~~
 
