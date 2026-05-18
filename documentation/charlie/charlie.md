@@ -210,11 +210,9 @@ puts $prince + ': ' + $soliloquy
 
 `$$foo` returns the variable object itself. Variable objects can be passed around like any
 other object, but deliberately do not expose their value. Pass-by-reference is an
-intentionally unsupported pattern. Future use cases may prpmpt us to revisit this
-decision.
-
-See [no nanny code](../overview.md#no-nanny-code) for the broader principle that keeps
-"intentionally unsupported" decisions like this open to revisit.
+intentionally unsupported pattern. That decision could reasonably viewed as
+[nanny code](../overview.md#no-nanny-code) so I'm open to revisiting it if the
+community wants to.
 
 ---
 
