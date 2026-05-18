@@ -6,7 +6,8 @@
 	"role": "language-agnostic remote object protocol — instantiate a remote class, hold a reference, call its methods, treat it like a local object",
 	"key_concepts": ["language_agnostic", "remote_object_protocol",
 		"remote_feels_local", "uns_addresses", "instantiate_and_call",
-		"manufactured_methods"],
+		"manufactured_methods", "returns_can_be_other_puck_objects",
+		"chained_remote_calls"],
 	"audience": ["developers_in_any_language", "puck_client_implementors",
 		"puck_server_implementors"],
 	"example_language": "Python"
@@ -55,3 +56,32 @@ Each of those methods makes a remote call to the server that hosts
 `puck.uno/geo`. The same shape works from JavaScript, Ruby, or any
 other language that wires up a Puck client; the specifics differ
 only in syntax.
+
+---
+
+<a id="remote-returns-can-be-other-puck-objects"></a>
+## 2 Remote returns can be other Puck objects
+
+A Puck method doesn't have to return a flat value. It can return an
+**instance of another Puck class** — and that returned object is itself
+remote. You call methods on it, the puck does the dispatch, the cycle
+continues. The fact that you're now talking to a different class (and
+possibly a different server) doesn't change how the code reads.
+
+For example, `hq.census_district` doesn't just return a name or an ID;
+it returns an instance of a `CensusDistrict` Puck class. That object
+exposes its own manufactured methods:
+
+```python
+district = hq.census_district
+
+district.name              # 'CA-11'
+district.representative    # current US House representative
+district.population        # 760_000
+district.boundary_geojson  # GeoJSON for the district boundary
+```
+
+Each of those is a fresh remote call. From the caller's perspective,
+`district` is just an object with methods — the chained-call shape
+(`hq.census_district.representative`) reads the same as deeply-chained
+local calls, even when two distinct remote services are involved.
