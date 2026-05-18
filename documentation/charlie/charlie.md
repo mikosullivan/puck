@@ -40,12 +40,11 @@ Charlie VS Code extension is available (link here when it actually
 exists). That extension allows you to format Charlie to your own
 preference. The rule is simple:
 
-
 - Submit code formatted however you want.
 - Run downloaded code through your formatter.
 
 That's it. No house style, no enforced repo-wide config, no formatting nits in code
-review. Tabs-vs-spaces is a settings file each developer owns, not a debate.
+review. Tabs-vs-spaces is a setting that each developer owns.
 
 ---
 
@@ -177,7 +176,7 @@ puts $prince + ': ' + $soliloquy
 
 `$$foo` returns the variable object itself. Variable objects can be passed around like any
 other object, but deliberately do not expose their value. Pass-by-reference is an
-intentionally unsupported pattern. That decision could reasonably viewed as
+intentionally unsupported pattern. That decision could be reasonably viewed as
 [nanny code](../overview.md#no-nanny-code) so I'm open to revisiting it if the
 community wants to.
 
