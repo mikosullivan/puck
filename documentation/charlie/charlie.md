@@ -23,15 +23,6 @@ Charlie's style is influenced by Ruby with some Perl mixed in.
 By convention, code is shared as Charlie, not as CharlieJSON. CharlieJSON is a runtime
 artifact, not a source format.
 
-Charlie is the **canonical surface syntax** — the one users see and write today. The
-language architecture deliberately separates the surface syntax from the canonical
-runtime form ([CharlieJSON](charliejson.md)), preserving the possibility of alternate
-surface syntaxes that also transpile to CharlieJSON. The original design ambition was
-multiple coexisting source syntaxes for the same semantic core; the project scoped down
-to a single canonical surface (Charlie) for clarity, but the multi-syntax option
-remains architecturally open through the Charlie-source → CharlieJSON layer. No
-alternate surface syntaxes are planned for v1.
-
 ---
 
 <a id="formatting-standards-or-lack-thereof"></a>
@@ -68,12 +59,22 @@ review. Tabs-vs-spaces is a settings file each developer owns, not a debate.
 {"vibecode": {
 	"section": "transpilation",
 	"target": "CharlieJSON",
-	"notes": ["see_charliejson_md_for_format"]
+	"notes": ["see_charliejson_md_for_format",
+		"surface_syntax_separated_from_runtime_form_to_keep_alternate_syntaxes_architecturally_open"]
 }}
 ~~~
 
 Charlie compiles to CharlieJSON. See [charliejson.md](charliejson.md) for the CharlieJSON
 format.
+
+Charlie is the **canonical surface syntax** — the one users see and write today. The
+language architecture deliberately separates the surface syntax from the canonical
+runtime form ([CharlieJSON](charliejson.md)), preserving the possibility of alternate
+surface syntaxes that also transpile to CharlieJSON. The original design ambition was
+multiple coexisting source syntaxes for the same semantic core; the project scoped down
+to a single canonical surface (Charlie) for clarity, but the multi-syntax option
+remains architecturally open through the Charlie-source → CharlieJSON layer. No
+alternate surface syntaxes are planned for v1.
 
 ---
 
