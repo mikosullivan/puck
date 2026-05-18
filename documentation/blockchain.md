@@ -14,7 +14,6 @@
 
 - [Status](#status)
 - [The Problem](#the-problem)
-- [License](#license)
 - [Design Principles](#design-principles)
 - [The Open Ledger](#the-open-ledger)
 - [Trust Delegation](#trust-delegation)
@@ -37,6 +36,7 @@
   - [Collaboration: Puck Delegates to ChainGuard](#collaboration-puck-delegates-to-chainguard)
   - [Partnership Goal](#partnership-goal)
 - [Design Notes](#design-notes)
+- [License](#license)
 - [Open Issues](#open-issues)
 
 ---
@@ -45,17 +45,9 @@
 ## 2 Status
 
 **In V1.** The blockchain design described here ships as part of the
-V1 Puck ecoverse.
-
-**We do not provide blockchain software.** Running a blockchain
-node, hosting a chain, or building chain infrastructure is not in
-scope. Anyone who wants to operate a Puck-compatible chain is free
-to do so with whatever stack they prefer.
-
-**We do provide a public API for the Puck blockchain.** The API is
-itself a Puck service — a Puck server exposing the blockchain
-operations described in this doc. Engines and applications consume
-the chain through that API; they don't talk to chain nodes directly.
+V1 Puck ecoverse. Puck.uno will provide a public interface for the
+blockchain. Charlie will natively know about that service. We won't
+actually ship blockchain technology in the core product.
 
 <a id="the-problem"></a>
 ## 3 The Problem
@@ -73,21 +65,8 @@ A UNS string alone proves neither. It is just a name.
 
 ---
 
-<a id="license"></a>
-## 4 License
-
-The Puck distributed object system is released under the MIT License. This must be stated
-in any overview or primer describing Puck, including the `puck_primer` field of authority
-blocks.
-
-Code distributed through the Puck ecosystem is not considered distributable unless it
-carries an explicit license. Provenance endorsements that sign a software artifact must
-always include a `license` field. A provenance endorsement that omits `license` is invalid.
-
----
-
 <a id="design-principles"></a>
-## 5 Design Principles
+## 4 Design Principles
 
 **Puck.uno holds one private key.** That is the only cryptographic key in the system
 that Puck manages. Everything flows from it.
@@ -105,7 +84,7 @@ verify the entire system.
 ---
 
 <a id="the-open-ledger"></a>
-## 6 The Open Ledger
+## 5 The Open Ledger
 
 The Puck blockchain is an open, append-only ledger of signed records about objects in the
 Puck distributed object system. Its purpose is to provide independently verifiable provenance
@@ -133,7 +112,7 @@ Puck for public libraries, trust an internal root for private ones.
 ---
 
 <a id="trust-delegation"></a>
-## 7 Trust Delegation
+## 6 Trust Delegation
 
 A `delegate` block extends trust to another entity. Puck.uno can post a `delegate` block
 that says: "I trust this entity's endorsements." The delegation references the trusted
@@ -156,7 +135,7 @@ on. Engines following the chain extend trust transitively.
 ---
 
 <a id="how-puck-vouches-for-an-object"></a>
-## 8 How Puck Vouches for an Object
+## 7 How Puck Vouches for an Object
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Puck will sign them. The domain owner must explicitly request signing through puck.uno.
@@ -175,7 +154,7 @@ object is trusted.
 ---
 
 <a id="the-blockchain-as-registry"></a>
-## 9 The Blockchain as Registry
+## 8 The Blockchain as Registry
 
 The blockchain serves as the permanent, decentralized registry for published objects.
 Once a block is posted, it is available forever regardless of what happens to any
@@ -191,7 +170,7 @@ chain directly. The API handles lookup by UNS address and returns the signed blo
 ---
 
 <a id="chain-design"></a>
-## 10 Chain Design
+## 9 Chain Design
 
 The Puck blockchain is a permissioned append-only ledger. There is no mining, no
 proof-of-work, and no gas. Records are written directly by authorised signers. Validity
@@ -214,7 +193,7 @@ the SHA-256 of the preceding record.
 ---
 
 <a id="record-types-grammar-v10"></a>
-## 11 Record Types — Grammar v1.0
+## 10 Record Types — Grammar v1.0
 
 All blocks must include a `grammar` field in their payload referencing the grammar block
 by hash. The hash is authoritative for machine verification; the version string is for
@@ -460,7 +439,7 @@ consumers decide how to respond.
 ---
 
 <a id="the-signing-scheme"></a>
-## 12 The Signing Scheme
+## 11 The Signing Scheme
 
 To sign a record:
 
@@ -478,7 +457,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="trust-tiers"></a>
-## 13 Trust Tiers
+## 12 Trust Tiers
 
 | Source | Trust level |
 |--------|-------------|
@@ -490,7 +469,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="what-each-party-manages"></a>
-## 14 What Each Party Manages
+## 13 What Each Party Manages
 
 | Party | Responsibility |
 |-------|---------------|
@@ -502,7 +481,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="api"></a>
-## 15 API
+## 14 API
 
 All blockchain services are hosted at `blockchain.puck.uno`.
 
@@ -511,7 +490,7 @@ By default it operates through the API at `blockchain.puck.uno`. The endpoints b
 describe the intended shape; the final API spec will be a separate document.
 
 <a id="submit-domain-owner-puck"></a>
-### 15.1 Submit (domain owner → Puck)
+### 14.1 Submit (domain owner → Puck)
 
 `POST https://blockchain.puck.uno/v1/submit`
 
@@ -533,7 +512,7 @@ Response:
 ```
 
 <a id="fetch-engine-puck"></a>
-### 15.2 Fetch (engine → Puck)
+### 14.2 Fetch (engine → Puck)
 
 `GET https://blockchain.puck.uno/v1/object/<uns>`
 
@@ -546,7 +525,7 @@ the signature client-side using the baked-in public key.
 `effective_date` is on or before the given date.
 
 <a id="root-block"></a>
-### 15.3 Root block
+### 14.3 Root block
 
 `GET https://blockchain.puck.uno/v1/authority`
 
@@ -556,7 +535,7 @@ key matches the chain.
 ---
 
 <a id="versioning"></a>
-## 16 Versioning
+## 15 Versioning
 
 The Puck ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
@@ -571,7 +550,7 @@ constraint, you get the most recently posted version. When you request with a da
 you get the most recently posted version that falls within that range.
 
 <a id="effective-date"></a>
-### 16.1 Effective Date
+### 15.1 Effective Date
 
 A signer may set an `effective_date` on an endorsement to declare the date that
 should be used for version ordering in place of `posted`. This allows historical objects
@@ -581,7 +560,7 @@ today with `effective_date` set to its original release date.
 `effective_date` is optional. Omitting it means `posted` governs.
 
 <a id="tombstone-and-birthstone"></a>
-### 16.2 Tombstone and Birthstone
+### 15.2 Tombstone and Birthstone
 
 A **tombstone** is an upper bound: "give me the latest version on or before this date."
 Setting a tombstone pins resolution to a point in time — useful for reproducible builds.
@@ -594,7 +573,7 @@ Useful for excluding objects published before a known-good baseline.
 ```
 
 <a id="dependency-resolution"></a>
-### 16.3 Dependency Resolution
+### 15.3 Dependency Resolution
 
 Each object may declare its own dependencies — by UNS name — along with an optional
 date range per dependency. When the gateway resolves a request, it traverses the
@@ -608,7 +587,7 @@ the intended range.
 ---
 
 <a id="use-case-third-party-endorsement"></a>
-## 17 Use Case: Third-Party Endorsement
+## 16 Use Case: Third-Party Endorsement
 
 **Scenario:** ChainGuard is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
@@ -718,7 +697,7 @@ ChainGuard's public key (configured by the contractor). Neither party needed to
 coordinate with the other. The shared ledger is what ties them together.
 
 <a id="collaboration-puck-delegates-to-chainguard"></a>
-### 17.1 Collaboration: Puck Delegates to ChainGuard
+### 16.1 Collaboration: Puck Delegates to ChainGuard
 
 Although Puck and ChainGuard can operate completely independently, there is a deeper
 collaboration available through trust delegation.
@@ -761,7 +740,7 @@ Any engine or toolchain that knows how to read the chain gains access to that tr
 infrastructure with no additional setup.
 
 <a id="partnership-goal"></a>
-### 17.2 Partnership Goal
+### 16.2 Partnership Goal
 
 Puck is actively seeking a partner in this space — a company analogous to ChainGuard
 whose endorsements and deprecations would be surfaced directly through the
@@ -781,7 +760,7 @@ As Stuart says, this scratches an itch.
 ---
 
 <a id="design-notes"></a>
-## 18 Design Notes
+## 17 Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Puck is
@@ -815,6 +794,17 @@ ranking policy belongs in the engine or fetch library, not in block grammar.
 
 ---
 
+<a id="license"></a>
+## 18 License
+
+Code should identify the open source license with which it is
+distributed. Code that fails to do so should not be distributed
+in the ecoverse. Provenance endorsements that sign a software artifact
+must always include a `license` field. A provenance endorsement that omits
+`license` is invalid.
+
+---
+
 <a id="open-issues"></a>
 ## 19 Open Issues
 
@@ -823,3 +813,4 @@ languages, DBMSs, frameworks), putting every identifier on the chain would bloat
 Most identifiers are just namespace declarations and don't need provenance or revocation
 the way published artifacts do. Do software identifiers belong on the chain at all, or
 should the chain only carry records that reference them?
+
