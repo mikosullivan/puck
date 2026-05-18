@@ -2,11 +2,13 @@
 
 ## What Is This? (Vic Fontaine II)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "what_is_this",
 	"role": "introduces the Kiera ecoverse and its three core components",
 	"key_concepts": ["Kiera_ecoverse", "Mikobase", "KScript", "Kiera_protocol", "Q0", "UNS"]
-}
+}}
+~~~
 
 This project is the **Kiera ecoverse** — a suite of interconnected tools for storing,
 querying, and programming with objects across different languages and systems. The core
@@ -20,11 +22,13 @@ components are:
 
 ## The Components (Vic Las Vegas)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "the_components",
 	"role": "summarizes each major component: Mikobase, KScript, Kiera, and Packaged Mikobases",
 	"key_concepts": ["Mikobase", "KScript", "Kiera", "packaged_mikobases", "UNS", "Q0", "KScriptJSON"]
-}
+}}
+~~~
 
 ### Mikobase
 
@@ -90,11 +94,13 @@ See [mikobase.md](mikobase/mikobase.md).
 
 ## Implementation Status (Vic Holosuite)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "implementation_status",
 	"role": "tracks the development status of each Kiera ecoverse component",
 	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0", "KScript", "v01_hello_world_shipped"]
-}
+}}
+~~~
 
 | Component | Status |
 |---|---|
@@ -111,11 +117,13 @@ vibecode: {
 
 ## How It Fits Together (Iden)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "how_it_fits_together",
 	"role": "shows the data flow from KScript source through to SQLite and back",
 	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0", "opt_in_forking_concurrency"]
-}
+}}
+~~~
 
 ```
 Developer writes KScript
@@ -138,12 +146,14 @@ turning it into the coordination mechanism for concurrent work.
 
 ## Key Concepts (Iden Hologram)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "key_concepts",
 	"role": "glossary of the most important concepts in the Kiera ecoverse",
 	"key_concepts": ["UNS", "Q0", "KScript_syntax", "mikobase_live_process", "single-threaded", "pass-through_fields",
 		"vibecode", "comment", "misc", "enterprise"]
-}
+}}
+~~~
 
 **UNS (Universal Namespace)** — class names are URLs without `https://`. Your domain
 gives you a globally unique namespace: `mycompany.com/character`. Built-in classes use
@@ -179,13 +189,15 @@ explicit override. See "No Nanny Code" below.
 
 ## No Nanny Code (Photonics)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "no_nanny_code",
 	"role": "states the design principle that Kiera avoids paternalistic API restrictions; safe defaults and security guarantees remain, but blocking legitimate operations because the designer disapproves is rejected",
 	"key_concepts": ["no_paternalism", "explicit_override_for_every_safe_default",
 		"security_guarantees_are_not_nanny_code", "structural_rules_are_not_nanny_code",
 		"borrowed_from_perl_enough_rope"]
-}
+}}
+~~~
 
 Kiera follows a principle borrowed from Perl: **the system gives you enough rope to
 hang yourself.** When the system declines to do something by default, there are
@@ -206,11 +218,13 @@ that's nanny code.
 
 ## Libraries Are Cached, Not Installed (Reggie)
 
-vibecode: {
+~~~json
+{"vibecode": {
 	"section": "libraries_are_cached_not_installed",
 	"role": "explains that KScript has no library installation step — libraries are referenced by UNS and resolved on demand from a provider chain that may include a cache",
 	"key_concepts": ["no_install_step", "uns_reference", "engine_resolves_on_demand", "provider_chain", "cache"]
-}
+}}
+~~~
 
 KScript has no library installation step. There is no `kscript install foo.com/bar`,
 no `package.json`, no lockfile, no manifest. A library is **referenced** directly in
