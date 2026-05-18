@@ -14,7 +14,6 @@
 
 - [Status](#status)
   - [Future engine settings](#future-engine-settings)
-  - [Note to Stuart](#note-to-stuart)
 - [The Problem](#the-problem)
 - [License](#license)
 - [Design Principles](#design-principles)
@@ -62,13 +61,6 @@ When the time comes, Puck engines will accept configuration for **blockchain que
 which provider to consult, which authority blocks to trust as roots, cache TTLs, fallback
 behavior, and so on. The exact shape of these settings is **TBD**. Nothing in the engine
 or in any production component should assume a chain is reachable today.
-
-<a id="note-to-stuart"></a>
-### 2.2 Note to Stuart
-
-You might want to start with [Use Case: Third-Party Endorsement](#use-case-third-party-endorsement).
-
----
 
 <a id="the-problem"></a>
 ## 3 The Problem
