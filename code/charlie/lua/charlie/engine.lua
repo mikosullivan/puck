@@ -9,7 +9,7 @@
     "lookup_method": "(value, name) → method_fn  resolve a method via the value's class",
     "transition":    "(new_role, fn) → result  save/restore ctx around fn(); wipes chain at boundary",
     "dispatch":      "(statement) → value  execute one [receiver, method, args?] statement",
-    "run":           "(path) → value  read a .ksj file, parse, execute, return last statement's value"
+    "run":           "(path) → value  read a .cjs file, parse, execute, return last statement's value"
   },
   "state": {
     "roles":   "{ user, stdlib }  populated by bootstrap; role objects are {name=string} only; stdlib owns all built-in classes",
@@ -183,7 +183,7 @@ end
 
 --[[
 {
-  "in":  "path: filesystem path to a .ksj file",
+  "in":  "path: filesystem path to a .cjs file",
   "out": "the value of the last top-level statement, or nil if the program is empty",
   "steps": [
     "1. bootstrap (fresh role/class/ctx state)",

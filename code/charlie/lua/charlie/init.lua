@@ -52,15 +52,15 @@ end
 
 --[[ { "in": {"source": "string", "pretty": "bool?"}, "out": "string  (JSON)", "note": "pretty=true for indented output; omit or false for compact" } ]]
 function M.to_json(source, pretty)
-    local ksj = M.transpile(source)
-    return json.encode(ksj, pretty)
+    local cjs = M.transpile(source)
+    return json.encode(cjs, pretty)
 end
 
 --[[ { "in": {"source": "string", "env": "table? (stdout override etc.)"}, "out": "nil", "note": "full pipeline: transpile then execute; env.stdout overrides the default print function" } ]]
 function M.run(source, env)
-    local ksj = M.transpile(source)
+    local cjs = M.transpile(source)
     local interp = interpreter.new(env)
-    interp:exec(ksj)
+    interp:exec(cjs)
 end
 
 --[[ { "in": {"node": "AST node or any table", "indent": "number? (default 0)"}, "out": "string", "note": "debug pretty-printer; works on any table, not just AST nodes" } ]]

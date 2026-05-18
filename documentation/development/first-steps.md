@@ -57,7 +57,7 @@ Open these files in your editor in this order:
 | `tests/charlie/run.lua` | Confirms how `package.path` is set; that's how every test discovers the engine modules |
 | `tests/charlie/support/runner.lua` | The test framework: `suite`, `test`, `report` |
 | `tests/charlie/support/assert.lua` | The assertion helpers (`equal`, `is_nil`, `not_nil`, etc.) |
-| `code/charlie/lua/charlie/json.lua` | The JSON parser the engine will use to load `.ksj` files |
+| `code/charlie/lua/charlie/json.lua` | The JSON parser the engine will use to load `.cjs` files |
 | `code/charlie/lua/charlie/interpreter.lua` | The CharlieJSON executor in whatever state it's currently in |
 
 Open each, read top-to-bottom, get a sense of:
@@ -95,7 +95,7 @@ needs to be brought into line on.
 <a id="step-3-write-the-v001-fixture"></a>
 ## 3 Step 3: Write the V0.01 fixture
 
-Create the file `tests/charlie/fixtures/hello_world.ksj`. Contents,
+Create the file `tests/charlie/fixtures/hello_world.cjs`. Contents,
 exactly:
 
 ```
@@ -112,8 +112,8 @@ no args.
 Verify the file is there:
 
 ```
-cat tests/charlie/fixtures/hello_world.ksj
-wc -l tests/charlie/fixtures/hello_world.ksj
+cat tests/charlie/fixtures/hello_world.cjs
+wc -l tests/charlie/fixtures/hello_world.cjs
 ```
 
 Expected output: the literal JSON string, and `1` line.
@@ -133,7 +133,7 @@ local json = require("charlie.json")
 runner.suite("v0.01 / fixture parse")
 
 runner.test("parses the hello_world fixture", function()
-    local f = assert(io.open("tests/charlie/fixtures/hello_world.ksj"))
+    local f = assert(io.open("tests/charlie/fixtures/hello_world.cjs"))
     local source = f:read("*a")
     f:close()
 
@@ -218,7 +218,7 @@ local engine = require("charlie")
 runner.suite("v0.01 / engine.run")
 
 runner.test("engine.run on the fixture returns a parsed tree", function()
-    local result = engine.run("tests/charlie/fixtures/hello_world.ksj")
+    local result = engine.run("tests/charlie/fixtures/hello_world.cjs")
     assert_.not_nil(result)
     assert_.equal(type(result), "table")
     assert_.equal(#result, 1)

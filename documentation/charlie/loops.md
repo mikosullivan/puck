@@ -138,9 +138,6 @@ $bar.each($foo) as $loop
     print $loop.count   # current iteration, 1-based
     print $loop.active  # true while loop is running
 end
-
-$loop.active            # false after loop ends
-$loop.count             # total iterations
 ```
 
 By default, the loop object is scoped to the loop block. To retain it

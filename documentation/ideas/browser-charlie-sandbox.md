@@ -106,7 +106,7 @@ classes.
   for "how does a Charlie engine work" without the parser
   complexity.
 
-**Parity test**: run the V0.01 `hello_world.ksj` fixture through both
+**Parity test**: run the V0.01 `hello_world.cjs` fixture through both
 the Lua engine and this TS engine; both must return a value with
 `payload == "hello"`. Same fixture, same expected output. The Lua
 engine's existing tests (now 213/213) become the conformance suite.

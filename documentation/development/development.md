@@ -110,7 +110,7 @@ from them. When the two disagree, vibecode wins.
 ["charlie_text_parser", "transpiler", "stdout_io", "sys_references"]}}
 ~~~
 
-The first runnable version. A single `.ksj` file containing the CharlieJSON
+The first runnable version. A single `.cjs` file containing the CharlieJSON
 encoding of "evaluate `"hello".to_string`" executes through the engine
 under `code/charlie/lua/` and returns the string `"hello"` to the test
 harness. No I/O — no stdout, no sinks beyond what the harness needs to
@@ -862,11 +862,11 @@ point; what differs is who triggers it and what they pass in.
 ~~~json
 {"vibecode": {"v001_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
-"lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.ksj"},
+"lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.cjs"},
 {"step": 2, "name": "runner_loads_engine_as_lua_library",
 "example": "local engine = require(\"charlie\")"}, {"step": 3,
 "name": "runner_calls_engine_run_with_file_path", "example":
-"local result = engine.run(\"tests/charlie/fixtures/hello_world.ksj\")"},
+"local result = engine.run(\"tests/charlie/fixtures/hello_world.cjs\")"},
 {"step": 4, "name": "engine_bootstrap_then_parse_then_execute",
 "covered_in_next_subsection": true}, {"step": 5, "name":
 "engine_returns_last_statement_value_to_runner_as_lua_value"},
@@ -877,11 +877,11 @@ point; what differs is who triggers it and what they pass in.
 Top-level shape:
 
 1. **Command-line invocation.** Something like
-   `lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.ksj`.
+   `lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.cjs`.
 2. **Runner loads the engine as a Lua library.** Roughly
    `local engine = require("charlie")`.
 3. **Runner calls `engine.run()` with the fixture path.** Roughly
-   `local result = engine.run("...fixtures/hello_world.ksj")`.
+   `local result = engine.run("...fixtures/hello_world.cjs")`.
 4. **Engine bootstrap, parse, and execute happen behind that one
    call.** Detailed below.
 5. **Engine returns the last statement's value to the runner** as a Lua
@@ -1583,7 +1583,7 @@ All six must pass before V0.01 phase 1 begins.
 
 ~~~json
 {"vibecode": {"phase": 1, "version": "0.01", "fixture_path":
-"tests/charlie/fixtures/hello_world.ksj", "fixture_content":
+"tests/charlie/fixtures/hello_world.cjs", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
 "tests/charlie/run.lua", "acceptance":
 "fixture_runs_via_engine_and_harness_captures_return_value_hello",
@@ -1645,7 +1645,7 @@ so the source→runtime pipeline is end-to-end canonical.
 Read what's already in `code/charlie/lua/charlie/`: in particular `json.lua`
 and `interpreter.lua`. Note the state of each:
 
-- Does `json.lua` parse the JSON forms `hello-world.ksj` needs (top-level
+- Does `json.lua` parse the JSON forms `hello-world.cjs` needs (top-level
   array, nested array, object with string keys, string values)?
 - Does `interpreter.lua` accept a parsed CharlieJSON tree and dispatch
   statements?
@@ -1708,7 +1708,7 @@ this one's.
 "any_deviation; failure_message_should_name_which_layer_blocked"}}
 ~~~
 
-Create the fixture at `tests/charlie/fixtures/hello_world.ksj` containing
+Create the fixture at `tests/charlie/fixtures/hello_world.cjs` containing
 the CharlieJSON encoding, run it via the engine, capture the last
 statement's return value, compare to the string `"hello"`. Pass = exact
 match on return value plus no exception. Fail = capture which layer
@@ -1788,7 +1788,7 @@ Every test in the plan below follows this pattern.
 | T1.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
 | T1.5 | unit | transition save/restore | Call `engine.transition(engine.roles.stdlib, function() return engine.ctx.current_role end)`; verify return == `engine.roles.stdlib` AND after the call `engine.ctx.current_role == engine.roles.user` and `engine.ctx.chain` is the original table |
 | T1.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
-| T1.7 | integration | full end-to-end | `engine.run("tests/charlie/fixtures/hello_world.ksj")` returns a value whose `payload == "hello"` |
+| T1.7 | integration | full end-to-end | `engine.run("tests/charlie/fixtures/hello_world.cjs")` returns a value whose `payload == "hello"` |
 | T1.8 | unit | transition observed | A spy in the `to_string` method records `engine.ctx.current_role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
 
 T1.8 is the load-bearing test for the role system: it proves the
@@ -1826,7 +1826,7 @@ naming follows the existing convention (`test_<topic>.lua`).
 | Path | Contents |
 |---|---|
 | `tests/sanity/` | Phase 0 workbench tests (engine-independent) |
-| `tests/charlie/fixtures/` | CharlieJSON and text fixtures (e.g., `hello_world.ksj`, `_sanity_text.txt`) |
+| `tests/charlie/fixtures/` | CharlieJSON and text fixtures (e.g., `hello_world.cjs`, `_sanity_text.txt`) |
 | `tests/charlie/v001/` | Phase 1 unit and integration tests (V0.01-specific) |
 | `tests/charlie/run.lua` | Entry point — extended to also require sanity + V0.01 tests |
 | `tests/charlie/support/` | Existing `runner.lua` and `assert.lua`, unchanged |
@@ -2158,7 +2158,7 @@ All six pass = V0.02 done.
 
 | Path | Contents |
 |---|---|
-| `tests/charlie/fixtures/hello_world.charlie` | Charlie source fixture (sibling of `hello_world.ksj`) |
+| `tests/charlie/fixtures/hello_world.charlie` | Charlie source fixture (sibling of `hello_world.cjs`) |
 | `tests/charlie/v002/` | Phase 0 and Phase 1 unit + integration tests |
 | `tests/charlie/run.lua` | Extended to require V0.02 test modules |
 | `tests/charlie/support/assert.lua` | Gains a `deep_equal` helper |
@@ -2469,7 +2469,7 @@ V0.01 T1.8): a spy on the `puts` handler records
 | T3.4 | unit | `env.stdout` override accepted | `engine.run_source(path, {stdout = capture})` runs without error |
 | T3.5 | unit | Transition to stdout role observed during dispatch | Spy on `puts` handler records role at call time; assert it was `stdout` |
 | T3.6 | integration | End-to-end via source file | `engine.run_source("tests/charlie/fixtures/puts_hello.charlie", env)` leaves `env` buffer == `"hello\n"` |
-| T3.7 | regression | V0.01 and V0.02 fixtures still work | Run V0.01 `hello_world.ksj` via `engine.run` and V0.02 `hello_world.charlie` via `engine.run_source`; both still return payload `"hello"` |
+| T3.7 | regression | V0.01 and V0.02 fixtures still work | Run V0.01 `hello_world.cjs` via `engine.run` and V0.02 `hello_world.charlie` via `engine.run_source`; both still return payload `"hello"` |
 
 All seven pass = V0.03 done.
 
