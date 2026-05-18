@@ -225,7 +225,7 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ~~~charlie
 # `if` block
-if $role == 'Prince'
+if $role == 'King'
     puts 'My liege.'
 end
 

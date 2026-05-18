@@ -156,13 +156,13 @@ UTF-8 at system boundaries before passing them to Charlie.
 | `:last` | Replace the last match from the end |
 
 ```
-$foo = 'Mike Stuart Mike'
+$foo = 'Lucy Edmund Lucy'
 
-$foo.replace('Mike', 'foo')         -> 'foo Stuart foo'
-$foo.replace('Mike', 'foo', :all)   -> 'foo Stuart foo'
-$foo.replace('Mike', 'foo', :first) -> 'foo Stuart Mike'
-$foo.replace('Mike', 'foo', :last)  -> 'Mike Stuart foo'
-$foo.replace('xyz', 'bar')          -> 'Mike Stuart Mike'
+$foo.replace('Lucy', 'Susan')         -> 'Susan Edmund Susan'
+$foo.replace('Lucy', 'Susan', :all)   -> 'Susan Edmund Susan'
+$foo.replace('Lucy', 'Susan', :first) -> 'Susan Edmund Lucy'
+$foo.replace('Lucy', 'Susan', :last)  -> 'Lucy Edmund Susan'
+$foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ```
 
 ---

@@ -163,7 +163,7 @@ leave the path unchanged.
 A directory object holds its path relative to the jail root.
 
 ```
-$dir = $jail.dir('docs/shakespeare')
+$dir = $jail.dir('docs/narnia')
 ```
 
 <a id="operations-1"></a>
@@ -184,7 +184,7 @@ $dir.delete              # deletes the directory
 ### 3.2 Navigating
 
 ```
-$dir['hamlet.txt']       # returns a file object
+$dir['caspian.txt']       # returns a file object
 $dir['subdir']           # returns a directory object
 ```
 
@@ -194,7 +194,7 @@ object is created without hitting the filesystem; failure occurs on the actual o
 Directories can be chained:
 
 ```
-$text = $jail.dir('docs').dir('shakespeare')['hamlet.txt'].read
+$text = $jail.dir('docs').dir('narnia')['caspian.txt'].read
 ```
 
 ---

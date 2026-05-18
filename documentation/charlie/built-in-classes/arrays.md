@@ -137,10 +137,10 @@ element object is a live reference: it knows its current index and stays in sync
 array as elements are moved or deleted.
 
 ```
-$arr = ['a', 'b', 'c', 'd']
+$arr = ['Lucy', 'Edmund', 'Susan', 'Peter']
 $els = $arr.elements
 
-$els[0].value   -> 'a'
+$els[0].value   -> 'Lucy'
 $els[0].index   -> 0
 ```
 
@@ -167,15 +167,15 @@ Element objects reflect the current state of the array. Moving one element updat
 `index` of all affected elements:
 
 ```
-$arr = ['a', 'b', 'c']
+$arr = ['Lucy', 'Edmund', 'Susan']
 $els = $arr.elements
 
 $els[2].move_to_start
 
-$arr            -> ['c', 'a', 'b']
-$els[0].value   -> 'c'   # $els[0] is now 'c'
-$els[1].value   -> 'a'
-$els[2].value   -> 'b'
+$arr            -> ['Susan', 'Lucy', 'Edmund']
+$els[0].value   -> 'Susan'   # $els[0] is now 'Susan'
+$els[1].value   -> 'Lucy'
+$els[2].value   -> 'Edmund'
 ```
 
 <a id="deleted-elements"></a>
@@ -185,12 +185,12 @@ After `delete`, the element is removed from the array. Any method call on the de
 element raises an exception:
 
 ```
-$arr = ['a', 'b', 'c']
+$arr = ['Lucy', 'Edmund', 'Susan']
 $els = $arr.elements
 
 $els[1].delete
 
-$arr            -> ['a', 'c']
+$arr            -> ['Lucy', 'Susan']
 $els[1].value   # raises exception — element has been deleted
 ```
 
@@ -225,14 +225,14 @@ Pass a value; `find` returns every Element whose value `==` the
 argument:
 
 ```
-$arr = ['apple', 'banana', 'apple', 'cherry']
+$arr = ['Lucy', 'Edmund', 'Lucy', 'Susan']
 
-$found = $arr.find('apple')
+$found = $arr.find('Lucy')
 
 $found.length        -> 2
 $found[0].index      -> 0
 $found[1].index      -> 2
-$found[0].value      -> 'apple'
+$found[0].value      -> 'Lucy'
 ```
 
 If nothing matches, `find` returns `[]` (empty array). No
@@ -293,8 +293,8 @@ For the common "I want just the first match" or "just the last
 match" cases, two thin sugars:
 
 ```
-$el = $arr.find_first('apple')
-$el = $arr.find_last('apple')
+$el = $arr.find_first('Lucy')
+$el = $arr.find_last('Lucy')
 
 $el = $arr.find_first() do($index, $element)
     $element.value > 10
