@@ -20,10 +20,10 @@ This repository is the working source: design docs, the engine in progress, test
 
 ## The three packages
 
-- **Puck (the object protocol)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
-- **Charlie** — a lightweight, embeddable language. Source is Charlie text; the runtime format is **CharlieJSON**, a JSON-shaped AST the engine executes directly.
-- **Mikobase** — a live, portable object store. Class-based, NoSQL; queries are JSON.
+- **[Puck (the object protocol)](documentation/puck/puck.md)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
+- **[Charlie](documentation/charlie/charlie.md)** — a lightweight, embeddable language. Source is Charlie text; the runtime format is **CharlieJSON**, a JSON-shaped AST the engine executes directly.
+- **[Mikobase](documentation/mikobase/mikobase.md)** — a live, portable object store. Class-based, NoSQL; queries are JSON.
 
 ## Reading the docs
 
-Design specs live under [`documentation/`](documentation/).
+Start with the **[project overview](documentation/overview.md)** for an end-to-end tour. Full specs live under [`documentation/`](documentation/).
