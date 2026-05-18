@@ -7,15 +7,15 @@
 {"vibecode": {
 	"section": "overview",
 	"format": "CharlieJSON",
-	"alias": "ksj",
+	"alias": "cjs",
 	"purpose": "canonical_runtime_format_for_charlie_programs",
 	"not": "bytecode",
-	"convention": "share_as_charlie_source_ksj_is_runtime_artifact",
-	"bootstrap_note": "parser_must_be_written_directly_in_ksj"
+	"convention": "share_as_charlie_source_cjs_is_runtime_artifact",
+	"bootstrap_note": "parser_must_be_written_directly_in_cjs"
 }}
 ~~~
 
-CharlieJSON (informally: ksj) is the canonical runtime format for Charlie programs. It is
+CharlieJSON (informally: cjs) is the canonical runtime format for Charlie programs. It is
 not bytecode — it is a full representation of the program as a JSON data structure. Charlie
 transpiles to CharlieJSON for execution.
 

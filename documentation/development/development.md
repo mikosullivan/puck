@@ -37,7 +37,7 @@ from them. When the two disagree, vibecode wins.
   - [V0.01 invocation chain](#v001-invocation-chain)
   - [V0.01 engine bootstrap sequence](#v001-engine-bootstrap-sequence)
   - [Program model](#program-model)
-  - [What user CharlieJSON can see in V0.01](#what-user-ksj-can-see-in-v001)
+  - [What user CharlieJSON can see in V0.01](#what-user-charliejson-can-see-in-v001)
   - [How later slices grow the lifecycle](#how-later-slices-grow-the-lifecycle)
 - [Lua-side implementation sketch](#lua-side-implementation-sketch)
   - [Data structures (Lua tables)](#data-structures-lua-tables)
