@@ -424,7 +424,7 @@ in `%chain`." Lines 268-282: "engine controls; universally
 available." Suggestion: decide explicitly — the role-crossing case
 is the common one.
 
-<a id="33-vibecode-reserved-field-count-off-by-one-low-resolved-2026-05-17-all-three-reserved-fields-all-four-reserved-fields-vibecode-comment-misc-enterprise"></a>
+<a id="33-vibecode-reserved-field-count-off-by-one-low-resolved-2026-05-17-all-three-reserved-fields-all-four-reserved-fields-vibecode-comment-misc-corporate-field-later-renamed-from-enterprise-to-corporate-on-2026-05-18"></a>
 ### 7.4 33. Vibecode reserved-field count off by one [LOW] [RESOLVED 2026-05-17 — "All three reserved fields" → "All four reserved fields (`vibecode`, `comment`, `misc`, `corporate`)". (Field later renamed from `enterprise` to `corporate` on 2026-05-18.)]
 
 **File:** [vibecode.md:1-3, 247-267, 203](documentation/ecoverse/vibecode.md)

@@ -36,7 +36,7 @@ found so far.
 <a id="still-open"></a>
 ## 2 Still open
 
-<a id="better-name-needed-for-xemes-enterprise-field"></a>
+<a id="better-name-needed-for-xemes-enterprise-field-resolved-2026-05-18"></a>
 ### 2.1 Better name needed for Xeme's `enterprise` field — RESOLVED 2026-05-18
 
 Renamed `enterprise` → `corporate` across the docs. Earlier
