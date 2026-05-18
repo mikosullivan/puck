@@ -187,10 +187,20 @@ own damn fault and they deserve it.
 
 Variables are prefixed with `$`, Perl-style:
 
-```
-$foo
-$loop
-```
+~~~charlie
+$rank      = 'Captain'
+$officer   = 'Picard'
+$greeting  = $rank + ' ' + $officer
+puts $greeting               # Captain Picard
+~~~
+
+Once a variable is set, the `$` form refers to the value:
+
+~~~charlie
+$prince  = 'Hamlet'
+$soliloquy = 'To be or not to be'
+puts $prince + ': ' + $soliloquy
+~~~
 
 `$$foo` returns the variable object itself. Variable objects can be passed around like any
 other object, but deliberately do not expose their value. Pass-by-reference is an
@@ -212,6 +222,60 @@ intentionally unsupported pattern. Future use cases will be designed around this
 
 Blocks are closed with `end`, Ruby-style. Every block creates a new inherited scope.
 This applies to all blocks without exception — `if`, `else`, loop bodies, and bare blocks.
+
+~~~charlie
+# `if` block
+if $rank == 'Captain'
+    puts 'Aye, captain.'
+end
+
+# `while` block
+while $count > 0
+    $count = $count - 1
+end
+
+# Bare block — just `do ... end` standing on its own
+do
+    $tempfile = '/tmp/scratch'
+    puts $tempfile
+end
+~~~
+
+**Inherited scope.** Variables defined in the outer scope are visible inside
+the block:
+
+~~~charlie
+$officer = 'Picard'
+
+if $on_duty
+    puts 'On duty: ' + $officer   # $officer inherited from the outer scope
+end
+~~~
+
+**New scope.** Variables defined *inside* a block stay inside — they are not
+visible after the `end`:
+
+~~~charlie
+$prince = 'Hamlet'
+
+if $prince == 'Hamlet'
+    $play = 'Hamlet'
+end
+
+puts $play     # error — $play was scoped to the `if` block
+~~~
+
+To make a variable survive the block, declare it outside first:
+
+~~~charlie
+$play = null
+
+if $prince == 'Hamlet'
+    $play = 'Hamlet'
+end
+
+puts $play     # 'Hamlet'
+~~~
 
 ---
 
