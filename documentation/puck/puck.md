@@ -31,8 +31,7 @@ the protocol is not Charlie-specific.
 
 `puck.uno/geo` publishes a `Geo` class — a geolocation service. It's
 **inherently remote**: the data (weather feeds, census databases, map
-tiles) lives on the server side. There's no local implementation of
-`Geo` to fall back on; without Puck, the class isn't usable at all.
+tiles) lives on the server side.
 
 The workflow is the standard one: **resolve the class by UNS,
 instantiate it, then use it.**
