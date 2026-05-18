@@ -22,18 +22,18 @@ This repository is the working source: design docs, the engine in progress, test
 ## The three packages
 
 - **[Puck (the object protocol)](documentation/puck/puck.md)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
-- **[Charlie](documentation/charlie/charlie.md)** — a lightweight, embeddable language. Source is Charlie text; the runtime format is **CharlieJSON**, a JSON-shaped AST the engine executes directly.
+- **[Charlie](documentation/charlie/charlie.md)** — a lightweight, embeddable language. Source is Charlie text; the runtime format is **[CharlieJSON](documentation/charlie/charliejson.md)**, a JSON-shaped AST the engine executes directly.
 - **[Mikobase](documentation/mikobase/mikobase.md)** — a live, portable object store. Class-based, NoSQL; queries are JSON.
-
-## Reading the docs
-
-Start with the **[project overview](documentation/overview.md)** for an end-to-end tour. Full specs live under [`documentation/`](documentation/).
 
 ## The Puck community
 
-All of Puck is guided by four principles:
+Puck is guided by four core principles:
 
 - **Puck is easy.**
 - **The Puck community is friendly.**
 - **Software shouldn't tell you how to live your life.**
 - **Everything doesn't have to be complicated.**
+
+## Reading the docs
+
+Start with the **[project overview](documentation/overview.md)** for an end-to-end tour. Full specs live under [`documentation/`](documentation/).
