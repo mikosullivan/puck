@@ -29,14 +29,21 @@
 	"type": "string",
 	"encoding": "utf8",
 	"mutable": false,
-	"key_facts": ["all_methods_return_new_string", "engine_validates_utf8_at_boundary"],
+	"key_facts": ["all_methods_return_new_string",
+		"all_strings_normalized_to_utf8_at_boundary",
+		"no_charset_to_query_no_decode_step"],
 	"example_universe": "Narnia"
 }}
 ~~~
 
-Strings are immutable UTF-8 sequences. Every method returns a new string (or a value of
-another type); none mutate in place. A compliant engine must ensure all strings are valid
-UTF-8 at system boundaries before passing them to Charlie.
+**All strings in Charlie are normalized to UTF-8.** Whatever encoding input arrives in —
+from files, network streams, OS calls, foreign-function returns, anywhere — the engine
+transcodes it to UTF-8 at the boundary before the value becomes a Charlie string. By the
+time user code sees a string, the encoding is guaranteed; there's no charset to query,
+no decode step to remember, and no way to hold a Charlie string in any other encoding.
+
+Strings are immutable. Every method returns a new string (or a value of another type);
+none mutate in place.
 
 ---
 
