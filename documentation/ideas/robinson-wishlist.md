@@ -12,7 +12,7 @@
 
 A running list of features wanted in Robinson, the Charlie HTTP middleware framework.
 Background: Miko built a previous Robinson in Ruby — a comprehensive web framework
-in the same conceptual space as Rails or Sinatra. This document captures features
+in the same conceptual space as Rails or Sammy. This document captures features
 to consider for the Charlie reincarnation.
 
 **Purpose**: capture, not commit. Listing a feature here means "we want this
@@ -55,8 +55,8 @@ on the horizon right now.
 What this means in practice:
 
 - **Defaults match the small case.** Single process, sensible auto-config.
-  The small-site convenience layer (the Sinatra handler, with its method
-  selectors and built-in error pages) is one keyword away (`sinatra: true`)
+  The small-site convenience layer (the Sammy handler, with its method
+  selectors and built-in error pages) is one keyword away (`sammy: true`)
   — not on by default, but trivial to turn on.
 - **Opt-ins unlock the large case.** Worker pool with prefork concurrency,
   custom handler chains, fine-grained settings cascade, alternative routing
@@ -68,7 +68,7 @@ What this means in practice:
 
 Many of the design choices already in this wishlist follow directly from this
 goal: the single-process default with `enable_forking` opt-in, the empty-by-
-default server with a one-keyword `sinatra: true` opt-in for the small-site
+default server with a one-keyword `sammy: true` opt-in for the small-site
 convenience layer, the full handler-chain composability underneath everything.
 Each is a small-case default with a large-case opt-in (or vice versa: a
 clean-slate default with a convenience opt-in). The pattern repeats across
@@ -86,7 +86,7 @@ explicit decision.
 In many cases, Robinson ships with **no default at all**. The developer
 has to declare an intent. There is no admin until you set one up. There
 is no forking until you opt in (and the engine grants permission). There
-is no Sinatra handler until you ask for one. Silence is not consent.
+is no Sammy handler until you ask for one. Silence is not consent.
 
 This is the inverse of the "convenient out-of-the-box" tradition. We
 swap some initial setup for the certainty that the framework isn't
@@ -241,7 +241,7 @@ Every installation has **one or more request handlers** registered in an
 implement up to three optional methods.
 
 The hash representation is a convenience for developers: handlers are referred
-to by nickname (`$server.handlers['csrf']`, `$server.handlers['sinatra']`)
+to by nickname (`$server.handlers['csrf']`, `$server.handlers['sammy']`)
 rather than by position. The keys are purely labels — Robinson doesn't
 interpret them or enforce any pattern. Because Puck hashes are order-sensitive
 (see [hashes.md](../charlie/built-in-classes/hashes.md)), the handlers still
@@ -279,11 +279,11 @@ the response. Examples:
 
 This three-phase chain dissolves the earlier "routing convention" question. There
 is no single routing model in Robinson — routing is whatever a handler implements
-internally. A Sinatra-style closure-based router is a handler. A Rails-style
+internally. A Sammy-style closure-based router is a handler. A Rails-style
 class-based page resolver is a handler. A static-file server is a handler. They
 all coexist on the same chain.
 
-For light systems, a single Sinatra-style handler is enough. For larger systems,
+For light systems, a single Sammy-style handler is enough. For larger systems,
 the chain scales naturally: security at the front, several routing/processing
 handlers in the middle (each owning different URL prefixes or content types),
 and response-refinement handlers at the back.
@@ -382,23 +382,23 @@ Open:
 - What happens to in-flight requests during a graceful shutdown — wait, kill
   after a grace period, drop immediately?
 
-<a id="sinatra-method-selectors"></a>
-### 2.6 Sinatra Method Selectors
+<a id="sammy-method-selectors"></a>
+### 2.6 Sammy Method Selectors
 
-> **Feature lock.** Sinatra is locked for v1. It's intended for **simple
+> **Feature lock.** Sammy is locked for v1. It's intended for **simple
 > cases** — single-file sites, microservices, small internal tools — not
 > expansive multi-host sites with admin tooling. The fancier features
 > Robinson covers (sites, admin authentication, per-host dispatch,
 > `site.json`, canonical redirects, factory message overrides, etc.) do
-> **not** apply to Sinatra-only servers. May revisit if a real use case
-> surfaces; for now, Sinatra's surface is what's specified here.
+> **not** apply to Sammy-only servers. May revisit if a real use case
+> surfaces; for now, Sammy's surface is what's specified here.
 
 A bare `%puck['puck.uno/Robinson'].new()` returns an **empty server** — no
 handlers, no routes, nothing registered. To get the Ruby-Sinatra-style
-method-selector API, opt into the **Sinatra handler**:
+method-selector API, opt into the **Sammy handler**:
 
 ```
-$server = %puck['puck.uno/Robinson'].new(sinatra: true)
+$server = %puck['puck.uno/Robinson'].new(sammy: true)
 
 $server.get('/') do($request)
     response.new(200, {content_type: 'text/plain'}, 'Hello world')
@@ -420,8 +420,8 @@ $server.run() do($request)
 end
 ```
 
-The handler is named **Sinatra** after Ruby Sinatra, whose method-selector
-style Robinson borrows.
+The handler is named **Sammy** (after Sammy Davis Jr.); its
+method-selector style is borrowed from Ruby Sinatra.
 
 Each HTTP method has its own selector — `get()`, `post()`, `put()`, `delete()`,
 `patch()`, `options()`, `head()`. A registration matches when **both** the HTTP
@@ -430,8 +430,8 @@ different methods is fine — they're independent registrations.
 
 Three things are happening:
 
-- **`.new(sinatra: true)`** — instantiate a Robinson server with the Sinatra
-  handler pre-registered under the `'sinatra'` key in the handler hash.
+- **`.new(sammy: true)`** — instantiate a Robinson server with the Sammy
+  handler pre-registered under the `'sammy'` key in the handler hash.
 - **`$server.<method>('/path') do ... end`** — register a closure to handle a
   specific HTTP method at a specific URL path. The closure runs when an
   incoming request matches both.
@@ -440,11 +440,11 @@ Three things are happening:
   registration matched. Without a fallback block (or with one that doesn't
   return a response), an unmatched request becomes a 404.
 
-<a id="sinatra-true-is-just-sugar"></a>
-#### 2.6.1 `sinatra: true` Is Just Sugar
+<a id="sammy-true-is-just-sugar"></a>
+#### 2.6.1 `sammy: true` Is Just Sugar
 
 The opt-in keyword is shorthand for what you could do manually: instantiate a
-Sinatra handler, add it to the handler hash under the `'sinatra'` key, and
+Sammy handler, add it to the handler hash under the `'sammy'` key, and
 delegate the method selectors (`$server.get`, `$server.post`, etc.) to that
 instance. Nothing about the wiring is special-cased inside Robinson — the
 keyword just saves you the three lines.
@@ -455,10 +455,10 @@ it'll use the same delegation mechanism. There's no privileged path here.
 <a id="built-in-error-pages"></a>
 #### 2.6.2 Built-in Error Pages
 
-The Sinatra handler ships with a **standard set of error pages** — 404, 500,
+The Sammy handler ships with a **standard set of error pages** — 404, 500,
 and the other common HTTP status conditions — rendered with plain, sensible
 defaults. These error pages are **not configurable**. They are part of what
-Sinatra gives you; take them as-is when you use it.
+Sammy gives you; take them as-is when you use it.
 
 For small installations this is adequate — most personal sites, internal
 tools, and prototype services never need a custom 404 page, let alone the
@@ -466,8 +466,8 @@ others. The plain defaults look professional enough and require zero work
 from the developer.
 
 For installations that need branded or custom error pages, don't opt into
-Sinatra (or replace it with a customized equivalent). Once you're past
-Sinatra's scope, you take responsibility for your own error handling.
+Sammy (or replace it with a customized equivalent). Once you're past
+Sammy's scope, you take responsibility for your own error handling.
 
 Key design properties:
 
@@ -477,7 +477,7 @@ Key design properties:
 - **Complex things possible**: when a site outgrows the closure-per-route
   pattern, developers register their own handlers in the chain (Rails-style
   page classes, static-file servers, custom middleware) alongside or
-  instead of Sinatra, without abandoning what's already there.
+  instead of Sammy, without abandoning what's already there.
 - **Catch-all in `run()`**: the fallback handler lives in the `run()` call
   itself rather than being a separate registration. Reads naturally as "start
   the server, and if nothing else handles it, fall through to this."
@@ -486,19 +486,19 @@ Key design properties:
   and exposed to the closure as `$request.steps['name']`. Example:
   `/shakespeare/{play}/{act}/{scene}` captures three values.
 - **Ruby-Sinatra-style placeholders are a stated goal (not a hard requirement)**:
-  the Sinatra handler aims to support the same kinds of placeholders Ruby Sinatra
+  the Sammy handler aims to support the same kinds of placeholders Ruby Sinatra
   supports — named captures, splat patterns (`*`), and similar matchers — so
   that anyone familiar with Ruby Sinatra recognizes the route patterns
   immediately. The specific syntax differs (we use `{name}` rather
   than Ruby Sinatra's `:name`), but the semantics aim for parity. This is **a
   goal, not a requirement**: if implementation pressure makes any specific
-  Sinatra-style pattern hard to support, it can be simplified or dropped
+  Sammy-style pattern hard to support, it can be simplified or dropped
   without breaking the design. Parity in spirit, feature-by-feature as
   practical.
 
 Open:
 
-- **Specific placeholder set**: the Sinatra-style goal covers named captures
+- **Specific placeholder set**: the Sammy-style goal covers named captures
   (`{name}`) and splat (`*`) at minimum. Trailing-slash semantics, regex
   patterns, optional segments, file-extension matches, etc. are each a
   separate "do we support this?" decision.
@@ -625,7 +625,7 @@ the return that would otherwise run.
 
 Open:
 
-- **Where the `response` DSL is available**: confirmed for Sinatra-style
+- **Where the `response` DSL is available**: confirmed for Sammy-style
   closures. Should the same DSL appear inside custom handlers' `process`
   methods? Likely yes (parity), but worth pinning explicitly.
 - **Specific options-hash keys**: `content_type` is the obvious one;

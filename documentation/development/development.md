@@ -610,15 +610,15 @@ not a wall — but the budget should be visible.
 
 ~~~json
 {"vibecode": {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
-"sinatra", "trivet", "uma", "bryton", "jasmine", "puck_identity",
+"sammy", "trivet", "uma", "bryton", "jasmine", "puck_identity",
 "deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
 "external_service; charlie_client_is_thin_http", "v1_http_path":
-"sinatra_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
+"sammy_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
 "handler_implements_directly; no_declarative_role_policy"}}
 ~~~
 
 V1 ships Puck.uno as a deployable service. The HTTP layer that ships with
-V1 is Sinatra (built on Touchstone); the V1 HTTP path is Sinatra-style
+V1 is Sammy (built on Touchstone); the V1 HTTP path is Sammy-style
 explicit handlers. **Robinson** (the filesystem-tree page-server) is **not
 bundled with V1** — it's a library resolved through Puck on demand, so it
 can land on its own timeline without blocking V1. Programs that don't use
@@ -657,7 +657,7 @@ production).
 {"v": "0.1", "name": "bryton", "proves":
 "first_usable_test_framework_for_charlie_code; runner_walks_dir_and_aggregates_xemes"},
 {"v": "0.0X", "name": "first_http_response", "proves":
-"sinatra_routing; handler_chain; response_object"}, {"v": "0.0X", "name":
+"sammy_routing; handler_chain; response_object"}, {"v": "0.0X", "name":
 "first_db_read", "proves": "mikobase_client; data_flow"}, {"v": "0.0X",
 "name": "first_uma_response", "proves":
 "trivet; uma; body_handle_to_string"}, {"v": "0.0X", "name":
@@ -838,7 +838,7 @@ allowed objects into the outermost CharlieJSON block**.
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
 "v001_host": "lua_test_runner_invoked_from_command_line",
 "later_hosts": ["standalone_cli_via_v00x_charlie_cli_slice",
-"sinatra_request_handler_v003_plus",
+"sammy_request_handler_v003_plus",
 "one_running_ksj_calling_another_via_function_dispatch"]}}}
 ~~~
 
@@ -849,7 +849,7 @@ engine. They are different layers.
 In V0.01 the host is a Lua test runner invoked from the command line.
 Later hosts include the standalone `charlie` CLI (arrives in the
 [V0.0X charlie-cli slice](#v00x-charlie-command-line-execution),
-prerequisite for V0.1 Bryton), a Sinatra request handler (at the
+prerequisite for V0.1 Bryton), a Sammy request handler (at the
 first-HTTP slice — every handler closure is itself CharlieJSON that the engine
 runs in response to a request), and one piece of running CharlieJSON calling
 another (which emerges from normal function dispatch, no separate
@@ -1002,7 +1002,7 @@ created.
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
 "runner_may_optionally_transpile_charlie_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
-"first_http": {"new_host": "sinatra_request_handler",
+"first_http": {"new_host": "sammy_request_handler",
 "new_bootstrap_pieces":
 ["network_faucet_role; request_object_tagged_with_faucet_role"],
 "new_visibility":
@@ -1023,7 +1023,7 @@ CharlieJSON exactly as in V0.01.
 
 Later slices extend the lifecycle in these ways:
 
-- **New hosts.** The first HTTP slice introduces a Sinatra request
+- **New hosts.** The first HTTP slice introduces a Sammy request
   handler as a host: an incoming request triggers a handler closure
   (itself CharlieJSON) to execute. Same `engine.run()`-shaped entry; the
   caller is different.

@@ -1,20 +1,23 @@
-# Sinatra
+# Sammy
 
 ~~~json
 {"vibecode": {
-	"doc": "sinatra",
-	"role": "spec for puck.uno/sinatra, a small-site HTTP server with Ruby-Sinatra-style route handlers (closures bound to HTTP-method+path pairs); core middleware built on Touchstone",
+	"doc": "sammy",
+	"role": "spec for puck.uno/sammy, a small-site HTTP server with Ruby-Sinatra-style route handlers (closures bound to HTTP-method+path pairs); core middleware built on Touchstone",
 	"key_concepts": ["route_handlers", "method_path_pairs", "closure_handlers",
 		"catch_all_fallthrough", "touchstone_descendant"]
 }}
 ~~~
 
-`puck.uno/sinatra` — a small-site HTTP server with Ruby-Sinatra-style
+`puck.uno/sammy` — a small-site HTTP server with Ruby-Sinatra-style
 route handlers. Closures register against HTTP-method + path pairs;
 unmatched requests fall through to a catch-all.
 
+Named after **Sammy Davis Jr.**; the route-handler design is inspired
+by **Ruby Sinatra**.
+
 Built on [Touchstone](touchstone.md), which provides content-type
-defaults, Jasmine integration, and shared HTTP plumbing. Sinatra
+defaults, Jasmine integration, and shared HTTP plumbing. Sammy
 adds the route-handler layer and its own approach to static file
 serving on top.
 
@@ -24,10 +27,10 @@ serving on top.
 ## 1 Status
 
 Spec in development. Material previously filed under the
-[Dogberry wishlist](../../ideas/dogberry-wishlist.md) (Sinatra
+[Dogberry wishlist](../../ideas/dogberry-wishlist.md) (Sammy
 Method Selectors section, error pages, etc.) applies here and
 will be ported in as this doc fills out. Until that port is
-done, treat the wishlist as the source of truth for Sinatra's
+done, treat the wishlist as the source of truth for Sammy's
 shape.
 
 ---
@@ -36,7 +39,7 @@ shape.
 ## 2 Quick example
 
 ```
-$server = %['puck.uno/sinatra'].new()
+$server = %['puck.uno/sammy'].new()
 
 $server.get('/') do($request)
     response.new(200, {'Content-Type': 'text/plain'}, 'Hello world')
@@ -137,11 +140,11 @@ named-capture syntax above.
 
 **Method mismatches return 404, not 405.** If the client sends
 `POST /users/42` and only `GET /users/{id}` is registered,
-Sinatra treats the request as unmatched — the path-with-this-method
+Sammy treats the request as unmatched — the path-with-this-method
 doesn't exist. The request falls through to the catch-all on
 `$server.run` (or the built-in 404 page if there's no catch-all).
 No automatic 405 for the mismatch itself. This matches Ruby
-Sinatra's behavior and keeps the routing dispatch simple — Sinatra
+Sammy's behavior and keeps the routing dispatch simple — Sammy
 doesn't have to track which other methods exist for a given path
 pattern just to refine an error response. Handlers that want
 strict 405 semantics use [`$server.reject`](#explicit-405-serverreject)
@@ -161,7 +164,7 @@ both should be served. No automatic normalization, no 301
 redirect. This matches Ruby Sinatra's explicit behavior. If
 canonical-form redirects are wanted, the developer registers a
 small redirecting handler — or an upstream reverse proxy
-normalizes paths before Sinatra sees them.
+normalizes paths before Sammy sees them.
 
 **Route precedence: first match wins, by registration order.**
 Each `$server.get/.post/.put/...` registration adds a path
@@ -267,7 +270,7 @@ $server.reject('/users/{id}', 'POST', 'PUT', 'DELETE')
 #           Allow: GET, HEAD
 ```
 
-The `Allow` header is **auto-populated** by Sinatra from the
+The `Allow` header is **auto-populated** by Sammy from the
 cached [methods-per-path index](#methods-per-path-index) — the
 same index that powers auto-OPTIONS. The developer doesn't have
 to maintain the Allow list; it stays in sync with the
@@ -292,7 +295,7 @@ the global default.
 <a id="auto-options"></a>
 ### 4.4 Auto-OPTIONS
 
-Sinatra ships with a **built-in default handler** that responds
+Sammy ships with a **built-in default handler** that responds
 to `OPTIONS /path` with `204 No Content` and an `Allow:` header
 listing the methods registered for that path:
 
@@ -306,12 +309,12 @@ $server.delete('/users/{id}') do($request) ... end
 #           Allow: GET, HEAD, DELETE, OPTIONS
 ```
 
-`OPTIONS` is always included in the Allow list (Sinatra is
+`OPTIONS` is always included in the Allow list (Sammy is
 answering the OPTIONS request, so OPTIONS is by definition
 supported).
 
 **It's a handler, not a special dispatch path.** At construction,
-Sinatra appends a final-position OPTIONS-matching handler to the
+Sammy appends a final-position OPTIONS-matching handler to the
 handler chain. The chain's normal first-match-wins rule applies:
 explicit `$server.options(path) do ... end` registrations live
 earlier in the chain and win. This is the path for CORS
@@ -331,7 +334,7 @@ end
 at server construction:
 
 ```
-$server = sinatra.new(auto_options: false)
+$server = sammy.new(auto_options: false)
 ```
 
 With it off, OPTIONS requests fall through like any other
@@ -349,7 +352,7 @@ form) is not handled by the default. Register
 
 Both auto-OPTIONS and [`$server.reject`](#explicit-405-serverreject)
 need to know "which methods are registered for path X" to
-populate the `Allow:` header. Sinatra maintains a cached
+populate the `Allow:` header. Sammy maintains a cached
 `{path_pattern → [methods]}` index, rebuilt lazily after any
 registration call. After `$server.run` starts, registrations
 are usually frozen — the index settles to one build and stays
@@ -396,21 +399,21 @@ All of these are universal HTTP infrastructure and live in
   `steps` (positional and nickname), `params`, `param_array`,
   `param_hash`, `body`. Steps nicknames are populated by
   Touchstone's pattern matcher before the request is locked, so
-  Sinatra path-selector closures see fully-formed steps
+  Sammy path-selector closures see fully-formed steps
   including `{name}` captures.
 - The [`$transaction` object](touchstone.md#the-transaction-object) —
   `request`, `response`, `session`.
 - [Sessions](touchstone.md#sessions) — `$transaction.session`
   hash, domain configuration, default cookie attributes.
 - [Body buffering](touchstone.md#body-buffering) — memory and
-  FSO modes, `puck.uno/touchstone/error/sinatra/cannot_store_files`.
+  FSO modes, `puck.uno/touchstone/error/sammy/cannot_store_files`.
 
-Sinatra inherits these unchanged.
+Sammy inherits these unchanged.
 
 <a id="static-file-serving"></a>
 ## 6 Static file serving
 
-Sinatra **has no filesystem dependency by default.** A bare `.new()`
+Sammy **has no filesystem dependency by default.** A bare `.new()`
 gives a routes-only server that never touches a filesystem — ideal
 for IPC over Unix sockets, in-memory test fixtures, or any
 environment where there's nothing to read from disk.
@@ -423,9 +426,9 @@ $server.static $dir
 ```
 
 The `$dir` is a directory object (Puck's filesystem abstraction).
-Sinatra doesn't know or care what backs it — could be a real
+Sammy doesn't know or care what backs it — could be a real
 filesystem path, an in-memory tree, a remote source, a tarball,
-anything that implements the directory interface. Sinatra just
+anything that implements the directory interface. Sammy just
 asks the directory for files by name and serves whatever comes
 back, applying the content-type factory defaults from
 [Touchstone](touchstone.md).
@@ -433,14 +436,14 @@ back, applying the content-type factory defaults from
 Multiple `static` registrations are fine; they layer in
 registration order.
 
-**Why a directory object, not a path string.** Sinatra is the
+**Why a directory object, not a path string.** Sammy is the
 intended server for IPC and other very-light deployments. Taking
 a path string would couple it to the filesystem; taking a
 directory object decouples it. The directory abstraction handles
 the "where do the bytes come from" question separately, so
-Sinatra stays light.
+Sammy stays light.
 
-**No entry, no serve.** Sinatra refuses to serve a file whose
+**No entry, no serve.** Sammy refuses to serve a file whose
 extension does not have an explicit entry in
 [`factory.json`](factory.json) (or a developer-supplied
 extension). A file with an unknown or unlisted extension returns
@@ -463,15 +466,15 @@ defaults" principle as the per-extension rule above.
 <a id="concurrency"></a>
 ## 7 Concurrency
 
-**Sinatra is single-threaded. One request at a time.** The accept
+**Sammy is single-threaded. One request at a time.** The accept
 loop reads a request, runs the handler synchronously, writes the
 response, then accepts the next connection. There is no thread
 pool, no fiber pool, no async runtime — Charlie itself is
-single-threaded by design, and Sinatra inherits that constraint
+single-threaded by design, and Sammy inherits that constraint
 directly. This keeps the implementation tiny and makes handlers
 trivial to reason about: no locking, no race conditions, no
 shared-mutable-state hazards between requests in a single
-Sinatra process.
+Sammy process.
 
 **Multiple TCP connections waiting at once is fine** — they queue
 at the OS level on the listen socket. The accept loop just
@@ -481,18 +484,18 @@ socket in IPC deployments.
 **Scaling beyond one request at a time is process-level, not
 thread-level.** Three deployment paths:
 
-- **Externally supervised**: run N Sinatra processes behind a
+- **Externally supervised**: run N Sammy processes behind a
   load balancer or per-Unix-socket, supervised by the host's
   process manager (systemd, k8s, etc.). The deployer owns the
   worker count and restart policy.
-- **Forking add-on**: install the Sinatra forking add-on
+- **Forking add-on**: install the Sammy forking add-on
   (downloadable, not in core) and let it manage a prefork pool
   of workers from a single `$server.run`. Each worker is itself
-  a single-threaded Sinatra process; the add-on just handles
+  a single-threaded Sammy process; the add-on just handles
   fork/accept distribution and worker lifecycle.
 - **Robinson**: if you want forking *and* the other features
   Robinson provides (multi-site dispatch, admin auth, factory
-  pages), use Robinson instead of Sinatra+add-on.
+  pages), use Robinson instead of Sammy+add-on.
 
 **What this rules out for v1:**
 
@@ -501,13 +504,13 @@ thread-level.** Three deployment paths:
 - **WebSockets.** Same reason.
 - **Background work during a request.** The handler completes
   synchronously and returns; there's no "fire-and-forget" task
-  inside Sinatra. Spawn the work externally (a worker, a queue)
+  inside Sammy. Spawn the work externally (a worker, a queue)
   if needed.
 - **Per-request timeouts via threading.** Handler timeouts come
   from `%utils.timeout` wrapping the handler call, not from a
   reaper thread.
 
-These are deliberate trade-offs. Sinatra is meant for small,
+These are deliberate trade-offs. Sammy is meant for small,
 fast, predictable services; cases that need concurrency move
 to Robinson or a deployer-level multi-process setup.
 
@@ -517,8 +520,8 @@ to Robinson or a deployer-level multi-process setup.
 The handler chain, three-stage dispatch (`before` / `process` /
 `after`), the `$transaction` object, per-handler state, uncaught
 exception handling, and short-circuit semantics all live in
-[Touchstone](touchstone.md#the-handler-chain). Sinatra inherits
-the full machinery; this section just notes the Sinatra-specific
+[Touchstone](touchstone.md#the-handler-chain). Sammy inherits
+the full machinery; this section just notes the Sammy-specific
 details on top.
 
 **Path selectors as Handlers.** The `$server.get('/foo') do ... end`,
@@ -536,8 +539,8 @@ in the same flat `$server.handlers` array. There's no separate
 deciding whether to handle the request as it gets called.
 Registration order is dispatch order.
 
-**Catch-all.** Sinatra's `$server.run() do ... end` catch-all is
-the Sinatra-specific fallback when no handler returned a response.
+**Catch-all.** Sammy's `$server.run() do ... end` catch-all is
+the Sammy-specific fallback when no handler returned a response.
 See [The three stages](touchstone.md#the-three-stages) in
 Touchstone for how that slots into the dispatch flow.
 
@@ -548,19 +551,19 @@ Both are universal HTTP security features and live in
 [Touchstone](touchstone.md):
 
 - [CSRF Protection](touchstone.md#csrf-protection) — opt-in via
-  `$server.csrf_guard = true`. Sinatra exposes the per-route
+  `$server.csrf_guard = true`. Sammy exposes the per-route
   `csrf: false` opt-out as a path-selector kwarg.
 - [Content Security Policy (CSP)](touchstone.md#content-security-policy-csp) —
   per-response `$response.csp` hash.
 
-Sinatra inherits both unchanged.
+Sammy inherits both unchanged.
 
 <a id="whats-out-of-scope"></a>
 ## 10 What's out of scope
 
 The fancier features Robinson covers (multi-site dispatch,
 filesystem trees, admin authentication, factory message overrides,
-canonical redirects) do **not** apply to Sinatra. If you need
+canonical redirects) do **not** apply to Sammy. If you need
 those, use Robinson.
 
 <a id="candidates-for-v1"></a>
@@ -568,10 +571,10 @@ those, use Robinson.
 
 The features below are tempting to add. Each is a v1 candidate
 **if and only if it proves light** — a short, clean implementation
-that doesn't push Sinatra's core out of microservice territory.
+that doesn't push Sammy's core out of microservice territory.
 A 50-line addition is a different proposal from a 500-line
 subsystem. The general rule that catches most of these: if a
-feature requires Sinatra to know something domain-specific about
+feature requires Sammy to know something domain-specific about
 HTTP semantics, auth, or the application's state model, it
 probably doesn't belong in core.
 
@@ -588,10 +591,10 @@ full spec section above) or moved to add-on territory.
   persistent expiry) stay add-on.
 - **Authentication / authorization helpers.** Auth is usually a
   deployment concern (reverse proxy, JWT verifier upstream).
-  Sinatra shouldn't ship anything that touches credentials.
+  Sammy shouldn't ship anything that touches credentials.
 - **CORS.** Out of scope for v1. Headers the developer can set
   explicitly via their own `$server.options(...)` handler;
-  baking in CORS rules ships a permission system Sinatra
+  baking in CORS rules ships a permission system Sammy
   shouldn't own, and a permissive default would be a security
   hole. **Will need revisiting.** If the page-as-API story
   ([Robinson](robinson.md)) leads developers to commonly expose
@@ -606,7 +609,7 @@ full spec section above) or moved to add-on territory.
 ### 11.2 HTTP "correctness" niceties
 
 - **Auto-HEAD from GET.** Tempting and small, but it implies
-  "Sinatra knows your GET is side-effect-free," which it doesn't.
+  "Sammy knows your GET is side-effect-free," which it doesn't.
   Make HEAD an explicit `.head()` registration if wanted.
 - **Content negotiation (Accept header parsing).** A whole
   subsystem disguised as one feature.
@@ -671,18 +674,18 @@ Long-polling, WebSockets, SSE not viable in core.)
 <a id="add-ons"></a>
 ## 12 Add-ons
 
-Sinatra is designed to be extended by add-ons — installable
+Sammy is designed to be extended by add-ons — installable
 packages that layer additional behavior on top of the core
 server. The architecture supports them, and the v1 surface is
 deliberately small enough that third parties have room to add
 real value (authentication helpers, template engines, websocket
 support, content negotiation, rate limiting, etc.).
 
-**First-party add-ons** that ship alongside Sinatra but are
+**First-party add-ons** that ship alongside Sammy but are
 explicitly opt-in downloads, not core:
 
 - **Forking add-on.** Forks a worker process per incoming
-  request. Each worker is a single-threaded Sinatra (or
+  request. Each worker is a single-threaded Sammy (or
   Robinson) process that handles one request and exits.
   **Mode: fork, detach, ignore.** Parent doesn't track the
   child, doesn't wait for it, doesn't reuse it — each request
@@ -695,7 +698,7 @@ explicitly opt-in downloads, not core:
   recovery. The fire-and-forget shape is the only mode for v1
   and the foreseeable future.
 
-For v1, **everything currently spec'd stays in the core Sinatra
+For v1, **everything currently spec'd stays in the core Sammy
 package** — routes, params, static file serving, multipart
 uploads, response handling, error pages, the lot. The add-on
 architecture is the extension point for things we *haven't*
@@ -717,7 +720,7 @@ header conventions (raw HTTP names, snake_case aliases for
 duplicate-cookie-name warning, and the redirect machinery
 (`response.redirect.permanent`, etc.) all live in
 [Touchstone § The response object](touchstone.md#the-response-object).
-Sinatra inherits them unchanged.
+Sammy inherits them unchanged.
 
 ---
 

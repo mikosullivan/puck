@@ -129,7 +129,7 @@ Service" as a placeholder, not a final name.
   Probably both, picked per endpoint.
 - **Concurrency model.** Server-side Charlie is per-request
   single-threaded (engine constraint); horizontal scaling is by
-  process. Same model as Sinatra and Robinson already use.
+  process. Same model as Sammy and Robinson already use.
 - **Authentication / billing / quotas.** Optional but real if this
   ever runs as a public service. Blockchain identity is the natural
   hook.

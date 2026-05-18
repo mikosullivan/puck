@@ -5,7 +5,7 @@
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "canonical_location": "ideas/ until firm enough to promote to documentation/charlie/http-middleware/",
-    "what_is_known": "dogberry_is_http_middleware_peer_of_sinatra_and_robinson_but_a_different_kind_of_middleware_entirely_from_robinson",
+    "what_is_known": "dogberry_is_http_middleware_peer_of_sammy_and_robinson_but_a_different_kind_of_middleware_entirely_from_robinson",
     "what_is_not": ["not_robinson", "not_role_based_access_control"],
     "preexisting_file": "documentation/charlie/http-middleware/dogberry.md_is_stale_per_project_memory_pending_review_or_replacement_by_this_doc",
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"

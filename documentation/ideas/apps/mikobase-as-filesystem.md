@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "mikobase-as-filesystem",
-	"role": "brainstorm about exposing a mikobase as a directory-tree filesystem so storage-agnostic consumers (Sinatra static, Jasmine stores, DirJails) can use mikobase transparently; explores the two superpowers POSIX cannot offer",
+	"role": "brainstorm about exposing a mikobase as a directory-tree filesystem so storage-agnostic consumers (Sammy static, Jasmine stores, DirJails) can use mikobase transparently; explores the two superpowers POSIX cannot offer",
 	"key_concepts": ["mikobase_backed_filesystem", "storage_agnostic_consumers",
 		"transactions_over_files", "history_over_files"],
 	"status": "brainstorm"
@@ -24,7 +24,7 @@ directory-tree interface backed by mikobase data?
 ## 1 Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
-  object is expected ([Sinatra static serving](../../charlie/http-middleware/sinatra.md#static-file-serving),
+  object is expected ([Sammy static serving](../../charlie/http-middleware/sammy.md#static-file-serving),
   [Jasmine directory stores](../../charlie/jasmine/jasmine.md#stores),
   [%utils.tempdir DirJails](../../charlie/utils.md), etc.) without those
   consumers knowing anything about mikobase.
@@ -170,7 +170,7 @@ above.
 
 By the time the broader **FSO (file system objects)** abstraction
 is finished — directory objects, file objects, DirJails, the
-interface that Sinatra's `$server.static` consumes — a rudimentary
+interface that Sammy's `$server.static` consumes — a rudimentary
 mikobase-backed filesystem implementation should be a small
 additional step. Not committed yet; flagged as a likely outcome
 of the work that's already happening for other reasons.
@@ -208,7 +208,7 @@ intermediate "still typing" noise in the history. Mitigations:
 - **Retention policy** that drops fine-grained history past
   some age, keeping labeled states for the long term.
 
-The killer combo: mikobase-as-filesystem + Sinatra + Jasmine →
+The killer combo: mikobase-as-filesystem + Sammy + Jasmine →
 "every config change is recorded, every deploy is a tagged state,
 every request log is reproducible against the exact filesystem
 state that served it."

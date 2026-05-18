@@ -38,7 +38,7 @@ named after the author's old high school.
 
 Spec in development. **Robinson is not in core and not required
 for launch day.** This document captures the design well enough
-to see how it fits with Sinatra and Touchstone; details that
+to see how it fits with Sammy and Touchstone; details that
 need filling in are flagged. The
 [Dogberry wishlist § Robinson Handler](../../ideas/dogberry-wishlist.md#robinson-handler-filesystem-tree-pages)
 holds earlier-thinking material that this spec consolidates and
@@ -85,8 +85,8 @@ Per-site sub-chain (the "directory handlers"):
 Each entry is a regular Touchstone Handler — same
 `before` / `process` / `after` interface every other Handler
 uses. Developers can insert their own Handlers anywhere (auth,
-CORS, metrics, etc.). **Robinson and Sinatra Handlers are
-interchangeable**; in principle you can install Sinatra
+CORS, metrics, etc.). **Robinson and Sammy Handlers are
+interchangeable**; in principle you can install Sammy
 path-selector Handlers alongside Robinson directory Handlers in
 the same server. Whether that's a feature or a footgun is TBD.
 
@@ -419,7 +419,7 @@ debugging, never to public clients. See
 ## 9 Concurrency
 
 **Robinson is single-threaded. One request at a time.** Same
-model as Sinatra — inherits the simplicity and the constraints.
+model as Sammy — inherits the simplicity and the constraints.
 Charlie is single-threaded by design; Robinson doesn't depart
 from that.
 
@@ -429,13 +429,13 @@ Scaling beyond one request at a time is process-level:
   load balancer or per-Unix-socket, supervised by the host's
   process manager (systemd, k8s, etc.).
 - **Forking add-on.** Install the forking pool add-on (the
-  same one Sinatra offers) — manages a prefork worker pool
+  same one Sammy offers) — manages a prefork worker pool
   from a single `$server.run`. Each worker is itself a
   single-threaded Robinson process. Opt-in download, not core.
 
 What this rules out: long-polling, WebSockets, streaming
 responses, in-process background work. Same trade-offs as
-Sinatra. The framework is designed for sites that need
+Sammy. The framework is designed for sites that need
 ordinary HTTP request/response, where a multi-process scaling
 strategy is sufficient.
 
@@ -764,7 +764,7 @@ storage" question is settled.
   argon2, or scrypt).
 - Helper utility for generating hashes to paste into `site.json`.
 - Session/cookie mechanism details (TTL, signing).
-- Whether admin auth eventually moves to Touchstone (so Sinatra
+- Whether admin auth eventually moves to Touchstone (so Sammy
   can use it) — for now stays Robinson-specific.
 
 ---
@@ -890,16 +890,16 @@ machinery.
 
 ---
 
-<a id="convergence-with-sinatra"></a>
-## 14 Convergence with Sinatra
+<a id="convergence-with-sammy"></a>
+## 14 Convergence with Sammy
 
 The architectures converge cleanly because **everything is a
-Handler**. Sinatra and Robinson are both Touchstone subclasses
+Handler**. Sammy and Robinson are both Touchstone subclasses
 that pre-install a different set of Handlers; they differ in
 the *configuration affordance* (method-selector calls vs.
 filesystem trees) but not in the underlying dispatch model.
 
-| Concept | Sinatra | Robinson | Shared? |
+| Concept | Sammy | Robinson | Shared? |
 |---|---|---|---|
 | Dispatch primitive | Path selector Handler | Directory handler | Touchstone Handler interface |
 | Pattern matching | `{name}` placeholders | URL → file path | Both populate `$request.steps` |
@@ -910,7 +910,7 @@ filesystem trees) but not in the underlying dispatch model.
 | Authentication | Developer rolls own | Built-in admin tree (opt-in) | Robinson-specific (for now) |
 | Multi-host | Not in core | First-class via `server.json` | Robinson-specific |
 
-**Sinatra and Robinson differ in *registration model*, not in
+**Sammy and Robinson differ in *registration model*, not in
 *runtime model*.** A directory Handler and a path-selector
 Handler look identical to the dispatcher. Once dispatch starts,
 Touchstone is in charge.
@@ -921,7 +921,7 @@ Touchstone is in charge.
 ## 15 What's out of scope
 
 If your app is mostly ad-hoc routes rather than content-as-files,
-use [Sinatra](sinatra.md). If you need both styles in one
+use [Sammy](sammy.md). If you need both styles in one
 server, that's possible in principle (both expose Handlers); the
 ergonomics of that combination are deferred until a real use
 case surfaces.
@@ -966,5 +966,5 @@ Admin:
 - **Per-site data storage** mechanism (broader than admin).
 
 Cross-cutting:
-- **Mixing Sinatra and Robinson Handlers** in one server — supported by
+- **Mixing Sammy and Robinson Handlers** in one server — supported by
   the Handler interface; ergonomics TBD.

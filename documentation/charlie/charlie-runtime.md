@@ -777,11 +777,11 @@ flow-control surface.
 <a id="raising-custom-flags"></a>
 ### 8.5 Raising custom flags
 
-For custom flag classes (a specific exception subclass, a Sinatra redirect, a
+For custom flag classes (a specific exception subclass, a Sammy redirect, a
 custom warning, etc.), use the standard object-instantiation pattern:
 
 ```
-$f = %['puck.uno/sinatra/redirect/302'].new('temporary')
+$f = %['puck.uno/sammy/redirect/302'].new('temporary')
 $f['whatever'] = 'dude'
 $f.raise
 ```

@@ -371,10 +371,10 @@ The term doesn't appear in filesystem.md (which uses "jail / file
 object / directory object") or any other doc. Suggestion: define FSO,
 or rename to the existing terminology.
 
-<a id="28-touchstonemdsinatramd-mutate-responsecsp-etc-before-any-response-exists-medium-resolved-2026-05-17-reframed-transactionresponse-as-starts-at-null-but-auto-creates-on-first-write-writes-to-cspheadersstatusbody-instantiate-an-empty-response-on-the-spot-the-cspheader-examples-in-touchstonemd-and-sinatramd-auto-options-now-have-coherent-semantics-the-null-no-handler-wrote-anything-fallback-fires-rule-is-preserved"></a>
-### 6.7 28. touchstone.md/sinatra.md mutate `$response.csp` etc. before any `$response` exists [MEDIUM] [RESOLVED 2026-05-17 — reframed `$transaction.response` as "starts at null but auto-creates on first write": writes to `csp`/`headers`/`status`/`body` instantiate an empty response on the spot. The CSP/header examples in touchstone.md and sinatra.md (auto-OPTIONS) now have coherent semantics. The "null = no handler wrote anything → fallback fires" rule is preserved.]
+<a id="28-touchstonemdsammymd-mutate-responsecsp-etc-before-any-response-exists-medium-resolved-2026-05-17-reframed-transactionresponse-as-starts-at-null-but-auto-creates-on-first-write-writes-to-cspheadersstatusbody-instantiate-an-empty-response-on-the-spot-the-cspheader-examples-in-touchstonemd-and-sammymd-auto-options-now-have-coherent-semantics-the-null-no-handler-wrote-anything-fallback-fires-rule-is-preserved"></a>
+### 6.7 28. touchstone.md/sammy.md mutate `$response.csp` etc. before any `$response` exists [MEDIUM] [RESOLVED 2026-05-17 — reframed `$transaction.response` as "starts at null but auto-creates on first write": writes to `csp`/`headers`/`status`/`body` instantiate an empty response on the spot. The CSP/header examples in touchstone.md and sammy.md (auto-OPTIONS) now have coherent semantics. The "null = no handler wrote anything → fallback fires" rule is preserved.]
 
-**Files:** [touchstone.md:60-61, 766-792](documentation/charlie/http-middleware/touchstone.md); [sinatra.md:304-310](documentation/charlie/http-middleware/sinatra.md#L304-L310)
+**Files:** [touchstone.md:60-61, 766-792](documentation/charlie/http-middleware/touchstone.md); [sammy.md:304-310](documentation/charlie/http-middleware/sammy.md#L304-L310)
 
 touchstone.md says `$response` starts at null and is built by stage
 2. Then handlers write into `$response.csp[...]` and

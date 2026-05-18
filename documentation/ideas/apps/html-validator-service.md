@@ -59,7 +59,7 @@ $result.violations       # array of structured violation reports
 $result.tidied           # cleaned-up version (optional, configurable)
 ```
 
-Or as a Sinatra-style HTTP endpoint with a JSON request/response.
+Or as a Sammy-style HTTP endpoint with a JSON request/response.
 
 <a id="open"></a>
 ## 5 Open

@@ -317,7 +317,7 @@ notes that don't rot.
 - **Flushed** to the logger's stores when the block exits — normal
   return, exception, or any other unwind.
 
-A framework like Sinatra wraps each request in `%chain.log.entry do`
+A framework like Sammy wraps each request in `%chain.log.entry do`
 internally, so per-request logging Just Works for handler code; the
 developer didn't have to write the wrapper themselves.
 
@@ -361,7 +361,7 @@ common case — "what failed and where?" — comes for free.
 real use case surfaces.
 
 **Redirects don't trigger this** because redirects (`response.redirect.permanent`
-and friends, see Sinatra's response model) are caught by the
+and friends, see Sammy's response model) are caught by the
 framework *inside* the entry scope — they never propagate out of
 `.entry do`. From Jasmine's perspective, a redirect is a normal
 exit. If a redirect ever does escape, **that's a framework bug**

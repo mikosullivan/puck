@@ -16,9 +16,9 @@ software for storing, querying, and programming with objects across
 different languages and systems. The ecoverse is organized around
 **three core packages**:
 
-- **Puck** — the object protocol (UNS-addressed remote objects)
-- **Charlie** — the programming language
-- **Mikobase** — the live object store
+- **Puck** — a remote object protocol
+- **Charlie** — a programming language
+- **Mikobase** — a live object store
 
 Each package has its own features and its own canonical specs. The
 sections below walk through each package and its core features, then
@@ -95,22 +95,15 @@ See [puck.md](puck/puck.md) for the full protocol spec.
 ~~~
 
 Charlie is a **lightweight, embeddable programming language**. It
-is designed from the ground up to allow running untrusted code.
+is designed from the ground up to support running untrusted code.
 Designed to run inside a Mikobase engine, a browser, a CLI, or anywhere
 else without external runtime dependencies beyond the engine itself.
 
-See [charlie.md](charlie/charlie.md) for the language reference and
-[charliejson.md](charlie/charliejson.md) for the runtime format.
+See [charlie.md](charlie/charlie.md) for the language reference.
 
 <a id="features-1"></a>
 ### 3.1 Features
 
-- **CharlieJSON as the canonical runtime format.** Charlie source
-  transpiles to CharlieJSON (a JSON-shaped representation the engine
-  executes directly). The format isn't bytecode — it's a full
-  representation of the program. The source-vs-runtime separation
-  preserves the architectural option for alternate source syntaxes
-  fanning into the same canonical form.
 - **Classes and inheritance.** `class 'UNS' ... end` defines a class
   with fields, properties, methods, and helpers. Bare/anonymous
   classes (`class\n    inherits ... end`) for cases like Robinson
@@ -126,16 +119,15 @@ See [charlie.md](charlie/charlie.md) for the language reference and
   shared-memory primitives, no locks.
 - **Role-based security.** Every value is owned by a role. Calling
   into another role's code is a security boundary: `%chain` wipes,
-  the new role's capabilities apply. Replaces the older binary
-  trust/untrust model. See [roles.md](charlie/roles.md).
+  the new role's capabilities apply. See [roles.md](charlie/roles.md).
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception.
 - **Built-in HTTP middleware family.** Touchstone provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). Sinatra and Robinson are sibling middleware frameworks built
+  CSP). Sammy and Robinson are sibling middleware frameworks built
   on Touchstone for route-style and filesystem-tree-style serving
-  respectively. Dogberry is a transforming proxy planned alongside.
+  respectively.
 
 ---
 

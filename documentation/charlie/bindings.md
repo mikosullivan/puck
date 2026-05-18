@@ -26,7 +26,7 @@ and from there into the host process.
 
 But Puck's framework needs Lua-backed functionality everywhere:
 HTTP, filesystem, JSON, SQLite, crypto, markup parsing, etc. The
-question is how user-level Charlie classes (Uma, mikobase, Sinatra,
+question is how user-level Charlie classes (Uma, mikobase, Sammy,
 etc.) get to use these Lua libraries without breaking the seal.
 
 **Bindings are the answer.** They're a controlled bridge: each

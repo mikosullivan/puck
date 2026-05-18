@@ -3,13 +3,13 @@
 ~~~json
 {"vibecode": {
 	"doc": "touchstone",
-	"role": "spec for puck.uno/touchstone, the base HTTP server class inherited by Sinatra and Robinson; holds shared infrastructure (content-type defaults, Jasmine integration, common HTTP plumbing) but is not directly instantiable",
+	"role": "spec for puck.uno/touchstone, the base HTTP server class inherited by Sammy and Robinson; holds shared infrastructure (content-type defaults, Jasmine integration, common HTTP plumbing) but is not directly instantiable",
 	"key_concepts": ["base_http_class", "content_type_factory", "jasmine_integration",
 		"shared_http_plumbing", "not_directly_instantiable"]
 }}
 ~~~
 
-`puck.uno/touchstone` — the **base HTTP server class** that Sinatra
+`puck.uno/touchstone` — the **base HTTP server class** that Sammy
 and Robinson inherit from. Touchstone is **not directly instantiable
 as a working server.** It holds the shared infrastructure both
 descendants need (content-type factory defaults, Jasmine
@@ -25,7 +25,7 @@ for a base class.
 <a id="status"></a>
 ## 1 Status
 
-Spec in development. The shape fills in as Sinatra and Robinson
+Spec in development. The shape fills in as Sammy and Robinson
 surface their requirements — Touchstone is where shared behavior
 crystallizes once both descendants need the same thing.
 
@@ -39,7 +39,7 @@ crystallizes once both descendants need the same thing.
 
 Touchstone ships a factory map from common file extensions to
 `Content-Type` values (`.css` → `text/css`, `.png` → `image/png`,
-`.json` → `application/json`, and so on). Sinatra and Robinson
+`.json` → `application/json`, and so on). Sammy and Robinson
 share this map when serving files; developers can override
 per-server.
 
@@ -112,7 +112,7 @@ and (where applicable) nickname.
 
 Both flavors are populated **before any handler runs.** Touchstone
 matches the URL against the patterns registered by descendant
-classes (Sinatra via `$server.get/.post/...`) at request-build
+classes (Sammy via `$server.get/.post/...`) at request-build
 time and bakes both positional and nickname keys into
 `$request.steps` before locking the request. By the time
 handlers see `$transaction`, `steps` is complete and immutable.
@@ -259,15 +259,15 @@ it on the way in, exposes it as `$transaction.session`, tracks
 mutations, and reserializes on the way out.
 
 **Configuration is required.** A server with no domain configured
-will raise `puck.uno/touchstone/error/sinatra/no_cookie_domain`
+will raise `puck.uno/touchstone/error/sammy/no_cookie_domain`
 the first time a handler accesses `$transaction.session`. Cookies
 without a domain are unsafe; Touchstone refuses to issue them.
 
 ```
-$server = %['puck.uno/sinatra'].new(domain: 'example.com')
+$server = %['puck.uno/sammy'].new(domain: 'example.com')
 
 # Optional: override the cookie name (defaults to 'session')
-$server = %['puck.uno/sinatra'].new(domain: 'example.com',
+$server = %['puck.uno/sammy'].new(domain: 'example.com',
                                       cookie_name: 'sid')
 ```
 
@@ -283,7 +283,7 @@ $server = %['puck.uno/sinatra'].new(domain: 'example.com',
 To override:
 
 ```
-$server = %['puck.uno/sinatra'].new(
+$server = %['puck.uno/sammy'].new(
     domain: 'example.com',
     cookie_secure: false,       # local dev over HTTP
     cookie_samesite: 'Strict',
@@ -340,7 +340,7 @@ Below the limit, bodies are held in memory. Above the limit:
   live is an implementation detail.
 - **If no FSO is configured**, the body is rejected and
   Touchstone raises
-  `puck.uno/touchstone/error/sinatra/cannot_store_files`. The
+  `puck.uno/touchstone/error/sammy/cannot_store_files`. The
   exception carries the request's `Content-Length` and the
   configured memory limit so the caller can produce a useful
   diagnostic.
@@ -379,7 +379,7 @@ in different stages of the transaction. This is the plug-in
 surface that lets add-ons add features — auth checks, CORS
 headers, metrics, logging enrichment, request-ID injection, the
 built-in CSRF guard, etc. — without those features needing to
-live in core. Sinatra's path-selector registrations and
+live in core. Sammy's path-selector registrations and
 Robinson's filesystem-tree dispatch both build on this same
 chain mechanism.
 
@@ -408,7 +408,7 @@ Touchstone walks `$server.handlers` three times per request:
    response). There is no separate `decline()` call or special
    flag — null is the only decline signal. If no handler returns
    a response, the framework's catch-all (the descendant class's
-   responsibility — Sinatra exposes it via `$server.run`)
+   responsibility — Sammy exposes it via `$server.run`)
    fires; if that doesn't return a response either, the built-in
    404 page is produced.
 3. **Stage 3 — `after($transaction)`.** Every handler's `after`
@@ -420,7 +420,7 @@ A handler can implement any subset of `{before, process, after}`.
 The CSRF guard handler has both `before` (verify token) and
 `after` (inject token into HTML). A CORS handler has just
 `after` (add headers). A logging handler has `before` (start log
-entry) and `after` (flush log entry). Sinatra's path selectors
+entry) and `after` (flush log entry). Sammy's path selectors
 have just `process`.
 
 <a id="one-handler-class-one-dispatcher"></a>
@@ -436,7 +436,7 @@ and a single dispatcher function:
   after each).
 
 That's the entire dispatch machinery. Every Handler in the
-chain — Sinatra path selectors, Robinson tree-pages, CSRF guard,
+chain — Sammy path selectors, Robinson tree-pages, CSRF guard,
 CORS, etc. — implements the same interface; the dispatcher
 doesn't know or care which is which. A path selector that
 declines a request is no different from a CORS Handler that has
@@ -501,7 +501,7 @@ and registration position. Without this, debugging a chain of
 handlers means guessing which one threw. The handler-attribution
 field is the first thing an operator looks at.
 
-The attribution names the handler class (`puck.uno/sinatra/csrf_guard`,
+The attribution names the handler class (`puck.uno/sammy/csrf_guard`,
 the developer's custom Handler's UNS, the Robinson page-tree
 handler for a specific site, etc.) and its position in
 `$server.handlers`. Subsystems that compose multiple handlers
@@ -760,7 +760,7 @@ end
 
 The default is "guard on" when `$server.csrf_guard = true`. The
 kwarg only suppresses verification for that specific route. (The
-`csrf: false` kwarg shape lives on Sinatra's path-selector
+`csrf: false` kwarg shape lives on Sammy's path-selector
 registrations; Robinson exposes the same opt-out via its own
 page-config mechanism.)
 
@@ -813,7 +813,7 @@ CSP is the strong defense-in-depth against XSS — it tells the
 browser which sources are allowed for scripts, styles, images,
 etc., so that injected attacker content is refused by the browser
 even when it slips through the application. Touchstone provides
-the mechanism; both Sinatra and Robinson inherit it unchanged.
+the mechanism; both Sammy and Robinson inherit it unchanged.
 
 Touchstone exposes CSP as a **per-response** hash on
 `$response.csp`. Each handler composes the policy for its own
@@ -908,7 +908,7 @@ are stable but neither carries semantic meaning to the browser.
 - **No per-request nonce auto-injection** into `<script>` tags.
   Developers can generate a nonce in the handler, push it into
   `$response.csp['script-src']`, and include it manually in the
-  rendered HTML. Auto-injection (similar to Sinatra's CSRF
+  rendered HTML. Auto-injection (similar to Sammy's CSRF
   guard's form-tag injection) is a candidate for a later
   version if it proves light.
 
@@ -918,10 +918,10 @@ are stable but neither carries semantic meaning to the browser.
 ## 11 Not for direct use
 
 Static file serving is **not** a Touchstone responsibility.
-Sinatra and Robinson each handle static files in their own way —
+Sammy and Robinson each handle static files in their own way —
 their needs differ enough that a shared implementation in the base
 class would compromise both. Touchstone provides the *facts* (the
 content-type map) but leaves the *behavior* to descendants.
 
-If you want a server, instantiate Sinatra or Robinson — not
+If you want a server, instantiate Sammy or Robinson — not
 Touchstone directly.

@@ -99,7 +99,7 @@ TryRuby, Replit, the various "play with this language" pages.
 - Sandboxed Charlie runtime in WebAssembly or compiled-to-JS.
 - Persistent saved snippets for sharing.
 - Pre-loaded mikobase examples, blockchain examples,
-  Sinatra/Bryton skeletons.
+  Sammy/Bryton skeletons.
 - A real first-contact surface: someone reads a Puck article,
   clicks a "try it" link, and 30 seconds later is running Charlie
   in their browser.

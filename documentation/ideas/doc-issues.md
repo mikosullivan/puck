@@ -25,8 +25,8 @@ found so far.
 - **`ideas/uns-required-when.md`** — two fixes:
   - `puck.uno/error` → `puck.uno/exception/error`.
   - The Dogberry-as-framework references (`puck.uno/dogberry/page`,
-    `puck.uno/dogberry/sinatra`) updated to the new standalone
-    model (`puck.uno/robinson/page`, `puck.uno/sinatra`).
+    `puck.uno/dogberry/sammy`) updated to the new standalone
+    model (`puck.uno/robinson/page`, `puck.uno/sammy`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
   puck-object cutoff window. Cross-reference to [puck.md](../puck/puck.md)
   added alongside [versioning.md](../charlie/versioning.md).
@@ -71,14 +71,14 @@ model?
 The Explore-agent sweep confirmed these areas are already
 consistent with recent design decisions:
 
-- **`Piscopo` → `Sinatra` rename** — no remaining references.
+- **`Piscopo` → `Sammy` rename** — no remaining references.
 - **`%chain.exception` → `%chain.throw` rename** — no remaining
   references.
 - **`block` bwc → `begin` bwc rename** — all usages already use
   `begin...end`.
 - **Deleted `hosted-logging-service.md`** — no broken links.
 - **Dogberry-as-framework framing** — the http-middleware/ docs
-  correctly reflect Sinatra and Robinson as standalone servers.
+  correctly reflect Sammy and Robinson as standalone servers.
 - **`%[...]` shorthand for `%puck[...]`** — properly documented
   in system-methods.md.
 - **`%chain.log` and `%stdout`/`%stderr` always-present** — Jasmine

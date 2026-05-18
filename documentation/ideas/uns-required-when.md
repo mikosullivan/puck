@@ -26,7 +26,7 @@ Different subsystems treat UNS names differently:
   `puck.uno/robinson/page`. No UNS on the page class itself — the file's
   location in the tree is its identity.
 - **Other places UNS shows up**: server classes
-  (`puck.uno/sinatra`, `puck.uno/robinson`), built-in classes
+  (`puck.uno/sammy`, `puck.uno/robinson`), built-in classes
   (`puck.uno/exception/error`, `puck.uno/reference`), reference field types
   (`allowed_class: 'foo.com/planet'`), engine-resolved capabilities
   (`%puck['puck.uno/mikobase/sqlite']`), etc.
