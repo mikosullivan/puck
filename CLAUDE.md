@@ -12,7 +12,7 @@ Current development target is **V0.01 "hello-world"** — see [documentation/dev
 
 ## Repo layout (non-obvious bits)
 
-- [documentation/](documentation/) — canonical specs. Markdown here is the source of truth; the published HTML at https://mikosullivan.github.io/kiera-docs/ is a derivative and is regenerated from these files. **Do not regenerate the HTML unless explicitly asked.**
+- [documentation/](documentation/) — canonical specs. Markdown here is the source of truth.
 - [code/](code/) — implementation, organized by component then host language: `code/<component>/<lang>/`. Only `code/charlie/lua/charlie/` has substantial code today; `code/mikobase/`, `code/kiera/`, `code/dogberry/` are placeholders for future work.
 - [tests/](tests/) — mirrors `code/` shape. Only `tests/charlie/` has tests today.
 - [experiments/](experiments/) — scratch files; not part of the build or tests.

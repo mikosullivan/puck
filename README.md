@@ -13,8 +13,4 @@ This repository is the working source: design docs, the engine in progress, test
 
 ## Reading the docs
 
-Design specs live under [`documentation/`](documentation/). For an end-to-end read, the rendered HTML version is at:
-
-**[https://mikosullivan.github.io/kiera-docs/](https://mikosullivan.github.io/kiera-docs/)**
-
-The markdown sources here are canonical; the HTML site is a derivative for easier reading.
+Design specs live under [`documentation/`](documentation/).
