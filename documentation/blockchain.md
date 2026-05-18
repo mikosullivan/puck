@@ -170,7 +170,7 @@ They are in charge of which objects get submitted and when.
 3. Puck posts an `endorse` block with `endorsement: "provenance"`, embedding the object's
    fields directly in the endorsement entry
 
-**The object must include a valid open source license.** Puck will
+The object must include a valid open source license. Puck will
 not sign software that doesn't declare one. The license is exposed
 as a `license` field on the object served at its UNS URL:
 
@@ -185,28 +185,11 @@ as a `license` field on the object served at its UNS URL:
 
 Any [SPDX license identifier](https://spdx.org/licenses/) is
 accepted. Puck reads the `license` field at fetch time and embeds
-it verbatim in the provenance endorsement; an endorsement that
-omits `license` is invalid.
+it verbatim in the provenance endorsement.
 
 When an engine needs `borg.com/foo`, it queries Puck's API, receives the signed block, and
 verifies Puck's signature using the baked-in public key. If the signature is valid, the
 object is trusted.
-
----
-
-<a id="the-blockchain-as-registry"></a>
-## 10 The Blockchain as Registry
-
-The blockchain serves as the permanent, decentralized registry for published objects.
-Once a block is posted, it is available forever regardless of what happens to any
-specific server. No single server going offline can make a published library unavailable.
-
-This is not the only way to obtain objects — objects can also be fetched directly from
-Puck servers or other sources — but it is the highest-trust path. An object on the
-blockchain was verified by Puck at the time of posting and cannot be silently altered.
-
-Puck provides an API over the blockchain so engines do not need to interact with the
-chain directly. The API handles lookup by UNS address and returns the signed block.
 
 ---
 
