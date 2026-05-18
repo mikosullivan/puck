@@ -92,12 +92,16 @@ correctly.
 <a id="invoking-a-method"></a>
 ## 2 Invoking a method
 
-A method call is a **POST to a URL that encodes the class and the
-method**, with a body that carries the instance's `class` and
-`bucket` (the field-value hash):
+A method call is **typically a POST** to a URL that encodes the
+class and the method, with a body that carries the instance's
+`class` and `bucket` (the field-value hash):
 
 - **URL** — `https://{class-uns}/{method}`. The method name lives
   in the URL, not the body.
+- **HTTP verb** — POST in most cases. The protocol allows other
+  verbs (GET, PUT, DELETE, ...); class designers can pick what fits
+  each method's semantics. POST is the safe default and what the
+  examples below use.
 - **Body** — JSON with `class` (the UNS of the instance's class)
   and `bucket` (the field-value hash), plus `params` if the method
   takes any named arguments.
