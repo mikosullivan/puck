@@ -31,7 +31,7 @@ Python library.
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [Getting a Puck client](#getting-a-client)
+- [Getting a Puck client](#getting-a-puck-client)
 - [Looking up a class](#looking-up-a-class)
 - [Instantiation](#instantiation)
 - [Calling methods](#calling-methods)
@@ -74,7 +74,7 @@ class, instantiate, call methods.
 
 ---
 
-<a id="getting-a-client"></a>
+<a id="getting-a-puck-client"></a>
 ## 4 Getting a Puck client
 
 **Module-level default.** `puck.lookup(...)` and friends operate on
