@@ -196,9 +196,12 @@ object is trusted.
 <a id="chain-design"></a>
 ## 11 Chain Design
 
-The Puck blockchain is a permissioned append-only ledger. There is no mining, no
-proof-of-work, and no gas. Records are written directly by authorised signers. Validity
-is determined by signature verification and hash chaining, not by computational work.
+The Puck blockchain is an **open** append-only ledger. There is no mining, no
+proof-of-work, no gas, and no gatekeeper deciding who can write. Anyone can post a
+record; each record carries its signer's signature, and validity is determined by
+signature verification and hash chaining. Trust in a given record comes from trusting
+its signer (see [Authority Blocks](#authority-blocks)) — not from whether the writer
+was "permitted" to post.
 
 Each record in the chain is a JSON object with the following envelope fields:
 
