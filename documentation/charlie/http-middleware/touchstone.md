@@ -75,7 +75,7 @@ threads through every handler method in the chain. It exposes:
   `$response.headers`, `$response.status`, or `$response.body`
   instantiate an empty response object on the spot. This means a
   handler can configure CSP or headers (see
-  [CSP](#content-security-policy-csp)) without an explicit
+  [CSP](#content-security-policy)) without an explicit
   construction step — the first write is the construction. If stage
   2 ends with `$transaction.response` still null (no handler wrote
   anything), the built-in 404 / 5xx fallback fires. Stage 3 handlers
