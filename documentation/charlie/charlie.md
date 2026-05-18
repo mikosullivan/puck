@@ -188,10 +188,10 @@ own damn fault and they deserve it.
 Variables are prefixed with `$`, Perl-style:
 
 ~~~charlie
-$rank      = 'Captain'
-$officer   = 'Picard'
-$greeting  = $rank + ' ' + $officer
-puts $greeting               # Captain Picard
+$role     = 'Prince'
+$name     = 'Hamlet'
+$greeting = $role + ' ' + $name
+puts $greeting               # Prince Hamlet
 ~~~
 
 Once a variable is set, the `$` form refers to the value:
@@ -225,8 +225,8 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ~~~charlie
 # `if` block
-if $rank == 'Captain'
-    puts 'Aye, captain.'
+if $role == 'Prince'
+    puts 'My liege.'
 end
 
 # `while` block
@@ -236,8 +236,8 @@ end
 
 # Bare block — just `do ... end` standing on its own
 do
-    $tempfile = '/tmp/scratch'
-    puts $tempfile
+    $sealed_letter = 'For Polonius, in confidence'
+    puts $sealed_letter
 end
 ~~~
 
@@ -245,10 +245,10 @@ end
 the block:
 
 ~~~charlie
-$officer = 'Picard'
+$courtier = 'Polonius'
 
-if $on_duty
-    puts 'On duty: ' + $officer   # $officer inherited from the outer scope
+if $at_court
+    puts 'At court: ' + $courtier   # $courtier inherited from the outer scope
 end
 ~~~
 
