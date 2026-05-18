@@ -47,7 +47,7 @@ alternate surface syntaxes are planned for v1.
 ~~~
 
 To avoid debates about tabs-vs-spaces and other bickering, a
-Charlie VS Code extentsion if available (link here when it actually
+Charlie VS Code extension is available (link here when it actually
 exists). That extension allows you to format Charlie to your own
 preference. The rule is simple:
 
@@ -522,7 +522,7 @@ end
 ```
 
 No `do` between the parameter list and the body — definitions own their body
-directly (per [When `do` is Required](#when-do-is-required-ressikan)). The
+directly (per [When `do` is Required](#when-do-is-required)). The
 parameters are the function's parameters; outside variables are invisible to
 a function; a closure sees everything in scope at the point it was created.
 
@@ -1043,7 +1043,7 @@ any valid Unicode identifier as a method name.
 ### 19.1 The `?` suffix
 
 The `?` suffix is a Puck convention, not a language-enforced
-contract — the charlie parser doesn't treat names ending in `?`
+contract — the Charlie parser doesn't treat names ending in `?`
 specially. It's a hint to readers about how a method behaves,
 not a hook with semantics baked in. The convention is still
 settling through use; the patterns below describe how it's
