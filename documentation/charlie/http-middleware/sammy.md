@@ -257,12 +257,12 @@ selector that explicitly responds 405:
 
 ```
 $server.get('/users/{id}')    do($request) ... end
-$server.head('/users/{id}')   do($request) ... end
-$server.reject('/users/{id}', 'POST', 'PUT', 'DELETE')
+$server.put('/users/{id}')    do($request) ... end
+$server.reject('/users/{id}', 'POST', 'DELETE', 'PATCH')
 
 # Request: POST /users/42
 # Response: 405 Method Not Allowed
-#           Allow: GET, HEAD
+#           Allow: GET, PUT
 ```
 
 The `Allow` header is **auto-populated** by Sammy from the
@@ -296,12 +296,12 @@ listing the methods registered for that path:
 
 ```
 $server.get('/users/{id}')    do($request) ... end
-$server.head('/users/{id}')   do($request) ... end
+$server.put('/users/{id}')    do($request) ... end
 $server.delete('/users/{id}') do($request) ... end
 
 # Request:  OPTIONS /users/42
 # Response: 204 No Content
-#           Allow: GET, HEAD, DELETE, OPTIONS
+#           Allow: GET, PUT, DELETE, OPTIONS
 ```
 
 `OPTIONS` is always included in the Allow list (Sammy is
