@@ -33,7 +33,7 @@
   - [Tombstone and Birthstone](#tombstone-and-birthstone)
   - [Dependency Resolution](#dependency-resolution)
 - [Use Case: Third-Party Endorsement](#use-case-third-party-endorsement)
-  - [Collaboration: Puck Delegates to ChainGuard](#collaboration-puck-delegates-to-chainguard)
+  - [Collaboration: Puck Delegates to Castle Security](#collaboration-puck-delegates-to-castle-security)
   - [Partnership Goal](#partnership-goal)
 - [Design Notes](#design-notes)
 - [License](#license)
@@ -392,9 +392,9 @@ authority block onward.
 {
   "intent": "delegate",
   "grammar": {"hash": "...", "version": "1.0"},
-  "entity": "chainguard.dev",
+  "entity": "castlesecurity.com",
   "endorsements": ["provenance", "security"],
-  "target_hash": "<chainguard.dev authority block record_hash>",
+  "target_hash": "<castlesecurity.com authority block record_hash>",
   "note": "..."
 }
 ```
@@ -589,11 +589,11 @@ the intended range.
 <a id="use-case-third-party-endorsement"></a>
 ## 16 Use Case: Third-Party Endorsement
 
-**Scenario:** ChainGuard is a security auditing company. A government contractor needs
+**Scenario:** Castle Security is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
-deploying it. ChainGuard reviews the library and posts an endorsement to the chain.
+deploying it. Castle Security reviews the library and posts an endorsement to the chain.
 
-A collaboration between Puck and ChainGuard could be a mutually beneficial arrangement.
+A collaboration between Puck and Castle Security could be a mutually beneficial arrangement.
 
 **Step 1 — Puck vouches for provenance.**
 
@@ -630,9 +630,9 @@ This block answers one question: *did this object really come from borg.com?* No
 
 ---
 
-**Step 2 — ChainGuard establishes its identity.**
+**Step 2 — Castle Security establishes its identity.**
 
-ChainGuard has its own Ed25519 key pair. It posts its own authority block to the chain,
+Castle Security has its own Ed25519 key pair. It posts its own authority block to the chain,
 establishing its identity independently of Puck. No permission from Puck is required.
 
 ```json
@@ -640,11 +640,11 @@ establishing its identity independently of Puck. No permission from Puck is requ
   "intent": "authority",
   "prev_hash": "...",
   "posted": "2026-05-04T10:00:00Z",
-  "signer": "chainguard.dev",
+  "signer": "castlesecurity.com",
   "payload": {
     "intent": "authority",
     "grammar": {"hash": "...", "version": "1.0"},
-    "note": "ChainGuard security audit authority — independent assessments for government contractors",
+    "note": "Castle Security security audit authority — independent assessments for government contractors",
     "public_key": "-----BEGIN PUBLIC KEY-----\n...",
     "puck_primer": "..."
   },
@@ -654,10 +654,10 @@ establishing its identity independently of Puck. No permission from Puck is requ
 
 ---
 
-**Step 3 — ChainGuard reviews and endorses.**
+**Step 3 — Castle Security reviews and endorses.**
 
-ChainGuard fetches Puck's provenance block, reviews the `bucket` contents, and posts
-an endorsement referencing that block by its `record_hash`. ChainGuard does not re-fetch
+Castle Security fetches Puck's provenance block, reviews the `bucket` contents, and posts
+an endorsement referencing that block by its `record_hash`. Castle Security does not re-fetch
 from `borg.com` and does not re-post the source — they are endorsing the specific block
 Puck already verified.
 
@@ -666,7 +666,7 @@ Puck already verified.
   "intent": "endorse",
   "prev_hash": "...",
   "posted": "2026-05-04T11:00:00Z",
-  "signer": "chainguard.dev",
+  "signer": "castlesecurity.com",
   "payload": {
     "intent": "endorse",
     "grammar": {"hash": "...", "version": "1.0"},
@@ -690,19 +690,19 @@ Puck already verified.
 The engine fetches `borg.com/parser`. It verifies:
 
 1. Puck's signature on the provenance block — origin confirmed, object unmodified
-2. ChainGuard's endorsement referencing that same block — security criteria met
+2. Castle Security's endorsement referencing that same block — security criteria met
 
 Both checks are independent. The engine trusts Puck's public key (baked in) and
-ChainGuard's public key (configured by the contractor). Neither party needed to
+Castle Security's public key (configured by the contractor). Neither party needed to
 coordinate with the other. The shared ledger is what ties them together.
 
-<a id="collaboration-puck-delegates-to-chainguard"></a>
-### 16.1 Collaboration: Puck Delegates to ChainGuard
+<a id="collaboration-puck-delegates-to-castle-security"></a>
+### 16.1 Collaboration: Puck Delegates to Castle Security
 
-Although Puck and ChainGuard can operate completely independently, there is a deeper
+Although Puck and Castle Security can operate completely independently, there is a deeper
 collaboration available through trust delegation.
 
-Puck posts a `delegate` block naming ChainGuard as a trusted endorser:
+Puck posts a `delegate` block naming Castle Security as a trusted endorser:
 
 ```json
 {
@@ -713,28 +713,28 @@ Puck posts a `delegate` block naming ChainGuard as a trusted endorser:
   "payload": {
     "intent": "delegate",
     "grammar": {"hash": "...", "version": "1.0"},
-    "entity": "chainguard.dev",
+    "entity": "castlesecurity.com",
     "endorsements": ["provenance", "security"],
-    "target_hash": "<chainguard.dev authority block record_hash>",
-    "note": "Puck delegates provenance and security trust to ChainGuard."
+    "target_hash": "<castlesecurity.com authority block record_hash>",
+    "note": "Puck delegates provenance and security trust to Castle Security."
   },
   "signature": "base64..."
 }
 ```
 
-With this delegation in place, ChainGuard can fetch objects from domains over HTTPS
+With this delegation in place, Castle Security can fetch objects from domains over HTTPS
 and post provenance endorsements signed with their own key. Engines that trust Puck's
-authority block follow the delegation chain and accept ChainGuard's blocks as trusted
+authority block follow the delegation chain and accept Castle Security's blocks as trusted
 provenance — exactly as they would accept blocks signed by Puck directly.
 
-This offloads the fetch-and-sign work from Puck entirely. ChainGuard becomes an
+This offloads the fetch-and-sign work from Puck entirely. Castle Security becomes an
 operational partner: they fetch, they sign, they post, and they add their security
 endorsement in the same pass. Puck's role shrinks to maintaining the authority block
 and the delegation record.
 
 The broader opportunity is significant. The Puck blockchain is not limited to Charlie
 objects — it can store Python libraries, Go modules, or any signed artifact. A company
-like ChainGuard, trusted by Puck and trusted by governments, could position itself as
+like Castle Security, trusted by Puck and trusted by governments, could position itself as
 a leading authority on security-cleared open source across languages and ecosystems.
 Any engine or toolchain that knows how to read the chain gains access to that trust
 infrastructure with no additional setup.
@@ -742,7 +742,7 @@ infrastructure with no additional setup.
 <a id="partnership-goal"></a>
 ### 16.2 Partnership Goal
 
-Puck is actively seeking a partner in this space — a company analogous to ChainGuard
+Puck is actively seeking a partner in this space — a company analogous to Castle Security
 whose endorsements and deprecations would be surfaced directly through the
 `blockchain.puck.uno` API. When such a partnership is in place, a developer calling
 the fetch endpoint would receive not just Puck's provenance block but also the
@@ -754,8 +754,6 @@ They do not need to know anything about the partner's internal processes or quer
 separate API. The blockchain.puck.uno response tells them everything: where the object
 came from, that it hasn't been modified, and whether it meets the security criteria they
 care about.
-
-As Stuart says, this scratches an itch.
 
 ---
 
