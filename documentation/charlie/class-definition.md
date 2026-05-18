@@ -159,15 +159,19 @@ records in `records_history`. There is no separate declaration required.
 ~~~json
 {"vibecode": {
 	"section": "inheritance",
-	"role": "documents single-parent explicit inheritance via the inherits field",
-	"key_concepts": ["inherits_field", "single_parent", "explicit_only", "no_path-implied_inheritance", "write-time_validation"]
+	"role": "documents the inherits field for class-definition-level inheritance; points to the runtime class-stack model for multi-class composition",
+	"key_concepts": ["inherits_field", "class_stack_model",
+		"multi_class_inheritance", "explicit_inheritance",
+		"no_path-implied_inheritance", "write-time_validation"]
 }}
 ~~~
 
-A class inherits all field definitions from its parent class. Subclasses may override or extend
-inherited fields.
+A class can declare a parent via the `inherits` field. Inherited
+field definitions flow to the subclass; the subclass may override
+or extend them.
 
-Inheritance is always explicit via the `inherits` field. There is no path-implied inheritance.
+Inheritance is always explicit via `inherits` — there is no path-
+implied inheritance.
 
 ```json
 {
@@ -176,10 +180,18 @@ Inheritance is always explicit via the `inherits` field. There is no path-implie
 }
 ```
 
-Only one parent is allowed.
+**Charlie uses a multi-class inheritance model.** Every object holds
+an ordered **class stack** rather than a single-parent chain, and
+method/field resolution walks the stack top-down. The class declared
+in the record's `class` field is the base; additional classes can be
+added to the stack at runtime. See
+[charlie-runtime.md § Object Model](charlie-runtime.md#object-model)
+for the full picture — class stack, shadow class, shared bucket —
+and the mechanisms for adding classes to a stack.
 
-Validation of a record always uses the latest active version of its class definition at the time
-of the write. Previously written records are not retroactively invalidated by class changes.
+Validation of a record always uses the latest active version of its
+class definitions at the time of the write. Previously written
+records are not retroactively invalidated by class changes.
 
 <a id="fields"></a>
 ## 8 Fields
