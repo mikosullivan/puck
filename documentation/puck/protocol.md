@@ -84,3 +84,56 @@ Every method in this block is callable by a Puck client over the
 wire. The server side of the class implements them; the JSON
 definition is what a client needs to know to dispatch a call
 correctly.
+
+---
+
+<a id="invoking-a-method"></a>
+## 2 Invoking a method
+
+To invoke a remote method, **the client sends the entire instance
+to the server**, along with the method name and the params hash.
+The request body is a JSON object with three top-level keys:
+
+- **`instance`** — the full object being called on, including its
+  `class` UNS and all field values.
+- **`method`** — name of the method to invoke.
+- **`params`** *(optional)* — hash of named arguments. Omit when
+  the method takes none.
+
+For example, calling `weather` on a Geo instance pointing at
+Starfleet HQ in San Francisco:
+
+```json
+{
+    "instance": {
+        "class": "puck.uno/geo",
+        "lat": 37.7980,
+        "lon": -122.4626
+    },
+    "method": "weather"
+}
+```
+
+And calling `map_image(zoom=14)` on the same instance:
+
+```json
+{
+    "instance": {
+        "class": "puck.uno/geo",
+        "lat": 37.7980,
+        "lon": -122.4626
+    },
+    "method": "map_image",
+    "params": {
+        "zoom": 14
+    }
+}
+```
+
+**The server is stateless with respect to instance identity.** It
+keeps no handles, no sessions, no per-instance state between calls.
+Each request carries the object it operates on. Subsequent calls on
+the "same" instance from the client's perspective each re-send the
+full instance — the server reconstructs whatever it needs each time.
+Field values that a particular method doesn't actually use are
+still sent; the protocol doesn't try to optimize that away.
