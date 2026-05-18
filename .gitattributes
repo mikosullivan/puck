@@ -1,0 +1,10 @@
+# Charlie source files: Ruby is the closest existing Linguist language.
+# Charlie's style is Ruby-influenced, so most syntax highlights cleanly
+# (sigils like $foo and %sys won't be perfect; everything else mostly works).
+# Replace with `linguist-language=Charlie` if/when Charlie lands in
+# github-linguist proper.
+*.charlie linguist-language=Ruby
+
+# CharlieJSON files: JSON-shaped. Linguist would otherwise detect .cjs as
+# CommonJS/JavaScript, which is wrong for this project.
+*.cjs linguist-language=JSON
