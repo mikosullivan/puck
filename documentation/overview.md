@@ -1,6 +1,6 @@
 # Project Overview
 
-## What Is This? (Vic Fontaine II)
+## What Is This?
 
 ~~~json
 {"vibecode": {
@@ -26,7 +26,7 @@ the pieces fit together at runtime.
 
 ---
 
-## Kiera (Quark)
+## Kiera
 
 ~~~json
 {"vibecode": {
@@ -77,7 +77,7 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
 
 ---
 
-## KScript (Bashir)
+## KScript
 
 ~~~json
 {"vibecode": {
@@ -91,10 +91,9 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
 ~~~
 
 KScript is a **lightweight, embeddable programming language**. It
-handles computation and control flow — the things Q0 deliberately
-doesn't do. Designed to run inside a Mikobase engine, a browser, a
-CLI, or anywhere else without external runtime dependencies beyond
-the engine itself.
+is designed from the ground up to allow running untrusted code.
+Designed to run inside a Mikobase engine, a browser, a CLI, or anywhere
+else without external runtime dependencies beyond the engine itself.
 
 See [kscript.md](kscript/kscript.md) for the language reference and
 [kscriptjson.md](kscript/kscriptjson.md) for the runtime format.
@@ -116,7 +115,7 @@ See [kscript.md](kscript/kscript.md) for the language reference and
   Parameters carry metadata via a uniform hash form (`{lazy: true,
   classes: ['string']}`); first-class param manipulation via
   `$foo.params['bar']`.
-- **Single-threaded by default; forking opt-in.** One execution
+- **Single-threaded; forking opt-in.** One execution
   context per engine. The opt-in forking feature spawns isolated
   KScript processes that coordinate through shared Mikobases — no
   shared-memory primitives, no locks.
@@ -135,7 +134,7 @@ See [kscript.md](kscript/kscript.md) for the language reference and
 
 ---
 
-## Mikobase (O'Brien)
+## Mikobase
 
 ~~~json
 {"vibecode": {
@@ -185,7 +184,7 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
 ---
 
-## Cross-cutting design principles (Kira Nerys)
+## Cross-cutting design principles
 
 ~~~json
 {"vibecode": {
@@ -228,7 +227,7 @@ See [vibecode.md](ecoverse/vibecode.md).
 
 ---
 
-## Implementation Status (Vic Holosuite)
+## Implementation Status
 
 ~~~json
 {"vibecode": {
@@ -252,7 +251,7 @@ See [vibecode.md](ecoverse/vibecode.md).
 
 ---
 
-## How It Fits Together (Iden)
+## How It Fits Together
 
 ~~~json
 {"vibecode": {

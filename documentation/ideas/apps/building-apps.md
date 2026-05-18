@@ -1,6 +1,6 @@
 # Building Apps on Mikobase
 
-## Outbound POST Queue (V'Ger)
+## Outbound POST Queue
 
 When an app writes to a remote mikobase over HTTP, it should treat outbound worldlet deltas
 as a queue of pending POSTs rather than fire-and-forget calls. If the connection is

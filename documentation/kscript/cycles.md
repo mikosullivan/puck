@@ -1,6 +1,6 @@
 # Cycles
 
-## Overview (Alandra)
+## Overview
 
 ```
 vibecode: {
@@ -24,7 +24,7 @@ than the hardware level.
 
 ---
 
-## Syntax (Alandra La Forge)
+## Syntax
 
 ```
 vibecode: {
@@ -53,7 +53,7 @@ The `#cycles` block returns a cycles object with two fields:
 
 ---
 
-## Nested Cycles (Shaw)
+## Nested Cycles
 
 ```
 vibecode: {
@@ -88,7 +88,7 @@ call increments all counters currently on the stack.
 
 ---
 
-## Counting Rules (Liam Shaw)
+## Counting Rules
 
 ```
 vibecode: {
@@ -115,7 +115,7 @@ caching, or context switching.
 
 ---
 
-## Implementation Note (Captain Shaw)
+## Implementation Note
 
 ```
 vibecode: {

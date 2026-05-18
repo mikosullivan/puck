@@ -16,7 +16,7 @@ Brainstorm in progress.
 
 ---
 
-## Why (Janeway IV)
+## Why
 
 ```
 vibecode: {
@@ -46,7 +46,7 @@ let people experience KScript before buying into the whole system.
 
 ---
 
-## Architecture: three independent artifacts (B-4)
+## Architecture: three independent artifacts
 
 ```
 vibecode: {
@@ -130,7 +130,7 @@ saving meaningful effort.
 
 ---
 
-## Why KScript is particularly well-suited (Lal)
+## Why KScript is particularly well-suited
 
 ```
 vibecode: {

@@ -6,7 +6,7 @@ it. The underlying real path is never exposed to KScript code.
 
 ---
 
-## The Jail (Tarka)
+## The Jail
 
 ```
 vibecode: {
@@ -44,7 +44,7 @@ $jail['readme.txt'].read
 
 ---
 
-## File Objects (Book)
+## File Objects
 
 ```
 vibecode: {
@@ -140,7 +140,7 @@ leave the path unchanged.
 
 ---
 
-## Directory Objects (Cleveland Booker)
+## Directory Objects
 
 ```
 vibecode: {
@@ -190,7 +190,7 @@ $text = $jail.dir('docs').dir('shakespeare')['hamlet.txt'].read
 
 ---
 
-## Jail Permissions (Grudge)
+## Jail Permissions
 
 ```
 vibecode: {
@@ -223,7 +223,7 @@ never something that quietly happens.
 
 ---
 
-## Deriving Restricted Jails (Lorca)
+## Deriving Restricted Jails
 
 ```
 vibecode: {
@@ -292,7 +292,7 @@ something to other code that should only see a restricted view.
 
 ---
 
-## Authorizing Untrusted Paths (Mirror Lorca)
+## Authorizing Untrusted Paths
 
 ```
 vibecode: {
@@ -362,7 +362,7 @@ time you call `use_path`, the string is just a path.)
 
 ---
 
-## Iteration (L'Rell)
+## Iteration
 
 ```
 vibecode: {
@@ -388,7 +388,7 @@ end
 
 ---
 
-## Notes (Voq)
+## Notes
 
 ```
 vibecode: {

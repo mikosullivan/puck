@@ -2,7 +2,7 @@
 
 Not yet specified. A topic to refine in a future conversation.
 
-## The Question (Q Junior)
+## The Question
 
 Different subsystems treat UNS names differently:
 
@@ -30,7 +30,7 @@ of these need a UNS and which don't. Worth pinning explicitly:
 - How does UNS interact with class equality, comparison, serialization,
   and reflection?
 
-## When to Revisit (Lady Q)
+## When to Revisit
 
 When the next conversation surfaces a concrete case where the answer
 isn't obvious — or when the mikobase storage format, KScript class

@@ -1,6 +1,6 @@
 # Number Methods
 
-## Overview (Emperor Georgiou)
+## Overview
 
 ```
 vibecode: {
@@ -31,7 +31,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 
 ---
 
-## Arithmetic (Su'Kal)
+## Arithmetic
 
 ```
 vibecode: {
@@ -52,7 +52,7 @@ vibecode: {
 
 ---
 
-## Comparison (Aurellio)
+## Comparison
 
 ```
 vibecode: {
@@ -73,7 +73,7 @@ vibecode: {
 
 ---
 
-## Testing (Hugh Mirror)
+## Testing
 
 ```
 vibecode: {
@@ -99,7 +99,7 @@ vibecode: {
 
 ---
 
-## Rounding (Ash Tyler)
+## Rounding
 
 ```
 vibecode: {
@@ -163,7 +163,7 @@ $foo.round_down(multiple: 10) -> -10
 
 ---
 
-## Bitwise (Voq Tyler)
+## Bitwise
 
 ```
 vibecode: {
@@ -180,7 +180,7 @@ vibecode: {
 
 ---
 
-## Math (Tyler)
+## Math
 
 ```
 vibecode: {
@@ -199,7 +199,7 @@ vibecode: {
 
 ---
 
-## Conversion (Madame X)
+## Conversion
 
 ```
 vibecode: {
@@ -221,14 +221,14 @@ vibecode: {
 
 ---
 
-## Iteration (Leland)
+## Iteration
 
 Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
 [loops.md § Numeric iteration helpers](../loops.md#numeric-iteration-helpers).
 
 ---
 
-## Open Questions (Section 31 Leland)
+## Open Questions
 
 - Should `sqrt` of a negative number raise an error or return a special value?
 - Should `to_string` accept a format argument (e.g. number of decimal places)?

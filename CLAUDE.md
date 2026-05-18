@@ -62,7 +62,6 @@ Use `kscript.null` (re-exported as `json.null`) for JSON null in KScriptJSON tab
 These are project-wide, not personal preferences — follow them in any file you edit:
 
 - **Vibecode blocks.** Most documentation sections begin with a `vibecode:` JSON block giving AI-readable context for the surrounding prose. When adding or editing a documentation section, include or update its vibecode block. The development plan explicitly states vibecode blocks are the source of truth where prose disagrees with them.
-- **Star Trek H2 nicknames.** Every `## ` heading in `documentation/` ends with a unique Star Trek character/ship/hologram nickname in parens — e.g. `## Overview (Sovereign)`, `## Philosophy (Seven PIC)`. New H2s follow the same pattern; pick a name not already used in that file.
 - **UNS (Universal Namespace)** for class names: a URL without `https://`, e.g. `foo.com/character`. Built-ins are under `kiera.uno/...`.
 - **Reserved pass-through fields** on every Kieraverse object: `vibecode`, `comment`, `misc`, `enterprise`. Always passed through; never stripped or validated. See [documentation/ecoverse/vibecode.md](documentation/ecoverse/vibecode.md).
 - **Module headers in Lua code** are JSON `--[[ {...} ]]` blocks describing role, pipeline, exports, and dependencies. Per-function headers describe `in`/`out`/`note`. Match this style in new Lua code.

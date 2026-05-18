@@ -11,39 +11,39 @@ This file is the technical development plan for Kiera. Vibecode blocks are
 the canonical source; surrounding prose is human-readable narrative derived
 from them. When the two disagree, vibecode wins.
 
-## Contents (Spock)
+## Contents
 
-- [V0.01: "hello-world"](#v001-hello-world-kirk)
+- [V0.01: "hello-world"](#v001-hello-world)
   - [Definition of done](#definition-of-done)
-- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello-uhura)
+- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello)
   - [Definition of done (V0.02)](#definition-of-done-v002)
-- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout-janeway)
+- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout)
   - [Definition of done (V0.03)](#definition-of-done-v003)
-- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes-data)
+- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes)
   - [Definition of done (V0.04)](#definition-of-done-v004)
-- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization-geordi)
+- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization)
   - [Definition of done (V0.05)](#definition-of-done-v005)
-- [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach-mccoy)
+- [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach)
   - [Bootstrap path](#bootstrap-path)
   - [One product named Bryton, not "bryton-lite"](#one-product-named-bryton-not-bryton-lite)
-- [Feature soft-lock](#feature-soft-lock-scotty)
+- [Feature soft-lock](#feature-soft-lock)
   - [Deliberate post-lock additions](#deliberate-post-lock-additions)
 - [V1 scope (after 0.01)](#v1-scope-after-001)
-- [Walking-skeleton roadmap](#walking-skeleton-roadmap-sulu)
-- [Role system: baking from the start](#role-system-baking-from-the-start-chekov)
-- [Engine startup and invocation](#engine-startup-and-invocation-chapel)
+- [Walking-skeleton roadmap](#walking-skeleton-roadmap)
+- [Role system: baking from the start](#role-system-baking-from-the-start)
+- [Engine startup and invocation](#engine-startup-and-invocation)
   - [Host vs. engine](#host-vs-engine)
   - [V0.01 invocation chain](#v001-invocation-chain)
   - [V0.01 engine bootstrap sequence](#v001-engine-bootstrap-sequence)
   - [Program model](#program-model)
   - [What user KSJ can see in V0.01](#what-user-ksj-can-see-in-v001)
   - [How later slices grow the lifecycle](#how-later-slices-grow-the-lifecycle)
-- [Lua-side implementation sketch](#lua-side-implementation-sketch-rand)
+- [Lua-side implementation sketch](#lua-side-implementation-sketch)
   - [Data structures (Lua tables)](#data-structures-lua-tables)
   - [Key procedures](#key-procedures)
   - [Pseudo-code skeleton](#pseudo-code-skeleton)
   - [Notes on the sketch](#notes-on-the-sketch)
-- [V0.01 phase 0: Lua workbench](#v001-phase-0-lua-workbench-pike)
+- [V0.01 phase 0: Lua workbench](#v001-phase-0-lua-workbench)
   - [Step 0.1: Confirm Lua 5.4](#step-01-confirm-lua-54)
   - [Step 0.2: Run a sanity hello in pure Lua](#step-02-run-a-sanity-hello-in-pure-lua)
   - [Step 0.3: Verify package.path resolves engine modules](#step-03-verify-packagepath-resolves-engine-modules)
@@ -51,50 +51,50 @@ from them. When the two disagree, vibecode wins.
   - [Step 0.5: Verify json.lua loads and parses](#step-05-verify-jsonlua-loads-and-parses)
   - [Step 0.6: Verify file reading](#step-06-verify-file-reading)
   - [Phase 0 test plan](#phase-0-test-plan)
-- [V0.01 phase 1: hello-world in KScriptJSON](#v001-phase-1-hello-world-in-kscriptjson-number-one)
+- [V0.01 phase 1: hello-world in KScriptJSON](#v001-phase-1-hello-world-in-kscriptjson)
   - [Step 1: Inventory](#step-1-inventory)
   - [Step 2: Fill the gaps](#step-2-fill-the-gaps)
   - [Step 3: Verify](#step-3-verify)
   - [Phase 1 test plan](#phase-1-test-plan)
   - [Test layout](#test-layout)
-- [V0.02 phase 0: source-side workbench](#v002-phase-0-source-side-workbench-saavik)
+- [V0.02 phase 0: source-side workbench](#v002-phase-0-source-side-workbench)
   - [Step 0.1: Confirm the lexer tokenizes the fixture](#step-01-confirm-the-lexer-tokenizes-the-fixture)
   - [Step 0.2: Confirm the parser produces a clean AST](#step-02-confirm-the-parser-produces-a-clean-ast)
   - [Step 0.3: Observe the transpiler's current output](#step-03-observe-the-transpilers-current-output)
   - [Step 0.4: Confirm engine.run handles a hand-built canonical tree](#step-04-confirm-enginerun-handles-a-hand-built-canonical-tree)
   - [V0.02 phase 0 test plan](#v002-phase-0-test-plan)
-- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source-hoshi)
+- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source)
   - [V0.02 Step 1: Inventory](#v002-step-1-inventory)
   - [V0.02 Step 2: Fill the gaps](#v002-step-2-fill-the-gaps)
   - [V0.02 Step 3: Verify](#v002-step-3-verify)
   - [V0.02 phase 1 test plan](#v002-phase-1-test-plan)
   - [V0.02 test layout](#v002-test-layout)
   - [V0.02 open questions](#v002-open-questions)
-- [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench-tuvok)
+- [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench)
   - [V0.03 phase 0 test plan](#v003-phase-0-test-plan)
-- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source-paris)
+- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source)
   - [V0.03 Step 1: Inventory](#v003-step-1-inventory)
   - [V0.03 Step 2: Fill the gaps](#v003-step-2-fill-the-gaps)
   - [V0.03 Step 3: Verify](#v003-step-3-verify)
   - [V0.03 phase 1 test plan](#v003-phase-1-test-plan)
   - [V0.03 test layout](#v003-test-layout)
   - [V0.03 open questions](#v003-open-questions)
-- [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution-sarek)
+- [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution)
   - [What the slice introduces](#what-the-slice-introduces)
   - [Permissions: default restrictive, opt-in via flags](#permissions-default-restrictive-opt-in-via-flags)
   - [Installation](#installation)
   - [Bryton interaction](#bryton-interaction)
   - [Open questions](#open-questions)
-- [V0.1: Bryton](#v01-bryton-amanda)
+- [V0.1: Bryton](#v01-bryton)
   - [V0.1 prerequisites](#v01-prerequisites)
   - [V0.1 phase plan](#v01-phase-plan)
   - [V0.1 test layout](#v01-test-layout)
-- [Methodology](#methodology-tpring)
-- [Open](#open-tpau)
+- [Methodology](#methodology)
+- [Open](#open)
 
 ---
 
-## V0.01: "hello-world" (Kirk)
+## V0.01: "hello-world"
 
 ```
 vibecode: {"version": "0.01", "codename": "hello-world", "goal":
@@ -160,7 +160,7 @@ scope without explicit unlock.
 
 ---
 
-## V0.02: "kscript-source-hello" (Uhura)
+## V0.02: "kscript-source-hello"
 
 ```
 vibecode: {"version": "0.02", "codename": "kscript-source-hello", "goal":
@@ -239,7 +239,7 @@ as V0.01.
 
 ---
 
-## V0.03: "kscript-with-stdout" (Janeway)
+## V0.03: "kscript-with-stdout"
 
 ```
 vibecode: {"version": "0.03", "codename": "kscript-with-stdout", "goal":
@@ -332,7 +332,7 @@ That's the entirety of V0.03. Soft feature lock applies.
 
 ---
 
-## V0.04: "kscript-with-hashes" (Data)
+## V0.04: "kscript-with-hashes"
 
 ```
 vibecode: {"version": "0.04", "codename": "kscript-with-hashes",
@@ -401,7 +401,7 @@ V0.04 is selected. Expected shape:
 
 ---
 
-## V0.05: "kscript-with-json-serialization" (Geordi)
+## V0.05: "kscript-with-json-serialization"
 
 ```
 vibecode: {"version": "0.05",
@@ -475,7 +475,7 @@ V0.05 is selected. Expected shape:
 
 ---
 
-## Testing strategy: two-tier approach (McCoy)
+## Testing strategy: two-tier approach
 
 ```
 vibecode: {"section": "testing_strategy", "model": "two_tier",
@@ -556,7 +556,7 @@ compiler, different stage.
 
 ---
 
-## Feature soft-lock (Scotty)
+## Feature soft-lock
 
 ```
 vibecode: {"lock": "soft", "scope": "all_kiera_features", "rationale":
@@ -621,7 +621,7 @@ production).
 
 ---
 
-## Walking-skeleton roadmap (Sulu)
+## Walking-skeleton roadmap
 
 ```
 vibecode: {"approach": "walking_skeleton", "principle":
@@ -672,7 +672,7 @@ used wherever a layer needs to surface diagnostic output.
 
 ---
 
-## Role system: baking from the start (Chekov)
+## Role system: baking from the start
 
 ```
 vibecode: {"principle": "roles_are_core_not_bolt_on", "reason":
@@ -794,7 +794,7 @@ possible scale; every later slice exercises more of the model.
 
 ---
 
-## Engine startup and invocation (Chapel)
+## Engine startup and invocation
 
 ```
 vibecode: {"section": "engine_startup_and_invocation", "scope":
@@ -1026,7 +1026,7 @@ code cannot escape. Flagged as an open item.
 
 ---
 
-## Lua-side implementation sketch (Rand)
+## Lua-side implementation sketch
 
 ```
 vibecode: {"section": "lua_implementation_sketch", "status":
@@ -1288,7 +1288,7 @@ A few specifics worth flagging:
 
 ---
 
-## V0.01 phase 0: Lua workbench (Pike)
+## V0.01 phase 0: Lua workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.01", "purpose":
@@ -1541,7 +1541,7 @@ All six must pass before V0.01 phase 1 begins.
 
 ---
 
-## V0.01 phase 1: hello-world in KScriptJSON (Number One)
+## V0.01 phase 1: hello-world in KScriptJSON
 
 ```
 vibecode: {"phase": 1, "version": "0.01", "fixture_path":
@@ -1795,7 +1795,7 @@ above mirror what's there.
 
 ---
 
-## V0.02 phase 0: source-side workbench (Saavik)
+## V0.02 phase 0: source-side workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.02", "purpose":
@@ -1921,7 +1921,7 @@ V0.02 phase 1 begins.
 
 ---
 
-## V0.02 phase 1: hello-world from KScript source (Hoshi)
+## V0.02 phase 1: hello-world from KScript source
 
 ```
 vibecode: {"phase": 1, "version": "0.02", "fixture_path":
@@ -2139,7 +2139,7 @@ vibecode: {"open_questions":
 
 ---
 
-## V0.03 phase 0: stdout-and-bwc workbench (Tuvok)
+## V0.03 phase 0: stdout-and-bwc workbench
 
 ```
 vibecode: {"phase": 0, "version": "0.03", "purpose":
@@ -2233,7 +2233,7 @@ before V0.03 phase 1 begins.
 
 ---
 
-## V0.03 phase 1: puts-hello from KScript source (Paris)
+## V0.03 phase 1: puts-hello from KScript source
 
 ```
 vibecode: {"phase": 1, "version": "0.03", "fixture_path":
@@ -2460,7 +2460,7 @@ vibecode: {"open_questions":
 
 ---
 
-## V0.0X: KScript command-line execution (Sarek)
+## V0.0X: KScript command-line execution
 
 ```
 vibecode: {"slice": "v0_0x_kscript_cli", "codename":
@@ -2694,7 +2694,7 @@ vibecode: {"open_questions_v00x_cli":
 
 ---
 
-## V0.1: Bryton (Amanda)
+## V0.1: Bryton
 
 ```
 vibecode: {"version": "0.1", "codename": "bryton", "goal":
@@ -2880,7 +2880,7 @@ vibecode: {"v01_test_layout":
 
 ---
 
-## Methodology (T'Pring)
+## Methodology
 
 ```
 vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
@@ -2908,7 +2908,7 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 
 ---
 
-## Open (T'Pau)
+## Open
 
 ```
 vibecode: {"open": ["test_runner_decision", "fixture_layout",

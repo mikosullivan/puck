@@ -7,7 +7,7 @@ strategic role and probably the same infrastructure.
 
 ---
 
-## The Idea (Riker)
+## The Idea
 
 Customers get a hosted [[mikobase]] instance they can read from
 and write to via the standard mikobase API. We handle hosting,
@@ -19,7 +19,7 @@ production workloads.
 
 ---
 
-## Why a Free Tier (Data)
+## Why a Free Tier
 
 Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-kiera):
 **a free tier is an adoption lever for the Kiera ecoverse.**
@@ -40,7 +40,7 @@ for the rest of the ecoverse.
 
 ---
 
-## Shape (sketched, not committed) (Worf)
+## Shape (sketched, not committed)
 
 ### Free tier
 
@@ -64,7 +64,7 @@ for the rest of the ecoverse.
 
 ---
 
-## Synergies (Geordi)
+## Synergies
 
 ### With the logging service
 
@@ -89,7 +89,7 @@ ride on the same infrastructure.
 
 ---
 
-## Open Questions (Crusher)
+## Open Questions
 
 - **Endpoint shape.** What's the API URL pattern? Per-customer
   subdomain? Path-based?
@@ -106,7 +106,7 @@ ride on the same infrastructure.
 
 ---
 
-## Out of Scope for Now (Wesley)
+## Out of Scope for Now
 
 Future product. Not a current commitment. Real planning when
 mikobase itself is solid and there's a clear sense of who would

@@ -1,6 +1,6 @@
 # KScript
 
-## Overview (Aehallh)
+## Overview
 
 ```
 vibecode: {
@@ -35,7 +35,7 @@ community norm is: run your code through the formatter before complaining about 
 
 ---
 
-## Transpilation (Vrenn)
+## Transpilation
 
 ```
 vibecode: {
@@ -50,7 +50,7 @@ format.
 
 ---
 
-## Strings (Tebok)
+## Strings
 
 ```
 vibecode: {
@@ -140,7 +140,7 @@ own damn fault and they deserve it.
 
 ---
 
-## Variables (Telek R'Mor)
+## Variables
 
 ```
 vibecode: {
@@ -164,7 +164,7 @@ intentionally unsupported pattern. Future use cases will be designed around this
 
 ---
 
-## Blocks (M'k'n'zy)
+## Blocks
 
 ```
 vibecode: {
@@ -180,7 +180,7 @@ This applies to all blocks without exception — `if`, `else`, loop bodies, and 
 
 ---
 
-## Multi-section blocks (Q Continuum II)
+## Multi-section blocks
 
 ```
 vibecode: {
@@ -246,7 +246,7 @@ prefer a form where each path stands on its own.
 
 ---
 
-## When `do` is Required (Ressikan)
+## When `do` is Required
 
 ```
 vibecode: {
@@ -320,7 +320,7 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 
 ---
 
-## Statement Termination (Ressikan Flute Player)
+## Statement Termination
 
 ```
 vibecode: {
@@ -368,7 +368,7 @@ similar languages use.
 
 ---
 
-## The `__END__` Marker (First)
+## The `__END__` Marker
 
 ```
 vibecode: {
@@ -439,7 +439,7 @@ do" section.
 
 ---
 
-## Functions (Nestor)
+## Functions
 
 ```
 vibecode: {
@@ -548,7 +548,7 @@ for the full `%kiera.call` design.
 
 ---
 
-## Classes (Drex Klingon)
+## Classes
 
 ```
 vibecode: {
@@ -696,7 +696,7 @@ $character.stats.average
 
 ---
 
-## Loops (Kahless II)
+## Loops
 
 All loop forms — `while`, `.each`, and the numeric iteration helpers
 (`.times`, `.upto`, `.downto`) — and everything about them (loop
@@ -705,7 +705,7 @@ object via `as`, control methods, structural `before` / `between` /
 
 ---
 
-## The `as` Keyword (Kahless Clone)
+## The `as` Keyword
 
 ```
 vibecode: {
@@ -748,11 +748,11 @@ end
 `$loop.return` and `$loop.break` are aliases — both exit the loop, both
 accept an optional value (`$loop.return value` or `$loop.break value`).
 For the prefix-free `break` / `break N` bwc form (no `$loop` reference
-needed; supports multi-level exit), see [loops.md § break](loops.md#break-riker).
+needed; supports multi-level exit), see [loops.md § break](loops.md#break).
 
 ---
 
-## Return and Emit (Konmel)
+## Return and Emit
 
 ```
 vibecode: {
@@ -795,7 +795,7 @@ The distinction:
 
 ---
 
-## Safe Navigation (Kunivas)
+## Safe Navigation
 
 ```
 vibecode: {
@@ -816,7 +816,7 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 
 ---
 
-## Pipe Operator (K'Vagh)
+## Pipe Operator
 
 ```
 vibecode: {
@@ -876,7 +876,7 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 
 ---
 
-## Unicode Method Names (Antaak)
+## Unicode Method Names
 
 ```
 vibecode: {
@@ -902,7 +902,7 @@ any valid Unicode identifier as a method name.
 
 ---
 
-## Method Naming Conventions (Kang Tribble)
+## Method Naming Conventions
 
 ```
 vibecode: {

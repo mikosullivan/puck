@@ -30,7 +30,7 @@ this doc focuses on the loop-specific use.
 
 ---
 
-## `while` (Worf)
+## `while`
 
 ```
 vibecode: {
@@ -56,7 +56,7 @@ for the rule.
 
 ---
 
-## `.each` (Ruon Tarka)
+## `.each`
 
 ```
 vibecode: {
@@ -78,7 +78,7 @@ end
 
 ---
 
-## Numeric iteration helpers (Centaur)
+## Numeric iteration helpers
 
 ```
 vibecode: {
@@ -115,7 +115,7 @@ they behave the same as `.each` over the corresponding range and accept
 
 ---
 
-## Naming a loop with `as` (Quinn)
+## Naming a loop with `as`
 
 ```
 vibecode: {
@@ -181,7 +181,7 @@ vibecode: {
 or `.break value`); both leave `$loop.active` false and
 `$loop.count` equal to the iterations that ran. Pick whichever name
 reads better in context. For the prefix-free top-level form (no
-`$loop` reference needed, multi-level exit), see [break](#break-riker).
+`$loop` reference needed, multi-level exit), see [break](#break).
 
 **`return` (without `$loop.`) is a function exit, not a loop exit.**
 A bare `return` inside a loop body returns from the enclosing
@@ -192,7 +192,7 @@ from the enclosing function.
 
 ---
 
-## `break` (Riker)
+## `break`
 
 ```
 vibecode: {
@@ -287,7 +287,7 @@ post-lock addition.
 
 ---
 
-## Structural blocks (Q Continuum)
+## Structural blocks
 
 ```
 vibecode: {
@@ -331,7 +331,7 @@ without an extra emptiness check around the loop.
 
 ---
 
-## Not in KScript (Q DeLancie)
+## Not in KScript
 
 ```
 vibecode: {

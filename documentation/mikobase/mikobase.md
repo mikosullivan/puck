@@ -1,6 +1,6 @@
 # Mikobase
 
-## Overview (Sovereign)
+## Overview
 
 vibecode: {
 	"section": "overview",
@@ -22,7 +22,7 @@ services) are supported, but worldlets drive design decisions.
 
 ---
 
-## v1 Scope (Galaxy)
+## v1 Scope
 
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
@@ -63,7 +63,7 @@ focused:
 
 ---
 
-## Temporal vs Non-temporal Mode (Galaxy Class)
+## Temporal vs Non-temporal Mode
 
 vibecode: {
 	"section": "temporal_mode",
@@ -89,7 +89,7 @@ top-level flag:
 A database without the `temporal` key — or with `"temporal": true` — is temporal.
 
 Non-temporal mode was added because **worldlets are the primary use case for
-mikobase** (see [overview](#overview-sovereign)), and most worldlets don't
+mikobase** (see [overview](#overview)), and most worldlets don't
 benefit from history — they're snapshots of conversations, scenarios, or
 scratch state, not audit logs. After working with worldlets in temporal mode,
 reading through history records that each only appeared once was annoying;
@@ -147,7 +147,7 @@ isn't specified and isn't a priority to resolve.
 
 ---
 
-## Export formats (Akira)
+## Export formats
 
 ```
 vibecode: {
@@ -235,7 +235,7 @@ import in particular:
 
 ---
 
-## Single-process vs. cross-fork use (Intrepid)
+## Single-process vs. cross-fork use
 
 vibecode: {
 	"section": "single_process_vs_cross_fork",
@@ -250,7 +250,7 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 
 ---
 
-## The Maintaining Process (Nova)
+## The Maintaining Process
 
 vibecode: {
 	"section": "maintaining_process",
@@ -270,7 +270,7 @@ connecting to a live process, not reading from a file.
 
 ---
 
-## Object Ownership (Nebula)
+## Object Ownership
 
 vibecode: {
 	"section": "object_ownership",
@@ -283,7 +283,7 @@ they connect to the mikobase and interact with whatever is already there.
 
 ---
 
-## Class Hierarchy (Olympic)
+## Class Hierarchy
 
 vibecode: {
 	"section": "class_hierarchy",
@@ -311,7 +311,7 @@ KScript code interacts only with the `kiera.uno/mikobase` interface and is unawa
 
 ---
 
-## Managed Mikobase Server (`kiera.uno/mikobase/server`) (Centaur)
+## Managed Mikobase Server (`kiera.uno/mikobase/server`)
 
 vibecode: {
 	"section": "managed_mikobase_server",
@@ -339,7 +339,7 @@ the block exits will cause the server to wait before shutting down.
 
 ---
 
-## HTTP Mikobase (Cheyenne)
+## HTTP Mikobase
 
 vibecode: {
 	"section": "http_mikobase",
@@ -488,7 +488,7 @@ permissions are not part of v1.
 
 ---
 
-## Hot and Cold Connections (Daedalus)
+## Hot and Cold Connections
 
 vibecode: {
 	"section": "hot_and_cold_connections",
@@ -569,7 +569,7 @@ $record = $mikobase.q0({...}, hot: false)
 
 ---
 
-## Locking (Daedalus Class)
+## Locking
 
 vibecode: {
 	"section": "locking",
@@ -588,7 +588,7 @@ automatically. There is no explicit lock/unlock API in normal usage.
 
 ---
 
-## Transactions (Constitution)
+## Transactions
 
 vibecode: {
 	"section": "transactions",
@@ -606,7 +606,7 @@ Mikobases support transactions using the following model:
 
 ---
 
-## `%bucket` in the Mikobase (Constitution Class)
+## `%bucket` in the Mikobase
 
 vibecode: {
 	"section": "bucket_in_mikobase",
@@ -631,7 +631,7 @@ end
 
 ---
 
-## Record Change Signals (Constitution II)
+## Record Change Signals
 
 vibecode: {
 	"section": "record_change_signals",
@@ -706,7 +706,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 
 ---
 
-## Packaged Mikobases (Miranda)
+## Packaged Mikobases
 
 vibecode: {
 	"section": "packaged_mikobases",

@@ -1,6 +1,6 @@
 # Ideas
 
-## Firewall Design (Liko)
+## Firewall Design
 
 ### What Is Settled
 
@@ -104,7 +104,7 @@ Both approaches require that class definitions are always reachable.
 
 ---
 
-## Field-Level Filters (Berlinghoff)
+## Field-Level Filters
 
 Separate from record-level firewall rules. A filter strips fields from records that pass
 the firewall, rather than blocking the record entirely.
@@ -138,7 +138,7 @@ Not yet settled:
 
 ---
 
-## Rule IDs and Override / Inheritance (Rasmussen)
+## Rule IDs and Override / Inheritance
 
 Every firewall rule can optionally declare an `id`. When engines inherit a default rule set,
 a rule in the specific configuration can override a default rule by declaring the same `id`.
@@ -147,6 +147,6 @@ Not well thought out yet. May be resolved by whichever layering mechanism is cho
 
 ---
 
-## AI Agent Collaboration (Krite)
+## AI Agent Collaboration
 
 See [agent-collaboration.md](agent-collaboration.md).

@@ -6,7 +6,7 @@ doesn't.
 
 ---
 
-## The Idea (Valeris)
+## The Idea
 
 A personal location-monitoring app: the user maintains a list of
 "errands tied to places" (e.g., "buy milk at Kroger," "drop off
@@ -19,7 +19,7 @@ the milk, marks the errand done.
 
 ---
 
-## What it would use from `kiera.uno/geo` (Saavik)
+## What it would use from `kiera.uno/geo`
 
 - **Continuous location monitoring** in the app (using the browser's
   Geolocation API).
@@ -40,7 +40,7 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 
 ---
 
-## Why it's a useful validation (Soval)
+## Why it's a useful validation
 
 - Different access pattern than the driver app — long-running
   background-ish location monitoring with sparse "did anything
@@ -52,7 +52,7 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 
 ---
 
-## Out of scope for now (T'Pel)
+## Out of scope for now
 
 This is a future idea, not a current commitment. Filed so it isn't
 lost. Real spec when the time comes.

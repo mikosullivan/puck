@@ -11,7 +11,7 @@ abstraction.
 
 ---
 
-## Status (Shenzhou)
+## Status
 
 Spec in development. The Ruby Trivet has been in use since 2020;
 the design here is the KScript adaptation. The semantics carry
@@ -19,7 +19,7 @@ over directly; method naming follows KScript conventions.
 
 ---
 
-## Core classes (Sao Paulo)
+## Core classes
 
 Three classes form the Trivet surface:
 
@@ -51,7 +51,7 @@ into nodes; non-node children are leaves.
 
 ---
 
-## Construction (Orinoco)
+## Construction
 
 ```
 $food = %['kiera.uno/trivet/node'].new('food')
@@ -81,7 +81,7 @@ creates and returns the child.
 
 ---
 
-## Node IDs (Crockett)
+## Node IDs
 
 Every node has an `id` slot. The id is optional in the sense
 that nodes can exist without one (id is null by default), but
@@ -155,7 +155,7 @@ subclass handles where the id actually lives.
 
 ---
 
-## Relationships (Lakota)
+## Relationships
 
 | Method | Returns | Description |
 |---|---|---|
@@ -263,7 +263,7 @@ the operation always fails.
 
 ---
 
-## Children (Equinox)
+## Children
 
 `$node.children` is a `child_set` — a thin subclass of Array.
 All standard array operations work directly, plus the mutation
@@ -360,7 +360,7 @@ $node.node_by_id('paprika')            # find a child node by id (depth-first in
 
 ---
 
-## Traversal (Saratoga)
+## Traversal
 
 ```
 $food.traverse do($node)
@@ -406,7 +406,7 @@ those that are actual nodes (skipping strings, hashes, etc.).
 
 ---
 
-## Query (Yeager)
+## Query
 
 `query` finds nodes matching a developer-supplied predicate.
 The predicate is the `match?` method on the node class.
@@ -465,7 +465,7 @@ $first = $food.query_first('paprika')
 
 ---
 
-## Mutation (Yorktown)
+## Mutation
 
 Most reparenting goes through [rehome](#rehome--the-one-true-move)
 and its sugar. A few additional node-level methods:
@@ -482,7 +482,7 @@ instead. Same operation, expressed from the child's perspective.
 
 ---
 
-## Child validation (Rio Grande)
+## Child validation
 
 A node can constrain what kinds of children it accepts by
 overriding `allow_child?`:
@@ -515,7 +515,7 @@ is `kiera.uno/trivet/node`; subclasses override to make their
 
 ---
 
-## Output (Mekong)
+## Output
 
 | Method | Returns |
 |---|---|
@@ -543,7 +543,7 @@ food
 
 ---
 
-## Document (Ganges)
+## Document
 
 `kiera.uno/trivet/document` is **not** a node. It is a separate
 container class that holds a tree's root and exists outside the
@@ -610,7 +610,7 @@ returns null.
 
 ---
 
-## Subclassing (Volga)
+## Subclassing
 
 The expected use pattern. Most consumers of Trivet subclass
 `trivet/node`:
@@ -628,7 +628,7 @@ unchanged on any subclass.
 
 ---
 
-## Bucket discipline: the `uns` slot (Jenolan)
+## Bucket discipline: the `uns` slot
 
 Trivet's node class is designed to be **added to any object** —
 strings (for HTML text nodes), hashes, custom classes, anything.
@@ -678,7 +678,7 @@ without stepping on each other.
 
 ---
 
-## Mental model (Tsiolkovsky)
+## Mental model
 
 A Trivet tree is a recursive structure where every interior
 node is a `trivet/node` (or subclass), and leaves can be
@@ -692,7 +692,7 @@ in libraries built on top (Uma being the canonical example).
 
 ---
 
-## Open questions (Hera)
+## Open questions
 
 - **Iteration order in queries**: depth-first vs breadth-first.
   Ruby version is depth-first.

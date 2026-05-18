@@ -6,7 +6,7 @@ Nothing here is spec — it's the *why* behind the names and choices.
 
 ---
 
-## The Robinson and Dogberry Origin Story (Mila)
+## The Robinson and Dogberry Origin Story
 
 The basic idea is that I miss the simplicity of CGI. Every file represented
 a page in the URL path by its mere presence in that tree. I recognized that

@@ -1,6 +1,6 @@
 # Forking and Concurrency
 
-## Design Rationale (Dukat)
+## Design Rationale
 
 Traditional threads share a memory space and leave access management to the developer —
 locks, mutexes, semaphores. These primitives are easy to misuse and the bugs they produce
@@ -17,7 +17,7 @@ A mikobase can.
 
 ---
 
-## Threading Model (Weyoun)
+## Threading Model
 
 Strictly speaking, the forking feature does not provide threads. Instead, it provides an
 easy way for processes to talk to each other.
@@ -33,7 +33,7 @@ See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
 
 ---
 
-## `%forks` and `%tmp` (Damar)
+## `%forks` and `%tmp`
 
 Forking is a standard KScript feature, but it requires explicit engine permission. The
 engine grants it by providing `%forks` and optionally `%tmp` — both are `null` if the
@@ -154,7 +154,7 @@ end
 
 ---
 
-## `object.fork` — Forking a Single Object (Eddington)
+## `object.fork` — Forking a Single Object
 
 `object.fork` spawns N forks that all share a single object's `%bucket`. The object is
 passed into each fork as a block parameter:
@@ -176,7 +176,7 @@ the object in as the block parameter. The caller sees none of that machinery.
 
 ---
 
-## Sharing `%bucket` Through a Mikobase (Winn)
+## Sharing `%bucket` Through a Mikobase
 
 Setting `include_private = true` on a mikobase causes `%bucket` to be backed by the mikobase for
 any fork that connects to it. The fork's `@foo` reads and writes go directly to a live
@@ -195,7 +195,7 @@ end
 
 ---
 
-## Example: Parallel Report Generation (Bareil)
+## Example: Parallel Report Generation
 
 A company needs to generate monthly reports for 50 clients. Each report requires several
 database queries. Running them serially takes minutes; in parallel, seconds.
@@ -234,7 +234,7 @@ shuts down cleanly when its block exits.
 
 ---
 
-## Open Questions (Leeta)
+## Open Questions
 
 - How are forks spawned at the process/OS level? (true OS fork, thread, coroutine?)
 - How does a fork signal failure to the manager?
@@ -242,7 +242,7 @@ shuts down cleanly when its block exits.
 
 ---
 
-## Future: Fork Restrictions (Martok)
+## Future: Fork Restrictions
 
 There should be a way to indicate that a forked process may not itself fork. This will be
 part of the security model — untrusted code running inside a fork should not be able to

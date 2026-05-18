@@ -1,6 +1,6 @@
 # KScript
 
-## Overview (Janeway Holo)
+## Overview
 
 ```
 vibecode: {
@@ -21,7 +21,7 @@ KScript has been in development conceptually for approximately twenty years.
 
 ---
 
-## Host Language: Why Lua (Q Continuum III)
+## Host Language: Why Lua
 
 ```
 vibecode: {
@@ -68,7 +68,7 @@ gets us most of the way without it.
 
 ---
 
-## Philosophy (Murf II)
+## Philosophy
 
 ```
 vibecode: {
@@ -145,7 +145,7 @@ explain the mistake clearly. A confusing error message is a bug.
 
 ---
 
-## Design Principles (Dal R'El)
+## Design Principles
 
 ```
 vibecode: {
@@ -371,7 +371,7 @@ is the language; KScriptJSON is the wire format.
 
 ---
 
-## Relationship to Other Systems (Tasha Sela)
+## Relationship to Other Systems
 
 ```
 vibecode: {
@@ -391,7 +391,7 @@ vibecode: {
 
 ---
 
-## Primitives (Sela II)
+## Primitives
 
 ```
 vibecode: {
@@ -553,7 +553,7 @@ appearance is a parse error.
 
 ---
 
-## Variables (Pardek)
+## Variables
 
 ```
 vibecode: {
@@ -575,7 +575,7 @@ around other use cases in the future.
 
 ---
 
-## Exceptions and Warnings (Romulan Senator)
+## Exceptions and Warnings
 
 ```
 vibecode: {
@@ -1035,7 +1035,7 @@ familiarity argument carried the day.
 
 ---
 
-## Structured Non-Local Control Flow (Q Trial)
+## Structured Non-Local Control Flow
 
 ```
 vibecode: {
@@ -1275,7 +1275,7 @@ absorbs control then becomes a thin layer over the same primitive.
 
 ---
 
-## Conditional Constructs Share One Primitive (Female Q)
+## Conditional Constructs Share One Primitive
 
 ```
 vibecode: {
@@ -1421,7 +1421,7 @@ mechanism but not the **condition-evaluation** mechanism.
 
 ---
 
-## Block Parameter Binding (Q's Son)
+## Block Parameter Binding
 
 ```
 vibecode: {
@@ -1688,7 +1688,7 @@ vibecode: {
 
 ---
 
-## Object Model (Tal'aura)
+## Object Model
 
 ```
 vibecode: {
@@ -1847,7 +1847,7 @@ This is a rare use case — normal method resolution handles the common case.
 
 ---
 
-## Garbage Collection (Suran II)
+## Garbage Collection
 
 ```
 vibecode: {
@@ -1906,7 +1906,7 @@ covers every object in the system.
 
 ---
 
-## Helpers (Hakeev)
+## Helpers
 
 ```
 vibecode: {
@@ -1962,7 +1962,7 @@ keeping them out of the main method namespace.
 
 ---
 
-## Classes (Tomalak III)
+## Classes
 
 ```
 vibecode: {
@@ -2125,7 +2125,7 @@ end
 
 ---
 
-## Functions (Tasha Romulan)
+## Functions
 
 ```
 vibecode: {
@@ -2242,7 +2242,7 @@ yielded block — any nested function calls or blocks inside that block run with
 
 ---
 
-## Scoping (Donatra II)
+## Scoping
 
 ```
 vibecode: {
@@ -2263,7 +2263,7 @@ is no special closure type — any function becomes a closure when passed a scop
 
 ---
 
-## System Methods (Toreth)
+## System Methods
 
 ```
 vibecode: {
@@ -2577,7 +2577,7 @@ syntax is designed.
 
 ---
 
-## Jail (Object Firewall)
+## Jail
 
 ```
 vibecode: {
@@ -2629,7 +2629,7 @@ $bar = $foo.object.jail(:call)
 
 ---
 
-## Freezing (Toreth Romulan)
+## Freezing
 
 ```
 vibecode: {
@@ -2703,7 +2703,7 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 
 ---
 
-## Change Signals (Selok)
+## Change Signals
 
 ```
 vibecode: {

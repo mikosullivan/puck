@@ -1,6 +1,6 @@
 # Class Definition Format
 
-## Overview (Pike SNW)
+## Overview
 
 vibecode: {
 	"section": "overview",
@@ -13,7 +13,7 @@ A class definition is stored as a record in `records_history` with `class_pk` po
 
 The class definition is stored in the `bucket` field.
 
-## Universal Namespace (UNS)
+## Universal Namespace
 
 vibecode: {
 	"section": "universal_namespace",
@@ -31,7 +31,7 @@ Examples:
 - `foo.com/bar`
 - `mycompany.com/character`
 
-## Schema (Hemmer Pendelis)
+## Schema
 
 vibecode: {
 	"section": "schema",
@@ -75,7 +75,7 @@ explicitly set inside a class definition is ignored and overwritten with the key
 }
 ```
 
-## Class Name (Pelia Lanthanite)
+## Class Name
 
 vibecode: {
 	"section": "class_name",
@@ -98,7 +98,7 @@ Built-in classes seeded as database records:
 - `kiera.uno/reference` — reference to another record
 - `kiera.uno/dbfile` — file attachment
 
-## Record Classes (Raffi)
+## Record Classes
 
 vibecode: {
 	"section": "record_classes",
@@ -109,7 +109,7 @@ vibecode: {
 All classes defined in the `classes` schema are record classes — they can be assigned to
 records in `records_history`. There is no separate declaration required.
 
-## Inheritance (Rios)
+## Inheritance
 
 vibecode: {
 	"section": "inheritance",
@@ -134,7 +134,7 @@ Only one parent is allowed.
 Validation of a record always uses the latest active version of its class definition at the time
 of the write. Previously written records are not retroactively invalidated by class changes.
 
-## Fields (Soji)
+## Fields
 
 vibecode: {
 	"section": "fields",
@@ -157,7 +157,7 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 }
 ```
 
-## Field Types (Dahj)
+## Field Types
 
 vibecode: {
 	"section": "field_types",
@@ -178,7 +178,7 @@ vibecode: {
 | `"kiera.uno/dbfile"` | File attachment |
 | any UNS class name | Reference to a named class defined elsewhere in the schema |
 
-## Inline vs. Named Field Types (Elnor)
+## Inline vs. Named Field Types
 
 vibecode: {
 	"section": "inline_vs_named_field_types",
@@ -240,7 +240,7 @@ that type:
 "labels": {"class": "hash", "of": "string"}
 ```
 
-## Common Field Settings (Agnes)
+## Common Field Settings
 
 vibecode: {
 	"section": "common_field_settings",
@@ -255,7 +255,7 @@ vibecode: {
 | `default` | all scalar types | Value to use when the field is absent on create |
 | `instantiate` | `hash` only | If `true`, auto-create the nested object when absent, then apply sub-field defaults |
 
-## String Settings (Jurati)
+## String Settings
 
 vibecode: {
 	"section": "string_settings",
@@ -269,7 +269,7 @@ vibecode: {
 | `max_length` | Maximum character length |
 | `collapse` | If `true`, trim leading/trailing whitespace and collapse internal whitespace runs to one space |
 
-## Number Settings (Hugh PIC)
+## Number Settings
 
 vibecode: {
 	"section": "number_settings",
@@ -286,7 +286,7 @@ vibecode: {
 | `integer_only` | If `true`, reject fractional values |
 | `multiple_of` | Value must be a multiple of this number |
 
-## Array and Hash Settings (Narek)
+## Array and Hash Settings
 
 vibecode: {
 	"section": "array_and_hash_settings",
@@ -299,7 +299,7 @@ vibecode: {
 | `min_elements` | Minimum number of elements (array) or keys (hash) |
 | `max_elements` | Maximum number of elements (array) or keys (hash) |
 
-## Typed Arrays (Narissa)
+## Typed Arrays
 
 vibecode: {
 	"section": "typed_arrays",
@@ -317,7 +317,7 @@ A typed array uses `"class": "array"` with an `"of"` key specifying the element 
 
 An untyped array uses `"class": "array"` with no `"of"`.
 
-## Reference Fields (Maddox PIC)
+## Reference Fields
 
 vibecode: {
 	"section": "reference_fields",
@@ -337,7 +337,7 @@ are present they are merged. Any record of the specified class or a subclass is 
 }
 ```
 
-## Object Representation (Vadic)
+## Object Representation
 
 vibecode: {
 	"section": "object_representation",
@@ -373,7 +373,7 @@ The shorthand for `kiera.uno/reference` is a plain string containing the target 
 
 The shorthand for `kiera.uno/dbfile` is a plain string containing the target `file_pk`.
 
-## File Fields (Beverly PIC)
+## File Fields
 
 vibecode: {
 	"section": "file_fields",
@@ -383,7 +383,7 @@ vibecode: {
 
 `kiera.uno/dbfile` fields support only `required`. No other constraints.
 
-## Field Ordering (Jack PIC)
+## Field Ordering
 
 vibecode: {
 	"section": "field_ordering",
@@ -397,7 +397,7 @@ Records returned from queries present fields in this order:
 2. Fields defined in the class itself, in definition order
 3. Fields not defined in any class, in their stored order
 
-## Unique Constraints (Tuvok PIC)
+## Unique Constraints
 
 vibecode: {
 	"section": "unique_constraints",
@@ -434,7 +434,7 @@ that class:
 - A unique constraint violation on `create` or `update` is a write-time error.
 - Multiple independent `uniques` constraints may be declared.
 
-## Joins (Worf PIC)
+## Joins
 
 vibecode: {
 	"section": "joins",
@@ -469,7 +469,7 @@ semantics — direction is determined by which field holds which reference.
 
 Additional fields beyond those listed in `join` may be defined and updated normally.
 
-## Unknown Fields (Geordi PIC)
+## Unknown Fields
 
 vibecode: {
 	"section": "unknown_fields",

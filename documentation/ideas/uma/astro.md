@@ -17,7 +17,7 @@ selectors compile to.
 
 ---
 
-## Structure (Maihar'du)
+## Structure
 
 A selector is a hash with these reserved keys:
 
@@ -38,7 +38,7 @@ Nanny should flag a warning on that.
 
 ---
 
-## Atts (Pel)
+## Atts
 
 Each entry in `atts` describes an attribute constraint:
 
@@ -64,7 +64,7 @@ Each entry in `atts` describes an attribute constraint:
 
 ---
 
-## Combinators (Ishka)
+## Combinators
 
 Three combinator keys mirror the CSS subset Uma supports in v1:
 
@@ -82,7 +82,7 @@ defers to its combinator for the next level.
 
 ---
 
-## Result selection (Moogie)
+## Result selection
 
 By default, the result is the **innermost matched element** —
 matches CSS's "rightmost selector is what you get" rule.
@@ -143,7 +143,7 @@ button.
 
 ---
 
-## Examples (Krax)
+## Examples
 
 ### Basic
 
@@ -221,7 +221,7 @@ button.
 
 ---
 
-## Mapping table: CSS ↔ Astro (Bok)
+## Mapping table: CSS ↔ Astro
 
 | CSS | Astro |
 |---|---|
@@ -244,7 +244,7 @@ machinery then operates on Astro.
 
 ---
 
-## Open questions (Plegg)
+## Open questions
 
 - **Top-level OR via array?** A top-level selector list (CSS:
   `h1, h2, h3`) is currently `"tags": ["h1", "h2", "h3"]` —

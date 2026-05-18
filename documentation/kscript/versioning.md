@@ -20,7 +20,7 @@ For now, timestamp versioning is the only versioning system.
 
 ---
 
-## Why Date-Pinned (Hera Frigate)
+## Why Date-Pinned
 
 vibecode: {
 	"section": "why_date_pinned",
@@ -48,7 +48,7 @@ Three concrete benefits:
 
 ---
 
-## The Cutoff in %chain (Hera Picard)
+## The Cutoff in %chain
 
 vibecode: {
 	"section": "cutoff_in_chain",
@@ -85,7 +85,7 @@ gone.
 
 ---
 
-## Out-of-Range Exceptions (Bellerophon)
+## Out-of-Range Exceptions
 
 vibecode: {
 	"section": "out_of_range_exceptions",
@@ -131,7 +131,7 @@ This is the information a security responder or audit log needs to investigate.
 
 ---
 
-## Resolution Rules (T'Plana-Hath)
+## Resolution Rules
 
 vibecode: {
 	"section": "resolution_rules",
@@ -167,7 +167,7 @@ the trust placed in the provider.
 
 ---
 
-## Semver as a Label (Pathfinder)
+## Semver as a Label
 
 vibecode: {
 	"section": "semver_as_a_label",
@@ -192,7 +192,7 @@ asked for; whether it ever does more is a question for future demand.
 
 ---
 
-## What This Replaces (Pathfinder Project)
+## What This Replaces
 
 vibecode: {
 	"section": "what_this_replaces",
@@ -221,7 +221,7 @@ should be high.
 
 ---
 
-## Relationship to the Blockchain (Prometheus)
+## Relationship to the Blockchain
 
 vibecode: {
 	"section": "relationship_to_blockchain",

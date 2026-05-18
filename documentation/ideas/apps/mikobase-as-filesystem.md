@@ -10,7 +10,7 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-## Why it's interesting (Joanna)
+## Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
   object is expected ([Sinatra static serving](../../kscript/http-middleware/sinatra.md#static-file-serving),
@@ -29,7 +29,7 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-## The two superpowers (Areel Shaw)
+## The two superpowers
 
 The dir/file/permissions surface is trivial — most filesystems
 have it. What makes a mikobase-backed filesystem genuinely
@@ -74,7 +74,7 @@ world they describe is still queryable." Filesystem-backed
 systems spend enormous engineering effort getting crude
 approximations of either; mikobase-as-filesystem inherits both.
 
-## POSIX access via SSH and SSHFS (Carol Marcus)
+## POSIX access via SSH and SSHFS
 
 A clean way to handle POSIX-tool compatibility: **expose the
 mikobase as an SSH endpoint.** No kernel module to build, no
@@ -108,7 +108,7 @@ What this approach still doesn't handle perfectly:
 
 For the vast majority of POSIX use, SSH + SSHFS is plenty.
 
-## In-memory mode (David Marcus)
+## In-memory mode
 
 A mikobase doesn't have to be disk-backed. **An in-memory
 mikobase that lives in the process's own memory** can present the
@@ -148,7 +148,7 @@ unmount/reboot. An in-memory mikobase is process-owned and dies
 with the process. Different scope; better-targeted for the cases
 above.
 
-## FSO and the path forward (Saavik II)
+## FSO and the path forward
 
 By the time the broader **FSO (file system objects)** abstraction
 is finished — directory objects, file objects, DirJails, the
@@ -164,7 +164,7 @@ of the work that's already happening for other reasons.
 - **Storage growth.** Time-travel implies keeping history.
   Bounded by retention policy; needs to be configurable.
 
-## As a versioning tool (Lenore Karidian)
+## As a versioning tool
 
 Time-travel + a labeling layer makes mikobase-as-filesystem a
 linear-history version control system. Auto-recorded changes,
@@ -193,7 +193,7 @@ The killer combo: mikobase-as-filesystem + Sinatra + Jasmine →
 every request log is reproducible against the exact filesystem
 state that served it."
 
-## Storage shape: chunks vs deltas (Anton Karidian)
+## Storage shape: chunks vs deltas
 
 The current mikobase plan stores files in **chunks**. Great for
 static collections (e.g., a Shakespeare-image archive — flagged
@@ -234,13 +234,13 @@ Fossil, Subversion). Trade-offs to design:
 
 The storage layer becomes **content-aware** rather than uniform.
 
-## Open questions / things to vibe on (Tristan Adams)
+## Open questions / things to vibe on
 
 (To be filled in.)
 
 ---
 
-## Out of scope for now (Marla McGivers)
+## Out of scope for now
 
 Brainstorm only. No commitments. The point is to capture the idea
 and let it ripen.

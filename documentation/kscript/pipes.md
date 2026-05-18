@@ -1,6 +1,6 @@
 # KScript Pipe Operator Design
 
-## Overview (T'Lar)
+## Overview
 
 vibecode: {
 	"section": "overview",
@@ -14,7 +14,7 @@ This provides a more readable and intuitive alternative to deeply nested express
 
 ---
 
-## Basic Pipe Operator (T'Lar Vulcan)
+## Basic Pipe Operator
 
 vibecode: {
 	"section": "basic_pipe_operator",
@@ -60,7 +60,7 @@ Same shape as Elixir's `|>`, F#'s `|>`, R's `%>%`.
 
 ---
 
-## Chaining Pipes (T'Lar Elder)
+## Chaining Pipes
 
 vibecode: {
 	"section": "chaining_pipes",
@@ -84,7 +84,7 @@ desugars to:
 
 ---
 
-## Example: Method Calls (T'Pol Vulcan)
+## Example: Method Calls
 
 vibecode: {
 	"section": "example_method_calls",
@@ -110,7 +110,7 @@ This allows writing code in the same order as execution.
 
 ---
 
-## Design Principle (T'Pen)
+## Design Principle
 
 vibecode: {
 	"section": "design_principle",
@@ -124,7 +124,7 @@ Each stage receives exactly one input: the result of the previous stage.
 
 ---
 
-## Null-Safe Pipe Operator (`|&`) (Saavik II)
+## Null-Safe Pipe Operator (`|&`)
 
 vibecode: {
 	"section": "null_safe_pipe_operator",
@@ -146,7 +146,7 @@ The pipe system introduces a similar concept.
 
 ---
 
-## Syntax (T'Pring II)
+## Syntax
 
 vibecode: {
 	"section": "null_safe_syntax",
@@ -160,7 +160,7 @@ a |& b
 
 ---
 
-## Semantics (T'Pring SNW)
+## Semantics
 
 vibecode: {
 	"section": "null_safe_semantics",
@@ -190,7 +190,7 @@ is equivalent to:
 
 ---
 
-## Execution Model (T'Vrana)
+## Execution Model
 
 vibecode: {
 	"section": "execution_model",
@@ -220,7 +220,7 @@ return &gup(y)
 
 ---
 
-## Design Rule (T'Marik)
+## Design Rule
 
 vibecode: {
 	"section": "null_safe_design_rule",
@@ -234,7 +234,7 @@ This avoids repetition while keeping intent clear.
 
 ---
 
-## Summary (T'Mara)
+## Summary
 
 vibecode: {
 	"section": "summary",

@@ -15,7 +15,7 @@ Brainstorm in progress.
 
 ---
 
-## Architectural constraint (Lal)
+## Architectural constraint
 
 ```
 vibecode: {
@@ -48,7 +48,7 @@ buying into the whole system.
 
 ---
 
-## Settings location (Soong)
+## Settings location
 
 ```
 vibecode: {
@@ -84,7 +84,7 @@ defer.
 
 ---
 
-## Formatter v1 spec (B-4)
+## Formatter v1 spec
 
 ```
 vibecode: {

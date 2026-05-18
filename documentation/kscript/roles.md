@@ -23,7 +23,7 @@ follows the role model described here.
 
 ---
 
-## Motivation (Solkar)
+## Motivation
 
 The previous model classified every value and every running function as
 either *trusted* or *untrusted*, based on its source. The model worked but
@@ -43,7 +43,7 @@ own role, and cross-role interaction is the security-relevant event.
 
 ---
 
-## Core Concept (Selek Future)
+## Core Concept
 
 ```
 vibecode: {
@@ -69,7 +69,7 @@ each role on its own terms.
 
 ---
 
-## The `%role` System Method (Selek Spock)
+## The `%role` System Method
 
 ```
 vibecode: {
@@ -89,7 +89,7 @@ $current = %role    # the role currently in effect
 
 ---
 
-## Engine Startup: Initial Roles (Enterprise)
+## Engine Startup: Initial Roles
 
 ```
 vibecode: {
@@ -132,7 +132,7 @@ reference syntax is TBD.
 
 ---
 
-## Role Transitions (Voyager)
+## Role Transitions
 
 ```
 vibecode: {
@@ -171,7 +171,7 @@ lifetime; A doesn't lose state because it called B.
 
 ---
 
-## What Is NOT Checked at a Boundary (Defiant)
+## What Is NOT Checked at a Boundary
 
 ```
 vibecode: {
@@ -221,7 +221,7 @@ the narrowing easy.
 
 ---
 
-## `%chain.isolate do ... end` (Excelsior)
+## `%chain.isolate do ... end`
 
 ```
 vibecode: {
@@ -275,7 +275,7 @@ another function.
 
 ---
 
-## Exceptions and Alarms (Reliant)
+## Exceptions and Alarms
 
 ```
 vibecode: {
@@ -325,7 +325,7 @@ revisitation.
 
 ---
 
-## How Objects Get Their Owning Role (Yamato)
+## How Objects Get Their Owning Role
 
 ```
 vibecode: {
@@ -360,7 +360,7 @@ value; it doesn't change because the value's location changed.
 
 ---
 
-## Faucets (Stargazer)
+## Faucets
 
 ```
 vibecode: {
@@ -475,7 +475,7 @@ through it inherits that role**.
 
 ---
 
-## Cross-Role Trust (Pasteur)
+## Cross-Role Trust
 
 ```
 vibecode: {
@@ -503,7 +503,7 @@ revocation, runtime adjustability.
 
 ---
 
-## Open Questions (Bozeman)
+## Open Questions
 
 The model is solid enough to adopt; these are refinements within an
 established framework, not blockers.
@@ -592,7 +592,7 @@ To explore in a future round.
 
 ---
 
-## Related Documents (Constellation)
+## Related Documents
 
 - [kiera.md](../kiera/kiera.md) — the kiera object model, which builds on role
   concepts (per-getter roles, version windows, etc.).

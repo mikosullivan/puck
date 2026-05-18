@@ -4,7 +4,7 @@ Speculative. Filed for future consideration. Ruby's `tap`
 pattern — receive the value in a block, run side-effecting
 logic on it, return the value unchanged.
 
-## Use case (Drex II)
+## Use case
 
 Brief use of a value without breaking a chain or assigning to
 a throwaway variable:
@@ -18,7 +18,7 @@ end.do_more
 Returns the value `do_something` produced; the `log` call is a
 side-effect inserted into the chain.
 
-## Open: where does it live? (Sirella II)
+## Open: where does it live?
 
 Two reasonable readings:
 
@@ -39,7 +39,7 @@ object (since every KScript object inherits a root that can
 carry it). Receiver in, receiver out. Matches Ruby exactly and
 preserves chain ergonomics.
 
-## Open: what does the block receive? (Brunt)
+## Open: what does the block receive?
 
 - The receiver itself — natural and useful.
 
@@ -47,7 +47,7 @@ preserves chain ergonomics.
 either the original value or the object helper — another reason
 the on-the-value placement is simpler.)
 
-## Status (Zek)
+## Status
 
 Not in v1 core. Trivial to add when wanted. Filed here so the
 discussion isn't lost.

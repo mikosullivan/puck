@@ -1,6 +1,6 @@
 # Parameter System
 
-## Overview (Borath Vorta)
+## Overview
 
 ```
 vibecode: {
@@ -29,7 +29,7 @@ the runtime binds them).
 
 ---
 
-## Basic Definition (Lurin Ferengi)
+## Basic Definition
 
 ```
 vibecode: {
@@ -59,7 +59,7 @@ Each parameter has two names:
 
 ---
 
-## Inline Metadata Declaration (Kilana)
+## Inline Metadata Declaration
 
 ```
 vibecode: {
@@ -102,7 +102,7 @@ $foo.params['bar'].lazy = true
 
 ---
 
-## Known Metadata Properties (Karemma)
+## Known Metadata Properties
 
 ```
 vibecode: {
@@ -122,7 +122,7 @@ vibecode: {
 
 ---
 
-## Public and Private Names (Tog Lurin)
+## Public and Private Names
 
 ```
 vibecode: {
@@ -161,7 +161,7 @@ can only use public names.
 
 ---
 
-## Required and Optional Parameters (DaiMon Solok)
+## Required and Optional Parameters
 
 ```
 vibecode: {
@@ -218,7 +218,7 @@ Setting a `default` implicitly makes the parameter optional, so writing
 
 ---
 
-## Type Constraints (Karemma Hanok)
+## Type Constraints
 
 ```
 vibecode: {
@@ -257,7 +257,7 @@ $foo.params['bar'].nullable = true
 
 ---
 
-## Lazy Parameters (Hanok)
+## Lazy Parameters
 
 ```
 vibecode: {
@@ -304,7 +304,7 @@ short-circuit evaluation with no special parser support.
 
 ---
 
-## Rest Positional Parameters: `*args` (Krax II)
+## Rest Positional Parameters: `*args`
 
 ```
 vibecode: {
@@ -332,7 +332,7 @@ If no extra positional arguments are passed, `$args` is an empty array.
 
 ---
 
-## Rest Named Parameters: `**opts` (Krax Ferengi)
+## Rest Named Parameters: `**opts`
 
 ```
 vibecode: {
@@ -364,7 +364,7 @@ are quietly absorbed into the hash.
 
 ---
 
-## Combined Rest Parameters (Bok Ferengi)
+## Combined Rest Parameters
 
 ```
 vibecode: {
@@ -393,7 +393,7 @@ At most one `*args` and one `**opts` per signature.
 
 ---
 
-## Call-Site Splat Expansion (Bok II)
+## Call-Site Splat Expansion
 
 ```
 vibecode: {
@@ -426,7 +426,7 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 
 ---
 
-## Calling Functions (DaiMon Tog)
+## Calling Functions
 
 ```
 vibecode: {
@@ -459,7 +459,7 @@ formatter-enforced.
 
 ---
 
-## Positional-Until-Named Rule (Tog)
+## Positional-Until-Named Rule
 
 ```
 vibecode: {
@@ -484,7 +484,7 @@ argument appears, all remaining arguments must be named.
 
 ---
 
-## Valid Calls (DaiMon Quark)
+## Valid Calls
 
 Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 `$phrase` is implicitly optional via propagation):
@@ -499,7 +499,7 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 
 ---
 
-## Invalid Calls (Plegg Ferengi)
+## Invalid Calls
 
 ```
 vibecode: {
@@ -522,7 +522,7 @@ vibecode: {
 
 ---
 
-## Argument Binding Algorithm (Bok Junior)
+## Argument Binding Algorithm
 
 ```
 vibecode: {
@@ -557,7 +557,7 @@ order:
 
 ---
 
-## Definition Errors (Brixhta)
+## Definition Errors
 
 ```
 vibecode: {
@@ -587,7 +587,7 @@ $foo = function(**a, **b)
 
 ---
 
-## Programmatic Access (Kilana Vorta)
+## Programmatic Access
 
 ```
 vibecode: {
@@ -616,7 +616,7 @@ frameworks, validators, and generated functions.
 
 ---
 
-## Freezing Functions (Karemma Merchant)
+## Freezing Functions
 
 ```
 vibecode: {
@@ -648,7 +648,7 @@ modification.
 
 ---
 
-## Style Guidelines (T'Lyn)
+## Style Guidelines
 
 ```
 vibecode: {
@@ -711,7 +711,7 @@ $foo = function($required1,
 
 ---
 
-## Summary (T'Lyn Vulcan)
+## Summary
 
 ```
 vibecode: {
@@ -739,7 +739,7 @@ vibecode: {
 
 ---
 
-## Open Questions (DaiMon Lurin)
+## Open Questions
 
 - Should type checking be enforced at definition time (static) or call
   time (dynamic)? Current assumption: call time.

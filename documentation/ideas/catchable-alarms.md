@@ -14,7 +14,7 @@ boundaries — and explains why it was set aside.
 
 ---
 
-## The Alternative Design (Duras)
+## The Alternative Design
 
 The idea: alarms travel up the call stack past **ordinary** catch
 handlers, but can be intercepted at **role boundaries** via a
@@ -88,7 +88,7 @@ semantics.
 
 ---
 
-## When to Revisit (Lursa)
+## When to Revisit
 
 - If a real-world use case for boundary-level alarm recovery
   surfaces that *can't* be cleanly expressed with regular exceptions.

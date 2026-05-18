@@ -23,7 +23,7 @@ Brainstorm paused. Resume points when picking this back up:
 
 ---
 
-## Concept (Saru)
+## Concept
 
 ```
 vibecode: {
@@ -63,7 +63,7 @@ disk to be loaded by Robinson, never to be served as URLs.
 
 ---
 
-## File shape (Saru II)
+## File shape
 
 ```
 vibecode: {
@@ -102,7 +102,7 @@ defines `class 'UNS' ... end`). One spec fix covers both.
 
 ---
 
-## The two-trip pattern (Saru III)
+## The two-trip pattern
 
 ```
 vibecode: {
@@ -135,7 +135,7 @@ across page files and dir handlers.
 
 ---
 
-## Framework organization (Saru IIA)
+## Framework organization
 
 ```
 vibecode: {
@@ -226,7 +226,7 @@ to detect — the chain just stops where it stops.
 
 ---
 
-## Composition across handlers (Saru V)
+## Composition across handlers
 
 ```
 vibecode: {
@@ -283,7 +283,7 @@ The shape:
 
 ---
 
-## `pass_through` — the wrapping primitive (Saru IV)
+## `pass_through` — the wrapping primitive
 
 ```
 vibecode: {

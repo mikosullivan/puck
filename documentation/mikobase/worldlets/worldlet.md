@@ -1,6 +1,6 @@
 # Worldlet Format
 
-## Overview (Mark II Holo)
+## Overview
 
 ```
 vibecode: {
@@ -24,7 +24,7 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 
 ---
 
-## Top-Level Structure (Photons)
+## Top-Level Structure
 
 ```
 vibecode: {
@@ -72,7 +72,7 @@ entries, see
 
 ---
 
-## `meta` (EMH)
+## `meta`
 
 ```
 vibecode: {
@@ -104,7 +104,7 @@ Descriptive information about the worldlet.
 
 ---
 
-## `format` and `format_version` (EMH Voyager)
+## `format` and `format_version`
 
 ```
 vibecode: {
@@ -136,7 +136,7 @@ Both are optional for backwards compatibility but should be included in all new 
 
 ---
 
-## `properties` (Photon)
+## `properties`
 
 ```
 vibecode: {
@@ -174,7 +174,7 @@ shape (each record carries its current bucket directly, no history block). See
 
 ---
 
-## `allow` (Photons Be Free)
+## `allow`
 
 ```
 vibecode: {
@@ -195,7 +195,7 @@ The format and full capability vocabulary are not yet fully designed.
 
 ---
 
-## `extensions` (Author Doctor)
+## `extensions`
 
 ```
 vibecode: {
@@ -218,7 +218,7 @@ unrecognised `extensions` key.
 
 ---
 
-## `classes` (Doctor Zimmerman)
+## `classes`
 
 ```
 vibecode: {
@@ -299,7 +299,7 @@ See [class-definition.md](../../kscript/class-definition.md) for the full class 
 
 ---
 
-## `records` (Maquis)
+## `records`
 
 ```
 vibecode: {
@@ -331,7 +331,7 @@ is no separate history block and no per-version entries.
 
 ---
 
-## `files` (Maquis Cell)
+## `files`
 
 ```
 vibecode: {
@@ -366,7 +366,7 @@ hash, timestamp, and MIME type.
 
 ---
 
-## `file_chunks` (Computer LCARS)
+## `file_chunks`
 
 A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
 or more chunks. Chunks are assembled in `index` order to reconstruct the file.
@@ -391,7 +391,7 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 
 ---
 
-## Import Rules (LCARS)
+## Import Rules
 
 ```
 vibecode: {
@@ -446,7 +446,7 @@ written to the target mikobase. Partial imports do not happen.
 
 ---
 
-## Minimal Valid Example (Lt. Barclay)
+## Minimal Valid Example
 
 The smallest possible worldlet — one record, no schema, no files:
 
@@ -467,7 +467,7 @@ The smallest possible worldlet — one record, no schema, no files:
 
 ---
 
-## Complete Example (Barclay Holo)
+## Complete Example
 
 ```json
 {

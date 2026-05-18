@@ -5,7 +5,7 @@ the KScript runtime.
 
 ---
 
-## Architecture (Vash)
+## Architecture
 
 ```
 Ruby (host / policy layer)
@@ -22,7 +22,7 @@ callback.
 
 ---
 
-## The Ruby API (Boothby)
+## The Ruby API
 
 The host creates a runtime object, configures it, then runs code:
 
@@ -62,7 +62,7 @@ by convention.
 
 ---
 
-## Injecting Capabilities (Tomalak)
+## Injecting Capabilities
 
 KScript has no ambient authority — no global filesystem access, no network. Everything
 the program can do must be explicitly granted by the host. Built-in system methods like
@@ -112,7 +112,7 @@ code can only write to stdout if it has been explicitly handed the capability.
 
 ---
 
-## Data vs Capabilities vs Chain (Sela)
+## Data vs Capabilities vs Chain
 
 Three distinct channels carry information into a KScript execution:
 
@@ -132,7 +132,7 @@ Context     →  passed by chain
 
 ---
 
-## Filesystem Sandboxing (Jail)
+## Filesystem Sandboxing
 
 Filesystem access is granted via jail objects — scoped handles to specific directories
 with explicit read/write permissions:
@@ -193,7 +193,7 @@ of `%chain` are to be discussed separately.
 
 ---
 
-## Summary (Toral)
+## Summary
 
 The bootstrapping process in a Ruby host:
 

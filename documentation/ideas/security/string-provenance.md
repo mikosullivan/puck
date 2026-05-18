@@ -5,7 +5,7 @@ implementation, but worth recording so future decisions can build on it. A reaso
 direction is for this to eventually be an **opt-in feature for a higher level of
 security**, not the default behavior of the runtime.
 
-## The Idea (Joran)
+## The Idea
 
 Every string carries its **complete construction history** — not just "this string
 exists and is tainted," but the full record of every operation and every original
@@ -42,7 +42,7 @@ engine materializes the query: walks back through the query chain to the base
 string(s), runs the operations, and produces the result. Until then, no characters
 have been computed.
 
-## Why This Would Be Powerful (Tobin)
+## Why This Would Be Powerful
 
 The coarse model of one role-tag per value (see [roles.md](../../kscript/roles.md)) collapses
 construction history down to a single owning role per string. That's enough for
@@ -62,7 +62,7 @@ could be useful in several places:
 - **Auditing.** Reconstructing data flow from an artifact back to original inputs
   is mechanical, not detective work.
 
-## Why It's Deferred (Audrid)
+## Why It's Deferred
 
 The cost is significant, and most code doesn't need the richness:
 
@@ -96,7 +96,7 @@ otherwise be freed; weak references with snapshot fallback; etc.), but each
 trades away some of the provenance benefit. The fundamental tension is real:
 keeping full provenance means keeping the inputs, and inputs accumulate.
 
-## Things to Think About When Revisiting (Curzon)
+## Things to Think About When Revisiting
 
 - **Non-concatenative operations.** Substring, slice, replace, regex match — these
   produce strings whose characters trace back to specific positions in a base.
@@ -128,7 +128,7 @@ keeping full provenance means keeping the inputs, and inputs accumulate.
   the API is the same — provenance queries just return less detail (or nothing,
   or a single coarse tag) in the non-provenance case.
 
-## Relation to the Current Trust Model (Belar)
+## Relation to the Current Trust Model
 
 The coarse tracking (one trust tag per value) is the practical floor. Full
 provenance is a strict superset: if you have the query chain back to base strings,

@@ -1,6 +1,6 @@
 # Bitwise Object
 
-## Overview (Airiam)
+## Overview
 
 ```
 vibecode: {
@@ -15,7 +15,7 @@ Bitwise operations are exposed through a dedicated bitwise object rather than as
 methods on Number. This keeps the Number class uncluttered and makes bitwise intent
 explicit at the call site.
 
-## Access (Adira)
+## Access
 
 ```
 vibecode: {
@@ -35,7 +35,7 @@ $n.bitwise.or(456)
 
 ---
 
-## Open Questions (Gray)
+## Open Questions
 
 - Do operations take a second Number argument, or does the bitwise object wrap the value
   and chain? e.g. `$a.bitwise.or($b)` vs `$a.bitwise.or($b).and($c)`
@@ -46,7 +46,7 @@ $n.bitwise.or(456)
 
 ---
 
-## Methods (Vance)
+## Methods
 
 ```
 vibecode: {

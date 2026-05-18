@@ -10,7 +10,7 @@ runner-spec sections.
 
 ---
 
-## `bryton.json` per directory (Travis Voyager)
+## `bryton.json` per directory
 
 Any directory in the test tree may contain an optional
 `bryton.json` file with per-directory configuration.
@@ -138,7 +138,7 @@ for files that aren't tests yet.
 
 ---
 
-## `dev.*` files — silent ignore (Hoshi)
+## `dev.*` files — silent ignore
 
 Executable files whose name starts with `dev.` are **silently
 ignored** by the runner. They don't appear in the test tree at
@@ -170,7 +170,7 @@ acknowledgment.
 
 ---
 
-## Aggregator directories (Cutler)
+## Aggregator directories
 
 A directory can serve as an **aggregator** by listing test trees
 that live elsewhere on the filesystem. Paths in `files` are
@@ -209,7 +209,7 @@ local children.
 
 ---
 
-## Dynamic configuration via executable `bryton.*` (Liz Cutler)
+## Dynamic configuration via executable `bryton.*`
 
 A directory's effective config can be **generated dynamically** by
 an executable file matching the pattern `bryton.*` (e.g.,
@@ -291,7 +291,7 @@ aware of: don't run Bryton against untrusted directory trees.
 
 ---
 
-## Fail-fast (Crewman Cutler)
+## Fail-fast
 
 Setting `fail_fast: true` in any `bryton.json` tells the runner
 to **stop launching new tests as soon as one fails or returns no
@@ -413,7 +413,7 @@ script-side behaviors stay coordinated.
 
 ---
 
-## What counts as a successful script execution (Captain Erika)
+## What counts as a successful script execution
 
 For the runner to treat a script execution as successful, **two
 rules must both be met**:
@@ -461,7 +461,7 @@ guessing.
 
 ---
 
-## Test script output: Xeme vs human (Erika Hernandez)
+## Test script output: Xeme vs human
 
 A test script needs to output two different things depending on
 context:
@@ -517,7 +517,7 @@ script emits Xeme JSON regardless of failure/success state.
 
 ---
 
-## The runner ignores any pre-existing `BRYTON` (Soong II)
+## The runner ignores any pre-existing `BRYTON`
 
 When the runner starts, it **ignores whatever `BRYTON` was set
 in the invoking shell**. It builds BRYTON entirely from the
@@ -543,7 +543,7 @@ ignored for runner-driven runs.
 
 ---
 
-## Personal config: `~/.config/bryton/config.json` (Arik Soong)
+## Personal config: `~/.config/bryton/config.json`
 
 A developer can set **personal defaults** for how scripts run
 when invoked directly at the CLI. These live in
@@ -561,7 +561,7 @@ The initial standardized shape:
 This says: "when I run a test directly, default to fail-fast and
 trimmed output."
 
-## Tags (Section 31 Harris)
+## Tags
 
 Tags are per-node metadata used for selective test runs. A node
 (directory or file) can declare its tags via the `tags` field:
@@ -631,7 +631,7 @@ Tags don't propagate in the Xeme tree any more than they do in
 `bryton.json` — a tagged directory's Xeme carries the tags, but
 its children's Xemes don't automatically inherit them.
 
-## Which bryton.json keys propagate (Harris)
+## Which bryton.json keys propagate
 
 The settings that flow down from a parent directory's
 `bryton.json` to its subdirectories (the **allow-list**):
@@ -674,7 +674,7 @@ The default stays `false` because most workflows want to see all
 results during development — trim is for production CI runs and
 mass-testing scenarios where only failures matter.
 
-## Official precedence: building BRYTON (Stanford Reed)
+## Official precedence: building BRYTON
 
 BRYTON is built by overlaying layers in a fixed precedence order.
 Lowest layer first; each subsequent layer overrides the previous
@@ -794,7 +794,7 @@ is minimal.
 
 ---
 
-## Scripts don't need libraries (Travis Sr.)
+## Scripts don't need libraries
 
 **The first-contact promise: a script that emits Xeme JSON to
 stdout IS a Bryton test, period.** No library imports, no

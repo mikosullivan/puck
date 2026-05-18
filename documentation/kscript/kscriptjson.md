@@ -1,6 +1,6 @@
 # KScriptJSON
 
-## Overview (Tora Klingon)
+## Overview
 
 ```
 vibecode: {
@@ -34,7 +34,7 @@ itself before the parser exists.
 
 ---
 
-## Core Principle (K'mtar)
+## Core Principle
 
 ```
 vibecode: {
@@ -63,7 +63,7 @@ arguments or a single expression for positional calls.
 
 ---
 
-## Comments (K'mtar Klingon)
+## Comments
 
 ```
 vibecode: {
@@ -86,7 +86,7 @@ It is ignored by the interpreter.
 
 ---
 
-## Expressions (Drex II)
+## Expressions
 
 ```
 vibecode: {
@@ -167,7 +167,7 @@ A `function` does not capture the outer scope. A `closure` does.
 
 ---
 
-## Statements (Drex Mogh)
+## Statements
 
 ```
 vibecode: {
@@ -263,7 +263,7 @@ KScript equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 
 ---
 
-## Control Flow (Lukara)
+## Control Flow
 
 ```
 vibecode: {
@@ -363,13 +363,13 @@ integer — a literal, a variable, or a computed value:
 
 KScript equivalent: `break $depth`
 
-See [loops.md § break](loops.md#break-riker) for full semantics,
+See [loops.md § break](loops.md#break) for full semantics,
 including interaction with structural blocks and the open question
 about `break $named_loop` as a targeting alternative.
 
 ---
 
-## Blocks (Kahless I)
+## Blocks
 
 ```
 vibecode: {
@@ -401,7 +401,7 @@ end
 
 ---
 
-## Function and Closure Definitions (Mauk-to'Vor)
+## Function and Closure Definitions
 
 ```
 vibecode: {
@@ -456,7 +456,7 @@ end
 
 ---
 
-## Return (Korath)
+## Return
 
 ```
 vibecode: {
@@ -480,7 +480,7 @@ Return with no value:
 
 ---
 
-## Exception Handling (Korath Klingon)
+## Exception Handling
 
 ```
 vibecode: {
@@ -517,7 +517,7 @@ KScript equivalent: `raise 'borg.com/exception/assimilation'`
 
 ---
 
-## System Methods (Drex Worf)
+## System Methods
 
 ```
 vibecode: {
@@ -545,7 +545,7 @@ KScript equivalent: `%chain['user']`
 
 ---
 
-## Document Statements (Quvar)
+## Document Statements
 
 ```
 vibecode: {
@@ -572,7 +572,7 @@ in the program array. They are no-ops at runtime.
 
 ---
 
-## Source Position Annotations (Lurin)
+## Source Position Annotations
 
 ```
 vibecode: {
@@ -635,7 +635,7 @@ position is genuinely unknown.
 
 ---
 
-## Known Gaps (Pakled)
+## Known Gaps
 
 ```
 vibecode: {
@@ -653,7 +653,7 @@ insertion order through serialization and deserialization.
 
 ---
 
-## Open Questions (Lurin Pakled)
+## Open Questions
 
 ### Class definitions
 

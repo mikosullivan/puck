@@ -25,7 +25,7 @@ Both humans and AI systems can read this document directly.
 
 ---
 
-## Mikobase (Prometheus II)
+## Mikobase
 
 A **mikobase** is a live object store — not a passive file. It supports typed class
 definitions, append-only record history, locking, and transactions. The central rule: a
@@ -66,7 +66,7 @@ vibecode: {"concept":"packaged_mikobase","marketing_name":"worldlet",
 
 ---
 
-## Q0 (Akira)
+## Q0
 
 **Q0** ("query zero") is the universal query interface for all mikobase engines. Queries are
 JSON objects sent to `engine.q0()`. Every mikobase engine supports Q0. Class names in queries
@@ -194,7 +194,7 @@ vibecode: {"concept":"q0_error_ids","errors":[
 
 ---
 
-## Worldlet JSON Format (Akira Class)
+## Worldlet JSON Format
 
 A **worldlet** is a complete mikobase serialized as a single JSON object — classes, records,
 history, and files in one portable document. Primary keys are preserved exactly on import, so
@@ -370,7 +370,7 @@ vibecode: {"concept":"worldlet_import_rules",
 
 ---
 
-## AI Conversation Format (Steamrunner)
+## AI Conversation Format
 
 The `kiera.uno/ai/` namespace defines a standard class library for AI-to-AI collaboration
 over a shared live mikobase. Using these classes is optional — the mikobase accepts anything

@@ -12,7 +12,7 @@ JSON line is a complete, working Bryton test.
 
 ---
 
-## Architecture (Klaang)
+## Architecture
 
 Bryton consists of three cooperating parts:
 
@@ -35,7 +35,7 @@ the contract between them.
 
 ---
 
-## Core principles (Suliban)
+## Core principles
 
 ### Tests are runnable scripts
 
@@ -94,7 +94,7 @@ hierarchy of the filesystem.
 
 ---
 
-## Configuration (Sluggo)
+## Configuration
 
 Three layers, in precedence order (lowest to highest):
 
@@ -131,7 +131,7 @@ for the full chain.
 
 ---
 
-## What ships in v1 (Lorian)
+## What ships in v1
 
 - The runner (language-agnostic).
 - Xeme spec + canonical icon set.
@@ -155,7 +155,7 @@ What's deferred to future versions:
 
 ---
 
-## Where to read more (Tasso)
+## Where to read more
 
 - **[Xeme](xeme/xeme.md)** — the JSON result format. Required
   reading for anyone writing tools that produce or consume

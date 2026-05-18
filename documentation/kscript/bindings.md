@@ -7,7 +7,7 @@ that prevents arbitrary KScript code from accessing Lua directly.
 
 ---
 
-## Why bindings exist (Magnus Voyager)
+## Why bindings exist
 
 KScript is designed so user-level code **cannot reach into Lua**.
 That seal is a load-bearing security property — without it,
@@ -27,7 +27,7 @@ they consume any other capability.
 
 ---
 
-## Install: operator-only, not runtime (Brewster)
+## Install: operator-only, not runtime
 
 A binding includes Lua code. Loading it gives the engine new
 Lua-level functionality. **This is a privileged operation** — the
@@ -50,7 +50,7 @@ binding install as more like adding a system service.
 
 ---
 
-## How a KScript class uses a binding (Bristow)
+## How a KScript class uses a binding
 
 A class declares its binding dependency, and the engine raises a
 clear error at class-load time if the binding isn't installed. The
@@ -73,7 +73,7 @@ The flow:
 
 ---
 
-## Naming convention (Kyoto Joe)
+## Naming convention
 
 Bindings live under `kiera.uno/binding/...`:
 
@@ -141,7 +141,7 @@ Kiera uses these primitives for:
 
 ---
 
-## Non-core bindings (Archer)
+## Non-core bindings
 
 Bindings that don't ship by default but the operator can install:
 
@@ -189,7 +189,7 @@ SQLite binding spec.
 
 ---
 
-## Open questions (T'Pol)
+## Open questions
 
 Deferred from the initial design conversation; will be addressed
 as bindings get spec'd:

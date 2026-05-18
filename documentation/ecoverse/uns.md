@@ -3,7 +3,7 @@
 A simple naming scheme for identifying things in a globally
 unambiguous way.
 
-## Too Long, Didn't Read (Khan)
+## Too Long, Didn't Read
 
 A UNS is just a URL without the protocol. It's a way to identify
 an object without the noise of protocols:
@@ -32,7 +32,7 @@ Read on for more.
 
 ---
 
-## Introduction (Mudd)
+## Introduction
 
 Software systems hit namespace collisions all the time — two
 libraries that both want to define a `User` class, two services
@@ -65,7 +65,7 @@ noise. That's the main motivation for UNS. The naming idea isn't
 new — domain-prefixed identifiers have been around for decades.
 UNS just cuts down the noise.
 
-## Pancake simple (Stella)
+## Pancake simple
 
 The whole concept is barely an invention — it's a thin
 formalization of what people already do with domain-prefixed
@@ -73,7 +73,7 @@ names. The value is in **everyone agreeing on the same shape** so
 identifiers parse and compare consistently across tools and
 systems.
 
-## Specification (Trelane)
+## Specification
 
 ### Valid characters
 
@@ -165,7 +165,7 @@ similar filesystem-backed contexts). A UNS that survives
 validation can be turned directly into a path on disk without
 escaping or sanitization. The strictness is what makes that safe.
 
-## Norms (Apollo)
+## Norms
 
 ### Keep UNSes short
 
@@ -193,7 +193,7 @@ UNSes (UNS is byte-for-byte case-sensitive), but the trailing
 slash is usually just noise. Omit it unless you have a specific
 reason to keep it.
 
-## Use in Kiera (Korob)
+## Use in Kiera
 
 ### Parser is a core KScript requirement
 
@@ -228,7 +228,7 @@ nginx) will redirect to `https://kiera.uno/foo/` — costing an
 extra round trip. Noted here so the friction is acknowledged;
 not considered a significant problem at present.
 
-## First-contact angle (Sylvia)
+## First-contact angle
 
 UNS is one of the lowest-friction ways someone might encounter
 Kiera. It's small, self-contained, and useful on its own — you

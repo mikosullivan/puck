@@ -5,7 +5,7 @@ first instance) where a deeper layer needs to **truly remove**
 an inherited key, not just shadow it with null. JSON has no
 delete marker; KScript hashes are ours and could.
 
-## Why this matters (Lefler)
+## Why this matters
 
 In a meta-hash cascade, the current spec says:
 
@@ -24,7 +24,7 @@ need to remove certain keys from the inherited chain. A null
 value isn't quite right (caller can tell there was *something*
 called that key via `has_key?`); a delete marker is.
 
-## Two candidate designs (Robin Lefler)
+## Two candidate designs
 
 ### A — Null flavor
 
@@ -57,7 +57,7 @@ Cons:
 - New top-level concept; one more thing to learn.
 - Doesn't compose with anything else.
 
-## Edge cases either design has to answer (Ro Laren)
+## Edge cases either design has to answer
 
 - **Iteration on a plain hash.** Does `$h.keys` include keys
   whose value is a deletion marker? Probably yes — the hash
@@ -78,7 +78,7 @@ A (null flavor) leans cleaner — leverages an existing pattern,
 adds nothing structurally new, fits the rest of the
 null-as-typed-thing model.
 
-## Status (Hugh)
+## Status
 
 Not in v1. Filed for reconsideration when either meta-hash
 genuinely needs it (more than `%chain`'s security barrier, which

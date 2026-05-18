@@ -16,7 +16,7 @@ list feels complete, we sort by priority and decide what's in for v1.
 
 ---
 
-## Design Goals (Tomalak II)
+## Design Goals
 
 ### Scales Down Small, Scales Up Large
 
@@ -97,7 +97,7 @@ target range covers.
 
 ---
 
-## Features (Suran)
+## Features
 
 ### Settings Hierarchy
 
@@ -1164,14 +1164,14 @@ Specifics to be filled in as features are described.
 
 ---
 
-## Open Questions / Cross-Cutting Concerns (Cretak)
+## Open Questions / Cross-Cutting Concerns
 
 (For things that affect multiple features, design tensions, or "we'll figure it out
 when we get there" notes.)
 
 ---
 
-## Prioritization (Letant)
+## Prioritization
 
 (Empty for now. Filled in once the feature list stabilizes — typically with three
 buckets: in v1, deferred to later, dropped or unlikely.)

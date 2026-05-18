@@ -9,7 +9,7 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-## Goals (Troi)
+## Goals
 
 - Build the **driver app first**, since Miko is the most reliable
   user (he's actually a rideshare driver). Eat our own dog food.
@@ -23,7 +23,7 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-## What kiera.uno/geo Provides (Yar)
+## What kiera.uno/geo Provides
 
 Everything map-related routes through `kiera.uno/geo`:
 
@@ -45,7 +45,7 @@ maps. No Google Maps, no Mapbox, no separate provider keys.
 
 ---
 
-## What kiera.uno/geo Does NOT Provide (Pulaski)
+## What kiera.uno/geo Does NOT Provide
 
 Everything ride-business-specific lives in the rideshare's **own
 backend** (which is a separate system from kiera.uno/geo):
@@ -69,7 +69,7 @@ only with the driver-PWA side and its use of kiera.uno/geo.
 
 ---
 
-## Tech Stack (Guinan)
+## Tech Stack
 
 - **Frontend**: PWA. HTML/CSS/JS in a service-worker-enabled web
   app. Mobile-first, designed for phones in a vehicle dash mount.
@@ -88,7 +88,7 @@ only with the driver-PWA side and its use of kiera.uno/geo.
 
 ---
 
-## Major Screens (Q)
+## Major Screens
 
 ### Status / Main (idle)
 
@@ -214,7 +214,7 @@ Vehicle info, documents, driver preferences. Rideshare-backend data.
 
 ---
 
-## kiera.uno/geo Usage Summary (Lwaxana)
+## kiera.uno/geo Usage Summary
 
 Cross-referenced from the screens above:
 
@@ -235,7 +235,7 @@ list needs to actually work well for v1 to ship.
 
 ---
 
-## Validation: Does kiera.uno/geo Have What's Needed? (Lore)
+## Validation: Does kiera.uno/geo Have What's Needed?
 
 Cross-checking the table above against the geo spec:
 
@@ -267,7 +267,7 @@ features.
 
 ---
 
-## PWA Limitations to Design Around (Lal)
+## PWA Limitations to Design Around
 
 PWAs are not native apps; some things that "just work" on iOS/Android
 require workarounds in a PWA. The driver app is particularly sensitive
@@ -332,7 +332,7 @@ battery-conscious:
 
 ---
 
-## What's Out of Scope for v1 (B-4)
+## What's Out of Scope for v1
 
 To keep the v1 scope honest:
 
@@ -350,7 +350,7 @@ To keep the v1 scope honest:
 
 ---
 
-## Open Questions (Soong)
+## Open Questions
 
 - **Authentication mechanism.** PWAs don't have great native
   patterns for this. Probably an OAuth flow on first launch +
@@ -375,7 +375,7 @@ To keep the v1 scope honest:
 
 ---
 
-## Why This Validates the Geo Service (Juliana)
+## Why This Validates the Geo Service
 
 If this app ships and works well, that's strong evidence the
 kiera.uno/geo service is sufficient for real driver use. The doc

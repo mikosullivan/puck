@@ -4,7 +4,7 @@ A logging format. Named after one of Miko's cats.
 
 ---
 
-## Overview (Drednok)
+## Overview
 
 Jasmine is a logging format derived from **JSONL** (JSON Lines) with
 a few tweaks specific to the Kiera ecoverse.
@@ -49,7 +49,7 @@ ecoverse needs. The tweaks are detailed below.
 
 ---
 
-## Differences from JSONL (Asencia)
+## Differences from JSONL
 
 ### Malformed lines are silently ignored
 
@@ -80,7 +80,7 @@ need strict guarantees about every line getting through should
 include their own integrity mechanisms (checksums in the JSON,
 sequence numbers, etc.).
 
-## Specification (Solum)
+## Specification
 
 ### Required fields
 
@@ -191,7 +191,7 @@ standard, which are optional, privacy considerations for things
 like IP/user-agent, etc.) is its own spec — to be filled in as
 Robinson's logging needs become more concrete.
 
-## Loggers and entries (Okona)
+## Loggers and entries
 
 Two distinct concepts:
 
@@ -549,7 +549,7 @@ The security properties are intact:
 
 ---
 
-## Stores (Vau N'Akat)
+## Stores
 
 Jasmine separates **what to log** (entries, the format) from **where
 they live** (the store). Stores are pluggable; one Jasmine producer
@@ -863,7 +863,7 @@ becomes eligible regardless once the date rolls over.
 
 ---
 
-## Open Questions (Brikar)
+## Open Questions
 
 The Jasmine spec is intentionally kept light at this stage. The big
 structural decisions are settled (JSONL baseline, malformed-line

@@ -19,7 +19,7 @@ Brainstorm in progress.
 
 ---
 
-## Why this is interesting (Data Soong)
+## Why this is interesting
 
 ```
 vibecode: {

@@ -1,6 +1,6 @@
 # Issues
 
-## Open issues (Gaila)
+## Open issues
 
 ### Expand Canonical Tag Coverage To Match Runtime Spec
 - opened: 2026-04-02

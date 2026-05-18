@@ -1,6 +1,6 @@
 # String Methods
 
-## Overview (Rayner DISCO)
+## Overview
 
 ```
 vibecode: {
@@ -18,7 +18,7 @@ UTF-8 at system boundaries before passing them to KScript.
 
 ---
 
-## Operators (Moll)
+## Operators
 
 ```
 vibecode: {
@@ -40,7 +40,7 @@ vibecode: {
 
 ---
 
-## Testing (Moll DISCO)
+## Testing
 
 ```
 vibecode: {
@@ -64,7 +64,7 @@ vibecode: {
 
 ---
 
-## Case (L'ak)
+## Case
 
 ```
 vibecode: {
@@ -81,7 +81,7 @@ vibecode: {
 
 ---
 
-## Whitespace (Vellek)
+## Whitespace
 
 ```
 vibecode: {
@@ -102,7 +102,7 @@ vibecode: {
 
 ---
 
-## Prefix and Suffix (La'an)
+## Prefix and Suffix
 
 ```
 vibecode: {
@@ -120,7 +120,7 @@ vibecode: {
 
 ---
 
-## Search and Replace (Ortegas)
+## Search and Replace
 
 ```
 vibecode: {
@@ -159,7 +159,7 @@ $foo.replace('xyz', 'bar')          -> 'Mike Stuart Mike'
 
 ---
 
-## Formatting (M'Benga)
+## Formatting
 
 ```
 vibecode: {
@@ -177,7 +177,7 @@ vibecode: {
 
 ---
 
-## Splitting (Chapel SNW)
+## Splitting
 
 ```
 vibecode: {
@@ -194,7 +194,7 @@ vibecode: {
 
 ---
 
-## Size (Hemmer)
+## Size
 
 ```
 vibecode: {
@@ -212,7 +212,7 @@ vibecode: {
 
 ---
 
-## Conversion (Pelia)
+## Conversion
 
 ```
 vibecode: {
@@ -234,7 +234,7 @@ vibecode: {
 
 ---
 
-## End-Anchored Slicing (Sam Kirk)
+## End-Anchored Slicing
 
 ```
 vibecode: {
@@ -295,7 +295,7 @@ parser must handle this disambiguation.
 
 ---
 
-## Open Questions (Sam)
+## Open Questions
 
 - `[]` with `:end`: resolved — see End-Anchored Slicing section.
 - `match` return type: the Match object API is not yet designed.

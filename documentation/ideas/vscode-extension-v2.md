@@ -21,7 +21,7 @@ unlock features v1 can't reach.
 
 ---
 
-## The architectural jump (Lore)
+## The architectural jump
 
 ```
 vibecode: {
@@ -89,7 +89,7 @@ parser in an LSP layer.
 
 ---
 
-## Features deferred from V1 (Data)
+## Features deferred from V1
 
 ```
 vibecode: {

@@ -17,7 +17,7 @@ shape; for now this file is a workspace.
 
 ---
 
-## Concept (Quark)
+## Concept
 
 ```
 vibecode: {

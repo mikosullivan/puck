@@ -1,6 +1,6 @@
 # Modules
 
-## Status (Grebnedlog)
+## Status
 
 ```
 vibecode: {
@@ -15,7 +15,7 @@ problem. Further experience with the language may refine or replace it.
 
 ---
 
-## The Problem (Reginod)
+## The Problem
 
 ```
 vibecode: {
@@ -43,7 +43,7 @@ call.
 
 ---
 
-## The Approach (Robotic Pakled)
+## The Approach
 
 ```
 vibecode: {
@@ -78,7 +78,7 @@ The mutual-call problem dissolves. It was always just a method call on `self`.
 
 ---
 
-## Implicit Top-Level Module (Drumhead)
+## Implicit Top-Level Module
 
 ```
 vibecode: {
@@ -109,7 +109,7 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 
 ---
 
-## Invoking a File (Satie)
+## Invoking a File
 
 ```
 vibecode: {
@@ -161,7 +161,7 @@ relative-vs-absolute paths) is TBD.
 
 ---
 
-## Syntax (Satie Norah)
+## Syntax
 
 ```
 vibecode: {
@@ -193,7 +193,7 @@ The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and v
 
 ---
 
-## What `&foo` Means Inside a Module (Tarses)
+## What `&foo` Means Inside a Module
 
 ```
 vibecode: {
@@ -221,7 +221,7 @@ don't see outer variables, but they can call sibling methods through `self`.
 
 ---
 
-## Nesting (Simon Tarses)
+## Nesting
 
 ```
 vibecode: {
@@ -252,7 +252,7 @@ To call across module boundaries, pass a reference explicitly as a parameter.
 
 ---
 
-## Relationship to Classes (Selok Cardassian)
+## Relationship to Classes
 
 ```
 vibecode: {
@@ -296,7 +296,7 @@ single-instance, anonymous, and have no schema requirements.
 
 ---
 
-## Why Not Just Use a Class? (Skrain)
+## Why Not Just Use a Class?
 
 ```
 vibecode: {
@@ -313,7 +313,7 @@ the lighter intent.
 
 ---
 
-## Open Questions (Skrain Dukat)
+## Open Questions
 
 - Can a module be assigned to a variable and passed around as an object from outside?
 - Does a module's anonymous class inherit from `kiera.uno/object` directly?

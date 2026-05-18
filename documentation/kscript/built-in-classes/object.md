@@ -5,7 +5,7 @@ small, fixed set of methods that the engine guarantees about every object
 regardless of class — truthiness classification, null detection, and similar
 introspection that doesn't belong to any one class but applies uniformly to all.
 
-## Methods (Control)
+## Methods
 
 ```
 vibecode: {
@@ -180,7 +180,7 @@ The cost is one extra dot per call. Worth it for the clarity.
 
 ---
 
-## Naming Conventions (Rayner)
+## Naming Conventions
 
 A small set of method names carry agreed-upon meanings across the project.
 These are **conventions**, not framework features — the runtime doesn't

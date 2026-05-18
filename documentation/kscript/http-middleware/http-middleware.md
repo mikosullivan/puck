@@ -30,7 +30,7 @@ Sinatra is enough to serve HTTP responses; everything beyond is
 opt-in via library resolution. A KScript program that doesn't need
 Robinson never pulls Robinson in.
 
-## Architecture (Mariner)
+## Architecture
 
 **No layered servers.** Sinatra and Robinson are not "handlers
 inside Dogberry" — they're standalone servers. You pick the one
@@ -64,7 +64,7 @@ keeps each server simple and self-contained; Dogberry's eventual
 shape will be designed without being constrained to slot Sinatra
 and Robinson in as components.
 
-## Picking one (Boimler)
+## Picking one
 
 - **Sinatra** if your app is mostly a handful of routes — closures
   that respond to HTTP methods and paths. Default for "I just need
@@ -80,7 +80,7 @@ The three are not competing for the same use cases. They occupy
 different points in the spectrum from "ad-hoc per-route code" to
 "content-as-files" to (eventually, whatever Dogberry becomes).
 
-## Shared facilities (Tendi)
+## Shared facilities
 
 ### Jasmine logging
 

@@ -1,6 +1,6 @@
 # Array Methods
 
-## Overview (Culber)
+## Overview
 
 ```
 vibecode: {
@@ -16,7 +16,7 @@ array do not mutate the original.
 
 ---
 
-## Set Theory (Owosekun)
+## Set Theory
 
 ```
 vibecode: {
@@ -111,7 +111,7 @@ $a.empty?              -> false
 
 ---
 
-## Elements (Detmer)
+## Elements
 
 ```
 vibecode: {
@@ -186,7 +186,7 @@ $els[1].value   # raises exception — element has been deleted
 
 ---
 
-## Searching: `find` (Rhys)
+## Searching: `find`
 
 ```
 vibecode: {
@@ -315,7 +315,7 @@ One method, one return shape, no nil-on-no-match special case.
 
 ---
 
-## Open Questions (Bryce)
+## Open Questions
 
 - `⊃` (proper superset) and `⊇` (superset or equal) are not included — use
   `$b.⊂($a)` and `$b.⊆($a)` instead. May be added later if there is demand.

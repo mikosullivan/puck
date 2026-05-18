@@ -11,7 +11,7 @@ serving on top.
 
 ---
 
-## Status (Bea Olson)
+## Status
 
 Spec in development. Material previously filed under the
 [Dogberry wishlist](../../ideas/dogberry-wishlist.md) (Sinatra
@@ -22,7 +22,7 @@ shape.
 
 ---
 
-## Quick example (Bea)
+## Quick example
 
 ```
 $server = %['kiera.uno/sinatra'].new()
@@ -45,7 +45,7 @@ $server.run() do($request)
 end
 ```
 
-## What's in scope (Castro)
+## What's in scope
 
 Small-case use:
 
@@ -64,7 +64,7 @@ Small-case use:
 - A standard `response` constructor.
 - Static file serving via a directory object (see below).
 
-## Route patterns (Kayshon)
+## Route patterns
 
 A route pattern is a path string with two kinds of named captures:
 
@@ -368,7 +368,7 @@ The index is internal — handler code doesn't see it. It exists
 so the two `Allow:`-emitting features stay cheap on the common
 path.
 
-## Request, transaction, sessions, body buffering (Goleta)
+## Request, transaction, sessions, body buffering
 
 All of these are universal HTTP infrastructure and live in
 [Touchstone](touchstone.md):
@@ -388,7 +388,7 @@ All of these are universal HTTP infrastructure and live in
 
 Sinatra inherits these unchanged.
 
-## Static file serving (Olivia Mariner)
+## Static file serving
 
 Sinatra **has no filesystem dependency by default.** A bare `.new()`
 gives a routes-only server that never touches a filesystem — ideal
@@ -440,7 +440,7 @@ listings explicitly when they're wanted; otherwise the
 directory's inventory stays hidden, on the same "no dangerous
 defaults" principle as the per-extension rule above.
 
-## Concurrency (Carol Freeman)
+## Concurrency
 
 **Sinatra is single-threaded. One request at a time.** The accept
 loop reads a request, runs the handler synchronously, writes the
@@ -490,7 +490,7 @@ These are deliberate trade-offs. Sinatra is meant for small,
 fast, predictable services; cases that need concurrency move
 to Robinson or a deployer-level multi-process setup.
 
-## Handlers (Alonzo Freeman)
+## Handlers
 
 The handler chain, three-stage dispatch (`before` / `process` /
 `after`), the `$transaction` object, per-handler state, uncaught
@@ -519,7 +519,7 @@ the Sinatra-specific fallback when no handler returned a response.
 See [The three stages](touchstone.md#the-three-stages) in
 Touchstone for how that slots into the dispatch flow.
 
-## CSRF Protection and CSP (Andy Billups)
+## CSRF Protection and CSP
 
 Both are universal HTTP security features and live in
 [Touchstone](touchstone.md):
@@ -532,14 +532,14 @@ Both are universal HTTP security features and live in
 
 Sinatra inherits both unchanged.
 
-## What's out of scope (Captain Tendi)
+## What's out of scope
 
 The fancier features Robinson covers (multi-site dispatch,
 filesystem trees, admin authentication, factory message overrides,
 canonical redirects) do **not** apply to Sinatra. If you need
 those, use Robinson.
 
-## Candidates for v1 (Tendi Sister)
+## Candidates for v1
 
 The features below are tempting to add. Each is a v1 candidate
 **if and only if it proves light** — a short, clean implementation
@@ -635,7 +635,7 @@ Long-polling, WebSockets, SSE not viable in core.)
 
 ---
 
-## Add-ons (Dr. Migleemo)
+## Add-ons
 
 Sinatra is designed to be extended by add-ons — installable
 packages that layer additional behavior on top of the core
@@ -673,7 +673,7 @@ Community add-ons are welcomed and expected.
 
 ---
 
-## The response object (Karavitis II)
+## The response object
 
 The response constructor (`response.new($status, $headers, $body)`),
 the convenience helpers (`response.html`, `response.json`, etc.),
@@ -686,13 +686,13 @@ Sinatra inherits them unchanged.
 
 ---
 
-## To be ported from the wishlist (Steve Stevens)
+## To be ported from the wishlist
 
 - Detailed registration semantics
 - Error page rendering
 - Implicit-last-value return convention
 
-## Open issues (Dal)
+## Open issues
 
 (none currently)
 

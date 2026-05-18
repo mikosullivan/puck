@@ -5,7 +5,7 @@ to capture the idea in case it ties into Kiera later.
 
 ---
 
-## The Idea (Ayala)
+## The Idea
 
 A single HTTP header named **`uns`** carries one JSON hash. Anyone
 can add fields to that hash using UNS identifiers to namespace
@@ -16,7 +16,7 @@ everything custom lives inside `uns`, namespaced by UNS.
 uns: {"kiera.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 ```
 
-## Why it's interesting (Carey)
+## Why it's interesting
 
 - **Namespacing.** UNS identifiers eliminate header-name
   collisions cleanly. RFC 6648 deprecated `X-` prefixes without
@@ -29,7 +29,7 @@ uns: {"kiera.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"
 - **Consistency with Kiera's JSON-everywhere posture** (KScript,
   mikobase records, JSON URL params, etc.).
 
-## Coexistence and long-term vision (Wildman)
+## Coexistence and long-term vision
 
 `uns` is just another HTTP header — it coexists with everything
 else. Standard headers (`Content-Type`, `Authorization`, etc.)
@@ -40,7 +40,7 @@ keep working unchanged.
 header surface fades and `uns` becomes the only header. Not a
 plan, just the direction the idea points.
 
-## Open questions (Tuvix)
+## Open questions
 
 - **Size limits.** Header size caps (typically 8–64 KB per
   server) constrain how much fits in one JSON blob.
@@ -54,7 +54,7 @@ plan, just the direction the idea points.
   services can do this with each other freely; broader adoption
   needs a story.
 
-## Path to standardization (Wesley Voyager)
+## Path to standardization
 
 The body that standardizes HTTP is the **IETF** (Internet
 Engineering Task Force), specifically the **httpbis** working
@@ -107,6 +107,6 @@ value, accumulate adopters. Approach IETF only once there's a
 real ecosystem behind it — empty proposals get politely ignored;
 proposals with demonstrated traction get serious consideration.
 
-## Status (Future Janeway)
+## Status
 
 Captured for the record. Not on any roadmap.

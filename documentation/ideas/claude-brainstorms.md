@@ -10,7 +10,7 @@ read each.
 
 ---
 
-## 1. Time-travel debugger for KScript (B'Etor)
+## 1. Time-travel debugger for KScript
 
 Mikobase already supports time-travel reads (querying state as
 of any past timestamp). A debugger could exploit this:
@@ -25,7 +25,7 @@ mikobase-shaped during a debug run. Heavy but feasible.
 
 ---
 
-## 2. Visual Xeme tree renderer (Gowron)
+## 2. Visual Xeme tree renderer
 
 The icons we just spent time organizing are a contract waiting
 for a client. A browser-based (or desktop) viewer that:
@@ -41,7 +41,7 @@ the icon-fallback rule once, in one place.
 
 ---
 
-## 3. Test analytics service (K'Ehleyr)
+## 3. Test analytics service
 
 A hosted service that consumes Xeme trees over time and surfaces:
 
@@ -59,7 +59,7 @@ service.
 
 ---
 
-## 4. Jasmine → notifications service (Alexander)
+## 4. Jasmine → notifications service
 
 A hosted service that consumes Jasmine entries and routes
 attention-worthy events to email / SMS / Slack / Pushover / etc.
@@ -76,7 +76,7 @@ competing with it.
 
 ---
 
-## 5. TryKScript — browser playground (Kahless)
+## 5. TryKScript — browser playground
 
 A web page where someone can type KScript and see it run. Mimics
 TryRuby, Replit, the various "play with this language" pages.
@@ -93,7 +93,7 @@ Aligns with the first-contact strategy memory.
 
 ---
 
-## 6. Kiera CLI tool (Mogh)
+## 6. Kiera CLI tool
 
 A unified command-line tool — `kiera` — for everyday Kiera
 operations. Like `kubectl` for Kubernetes or `gh` for GitHub.
@@ -112,7 +112,7 @@ specific scripts. Discoverable via `kiera --help`.
 
 ---
 
-## 7. Universal logger sidecar (Kurn)
+## 7. Universal logger sidecar
 
 A small daemon — `kiera-log` — that reads Jasmine entries on
 stdin (or a Unix socket) and routes them to whatever's configured
@@ -127,7 +127,7 @@ ship as part of the core toolset.
 
 ---
 
-## 8. Federated mikobases (Larg)
+## 8. Federated mikobases
 
 Multiple mikobases can be queried as a single virtual store. The
 federation layer:
@@ -146,7 +146,7 @@ posture.
 
 ---
 
-## 9. Time-bounded objects (TTL)
+## 9. Time-bounded objects
 
 A class capability: objects with an explicit lifetime. The
 mikobase auto-collects them after their TTL expires.
@@ -167,7 +167,7 @@ is collectible after timestamp X."
 
 ---
 
-## 10. Lazy mikobase records (Klag)
+## 10. Lazy mikobase records
 
 A record whose value is computed on demand by a function, not
 stored. The mikobase keeps the recipe (the function + its
@@ -191,7 +191,7 @@ hard parts.
 
 ---
 
-## Status (Madred)
+## Status
 
 All ten are speculative. Some overlap with already-flagged
 future work; others are new threads. None are commitments.

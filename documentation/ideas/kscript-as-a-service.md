@@ -22,7 +22,7 @@ server returns results.**
 
 ---
 
-## Why (Sito Jaxa)
+## Why
 
 ```
 vibecode: {
@@ -136,7 +136,7 @@ Service" as a placeholder, not a final name.
 
 ---
 
-## Playground capability menu (Sito II)
+## Playground capability menu
 
 ```
 vibecode: {

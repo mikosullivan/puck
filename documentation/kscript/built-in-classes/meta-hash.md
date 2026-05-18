@@ -9,7 +9,7 @@ of defaults stack up and the deepest layer wins.
 
 ---
 
-## Construction (Una DISCO)
+## Construction
 
 Pass an array of hashes, ordered from most-general to
 most-specific:
@@ -30,7 +30,7 @@ references them; it doesn't copy.
 
 ---
 
-## Reads (Spock DISCO)
+## Reads
 
 `$mh['key']` walks the array **from end to start** and returns
 the value from the first hash that has the key:
@@ -56,7 +56,7 @@ distinguish "key absent" from "key set to null."
 
 ---
 
-## Writes (Linus)
+## Writes
 
 `$mh['key'] = value` always writes to the **last hash in the
 array** — the most-specific layer:
@@ -76,7 +76,7 @@ references — meta-hash is a view, not an owner).
 
 ---
 
-## `$mh.extend(hash)` (Ruon Tarka)
+## `$mh.extend(hash)`
 
 Returns a **new meta-hash** with the given hash appended as the
 new bottom (most-specific) layer:
@@ -99,7 +99,7 @@ with its own settings.
 
 ---
 
-## `$mh.flatten` (Ruon)
+## `$mh.flatten`
 
 Returns a single regular hash representing the merged view at
 the current state. Most-specific layer takes precedence; earlier
@@ -117,14 +117,14 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Use cases (Reno)
+## Use cases
 
 - **HTTP middleware settings cascade.** Touchstone → Robinson →
   server → site → dir levels → file. Each level overlays the
   previous; reads return the most-specific value. Writes through
   the meta-hash land in the most-specific (last) layer; to mutate
   an earlier layer, write to that hash directly (see
-  [Writes](#writes-linus)).
+  [Writes](#writes)).
 - **Per-request configuration.** Engine defaults → per-handler
   overrides → per-request override.
 - **Class-stack-style metadata lookup** where classes carry
@@ -135,7 +135,7 @@ underlying hashes don't affect the returned snapshot.
 
 ---
 
-## Implementation note (Jett Reno)
+## Implementation note
 
 The class is intentionally tiny — read, write, has?, extend,
 flatten are the entire surface, and each is straightforward.
@@ -146,7 +146,7 @@ problem to memoize.
 
 ---
 
-## What's not in the v1 surface (Hugh DISCO)
+## What's not in the v1 surface
 
 - **Iteration order semantics** when the same key exists in
   multiple layers — `$mh.each` returns the merged view (deepest

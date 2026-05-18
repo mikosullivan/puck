@@ -5,7 +5,7 @@ in as the design develops.
 
 ---
 
-## Overview (Barclay)
+## Overview
 
 One of the Kiera-provided services available at kiera.uno launch will
 be **`kiera.uno/geo`** — a geolocation service in the `kiera.uno`
@@ -54,7 +54,7 @@ Standard Kiera remote-call mechanics apply (see [kiera.md](../kiera/kiera.md)):
 
 ---
 
-## OSM Stewardship (Maddox)
+## OSM Stewardship
 
 The geo service is built on top of OpenStreetMap's freely-available
 data and services (Nominatim for geocoding, Overpass for tag queries).
@@ -124,7 +124,7 @@ see it more than once per cache TTL. That's the whole architecture
 
 ---
 
-## Services (Moriarty)
+## Services
 
 Methods on a `kiera.uno/geo` instance are remote calls that compute
 location-derived information from the instance's `lat`/`long`/`alt`.
@@ -1489,6 +1489,6 @@ stays opaque — only cache hit/miss counts in coarsened-coord buckets.
 
 ---
 
-## Open Questions (Minuet)
+## Open Questions
 
 (To be filled in.)

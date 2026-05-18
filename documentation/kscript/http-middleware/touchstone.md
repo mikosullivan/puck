@@ -13,7 +13,7 @@ for a base class.
 
 ---
 
-## Status (Gwyn)
+## Status
 
 Spec in development. The shape fills in as Sinatra and Robinson
 surface their requirements — Touchstone is where shared behavior
@@ -21,7 +21,7 @@ crystallizes once both descendants need the same thing.
 
 ---
 
-## Responsibilities (Jankom)
+## Responsibilities
 
 ### Content-type factory defaults
 
@@ -46,7 +46,7 @@ response writing, error-page rendering scaffolding.
 
 ---
 
-## The transaction object (Jankom Pog)
+## The transaction object
 
 Every request creates a single `$transaction` object that
 threads through every handler method in the chain. It exposes:
@@ -72,7 +72,7 @@ the handler chain that processes the transaction.
 
 ---
 
-## The request object (Rok-Tahk)
+## The request object
 
 `$transaction.request` (or `$request` inside handler closures
 where it's bound for brevity) exposes everything about the
@@ -212,7 +212,7 @@ contract.
 
 ---
 
-## Sessions (Rok)
+## Sessions
 
 `$transaction.session` is a hash-like handle on the session
 cookie. Reading and writing behaves like an ordinary KScript
@@ -292,7 +292,7 @@ different add-on that handles richer session semantics.
 
 ---
 
-## Body buffering (Murf)
+## Body buffering
 
 Touchstone buffers incoming bodies; it does not stream-process
 them. Two backing stores are available:
@@ -345,7 +345,7 @@ limits, etc. Not in v1; flagged if demand surfaces.
 
 ---
 
-## The handler chain (Zero)
+## The handler chain
 
 Touchstone processes each request through an **ordered chain of
 handlers** registered on `$server.handlers`. Handlers are Kiera
@@ -533,7 +533,7 @@ handler's `before` runs.
 
 ---
 
-## The response object (Holo Janeway)
+## The response object
 
 A handler returns a response object. The bare constructor is
 the full-control form:
@@ -678,7 +678,7 @@ choice prevents the wrong default from being silently picked.
 
 ---
 
-## CSRF Protection (Janeway PRO)
+## CSRF Protection
 
 CSRF (Cross-Site Request Forgery) protection is built in and
 **off by default**. Enable it with one line:
@@ -765,7 +765,7 @@ cookie machinery is shared.
 
 ---
 
-## Content Security Policy (CSP)
+## Content Security Policy
 
 CSP is the strong defense-in-depth against XSS — it tells the
 browser which sources are allowed for scripts, styles, images,
@@ -868,7 +868,7 @@ are stable but neither carries semantic meaning to the browser.
 
 ---
 
-## Not for direct use (Diviner)
+## Not for direct use
 
 Static file serving is **not** a Touchstone responsibility.
 Sinatra and Robinson each handle static files in their own way —

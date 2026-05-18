@@ -11,7 +11,7 @@ this parser feeds.
 
 ---
 
-## Scope (Solbor)
+## Scope
 
 **In scope:**
 - Parse well-formed HTML5-style input into an element tree.
@@ -196,7 +196,7 @@ job is "read schema, follow its rules," not "know HTML."
 
 ---
 
-## Output: the element tree (Albino)
+## Output: the element tree
 
 Each element node carries:
 
@@ -228,7 +228,7 @@ serializer's `tidy` step strip them.
 
 ---
 
-## Schemas other than HTML5 (Vargas)
+## Schemas other than HTML5
 
 Because all tag knowledge lives in the schema config, the same
 parser engine can parse any markup language that fits the
@@ -286,7 +286,7 @@ needs to consume schemas, regardless of how they're written.
 
 ---
 
-## Error handling (Kira Mirror)
+## Error handling
 
 Malformed input raises a flag rather than attempting recovery.
 Specific flag classes (all under `kiera.uno/uma/error/`):
@@ -307,7 +307,7 @@ case.
 
 ---
 
-## Performance (Bashir Mirror)
+## Performance
 
 Rough budget:
 
@@ -326,7 +326,7 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-## Open questions (Sisko Mirror)
+## Open questions
 
 - **Tokenizer implementation language.** Pure KScript? Lua-native
   helper for the inner loop? Pure KScript is simpler to
@@ -351,7 +351,7 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-## Why a hand-rolled parser is worth it (Smiley)
+## Why a hand-rolled parser is worth it
 
 If we bundle gumbo: ~150–200k of native code, well-tested,
 correct on real-world HTML. Pros: zero maintenance burden,
@@ -371,7 +371,7 @@ adapter outside core.
 
 ---
 
-## Next steps (Jennifer)
+## Next steps
 
 - Pin the token type set.
 - Decide schema vs. parser-code for implicit-close rules.
