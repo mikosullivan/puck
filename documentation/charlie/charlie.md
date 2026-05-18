@@ -33,8 +33,8 @@ alternate surface syntaxes are planned for v1.
 
 ---
 
-<a id="community-formatting-standards"></a>
-## 2 Community formatting standards
+<a id="formatting-standards-or-lack-thereof"></a>
+## 2 Formatting standards, or lack thereof
 
 ~~~json
 {"vibecode": {
