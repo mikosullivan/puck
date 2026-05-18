@@ -74,8 +74,8 @@ fields and three remote methods:
         "weather": {
             "returns": {"class": "puck.uno/weather_report"}
         },
-        "census_district": {
-            "returns": {"class": "puck.uno/census_district"}
+        "congressional_district": {
+            "returns": {"class": "puck.uno/congressional_district"}
         },
         "map_image": {
             "params": {
@@ -95,7 +95,7 @@ fields and three remote methods:
   - **`params`** *(optional)* — named parameters, each in the same
     shape as a field definition (`class`, `required`, `default`,
     `min`, `max`, etc.). Omit when the method takes no args
-    (`weather`, `census_district` above). **All Puck params are
+    (`weather`, `congressional_district` above). **All Puck params are
     named**: on the wire they're always a JSON hash keyed by name.
     There are no positional placeholders.
   - **`returns`** — the type of the value the method produces, also
@@ -173,6 +173,46 @@ canonical declaration of what the bucket conforms to — useful for
 validation, for forwarding the call to another handler without
 re-parsing the URL, and for logs and replay.
 
+<a id="response-shape"></a>
+### 3.1 Response shape
+
+The response body is the method's return value, encoded as JSON
+with no envelope. The HTTP status code carries success/failure
+(`200 OK` for normal returns, error codes for the
+[error catalog](puck.md#error-catalog) — TBD here).
+
+For a **primitive return**, the body is just the primitive. For
+example, the response from a hypothetical `hq.name` (returning a
+string) is:
+
+```json
+"Starfleet HQ"
+```
+
+For an **object return**, the body is a dynamic puck — `class`
+plus `bucket`. The response from `congressional_district` on the
+Geo instance from §3 returns a dynamic puck that references the
+stored CongressionalDistrict for that location:
+
+```json
+{
+    "class": "puck.uno/congressional_district",
+    "bucket": {
+        "code": "CA-11"
+    }
+}
+```
+
+The client can use that returned puck as the body of further
+calls. To get the representative, the client takes the returned
+puck verbatim and POSTs it to the `representative` method's URL:
+
+```
+POST https://puck.uno/congressional_district/representative
+```
+
+with the same body it just received as the response.
+
 **The server is stateless with respect to instance identity.** It
 keeps no handles, no sessions, no per-instance state between calls.
 Each request carries the object it operates on. Subsequent calls on
@@ -182,7 +222,7 @@ Field values that a particular method doesn't actually use are
 still sent; the protocol doesn't try to optimize that away.
 
 **In practice the cost is small.** Most Puck objects are tiny — a
-Geo is two numbers, a CensusDistrict reference is one UNS string, a
+Geo is two numbers, a CongressionalDistrict reference is one UNS string, a
 Color is one hex code. The wire payload is mostly HTTP/JSON
 envelope; the object data itself rarely amounts to much.
 

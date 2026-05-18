@@ -66,7 +66,7 @@ Geo = puck.lookup('puck.uno/geo')
 hq = Geo(lat=37.7980, lon=-122.4626)
 
 hq.weather                 # current weather report
-hq.census_district         # returns another Puck object
+hq.congressional_district         # returns another Puck object
 ```
 
 That's the full surface for the common case: import, look up the
@@ -211,13 +211,13 @@ A remote method's return value comes back as:
 | **Reference to a Puck object** | wrapper instance that you can call methods on |
 
 The Puck-object case is the interesting one. When a method returns
-`puck.uno/census_district` (as in the [puck.md example](puck.md#remote-returns-can-be-other-puck-objects)),
+`puck.uno/congressional_district` (as in the [puck.md example](puck.md#remote-returns-can-be-other-puck-objects)),
 the Python wrapper transparently constructs a Python class instance
-representing the remote `CensusDistrict`. You don't have to do another
+representing the remote `CongressionalDistrict`. You don't have to do another
 `lookup` — the reference is enough.
 
 ```python
-district = hq.census_district     # remote CensusDistrict instance
+district = hq.congressional_district     # remote CongressionalDistrict instance
 district.representative           # remote method call on the new object
 ```
 

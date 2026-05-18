@@ -48,7 +48,7 @@ hq = Geo(lat=37.7980, lon=-122.4626)
 
 # Call the class's manufactured methods
 hq.weather                  # current weather report at that location
-hq.census_district          # census district info for that point
+hq.congressional_district          # congressional district info for that point
 hq.map_image(zoom=14)       # PNG map image centered on the point
 ```
 
@@ -68,12 +68,12 @@ remote. You call methods on it, the puck does the dispatch, the cycle
 continues. The fact that you're now talking to a different class (and
 possibly a different server) doesn't change how the code reads.
 
-For example, `hq.census_district` doesn't just return a name or an ID;
-it returns an instance of a `CensusDistrict` Puck class. That object
+For example, `hq.congressional_district` doesn't just return a name or an ID;
+it returns an instance of a `CongressionalDistrict` Puck class. That object
 exposes its own manufactured methods:
 
 ```python
-district = hq.census_district
+district = hq.congressional_district
 
 district.name              # 'CA-11'
 district.representative    # current US House representative
@@ -83,5 +83,5 @@ district.boundary_geojson  # GeoJSON for the district boundary
 
 Each of those is a fresh remote call. From the caller's perspective,
 `district` is just an object with methods — the chained-call shape
-(`hq.census_district.representative`) reads the same as deeply-chained
+(`hq.congressional_district.representative`) reads the same as deeply-chained
 local calls, even when two distinct remote services are involved.
