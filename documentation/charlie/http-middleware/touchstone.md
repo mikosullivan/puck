@@ -9,12 +9,13 @@
 }}
 ~~~
 
-`puck.uno/touchstone` — the **base HTTP server class** that Sammy
-and Robinson inherit from. Touchstone is **not directly instantiable
-as a working server.** It holds the shared infrastructure both
-descendants need (content-type factory defaults, Jasmine
-integration, common HTTP plumbing) but doesn't itself decide *how*
-to serve content. That decision is each descendant's job.
+`puck.uno/touchstone` — the **base HTTP server class** that
+[Sammy](sammy.md) and [Robinson](robinson.md) inherit from. Touchstone
+is **not directly instantiable as a working server.** It holds the
+shared infrastructure both descendants need (content-type factory
+defaults, [Jasmine](../jasmine/jasmine.md) integration, common HTTP
+plumbing) but doesn't itself decide *how* to serve content. That
+decision is each descendant's job.
 
 Named after the clown in Shakespeare's *As You Like It*; the common
 noun also means "a standard of comparison or judgment" — fitting
@@ -379,9 +380,9 @@ in different stages of the transaction. This is the plug-in
 surface that lets add-ons add features — auth checks, CORS
 headers, metrics, logging enrichment, request-ID injection, the
 built-in CSRF guard, etc. — without those features needing to
-live in core. Sammy's path-selector registrations and
-Robinson's filesystem-tree dispatch both build on this same
-chain mechanism.
+live in core. [Sammy](sammy.md)'s path-selector registrations and
+[Robinson](robinson.md)'s filesystem-tree dispatch both build on
+this same chain mechanism.
 
 ```
 $server.handlers << %['foo.bar/cors'].new(allow_origin: '*')
@@ -923,5 +924,5 @@ their needs differ enough that a shared implementation in the base
 class would compromise both. Touchstone provides the *facts* (the
 content-type map) but leaves the *behavior* to descendants.
 
-If you want a server, instantiate Sammy or Robinson — not
-Touchstone directly.
+If you want a server, instantiate [Sammy](sammy.md) or
+[Robinson](robinson.md) — not Touchstone directly.
