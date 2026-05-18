@@ -281,12 +281,12 @@ vibecode: {"concept":"worldlet_allow","required":false,"type":"array of strings"
 
 An object keyed by UNS class name. The class name is always taken from the dictionary key —
 any `name` field inside the definition is ignored. Methods are fields with `class: function`
-and a `kscript` key. Import does not delete classes absent from the schema.
+and a `charlie` key. Import does not delete classes absent from the schema.
 
 vibecode: {"concept":"worldlet_classes","required":false,
 "format":"object keyed by UNS class name; value is class definition",
 "name_rule":"name is always taken from dict key; any name field inside definition is ignored and overwritten",
-"methods":"defined as fields with class:function and a kscript key containing KScript source",
+"methods":"defined as fields with class:function and a charlie key containing Charlie source",
 "import_rules":["importing absent class creates new record",
 "importing existing class appends new history row",
 "import does not delete classes absent from schema",

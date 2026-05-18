@@ -27,7 +27,7 @@ system-method handle through which user code gets a kiera object back.
 **`%kiera` is scoped via `%chain`.** What it returns depends on
 context. The current kiera lives in `%chain` — `%kiera` reads from
 there. Because `%chain` is wiped at role boundaries (see
-[roles.md](../kscript/roles.md)), the current kiera does not propagate across
+[roles.md](../charlie/roles.md)), the current kiera does not propagate across
 boundaries; each role gets its own world.
 
 - Outside any `restrict` block, in the outer role, `%kiera` returns
@@ -157,7 +157,7 @@ give them a network faucet in the first place. Use jails to
 restrict what passes across role boundaries.
 
 Consistent with the broader "developer decides what to expose by
-what they pass" principle (see [roles.md](../kscript/roles.md) — boundary
+what they pass" principle (see [roles.md](../charlie/roles.md) — boundary
 crossings do not gate method access; jails are the explicit
 narrowing mechanism).
 
@@ -223,7 +223,7 @@ one for the latest version of the UNS that falls within the kiera's
 across all getters' responses. If no getter has any version of the
 UNS within the window, lookup returns a null with the flavor
 `kiera.uno/null/flavor/not_found` (per the HTTP-style null-flavor
-scheme in [nulls.md](../kscript/built-in-classes/nulls.md)). Callers
+scheme in [nulls.md](../charlie/built-in-classes/nulls.md)). Callers
 can inspect `flavor.code` to tell the difference between "lookup
 didn't match" and "the registered value is intentionally null."
 
@@ -262,7 +262,7 @@ differently-tagged objects, because they're genuinely different
 logical sources.
 
 **Faucets inside a getter share the getter's role.** This is the key
-property that resolves the download-vs-cache problem. KScript caches
+property that resolves the download-vs-cache problem. Charlie caches
 remote objects on demand — first-time fetches go through download,
 subsequent fetches through cache. Both are faucets inside the same
 getter, both produce objects with the getter's role. The same UNS
@@ -338,7 +338,7 @@ layer their own checks; this is one such layering.
 
 Examples:
 
-- **Kiera blockchain** ([blockchain.md](../kscript/blockchain/blockchain.md)) holds
+- **Kiera blockchain** ([blockchain.md](../charlie/blockchain/blockchain.md)) holds
   signed attestations from UNS authorities. Cached objects are
   verified against blockchain entries before being trusted.
 - Traditional public-key signing infrastructures (the source signs
@@ -367,7 +367,7 @@ configuration determines everything about provenance policy:
 Different engines hand in different kieras. A strict, security-
 sensitive deployment hands user code a kiera that requires signatures
 and blockchain attestations. A relaxed developer playground hands
-user code a kiera that just trusts the cache. The KScript code is the
+user code a kiera that just trusts the cache. The Charlie code is the
 same; the kiera differs.
 
 User code typically doesn't reason about which kiera it got. It calls
@@ -385,11 +385,11 @@ the result and the checks.
   above.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
-  [roles.md](../kscript/roles.md).)
+  [roles.md](../charlie/roles.md).)
 - **Where the version cutoff lives.** Resolved: on the kiera object
   itself. See "Version Cutoff" section above.
 - **Granularity of kiera-source roles** — one role per **getter**
   inside the kiera. Faucets *inside* a getter (download + cache)
   share the getter's role to keep cache state from changing the
   tag. Aligns with the broader granularity question in
-  [roles.md](../kscript/roles.md).
+  [roles.md](../charlie/roles.md).

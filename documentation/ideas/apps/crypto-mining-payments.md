@@ -8,13 +8,13 @@ Future consideration. Not part of early versions.
 
 ## Overview
 
-KScript's sandbox, trust policy, and blockchain integration make it a natural platform
+Charlie's sandbox, trust policy, and blockchain integration make it a natural platform
 for a generalised opt-in compute payment system. Any two parties can use it: a user pays
 for a service by donating compute time; the recipient verifies and records the work on
 the blockchain.
 
 This is not specific to kiera.uno. Any site can offer it, accept it, or build on top of
-it using a standard KScript library.
+it using a standard Charlie library.
 
 ---
 
@@ -23,7 +23,7 @@ it using a standard KScript library.
 1. A site offers something in exchange for compute time — a service, credits, a free
    tier, a charitable donation.
 2. The user agrees explicitly. The mining session is clearly marked as such in the UI.
-3. The KScript runtime executes the mining library in a sandboxed environment for a
+3. The Charlie runtime executes the mining library in a sandboxed environment for a
    defined duration. The sandbox enforces the time limit; the user's machine cannot be
    exploited beyond what was agreed.
 4. The completed work is verified and recorded on the blockchain. Both parties can audit
@@ -32,7 +32,7 @@ it using a standard KScript library.
 
 ---
 
-## Why KScript Is a Good Fit
+## Why Charlie Is a Good Fit
 
 - **Sandbox** — secure, time-limited execution. Mining runs in a controlled environment
   with explicit permissions. The trust policy governs what the mining code is allowed

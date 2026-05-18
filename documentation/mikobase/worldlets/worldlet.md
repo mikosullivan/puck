@@ -224,7 +224,7 @@ unrecognised `extensions` key.
 vibecode: {
 	"section": "classes",
 	"format": "dict_keyed_by_uns_class_name",
-	"methods_as": "fields_with_class_function_and_kscript_key",
+	"methods_as": "fields_with_class_function_and_charlie_key",
 	"see": "class-definition.md"
 }
 ```
@@ -232,8 +232,8 @@ vibecode: {
 The schema, using the standard class definition format. Each key is a UNS class name; each
 value is the class definition. All classes defined here are record classes.
 
-Methods are defined as fields with `"class": "function"` and a `"kscript"` key containing
-KScript source. Multiline strings use literal newlines; leading indentation is stripped by
+Methods are defined as fields with `"class": "function"` and a `"charlie"` key containing
+Charlie source. Multiline strings use literal newlines; leading indentation is stripped by
 the importer.
 
 ```json
@@ -246,7 +246,7 @@ the importer.
 
             "greet": {
                 "class": "function",
-                "kscript": "
+                "charlie": "
                     function &greet
                         'Hello, I am ' + @name
                     end
@@ -265,7 +265,7 @@ the importer.
 
             "summary": {
                 "class": "function",
-                "kscript": "
+                "charlie": "
                     function &summary
                         @rank + ' ' + @name + ' (' + @serial + ')'
                     end
@@ -274,7 +274,7 @@ the importer.
 
             "promote": {
                 "class": "function",
-                "kscript": "
+                "charlie": "
                     function &promote(new_rank:)
                         @rank = new_rank
                         self
@@ -295,7 +295,7 @@ the importer.
 }
 ```
 
-See [class-definition.md](../../kscript/class-definition.md) for the full class definition format.
+See [class-definition.md](../../charlie/class-definition.md) for the full class definition format.
 
 ---
 
@@ -500,7 +500,7 @@ The smallest possible worldlet — one record, no schema, no files:
 
                 "greet": {
                     "class": "function",
-                    "kscript": "
+                    "charlie": "
                         function &greet
                             'Hello, I am ' + @name
                         end
@@ -519,7 +519,7 @@ The smallest possible worldlet — one record, no schema, no files:
 
                 "summary": {
                     "class": "function",
-                    "kscript": "
+                    "charlie": "
                         function &summary
                             @rank + ' ' + @name + ' (' + @serial + ')'
                         end
@@ -528,7 +528,7 @@ The smallest possible worldlet — one record, no schema, no files:
 
                 "promote": {
                     "class": "function",
-                    "kscript": "
+                    "charlie": "
                         function &promote(new_rank:)
                             @rank = new_rank
                             self

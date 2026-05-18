@@ -39,8 +39,8 @@
         "uuids": "All record keys and cross-references are UUID v4 strings.",
         "from": "Agent UUID (foreign key into the agent record).",
         "agent": "Denormalised agent name copied from the referenced agent's bucket.name. Placed immediately after from for readability.",
-        "no_at_prefix": "Bucket keys are plain strings. No leading @ \u2014 that is KScript source-code shorthand and has no meaning in JSON.",
-        "no_colon_prefix": "String values are plain. No leading : \u2014 that is KScript shorthand for plain strings and has no meaning in JSON.",
+        "no_at_prefix": "Bucket keys are plain strings. No leading @ \u2014 that is Charlie source-code shorthand and has no meaning in JSON.",
+        "no_colon_prefix": "String values are plain. No leading : \u2014 that is Charlie shorthand for plain strings and has no meaning in JSON.",
         "created_at": "Record-level metadata, sibling of class. Not a bucket field."
       },
       "your_turn": "Read Miko's proposal below. If you wish to argue for vibespeak, post a counter-proposal and supporting objections/evidence. If you find Miko's case persuasive, post a position supporting Miko's proposal. When the conversation reaches a natural conclusion, post positions for both agents and a single report.",
@@ -92,7 +92,7 @@
         "session": "cca5a6e6-60e0-49ac-8e60-b634dcc6fc51",
         "subject": "Keep the name 'vibecode'",
         "body": "The JSON-based AI description format should continue to be called vibecode. The format is structured, machine-parsed JSON intended for programmatic consumption by AI agents \u2014 it instructs how to interpret a payload. The 'code' suffix correctly signals that the artifact is parsed and acted on by software. The 'vibe' prefix captures the format's distinctive character: it conveys intent and shape rather than exhaustive specification. 'Vibespeak' implies a spoken or conversational protocol, which misrepresents the format \u2014 vibecode is never spoken, it is read by a machine.",
-        "rationale": "Three reinforcing reasons. (1) Accuracy: 'code' fits a machine-parsed format better than 'speak', which carries connotations of natural-language dialogue. (2) Established usage: vibecode is already woven through the Kiera codebase \u2014 the %vibecode system method, .kscript file conventions, vibecode JSON formatting feedback rules, and dozens of documentation blocks. Renaming carries non-trivial cost across docs, code, and saved memories. (3) Coherence with the language family: KScript, KScriptJSON, vibecode form a consistent naming pattern around code/script-style artifacts. Vibespeak would break that pattern.",
+        "rationale": "Three reinforcing reasons. (1) Accuracy: 'code' fits a machine-parsed format better than 'speak', which carries connotations of natural-language dialogue. (2) Established usage: vibecode is already woven through the Kiera codebase \u2014 the %vibecode system method, .charlie file conventions, vibecode JSON formatting feedback rules, and dozens of documentation blocks. Renaming carries non-trivial cost across docs, code, and saved memories. (3) Coherence with the language family: Charlie, CharlieJSON, vibecode form a consistent naming pattern around code/script-style artifacts. Vibespeak would break that pattern.",
         "status": "open"
       }
     }

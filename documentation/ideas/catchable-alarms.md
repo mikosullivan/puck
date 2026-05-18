@@ -3,9 +3,9 @@
 **Status:** considered and dropped from current production. Recorded
 here in case it's worth revisiting later.
 
-The current role-model spec (see [roles.md](../kscript/roles.md)) treats alarms
+The current role-model spec (see [roles.md](../charlie/roles.md)) treats alarms
 as **always fatal**: they go directly to the engine with no
-unwinding, no `finally` blocks, no catch handlers from KScript code.
+unwinding, no `finally` blocks, no catch handlers from Charlie code.
 The engine terminates the process or handles it however it sees fit.
 
 This document describes an alternative design that was sketched

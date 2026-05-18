@@ -1,13 +1,13 @@
-# Robinson per-directory `robinson.kscript` handlers
+# Robinson per-directory `robinson.charlie` handlers
 
 ```
 vibecode: {
     "status": "paused_2026-05-17_returning_to_issues_walkthrough",
     "started": "2026-05-17",
     "subsystem": "robinson",
-    "canonical_location": "ideas/ until firm enough to promote to documentation/kscript/http-middleware/robinson.md",
+    "canonical_location": "ideas/ until firm enough to promote to documentation/charlie/http-middleware/robinson.md",
     "relation_to_other_robinson_features": {
-        "embed_target_cascade": "structural_sibling_but_for_kscript_logic_not_html; embed_target_set_aside_for_this_discussion",
+        "embed_target_cascade": "structural_sibling_but_for_charlie_logic_not_html; embed_target_set_aside_for_this_discussion",
         "reserved_prefix_robinson_dot_star": "naturally_blocks_these_from_public_http; reuses_existing_rule"
     },
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime",
@@ -28,15 +28,15 @@ Brainstorm paused. Resume points when picking this back up:
 ```
 vibecode: {
     "section": "concept",
-    "what": "per_directory_handler_files_named_robinson_kscript",
-    "trigger": "every_request_traversing_a_directory_runs_any_robinson_kscript_in_that_directory",
+    "what": "per_directory_handler_files_named_robinson_charlie",
+    "trigger": "every_request_traversing_a_directory_runs_any_robinson_charlie_in_that_directory",
     "traversal_order": "root_to_leaf",
     "non_public": "automatic_via_existing_robinson_dot_star_reserved_prefix_rule"
 }
 ```
 
 A directory in a Robinson tree may contain a file named
-`robinson.kscript`. When a request is processed, each `robinson.kscript`
+`robinson.charlie`. When a request is processed, each `robinson.charlie`
 along the path from the site root to the resolved page file gets a chance
 to see the request.
 
@@ -44,20 +44,20 @@ to see the request.
 
 For a request to `/blog/posts/my-post`, the chain along the path is:
 
-1. `/robinson.kscript` (site root) — first.
-2. `/blog/robinson.kscript` — next, if present.
-3. `/blog/posts/robinson.kscript` — next, if present.
+1. `/robinson.charlie` (site root) — first.
+2. `/blog/robinson.charlie` — next, if present.
+3. `/blog/posts/robinson.charlie` — next, if present.
 4. The resolved page file — the leaf.
 
-Root sees the request before any descendant. Each `robinson.kscript`
+Root sees the request before any descendant. Each `robinson.charlie`
 runs in directory order from outer to inner.
 
-Files at intermediate directories without a `robinson.kscript` are
+Files at intermediate directories without a `robinson.charlie` are
 simply skipped — no requirement that every directory have one.
 
 ### Non-public by construction
 
-`robinson.kscript` matches the [reserved `robinson.*` prefix rule](../kscript/http-middleware/robinson.md#reserved-filename-prefix-robinson)
+`robinson.charlie` matches the [reserved `robinson.*` prefix rule](../charlie/http-middleware/robinson.md#reserved-filename-prefix-robinson)
 that already blocks request-boundary access. These files exist on
 disk to be loaded by Robinson, never to be served as URLs.
 
@@ -74,7 +74,7 @@ vibecode: {
 }
 ```
 
-A `robinson.kscript` file follows the same shape as a page file: the
+A `robinson.charlie` file follows the same shape as a page file: the
 file's last expression is an **anonymous class** that inherits from a
 Robinson-supplied base class. The base class for directory handlers is
 distinct from `kiera.uno/robinson/page` (working name TBD —
@@ -97,7 +97,7 @@ end
 ```
 
 The syntax depends on the same bare/anonymous `class` form that page
-files use, currently flagged in audit issue #26 (kscript.md only
+files use, currently flagged in audit issue #26 (charlie.md only
 defines `class 'UNS' ... end`). One spec fix covers both.
 
 ---
@@ -116,7 +116,7 @@ vibecode: {
 }
 ```
 
-Each `robinson.kscript` exposes two phase methods (more to come):
+Each `robinson.charlie` exposes two phase methods (more to come):
 
 | Method | Phase | Order along path |
 |---|---|---|
@@ -155,7 +155,7 @@ can't tell from outside whether the method yielded, threading state
 through `yield` is awkward, and "pass_through is optional" requires
 runtime detection that ripples through the dispatcher.
 
-KScript can sidestep all of that by being **explicit**: the framework
+Charlie can sidestep all of that by being **explicit**: the framework
 passes the inner-chain callable as a parameter, and the handler invokes
 it directly.
 
@@ -236,7 +236,7 @@ vibecode: {
 }
 ```
 
-When there are multiple `robinson.kscript` handlers along a path, each
+When there are multiple `robinson.charlie` handlers along a path, each
 one's three methods nest the next one's full sequence inside its own
 `pass_through` yield. For a request to `/blog/posts/my-post` with
 handlers at `/`, `/blog`, and `/blog/posts` (each implementing all
@@ -279,7 +279,7 @@ The shape:
 - **`%chain` set by an outer handler is visible to every descendant**
   (same role, no chain wipe).
 - **Missing handlers are simply skipped.** A directory without a
-  `robinson.kscript` contributes no methods to the chain.
+  `robinson.charlie` contributes no methods to the chain.
 
 ---
 
@@ -362,23 +362,23 @@ This is the same shape as:
 
 ## Open questions (tracked as the brainstorm continues)
 
-- **What does each `robinson.kscript` return / do?** Inspect-only,
+- **What does each `robinson.charlie` return / do?** Inspect-only,
   modify the request/transaction, short-circuit with a response,
   register cleanup, all of the above?
 - **Response trip.** Does the chain reverse for the response —
   leaf → root, onion-style — so descendants can wrap parent output?
   Or is the response unwrapped without further handler involvement?
-- **Per-directory state passing.** Can an outer `robinson.kscript`
+- **Per-directory state passing.** Can an outer `robinson.charlie`
   set context that descendants (and the page) can read?
 - **Relationship to global Touchstone Handler chain.** Per-directory
   handlers fire inside the `pages/` directory handler's `process`,
   or are they peers in the chain alongside the global Handler list?
-- **Per-directory class shape.** Is `robinson.kscript` a class
+- **Per-directory class shape.** Is `robinson.charlie` a class
   inheriting from a `kiera.uno/robinson/dir_handler` base (parallel to
   page files inheriting from `kiera.uno/robinson/page`), or a
   function, or something else?
 - **Multiple trees.** If a site has `pages/` and `admin/` and both
-  contain `robinson.kscript` at corresponding levels, do both fire
+  contain `robinson.charlie` at corresponding levels, do both fire
   for a request that resolves into one of them, or only the tree
   the request belongs to?
 

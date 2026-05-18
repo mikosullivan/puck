@@ -26,7 +26,7 @@ uns: {"kiera.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"
 - **Structured values.** Arrays, nested objects, booleans, nulls
   — all natural inside JSON. Standard headers tend to invent
   ad-hoc microsyntaxes for structure.
-- **Consistency with Kiera's JSON-everywhere posture** (KScript,
+- **Consistency with Kiera's JSON-everywhere posture** (Charlie,
   mikobase records, JSON URL params, etc.).
 
 ## Coexistence and long-term vision

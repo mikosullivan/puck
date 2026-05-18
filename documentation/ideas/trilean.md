@@ -1,19 +1,19 @@
 # Trilean (idea — not in core)
 
-> **Status**: 2026-05-17 — moved from `documentation/kscript/built-in-classes/`
-> to `documentation/ideas/`. KScript's core primitive for two-valued logic is
+> **Status**: 2026-05-17 — moved from `documentation/charlie/built-in-classes/`
+> to `documentation/ideas/`. Charlie's core primitive for two-valued logic is
 > `boolean`, not `trilean`. Three-valued logic is an idea preserved here for
 > possible future revisit but is not part of the language. The text below
 > describes what trilean *would* be if introduced.
 
 ---
 
-`kiera.uno/trilean` is the home for **three-valued logic** in KScript. It provides
+`kiera.uno/trilean` is the home for **three-valued logic** in Charlie. It provides
 the standard operators (`and`, `or`, `not`, `nand`, `nor`, `xor`, `xnor`,
 `implies`, `eq`) under a model where any operand can be `null` ("unknown") in
 addition to `true` and `false`.
 
-Default KScript operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
+Default Charlie operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
 semantics — null is treated as falsey, just like in most languages. The trilean
 class is **opt-in**: code that wants three-valued logic explicitly calls into it.
 
@@ -24,14 +24,14 @@ vibecode: {
 	"section": "status",
 	"priority": "low",
 	"target_release": "first_production",
-	"implementation": "pure_kscript_in_stdlib"
+	"implementation": "pure_charlie_in_stdlib"
 }
 ```
 
 Low priority but slated for the first production release. Will be implemented in
-**pure KScript** as part of the standard library — partly because three-valued
+**pure Charlie** as part of the standard library — partly because three-valued
 logic is genuinely useful, partly because it makes a good real-world test case for
-the language runtime. Implementation will live at `code/kscript/stdlib/trilean.kscript`.
+the language runtime. Implementation will live at `code/charlie/stdlib/trilean.charlie`.
 
 ---
 
@@ -196,7 +196,7 @@ above for the truth table and semantics.
 
 The alias exists because "eq" reads more naturally at call sites where the intent
 is "are these the same trilean value." Note this is **not** the place for
-arbitrary value equality — use KScript's regular `==` for that, with its standard
+arbitrary value equality — use Charlie's regular `==` for that, with its standard
 truthy-falsy semantics.
 
 The SQL trap applies: `eq(null, null)` is `null`, not `true`. To check "is this
@@ -269,7 +269,7 @@ $tri.eq($maybe_null_value) do
 end
 ```
 
-The block-form syntax is consistent with how other KScript constructs accept
+The block-form syntax is consistent with how other Charlie constructs accept
 deferred work (`%utils.timeout`, `%forks.run`, etc.). The block runs in the caller's
 chain frame, so `%chain` access and exception propagation behave normally.
 
@@ -280,7 +280,7 @@ chain frame, so `%chain` access and exception propagation behave normally.
 A trilean operator always returns one of three strict values: `true`, `false`, or
 `null`. Branching on the result is straightforward — use direct comparisons or
 the universal `.object.null?` / `.object.defined?` helpers (which live on every
-value in KScript, not just trileans):
+value in Charlie, not just trileans):
 
 ```
 $result = $tri.and($a, $b)
@@ -306,7 +306,7 @@ else
 end
 ```
 
-The second form takes advantage of KScript's default truthy semantics, where
+The second form takes advantage of Charlie's default truthy semantics, where
 null is treated as falsy in an `if`. After the `null?` check has handled the
 unknown case, ordinary `if $result` is safe.
 
@@ -322,7 +322,7 @@ set.
 ```
 vibecode: {
 	"section": "usage",
-	"role": "shows typical KScript code calling into the trilean class"
+	"role": "shows typical Charlie code calling into the trilean class"
 }
 ```
 
@@ -355,33 +355,33 @@ about three-valued logic at all.
 
 ---
 
-## Why Pure KScript
+## Why Pure Charlie
 
 ```
 vibecode: {
-	"section": "why_pure_kscript",
-	"role": "explains the choice to implement trilean in stdlib KScript rather than the runtime"
+	"section": "why_pure_charlie",
+	"role": "explains the choice to implement trilean in stdlib Charlie rather than the runtime"
 }
 ```
 
 Two reasons:
 
 - **The operations don't need engine-level support.** All trilean methods reduce
-  to ordinary boolean operations and null checks — exactly the operations KScript
-  already has. Implementing in KScript keeps the runtime smaller.
-- **It's a useful real-world test of the language.** A short pure-KScript module
+  to ordinary boolean operations and null checks — exactly the operations Charlie
+  already has. Implementing in Charlie keeps the runtime smaller.
+- **It's a useful real-world test of the language.** A short pure-Charlie module
   with a clear specification, plenty of edge cases (the truth tables), and
   well-defined behavior makes a good fixture for runtime testing. If the trilean
   module passes its own truth-table tests, that's evidence the runtime handles
   conditional logic, function definition, and null-comparison correctly.
 
-The implementation lives at [code/kscript/stdlib/trilean.kscript](../../../code/kscript/stdlib/trilean.kscript).
+The implementation lives at [code/charlie/stdlib/trilean.charlie](../../../code/charlie/stdlib/trilean.charlie).
 
 ---
 
 ## Notes
 
-- **Operators stay strict-boolean.** Default KScript `&&`, `||`, `not`, `==`
+- **Operators stay strict-boolean.** Default Charlie `&&`, `||`, `not`, `==`
   treat null as falsey. Trilean is purely a library, not an operator overload.
 - **Operators classify by truthiness, not strict class.** `$tri.and(1, true)`
   returns `true`; `$tri.or(0, "hello")` returns `true`. Any truthy non-null

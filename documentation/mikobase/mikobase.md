@@ -192,7 +192,7 @@ This means:
 
 The choice of engine is the choice between persistence-cost and
 serialization-cost. Both engines speak the same `kiera.uno/mikobase`
-interface; KScript code that doesn't care which backend it's on works
+interface; Charlie code that doesn't care which backend it's on works
 identically against either.
 
 ### Import / export functions
@@ -239,12 +239,12 @@ import in particular:
 
 vibecode: {
 	"section": "single_process_vs_cross_fork",
-	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are KScript features (cross-fork requires the opt-in forking feature)",
-	"key_concepts": ["KScript", "local_object_store", "fork_sharing", "opt_in_forking"]
+	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are Charlie features (cross-fork requires the opt-in forking feature)",
+	"key_concepts": ["Charlie", "local_object_store", "fork_sharing", "opt_in_forking"]
 }
 
-Mikobases are a KScript feature — a mikobase is a useful local object store on its own.
-Sharing a mikobase between forked processes uses the opt-in **forking** feature of KScript
+Mikobases are a Charlie feature — a mikobase is a useful local object store on its own.
+Sharing a mikobase between forked processes uses the opt-in **forking** feature of Charlie
 (engine-granted via `%forks` / `%tmp`; off by default). See
 [ideas/plusplus/threads.md](../ideas/plusplus/threads.md) for the forking design.
 
@@ -307,7 +307,7 @@ no separate in-memory query engine needed. The worldlet engine is a third backen
 that implements Q0 against the worldlet's JSON structure directly (no SQLite
 involvement).
 
-KScript code interacts only with the `kiera.uno/mikobase` interface and is unaware of the backend.
+Charlie code interacts only with the `kiera.uno/mikobase` interface and is unaware of the backend.
 
 ---
 
@@ -349,15 +349,15 @@ vibecode: {
 
 `kiera.uno/mikobase/http` wraps any mikobase and exposes it over HTTP. The mikobase's locking model
 handles concurrent connections — the HTTP server is a transport layer only. Connection-level
-concurrency lives in the C layer, not in KScript.
+concurrency lives in the C layer, not in Charlie.
 
 Serving a mikobase over HTTP doesn't require the forking feature. A single-process script
-can serve a mikobase, and other KScript processes — including forks from the opt-in
+can serve a mikobase, and other Charlie processes — including forks from the opt-in
 forking feature — can connect to it as a shared mikobase.
 
 ### Unix Domain Sockets (preferred)
 
-For local communication, KScript steers developers toward Unix domain sockets. They use a
+For local communication, Charlie steers developers toward Unix domain sockets. They use a
 file path instead of a port number, bypass the network stack entirely, and access is
 controlled by filesystem permissions — faster and more secure than TCP for local use.
 
@@ -710,7 +710,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 
 vibecode: {
 	"section": "packaged_mikobases",
-	"role": "describes the packaged mikobase format: bundled schema, KScript, records, and capabilities",
+	"role": "describes the packaged mikobase format: bundled schema, Charlie, records, and capabilities",
 	"key_concepts": ["packaged_mikobase", "worldlet", "capabilities_manifest", "portable_distribution",
 		"use_cases", "lifecycle"]
 }
@@ -748,7 +748,7 @@ A packaged mikobase says: "here is a functioning object ecosystem you can import
 A packaged mikobase may include:
 
 - **Class definitions** — the schema, including fields, joins, and constraints
-- **KScript** — methods and behavior attached to those classes
+- **Charlie** — methods and behavior attached to those classes
 - **Records** — seed objects or full data exports
 - **Hooks** — `before_save` / `after_save` listeners
 - **Capabilities** — a manifest declaring what the mikobase requires to run
@@ -765,10 +765,10 @@ A packaged mikobase is a single file. The format is not yet defined in detail, b
 contents are:
 
 - A mikobase export (class definitions and records as Q0-compatible JSON)
-- KScript source for any attached methods and hooks
+- Charlie source for any attached methods and hooks
 - A capabilities manifest
 
-The format design should happen alongside the KScriptJSON format discussion.
+The format design should happen alongside the CharlieJSON format discussion.
 
 ### Capabilities Manifest
 
@@ -785,7 +785,7 @@ requires:
     - create objects: PricePoint
 ```
 
-This connects directly to KScript's security model. The capabilities declaration is
+This connects directly to Charlie's security model. The capabilities declaration is
 essentially an upfront jail configuration — the mikobase runs with only the permissions
 it declared. Undeclared capabilities are unavailable.
 
@@ -800,7 +800,7 @@ Recipient imports mikobase into their running mikobase
         ↓
 Capabilities reviewed and approved
         ↓
-Classes, records, and KScript installed
+Classes, records, and Charlie installed
         ↓
 Mikobase runs inside recipient's environment
 ```
@@ -831,7 +831,7 @@ notebook. Publish a mikobase; others install a working system, not a blank schem
 
 ### What Is Not Yet Designed
 
-- The packaged mikobase file format (depends on KScriptJSON format design)
+- The packaged mikobase file format (depends on CharlieJSON format design)
 - The capabilities manifest syntax and enforcement mechanism
 - Scheduled jobs
 - External connectors

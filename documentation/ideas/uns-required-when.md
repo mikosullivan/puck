@@ -8,7 +8,7 @@ Different subsystems treat UNS names differently:
 
 - **Mikobase storage** requires a class to have a UNS — that's how classes
   are identified and looked up (`%kiera['foo.com/character']`).
-- **KScript in-memory** does not require a UNS for a class.
+- **Charlie in-memory** does not require a UNS for a class.
   `$foo = class ... end` produces a valid anonymous class with no
   identity beyond the variable that holds it.
 - **Robinson page files** invoke to anonymous classes inheriting from
@@ -33,5 +33,5 @@ of these need a UNS and which don't. Worth pinning explicitly:
 ## When to Revisit
 
 When the next conversation surfaces a concrete case where the answer
-isn't obvious — or when the mikobase storage format, KScript class
+isn't obvious — or when the mikobase storage format, Charlie class
 syntax, or related subsystems need to be more rigorously spec'd.

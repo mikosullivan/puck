@@ -71,7 +71,7 @@ Other fields may be added as needed. The structure is intentionally open.
 - Individual methods and properties within a class
 - Records
 - Q0 queries
-- KScript functions
+- Charlie functions
 - Mikobase configurations
 - Firewall rules
 
@@ -83,7 +83,7 @@ There is no object too small to carry `vibecode`.
 
 `vibecode` is especially valuable on remote classes. When an AI is asked to instantiate
 a class from `borg.com/person` and do something with it, it downloads the class definition
-— which includes the method stubs, local KScript, and all `vibecode`. The AI gets
+— which includes the method stubs, local Charlie, and all `vibecode`. The AI gets
 everything it needs to use the class correctly in a single download, with no external
 documentation required.
 
@@ -94,9 +94,9 @@ good `vibecode`.
 
 ---
 
-## In KScript: `%document` and `%vibecode`
+## In Charlie: `%document` and `%vibecode`
 
-`%document` is the general mechanism for saving documentation into the KScriptJSON
+`%document` is the general mechanism for saving documentation into the CharlieJSON
 command array. It takes a MIME type and a heredoc or string:
 
 ```

@@ -195,9 +195,9 @@ reason to keep it.
 
 ## Use in Kiera
 
-### Parser is a core KScript requirement
+### Parser is a core Charlie requirement
 
-A UNS parser/validator is a **core requirement** of any KScript
+A UNS parser/validator is a **core requirement** of any Charlie
 implementation. Every host needs to be able to take a string and
 answer "is this a valid UNS?" and "what's the canonical form?"
 without depending on external libraries. The parser is not a

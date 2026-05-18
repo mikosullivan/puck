@@ -23,10 +23,10 @@ Strictly speaking, the forking feature does not provide threads. Instead, it pro
 easy way for processes to talk to each other.
 
 A "thread" is just a fork that has access to a shared mikobase. Each fork runs a
-single-threaded KScript interpreter independently. Forks do not share memory with each
+single-threaded Charlie interpreter independently. Forks do not share memory with each
 other — all coordination happens through the mikobase.
 
-This means KScript itself has no threading primitives. The mikobase is the entire coordination
+This means Charlie itself has no threading primitives. The mikobase is the entire coordination
 mechanism.
 
 See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
@@ -35,7 +35,7 @@ See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
 
 ## `%forks` and `%tmp`
 
-Forking is a standard KScript feature, but it requires explicit engine permission. The
+Forking is a standard Charlie feature, but it requires explicit engine permission. The
 engine grants it by providing `%forks` and optionally `%tmp` — both are `null` if the
 engine did not grant the corresponding permission.
 

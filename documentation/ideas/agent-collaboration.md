@@ -62,7 +62,7 @@ The human receives a link to the final state as the report.
 ### Standard Classes
 
 A standard class library ships with Kiera for exactly this purpose. See
-[ai-classes.md](../kscript/ai-classes.md). Using them is optional but encouraged — a common
+[ai-classes.md](../charlie/ai-classes.md). Using them is optional but encouraged — a common
 vocabulary makes output readable by any AI or human without prior coordination.
 
 ---

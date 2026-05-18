@@ -6,7 +6,7 @@
 {"vibecode": {
 	"section": "what_is_this",
 	"role": "introduces the Kiera ecoverse organized around its three core packages",
-	"key_concepts": ["Kiera_ecoverse", "Kiera_protocol", "KScript", "Mikobase"]
+	"key_concepts": ["Kiera_ecoverse", "Kiera_protocol", "Charlie", "Mikobase"]
 }}
 ~~~
 
@@ -16,7 +16,7 @@ different languages and systems. The ecoverse is organized around
 **three core packages**:
 
 - **Kiera** — the object protocol (UNS-addressed remote objects)
-- **KScript** — the programming language
+- **Charlie** — the programming language
 - **Mikobase** — the live object store
 
 Each package has its own features and its own canonical specs. The
@@ -52,7 +52,7 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
   `kiera.uno/...`. UNS is naming/identity, not type hierarchy:
   `kiera.uno/touchstone/error/x` is not a subclass of
   `kiera.uno/error/x` unless explicitly declared.
-- **`%kiera[UNS]` lookup.** KScript code retrieves objects by UNS:
+- **`%kiera[UNS]` lookup.** Charlie code retrieves objects by UNS:
   `%kiera['foo.com/character']`. The kiera (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
@@ -66,7 +66,7 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
   eligible to be returned. Derived kieras can narrow the window
   (one-way ratchet); you can't broaden it. Enables reproducible
   builds and historical queries.
-- **Libraries are cached, not installed.** KScript has no install
+- **Libraries are cached, not installed.** Charlie has no install
   step, no lockfile, no manifest. Libraries are referenced by UNS in
   source code and resolved on demand through the provider chain.
   Cached locally on first use; subsequent references hit the cache.
@@ -77,31 +77,31 @@ See [kiera.md](kiera/kiera.md) for the full protocol spec.
 
 ---
 
-## KScript
+## Charlie
 
 ~~~json
 {"vibecode": {
-	"section": "kscript_package",
-	"role": "describes the KScript language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
-	"key_concepts": ["lightweight_embeddable_language", "KScriptJSON_runtime_format",
+	"section": "charlie_package",
+	"role": "describes the Charlie language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
+	"key_concepts": ["lightweight_embeddable_language", "CharlieJSON_runtime_format",
 		"classes_with_inheritance", "functions_closures",
 		"single_threaded_by_default_forking_opt_in", "role_based_security",
 		"exception_handling", "multi_syntax_architecture_preserved"]
 }}
 ~~~
 
-KScript is a **lightweight, embeddable programming language**. It
+Charlie is a **lightweight, embeddable programming language**. It
 is designed from the ground up to allow running untrusted code.
 Designed to run inside a Mikobase engine, a browser, a CLI, or anywhere
 else without external runtime dependencies beyond the engine itself.
 
-See [kscript.md](kscript/kscript.md) for the language reference and
-[kscriptjson.md](kscript/kscriptjson.md) for the runtime format.
+See [charlie.md](charlie/charlie.md) for the language reference and
+[charliejson.md](charlie/charliejson.md) for the runtime format.
 
 ### Features
 
-- **KScriptJSON as the canonical runtime format.** KScript source
-  transpiles to KScriptJSON (a JSON-shaped representation the engine
+- **CharlieJSON as the canonical runtime format.** Charlie source
+  transpiles to CharlieJSON (a JSON-shaped representation the engine
   executes directly). The format isn't bytecode — it's a full
   representation of the program. The source-vs-runtime separation
   preserves the architectural option for alternate source syntaxes
@@ -117,12 +117,12 @@ See [kscript.md](kscript/kscript.md) for the language reference and
   `$foo.params['bar']`.
 - **Single-threaded; forking opt-in.** One execution
   context per engine. The opt-in forking feature spawns isolated
-  KScript processes that coordinate through shared Mikobases — no
+  Charlie processes that coordinate through shared Mikobases — no
   shared-memory primitives, no locks.
 - **Role-based security.** Every value is owned by a role. Calling
   into another role's code is a security boundary: `%chain` wipes,
   the new role's capabilities apply. Replaces the older binary
-  trust/untrust model. See [roles.md](kscript/roles.md).
+  trust/untrust model. See [roles.md](charlie/roles.md).
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception.
@@ -234,19 +234,19 @@ See [vibecode.md](ecoverse/vibecode.md).
 	"section": "implementation_status",
 	"role": "tracks the development status of each Kiera ecoverse component",
 	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0",
-		"KScript", "v01_hello_world_shipped"]
+		"Charlie", "v01_hello_world_shipped"]
 }}
 ~~~
 
 | Component | Status |
 |---|---|
-| KScript Lua reference engine | V0.01 hello-world ships; 213 tests passing. V0.02 (KScript source via transpiler) and V0.03–V0.05 plans drafted. |
-| KScript language | V0.01 surface shipped; broader language spec in active design. |
-| KScriptJSON | Canonical runtime format; V0.01 fixture-and-engine path is fully wired. |
+| Charlie Lua reference engine | V0.01 hello-world ships; 213 tests passing. V0.02 (Charlie source via transpiler) and V0.03–V0.05 plans drafted. |
+| Charlie language | V0.01 surface shipped; broader language spec in active design. |
+| CharlieJSON | Canonical runtime format; V0.01 fixture-and-engine path is fully wired. |
 | Mikobase engine | Design only. V1 plan ships three engines (SQLite file, SQLite `:memory:`, worldlet-direct); none yet implemented. |
 | Q0 query language | Designed; will be implemented as SQL passthrough on the SQLite engines and against the JSON structure on the worldlet engine. |
 | Worldlet (packaged mikobase) | Format spec exists; import/export to be implemented alongside the Mikobase engines. |
-| Forking (opt-in KScript feature) | Early design; not in active development. |
+| Forking (opt-in Charlie feature) | Early design; not in active development. |
 | Kiera protocol | Early design. |
 
 ---
@@ -256,18 +256,18 @@ See [vibecode.md](ecoverse/vibecode.md).
 ~~~json
 {"vibecode": {
 	"section": "how_it_fits_together",
-	"role": "shows the data flow from KScript source through to SQLite and back",
-	"key_concepts": ["KScript_to_KScriptJSON", "interpreter", "mikobase", "SQLite", "Q0",
+	"role": "shows the data flow from Charlie source through to SQLite and back",
+	"key_concepts": ["Charlie_to_CharlieJSON", "interpreter", "mikobase", "SQLite", "Q0",
 		"opt_in_forking_concurrency"]
 }}
 ~~~
 
 ```
-Developer writes KScript
+Developer writes Charlie
         ↓
-Transpiles to KScriptJSON
+Transpiles to CharlieJSON
         ↓
-KScript interpreter runs it
+Charlie interpreter runs it
         ↓
 Reads/writes to a Mikobase (object store)
         ↓
@@ -278,6 +278,6 @@ Queries expressed in Q0 (JSON)
 Remote objects resolved through Kiera (UNS → object)
 ```
 
-When the opt-in forking feature is enabled, multiple KScript
+When the opt-in forking feature is enabled, multiple Charlie
 processes share a mikobase, turning it into the coordination
 mechanism for concurrent work.

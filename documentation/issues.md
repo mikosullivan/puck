@@ -2,7 +2,7 @@
 
 Tracker for contradictions, gaps, and stale references found in the
 canonical docs and the development plan. Produced 2026-05-17 by a
-four-agent parallel audit covering the core KScript language spec,
+four-agent parallel audit covering the core Charlie language spec,
 the subsystem specs, the ecosystem layer, and the development plan
 versus the V0.01 shipped code.
 
@@ -25,7 +25,7 @@ Out of scope for this tracker: anything in `documentation/ideas/`
 - **Resolved: 46** — see each issue heading below for the per-issue resolution note.
 - **Deferred: 3** — issues that touch larger unsettled designs:
   - **#10 (filesystem.md "Authorizing Untrusted Paths" section)** — small inline `untrusted()`/`trusted string` fixes applied; the larger filesystem section needs the role model's filesystem story to settle first.
-  - **#14 (operator namespace `kscript.uno` vs `kiera.uno`)** — deferred pending operator-registration design pass.
+  - **#14 (operator namespace `charlie.uno` vs `kiera.uno`)** — deferred pending operator-registration design pass.
   - **#41 (`scope.operators` namespace)** — entangled with #14; resolved together when operator subsystem is revisited.
 
 Engine + test suite: **213/213 passing** after all changes.
@@ -39,16 +39,16 @@ Engine + test suite: **213/213 passing** after all changes.
 - **`stdlib` role** added to roles.md as enumerated minimum; replaces TBD `string_class_role` in engine.lua.
 - **`%role` backfilled** into engine.lua with 6 new tests (213/213 passing).
 - **Parameter spec consolidated** into one canonical `parameters.md` (with `optional: true` opt-out, hash-spacing convention, hash-splat style preference).
-- **Anonymous (bare) class** form added to kscript.md (`class\n    inherits ... end`), unblocking Robinson pages and per-dir handlers.
+- **Anonymous (bare) class** form added to charlie.md (`class\n    inherits ... end`), unblocking Robinson pages and per-dir handlers.
 - **break bwc spec** landed post-soft-lock with explicit deliberateness log in Scotty section.
 
 ### Brainstorm docs filed from the walkthrough (in `documentation/ideas/`)
 
 - [dogberry.md](ideas/dogberry.md) — transforming-proxy idea (fetch + execute remote scripts).
-- [robinson-per-dir-handlers.md](ideas/robinson-per-dir-handlers.md) — `robinson.kscript` per-directory middleware; paused with explicit resume points.
-- [browser-kscript-sandbox.md](ideas/browser-kscript-sandbox.md) — three-artifact plan (WASM Lua engine for browser; TS KSJ-engine for community; TS parser already in vscode-extension v2 plans).
-- [kscript-as-a-service.md](ideas/kscript-as-a-service.md) — server-side script execution as a service (peer of Dogberry).
-- [ai-script-messaging.md](ideas/ai-script-messaging.md) — AIs authoring KSJ directly and exchanging signed executable messages.
+- [robinson-per-dir-handlers.md](ideas/robinson-per-dir-handlers.md) — `robinson.charlie` per-directory middleware; paused with explicit resume points.
+- [browser-charlie-sandbox.md](ideas/browser-charlie-sandbox.md) — three-artifact plan (WASM Lua engine for browser; TS CharlieJSON-engine for community; TS parser already in vscode-extension v2 plans).
+- [charlie-as-a-service.md](ideas/charlie-as-a-service.md) — server-side script execution as a service (peer of Dogberry).
+- [ai-script-messaging.md](ideas/ai-script-messaging.md) — AIs authoring CharlieJSON directly and exchanging signed executable messages.
 - [vscode-extension.md](ideas/vscode-extension.md) — V1 self-contained TypeScript extension spec (formatter + syntax + settings).
 - [vscode-extension-v2.md](ideas/vscode-extension-v2.md) — parser-based V2 ambitions, parked.
 
@@ -110,7 +110,7 @@ role), V0.05 (no new role).
 
 ### 6. `%role` system method promised but not shipped [BLOCKER] [RESOLVED 2026-05-17]
 
-**Files:** [development.md:686-687, 1522](documentation/development/development.md); [engine.lua](code/kscript/lua/kscript/engine.lua)
+**Files:** [development.md:686-687, 1522](documentation/development/development.md); [engine.lua](code/charlie/lua/charlie/engine.lua)
 
 V0.01 footprint lists "role_system_method" but engine.lua has no
 sys-reference handling. The fixture didn't require it so V0.01
@@ -119,7 +119,7 @@ follow-up slice.
 
 ### 7. `string_class_role` is a TBD name hardcoded into shipped code + test [BLOCKER] [RESOLVED 2026-05-17 — renamed to `stdlib`]
 
-**Files:** [engine.lua:44](code/kscript/lua/kscript/engine.lua#L44); [test_bootstrap.lua:21](tests/kscript/v001/test_bootstrap.lua#L21); [roles.md:92-124](documentation/kscript/roles.md#L92-L124)
+**Files:** [engine.lua:44](code/charlie/lua/charlie/engine.lua#L44); [test_bootstrap.lua:21](tests/charlie/v001/test_bootstrap.lua#L21); [roles.md:92-124](documentation/charlie/roles.md#L92-L124)
 
 roles.md does not enumerate this role. Plan flags it as "provisional"
 but test_bootstrap.lua asserts the exact string. Suggestion: pick a
@@ -142,13 +142,13 @@ deliberately and why.
 
 ### 9. Exception/error class hierarchy is forked across ~7 files [HIGH] [RESOLVED 2026-05-17 — flattened to `kiera.uno/X`, umbrella `kiera.uno/exception` kept]
 
-**Canonical:** `kiera.uno/exception/error/timeout` — [kscript-runtime.md:745-765](documentation/kscript/kscript-runtime.md#L745-L765)
+**Canonical:** `kiera.uno/exception/error/timeout` — [charlie-runtime.md:745-765](documentation/charlie/charlie-runtime.md#L745-L765)
 
 **Diverging shorthand `kiera.uno/error/...`:**
-- [utils.md:47](documentation/kscript/utils.md#L47)
-- [versioning.md:99](documentation/kscript/versioning.md#L99)
-- [jasmine.md:311](documentation/kscript/jasmine/jasmine.md#L311)
-- [kscript-runtime.md:1792](documentation/kscript/kscript-runtime.md#L1792) (itself)
+- [utils.md:47](documentation/charlie/utils.md#L47)
+- [versioning.md:99](documentation/charlie/versioning.md#L99)
+- [jasmine.md:311](documentation/charlie/jasmine/jasmine.md#L311)
+- [charlie-runtime.md:1792](documentation/charlie/charlie-runtime.md#L1792) (itself)
 
 **Subsystem-minted roots:** `kiera.uno/touchstone/error/*`, `kiera.uno/robinson/warning/*`, `kiera.uno/trivet/error/cycle`
 
@@ -156,12 +156,12 @@ deliberately and why.
 
 Suggestion: decide on one root, or document the shorthand as sugar.
 
-### 10. Binary trust model still leaks through despite roles.md superseding it [HIGH] [PARTIAL — 2026-05-17: small inline fixes applied (kscript-runtime.md `untrusted()` → role-based wording; nulls.md "trusted string" → "fresh string"); filesystem.md "Authorizing Untrusted Paths" section still deferred until the role model's filesystem story is settled]
+### 10. Binary trust model still leaks through despite roles.md superseding it [HIGH] [PARTIAL — 2026-05-17: small inline fixes applied (charlie-runtime.md `untrusted()` → role-based wording; nulls.md "trusted string" → "fresh string"); filesystem.md "Authorizing Untrusted Paths" section still deferred until the role model's filesystem story is settled]
 
 **Files:**
-- `untrusted()` referenced as real construct — [kscript-runtime.md:822, 826](documentation/kscript/kscript-runtime.md#L822-L826)
-- `%chain.trust` analogues — [filesystem.md:295-362](documentation/kscript/built-in-classes/filesystem.md#L295-L362)
-- "trusted string" vocabulary — [nulls.md:430-432](documentation/kscript/built-in-classes/nulls.md#L430-L432)
+- `untrusted()` referenced as real construct — [charlie-runtime.md:822, 826](documentation/charlie/charlie-runtime.md#L822-L826)
+- `%chain.trust` analogues — [filesystem.md:295-362](documentation/charlie/built-in-classes/filesystem.md#L295-L362)
+- "trusted string" vocabulary — [nulls.md:430-432](documentation/charlie/built-in-classes/nulls.md#L430-L432)
 
 roles.md explicitly retires all of this. Suggestion: rewrite affected
 sections in role terms, or remove if the concept doesn't survive
@@ -188,9 +188,9 @@ A worldlet round-tripped through the SQLite engine loses or renames
 the timestamp. Suggestion: pick one — `created_at` reads cleaner for
 an append-only history row.
 
-### 13. Parameter spec is forked [HIGH] [RESOLVED 2026-05-17 — merged into one canonical parameters.md combining metadata-as-hash + programmatic API + classes + nullable + freezing (from old parameters.md) with call binding + public names + `*args`/`**opts` + splats + errors (from old params.md); `optional: true` chosen as the opt-out; `lazy: true` spacing locked; params.md deleted; kscript-runtime.md callout updated]
+### 13. Parameter spec is forked [HIGH] [RESOLVED 2026-05-17 — merged into one canonical parameters.md combining metadata-as-hash + programmatic API + classes + nullable + freezing (from old parameters.md) with call binding + public names + `*args`/`**opts` + splats + errors (from old params.md); `optional: true` chosen as the opt-out; `lazy: true` spacing locked; params.md deleted; charlie-runtime.md callout updated]
 
-**Files:** [parameters.md](documentation/kscript/parameters.md), [params.md](documentation/kscript/params.md); [kscript-runtime.md:1456-1459](documentation/kscript/kscript-runtime.md#L1456-L1459)
+**Files:** [parameters.md](documentation/charlie/parameters.md), [params.md](documentation/charlie/params.md); [charlie-runtime.md:1456-1459](documentation/charlie/charlie-runtime.md#L1456-L1459)
 
 Two parameter spec docs cover overlapping ground with divergent
 conventions: `lazy:true` syntax, nullable/classes/default vs
@@ -199,55 +199,55 @@ the fork: "two parameter spec docs exist… Reconciling them is a
 separate task." Suggestion: merge into one canonical doc; move the
 other to `ideas/`.
 
-### 14. Operator namespace inconsistent: `kscript.uno/` vs `kiera.uno/` [HIGH]
+### 14. Operator namespace inconsistent: `charlie.uno/` vs `kiera.uno/` [HIGH]
 
 **Files:**
-- `kscript.uno/...` — [operators.md:66ff](documentation/kscript/operators.md#L66), [assignment-operators.md:78ff](documentation/kscript/assignment-operators.md#L78)
-- `kiera.uno/...` (the rest of the stdlib) — [parameters.md:134](documentation/kscript/parameters.md#L134), [kscript-runtime.md](documentation/kscript/kscript-runtime.md)
+- `charlie.uno/...` — [operators.md:66ff](documentation/charlie/operators.md#L66), [assignment-operators.md:78ff](documentation/charlie/assignment-operators.md#L78)
+- `kiera.uno/...` (the rest of the stdlib) — [parameters.md:134](documentation/charlie/parameters.md#L134), [charlie-runtime.md](documentation/charlie/charlie-runtime.md)
 
-`kscript.uno/` is never defined as a separate namespace. Suggestion:
+`charlie.uno/` is never defined as a separate namespace. Suggestion:
 unify on `kiera.uno/`.
 
 ---
 
 ## D. Hard contradictions inside single language docs
 
-### 15. Class-method definition: `function name()` vs `function &name()` [MEDIUM] [RESOLVED 2026-05-17 — `function &name($args) ... end` with the `&` sigil and no `do` keyword. Applied across kscript-runtime.md class-method examples and prose; kscript.md "Definition" section examples updated to drop the `do`; scope summary table updated.]
+### 15. Class-method definition: `function name()` vs `function &name()` [MEDIUM] [RESOLVED 2026-05-17 — `function &name($args) ... end` with the `&` sigil and no `do` keyword. Applied across charlie-runtime.md class-method examples and prose; charlie.md "Definition" section examples updated to drop the `do`; scope summary table updated.]
 
 **Files:**
-- `&` sigil form — [kscript.md:553, 624](documentation/kscript/kscript.md), class-definition.md
-- Bare form — [kscript-runtime.md:1900, 1914, 2029-2084](documentation/kscript/kscript-runtime.md)
+- `&` sigil form — [charlie.md:553, 624](documentation/charlie/charlie.md), class-definition.md
+- Bare form — [charlie-runtime.md:1900, 1914, 2029-2084](documentation/charlie/charlie-runtime.md)
 
-Pick one; the `&` form is consistent with the rest of kscript.md's
+Pick one; the `&` form is consistent with the rest of charlie.md's
 "function vs &function" rule.
 
-### 16. `property` syntax: `:nickname` vs `@foo, :get, :set, default:'bar'` [MEDIUM] [RESOLVED 2026-05-17 — canonical form: `property @foo, :get, :set` (sigil-prefixed name + accessor flags). kscript.md updated to use sigil form; kscript-runtime.md kept the form but `default:` option dropped for v1 (deferred). Mechanics noted in both docs: the accessors read/write `%bucket['<name>']`.]
+### 16. `property` syntax: `:nickname` vs `@foo, :get, :set, default:'bar'` [MEDIUM] [RESOLVED 2026-05-17 — canonical form: `property @foo, :get, :set` (sigil-prefixed name + accessor flags). charlie.md updated to use sigil form; charlie-runtime.md kept the form but `default:` option dropped for v1 (deferred). Mechanics noted in both docs: the accessors read/write `%bucket['<name>']`.]
 
-**Files:** [kscript.md:591](documentation/kscript/kscript.md#L591), [kscript-runtime.md:2005-2010](documentation/kscript/kscript-runtime.md#L2005-L2010)
+**Files:** [charlie.md:591](documentation/charlie/charlie.md#L591), [charlie-runtime.md:2005-2010](documentation/charlie/charlie-runtime.md#L2005-L2010)
 
 Two different first-argument shapes for the same construct.
 Suggestion: reconcile in one place and reference from the other.
 
-### 17. Pipe semantics: "first positional arg" vs "first and only arg" [MEDIUM] [RESOLVED 2026-05-17 — first-positional wins (kscript.md). pipes.md updated: the piped value occupies the first positional slot; additional positional/named args at the call site bind normally. Matches Elixir/F#/R conventions.]
+### 17. Pipe semantics: "first positional arg" vs "first and only arg" [MEDIUM] [RESOLVED 2026-05-17 — first-positional wins (charlie.md). pipes.md updated: the piped value occupies the first positional slot; additional positional/named args at the call site bind normally. Matches Elixir/F#/R conventions.]
 
-**Files:** [kscript.md:758](documentation/kscript/kscript.md#L758), [pipes.md:33, 38-42](documentation/kscript/pipes.md#L33-L42)
+**Files:** [charlie.md:758](documentation/charlie/charlie.md#L758), [pipes.md:33, 38-42](documentation/charlie/pipes.md#L33-L42)
 
-kscript.md allows other args; pipes.md forbids them and desugars
-`a | b` to `b(a)` only. Suggestion: pick one; the kscript.md form
+charlie.md allows other args; pipes.md forbids them and desugars
+`a | b` to `b(a)` only. Suggestion: pick one; the charlie.md form
 is more general.
 
-### 18. kscript.md self-conflict: `function`-with-`do` for definitions [MEDIUM] [RESOLVED 2026-05-17 — resolved alongside #15. Definition examples no longer use `do`; the "No `do` for definitions" rule at kscript.md:271 now matches the examples.]
+### 18. charlie.md self-conflict: `function`-with-`do` for definitions [MEDIUM] [RESOLVED 2026-05-17 — resolved alongside #15. Definition examples no longer use `do`; the "No `do` for definitions" rule at charlie.md:271 now matches the examples.]
 
-**File:** [kscript.md:271 vs 441-461](documentation/kscript/kscript.md)
+**File:** [charlie.md:271 vs 441-461](documentation/charlie/charlie.md)
 
 "No `do` for definitions" at line 271 vs every function/closure
 definition example using `function(...) do ... end`. Suggestion:
 clarify whether the form is a call (explains the `do`) or a
 definition (forbids it).
 
-### 19. KScriptJSON core principle broken by its own `if`/`while` form [MEDIUM] [RESOLVED 2026-05-17 — prose fix only, no shape changes. Core Principle section rewritten to acknowledge two receiver shapes: value receivers take `[receiver, method, args?]`; bwc receivers take `[{bwc}, args?]` (the bwc name IS the call, no method slot). V0.01 engine already runs the bwc shape as-is, no code change needed.]
+### 19. CharlieJSON core principle broken by its own `if`/`while` form [MEDIUM] [RESOLVED 2026-05-17 — prose fix only, no shape changes. Core Principle section rewritten to acknowledge two receiver shapes: value receivers take `[receiver, method, args?]`; bwc receivers take `[{bwc}, args?]` (the bwc name IS the call, no method slot). V0.01 engine already runs the bwc shape as-is, no code change needed.]
 
-**File:** [kscriptjson.md:42 vs 267-301](documentation/kscript/kscriptjson.md)
+**File:** [charliejson.md:42 vs 267-301](documentation/charlie/charliejson.md)
 
 Core principle: every statement is `[receiver, method, args?]`.
 `if` and `while` are encoded as `[{bwc:...}, {...}]` — two-element
@@ -255,17 +255,17 @@ forms with no method slot. Suggestion: either add an explicit method
 for symmetry, or revise the core principle to note bwc statements may
 omit the method slot.
 
-### 20. `%blocks` system method listed but never defined [MEDIUM] [RESOLVED 2026-05-17 — dropped `%blocks` from system-methods.md (table row + vibecode list). `%call.blocks` remains the canonical access pattern documented in kscript-runtime.md. A future shortcut can be added deliberately as sugar with documented sugaring rules, not as a parallel spec.]
+### 20. `%blocks` system method listed but never defined [MEDIUM] [RESOLVED 2026-05-17 — dropped `%blocks` from system-methods.md (table row + vibecode list). `%call.blocks` remains the canonical access pattern documented in charlie-runtime.md. A future shortcut can be added deliberately as sugar with documented sugaring rules, not as a parallel spec.]
 
-**Files:** [system-methods.md:37](documentation/kscript/system-methods.md#L37), [kscript-runtime.md:2118, 2467](documentation/kscript/kscript-runtime.md)
+**Files:** [system-methods.md:37](documentation/charlie/system-methods.md#L37), [charlie-runtime.md:2118, 2467](documentation/charlie/charlie-runtime.md)
 
 Only `%call.blocks` is defined; `%blocks` is listed in the top-level
 system methods table. Suggestion: drop `%blocks` from the table or
 define it as a shortcut.
 
-### 21. `trilean` primitive vs `boolean` [MEDIUM] [RESOLVED 2026-05-17 — `boolean` is the core primitive; `trilean` was an idea for three-valued logic, not core. system-methods.md `%utils.json.parse` description updated (trilean → boolean); `trilean.md` moved from `documentation/kscript/built-in-classes/` to `documentation/ideas/` with a status banner.]
+### 21. `trilean` primitive vs `boolean` [MEDIUM] [RESOLVED 2026-05-17 — `boolean` is the core primitive; `trilean` was an idea for three-valued logic, not core. system-methods.md `%utils.json.parse` description updated (trilean → boolean); `trilean.md` moved from `documentation/charlie/built-in-classes/` to `documentation/ideas/` with a status banner.]
 
-**Files:** [kscript-runtime.md:422](documentation/kscript/kscript-runtime.md#L422), [system-methods.md:326](documentation/kscript/system-methods.md#L326), [trilean.md](documentation/kscript/built-in-classes/trilean.md)
+**Files:** [charlie-runtime.md:422](documentation/charlie/charlie-runtime.md#L422), [system-methods.md:326](documentation/charlie/system-methods.md#L326), [trilean.md](documentation/charlie/built-in-classes/trilean.md)
 
 Runtime declares Boolean as primitive; `%utils.json.parse` is
 described as returning "trilean." `trilean.md` exists in
@@ -279,7 +279,7 @@ a defined logic system.
 
 ### 22. Bryton/Xeme disagree on runner-error class prefix [MEDIUM] [RESOLVED 2026-05-17 — honored xeme.md's own working convention at line 479-480 (UNS-style identifier without domain prefix). Replaced `kiera.uno/result/failure/runtime/*` → `bryton/runtime/*` and `kiera.uno/result/null/*` → `bryton/null/*` in xeme.md. runner.md was already consistent. The `runtime/` middle segment is reserved for runner-level failures (test missing, crashed, timeout, unparseable, exception); test-payload failures like assertion or connection_refused live under `bryton/` directly without `runtime/`.]
 
-**Files:** [runner.md:440-444](documentation/kscript/bryton/runner.md#L440-L444), [xeme.md:808, 823](documentation/kscript/bryton/xeme/xeme.md)
+**Files:** [runner.md:440-444](documentation/charlie/bryton/runner.md#L440-L444), [xeme.md:808, 823](documentation/charlie/bryton/xeme/xeme.md)
 
 runner.md: `class: "bryton/runtime/missing"`. xeme.md: same concept
 uses `kiera.uno/result/failure/runtime/crashed`. Suggestion: pick one
@@ -287,7 +287,7 @@ prefix for `errors[].class` and propagate.
 
 ### 23. xeme.md promised "Jasmine will be flattened to this shape." It wasn't. [MEDIUM] [RESOLVED 2026-05-17 — soften, not apply. The Jasmine-flattening alignment in xeme.md is now labeled "proposed, not yet applied" with an explicit pointer to jasmine.md as the current canonical shape. The actual flattening of jasmine.md is deferred (substantial rewrite); the spec is at least honest about current state.]
 
-**Files:** [xeme.md:503-547](documentation/kscript/bryton/xeme/xeme.md#L503-L547), [jasmine.md:411-468](documentation/kscript/jasmine/jasmine.md#L411-L468)
+**Files:** [xeme.md:503-547](documentation/charlie/bryton/xeme/xeme.md#L503-L547), [jasmine.md:411-468](documentation/charlie/jasmine/jasmine.md#L411-L468)
 
 xeme.md describes a flat target; jasmine.md still has the nested
 `calls + {function, entry}` shape. Suggestion: either update Jasmine
@@ -295,14 +295,14 @@ to the flattened shape or back the proposal out of xeme.md.
 
 ### 24. jasmine.md still describes itself as "for the Robinson handler in Dogberry" [MEDIUM] [RESOLVED 2026-05-17 — rewritten to "originally motivated by Robinson" with an explicit parenthetical noting Robinson and Dogberry are independent HTTP middleware peers. Stale link to dogberry-wishlist.md replaced with link to the current ideas/dogberry.md.]
 
-**Files:** [jasmine.md:26-28](documentation/kscript/jasmine/jasmine.md#L26-L28); http-middleware.md, dogberry.md (which retire this framing)
+**Files:** [jasmine.md:26-28](documentation/charlie/jasmine/jasmine.md#L26-L28); http-middleware.md, dogberry.md (which retire this framing)
 
 Also matches the memory note: Dogberry is undefined. Suggestion:
 update jasmine.md's framing to drop the retired association.
 
-### 25. `%chain.log` treated as engine-granted ambient, missing from system-methods.md [MEDIUM] [RESOLVED 2026-05-17 — extended the `%chain` row in system-methods.md to enumerate engine-installed methods on `%chain`: flag-raising (`%chain.warn`/`throw`/`error`/`exit`/`abort`, pointer to kscript-runtime.md) and logging (`%chain.log`, pointer to jasmine.md). jasmine.md's usage is now backed by an explicit mention in the system-methods spec.]
+### 25. `%chain.log` treated as engine-granted ambient, missing from system-methods.md [MEDIUM] [RESOLVED 2026-05-17 — extended the `%chain` row in system-methods.md to enumerate engine-installed methods on `%chain`: flag-raising (`%chain.warn`/`throw`/`error`/`exit`/`abort`, pointer to charlie-runtime.md) and logging (`%chain.log`, pointer to jasmine.md). jasmine.md's usage is now backed by an explicit mention in the system-methods spec.]
 
-**Files:** [jasmine.md:218-241](documentation/kscript/jasmine/jasmine.md#L218-L241) vs [system-methods.md:20-26](documentation/kscript/system-methods.md)
+**Files:** [jasmine.md:218-241](documentation/charlie/jasmine/jasmine.md#L218-L241) vs [system-methods.md:20-26](documentation/charlie/system-methods.md)
 
 jasmine.md treats `%chain.log` as always-present, engine-configured.
 system-methods.md doesn't list it. User code can't define new
@@ -310,18 +310,18 @@ system-methods.md doesn't list it. User code can't define new
 declared in core. Suggestion: add `%chain.log` to system-methods.md
 or revise jasmine.md to use a non-system-method mechanism.
 
-### 26. Robinson "page = class with no UNS" uses a class-decl form kscript.md doesn't define [MEDIUM] [RESOLVED 2026-05-17 — added an "Anonymous (bare) class" subsection to kscript.md after the Definition section. `class ... end` with no UNS produces an anonymous class; its identity comes from its location/context (Robinson pages, per-dir handlers). `inherits` and other declarations work identically.]
+### 26. Robinson "page = class with no UNS" uses a class-decl form charlie.md doesn't define [MEDIUM] [RESOLVED 2026-05-17 — added an "Anonymous (bare) class" subsection to charlie.md after the Definition section. `class ... end` with no UNS produces an anonymous class; its identity comes from its location/context (Robinson pages, per-dir handlers). `inherits` and other declarations work identically.]
 
-**Files:** [robinson.md:270-284](documentation/kscript/http-middleware/robinson.md#L270-L284), [kscript.md:543-557](documentation/kscript/kscript.md#L543-L557)
+**Files:** [robinson.md:270-284](documentation/charlie/http-middleware/robinson.md#L270-L284), [charlie.md:543-557](documentation/charlie/charlie.md#L543-L557)
 
-kscript.md defines `class 'UNS' ... end`; no bare/anonymous form.
+charlie.md defines `class 'UNS' ... end`; no bare/anonymous form.
 Robinson depends on a syntax variant the core doesn't define.
-Suggestion: either define the bare-class form in kscript.md or change
+Suggestion: either define the bare-class form in charlie.md or change
 Robinson's page declaration to use a synthetic UNS derived from path.
 
 ### 27. "FSO (filesystem object)" used in touchstone.md without a definition [LOW] [RESOLVED 2026-05-17 — defined FSO in touchstone.md at first use: "an engine-configured object that can accept byte writes for storage; in v1, a dirjail (per filesystem.md)." Leaves room for non-filesystem backings later without changing the handler contract.]
 
-**File:** [touchstone.md:199, 294-326](documentation/kscript/http-middleware/touchstone.md)
+**File:** [touchstone.md:199, 294-326](documentation/charlie/http-middleware/touchstone.md)
 
 The term doesn't appear in filesystem.md (which uses "jail / file
 object / directory object") or any other doc. Suggestion: define FSO,
@@ -329,7 +329,7 @@ or rename to the existing terminology.
 
 ### 28. touchstone.md/sinatra.md mutate `$response.csp` etc. before any `$response` exists [MEDIUM] [RESOLVED 2026-05-17 — reframed `$transaction.response` as "starts at null but auto-creates on first write": writes to `csp`/`headers`/`status`/`body` instantiate an empty response on the spot. The CSP/header examples in touchstone.md and sinatra.md (auto-OPTIONS) now have coherent semantics. The "null = no handler wrote anything → fallback fires" rule is preserved.]
 
-**Files:** [touchstone.md:60-61, 766-792](documentation/kscript/http-middleware/touchstone.md); [sinatra.md:304-310](documentation/kscript/http-middleware/sinatra.md#L304-L310)
+**Files:** [touchstone.md:60-61, 766-792](documentation/charlie/http-middleware/touchstone.md); [sinatra.md:304-310](documentation/charlie/http-middleware/sinatra.md#L304-L310)
 
 touchstone.md says `$response` starts at null and is built by stage
 2. Then handlers write into `$response.csp[...]` and
@@ -339,21 +339,21 @@ mutable-response usage.
 
 ### 29. Uma referenced by Robinson and Trivet, no Uma spec in canonical tree [MEDIUM] [RESOLVED 2026-05-17 — added explicit pointers in robinson.md (`$request.uma` section) and trivet.md (the inline mention) noting Uma is currently in `documentation/ideas/uma/uma.md`, not yet promoted to canonical, and that Uma must be canonical before Robinson can be implemented. Honest about state; actual Uma promotion deferred as substantial separate work.]
 
-**Files:** [robinson.md:561-624](documentation/kscript/http-middleware/robinson.md), [trivet.md:7, 651, 691](documentation/kscript/trivet/trivet.md)
+**Files:** [robinson.md:561-624](documentation/charlie/http-middleware/robinson.md), [trivet.md:7, 651, 691](documentation/charlie/trivet/trivet.md)
 
 Only Uma spec lives in `documentation/ideas/uma/uma.md` (out of
 scope). Suggestion: promote a minimal Uma spec into canonical
-`documentation/kscript/uma/` before Robinson/Trivet work proceeds.
+`documentation/charlie/uma/` before Robinson/Trivet work proceeds.
 
 ---
 
 ## F. Ecosystem / repo accuracy
 
-### 30. README + overview promise Python Mikobase engine that doesn't exist [MEDIUM] [RESOLVED 2026-05-17 — README.md repo-layout row rewritten to reflect actual state (KScript Lua engine shipped; Mikobase/Kiera/Dogberry placeholders). overview.md status table rewritten: removed Python Mikobase references; added rows for KScript Lua reference engine (V0.01 shipped, 213 tests passing) and the three planned Mikobase engines (SQLite file, SQLite memory, worldlet-direct).]
+### 30. README + overview promise Python Mikobase engine that doesn't exist [MEDIUM] [RESOLVED 2026-05-17 — README.md repo-layout row rewritten to reflect actual state (Charlie Lua engine shipped; Mikobase/Kiera/Dogberry placeholders). overview.md status table rewritten: removed Python Mikobase references; added rows for Charlie Lua reference engine (V0.01 shipped, 213 tests passing) and the three planned Mikobase engines (SQLite file, SQLite memory, worldlet-direct).]
 
 **Files:** [README.md:25](README.md#L25), [overview.md:99-107](documentation/overview.md#L99-L107); [code/mikobase/](code/mikobase/) (empty)
 
-CLAUDE.md confirms V0.01 walking-skeleton target is the Lua KScript
+CLAUDE.md confirms V0.01 walking-skeleton target is the Lua Charlie
 engine, not Python Mikobase. Suggestion: update README and overview
 to reflect current state; mark Mikobase engine as design only.
 
@@ -382,9 +382,9 @@ Introduces FOUR reserved keys (`vibecode`, `comment`, `misc`,
 `enterprise`); line 203 says "all three reserved fields are always
 passed through." Suggestion: fix "three" → "four."
 
-### 34. Memory note says signing.md → blockchain.md; file isn't at the new location [LOW] [RESOLVED 2026-05-17 — moved `documentation/kscript/blockchain/blockchain.md` → `documentation/blockchain.md`. Updated three external link references (versioning.md ×2, bindings.md, kiera.md). The blockchain SERVER infrastructure (Dockerfile, blockchain.json, scripts, nginx.conf, fly.toml, lua/) is still under `documentation/kscript/blockchain/` — flagged as needing a separate restructure since it's code/infra, not docs.]
+### 34. Memory note says signing.md → blockchain.md; file isn't at the new location [LOW] [RESOLVED 2026-05-17 — moved `documentation/charlie/blockchain/blockchain.md` → `documentation/blockchain.md`. Updated three external link references (versioning.md ×2, bindings.md, kiera.md). The blockchain SERVER infrastructure (Dockerfile, blockchain.json, scripts, nginx.conf, fly.toml, lua/) is still under `documentation/charlie/blockchain/` — flagged as needing a separate restructure since it's code/infra, not docs.]
 
-**Files:** `documentation/blockchain.md` (does not exist); [documentation/kscript/blockchain/blockchain.md](documentation/kscript/blockchain/blockchain.md) (does exist)
+**Files:** `documentation/blockchain.md` (does not exist); [documentation/charlie/blockchain/blockchain.md](documentation/charlie/blockchain/blockchain.md) (does exist)
 
 Either move the file as the memory note says, or update the memory.
 
@@ -408,39 +408,39 @@ Suggestion: demote the Dogberry section to "TBD when Dogberry lands."
 
 ## G. Smaller gaps and dead pointers
 
-### 37. `__END__` "spec requirement; not yet implemented" with no compliant-engine behavior stated [LOW] [RESOLVED 2026-05-17 — added "Compliant-engine behavior for the unimplemented state" subsection to kscript.md: until implemented, `__END__` is treated as an ordinary unrecognized identifier (typically a parse error), not silently accepted or special-cased.]
+### 37. `__END__` "spec requirement; not yet implemented" with no compliant-engine behavior stated [LOW] [RESOLVED 2026-05-17 — added "Compliant-engine behavior for the unimplemented state" subsection to charlie.md: until implemented, `__END__` is treated as an ordinary unrecognized identifier (typically a parse error), not silently accepted or special-cased.]
 
-**File:** [kscript.md:362-414](documentation/kscript/kscript.md)
+**File:** [charlie.md:362-414](documentation/charlie/charlie.md)
 
 For a "spec requirement," what happens when an engine sees `__END__`
 but doesn't implement it should be stated (silent? error? warning?).
 
-### 38. Stack-trace shape "TBD" but several specs depend on it [MEDIUM] [RESOLVED 2026-05-17 — stubbed the minimum v1 shape in kscript-runtime.md: `$e.stack` is an array of `{class, method, line}` hashes, root frame first. Engines may add fields; consumers treat unknown fields as additive. Now versioning.md, roles.md cross-role trust, and Jasmine serialization have a concrete shape to anchor against.]
+### 38. Stack-trace shape "TBD" but several specs depend on it [MEDIUM] [RESOLVED 2026-05-17 — stubbed the minimum v1 shape in charlie-runtime.md: `$e.stack` is an array of `{class, method, line}` hashes, root frame first. Engines may add fields; consumers treat unknown fields as additive. Now versioning.md, roles.md cross-role trust, and Jasmine serialization have a concrete shape to anchor against.]
 
-**Files:** [kscript-runtime.md:676-679](documentation/kscript/kscript-runtime.md#L676-L679); [versioning.md:127](documentation/kscript/versioning.md#L127); roles.md cross-role trust mechanics
+**Files:** [charlie-runtime.md:676-679](documentation/charlie/charlie-runtime.md#L676-L679); [versioning.md:127](documentation/charlie/versioning.md#L127); roles.md cross-role trust mechanics
 
 Suggestion: stub a minimal shape (array of `{class, method, line}`
 frames) even if extensions are TBD.
 
-### 39. `[{bwc:"if"}, {}]` (branchless `if`) undefined [LOW] [RESOLVED 2026-05-17 — kscriptjson.md now states: if both `branches` and `else` are absent/empty, the `if` is a no-op returning `null`. Not an error.]
+### 39. `[{bwc:"if"}, {}]` (branchless `if`) undefined [LOW] [RESOLVED 2026-05-17 — charliejson.md now states: if both `branches` and `else` are absent/empty, the `if` is a no-op returning `null`. Not an error.]
 
-**File:** [kscriptjson.md:290](documentation/kscript/kscriptjson.md#L290)
+**File:** [charliejson.md:290](documentation/charlie/charliejson.md#L290)
 
 Doc says branches and else are both optional; never says what the
 empty form evaluates to.
 
 ### 40. `%kiera.call` referenced but signature unspecified [MEDIUM] [RESOLVED 2026-05-17 — added "Return value and error model" subsection to kiera.md's `%kiera.call` section. Specifies the return value shape and the canonical error classes for the five common failure modes: target lookup failure (`kiera.uno/error/not_found`), method not found, transport failure, remote exception propagation, authorization failure. Signature was already in the section; chain forwarding was already in the section.]
 
-**File:** [kscript.md:505-521](documentation/kscript/kscript.md#L505-L521)
+**File:** [charlie.md:505-521](documentation/charlie/charlie.md#L505-L521)
 
 `remote function` delegates to `%kiera.call(self, :save, name: name)`.
-Neither system-methods.md nor kscript-runtime.md defines `%kiera.call`.
+Neither system-methods.md nor charlie-runtime.md defines `%kiera.call`.
 The in-scope spec leaves the call signature, error model, and
 `%chain` forwarding unspecified.
 
 ### 41. `scope.operators` namespace referenced but not specified [LOW] [DEFERRED 2026-05-17 — entangled with #14 (operator namespace). Both questions touch operator-registration design; should be resolved together when the operator subsystem is revisited.]
 
-**Files:** [operators.md:63-70](documentation/kscript/operators.md#L63-L70), [assignment-operators.md:134](documentation/kscript/assignment-operators.md#L134)
+**Files:** [operators.md:63-70](documentation/charlie/operators.md#L63-L70), [assignment-operators.md:134](documentation/charlie/assignment-operators.md#L134)
 
 Whether `scope` here is `%scope` (the lexical scope) or a different
 concept is unspecified. The doc's own open questions confirm it's not
@@ -448,14 +448,14 @@ settled.
 
 ### 42. `%vibecode side` field has no documented consumer effect [LOW] [RESOLVED 2026-05-17 — added explicit "Consumer effect of `side` is TBD" note to the `%vibecode` row in system-methods.md. The field is recorded for future tooling; no current consumer reads it. Honest about state.]
 
-**File:** [system-methods.md:39](documentation/kscript/system-methods.md#L39)
+**File:** [system-methods.md:39](documentation/charlie/system-methods.md#L39)
 
 Introduces `side: "target" | "value"` as "attachment intent." No file
 says what consumers do with it.
 
-### 43. `loops.md` structural blocks have no grammar contract in core [LOW] [RESOLVED 2026-05-17 — added a "Loop-scoped section markers" note to kscript-runtime.md's core bwcs section. `before`/`between`/`after`/`noloop` are reserved keywords recognized by the lexer/parser, consumed by the loop runner, and not valid outside loop bodies. Distinguished from general bwcs to avoid mischaracterization.]
+### 43. `loops.md` structural blocks have no grammar contract in core [LOW] [RESOLVED 2026-05-17 — added a "Loop-scoped section markers" note to charlie-runtime.md's core bwcs section. `before`/`between`/`after`/`noloop` are reserved keywords recognized by the lexer/parser, consumed by the loop runner, and not valid outside loop bodies. Distinguished from general bwcs to avoid mischaracterization.]
 
-**File:** [loops.md:204-227](documentation/kscript/loops.md#L204-L227); [kscript-runtime.md:533-538](documentation/kscript/kscript-runtime.md) (core bwcs list)
+**File:** [loops.md:204-227](documentation/charlie/loops.md#L204-L227); [charlie-runtime.md:533-538](documentation/charlie/charlie-runtime.md) (core bwcs list)
 
 `before` / `between` / `after` / `noloop` are shown in examples but
 their lexer/parser contract (reserved bwcs? scoped only inside
@@ -463,38 +463,38 @@ loops?) is not defined.
 
 ### 44. `meta-hash.md` self-contradicts on per-level writes [LOW] [RESOLVED 2026-05-17 — Use cases bullet rewritten to match the authoritative "Writes" section: writes through the meta-hash always land in the last (most-specific) layer; per-layer mutation requires writing to the underlying hash directly. No conflicting wording remains.]
 
-**File:** [meta-hash.md:60-77 vs 122-125](documentation/kscript/built-in-classes/meta-hash.md)
+**File:** [meta-hash.md:60-77 vs 122-125](documentation/charlie/built-in-classes/meta-hash.md)
 
 "Writes always land in the last hash" vs "writes at a level set just
 that level." Suggestion: pick one.
 
 ### 45. `bryton/runner.md:128` "[slob pattern](../../)" link is incomplete [LOW] [RESOLVED 2026-05-17 — replaced broken link with italics + a parenthetical pointing at overview.md (which has the companion "no-nanny" principle). No canonical "slob pattern" doc exists; phrase kept as inline italics.]
 
-**File:** [runner.md:128](documentation/kscript/bryton/runner.md#L128)
+**File:** [runner.md:128](documentation/charlie/bryton/runner.md#L128)
 
 Points at the documentation root rather than a specific document
 discussing the slob pattern.
 
 ### 46. `vscode/syntax/syntax.md` is zero bytes [LOW] [RESOLVED 2026-05-17 — filled the empty file with a small pointer stub directing to the actual extension scaffolding at `vscode/syntax/`, the V1 spec at `ideas/vscode-extension.md`, the V2 ideas, and `formatter.md`. The previously empty file is now a useful index.]
 
-**File:** [syntax.md](documentation/kscript/vscode/syntax/syntax.md)
+**File:** [syntax.md](documentation/charlie/vscode/syntax/syntax.md)
 
 Either planned stub or should be removed; right now it's a dead link
 target.
 
-### 47. `trilean.md:370` points to nonexistent `code/kscript/stdlib/trilean.kscript` [LOW] [RESOLVED 2026-05-17 — moot; trilean.md moved to `documentation/ideas/` as a non-core idea (see #21). The dead reference inside is now correctly contextualized as "what this would look like if implemented."]
+### 47. `trilean.md:370` points to nonexistent `code/charlie/stdlib/trilean.charlie` [LOW] [RESOLVED 2026-05-17 — moot; trilean.md moved to `documentation/ideas/` as a non-core idea (see #21). The dead reference inside is now correctly contextualized as "what this would look like if implemented."]
 
-**File:** [trilean.md:370](documentation/kscript/built-in-classes/trilean.md#L370)
+**File:** [trilean.md:370](documentation/charlie/built-in-classes/trilean.md#L370)
 
 The entire stdlib directory is empty. Spec lists this as if it ships
 in v1.
 
-### 48. Bryton spec link path wrong in V0.1 Amanda vibecode [LOW] [RESOLVED 2026-05-17 — fixed vibecode paths (`documentation/bryton/...` → `documentation/kscript/bryton/...`) and the prose `[bryton/overview.md](../overview.md)` link which was resolving to the wrong file (project overview); now correctly points to `../kscript/bryton/overview.md`.]
+### 48. Bryton spec link path wrong in V0.1 Amanda vibecode [LOW] [RESOLVED 2026-05-17 — fixed vibecode paths (`documentation/bryton/...` → `documentation/charlie/bryton/...`) and the prose `[bryton/overview.md](../overview.md)` link which was resolving to the wrong file (project overview); now correctly points to `../charlie/bryton/overview.md`.]
 
 **File:** [development.md:2674-2676, 2680-2681](documentation/development/development.md)
 
 Vibecode paths point at `documentation/bryton/...`; real path is
-`documentation/kscript/bryton/...`. Prose link `[bryton/overview.md](../overview.md)`
+`documentation/charlie/bryton/...`. Prose link `[bryton/overview.md](../overview.md)`
 resolves to `documentation/overview.md` (which exists but is the
 project overview, not Bryton's).
 

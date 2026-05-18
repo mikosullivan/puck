@@ -528,7 +528,7 @@ The engine provides methods for importing and exporting schemas.
 - `engine.export_schema()` — returns the current schema as a dict
 - `engine.export_schema_file(path)` — writes the current schema to a JSON file
 
-See [class-definition.md](../kscript/class-definition.md) for schema format and import rules.
+See [class-definition.md](../charlie/class-definition.md) for schema format and import rules.
 
 ---
 

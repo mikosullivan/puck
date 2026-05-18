@@ -13,9 +13,9 @@ directory-tree interface backed by mikobase data?
 ## Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
-  object is expected ([Sinatra static serving](../../kscript/http-middleware/sinatra.md#static-file-serving),
-  [Jasmine directory stores](../../kscript/jasmine/jasmine.md#stores),
-  [%utils.tempdir DirJails](../../kscript/utils.md), etc.) without those
+  object is expected ([Sinatra static serving](../../charlie/http-middleware/sinatra.md#static-file-serving),
+  [Jasmine directory stores](../../charlie/jasmine/jasmine.md#stores),
+  [%utils.tempdir DirJails](../../charlie/utils.md), etc.) without those
   consumers knowing anything about mikobase.
 - "Storage-agnostic" gets real teeth: a developer can swap a real
   filesystem for a mikobase-backed one and the rest of the code
@@ -157,7 +157,7 @@ mikobase-backed filesystem implementation should be a small
 additional step. Not committed yet; flagged as a likely outcome
 of the work that's already happening for other reasons.
 
-## Other concerns (Kor (TOS))
+## Other concerns
 
 - **Performance overhead** of transactional storage compared to
   raw POSIX. Bulk file ingestion might want a fast path.

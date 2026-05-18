@@ -15,13 +15,13 @@ from them. When the two disagree, vibecode wins.
 
 - [V0.01: "hello-world"](#v001-hello-world)
   - [Definition of done](#definition-of-done)
-- [V0.02: "kscript-source-hello"](#v002-kscript-source-hello)
+- [V0.02: "charlie-source-hello"](#v002-charlie-source-hello)
   - [Definition of done (V0.02)](#definition-of-done-v002)
-- [V0.03: "kscript-with-stdout"](#v003-kscript-with-stdout)
+- [V0.03: "charlie-with-stdout"](#v003-charlie-with-stdout)
   - [Definition of done (V0.03)](#definition-of-done-v003)
-- [V0.04: "kscript-with-hashes"](#v004-kscript-with-hashes)
+- [V0.04: "charlie-with-hashes"](#v004-charlie-with-hashes)
   - [Definition of done (V0.04)](#definition-of-done-v004)
-- [V0.05: "kscript-with-json-serialization"](#v005-kscript-with-json-serialization)
+- [V0.05: "charlie-with-json-serialization"](#v005-charlie-with-json-serialization)
   - [Definition of done (V0.05)](#definition-of-done-v005)
 - [Testing strategy: two-tier approach](#testing-strategy-two-tier-approach)
   - [Bootstrap path](#bootstrap-path)
@@ -36,7 +36,7 @@ from them. When the two disagree, vibecode wins.
   - [V0.01 invocation chain](#v001-invocation-chain)
   - [V0.01 engine bootstrap sequence](#v001-engine-bootstrap-sequence)
   - [Program model](#program-model)
-  - [What user KSJ can see in V0.01](#what-user-ksj-can-see-in-v001)
+  - [What user CharlieJSON can see in V0.01](#what-user-ksj-can-see-in-v001)
   - [How later slices grow the lifecycle](#how-later-slices-grow-the-lifecycle)
 - [Lua-side implementation sketch](#lua-side-implementation-sketch)
   - [Data structures (Lua tables)](#data-structures-lua-tables)
@@ -51,7 +51,7 @@ from them. When the two disagree, vibecode wins.
   - [Step 0.5: Verify json.lua loads and parses](#step-05-verify-jsonlua-loads-and-parses)
   - [Step 0.6: Verify file reading](#step-06-verify-file-reading)
   - [Phase 0 test plan](#phase-0-test-plan)
-- [V0.01 phase 1: hello-world in KScriptJSON](#v001-phase-1-hello-world-in-kscriptjson)
+- [V0.01 phase 1: hello-world in CharlieJSON](#v001-phase-1-hello-world-in-charliejson)
   - [Step 1: Inventory](#step-1-inventory)
   - [Step 2: Fill the gaps](#step-2-fill-the-gaps)
   - [Step 3: Verify](#step-3-verify)
@@ -63,7 +63,7 @@ from them. When the two disagree, vibecode wins.
   - [Step 0.3: Observe the transpiler's current output](#step-03-observe-the-transpilers-current-output)
   - [Step 0.4: Confirm engine.run handles a hand-built canonical tree](#step-04-confirm-enginerun-handles-a-hand-built-canonical-tree)
   - [V0.02 phase 0 test plan](#v002-phase-0-test-plan)
-- [V0.02 phase 1: hello-world from KScript source](#v002-phase-1-hello-world-from-kscript-source)
+- [V0.02 phase 1: hello-world from Charlie source](#v002-phase-1-hello-world-from-charlie-source)
   - [V0.02 Step 1: Inventory](#v002-step-1-inventory)
   - [V0.02 Step 2: Fill the gaps](#v002-step-2-fill-the-gaps)
   - [V0.02 Step 3: Verify](#v002-step-3-verify)
@@ -72,14 +72,14 @@ from them. When the two disagree, vibecode wins.
   - [V0.02 open questions](#v002-open-questions)
 - [V0.03 phase 0: stdout-and-bwc workbench](#v003-phase-0-stdout-and-bwc-workbench)
   - [V0.03 phase 0 test plan](#v003-phase-0-test-plan)
-- [V0.03 phase 1: puts-hello from KScript source](#v003-phase-1-puts-hello-from-kscript-source)
+- [V0.03 phase 1: puts-hello from Charlie source](#v003-phase-1-puts-hello-from-charlie-source)
   - [V0.03 Step 1: Inventory](#v003-step-1-inventory)
   - [V0.03 Step 2: Fill the gaps](#v003-step-2-fill-the-gaps)
   - [V0.03 Step 3: Verify](#v003-step-3-verify)
   - [V0.03 phase 1 test plan](#v003-phase-1-test-plan)
   - [V0.03 test layout](#v003-test-layout)
   - [V0.03 open questions](#v003-open-questions)
-- [V0.0X: KScript command-line execution](#v00x-kscript-command-line-execution)
+- [V0.0X: Charlie command-line execution](#v00x-charlie-command-line-execution)
   - [What the slice introduces](#what-the-slice-introduces)
   - [Permissions: default restrictive, opt-in via flags](#permissions-default-restrictive-opt-in-via-flags)
   - [Installation](#installation)
@@ -98,26 +98,26 @@ from them. When the two disagree, vibecode wins.
 
 ```
 vibecode: {"version": "0.01", "codename": "hello-world", "goal":
-"execute a minimal kscriptjson program end_to_end and return a literal value to the test harness",
-"medium": "kscriptjson_hand_written; not_kscript_source", "fixture":
+"execute a minimal charliejson program end_to_end and return a literal value to the test harness",
+"medium": "charliejson_hand_written; not_charlie_source", "fixture":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "expected_return": "hello",
 "observation": "test_harness_captures_last_statement_value; no_stdout_io",
 "covers": ["json_parser", "ksj_interpreter", "statement_dispatch",
 "literal_materialization_with_owning_role", "method_dispatch_with_role_transition",
 "string_class_minimum_with_to_string"], "deferred_to_later":
-["kscript_text_parser", "transpiler", "stdout_io", "sys_references"]}
+["charlie_text_parser", "transpiler", "stdout_io", "sys_references"]}
 ```
 
-The first runnable version. A single `.ksj` file containing the KScriptJSON
+The first runnable version. A single `.ksj` file containing the CharlieJSON
 encoding of "evaluate `"hello".to_string`" executes through the engine
-under `code/kscript/lua/` and returns the string `"hello"` to the test
+under `code/charlie/lua/` and returns the string `"hello"` to the test
 harness. No I/O — no stdout, no sinks beyond what the harness needs to
 observe the return value.
 
-KScript transpiles to KScriptJSON (KScriptJSON is the canonical runtime
-format), so the engine consumes KScriptJSON, not KScript text. V0.01
-hand-writes the KScriptJSON fixture and skips the transpiler entirely. The
-KScript text parser, the transpiler, and `sys`-reference resolution
+Charlie transpiles to CharlieJSON (CharlieJSON is the canonical runtime
+format), so the engine consumes CharlieJSON, not Charlie text. V0.01
+hand-writes the CharlieJSON fixture and skips the transpiler entirely. The
+Charlie text parser, the transpiler, and `sys`-reference resolution
 (`%stdout`, `%now`, etc.) are all deferred to later slices.
 
 V0.01 is intentionally tiny. Every layer the engine actually needs to
@@ -160,41 +160,41 @@ scope without explicit unlock.
 
 ---
 
-## V0.02: "kscript-source-hello"
+## V0.02: "charlie-source-hello"
 
 ```
-vibecode: {"version": "0.02", "codename": "kscript-source-hello", "goal":
-"execute a kscript source program end_to_end through the transpiler and return a literal value to the test harness",
-"medium": "kscript_source_text", "fixture":
+vibecode: {"version": "0.02", "codename": "charlie-source-hello", "goal":
+"execute a charlie source program end_to_end through the transpiler and return a literal value to the test harness",
+"medium": "charlie_source_text", "fixture":
 "'hello'.to_string", "fixture_path":
-"tests/kscript/fixtures/hello_world.kscript", "expected_return": "hello",
+"tests/charlie/fixtures/hello_world.charlie", "expected_return": "hello",
 "expected_canonical_ksj": "[[{\"value\": \"hello\"}, \"to_string\"]]",
 "observation":
 "test_harness_captures_last_statement_value_through_engine_run_source; no_stdout_io",
-"covers": ["kscript_lexer", "kscript_parser",
+"covers": ["charlie_lexer", "charlie_parser",
 "transpiler_to_canonical_ksj", "source_to_runtime_pipeline_wiring"],
 "reuses_from_v001": ["bootstrap", "materialize", "lookup_method",
 "transition", "dispatch", "string_class_to_string"],
 "deferred_to_later": ["stdout_io", "sys_references",
 "additional_classes_or_methods",
-"full_transpiler_realignment_for_all_kscript_constructs"]}
+"full_transpiler_realignment_for_all_charlie_constructs"]}
 ```
 
-V0.02 ships hello-world in KScript source. Same semantic program as V0.01
+V0.02 ships hello-world in Charlie source. Same semantic program as V0.01
 — `'hello'.to_string` evaluated and the result returned to the harness —
-now expressed as KScript source text and executed through the lexer →
-parser → transpiler → canonical KScriptJSON → V0.01 engine pipeline.
+now expressed as Charlie source text and executed through the lexer →
+parser → transpiler → canonical CharlieJSON → V0.01 engine pipeline.
 
 The source fixture is the single line `'hello'.to_string`. The expected
-transpiled KSJ is `[[{"value": "hello"}, "to_string"]]` — exactly the
+transpiled CharlieJSON is `[[{"value": "hello"}, "to_string"]]` — exactly the
 V0.01 hand-written fixture. This equivalence is load-bearing: it proves
-the transpiler emits canonical KSJ and that the source-text and JSON
+the transpiler emits canonical CharlieJSON and that the source-text and JSON
 paths converge on the same runtime tree.
 
 V0.02 reuses every engine layer V0.01 built: bootstrap, materialize,
 lookup_method, transition, dispatch. The new work is on the source side
 — the existing lexer/parser scaffolding gets exercised against the
-fixture, the transpiler gets realigned to emit canonical KSJ for the
+fixture, the transpiler gets realigned to emit canonical CharlieJSON for the
 AST shape hello-world produces, and a thin source-side entry point
 combines transpile + dispatch.
 
@@ -208,11 +208,11 @@ realign more AST node types as later versions exercise them. Per
 ```
 vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
 {"source_fixture_parses":
-"tests_kscript_fixtures_hello_world_kscript_lexes_and_parses_without_error",
+"tests_charlie_fixtures_hello_world_charlie_lexes_and_parses_without_error",
 "transpiler_emits_canonical_ksj":
 "transpiler_output_for_the_fixture_deep_equals_the_v001_hand_written_fixture",
 "source_side_entry_point_exists":
-"engine_run_source_path_or_equivalent_takes_a_kscript_file_through_to_dispatch",
+"engine_run_source_path_or_equivalent_takes_a_charlie_file_through_to_dispatch",
 "returns_hello":
 "engine_run_source_of_the_fixture_returns_a_value_whose_payload_equals_hello"}}
 ```
@@ -220,16 +220,16 @@ vibecode: {"scope_status": "drafted_2026-05-16", "done_criteria":
 V0.02 is done when all four are true:
 
 1. **The source fixture parses.** `'hello'.to_string` lexes and parses
-   without error using the existing `kscript.lexer` and `kscript.parser`
+   without error using the existing `charlie.lexer` and `charlie.parser`
    modules.
-2. **The transpiler emits canonical KSJ.** Running the source through
+2. **The transpiler emits canonical CharlieJSON.** Running the source through
    the transpiler produces a Lua table deep-equal to the V0.01
    hand-written `[[{"value": "hello"}, "to_string"]]` fixture.
 3. **A source-side entry point exists.** A function in the engine
-   (working name: `engine.run_source(path)`) reads a `.kscript` file,
-   transpiles to canonical KSJ, and dispatches the result. The internal
-   `engine.run(path)` (KSJ file) is refactored to share an
-   `engine.run_tree(tree)` helper so both source and KSJ paths converge
+   (working name: `engine.run_source(path)`) reads a `.charlie` file,
+   transpiles to canonical CharlieJSON, and dispatches the result. The internal
+   `engine.run(path)` (CharlieJSON file) is refactored to share an
+   `engine.run_tree(tree)` helper so both source and CharlieJSON paths converge
    on the same dispatch loop.
 4. **The harness receives `"hello"`.** `engine.run_source(fixture_path)`
    returns a value whose `.payload == "hello"`.
@@ -239,14 +239,14 @@ as V0.01.
 
 ---
 
-## V0.03: "kscript-with-stdout"
+## V0.03: "charlie-with-stdout"
 
 ```
-vibecode: {"version": "0.03", "codename": "kscript-with-stdout", "goal":
-"execute puts_hello_from_kscript_source_and_observe_the_string_arrive_on_stdout",
-"medium": "kscript_source_text", "fixture":
+vibecode: {"version": "0.03", "codename": "charlie-with-stdout", "goal":
+"execute puts_hello_from_charlie_source_and_observe_the_string_arrive_on_stdout",
+"medium": "charlie_source_text", "fixture":
 "puts 'hello'", "fixture_path":
-"tests/kscript/fixtures/puts_hello.kscript", "expected_canonical_ksj":
+"tests/charlie/fixtures/puts_hello.charlie", "expected_canonical_ksj":
 "[[{\"bwc\": \"puts\"}, {\"value\": \"hello\"}]]", "expected_stdout":
 "hello\\n", "observation":
 "test_harness_captures_stdout_via_injected_sink; payload_match_on_captured_buffer",
@@ -264,7 +264,7 @@ vibecode: {"version": "0.03", "codename": "kscript-with-stdout", "goal":
 ```
 
 V0.03 is the first slice with real I/O. The program `puts 'hello'`,
-written as KScript source, executes through the V0.02 source pipeline
+written as Charlie source, executes through the V0.02 source pipeline
 and writes `hello\n` to a stdout sink the test harness observes. No
 return-value capture this time — the observable is the stdout buffer.
 
@@ -285,7 +285,7 @@ V0.03 introduces three pieces the engine doesn't have yet:
 2. **stdout sink.** An engine-supplied object representing "where
    text written by the program goes." stdout is a sink (values flow
    out), not a faucet (which would be input). Following
-   [roles.md](../kscript/roles.md), it has its own role (`stdout`).
+   [roles.md](../charlie/roles.md), it has its own role (`stdout`).
    For test injection, the engine exposes an `env.stdout` override
    parameter to `engine.run_source` / `engine.run_tree`, defaulting to
    `io.write` for production use.
@@ -325,22 +325,22 @@ V0.03 is done when all four are true:
    role, calls it, restores.
 4. **Stdout sink receives `"hello\n"`.** A test that injects a capture
    buffer as `env.stdout` and calls
-   `engine.run_source("tests/kscript/fixtures/puts_hello.kscript", env)`
+   `engine.run_source("tests/charlie/fixtures/puts_hello.charlie", env)`
    ends with `env.stdout_buffer == "hello\n"`.
 
 That's the entirety of V0.03. Soft feature lock applies.
 
 ---
 
-## V0.04: "kscript-with-hashes"
+## V0.04: "charlie-with-hashes"
 
 ```
-vibecode: {"version": "0.04", "codename": "kscript-with-hashes",
+vibecode: {"version": "0.04", "codename": "charlie-with-hashes",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "v003_ships",
 "goal":
-"kscript_can_construct_a_hash_literal_read_a_key_and_iterate_in_insertion_order",
-"medium": "kscript_source_text", "candidate_fixture":
+"charlie_can_construct_a_hash_literal_read_a_key_and_iterate_in_insertion_order",
+"medium": "charlie_source_text", "candidate_fixture":
 "{name: 'Picard'}.name", "candidate_expected_return": "Picard",
 "alt_fixture_for_iteration_check":
 "{name: 'Picard', rank: 'Captain'}.each($k, $v) do; puts $k; end",
@@ -360,7 +360,7 @@ vibecode: {"version": "0.04", "codename": "kscript-with-hashes",
 V0.04 introduces the hash data structure. The minimum: a hash literal
 evaluates, a key lookup returns the value, and the harness observes the
 result. Order preservation is load-bearing because Kiera hashes have
-significant key order (per [kscriptjson.md](../kscript/kscriptjson.md)
+significant key order (per [charliejson.md](../charlie/charliejson.md)
 "Hash key order").
 
 **Why this is its own slice rather than bundled with V0.03.** Hashes
@@ -376,17 +376,17 @@ belongs in V0.05 or later if it complicates the slice.
 **Key risks (to confirm during planning):**
 
 - **Hash key-access method shape.** Whether `$h.name` and `$h['name']`
-  are the same call in canonical KSJ or distinct. Currently spec'd
+  are the same call in canonical CharlieJSON or distinct. Currently spec'd
   as different sugars but the transpiler / dispatcher may need to
   unify or distinguish — Phase 1 inventory clarifies.
-- **Ordered-hash plumbing.** `kscript.json.new_hash` already provides
+- **Ordered-hash plumbing.** `charlie.json.new_hash` already provides
   ordered storage; the engine has to use it consistently for
   hash-literal materialization. Mixing plain Lua tables and ordered
   hashes is a source of subtle bugs.
 - **Hash class registration.** Engine grows a second built-in class
   (string was the first); the bootstrap path becomes "classes table
   has N entries" rather than "one class for strings only."
-- **Transpiler shape for hash literals.** Per kscriptjson.md, hash
+- **Transpiler shape for hash literals.** Per charliejson.md, hash
   literals serialize as `{"hash": [[key, expr], ...]}`. Transpiler
   realignment is needed for the hash-literal AST node.
 
@@ -401,47 +401,47 @@ V0.04 is selected. Expected shape:
 
 ---
 
-## V0.05: "kscript-with-json-serialization"
+## V0.05: "charlie-with-json-serialization"
 
 ```
 vibecode: {"version": "0.05",
-"codename": "kscript-with-json-serialization",
+"codename": "charlie-with-json-serialization",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "v004_ships",
 "goal":
-"kscript_can_serialize_a_hash_or_array_or_primitive_to_a_json_string_via_to_json_method",
-"medium": "kscript_source_text", "candidate_fixture":
+"charlie_can_serialize_a_hash_or_array_or_primitive_to_a_json_string_via_to_json_method",
+"medium": "charlie_source_text", "candidate_fixture":
 "{name: 'Picard', rank: 'Captain'}.to_json", "candidate_expected_return":
 "{\"name\":\"Picard\",\"rank\":\"Captain\"}",
 "covers_candidates": ["to_json_method_on_hash_class",
 "to_json_method_on_string_class_already_present",
 "to_json_method_on_array_class_if_arrays_landed_in_v004",
-"json_encoder_reuse_from_kscript_json_lua_existing_module",
+"json_encoder_reuse_from_charlie_json_lua_existing_module",
 "round_trip_property_check_against_json_parse_added_in_v001"],
 "reuses_from_prior": ["bootstrap", "materialize", "lookup_method",
 "transition", "dispatch", "engine_run_source", "hash_class_from_v004",
-"json_encode_from_kscript_json_lua"],
-"deferred_to_later": ["from_json_parsing_into_kscript_objects",
+"json_encode_from_charlie_json_lua"],
+"deferred_to_later": ["from_json_parsing_into_charlie_objects",
 "pretty_print_option", "custom_serialization_for_user_defined_classes",
 "streaming_serialization_for_large_structures"]}
 ```
 
 V0.05 closes the loop on hashes by giving them a serialization story.
-With V0.05 in place, KScript programs can produce JSON output —
+With V0.05 in place, Charlie programs can produce JSON output —
 unlocking real interop with external systems and (more importantly for
 the roadmap) giving Bryton a credible Xeme-emission story.
 
-**Reuses existing infrastructure.** `kscript.json.encode` (already in
+**Reuses existing infrastructure.** `charlie.json.encode` (already in
 the engine) does the actual JSON formatting. V0.05's work is mostly
 about wiring: registering `to_json` methods on the built-in classes,
 making sure ordered hashes serialize with their keys in order, and
-proving round-trip equivalence with `kscript.json.parse` (added in
+proving round-trip equivalence with `charlie.json.parse` (added in
 V0.01 phase 1).
 
 **Candidate fixture:**
 `{name: 'Picard', rank: 'Captain'}.to_json` returning
 `{"name":"Picard","rank":"Captain"}`. The round-trip check —
-`kscript.json.parse(result)` deep-equals the original hash — is the
+`charlie.json.parse(result)` deep-equals the original hash — is the
 load-bearing assertion.
 
 **Key risks (to confirm during planning):**
@@ -451,7 +451,7 @@ load-bearing assertion.
   (if landed) array. The plan should be explicit about which classes
   get it in this slice and which wait.
 - **Number formatting.** `json.encode` distinguishes integer (`%.0f`)
-  from float (`%.17g`). KScript number type design touches this. If
+  from float (`%.17g`). Charlie number type design touches this. If
   numbers haven't been formalized by V0.05, the slice scope narrows to
   what the fixture exercises (strings, hashes).
 - **Null and missing-value handling.** `M.null` exists; user code has
@@ -469,7 +469,7 @@ V0.05 is selected. Expected shape:
    present), owned by their existing class roles.
 2. Fixture transpiles, dispatches, returns a string value.
 3. Returned string deep-equals the expected literal JSON.
-4. `kscript.json.parse(result)` deep-equals the original hash (round-
+4. `charlie.json.parse(result)` deep-equals the original hash (round-
    trip).
 5. Hash key order preserved through serialization.
 
@@ -481,18 +481,18 @@ V0.05 is selected. Expected shape:
 vibecode: {"section": "testing_strategy", "model": "two_tier",
 "tier_1": {"name": "lua_side_tests", "scope":
 "engine_internals_and_bryton_runner_itself", "framework":
-"tests_kscript_support_runner_and_support_assert", "permanence":
+"tests_charlie_support_runner_and_support_assert", "permanence":
 "permanent_engine_is_in_lua_tests_live_in_lua_next_to_it"},
 "tier_2": {"name": "bryton_tests", "scope":
-"kscript_level_behavior", "framework":
+"charlie_level_behavior", "framework":
 "bryton_walks_directory_runs_each_file_aggregates_xeme",
 "arrives": "v0.1"}, "pre_v01_bridge":
-"lua_host_harness_calling_engine_run_kscript_test_and_asserting_on_return_value",
+"lua_host_harness_calling_engine_run_charlie_test_and_asserting_on_return_value",
 "no_bryton_lite_name":
 "one_product_named_bryton_versioned_v01_minimum_v0X_grows_features",
 "no_circularity":
-"lua_independent_of_kscript_tier_1_self_contained;
-bryton_depends_on_kscript_and_lua_but_is_tested_by_lua"}
+"lua_independent_of_charlie_tier_1_self_contained;
+bryton_depends_on_charlie_and_lua_but_is_tested_by_lua"}
 ```
 
 Testing in Kiera operates on two tiers, each with its own tooling and
@@ -501,23 +501,23 @@ its own permanent home.
 **Tier 1: Lua-side tests** — for the engine and other Lua-implemented
 infrastructure (including the Bryton runner itself). Tests are Lua
 files using the project's existing framework at
-`tests/kscript/support/runner.lua` + `support/assert.lua`. **Tier 1 is
+`tests/charlie/support/runner.lua` + `support/assert.lua`. **Tier 1 is
 permanent** — the engine is implemented in Lua; tests of the engine
 live in Lua next to the implementation.
 
-**Tier 2: Bryton tests** — for KScript-level behavior. Tests are
-`.kscript` files that emit Xeme JSON; the Bryton runner walks a
+**Tier 2: Bryton tests** — for Charlie-level behavior. Tests are
+`.charlie` files that emit Xeme JSON; the Bryton runner walks a
 directory of them and aggregates results. Tier 2 arrives at
-[V0.1](#v01-bryton). Before V0.1, KScript-level behavior is tested via
-**Lua-host harnesses** that invoke `engine.run("test.kscript")` and
+[V0.1](#v01-bryton). Before V0.1, Charlie-level behavior is tested via
+**Lua-host harnesses** that invoke `engine.run("test.charlie")` and
 assert on the return value — a manual proto-Bryton in Tier 1 form.
 
 The boundary stays sharp:
 
 - **Bryton tests the language.** Does `for` terminate correctly? Do
   hashes preserve insertion order? Does `%role` return the right role
-  inside a cross-role call? These are tests of KScript's behavior —
-  written in KScript, run by Bryton.
+  inside a cross-role call? These are tests of Charlie's behavior —
+  written in Charlie, run by Bryton.
 - **Lua tests the implementation.** Does the lexer produce the right
   tokens? Does the dispatcher transition roles correctly? Does the
   engine return the last-statement value to its host? These are tests
@@ -530,25 +530,25 @@ for Tier 2.
 
 ### Bootstrap path
 
-| Phase | Engine tests | KScript-behavior tests | Bryton tests |
+| Phase | Engine tests | Charlie-behavior tests | Bryton tests |
 |---|---|---|---|
-| V0.01 | Lua-side (`support/runner.lua`) | — (no KScript text execution yet) | — |
-| V0.02 → V0.0X | Lua-side | Lua-host harness calling `engine.run("X.kscript")` | — |
-| V0.1 | Lua-side | (migration begins) | Bryton tests: `.kscript` files emitting Xeme |
+| V0.01 | Lua-side (`support/runner.lua`) | — (no Charlie text execution yet) | — |
+| V0.02 → V0.0X | Lua-side | Lua-host harness calling `engine.run("X.charlie")` | — |
+| V0.1 | Lua-side | (migration begins) | Bryton tests: `.charlie` files emitting Xeme |
 | V0.1+ | Lua-side (forever) | (mostly migrated) | Bryton (primary) |
 
-**No circularity.** Lua is independent of KScript; Tier 1 tests
-are trustworthy from day one. Bryton depends on KScript (it runs
-KScript test files) and on Lua (its V0.1 runner is in Lua), but is
+**No circularity.** Lua is independent of Charlie; Tier 1 tests
+are trustworthy from day one. Bryton depends on Charlie (it runs
+Charlie test files) and on Lua (its V0.1 runner is in Lua), but is
 itself tested by Lua. There's no spot where "testing X requires X
 to already work."
 
 ### One product named Bryton, not "bryton-lite"
 
 V0.1 Bryton (Lua-implemented, strict feature subset) and an eventual
-KScript-hosted Bryton are the same product at different stages, not
+Charlie-hosted Bryton are the same product at different stages, not
 distinct tools. Same purpose, same Xeme contract, same
-directory-walking model. The implementation language (Lua → KScript)
+directory-walking model. The implementation language (Lua → Charlie)
 is an internal detail. Versioning the feature set is enough —
 re-branding would create a docs tax and an implication that "lite"
 means "less correct." Same shape as `gcc` 1.0 vs `gcc` 14: same
@@ -576,13 +576,13 @@ guards spec quality; this lock guards build momentum.
 vibecode: {"additions_since_lock":
 [{"date": "2026-05-17", "feature":
 "break_bwc_with_optional_level_count", "version_target": "v1",
-"spec_locations": ["documentation/kscript/loops.md#break-riker",
-"documentation/kscript/kscriptjson.md_control_flow_break_section"],
+"spec_locations": ["documentation/charlie/loops.md#break-riker",
+"documentation/charlie/charliejson.md_control_flow_break_section"],
 "rationale":
 "loop_exit_without_loop_object_reference; multi_level_exit; explicit_user_request",
 "side_effects":
 ["$loop.return_and_$loop.break_now_aliased",
-"kscript_md_line_683_updated_to_reflect_aliasing"]}]}
+"charlie_md_line_683_updated_to_reflect_aliasing"]}]}
 ```
 
 Running log of features that broke the soft lock. Each entry names
@@ -594,10 +594,10 @@ not a wall — but the budget should be visible.
 ## V1 scope (after 0.01)
 
 ```
-vibecode: {"v1_in": ["kscript", "kscript_cli", "mikobase", "touchstone",
+vibecode: {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
 "sinatra", "trivet", "uma", "bryton", "jasmine", "kiera_identity",
 "deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
-"external_service; kscript_client_is_thin_http", "v1_http_path":
+"external_service; charlie_client_is_thin_http", "v1_http_path":
 "sinatra_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
 "handler_implements_directly; no_declarative_role_policy"}
 ```
@@ -613,7 +613,7 @@ Robinson never pull it in; programs that want it call
 Authentication is signed-request based; authorization is whatever the handler
 implements directly.
 
-The blockchain is treated as an external service. KScript's blockchain
+The blockchain is treated as an external service. Charlie's blockchain
 involvement is a thin HTTP client (~20 lines) that calls the blockchain API
 for signature verification, key lookups, etc. The chain itself runs as
 separate infrastructure (the existing Python `blockchain/sim/` evolved to
@@ -628,18 +628,18 @@ vibecode: {"approach": "walking_skeleton", "principle":
 "each_phase_runnable_end_to_end; expand_outward_feature_by_feature", "phases":
 [{"v": "0.01", "name": "hello_world_ksj", "proves":
 "json_parser; ksj_interpreter; stdlib_minimum"}, {"v": "0.02", "name":
-"hello_world_kscript", "proves":
-"kscript_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
-"name": "kscript_with_stdout", "proves":
+"hello_world_charlie", "proves":
+"charlie_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
+"name": "charlie_with_stdout", "proves":
 "bwc_dispatch; stdout_sink_and_role; puts_bwc"}, {"v": "0.04",
-"name": "kscript_with_hashes", "proves":
+"name": "charlie_with_hashes", "proves":
 "hash_class; hash_literal; key_access; ordered_iteration"}, {"v": "0.05",
-"name": "kscript_with_json_serialization", "proves":
+"name": "charlie_with_json_serialization", "proves":
 "to_json_method_on_built_in_classes; round_trip_with_json_parse"},
-{"v": "0.0X", "name": "kscript_cli", "proves":
-"os_executable_kscript_files; shebang_support; permission_flag_machinery_with_default_restrictive_posture"},
+{"v": "0.0X", "name": "charlie_cli", "proves":
+"os_executable_charlie_files; shebang_support; permission_flag_machinery_with_default_restrictive_posture"},
 {"v": "0.1", "name": "bryton", "proves":
-"first_usable_test_framework_for_kscript_code; runner_walks_dir_and_aggregates_xemes"},
+"first_usable_test_framework_for_charlie_code; runner_walks_dir_and_aggregates_xemes"},
 {"v": "0.0X", "name": "first_http_response", "proves":
 "sinatra_routing; handler_chain; response_object"}, {"v": "0.0X", "name":
 "first_db_read", "proves": "mikobase_client; data_flow"}, {"v": "0.0X",
@@ -657,7 +657,7 @@ demo proving a thin band of the stack. The order follows dependencies —
 earlier slices unblock later ones. Bryton (tests) and Jasmine (logs) are
 continuous threads, used from V0.01 onward.
 
-V0.01 (hello-world in KScriptJSON) and V0.02 (hello-world in KScript
+V0.01 (hello-world in CharlieJSON) and V0.02 (hello-world in Charlie
 source, via the new transpiler) bracket the engine's bootstrapping.
 V0.03, V0.04, and V0.05 are atomic prerequisites Bryton needs: real
 stdout, hash data structures, and JSON serialization. They were once
@@ -685,9 +685,9 @@ vibecode: {"principle": "roles_are_core_not_bolt_on", "reason":
 "source_side_propagation", "chain_isolate_developer_facing"]}
 ```
 
-Roles are not a bolt-on to KScript — they are part of the engine's core
+Roles are not a bolt-on to Charlie — they are part of the engine's core
 architecture from V0.01 onward. The role spec lives in
-[roles.md](../kscript/roles.md); this section is the implementation plan for layering
+[roles.md](../charlie/roles.md); this section is the implementation plan for layering
 it in incrementally.
 
 **Why roles cannot be deferred.** Every value in the runtime needs an
@@ -712,7 +712,7 @@ vibecode: {"v001_role_footprint": {"registry_entries_min":
 - **Role registry.** Engine maintains a name → role-object map.
   Populated at startup with `user` and the engine role owning the
   built-in string class (and any other built-in classes V0.01 touches).
-  Per [roles.md](../kscript/roles.md), the broader minimum is `user`, `clock`,
+  Per [roles.md](../charlie/roles.md), the broader minimum is `user`, `clock`,
   `randomizer`, `utils`; V0.01 needs only what it actually exercises.
   The others arrive as their values get wired up in later slices.
 - **Owning role on every value.** Each value carries an `owning_role`
@@ -762,7 +762,7 @@ vibecode: {"growth_path": [{"slice": "v0.01", "adds":
 | Slice | Role additions |
 |---|---|
 | V0.01 | Core: registry, `owning_role` on values, transition-on-call, `%role`, `%chain` wipe |
-| V0.02 | Transpiler role; emitted KScriptJSON tagged with caller role |
+| V0.02 | Transpiler role; emitted CharlieJSON tagged with caller role |
 | V0.03 | `stdout` role; owns the stdout sink and the `puts` bwc; first cross-role boundary for engine-supplied I/O |
 | V0.04 | No new role primitives; built-in hash class is registered under the existing `stdlib` role (same pattern as V0.01's string class) |
 | V0.05 | No new role primitives; `to_json` methods register on existing `stdlib`-owned classes |
@@ -778,7 +778,7 @@ Jails arrive when a slice has values worth narrowing. Cross-role trust
 declarations arrive when a slice needs to grant trust. Alarms (vs.
 regular exceptions) arrive when a slice has sinks that must hard-stop.
 Source-side propagation is deferred until the
-[string-provenance question](../kscript/roles.md#open-questions) settles.
+[string-provenance question](../charlie/roles.md#open-questions) settles.
 
 **Hello-world's role behavior end-to-end.** Program starts in role
 `user`. The fixture materializes the literal `"hello"` — a string value
@@ -804,35 +804,35 @@ vibecode: {"section": "engine_startup_and_invocation", "scope":
 "what_user_ksj_can_see", "how_later_slices_extend"]}
 ```
 
-This section spells out the lifecycle of a KSJ run end-to-end: who
+This section spells out the lifecycle of a CharlieJSON run end-to-end: who
 launches it, what the engine does before user code executes, what user
 code can actually reference, and how that lifecycle grows in later
 slices. It answers two related questions that came up while scoping
-V0.01: **how do you start a KSJ script** and **how does the engine load
-allowed objects into the outermost KSJ block**.
+V0.01: **how do you start a CharlieJSON script** and **how does the engine load
+allowed objects into the outermost CharlieJSON block**.
 
 ### Host vs. engine
 
 ```
 vibecode: {"host_vs_engine": {"engine":
-"the_library_that_runs_ksj; located_under_code_kscript_lua",
+"the_library_that_runs_ksj; located_under_code_charlie_lua",
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
 "v001_host": "lua_test_runner_invoked_from_command_line",
-"later_hosts": ["standalone_cli_via_v00x_kscript_cli_slice",
+"later_hosts": ["standalone_cli_via_v00x_charlie_cli_slice",
 "sinatra_request_handler_v003_plus",
 "one_running_ksj_calling_another_via_function_dispatch"]}}
 ```
 
-The **engine** is the Lua library at `code/kscript/lua/` that knows how
-to parse and execute KSJ. The **host** is whatever calls into the
+The **engine** is the Lua library at `code/charlie/lua/` that knows how
+to parse and execute CharlieJSON. The **host** is whatever calls into the
 engine. They are different layers.
 
 In V0.01 the host is a Lua test runner invoked from the command line.
-Later hosts include the standalone `kscript` CLI (arrives in the
-[V0.0X kscript-cli slice](#v00x-kscript-command-line-execution),
+Later hosts include the standalone `charlie` CLI (arrives in the
+[V0.0X charlie-cli slice](#v00x-charlie-command-line-execution),
 prerequisite for V0.1 Bryton), a Sinatra request handler (at the
-first-HTTP slice — every handler closure is itself KSJ that the engine
-runs in response to a request), and one piece of running KSJ calling
+first-HTTP slice — every handler closure is itself CharlieJSON that the engine
+runs in response to a request), and one piece of running CharlieJSON calling
 another (which emerges from normal function dispatch, no separate
 engine API needed). Each host invokes the same `engine.run()` entry
 point; what differs is who triggers it and what they pass in.
@@ -842,11 +842,11 @@ point; what differs is who triggers it and what they pass in.
 ```
 vibecode: {"v001_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
-"lua tests/kscript/run.lua tests/kscript/fixtures/hello_world.ksj"},
+"lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.ksj"},
 {"step": 2, "name": "runner_loads_engine_as_lua_library",
-"example": "local engine = require(\"kscript\")"}, {"step": 3,
+"example": "local engine = require(\"charlie\")"}, {"step": 3,
 "name": "runner_calls_engine_run_with_file_path", "example":
-"local result = engine.run(\"tests/kscript/fixtures/hello_world.ksj\")"},
+"local result = engine.run(\"tests/charlie/fixtures/hello_world.ksj\")"},
 {"step": 4, "name": "engine_bootstrap_then_parse_then_execute",
 "covered_in_next_subsection": true}, {"step": 5, "name":
 "engine_returns_last_statement_value_to_runner_as_lua_value"},
@@ -857,9 +857,9 @@ vibecode: {"v001_invocation_chain": [{"step": 1, "name":
 Top-level shape:
 
 1. **Command-line invocation.** Something like
-   `lua tests/kscript/run.lua tests/kscript/fixtures/hello_world.ksj`.
+   `lua tests/charlie/run.lua tests/charlie/fixtures/hello_world.ksj`.
 2. **Runner loads the engine as a Lua library.** Roughly
-   `local engine = require("kscript")`.
+   `local engine = require("charlie")`.
 3. **Runner calls `engine.run()` with the fixture path.** Roughly
    `local result = engine.run("...fixtures/hello_world.ksj")`.
 4. **Engine bootstrap, parse, and execute happen behind that one
@@ -910,7 +910,7 @@ coming back:
    (current role is `user`); every method call goes through the
    dispatcher.
 
-4. **Load and parse the KSJ file.** The engine reads the path it was
+4. **Load and parse the CharlieJSON file.** The engine reads the path it was
    handed, gives the text to the JSON parser, gets back a parsed tree.
    For V0.01 the tree is `[[{"value": "hello"}, "to_string"]]`.
 
@@ -934,7 +934,7 @@ vibecode: {"program_model_v001": {"shape":
 "statements_run_in_order"}}
 ```
 
-A KSJ program is a **top-level array of statements**. The engine
+A CharlieJSON program is a **top-level array of statements**. The engine
 executes them in order. The "result" of the program is the value of
 the last top-level statement. There is no `main` function and no
 entry-point declaration — the outermost array IS the entry point.
@@ -942,7 +942,7 @@ entry-point declaration — the outermost array IS the entry point.
 Statements can define functions and call them, but for V0.01 the
 program is just one statement.
 
-### What user KSJ can see in V0.01
+### What user CharlieJSON can see in V0.01
 
 ```
 vibecode: {"v001_visibility": {"directly_referenceable_by_name":
@@ -966,7 +966,7 @@ The V0.01 fixture doesn't reference any object by name. It only:
 The string class is **not exposed as a named object** in V0.01. It's
 **discovered** by the dispatcher when a method call lands on a string
 value. This is the simplest possible answer to "how do allowed objects
-get loaded into the outermost KSJ block": in V0.01, they don't get
+get loaded into the outermost CharlieJSON block": in V0.01, they don't get
 loaded explicitly at all — they're available only through the
 dispatcher's class-lookup mechanism for values the engine itself
 created.
@@ -977,7 +977,7 @@ created.
 vibecode: {"growth_path": {"v002": {"bootstrap_change":
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
-"runner_may_optionally_transpile_kscript_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
+"runner_may_optionally_transpile_charlie_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
 "first_http": {"new_host": "sinatra_request_handler",
 "new_bootstrap_pieces":
 ["network_faucet_role; request_object_tagged_with_faucet_role"],
@@ -994,14 +994,14 @@ vibecode: {"growth_path": {"v002": {"bootstrap_change":
 
 V0.02 (transpiler) doesn't change the bootstrap sequence — the
 transpiler runs before the engine is invoked (probably as a runner-side
-step that turns `.kscript` text into KSJ), and the engine consumes the
-KSJ exactly as in V0.01.
+step that turns `.charlie` text into CharlieJSON), and the engine consumes the
+CharlieJSON exactly as in V0.01.
 
 Later slices extend the lifecycle in these ways:
 
 - **New hosts.** The first HTTP slice introduces a Sinatra request
   handler as a host: an incoming request triggers a handler closure
-  (itself KSJ) to execute. Same `engine.run()`-shaped entry; the
+  (itself CharlieJSON) to execute. Same `engine.run()`-shaped entry; the
   caller is different.
 - **Sys references** (`%stdout`, `%now`, `%role`, `%kiera`, etc.). The
   engine pre-populates a sys-reference table during bootstrap; user
@@ -1018,10 +1018,10 @@ Later slices extend the lifecycle in these ways:
 The bigger open question — **how the engine decides which capabilities
 a particular invocation gets** — is V1 work, not V0.01. The shape is
 still TBD. Likely candidates: engine-config-driven (the deployer
-specifies which built-ins and faucets a given KScript instance can
+specifies which built-ins and faucets a given Charlie instance can
 access); role-driven (a role's trust web determines what it can see).
 This is core to "running untrusted code" — the engine must be able to
-launch a KScript instance with a restricted surface that the running
+launch a Charlie instance with a restricted surface that the running
 code cannot escape. Flagged as an open item.
 
 ---
@@ -1034,7 +1034,7 @@ vibecode: {"section": "lua_implementation_sketch", "status":
 "language": "lua_5_4_assumed", "style":
 "plain_tables_no_metatables_for_v001; closures_for_role_transition_save_restore",
 "deliberately_not_specified":
-["module_layout_within_code_kscript_lua_kscript_directory",
+["module_layout_within_code_charlie_lua_charlie_directory",
 "naming_conventions_for_internal_locals",
 "exact_signature_of_existing_json_lua"]}
 ```
@@ -1042,7 +1042,7 @@ vibecode: {"section": "lua_implementation_sketch", "status":
 This section sketches the engine's internal Lua shape for V0.01: data
 structures, key procedures, and a pseudo-code skeleton. It is a
 **candidate target** to be reconciled with what's already in
-`code/kscript/lua/kscript/` during Step 1 (inventory) of Phase 1. Where
+`code/charlie/lua/charlie/` during Step 1 (inventory) of Phase 1. Where
 existing code already does something workable, use it; where it
 doesn't, the shapes below are the proposal.
 
@@ -1079,14 +1079,14 @@ reference, not the contents).
   }
   ```
 
-- **Value.** Every KSJ value the runtime holds is a Lua table with
+- **Value.** Every CharlieJSON value the runtime holds is a Lua table with
   three fields:
   ```lua
   { type = "string", owning_role = engine.roles.user, payload = "hello" }
   ```
   The `owning_role` field is a *reference* to one of the role objects
   in `engine.roles` — same Lua table, shared. Once set, it's never
-  reassigned (immutable per [roles.md](../kscript/roles.md)).
+  reassigned (immutable per [roles.md](../charlie/roles.md)).
 
 - **Class object.** Holds methods as a sub-table of Lua functions:
   ```lua
@@ -1140,7 +1140,7 @@ Five procedures cover V0.01:
   and execution context. Runs once per `engine.run` invocation.
 - `engine.dispatch(statement)` — handles one parsed statement (the
   `[receiver, method, args?]` triple).
-- `engine.materialize(expr)` — turns a KSJ expression
+- `engine.materialize(expr)` — turns a CharlieJSON expression
   (`{"value": ...}`, etc.) into a value table with `owning_role` tag.
 - `engine.transition(new_role, fn)` — wraps a Lua function call with
   save/restore of `engine.ctx`. Uses Lua's call stack via closures;
@@ -1158,7 +1158,7 @@ vibecode: {"pseudo_code_status":
 
 ```lua
 local engine = {}
-local json = require("kscript.json")     -- existing json.lua
+local json = require("charlie.json")     -- existing json.lua
 
 function engine.run(path)
     engine.bootstrap()
@@ -1258,7 +1258,7 @@ vibecode: {"sketch_notes": ["plain_tables_only_no_metatables_v001",
 "role_objects_shared_by_reference_across_owning_role_fields",
 "transition_uses_lua_call_stack_via_closure_no_explicit_transition_stack",
 "chain_is_initialized_to_empty_table_wipe_means_replace_with_fresh_table",
-"errors_use_lua_error_for_v001_no_kscript_exception_machinery_yet",
+"errors_use_lua_error_for_v001_no_charlie_exception_machinery_yet",
 "json_parse_assumed_to_return_nested_lua_tables_arrays_indexed_from_1"]}
 ```
 
@@ -1278,8 +1278,8 @@ A few specifics worth flagging:
 - **Chain wipe = replace, not clear.** `engine.ctx.chain = {}` creates
   a fresh empty table; the caller's saved-chain reference still points
   to the original. On restore, the original is reattached. Safe.
-- **Errors use Lua `error()` for V0.01.** KScript-level exception
-  machinery (alarms vs. regular exceptions per [roles.md](../kscript/roles.md))
+- **Errors use Lua `error()` for V0.01.** Charlie-level exception
+  machinery (alarms vs. regular exceptions per [roles.md](../charlie/roles.md))
   lands in a later slice. For V0.01, anything wrong = engine bails
   with a Lua error.
 - **JSON parser is assumed to return nested Lua tables**, arrays as
@@ -1293,7 +1293,7 @@ A few specifics worth flagging:
 ```
 vibecode: {"phase": 0, "version": "0.01", "purpose":
 "set_up_and_verify_lua_dev_environment_before_writing_any_engine_code",
-"explicitly_excludes": "executing_kscript_or_ksj; only_lua_level_sanity",
+"explicitly_excludes": "executing_charlie_or_ksj; only_lua_level_sanity",
 "steps_count": 6, "acceptance":
 "all_six_workbench_steps_pass; no_engine_code_written", "tactic":
 "verify_the_workbench_before_building_in_it"}
@@ -1301,7 +1301,7 @@ vibecode: {"phase": 0, "version": "0.01", "purpose":
 
 Before writing any engine code, the Lua-side development environment
 has to be verified. Six steps, each independently runnable. If a step
-fails, fix that before moving on. **No KScript or KSJ execution
+fails, fix that before moving on. **No Charlie or CharlieJSON execution
 happens in Phase 0** — this is purely Lua-level sanity.
 
 ### Step 0.1: Confirm Lua 5.4
@@ -1339,23 +1339,23 @@ followed by a newline. Exit code 0.
 
 ```
 vibecode: {"step": "0.3", "name": "package_path_check", "action":
-"set_package_path_prefix_to_code_kscript_lua; require_a_known_engine_module_no_error",
+"set_package_path_prefix_to_code_charlie_lua; require_a_known_engine_module_no_error",
 "expected": "require_call_returns_a_table_without_error"}
 ```
 
-The engine lives under `code/kscript/lua/`. Lua needs to find modules
-when `require("kscript.X")` is called. The convention:
+The engine lives under `code/charlie/lua/`. Lua needs to find modules
+when `require("charlie.X")` is called. The convention:
 
 ```lua
-package.path = "code/kscript/lua/?.lua;" .. package.path
+package.path = "code/charlie/lua/?.lua;" .. package.path
 ```
 
-Verify with a real existing engine module — `kscript.json` is the
+Verify with a real existing engine module — `charlie.json` is the
 natural choice since it's already in the tree:
 
-The existing `tests/kscript/run.lua` already sets up `package.path` to
-resolve both `code/kscript/lua/?.lua` (engine modules) and
-`tests/kscript/?.lua` (test-side modules including `support.runner`).
+The existing `tests/charlie/run.lua` already sets up `package.path` to
+resolve both `code/charlie/lua/?.lua` (engine modules) and
+`tests/charlie/?.lua` (test-side modules including `support.runner`).
 If launching tests from a different entry point, mirror that setup.
 
 A small sanity test exercising the path:
@@ -1364,11 +1364,11 @@ A small sanity test exercising the path:
 -- tests/sanity/test_package_path.lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local json = require("kscript.json")
+local json = require("charlie.json")
 
 runner.suite("sanity / package path")
 
-runner.test("kscript.json loaded as a table", function()
+runner.test("charlie.json loaded as a table", function()
     assert_.equal(type(json), "table")
 end)
 ```
@@ -1377,9 +1377,9 @@ end)
 
 ```
 vibecode: {"step": "0.4", "name": "verify_existing_test_framework",
-"existing_runner_module": "tests/kscript/support/runner.lua",
-"existing_assert_module": "tests/kscript/support/assert.lua",
-"existing_entry_point": "tests/kscript/run.lua",
+"existing_runner_module": "tests/charlie/support/runner.lua",
+"existing_assert_module": "tests/charlie/support/assert.lua",
+"existing_entry_point": "tests/charlie/run.lua",
 "do_not": "invent_a_new_harness; use_what_is_already_there",
 "runner_api": {"suite": "(name)", "test": "(name, fn)", "report":
 "() returns true_if_all_passed"}, "assert_api":
@@ -1389,7 +1389,7 @@ vibecode: {"step": "0.4", "name": "verify_existing_test_framework",
 ```
 
 The project already has a Lua test framework under
-`tests/kscript/support/`:
+`tests/charlie/support/`:
 
 - `support/runner.lua` — provides `runner.suite(name)`,
   `runner.test(name, fn)`, and `runner.report()`. Maintains pass/fail
@@ -1399,11 +1399,11 @@ The project already has a Lua test framework under
   `not_equal`, `is_nil`, `not_nil`, `is_true`, `is_false`, `kind`,
   `count`, `parse_error`. Each errors with a descriptive message on
   failure.
-- `tests/kscript/run.lua` — entry point. Adds `package.path`, requires
+- `tests/charlie/run.lua` — entry point. Adds `package.path`, requires
   all test modules, calls `runner.report()`, exits 0/1.
 
 The existing lexer/parser/transpiler tests already use this framework
-(`tests/kscript/lexer/test_literals.lua`, etc.). **Use it as-is for
+(`tests/charlie/lexer/test_literals.lua`, etc.). **Use it as-is for
 V0.01.** Don't invent a parallel harness.
 
 Verify it works by writing one trivial sanity test that uses the
@@ -1425,7 +1425,7 @@ runner.test("not_nil works", function()
 end)
 ```
 
-Then require it from `tests/kscript/run.lua` (or a temporary V0.01-only
+Then require it from `tests/charlie/run.lua` (or a temporary V0.01-only
 entry point) and run. Expected: two dots and a `2 / 2 passed` summary,
 exit 0.
 
@@ -1438,13 +1438,13 @@ description in the summary, and exit 1.
 ```
 vibecode: {"step": "0.5", "name": "json_parse_sanity",
 "fixture_path": "tests/sanity/test_json_parse.lua",
-"requires_module": "kscript.json", "parses": "{\"a\": 1}",
+"requires_module": "charlie.json", "parses": "{\"a\": 1}",
 "expected": "lua_table_with_a_equals_1", "side_effect":
 "discovers_json_lua_actual_api_for_inventory_step",
-"framework_used": "tests/kscript/support/runner_and_assert"}
+"framework_used": "tests/charlie/support/runner_and_assert"}
 ```
 
-The existing `code/kscript/lua/kscript/json.lua` is assumed to provide
+The existing `code/charlie/lua/charlie/json.lua` is assumed to provide
 a `parse` function. This step confirms it (and surfaces any API
 surprises for the V0.01 phase 1 inventory step).
 
@@ -1452,7 +1452,7 @@ surprises for the V0.01 phase 1 inventory step).
 -- tests/sanity/test_json_parse.lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local json = require("kscript.json")
+local json = require("charlie.json")
 
 runner.suite("sanity / json")
 
@@ -1471,16 +1471,16 @@ result, etc.), this is where we discover it — and the
 
 ```
 vibecode: {"step": "0.6", "name": "file_read_sanity",
-"fixture_path": "tests/kscript/fixtures/_sanity_text.txt",
+"fixture_path": "tests/charlie/fixtures/_sanity_text.txt",
 "fixture_content": "ok\\n", "test_file":
 "tests/sanity/test_file_read.lua",
-"framework_used": "tests/kscript/support/runner_and_assert"}
+"framework_used": "tests/charlie/support/runner_and_assert"}
 ```
 
-The engine has to read KSJ files from disk; this step confirms that
+The engine has to read CharlieJSON files from disk; this step confirms that
 works.
 
-Fixture: `tests/kscript/fixtures/_sanity_text.txt` containing the two
+Fixture: `tests/charlie/fixtures/_sanity_text.txt` containing the two
 bytes `ok` followed by a newline.
 
 ```lua
@@ -1491,7 +1491,7 @@ local assert_ = require("support.assert")
 runner.suite("sanity / file read")
 
 runner.test("io.open + read('*a') returns expected bytes", function()
-    local f = assert(io.open("tests/kscript/fixtures/_sanity_text.txt", "r"))
+    local f = assert(io.open("tests/charlie/fixtures/_sanity_text.txt", "r"))
     local content = f:read("*a")
     f:close()
     assert_.equal(content, "ok\n")
@@ -1509,13 +1509,13 @@ vibecode: {"phase_0_tests":
 "command_line_lua_dash_v", "framework": "none"}, {"id": "T0.2",
 "verifies": "pure_lua_script_runs_and_prints", "tool":
 "tests/sanity/lua_hello.lua", "framework": "none"}, {"id": "T0.3",
-"verifies": "package_path_resolves_kscript_json_via_require",
+"verifies": "package_path_resolves_charlie_json_via_require",
 "tool": "tests/sanity/test_package_path.lua", "framework":
 "support_runner_and_assert"}, {"id": "T0.4", "verifies":
 "existing_test_framework_reports_pass_fail_and_exit_code", "tool":
 "tests/sanity/test_framework_sanity.lua", "framework":
 "support_runner_and_assert"}, {"id": "T0.5", "verifies":
-"kscript_json_parse_handles_simple_object", "tool":
+"charlie_json_parse_handles_simple_object", "tool":
 "tests/sanity/test_json_parse.lua", "framework":
 "support_runner_and_assert"}, {"id": "T0.6", "verifies":
 "file_io_read_returns_expected_bytes", "tool":
@@ -1525,14 +1525,14 @@ vibecode: {"phase_0_tests":
 
 T0.1 and T0.2 are pre-framework — Lua isn't even confirmed working
 yet, so they can't depend on `support/runner.lua`. T0.3 onward use the
-project's existing framework (`tests/kscript/support/runner.lua` +
+project's existing framework (`tests/charlie/support/runner.lua` +
 `support/assert.lua`).
 
 | ID | Verifies | Tool | Framework |
 |---|---|---|---|
 | T0.1 | Lua 5.4 installed | `lua -v` | none |
 | T0.2 | Pure Lua script runs and prints | `tests/sanity/lua_hello.lua` | none |
-| T0.3 | package.path resolves kscript modules | `tests/sanity/test_package_path.lua` | `support/runner` |
+| T0.3 | package.path resolves charlie modules | `tests/sanity/test_package_path.lua` | `support/runner` |
 | T0.4 | Existing framework reports pass/fail | `tests/sanity/test_framework_sanity.lua` | `support/runner` |
 | T0.5 | json.lua parses simple object | `tests/sanity/test_json_parse.lua` | `support/runner` |
 | T0.6 | File I/O read returns expected bytes | `tests/sanity/test_file_read.lua` | `support/runner` |
@@ -1541,16 +1541,16 @@ All six must pass before V0.01 phase 1 begins.
 
 ---
 
-## V0.01 phase 1: hello-world in KScriptJSON
+## V0.01 phase 1: hello-world in CharlieJSON
 
 ```
 vibecode: {"phase": 1, "version": "0.01", "fixture_path":
-"tests/kscript/fixtures/hello_world.ksj", "fixture_content":
+"tests/charlie/fixtures/hello_world.ksj", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
-"tests/kscript/run.lua", "acceptance":
+"tests/charlie/run.lua", "acceptance":
 "fixture_runs_via_engine_and_harness_captures_return_value_hello",
 "required_ksj_forms": ["value_literal", "statement_call"], "required_runtime":
-["json_parser", "ksj_format_alignment_to_canonical_kscriptjson_spec",
+["json_parser", "ksj_format_alignment_to_canonical_charliejson_spec",
 "statement_dispatcher_with_role_transition",
 "method_dispatch", "literal_materialization_with_owning_role_tag",
 "role_registry_with_user_and_stdlib", "role_system_method",
@@ -1558,9 +1558,9 @@ vibecode: {"phase": 1, "version": "0.01", "fixture_path":
 "top_level_returns_last_statement_value_to_harness"],
 "required_stdlib": ["string_class_min_with_to_string_returning_self"],
 "tactic": "inventory_then_fill_gaps_and_align_format; spec_wins_over_existing_code",
-"canon": "kscriptjson_md_is_canonical; existing_transpiler_interpreter_format_is_pre_spec_and_gets_brought_into_line",
+"canon": "charliejson_md_is_canonical; existing_transpiler_interpreter_format_is_pre_spec_and_gets_brought_into_line",
 "deferred_to_v002":
-["kscript_text_parser", "transpiler_emitting_canonical_ksj"],
+["charlie_text_parser", "transpiler_emitting_canonical_ksj"],
 "deferred_to_later":
 ["sys_references_including_stdout", "stdout_io",
 "any_method_beyond_to_string", "any_class_beyond_string"]}
@@ -1568,29 +1568,29 @@ vibecode: {"phase": 1, "version": "0.01", "fixture_path":
 
 The first concrete development task. Work splits into three steps. The
 tactic is **inventory then fill gaps** — but with an important caveat:
-the existing engine consumes a KScriptJSON shape that **predates the
-canonical [kscriptjson.md](../kscript/kscriptjson.md) spec.** The
+the existing engine consumes a CharlieJSON shape that **predates the
+canonical [charliejson.md](../charlie/charliejson.md) spec.** The
 [V0.01 fixture](#v001-hello-world) is in the canonical form; the
 existing interpreter currently isn't.
 
-**Canon: the spec wins.** When `kscriptjson.md` and the existing
+**Canon: the spec wins.** When `charliejson.md` and the existing
 engine disagree, the spec is authoritative and the engine gets
 brought into line. The format-alignment work is part of V0.01
 scope, not a separate slice — Phase 1 doesn't end until the
-interpreter consumes canonical KSJ. (Per
+interpreter consumes canonical CharlieJSON. (Per
 [`feedback_surface_conflicts`](../../../.claude/projects/-home-miko-projects-mikobase-working/memory/feedback_surface_conflicts.md):
 this is a specific decision for this specific conflict, not a
 universal rule. Future conflicts get surfaced and resolved
 case-by-case.)
 
-The existing engine under `code/kscript/lua/kscript/` has a
+The existing engine under `code/charlie/lua/charlie/` has a
 `json.lua`, `interpreter.lua`, and other modules with 172 passing
 tests. The V0.01 work is to (a) verify the JSON parser handles the
-canonical form, (b) realign the KScriptJSON-execution path to the
+canonical form, (b) realign the CharlieJSON-execution path to the
 canonical statement shape `[receiver, method, args?]`, and (c)
-complete enough of the executor to run `hello-world`. The KScript
+complete enough of the executor to run `hello-world`. The Charlie
 text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is V0.02
-work; when it lands, the transpiler must also emit canonical KSJ
+work; when it lands, the transpiler must also emit canonical CharlieJSON
 so the source→runtime pipeline is end-to-end canonical.
 
 ### Step 1: Inventory
@@ -1603,20 +1603,20 @@ vibecode: {"step": 1, "name": "inventory", "actions":
 "state_of_engine_doc; gap_list_for_v001"}
 ```
 
-Read what's already in `code/kscript/lua/kscript/`: in particular `json.lua`
+Read what's already in `code/charlie/lua/charlie/`: in particular `json.lua`
 and `interpreter.lua`. Note the state of each:
 
 - Does `json.lua` parse the JSON forms `hello-world.ksj` needs (top-level
   array, nested array, object with string keys, string values)?
-- Does `interpreter.lua` accept a parsed KScriptJSON tree and dispatch
+- Does `interpreter.lua` accept a parsed CharlieJSON tree and dispatch
   statements?
 
-`lexer.lua`, `parser.lua`, and `transpiler.lua` are KScript-text-side
+`lexer.lua`, `parser.lua`, and `transpiler.lua` are Charlie-text-side
 concerns deferred to V0.02. Confirm they exist as scaffolding; don't trial
 them for V0.01.
 
 Output: a short gap list — "the JSON parser handles these forms / doesn't
-handle these; the interpreter executes these KScriptJSON shapes / doesn't
+handle these; the interpreter executes these CharlieJSON shapes / doesn't
 execute these; this is what's needed to clear V0.01."
 
 ### Step 2: Fill the gaps
@@ -1640,7 +1640,7 @@ For each gap in the inventory, add only what V0.01 needs.
 **Don't generalize ahead of the test.** The required surface is tiny:
 
 - Enough JSON parsing to read `[[{"value": "hello"}, "to_string"]]`.
-- Enough KScriptJSON execution to handle one top-level statement list,
+- Enough CharlieJSON execution to handle one top-level statement list,
   dispatch a single method call (with role transition), materialize a
   `value` literal with its owning-role tag, and return the last
   statement's value to the test harness.
@@ -1667,8 +1667,8 @@ vibecode: {"step": 3, "name": "verify", "actions":
 "any_deviation; failure_message_should_name_which_layer_blocked"}
 ```
 
-Create the fixture at `tests/kscript/fixtures/hello_world.ksj` containing
-the KScriptJSON encoding, run it via the engine, capture the last
+Create the fixture at `tests/charlie/fixtures/hello_world.ksj` containing
+the CharlieJSON encoding, run it via the engine, capture the last
 statement's return value, compare to the string `"hello"`. Pass = exact
 match on return value plus no exception. Fail = capture which layer
 blocked (JSON parse error? statement dispatch failed? literal
@@ -1676,7 +1676,7 @@ materialization failed? `to_string` method missing? role transition
 botched? return-to-harness path missing?). That layer is the next thing
 to fix; loop back to Step 2.
 
-When V0.01 passes, V0.02 (hello-world in KScript source, via the transpiler)
+When V0.01 passes, V0.02 (hello-world in Charlie source, via the transpiler)
 is selected from the roadmap and planned in the same three-step shape.
 
 ### Phase 1 test plan
@@ -1703,18 +1703,18 @@ vibecode: {"phase_1_tests":
 ```
 
 Seven unit tests plus one end-to-end integration test verify Phase 1.
-Each test is a Lua file under `tests/kscript/v001/` using the existing
+Each test is a Lua file under `tests/charlie/v001/` using the existing
 project framework (`support.runner` + `support.assert`), required from
-`tests/kscript/run.lua` (or a V0.01-specific entry point) and reported
+`tests/charlie/run.lua` (or a V0.01-specific entry point) and reported
 through `runner.report()`.
 
 Skeleton for a V0.01 test file:
 
 ```lua
--- tests/kscript/v001/test_bootstrap.lua
+-- tests/charlie/v001/test_bootstrap.lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local engine = require("kscript")
+local engine = require("charlie")
 
 runner.suite("v0.01 / bootstrap")
 
@@ -1746,7 +1746,7 @@ Every test in the plan below follows this pattern.
 | T1.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
 | T1.5 | unit | transition save/restore | Call `engine.transition(engine.roles.stdlib, function() return engine.ctx.current_role end)`; verify return == `engine.roles.stdlib` AND after the call `engine.ctx.current_role == engine.roles.user` and `engine.ctx.chain` is the original table |
 | T1.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
-| T1.7 | integration | full end-to-end | `engine.run("tests/kscript/fixtures/hello_world.ksj")` returns a value whose `payload == "hello"` |
+| T1.7 | integration | full end-to-end | `engine.run("tests/charlie/fixtures/hello_world.ksj")` returns a value whose `payload == "hello"` |
 | T1.8 | unit | transition observed | A spy in the `to_string` method records `engine.ctx.current_role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
 
 T1.8 is the load-bearing test for the role system: it proves the
@@ -1760,36 +1760,36 @@ All eight pass = V0.01 done.
 
 ```
 vibecode: {"test_framework":
-"project_existing_at_tests_kscript_support_runner_and_assert; do_not_invent_a_new_one",
+"project_existing_at_tests_charlie_support_runner_and_assert; do_not_invent_a_new_one",
 "file_naming_convention":
 "test_topic_dot_lua_matching_existing_lexer_parser_transpiler_files",
 "directory_layout": {"tests/sanity/":
 "phase_0_workbench_sanity_tests_engine_independent",
-"tests/kscript/fixtures/":
+"tests/charlie/fixtures/":
 "ksj_and_text_fixtures_consumed_by_engine_or_tests",
-"tests/kscript/v001/":
+"tests/charlie/v001/":
 "phase_1_unit_and_integration_tests_for_v001",
-"tests/kscript/run.lua":
+"tests/charlie/run.lua":
 "shared_entry_point_requires_all_test_modules_and_calls_runner_report",
-"tests/kscript/support/":
+"tests/charlie/support/":
 "existing_runner_and_assert_modules_unchanged"}}
 ```
 
-The project uses its existing test framework — `tests/kscript/support/runner.lua`
-(provides `suite`, `test`, `report`) and `tests/kscript/support/assert.lua`
+The project uses its existing test framework — `tests/charlie/support/runner.lua`
+(provides `suite`, `test`, `report`) and `tests/charlie/support/assert.lua`
 (assertion helpers). No new framework gets invented for V0.01. File
 naming follows the existing convention (`test_<topic>.lua`).
 
 | Path | Contents |
 |---|---|
 | `tests/sanity/` | Phase 0 workbench tests (engine-independent) |
-| `tests/kscript/fixtures/` | KSJ and text fixtures (e.g., `hello_world.ksj`, `_sanity_text.txt`) |
-| `tests/kscript/v001/` | Phase 1 unit and integration tests (V0.01-specific) |
-| `tests/kscript/run.lua` | Entry point — extended to also require sanity + V0.01 tests |
-| `tests/kscript/support/` | Existing `runner.lua` and `assert.lua`, unchanged |
+| `tests/charlie/fixtures/` | CharlieJSON and text fixtures (e.g., `hello_world.ksj`, `_sanity_text.txt`) |
+| `tests/charlie/v001/` | Phase 1 unit and integration tests (V0.01-specific) |
+| `tests/charlie/run.lua` | Entry point — extended to also require sanity + V0.01 tests |
+| `tests/charlie/support/` | Existing `runner.lua` and `assert.lua`, unchanged |
 
-Existing scaffolding under `tests/kscript/lexer/`, `tests/kscript/parser/`,
-and `tests/kscript/transpiler/` is V0.02+ territory; not exercised by
+Existing scaffolding under `tests/charlie/lexer/`, `tests/charlie/parser/`,
+and `tests/charlie/transpiler/` is V0.02+ territory; not exercised by
 V0.01 directly but already uses the same framework so the patterns
 above mirror what's there.
 
@@ -1805,10 +1805,10 @@ vibecode: {"phase": 0, "version": "0.02", "purpose":
 "tactic":
 "exercise_existing_pipeline_with_v002_fixture_string; observe_each_layer_output",
 "differs_from_v001_phase_0":
-"v001_phase_0_verified_lua_environment_and_json_lua_existed; v002_phase_0_verifies_existing_kscript_source_pipeline_handles_the_fixture_input"}
+"v001_phase_0_verified_lua_environment_and_json_lua_existed; v002_phase_0_verifies_existing_charlie_source_pipeline_handles_the_fixture_input"}
 ```
 
-V0.02's workbench is the existing KScript source pipeline (lexer →
+V0.02's workbench is the existing Charlie source pipeline (lexer →
 parser → transpiler). Before realigning the transpiler, Phase 0
 characterizes what each layer produces today for the V0.02 fixture
 string. The output is a concrete gap list driving Phase 1 step 2.
@@ -1823,14 +1823,14 @@ vibecode: {"step": "0.1", "name": "lexer_check",
 "input": "'hello'.to_string",
 "expected_token_kinds_in_order":
 ["string_literal", "dot", "identifier"],
-"tool": "kscript.tokenize from init.lua",
+"tool": "charlie.tokenize from init.lua",
 "acceptance":
 "no_lex_error; token_sequence_includes_string_literal_hello_then_dot_then_identifier_to_string"}
 ```
 
-`kscript.tokenize("'hello'.to_string")` returns a token sequence
+`charlie.tokenize("'hello'.to_string")` returns a token sequence
 covering the literal, the dot, and the identifier `to_string`. Existing
-lexer tests under `tests/kscript/lexer/` exercise each form
+lexer tests under `tests/charlie/lexer/` exercise each form
 individually; this step confirms the combination tokenizes cleanly.
 
 ### Step 0.2: Confirm the parser produces a clean AST
@@ -1840,12 +1840,12 @@ vibecode: {"step": "0.2", "name": "parser_check",
 "input": "'hello'.to_string",
 "expected_program_shape":
 "program_node_with_one_statement_node_representing_a_method_call_on_a_string_literal",
-"tool": "kscript.parse from init.lua",
+"tool": "charlie.parse from init.lua",
 "acceptance":
 "no_parse_error; ast_shape_documented_for_phase_1_inventory"}
 ```
 
-`kscript.parse("'hello'.to_string")` returns an AST. Step 0.2 documents
+`charlie.parse("'hello'.to_string")` returns an AST. Step 0.2 documents
 the exact `kind` of the top-level node, the method-call node, and the
 literal node so Phase 1 step 1 can compare directly.
 
@@ -1854,16 +1854,16 @@ literal node so Phase 1 step 1 can compare directly.
 ```
 vibecode: {"step": "0.3", "name": "transpiler_baseline",
 "input": "'hello'.to_string",
-"tool": "kscript.transpile from init.lua",
+"tool": "charlie.transpile from init.lua",
 "expected":
 "captures_actual_current_output_for_comparison_to_canonical_in_phase_1",
 "acceptance":
 "transpile_completes_without_error; output_recorded_as_phase_1_baseline; current_shape_is_pre_canonical_and_that_is_expected"}
 ```
 
-`kscript.transpile("'hello'.to_string")` returns a Lua table. The
+`charlie.transpile("'hello'.to_string")` returns a Lua table. The
 current output is pre-canonical — it matches `interpreter.lua`'s
-consumption shape, not `kscriptjson.md`'s `[receiver, method, args?]`
+consumption shape, not `charliejson.md`'s `[receiver, method, args?]`
 shape. Phase 0 captures what comes out today; the diff against canonical
 is computed in Phase 1.
 
@@ -1883,7 +1883,7 @@ The V0.01 engine takes a path (`engine.run(path)`) — it reads the file,
 parses JSON, then iterates. To wire the transpiler in, the file-read +
 JSON-parse step has to be separable from the dispatch loop. Step 0.4
 confirms (or, if needed, introduces) a callable
-`engine.run_tree(tree)` that takes a pre-built canonical KSJ Lua table
+`engine.run_tree(tree)` that takes a pre-built canonical CharlieJSON Lua table
 and returns the same result the file-based path would.
 
 If the V0.01 implementation already factored this out, Step 0.4 is a
@@ -1896,16 +1896,16 @@ one-line test. If not, Step 0.4 adds the helper purely as refactoring
 vibecode: {"phase_0_tests":
 [{"id": "T2.0.1", "verifies":
 "lexer_handles_v002_fixture_string", "tool":
-"tests/kscript/v002/test_lexer_check.lua", "level": "unit"},
+"tests/charlie/v002/test_lexer_check.lua", "level": "unit"},
 {"id": "T2.0.2", "verifies":
 "parser_returns_ast_for_v002_fixture_string", "tool":
-"tests/kscript/v002/test_parser_check.lua", "level": "unit"},
+"tests/charlie/v002/test_parser_check.lua", "level": "unit"},
 {"id": "T2.0.3", "verifies":
 "transpiler_completes_without_error_for_v002_fixture_string; current_output_captured_for_phase_1_comparison",
-"tool": "tests/kscript/v002/test_transpiler_baseline.lua",
+"tool": "tests/charlie/v002/test_transpiler_baseline.lua",
 "level": "unit"}, {"id": "T2.0.4", "verifies":
 "engine_run_tree_returns_value_for_hand_built_canonical_tree",
-"tool": "tests/kscript/v002/test_engine_run_tree.lua",
+"tool": "tests/charlie/v002/test_engine_run_tree.lua",
 "level": "unit"}]}
 ```
 
@@ -1921,13 +1921,13 @@ V0.02 phase 1 begins.
 
 ---
 
-## V0.02 phase 1: hello-world from KScript source
+## V0.02 phase 1: hello-world from Charlie source
 
 ```
 vibecode: {"phase": 1, "version": "0.02", "fixture_path":
-"tests/kscript/fixtures/hello_world.kscript", "fixture_content":
+"tests/charlie/fixtures/hello_world.charlie", "fixture_content":
 "'hello'.to_string", "runner_path":
-"tests/kscript/run.lua", "acceptance":
+"tests/charlie/run.lua", "acceptance":
 "fixture_transpiles_to_canonical_ksj_and_engine_run_source_returns_value_payload_hello",
 "required_work":
 ["transpiler_realignment_for_hello_world_ast_only",
@@ -1937,13 +1937,13 @@ vibecode: {"phase": 1, "version": "0.02", "fixture_path":
 ["bootstrap", "materialize", "lookup_method", "transition", "dispatch"],
 "out_of_scope":
 ["full_transpiler_retrofit", "interpreter_lua_removal",
-"renaming_or_deprecation_of_existing_kscript_run_source_in_init_lua",
+"renaming_or_deprecation_of_existing_charlie_run_source_in_init_lua",
 "sys_references_or_stdout_io",
 "additional_classes_or_methods_beyond_to_string"],
 "tactic":
 "minimal_realignment_just_for_hello_world_ast; later_slices_extend",
 "canon":
-"kscriptjson_md_is_canonical; transpiler_output_must_match_v001_hand_written_fixture_for_this_ast"}
+"charliejson_md_is_canonical; transpiler_output_must_match_v001_hand_written_fixture_for_this_ast"}
 ```
 
 Three steps. Same shape as V0.01 Phase 1: inventory, fill gaps, verify.
@@ -1970,7 +1970,7 @@ the V0.02 fixture in mind. Document:
 - The diff between that shape and the canonical
   `[[{"value": "hello"}, "to_string"]]`.
 - The set of existing transpiler tests under
-  `tests/kscript/transpiler/` that assert on the pre-canonical shape
+  `tests/charlie/transpiler/` that assert on the pre-canonical shape
   for the AST nodes we'll realign. These will need updating in Step 2.
 
 Output: a short text summary of the gap (which fields differ, which
@@ -2002,7 +2002,7 @@ For each gap from Step 1, add only what V0.02 needs:
   wrapper. Other AST node types (assignment, if, while, bwc, function
   definition, etc.) stay pre-canonical for now.
 - **Engine wiring.** Add `engine.run_source(path)` that reads a
-  `.kscript` file, transpiles to canonical KSJ, and iterates the
+  `.charlie` file, transpiles to canonical CharlieJSON, and iterates the
   dispatch loop. If `engine.run` doesn't already separate file-read
   from dispatch, extract `engine.run_tree(tree)` and refactor
   `engine.run` to call it. `engine.run_source(path)` also calls
@@ -2012,7 +2012,7 @@ For each gap from Step 1, add only what V0.02 needs:
   tests to the canonical shape. Tests for AST nodes we don't touch
   stay as-is.
 - **Assertion helper.** Add `assert.deep_equal(got, expected, msg)` to
-  `tests/kscript/support/assert.lua` for table equality with a
+  `tests/charlie/support/assert.lua` for table equality with a
   first-divergent-path failure message. Needed by T2.1 and useful for
   every later slice that compares trees.
 
@@ -2024,7 +2024,7 @@ slices exercise each AST node, not all at once.
 
 ```
 vibecode: {"step": 3, "name": "verify", "actions":
-["create_kscript_source_fixture",
+["create_charlie_source_fixture",
 "run_via_engine_run_source",
 "compare_returned_value_payload_to_hello",
 "compare_transpiled_tree_to_v001_hand_written_canonical_fixture"],
@@ -2034,7 +2034,7 @@ vibecode: {"step": 3, "name": "verify", "actions":
 "any_deviation; failure_message_names_which_layer_blocked"}
 ```
 
-Create `tests/kscript/fixtures/hello_world.kscript` containing
+Create `tests/charlie/fixtures/hello_world.charlie` containing
 `'hello'.to_string`. Run it via `engine.run_source(path)`. Verify two
 things:
 
@@ -2059,7 +2059,7 @@ vibecode: {"phase_1_tests":
 "level": "unit"}, {"id": "T2.2", "verifies":
 "engine_run_tree_returns_payload_hello_for_v001_canonical_tree",
 "level": "unit"}, {"id": "T2.3", "verifies":
-"engine_run_source_returns_payload_hello_for_v002_kscript_fixture_file",
+"engine_run_source_returns_payload_hello_for_v002_charlie_fixture_file",
 "level": "integration_end_to_end"}, {"id": "T2.4", "verifies":
 "ctx_back_to_user_after_engine_run_source_returns",
 "level": "unit_observability_check"}, {"id": "T2.5", "verifies":
@@ -2069,19 +2069,19 @@ vibecode: {"phase_1_tests":
 "level": "regression_check"}]}
 ```
 
-Six tests for V0.02 phase 1. Each lives under `tests/kscript/v002/`
+Six tests for V0.02 phase 1. Each lives under `tests/charlie/v002/`
 using the same framework (`support.runner` + `support.assert`).
 
 | ID | Level | Verifies | How |
 |---|---|---|---|
-| T2.1 | unit | Transpiler emits canonical for the fixture | `assert.deep_equal(kscript.transpile("'hello'.to_string"), {{ {value="hello"}, "to_string" }})` |
+| T2.1 | unit | Transpiler emits canonical for the fixture | `assert.deep_equal(charlie.transpile("'hello'.to_string"), {{ {value="hello"}, "to_string" }})` |
 | T2.2 | unit | `engine.run_tree` returns payload `"hello"` | Hand-build the canonical tree in Lua, pass to `engine.run_tree`, assert on result |
-| T2.3 | integration | `engine.run_source` returns payload `"hello"` from the source fixture file | `engine.run_source("tests/kscript/fixtures/hello_world.kscript")` |
+| T2.3 | integration | `engine.run_source` returns payload `"hello"` from the source fixture file | `engine.run_source("tests/charlie/fixtures/hello_world.charlie")` |
 | T2.4 | unit | ctx restored to user after `engine.run_source` returns | Mirror of V0.01 T1.7's second assertion |
-| T2.5 | regression | `engine.run` of V0.01 KSJ fixture still works | Identical to V0.01 T1.7 — must not regress |
+| T2.5 | regression | `engine.run` of V0.01 CharlieJSON fixture still works | Identical to V0.01 T1.7 — must not regress |
 | T2.6 | regression | Pre-canonical transpiler tests for unrelated AST types still pass | The unchanged transpiler test files continue to pass; the changed ones reflect canonical output |
 
-T2.5 and T2.6 are regression checks: the engine's KSJ-file path and the
+T2.5 and T2.6 are regression checks: the engine's CharlieJSON-file path and the
 unchanged transpiler paths must continue to work after V0.02's
 realignment. If either breaks, that's a sign V0.02 reached further than
 its declared scope.
@@ -2091,23 +2091,23 @@ All six pass = V0.02 done.
 ### V0.02 test layout
 
 ```
-vibecode: {"test_directory": "tests/kscript/v002/",
-"fixture_path": "tests/kscript/fixtures/hello_world.kscript",
+vibecode: {"test_directory": "tests/charlie/v002/",
+"fixture_path": "tests/charlie/fixtures/hello_world.charlie",
 "entry_point_change":
-"tests_kscript_run_lua_extended_to_require_v002_test_modules",
+"tests_charlie_run_lua_extended_to_require_v002_test_modules",
 "transpiler_test_updates":
-"tests_kscript_transpiler_test_files_updated_only_for_realigned_ast_nodes",
+"tests_charlie_transpiler_test_files_updated_only_for_realigned_ast_nodes",
 "support_helper_addition":
-"tests_kscript_support_assert_lua_gains_deep_equal_helper"}
+"tests_charlie_support_assert_lua_gains_deep_equal_helper"}
 ```
 
 | Path | Contents |
 |---|---|
-| `tests/kscript/fixtures/hello_world.kscript` | KScript source fixture (sibling of `hello_world.ksj`) |
-| `tests/kscript/v002/` | Phase 0 and Phase 1 unit + integration tests |
-| `tests/kscript/run.lua` | Extended to require V0.02 test modules |
-| `tests/kscript/support/assert.lua` | Gains a `deep_equal` helper |
-| `tests/kscript/transpiler/test_*.lua` | Updated only for AST nodes realigned in V0.02 |
+| `tests/charlie/fixtures/hello_world.charlie` | Charlie source fixture (sibling of `hello_world.ksj`) |
+| `tests/charlie/v002/` | Phase 0 and Phase 1 unit + integration tests |
+| `tests/charlie/run.lua` | Extended to require V0.02 test modules |
+| `tests/charlie/support/assert.lua` | Gains a `deep_equal` helper |
+| `tests/charlie/transpiler/test_*.lua` | Updated only for AST nodes realigned in V0.02 |
 
 ### V0.02 open questions
 
@@ -2115,13 +2115,13 @@ vibecode: {"test_directory": "tests/kscript/v002/",
 vibecode: {"open_questions":
 ["api_naming_for_source_side_entry_point",
 "deep_equal_assert_helper_signature_and_first_divergent_path_format",
-"whether_existing_kscript_run_source_in_init_lua_should_be_renamed_or_deprecated_in_v002_or_later",
+"whether_existing_charlie_run_source_in_init_lua_should_be_renamed_or_deprecated_in_v002_or_later",
 "how_much_transpiler_test_churn_in_practice"]}
 ```
 
 - **API naming.** `engine.run_source(path)` is the working name.
-  Alternatives: `engine.run_kscript(path)`, `kscript.run_source(path)`,
-  `kscript.execute_file(path)`. Decision can wait until the function is
+  Alternatives: `engine.run_charlie(path)`, `charlie.run_source(path)`,
+  `charlie.execute_file(path)`. Decision can wait until the function is
   written — easy to rename.
 - **`assert.deep_equal` signature.** Existing `support/assert.lua` uses
   descriptive failure messages. The deep_equal helper should surface
@@ -2162,13 +2162,13 @@ The new questions are bwc-specific and stdout-injection-specific.
 ```
 vibecode: {"step": "0.1", "name": "source_pipeline_baseline",
 "input": "puts 'hello'", "tools":
-["kscript.tokenize", "kscript.parse", "kscript.transpile"],
+["charlie.tokenize", "charlie.parse", "charlie.transpile"],
 "acceptance":
 "all_three_run_without_error; current_transpiler_output_for_puts_call_recorded_as_phase_1_baseline; ast_node_kind_for_bwc_call_documented"}
 ```
 
-Run `kscript.tokenize("puts 'hello'")`, `kscript.parse(...)`, and
-`kscript.transpile(...)`. Record the AST node `kind` for the bwc-call
+Run `charlie.tokenize("puts 'hello'")`, `charlie.parse(...)`, and
+`charlie.transpile(...)`. Record the AST node `kind` for the bwc-call
 form and the current transpiler output. The current output is
 pre-canonical (matches `interpreter.lua`'s legacy bwc shape, e.g.,
 `[{bwc:'puts'}, '&', {args:[{value:'hello'}]}]`); the canonical target
@@ -2207,7 +2207,7 @@ vibecode: {"step": "0.3", "name": "legacy_bwc_reference",
 `interpreter.lua` already has a `puts` bwc handler (it predates V0.01).
 Step 0.3 reads that implementation as a reference for the V0.03
 implementation — particularly the stdout-override pattern via
-`env.stdout`. V0.03 adopts that pattern verbatim; the canonical KSJ
+`env.stdout`. V0.03 adopts that pattern verbatim; the canonical CharlieJSON
 shape is different but the host-level capture mechanism doesn't need
 to change.
 
@@ -2217,10 +2217,10 @@ to change.
 vibecode: {"phase_0_tests":
 [{"id": "T3.0.1", "verifies":
 "source_pipeline_completes_for_puts_hello_fixture_and_baseline_output_captured",
-"tool": "tests/kscript/v003/test_source_baseline.lua", "level": "unit"},
+"tool": "tests/charlie/v003/test_source_baseline.lua", "level": "unit"},
 {"id": "T3.0.2", "verifies":
 "engine_run_source_signature_compatible_with_optional_env_argument",
-"tool": "tests/kscript/v003/test_env_signature.lua", "level": "unit"}]}
+"tool": "tests/charlie/v003/test_env_signature.lua", "level": "unit"}]}
 ```
 
 | ID | Level | Verifies | Tool |
@@ -2233,12 +2233,12 @@ before V0.03 phase 1 begins.
 
 ---
 
-## V0.03 phase 1: puts-hello from KScript source
+## V0.03 phase 1: puts-hello from Charlie source
 
 ```
 vibecode: {"phase": 1, "version": "0.03", "fixture_path":
-"tests/kscript/fixtures/puts_hello.kscript", "fixture_content":
-"puts 'hello'", "runner_path": "tests/kscript/run.lua",
+"tests/charlie/fixtures/puts_hello.charlie", "fixture_content":
+"puts 'hello'", "runner_path": "tests/charlie/run.lua",
 "acceptance":
 "fixture_transpiles_to_canonical_bwc_form_and_engine_run_source_with_capture_sink_produces_stdout_buffer_hello_newline",
 "required_work":
@@ -2267,7 +2267,7 @@ verify.
 vibecode: {"step": 1, "name": "inventory", "actions":
 ["read_existing_transpiler_to_see_how_bwc_calls_are_emitted_today",
 "read_existing_interpreter_lua_puts_handler_for_reference",
-"document_canonical_target_shape_per_kscriptjson_md",
+"document_canonical_target_shape_per_charliejson_md",
 "identify_engine_dispatch_branch_that_needs_extending_for_bwc_receiver_form",
 "identify_transpiler_tests_that_will_need_updating_for_realigned_bwc_emit"],
 "output":
@@ -2277,11 +2277,11 @@ vibecode: {"step": 1, "name": "inventory", "actions":
 Read the existing `transpiler.lua` for its bwc-call output shape, the
 existing `interpreter.lua` for its `puts` handler (lines around the
 `puts = function(interp, args) ... end` definition), and
-`kscriptjson.md` for the canonical bwc-call shape
+`charliejson.md` for the canonical bwc-call shape
 (`[{bwc: "name"}, arg?]`). Document:
 
 - Current transpiler output for `puts 'hello'`.
-- Target canonical shape per kscriptjson.md.
+- Target canonical shape per charliejson.md.
 - The diff (likely the `'&'` sigil and `{args: [...]}` wrapper drop
   away in canonical form).
 - Which existing transpiler tests assert on the pre-canonical bwc
@@ -2333,7 +2333,7 @@ For each gap from Step 1, add only what V0.03 needs:
 - **Test capture sink.** A small Lua-side helper builds an `env` with
   `env.stdout = function(s) buf[#buf+1] = s end` and exposes the
   concatenated buffer for the test assertion. Lives under
-  `tests/kscript/v003/` or extends `tests/kscript/support/` if reused.
+  `tests/charlie/v003/` or extends `tests/charlie/support/` if reused.
 
 Per the no-bolt-on principle: anything beyond `puts` with one string
 argument (a second bwc, two arguments, kwargs, escapes inside the
@@ -2343,7 +2343,7 @@ string, etc.) is later work.
 
 ```
 vibecode: {"step": 3, "name": "verify", "actions":
-["create_kscript_source_fixture",
+["create_charlie_source_fixture",
 "build_capture_sink_env",
 "run_via_engine_run_source_with_env",
 "assert_captured_stdout_equals_hello_newline",
@@ -2354,7 +2354,7 @@ vibecode: {"step": 3, "name": "verify", "actions":
 "any_deviation; failure_message_names_which_layer_blocked"}
 ```
 
-Create `tests/kscript/fixtures/puts_hello.kscript` containing
+Create `tests/charlie/fixtures/puts_hello.charlie` containing
 `puts 'hello'`. Build a capture-sink `env`. Run via
 `engine.run_source(path, env)`. Verify:
 
@@ -2389,7 +2389,7 @@ vibecode: {"phase_1_tests":
 "level": "regression_check"}]}
 ```
 
-Seven tests for V0.03 phase 1. Each lives under `tests/kscript/v003/`
+Seven tests for V0.03 phase 1. Each lives under `tests/charlie/v003/`
 using the same framework. T3.5 is the load-bearing role test (mirror of
 V0.01 T1.8): a spy on the `puts` handler records
 `engine.ctx.current_role` at call time; assert it was `stdout`, not
@@ -2397,35 +2397,35 @@ V0.01 T1.8): a spy on the `puts` handler records
 
 | ID | Level | Verifies | How |
 |---|---|---|---|
-| T3.1 | unit | Transpiler emits canonical bwc form | `assert.deep_equal(kscript.transpile("puts 'hello'"), {{ {bwc="puts"}, {value="hello"} }})` |
+| T3.1 | unit | Transpiler emits canonical bwc form | `assert.deep_equal(charlie.transpile("puts 'hello'"), {{ {bwc="puts"}, {value="hello"} }})` |
 | T3.2 | unit | Bootstrap registers stdout role and `puts` | `engine.roles.stdout` exists; `engine.bwcs.puts.fn` is a function; `engine.bwcs.puts.owning_role == engine.roles.stdout` |
 | T3.3 | unit | Dispatch routes bwc to handler | Hand-build `[{bwc:"puts"}, {value:"x"}]`; pass to `engine.dispatch` with a capture env; assert capture has `"x\n"` |
 | T3.4 | unit | `env.stdout` override accepted | `engine.run_source(path, {stdout = capture})` runs without error |
 | T3.5 | unit | Transition to stdout role observed during dispatch | Spy on `puts` handler records role at call time; assert it was `stdout` |
-| T3.6 | integration | End-to-end via source file | `engine.run_source("tests/kscript/fixtures/puts_hello.kscript", env)` leaves `env` buffer == `"hello\n"` |
-| T3.7 | regression | V0.01 and V0.02 fixtures still work | Run V0.01 `hello_world.ksj` via `engine.run` and V0.02 `hello_world.kscript` via `engine.run_source`; both still return payload `"hello"` |
+| T3.6 | integration | End-to-end via source file | `engine.run_source("tests/charlie/fixtures/puts_hello.charlie", env)` leaves `env` buffer == `"hello\n"` |
+| T3.7 | regression | V0.01 and V0.02 fixtures still work | Run V0.01 `hello_world.ksj` via `engine.run` and V0.02 `hello_world.charlie` via `engine.run_source`; both still return payload `"hello"` |
 
 All seven pass = V0.03 done.
 
 ### V0.03 test layout
 
 ```
-vibecode: {"test_directory": "tests/kscript/v003/",
-"fixture_path": "tests/kscript/fixtures/puts_hello.kscript",
+vibecode: {"test_directory": "tests/charlie/v003/",
+"fixture_path": "tests/charlie/fixtures/puts_hello.charlie",
 "entry_point_change":
-"tests_kscript_run_lua_extended_to_require_v003_test_modules",
+"tests_charlie_run_lua_extended_to_require_v003_test_modules",
 "capture_sink_helper":
-"tests_kscript_v003_support_capture_lua_or_inlined_per_test",
+"tests_charlie_v003_support_capture_lua_or_inlined_per_test",
 "transpiler_test_updates":
-"tests_kscript_transpiler_test_files_for_bwc_paths_updated_only"}
+"tests_charlie_transpiler_test_files_for_bwc_paths_updated_only"}
 ```
 
 | Path | Contents |
 |---|---|
-| `tests/kscript/fixtures/puts_hello.kscript` | Source fixture for V0.03 |
-| `tests/kscript/v003/` | Phase 0 and Phase 1 tests |
-| `tests/kscript/run.lua` | Extended to require V0.03 test modules |
-| `tests/kscript/transpiler/test_*.lua` | Updated only for bwc paths realigned in V0.03 |
+| `tests/charlie/fixtures/puts_hello.charlie` | Source fixture for V0.03 |
+| `tests/charlie/v003/` | Phase 0 and Phase 1 tests |
+| `tests/charlie/run.lua` | Extended to require V0.03 test modules |
+| `tests/charlie/transpiler/test_*.lua` | Updated only for bwc paths realigned in V0.03 |
 
 ### V0.03 open questions
 
@@ -2460,14 +2460,14 @@ vibecode: {"open_questions":
 
 ---
 
-## V0.0X: KScript command-line execution
+## V0.0X: Charlie command-line execution
 
 ```
-vibecode: {"slice": "v0_0x_kscript_cli", "codename":
-"kscript_cli", "position_in_roadmap":
-"after_v005_kscript_with_json_serialization; before_v01_bryton",
+vibecode: {"slice": "v0_0x_charlie_cli", "codename":
+"charlie_cli", "position_in_roadmap":
+"after_v005_charlie_with_json_serialization; before_v01_bryton",
 "goal":
-"introduce_kscript_as_os_level_command_for_running_kscript_files_with_explicit_permission_model",
+"introduce_charlie_as_os_level_command_for_running_charlie_files_with_explicit_permission_model",
 "hard_prerequisite_for": "v0_1_bryton",
 "permission_posture":
 "default_restrictive; opt_in_via_flags_deno_shape",
@@ -2479,22 +2479,22 @@ Hard prerequisite for [V0.1 Bryton](#v01-bryton) — Bryton
 subprocess-invokes test files (per the
 [Bryton spec](../overview.md#tests-are-runnable-scripts), every
 test file is "an ordinary executable"). This slice introduces
-`kscript` as an OS-level command and pins down the permission model
-for KScript code launched at the CLI.
+`charlie` as an OS-level command and pins down the permission model
+for Charlie code launched at the CLI.
 
 ### What the slice introduces
 
 ```
-vibecode: {"introduces": ["kscript_command_line_launcher",
-"shebang_support", "argument_passing_into_kscript",
+vibecode: {"introduces": ["charlie_command_line_launcher",
+"shebang_support", "argument_passing_into_charlie",
 "stderr_sink_and_role",
 "routing_convention_engine_errors_to_stderr_program_output_to_stdout",
 "exit_codes_zero_on_clean_completion_nonzero_on_alarm_or_uncaught",
 "permission_flag_machinery"],
 "note_on_stdout":
-"stdout_sink_and_puts_bwc_already_shipped_in_v003_kscript_with_stdout; v00x_cli_adds_stderr_as_a_peer_sink_plus_the_routing_convention",
+"stdout_sink_and_puts_bwc_already_shipped_in_v003_charlie_with_stdout; v00x_cli_adds_stderr_as_a_peer_sink_plus_the_routing_convention",
 "launcher_responsibilities":
-["take_a_kscript_file_path_as_first_argument",
+["take_a_charlie_file_path_as_first_argument",
 "set_up_engine_with_minimum_roles",
 "wire_up_faucets_for_any_granted_flags",
 "invoke_engine_run_on_the_file",
@@ -2502,13 +2502,13 @@ vibecode: {"introduces": ["kscript_command_line_launcher",
 "exit_with_appropriate_code"]}
 ```
 
-- A `kscript` command-line launcher — a small script taking a
-  `.kscript` file path as its first argument, invoking the engine,
+- A `charlie` command-line launcher — a small script taking a
+  `.charlie` file path as its first argument, invoking the engine,
   exiting with an appropriate code.
-- Shebang support — `.kscript` files starting with
-  `#!/usr/bin/env kscript` are directly runnable via `chmod +x` and
-  `./file.kscript`.
-- Argument passing from OS argv into the running KScript program
+- Shebang support — `.charlie` files starting with
+  `#!/usr/bin/env charlie` are directly runnable via `chmod +x` and
+  `./file.charlie`.
+- Argument passing from OS argv into the running Charlie program
   (surfaced via `%argv`; exact shape settled in this slice).
 - **stderr sink** — engine-introduced peer of the stdout sink that
   shipped in V0.03. Has its own role (`stderr`); writes go to the
@@ -2537,9 +2537,9 @@ vibecode: {"permission_model": "default_restrictive_opt_in_via_flags",
 ["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}
 ```
 
-Following the role-based security model in [roles.md](../kscript/roles.md) and the
+Following the role-based security model in [roles.md](../charlie/roles.md) and the
 no-dangerous-defaults discipline, the CLI uses a **default-restrictive**
-posture: a `.kscript` program invoked via the CLI gets only the minimum
+posture: a `.charlie` program invoked via the CLI gets only the minimum
 roles and faucets, with everything else opt-in via flags. This mirrors
 Deno's local-script model.
 
@@ -2548,7 +2548,7 @@ Deno's local-script model.
 | Capability | Role | Why default |
 |---|---|---|
 | Program execution context | `user` | The program has to run as something |
-| Clock | `clock` | Per [roles.md](../kscript/roles.md) engine minimum |
+| Clock | `clock` | Per [roles.md](../charlie/roles.md) engine minimum |
 | Randomizer | `randomizer` | Per engine minimum |
 | `%utils` namespace | `utils` | Per engine minimum |
 | stdin object | `stdin` faucet | The controlling terminal |
@@ -2569,22 +2569,22 @@ Deno's local-script model.
 | `--allow-all` (or `-A`) | Everything above | convenience for trusted local scripts |
 
 `--allow-all` is the escape hatch for "this is my own script and I
-trust myself." Without it, KScript at the CLI runs sandboxed by
+trust myself." Without it, Charlie at the CLI runs sandboxed by
 default — the developer has to think about what the program needs.
 
 #### Examples
 
 ```bash
-./hello.kscript
+./hello.charlie
 # stdin/out/err/argv + engine minimums only; nothing else
 
-kscript --allow-fs=. ./read_file.kscript
+charlie --allow-fs=. ./read_file.charlie
 # adds read-write dirjail rooted at current directory
 
-kscript --allow-fs-read=. --allow-net=api.example.com:443 ./fetch.kscript
+charlie --allow-fs-read=. --allow-net=api.example.com:443 ./fetch.charlie
 # read-only filesystem + single-host network
 
-kscript --allow-all ./my_local_tool.kscript
+charlie --allow-all ./my_local_tool.charlie
 # everything; for trusted local scripts
 ```
 
@@ -2593,7 +2593,7 @@ kscript --allow-all ./my_local_tool.kscript
 ```
 vibecode: {"installation_model":
 "project_local_bin_plus_path; no_system_install",
-"launcher_path_in_repo": "bin/kscript",
+"launcher_path_in_repo": "bin/charlie",
 "user_action_once":
 "add_project_bin_directory_to_path_in_shell_rc",
 "launcher_is_self_locating":
@@ -2605,11 +2605,11 @@ vibecode: {"installation_model":
 "system_install_status": "v1_plus_deployment_concern; not_v00x_work"}
 ```
 
-The `kscript` launcher lives at `bin/kscript` inside the repo. There
+The `charlie` launcher lives at `bin/charlie` inside the repo. There
 is **no system-level install** in V0.0X — root access is not required,
 and `/usr/local/bin/` (or equivalent) is not touched.
 
-To make `kscript` available as a command, the user adds the project's
+To make `charlie` available as a command, the user adds the project's
 `bin/` directory to their `$PATH` once, in their shell's rc file:
 
 ```bash
@@ -2618,12 +2618,12 @@ export PATH="/path/to/kiera/working/bin:$PATH"   # replace with your local check
 ```
 
 After re-sourcing the rc file (or starting a new shell),
-`kscript ./foo.kscript` works from any directory.
+`charlie ./foo.charlie` works from any directory.
 
-**The launcher is self-locating.** When invoked, `bin/kscript`
+**The launcher is self-locating.** When invoked, `bin/charlie`
 computes its own absolute path, derives the repo root from that, and
-resolves the engine at `<repo_root>/code/kscript/lua/`. This works
-regardless of the user's current directory when running `kscript`.
+resolves the engine at `<repo_root>/code/charlie/lua/`. This works
+regardless of the user's current directory when running `charlie`.
 
 One candidate shape (bash form):
 
@@ -2632,8 +2632,8 @@ One candidate shape (bash form):
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 exec lua \
-    -e "package.path='$REPO_ROOT/code/kscript/lua/?.lua;'..package.path" \
-    "$REPO_ROOT/code/kscript/lua/kscript/cli.lua" "$@"
+    -e "package.path='$REPO_ROOT/code/charlie/lua/?.lua;'..package.path" \
+    "$REPO_ROOT/code/charlie/lua/charlie/cli.lua" "$@"
 ```
 
 A pure-Lua form with a `#!/usr/bin/env lua` shebang also works (use
@@ -2649,17 +2649,17 @@ to ship.
 - Standard pattern (Cargo, rustup, NVM, pyenv, etc. all ship dev tools
   this shape).
 
-System-level install (`/usr/local/bin/kscript`, distribution packages,
+System-level install (`/usr/local/bin/charlie`, distribution packages,
 homebrew formula, etc.) is a V1+ deployment concern, not V0.0X work.
 
 ### Bryton interaction
 
 ```
-vibecode: {"bryton_invocation": "kscript_dash_dash_allow_all_per_test",
+vibecode: {"bryton_invocation": "charlie_dash_dash_allow_all_per_test",
 "rationale": "test_files_typically_need_broad_access; per_test_narrowing_is_later_bryton_feature_out_of_scope_for_v01"}
 ```
 
-Bryton subprocess-invokes test files using `kscript --allow-all` by
+Bryton subprocess-invokes test files using `charlie --allow-all` by
 default. Test files typically need broad access (filesystem to read
 fixtures, network to hit a service-under-test, etc.). Per-test
 permission narrowing is a later Bryton feature (configurable via a
@@ -2673,7 +2673,7 @@ vibecode: {"open_questions_v00x_cli":
 "default_for_kiera_role_off_seems_right_but_kiera_is_central",
 "determinism_flag_for_clock_and_randomizer_seed_for_test_reproducibility_v2_plus",
 "cross_platform_shebang_behavior_linux_macos_wsl",
-"whether_engine_reading_the_dot_kscript_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}
+"whether_engine_reading_the_dot_charlie_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}
 ```
 
 - **Exact flag syntax.** Long-only or short forms? `--allow-fs=./`
@@ -2687,7 +2687,7 @@ vibecode: {"open_questions_v00x_cli":
 - **Cross-platform shebang behavior** (Linux / macOS / WSL).
   Mostly-portable on the three Unix-flavored cases; Windows native is
   V2+.
-- **Engine reading the `.kscript` source file itself.** Current
+- **Engine reading the `.charlie` source file itself.** Current
   proposal: pre-permission engine plumbing (the engine has to read the
   script to run anything). If this becomes contentious, an explicit
   `--source=PATH` form could surface it.
@@ -2709,17 +2709,17 @@ vibecode: {"version": "0.1", "codename": "bryton", "goal":
 "explicit_skipping", "per_language_helper_libraries",
 "fail_fast", "tree_shaped_result_aggregation", "concurrency_control"],
 "language_of_runner_v01":
-"lua_for_simplicity; kscript_hosted_runner_is_a_later_slice",
+"lua_for_simplicity; charlie_hosted_runner_is_a_later_slice",
 "distinct_from":
-"lua_side_engine_tests_which_continue_to_use_tests_kscript_support_runner",
+"lua_side_engine_tests_which_continue_to_use_tests_charlie_support_runner",
 "spec_links":
-["documentation/kscript/bryton/overview.md",
-"documentation/kscript/bryton/runner.md"]}
+["documentation/charlie/bryton/overview.md",
+"documentation/charlie/bryton/runner.md"]}
 ```
 
 V0.1 is the first usable **Bryton** — see
-[bryton/overview.md](../kscript/bryton/overview.md) and
-[bryton/runner.md](../kscript/bryton/runner.md) for the full spec. Per the
+[bryton/overview.md](../charlie/bryton/overview.md) and
+[bryton/runner.md](../charlie/bryton/runner.md) for the full spec. Per the
 direction to keep it very light at this stage, the V0.1 runner does
 only what's strictly needed: walk a directory, run each file as a
 subprocess, parse each Xeme, aggregate, report.
@@ -2735,19 +2735,19 @@ subprocess, parse each Xeme, aggregate, report.
 **Explicitly excluded from V0.1** (deferred to later Bryton slices):
 
 - `bryton.json` per-directory config (no ordering, no skipping)
-- Per-language helper libraries (no KScript-side assertion helpers)
+- Per-language helper libraries (no Charlie-side assertion helpers)
 - Fail-fast
 - Tree-shaped result aggregation (flat tally only)
 - Concurrency control (sequential execution only)
-- The runner being itself a KScript program — V0.1 runner is
-  implemented in Lua for simplicity. A KScript-hosted Bryton runner
+- The runner being itself a Charlie program — V0.1 runner is
+  implemented in Lua for simplicity. A Charlie-hosted Bryton runner
   is a later slice (the language has to mature far enough to expose
   filesystem and subprocess capabilities).
 
 **Distinct from Lua-side engine tests.** The existing
-`tests/kscript/support/runner.lua` continues to test the engine
-internals; that's fixed at V0.01. Bryton is for testing **KScript
-code with KScript code** (or, in V0.1, with any script that emits
+`tests/charlie/support/runner.lua` continues to test the engine
+internals; that's fixed at V0.01. Bryton is for testing **Charlie
+code with Charlie code** (or, in V0.1, with any script that emits
 Xeme), layered on top of the engine.
 
 ### V0.1 prerequisites
@@ -2755,9 +2755,9 @@ Xeme), layered on top of the engine.
 ```
 vibecode: {"v01_prerequisites":
 ["v001_engine_can_run_ksj_end_to_end",
-"v00X_kscript_text_parser_and_transpiler_so_test_files_can_be_kscript_source",
-"v00X_hash_class_so_kscript_tests_can_construct_xemes",
-"v00X_stdout_writing_so_kscript_tests_can_emit_xemes",
+"v00X_charlie_text_parser_and_transpiler_so_test_files_can_be_charlie_source",
+"v00X_hash_class_so_charlie_tests_can_construct_xemes",
+"v00X_stdout_writing_so_charlie_tests_can_emit_xemes",
 "v00X_json_serialization_method_on_hashes_so_tests_can_emit_their_xemes",
 "lua_host_subprocess_invocation_io_popen",
 "lua_host_directory_walk_find_via_io_popen_or_lfs"]}
@@ -2767,12 +2767,12 @@ Several slices in the V0.0X range have to land before V0.1 can ship:
 
 | Prerequisite | Provided by |
 |---|---|
-| Engine can run KSJ end-to-end | V0.01 |
-| KScript text → KSJ transpiler | V0.02 |
+| Engine can run CharlieJSON end-to-end | V0.01 |
+| Charlie text → CharlieJSON transpiler | V0.02 |
 | Hash class | a V0.0X slice |
 | `%stdout.write` (sys references + stdout sink) | a V0.0X slice |
 | JSON serialization (hash → JSON string method) | a V0.0X slice |
-| KScript CLI executable (`kscript` command, shebang support, permission flags) | [V0.0X CLI slice](#v00x-kscript-command-line-execution) |
+| Charlie CLI executable (`charlie` command, shebang support, permission flags) | [V0.0X CLI slice](#v00x-charlie-command-line-execution) |
 | Lua-host subprocess invocation | runner host; native `io.popen` |
 | Lua-host directory walk | runner host; `io.popen("find ...")` or `lfs` |
 
@@ -2853,9 +2853,9 @@ vibecode: {"v01_phase_2_tests":
 
 The test fixtures themselves can be in any language that emits Xeme
 JSON to stdout (shell scripts, Lua scripts, or — once the
-prerequisites land — KScript files). For V0.1 acceptance, the
+prerequisites land — Charlie files). For V0.1 acceptance, the
 simplest path is shell scripts that `echo` the Xeme JSON — this
-lets us verify the runner works without depending on the KScript
+lets us verify the runner works without depending on the Charlie
 prerequisites being complete.
 
 When all three pass, V0.1 Bryton ships.
@@ -2889,7 +2889,7 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 "phase_completion_requires_acceptance_criterion_passing",
 "inventory_before_implement; never_rewrite_without_understanding",
 "minimal_surface_per_slice; not_full_spec_upfront",
-"ksj_is_runtime_format; kscript_text_is_for_humans"]}
+"ksj_is_runtime_format; charlie_text_is_for_humans"]}
 ```
 
 - Vibecode blocks are canonical; prose is derivative.
@@ -2900,11 +2900,11 @@ vibecode: {"notes": ["vibecode_is_source_of_truth", "prose_is_derivative",
 - A phase isn't complete until its acceptance criterion passes.
 - Inventory existing code before adding new code; never rewrite without
   understanding what's there.
-- Each slice builds the minimal surface it needs. The full KScriptJSON
-  spec, the full KScript grammar, and the full stdlib emerge over many
+- Each slice builds the minimal surface it needs. The full CharlieJSON
+  spec, the full Charlie grammar, and the full stdlib emerge over many
   slices, not as single upfront efforts.
-- KScriptJSON is the runtime format the engine consumes; KScript text is
-  for human authors and gets transpiled to KScriptJSON before execution.
+- CharlieJSON is the runtime format the engine consumes; Charlie text is
+  for human authors and gets transpiled to CharlieJSON before execution.
 
 ---
 
@@ -2920,20 +2920,20 @@ vibecode: {"open": ["test_runner_decision", "fixture_layout",
 ["string_class_role_name_resolved_2026-05-17_as_stdlib_for_all_built_in_classes"]}
 ```
 
-- **Test runner.** Use the existing `tests/kscript/run.lua` or evolve it?
+- **Test runner.** Use the existing `tests/charlie/run.lua` or evolve it?
   To be decided during Step 1 (inventory) of V0.01.
-- **Fixture layout.** The proposed `tests/kscript/fixtures/` path mirrors
+- **Fixture layout.** The proposed `tests/charlie/fixtures/` path mirrors
   the existing test directory structure but should be confirmed on
   inventory.
 - **Vibecode attachment form.** The mechanism for attaching vibecode blocks
   to runtime statements is TBD per the existing memory. Doesn't block V0.01
   — vibecode in docs is fine for now.
-- **Bootstrap parser.** The KScriptJSON spec notes that the bootstrap
-  parser (KScript text → KScriptJSON) must be written directly in
-  KScriptJSON. This is V0.02 work, not V0.01, but flagged here so it isn't
+- **Bootstrap parser.** The CharlieJSON spec notes that the bootstrap
+  parser (Charlie text → CharlieJSON) must be written directly in
+  CharlieJSON. This is V0.02 work, not V0.01, but flagged here so it isn't
   lost.
 - **String-class role name.** The engine role owning the built-in string
-  class needs a name. Per [roles.md](../kscript/roles.md) the broader minimum role
+  class needs a name. Per [roles.md](../charlie/roles.md) the broader minimum role
   set includes `user`, `clock`, `randomizer`, `utils` — the string class
   isn't named there explicitly. Provisional name to be decided at V0.01
   implementation.

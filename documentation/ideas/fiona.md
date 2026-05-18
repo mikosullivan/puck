@@ -89,7 +89,7 @@ them.
 
 **The distinction between primitives and relationships stuck.** Miko
 still mentally models objects as immutable while their relationships
-can change. This isn't how Postgres, Ruby, or KScript actually work —
+can change. This isn't how Postgres, Ruby, or Charlie actually work —
 all of those treat objects as mutable — but it remains his working
 mental model when thinking about data.
 

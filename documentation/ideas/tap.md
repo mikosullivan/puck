@@ -35,7 +35,7 @@ Two reasonable readings:
   reason for tap.
 
 Recommendation (not committed): put `tap` directly on every
-object (since every KScript object inherits a root that can
+object (since every Charlie object inherits a root that can
 carry it). Receiver in, receiver out. Matches Ruby exactly and
 preserves chain ergonomics.
 

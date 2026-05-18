@@ -1,12 +1,12 @@
-# KScript VS Code Extension
+# Charlie VS Code Extension
 
 ```
 vibecode: {
     "status": "active_brainstorm",
     "started": "2026-05-17",
-    "subsystem": "vscode_kscript_extension",
+    "subsystem": "vscode_charlie_extension",
     "canonical_location": "ideas/ until firm enough to promote to formatter.md or a new dedicated vscode-extension.md",
-    "scope": "first_contact_polished_self_contained_vs_code_extension_for_kscript_files",
+    "scope": "first_contact_polished_self_contained_vs_code_extension_for_charlie_files",
     "co_authoring": "claude_capturing_miko_decisions_in_realtime"
 }
 ```
@@ -22,23 +22,23 @@ vibecode: {
     "section": "architectural_constraint",
     "rule_1": "extension_must_be_completely_independent_no_kiera_install_required",
     "rule_2": "battle_tested_approach_not_experimental",
-    "context": "first_contact_situation_for_kscript; syntax_must_show_up_nice_and_clean",
-    "rules_out": ["subprocess_to_kscript_fmt_cli",
-                   "language_server_requiring_kscript_lsp_process",
-                   "wasm_artifact_compiled_from_kscript"],
+    "context": "first_contact_situation_for_charlie; syntax_must_show_up_nice_and_clean",
+    "rules_out": ["subprocess_to_charlie_fmt_cli",
+                   "language_server_requiring_charlie_lsp_process",
+                   "wasm_artifact_compiled_from_charlie"],
     "implication": "self_contained_typescript_javascript_vs_code_extension"
 }
 ```
 
 The extension must work for someone who has never installed Kiera. They
-install the extension from the VS Code Marketplace, open a `.kscript`
+install the extension from the VS Code Marketplace, open a `.charlie`
 file, and everything works. No external runtime, no CLI dependency, no
 language server process.
 
 This rules out:
-- Subprocess calls to `kscript fmt` (requires Kiera installed)
-- Language Server Protocol with a KScript-based server (requires Kiera)
-- WASM artifacts compiled from KScript (complex build, not battle-tested
+- Subprocess calls to `charlie fmt` (requires Kiera installed)
+- Language Server Protocol with a Charlie-based server (requires Kiera)
+- WASM artifacts compiled from Charlie (complex build, not battle-tested
   for editor extensions)
 
 What's left: a **self-contained TypeScript/JavaScript extension** — the
@@ -56,7 +56,7 @@ vibecode: {
     "decision": "use_vs_code_built_in_settings_json",
     "rationale": "simplicity; standard_vs_code_pattern; integrated_with_settings_ui",
     "decided_2026-05-17": true,
-    "diverges_from_formatter_md": "formatter_md_says_extension_reads_external_kscript_style_toml; this_brainstorm_supersedes_for_the_vs_code_extension_specifically; future_kscript_fmt_cli_can_still_use_external_file_or_can_align"
+    "diverges_from_formatter_md": "formatter_md_says_extension_reads_external_charlie_style_toml; this_brainstorm_supersedes_for_the_vs_code_extension_specifically; future_charlie_fmt_cli_can_still_use_external_file_or_can_align"
 }
 ```
 
@@ -65,19 +65,19 @@ The extension's user preferences live in **VS Code's own `settings.json`**.
 - The extension declares its configurable settings in its `package.json`
   (via a `contributes.configuration` block).
 - The settings appear in VS Code's Settings UI (`Ctrl+,`) under a
-  "KScript" heading.
+  "Charlie" heading.
 - User scope (`~/.config/Code/User/settings.json` or the VS Code Server
   equivalent) applies everywhere; workspace scope (`.vscode/settings.json`
   in a project) overrides for that project.
 
 This is simpler than the existing
-[formatter.md](../kscript/formatter.md) plan to read
-`~/.config/kscript/style.toml`. That external-file plan still makes
-sense for a future `kscript fmt` CLI (so the CLI doesn't depend on
+[formatter.md](../charlie/formatter.md) plan to read
+`~/.config/charlie/style.toml`. That external-file plan still makes
+sense for a future `charlie fmt` CLI (so the CLI doesn't depend on
 VS Code being installed), but the VS Code extension uses VS Code's
 native settings instead.
 
-Open: should a future `kscript fmt` CLI and the VS Code extension share
+Open: should a future `charlie fmt` CLI and the VS Code extension share
 the same settings somehow (e.g., extension can optionally read
 `style.toml` as a fallback)? Not load-bearing for the v1 extension;
 defer.
@@ -90,7 +90,7 @@ defer.
 vibecode: {
     "section": "formatter_v1",
     "approach": "line_based_regex_rules_no_ast",
-    "rationale": "battle_tested; handles_syntactically_broken_files; no_parallel_kscript_parser_in_typescript_to_maintain; can_evolve_to_parser_based_later",
+    "rationale": "battle_tested; handles_syntactically_broken_files; no_parallel_charlie_parser_in_typescript_to_maintain; can_evolve_to_parser_based_later",
     "language": "typescript",
     "self_contained": true,
     "scope_v1": ["indentation_normalization", "hash_option_spacing",
@@ -118,7 +118,7 @@ export interface FormatterOptions {
     normalizeAssignmentSpacing: boolean; // default true
 }
 
-export function formatKScript(
+export function formatCharlie(
     source: string,
     options: Partial<FormatterOptions> = {}
 ): string;
@@ -129,7 +129,7 @@ them from `settings.json`; tests can pass them explicitly.
 
 ### Rule pipeline
 
-`formatKScript()` is a pipeline of independent rules. Order matters:
+`formatCharlie()` is a pipeline of independent rules. Order matters:
 
 1. `applyAssignmentSpacing` — `$x=1` → `$x = 1`
 2. `applyHashSpacing` — `{a:1,b: 2}` → `{a: 1, b: 2}`
@@ -147,11 +147,11 @@ introduces survives the strip pass.
 vscode/syntax/
 ├── package.json                   # manifest, adds main + formatter contributions
 ├── syntaxes/
-│   └── kscript.tmLanguage.json    # existing syntax highlighting
+│   └── charlie.tmLanguage.json    # existing syntax highlighting
 ├── language-configuration.json    # NEW: brackets, comments, indentation
 ├── src/
 │   ├── extension.ts               # NEW: activate(), registers formatter
-│   ├── formatter.ts               # NEW: formatKScript() + pipeline
+│   ├── formatter.ts               # NEW: formatCharlie() + pipeline
 │   └── rules/                     # NEW: one file per rule
 │       ├── indentation.ts
 │       ├── hashSpacing.ts
@@ -204,13 +204,13 @@ Value-type semantics where they apply:
 - `splat`: `"prefer"` reformats inline keyword args to hash-splat; `"keep"` leaves as written.
 
 Translation to VS Code's `settings.json` (which is flat with dotted
-keys) prefixes each setting with `kscript.formatter.`:
+keys) prefixes each setting with `charlie.formatter.`:
 
 ```json
-"kscript.formatter.tab":        4,
-"kscript.formatter.blanks":     2,
-"kscript.formatter.wrap":       100,
-"kscript.formatter.hashColon":  "loose"
+"charlie.formatter.tab":        4,
+"charlie.formatter.blanks":     2,
+"charlie.formatter.wrap":       100,
+"charlie.formatter.hashColon":  "loose"
 ```
 
 ### Settings declaration in `package.json`
@@ -221,13 +221,13 @@ The configurable options surface in VS Code's Settings UI through a
 ```json
 "contributes": {
     "configuration": {
-        "title": "KScript",
+        "title": "Charlie",
         "properties": {
-            "kscript.formatter.indentSize": {
+            "charlie.formatter.indentSize": {
                 "type": "number", "default": 4,
                 "description": "Number of spaces per indent level."
             },
-            "kscript.formatter.indentStyle": {
+            "charlie.formatter.indentStyle": {
                 "type": "string", "enum": ["spaces", "tabs"],
                 "default": "spaces",
                 "description": "Use spaces or tabs for indentation."
@@ -249,15 +249,15 @@ and (when enabled by the user) format-on-save.
 ```ts
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-        vscode.languages.registerDocumentFormattingEditProvider('kscript', {
+        vscode.languages.registerDocumentFormattingEditProvider('charlie', {
             provideDocumentFormattingEdits(document) {
-                const config = vscode.workspace.getConfiguration('kscript.formatter');
+                const config = vscode.workspace.getConfiguration('charlie.formatter');
                 const options: Partial<FormatterOptions> = {
                     indentSize:  config.get('indentSize'),
                     indentStyle: config.get('indentStyle'),
                     // ... other settings ...
                 };
-                const formatted = formatKScript(document.getText(), options);
+                const formatted = formatCharlie(document.getText(), options);
                 const fullRange = new vscode.Range(
                     document.positionAt(0),
                     document.positionAt(document.getText().length)
@@ -271,10 +271,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 ### Testing
 
-Each rule has an `input.kscript` and `expected.kscript` fixture pair
+Each rule has an `input.charlie` and `expected.charlie` fixture pair
 under `tests/formatter/`. The test runner reads the input, applies the
 rule (or the full pipeline), and asserts the output matches expected.
-Same shape as the existing Lua engine's `tests/kscript/fixtures/`
+Same shape as the existing Lua engine's `tests/charlie/fixtures/`
 pattern but in TS.
 
 ### Marketplace polish (Vasquez)

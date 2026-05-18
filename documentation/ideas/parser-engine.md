@@ -10,7 +10,7 @@ In v1, each parser is hand-rolled:
 - CSS selector parser: ~200–400 lines.
 - HTML parser (Uma): schema-driven, ~1500 lines, but schemas
   (like html5.json) are easy enough for developers to write.
-- KScript itself: in Lua bootstrap, not part of the standard
+- Charlie itself: in Lua bootstrap, not part of the standard
   library.
 
 The hand-rolled approach keeps each parser purpose-built and
@@ -36,12 +36,12 @@ in the framework**, with the prospect of more.
 - Pros: don't write a parsing engine ourselves; well-understood
   PEG semantics; fast.
 - Cons: native dependency (more binary surface); LPeg is C, so
-  grammar errors might surface awkwardly across the KScript/Lua
+  grammar errors might surface awkwardly across the Charlie/Lua
   boundary.
 
-### Roll our own PEG (or parser-combinator) engine in KScript
+### Roll our own PEG (or parser-combinator) engine in Charlie
 
-- ~500–1500 lines of KScript for a usable engine.
+- ~500–1500 lines of Charlie for a usable engine.
 - Pros: stays in our ecosystem; no native dependency; we
   control the semantics (good error messages, debug hooks).
 - Cons: a substantial chunk of code to write and maintain.

@@ -1,7 +1,7 @@
 # Kiera
 
 Kiera is a foreign object API — a protocol for working with remote objects across different
-languages and systems. It is the umbrella that holds the mikobase, KScript, and Q0 together.
+languages and systems. It is the umbrella that holds the mikobase, Charlie, and Q0 together.
 See [overview.md](../overview.md) for the full picture.
 
 Class names in Kiera use UNS strings (URLs without the `https://` prefix), providing a
@@ -21,7 +21,7 @@ vibecode: {
 	"key_concepts": ["%kiera", "UNS_lookup", "built-in_objects", "kiera.uno_default_namespace", "bare_name_shorthand"]
 }
 
-`%kiera` is a KScript system method that returns a **kiera object** — see
+`%kiera` is a Charlie system method that returns a **kiera object** — see
 "The Kiera Object" below for the full model. `%kiera[UNS]` is a shorthand that
 returns the object registered at that UNS address (the kiera's lookup method
 in convenience form).
@@ -32,7 +32,7 @@ from a configurable chain of providers (typically a local cache first, then remo
 sources), with no install step. See [overview.md — Libraries Are Cached, Not Installed](../overview.md#libraries-are-cached-not-installed).
 
 `%kiera` is scoped via `%chain` (the current kiera lives in the chain).
-Because `%chain` is wiped at role boundaries (see [roles.md](../kscript/roles.md)),
+Because `%chain` is wiped at role boundaries (see [roles.md](../charlie/roles.md)),
 the current kiera does not propagate across role boundaries; each role gets
 its own world. When there is no kiera in the chain, `%kiera` returns plain
 null.
@@ -119,7 +119,7 @@ differently-tagged objects, because they're genuinely different logical
 sources.
 
 **Faucets inside a getter share the getter's role.** This resolves the
-download-vs-cache problem: KScript caches remote objects on demand —
+download-vs-cache problem: Charlie caches remote objects on demand —
 first-time fetches go through download, subsequent fetches through
 cache. Both are faucets inside the same getter, both produce objects
 with the getter's role. The same UNS hands back identically-tagged
@@ -290,7 +290,7 @@ faucets, version window, etc.
 Different engines hand in different kieras. A strict, security-
 sensitive deployment hands user code a kiera that requires signatures
 and blockchain attestations. A relaxed developer playground hands user
-code a kiera that just trusts the cache. The KScript code is the same;
+code a kiera that just trusts the cache. The Charlie code is the same;
 the kiera differs.
 
 User code typically doesn't reason about which kiera it got. It calls
@@ -337,7 +337,7 @@ future use and is not part of early versions.
 - **Remote exception**: if the remote method itself raises, that exception
   propagates to the caller as if it were thrown locally. The remote stack trace is
   preserved (per the stack-trace shape in
-  [kscript-runtime.md](../kscript/kscript-runtime.md#all-exceptions-carry-a-stack-trace)).
+  [charlie-runtime.md](../charlie/charlie-runtime.md#all-exceptions-carry-a-stack-trace)).
   Caller handles with `catch` as usual.
 - **Authorization failure**: if the remote rejects the call (signature invalid,
   role not trusted, etc.), raises `kiera.uno/error/auth`.
@@ -393,10 +393,10 @@ vibecode: {
 | `kiera.uno/mikobase/server` | Managed mikobase server for fork-based coordination |
 | `kiera.uno/helper` | Base helper class |
 | `kiera.uno/loop` | Loop object |
-| `kiera.uno/meta_hash` | Read-overlay-write hash backed by an array of hashes; cascading config primitive (see [meta-hash.md](../kscript/built-in-classes/meta-hash.md)) |
+| `kiera.uno/meta_hash` | Read-overlay-write hash backed by an array of hashes; cascading config primitive (see [meta-hash.md](../charlie/built-in-classes/meta-hash.md)) |
 | `kiera.uno/flag` | Abstract root of the flag hierarchy |
 | `kiera.uno/warning` | Observational, non-unwinding; emitted via `%chain.warn`, collected via `heed()` |
-| `kiera.uno/exception` | Umbrella for everything raised. Also itself a concrete user-catchable class (unwinds; carries stack trace). All other classes in this block are declared subclasses; UNS naming is flat, inheritance is declared (see [kscript-runtime.md § Catching exceptions](../kscript/kscript-runtime.md#catching-exceptions)). |
+| `kiera.uno/exception` | Umbrella for everything raised. Also itself a concrete user-catchable class (unwinds; carries stack trace). All other classes in this block are declared subclasses; UNS naming is flat, inheritance is declared (see [charlie-runtime.md § Catching exceptions](../charlie/charlie-runtime.md#catching-exceptions)). |
 | `kiera.uno/error` | Semantic-marker subclass of exception — same behavior; the name signals "this is an error condition" |
 | `kiera.uno/error/timeout` | Caller-facing timeout error raised at the `%utils.timeout` boundary (user-catchable, unwinds) |
 | `kiera.uno/exit` | Graceful process exit (engine-caught, unwinds stack, runs GC) |

@@ -10,12 +10,12 @@ read each.
 
 ---
 
-## 1. Time-travel debugger for KScript
+## 1. Time-travel debugger for Charlie
 
 Mikobase already supports time-travel reads (querying state as
 of any past timestamp). A debugger could exploit this:
 **step backwards through state changes**, not just forwards.
-Pair with KScript's deterministic GC (collection happens at known
+Pair with Charlie's deterministic GC (collection happens at known
 moments) and the auto-recorded Jasmine call frames, and you have
 the ingredients for a real "rewind execution to before the bug"
 experience.
@@ -76,17 +76,17 @@ competing with it.
 
 ---
 
-## 5. TryKScript — browser playground
+## 5. TryCharlie — browser playground
 
-A web page where someone can type KScript and see it run. Mimics
+A web page where someone can type Charlie and see it run. Mimics
 TryRuby, Replit, the various "play with this language" pages.
 
-- Sandboxed KScript runtime in WebAssembly or compiled-to-JS.
+- Sandboxed Charlie runtime in WebAssembly or compiled-to-JS.
 - Persistent saved snippets for sharing.
 - Pre-loaded mikobase examples, blockchain examples,
   Sinatra/Bryton skeletons.
 - A real first-contact surface: someone reads a Kiera article,
-  clicks a "try it" link, and 30 seconds later is running KScript
+  clicks a "try it" link, and 30 seconds later is running Charlie
   in their browser.
 
 Aligns with the first-contact strategy memory.

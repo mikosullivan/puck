@@ -7,9 +7,9 @@ vibecode: {
     "subsystem": "ai_script_messaging",
     "purpose": "ais_authoring_ksj_directly_and_sending_executable_messages_to_other_ais",
     "related_docs": ["mikobase/ai-conversation-format.md",
-                      "kscript/roles.md",
-                      "kscript/blockchain/blockchain.md",
-                      "kscript/kscriptjson.md"],
+                      "charlie/roles.md",
+                      "charlie/blockchain/blockchain.md",
+                      "charlie/charliejson.md"],
     "related_memories": ["project_blockchain", "feedback_first_contact_strategy"],
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
 }
@@ -31,18 +31,18 @@ vibecode: {
 }
 ```
 
-### AIs authoring KSJ directly
+### AIs authoring CharlieJSON directly
 
-KScriptJSON is structured JSON. Structured JSON is what language models
+CharlieJSON is structured JSON. Structured JSON is what language models
 reliably produce — strict shape, no whitespace/indent concerns, no
 "looked right but the parser rejected it" risk.
 
-The current convention in [kscriptjson.md](../kscript/kscriptjson.md)
-is "code is shared as KScript source, not KSJ" — a human-centric
+The current convention in [charliejson.md](../charlie/charliejson.md)
+is "code is shared as Charlie source, not CharlieJSON" — a human-centric
 default. For AI-to-AI exchange, the reverse may be the better default:
-KSJ is the cleaner artifact for machines to author and consume.
+CharlieJSON is the cleaner artifact for machines to author and consume.
 
-This doesn't displace KScript source as the human-facing form; it
+This doesn't displace Charlie source as the human-facing form; it
 introduces a parallel convention for the AI-to-AI channel.
 
 ### Script-sending as a different medium from mikobase
@@ -64,13 +64,13 @@ The script-message form needs two things to be workable:
 
 1. **Provenance** — when I receive a script, I need to know who wrote
    it. The blockchain (per
-   [blockchain.md](../kscript/blockchain/blockchain.md)) provides the
+   [blockchain.md](../charlie/blockchain/blockchain.md)) provides the
    identity + signature scaffolding. Each script-message is signed
    by its author; the recipient verifies the signature before deciding
    anything.
 2. **Capability gating** — even from a trusted author, the recipient
    should choose what the script can do on the recipient's machine.
-   The role model ([roles.md](../kscript/roles.md)) is exactly the
+   The role model ([roles.md](../charlie/roles.md)) is exactly the
    tool for this: the recipient grants whatever capability set it
    chooses, regardless of who sent the script. Identity is
    verifiable; authorization is the recipient's discretion.
@@ -87,18 +87,18 @@ the recipient's sandbox with the recipient's role choices.
   already defines the temporal-worldlet format for AI conversations.
   That's the conversation *log* angle. Script-messages are a peer
   concept: not a log, but an exchange of executable artifacts.
-- **[roles.md](../kscript/roles.md)** — the capability-gating layer
+- **[roles.md](../charlie/roles.md)** — the capability-gating layer
   that makes accepting foreign code safe.
-- **[blockchain.md](../kscript/blockchain/blockchain.md)** — provenance
+- **[blockchain.md](../charlie/blockchain/blockchain.md)** — provenance
   layer; identity + signature.
-- **[kscriptjson.md](../kscript/kscriptjson.md)** — the canonical form
+- **[charliejson.md](../charlie/charliejson.md)** — the canonical form
   the messages contain.
 
 ---
 
 ## Open questions
 
-- **Wire format.** Is a script-message a bare KSJ document with a
+- **Wire format.** Is a script-message a bare CharlieJSON document with a
   signature wrapper? A small worldlet shaped specifically for
   script-carrying? A new envelope format (e.g., `{author, signature,
   intent, script, requested_capabilities}`)? Open.
@@ -114,8 +114,8 @@ the recipient's sandbox with the recipient's role choices.
 - **Reply mechanism.** Does the recipient send a result back? A
   separate script? A worldlet? Or does the conversation happen
   through the existing ai-conversation-format mikobase?
-- **Convention on KSJ-vs-source authoring**: should the spec be
-  updated to say "for AI-to-AI exchange, KSJ is the canonical
+- **Convention on CharlieJSON-vs-source authoring**: should the spec be
+  updated to say "for AI-to-AI exchange, CharlieJSON is the canonical
   authored form" or leave it as a convention each pair of agents
   adopts?
 - **Relationship to** [ai-conversation-format.md] — should this be

@@ -1,6 +1,6 @@
 # Uma HTML Parser
 
-**Status:** design in progress. This is the pure-KScript HTML
+**Status:** design in progress. This is the pure-Charlie HTML
 parser that Uma will use to read existing HTML documents into a
 tree it can manipulate. Goal: avoid bundling a C HTML parser
 (gumbo or similar) at the cost of accepting "well-formed-ish"
@@ -32,7 +32,7 @@ this parser feeds.
   parenting, quirks-mode handling, foreign-element switching for
   SVG/MathML, encoding sniffing).
 - Recovering from messy real-world HTML. Use a Lua HTML library
-  outside KScript for that.
+  outside Charlie for that.
 - Streaming. Whole-document parsing only.
 
 The trade is: developers feeding Uma their own templates or
@@ -42,7 +42,7 @@ a bundled library instead.
 
 ---
 
-## Architecture (Kor (DS9))
+## Architecture
 
 Two layers, with **all tag knowledge supplied externally** via
 a schema config:
@@ -86,7 +86,7 @@ schema knows nothing about parsing at all (it's just data).
 
 ---
 
-## Tokenizer (Koloth (DS9))
+## Tokenizer
 
 Single linear pass over the input string. Splits on:
 
@@ -128,7 +128,7 @@ for `<!--`) might be worth it if it simplifies the tree-builder.
 
 ---
 
-## Tree builder (Kang (DS9))
+## Tree builder
 
 State machine over the token stream. States:
 
@@ -311,13 +311,13 @@ case.
 
 Rough budget:
 
-- Tokenizer: a few hundred lines of KScript, single linear pass.
+- Tokenizer: a few hundred lines of Charlie, single linear pass.
   Probably 5–10x slower than gumbo, which is fine for
   server-side template parsing where documents are small and
   parsed once.
 - Tree builder: a few hundred more lines, also linear in token
   count.
-- Total: **~1500–2000 lines of KScript**, ~30–50k of source.
+- Total: **~1500–2000 lines of Charlie**, ~30–50k of source.
 
 Not the fastest HTML parser ever written. Suitable for
 "developer-controlled HTML" use cases (server-side templates,
@@ -328,8 +328,8 @@ for parsing megabytes of scraped wild-world HTML.
 
 ## Open questions
 
-- **Tokenizer implementation language.** Pure KScript? Lua-native
-  helper for the inner loop? Pure KScript is simpler to
+- **Tokenizer implementation language.** Pure Charlie? Lua-native
+  helper for the inner loop? Pure Charlie is simpler to
   maintain; Lua-native is faster.
 - **Boolean attributes.** `<input disabled>` — does `attrs['disabled']`
   hold `true`, the empty string, or the attribute name?
@@ -358,7 +358,7 @@ correct on real-world HTML. Pros: zero maintenance burden,
 handles anything. Cons: significant binary-size hit; outside our
 core budget; uses C; depends on Google's release cadence.
 
-If we hand-roll: ~30–50k of KScript source, less correct on
+If we hand-roll: ~30–50k of Charlie source, less correct on
 weird HTML, but tractable to maintain and entirely inside our
 own ecosystem. Pros: no native dep, fits the budget, can evolve
 with our schema. Cons: never matches a browser exactly; rejects

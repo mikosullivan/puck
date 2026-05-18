@@ -21,12 +21,12 @@ hard to fail at.
 
 ---
 
-## Step 1: Run the existing test suite (Kor (TOS))
+## Step 1: Run the existing test suite
 
 From the project root:
 
 ```
-lua tests/kscript/run.lua
+lua tests/charlie/run.lua
 ```
 
 The existing scaffolding includes lexer, parser, and transpiler tests
@@ -41,28 +41,28 @@ Record the output somewhere casual (a scratch note, a paste into a
 gist — doesn't need to be checked in). This is the "before" snapshot.
 
 If the runner itself errors out before running any tests
-(e.g., `module 'kscript.lexer' not found`), that's a `package.path`
+(e.g., `module 'charlie.lexer' not found`), that's a `package.path`
 problem and Step 2 is where you'll fix it.
 
 ---
 
-## Step 2: Read the engine source (Pulaski (TNG))
+## Step 2: Read the engine source
 
 Open these files in your editor in this order:
 
 | File | Why first |
 |---|---|
-| `tests/kscript/run.lua` | Confirms how `package.path` is set; that's how every test discovers the engine modules |
-| `tests/kscript/support/runner.lua` | The test framework: `suite`, `test`, `report` |
-| `tests/kscript/support/assert.lua` | The assertion helpers (`equal`, `is_nil`, `not_nil`, etc.) |
-| `code/kscript/lua/kscript/json.lua` | The JSON parser the engine will use to load `.ksj` files |
-| `code/kscript/lua/kscript/interpreter.lua` | The KSJ executor in whatever state it's currently in |
+| `tests/charlie/run.lua` | Confirms how `package.path` is set; that's how every test discovers the engine modules |
+| `tests/charlie/support/runner.lua` | The test framework: `suite`, `test`, `report` |
+| `tests/charlie/support/assert.lua` | The assertion helpers (`equal`, `is_nil`, `not_nil`, etc.) |
+| `code/charlie/lua/charlie/json.lua` | The JSON parser the engine will use to load `.ksj` files |
+| `code/charlie/lua/charlie/interpreter.lua` | The CharlieJSON executor in whatever state it's currently in |
 
 Open each, read top-to-bottom, get a sense of:
 
-- Does `kscript.json` export a `parse` function? What does it return for
+- Does `charlie.json` export a `parse` function? What does it return for
   a nested JSON array?
-- Does `kscript.interpreter` have a `run` (or `execute`, or
+- Does `charlie.interpreter` have a `run` (or `execute`, or
   similar) entry point? What does it expect as input?
 - Does `support.runner` have any state we have to clear between test
   files (a global pass/fail counter, for instance)?
@@ -72,7 +72,7 @@ already there. This is the inventory phase. Output: a short list of
 "this exists, this is missing, this is unclear."
 
 **One thing to specifically look for in the inventory:** the existing
-interpreter consumes a **pre-spec KScriptJSON format** (its own
+interpreter consumes a **pre-spec CharlieJSON format** (its own
 docstring notes this). Concretely:
 
 - Assignment is emitted as `["scope", "setvar", name, value]` — a
@@ -82,7 +82,7 @@ docstring notes this). Concretely:
 - Other shapes may differ; only two paths have been checked.
 
 The canonical form lives in
-[kscriptjson.md](../kscript/kscriptjson.md), and the V0.01 fixture
+[charliejson.md](../charlie/charliejson.md), and the V0.01 fixture
 uses it. **The spec wins** — when the interpreter and the spec
 disagree, the interpreter is the thing that changes. Part of Step 1's
 output is therefore the exact list of format mismatches the engine
@@ -90,9 +90,9 @@ needs to be brought into line on.
 
 ---
 
-## Step 3: Write the V0.01 fixture (Spock (TNG))
+## Step 3: Write the V0.01 fixture
 
-Create the file `tests/kscript/fixtures/hello_world.ksj`. Contents,
+Create the file `tests/charlie/fixtures/hello_world.ksj`. Contents,
 exactly:
 
 ```
@@ -109,27 +109,27 @@ no args.
 Verify the file is there:
 
 ```
-cat tests/kscript/fixtures/hello_world.ksj
-wc -l tests/kscript/fixtures/hello_world.ksj
+cat tests/charlie/fixtures/hello_world.ksj
+wc -l tests/charlie/fixtures/hello_world.ksj
 ```
 
 Expected output: the literal JSON string, and `1` line.
 
 ---
 
-## Step 4: First sanity test — parse the fixture (Sarek (TNG))
+## Step 4: First sanity test — parse the fixture
 
-Create `tests/kscript/v001/test_fixture_parse.lua`:
+Create `tests/charlie/v001/test_fixture_parse.lua`:
 
 ```lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local json = require("kscript.json")
+local json = require("charlie.json")
 
 runner.suite("v0.01 / fixture parse")
 
 runner.test("parses the hello_world fixture", function()
-    local f = assert(io.open("tests/kscript/fixtures/hello_world.ksj"))
+    local f = assert(io.open("tests/charlie/fixtures/hello_world.ksj"))
     local source = f:read("*a")
     f:close()
 
@@ -145,7 +145,7 @@ runner.test("parses the hello_world fixture", function()
 end)
 ```
 
-Wire it into the test runner. Open `tests/kscript/run.lua` and add:
+Wire it into the test runner. Open `tests/charlie/run.lua` and add:
 
 ```lua
 require("v001.test_fixture_parse")
@@ -156,28 +156,28 @@ require("v001.test_fixture_parse")
 Run:
 
 ```
-lua tests/kscript/run.lua
+lua tests/charlie/run.lua
 ```
 
 Expected: a dot for this test in the runner output, and a final
 summary line showing one additional pass.
 
-If `kscript.json`'s API doesn't match what the test assumes (different
+If `charlie.json`'s API doesn't match what the test assumes (different
 function name, different return shape), this is where you discover it.
-Update either the test or `kscript.json` as appropriate. Step 2's
+Update either the test or `charlie.json` as appropriate. Step 2's
 inventory should have told you which.
 
 ---
 
-## Step 5: Engine entry point (Kor (DS9))
+## Step 5: Engine entry point
 
-In `code/kscript/lua/kscript/`, create `engine.lua` (or evolve whatever
-top-level entry already lives there) so that `require("kscript")`
+In `code/charlie/lua/charlie/`, create `engine.lua` (or evolve whatever
+top-level entry already lives there) so that `require("charlie")`
 returns a table with a `run` function:
 
 ```lua
 local engine = {}
-local json = require("kscript.json")
+local json = require("charlie.json")
 
 function engine.run(path)
     local f = assert(io.open(path))
@@ -195,39 +195,39 @@ end
 return engine
 ```
 
-If `code/kscript/lua/kscript/init.lua` already exists and `kscript` is
+If `code/charlie/lua/charlie/init.lua` already exists and `charlie` is
 already a module, integrate the `run` function there instead. The
 import surface from the test side stays the same:
 
 ```lua
-local engine = require("kscript")
+local engine = require("charlie")
 ```
 
-Add `tests/kscript/v001/test_engine_run.lua`:
+Add `tests/charlie/v001/test_engine_run.lua`:
 
 ```lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local engine = require("kscript")
+local engine = require("charlie")
 
 runner.suite("v0.01 / engine.run")
 
 runner.test("engine.run on the fixture returns a parsed tree", function()
-    local result = engine.run("tests/kscript/fixtures/hello_world.ksj")
+    local result = engine.run("tests/charlie/fixtures/hello_world.ksj")
     assert_.not_nil(result)
     assert_.equal(type(result), "table")
     assert_.equal(#result, 1)
 end)
 ```
 
-Wire this into `tests/kscript/run.lua` the same way as Step 4.
+Wire this into `tests/charlie/run.lua` the same way as Step 4.
 
 Run the suite again. Expected: two new passing tests for V0.01 plus
 whatever was passing before.
 
 ---
 
-## Step 6: Pick the first real implementation slice (Koloth (DS9))
+## Step 6: Pick the first real implementation slice
 
 At this point the engine loads, parses, and returns the parsed tree.
 **It doesn't execute anything yet.** The V0.01 acceptance test
@@ -241,8 +241,8 @@ At this point the engine loads, parses, and returns the parsed tree.
 | `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type, owning_role, payload}` | ~20 |
 | `engine.lookup_method(value, name)` | Finds `to_string` on the string class | ~15 |
 | `engine.transition(new_role, fn)` | Save/restore ctx around a Lua function call | ~15 |
-| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore. **Consumes canonical `[receiver, method, args?]` shape per [kscriptjson.md](../kscript/kscriptjson.md)** — the existing interpreter's pre-spec shapes are deprecated by this work. | ~25 |
-| Format alignment for the rest of the interpreter | Migrate the remaining statement-shape handlers (assignment, `if`/`elsif`/`else`, etc.) from the pre-spec format to canonical KSJ. Touches every dispatch path in `interpreter.lua`. Existing parser/transpiler tests still pass — they test the source-side, not the runtime format. Some interpreter-level tests may need to be added or rewritten. | varies |
+| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore. **Consumes canonical `[receiver, method, args?]` shape per [charliejson.md](../charlie/charliejson.md)** — the existing interpreter's pre-spec shapes are deprecated by this work. | ~25 |
+| Format alignment for the rest of the interpreter | Migrate the remaining statement-shape handlers (assignment, `if`/`elsif`/`else`, etc.) from the pre-spec format to canonical CharlieJSON. Touches every dispatch path in `interpreter.lua`. Existing parser/transpiler tests still pass — they test the source-side, not the runtime format. Some interpreter-level tests may need to be added or rewritten. | varies |
 
 Recommended order: `bootstrap` first (everything else needs the roles
 and classes to exist), then `materialize`, then `lookup_method`, then
@@ -252,11 +252,11 @@ result.
 
 For each slice:
 
-1. **Write the unit test first** under `tests/kscript/v001/`, named
+1. **Write the unit test first** under `tests/charlie/v001/`, named
    `test_<slice>.lua`. The test plans in [development.md
    §Phase 1 test plan](development.md#phase-1-test-plan) (T1.2
    through T1.6) spell out what each one should assert.
-2. **Implement the slice** in `code/kscript/lua/kscript/engine.lua`
+2. **Implement the slice** in `code/charlie/lua/charlie/engine.lua`
    (or its companions). Keep each implementation small — just enough
    to make the test pass.
 3. **Run the suite.** Confirm the new test passes and nothing else
@@ -269,17 +269,17 @@ V0.01.
 
 ---
 
-## What this doc does NOT cover (Kang (DS9))
+## What this doc does NOT cover
 
 ```
 vibecode: {"out_of_scope_for_first_steps":
-["v002_kscript_text_parser_and_transpiler", "v00X_stdout_hashes_json_serialization",
-"v00X_kscript_cli", "v01_bryton", "lua_host_optimizations",
+["v002_charlie_text_parser_and_transpiler", "v00X_stdout_hashes_json_serialization",
+"v00X_charlie_cli", "v01_bryton", "lua_host_optimizations",
 "performance_tuning", "error_message_polish"]}
 ```
 
 This doc covers only the first six concrete actions. Once V0.01
-passes, the next slice (V0.02, KScript-text → KScriptJSON transpiler)
+passes, the next slice (V0.02, Charlie-text → CharlieJSON transpiler)
 gets its own first-steps treatment when the time comes. Same shape:
 phase-level in [development.md](development.md), file-by-file in a
 companion doc.

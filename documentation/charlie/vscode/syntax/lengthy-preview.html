@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>lengthy.charlie — Charlie Preview</title>
+<style>
+    body {
+        background: #1e1e1e;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 0;
+        padding: 40px;
+        color: #d4d4d4;
+    }
+    h1 {
+        font-family: sans-serif;
+        font-size: 13px;
+        color: #858585;
+        margin: 0 0 24px 0;
+        font-weight: normal;
+        letter-spacing: 0.05em;
+    }
+    pre {
+        margin: 0;
+    }
+
+    .kw  { color: #82AAFF; }          /* keywords */
+    .var { color: #9cdcfe; }          /* $variables */
+    .ivar{ color: #9cdcfe; }          /* @instance */
+    .str { color: #ce9178; }          /* strings */
+    .sym { color: #ce9178; }          /* :symbols */
+    .num { color: #b5cea8; }          /* numbers */
+    .fn  { color: #dcdcaa; }          /* &functions */
+    .sys { color: #4ec9b0; }          /* %system */
+    .con { color: #569cd6; }          /* true false null */
+    .cmt { color: #6a9955; }          /* comments */
+    .op  { color: #d4d4d4; }          /* operators */
+</style>
+</head>
+<body>
+<h1>lengthy.charlie</h1>
+<pre>
+<span class="cmt"># Starfleet personnel management system</span>
+
+<span class="kw">class</span> <span class="str">'starfleet.com/person'</span>
+    <span class="kw">field</span> <span class="sym">:name</span>,      <span class="kw">class</span>: <span class="sym">:string</span>, required: <span class="con">true</span>, collapse: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:birthdate</span>, <span class="kw">class</span>: <span class="sym">:string</span>
+    <span class="kw">field</span> <span class="sym">:species</span>,   <span class="kw">class</span>: <span class="sym">:string</span>, default: <span class="str">'Human'</span>
+
+    <span class="kw">property</span> <span class="sym">:nickname</span>
+
+    <span class="kw">function</span> <span class="fn">&amp;greet</span>
+        <span class="str">'Hello, I am '</span> <span class="op">+</span> <span class="ivar">@nickname</span>
+    <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">class</span> <span class="str">'starfleet.com/officer'</span>
+    <span class="kw">inherits</span> <span class="str">'starfleet.com/person'</span>
+
+    <span class="kw">field</span> <span class="sym">:rank</span>,     <span class="kw">class</span>: <span class="sym">:string</span>,  required: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:serial</span>,   <span class="kw">class</span>: <span class="sym">:string</span>,  required: <span class="con">true</span>, unique: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:active</span>,   <span class="kw">class</span>: <span class="sym">:boolean</span>, default: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:starship</span>, <span class="kw">class</span>: <span class="str">'kiera.uno/reference'</span>, allowed_class: <span class="str">'starfleet.com/ship'</span>
+
+    <span class="kw">helper</span> <span class="sym">:record</span>
+        <span class="kw">function</span> <span class="fn">&amp;summary</span>
+            <span class="var">$r</span> <span class="op">=</span> <span class="kw">self</span>.reference
+            <span class="var">$r</span>.rank <span class="op">+</span> <span class="str">' '</span> <span class="op">+</span> <span class="var">$r</span>.name <span class="op">+</span> <span class="str">' ('</span> <span class="op">+</span> <span class="var">$r</span>.serial <span class="op">+</span> <span class="str">')'</span>
+        <span class="kw">end</span>
+    <span class="kw">end</span>
+
+    <span class="kw">function</span> <span class="fn">&amp;promote</span>(new_rank:)
+        <span class="ivar">@rank</span> <span class="op">=</span> new_rank
+        <span class="kw">self</span>
+    <span class="kw">end</span>
+
+    <span class="kw">function</span> <span class="fn">&amp;transfer</span>(ship:)
+        <span class="ivar">@starship</span> <span class="op">=</span> ship
+        <span class="kw">self</span>
+    <span class="kw">end</span>
+
+    <span class="kw">remote function</span> <span class="fn">&amp;save</span>(name:, rank:, serial:)
+    <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">class</span> <span class="str">'starfleet.com/ship'</span>
+    <span class="kw">field</span> <span class="sym">:name</span>,       <span class="kw">class</span>: <span class="sym">:string</span>, required: <span class="con">true</span>, unique: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:registry</span>,   <span class="kw">class</span>: <span class="sym">:string</span>, required: <span class="con">true</span>, unique: <span class="con">true</span>
+    <span class="kw">field</span> <span class="sym">:ship_class</span>, <span class="kw">class</span>: <span class="sym">:string</span>
+
+    <span class="kw">join</span> <span class="sym">:name</span>, <span class="sym">:registry</span>
+<span class="kw">end</span>
+
+<span class="cmt"># Connect to the mikobase</span>
+
+<span class="var">$mikobase</span> <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'kiera.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>)
+
+<span class="var">$mikobase</span>.listen <span class="str">'starfleet.com/officer'</span>, <span class="sym">:after_save</span> <span class="kw">do</span>(<span class="var">$change</span>)
+    <span class="var">$officer</span> <span class="op">=</span> <span class="var">$change</span>.record
+    <span class="var">$fields</span>  <span class="op">=</span> <span class="var">$change</span>.fields
+
+    <span class="kw">if</span> (<span class="var">$fields</span>[<span class="str">'rank'</span>])
+        puts(<span class="str">'Rank change: '</span> <span class="op">+</span> <span class="var">$officer</span>.record.summary)
+    <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="cmt"># Seed ships</span>
+
+<span class="var">$enterprise</span> <span class="op">=</span> <span class="var">$mikobase</span>.q0({
+    action: <span class="sym">:create</span>,
+    <span class="kw">class</span>:  <span class="str">'starfleet.com/ship'</span>,
+    bucket: {name: <span class="str">'USS Enterprise'</span>, registry: <span class="str">'NCC-1701-D'</span>, ship_class: <span class="str">'Galaxy'</span>}
+})
+
+<span class="var">$defiant</span> <span class="op">=</span> <span class="var">$mikobase</span>.q0({
+    action: <span class="sym">:create</span>,
+    <span class="kw">class</span>:  <span class="str">'starfleet.com/ship'</span>,
+    bucket: {name: <span class="str">'USS Defiant'</span>, registry: <span class="str">'NX-74205'</span>, ship_class: <span class="str">'Defiant'</span>}
+})
+
+<span class="cmt"># Create officers</span>
+
+<span class="var">$crew</span> <span class="op">=</span> [
+    {name: <span class="str">'Picard, Jean-Luc'</span>, rank: <span class="str">'Captain'</span>,    serial: <span class="str">'SP-937-215'</span>},
+    {name: <span class="str">'Riker, William'</span>,   rank: <span class="str">'Commander'</span>,  serial: <span class="str">'SC-231-427'</span>},
+    {name: <span class="str">'Data'</span>,             rank: <span class="str">'Lieutenant'</span>, serial: <span class="str">'SA-789-012'</span>},
+    {name: <span class="str">'Sisko, Benjamin'</span>,  rank: <span class="str">'Commander'</span>,  serial: <span class="str">'SB-539-781'</span>}
+]
+
+<span class="var">$crew</span>.each(<span class="var">$o</span>) <span class="kw">do</span>
+    <span class="var">$mikobase</span>.q0({
+        action: <span class="sym">:create</span>,
+        <span class="kw">class</span>:  <span class="str">'starfleet.com/officer'</span>,
+        bucket: {name: <span class="var">$o</span>[<span class="str">'name'</span>], rank: <span class="var">$o</span>[<span class="str">'rank'</span>], serial: <span class="var">$o</span>[<span class="str">'serial'</span>]}
+    })
+<span class="kw">end</span>
+
+<span class="cmt"># Query and report</span>
+
+<span class="var">$active</span> <span class="op">=</span> <span class="var">$mikobase</span>.q0({
+    action: <span class="sym">:select</span>,
+    <span class="kw">class</span>:  <span class="str">'starfleet.com/officer'</span>,
+    then:   {path: [<span class="str">'active'</span>, <span class="con">true</span>]}
+})
+
+<span class="var">$report</span> <span class="op">=</span> <span class="str">&lt;&lt;'EOF'
+--- Starfleet Active Personnel ---
+EOF</span>
+
+<span class="var">$active</span>.each(<span class="var">$officer</span>) <span class="kw">as</span> <span class="var">$loop</span>
+    <span class="var">$line</span> <span class="op">=</span> <span class="var">$officer</span>.record.summary
+
+    <span class="kw">if</span> (<span class="var">$officer</span>[<span class="str">'rank'</span>] <span class="op">==</span> <span class="str">'Captain'</span>)
+        <span class="var">$line</span> <span class="op">=</span> <span class="str">'*** '</span> <span class="op">+</span> <span class="var">$line</span> <span class="op">+</span> <span class="str">' ***'</span>
+    <span class="kw">elsif</span> (<span class="var">$officer</span>[<span class="str">'rank'</span>] <span class="op">==</span> <span class="str">'Admiral'</span>)
+        <span class="var">$line</span> <span class="op">=</span> <span class="str">'!!! '</span> <span class="op">+</span> <span class="var">$line</span> <span class="op">+</span> <span class="str">' !!!'</span>
+    <span class="kw">else</span>
+        <span class="var">$line</span> <span class="op">=</span> <span class="str">'    '</span> <span class="op">+</span> <span class="var">$line</span>
+    <span class="kw">end</span>
+
+    <span class="var">$report</span> <span class="op">=</span> <span class="var">$report</span> <span class="op">+</span> <span class="var">$line</span> <span class="op">+</span> <span class="str">"\n"</span>
+<span class="kw">before</span>
+    puts(<span class="str">'Generating report...'</span>)
+<span class="kw">after</span>
+    puts(<span class="str">'Total: '</span> <span class="op">+</span> <span class="var">$loop</span>.count)
+<span class="kw">noloop</span>
+    puts(<span class="str">'No active officers found'</span>)
+<span class="kw">end</span>
+
+puts(<span class="var">$report</span>)
+
+<span class="cmt"># Pattern matching on names</span>
+
+<span class="var">$active</span>.each(<span class="var">$officer</span>) <span class="kw">do</span>
+    <span class="var">$match</span> <span class="op">=</span> <span class="var">$officer</span>[<span class="str">'name'</span>].match(<span class="str">'^(%a+),'</span>)
+
+    <span class="kw">if</span> (<span class="var">$match</span>)
+        puts(<span class="str">'Family name: '</span> <span class="op">+</span> <span class="var">$match</span>.groups[<span class="num">0</span>])
+    <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="cmt"># Promotion pipeline</span>
+
+<span class="kw">function</span> <span class="fn">&amp;find_officer</span>(serial:)
+    <span class="var">$mikobase</span>.q0({
+        action: <span class="sym">:select</span>,
+        <span class="kw">class</span>:  <span class="str">'starfleet.com/officer'</span>,
+        then:   {path: [<span class="str">'serial'</span>, serial]}
+    }).first
+<span class="kw">end</span>
+
+<span class="fn">&amp;find_officer</span>(serial: <span class="str">'SC-231-427'</span>) <span class="op">|</span>
+    <span class="fn">&amp;promote</span>(new_rank: <span class="str">'Captain'</span>) <span class="op">|</span>
+    <span class="fn">&amp;save</span>
+
+<span class="cmt"># Exception handling</span>
+
+<span class="var">$exception</span> <span class="op">=</span> <span class="kw">catch</span>(<span class="str">'starfleet.com/exception/unauthorized'</span>)
+    <span class="fn">&amp;find_officer</span>(serial: <span class="str">'XX-000-000'</span>)
+<span class="kw">end</span>
+
+<span class="kw">if</span> (<span class="var">$exception</span>)
+    puts(<span class="str">'Access denied: '</span> <span class="op">+</span> <span class="var">$exception</span>.message)
+<span class="kw">end</span>
+
+<span class="cmt"># Chain context</span>
+
+<span class="sys">%chain</span>[<span class="str">'user'</span>]       <span class="op">=</span> <span class="str">'computer'</span>
+<span class="sys">%chain</span>[<span class="str">'request_id'</span>] <span class="op">=</span> <span class="str">'47'</span>
+
+<span class="sys">%chain</span>.scope <span class="kw">do</span>
+    <span class="sys">%chain</span>[<span class="str">'user'</span>] <span class="op">=</span> <span class="str">'worf'</span>
+    <span class="fn">&amp;find_officer</span>(serial: <span class="str">'SP-937-215'</span>)
+<span class="kw">end</span>
+
+<span class="cmt"># Null flavors</span>
+
+<span class="kw">class</span> <span class="str">'starfleet.com/null/classified'</span>
+    <span class="kw">inherits</span> <span class="str">'kiera.uno/null'</span>
+<span class="kw">end</span>
+
+<span class="var">$classified</span> <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'starfleet.com/null/classified'</span>].new
+
+<span class="kw">if</span> (<span class="var">$classified</span>)
+    puts(<span class="str">'never reached — classified is falsey'</span>)
+<span class="kw">end</span>
+
+<span class="cmt"># Hot connection for real-time updates</span>
+
+<span class="var">$hot</span>    <span class="op">=</span> <span class="sys">%kiera</span>[<span class="str">'kiera.uno/mikobase/sqlite'</span>].new(<span class="str">'/var/starfleet/personnel.db'</span>, hot: <span class="con">true</span>)
+<span class="var">$picard</span> <span class="op">=</span> <span class="var">$hot</span>.q0({action: <span class="sym">:select</span>, then: {path: [<span class="str">'serial'</span>, <span class="str">'SP-937-215'</span>]}}).first
+<span class="var">$picard</span>[<span class="str">'rank'</span>] <span class="op">=</span> <span class="str">'Admiral'</span>
+</pre>
+</body>
+</html>

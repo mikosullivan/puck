@@ -2,21 +2,21 @@
 
 ## Overview
 
-KScript has no concept of where its trust configuration comes from. That is the host
+Charlie has no concept of where its trust configuration comes from. That is the host
 program's responsibility. The engine enforces whatever policy the host provides; it does
 not decide what that policy is.
 
 The flow is always outside-in:
 
 ```
-config source → host program → engine → %engine → KScript script
+config source → host program → engine → %engine → Charlie script
 ```
 
 ---
 
 ## The Three Layers
 
-**KScript** — knows nothing about trust configuration. Accesses host-provided resources
+**Charlie** — knows nothing about trust configuration. Accesses host-provided resources
 via `%engine`. Cannot read, modify, or influence the trust policy.
 
 **The engine** — knows the structure of the trust policy and enforces it. Accepts the
@@ -32,7 +32,7 @@ sense for its context and passes it to the engine at startup. Two examples:
 
 ## CLI Behavior
 
-When a KScript script is run from the command line, the CLI host applies this default:
+When a Charlie script is run from the command line, the CLI host applies this default:
 
 1. Start with an open policy — any signed object from any domain is permitted
 2. Read `~/.config/kiera/trust.json` if it exists

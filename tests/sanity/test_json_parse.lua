@@ -2,14 +2,14 @@
 {
   "file": "tests/sanity/test_json_parse.lua",
   "test_id": "T0.5",
-  "verifies": "kscript.json provides a parse function that handles the minimum JSON forms the engine needs to consume KSJ fixtures (objects with string keys, integer numbers).",
+  "verifies": "charlie.json provides a parse function that handles the minimum JSON forms the engine needs to consume CharlieJSON fixtures (objects with string keys, integer numbers).",
   "level": "unit",
-  "context": "complements tests/kscript/v001/test_json_parse.lua which asserts on the V0.01 hello-world fixture shape; this test verifies the minimum parse contract"
+  "context": "complements tests/charlie/v001/test_json_parse.lua which asserts on the V0.01 hello-world fixture shape; this test verifies the minimum parse contract"
 }
 ]]
 local runner   = require("support.runner")
 local assert_  = require("support.assert")
-local json     = require("kscript.json")
+local json     = require("charlie.json")
 
 runner.suite("sanity / json parse")
 

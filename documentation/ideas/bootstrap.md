@@ -1,7 +1,7 @@
-# Bootstrapping the KScript Interpreter
+# Bootstrapping the Charlie Interpreter
 
 Notes on how a host language (Ruby used as the example) integrates with and bootstraps
-the KScript runtime.
+the Charlie runtime.
 
 ---
 
@@ -12,11 +12,11 @@ Ruby (host / policy layer)
     ↓
 Lua C library (embedded VM)
     ↓
-KScript runtime (written in Lua)
+Charlie runtime (written in Lua)
 ```
 
-Ruby owns the process and enforces policy. Lua runs the KScript engine. KScript runs
-the program (which may include untrusted code). Each layer can only see downward — KScript
+Ruby owns the process and enforces policy. Lua runs the Charlie engine. Charlie runs
+the program (which may include untrusted code). Each layer can only see downward — Charlie
 cannot reach into Lua internals, and Lua cannot reach into Ruby without an explicit
 callback.
 
@@ -27,7 +27,7 @@ callback.
 The host creates a runtime object, configures it, then runs code:
 
 ```ruby
-engine = KScript::Runtime.new
+engine = Charlie::Runtime.new
 engine.timeout_seconds = 5
 
 result = engine.run_string("puts 'hello'")
@@ -44,7 +44,7 @@ result.elapsed_seconds  # wall time
 
 ---
 
-## How the Script Accesses Host Resources (Pulaski (TNG))
+## How the Script Accesses Host Resources
 
 The top-level script uses `%engine` to pull in whatever the host has made available:
 
@@ -64,7 +64,7 @@ by convention.
 
 ## Injecting Capabilities
 
-KScript has no ambient authority — no global filesystem access, no network. Everything
+Charlie has no ambient authority — no global filesystem access, no network. Everything
 the program can do must be explicitly granted by the host. Built-in system methods like
 `%now` (returns the current timestamp) are provided by the runtime and are not
 capabilities — they carry no authority and grant no access to resources.
@@ -72,16 +72,16 @@ capabilities — they carry no authority and grant no access to resources.
 The host injects named capabilities before running:
 
 ```ruby
-engine["db"] = KScript::Capability.new { MyDatabase.connection }
+engine["db"] = Charlie::Capability.new { MyDatabase.connection }
 ```
 
-Inside KScript, injected capabilities appear as `%name`:
+Inside Charlie, injected capabilities appear as `%name`:
 
 ```
 %db.query(...)
 ```
 
-This means a KScript program can only do what the host explicitly hands it. Nothing is
+This means a Charlie program can only do what the host explicitly hands it. Nothing is
 available by default.
 
 ### stdout and stderr
@@ -114,12 +114,12 @@ code can only write to stdout if it has been explicitly handed the capability.
 
 ## Data vs Capabilities vs Chain
 
-Three distinct channels carry information into a KScript execution:
+Three distinct channels carry information into a Charlie execution:
 
 - **Data** — plain values passed by value (strings, numbers, hashes). Safe to pass to
   untrusted code. No authority attached.
 - **Capabilities** — objects that carry authority (filesystem handle, database connection,
-  network socket). Explicitly injected; KScript sees only what the host grants.
+  network socket). Explicitly injected; Charlie sees only what the host grants.
 - **Chain** (`%chain`) — scoped ambient context (current user, request ID, locale).
   Flows downward through the call stack; changes do not propagate upward. Cleared when
   entering untrusted execution.
@@ -138,25 +138,25 @@ Filesystem access is granted via jail objects — scoped handles to specific dir
 with explicit read/write permissions:
 
 ```ruby
-engine["docs"] = KScript::Jail.new("/var/lib/myapp/docs", read: true)
-engine["out"]  = KScript::Jail.new("/var/lib/myapp/out",  read: true, write: true)
+engine["docs"] = Charlie::Jail.new("/var/lib/myapp/docs", read: true)
+engine["out"]  = Charlie::Jail.new("/var/lib/myapp/out",  read: true, write: true)
 ```
 
-Inside KScript:
+Inside Charlie:
 
 ```
 %docs.path("readme.txt").read
 %out.path("result.json").write($data)
 ```
 
-KScript never sees real filesystem paths — only virtual paths relative to the jail root.
+Charlie never sees real filesystem paths — only virtual paths relative to the jail root.
 The host resolves them. A program cannot escape its jail.
 
 ---
 
-## Timeouts (Spock (TNG))
+## Timeouts
 
-A compliant engine must enforce timeouts in a way that KScript code cannot interfere with
+A compliant engine must enforce timeouts in a way that Charlie code cannot interfere with
 or disable. In the Lua reference implementation this is done using `debug.sethook`.
 
 The host sets a default timeout:
@@ -165,7 +165,7 @@ The host sets a default timeout:
 engine.timeout_seconds = 5
 ```
 
-KScript code can set tighter timeouts on its own blocks, but cannot exceed the budget
+Charlie code can set tighter timeouts on its own blocks, but cannot exceed the budget
 granted by the host:
 
 ```
@@ -182,7 +182,7 @@ effective_timeout = min(requested, remaining_parent_budget)
 
 ---
 
-## %chain and Security (Sarek (TNG))
+## %chain and Security
 
 `%chain` is cleared when entering an untrusted execution boundary. This prevents a
 downloaded function from reading the caller's user context, request ID, or any other
@@ -197,7 +197,7 @@ of `%chain` are to be discussed separately.
 
 The bootstrapping process in a Ruby host:
 
-1. Create a `KScript::Runtime`
+1. Create a `Charlie::Runtime`
 2. Set limits (timeout)
 3. Inject capabilities (`engine["name"] = resource`), including stdout/stderr if needed
 4. Call `engine.run_string` or `engine.run_file`

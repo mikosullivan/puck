@@ -27,7 +27,7 @@ You might want to start with [Use Case: Third-Party Endorsement](#use-case-third
 ## The Problem
 
 Kiera is a distributed object system. Objects (classes, capabilities, etc.) are identified
-by UNS addresses like `borg.com/foo`. When a KScript engine fetches and uses an object, it
+by UNS addresses like `borg.com/foo`. When a Charlie engine fetches and uses an object, it
 needs confidence that:
 
 1. **The object really came from `borg.com`** — not from someone who injected a fake
@@ -86,7 +86,7 @@ Trust is determined by whose authority block and signing key you choose to trust
 is allowed to write to the ledger. The ledger is the record; the trust model is layered on top.
 
 Any entity can post their own authority block and establish their own web of trust, completely
-independent of Kiera. A company running internal KScript infrastructure could run their own
+independent of Kiera. A company running internal Charlie infrastructure could run their own
 chain, publish their own libraries, and configure their engines to trust their own authority
 block instead of (or in addition to) Kiera's.
 
@@ -269,7 +269,7 @@ Provenance endorsement (signed by the publisher):
       "endorsement": "provenance",
       "name": "borg.com/parser",
       "description": "Parses structured text into a normalised output hash.",
-      "language": "kiera.uno/software/kscript",
+      "language": "kiera.uno/software/charlie",
       "license": "MIT",
       "version": "2.1.0",
       "artifact_hash": "sha256:...",
@@ -335,7 +335,7 @@ matches the artifact's hash.
   "uns": "borg.com/parser",
   "version": "2.1.0",
   "artifact_hash": "sha256:8f2a3b7d1e9c4a5f...",
-  "mirror_url": "https://archive.example.org/kiera/borg.com/parser/2.1.0.kscript",
+  "mirror_url": "https://archive.example.org/kiera/borg.com/parser/2.1.0.charlie",
   "notes": "Mirror of borg.com/parser 2.1.0 hosted by archive.example.org."
 }
 ```
@@ -452,7 +452,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 | `borg.com` | Serve objects over HTTPS. Nothing else. |
 | Kiera.uno | One private key. Fetch, sign, post to blockchain. |
 | Kiera server operators | Store and serve bytes. Nothing else. |
-| KScript engines | Kiera's public key baked in. Verify on fetch. |
+| Charlie engines | Kiera's public key baked in. Verify on fetch. |
 
 ---
 
@@ -698,7 +698,7 @@ operational partner: they fetch, they sign, they post, and they add their securi
 endorsement in the same pass. Kiera's role shrinks to maintaining the authority block
 and the delegation record.
 
-The broader opportunity is significant. The Kiera blockchain is not limited to KScript
+The broader opportunity is significant. The Kiera blockchain is not limited to Charlie
 objects — it can store Python libraries, Go modules, or any signed artifact. A company
 like ChainGuard, trusted by Kiera and trusted by governments, could position itself as
 a leading authority on security-cleared open source across languages and ecosystems.

@@ -1,7 +1,7 @@
 # Logging Service (idea)
 
 **Status:** future product, exploratory. Built on
-[Jasmine](../../kscript/jasmine/jasmine.md).
+[Jasmine](../../charlie/jasmine/jasmine.md).
 
 The general service first — basic and useful. A web-logging
 customization (Robinson-shaped) layers on later in a separate doc.

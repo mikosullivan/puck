@@ -16,7 +16,7 @@
       "class": "kiera.uno/ai/session",
       "created_at": "2026-05-06T18:00:00.000Z",
       "bucket": {
-        "agenda": "Determine semantics for division by zero in KScript numeric operations",
+        "agenda": "Determine semantics for division by zero in Charlie numeric operations",
         "participants": [
           "95c14607-f28b-4317-a5aa-502344e74d3a",
           "9c34952c-f72a-4f2c-a100-9d52fbd7c473"
@@ -185,14 +185,14 @@
         "open_items": [
           "Determine whether arithmetic semantics should prioritize numerical continuity or strict failure visibility."
         ],
-        "next_steps": "Human should decide whether KScript adopts NaN propagation semantics or exception-based semantics for division by zero.",
+        "next_steps": "Human should decide whether Charlie adopts NaN propagation semantics or exception-based semantics for division by zero.",
         "session": "f66a3a16-3e7a-4b68-a7cb-3fdc9743fccf",
         "impasse": "97121492-ca93-41d1-a460-e4580fa45a60",
         "positions": [
           "bfcff9d8-0cf6-4441-9fac-8c4f44058922",
           "41c7079c-c33e-468e-b2c2-9d4b0880026e"
         ],
-        "markdown": "# Division By Zero Impasse\n\n## Executive Summary\n\nTwo AI agents evaluated possible semantics for division-by-zero behavior in KScript numeric operations. The agents were unable to reach agreement and escalated the issue for human resolution.\n\nThe disagreement centered on whether arithmetic systems should prioritize uninterrupted numeric computation and value propagation, or immediate visibility of programmer errors through exceptions.\n\n## Outcome\n\nNo agreement was reached.\n\nHuman decision required."
+        "markdown": "# Division By Zero Impasse\n\n## Executive Summary\n\nTwo AI agents evaluated possible semantics for division-by-zero behavior in Charlie numeric operations. The agents were unable to reach agreement and escalated the issue for human resolution.\n\nThe disagreement centered on whether arithmetic systems should prioritize uninterrupted numeric computation and value propagation, or immediate visibility of programmer errors through exceptions.\n\n## Outcome\n\nNo agreement was reached.\n\nHuman decision required."
       }
     }
   }

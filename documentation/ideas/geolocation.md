@@ -14,7 +14,7 @@ namespace.
 ### Remote-first service pattern
 
 `kiera.uno/geo` is intended as an **example of a class that is only used
-remotely**. There is very little KScript in the class definition; all
+remotely**. There is very little Charlie in the class definition; all
 methods are remote calls. The class on the client side is essentially a
 stub that exposes the method surface and dispatches each call to the
 kiera.uno server via `%kiera.call` (see
@@ -26,7 +26,7 @@ let the remote do all the work.
 
 This makes `geo` a useful reference example: developers building their
 own remote-first services can use it as a template for what a
-remote-only class looks like in KScript.
+remote-only class looks like in Charlie.
 
 ### Coordinates
 
@@ -716,10 +716,10 @@ $map.pan = true
   map's UI; the map handles geocoding and routing internally,
   draws the route, and follows the driver's progress along it.
 
-  The KScript side doesn't need to know specific routes — it just
+  The Charlie side doesn't need to know specific routes — it just
   toggles the feature on. The rendered map does the dynamic work.
 
-  Programmatic destination control (KScript sets a specific
+  Programmatic destination control (Charlie sets a specific
   destination, the map navigates to it without the user entering
   one) may be added later as an additional property (working name
   `$map.destination`). Not in v1 of this property.
@@ -883,7 +883,7 @@ anything that references remote resources at render time), the
 **ecoverse-wide CSP policy** applies: alongside the HTML snippet,
 the service provides the information needed to construct a
 `Content-Security-Policy` header that permits the embed. See
-[csp.md](../kscript/csp.md) for the full policy.
+[csp.md](../charlie/csp.md) for the full policy.
 
 Consumers can use that info or not — but it's always provided.
 
@@ -925,7 +925,7 @@ developers don't have to handle attribution separately.
 
 **CSP info.** When this URL is provided as part of a larger HTML
 snippet (e.g., an embed code), the corresponding CSP info bundle
-(see [csp.md](../kscript/csp.md)) accompanies it. For the bare image URL alone,
+(see [csp.md](../charlie/csp.md)) accompanies it. For the bare image URL alone,
 adding `img-src https://kiera.uno` to a site's CSP is what's needed
 to allow the embed.
 
@@ -1212,7 +1212,7 @@ library is configured to fetch tiles from) to its
 `Content-Security-Policy`. Plus any `connect-src` directives the
 script needs for runtime API calls.
 
-Per the [ecoverse CSP policy](../kscript/csp.md), `$map.html` makes the CSP
+Per the [ecoverse CSP policy](../charlie/csp.md), `$map.html` makes the CSP
 info available alongside the HTML — exact bundling format TBD.
 
 ##### Privacy and OSM stewardship

@@ -3,7 +3,7 @@
 Speculative metaprogramming idea. Filed for exploration, not as a
 proposed feature.
 
-See [kscript-runtime.md § Object Model](../kscript/kscript-runtime.md#object-model)
+See [charlie-runtime.md § Object Model](../charlie/charlie-runtime.md#object-model)
 for the established shadow-class concept this idea builds on.
 
 ---

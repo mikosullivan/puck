@@ -1,10 +1,10 @@
-# KScript VS Code Extension — V2 ideas
+# Charlie VS Code Extension — V2 ideas
 
 ```
 vibecode: {
     "status": "future_planning_not_v1_work",
     "started": "2026-05-17",
-    "subsystem": "vscode_kscript_extension",
+    "subsystem": "vscode_charlie_extension",
     "parent_doc": "vscode-extension.md (V1 spec)",
     "purpose": "park_features_deferred_from_v1_and_speculate_about_the_architectural_jump",
     "co_authoring": "claude_capturing_decisions_in_realtime"
@@ -12,10 +12,10 @@ vibecode: {
 ```
 
 V1 is a self-contained TypeScript extension with line-based regex
-formatting — six small rules, masked-string pre-pass, no KScript parser
+formatting — six small rules, masked-string pre-pass, no Charlie parser
 in TS. See [vscode-extension.md](vscode-extension.md) for that spec.
 
-V2 is for ambitions that need either (a) a KScript parser in TypeScript
+V2 is for ambitions that need either (a) a Charlie parser in TypeScript
 or (b) a Language Server Protocol shape. Both are bigger than v1; both
 unlock features v1 can't reach.
 
@@ -27,26 +27,26 @@ unlock features v1 can't reach.
 vibecode: {
     "section": "architectural_jump",
     "v1_constraint": "line_based_regex_no_parser",
-    "v2_options": ["typescript_kscript_parser_embedded",
-                    "language_server_protocol_with_kscript_server"],
-    "tradeoff": "lsp_unlocks_more_features_but_requires_a_running_kscript_capable_server_which_re_introduces_the_kiera_dependency_unless_the_server_is_also_in_typescript"
+    "v2_options": ["typescript_charlie_parser_embedded",
+                    "language_server_protocol_with_charlie_server"],
+    "tradeoff": "lsp_unlocks_more_features_but_requires_a_running_charlie_capable_server_which_re_introduces_the_kiera_dependency_unless_the_server_is_also_in_typescript"
 }
 ```
 
 Two shapes for v2 to consider — they're not mutually exclusive but each
 costs:
 
-### Option A: TypeScript-based KScript parser, still no external runtime
+### Option A: TypeScript-based Charlie parser, still no external runtime
 
-A real KScript parser written in TypeScript, embedded in the extension.
+A real Charlie parser written in TypeScript, embedded in the extension.
 Still self-contained — no external runtime, no Kiera install. Unlocks
 all the features that need to know about syntactic structure
 (structural re-indent, line wrapping, operator spacing with edge case
 awareness, parens-on-return-value, etc.).
 
-Cost: a second KScript parser to maintain (the Lua reference engine has
+Cost: a second Charlie parser to maintain (the Lua reference engine has
 the canonical parser; this would be a parallel TS implementation). The
-two implementations must agree about what's valid KScript.
+two implementations must agree about what's valid Charlie.
 
 **A TS parser is also valuable in its own right, beyond the extension's
 formatting features:**
@@ -57,7 +57,7 @@ formatting features:**
   easier for skeptics to evaluate the language, easier to embed in
   web demos.
 - **Spec validation.** Two independent implementations agreeing forces
-  the [KScriptJSON](../kscript/kscriptjson.md) spec to be precise
+  the [CharlieJSON](../charlie/charliejson.md) spec to be precise
   enough that two people can build the same thing from it. That's a
   real spec quality check no single-implementation language gets.
 - **Drop-in for web tooling.** Any JS/TS project — build pipelines,
@@ -156,18 +156,18 @@ folding UI — needs structural awareness.
 ## Open questions for V2 planning
 
 - **Cross-tool config sharing.** V1 reads from VS Code's
-  `settings.json` only. A future `kscript fmt` CLI will likely read
-  `~/.config/kscript/style.toml`. V2 might let the extension
+  `settings.json` only. A future `charlie fmt` CLI will likely read
+  `~/.config/charlie/style.toml`. V2 might let the extension
   optionally read the external file as a fallback so the two tools
   share style settings — useful for developers who use both.
 - **Where the parser lives in the repo.** If V2 introduces a TS-based
-  KScript parser, does it live in `vscode/syntax/src/`? Or a peer
+  Charlie parser, does it live in `vscode/syntax/src/`? Or a peer
   package `vscode/parser/` that the extension consumes? Affects code
   organization and possibly future LSP work (which would want to
   reuse the parser).
 - **Reconciliation with the canonical Lua parser.** Two parsers for
   the same language can drift. Possible mitigations: shared test
-  fixtures (the same `.kscript` files must parse identically on both
+  fixtures (the same `.charlie` files must parse identically on both
   sides), or generating one from the other (probably overkill).
 - **Distribution.** V1 is Marketplace-ready as a single TypeScript
   extension. V2 with a TS parser is still single-extension. V3 with
@@ -175,6 +175,6 @@ folding UI — needs structural awareness.
   single artifact from the user's perspective.
 - **Whether `vscode-extension.md` (V1) and this file should
   eventually merge** into a single canonical extension spec under
-  `documentation/kscript/vscode/` (replacing the current zero-byte
+  `documentation/charlie/vscode/` (replacing the current zero-byte
   `vscode/syntax/syntax.md`), or stay separate as "shipped" vs
   "future" reference docs.

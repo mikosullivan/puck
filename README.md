@@ -8,7 +8,7 @@ This repository is the working source: design docs, the engine in progress, test
 ## The three packages
 
 - **Kiera (the object protocol)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
-- **KScript** — a lightweight, embeddable language. Source is KScript text; the runtime format is **KScriptJSON**, a JSON-shaped AST the engine executes directly.
+- **Charlie** — a lightweight, embeddable language. Source is Charlie text; the runtime format is **CharlieJSON**, a JSON-shaped AST the engine executes directly.
 - **Mikobase** — a live, portable object store. Class-based, NoSQL; queries are JSON.
 
 ## Reading the docs

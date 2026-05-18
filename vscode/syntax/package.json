@@ -1,7 +1,7 @@
 {
-    "name": "kscript",
-    "displayName": "KScript",
-    "description": "Syntax highlighting for KScript (.kscript) files",
+    "name": "charlie",
+    "displayName": "Charlie",
+    "description": "Syntax highlighting for Charlie (.charlie) files",
     "version": "0.0.1",
     "publisher": "mikobase",
     "engines": {
@@ -13,16 +13,16 @@
     "contributes": {
         "languages": [
             {
-                "id": "kscript",
-                "aliases": ["KScript", "kscript"],
-                "extensions": [".kscript"]
+                "id": "charlie",
+                "aliases": ["Charlie", "charlie"],
+                "extensions": [".charlie"]
             }
         ],
         "grammars": [
             {
-                "language": "kscript",
-                "scopeName": "source.kscript",
-                "path": "./syntaxes/kscript.tmLanguage.json"
+                "language": "charlie",
+                "scopeName": "source.charlie",
+                "path": "./syntaxes/charlie.tmLanguage.json"
             }
         ]
     }

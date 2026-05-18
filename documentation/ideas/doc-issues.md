@@ -19,7 +19,7 @@ found so far.
     model (`kiera.uno/robinson/page`, `kiera.uno/sinatra`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
   kiera-object cutoff window. Cross-reference to [kiera.md](../kiera/kiera.md)
-  added alongside [versioning.md](../kscript/versioning.md).
+  added alongside [versioning.md](../charlie/versioning.md).
 
 ---
 
@@ -28,7 +28,7 @@ found so far.
 ### Better name needed for Xeme's `enterprise` field
 
 The `enterprise` reserved field in
-[Xeme](../kscript/bryton/xeme/xeme.md) (a Kiera-wide convention for
+[Xeme](../charlie/bryton/xeme/xeme.md) (a Kiera-wide convention for
 organization-level pass-through data — licensing, audit hooks,
 deployment markers, etc.) needs a better name. The word
 "enterprise" carries enterprise-software/sales connotations the
@@ -80,7 +80,7 @@ consistent with recent design decisions:
 
 **Paused before completion.** The categories above were swept;
 the rest of the documentation tree (especially the larger files
-like `kscript-runtime.md`, `mikobase.md`, the various ideas/
+like `charlie-runtime.md`, `mikobase.md`, the various ideas/
 files) hasn't been swept in full. Likely more stale items exist
 that this pass didn't reach.
 
