@@ -1,5 +1,15 @@
 # Bootstrapping the Charlie Interpreter
 
+~~~json
+{"vibecode": {
+	"doc": "bootstrap",
+	"role": "design notes for how a host language (Ruby as the worked example) integrates with and bootstraps the Charlie runtime through an embedded Lua VM; layered host/Lua/Charlie policy model",
+	"key_concepts": ["host_layer", "embedded_lua_vm", "downward_visibility_only",
+		"ruby_api_sketch", "policy_enforcement"],
+	"status": "brainstorm"
+}}
+~~~
+
 Notes on how a host language (Ruby used as the example) integrates with and bootstraps
 the Charlie runtime.
 

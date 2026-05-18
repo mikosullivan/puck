@@ -1,5 +1,14 @@
 # Documentation Issues
 
+~~~json
+{"vibecode": {
+	"doc": "doc-issues",
+	"role": "tracker for documentation cleanup findings from a 2026-05-13 sweep; lists fixes already applied and still-open items grouped by spec area",
+	"key_concepts": ["doc_cleanup_tracker", "fixed_during_sweep", "still_open_items",
+		"naming_audits", "stale_references"]
+}}
+~~~
+
 Findings from a documentation-cleanup pass on 2026-05-13. The
 sweep was paused before completion; this file captures what was
 found so far.

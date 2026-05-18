@@ -1,6 +1,14 @@
 # Puck.uno HTML validator and tidying service
 
-**Status:** Forward-looking note. Not in v1.
+~~~json
+{"vibecode": {
+	"doc": "html-validator-service",
+	"role": "speculative puck.uno-hosted service offering HTML5 validation and tidying as a network service; positioned as the heavy-weight authority complementing Uma's local schema-driven first pass",
+	"key_concepts": ["html5_validator_service", "html_tidy", "uma_complement",
+		"service_not_embedded", "whatwg_spec_check"],
+	"status": "brainstorm"
+}}
+~~~
 
 <a id="purpose"></a>
 ## 1 Purpose

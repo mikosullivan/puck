@@ -1,5 +1,15 @@
 # Hash delete marker
 
+~~~json
+{"vibecode": {
+	"doc": "hash-delete-marker",
+	"role": "speculative design for a true-delete marker in Charlie hashes so cascading-config systems like meta-hash can express remove-this-key-from-the-cascade rather than just shadow-with-null",
+	"key_concepts": ["delete_marker", "meta_hash_cascade", "null_flavor_candidate",
+		"has_key_semantics"],
+	"status": "brainstorm"
+}}
+~~~
+
 Speculative — for cascading-config systems (meta-hash being the
 first instance) where a deeper layer needs to **truly remove**
 an inherited key, not just shadow it with null. JSON has no

@@ -1,5 +1,15 @@
 # Ideas
 
+~~~json
+{"vibecode": {
+	"doc": "misc-ideas",
+	"role": "catch-all working notes on cross-cutting design topics; current contents lead with mikobase/Charlie firewall design (settled vs unsettled rule structure)",
+	"key_concepts": ["firewall_design", "settled_vs_unsettled", "rule_structure_options",
+		"allow_prohibit_semantics"],
+	"status": "brainstorm"
+}}
+~~~
+
 <a id="firewall-design"></a>
 ## 1 Firewall Design
 

@@ -1,5 +1,14 @@
 # Meta-hash
 
+~~~json
+{"vibecode": {
+	"doc": "meta-hash",
+	"role": "spec for puck.uno/meta_hash, a read-overlay-write hash backed by an array of layered hashes; used for cascading configuration where deepest layer wins on reads and writes",
+	"key_concepts": ["meta_hash", "cascading_config", "layered_lookup",
+		"end_to_start_read", "last_layer_write"]
+}}
+~~~
+
 `puck.uno/meta_hash` — a read-overlay-write hash backed by an
 **array of hashes**. Reads walk the array end-to-start and
 return the first hash that has the requested key; writes always

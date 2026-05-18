@@ -1,5 +1,14 @@
 # Trivet
 
+~~~json
+{"vibecode": {
+	"doc": "trivet",
+	"role": "spec for puck.uno/trivet, a generic tree library for Charlie with node/child_set/document classes; ported from the Ruby Trivet gem and used wherever the framework deals with trees",
+	"key_concepts": ["tree_library", "trivet_node", "trivet_child_set",
+		"trivet_document", "parent_pointer_maintenance", "ruby_port"]
+}}
+~~~
+
 `puck.uno/trivet` — a generic tree library for Charlie. Provides
 hierarchical node structures with parent/child relationships,
 traversal, query, and mutation. Ported from the Ruby Trivet gem.

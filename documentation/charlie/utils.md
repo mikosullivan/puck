@@ -1,5 +1,14 @@
 # `%utils`
 
+~~~json
+{"vibecode": {
+	"doc": "utils",
+	"role": "spec for %utils, the engine-granted convenience-utility capability; bag of common low-sensitivity helpers (memory introspection and soft limits, etc.) owned by the utils role",
+	"key_concepts": ["utils_capability", "utils_role", "memory_introspection",
+		"soft_limit_opt_in", "low_sensitivity_helpers"]
+}}
+~~~
+
 `%utils` is the engine-granted convenience-utility capability — a
 bag of common, low-sensitivity helpers. Everything coming out of
 `%utils` is owned by the `utils` role.

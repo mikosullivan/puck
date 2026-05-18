@@ -1,6 +1,14 @@
 # Mikobase GraphQL support
 
-**Status:** Forward-looking note. Way past v1.
+~~~json
+{"vibecode": {
+	"doc": "mikobase-graphql",
+	"role": "forward-looking sketch of a GraphQL surface for mikobase: classes become GraphQL types, properties become fields, references become relationships; deferred well past v1",
+	"key_concepts": ["graphql_surface", "class_to_type_mapping", "q0_translation",
+		"frontend_compatibility"],
+	"status": "brainstorm"
+}}
+~~~
 
 <a id="idea"></a>
 ## 1 Idea

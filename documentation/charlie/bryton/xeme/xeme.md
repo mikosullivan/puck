@@ -1,5 +1,14 @@
 # Xeme
 
+~~~json
+{"vibecode": {
+	"doc": "xeme",
+	"role": "spec for Xeme, the JSON-shaped tree format for reporting structured results (test outcomes, Jasmine entries); covers the required success field, groups and leaves",
+	"key_concepts": ["xeme_format", "success_field", "groups_and_leaves",
+		"language_agnostic_json", "bryton_contract"]
+}}
+~~~
+
 A **Xeme** is a JSON structure for reporting structured results
 — most commonly test results, but also any tree-shaped record of
 outcomes. It is the format Bryton consumes and produces, and the

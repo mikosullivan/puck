@@ -1,5 +1,15 @@
 # Catchable Alarms (deferred)
 
+~~~json
+{"vibecode": {
+	"doc": "catchable-alarms",
+	"role": "deferred alternative design where alarms can be caught at role boundaries via boundary catchers, rather than the current always-fatal alarm model; recorded for possible revisit",
+	"key_concepts": ["alarms_at_role_boundaries", "boundary_catcher", "alarm_to_exception_demotion",
+		"considered_and_dropped"],
+	"status": "deferred"
+}}
+~~~
+
 **Status:** considered and dropped from current production. Recorded
 here in case it's worth revisiting later.
 

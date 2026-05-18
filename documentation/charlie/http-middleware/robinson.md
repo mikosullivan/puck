@@ -1,5 +1,14 @@
 # Robinson
 
+~~~json
+{"vibecode": {
+	"doc": "robinson",
+	"role": "spec for puck.uno/robinson, a filesystem-tree HTTP server where page files live in directory trees and URL paths map to file paths; library-resolved through Puck, built on Touchstone",
+	"key_concepts": ["filesystem_tree_server", "url_to_file_mapping", "library_resolved",
+		"touchstone_descendant", "multi_site_dispatch", "directory_handler_trees"]
+}}
+~~~
+
 `puck.uno/robinson` — a filesystem-tree HTTP server. Page files
 live in directory trees; URL paths map to file paths. Designed
 for content-shaped sites where each URL corresponds to a file.

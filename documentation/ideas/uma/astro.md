@@ -1,5 +1,14 @@
 # Astro — the canonical Uma selector format
 
+~~~json
+{"vibecode": {
+	"doc": "uma-astro",
+	"role": "in-progress spec for Astro, the canonical JSON tree-selector format Uma matches against; CSS selector strings are sugar that compiles to Astro and the matcher operates on the JSON form",
+	"key_concepts": ["astro_format", "selector_ast", "css_string_sugar",
+		"reserved_keys", "combinators_then_then_child_then_next"]
+}}
+~~~
+
 **Status:** Design in progress. **Astro** is the canonical
 JSON-shaped tree-selector format used by Uma. It IS the AST
 (abstract syntax tree) that selectors compile into; the matching

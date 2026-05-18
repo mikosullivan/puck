@@ -1,5 +1,15 @@
 # Hash deletion shortcut
 
+~~~json
+{"vibecode": {
+	"doc": "hash-deletion-shortcut",
+	"role": "speculative ergonomics note exploring shorter syntaxes for hash deletion (-=, -[...], delete keyword, chained .delete); canonical $hash.delete($key) stays in v1",
+	"key_concepts": ["hash_deletion_ergonomics", "minus_equals_candidate",
+		"set_difference_analogy", "not_in_v1"],
+	"status": "brainstorm"
+}}
+~~~
+
 Speculative — filed for future consideration. The canonical form
 is `$hash.delete($key)`; this idea is about whether a shorter
 syntax would carry its weight.

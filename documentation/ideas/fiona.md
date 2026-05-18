@@ -1,5 +1,15 @@
 # Fiona
 
+~~~json
+{"vibecode": {
+	"doc": "fiona",
+	"role": "historical notes on Fiona, a DBMS Miko once designed around strict object immutability and relationship-as-record modeling; not in use in mikobase but its ideas may inform future design",
+	"key_concepts": ["fiona_dbms", "object_immutability", "relationships_as_records",
+		"value_semantics_for_objects", "historical_design_influence"],
+	"status": "historical"
+}}
+~~~
+
 **Status:** notes on a data structure Miko once invented. **Not in use
 in mikobase.** Recorded here because some of its ideas may still
 inform future design decisions.

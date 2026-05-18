@@ -1,5 +1,14 @@
 # Null
 
+~~~json
+{"vibecode": {
+	"doc": "nulls",
+	"role": "spec for Charlie's null model: bare-word null returns a fresh puck.uno/null instance per call; nulls carry an assignable flavor field; null/true/false are not user-overridable",
+	"key_concepts": ["null_instance_per_call", "null_flavor", "no_singleton",
+		"reserved_bare_words", "puck_uno_null_class"]
+}}
+~~~
+
 `null` is a bare word method that returns an instance of the `puck.uno/null`
 class.
 

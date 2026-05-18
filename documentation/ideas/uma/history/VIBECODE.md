@@ -1,5 +1,15 @@
 # Project Information
 
+~~~json
+{"vibecode": {
+	"doc": "uma-history-vibecode",
+	"role": "imported per-project documentation from the prior Ruby Uma library: purpose, primary files, core object model, and public behavior of Uma as a Nokogiri::HTML5 wrapper",
+	"key_concepts": ["ruby_uma_project_info", "nokogiri_wrapper", "canon_json_schema",
+		"uma_element_extension"],
+	"status": "historical"
+}}
+~~~
+
 <a id="purpose"></a>
 ## 1 Purpose
 

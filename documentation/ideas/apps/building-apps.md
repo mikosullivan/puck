@@ -1,5 +1,14 @@
 # Building Apps on Mikobase
 
+~~~json
+{"vibecode": {
+	"doc": "building-apps",
+	"role": "developer guidance for apps that talk to remote mikobases over HTTP: treat outbound deltas as a retryable queue; mikobase POST endpoint is idempotent so retries are safe",
+	"key_concepts": ["outbound_post_queue", "idempotent_receipt", "platform_queue_reuse",
+		"retry_safety", "app_responsibility_vs_server_guarantee"]
+}}
+~~~
+
 <a id="outbound-post-queue"></a>
 ## 1 Outbound POST Queue
 

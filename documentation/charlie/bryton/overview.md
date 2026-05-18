@@ -1,5 +1,14 @@
 # Bryton
 
+~~~json
+{"vibecode": {
+	"doc": "bryton-overview",
+	"role": "overview of Bryton, Puck's language-agnostic testing framework; introduces the runner, Xeme result format, and per-language helper libraries",
+	"key_concepts": ["language_agnostic_runner", "xeme_results", "per_language_helpers",
+		"first_contact_surface", "json_emitting_tests"]
+}}
+~~~
+
 Bryton is a software testing framework. It's the primary testing
 tool for Charlie and is **language-agnostic at the runner level**
 — it can execute and aggregate tests written in any language that

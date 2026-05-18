@@ -1,5 +1,15 @@
 # Rideshare Driver App (worked example)
 
+~~~json
+{"vibecode": {
+	"doc": "rideshare-driver-app",
+	"role": "worked-example spec for a driver-side PWA built on puck.uno/geo; doubles as the end-to-end validation case for whether geo covers a real rideshare driver use case",
+	"key_concepts": ["driver_pwa", "puck_uno_geo_validation", "address_resolution",
+		"turn_by_turn_navigation", "fare_zone_logic"],
+	"status": "brainstorm"
+}}
+~~~
+
 **Status:** spec for a real app Miko may build — a driver-side
 Progressive Web App for a new rideshare service. Doubles as a worked
 example of how `puck.uno/geo` is intended to be used.

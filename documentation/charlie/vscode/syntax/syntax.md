@@ -1,5 +1,14 @@
 # Charlie VS Code syntax (pointer)
 
+~~~json
+{"vibecode": {
+	"doc": "vscode-syntax",
+	"role": "pointer stub: directs readers to the actual VS Code extension scaffolding, the V1 spec, V2 ideas, and the formatter spec",
+	"key_concepts": ["vscode_extension_pointer", "textmate_grammar", "formatter_spec_link"],
+	"status": "pointer_stub"
+}}
+~~~
+
 This file is a stub. The actual VS Code extension lives at:
 
 - **Extension scaffolding** — [`vscode/syntax/`](../../../../vscode/syntax/)

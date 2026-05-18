@@ -1,5 +1,15 @@
 # Roles
 
+~~~json
+{"vibecode": {
+	"doc": "plusplus-roles",
+	"role": "early-stage Charlie++ design for %role, a chain-scoped identity/context store distinct from access control; covers scoping, unset patterns, and privilege-escalation pitfalls",
+	"key_concepts": ["role_object", "chain_scoped_role", "identity_context",
+		"not_permissions", "unset_patterns"],
+	"status": "brainstorm"
+}}
+~~~
+
 <a id="status"></a>
 ## 1 Status
 

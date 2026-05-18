@@ -1,5 +1,15 @@
 # Mikobase as a Filesystem (brainstorm)
 
+~~~json
+{"vibecode": {
+	"doc": "mikobase-as-filesystem",
+	"role": "brainstorm about exposing a mikobase as a directory-tree filesystem so storage-agnostic consumers (Sinatra static, Jasmine stores, DirJails) can use mikobase transparently; explores the two superpowers POSIX cannot offer",
+	"key_concepts": ["mikobase_backed_filesystem", "storage_agnostic_consumers",
+		"transactions_over_files", "history_over_files"],
+	"status": "brainstorm"
+}}
+~~~
+
 **Status:** brainstorm. Vibing on the idea. Not committed; not
 specced; just thinking out loud.
 

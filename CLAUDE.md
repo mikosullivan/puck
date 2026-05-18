@@ -1,5 +1,14 @@
 # CLAUDE.md
 
+~~~json
+{"vibecode": {
+	"doc": "claude-md",
+	"role": "project-guidance file for Claude Code: repo overview, layout, build/test commands, conventions, and design principles to honor when editing this codebase",
+	"key_concepts": ["puck_ecoverse", "walking_skeleton_v001", "two_tier_testing",
+		"engine_pipeline", "vibecode_blocks", "no_nanny_code"]
+}}
+~~~
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What this repo is

@@ -1,5 +1,15 @@
 # Idea: String Provenance
 
+~~~json
+{"vibecode": {
+	"doc": "string-provenance",
+	"role": "speculative high-security feature: every string carries its full construction history via base strings and query strings, so operations track full provenance back to original sources",
+	"key_concepts": ["string_provenance", "base_string_vs_query_string",
+		"construction_history", "opt_in_high_security"],
+	"status": "brainstorm"
+}}
+~~~
+
 Not implemented. Probably too expensive and complicated for the current
 implementation, but worth recording so future decisions can build on it. A reasonable
 direction is for this to eventually be an **opt-in feature for a higher level of

@@ -1,5 +1,14 @@
 # HTTP Middleware
 
+~~~json
+{"vibecode": {
+	"doc": "http-middleware",
+	"role": "index of Puck's HTTP middleware classes: which ship in core (Touchstone, Sinatra), which are library-resolved (Robinson), which are deferred (Dogberry); explains the no-layered-servers architecture",
+	"key_concepts": ["touchstone_base", "sinatra_core", "robinson_library",
+		"dogberry_deferred", "no_layered_servers", "library_resolution"]
+}}
+~~~
+
 Puck covers HTTP servers in two tiers: a small set of classes that
 **ship with Puck** (always available out of the box) and a larger
 set that are **available as libraries** — resolved on demand through

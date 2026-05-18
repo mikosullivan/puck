@@ -1,5 +1,15 @@
 # `tap` method
 
+~~~json
+{"vibecode": {
+	"doc": "tap",
+	"role": "speculative note exploring a Ruby-style tap method on Charlie objects for inline side effects in chains; open question is whether it lives on every object or on the .object meta-helper",
+	"key_concepts": ["tap_method", "ruby_style_chaining", "side_effect_in_chain",
+		"object_meta_helper_placement"],
+	"status": "brainstorm"
+}}
+~~~
+
 Speculative. Filed for future consideration. Ruby's `tap`
 pattern — receive the value in a block, run side-effecting
 logic on it, return the value unchanged.

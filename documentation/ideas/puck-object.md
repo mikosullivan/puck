@@ -1,5 +1,15 @@
 # Puck Objects (brainstorm — folded into official doc)
 
+~~~json
+{"vibecode": {
+	"doc": "puck-object",
+	"role": "historical brainstorm that worked out the puck-object-vs-%puck distinction; superseded by the canonical puck.md but kept as a record of how the design developed",
+	"key_concepts": ["puck_object_vs_system_method", "chain_scoped_puck",
+		"restrict_block_substitution", "historical_record"],
+	"status": "folded_into_canonical"
+}}
+~~~
+
 > **Status: this brainstorm has been folded into the official
 > [documentation/puck.md](../puck/puck.md).** The puck-object model is
 > now part of the canonical Puck documentation. This file is preserved

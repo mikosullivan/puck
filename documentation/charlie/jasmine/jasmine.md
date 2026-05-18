@@ -1,5 +1,14 @@
 # Jasmine
 
+~~~json
+{"vibecode": {
+	"doc": "jasmine",
+	"role": "spec for Jasmine, Puck's JSONL-derived logging format; covers entries, logs, %chain.log under-construction entry, corruption tolerance, and integration with Robinson and other producers",
+	"key_concepts": ["jsonl_derived", "log_entries", "chain_log",
+		"corruption_tolerance", "robinson_integration"]
+}}
+~~~
+
 A logging format. Named after one of Miko's cats.
 
 ---

@@ -1,5 +1,14 @@
 # Bryton Runner
 
+~~~json
+{"vibecode": {
+	"doc": "bryton-runner",
+	"role": "spec for the Bryton runner: walks a test directory tree, executes tests, and assembles a Xeme result tree; covers per-directory bryton.json configuration and the files hash",
+	"key_concepts": ["test_aggregation", "bryton_json_config", "files_hash",
+		"per_directory_configuration", "xeme_tree_output"]
+}}
+~~~
+
 The Bryton runner walks a tree of test files, executes them, and
 assembles the results as a [Xeme](xeme/xeme.md) tree.
 

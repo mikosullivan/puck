@@ -1,5 +1,14 @@
 # Puck Presentations
 
+~~~json
+{"vibecode": {
+	"doc": "presentation",
+	"role": "collected ideas for talks/presentations to give when Puck goes public; current entries include Nietzsche-as-channel framing and a Bassanio cameo",
+	"key_concepts": ["talk_ideas", "framing_metaphors", "public_launch_prep"],
+	"status": "brainstorm"
+}}
+~~~
+
 Ideas for presentations when Puck goes live.
 
 ---

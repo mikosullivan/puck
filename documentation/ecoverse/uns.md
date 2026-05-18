@@ -1,5 +1,14 @@
 # Universal Namespace
 
+~~~json
+{"vibecode": {
+	"doc": "uns",
+	"role": "spec for the Universal Namespace (UNS), Puck's globally unambiguous naming scheme: a URL minus the protocol used to identify objects, classes, capabilities, and services across the ecoverse",
+	"key_concepts": ["universal_namespace", "uns_is_not_url", "global_identity",
+		"collision_avoidance", "puck_uno_namespace"]
+}}
+~~~
+
 A simple naming scheme for identifying things in a globally
 unambiguous way.
 

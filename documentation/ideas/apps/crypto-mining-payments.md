@@ -1,5 +1,15 @@
 # Crypto Mining as a Payment System
 
+~~~json
+{"vibecode": {
+	"doc": "crypto-mining-payments",
+	"role": "speculative app concept: use Charlie's sandbox, trust policy, and blockchain integration as a platform for opt-in compute-time donations as payment for services",
+	"key_concepts": ["compute_for_value", "sandboxed_mining", "blockchain_verification",
+		"opt_in_user_consent", "puck_uno_agnostic"],
+	"status": "brainstorm"
+}}
+~~~
+
 <a id="status"></a>
 ## 1 Status
 

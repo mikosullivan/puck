@@ -1,6 +1,14 @@
 # Common parser engine
 
-**Status:** Filed as a forward direction. Not in v1.
+~~~json
+{"vibecode": {
+	"doc": "parser-engine",
+	"role": "forward-direction note: v1 keeps parsers hand-rolled and small; if the count grows to ~4-5 distinct parsers, revisit options like bundling LPeg or building a shared engine",
+	"key_concepts": ["hand_rolled_parsers", "lpeg_bundling_option", "common_engine_trigger",
+		"schema_driven_alternative"],
+	"status": "deferred"
+}}
+~~~
 
 <a id="context"></a>
 ## 1 Context

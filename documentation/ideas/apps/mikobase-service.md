@@ -1,5 +1,15 @@
 # Mikobase Service (idea)
 
+~~~json
+{"vibecode": {
+	"doc": "mikobase-service",
+	"role": "future-product concept for a public hosted mikobase service with a generous free tier as a Puck adoption lever; analogous to Heroku Postgres or PlanetScale but for mikobase",
+	"key_concepts": ["hosted_mikobase_service", "free_tier_adoption_lever",
+		"frictionless_first_contact", "shared_infra_with_logging_service"],
+	"status": "brainstorm"
+}}
+~~~
+
 **Status:** future product, intent stated. A public hosted
 mikobase service with a free tier. Filed as exploration alongside
 the [logging service](logging-service.md) — they share the same

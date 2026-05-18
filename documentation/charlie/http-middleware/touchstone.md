@@ -1,5 +1,14 @@
 # Touchstone
 
+~~~json
+{"vibecode": {
+	"doc": "touchstone",
+	"role": "spec for puck.uno/touchstone, the base HTTP server class inherited by Sinatra and Robinson; holds shared infrastructure (content-type defaults, Jasmine integration, common HTTP plumbing) but is not directly instantiable",
+	"key_concepts": ["base_http_class", "content_type_factory", "jasmine_integration",
+		"shared_http_plumbing", "not_directly_instantiable"]
+}}
+~~~
+
 `puck.uno/touchstone` — the **base HTTP server class** that Sinatra
 and Robinson inherit from. Touchstone is **not directly instantiable
 as a working server.** It holds the shared infrastructure both

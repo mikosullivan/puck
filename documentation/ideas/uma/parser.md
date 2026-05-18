@@ -1,5 +1,14 @@
 # Uma HTML Parser
 
+~~~json
+{"vibecode": {
+	"doc": "uma-parser",
+	"role": "in-progress spec for Uma's pure-Charlie HTML parser; accepts well-formed-ish HTML to avoid bundling a C parser, rejects malformed input rather than attempting browser-style recovery",
+	"key_concepts": ["pure_charlie_parser", "well_formed_ish_input", "void_element_handling",
+		"opaque_script_style", "no_browser_recovery"]
+}}
+~~~
+
 **Status:** design in progress. This is the pure-Charlie HTML
 parser that Uma will use to read existing HTML documents into a
 tree it can manipulate. Goal: avoid bundling a C HTML parser

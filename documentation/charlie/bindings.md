@@ -1,5 +1,14 @@
 # Bindings
 
+~~~json
+{"vibecode": {
+	"doc": "bindings",
+	"role": "spec for the binding mechanism that lets Charlie classes reach Lua-backed functionality (HTTP, filesystem, SQLite, crypto, parsing) without breaching the Charlie/Lua security floor",
+	"key_concepts": ["binding_mechanism", "lua_bridge", "operator_install_only",
+		"sandbox_seal", "engine_startup_load", "controlled_capability_surface"]
+}}
+~~~
+
 A **binding** is the mechanism by which a Charlie class reaches
 Lua-level functionality (a parsed HTML tree, an HTTP client, a
 SQLite connection, etc.) without breaching the security floor

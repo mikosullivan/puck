@@ -1,5 +1,15 @@
 # Ten Brainstorms (Claude)
 
+~~~json
+{"vibecode": {
+	"doc": "claude-brainstorms",
+	"role": "ten short, undiscussed-with-the-project new-direction seeds from Claude: time-travel debugger, Xeme viewer, and other 30-second-read ideas not yet specified",
+	"key_concepts": ["seed_ideas_not_specs", "time_travel_debugger", "xeme_tree_renderer",
+		"speculative_directions"],
+	"status": "brainstorm"
+}}
+~~~
+
 Ten new-to-the-project ideas I came up with while you were at
 7-Eleven. None of these have been explicitly discussed; some
 overlap conceptually with existing work but propose new

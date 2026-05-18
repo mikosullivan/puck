@@ -1,5 +1,15 @@
 # AI Agent Collaboration
 
+~~~json
+{"vibecode": {
+	"doc": "agent-collaboration",
+	"role": "design notes for AI-to-AI collaboration sessions using a shared live mikobase as the communication medium rather than a message-passing protocol",
+	"key_concepts": ["ai_agent_collaboration", "shared_mikobase_medium", "sign_off_protocol",
+		"auditable_workspace", "live_document_model"],
+	"status": "brainstorm"
+}}
+~~~
+
 <a id="the-basic-idea"></a>
 ## 1 The Basic Idea
 

@@ -1,5 +1,15 @@
 # Idea: When Is a UNS Required?
 
+~~~json
+{"vibecode": {
+	"doc": "uns-required-when",
+	"role": "open-question doc: when is a UNS required, optional, forbidden, or recommended across mikobase storage, in-memory Charlie classes, Robinson page files, server classes, and built-ins; to be pinned in a future conversation",
+	"key_concepts": ["uns_requirement_rules", "anonymous_class_identity",
+		"mikobase_storage_requires_uns", "robinson_page_no_uns"],
+	"status": "brainstorm"
+}}
+~~~
+
 Not yet specified. A topic to refine in a future conversation.
 
 <a id="the-question"></a>

@@ -1,5 +1,14 @@
 # Trust Policy
 
+~~~json
+{"vibecode": {
+	"doc": "trust-policy",
+	"role": "spec for the three-layer trust-policy model: host injects policy at boot, engine enforces it, Charlie consumes resources via %engine; covers CLI default behavior",
+	"key_concepts": ["three_layer_trust_model", "host_injects_policy", "engine_enforces",
+		"cli_default_open_policy", "charlie_blind_to_config"]
+}}
+~~~
+
 <a id="overview"></a>
 ## 1 Overview
 

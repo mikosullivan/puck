@@ -1,5 +1,14 @@
 # Geolocation
 
+~~~json
+{"vibecode": {
+	"doc": "geolocation",
+	"role": "in-progress spec for puck.uno/geo, a geolocation service available at puck.uno launch; used as the reference example of a remote-first class (client-side stub, all logic on the server)",
+	"key_concepts": ["puck_uno_geo", "remote_first_service_pattern", "coordinate_fields",
+		"address_resolution", "remote_method_dispatch"]
+}}
+~~~
+
 **Status:** designing. Spec for the launch of puck.uno — to be filled
 in as the design develops.
 

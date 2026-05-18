@@ -1,5 +1,15 @@
 # Marina
 
+~~~json
+{"vibecode": {
+	"doc": "marina",
+	"role": "set-aside design exploration of Puck, Q0, and class definitions; preserved for possible revisit and incorporation into the final design",
+	"key_concepts": ["set_aside_exploration", "implicit_class_from_context",
+		"early_puck_model", "q0_sketches"],
+	"status": "set_aside"
+}}
+~~~
+
 Marina is the codeword for a design exploration of Puck, Q0, and class definitions that was set aside. These ideas were developed collaboratively and may be revisited and incorporated into the final design later.
 
 ---

@@ -1,5 +1,15 @@
 # Robinson Wishlist
 
+~~~json
+{"vibecode": {
+	"doc": "robinson-wishlist",
+	"role": "running capture-not-commit list of features wanted in the Charlie Robinson reincarnation, drawing on the prior Ruby Robinson; prioritization happens after the list is reasonably complete",
+	"key_concepts": ["feature_wishlist", "capture_not_commit", "scales_down_and_up",
+		"ruby_robinson_lineage"],
+	"status": "wishlist"
+}}
+~~~
+
 A running list of features wanted in Robinson, the Charlie HTTP middleware framework.
 Background: Miko built a previous Robinson in Ruby — a comprehensive web framework
 in the same conceptual space as Rails or Sinatra. This document captures features

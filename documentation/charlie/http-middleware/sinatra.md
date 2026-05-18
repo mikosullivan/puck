@@ -1,5 +1,14 @@
 # Sinatra
 
+~~~json
+{"vibecode": {
+	"doc": "sinatra",
+	"role": "spec for puck.uno/sinatra, a small-site HTTP server with Ruby-Sinatra-style route handlers (closures bound to HTTP-method+path pairs); core middleware built on Touchstone",
+	"key_concepts": ["route_handlers", "method_path_pairs", "closure_handlers",
+		"catch_all_fallthrough", "touchstone_descendant"]
+}}
+~~~
+
 `puck.uno/sinatra` — a small-site HTTP server with Ruby-Sinatra-style
 route handlers. Closures register against HTTP-method + path pairs;
 unmatched requests fall through to a catch-all.

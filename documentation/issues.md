@@ -1,5 +1,14 @@
 # Documentation issues
 
+~~~json
+{"vibecode": {
+	"doc": "issues",
+	"role": "tracker for contradictions, gaps, and stale references found by a 2026-05-17 four-agent parallel audit of canonical docs and the development plan; 49 issues categorized by severity, mostly resolved with three deferred",
+	"key_concepts": ["doc_issue_tracker", "audit_findings", "severity_tags",
+		"all_resolved_or_deferred", "design_outcomes_from_audit"]
+}}
+~~~
+
 Tracker for contradictions, gaps, and stale references found in the
 canonical docs and the development plan. Produced 2026-05-17 by a
 four-agent parallel audit covering the core Charlie language spec,

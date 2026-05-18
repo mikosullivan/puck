@@ -1,5 +1,15 @@
 # Ramblings
 
+~~~json
+{"vibecode": {
+	"doc": "ramblings",
+	"role": "informal first-person project lore: origin stories and the why behind names like Robinson and Dogberry; explicitly not spec",
+	"key_concepts": ["project_lore", "naming_origins", "robinson_dogberry_origin",
+		"not_spec"],
+	"status": "lore"
+}}
+~~~
+
 A place for project lore, origin stories, and background that doesn't fit in
 the formal docs but is worth remembering. Loose, narrative, first-person.
 Nothing here is spec — it's the *why* behind the names and choices.

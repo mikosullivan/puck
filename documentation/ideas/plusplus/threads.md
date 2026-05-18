@@ -1,5 +1,15 @@
 # Forking and Concurrency
 
+~~~json
+{"vibecode": {
+	"doc": "plusplus-threads",
+	"role": "Charlie++ design notes for forking and concurrency; threads are forks with a shared mikobase as the sole coordination mechanism, so Charlie itself has no threading primitives",
+	"key_concepts": ["forking_model", "mikobase_as_coordination", "no_shared_memory",
+		"forks_and_tmp", "single_threaded_charlie"],
+	"status": "brainstorm"
+}}
+~~~
+
 <a id="design-rationale"></a>
 ## 1 Design Rationale
 

@@ -1,5 +1,15 @@
 # Idea: Auto-Format on Post
 
+~~~json
+{"vibecode": {
+	"doc": "auto-format",
+	"role": "speculative note: platforms could auto-render Charlie code through the viewer's personal formatter so every reader sees code in their own style, treating formatting as a presentation layer",
+	"key_concepts": ["per_viewer_formatting", "presentation_layer_formatting",
+		"platform_integration"],
+	"status": "brainstorm"
+}}
+~~~
+
 When Charlie code is posted to a platform — a forum, a chat tool, a code review system,
 a documentation site — the platform could automatically render it through the viewer's
 personal formatter before displaying it.

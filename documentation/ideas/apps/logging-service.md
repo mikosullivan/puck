@@ -1,5 +1,15 @@
 # Logging Service (idea)
 
+~~~json
+{"vibecode": {
+	"doc": "logging-service",
+	"role": "future-product concept for a hosted Jasmine log ingest/storage/read service with a free tier as a Puck adoption lever; deliberately not a search-engine-with-DSL (mikobase is the query layer)",
+	"key_concepts": ["jasmine_ingest_service", "free_tier_adoption_lever",
+		"mikobase_query_layer", "vendor_neutral_format"],
+	"status": "brainstorm"
+}}
+~~~
+
 **Status:** future product, exploratory. Built on
 [Jasmine](../../charlie/jasmine/jasmine.md).
 

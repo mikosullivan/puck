@@ -1,5 +1,15 @@
 # The Nanny (idea)
 
+~~~json
+{"vibecode": {
+	"doc": "nanny",
+	"role": "deferred design space for a unified nanny helper that manages quietable warnings and supports escalation to exceptions; current direction is per-feature ad-hoc opt-out flags until use cases converge",
+	"key_concepts": ["nanny_helper", "quietable_warnings", "warning_escalation",
+		"per_feature_optout_flags"],
+	"status": "deferred"
+}}
+~~~
+
 **Status:** early-stage idea, deferred. Seed-planted in a discussion
 about Jasmine's
 [`no_writers_ok`](../../charlie/jasmine/jasmine.md#constructing-a-jasmine-log) escape

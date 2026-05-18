@@ -1,5 +1,14 @@
 # Standard AI Mikobase Classes
 
+~~~json
+{"vibecode": {
+	"doc": "ai-classes",
+	"role": "standard class library under puck.uno/ai/* for AI-to-AI collaboration sessions backed by a shared mikobase: agent, session, and related record types",
+	"key_concepts": ["ai_to_ai_collaboration", "agent_record", "session_record",
+		"shared_mikobase", "puck_uno_ai_namespace"]
+}}
+~~~
+
 <a id="overview"></a>
 ## 1 Overview
 
