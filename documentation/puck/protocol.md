@@ -120,10 +120,7 @@ class and the method, with a body that carries the instance's
 
 - **URL** — `https://{class-uns}/{method}`. The method name lives
   in the URL, not the body.
-- **HTTP verb** — POST in most cases. The protocol allows other
-  verbs (GET, PUT, DELETE, ...); class designers can pick what fits
-  each method's semantics. POST is the safe default and what the
-  examples below use.
+- **HTTP verb** — POST in most cases.
 - **Body** — JSON with `class` (the UNS of the instance's class)
   and `bucket` (the field-value hash), plus `params` if the method
   takes any named arguments.
@@ -363,28 +360,17 @@ sync/async, open questions — see [python.md](python.md).
 <a id="versioning"></a>
 ## 6 Versioning
 
-The Puck protocol supports versioning **only loosely.** Two
+The Puck protocol supports versioning only loosely. Two
 recommended paths:
 
 - **Simple APIs:** commit to keeping your API consistent for as
-  long as you serve it. A class published at `puck.uno/geo` keeps
-  the same fields and method signatures over time. Clients can
-  rely on the URL meaning what it meant when they wrote the call.
+  long as you serve it.
 
 - **APIs that need to evolve:** use a `vN/` segment in the UNS.
-  `puck.uno/geo/v1`, `puck.uno/geo/v2`, etc. — each version is a
-  distinct UNS with its own class definition. Clients pick which
-  version they want and stay on it.
+  `borg.uno/geo/v1`, `borg.uno/geo/v2`, etc.
 
 These two conventions cover the common cases. If the community
-wants a more fine-grained mechanism — request-time version pinning,
-narrowing windows, per-instance attestations — that's a
-conversation to have once a real use case shows up.
+wants a more fine-grained approach then let's have that discussion.
 
-**Distinct from Charlie's blockchain-signed versioning.** Charlie
-has its own versioning story for library identity and signed
-attestations; see [blockchain.md](../blockchain.md). That's about
-who published which code. The Puck protocol's versioning here is
-just about how UNS owners structure their URLs as their APIs
-evolve.
-
+Versioning in Puck is distinct from Charlie's
+[blockchain-signed versioning model](../blockchain.md).
