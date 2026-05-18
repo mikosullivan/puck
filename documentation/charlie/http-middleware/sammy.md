@@ -440,7 +440,7 @@ All of these are universal HTTP infrastructure and live in
 - [Sessions](touchstone.md#sessions) — `$transaction.session`
   hash, domain configuration, default cookie attributes.
 - [Body buffering](touchstone.md#body-buffering) — memory and
-  FSO modes, `puck.uno/touchstone/error/sammy/cannot_store_files`.
+  FSO modes, `puck.uno/touchstone/error/cannot_store_files`.
 
 Sammy inherits these unchanged.
 

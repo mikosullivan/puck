@@ -342,7 +342,7 @@ Below the limit, bodies are held in memory. Above the limit:
   live is an implementation detail.
 - **If no FSO is configured**, the body is rejected and
   Touchstone raises
-  `puck.uno/touchstone/error/sammy/cannot_store_files`. The
+  `puck.uno/touchstone/error/cannot_store_files`. The
   exception carries the request's `Content-Length` and the
   configured memory limit so the caller can produce a useful
   diagnostic.
