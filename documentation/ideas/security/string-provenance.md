@@ -16,7 +16,7 @@ direction is for this to eventually be an **opt-in feature for a higher level of
 security**, not the default behavior of the runtime.
 
 <a id="the-idea"></a>
-## 1 The Idea
+## The Idea
 
 Every string carries its **complete construction history** — not just "this string
 exists and is tainted," but the full record of every operation and every original
@@ -54,7 +54,7 @@ string(s), runs the operations, and produces the result. Until then, no characte
 have been computed.
 
 <a id="why-this-would-be-powerful"></a>
-## 2 Why This Would Be Powerful
+## Why This Would Be Powerful
 
 The coarse model of one role-tag per value (see [roles.md](../../charlie/roles.md)) collapses
 construction history down to a single owning role per string. That's enough for
@@ -75,7 +75,7 @@ could be useful in several places:
   is mechanical, not detective work.
 
 <a id="why-its-deferred"></a>
-## 3 Why It's Deferred
+## Why It's Deferred
 
 The cost is significant, and most code doesn't need the richness:
 
@@ -97,7 +97,7 @@ The cost is significant, and most code doesn't need the richness:
   concerns.
 
 <a id="file-caching-as-a-partial-mitigation"></a>
-### 3.1 File caching as a partial mitigation
+### File caching as a partial mitigation
 
 The memory pressure on base strings could be mitigated by spilling cold base
 strings to disk. Query strings still reference them, but the materialization step
@@ -111,7 +111,7 @@ trades away some of the provenance benefit. The fundamental tension is real:
 keeping full provenance means keeping the inputs, and inputs accumulate.
 
 <a id="things-to-think-about-when-revisiting"></a>
-## 4 Things to Think About When Revisiting
+## Things to Think About When Revisiting
 
 - **Non-concatenative operations.** Substring, slice, replace, regex match — these
   produce strings whose characters trace back to specific positions in a base.
@@ -144,7 +144,7 @@ keeping full provenance means keeping the inputs, and inputs accumulate.
   or a single coarse tag) in the non-provenance case.
 
 <a id="relation-to-the-current-trust-model"></a>
-## 5 Relation to the Current Trust Model
+## Relation to the Current Trust Model
 
 The coarse tracking (one trust tag per value) is the practical floor. Full
 provenance is a strict superset: if you have the query chain back to base strings,

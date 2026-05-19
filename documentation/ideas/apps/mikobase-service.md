@@ -18,7 +18,7 @@ strategic role and probably the same infrastructure.
 ---
 
 <a id="the-idea"></a>
-## 1 The Idea
+## The Idea
 
 Customers get a hosted [[mikobase]] instance they can read from
 and write to via the standard mikobase API. We handle hosting,
@@ -31,7 +31,7 @@ production workloads.
 ---
 
 <a id="why-a-free-tier"></a>
-## 2 Why a Free Tier
+## Why a Free Tier
 
 Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-puck):
 **a free tier is an adoption lever for the Puck ecoverse.**
@@ -53,10 +53,10 @@ for the rest of the ecoverse.
 ---
 
 <a id="shape-sketched-not-committed"></a>
-## 3 Shape (sketched, not committed)
+## Shape (sketched, not committed)
 
 <a id="free-tier"></a>
-### 3.1 Free tier
+### Free tier
 
 - One mikobase instance per account.
 - Small storage cap (e.g., 100 MB; TBD).
@@ -65,7 +65,7 @@ for the rest of the ecoverse.
 - Public URL (with auth) so the customer's apps can connect.
 
 <a id="paid-tiers"></a>
-### 3.2 Paid tiers
+### Paid tiers
 
 - Larger storage caps.
 - More instances per account.
@@ -73,7 +73,7 @@ for the rest of the ecoverse.
 - Eventually: replication, read replicas, multi-region.
 
 <a id="enterprise"></a>
-### 3.3 Enterprise
+### Enterprise
 
 - Dedicated infra, custom limits, compliance audits, optional
   self-hosted appliance.
@@ -81,10 +81,10 @@ for the rest of the ecoverse.
 ---
 
 <a id="synergies"></a>
-## 4 Synergies
+## Synergies
 
 <a id="with-the-logging-service"></a>
-### 4.1 With the logging service
+### With the logging service
 
 The [logging service](logging-service.md) already runs per-customer
 mikobases as its storage backend. **Same infrastructure, two
@@ -93,7 +93,7 @@ direct mikobase access to their log data as part of their plan —
 or sign up for both products with a single account.
 
 <a id="with-puck-adoption"></a>
-### 4.2 With Puck adoption
+### With Puck adoption
 
 Every Puck tutorial, demo, and example needs a place to put
 data. A free mikobase service is the obvious answer:
@@ -101,7 +101,7 @@ data. A free mikobase service is the obvious answer:
 No setup, no infra, just a working data store.
 
 <a id="with-other-future-products"></a>
-### 4.3 With other future products
+### With other future products
 
 Any future Puck service that needs a customer-facing database
 backend (CMS-style products, structured-data services, etc.) can
@@ -110,7 +110,7 @@ ride on the same infrastructure.
 ---
 
 <a id="open-questions"></a>
-## 5 Open Questions
+## Open Questions
 
 - **Endpoint shape.** What's the API URL pattern? Per-customer
   subdomain? Path-based?
@@ -128,7 +128,7 @@ ride on the same infrastructure.
 ---
 
 <a id="out-of-scope-for-now"></a>
-## 6 Out of Scope for Now
+## Out of Scope for Now
 
 Future product. Not a current commitment. Real planning when
 mikobase itself is solid and there's a clear sense of who would

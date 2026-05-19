@@ -11,14 +11,14 @@
 ~~~
 
 <a id="status"></a>
-## 1 Status
+## Status
 
 Future consideration. Not part of early versions.
 
 ---
 
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 Charlie's sandbox, trust policy, and blockchain integration make it a natural platform
 for a generalised opt-in compute payment system. Any two parties can use it: a user pays
@@ -31,7 +31,7 @@ it using a standard Charlie library.
 ---
 
 <a id="how-it-works"></a>
-## 3 How It Works
+## How It Works
 
 1. A site offers something in exchange for compute time — a service, credits, a free
    tier, a charitable donation.
@@ -46,7 +46,7 @@ it using a standard Charlie library.
 ---
 
 <a id="why-charlie-is-a-good-fit"></a>
-## 4 Why Charlie Is a Good Fit
+## Why Charlie Is a Good Fit
 
 - **Sandbox** — secure, time-limited execution. Mining runs in a controlled environment
   with explicit permissions. The trust policy governs what the mining code is allowed
@@ -64,7 +64,7 @@ it using a standard Charlie library.
 ---
 
 <a id="use-cases"></a>
-## 5 Use Cases
+## Use Cases
 
 - **puck.uno services** — pay for signed object publishing by donating compute time
   instead of money.
@@ -78,7 +78,7 @@ it using a standard Charlie library.
 ---
 
 <a id="open-questions"></a>
-## 6 Open Questions
+## Open Questions
 
 - **What is actually mined?** Pure proof-of-work hashing is verifiable but wasteful.
   Useful work (protein folding, AI training, rendering) is a better story but harder
@@ -95,7 +95,7 @@ it using a standard Charlie library.
 ---
 
 <a id="relationship-to-trust-policy"></a>
-## 7 Relationship to Trust Policy
+## Relationship to Trust Policy
 
 Mining sessions run under the standard trust policy. A mining object must declare itself
 as such (setting TBD). The engine can enforce a default maximum duration for mining

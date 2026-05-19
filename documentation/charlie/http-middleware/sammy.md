@@ -24,49 +24,15 @@ serving on top.
 
 ---
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Status](#status)
-- [Quick example](#quick-example)
-- [What's in scope](#whats-in-scope)
-- [Route patterns](#route-patterns)
-  - [Method-agnostic registration](#method-agnostic-registration)
-  - [The `path()` primitive](#the-path-primitive)
-  - [Explicit 405: `$server.reject`](#explicit-405-serverreject)
-  - [Auto-OPTIONS](#auto-options)
-  - [Methods-per-path index](#methods-per-path-index)
-- [Request, transaction, sessions, body buffering](#request-transaction-sessions-body-buffering)
-- [Static file serving](#static-file-serving)
-- [Concurrency](#concurrency)
-- [Handlers](#handlers)
-- [CSRF Protection and CSP](#csrf-protection-and-csp)
-- [What's out of scope](#whats-out-of-scope)
-- [Candidates for v1](#candidates-for-v1)
-  - [Comfort middleware](#comfort-middleware)
-  - [HTTP "correctness" niceties](#http-correctness-niceties)
-  - [Routing power](#routing-power)
-  - [Response sugar](#response-sugar)
-  - [Body / serialization](#body-serialization)
-  - [Observability](#observability)
-  - [Testing](#testing)
-  - [Streaming / async](#streaming-async)
-- [Add-ons](#add-ons)
-- [The response object](#the-response-object)
-- [To be ported from the wishlist](#to-be-ported-from-the-wishlist)
-- [Open issues](#open-issues)
-
----
-
 <a id="status"></a>
-## 2 Status
+## Status
 
 Spec in development.
 
 ---
 
 <a id="quick-example"></a>
-## 3 Quick example
+## Quick example
 
 A complete Sammy server: instantiate, register handlers for the routes
 you care about, register a catch-all, then run. Below, four
@@ -120,7 +86,7 @@ What each piece does:
   no response (or the body is empty), Sammy emits a 404.
 
 <a id="whats-in-scope"></a>
-## 4 What's in scope
+## What's in scope
 
 Small-case use:
 
@@ -140,7 +106,7 @@ Small-case use:
 - Static file serving via a directory object (see below).
 
 <a id="route-patterns"></a>
-## 5 Route patterns
+## Route patterns
 
 A route pattern is a path string with two kinds of named captures:
 
@@ -251,7 +217,7 @@ first-response-wins rule as the
 [handler chain](touchstone.md#the-handler-chain) itself.
 
 <a id="method-agnostic-registration"></a>
-### 5.1 Method-agnostic registration
+### Method-agnostic registration
 
 `$server.all_methods(pattern) do ... end` registers a path
 selector that matches the pattern regardless of the request
@@ -271,7 +237,7 @@ prefers distinct per-method registrations; `all_methods` is for
 the cases where one response really is right for every verb.)
 
 <a id="the-path-primitive"></a>
-### 5.2 The `path()` primitive
+### The `path()` primitive
 
 The per-method selectors and `all_methods` are sugar for a
 single primitive:
@@ -315,7 +281,7 @@ No further compound sugar (no `post_and_get`, no
 ballooning the method-name surface.
 
 <a id="explicit-405-serverreject"></a>
-### 5.3 Explicit 405: `$server.reject`
+### Explicit 405: `$server.reject`
 
 For REST-conscious deployments that want strict
 `405 Method Not Allowed` semantics (rather than the default 404
@@ -355,7 +321,7 @@ upgrade specific paths to strict-405 semantics without changing
 the global default.
 
 <a id="auto-options"></a>
-### 5.4 Auto-OPTIONS
+### Auto-OPTIONS
 
 Sammy ships with a **built-in default handler** that responds
 to `OPTIONS /path` with `204 No Content` and an `Allow:` header
@@ -416,7 +382,7 @@ form) is not handled by the default. Register
 `$server.options('*')` manually if needed.
 
 <a id="methods-per-path-index"></a>
-### 5.5 Methods-per-path index
+### Methods-per-path index
 
 Both auto-OPTIONS and [`$server.reject`](#explicit-405-serverreject)
 need to know "which methods are registered for path X" to
@@ -458,7 +424,7 @@ so the two `Allow:`-emitting features stay cheap on the common
 path.
 
 <a id="request-transaction-sessions-body-buffering"></a>
-## 6 Request, transaction, sessions, body buffering
+## Request, transaction, sessions, body buffering
 
 All of these are universal HTTP infrastructure and live in
 [Touchstone](touchstone.md):
@@ -479,7 +445,7 @@ All of these are universal HTTP infrastructure and live in
 Sammy inherits these unchanged.
 
 <a id="static-file-serving"></a>
-## 7 Static file serving
+## Static file serving
 
 Sammy **has no filesystem dependency by default.** A bare `.new()`
 gives a routes-only server that never touches a filesystem — ideal
@@ -538,7 +504,7 @@ directory's inventory stays hidden, on the same "no dangerous
 defaults" principle as the per-extension rule above.
 
 <a id="concurrency"></a>
-## 8 Concurrency
+## Concurrency
 
 **Sammy is single-threaded. One request at a time.** The accept
 loop reads a request, runs the handler synchronously, writes the
@@ -547,7 +513,7 @@ for a system for managing worker processes, but that feature
 won't be in Version 1.0.
 
 <a id="handlers"></a>
-## 9 Handlers
+## Handlers
 
 The handler chain, three-stage dispatch (`before` / `process` /
 `after`), the `$transaction` object, per-handler state, uncaught
@@ -577,7 +543,7 @@ See [The three stages](touchstone.md#the-three-stages) in
 Touchstone for how that slots into the dispatch flow.
 
 <a id="csrf-protection-and-csp"></a>
-## 10 CSRF Protection and CSP
+## CSRF Protection and CSP
 
 Both are universal HTTP security features and live in
 [Touchstone](touchstone.md):
@@ -591,7 +557,7 @@ Both are universal HTTP security features and live in
 Sammy inherits both unchanged.
 
 <a id="whats-out-of-scope"></a>
-## 11 What's out of scope
+## What's out of scope
 
 The fancier features Robinson covers (multi-site dispatch,
 filesystem trees, admin authentication, factory message overrides,
@@ -599,7 +565,7 @@ canonical redirects) do **not** apply to Sammy. If you need
 those, use Robinson.
 
 <a id="candidates-for-v1"></a>
-## 12 Candidates for v1
+## Candidates for v1
 
 The features below are tempting to add. Each is a v1 candidate
 **if and only if it proves light** — a short, clean implementation
@@ -614,7 +580,7 @@ As each is evaluated, it either gets promoted to scope (with a
 full spec section above) or moved to add-on territory.
 
 <a id="comfort-middleware"></a>
-### 12.1 Comfort middleware
+### Comfort middleware
 
 - **Cookies API / sessions.** **Promoted to scope** — see
   [`$transaction.session`](#sessions). Basic JSON-hash cookie
@@ -638,7 +604,7 @@ full spec section above) or moved to add-on territory.
 - **Rate limiting.** Reverse proxy or add-on.
 
 <a id="http-correctness-niceties"></a>
-### 12.2 HTTP "correctness" niceties
+### HTTP "correctness" niceties
 
 - **Auto-HEAD from GET.** Tempting and small, but it implies
   "Sammy knows your GET is side-effect-free," which it doesn't.
@@ -651,7 +617,7 @@ full spec section above) or moved to add-on territory.
   Pure historical wart.
 
 <a id="routing-power"></a>
-### 12.3 Routing power
+### Routing power
 
 - **Before/after request hooks and middleware chain.**
   **Promoted to scope** — see [Handlers](#handlers). The
@@ -665,7 +631,7 @@ full spec section above) or moved to add-on territory.
 - **URL reverse routing / named routes.** Path strings are paths.
 
 <a id="response-sugar"></a>
-### 12.4 Response sugar
+### Response sugar
 
 - **Status code symbols** (`:ok`, `:not_found`). Integer 200 is fine.
 - **Auto-JSON-from-hash return.** Forces a JSON encoder into the
@@ -674,7 +640,7 @@ full spec section above) or moved to add-on territory.
 - **Pretty-print JSON by default.** No.
 
 <a id="body-serialization"></a>
-### 12.5 Body / serialization
+### Body / serialization
 
 - **XML, YAML, form-urlencoded-via-magic body parsers.** Multipart
   is already in because uploads need it. Everything else is the
@@ -682,21 +648,21 @@ full spec section above) or moved to add-on territory.
 - **Built-in gzip / brotli compression.** Reverse proxy.
 
 <a id="observability"></a>
-### 12.6 Observability
+### Observability
 
 - **A logger interface separate from [Jasmine](../jasmine/jasmine.md).**
   Jasmine is the logging surface. Don't expose a second one.
 - **Metrics / Prometheus endpoints.** Add-on territory.
 
 <a id="testing"></a>
-### 12.7 Testing
+### Testing
 
 - **A built-in test client / mock request builder.**
   [Bryton](../bryton/overview.md) plus a real loopback socket
   is the path. No test-only mode inside the server.
 
 <a id="streaming-async"></a>
-### 12.8 Streaming / async
+### Streaming / async
 
 (Already ruled out by single-threaded — see [Concurrency](#concurrency).
 Long-polling, WebSockets, SSE not viable in core.)
@@ -704,7 +670,7 @@ Long-polling, WebSockets, SSE not viable in core.)
 ---
 
 <a id="add-ons"></a>
-## 13 Add-ons
+## Add-ons
 
 Sammy is designed to be extended by add-ons — installable
 packages that layer additional behavior on top of the core
@@ -743,7 +709,7 @@ Community add-ons are welcomed and expected.
 ---
 
 <a id="the-response-object"></a>
-## 14 The response object
+## The response object
 
 The response constructor (`response.new($status, $headers, $body)`),
 the convenience helpers (`response.html`, `response.json`, etc.),
@@ -757,14 +723,14 @@ Sammy inherits them unchanged.
 ---
 
 <a id="to-be-ported-from-the-wishlist"></a>
-## 15 To be ported from the wishlist
+## To be ported from the wishlist
 
 - Detailed registration semantics
 - Error page rendering
 - Implicit-last-value return convention
 
 <a id="open-issues"></a>
-## 16 Open issues
+## Open issues
 
 (none currently)
 

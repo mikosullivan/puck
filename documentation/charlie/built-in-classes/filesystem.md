@@ -17,7 +17,7 @@ it. The underlying real path is never exposed to Charlie code.
 ---
 
 <a id="the-jail"></a>
-## 1 The Jail
+## The Jail
 
 ~~~json
 {"vibecode": {
@@ -56,7 +56,7 @@ $jail['readme.txt'].read
 ---
 
 <a id="file-objects"></a>
-## 2 File Objects
+## File Objects
 
 ~~~json
 {"vibecode": {
@@ -78,7 +78,7 @@ $file = $jail['docs/readme.txt']
 ```
 
 <a id="operations"></a>
-### 2.1 Operations
+### Operations
 
 ```
 $file.read              # returns file contents as a string
@@ -123,7 +123,7 @@ in the caller's scope. That's the same class users catch from
 Without `timeout:`, the call waits indefinitely.
 
 <a id="permissions-are-downgrade-only"></a>
-### 2.2 Permissions Are Downgrade-Only
+### Permissions Are Downgrade-Only
 
 A file object's read and write permissions can be **ratcheted off but never
 on**. Assigning `false` to `.readable` or `.writable` succeeds; assigning
@@ -138,14 +138,14 @@ take permissions away from there, but a file from a read-only jail can
 never gain write through any API.
 
 <a id="operations-that-return-a-new-file-object"></a>
-### 2.3 Operations that return a new file object
+### Operations that return a new file object
 
 ```
 $new_file = $file.copy('other/path.txt')   # copies file; returns new file object at destination
 ```
 
 <a id="operations-that-mutate-the-objects-path"></a>
-### 2.4 Operations that mutate the object's path
+### Operations that mutate the object's path
 
 ```
 $file.move('new/path.txt')   # moves the file; updates $file's path in place
@@ -157,7 +157,7 @@ leave the path unchanged.
 ---
 
 <a id="directory-objects"></a>
-## 3 Directory Objects
+## Directory Objects
 
 ~~~json
 {"vibecode": {
@@ -177,7 +177,7 @@ $dir = $jail.dir('docs/narnia')
 ```
 
 <a id="operations-1"></a>
-### 3.1 Operations
+### Operations
 
 ```
 $dir.children            # all entries — files and directories
@@ -191,7 +191,7 @@ $dir.delete              # deletes the directory
 ```
 
 <a id="navigating"></a>
-### 3.2 Navigating
+### Navigating
 
 ```
 $dir['caspian.txt']       # returns a file object
@@ -210,7 +210,7 @@ $text = $jail.dir('docs').dir('narnia')['caspian.txt'].read
 ---
 
 <a id="jail-permissions"></a>
-## 4 Jail Permissions
+## Jail Permissions
 
 ~~~json
 {"vibecode": {
@@ -244,7 +244,7 @@ never something that quietly happens.
 ---
 
 <a id="deriving-restricted-jails"></a>
-## 5 Deriving Restricted Jails
+## Deriving Restricted Jails
 
 ~~~json
 {"vibecode": {
@@ -276,7 +276,7 @@ derived from. Requesting `'rw'` from a read-only source either fails or
 silently returns a read-only jail (TBD).
 
 <a id="why-this-exists"></a>
-### 5.1 Why This Exists
+### Why This Exists
 
 The primary use case is **passing a capability to a callee** without
 exposing the original object:
@@ -303,7 +303,7 @@ or temporary mutation:
   read-only jail or set `$file.writable = false` on a fresh reference.
 
 <a id="relationship-to-the-property-ratchet"></a>
-### 5.2 Relationship to the Property Ratchet
+### Relationship to the Property Ratchet
 
 The property ratchet (`$file.readable = false`) mutates the existing
 object permanently. The jail derivation (`$file.jail('r')`) creates a
@@ -316,7 +316,7 @@ something to other code that should only see a restricted view.
 ---
 
 <a id="authorizing-untrusted-paths"></a>
-## 6 Authorizing Untrusted Paths
+## Authorizing Untrusted Paths
 
 ~~~json
 {"vibecode": {
@@ -364,7 +364,7 @@ query-string parsing, and other non-FS concerns are upstream — by the
 time you call `use_path`, the string is just a path.)
 
 <a id="rules"></a>
-### 6.1 Rules
+### Rules
 
 - **Explicit elevation.** Untrusted strings only reach the filesystem
   through `use_path` — never silently. The call site is conspicuous;
@@ -388,7 +388,7 @@ time you call `use_path`, the string is just a path.)
 ---
 
 <a id="iteration"></a>
-## 7 Iteration
+## Iteration
 
 ~~~json
 {"vibecode": {
@@ -415,7 +415,7 @@ end
 ---
 
 <a id="notes"></a>
-## 8 Notes
+## Notes
 
 ~~~json
 {"vibecode": {

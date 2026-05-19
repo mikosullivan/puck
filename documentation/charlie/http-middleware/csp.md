@@ -21,7 +21,7 @@ using CSP at all, they might want a stricter policy than ours. But
 the information has to be there for those who want it.
 
 <a id="why"></a>
-## 1 Why
+## Why
 
 CSP is a browser-level defense-in-depth mechanism that lets a site
 declare which origins/sources are allowed for various asset types.
@@ -48,7 +48,7 @@ and error, which usually means it's either too permissive (defeating
 the point of CSP) or too strict (and the embed silently breaks).
 
 <a id="what-the-service-provides"></a>
-## 2 What the service provides
+## What the service provides
 
 Details to be spec'd later, but the shape: alongside any HTML
 snippet, response, or embed code that involves remote references,
@@ -66,7 +66,7 @@ Exact format (HTTP header in a response, JSON sidecar, comment in
 the HTML, structured response field) TBD.
 
 <a id="posture"></a>
-## 3 Posture
+## Posture
 
 We never include remote references in our HTML without making the
 CSP information available alongside. This is a hard rule: if a
@@ -79,7 +79,7 @@ without those, that's a service-design problem we fix on our side,
 not a burden we push onto consumers.
 
 <a id="scope"></a>
-## 4 Scope
+## Scope
 
 This policy applies to every Puck service that emits HTML, not
 just geolocation. As of the writing of this doc the first concrete

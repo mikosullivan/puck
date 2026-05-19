@@ -23,7 +23,7 @@ server returns results.**
 ---
 
 <a id="why"></a>
-## 1 Why
+## Why
 
 ~~~json
 {"vibecode": {
@@ -60,7 +60,7 @@ Use cases where server-side execution beats client-side:
 ---
 
 <a id="relationship-to-dogberry-distinct-service"></a>
-## 2 Relationship to Dogberry — distinct service
+## Relationship to Dogberry — distinct service
 
 ~~~json
 {"vibecode": {
@@ -88,7 +88,7 @@ Service" as a placeholder, not a final name.
 ---
 
 <a id="what-the-architecture-already-gives-us"></a>
-## 3 What the architecture already gives us
+## What the architecture already gives us
 
 - **`engine.run_source(text, env)`** (planned for V0.02/V0.03) is the
   API shape. The server's request handler is just a host that calls
@@ -105,14 +105,14 @@ Service" as a placeholder, not a final name.
   across multiple script submissions. A session is a worldlet (likely
   non-temporal); each script submission is a small interaction with
   it.
-- **Blockchain** ([blockchain.md](../charlie/blockchain/blockchain.md))
+- **Blockchain** ([blockchain.md](../charlie/blockchain.md))
   provides client identity if the service needs to authenticate, bill,
   or audit.
 
 ---
 
 <a id="open-questions"></a>
-## 4 Open questions
+## Open questions
 
 - **Variant or distinct service.** See [Relationship to Dogberry](#relationship-to-dogberry)
   above. Probably defer until concrete use cases firm up.
@@ -141,7 +141,7 @@ Service" as a placeholder, not a final name.
 ---
 
 <a id="playground-capability-menu"></a>
-## 5 Playground capability menu
+## Playground capability menu
 
 ~~~json
 {"vibecode": {
@@ -157,7 +157,7 @@ the submitted scripts get to do. Each capability is a role grant per
 endpoint (or per user, or per tier).
 
 <a id="curated-datasets-read-only-mikobases"></a>
-### 5.1 Curated datasets (read-only mikobases)
+### Curated datasets (read-only mikobases)
 
 The most Charlie-flavored capability. Server hosts mikobases loaded
 with interesting data; scripts query them via Q0 with read-only access.
@@ -176,7 +176,7 @@ Candidate datasets:
 Read-only, server-cached; cheap per request, real-feeling data.
 
 <a id="external-apis-server-holds-the-credentials"></a>
-### 5.2 External APIs (server holds the credentials)
+### External APIs (server holds the credentials)
 
 Things that need API keys the user shouldn't have to bring. Server
 holds the keys; script gets a wrapped client. Rate-limited per session.
@@ -190,7 +190,7 @@ Each unlocks "things you couldn't easily call from the browser
 without auth/CORS hassles."
 
 <a id="persistent-state-across-sessions"></a>
-### 5.3 Persistent state across sessions
+### Persistent state across sessions
 
 Requires lightweight identity (cookie or token):
 
@@ -202,7 +202,7 @@ Requires lightweight identity (cookie or token):
 This is where playground becomes *project*.
 
 <a id="inter-script-coordination"></a>
-### 5.4 Inter-script coordination
+### Inter-script coordination
 
 Charlie-flavored uniquely because the role model + mikobase +
 capability system makes safe coordination easy:
@@ -215,7 +215,7 @@ capability system makes safe coordination easy:
   the server pairs it against other users' scripts.
 
 <a id="output-options"></a>
-### 5.5 Output options
+### Output options
 
 What the script can *produce*:
 
@@ -228,7 +228,7 @@ What the script can *produce*:
   script to build a custom dataset; download the result."
 
 <a id="time-and-scheduling"></a>
-### 5.6 Time and scheduling
+### Time and scheduling
 
 - **Sleep / timer** with sensible caps.
 - **Scheduled re-runs** — submit a script that runs every N minutes;
@@ -236,14 +236,14 @@ What the script can *produce*:
   for "alert me when X" patterns.
 
 <a id="filesystem-carefully"></a>
-### 5.7 Filesystem (carefully)
+### Filesystem (carefully)
 
 - **Per-user dirjail** — small filesystem rooted at user's account;
   quota'd; survives sessions.
 - **Read-only shared assets** — fonts, sample CSVs, etc.
 
 <a id="anti-resources-deliberately-not-offered"></a>
-### 5.8 Anti-resources (deliberately NOT offered)
+### Anti-resources (deliberately NOT offered)
 
 Worth being explicit about:
 
@@ -256,7 +256,7 @@ The role model makes "didn't grant the role" the cleanest possible
 implementation of each negative.
 
 <a id="tiering"></a>
-### 5.9 Tiering
+### Tiering
 
 Plausible tiers a service could offer:
 

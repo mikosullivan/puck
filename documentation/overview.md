@@ -1,7 +1,7 @@
 # Project Overview
 
-<a id="what-is-this"></a>
-## 1 What Is This?
+<a id="introduction"></a>
+## Introduction
 
 ~~~json
 {"vibecode": {
@@ -21,14 +21,43 @@ different languages and systems. The ecoverse is organized around
 - **Mikobase** — a live object store
 
 Each package has its own features and its own canonical specs. The
-sections below walk through each package and its core features, then
-cover cross-cutting design principles, implementation status, and how
-the pieces fit together at runtime.
+sections below cover the design principles that span all three
+packages, walk through each package and its core features, and
+report implementation status.
+
+---
+
+<a id="design-principles"></a>
+## Design principles
+
+~~~json
+{"vibecode": {
+	"section": "design_principles",
+	"role": "the design principles that span all three packages",
+	"key_concepts": ["no_nanny_code", "safe_defaults_with_explicit_overrides",
+		"security_guarantees_not_nanny"]
+}}
+~~~
+
+<a id="no-nanny-code"></a>
+### No nanny code
+
+Puck provides safe defaults but there are ways to override those
+defaults if you choose:
+
+- **Nanny code** says "you can't, because I think you shouldn't."
+- **Safe defaults** say "you have to be explicit if you want to."
+- **Security guarantees** say "you can't, because allowing this would
+  break the trust model the rest of the system depends on."
+
+The first is what we avoid. The second and third stay. When in doubt:
+if a developer wants to do something legitimate that the API blocks
+without giving them a way through, that's nanny code.
 
 ---
 
 <a id="puck"></a>
-## 2 Puck
+## Puck
 
 ~~~json
 {"vibecode": {
@@ -47,7 +76,7 @@ objects regardless of where they physically live.
 See [puck.md](puck/puck.md) for the full protocol spec.
 
 <a id="features"></a>
-### 2.1 Features
+### Features
 
 - **UNS (Universal Namespace).** Every class and well-known object has
   a URL-shaped global address — your domain gives you a unique
@@ -76,12 +105,12 @@ See [puck.md](puck/puck.md) for the full protocol spec.
 - **Blockchain identity and provenance.** The Puck blockchain
   provides cryptographically anchored identity and signed
   attestations for library versions — see
-  [blockchain.md](blockchain.md).
+  [blockchain.md](charlie/blockchain.md).
 
 ---
 
 <a id="charlie"></a>
-## 3 Charlie
+## Charlie
 
 ~~~json
 {"vibecode": {
@@ -102,7 +131,7 @@ else without external runtime dependencies beyond the engine itself.
 See [charlie.md](charlie/charlie.md) for the language reference.
 
 <a id="features-1"></a>
-### 3.1 Features
+### Features
 
 - **Built for running untrusted code.** Functions only have
 access to what is explicitely sent to them as parameters.
@@ -137,28 +166,28 @@ explicitly send them in as paramters. See [roles.md](charlie/roles.md).
 ---
 
 <a id="mikobase"></a>
-## 4 Mikobase
+## Mikobase
 
 ~~~json
 {"vibecode": {
 	"section": "mikobase_package",
-	"role": "describes the Mikobase object store and its features: Q0 query language, class-based NoSQL, temporal mode, three v1 engines, worldlets as export format, live process model",
+	"role": "describes the Mikobase object store and its features: Q0 query language, class-based NoSQL, three v1 engines, worldlets as export format, live process model; temporal history is an opt-in mode",
 	"key_concepts": ["live_object_store", "Q0_JSON_query_language", "class_based_NoSQL",
-		"temporal_vs_non_temporal_mode", "three_v1_engines",
-		"worldlets_as_export_format", "live_process_not_passive_file"]
+		"three_v1_engines", "worldlets_as_export_format",
+		"live_process_not_passive_file", "temporal_history_opt_in"]
 }}
 ~~~
 
 Mikobase is a **live object store** — in memory, file-backed, or
-served over a network. It supports class definitions, record history,
-transactions, locking, and a JSON query language. Worldlets are the
-primary use case for Mikobase; other use cases (microservices, larger
-services) are supported.
+served over a network. It supports class definitions, transactions,
+locking, and a JSON query language. Both database-shaped use
+(long-lived service backing store) and worldlet-shaped use (packaged,
+portable snapshots) are first-class.
 
 See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
 <a id="features-2"></a>
-### 4.1 Features
+### Features
 
 - **Q0 JSON-based query language.** Every query is a JSON object:
   `{"action": "select", "class": "foo.com/character"}`. SQL-shaped
@@ -168,19 +197,19 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 - **Class-based, NoSQL.** Records have a class, a stable UUID
   identity, and a typed `bucket` of fields. Class definitions live in
   the mikobase itself.
-- **Temporal vs non-temporal mode.** A per-database flag chosen at
-  initialization. Temporal mode keeps an append-only history of every
-  write; non-temporal mode overwrites in place. Worldlets that don't
-  need history opt out via `"temporal": false`.
 - **Three v1 engines.** SQLite file-backed, SQLite in-memory
   (`:memory:`), and a worldlet-direct engine that operates on
   worldlet JSON in place — built for very short-lived workloads (AI
   conversations) where SQLite import/export overhead would dominate.
 - **Worldlets as an export format.** A worldlet is a serialized
   export of a mikobase — a single portable JSON document containing
-  classes, records, history (in temporal mode), and files.
-  Round-trips through import/export, sharable, can be the live
-  storage of the worldlet-direct engine.
+  classes, records, and files. Round-trips through import/export,
+  sharable, can be the live storage of the worldlet-direct engine.
+- **Opt-in temporal history.** Records overwrite in place by default.
+  A mikobase set to `"temporal": true` at initialization keeps an
+  append-only history of every write, supporting rollback and
+  time-travel queries. Most workloads don't need this; turn it on
+  when audit history is a real requirement.
 - **Live process model.** A mikobase is not a passive file — it
   requires a maintaining process. Connecting to a mikobase means
   connecting to a live process, whether in-memory locally, a server
@@ -188,53 +217,8 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 
 ---
 
-<a id="cross-cutting-design-principles"></a>
-## 5 Cross-cutting design principles
-
-~~~json
-{"vibecode": {
-	"section": "design_principles",
-	"role": "the design principles that span all three packages: no nanny code, safe-defaults-with-explicit-overrides, and the four reserved pass-through fields on every object",
-	"key_concepts": ["no_nanny_code", "safe_defaults_with_explicit_overrides",
-		"security_guarantees_not_nanny", "four_reserved_pass_through_fields"]
-}}
-~~~
-
-<a id="no-nanny-code"></a>
-### 5.1 No nanny code
-
-Puck provides safe defaults but there are ways to override those
-defaults if you choose:
-
-- **Nanny code** says "you can't, because I think you shouldn't."
-- **Safe defaults** say "you have to be explicit if you want to."
-- **Security guarantees** say "you can't, because allowing this would
-  break the trust model the rest of the system depends on."
-
-The first is what we avoid. The second and third stay. When in doubt:
-if a developer wants to do something legitimate that the API blocks
-without giving them a way through, that's nanny code.
-
-<a id="reserved-pass-through-fields"></a>
-### 5.2 Reserved pass-through fields
-
-Every Puckverse object has four reserved keys that travel with it
-silently — never stripped, never modified by engines, firewalls, or
-network transport:
-
-- **`vibecode`** — AI-readable structured context (the JSON blocks
-  threaded throughout these docs).
-- **`comment`** — human-readable notes.
-- **`misc`** — informal ad-hoc data the framework doesn't interpret.
-- **`corporate`** — formally defined standards / org-specific
-  metadata.
-
-See [vibecode.md](ecoverse/vibecode.md).
-
----
-
 <a id="implementation-status"></a>
-## 6 Implementation Status
+## Implementation status
 
 ~~~json
 {"vibecode": {

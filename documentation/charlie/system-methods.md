@@ -8,7 +8,7 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 ---
 
 <a id="reference"></a>
-## 1 Reference
+## Reference
 
 ~~~json
 {"vibecode": {
@@ -46,7 +46,7 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 ---
 
 <a id="shorthands"></a>
-## 2 Shorthands
+## Shorthands
 
 ~~~json
 {"vibecode": {
@@ -85,7 +85,7 @@ for the hot path.
 ---
 
 <a id="stdout-and-stderr"></a>
-## 3 `%stdout` and `%stderr`
+## `%stdout` and `%stderr`
 
 `%stdout` and `%stderr` are handles to standard output and standard
 error. They are **always present** — code can write to them
@@ -111,7 +111,7 @@ the engine's configuration. Debug-style writes can be sprinkled
 in without context-specific guards.
 
 <a id="capture"></a>
-### 3.1 Capture
+### Capture
 
 Any process with the handle can capture output written through it:
 
@@ -129,7 +129,7 @@ Capture is just a method on the handle — no separate engine grant
 required beyond `%stdout` itself being granted.
 
 <a id="tee-mode-engine-only"></a>
-### 3.2 Tee mode (engine-only)
+### Tee mode (engine-only)
 
 The engine can optionally configure `%stdout` / `%stderr` so that
 captured bytes flow to *both* the capture buffer and the original
@@ -151,7 +151,7 @@ visible at the original destination. Not in v1; flagged if demand
 surfaces.
 
 <a id="security-posture"></a>
-### 3.3 Security posture
+### Security posture
 
 The engine is the policy point: it grants `%stdout` / `%stderr`,
 or it doesn't. Once granted, the handle is fully usable —
@@ -167,7 +167,7 @@ boundary.
 ---
 
 <a id="utilstimer"></a>
-## 4 `%utils.timer`
+## `%utils.timer`
 
 Times a block and returns the elapsed time in seconds.
 
@@ -193,7 +193,7 @@ is granted.
 ---
 
 <a id="utilstimeout"></a>
-## 5 `%utils.timeout`
+## `%utils.timeout`
 
 Wraps a block with a time limit. When the deadline hits, the
 timeout fires a **two-stage** flag sequence:
@@ -226,7 +226,7 @@ inside. By making the caller-side flag a normal error, the
 caller gets familiar `catch`/`ensure` semantics.
 
 <a id="the-unwind-option"></a>
-### 5.1 The `unwind:` option
+### The `unwind:` option
 
 For cooperative code that wants the timeout to behave like a
 polite "time's up — clean up and exit," pass `unwind: true`:
@@ -256,7 +256,7 @@ uncatchable bubble-up.
 | `unwind: true` | `error/timeout` (catchable, unwinds) | propagates from the block |
 
 <a id="the-form-utilstimeout"></a>
-### 5.2 The `?` form: `%utils.timeout?`
+### The `?` form: `%utils.timeout?`
 
 `%utils.timeout?` (with the `?` suffix) is the **tolerant form**
 that returns the timeout flag as a value instead of raising it
@@ -303,7 +303,7 @@ converts the escaping timeout to a return value. The developer
 can choose to handle it inside the block or outside.
 
 <a id="nested-timeouts"></a>
-### 5.3 Nested timeouts
+### Nested timeouts
 
 Nested `%utils.timeout` calls budget against their parent:
 `effective_timeout = min(requested, remaining_parent_budget)`.
@@ -319,7 +319,7 @@ execution is inside an inner `unwind: true` block, the outer's
 own deadline fires.
 
 <a id="availability"></a>
-### 5.4 Availability
+### Availability
 
 `%utils.timeout` is `null` if the engine did not grant `%utils`.
 Guard with `if %utils` if the caller can't assume the namespace
@@ -328,12 +328,12 @@ is granted.
 ---
 
 <a id="utilsjson"></a>
-## 6 `%utils.json`
+## `%utils.json`
 
 JSON parsing helpers. Two variants:
 
 <a id="utilsjsonparsestring"></a>
-### 6.1 `%utils.json.parse(string)`
+### `%utils.json.parse(string)`
 
 Strict parser. Returns the parsed value (hash, array, string,
 number, boolean, or `puck.uno/null`) on success. Raises
@@ -345,7 +345,7 @@ $data['name']    # 'Picard'
 ```
 
 <a id="utilsjsonparsestring-1"></a>
-### 6.2 `%utils.json.parse?(string)`
+### `%utils.json.parse?(string)`
 
 Tolerant parser. Same as `parse` on success. **Returns null
 instead of raising** when the string isn't valid JSON.
@@ -376,7 +376,7 @@ return is the trade-off for the cleaner API; richer disambiguation
 v1.
 
 <a id="availability-1"></a>
-### 6.3 Availability
+### Availability
 
 `%utils.json.parse` and `%utils.json.parse?` are `null` if the
 engine did not grant `%utils`. Guard with `if %utils` if the

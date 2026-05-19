@@ -16,7 +16,7 @@ the Puck object model the same way any other library is, with no
 install step.
 
 <a id="ships-with-puck"></a>
-### 0.1 Ships with Puck
+### Ships with Puck
 
 | Class | UNS | Use case |
 |---|---|---|
@@ -24,14 +24,14 @@ install step.
 | **Sammy** | `puck.uno/sammy` | Small sites, microservices, single-file apps. Route handlers as closures, Ruby-Sinatra-style. |
 
 <a id="available-as-a-library-through-puck"></a>
-### 0.2 Available as a library through Puck
+### Available as a library through Puck
 
 | Class | UNS | Use case |
 |---|---|---|
 | **Robinson** | `puck.uno/robinson` | Filesystem-tree-served sites. Pages live as files in a directory tree; URL paths map to file paths. **Not bundled — Puck resolves and caches it on first use** (see [puck.md](../../puck/puck.md) for the resolution + caching model). |
 
 <a id="deferred"></a>
-### 0.3 Deferred
+### Deferred
 
 | Class | UNS | Use case |
 |---|---|---|
@@ -43,7 +43,7 @@ opt-in via library resolution. A Charlie program that doesn't need
 Robinson never pulls Robinson in.
 
 <a id="architecture"></a>
-## 1 Architecture
+## Architecture
 
 **No layered servers.** Sammy and Robinson are not "handlers
 inside Dogberry" — they're standalone servers. You pick the one
@@ -78,7 +78,7 @@ shape will be designed without being constrained to slot Sammy
 and Robinson in as components.
 
 <a id="picking-one"></a>
-## 2 Picking one
+## Picking one
 
 - **Sammy** if your app is mostly a handful of routes — closures
   that respond to HTTP methods and paths. Default for "I just need
@@ -95,10 +95,10 @@ different points in the spectrum from "ad-hoc per-route code" to
 "content-as-files" to (eventually, whatever Dogberry becomes).
 
 <a id="shared-facilities"></a>
-## 3 Shared facilities
+## Shared facilities
 
 <a id="jasmine-logging"></a>
-### 3.1 Jasmine logging
+### Jasmine logging
 
 [Jasmine](../jasmine/jasmine.md) — Puck's JSONL-based logging format — is
 available to **both Sammy and Robinson**. The ambient

@@ -1,33 +1,7 @@
 # Worldlet Format
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Top-Level Structure](#top-level-structure)
-- [`meta`](#meta)
-- [`format` and `format_version`](#format-and-format_version)
-- [`properties`](#properties)
-- [`allow`](#allow)
-- [`extensions`](#extensions)
-- [`classes`](#classes)
-- [`records`](#records)
-- [`files`](#files)
-- [`file_chunks`](#file_chunks)
-- [Import Rules](#import-rules)
-  - [UUID constraints](#uuid-constraints)
-  - [Conflict policy](#conflict-policy)
-  - [Reference encoding](#reference-encoding)
-  - [The `class` field](#the-class-field)
-  - [Validation](#validation)
-  - [Atomicity](#atomicity)
-- [Minimal Valid Example](#minimal-valid-example)
-- [Complete Example](#complete-example)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -39,20 +13,24 @@
 A worldlet is a complete mikobase — classes, records, and files — packaged as a single
 JSON object. It is the standard format for sharing and distributing mikobases.
 
-**Worldlets are non-temporal.** Each record is stored as a single object with its
-current bucket; there is no version history. A worldlet represents a snapshot of a
-conversation, scenario, or scratch space, not an audit log. See
-[mikobase.md](../mikobase.md#temporal-vs-non-temporal-mode) for the full mode rules.
+**This document describes the non-temporal worldlet shape** — each record
+is stored as a single object with its current bucket; there is no version
+history. Non-temporal is the worldlet default and matches most use cases
+(snapshots of conversations, scenarios, scratch space). Temporal worldlets
+exist for cases that need to preserve history; see
+[AI2AI.md](../AI2AI.md) for that shape and
+[mikobase.md](../mikobase.md#temporal-vs-non-temporal-mode) for the full
+mode rules.
 
 A worldlet is imported into a running mikobase. The importer creates the classes, inserts
 the records, and stores any file attachments. PKs are preserved exactly as exported, so
-references between records remain valid after import. The target mikobase must be
-non-temporal — importing a worldlet into a temporal mikobase raises an exception.
+references between records remain valid after import. A non-temporal worldlet imports
+into a non-temporal mikobase; importing into a temporal mikobase raises an exception.
 
 ---
 
 <a id="top-level-structure"></a>
-## 3 Top-Level Structure
+## Top-Level Structure
 
 ~~~json
 {"vibecode": {
@@ -76,32 +54,33 @@ non-temporal — importing a worldlet into a temporal mikobase raises an excepti
 }
 ```
 
-A worldlet is a **serialized export** of a mikobase, not a mikobase itself.
-A live mikobase is always engine-backed (SQLite in v1); worldlets are pure
-data on disk produced by an export and consumed by an import. See
-[mikobase.md § Export formats](../mikobase.md#export-formats-akira) for
-the broader export-format picture.
+A worldlet plays two roles: a **serialized export** of an engine-backed
+mikobase (SQLite in v1) and the **live storage** of the
+`puck.uno/mikobase/worldlet` engine. See
+[mikobase.md § Worldlets: Mikobase on a microscale](../mikobase.md#worldlets-mikobase-on-a-microscale)
+for the broader picture and the engine/format distinction.
 
 A worldlet's required keys depend on its `temporal` flag (see
 [mikobase.md § Temporal vs Non-temporal Mode](../mikobase.md#temporal-vs-non-temporal-mode)):
 
-- **Temporal worldlets** (the default): `history` is required; `records` is
-  optional (the engine infers identity stubs from history if absent).
-- **Non-temporal worldlets** (`"temporal": false` at the top level): `records`
-  is required and carries each record's current bucket directly; `history` is
-  not part of the format.
+- **Non-temporal worldlets** (the default — `temporal` key absent or
+  `false`): `records` is required and carries each record's current
+  bucket directly; `history` is not part of the format.
+- **Temporal worldlets** (`"temporal": true` at the top level):
+  `history` is required; `records` is optional (the engine infers
+  identity stubs from history if absent).
 
 All other top-level keys default to empty structures if absent.
 
 This document describes the **non-temporal** worldlet shape — records carry
 their current bucket directly. For the temporal shape with per-version history
 entries, see
-[ai-conversation-format.md](../ai-conversation-format.md).
+[AI2AI.md](../AI2AI.md).
 
 ---
 
 <a id="meta"></a>
-## 4 `meta`
+## `meta`
 
 ~~~json
 {"vibecode": {
@@ -134,7 +113,7 @@ Descriptive information about the worldlet.
 ---
 
 <a id="format-and-format_version"></a>
-## 5 `format` and `format_version`
+## `format` and `format_version`
 
 ~~~json
 {"vibecode": {
@@ -167,7 +146,7 @@ Both are optional for backwards compatibility but should be included in all new 
 ---
 
 <a id="properties"></a>
-## 6 `properties`
+## `properties`
 
 ~~~json
 {"vibecode": {
@@ -206,7 +185,7 @@ shape (each record carries its current bucket directly, no history block). See
 ---
 
 <a id="allow"></a>
-## 7 `allow`
+## `allow`
 
 ~~~json
 {"vibecode": {
@@ -228,7 +207,7 @@ The format and full capability vocabulary are not yet fully designed.
 ---
 
 <a id="extensions"></a>
-## 8 `extensions`
+## `extensions`
 
 ~~~json
 {"vibecode": {
@@ -252,7 +231,7 @@ unrecognised `extensions` key.
 ---
 
 <a id="classes"></a>
-## 9 `classes`
+## `classes`
 
 ~~~json
 {"vibecode": {
@@ -334,7 +313,7 @@ See [class-definition.md](../../charlie/class-definition.md) for the full class 
 ---
 
 <a id="records"></a>
-## 10 `records`
+## `records`
 
 ~~~json
 {"vibecode": {
@@ -345,8 +324,10 @@ See [class-definition.md](../../charlie/class-definition.md) for the full class 
 ~~~
 
 A dict of records, keyed by record UUID. Each entry carries the record's class, its
-creation timestamp, and its current bucket directly. Worldlets are non-temporal — there
-is no separate history block and no per-version entries.
+creation timestamp, and its current bucket directly. The non-temporal worldlet shape
+documented here has no separate history block and no per-version entries; for the
+temporal shape with per-version history, see
+[AI2AI.md](../AI2AI.md).
 
 ```json
 "records": {
@@ -367,7 +348,7 @@ is no separate history block and no per-version entries.
 ---
 
 <a id="files"></a>
-## 11 `files`
+## `files`
 
 ~~~json
 {"vibecode": {
@@ -403,7 +384,7 @@ hash, timestamp, and MIME type.
 ---
 
 <a id="file_chunks"></a>
-## 12 `file_chunks`
+## `file_chunks`
 
 A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
 or more chunks. Chunks are assembled in `index` order to reconstruct the file.
@@ -429,7 +410,7 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 ---
 
 <a id="import-rules"></a>
-## 13 Import Rules
+## Import Rules
 
 ~~~json
 {"vibecode": {
@@ -439,13 +420,17 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 ~~~
 
 <a id="uuid-constraints"></a>
-### 13.1 UUID constraints
+### UUID constraints
 
-All keys in `records`, `files`, and `file_chunks` must be UUID v4 strings. The importer
-rejects any worldlet containing a malformed UUID.
+Keys in `records`, `files`, and `file_chunks` are conventionally UUID v4
+strings, but Mikobase requires only **uniqueness** — not a specific
+format and not cryptographic soundness. UUIDs are used for collision
+avoidance, not security. Any unique string is accepted today; the policy
+may tighten later. See
+[mikobase.md § Record identity](../mikobase.md#record-identity).
 
 <a id="conflict-policy"></a>
-### 13.2 Conflict policy
+### Conflict policy
 
 When a record being imported has the same UUID as one already in the target mikobase:
 
@@ -455,14 +440,14 @@ When a record being imported has the same UUID as one already in the target miko
 The same rule applies to `files` and `file_chunks` entries.
 
 <a id="reference-encoding"></a>
-### 13.3 Reference encoding
+### Reference encoding
 
 Reference fields in `bucket` are plain UUID strings. The class definition declares the
 field type — a field with class `puck.uno/reference` or `puck.uno/dbfile` tells the
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
 <a id="the-class-field"></a>
-### 13.4 The `class` field
+### The `class` field
 
 In all Puck-compliant hashes, the `class` field is reserved to indicate the class or
 classes the hash belongs to. This applies to Q0 queries, record entries, class
@@ -472,7 +457,7 @@ Bucket objects are not Puck-compliant. The `class` field has no special meaning 
 a bucket and may be used freely as an application field.
 
 <a id="validation"></a>
-### 13.5 Validation
+### Validation
 
 The importer validates the following before writing anything:
 
@@ -483,7 +468,7 @@ The importer validates the following before writing anything:
 - The target mikobase is non-temporal.
 
 <a id="atomicity"></a>
-### 13.6 Atomicity
+### Atomicity
 
 Import is all-or-nothing. If any validation error or conflict error occurs, nothing is
 written to the target mikobase. Partial imports do not happen.
@@ -491,7 +476,7 @@ written to the target mikobase. Partial imports do not happen.
 ---
 
 <a id="minimal-valid-example"></a>
-## 14 Minimal Valid Example
+## Minimal Valid Example
 
 The smallest possible worldlet — one record, no schema, no files:
 
@@ -513,7 +498,7 @@ The smallest possible worldlet — one record, no schema, no files:
 ---
 
 <a id="complete-example"></a>
-## 15 Complete Example
+## Complete Example
 
 ```json
 {

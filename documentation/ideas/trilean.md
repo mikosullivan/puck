@@ -18,7 +18,7 @@ semantics — null is treated as falsey, just like in most languages. The trilea
 class is **opt-in**: code that wants three-valued logic explicitly calls into it.
 
 <a id="status"></a>
-## 1 Status
+## Status
 
 ~~~json
 {"vibecode": {
@@ -37,7 +37,7 @@ the language runtime. Implementation will live at `code/charlie/stdlib/trilean.c
 ---
 
 <a id="the-model"></a>
-## 2 The Model
+## The Model
 
 ~~~json
 {"vibecode": {
@@ -84,7 +84,7 @@ strong Kleene logic, K3, or SQL three-valued logic).
 ---
 
 <a id="operators"></a>
-## 3 Operators
+## Operators
 
 ~~~json
 {"vibecode": {
@@ -97,7 +97,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 `%puck['trilean'].<op>(...)`.
 
 <a id="nota"></a>
-### 3.1 `not(a)`
+### `not(a)`
 
 | `a` | result |
 |---|---|
@@ -106,7 +106,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `null` | `null` |
 
 <a id="anda-b"></a>
-### 3.2 `and(a, b)`
+### `and(a, b)`
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -117,7 +117,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 `false` dominates AND. `null` poisons unless `false` is present.
 
 <a id="ora-b"></a>
-### 3.3 `or(a, b)`
+### `or(a, b)`
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -128,7 +128,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 `true` dominates OR. `null` poisons unless `true` is present.
 
 <a id="nanda-b-notanda-b"></a>
-### 3.4 `nand(a, b)` = `not(and(a, b))`
+### `nand(a, b)` = `not(and(a, b))`
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -137,7 +137,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `null` | `null` | `true` | `null` |
 
 <a id="nora-b-notora-b"></a>
-### 3.5 `nor(a, b)` = `not(or(a, b))`
+### `nor(a, b)` = `not(or(a, b))`
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -146,7 +146,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `null` | `false` | `null` | `null` |
 
 <a id="xora-b-exclusive-or"></a>
-### 3.6 `xor(a, b)` (exclusive or)
+### `xor(a, b)` (exclusive or)
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -158,7 +158,7 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 result always depends on the unknown.
 
 <a id="xnora-b-notxora-b-equivalence-iff"></a>
-### 3.7 `xnor(a, b)` = `not(xor(a, b))` (equivalence / iff)
+### `xnor(a, b)` = `not(xor(a, b))` (equivalence / iff)
 
 | `a \ b` | `true` | `false` | `null` |
 |---|---|---|---|
@@ -169,7 +169,7 @@ result always depends on the unknown.
 True when both operands are the same boolean. Same null-poisoning rule as XOR.
 
 <a id="impliesa-b-material-conditional-if-a-then-b"></a>
-### 3.8 `implies(a, b)` (material conditional, "if a then b")
+### `implies(a, b)` (material conditional, "if a then b")
 
 Defined as `or(not(a), b)`.
 
@@ -184,7 +184,7 @@ material-conditional rule (vacuous truth). When the antecedent is null, the
 result depends on whether the antecedent turns out to be true or false.
 
 <a id="prohibitsa-b-material-nonimplication-a-but-not-b"></a>
-### 3.9 `prohibits(a, b)` (material nonimplication, "a but not b")
+### `prohibits(a, b)` (material nonimplication, "a but not b")
 
 Defined as `and(a, not(b))`, equivalently `not(implies(a, b))`. The opposite of
 `implies` — true only in the one case where an implication fails: `a` is true
@@ -201,7 +201,7 @@ being true. Useful for rule and constraint logic where you want to assert that
 some condition forbids another.
 
 <a id="eqa-b-alias-for-xnor"></a>
-### 3.10 `eq(a, b)` (alias for `xnor`)
+### `eq(a, b)` (alias for `xnor`)
 
 `eq` is a friendly alias for `xnor`. Both operators produce the same truth table
 in trilean — they are the same function under two names. See the `xnor` section
@@ -218,7 +218,7 @@ null?" use `$x.object.null?`, never `eq(x, null)`.
 ---
 
 <a id="lazy-second-argument"></a>
-## 4 Lazy Second Argument
+## Lazy Second Argument
 
 ~~~json
 {"vibecode": {
@@ -290,7 +290,7 @@ chain frame, so `%chain` access and exception propagation behave normally.
 ---
 
 <a id="branching-on-a-trilean-result"></a>
-## 5 Branching on a Trilean Result
+## Branching on a Trilean Result
 
 A trilean operator always returns one of three strict values: `true`, `false`, or
 `null`. Branching on the result is straightforward — use direct comparisons or
@@ -333,7 +333,7 @@ set.
 ---
 
 <a id="usage"></a>
-## 6 Usage
+## Usage
 
 ~~~json
 {"vibecode": {
@@ -372,7 +372,7 @@ about three-valued logic at all.
 ---
 
 <a id="why-pure-charlie"></a>
-## 7 Why Pure Charlie
+## Why Pure Charlie
 
 ~~~json
 {"vibecode": {
@@ -397,7 +397,7 @@ The implementation lives at [code/charlie/stdlib/trilean.charlie](../../../code/
 ---
 
 <a id="notes"></a>
-## 8 Notes
+## Notes
 
 - **Operators stay strict-boolean.** Default Charlie `&&`, `||`, `not`, `==`
   treat null as falsey. Trilean is purely a library, not an operator overload.

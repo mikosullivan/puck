@@ -31,7 +31,7 @@ this doc focuses on the loop-specific use.
 ---
 
 <a id="while"></a>
-## 1 `while`
+## `while`
 
 ~~~json
 {"vibecode": {
@@ -58,7 +58,7 @@ for the rule.
 ---
 
 <a id="each"></a>
-## 2 `.each`
+## `.each`
 
 ~~~json
 {"vibecode": {
@@ -81,7 +81,7 @@ end
 ---
 
 <a id="numeric-iteration-helpers"></a>
-## 3 Numeric iteration helpers
+## Numeric iteration helpers
 
 ~~~json
 {"vibecode": {
@@ -119,7 +119,7 @@ they behave the same as `.each` over the corresponding range and accept
 ---
 
 <a id="naming-a-loop-with-as"></a>
-## 4 Naming a loop with `as`
+## Naming a loop with `as`
 
 ~~~json
 {"vibecode": {
@@ -173,7 +173,7 @@ unified rule.
 ---
 
 <a id="loop-object-methods"></a>
-## 5 Loop object methods
+## Loop object methods
 
 ~~~json
 {"vibecode": {
@@ -210,7 +210,7 @@ from the enclosing function.
 ---
 
 <a id="break"></a>
-## 6 `break`
+## `break`
 
 ~~~json
 {"vibecode": {
@@ -249,7 +249,7 @@ intervening loop objects' `$loop.active` becomes `false` and their
 `$loop.count` reflects the iterations that actually ran.
 
 <a id="function-boundary"></a>
-### 6.1 Function boundary
+### Function boundary
 
 `break` does **not** escape function boundaries. If a function
 definition encloses a loop and contains `break`, that `break` exits
@@ -275,7 +275,7 @@ blocks, not function definitions — they execute in the caller's
 lexical context. The first example above relies on this.
 
 <a id="argument-validation"></a>
-### 6.2 Argument validation
+### Argument validation
 
 - `break 1` is equivalent to bare `break`.
 - `break 0` raises `puck.uno/error/invalid_argument` —
@@ -288,7 +288,7 @@ lexical context. The first example above relies on this.
   positive integer the same `invalid_argument` is raised.
 
 <a id="interaction-with-structural-blocks"></a>
-### 6.3 Interaction with structural blocks
+### Interaction with structural blocks
 
 If `break` (or `break N`) exits a loop, the loop's `after` structural
 block does **not** run — `after` only runs after a complete iteration
@@ -297,7 +297,7 @@ breaks. The `noloop` block remains a no-op (it only runs when the
 loop body didn't run at all).
 
 <a id="open-question-named-loop-targeting"></a>
-### 6.4 Open question: named-loop targeting
+### Open question: named-loop targeting
 
 Loops can be named with `as $name` (see
 [Naming a loop with `as`](#naming-a-loop-with-as-quinn)). A natural
@@ -310,7 +310,7 @@ post-lock addition.
 ---
 
 <a id="structural-blocks"></a>
-## 7 Structural blocks
+## Structural blocks
 
 ~~~json
 {"vibecode": {
@@ -355,7 +355,7 @@ without an extra emptiness check around the loop.
 ---
 
 <a id="not-in-charlie"></a>
-## 8 Not in Charlie
+## Not in Charlie
 
 ~~~json
 {"vibecode": {

@@ -10,7 +10,7 @@
 ~~~
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 Charlie has no concept of where its trust configuration comes from. That is the host
 program's responsibility. The engine enforces whatever policy the host provides; it does
@@ -25,7 +25,7 @@ config source → host program → engine → %engine → Charlie script
 ---
 
 <a id="the-three-layers"></a>
-## 2 The Three Layers
+## The Three Layers
 
 **Charlie** — knows nothing about trust configuration. Accesses host-provided resources
 via `%engine`. Cannot read, modify, or influence the trust policy.
@@ -42,7 +42,7 @@ sense for its context and passes it to the engine at startup. Two examples:
 ---
 
 <a id="cli-behavior"></a>
-## 3 CLI Behavior
+## CLI Behavior
 
 When a Charlie script is run from the command line, the CLI host applies this default:
 
@@ -57,7 +57,7 @@ permissions beyond the open default.
 ---
 
 <a id="non-cli-behavior"></a>
-## 4 Non-CLI Behavior
+## Non-CLI Behavior
 
 In any context other than the CLI, there is no concept of a default config location. The
 host program is entirely responsible for providing the trust policy.
@@ -69,12 +69,12 @@ open-policy fallback would be a security hole.
 ---
 
 <a id="trust-policy-structure"></a>
-## 5 Trust Policy Structure
+## Trust Policy Structure
 
 A trust policy has two parts: a base mode and an optional domain list.
 
 <a id="base-mode"></a>
-### 5.1 Base mode
+### Base mode
 
 | Mode | Behaviour |
 |------|-----------|
@@ -82,7 +82,7 @@ A trust policy has two parts: a base mode and an optional domain list.
 | `allow_list` | Only domains explicitly listed are permitted |
 
 <a id="domain-entries"></a>
-### 5.2 Domain entries
+### Domain entries
 
 Each domain entry specifies which permissions objects from that domain are granted:
 
@@ -109,7 +109,7 @@ override the default — either granting less, granting more, or denying entirel
 In `allow_list` mode, domains not listed are denied automatically.
 
 <a id="permissions"></a>
-### 5.3 Permissions
+### Permissions
 
 | Permission | Description |
 |------------|-------------|
@@ -120,7 +120,7 @@ In `allow_list` mode, domains not listed are denied automatically.
 | `mining` | May perform crypto mining. See note below. |
 
 <a id="crypto-mining"></a>
-### 5.4 Crypto Mining
+### Crypto Mining
 
 Any object that performs crypto mining must explicitly declare itself as such. The
 declaration mechanism (a metadata field on the object) is not yet designed — setting TBD.
@@ -137,7 +137,7 @@ built on this mechanism.
 ---
 
 <a id="capability-attenuation"></a>
-## 6 Capability Attenuation
+## Capability Attenuation
 
 Permissions can be narrowed but never expanded. A script receiving an object from
 `borg.com` can pass it to a subsystem with `fork` stripped out. It cannot grant `borg.com`
@@ -149,7 +149,7 @@ sub-function. The ceiling is always set by the host.
 ---
 
 <a id="relationship-to-signing"></a>
-## 7 Relationship to Signing
+## Relationship to Signing
 
 The trust policy only applies to signed objects. An unsigned object is rejected outright
 regardless of policy. The policy controls what signed objects are permitted and at what

@@ -22,7 +22,7 @@ unlock features v1 can't reach.
 ---
 
 <a id="the-architectural-jump"></a>
-## 1 The architectural jump
+## The architectural jump
 
 ~~~json
 {"vibecode": {
@@ -38,7 +38,7 @@ Two shapes for v2 to consider — they're not mutually exclusive but each
 costs:
 
 <a id="option-a-typescript-based-charlie-parser-still-no-external-runtime"></a>
-### 1.1 Option A: TypeScript-based Charlie parser, still no external runtime
+### Option A: TypeScript-based Charlie parser, still no external runtime
 
 A real Charlie parser written in TypeScript, embedded in the extension.
 Still self-contained — no external runtime, no Puck install. Unlocks
@@ -73,7 +73,7 @@ roadmap, the TS parser would still be worth building. The formatter
 features are a bonus.
 
 <a id="option-b-language-server-protocol-with-a-typescript-based-language-server"></a>
-### 1.2 Option B: Language Server Protocol with a TypeScript-based language server
+### Option B: Language Server Protocol with a TypeScript-based language server
 
 Same parser as Option A, but exposed via LSP. The extension talks LSP
 to a long-running language server process (also TypeScript, also
@@ -93,7 +93,7 @@ parser in an LSP layer.
 ---
 
 <a id="features-deferred-from-v1"></a>
-## 2 Features deferred from V1
+## Features deferred from V1
 
 ~~~json
 {"vibecode": {
@@ -108,7 +108,7 @@ parser in an LSP layer.
 ~~~
 
 <a id="structural-re-indent"></a>
-### 2.1 Structural re-indent
+### Structural re-indent
 
 V1 trusts the per-line indent level the developer wrote and only
 normalizes tab/space style and indent size. V2 with a parser can
@@ -116,14 +116,14 @@ recompute the correct indent based on `do`/`end`/`class`/`function`/
 `if`/`while` block boundaries and fix nesting errors.
 
 <a id="line-wrapping-at-maxlinelength"></a>
-### 2.2 Line wrapping at `maxLineLength`
+### Line wrapping at `maxLineLength`
 
 V1 has a `maxLineLength` option that nothing reads. V2 with a parser
 can split long lines at sensible breakpoints (after `,` in argument
 lists, between operators with correct precedence, etc.).
 
 <a id="arithmetic-and-comparison-operator-spacing"></a>
-### 2.3 Arithmetic and comparison operator spacing
+### Arithmetic and comparison operator spacing
 
 V1 normalizes `=` (safe — assignment is unambiguous in context) but
 leaves `+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`, `<=`, `>=` alone
@@ -132,7 +132,7 @@ because the line-based pass can't tell `-1` (negation) from `x - 1`
 V2 with a parser handles all of them correctly.
 
 <a id="parens-on-return-value-convention"></a>
-### 2.4 Parens-on-return-value convention
+### Parens-on-return-value convention
 
 Miko's personal style preference: `$foo.bar 1, 2, 3` for side-effect
 calls; `$gup = $foo.bar(1, 2, 3)` for return-value capture (see
@@ -140,14 +140,14 @@ calls; `$gup = $foo.bar(1, 2, 3)` for return-value capture (see
 knowing whether a call's return value is captured — needs a parser.
 
 <a id="hash-splat-preference"></a>
-### 2.5 Hash-splat preference
+### Hash-splat preference
 
 Per Miko's style: prefer `&something **$args` over inline keyword
 arguments when there are several. V1 can't reformat one shape into the
 other without parsing the call. V2 candidate.
 
 <a id="vibecode-block-internal-formatting"></a>
-### 2.6 Vibecode block internal formatting
+### Vibecode block internal formatting
 
 The `vibecode:` JSON blocks have their own format convention
 (minified, soft-wrapped at 90 columns, breaks after `,` or `:`; per
@@ -156,7 +156,7 @@ The `vibecode:` JSON blocks have their own format convention
 convention.
 
 <a id="folding-markers-region-comments"></a>
-### 2.7 Folding markers / region comments
+### Folding markers / region comments
 
 V1 doesn't add or respect folding markers. V2 could let users
 collapse classes, functions, or `vibecode:` blocks via VS Code's
@@ -165,7 +165,7 @@ folding UI — needs structural awareness.
 ---
 
 <a id="open-questions-for-v2-planning"></a>
-## 3 Open questions for V2 planning
+## Open questions for V2 planning
 
 - **Cross-tool config sharing.** V1 reads from VS Code's
   `settings.json` only. A future `charlie fmt` CLI will likely read

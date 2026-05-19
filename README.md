@@ -1,4 +1,4 @@
-# Puck
+# <img src="orlando/static/logo.svg" alt="Puck logo" class="hero-logo"> Puck
 
 ~~~json
 {"vibecode": {
@@ -18,6 +18,8 @@ Puck is an **ecoverse** — a suite of interconnected software for querying
 and executing remote objects. Active design and early implementation.
 
 This repository is the working source: design docs, the engine in progress, tests, experimental code.
+
+You can submit issues to GitHub with these links: [GitHub issue](https://github.com/mikosullivan/puck/issues/new?title=%5Bdocs%5D%20README.md&body=Page%3A%20%60README.md%60%0A%0A%28Describe%20the%20issue%20here.%29)
 
 ## The three packages
 
@@ -44,4 +46,4 @@ Puck is guided by four core principles:
 
 ## Reading the docs
 
-Start with the **[project overview](documentation/overview.md)** for an end-to-end tour. Full specs live under [`documentation/`](documentation/).
+Start with the **[project overview](documentation/overview.md)** for an end-to-end tour.

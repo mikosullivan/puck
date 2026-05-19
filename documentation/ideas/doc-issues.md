@@ -16,7 +16,7 @@ found so far.
 ---
 
 <a id="fixed-during-the-sweep"></a>
-## 1 Fixed during the sweep
+## Fixed during the sweep
 
 - **`geolocation.md`** — `puck.uno/error/unreachable` →
   `puck.uno/exception/error/unreachable`. (Stale short-form of
@@ -34,10 +34,10 @@ found so far.
 ---
 
 <a id="still-open"></a>
-## 2 Still open
+## Still open
 
 <a id="better-name-needed-for-xemes-enterprise-field-resolved-2026-05-18"></a>
-### 2.1 Better name needed for Xeme's `enterprise` field — RESOLVED 2026-05-18
+### Better name needed for Xeme's `enterprise` field — RESOLVED 2026-05-18
 
 Renamed `enterprise` → `corporate` across the docs. Earlier
 alternatives that were rejected (recorded for posterity): `org`,
@@ -49,7 +49,7 @@ clearer governance label without that baggage.
 
 
 <a id="ideasmarinamd-uses-the-old-error-hierarchy"></a>
-### 2.2 `ideas/marina.md` uses the old error hierarchy
+### `ideas/marina.md` uses the old error hierarchy
 
 The file defines `puck.uno/error` as a subclass of
 `puck.uno/exception` (lines 18, 167, 172–178). Under the current
@@ -66,7 +66,7 @@ model?
 ---
 
 <a id="verified-clean-no-fix-needed"></a>
-## 3 Verified clean (no fix needed)
+## Verified clean (no fix needed)
 
 The Explore-agent sweep confirmed these areas are already
 consistent with recent design decisions:
@@ -87,7 +87,7 @@ consistent with recent design decisions:
 ---
 
 <a id="sweep-status"></a>
-## 4 Sweep status
+## Sweep status
 
 **Paused before completion.** The categories above were swept;
 the rest of the documentation tree (especially the larger files

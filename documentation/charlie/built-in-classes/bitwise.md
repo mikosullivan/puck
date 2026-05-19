@@ -1,7 +1,7 @@
 # Bitwise Object
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -17,7 +17,7 @@ methods on Number. This keeps the Number class uncluttered and makes bitwise int
 explicit at the call site.
 
 <a id="access"></a>
-## 2 Access
+## Access
 
 ~~~json
 {"vibecode": {
@@ -38,7 +38,7 @@ $n.bitwise.or(456)
 ---
 
 <a id="open-questions"></a>
-## 3 Open Questions
+## Open Questions
 
 - Do operations take a second Number argument, or does the bitwise object wrap the value
   and chain? e.g. `$a.bitwise.or($b)` vs `$a.bitwise.or($b).and($c)`
@@ -50,7 +50,7 @@ $n.bitwise.or(456)
 ---
 
 <a id="methods"></a>
-## 4 Methods
+## Methods
 
 ~~~json
 {"vibecode": {

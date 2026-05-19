@@ -32,7 +32,7 @@ response shapes, dynamic vs stored objects, versioning — see
 ---
 
 <a id="example-a-remote-geo-class"></a>
-## 1 Example: a remote `Geo` class
+## Example: a remote `Geo` class
 
 `puck.uno/geo` publishes a `Geo` class — a geolocation service. It's
 **inherently remote**: the data (weather feeds, census databases, map
@@ -64,7 +64,7 @@ only in syntax.
 ---
 
 <a id="remote-returns-can-be-other-puck-objects"></a>
-## 2 Remote returns can be other Puck objects
+## Remote returns can be other Puck objects
 
 A Puck method doesn't have to return a flat value. It can return an
 **instance of another Puck class** — and that returned object is itself

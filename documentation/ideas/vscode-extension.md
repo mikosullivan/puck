@@ -16,7 +16,7 @@ Brainstorm in progress.
 ---
 
 <a id="architectural-constraint"></a>
-## 1 Architectural constraint
+## Architectural constraint
 
 ~~~json
 {"vibecode": {
@@ -50,7 +50,7 @@ buying into the whole system.
 ---
 
 <a id="settings-location"></a>
-## 2 Settings location
+## Settings location
 
 ~~~json
 {"vibecode": {
@@ -87,7 +87,7 @@ defer.
 ---
 
 <a id="formatter-v1-spec"></a>
-## 3 Formatter v1 spec
+## Formatter v1 spec
 
 ~~~json
 {"vibecode": {
@@ -109,7 +109,7 @@ defer.
 ~~~
 
 <a id="public-api"></a>
-### 3.1 Public API
+### Public API
 
 ```ts
 export interface FormatterOptions {
@@ -132,7 +132,7 @@ One entry point. Options have safe defaults; the VS Code extension fills
 them from `settings.json`; tests can pass them explicitly.
 
 <a id="rule-pipeline"></a>
-### 3.2 Rule pipeline
+### Rule pipeline
 
 `formatCharlie()` is a pipeline of independent rules. Order matters:
 
@@ -147,7 +147,7 @@ Indentation runs before trailing-whitespace so any whitespace it
 introduces survives the strip pass.
 
 <a id="file-layout"></a>
-### 3.3 File layout
+### File layout
 
 ```
 vscode/syntax/
@@ -170,7 +170,7 @@ vscode/syntax/
 ```
 
 <a id="user-preferences-shape"></a>
-### 3.4 User preferences shape
+### User preferences shape
 
 ~~~json
 {"vibecode": {
@@ -221,7 +221,7 @@ keys) prefixes each setting with `charlie.formatter.`:
 ```
 
 <a id="settings-declaration-in-packagejson"></a>
-### 3.5 Settings declaration in `package.json`
+### Settings declaration in `package.json`
 
 The configurable options surface in VS Code's Settings UI through a
 `contributes.configuration` block:
@@ -248,7 +248,7 @@ The configurable options surface in VS Code's Settings UI through a
 (One entry per `FormatterOptions` field.)
 
 <a id="vs-code-wiring"></a>
-### 3.6 VS Code wiring
+### VS Code wiring
 
 `src/extension.ts` registers a Document Formatting provider on
 activation; VS Code auto-wires the Shift+Alt+F shortcut, the
@@ -279,7 +279,7 @@ export function activate(context: vscode.ExtensionContext) {
 ```
 
 <a id="testing"></a>
-### 3.7 Testing
+### Testing
 
 Each rule has an `input.charlie` and `expected.charlie` fixture pair
 under `tests/formatter/`. The test runner reads the input, applies the
@@ -288,7 +288,7 @@ Same shape as the existing Lua engine's `tests/charlie/fixtures/`
 pattern but in TS.
 
 <a id="marketplace-polish-vasquez"></a>
-### 3.8 Marketplace polish (Vasquez)
+### Marketplace polish (Vasquez)
 
 ~~~json
 {"vibecode": {
@@ -314,7 +314,7 @@ Extensions sidebar:
   - `repository` and `bugs` URLs: TBD.
 
 <a id="v1-caveats-absorbed-into-scope"></a>
-### 3.9 V1 caveats absorbed into scope
+### V1 caveats absorbed into scope
 
 Two pieces of v1 work the rule list above doesn't make obvious:
 

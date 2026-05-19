@@ -26,26 +26,8 @@ Python library.
 
 ---
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [Getting a Puck client](#getting-a-puck-client)
-- [Looking up a class](#looking-up-a-class)
-- [Instantiation](#instantiation)
-- [Calling methods](#calling-methods)
-- [Properties vs methods](#properties-vs-methods)
-- [Return values](#return-values)
-- [Errors](#errors)
-- [Versioning](#versioning)
-- [Sync vs async](#sync-vs-async)
-- [Open questions](#open-questions)
-
----
-
 <a id="installation"></a>
-## 2 Installation
+## Installation
 
 ```
 pip install puck
@@ -57,7 +39,7 @@ The package has minimal dependencies — an HTTP client (likely
 ---
 
 <a id="quick-start"></a>
-## 3 Quick start
+## Quick start
 
 ```python
 import puck
@@ -75,7 +57,7 @@ class, instantiate, call methods.
 ---
 
 <a id="getting-a-puck-client"></a>
-## 4 Getting a Puck client
+## Getting a Puck client
 
 **Module-level default.** `puck.lookup(...)` and friends operate on
 a module-level default client configured from the environment (env
@@ -108,7 +90,7 @@ Geo = prod.lookup('puck.uno/geo')
 ---
 
 <a id="looking-up-a-class"></a>
-## 5 Looking up a class
+## Looking up a class
 
 ```python
 Geo = puck.lookup('puck.uno/geo')
@@ -127,7 +109,7 @@ or a version segment that doesn't exist), `lookup` raises
 ---
 
 <a id="instantiation"></a>
-## 6 Instantiation
+## Instantiation
 
 Python's class-call syntax wraps the protocol-level constructor:
 
@@ -147,7 +129,7 @@ remote instance (a UNS for the instance, opaque to the developer).
 ---
 
 <a id="calling-methods"></a>
-## 7 Calling methods
+## Calling methods
 
 Method calls look like ordinary Python:
 
@@ -175,7 +157,7 @@ The library hides all five steps. The caller sees a method call.
 ---
 
 <a id="properties-vs-methods"></a>
-## 8 Properties vs methods
+## Properties vs methods
 
 Python distinguishes attribute access (`hq.weather`) from method calls
 (`hq.weather()`). The Puck protocol treats both as method dispatch.
@@ -195,7 +177,7 @@ the client follows. Open question.
 ---
 
 <a id="return-values"></a>
-## 9 Return values
+## Return values
 
 A remote method's return value comes back as:
 
@@ -223,7 +205,7 @@ district.representative           # remote method call on the new object
 ---
 
 <a id="errors"></a>
-## 10 Errors
+## Errors
 
 Protocol-level errors map to Python exceptions. All inherit from
 `puck.PuckError`:
@@ -253,7 +235,7 @@ except puck.RemoteError as e:
 ---
 
 <a id="versioning"></a>
-## 11 Versioning
+## Versioning
 
 The Puck protocol takes a deliberately light approach to
 versioning (see [protocol.md § Versioning](protocol.md#versioning)).
@@ -267,12 +249,12 @@ Geo = puck.lookup('puck.uno/geo/v2')
 
 Charlie's blockchain-signed versioning of library identity is a
 separate story; if you need that, see
-[blockchain.md](../blockchain.md).
+[blockchain.md](../charlie/blockchain.md).
 
 ---
 
 <a id="sync-vs-async"></a>
-## 12 Sync vs async
+## Sync vs async
 
 **v1: synchronous only.** Every method call blocks until the response
 arrives. This matches the most common Python usage pattern, keeps
@@ -287,7 +269,7 @@ to be decided when async demand is real.
 ---
 
 <a id="open-questions"></a>
-## 13 Open questions
+## Open questions
 
 These are flagged so the eventual implementation work knows what
 isn't decided yet.

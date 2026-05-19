@@ -9,41 +9,8 @@
 }}
 ~~~
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Status](#status)
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
-- [Design Principles](#design-principles)
-- [The Open Ledger](#the-open-ledger)
-- [Authority Blocks](#authority-blocks)
-- [Trust Delegation](#trust-delegation)
-- [How Puck Vouches for an Object](#how-puck-vouches-for-an-object)
-- [Chain Design](#chain-design)
-  - [Grammar](#record-types-grammar-v10)
-- [Authority blocks](#authority-blocks)
-- [The Signing Scheme](#the-signing-scheme)
-- [Trust Tiers](#trust-tiers)
-- [What Each Party Manages](#what-each-party-manages)
-- [API](#api)
-  - [Submit (domain owner → Puck)](#submit-domain-owner-puck)
-  - [Fetch (engine → Puck)](#fetch-engine-puck)
-  - [Root block](#root-block)
-- [Versioning](#versioning)
-  - [Effective Date](#effective-date)
-  - [Tombstone and Birthstone](#tombstone-and-birthstone)
-  - [Dependency Resolution](#dependency-resolution)
-- [Use Case: Third-Party Endorsement](#use-case-third-party-endorsement)
-  - [Collaboration: Puck Delegates to Castle Security](#collaboration-puck-delegates-to-castle-security)
-  - [Partnership Goal](#partnership-goal)
-- [Design Notes](#design-notes)
-- [Open Issues](#open-issues)
-
----
-
 <a id="status"></a>
-## 2 Status
+## Status
 
 The blockchain design described here will ship as part of the
 V1 Puck ecoverse. Puck.uno will provide a public interface for the
@@ -51,7 +18,7 @@ blockchain. Charlie will natively know about that service. We won't
 actually ship blockchain technology in the core product.
 
 <a id="the-problem"></a>
-## 3 The Problem
+## The Problem
 
 Puck is a distributed object system. Objects (classes, capabilities, etc.) are identified
 by UNS addresses like `borg.com/foo`. When a Charlie engine fetches and uses an object, it
@@ -65,7 +32,7 @@ needs confidence that:
 A UNS string alone proves neither. It is just a name.
 
 <a id="the-solution"></a>
-## 4 The Solution
+## The Solution
 
 Software authors publish their packages at URLs they control, served
 over HTTPS. The TLS certificate they already have is the only
@@ -84,7 +51,7 @@ service at Puck.uno to record it. Puck.uno does two things:
 ---
 
 <a id="design-principles"></a>
-## 5 Design Principles
+## Design Principles
 
 **Puck.uno holds one private key.** That is the only cryptographic key in the system
 that Puck manages. Everything flows from it.
@@ -102,7 +69,7 @@ verify the entire system.
 ---
 
 <a id="the-open-ledger"></a>
-## 6 The Open Ledger
+## The Open Ledger
 
 The Puck blockchain is an open, append-only ledger of signed records about objects
 in the Puck distributed object system. Its purpose is to provide independently
@@ -113,7 +80,7 @@ its UNS address at a specific time and signed by a specific key.
 ---
 
 <a id="authority-blocks"></a>
-## 7 Authority Blocks
+## Authority Blocks
 
 An **authority block** is the anchor of a trust chain on the ledger.
 It's a signed record that establishes a public key as a known
@@ -135,7 +102,7 @@ ones.
 ---
 
 <a id="trust-delegation"></a>
-## 8 Trust Delegation
+## Trust Delegation
 
 A `delegate` block extends trust to another entity. Puck.uno can post a `delegate` block
 that says: "I trust this entity's endorsements." The delegation references the trusted
@@ -158,7 +125,7 @@ on. Engines following the chain extend trust transitively.
 ---
 
 <a id="how-puck-vouches-for-an-object"></a>
-## 9 How Puck Vouches for an Object
+## How Puck Vouches for an Object
 
 Signing is not automatic. The fact that a domain serves objects over HTTPS does not mean
 Puck will sign them. The domain owner must explicitly request signing through puck.uno.
@@ -190,7 +157,7 @@ served at its URL:
 ---
 
 <a id="chain-design"></a>
-## 10 Chain Design
+## Chain Design
 
 The Puck blockchain is an open append-only ledger. There is no mining, no
 proof-of-work, and no gas. Anyone can post a record. Trust in a given record comes
@@ -214,7 +181,7 @@ Records are never modified or deleted.
 ---
 
 <a id="grammar"></a>
-### 10.1 Grammar
+### Grammar
 
 All blocks must include a `grammar` field in their payload referencing a grammar block
 by hash and version string:
@@ -229,8 +196,26 @@ grammar block.
 
 ---
 
+<a id="signing-scheme"></a>
+### Signing Scheme
+
+To sign a record:
+
+1. Construct the record as a JSON object with all fields except `signature`
+2. Serialize to minified JSON with all keys sorted alphabetically at every level
+3. Sign the UTF-8 bytes using Ed25519
+4. Base64-encode the signature and add it as the `signature` field
+
+To verify, remove the `signature` field, re-serialize with sorted keys, and run Ed25519
+verify against that string using the signer's public key (found in their authority block).
+
+The `record_hash` is the SHA-256 hex digest of the fully serialized record including the
+`signature` field, keys sorted alphabetically.
+
+---
+
 <a id="authority-blocks-1"></a>
-## 11 Authority blocks
+## Authority blocks
 
 **authority** — anchor of trust; establishes a signer's identity and public key on the
 chain. Any entity may post their own authority block.
@@ -334,46 +319,6 @@ Fields:
 
 ---
 
-**mirror** — declares that the signer hosts a copy of an artifact at an alternate URL.
-Mirror blocks make code resilient to takedowns or upstream outages: if the original
-publisher's URL goes away, consumers can fetch the same bytes from any mirror that
-matches the artifact's hash.
-
-```json
-{
-  "intent": "mirror",
-  "grammar": {"hash": "...", "version": "1.0"},
-  "target_hash": "<provenance block record_hash>",
-  "uns": "borg.com/parser",
-  "version": "2.1.0",
-  "artifact_hash": "sha256:8f2a3b7d1e9c4a5f...",
-  "mirror_url": "https://archive.example.org/puck/borg.com/parser/2.1.0.charlie",
-  "notes": "Mirror of borg.com/parser 2.1.0 hosted by archive.example.org."
-}
-```
-
-Fields:
-
-- `target_hash` — `record_hash` of the original provenance block being mirrored
-- `uns` and `version` — duplicated at the top level for cheap filtering ("all mirrors of
-  this UNS at this version") without descending into the target block
-- `artifact_hash` — duplicated from the target block. Lets consumers verify a mirror's
-  bytes without first fetching the target, and keeps the mirror honest: if the bytes at
-  `mirror_url` don't hash to this value, the mirror is broken or lying
-- `mirror_url` — URL where the signer hosts the copy. Distinct from the original block's
-  `artifact_url` because the signer here is the mirror operator, not the publisher
-
-The signer is the mirror operator and must have their own authority block on chain.
-Mirror blocks fall under intent-level trust delegation: consumers who trust an entity
-for `mirror` intents (via a delegate block listing `intents: ["mirror"]`) accept mirror
-blocks signed by that entity automatically.
-
-Original publishers can also post mirror blocks for their own artifacts — e.g. if
-`borg.com` puts the parser on a CDN, they can sign a mirror block pointing at the CDN URL.
-The mechanism is the same; no special case for self-mirrors.
-
----
-
 **delegate** — grants another entity trusted endorser status for a specified set of
 endorsement types. The delegation is scoped to the entity's authority block via
 `target_hash` and covers all blocks that entity has signed or will sign from that
@@ -429,26 +374,8 @@ consumers decide how to respond.
 
 ---
 
-<a id="the-signing-scheme"></a>
-## 12 The Signing Scheme
-
-To sign a record:
-
-1. Construct the record as a JSON object with all fields except `signature`
-2. Serialize to minified JSON with all keys sorted alphabetically at every level
-3. Sign the UTF-8 bytes using Ed25519
-4. Base64-encode the signature and add it as the `signature` field
-
-To verify, remove the `signature` field, re-serialize with sorted keys, and run Ed25519
-verify against that string using the signer's public key (found in their authority block).
-
-The `record_hash` is the SHA-256 hex digest of the fully serialized record including the
-`signature` field, keys sorted alphabetically.
-
----
-
 <a id="trust-tiers"></a>
-## 13 Trust Tiers
+## Trust Tiers
 
 | Source | Trust level |
 |--------|-------------|
@@ -460,7 +387,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="what-each-party-manages"></a>
-## 14 What Each Party Manages
+## What Each Party Manages
 
 | Party | Responsibility |
 |-------|---------------|
@@ -472,7 +399,7 @@ The `record_hash` is the SHA-256 hex digest of the fully serialized record inclu
 ---
 
 <a id="api"></a>
-## 15 API
+## API
 
 All blockchain services are hosted at `blockchain.puck.uno`.
 
@@ -481,7 +408,7 @@ By default it operates through the API at `blockchain.puck.uno`. The endpoints b
 describe the intended shape; the final API spec will be a separate document.
 
 <a id="submit-domain-owner-puck"></a>
-### 15.1 Submit (domain owner → Puck)
+### Submit (domain owner → Puck)
 
 `POST https://blockchain.puck.uno/v1/submit`
 
@@ -503,7 +430,7 @@ Response:
 ```
 
 <a id="fetch-engine-puck"></a>
-### 15.2 Fetch (engine → Puck)
+### Fetch (engine → Puck)
 
 `GET https://blockchain.puck.uno/v1/object/<uns>`
 
@@ -516,7 +443,7 @@ the signature client-side using the baked-in public key.
 `effective_date` is on or before the given date.
 
 <a id="root-block"></a>
-### 15.3 Root block
+### Root block
 
 `GET https://blockchain.puck.uno/v1/authority`
 
@@ -526,11 +453,11 @@ key matches the chain.
 ---
 
 <a id="versioning"></a>
-## 16 Versioning
+## Versioning
 
 The Puck ecoverse uses **date-pinned versioning** as its general model — a single
 cutoff timestamp governs the entire library tree, set on `%chain.cutoff` at the top of
-the call chain. The general model is documented in [versioning.md](../versioning.md);
+the call chain. The general model is documented in [versioning.md](versioning.md);
 this section describes how the blockchain anchors dates when it is in play.
 
 Every block on the Puck blockchain carries a `posted` timestamp assigned at insertion.
@@ -541,7 +468,7 @@ constraint, you get the most recently posted version. When you request with a da
 you get the most recently posted version that falls within that range.
 
 <a id="effective-date"></a>
-### 16.1 Effective Date
+### Effective Date
 
 A signer may set an `effective_date` on an endorsement to declare the date that
 should be used for version ordering in place of `posted`. This allows historical objects
@@ -551,7 +478,7 @@ today with `effective_date` set to its original release date.
 `effective_date` is optional. Omitting it means `posted` governs.
 
 <a id="tombstone-and-birthstone"></a>
-### 16.2 Tombstone and Birthstone
+### Tombstone and Birthstone
 
 A **tombstone** is an upper bound: "give me the latest version on or before this date."
 Setting a tombstone pins resolution to a point in time — useful for reproducible builds.
@@ -564,7 +491,7 @@ Useful for excluding objects published before a known-good baseline.
 ```
 
 <a id="dependency-resolution"></a>
-### 16.3 Dependency Resolution
+### Dependency Resolution
 
 Each object may declare its own dependencies — by UNS name — along with an optional
 date range per dependency. When the gateway resolves a request, it traverses the
@@ -578,7 +505,7 @@ the intended range.
 ---
 
 <a id="use-case-third-party-endorsement"></a>
-## 17 Use Case: Third-Party Endorsement
+## Use Case: Third-Party Endorsement
 
 **Scenario:** Castle Security is a security auditing company. A government contractor needs
 to verify that `borg.com/parser` meets NIST 800-53 security requirements before
@@ -688,7 +615,7 @@ Castle Security's public key (configured by the contractor). Neither party neede
 coordinate with the other. The shared ledger is what ties them together.
 
 <a id="collaboration-puck-delegates-to-castle-security"></a>
-### 17.1 Collaboration: Puck Delegates to Castle Security
+### Collaboration: Puck Delegates to Castle Security
 
 Although Puck and Castle Security can operate completely independently,
 collaborating could be a mutually beneficial arrangement.
@@ -736,7 +663,7 @@ Any engine or toolchain that knows how to read the chain gains access to that tr
 infrastructure with no additional setup.
 
 <a id="partnership-goal"></a>
-### 17.2 Partnership Goal
+### Partnership Goal
 
 Puck is actively seeking a partner in this space — a company analogous to Castle Security
 whose endorsements and deprecations would be surfaced directly through the
@@ -745,7 +672,7 @@ whose endorsements and deprecations would be surfaced directly through the
 ---
 
 <a id="design-notes"></a>
-## 18 Design Notes
+## Design Notes
 
 **Ed25519 is the right choice.** 64-byte signatures, fast verification, no parameter
 choices that can be misconfigured, widely supported in every language runtime Puck is
@@ -770,17 +697,10 @@ revisions and at most a few hundred DSL grammars in the most ambitious scenario.
 referencing an unrecognised grammar hash is not automatically invalid; consumers decide
 whether to accept or reject it.
 
-**Mirror resolution.** Because `artifact_hash` is the cryptographic anchor, any URL
-serving matching bytes is functionally equivalent to the original. This decouples trust
-from location: a consumer can prefer mirrors over the original — for latency, geographic
-proximity, internal-cache policy, or operator reputation — without weakening the
-verification guarantee. The chain records availability ("here's a copy at this URL"); the
-ranking policy belongs in the engine or fetch library, not in block grammar.
-
 ---
 
 <a id="open-issues"></a>
-## 19 Open Issues
+## Open Issues
 
 **Software namespace identifier bloat.** As `puck.uno/software` grows (programming
 languages, DBMSs, frameworks), putting every identifier on the chain would bloat it.

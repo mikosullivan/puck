@@ -16,7 +16,7 @@ to capture the idea in case it ties into Puck later.
 ---
 
 <a id="the-idea"></a>
-## 1 The Idea
+## The Idea
 
 A single HTTP header named **`uns`** carries one JSON hash. Anyone
 can add fields to that hash using UNS identifiers to namespace
@@ -28,7 +28,7 @@ uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 ```
 
 <a id="why-its-interesting"></a>
-## 2 Why it's interesting
+## Why it's interesting
 
 - **Namespacing.** UNS identifiers eliminate header-name
   collisions cleanly. RFC 6648 deprecated `X-` prefixes without
@@ -42,7 +42,7 @@ uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
   mikobase records, JSON URL params, etc.).
 
 <a id="coexistence-and-long-term-vision"></a>
-## 3 Coexistence and long-term vision
+## Coexistence and long-term vision
 
 `uns` is just another HTTP header — it coexists with everything
 else. Standard headers (`Content-Type`, `Authorization`, etc.)
@@ -54,7 +54,7 @@ header surface fades and `uns` becomes the only header. Not a
 plan, just the direction the idea points.
 
 <a id="open-questions"></a>
-## 4 Open questions
+## Open questions
 
 - **Size limits.** Header size caps (typically 8–64 KB per
   server) constrain how much fits in one JSON blob.
@@ -69,7 +69,7 @@ plan, just the direction the idea points.
   needs a story.
 
 <a id="path-to-standardization"></a>
-## 5 Path to standardization
+## Path to standardization
 
 The body that standardizes HTTP is the **IETF** (Internet
 Engineering Task Force), specifically the **httpbis** working
@@ -123,6 +123,6 @@ real ecosystem behind it — empty proposals get politely ignored;
 proposals with demonstrated traction get serious consideration.
 
 <a id="status"></a>
-## 6 Status
+## Status
 
 Captured for the record. Not on any roadmap.

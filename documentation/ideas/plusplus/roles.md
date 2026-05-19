@@ -11,14 +11,14 @@
 ~~~
 
 <a id="status"></a>
-## 1 Status
+## Status
 
 This is an early design idea, not yet in active development.
 
 ---
 
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 `%role` is a system method that returns the current role object for the scope. It is
 an identifier and context store — a way of passing identity and related data down the
@@ -30,7 +30,7 @@ is simply an object in the chain that code can read and use however it needs to.
 ---
 
 <a id="behavior"></a>
-## 3 Behavior
+## Behavior
 
 - `%role` follows the same scoping rules as `%chain` — values flow down, changes do
   not propagate back up.
@@ -41,7 +41,7 @@ is simply an object in the chain that code can read and use however it needs to.
 ---
 
 <a id="unsetting-the-role"></a>
-## 4 Unsetting the Role
+## Unsetting the Role
 
 Several ways to clear `%role`:
 
@@ -61,7 +61,7 @@ end
 ---
 
 <a id="marking-a-function-as-untrusted"></a>
-## 5 Marking a Function as Untrusted
+## Marking a Function as Untrusted
 
 Trust lives on the function object rather than at the call site. `untrusted()` wraps
 a function so that `%role` is automatically set to null whenever it is called:
@@ -83,7 +83,7 @@ null, then delegates to the original function. It composes naturally with jail.
 ---
 
 <a id="open-questions"></a>
-## 6 Open Questions
+## Open Questions
 
 - What properties does a role object expose beyond being a context store?
 - How do roles interact with firewall rules?

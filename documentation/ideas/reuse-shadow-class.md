@@ -19,7 +19,7 @@ for the established shadow-class concept this idea builds on.
 ---
 
 <a id="the-idea"></a>
-## 1 The idea
+## The idea
 
 The shadow class is normally a per-object hidden thing — you
 `object.define` methods on it to customize one specific instance,
@@ -56,7 +56,7 @@ fully-configured instance whose customizations are visible to any
 new object spawned from its shadow.
 
 <a id="why-its-interesting"></a>
-## 2 Why it's interesting
+## Why it's interesting
 
 - **Prototype-style inheritance for free.** Same mechanism that
   supports per-instance methods now supports "make more like this
@@ -73,7 +73,7 @@ new object spawned from its shadow.
   treating it as one-off-only.
 
 <a id="open-questions"></a>
-## 3 Open questions
+## Open questions
 
 - **Bucket state.** Does `$foo.object.shadow.new()` start with a
   fresh empty bucket, or copy $foo's bucket as initial state?
@@ -96,7 +96,7 @@ new object spawned from its shadow.
   they're implicit per-object.
 
 <a id="related-cloning-the-entire-class-stack"></a>
-## 4 Related: cloning the entire class stack
+## Related: cloning the entire class stack
 
 A sister idea, also already baked into the existing object model:
 clone the full class stack of one object onto another.
@@ -132,7 +132,7 @@ No factory function. No DSL. No "decorator pattern" framework.
 The class stack IS the decoration; copying it IS the cloning.
 
 <a id="status"></a>
-## 5 Status
+## Status
 
 Filed as exploration. No commitment to spec, implement, or even
 keep the idea in mind during v1 design. Both features

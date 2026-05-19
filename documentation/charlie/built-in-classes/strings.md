@@ -1,27 +1,7 @@
 # String Methods
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Operators](#operators)
-- [Testing](#testing)
-- [Case](#case)
-- [Whitespace](#whitespace)
-- [Prefix and Suffix](#prefix-and-suffix)
-- [Search and Replace](#search-and-replace)
-  - [replace scope options](#replace-scope-options)
-- [Formatting](#formatting)
-- [Splitting](#splitting)
-- [Size](#size)
-- [Conversion](#conversion)
-- [End-Anchored Slicing](#end-anchored-slicing)
-- [Open Questions](#open-questions)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -43,7 +23,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="operators"></a>
-## 3 Operators
+## Operators
 
 ~~~json
 {"vibecode": {
@@ -66,7 +46,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="testing"></a>
-## 4 Testing
+## Testing
 
 ~~~json
 {"vibecode": {
@@ -91,7 +71,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="case"></a>
-## 5 Case
+## Case
 
 ~~~json
 {"vibecode": {
@@ -109,7 +89,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="whitespace"></a>
-## 6 Whitespace
+## Whitespace
 
 ~~~json
 {"vibecode": {
@@ -131,7 +111,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="prefix-and-suffix"></a>
-## 7 Prefix and Suffix
+## Prefix and Suffix
 
 ~~~json
 {"vibecode": {
@@ -150,7 +130,7 @@ All strings in Charlie are normalized to UTF-8.
 ---
 
 <a id="search-and-replace"></a>
-## 8 Search and Replace
+## Search and Replace
 
 ~~~json
 {"vibecode": {
@@ -170,7 +150,7 @@ All strings in Charlie are normalized to UTF-8.
 | `replace($pattern, $replacement, $scope = :all)` | String | Replace occurrences of `$pattern` with `$replacement`. `$pattern` may be a string or regex. `$scope` controls which matches are replaced: `:all` (default) replaces every match, `:first` replaces only the first, `:last` replaces only the last. Returns the original string unchanged if no match is found. |
 
 <a id="replace-scope-options"></a>
-### 8.1 replace scope options
+### replace scope options
 
 | Scope | Behaviour |
 |-------|-----------|
@@ -191,7 +171,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ---
 
 <a id="formatting"></a>
-## 9 Formatting
+## Formatting
 
 ~~~json
 {"vibecode": {
@@ -210,7 +190,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ---
 
 <a id="splitting"></a>
-## 10 Splitting
+## Splitting
 
 ~~~json
 {"vibecode": {
@@ -228,7 +208,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ---
 
 <a id="size"></a>
-## 11 Size
+## Size
 
 ~~~json
 {"vibecode": {
@@ -247,7 +227,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ---
 
 <a id="conversion"></a>
-## 12 Conversion
+## Conversion
 
 ~~~json
 {"vibecode": {
@@ -270,7 +250,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ---
 
 <a id="end-anchored-slicing"></a>
-## 13 End-Anchored Slicing
+## End-Anchored Slicing
 
 ~~~json
 {"vibecode": {
@@ -332,7 +312,7 @@ parser must handle this disambiguation.
 ---
 
 <a id="open-questions"></a>
-## 14 Open Questions
+## Open Questions
 
 - `[]` with `:end`: resolved — see End-Anchored Slicing section.
 - `match` return type: the Match object API is not yet designed.

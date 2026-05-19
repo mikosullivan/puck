@@ -1,35 +1,7 @@
 # Class Definition Format
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Universal Namespace](#universal-namespace)
-- [Schema](#schema)
-  - [Import Rules](#import-rules)
-- [Class Name](#class-name)
-- [Record Classes](#record-classes)
-- [Inheritance](#inheritance)
-- [Fields](#fields)
-- [Field Types](#field-types)
-- [Inline vs. Named Field Types](#inline-vs-named-field-types)
-- [Common Field Settings](#common-field-settings)
-- [String Settings](#string-settings)
-- [Number Settings](#number-settings)
-- [Array and Hash Settings](#array-and-hash-settings)
-- [Typed Arrays](#typed-arrays)
-- [Reference Fields](#reference-fields)
-- [Object Representation](#object-representation)
-- [File Fields](#file-fields)
-- [Field Ordering](#field-ordering)
-- [Unique Constraints](#unique-constraints)
-- [Joins](#joins)
-- [Unknown Fields](#unknown-fields)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -45,7 +17,7 @@ A class definition is stored as a record in `records_history` with `class_pk` po
 The class definition is stored in the `bucket` field.
 
 <a id="universal-namespace"></a>
-## 3 Universal Namespace
+## Universal Namespace
 
 ~~~json
 {"vibecode": {
@@ -66,7 +38,7 @@ Examples:
 - `mycompany.com/character`
 
 <a id="schema"></a>
-## 4 Schema
+## Schema
 
 ~~~json
 {"vibecode": {
@@ -83,7 +55,7 @@ When a schema is imported, the class name is always taken from the dict key. Any
 explicitly set inside a class definition is ignored and overwritten with the key value.
 
 <a id="import-rules"></a>
-### 4.1 Import Rules
+### Import Rules
 
 - Importing a class that does not yet exist creates a new record.
 - Importing a class that already exists appends a new `records_history` row with the updated
@@ -114,7 +86,7 @@ explicitly set inside a class definition is ignored and overwritten with the key
 ```
 
 <a id="class-name"></a>
-## 5 Class Name
+## Class Name
 
 ~~~json
 {"vibecode": {
@@ -140,7 +112,7 @@ Built-in classes seeded as database records:
 - `puck.uno/dbfile` — file attachment
 
 <a id="record-classes"></a>
-## 6 Record Classes
+## Record Classes
 
 ~~~json
 {"vibecode": {
@@ -154,7 +126,7 @@ All classes defined in the `classes` schema are record classes — they can be a
 records in `records_history`. There is no separate declaration required.
 
 <a id="inheritance"></a>
-## 7 Inheritance
+## Inheritance
 
 ~~~json
 {"vibecode": {
@@ -194,7 +166,7 @@ class definitions at the time of the write. Previously written
 records are not retroactively invalidated by class changes.
 
 <a id="fields"></a>
-## 8 Fields
+## Fields
 
 ~~~json
 {"vibecode": {
@@ -220,7 +192,7 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 ```
 
 <a id="field-types"></a>
-## 9 Field Types
+## Field Types
 
 ~~~json
 {"vibecode": {
@@ -244,7 +216,7 @@ Field names are free-form, case-sensitive strings. Convention is `snake_case`.
 | any UNS class name | Reference to a named class defined elsewhere in the schema |
 
 <a id="inline-vs-named-field-types"></a>
-## 10 Inline vs. Named Field Types
+## Inline vs. Named Field Types
 
 ~~~json
 {"vibecode": {
@@ -309,7 +281,7 @@ that type:
 ```
 
 <a id="common-field-settings"></a>
-## 11 Common Field Settings
+## Common Field Settings
 
 ~~~json
 {"vibecode": {
@@ -327,7 +299,7 @@ that type:
 | `instantiate` | `hash` only | If `true`, auto-create the nested object when absent, then apply sub-field defaults |
 
 <a id="string-settings"></a>
-## 12 String Settings
+## String Settings
 
 ~~~json
 {"vibecode": {
@@ -344,7 +316,7 @@ that type:
 | `collapse` | If `true`, trim leading/trailing whitespace and collapse internal whitespace runs to one space |
 
 <a id="number-settings"></a>
-## 13 Number Settings
+## Number Settings
 
 ~~~json
 {"vibecode": {
@@ -364,7 +336,7 @@ that type:
 | `multiple_of` | Value must be a multiple of this number |
 
 <a id="array-and-hash-settings"></a>
-## 14 Array and Hash Settings
+## Array and Hash Settings
 
 ~~~json
 {"vibecode": {
@@ -380,7 +352,7 @@ that type:
 | `max_elements` | Maximum number of elements (array) or keys (hash) |
 
 <a id="typed-arrays"></a>
-## 15 Typed Arrays
+## Typed Arrays
 
 ~~~json
 {"vibecode": {
@@ -401,7 +373,7 @@ A typed array uses `"class": "array"` with an `"of"` key specifying the element 
 An untyped array uses `"class": "array"` with no `"of"`.
 
 <a id="reference-fields"></a>
-## 16 Reference Fields
+## Reference Fields
 
 ~~~json
 {"vibecode": {
@@ -424,7 +396,7 @@ are present they are merged. Any record of the specified class or a subclass is 
 ```
 
 <a id="object-representation"></a>
-## 17 Object Representation
+## Object Representation
 
 ~~~json
 {"vibecode": {
@@ -463,7 +435,7 @@ The shorthand for `puck.uno/reference` is a plain string containing the target `
 The shorthand for `puck.uno/dbfile` is a plain string containing the target `file_pk`.
 
 <a id="file-fields"></a>
-## 18 File Fields
+## File Fields
 
 ~~~json
 {"vibecode": {
@@ -476,7 +448,7 @@ The shorthand for `puck.uno/dbfile` is a plain string containing the target `fil
 `puck.uno/dbfile` fields support only `required`. No other constraints.
 
 <a id="field-ordering"></a>
-## 19 Field Ordering
+## Field Ordering
 
 ~~~json
 {"vibecode": {
@@ -493,7 +465,7 @@ Records returned from queries present fields in this order:
 3. Fields not defined in any class, in their stored order
 
 <a id="unique-constraints"></a>
-## 20 Unique Constraints
+## Unique Constraints
 
 ~~~json
 {"vibecode": {
@@ -533,7 +505,7 @@ that class:
 - Multiple independent `uniques` constraints may be declared.
 
 <a id="joins"></a>
-## 21 Joins
+## Joins
 
 ~~~json
 {"vibecode": {
@@ -571,7 +543,7 @@ semantics — direction is determined by which field holds which reference.
 Additional fields beyond those listed in `join` may be defined and updated normally.
 
 <a id="unknown-fields"></a>
-## 22 Unknown Fields
+## Unknown Fields
 
 ~~~json
 {"vibecode": {

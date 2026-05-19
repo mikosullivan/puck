@@ -28,7 +28,7 @@ material here may be folded into [puck.md](../puck/puck.md).
 ---
 
 <a id="puck-object-vs-puck"></a>
-## 1 Puck Object vs. `%puck`
+## Puck Object vs. `%puck`
 
 A **puck** (lowercase, the object) is distinct from **`%puck`** (the
 system method). A puck is a kind of object that knows how to resolve
@@ -68,7 +68,7 @@ derivations (via `restrict do ... end`) can override that for a
 block.
 
 <a id="restrict-do-end"></a>
-### 1.1 `restrict do ... end`
+### `restrict do ... end`
 
 `restrict` is the canonical way to scope `%puck` to a narrower
 window for a block of code:
@@ -100,7 +100,7 @@ Same shape as the other scoped-block primitives in the framework
 (`%chain.isolate do ... end`, `%chain.scope do ... end`, etc.).
 
 <a id="version-window"></a>
-## 2 Version Window
+## Version Window
 
 Each puck carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
@@ -129,7 +129,7 @@ sandbox — if the engine confines user code to a specific window, the
 window can't be widened from within the runtime.
 
 <a id="deriving-a-narrower-puck"></a>
-### 2.1 Deriving a Narrower Puck
+### Deriving a Narrower Puck
 
 A puck can produce a **derived puck with a narrower window**, but
 never a broader one. The one-way ratchet:
@@ -152,7 +152,7 @@ new puck, which they own; the new puck's window is bounded by
 what the parent allowed.
 
 <a id="what-the-narrowing-rule-does-not-prevent"></a>
-### 2.2 What the Narrowing Rule Does NOT Prevent
+### What the Narrowing Rule Does NOT Prevent
 
 **Code with access to a network faucet (or any other faucet) can
 construct its own puck from scratch.** That fresh puck isn't
@@ -187,7 +187,7 @@ Lookup semantics:
   the UNS isn't there (returns null-flavored `not_found`).
 
 <a id="implication-for-getter-walking"></a>
-### 2.3 Implication for getter walking
+### Implication for getter walking
 
 The version window changes the lookup mechanic. **The puck may need
 to consult all its getters to find the latest version within bounds**,
@@ -210,7 +210,7 @@ order-based first-wins is fine.
 ---
 
 <a id="what-a-puck-does"></a>
-## 3 What a Puck Does
+## What a Puck Does
 
 A puck **holds one or more getters**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
@@ -229,7 +229,7 @@ actual fetching:
   faucet.
 
 <a id="lookup"></a>
-### 3.1 Lookup
+### Lookup
 
 A puck exposes a **lookup method** as its public API. (Working name
 TBD — likely `.lookup($uns)` or similar; the actual name will be
@@ -250,7 +250,7 @@ that the puck may consult all getters rather than short-circuiting
 on first hit — finding the latest requires checking each.)
 
 <a id="the-explicit-null-rule-for-sources"></a>
-#### 3.1.1 The `explicit`-null rule for sources
+#### The `explicit`-null rule for sources
 
 If a puck faucet reaches a UNS where the registered value is
 intentionally null, **the source must mark that null as
@@ -274,7 +274,7 @@ matching, regex routing, dispatch tables, or fallback policies can
 subclass puck and override the lookup method.
 
 <a id="roles-per-getter-not-per-faucet"></a>
-### 3.2 Roles: per-getter, not per-faucet
+### Roles: per-getter, not per-faucet
 
 **Each getter has its own role.** Objects served through a getter
 get that getter's role. Different getters in the same puck produce
@@ -308,7 +308,7 @@ affects role assignment.
 ---
 
 <a id="provenance-checking"></a>
-## 4 Provenance Checking
+## Provenance Checking
 
 Provenance is **per-faucet**, not per-puck. Each faucet has its own
 policy about how to sign off on provenance for the objects it serves.
@@ -325,7 +325,7 @@ passing mechanics; the faucet's job is just "is this really from
 where it says it's from?"
 
 <a id="case-1-actual-fetch-from-the-url"></a>
-### 4.1 Case 1: Actual fetch from the URL
+### Case 1: Actual fetch from the URL
 
 An **HTTPS faucet** that fetches from the URL claimed by the UNS.
 TLS handles the certificate verification at the network layer; the
@@ -333,7 +333,7 @@ response by construction came from the verified server. No
 additional check needed at this faucet's layer.
 
 <a id="case-2-cache"></a>
-### 4.2 Case 2: Cache
+### Case 2: Cache
 
 A **cache faucet** that looks up the object in a local cache
 directory rather than re-fetching every time.
@@ -353,7 +353,7 @@ filesystem write access to the cache can plant malicious code that
 inherits cache-level authority. Case 3 addresses this.
 
 <a id="case-3-cache-plus-signature-verification"></a>
-### 4.3 Case 3: Cache plus signature verification
+### Case 3: Cache plus signature verification
 
 A **cache faucet with a stricter provenance policy** — same source as
 case 2 (the cache directory), but the faucet additionally verifies
@@ -362,7 +362,7 @@ layer their own checks; this is one such layering.
 
 Examples:
 
-- **Puck blockchain** ([blockchain.md](../charlie/blockchain/blockchain.md)) holds
+- **Puck blockchain** ([blockchain.md](../charlie/blockchain.md)) holds
   signed attestations from UNS authorities. Cached objects are
   verified against blockchain entries before being trusted.
 - Traditional public-key signing infrastructures (the source signs
@@ -379,7 +379,7 @@ it on.
 ---
 
 <a id="the-engine-decides-the-policy"></a>
-## 5 The Engine Decides the Policy
+## The Engine Decides the Policy
 
 **The engine controls which puck `%puck` returns**, and that puck's
 configuration determines everything about provenance policy:
@@ -402,7 +402,7 @@ the result and the checks.
 ---
 
 <a id="open-questions"></a>
-## 6 Open Questions
+## Open Questions
 
 - **Does `%puck` always return the same puck object across calls?**
   Resolved: no. `%puck` is scoped. By default it returns the

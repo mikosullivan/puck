@@ -15,7 +15,7 @@ is `$hash.delete($key)`; this idea is about whether a shorter
 syntax would carry its weight.
 
 <a id="candidates"></a>
-## 1 Candidates
+## Candidates
 
 - **`$hash -= $foo`** — assignment-style. Scales to arrays
   naturally: `$hash -= ['a', 'b', 'c']` for batch removal.
@@ -34,14 +34,14 @@ syntax would carry its weight.
   an Element rather than a value.
 
 <a id="recommendation-not-committed"></a>
-## 2 Recommendation (not committed)
+## Recommendation (not committed)
 
 `$hash -= $foo` is the cleanest; the batch form falls out for
 free and the syntax has set-theory roots that scale to other
 collection types if wanted.
 
 <a id="status"></a>
-## 3 Status
+## Status
 
 Not in v1. The standard `$hash.delete($key)` covers the use case;
 this is purely about ergonomics. Revisit if hash deletion proves

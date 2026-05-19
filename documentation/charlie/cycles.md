@@ -1,7 +1,7 @@
 # Cycles
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -26,7 +26,7 @@ than the hardware level.
 ---
 
 <a id="syntax"></a>
-## 2 Syntax
+## Syntax
 
 ~~~json
 {"vibecode": {
@@ -56,7 +56,7 @@ The `#cycles` block returns a cycles object with two fields:
 ---
 
 <a id="nested-cycles"></a>
-## 3 Nested Cycles
+## Nested Cycles
 
 ~~~json
 {"vibecode": {
@@ -92,7 +92,7 @@ call increments all counters currently on the stack.
 ---
 
 <a id="counting-rules"></a>
-## 4 Counting Rules
+## Counting Rules
 
 ~~~json
 {"vibecode": {
@@ -120,7 +120,7 @@ caching, or context switching.
 ---
 
 <a id="implementation-note"></a>
-## 5 Implementation Note
+## Implementation Note
 
 ~~~json
 {"vibecode": {

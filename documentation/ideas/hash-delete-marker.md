@@ -16,7 +16,7 @@ an inherited key, not just shadow it with null. JSON has no
 delete marker; Charlie hashes are ours and could.
 
 <a id="why-this-matters"></a>
-## 1 Why this matters
+## Why this matters
 
 In a meta-hash cascade, the current spec says:
 
@@ -36,10 +36,10 @@ value isn't quite right (caller can tell there was *something*
 called that key via `has_key?`); a delete marker is.
 
 <a id="two-candidate-designs"></a>
-## 2 Two candidate designs
+## Two candidate designs
 
 <a id="a-null-flavor"></a>
-### 2.1 A — Null flavor
+### A — Null flavor
 
 Add `puck.uno/null/flavor/deleted` to the existing
 null-flavor system. Hashes hold it as a value at a key like any
@@ -57,7 +57,7 @@ Cons:
   null-flavor serialization plan.
 
 <a id="b-dedicated-singleton-sentinel"></a>
-### 2.2 B — Dedicated singleton sentinel
+### B — Dedicated singleton sentinel
 
 Define `puck.uno/hash/deleted` (or `%delete`) as its own
 sentinel, not a null. Hashes can hold it; meta-hash special-cases
@@ -72,7 +72,7 @@ Cons:
 - Doesn't compose with anything else.
 
 <a id="edge-cases-either-design-has-to-answer"></a>
-## 3 Edge cases either design has to answer
+## Edge cases either design has to answer
 
 - **Iteration on a plain hash.** Does `$h.keys` include keys
   whose value is a deletion marker? Probably yes — the hash
@@ -88,14 +88,14 @@ Cons:
   rather than special-cased in the hash serializer.
 
 <a id="preference-not-committed"></a>
-## 4 Preference (not committed)
+## Preference (not committed)
 
 A (null flavor) leans cleaner — leverages an existing pattern,
 adds nothing structurally new, fits the rest of the
 null-as-typed-thing model.
 
 <a id="status"></a>
-## 5 Status
+## Status
 
 Not in v1. Filed for reconsideration when either meta-hash
 genuinely needs it (more than `%chain`'s security barrier, which

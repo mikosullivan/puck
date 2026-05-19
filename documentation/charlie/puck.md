@@ -18,7 +18,7 @@ syntax and system methods that wrap it.
 ---
 
 <a id="puck"></a>
-## 1 `%puck`
+## `%puck`
 
 `%puck` is a Charlie system method that returns a **Puck client
 object** — the resolver for UNS lookups. See
@@ -33,7 +33,7 @@ $officer.greet
 ~~~
 
 <a id="shorthand-for-built-in-classes"></a>
-### 1.1 Shorthand for built-in classes
+### Shorthand for built-in classes
 
 Bare names in `%puck[...]` — any key without a domain — resolve to
 `puck.uno/...`:
@@ -47,7 +47,7 @@ Bare names in `%puck[...]` — any key without a domain — resolve to
 `puck.uno` is the default namespace for `%puck` lookups.
 
 <a id="scoping-via-chain"></a>
-### 1.2 Scoping via `%chain`
+### Scoping via `%chain`
 
 `%puck` is scoped via `%chain` — the current Puck client lives in the
 chain. Because `%chain` is wiped at role boundaries (see
@@ -63,7 +63,7 @@ may leave `%puck` null for that role. Per-role policy, not global.
 ---
 
 <a id="puckcall"></a>
-## 2 `%puck.call`
+## `%puck.call`
 
 `%puck.call` is the Charlie syntax for an explicit remote method call:
 
@@ -84,7 +84,7 @@ For the protocol-level remote-invocation model (request shape, response
 shape, error catalog), see [puck/puck.md § Remote method invocation](../puck/puck.md#remote-method-invocation).
 
 <a id="return-and-error-handling-in-charlie"></a>
-### 2.1 Return and error handling in Charlie
+### Return and error handling in Charlie
 
 - **Return value** — the remote method's result, marshaled back as a
   Puck object reference (or a primitive). Callers don't see "this was
@@ -107,7 +107,7 @@ caller as if thrown locally, with the remote stack trace preserved (per
 ---
 
 <a id="remote-function"></a>
-## 3 `remote function`
+## `remote function`
 
 `remote function` is Charlie sugar for a method that delegates to
 `%puck.call`. Inside a class definition:
@@ -135,7 +135,7 @@ forwarded automatically in both.
 ---
 
 <a id="versioning"></a>
-## 4 Versioning
+## Versioning
 
 The Puck protocol takes a deliberately light approach to versioning
 — see [puck/protocol.md § Versioning](../puck/protocol.md#versioning).
@@ -148,4 +148,4 @@ $geo = %puck['puck.uno/geo/v2']
 ~~~
 
 Charlie's blockchain-signed versioning of library identity is a
-separate story; see [blockchain.md](../blockchain.md).
+separate story; see [blockchain.md](blockchain.md).

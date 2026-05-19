@@ -1,7 +1,7 @@
 # Charlie Formatter
 
 <a id="philosophy"></a>
-## 1 Philosophy
+## Philosophy
 
 ~~~json
 {"vibecode": {
@@ -27,7 +27,7 @@ If someone's code bothers you, format it to your taste before forming an opinion
 ---
 
 <a id="cli"></a>
-## 2 CLI
+## CLI
 
 ~~~json
 {"vibecode": {
@@ -61,7 +61,7 @@ Exits non-zero if the file does not match your personal style. Useful for pre-sa
 ---
 
 <a id="style-configuration"></a>
-## 3 Style Configuration
+## Style Configuration
 
 ~~~json
 {"vibecode": {
@@ -85,7 +85,7 @@ The exact set of configurable options will be defined as the formatter is implem
 ---
 
 <a id="vs-code-integration"></a>
-## 4 VS Code Integration
+## VS Code Integration
 
 ~~~json
 {"vibecode": {
@@ -108,7 +108,7 @@ project-level VS Code settings are needed.
 ---
 
 <a id="tooling-roadmap"></a>
-## 5 Tooling Roadmap
+## Tooling Roadmap
 
 ~~~json
 {"vibecode": {

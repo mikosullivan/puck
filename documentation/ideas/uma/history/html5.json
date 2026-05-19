@@ -1,2385 +1,2385 @@
 {
-	"default": {
-		"atts": {
-			"accesskey": {
-				"vibecode": "Global HTML attribute definition for accesskey. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-accesskey-attribute"
-				]
-			},
-			"autocapitalize": {
-				"vibecode": "Global HTML attribute definition for autocapitalize. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#autocapitalization"
-				]
-			},
-			"autocorrect": {
-				"vibecode": "Global HTML attribute definition for autocorrect. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#autocorrection"
-				]
-			},
-			"autofocus": {
-				"vibecode": "Global HTML attribute definition for autofocus. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
-				]
-			},
-			"class": {
-				"vibecode": "Global HTML attribute definition for class. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
-				]
-			},
-			"contenteditable": {
-				"vibecode": "Global HTML attribute definition for contenteditable. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#contenteditable"
-				]
-			},
-			"dir": {
-				"vibecode": "Global HTML attribute definition for dir. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#the-dir-attribute"
-				]
-			},
-			"draggable": {
-				"vibecode": "Global HTML attribute definition for draggable. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dnd.html#the-draggable-attribute"
-				]
-			},
-			"enterkeyhint": {
-				"vibecode": "Global HTML attribute definition for enterkeyhint. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-enterkeyhint-attribute"
-				]
-			},
-			"headingoffset": {
-				"vibecode": "Global HTML attribute definition for headingoffset. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
-				]
-			},
-			"headingreset": {
-				"vibecode": "Global HTML attribute definition for headingreset. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
-				]
-			},
-			"hidden": {
-				"vibecode": "Global HTML attribute definition for hidden. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-hidden-attribute"
-				]
-			},
-			"id": {
-				"vibecode": "Global HTML attribute definition for id. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
-				]
-			},
-			"inert": {
-				"vibecode": "Global HTML attribute definition for inert. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute"
-				]
-			},
-			"inputmode": {
-				"vibecode": "Global HTML attribute definition for inputmode. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-inputmode-attribute"
-				]
-			},
-			"is": {
-				"vibecode": "Global HTML attribute definition for is. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/custom-elements.html#custom-elements-core-concepts"
-				]
-			},
-			"itemid": {
-				"vibecode": "Global HTML attribute definition for itemid. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/microdata.html#items"
-				]
-			},
-			"itemprop": {
-				"vibecode": "Global HTML attribute definition for itemprop. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/microdata.html#names:-the-itemprop-attribute"
-				]
-			},
-			"itemref": {
-				"vibecode": "Global HTML attribute definition for itemref. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/microdata.html#items"
-				]
-			},
-			"itemscope": {
-				"vibecode": "Global HTML attribute definition for itemscope. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/microdata.html#items"
-				]
-			},
-			"itemtype": {
-				"vibecode": "Global HTML attribute definition for itemtype. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/microdata.html#items"
-				]
-			},
-			"lang": {
-				"vibecode": "Global HTML attribute definition for lang. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#the-lang-and-xml:lang-attributes"
-				]
-			},
-			"nonce": {
-				"vibecode": "Global HTML attribute definition for nonce. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/urls-and-fetching.html#nonce-attributes"
-				]
-			},
-			"popover": {
-				"vibecode": "Global HTML attribute definition for popover. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/popover.html#the-popover-attribute"
-				]
-			},
-			"role": {
-				"vibecode": "Global HTML attribute definition for role. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
-				]
-			},
-			"slot": {
-				"vibecode": "Global HTML attribute definition for slot. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
-				]
-			},
-			"spellcheck": {
-				"vibecode": "Global HTML attribute definition for spellcheck. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#spelling-and-grammar-checking"
-				]
-			},
-			"style": {
-				"vibecode": "Global HTML attribute definition for style. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#the-style-attribute"
-				]
-			},
-			"tabindex": {
-				"vibecode": "Global HTML attribute definition for tabindex. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
-				]
-			},
-			"title": {
-				"vibecode": "Global HTML attribute definition for title. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#the-title-attribute"
-				]
-			},
-			"translate": {
-				"vibecode": "Global HTML attribute definition for translate. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/dom.html#the-translate-attribute"
-				]
-			},
-			"writingsuggestions": {
-				"vibecode": "Global HTML attribute definition for writingsuggestions. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
-				"reference": [
-					"https://html.spec.whatwg.org/multipage/interaction.html#writing-suggestions"
-				]
-			}
-		},
-		"children": {}
-	},
-	"sources": {
-		"alt-attr": {
-			"atts": {
-				"alt": {
-					"vibecode": "Reusable HTML attribute definition for alt. Defined in source alt-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
-					]
-				}
-			}
-		},
-		"autocomplete-attr": {
-			"atts": {
-				"autocomplete": {
-					"vibecode": "Reusable HTML attribute definition for autocomplete. Defined in source autocomplete-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/forms.html#the-form-element",
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#autofilling-form-controls:-the-autocomplete-attribute"
-					]
-				}
-			}
-		},
-		"blocks": {
-			"include": ["dedup-children-009", "inlines"],
-			"children": {
-				"aside": {},
-				"form": {},
-				"hr": {},
-				"pre": {},
-				"blockquote": {},
-				"h1": {},
-				"h2": {},
-				"h3": {},
-				"h4": {},
-				"h5": {},
-				"h6": {},
-				"table": {}
-			}
-		},
-		"cite-attr": {
-			"atts": {
-				"cite": {
-					"vibecode": "Reusable HTML attribute definition for cite. Defined in source cite-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element",
-						"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element",
-						"https://html.spec.whatwg.org/multipage/edits.html#attributes-common-to-ins-and-del-elements"
-					]
-				}
-			}
-		},
-		"crossorigin-attr": {
-			"atts": {
-				"crossorigin": {
-					"vibecode": "Reusable HTML attribute definition for crossorigin. Defined in source crossorigin-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
-					]
-				}
-			}
-		},
-		"datetime-attr": {
-			"atts": {
-				"datetime": {
-					"vibecode": "Reusable HTML attribute definition for datetime. Defined in source datetime-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/edits.html#attributes-common-to-ins-and-del-elements",
-						"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element"
-					]
-				}
-			}
-		},
-		"flow-content": {
-			"include": ["dedup-children-003", "blocks"],
-			"children": {
-				"script": {}
-			}
-		},
-		"disabled-attr": {
-			"atts": {
-				"disabled": {
-					"vibecode": "Reusable HTML attribute definition for disabled. Defined in source disabled-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#enabling-and-disabling-form-controls:-the-disabled-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
-					]
-				}
-			}
-		},
-		"download-attr": {
-			"atts": {
-				"download": {
-					"vibecode": "Reusable HTML attribute definition for download. Defined in source download-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements"
-					]
-				}
-			}
-		},
-		"for-attr": {
-			"atts": {
-				"for": {
-					"vibecode": "Reusable HTML attribute definition for for. Defined in source for-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/forms.html#the-label-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element"
-					]
-				}
-			}
-		},
-		"form-attr": {
-			"atts": {
-				"form": {
-					"vibecode": "Reusable HTML attribute definition for form. Defined in source form-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#association-of-controls-and-forms"
-					]
-				}
-			}
-		},
-		"headers-attr": {
-			"atts": {
-				"headers": {
-					"vibecode": "Reusable HTML attribute definition for headers. Defined in source headers-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
-					]
-				}
-			}
-		},
-		"heading-inlines": {
-			"include": ["dedup-children-006", "simple-inlines"],
-			"children": {
-				"img": {}
-			}
-		},
-		"height-attr": {
-			"atts": {
-				"height": {
-					"vibecode": "Reusable HTML attribute definition for height. Defined in source height-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content-other.html#dimension-attributes"
-					]
-				}
-			}
-		},
-		"href": {
-			"atts": {
-				"href": {
-					"vibecode": "Reusable HTML attribute definition for href. Defined in source href so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-base-element"
-					]
-				}
-			}
-		},
-		"hreflang-attr": {
-			"atts": {
-				"hreflang": {
-					"vibecode": "Reusable HTML attribute definition for hreflang. Defined in source hreflang-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
-					]
-				}
-			}
-		},
-		"label-attr": {
-			"atts": {
-				"label": {
-					"vibecode": "Reusable HTML attribute definition for label. Defined in source label-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element",
-						"https://html.spec.whatwg.org/multipage/media.html#the-track-element"
-					]
-				}
-			}
-		},
-		"legend-inlines": {
-			"include": ["dedup-children-006", "simple-inlines"],
-			"children": {
-				"time": {}
-			}
-		},
-		"link-control-inlines": {
-			"children": {
-				"svg": {}
-			},
-			"include": [
-				"dedup-children-002"
-			]
-		},
-		"list-container-children": {
-			"include": ["container-basics"],
-			"children": {
-				"dl": {},
-				"em": {},
-				"li": {},
-				"strong": {}
-			}
-		},
-		"max-attr": {
-			"atts": {
-				"max": {
-					"vibecode": "Reusable HTML attribute definition for max. Defined in source max-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-min-and-max-attributes",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
-					]
-				}
-			}
-		},
-		"maxlength-attr": {
-			"atts": {
-				"maxlength": {
-					"vibecode": "Reusable HTML attribute definition for maxlength. Defined in source maxlength-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-maxlength-and-minlength-attributes",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				}
-			}
-		},
-		"media-attr": {
-			"atts": {
-				"media": {
-					"vibecode": "Reusable HTML attribute definition for media. Defined in source media-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-style-element"
-					]
-				}
-			}
-		},
-		"min-attr": {
-			"atts": {
-				"min": {
-					"vibecode": "Reusable HTML attribute definition for min. Defined in source min-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-min-and-max-attributes",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
-					]
-				}
-			}
-		},
-		"inlines": {
-			"children": {
-				"a": {},
-				"del": {},
-				"embed": {},
-				"iframe": {},
-				"ins": {},
-				"label": {},
-				"noscript": {},
-				"object": {},
-				"slot": {}
-			},
-			"include": [
-				"dedup-children-005",
-				"dedup-children-002"
-			]
-		},
-		"multiple-attr": {
-			"atts": {
-				"multiple": {
-					"vibecode": "Reusable HTML attribute definition for multiple. Defined in source multiple-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-multiple-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
-					]
-				}
-			}
-		},
-		"name-attr": {
-			"atts": {
-				"name": {
-					"vibecode": "Reusable HTML attribute definition for name. Defined in source name-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element",
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element",
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#naming-form-controls:-the-name-attribute",
-						"https://html.spec.whatwg.org/multipage/forms.html#the-form-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
-					]
-				}
-			}
-		},
-		"open-attr": {
-			"atts": {
-				"open": {
-					"vibecode": "Reusable HTML attribute definition for open. Defined in source open-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element",
-						"https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
-					]
-				}
-			}
-		},
-		"options": {
-			"children": {
-				"option": {}
-			}
-		},
-		"placeholder-attr": {
-			"atts": {
-				"placeholder": {
-					"vibecode": "Reusable HTML attribute definition for placeholder. Defined in source placeholder-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-placeholder-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				}
-			}
-		},
-		"readonly-attr": {
-			"atts": {
-				"readonly": {
-					"vibecode": "Reusable HTML attribute definition for readonly. Defined in source readonly-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-readonly-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				}
-			}
-		},
-		"referrerpolicy-attr": {
-			"atts": {
-				"referrerpolicy": {
-					"vibecode": "Reusable HTML attribute definition for referrerpolicy. Defined in source referrerpolicy-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
-					]
-				}
-			}
-		},
-		"rel-attr": {
-			"atts": {
-				"rel": {
-					"vibecode": "Reusable HTML attribute definition for rel. Defined in source rel-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
-					]
-				}
-			}
-		},
-		"required-attr": {
-			"atts": {
-				"required": {
-					"vibecode": "Reusable HTML attribute definition for required. Defined in source required-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-required-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				}
-			}
-		},
-		"simple-inlines": {
-			"children": {
-				"a": {},
-				"em": {},
-				"span": {},
-				"strong": {}
-			}
-		},
-		"size-attr": {
-			"atts": {
-				"size": {
-					"vibecode": "Reusable HTML attribute definition for size. Defined in source size-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-size-attribute",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
-					]
-				}
-			}
-		},
-		"span-attr": {
-			"atts": {
-				"span": {
-					"vibecode": "Reusable HTML attribute definition for span. Defined in source span-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/tables.html#the-col-element",
-						"https://html.spec.whatwg.org/multipage/tables.html#the-colgroup-element"
-					]
-				}
-			}
-		},
-		"src-attr": {
-			"atts": {
-				"src": {
-					"vibecode": "Reusable HTML attribute definition for src. Defined in source src-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#the-audio-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element",
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element",
-						"https://html.spec.whatwg.org/multipage/media.html#the-track-element",
-						"https://html.spec.whatwg.org/multipage/media.html#location-of-the-media-resource"
-					]
-				}
-			}
-		},
-		"table-cell": {
-			"atts": {
-				"colspan": {
-					"vibecode": "Reusable HTML attribute definition for colspan. Defined in source table-cell so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
-					]
-				},
-				"rowspan": {
-					"vibecode": "Reusable HTML attribute definition for rowspan. Defined in source table-cell so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
-					]
-				}
-			},
-			"children": {
-				"canvas": {},
-				"table": {}
-			},
-			"include": [
-				"dedup-children-008",
-				"dedup-children-004"
-			]
-		},
-		"table-section-children": {
-			"children": {
-				"tr": {}
-			}
-		},
-		"target-attr": {
-			"atts": {
-				"target": {
-					"vibecode": "Reusable HTML attribute definition for target. Defined in source target-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				}
-			}
-		},
-		"type-attr": {
-			"atts": {
-				"type": {
-					"vibecode": "Reusable HTML attribute definition for type. Defined in source type-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element",
-						"https://html.spec.whatwg.org/multipage/input.html#the-input-element",
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element",
-						"https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element",
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element"
-					]
-				}
-			}
-		},
-		"value-attr": {
-			"atts": {
-				"value": {
-					"vibecode": "Reusable HTML attribute definition for value. Defined in source value-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element",
-						"https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element",
-						"https://html.spec.whatwg.org/multipage/input.html#the-input-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element",
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
-					]
-				}
-			}
-		},
-		"width-attr": {
-			"atts": {
-				"width": {
-					"vibecode": "Reusable HTML attribute definition for width. Defined in source width-attr so multiple tags can include the same attribute schema without duplication.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element",
-						"https://html.spec.whatwg.org/multipage/embedded-content-other.html#dimension-attributes"
-					]
-				}
-			}
-		},
-		"details-dialog-children": {
-			"include": ["container-basics"],
-			"children": {
-				"audio": {},
-				"img": {},
-				"video": {}
-			}
-		},
-		"form-container-children": {
-			"include": ["dedup-children-005", "container-basics"],
-			"children": {
-				"details": {},
-				"dialog": {},
-				"img": {},
-				"label": {},
-				"summary": {},
-				"table": {}
-			}
-		},
-		"math-svg": {
-			"children": {
-				"math": {},
-				"svg": {}
-			}
-		},
-		"container-basics": {
-			"children": {
-				"a": {},
-				"ol": {},
-				"span": {},
-				"ul": {}
-			},
-			"include": [
-				"dedup-children-009"
-			]
-		},
-		"dedup-children-001": {
-			"children": {
-				"a": {},
-				"abbr": {},
-				"address": {},
-				"area": {},
-				"article": {},
-				"aside": {},
-				"audio": {},
-				"b": {},
-				"bdi": {},
-				"bdo": {},
-				"blockquote": {},
-				"body": {},
-				"br": {},
-				"button": {},
-				"canvas": {},
-				"caption": {},
-				"cite": {},
-				"code": {},
-				"col": {},
-				"colgroup": {},
-				"data": {},
-				"datalist": {},
-				"dd": {},
-				"del": {},
-				"details": {},
-				"dfn": {},
-				"dialog": {},
-				"div": {},
-				"dl": {},
-				"dt": {},
-				"em": {},
-				"embed": {},
-				"fieldset": {},
-				"figcaption": {},
-				"figure": {},
-				"footer": {},
-				"form": {},
-				"h1": {},
-				"h2": {},
-				"h3": {},
-				"h4": {},
-				"h5": {},
-				"h6": {},
-				"head": {},
-				"header": {},
-				"hr": {},
-				"i": {},
-				"iframe": {},
-				"img": {},
-				"input": {},
-				"ins": {},
-				"kbd": {},
-				"label": {},
-				"legend": {},
-				"li": {},
-				"main": {},
-				"map": {},
-				"mark": {},
-				"math": {},
-				"meter": {},
-				"nav": {},
-				"object": {},
-				"ol": {},
-				"optgroup": {},
-				"option": {},
-				"output": {},
-				"p": {},
-				"picture": {},
-				"pre": {},
-				"progress": {},
-				"q": {},
-				"rp": {},
-				"rt": {},
-				"ruby": {},
-				"s": {},
-				"samp": {},
-				"section": {},
-				"select": {},
-				"small": {},
-				"source": {},
-				"span": {},
-				"strong": {},
-				"sub": {},
-				"summary": {},
-				"sup": {},
-				"svg": {},
-				"table": {},
-				"textarea": {},
-				"tfoot": {},
-				"time": {},
-				"track": {},
-				"u": {},
-				"ul": {},
-				"var": {},
-				"video": {},
-				"wbr": {}
-			}
-		},
-		"dedup-children-002": {
-			"children": {
-				"abbr": {},
-				"audio": {},
-				"b": {},
-				"bdi": {},
-				"bdo": {},
-				"br": {},
-				"canvas": {},
-				"cite": {},
-				"code": {},
-				"data": {},
-				"dfn": {},
-				"em": {},
-				"i": {},
-				"img": {},
-				"kbd": {},
-				"map": {},
-				"mark": {},
-				"picture": {},
-				"q": {},
-				"rp": {},
-				"rt": {},
-				"ruby": {},
-				"s": {},
-				"samp": {},
-				"small": {},
-				"span": {},
-				"strong": {},
-				"sub": {},
-				"sup": {},
-				"time": {},
-				"u": {},
-				"var": {},
-				"video": {},
-				"wbr": {}
-			}
-		},
-		"dedup-children-003": {
-			"children": {
-				"aside": {},
-				"details": {},
-				"dialog": {},
-				"dl": {},
-				"figure": {},
-				"footer": {},
-				"header": {},
-				"main": {},
-				"nav": {},
-				"section": {},
-				"summary": {},
-				"svg": {},
-				"template": {}
-			}
-		},
-		"dedup-children-004": {
-			"children": {
-				"a": {},
-				"abbr": {},
-				"b": {},
-				"em": {},
-				"i": {},
-				"img": {},
-				"mark": {},
-				"small": {},
-				"span": {},
-				"strong": {},
-				"time": {},
-				"u": {}
-			}
-		},
-		"dedup-children-005": {
-			"children": {
-				"button": {},
-				"datalist": {},
-				"input": {},
-				"meter": {},
-				"output": {},
-				"progress": {},
-				"select": {},
-				"textarea": {}
-			}
-		},
-		"dedup-children-006": {
-			"children": {
-				"abbr": {},
-				"b": {},
-				"i": {},
-				"mark": {},
-				"small": {},
-				"u": {}
-			}
-		},
-		"dedup-children-007": {
-			"children": {
-				"tbody": {},
-				"td": {},
-				"th": {},
-				"thead": {},
-				"tr": {}
-			}
-		},
-		"dedup-children-008": {
-			"children": {
-				"audio": {},
-				"div": {},
-				"p": {},
-				"svg": {},
-				"video": {}
-			}
-		},
-		"dedup-children-009": {
-			"children": {
-				"div": {},
-				"p": {}
-			}
-		}
-	},
-	"tags": {
-		"a": {
-			"vibecode": "HTML <a> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, href, link-control-inlines, download-attr, hreflang-attr, rel-attr, target-attr, type-attr. No explicit child tag overrides are listed here. This element must not contain these descendant tags: a, audio, button, details, embed, iframe, input, label, and 3 more.",
-			"text": true,
-			"cannot-nest": [
-				"a",
-				"audio",
-				"button",
-				"details",
-				"embed",
-				"iframe",
-				"input",
-				"label",
-				"select",
-				"textarea",
-				"video"
-			],
-			"include": [
-				"inlines",
-				"href",
-				"link-control-inlines",
-				"download-attr",
-				"hreflang-attr",
-				"rel-attr",
-				"target-attr",
-				"type-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element"
-			]
-		},
-		"abbr": {
-			"vibecode": "HTML <abbr> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-abbr-element"
-			]
-		},
-		"address": {
-			"vibecode": "HTML <address> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-address-element"
-			]
-		},
-		"area": {
-			"vibecode": "HTML <area> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: href, download-attr, rel-attr, target-attr, alt-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": [
-				"href",
-				"download-attr",
-				"rel-attr",
-				"target-attr",
-				"alt-attr"
-			],
-			"atts": {
-				"coords": {
-					"vibecode": "Tag-specific HTML attribute definition for coords on <area>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
-					]
-				},
-				"shape": {
-					"vibecode": "Tag-specific HTML attribute definition for shape on <area>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
-			]
-		},
-		"article": {
-			"vibecode": "HTML <article> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-article-element"
-			]
-		},
-		"aside": {
-			"vibecode": "HTML <aside> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-aside-element"
-			]
-		},
-		"audio": {
-			"vibecode": "HTML <audio> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-009, src-attr. Explicit child tags listed here: source, track.",
-			"text": true,
-			"include": ["dedup-children-009", "src-attr"],
-			"children": {
-				"source": {},
-				"track": {}
-			},
-			"atts": {
-				"autoplay": {
-					"vibecode": "Tag-specific HTML attribute definition for autoplay on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#ready-states"
-					]
-				},
-				"controls": {
-					"vibecode": "Tag-specific HTML attribute definition for controls on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#user-interface"
-					]
-				},
-				"loop": {
-					"vibecode": "Tag-specific HTML attribute definition for loop on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#offsets-into-the-media-resource"
-					]
-				},
-				"muted": {
-					"vibecode": "Tag-specific HTML attribute definition for muted on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#user-interface"
-					]
-				},
-				"preload": {
-					"vibecode": "Tag-specific HTML attribute definition for preload on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/media.html#the-audio-element"
-			]
-		},
-		"b": {
-			"vibecode": "HTML <b> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-b-element"
-			]
-		},
-		"bdi": {
-			"vibecode": "HTML <bdi> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdi-element"
-			]
-		},
-		"bdo": {
-			"vibecode": "HTML <bdo> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdo-element"
-			]
-		},
-		"blockquote": {
-			"vibecode": "HTML <blockquote> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, blocks. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines", "blocks"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element"
-			]
-		},
-		"body": {
-			"vibecode": "HTML <body> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-body-element"
-			]
-		},
-		"br": {
-			"vibecode": "HTML <br> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element"
-			]
-		},
-		"button": {
-			"vibecode": "HTML <button> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, blocks, link-control-inlines, name-attr, value-attr, type-attr, disabled-attr, form-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"inlines",
-				"blocks",
-				"link-control-inlines",
-				"name-attr",
-				"value-attr",
-				"type-attr",
-				"disabled-attr",
-				"form-attr"
-			],
-			"atts": {
-				"formaction": {
-					"vibecode": "Tag-specific HTML attribute definition for formaction on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"formenctype": {
-					"vibecode": "Tag-specific HTML attribute definition for formenctype on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"formmethod": {
-					"vibecode": "Tag-specific HTML attribute definition for formmethod on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"formnovalidate": {
-					"vibecode": "Tag-specific HTML attribute definition for formnovalidate on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"formtarget": {
-					"vibecode": "Tag-specific HTML attribute definition for formtarget on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element"
-			]
-		},
-		"canvas": {
-			"vibecode": "HTML <canvas> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-008, height-attr, width-attr. Explicit child tags listed here: img, math.",
-			"text": true,
-			"include": [
-				"dedup-children-008",
-				"height-attr",
-				"width-attr"
-			],
-			"children": {
-				"img": {},
-				"math": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element"
-			]
-		},
-		"caption": {
-			"vibecode": "HTML <caption> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-caption-element"
-			]
-		},
-		"cite": {
-			"vibecode": "HTML <cite> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-cite-element"
-			]
-		},
-		"code": {
-			"vibecode": "HTML <code> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element"
-			]
-		},
-		"col": {
-			"vibecode": "HTML <col> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: span-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": ["span-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-col-element"
-			]
-		},
-		"colgroup": {
-			"vibecode": "HTML <colgroup> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: span-attr. Explicit child tags listed here: col.",
-			"text": false,
-			"include": ["span-attr"],
-			"children": {
-				"col": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-colgroup-element"
-			]
-		},
-		"data": {
-			"vibecode": "HTML <data> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, value-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines", "value-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element"
-			]
-		},
-		"datalist": {
-			"vibecode": "HTML <datalist> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: options. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": ["options"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-datalist-element"
-			]
-		},
-		"dd": {
-			"vibecode": "HTML <dd> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element"
-			]
-		},
-		"del": {
-			"vibecode": "HTML <del> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/edits.html#the-del-element"
-			]
-		},
-		"details": {
-			"vibecode": "HTML <details> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: details-dialog-children, open-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["details-dialog-children", "open-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element"
-			]
-		},
-		"dfn": {
-			"vibecode": "HTML <dfn> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-dfn-element"
-			]
-		},
-		"dialog": {
-			"vibecode": "HTML <dialog> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: details-dialog-children, open-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["details-dialog-children", "open-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
-			]
-		},
-		"div": {
-			"vibecode": "HTML <div> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element"
-			]
-		},
-		"dl": {
-			"vibecode": "HTML <dl> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: dd, dt.",
-			"text": false,
-			"children": {
-				"dd": {},
-				"dt": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element"
-			]
-		},
-		"dt": {
-			"vibecode": "HTML <dt> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element"
-			]
-		},
-		"em": {
-			"vibecode": "HTML <em> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element"
-			]
-		},
-		"embed": {
-			"vibecode": "HTML <embed> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: type-attr, src-attr, height-attr, width-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": [
-				"type-attr",
-				"src-attr",
-				"height-attr",
-				"width-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element"
-			]
-		},
-		"fieldset": {
-			"vibecode": "HTML <fieldset> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: form-container-children, name-attr, disabled-attr, form-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"form-container-children",
-				"name-attr",
-				"disabled-attr",
-				"form-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element"
-			]
-		},
-		"figcaption": {
-			"vibecode": "HTML <figcaption> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
-			"text": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element"
-			],
-			"import": [
-				"inlines",
-				"blocks"
-			]
-		},
-		"figure": {
-			"vibecode": "HTML <figure> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. Explicit child tags listed here: figcaption.",
-			"text": true,
-			"include": ["flow-content"],
-			"children": {
-				"figcaption": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-figure-element"
-			],
-			"import": [
-				"inlines",
-				"blocks"
-			]
-		},
-		"footer": {
-			"vibecode": "HTML <footer> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-footer-element"
-			]
-		},
-		"form": {
-			"vibecode": "HTML <form> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: form-container-children, name-attr, target-attr, autocomplete-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"form-container-children",
-				"name-attr",
-				"target-attr",
-				"autocomplete-attr"
-			],
-			"atts": {
-				"action": {
-					"vibecode": "Tag-specific HTML attribute definition for action on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"enctype": {
-					"vibecode": "Tag-specific HTML attribute definition for enctype on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"method": {
-					"vibecode": "Tag-specific HTML attribute definition for method on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				},
-				"novalidate": {
-					"vibecode": "Tag-specific HTML attribute definition for novalidate on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/forms.html#the-form-element"
-			]
-		},
-		"h1": {
-			"vibecode": "HTML <h1> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"h2": {
-			"vibecode": "HTML <h2> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"h3": {
-			"vibecode": "HTML <h3> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"h4": {
-			"vibecode": "HTML <h4> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"h5": {
-			"vibecode": "HTML <h5> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"h6": {
-			"vibecode": "HTML <h6> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["heading-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
-			]
-		},
-		"head": {
-			"vibecode": "HTML <head> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: base, link, meta, noscript, script, template, title.",
-			"text": false,
-			"children": {
-				"base": {},
-				"link": {},
-				"meta": {},
-				"noscript": {},
-				"script": {},
-				"template": {},
-				"title": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-head-element"
-			]
-		},
-		"header": {
-			"vibecode": "HTML <header> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-header-element"
-			]
-		},
-		"hr": {
-			"vibecode": "HTML <hr> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element"
-			]
-		},
-		"html": {
-			"vibecode": "HTML <html> element definition. Non-void element. Text is allowed. Explicit child tags listed here: body, head.",
-			"text": true,
-			"children": {
-				"body": {},
-				"head": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-html-element"
-			]
-		},
-		"i": {
-			"vibecode": "HTML <i> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-i-element"
-			]
-		},
-		"iframe": {
-			"vibecode": "HTML <iframe> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, src-attr, height-attr, width-attr, referrerpolicy-attr. Explicit child tags listed here: html.",
-			"text": true,
-			"include": [
-				"name-attr",
-				"src-attr",
-				"height-attr",
-				"width-attr",
-				"referrerpolicy-attr"
-			],
-			"children": {
-				"html": {}
-			},
-			"atts": {
-				"allow": {
-					"vibecode": "Tag-specific HTML attribute definition for allow on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
-					]
-				},
-				"allowfullscreen": {
-					"vibecode": "Tag-specific HTML attribute definition for allowfullscreen on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
-					]
-				},
-				"sandbox": {
-					"vibecode": "Tag-specific HTML attribute definition for sandbox on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
-			]
-		},
-		"img": {
-			"vibecode": "HTML <img> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: alt-attr, src-attr, height-attr, width-attr, crossorigin-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": [
-				"alt-attr",
-				"src-attr",
-				"height-attr",
-				"width-attr",
-				"crossorigin-attr"
-			],
-			"atts": {
-				"ismap": {
-					"vibecode": "Tag-specific HTML attribute definition for ismap on <img>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
-					]
-				},
-				"usemap": {
-					"vibecode": "Tag-specific HTML attribute definition for usemap on <img>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/image-maps.html#authoring"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
-			]
-		},
-		"input": {
-			"vibecode": "HTML <input> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: name-attr, value-attr, type-attr, disabled-attr, autocomplete-attr, max-attr, maxlength-attr, min-attr, and 5 more. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": [
-				"name-attr",
-				"value-attr",
-				"type-attr",
-				"disabled-attr",
-				"autocomplete-attr",
-				"max-attr",
-				"maxlength-attr",
-				"min-attr",
-				"multiple-attr",
-				"placeholder-attr",
-				"readonly-attr",
-				"required-attr",
-				"size-attr"
-			],
-			"atts": {
-				"accept": {
-					"vibecode": "Tag-specific HTML attribute definition for accept on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#file-upload-state-(type=file)"
-					]
-				},
-				"checked": {
-					"vibecode": "Tag-specific HTML attribute definition for checked on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-input-element"
-					]
-				},
-				"step": {
-					"vibecode": "Tag-specific HTML attribute definition for step on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/input.html#the-step-attribute"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/input.html#the-input-element"
-			]
-		},
-		"ins": {
-			"vibecode": "HTML <ins> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: simple-inlines, cite-attr, datetime-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"simple-inlines",
-				"cite-attr",
-				"datetime-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/edits.html#the-ins-element"
-			]
-		},
-		"kbd": {
-			"vibecode": "HTML <kbd> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-kbd-element"
-			]
-		},
-		"label": {
-			"vibecode": "HTML <label> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-005, dedup-children-004, form-attr, for-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"dedup-children-005",
-				"dedup-children-004",
-				"form-attr",
-				"for-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/forms.html#the-label-element"
-			]
-		},
-		"legend": {
-			"vibecode": "HTML <legend> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["legend-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element"
-			]
-		},
-		"li": {
-			"vibecode": "HTML <li> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content, value-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content", "value-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element"
-			]
-		},
-		"link": {
-			"vibecode": "HTML <link> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: href, hreflang-attr, rel-attr, type-attr, referrerpolicy-attr, crossorigin-attr, media-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": [
-				"href",
-				"hreflang-attr",
-				"rel-attr",
-				"type-attr",
-				"referrerpolicy-attr",
-				"crossorigin-attr",
-				"media-attr"
-			],
-			"atts": {
-				"sizes": {
-					"vibecode": "Tag-specific HTML attribute definition for sizes on <link>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
-			]
-		},
-		"main": {
-			"vibecode": "HTML <main> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-main-element"
-			]
-		},
-		"map": {
-			"vibecode": "HTML <map> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr. Explicit child tags listed here: area, canvas, img, object, p, svg, video.",
-			"text": true,
-			"include": ["name-attr"],
-			"children": {
-				"area": {},
-				"canvas": {},
-				"img": {},
-				"object": {},
-				"p": {},
-				"svg": {},
-				"video": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element"
-			]
-		},
-		"mark": {
-			"vibecode": "HTML <mark> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-mark-element"
-			]
-		},
-		"menu": {
-			"vibecode": "HTML <menu> element definition. Non-void element. Text is allowed. Explicit child tags listed here: li.",
-			"text": true,
-			"children": {
-				"li": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-menu-element"
-			]
-		},
-		"meta": {
-			"vibecode": "HTML <meta> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: name-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": ["name-attr"],
-			"atts": {
-				"charset": {
-					"vibecode": "Tag-specific HTML attribute definition for charset on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
-					]
-				},
-				"content": {
-					"vibecode": "Tag-specific HTML attribute definition for content on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
-					]
-				},
-				"http-equiv": {
-					"vibecode": "Tag-specific HTML attribute definition for http-equiv on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/semantics.html#pragma-directives"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
-			]
-		},
-		"meter": {
-			"vibecode": "HTML <meter> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: value-attr, max-attr, min-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": [
-				"value-attr",
-				"max-attr",
-				"min-attr"
-			],
-			"atts": {
-				"high": {
-					"vibecode": "Tag-specific HTML attribute definition for high on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
-					]
-				},
-				"low": {
-					"vibecode": "Tag-specific HTML attribute definition for low on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
-					]
-				},
-				"optimum": {
-					"vibecode": "Tag-specific HTML attribute definition for optimum on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
-			]
-		},
-		"nav": {
-			"vibecode": "HTML <nav> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-nav-element"
-			]
-		},
-		"noscript": {
-			"vibecode": "HTML <noscript> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-001. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["dedup-children-001"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/scripting.html#the-noscript-element"
-			]
-		},
-		"object": {
-			"vibecode": "HTML <object> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, type-attr, form-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"name-attr",
-				"type-attr",
-				"form-attr"
-			],
-			"atts": {
-				"data": {
-					"vibecode": "Tag-specific HTML attribute definition for data on <object>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
-			]
-		},
-		"ol": {
-			"vibecode": "HTML <ol> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: list-container-children, type-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["list-container-children", "type-attr"],
-			"atts": {
-				"reversed": {
-					"vibecode": "Tag-specific HTML attribute definition for reversed on <ol>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
-					]
-				},
-				"start": {
-					"vibecode": "Tag-specific HTML attribute definition for start on <ol>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
-			]
-		},
-		"optgroup": {
-			"vibecode": "HTML <optgroup> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: options, disabled-attr, label-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"options",
-				"disabled-attr",
-				"label-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element"
-			]
-		},
-		"option": {
-			"vibecode": "HTML <option> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: value-attr, disabled-attr, label-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"value-attr",
-				"disabled-attr",
-				"label-attr"
-			],
-			"atts": {
-				"selected": {
-					"vibecode": "Tag-specific HTML attribute definition for selected on <option>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
-			]
-		},
-		"output": {
-			"vibecode": "HTML <output> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines, name-attr, for-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"legend-inlines",
-				"name-attr",
-				"for-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element"
-			]
-		},
-		"p": {
-			"vibecode": "HTML <p> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, math-svg. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines", "math-svg"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element"
-			]
-		},
-		"picture": {
-			"vibecode": "HTML <picture> element definition. Non-void element. Text is allowed. Explicit child tags listed here: img, source.",
-			"text": true,
-			"children": {
-				"img": {},
-				"source": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element"
-			]
-		},
-		"pre": {
-			"vibecode": "HTML <pre> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element"
-			]
-		},
-		"progress": {
-			"vibecode": "HTML <progress> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: value-attr, max-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": ["value-attr", "max-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
-			]
-		},
-		"q": {
-			"vibecode": "HTML <q> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, cite-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines", "cite-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element"
-			]
-		},
-		"rp": {
-			"vibecode": "HTML <rp> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
-			"text": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-rp-element"
-			]
-		},
-		"rt": {
-			"vibecode": "HTML <rt> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
-			"text": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-rt-element"
-			]
-		},
-		"ruby": {
-			"vibecode": "HTML <ruby> element definition. Non-void element. Text is allowed. Explicit child tags listed here: rp, rt.",
-			"text": true,
-			"children": {
-				"rp": {},
-				"rt": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-ruby-element"
-			]
-		},
-		"s": {
-			"vibecode": "HTML <s> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-s-element"
-			]
-		},
-		"samp": {
-			"vibecode": "HTML <samp> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-samp-element"
-			]
-		},
-		"script": {
-			"vibecode": "HTML <script> element definition. Void element; no closing content in HTML syntax. Text is allowed. Includes reusable schema fragments: type-attr, src-attr, crossorigin-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"void": true,
-			"include": [
-				"type-attr",
-				"src-attr",
-				"crossorigin-attr"
-			],
-			"atts": {
-				"async": {
-					"vibecode": "Tag-specific HTML attribute definition for async on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
-					]
-				},
-				"defer": {
-					"vibecode": "Tag-specific HTML attribute definition for defer on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
-					]
-				},
-				"nomodule": {
-					"vibecode": "Tag-specific HTML attribute definition for nomodule on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
-			]
-		},
-		"section": {
-			"vibecode": "HTML <section> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/sections.html#the-section-element"
-			]
-		},
-		"select": {
-			"vibecode": "HTML <select> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, disabled-attr, form-attr, multiple-attr, required-attr, size-attr. Explicit child tags listed here: optgroup, option.",
-			"text": true,
-			"include": [
-				"name-attr",
-				"disabled-attr",
-				"form-attr",
-				"multiple-attr",
-				"required-attr",
-				"size-attr"
-			],
-			"children": {
-				"optgroup": {},
-				"option": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
-			]
-		},
-		"slot": {
-			"vibecode": "HTML <slot> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["name-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element"
-			]
-		},
-		"small": {
-			"vibecode": "HTML <small> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-small-element"
-			]
-		},
-		"source": {
-			"vibecode": "HTML <source> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: type-attr, src-attr, media-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": [
-				"type-attr",
-				"src-attr",
-				"media-attr"
-			],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element"
-			]
-		},
-		"span": {
-			"vibecode": "HTML <span> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, math-svg. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines", "math-svg"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-span-element"
-			]
-		},
-		"strong": {
-			"vibecode": "HTML <strong> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element"
-			]
-		},
-		"style": {
-			"vibecode": "HTML <style> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: media-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["media-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-style-element"
-			]
-		},
-		"sub": {
-			"vibecode": "HTML <sub> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements"
-			]
-		},
-		"summary": {
-			"vibecode": "HTML <summary> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["legend-inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/interactive-elements.html#the-summary-element"
-			]
-		},
-		"sup": {
-			"vibecode": "HTML <sup> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements"
-			]
-		},
-		"table": {
-			"vibecode": "HTML <table> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: caption, colgroup, tbody, tfoot, thead.",
-			"text": false,
-			"children": {
-				"caption": {},
-				"colgroup": {},
-				"tbody": {},
-				"tfoot": {},
-				"thead": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-table-element"
-			]
-		},
-		"tbody": {
-			"vibecode": "HTML <tbody> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": ["table-section-children"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-tbody-element"
-			]
-		},
-		"td": {
-			"vibecode": "HTML <td> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: table-cell, headers-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["table-cell", "headers-attr", "flow-content"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-td-element"
-			]
-		},
-		"template": {
-			"vibecode": "HTML <template> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: dedup-children-007, dedup-children-001. Explicit child tags listed here: html.",
-			"text": false,
-			"include": ["dedup-children-007", "dedup-children-001"],
-			"children": {
-				"html": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/scripting.html#the-template-element"
-			]
-		},
-		"textarea": {
-			"vibecode": "HTML <textarea> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, disabled-attr, form-attr, maxlength-attr, placeholder-attr, readonly-attr, required-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": [
-				"name-attr",
-				"disabled-attr",
-				"form-attr",
-				"maxlength-attr",
-				"placeholder-attr",
-				"readonly-attr",
-				"required-attr"
-			],
-			"atts": {
-				"cols": {
-					"vibecode": "Tag-specific HTML attribute definition for cols on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				},
-				"rows": {
-					"vibecode": "Tag-specific HTML attribute definition for rows on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				},
-				"wrap": {
-					"vibecode": "Tag-specific HTML attribute definition for wrap on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
-			]
-		},
-		"tfoot": {
-			"vibecode": "HTML <tfoot> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": ["table-section-children"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-tfoot-element"
-			]
-		},
-		"th": {
-			"vibecode": "HTML <th> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: table-cell, headers-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["table-cell", "headers-attr"],
-			"atts": {
-				"scope": {
-					"vibecode": "Tag-specific HTML attribute definition for scope on <th>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/tables.html#the-th-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-th-element"
-			]
-		},
-		"thead": {
-			"vibecode": "HTML <thead> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
-			"text": false,
-			"include": ["table-section-children"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-thead-element"
-			]
-		},
-		"time": {
-			"vibecode": "HTML <time> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: simple-inlines, datetime-attr. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["simple-inlines", "datetime-attr"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element"
-			]
-		},
-		"title": {
-			"vibecode": "HTML <title> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
-			"text": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/semantics.html#the-title-element"
-			]
-		},
-		"tr": {
-			"vibecode": "HTML <tr> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: td, th.",
-			"text": false,
-			"children": {
-				"td": {},
-				"th": {}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/tables.html#the-tr-element"
-			]
-		},
-		"track": {
-			"vibecode": "HTML <track> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: src-attr, label-attr. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"include": ["src-attr", "label-attr"],
-			"atts": {
-				"default": {
-					"vibecode": "Tag-specific HTML attribute definition for default on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#the-track-element"
-					]
-				},
-				"kind": {
-					"vibecode": "Tag-specific HTML attribute definition for kind on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#the-track-element"
-					]
-				},
-				"srclang": {
-					"vibecode": "Tag-specific HTML attribute definition for srclang on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#the-track-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/media.html#the-track-element"
-			]
-		},
-		"u": {
-			"vibecode": "HTML <u> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element"
-			]
-		},
-		"ul": {
-			"vibecode": "HTML <ul> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: list-container-children. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["list-container-children"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element"
-			]
-		},
-		"var": {
-			"vibecode": "HTML <var> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
-			"text": true,
-			"include": ["inlines"],
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-var-element"
-			]
-		},
-		"video": {
-			"vibecode": "HTML <video> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-007, dedup-children-003, inlines, blocks. Explicit child tags listed here: address, article, dd, dt, fieldset, figcaption, legend, li, and 8 more.",
-			"text": true,
-			"include": [
-				"dedup-children-007",
-				"dedup-children-003",
-				"inlines",
-				"blocks"
-			],
-			"children": {
-				"address": {},
-				"article": {},
-				"dd": {},
-				"dt": {},
-				"fieldset": {},
-				"figcaption": {},
-				"legend": {},
-				"li": {},
-				"math": {},
-				"ol": {},
-				"optgroup": {},
-				"option": {},
-				"source": {},
-				"tfoot": {},
-				"track": {},
-				"ul": {}
-			},
-			"atts": {
-				"poster": {
-					"vibecode": "Tag-specific HTML attribute definition for poster on <video>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
-					"reference": [
-						"https://html.spec.whatwg.org/multipage/media.html#the-video-element"
-					]
-				}
-			},
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/media.html#the-video-element"
-			]
-		},
-		"wbr": {
-			"vibecode": "HTML <wbr> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
-			"text": false,
-			"void": true,
-			"reference": [
-				"https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-wbr-element"
-			]
-		}
-	}
+  "default": {
+    "atts": {
+      "accesskey": {
+        "vibecode": "Global HTML attribute definition for accesskey. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-accesskey-attribute"
+        ]
+      },
+      "autocapitalize": {
+        "vibecode": "Global HTML attribute definition for autocapitalize. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#autocapitalization"
+        ]
+      },
+      "autocorrect": {
+        "vibecode": "Global HTML attribute definition for autocorrect. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#autocorrection"
+        ]
+      },
+      "autofocus": {
+        "vibecode": "Global HTML attribute definition for autofocus. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-autofocus-attribute"
+        ]
+      },
+      "class": {
+        "vibecode": "Global HTML attribute definition for class. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
+        ]
+      },
+      "contenteditable": {
+        "vibecode": "Global HTML attribute definition for contenteditable. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#contenteditable"
+        ]
+      },
+      "dir": {
+        "vibecode": "Global HTML attribute definition for dir. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#the-dir-attribute"
+        ]
+      },
+      "draggable": {
+        "vibecode": "Global HTML attribute definition for draggable. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dnd.html#the-draggable-attribute"
+        ]
+      },
+      "enterkeyhint": {
+        "vibecode": "Global HTML attribute definition for enterkeyhint. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-enterkeyhint-attribute"
+        ]
+      },
+      "headingoffset": {
+        "vibecode": "Global HTML attribute definition for headingoffset. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
+        ]
+      },
+      "headingreset": {
+        "vibecode": "Global HTML attribute definition for headingreset. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
+        ]
+      },
+      "hidden": {
+        "vibecode": "Global HTML attribute definition for hidden. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-hidden-attribute"
+        ]
+      },
+      "id": {
+        "vibecode": "Global HTML attribute definition for id. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
+        ]
+      },
+      "inert": {
+        "vibecode": "Global HTML attribute definition for inert. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute"
+        ]
+      },
+      "inputmode": {
+        "vibecode": "Global HTML attribute definition for inputmode. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#input-modalities:-the-inputmode-attribute"
+        ]
+      },
+      "is": {
+        "vibecode": "Global HTML attribute definition for is. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/custom-elements.html#custom-elements-core-concepts"
+        ]
+      },
+      "itemid": {
+        "vibecode": "Global HTML attribute definition for itemid. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/microdata.html#items"
+        ]
+      },
+      "itemprop": {
+        "vibecode": "Global HTML attribute definition for itemprop. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/microdata.html#names:-the-itemprop-attribute"
+        ]
+      },
+      "itemref": {
+        "vibecode": "Global HTML attribute definition for itemref. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/microdata.html#items"
+        ]
+      },
+      "itemscope": {
+        "vibecode": "Global HTML attribute definition for itemscope. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/microdata.html#items"
+        ]
+      },
+      "itemtype": {
+        "vibecode": "Global HTML attribute definition for itemtype. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/microdata.html#items"
+        ]
+      },
+      "lang": {
+        "vibecode": "Global HTML attribute definition for lang. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#the-lang-and-xml:lang-attributes"
+        ]
+      },
+      "nonce": {
+        "vibecode": "Global HTML attribute definition for nonce. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/urls-and-fetching.html#nonce-attributes"
+        ]
+      },
+      "popover": {
+        "vibecode": "Global HTML attribute definition for popover. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/popover.html#the-popover-attribute"
+        ]
+      },
+      "role": {
+        "vibecode": "Global HTML attribute definition for role. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
+        ]
+      },
+      "slot": {
+        "vibecode": "Global HTML attribute definition for slot. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#global-attributes"
+        ]
+      },
+      "spellcheck": {
+        "vibecode": "Global HTML attribute definition for spellcheck. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#spelling-and-grammar-checking"
+        ]
+      },
+      "style": {
+        "vibecode": "Global HTML attribute definition for style. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#the-style-attribute"
+        ]
+      },
+      "tabindex": {
+        "vibecode": "Global HTML attribute definition for tabindex. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#the-tabindex-attribute"
+        ]
+      },
+      "title": {
+        "vibecode": "Global HTML attribute definition for title. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#the-title-attribute"
+        ]
+      },
+      "translate": {
+        "vibecode": "Global HTML attribute definition for translate. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/dom.html#the-translate-attribute"
+        ]
+      },
+      "writingsuggestions": {
+        "vibecode": "Global HTML attribute definition for writingsuggestions. This attribute is applied to every tag through default.atts unless a tag adds more specific schema around it.",
+        "reference": [
+          "https://html.spec.whatwg.org/multipage/interaction.html#writing-suggestions"
+        ]
+      }
+    },
+    "children": {}
+  },
+  "sources": {
+    "alt-attr": {
+      "atts": {
+        "alt": {
+          "vibecode": "Reusable HTML attribute definition for alt. Defined in source alt-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
+          ]
+        }
+      }
+    },
+    "autocomplete-attr": {
+      "atts": {
+        "autocomplete": {
+          "vibecode": "Reusable HTML attribute definition for autocomplete. Defined in source autocomplete-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/forms.html#the-form-element",
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#autofilling-form-controls:-the-autocomplete-attribute"
+          ]
+        }
+      }
+    },
+    "blocks": {
+      "include": ["dedup-children-009", "inlines"],
+      "children": {
+        "aside": {},
+        "form": {},
+        "hr": {},
+        "pre": {},
+        "blockquote": {},
+        "h1": {},
+        "h2": {},
+        "h3": {},
+        "h4": {},
+        "h5": {},
+        "h6": {},
+        "table": {}
+      }
+    },
+    "cite-attr": {
+      "atts": {
+        "cite": {
+          "vibecode": "Reusable HTML attribute definition for cite. Defined in source cite-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element",
+            "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element",
+            "https://html.spec.whatwg.org/multipage/edits.html#attributes-common-to-ins-and-del-elements"
+          ]
+        }
+      }
+    },
+    "crossorigin-attr": {
+      "atts": {
+        "crossorigin": {
+          "vibecode": "Reusable HTML attribute definition for crossorigin. Defined in source crossorigin-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
+          ]
+        }
+      }
+    },
+    "datetime-attr": {
+      "atts": {
+        "datetime": {
+          "vibecode": "Reusable HTML attribute definition for datetime. Defined in source datetime-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/edits.html#attributes-common-to-ins-and-del-elements",
+            "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element"
+          ]
+        }
+      }
+    },
+    "flow-content": {
+      "include": ["dedup-children-003", "blocks"],
+      "children": {
+        "script": {}
+      }
+    },
+    "disabled-attr": {
+      "atts": {
+        "disabled": {
+          "vibecode": "Reusable HTML attribute definition for disabled. Defined in source disabled-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#enabling-and-disabling-form-controls:-the-disabled-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
+          ]
+        }
+      }
+    },
+    "download-attr": {
+      "atts": {
+        "download": {
+          "vibecode": "Reusable HTML attribute definition for download. Defined in source download-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements"
+          ]
+        }
+      }
+    },
+    "for-attr": {
+      "atts": {
+        "for": {
+          "vibecode": "Reusable HTML attribute definition for for. Defined in source for-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/forms.html#the-label-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element"
+          ]
+        }
+      }
+    },
+    "form-attr": {
+      "atts": {
+        "form": {
+          "vibecode": "Reusable HTML attribute definition for form. Defined in source form-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#association-of-controls-and-forms"
+          ]
+        }
+      }
+    },
+    "headers-attr": {
+      "atts": {
+        "headers": {
+          "vibecode": "Reusable HTML attribute definition for headers. Defined in source headers-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
+          ]
+        }
+      }
+    },
+    "heading-inlines": {
+      "include": ["dedup-children-006", "simple-inlines"],
+      "children": {
+        "img": {}
+      }
+    },
+    "height-attr": {
+      "atts": {
+        "height": {
+          "vibecode": "Reusable HTML attribute definition for height. Defined in source height-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content-other.html#dimension-attributes"
+          ]
+        }
+      }
+    },
+    "href": {
+      "atts": {
+        "href": {
+          "vibecode": "Reusable HTML attribute definition for href. Defined in source href so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-base-element"
+          ]
+        }
+      }
+    },
+    "hreflang-attr": {
+      "atts": {
+        "hreflang": {
+          "vibecode": "Reusable HTML attribute definition for hreflang. Defined in source hreflang-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
+          ]
+        }
+      }
+    },
+    "label-attr": {
+      "atts": {
+        "label": {
+          "vibecode": "Reusable HTML attribute definition for label. Defined in source label-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element",
+            "https://html.spec.whatwg.org/multipage/media.html#the-track-element"
+          ]
+        }
+      }
+    },
+    "legend-inlines": {
+      "include": ["dedup-children-006", "simple-inlines"],
+      "children": {
+        "time": {}
+      }
+    },
+    "link-control-inlines": {
+      "children": {
+        "svg": {}
+      },
+      "include": [
+        "dedup-children-002"
+      ]
+    },
+    "list-container-children": {
+      "include": ["container-basics"],
+      "children": {
+        "dl": {},
+        "em": {},
+        "li": {},
+        "strong": {}
+      }
+    },
+    "max-attr": {
+      "atts": {
+        "max": {
+          "vibecode": "Reusable HTML attribute definition for max. Defined in source max-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-min-and-max-attributes",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
+          ]
+        }
+      }
+    },
+    "maxlength-attr": {
+      "atts": {
+        "maxlength": {
+          "vibecode": "Reusable HTML attribute definition for maxlength. Defined in source maxlength-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-maxlength-and-minlength-attributes",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        }
+      }
+    },
+    "media-attr": {
+      "atts": {
+        "media": {
+          "vibecode": "Reusable HTML attribute definition for media. Defined in source media-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-style-element"
+          ]
+        }
+      }
+    },
+    "min-attr": {
+      "atts": {
+        "min": {
+          "vibecode": "Reusable HTML attribute definition for min. Defined in source min-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-min-and-max-attributes",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
+          ]
+        }
+      }
+    },
+    "inlines": {
+      "children": {
+        "a": {},
+        "del": {},
+        "embed": {},
+        "iframe": {},
+        "ins": {},
+        "label": {},
+        "noscript": {},
+        "object": {},
+        "slot": {}
+      },
+      "include": [
+        "dedup-children-005",
+        "dedup-children-002"
+      ]
+    },
+    "multiple-attr": {
+      "atts": {
+        "multiple": {
+          "vibecode": "Reusable HTML attribute definition for multiple. Defined in source multiple-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-multiple-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
+          ]
+        }
+      }
+    },
+    "name-attr": {
+      "atts": {
+        "name": {
+          "vibecode": "Reusable HTML attribute definition for name. Defined in source name-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element",
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element",
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#naming-form-controls:-the-name-attribute",
+            "https://html.spec.whatwg.org/multipage/forms.html#the-form-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
+          ]
+        }
+      }
+    },
+    "open-attr": {
+      "atts": {
+        "open": {
+          "vibecode": "Reusable HTML attribute definition for open. Defined in source open-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element",
+            "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
+          ]
+        }
+      }
+    },
+    "options": {
+      "children": {
+        "option": {}
+      }
+    },
+    "placeholder-attr": {
+      "atts": {
+        "placeholder": {
+          "vibecode": "Reusable HTML attribute definition for placeholder. Defined in source placeholder-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-placeholder-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        }
+      }
+    },
+    "readonly-attr": {
+      "atts": {
+        "readonly": {
+          "vibecode": "Reusable HTML attribute definition for readonly. Defined in source readonly-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-readonly-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        }
+      }
+    },
+    "referrerpolicy-attr": {
+      "atts": {
+        "referrerpolicy": {
+          "vibecode": "Reusable HTML attribute definition for referrerpolicy. Defined in source referrerpolicy-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
+          ]
+        }
+      }
+    },
+    "rel-attr": {
+      "atts": {
+        "rel": {
+          "vibecode": "Reusable HTML attribute definition for rel. Defined in source rel-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
+          ]
+        }
+      }
+    },
+    "required-attr": {
+      "atts": {
+        "required": {
+          "vibecode": "Reusable HTML attribute definition for required. Defined in source required-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-required-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        }
+      }
+    },
+    "simple-inlines": {
+      "children": {
+        "a": {},
+        "em": {},
+        "span": {},
+        "strong": {}
+      }
+    },
+    "size-attr": {
+      "atts": {
+        "size": {
+          "vibecode": "Reusable HTML attribute definition for size. Defined in source size-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-size-attribute",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
+          ]
+        }
+      }
+    },
+    "span-attr": {
+      "atts": {
+        "span": {
+          "vibecode": "Reusable HTML attribute definition for span. Defined in source span-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/tables.html#the-col-element",
+            "https://html.spec.whatwg.org/multipage/tables.html#the-colgroup-element"
+          ]
+        }
+      }
+    },
+    "src-attr": {
+      "atts": {
+        "src": {
+          "vibecode": "Reusable HTML attribute definition for src. Defined in source src-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#the-audio-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element",
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element",
+            "https://html.spec.whatwg.org/multipage/media.html#the-track-element",
+            "https://html.spec.whatwg.org/multipage/media.html#location-of-the-media-resource"
+          ]
+        }
+      }
+    },
+    "table-cell": {
+      "atts": {
+        "colspan": {
+          "vibecode": "Reusable HTML attribute definition for colspan. Defined in source table-cell so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
+          ]
+        },
+        "rowspan": {
+          "vibecode": "Reusable HTML attribute definition for rowspan. Defined in source table-cell so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/tables.html#attributes-common-to-td-and-th-elements"
+          ]
+        }
+      },
+      "children": {
+        "canvas": {},
+        "table": {}
+      },
+      "include": [
+        "dedup-children-008",
+        "dedup-children-004"
+      ]
+    },
+    "table-section-children": {
+      "children": {
+        "tr": {}
+      }
+    },
+    "target-attr": {
+      "atts": {
+        "target": {
+          "vibecode": "Reusable HTML attribute definition for target. Defined in source target-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        }
+      }
+    },
+    "type-attr": {
+      "atts": {
+        "type": {
+          "vibecode": "Reusable HTML attribute definition for type. Defined in source type-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/links.html#links-created-by-a-and-area-elements",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element",
+            "https://html.spec.whatwg.org/multipage/input.html#the-input-element",
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element",
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element",
+            "https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element",
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element"
+          ]
+        }
+      }
+    },
+    "value-attr": {
+      "atts": {
+        "value": {
+          "vibecode": "Reusable HTML attribute definition for value. Defined in source value-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element",
+            "https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element",
+            "https://html.spec.whatwg.org/multipage/input.html#the-input-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element",
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
+          ]
+        }
+      }
+    },
+    "width-attr": {
+      "atts": {
+        "width": {
+          "vibecode": "Reusable HTML attribute definition for width. Defined in source width-attr so multiple tags can include the same attribute schema without duplication.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element",
+            "https://html.spec.whatwg.org/multipage/embedded-content-other.html#dimension-attributes"
+          ]
+        }
+      }
+    },
+    "details-dialog-children": {
+      "include": ["container-basics"],
+      "children": {
+        "audio": {},
+        "img": {},
+        "video": {}
+      }
+    },
+    "form-container-children": {
+      "include": ["dedup-children-005", "container-basics"],
+      "children": {
+        "details": {},
+        "dialog": {},
+        "img": {},
+        "label": {},
+        "summary": {},
+        "table": {}
+      }
+    },
+    "math-svg": {
+      "children": {
+        "math": {},
+        "svg": {}
+      }
+    },
+    "container-basics": {
+      "children": {
+        "a": {},
+        "ol": {},
+        "span": {},
+        "ul": {}
+      },
+      "include": [
+        "dedup-children-009"
+      ]
+    },
+    "dedup-children-001": {
+      "children": {
+        "a": {},
+        "abbr": {},
+        "address": {},
+        "area": {},
+        "article": {},
+        "aside": {},
+        "audio": {},
+        "b": {},
+        "bdi": {},
+        "bdo": {},
+        "blockquote": {},
+        "body": {},
+        "br": {},
+        "button": {},
+        "canvas": {},
+        "caption": {},
+        "cite": {},
+        "code": {},
+        "col": {},
+        "colgroup": {},
+        "data": {},
+        "datalist": {},
+        "dd": {},
+        "del": {},
+        "details": {},
+        "dfn": {},
+        "dialog": {},
+        "div": {},
+        "dl": {},
+        "dt": {},
+        "em": {},
+        "embed": {},
+        "fieldset": {},
+        "figcaption": {},
+        "figure": {},
+        "footer": {},
+        "form": {},
+        "h1": {},
+        "h2": {},
+        "h3": {},
+        "h4": {},
+        "h5": {},
+        "h6": {},
+        "head": {},
+        "header": {},
+        "hr": {},
+        "i": {},
+        "iframe": {},
+        "img": {},
+        "input": {},
+        "ins": {},
+        "kbd": {},
+        "label": {},
+        "legend": {},
+        "li": {},
+        "main": {},
+        "map": {},
+        "mark": {},
+        "math": {},
+        "meter": {},
+        "nav": {},
+        "object": {},
+        "ol": {},
+        "optgroup": {},
+        "option": {},
+        "output": {},
+        "p": {},
+        "picture": {},
+        "pre": {},
+        "progress": {},
+        "q": {},
+        "rp": {},
+        "rt": {},
+        "ruby": {},
+        "s": {},
+        "samp": {},
+        "section": {},
+        "select": {},
+        "small": {},
+        "source": {},
+        "span": {},
+        "strong": {},
+        "sub": {},
+        "summary": {},
+        "sup": {},
+        "svg": {},
+        "table": {},
+        "textarea": {},
+        "tfoot": {},
+        "time": {},
+        "track": {},
+        "u": {},
+        "ul": {},
+        "var": {},
+        "video": {},
+        "wbr": {}
+      }
+    },
+    "dedup-children-002": {
+      "children": {
+        "abbr": {},
+        "audio": {},
+        "b": {},
+        "bdi": {},
+        "bdo": {},
+        "br": {},
+        "canvas": {},
+        "cite": {},
+        "code": {},
+        "data": {},
+        "dfn": {},
+        "em": {},
+        "i": {},
+        "img": {},
+        "kbd": {},
+        "map": {},
+        "mark": {},
+        "picture": {},
+        "q": {},
+        "rp": {},
+        "rt": {},
+        "ruby": {},
+        "s": {},
+        "samp": {},
+        "small": {},
+        "span": {},
+        "strong": {},
+        "sub": {},
+        "sup": {},
+        "time": {},
+        "u": {},
+        "var": {},
+        "video": {},
+        "wbr": {}
+      }
+    },
+    "dedup-children-003": {
+      "children": {
+        "aside": {},
+        "details": {},
+        "dialog": {},
+        "dl": {},
+        "figure": {},
+        "footer": {},
+        "header": {},
+        "main": {},
+        "nav": {},
+        "section": {},
+        "summary": {},
+        "svg": {},
+        "template": {}
+      }
+    },
+    "dedup-children-004": {
+      "children": {
+        "a": {},
+        "abbr": {},
+        "b": {},
+        "em": {},
+        "i": {},
+        "img": {},
+        "mark": {},
+        "small": {},
+        "span": {},
+        "strong": {},
+        "time": {},
+        "u": {}
+      }
+    },
+    "dedup-children-005": {
+      "children": {
+        "button": {},
+        "datalist": {},
+        "input": {},
+        "meter": {},
+        "output": {},
+        "progress": {},
+        "select": {},
+        "textarea": {}
+      }
+    },
+    "dedup-children-006": {
+      "children": {
+        "abbr": {},
+        "b": {},
+        "i": {},
+        "mark": {},
+        "small": {},
+        "u": {}
+      }
+    },
+    "dedup-children-007": {
+      "children": {
+        "tbody": {},
+        "td": {},
+        "th": {},
+        "thead": {},
+        "tr": {}
+      }
+    },
+    "dedup-children-008": {
+      "children": {
+        "audio": {},
+        "div": {},
+        "p": {},
+        "svg": {},
+        "video": {}
+      }
+    },
+    "dedup-children-009": {
+      "children": {
+        "div": {},
+        "p": {}
+      }
+    }
+  },
+  "tags": {
+    "a": {
+      "vibecode": "HTML <a> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, href, link-control-inlines, download-attr, hreflang-attr, rel-attr, target-attr, type-attr. No explicit child tag overrides are listed here. This element must not contain these descendant tags: a, audio, button, details, embed, iframe, input, label, and 3 more.",
+      "text": true,
+      "cannot-nest": [
+        "a",
+        "audio",
+        "button",
+        "details",
+        "embed",
+        "iframe",
+        "input",
+        "label",
+        "select",
+        "textarea",
+        "video"
+      ],
+      "include": [
+        "inlines",
+        "href",
+        "link-control-inlines",
+        "download-attr",
+        "hreflang-attr",
+        "rel-attr",
+        "target-attr",
+        "type-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element"
+      ]
+    },
+    "abbr": {
+      "vibecode": "HTML <abbr> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-abbr-element"
+      ]
+    },
+    "address": {
+      "vibecode": "HTML <address> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-address-element"
+      ]
+    },
+    "area": {
+      "vibecode": "HTML <area> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: href, download-attr, rel-attr, target-attr, alt-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": [
+        "href",
+        "download-attr",
+        "rel-attr",
+        "target-attr",
+        "alt-attr"
+      ],
+      "atts": {
+        "coords": {
+          "vibecode": "Tag-specific HTML attribute definition for coords on <area>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
+          ]
+        },
+        "shape": {
+          "vibecode": "Tag-specific HTML attribute definition for shape on <area>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element"
+      ]
+    },
+    "article": {
+      "vibecode": "HTML <article> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-article-element"
+      ]
+    },
+    "aside": {
+      "vibecode": "HTML <aside> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-aside-element"
+      ]
+    },
+    "audio": {
+      "vibecode": "HTML <audio> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-009, src-attr. Explicit child tags listed here: source, track.",
+      "text": true,
+      "include": ["dedup-children-009", "src-attr"],
+      "children": {
+        "source": {},
+        "track": {}
+      },
+      "atts": {
+        "autoplay": {
+          "vibecode": "Tag-specific HTML attribute definition for autoplay on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#ready-states"
+          ]
+        },
+        "controls": {
+          "vibecode": "Tag-specific HTML attribute definition for controls on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#user-interface"
+          ]
+        },
+        "loop": {
+          "vibecode": "Tag-specific HTML attribute definition for loop on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#offsets-into-the-media-resource"
+          ]
+        },
+        "muted": {
+          "vibecode": "Tag-specific HTML attribute definition for muted on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#user-interface"
+          ]
+        },
+        "preload": {
+          "vibecode": "Tag-specific HTML attribute definition for preload on <audio>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#loading-the-media-resource"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/media.html#the-audio-element"
+      ]
+    },
+    "b": {
+      "vibecode": "HTML <b> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-b-element"
+      ]
+    },
+    "bdi": {
+      "vibecode": "HTML <bdi> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdi-element"
+      ]
+    },
+    "bdo": {
+      "vibecode": "HTML <bdo> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdo-element"
+      ]
+    },
+    "blockquote": {
+      "vibecode": "HTML <blockquote> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, blocks. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines", "blocks"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element"
+      ]
+    },
+    "body": {
+      "vibecode": "HTML <body> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-body-element"
+      ]
+    },
+    "br": {
+      "vibecode": "HTML <br> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element"
+      ]
+    },
+    "button": {
+      "vibecode": "HTML <button> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, blocks, link-control-inlines, name-attr, value-attr, type-attr, disabled-attr, form-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "inlines",
+        "blocks",
+        "link-control-inlines",
+        "name-attr",
+        "value-attr",
+        "type-attr",
+        "disabled-attr",
+        "form-attr"
+      ],
+      "atts": {
+        "formaction": {
+          "vibecode": "Tag-specific HTML attribute definition for formaction on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "formenctype": {
+          "vibecode": "Tag-specific HTML attribute definition for formenctype on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "formmethod": {
+          "vibecode": "Tag-specific HTML attribute definition for formmethod on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "formnovalidate": {
+          "vibecode": "Tag-specific HTML attribute definition for formnovalidate on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "formtarget": {
+          "vibecode": "Tag-specific HTML attribute definition for formtarget on <button>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element"
+      ]
+    },
+    "canvas": {
+      "vibecode": "HTML <canvas> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-008, height-attr, width-attr. Explicit child tags listed here: img, math.",
+      "text": true,
+      "include": [
+        "dedup-children-008",
+        "height-attr",
+        "width-attr"
+      ],
+      "children": {
+        "img": {},
+        "math": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/canvas.html#the-canvas-element"
+      ]
+    },
+    "caption": {
+      "vibecode": "HTML <caption> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-caption-element"
+      ]
+    },
+    "cite": {
+      "vibecode": "HTML <cite> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-cite-element"
+      ]
+    },
+    "code": {
+      "vibecode": "HTML <code> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element"
+      ]
+    },
+    "col": {
+      "vibecode": "HTML <col> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: span-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": ["span-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-col-element"
+      ]
+    },
+    "colgroup": {
+      "vibecode": "HTML <colgroup> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: span-attr. Explicit child tags listed here: col.",
+      "text": false,
+      "include": ["span-attr"],
+      "children": {
+        "col": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-colgroup-element"
+      ]
+    },
+    "data": {
+      "vibecode": "HTML <data> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, value-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines", "value-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element"
+      ]
+    },
+    "datalist": {
+      "vibecode": "HTML <datalist> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: options. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": ["options"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-datalist-element"
+      ]
+    },
+    "dd": {
+      "vibecode": "HTML <dd> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element"
+      ]
+    },
+    "del": {
+      "vibecode": "HTML <del> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/edits.html#the-del-element"
+      ]
+    },
+    "details": {
+      "vibecode": "HTML <details> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: details-dialog-children, open-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["details-dialog-children", "open-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element"
+      ]
+    },
+    "dfn": {
+      "vibecode": "HTML <dfn> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-dfn-element"
+      ]
+    },
+    "dialog": {
+      "vibecode": "HTML <dialog> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: details-dialog-children, open-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["details-dialog-children", "open-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element"
+      ]
+    },
+    "div": {
+      "vibecode": "HTML <div> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element"
+      ]
+    },
+    "dl": {
+      "vibecode": "HTML <dl> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: dd, dt.",
+      "text": false,
+      "children": {
+        "dd": {},
+        "dt": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element"
+      ]
+    },
+    "dt": {
+      "vibecode": "HTML <dt> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element"
+      ]
+    },
+    "em": {
+      "vibecode": "HTML <em> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element"
+      ]
+    },
+    "embed": {
+      "vibecode": "HTML <embed> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: type-attr, src-attr, height-attr, width-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": [
+        "type-attr",
+        "src-attr",
+        "height-attr",
+        "width-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element"
+      ]
+    },
+    "fieldset": {
+      "vibecode": "HTML <fieldset> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: form-container-children, name-attr, disabled-attr, form-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "form-container-children",
+        "name-attr",
+        "disabled-attr",
+        "form-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element"
+      ]
+    },
+    "figcaption": {
+      "vibecode": "HTML <figcaption> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
+      "text": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element"
+      ],
+      "import": [
+        "inlines",
+        "blocks"
+      ]
+    },
+    "figure": {
+      "vibecode": "HTML <figure> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. Explicit child tags listed here: figcaption.",
+      "text": true,
+      "include": ["flow-content"],
+      "children": {
+        "figcaption": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-figure-element"
+      ],
+      "import": [
+        "inlines",
+        "blocks"
+      ]
+    },
+    "footer": {
+      "vibecode": "HTML <footer> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-footer-element"
+      ]
+    },
+    "form": {
+      "vibecode": "HTML <form> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: form-container-children, name-attr, target-attr, autocomplete-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "form-container-children",
+        "name-attr",
+        "target-attr",
+        "autocomplete-attr"
+      ],
+      "atts": {
+        "action": {
+          "vibecode": "Tag-specific HTML attribute definition for action on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "enctype": {
+          "vibecode": "Tag-specific HTML attribute definition for enctype on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "method": {
+          "vibecode": "Tag-specific HTML attribute definition for method on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        },
+        "novalidate": {
+          "vibecode": "Tag-specific HTML attribute definition for novalidate on <form>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-attributes"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/forms.html#the-form-element"
+      ]
+    },
+    "h1": {
+      "vibecode": "HTML <h1> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "h2": {
+      "vibecode": "HTML <h2> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "h3": {
+      "vibecode": "HTML <h3> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "h4": {
+      "vibecode": "HTML <h4> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "h5": {
+      "vibecode": "HTML <h5> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "h6": {
+      "vibecode": "HTML <h6> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: heading-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["heading-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements"
+      ]
+    },
+    "head": {
+      "vibecode": "HTML <head> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: base, link, meta, noscript, script, template, title.",
+      "text": false,
+      "children": {
+        "base": {},
+        "link": {},
+        "meta": {},
+        "noscript": {},
+        "script": {},
+        "template": {},
+        "title": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-head-element"
+      ]
+    },
+    "header": {
+      "vibecode": "HTML <header> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-header-element"
+      ]
+    },
+    "hr": {
+      "vibecode": "HTML <hr> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element"
+      ]
+    },
+    "html": {
+      "vibecode": "HTML <html> element definition. Non-void element. Text is allowed. Explicit child tags listed here: body, head.",
+      "text": true,
+      "children": {
+        "body": {},
+        "head": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-html-element"
+      ]
+    },
+    "i": {
+      "vibecode": "HTML <i> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-i-element"
+      ]
+    },
+    "iframe": {
+      "vibecode": "HTML <iframe> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, src-attr, height-attr, width-attr, referrerpolicy-attr. Explicit child tags listed here: html.",
+      "text": true,
+      "include": [
+        "name-attr",
+        "src-attr",
+        "height-attr",
+        "width-attr",
+        "referrerpolicy-attr"
+      ],
+      "children": {
+        "html": {}
+      },
+      "atts": {
+        "allow": {
+          "vibecode": "Tag-specific HTML attribute definition for allow on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
+          ]
+        },
+        "allowfullscreen": {
+          "vibecode": "Tag-specific HTML attribute definition for allowfullscreen on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
+          ]
+        },
+        "sandbox": {
+          "vibecode": "Tag-specific HTML attribute definition for sandbox on <iframe>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element"
+      ]
+    },
+    "img": {
+      "vibecode": "HTML <img> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: alt-attr, src-attr, height-attr, width-attr, crossorigin-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": [
+        "alt-attr",
+        "src-attr",
+        "height-attr",
+        "width-attr",
+        "crossorigin-attr"
+      ],
+      "atts": {
+        "ismap": {
+          "vibecode": "Tag-specific HTML attribute definition for ismap on <img>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
+          ]
+        },
+        "usemap": {
+          "vibecode": "Tag-specific HTML attribute definition for usemap on <img>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/image-maps.html#authoring"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element"
+      ]
+    },
+    "input": {
+      "vibecode": "HTML <input> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: name-attr, value-attr, type-attr, disabled-attr, autocomplete-attr, max-attr, maxlength-attr, min-attr, and 5 more. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": [
+        "name-attr",
+        "value-attr",
+        "type-attr",
+        "disabled-attr",
+        "autocomplete-attr",
+        "max-attr",
+        "maxlength-attr",
+        "min-attr",
+        "multiple-attr",
+        "placeholder-attr",
+        "readonly-attr",
+        "required-attr",
+        "size-attr"
+      ],
+      "atts": {
+        "accept": {
+          "vibecode": "Tag-specific HTML attribute definition for accept on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#file-upload-state-(type=file)"
+          ]
+        },
+        "checked": {
+          "vibecode": "Tag-specific HTML attribute definition for checked on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-input-element"
+          ]
+        },
+        "step": {
+          "vibecode": "Tag-specific HTML attribute definition for step on <input>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/input.html#the-step-attribute"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/input.html#the-input-element"
+      ]
+    },
+    "ins": {
+      "vibecode": "HTML <ins> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: simple-inlines, cite-attr, datetime-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "simple-inlines",
+        "cite-attr",
+        "datetime-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/edits.html#the-ins-element"
+      ]
+    },
+    "kbd": {
+      "vibecode": "HTML <kbd> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-kbd-element"
+      ]
+    },
+    "label": {
+      "vibecode": "HTML <label> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-005, dedup-children-004, form-attr, for-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "dedup-children-005",
+        "dedup-children-004",
+        "form-attr",
+        "for-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/forms.html#the-label-element"
+      ]
+    },
+    "legend": {
+      "vibecode": "HTML <legend> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["legend-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element"
+      ]
+    },
+    "li": {
+      "vibecode": "HTML <li> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content, value-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content", "value-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element"
+      ]
+    },
+    "link": {
+      "vibecode": "HTML <link> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: href, hreflang-attr, rel-attr, type-attr, referrerpolicy-attr, crossorigin-attr, media-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": [
+        "href",
+        "hreflang-attr",
+        "rel-attr",
+        "type-attr",
+        "referrerpolicy-attr",
+        "crossorigin-attr",
+        "media-attr"
+      ],
+      "atts": {
+        "sizes": {
+          "vibecode": "Tag-specific HTML attribute definition for sizes on <link>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-link-element"
+      ]
+    },
+    "main": {
+      "vibecode": "HTML <main> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-main-element"
+      ]
+    },
+    "map": {
+      "vibecode": "HTML <map> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr. Explicit child tags listed here: area, canvas, img, object, p, svg, video.",
+      "text": true,
+      "include": ["name-attr"],
+      "children": {
+        "area": {},
+        "canvas": {},
+        "img": {},
+        "object": {},
+        "p": {},
+        "svg": {},
+        "video": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element"
+      ]
+    },
+    "mark": {
+      "vibecode": "HTML <mark> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-mark-element"
+      ]
+    },
+    "menu": {
+      "vibecode": "HTML <menu> element definition. Non-void element. Text is allowed. Explicit child tags listed here: li.",
+      "text": true,
+      "children": {
+        "li": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-menu-element"
+      ]
+    },
+    "meta": {
+      "vibecode": "HTML <meta> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: name-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": ["name-attr"],
+      "atts": {
+        "charset": {
+          "vibecode": "Tag-specific HTML attribute definition for charset on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
+          ]
+        },
+        "content": {
+          "vibecode": "Tag-specific HTML attribute definition for content on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
+          ]
+        },
+        "http-equiv": {
+          "vibecode": "Tag-specific HTML attribute definition for http-equiv on <meta>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/semantics.html#pragma-directives"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-meta-element"
+      ]
+    },
+    "meter": {
+      "vibecode": "HTML <meter> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: value-attr, max-attr, min-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": [
+        "value-attr",
+        "max-attr",
+        "min-attr"
+      ],
+      "atts": {
+        "high": {
+          "vibecode": "Tag-specific HTML attribute definition for high on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
+          ]
+        },
+        "low": {
+          "vibecode": "Tag-specific HTML attribute definition for low on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
+          ]
+        },
+        "optimum": {
+          "vibecode": "Tag-specific HTML attribute definition for optimum on <meter>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element"
+      ]
+    },
+    "nav": {
+      "vibecode": "HTML <nav> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-nav-element"
+      ]
+    },
+    "noscript": {
+      "vibecode": "HTML <noscript> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-001. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["dedup-children-001"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/scripting.html#the-noscript-element"
+      ]
+    },
+    "object": {
+      "vibecode": "HTML <object> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, type-attr, form-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "name-attr",
+        "type-attr",
+        "form-attr"
+      ],
+      "atts": {
+        "data": {
+          "vibecode": "Tag-specific HTML attribute definition for data on <object>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element"
+      ]
+    },
+    "ol": {
+      "vibecode": "HTML <ol> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: list-container-children, type-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["list-container-children", "type-attr"],
+      "atts": {
+        "reversed": {
+          "vibecode": "Tag-specific HTML attribute definition for reversed on <ol>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
+          ]
+        },
+        "start": {
+          "vibecode": "Tag-specific HTML attribute definition for start on <ol>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element"
+      ]
+    },
+    "optgroup": {
+      "vibecode": "HTML <optgroup> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: options, disabled-attr, label-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "options",
+        "disabled-attr",
+        "label-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element"
+      ]
+    },
+    "option": {
+      "vibecode": "HTML <option> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: value-attr, disabled-attr, label-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "value-attr",
+        "disabled-attr",
+        "label-attr"
+      ],
+      "atts": {
+        "selected": {
+          "vibecode": "Tag-specific HTML attribute definition for selected on <option>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element"
+      ]
+    },
+    "output": {
+      "vibecode": "HTML <output> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines, name-attr, for-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "legend-inlines",
+        "name-attr",
+        "for-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element"
+      ]
+    },
+    "p": {
+      "vibecode": "HTML <p> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, math-svg. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines", "math-svg"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element"
+      ]
+    },
+    "picture": {
+      "vibecode": "HTML <picture> element definition. Non-void element. Text is allowed. Explicit child tags listed here: img, source.",
+      "text": true,
+      "children": {
+        "img": {},
+        "source": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element"
+      ]
+    },
+    "pre": {
+      "vibecode": "HTML <pre> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element"
+      ]
+    },
+    "progress": {
+      "vibecode": "HTML <progress> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: value-attr, max-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": ["value-attr", "max-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element"
+      ]
+    },
+    "q": {
+      "vibecode": "HTML <q> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, cite-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines", "cite-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element"
+      ]
+    },
+    "rp": {
+      "vibecode": "HTML <rp> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
+      "text": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-rp-element"
+      ]
+    },
+    "rt": {
+      "vibecode": "HTML <rt> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
+      "text": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-rt-element"
+      ]
+    },
+    "ruby": {
+      "vibecode": "HTML <ruby> element definition. Non-void element. Text is allowed. Explicit child tags listed here: rp, rt.",
+      "text": true,
+      "children": {
+        "rp": {},
+        "rt": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-ruby-element"
+      ]
+    },
+    "s": {
+      "vibecode": "HTML <s> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-s-element"
+      ]
+    },
+    "samp": {
+      "vibecode": "HTML <samp> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-samp-element"
+      ]
+    },
+    "script": {
+      "vibecode": "HTML <script> element definition. Void element; no closing content in HTML syntax. Text is allowed. Includes reusable schema fragments: type-attr, src-attr, crossorigin-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "void": true,
+      "include": [
+        "type-attr",
+        "src-attr",
+        "crossorigin-attr"
+      ],
+      "atts": {
+        "async": {
+          "vibecode": "Tag-specific HTML attribute definition for async on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
+          ]
+        },
+        "defer": {
+          "vibecode": "Tag-specific HTML attribute definition for defer on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
+          ]
+        },
+        "nomodule": {
+          "vibecode": "Tag-specific HTML attribute definition for nomodule on <script>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/scripting.html#the-script-element"
+      ]
+    },
+    "section": {
+      "vibecode": "HTML <section> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: flow-content. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/sections.html#the-section-element"
+      ]
+    },
+    "select": {
+      "vibecode": "HTML <select> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, disabled-attr, form-attr, multiple-attr, required-attr, size-attr. Explicit child tags listed here: optgroup, option.",
+      "text": true,
+      "include": [
+        "name-attr",
+        "disabled-attr",
+        "form-attr",
+        "multiple-attr",
+        "required-attr",
+        "size-attr"
+      ],
+      "children": {
+        "optgroup": {},
+        "option": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element"
+      ]
+    },
+    "slot": {
+      "vibecode": "HTML <slot> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["name-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element"
+      ]
+    },
+    "small": {
+      "vibecode": "HTML <small> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-small-element"
+      ]
+    },
+    "source": {
+      "vibecode": "HTML <source> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: type-attr, src-attr, media-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": [
+        "type-attr",
+        "src-attr",
+        "media-attr"
+      ],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element"
+      ]
+    },
+    "span": {
+      "vibecode": "HTML <span> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines, math-svg. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines", "math-svg"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-span-element"
+      ]
+    },
+    "strong": {
+      "vibecode": "HTML <strong> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element"
+      ]
+    },
+    "style": {
+      "vibecode": "HTML <style> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: media-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["media-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-style-element"
+      ]
+    },
+    "sub": {
+      "vibecode": "HTML <sub> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements"
+      ]
+    },
+    "summary": {
+      "vibecode": "HTML <summary> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: legend-inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["legend-inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-summary-element"
+      ]
+    },
+    "sup": {
+      "vibecode": "HTML <sup> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements"
+      ]
+    },
+    "table": {
+      "vibecode": "HTML <table> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: caption, colgroup, tbody, tfoot, thead.",
+      "text": false,
+      "children": {
+        "caption": {},
+        "colgroup": {},
+        "tbody": {},
+        "tfoot": {},
+        "thead": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-table-element"
+      ]
+    },
+    "tbody": {
+      "vibecode": "HTML <tbody> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": ["table-section-children"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-tbody-element"
+      ]
+    },
+    "td": {
+      "vibecode": "HTML <td> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: table-cell, headers-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["table-cell", "headers-attr", "flow-content"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-td-element"
+      ]
+    },
+    "template": {
+      "vibecode": "HTML <template> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: dedup-children-007, dedup-children-001. Explicit child tags listed here: html.",
+      "text": false,
+      "include": ["dedup-children-007", "dedup-children-001"],
+      "children": {
+        "html": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/scripting.html#the-template-element"
+      ]
+    },
+    "textarea": {
+      "vibecode": "HTML <textarea> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: name-attr, disabled-attr, form-attr, maxlength-attr, placeholder-attr, readonly-attr, required-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": [
+        "name-attr",
+        "disabled-attr",
+        "form-attr",
+        "maxlength-attr",
+        "placeholder-attr",
+        "readonly-attr",
+        "required-attr"
+      ],
+      "atts": {
+        "cols": {
+          "vibecode": "Tag-specific HTML attribute definition for cols on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        },
+        "rows": {
+          "vibecode": "Tag-specific HTML attribute definition for rows on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        },
+        "wrap": {
+          "vibecode": "Tag-specific HTML attribute definition for wrap on <textarea>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element"
+      ]
+    },
+    "tfoot": {
+      "vibecode": "HTML <tfoot> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": ["table-section-children"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-tfoot-element"
+      ]
+    },
+    "th": {
+      "vibecode": "HTML <th> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: table-cell, headers-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["table-cell", "headers-attr"],
+      "atts": {
+        "scope": {
+          "vibecode": "Tag-specific HTML attribute definition for scope on <th>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/tables.html#the-th-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-th-element"
+      ]
+    },
+    "thead": {
+      "vibecode": "HTML <thead> element definition. Non-void element. Text is not treated as allowed by this schema. Includes reusable schema fragments: table-section-children. No explicit child tag overrides are listed here.",
+      "text": false,
+      "include": ["table-section-children"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-thead-element"
+      ]
+    },
+    "time": {
+      "vibecode": "HTML <time> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: simple-inlines, datetime-attr. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["simple-inlines", "datetime-attr"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element"
+      ]
+    },
+    "title": {
+      "vibecode": "HTML <title> element definition. Non-void element. Text is allowed. No explicit child tag overrides are listed here.",
+      "text": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/semantics.html#the-title-element"
+      ]
+    },
+    "tr": {
+      "vibecode": "HTML <tr> element definition. Non-void element. Text is not treated as allowed by this schema. Explicit child tags listed here: td, th.",
+      "text": false,
+      "children": {
+        "td": {},
+        "th": {}
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/tables.html#the-tr-element"
+      ]
+    },
+    "track": {
+      "vibecode": "HTML <track> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. Includes reusable schema fragments: src-attr, label-attr. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "include": ["src-attr", "label-attr"],
+      "atts": {
+        "default": {
+          "vibecode": "Tag-specific HTML attribute definition for default on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#the-track-element"
+          ]
+        },
+        "kind": {
+          "vibecode": "Tag-specific HTML attribute definition for kind on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#the-track-element"
+          ]
+        },
+        "srclang": {
+          "vibecode": "Tag-specific HTML attribute definition for srclang on <track>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#the-track-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/media.html#the-track-element"
+      ]
+    },
+    "u": {
+      "vibecode": "HTML <u> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element"
+      ]
+    },
+    "ul": {
+      "vibecode": "HTML <ul> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: list-container-children. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["list-container-children"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element"
+      ]
+    },
+    "var": {
+      "vibecode": "HTML <var> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: inlines. No explicit child tag overrides are listed here.",
+      "text": true,
+      "include": ["inlines"],
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-var-element"
+      ]
+    },
+    "video": {
+      "vibecode": "HTML <video> element definition. Non-void element. Text is allowed. Includes reusable schema fragments: dedup-children-007, dedup-children-003, inlines, blocks. Explicit child tags listed here: address, article, dd, dt, fieldset, figcaption, legend, li, and 8 more.",
+      "text": true,
+      "include": [
+        "dedup-children-007",
+        "dedup-children-003",
+        "inlines",
+        "blocks"
+      ],
+      "children": {
+        "address": {},
+        "article": {},
+        "dd": {},
+        "dt": {},
+        "fieldset": {},
+        "figcaption": {},
+        "legend": {},
+        "li": {},
+        "math": {},
+        "ol": {},
+        "optgroup": {},
+        "option": {},
+        "source": {},
+        "tfoot": {},
+        "track": {},
+        "ul": {}
+      },
+      "atts": {
+        "poster": {
+          "vibecode": "Tag-specific HTML attribute definition for poster on <video>. Use this when the attribute belongs directly to that tag rather than to a shared source.",
+          "reference": [
+            "https://html.spec.whatwg.org/multipage/media.html#the-video-element"
+          ]
+        }
+      },
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/media.html#the-video-element"
+      ]
+    },
+    "wbr": {
+      "vibecode": "HTML <wbr> element definition. Void element; no closing content in HTML syntax. Text is not treated as allowed by this schema. No explicit child tag overrides are listed here.",
+      "text": false,
+      "void": true,
+      "reference": [
+        "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-wbr-element"
+      ]
+    }
+  }
 }

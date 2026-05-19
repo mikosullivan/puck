@@ -1,7 +1,7 @@
 # Array Methods
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -19,7 +19,7 @@ array do not mutate the original.
 ---
 
 <a id="set-theory"></a>
-## 2 Set Theory
+## Set Theory
 
 ~~~json
 {"vibecode": {
@@ -38,7 +38,7 @@ Charlie supports set-theory operations on arrays using Unicode symbols. Each sym
 a plain-English alias.
 
 <a id="binary-operators"></a>
-### 2.1 Binary Operators
+### Binary Operators
 
 `∈` and `∉` are binary operators registered in the scope, not methods on Array. They
 sit naturally between the element and the collection:
@@ -52,7 +52,7 @@ $x not_in $array  # same — English alias
 ```
 
 <a id="array-methods"></a>
-### 2.2 Array Methods
+### Array Methods
 
 | Symbol | Name | Returns | Description |
 |--------|------|---------|-------------|
@@ -63,7 +63,7 @@ $x not_in $array  # same — English alias
 | `⊆($other)` | `subset_of?($other)` | Boolean | True if every element of this array is in `$other` (equal arrays satisfy this) |
 
 <a id="ordering"></a>
-### 2.3 Ordering
+### Ordering
 
 Set operations treat arrays as unordered by default. Pass `ordered: true` to make the
 result follow the left array's element order:
@@ -82,7 +82,7 @@ $a.∩($b, ordered: true)     -> [1, 2]   # left array order for matching elemen
 `⊂` and `⊆` return a Boolean and are always unordered — `ordered:` does not apply.
 
 <a id="equality"></a>
-### 2.4 Equality
+### Equality
 
 `∈` and `∉` use `==` for element comparison. This means a custom class that overrides
 `==` affects membership testing. That is intentional and the caller's responsibility.
@@ -119,7 +119,7 @@ $a.empty?              -> false
 ---
 
 <a id="elements"></a>
-## 3 Elements
+## Elements
 
 ~~~json
 {"vibecode": {
@@ -146,7 +146,7 @@ $els[0].index   -> 0
 ```
 
 <a id="element-object-api"></a>
-### 3.1 Element Object API
+### Element Object API
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -162,7 +162,7 @@ $els[0].index   -> 0
 | `delete` | nil | Remove this element from the array. All subsequent method calls on this element raise an exception. |
 
 <a id="live-sync"></a>
-### 3.2 Live Sync
+### Live Sync
 
 Element objects reflect the current state of the array. Moving one element updates the
 `index` of all affected elements:
@@ -180,7 +180,7 @@ $els[2].value   -> 'Edmund'
 ```
 
 <a id="deleted-elements"></a>
-### 3.3 Deleted Elements
+### Deleted Elements
 
 After `delete`, the element is removed from the array. Any method call on the deleted
 element raises an exception:
@@ -198,7 +198,7 @@ $els[1].value   # raises exception — element has been deleted
 ---
 
 <a id="searching-find"></a>
-## 4 Searching: `find`
+## Searching: `find`
 
 ~~~json
 {"vibecode": {
@@ -220,7 +220,7 @@ and all the live-modification methods (`.move_*`, `.delete`,
 etc.).
 
 <a id="value-equality-form"></a>
-### 4.1 Value-equality form
+### Value-equality form
 
 Pass a value; `find` returns every Element whose value `==` the
 argument:
@@ -240,7 +240,7 @@ If nothing matches, `find` returns `[]` (empty array). No
 special "not found" return value.
 
 <a id="block-predicate-form"></a>
-### 4.2 Block-predicate form
+### Block-predicate form
 
 Pass a block taking `($index, $element)`; `find` returns every
 Element for which the block returns truthy:
@@ -270,7 +270,7 @@ falsey to skip. Implicit last-value return is the idiom; reserve
 `%call.return` for actual early exit.
 
 <a id="common-idioms"></a>
-### 4.3 Common idioms
+### Common idioms
 
 | Want | Idiom |
 |---|---|
@@ -288,7 +288,7 @@ stale-index problems and no "modify-while-iterating" undefined
 behavior.
 
 <a id="find_first-and-find_last-sugar"></a>
-### 4.4 `find_first` and `find_last` sugar
+### `find_first` and `find_last` sugar
 
 For the common "I want just the first match" or "just the last
 match" cases, two thin sugars:
@@ -313,7 +313,7 @@ just one method call shorter and reads more directly when only
 that one hit is wanted.
 
 <a id="why-one-method-always-array"></a>
-### 4.5 Why one method, always-array
+### Why one method, always-array
 
 Ruby's array search splits across `find` (first match, returns
 element or nil), `find_index` (returns index or nil), `select`
@@ -333,7 +333,7 @@ One method, one return shape, no nil-on-no-match special case.
 ---
 
 <a id="open-questions"></a>
-## 5 Open Questions
+## Open Questions
 
 - `⊃` (proper superset) and `⊇` (superset or equal) are not included — use
   `$b.⊂($a)` and `$b.⊆($a)` instead. May be added later if there is demand.

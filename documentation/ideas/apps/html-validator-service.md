@@ -11,7 +11,7 @@
 ~~~
 
 <a id="purpose"></a>
-## 1 Purpose
+## Purpose
 
 A Puck.uno-hosted service that validates and tidies HTML
 documents. Two related operations:
@@ -25,7 +25,7 @@ documents. Two related operations:
   valid. The HTML version of "format my code, please."
 
 <a id="where-it-fits"></a>
-## 2 Where it fits
+## Where it fits
 
 - **Uma** (especially the `puck.uno/uma/html5` subclass) is
   the local first-pass tool — it parses, manipulates, and
@@ -39,7 +39,7 @@ documents. Two related operations:
   and for cleaning up ingested HTML from untrusted sources.
 
 <a id="why-a-service-rather-than-embedded"></a>
-## 3 Why a service rather than embedded
+## Why a service rather than embedded
 
 - A full HTML5 validator is large (hundreds of K) and
   changes over time as the spec evolves.
@@ -50,7 +50,7 @@ documents. Two related operations:
   get the current standard without per-app updates.
 
 <a id="possible-api-shape-sketch"></a>
-## 4 Possible API shape (sketch)
+## Possible API shape (sketch)
 
 ```
 $result = %['puck.uno/html5-validator'].validate($html)
@@ -62,7 +62,7 @@ $result.tidied           # cleaned-up version (optional, configurable)
 Or as a Sammy-style HTTP endpoint with a JSON request/response.
 
 <a id="open"></a>
-## 5 Open
+## Open
 
 - Hosting and access model — free tier, paid tier, on-premises?
 - Spec version selection (validate against HTML5.x specifically?
@@ -73,7 +73,7 @@ Or as a Sammy-style HTTP endpoint with a JSON request/response.
   type wrap this for "did my page validate?" tests.
 
 <a id="status"></a>
-## 6 Status
+## Status
 
 Filed for future. The Uma side ships first; the validator
 service follows once Uma's user base needs heavier-weight

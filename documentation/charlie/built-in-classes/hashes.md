@@ -1,7 +1,7 @@
 # Hash Methods
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -19,7 +19,7 @@ typically symbols or strings.
 ---
 
 <a id="basic-methods"></a>
-## 2 Basic Methods
+## Basic Methods
 
 ~~~json
 {"vibecode": {
@@ -30,7 +30,7 @@ typically symbols or strings.
 ~~~
 
 <a id="and"></a>
-### 2.1 `[]` and `[]=`
+### `[]` and `[]=`
 
 Read and write entries by key:
 
@@ -48,7 +48,7 @@ insertion order) or updates the existing value in place
 (position preserved).
 
 <a id="has_keykey"></a>
-### 2.2 `has_key?(key)`
+### `has_key?(key)`
 
 Predicate. Returns `true` if the hash contains the given key,
 `false` otherwise.
@@ -64,7 +64,7 @@ present with `null` value" — both make `$h['key']` return null,
 but `has_key?` separates them.
 
 <a id="keys"></a>
-### 2.3 `keys`
+### `keys`
 
 Returns an array of all keys in insertion order.
 
@@ -74,7 +74,7 @@ $h.keys                  -> ['name', 'rank', 'ship']
 ```
 
 <a id="values"></a>
-### 2.4 `values`
+### `values`
 
 Returns an array of all values in insertion order.
 
@@ -84,7 +84,7 @@ $h.values                -> ['Picard', 'Captain', 'Enterprise']
 ```
 
 <a id="length"></a>
-### 2.5 `length`
+### `length`
 
 Returns the number of entries.
 
@@ -94,7 +94,7 @@ $h.length                -> 2
 ```
 
 <a id="empty"></a>
-### 2.6 `empty?`
+### `empty?`
 
 Predicate. Returns `true` if the hash has no entries, `false`
 otherwise.
@@ -107,7 +107,7 @@ otherwise.
 Equivalent to `$h.length == 0` but reads more directly.
 
 <a id="any"></a>
-### 2.7 `any?`
+### `any?`
 
 Predicate. Returns `true` if the hash has at least one entry,
 `false` if empty. The inverse of `empty?`; available for
@@ -119,7 +119,7 @@ readability when the natural phrasing is positive.
 ```
 
 <a id="deletekey"></a>
-### 2.8 `delete(key)`
+### `delete(key)`
 
 Removes the entry for the given key and returns the value that
 was removed. Returns `null` if the key wasn't present.
@@ -139,7 +139,7 @@ middle leaves no gap.
 ---
 
 <a id="elements"></a>
-## 3 Elements
+## Elements
 
 ~~~json
 {"vibecode": {
@@ -168,7 +168,7 @@ $els[0].index   -> 0
 ```
 
 <a id="element-object-api"></a>
-### 3.1 Element Object API
+### Element Object API
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -187,7 +187,7 @@ $els[0].index   -> 0
 | `delete` | nil | Remove this pair from the hash. All subsequent method calls on this element raise an exception. |
 
 <a id="live-sync"></a>
-### 3.2 Live Sync
+### Live Sync
 
 Element objects reflect the current state of the hash. Renaming a key or moving a pair
 updates all affected elements:
@@ -228,7 +228,7 @@ $h              -> {name: 'Riker'}
 ```
 
 <a id="deleted-elements"></a>
-### 3.3 Deleted Elements
+### Deleted Elements
 
 After `delete`, the pair is removed from the hash. Any method call on the deleted element
 raises an exception:

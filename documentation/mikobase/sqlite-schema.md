@@ -1,7 +1,7 @@
 # SQLite Schema
 
 <a id="records"></a>
-## 1 `records`
+## `records`
 
 ~~~json
 {"vibecode": {
@@ -31,7 +31,7 @@ end;
 ```
 
 <a id="records_history"></a>
-## 2 `records_history`
+## `records_history`
 
 ~~~json
 {"vibecode": {
@@ -86,7 +86,7 @@ end;
 ```
 
 <a id="views"></a>
-## 3 Views
+## Views
 
 ~~~json
 {"vibecode": {
@@ -124,7 +124,7 @@ and active = 1;
 ```
 
 <a id="files"></a>
-## 4 `files`
+## `files`
 
 ~~~json
 {"vibecode": {
@@ -157,7 +157,7 @@ end;
 ```
 
 <a id="file_chunks"></a>
-## 5 `file_chunks`
+## `file_chunks`
 
 ~~~json
 {"vibecode": {
@@ -190,7 +190,7 @@ end;
 ```
 
 <a id="notes"></a>
-## 6 Notes
+## Notes
 
 ~~~json
 {"vibecode": {

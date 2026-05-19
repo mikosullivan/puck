@@ -13,7 +13,7 @@
 Not yet specified. A topic to refine in a future conversation.
 
 <a id="the-question"></a>
-## 1 The Question
+## The Question
 
 Different subsystems treat UNS names differently:
 
@@ -42,7 +42,7 @@ of these need a UNS and which don't. Worth pinning explicitly:
   and reflection?
 
 <a id="when-to-revisit"></a>
-## 2 When to Revisit
+## When to Revisit
 
 When the next conversation surfaces a concrete case where the answer
 isn't obvious — or when the mikobase storage format, Charlie class

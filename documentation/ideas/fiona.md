@@ -17,7 +17,7 @@ inform future design decisions.
 ---
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 Fiona is a DBMS Miko once designed. Its defining property is **strict
 immutability**: every object in the database is a primitive. Once
@@ -43,7 +43,7 @@ Consequences of this property:
 ---
 
 <a id="structure"></a>
-## 2 Structure
+## Structure
 
 What other systems call "properties" of an object are defined in Fiona
 as **relationships**. Properties aren't fields stored on the object;
@@ -56,7 +56,7 @@ about twenty, consolidated through views into the two-table
 presentation. For clarity we treat the system as having just the two.)
 
 <a id="table-1-hsa-hashes-scalars-arrays"></a>
-### 2.1 Table 1: `hsa` (hashes-scalars-arrays)
+### Table 1: `hsa` (hashes-scalars-arrays)
 
 Holds primitive JSON values — scalars (numbers, strings, booleans,
 null), hashes, and arrays. Each row is one immutable primitive.
@@ -68,7 +68,7 @@ null), hashes, and arrays. Each row is one immutable primitive.
   primitive.
 
 <a id="table-2-relationships"></a>
-### 2.2 Table 2: `relationships`
+### Table 2: `relationships`
 
 Establishes relationships between hashes/arrays in `hsa` and the
 objects they reference (which are also in `hsa`). The relationships
@@ -94,14 +94,14 @@ them.
 ---
 
 <a id="why-its-not-used-in-mikobase"></a>
-## 3 Why It's Not Used in Mikobase
+## Why It's Not Used in Mikobase
 
 (To be filled in.)
 
 ---
 
 <a id="ideas-worth-carrying-forward"></a>
-## 4 Ideas Worth Carrying Forward
+## Ideas Worth Carrying Forward
 
 **The distinction between primitives and relationships stuck.** Miko
 still mentally models objects as immutable while their relationships

@@ -34,21 +34,8 @@ losslessly.
 
 ---
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Dynamic and stored objects](#dynamic-and-stored-objects)
-- [Class definition](#class-definition)
-- [Invoking a method](#invoking-a-method)
-  - [Response shape](#response-shape)
-- [Stored objects](#stored-objects)
-- [Client experience: Python (sketch)](#client-experience-python-sketch)
-- [Versioning](#versioning)
-
----
-
 <a id="dynamic-and-stored-objects"></a>
-## 2 Dynamic and stored objects
+## Dynamic and stored objects
 
 Two terms used throughout this doc:
 
@@ -69,7 +56,7 @@ object** — the actual ship data on the Starfleet server.
 ---
 
 <a id="class-definition"></a>
-## 3 Class definition
+## Class definition
 
 A Puck class is defined in JSON, using the **same shape Charlie and
 Mikobase use** (see [class-definition.md](../charlie/class-definition.md)
@@ -125,7 +112,7 @@ correctly.
 ---
 
 <a id="invoking-a-method"></a>
-## 4 Invoking a method
+## Invoking a method
 
 A method call is **typically a POST** to a URL that encodes the
 class and the method, with a body that carries the instance's
@@ -184,7 +171,7 @@ validation, for forwarding the call to another handler without
 re-parsing the URL, and for logs and replay.
 
 <a id="response-shape"></a>
-### 4.1 Response shape
+### Response shape
 
 The response body is the method's return value, encoded as JSON
 with no envelope. The HTTP status code carries success/failure
@@ -243,7 +230,7 @@ envelope; the object data itself rarely amounts to much.
 ---
 
 <a id="stored-objects"></a>
-## 5 Stored objects
+## Stored objects
 
 The Geo example in §2–3 is a **dynamic object** that carries all
 of its state in fields (`lat` and `lon`) — there's nothing behind
@@ -324,7 +311,7 @@ doesn't care.
 ---
 
 <a id="client-experience-python-sketch"></a>
-## 6 Client experience: Python (sketch)
+## Client experience: Python (sketch)
 
 A Python client wraps everything above. The developer doesn't see
 URLs, body envelopes, or marshaling — they get a Python class that
@@ -371,7 +358,7 @@ sync/async, open questions — see [python.md](python.md).
 ---
 
 <a id="versioning"></a>
-## 7 Versioning
+## Versioning
 
 The Puck protocol supports versioning only loosely. Two
 recommended paths:
@@ -386,4 +373,4 @@ These two conventions cover the common cases. If the community
 wants a more fine-grained approach then let's have that discussion.
 
 Versioning in Puck is distinct from Charlie's
-[blockchain-signed versioning model](../blockchain.md).
+[blockchain-signed versioning model](../charlie/blockchain.md).

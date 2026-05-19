@@ -17,7 +17,7 @@ that prevents arbitrary Charlie code from accessing Lua directly.
 ---
 
 <a id="why-bindings-exist"></a>
-## 1 Why bindings exist
+## Why bindings exist
 
 Charlie is designed so user-level code **cannot reach into Lua**.
 That seal is a load-bearing security property — without it,
@@ -38,7 +38,7 @@ they consume any other capability.
 ---
 
 <a id="install-operator-only-not-runtime"></a>
-## 2 Install: operator-only, not runtime
+## Install: operator-only, not runtime
 
 A binding includes Lua code. Loading it gives the engine new
 Lua-level functionality. **This is a privileged operation** — the
@@ -62,7 +62,7 @@ binding install as more like adding a system service.
 ---
 
 <a id="how-a-charlie-class-uses-a-binding"></a>
-## 3 How a Charlie class uses a binding
+## How a Charlie class uses a binding
 
 A class declares its binding dependency, and the engine raises a
 clear error at class-load time if the binding isn't installed. The
@@ -86,7 +86,7 @@ The flow:
 ---
 
 <a id="naming-convention"></a>
-## 4 Naming convention
+## Naming convention
 
 Bindings live under `puck.uno/binding/...`:
 
@@ -102,7 +102,7 @@ gumbo for another HTML parser) without renaming the binding.
 ---
 
 <a id="core-bindings-ship-with-every-engine"></a>
-## 5 Core bindings (ship with every engine)
+## Core bindings (ship with every engine)
 
 Every engine ships with this baseline set:
 
@@ -125,21 +125,21 @@ Probably ship (still TBD):
 | `puck.uno/binding/encoding` | base64, hex, URL encoding, UTF-8 utilities |
 
 <a id="http-client-is-non-negotiable"></a>
-### 5.1 HTTP client is non-negotiable
+### HTTP client is non-negotiable
 
 Puck's remote-object IPC depends on HTTP client. Every engine
 needs this binding — without it, `%puck` lookups against remote
 objects don't work. It's not optional.
 
 <a id="filesystem-includes-locking"></a>
-### 5.2 Filesystem includes locking
+### Filesystem includes locking
 
 `puck.uno/binding/fs` must include POSIX-style file locking
 (`flock`/`fcntl`). Jasmine's directory store and several other
 parts of the framework depend on it for concurrency.
 
 <a id="about-crypto"></a>
-### 5.3 About `crypto`
+### About `crypto`
 
 The name `crypto` here is the **standard software-engineering
 term for cryptographic primitives** — hashing (SHA-256, etc.),
@@ -151,7 +151,7 @@ intended here.
 
 Puck uses these primitives for:
 
-- Blockchain signing (see [blockchain.md](../blockchain.md)).
+- Blockchain signing (see [blockchain.md](blockchain.md)).
 - Mikobase file deduplication via SHA-256.
 - Secure random for UUIDs (Jasmine entries, tokens, identifiers).
 - Constant-time secret comparison where needed.
@@ -159,12 +159,12 @@ Puck uses these primitives for:
 ---
 
 <a id="non-core-bindings"></a>
-## 6 Non-core bindings
+## Non-core bindings
 
 Bindings that don't ship by default but the operator can install:
 
 <a id="postgres-driver"></a>
-### 6.1 Postgres driver
+### Postgres driver
 
 **`puck.uno/binding/postgres`** — Postgres driver for mikobase
 backends and other database needs. **Non-core but top-priority.**
@@ -176,7 +176,7 @@ A working Ruby Pg implementation already exists and serves as the
 reference for the Charlie binding.
 
 <a id="others"></a>
-### 6.2 Others
+### Others
 
 Anything else outside the core set: DNS-specific work (SRV/MX/TXT
 records), email (SMTP), WebSockets standalone, image processing,
@@ -185,7 +185,7 @@ PDF generation, gRPC, etc. — all third-party binding territory.
 ---
 
 <a id="common-driver-grammar-planned"></a>
-## 7 Common driver grammar (planned)
+## Common driver grammar (planned)
 
 Inspired by Perl's **DBI** (Database Interface), where drivers
 (DBD::SQLite, DBD::mysql, DBD::Pg) all implement a uniform
@@ -211,7 +211,7 @@ SQLite binding spec.
 ---
 
 <a id="open-questions"></a>
-## 8 Open questions
+## Open questions
 
 Deferred from the initial design conversation; will be addressed
 as bindings get spec'd:

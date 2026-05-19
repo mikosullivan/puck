@@ -11,10 +11,10 @@
 ~~~
 
 <a id="firewall-design"></a>
-## 1 Firewall Design
+## Firewall Design
 
 <a id="what-is-settled"></a>
-### 1.1 What Is Settled
+### What Is Settled
 
 - Rules apply to entire records. Field-level filtering is a separate mechanism (see below).
 - Rules use AND semantics: a record must pass every applicable rule or it is blocked.
@@ -27,10 +27,10 @@
   is not prohibited and an `allow` list exists, the record must appear there.
 
 <a id="what-is-not-settled"></a>
-### 1.2 What Is Not Settled
+### What Is Not Settled
 
 <a id="rule-structure"></a>
-#### 1.2.1 Rule Structure
+#### Rule Structure
 
 Three options were considered. The override key differs between them.
 
@@ -93,7 +93,7 @@ flip a rule from prohibit to allow in one operation.
 Option 3 is the most flexible. Option 2 has the cleanest visual grouping by class.
 
 <a id="layered-inherited-rules"></a>
-#### 1.2.2 Layered / Inherited Rules
+#### Layered / Inherited Rules
 
 Rules should be organized in layers so that a later layer can override an earlier one.
 Every engine has a default layer; engine configuration adds one or more layers on top.
@@ -103,7 +103,7 @@ a rule from a previous layer.
 How layers are expressed in configuration is not yet decided.
 
 <a id="default-restriction-of-meta-records"></a>
-#### 1.2.3 Default Restriction of Meta Records
+#### Default Restriction of Meta Records
 
 Two approaches were considered:
 
@@ -121,7 +121,7 @@ Both approaches require that class definitions are always reachable.
 ---
 
 <a id="field-level-filters"></a>
-## 2 Field-Level Filters
+## Field-Level Filters
 
 Separate from record-level firewall rules. A filter strips fields from records that pass
 the firewall, rather than blocking the record entirely.
@@ -156,7 +156,7 @@ Not yet settled:
 ---
 
 <a id="rule-ids-and-override-inheritance"></a>
-## 3 Rule IDs and Override / Inheritance
+## Rule IDs and Override / Inheritance
 
 Every firewall rule can optionally declare an `id`. When engines inherit a default rule set,
 a rule in the specific configuration can override a default rule by declaring the same `id`.
@@ -166,6 +166,6 @@ Not well thought out yet. May be resolved by whichever layering mechanism is cho
 ---
 
 <a id="ai-agent-collaboration"></a>
-## 4 AI Agent Collaboration
+## AI Agent Collaboration
 
 See [agent-collaboration.md](agent-collaboration.md).

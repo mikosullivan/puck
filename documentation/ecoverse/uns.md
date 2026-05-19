@@ -13,7 +13,7 @@ A simple naming scheme for identifying things in a globally
 unambiguous way.
 
 <a id="too-long-didnt-read"></a>
-## 1 Too Long, Didn't Read
+## Too Long, Didn't Read
 
 A UNS is just a URL without the protocol. It's a way to identify
 an object without the noise of protocols:
@@ -43,7 +43,7 @@ Read on for more.
 ---
 
 <a id="introduction"></a>
-## 2 Introduction
+## Introduction
 
 Software systems hit namespace collisions all the time — two
 libraries that both want to define a `User` class, two services
@@ -77,7 +77,7 @@ new — domain-prefixed identifiers have been around for decades.
 UNS just cuts down the noise.
 
 <a id="pancake-simple"></a>
-## 3 Pancake simple
+## Pancake simple
 
 The whole concept is barely an invention — it's a thin
 formalization of what people already do with domain-prefixed
@@ -86,10 +86,10 @@ identifiers parse and compare consistently across tools and
 systems.
 
 <a id="specification"></a>
-## 4 Specification
+## Specification
 
 <a id="valid-characters"></a>
-### 4.1 Valid characters
+### Valid characters
 
 UNS is meant to travel across filesystems, URLs, shell commands,
 and any other context where strings get passed around. The basic
@@ -116,14 +116,14 @@ a UNS is converted to a URL, the portion after `?` is preserved
 as the URL's query string.
 
 <a id="bare-domains-are-valid"></a>
-### 4.2 Bare domains are valid
+### Bare domains are valid
 
 A UNS doesn't need a path. `puck.uno`, `example.org`, and
 `miko.dev` are all valid UNSes on their own. The path is optional;
 it just adds specificity below the domain.
 
 <a id="disallowed-patterns"></a>
-### 4.3 Disallowed patterns
+### Disallowed patterns
 
 Even within the allowed character set, certain patterns aren't
 valid:
@@ -137,7 +137,7 @@ valid:
   valid UNS. The domain must contain at least one dot.
 
 <a id="validation-algorithm"></a>
-### 4.4 Validation algorithm
+### Validation algorithm
 
 To validate a candidate UNS:
 
@@ -164,7 +164,7 @@ own privately, test domains, future domains, or anything else
 that looks structurally correct.
 
 <a id="case-sensitivity"></a>
-### 4.5 Case sensitivity
+### Case sensitivity
 
 **UNS is case-sensitive.** `puck.uno/Foo` and `puck.uno/foo`
 are distinct identifiers. Tools comparing UNSes do a byte-for-byte
@@ -177,7 +177,7 @@ uppercase letters, that's the UNS, and only an exact match
 identifies the same thing.
 
 <a id="why-so-strict"></a>
-### 4.6 Why so strict
+### Why so strict
 
 UNS is used as the structure of the **caching directory** (and
 similar filesystem-backed contexts). A UNS that survives
@@ -185,17 +185,17 @@ validation can be turned directly into a path on disk without
 escaping or sanitization. The strictness is what makes that safe.
 
 <a id="norms"></a>
-## 5 Norms
+## Norms
 
 <a id="keep-unses-short"></a>
-### 5.1 Keep UNSes short
+### Keep UNSes short
 
 UNSes are meant to be **human-readable**. Always prefer the
 shorter form when one is available. The norms below are mostly
 specific applications of this general principle.
 
 <a id="prefer-lowercase"></a>
-### 5.2 Prefer lowercase
+### Prefer lowercase
 
 Uppercase letters are allowed but lowercase is preferred.
 `puck.uno/jasmine` reads better than `Puck.uno/Jasmine`, and
@@ -203,14 +203,14 @@ mixing cases invites the "is `Foo` the same UNS as `foo`?"
 confusion.
 
 <a id="skip-www"></a>
-### 5.3 Skip `www.`
+### Skip `www.`
 
 Prefer `puck.uno` over `www.puck.uno`. The `www.` prefix is
 noise from a different era. UNS is about cutting noise, so leave
 it off.
 
 <a id="skip-trailing-slashes"></a>
-### 5.4 Skip trailing slashes
+### Skip trailing slashes
 
 `puck.uno/foo/` and `puck.uno/foo` are technically different
 UNSes (UNS is byte-for-byte case-sensitive), but the trailing
@@ -218,10 +218,10 @@ slash is usually just noise. Omit it unless you have a specific
 reason to keep it.
 
 <a id="use-in-puck"></a>
-## 6 Use in Puck
+## Use in Puck
 
 <a id="parser-is-a-core-charlie-requirement"></a>
-### 6.1 Parser is a core Charlie requirement
+### Parser is a core Charlie requirement
 
 A UNS parser/validator is a **core requirement** of any Charlie
 implementation. Every host needs to be able to take a string and
@@ -232,7 +232,7 @@ lookup, identifier handling) that lacking one would break the
 runtime.
 
 <a id="uns-doubles-as-url"></a>
-### 6.2 UNS doubles as URL
+### UNS doubles as URL
 
 Puck often treats a UNS as **synonymous with a URL**. Many
 objects in the ecoverse live at the address their UNS points to —
@@ -256,7 +256,7 @@ extra round trip. Noted here so the friction is acknowledged;
 not considered a significant problem at present.
 
 <a id="first-contact-angle"></a>
-## 7 First-contact angle
+## First-contact angle
 
 UNS is one of the lowest-friction ways someone might encounter
 Puck. It's small, self-contained, and useful on its own — you

@@ -13,7 +13,7 @@
 Not implemented. Worth recording so future decisions can build on it.
 
 <a id="the-idea"></a>
-## 1 The Idea
+## The Idea
 
 Under the role model ([roles.md](../../charlie/roles.md)), a database faucet has its
 own role, and values pulled through it are owned by that role. If that
@@ -30,7 +30,7 @@ untrusted values) from being written. A trusted database remains trusted
 because nothing untrusted ever lands in it.
 
 <a id="likely-shape"></a>
-## 2 Likely Shape
+## Likely Shape
 
 - A trusted database connection refuses writes of untrusted values by
   default. Attempting to insert/update with an untrusted string raises a
@@ -44,7 +44,7 @@ because nothing untrusted ever lands in it.
   values. The schema would carry per-column trust policy.
 
 <a id="relationship-to-database-firewalls"></a>
-## 3 Relationship to Database Firewalls
+## Relationship to Database Firewalls
 
 The existing [firewall](firewall.md) rule mechanism — already part of
 every engine's base spec — is a natural place to enforce these checks.
@@ -67,7 +67,7 @@ yet, just placeholders):
 Both are forward-looking ideas; neither is designed.
 
 <a id="why-its-deferred"></a>
-## 4 Why It's Deferred
+## Why It's Deferred
 
 - Doesn't yet have a concrete use case driving it. The trust model works
   without it for the current set of databases.
@@ -77,7 +77,7 @@ Both are forward-looking ideas; neither is designed.
   Puck component marks a database as trusted.
 
 <a id="when-to-revisit"></a>
-## 5 When to Revisit
+## When to Revisit
 
 - The first time we want to mark a database as trusted.
 - If a real-world laundering exploit is identified in a Puck-based

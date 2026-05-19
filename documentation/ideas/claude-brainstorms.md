@@ -20,25 +20,8 @@ read each.
 
 ---
 
-<a id="contents"></a>
-## 1 Contents
-
-- [1. Time-travel debugger for Charlie](#1-time-travel-debugger-for-charlie)
-- [2. Visual Xeme tree renderer](#2-visual-xeme-tree-renderer)
-- [3. Test analytics service](#3-test-analytics-service)
-- [4. Jasmine → notifications service](#4-jasmine-notifications-service)
-- [5. TryCharlie — browser playground](#5-trycharlie-browser-playground)
-- [6. Puck CLI tool](#6-puck-cli-tool)
-- [7. Universal logger sidecar](#7-universal-logger-sidecar)
-- [8. Federated mikobases](#8-federated-mikobases)
-- [9. Time-bounded objects](#9-time-bounded-objects)
-- [10. Lazy mikobase records](#10-lazy-mikobase-records)
-- [Status](#status)
-
----
-
 <a id="1-time-travel-debugger-for-charlie"></a>
-## 2 1. Time-travel debugger for Charlie
+## 1. Time-travel debugger for Charlie
 
 Mikobase already supports time-travel reads (querying state as
 of any past timestamp). A debugger could exploit this:
@@ -54,7 +37,7 @@ mikobase-shaped during a debug run. Heavy but feasible.
 ---
 
 <a id="2-visual-xeme-tree-renderer"></a>
-## 3 2. Visual Xeme tree renderer
+## 2. Visual Xeme tree renderer
 
 The icons we just spent time organizing are a contract waiting
 for a client. A browser-based (or desktop) viewer that:
@@ -71,7 +54,7 @@ the icon-fallback rule once, in one place.
 ---
 
 <a id="3-test-analytics-service"></a>
-## 4 3. Test analytics service
+## 3. Test analytics service
 
 A hosted service that consumes Xeme trees over time and surfaces:
 
@@ -90,7 +73,7 @@ service.
 ---
 
 <a id="4-jasmine-notifications-service"></a>
-## 5 4. Jasmine → notifications service
+## 4. Jasmine → notifications service
 
 A hosted service that consumes Jasmine entries and routes
 attention-worthy events to email / SMS / Slack / Pushover / etc.
@@ -108,7 +91,7 @@ competing with it.
 ---
 
 <a id="5-trycharlie-browser-playground"></a>
-## 6 5. TryCharlie — browser playground
+## 5. TryCharlie — browser playground
 
 A web page where someone can type Charlie and see it run. Mimics
 TryRuby, Replit, the various "play with this language" pages.
@@ -126,7 +109,7 @@ Aligns with the first-contact strategy memory.
 ---
 
 <a id="6-puck-cli-tool"></a>
-## 7 6. Puck CLI tool
+## 6. Puck CLI tool
 
 A unified command-line tool — `puck` — for everyday Puck
 operations. Like `kubectl` for Kubernetes or `gh` for GitHub.
@@ -146,7 +129,7 @@ specific scripts. Discoverable via `puck --help`.
 ---
 
 <a id="7-universal-logger-sidecar"></a>
-## 8 7. Universal logger sidecar
+## 7. Universal logger sidecar
 
 A small daemon — `puck-log` — that reads Jasmine entries on
 stdin (or a Unix socket) and routes them to whatever's configured
@@ -162,7 +145,7 @@ ship as part of the core toolset.
 ---
 
 <a id="8-federated-mikobases"></a>
-## 9 8. Federated mikobases
+## 8. Federated mikobases
 
 Multiple mikobases can be queried as a single virtual store. The
 federation layer:
@@ -182,7 +165,7 @@ posture.
 ---
 
 <a id="9-time-bounded-objects"></a>
-## 10 9. Time-bounded objects
+## 9. Time-bounded objects
 
 A class capability: objects with an explicit lifetime. The
 mikobase auto-collects them after their TTL expires.
@@ -204,7 +187,7 @@ is collectible after timestamp X."
 ---
 
 <a id="10-lazy-mikobase-records"></a>
-## 11 10. Lazy mikobase records
+## 10. Lazy mikobase records
 
 A record whose value is computed on demand by a function, not
 stored. The mikobase keeps the recipe (the function + its
@@ -229,7 +212,7 @@ hard parts.
 ---
 
 <a id="status"></a>
-## 12 Status
+## Status
 
 All ten are speculative. Some overlap with already-flagged
 future work; others are new threads. None are commitments.

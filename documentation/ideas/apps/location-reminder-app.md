@@ -17,7 +17,7 @@ doesn't.
 ---
 
 <a id="the-idea"></a>
-## 1 The Idea
+## The Idea
 
 A personal location-monitoring app: the user maintains a list of
 "errands tied to places" (e.g., "buy milk at Kroger," "drop off
@@ -31,7 +31,7 @@ the milk, marks the errand done.
 ---
 
 <a id="what-it-would-use-from-puckunogeo"></a>
-## 2 What it would use from `puck.uno/geo`
+## What it would use from `puck.uno/geo`
 
 - **Continuous location monitoring** in the app (using the browser's
   Geolocation API).
@@ -53,7 +53,7 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 ---
 
 <a id="why-its-a-useful-validation"></a>
-## 3 Why it's a useful validation
+## Why it's a useful validation
 
 - Different access pattern than the driver app — long-running
   background-ish location monitoring with sparse "did anything
@@ -66,7 +66,7 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 ---
 
 <a id="out-of-scope-for-now"></a>
-## 4 Out of scope for now
+## Out of scope for now
 
 This is a future idea, not a current commitment. Filed so it isn't
 lost. Real spec when the time comes.

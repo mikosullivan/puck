@@ -1,36 +1,7 @@
 # Parameter System
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Basic Definition](#basic-definition)
-- [Inline Metadata Declaration](#inline-metadata-declaration)
-- [Known Metadata Properties](#known-metadata-properties)
-- [Public and Private Names](#public-and-private-names)
-- [Required and Optional Parameters](#required-and-optional-parameters)
-- [Type Constraints](#type-constraints)
-- [Lazy Parameters](#lazy-parameters)
-- [Rest Positional Parameters: `*args`](#rest-positional-parameters-args)
-- [Rest Named Parameters: `**opts`](#rest-named-parameters-opts)
-- [Combined Rest Parameters](#combined-rest-parameters)
-- [Call-Site Splat Expansion](#call-site-splat-expansion)
-- [Calling Functions](#calling-functions)
-- [Positional-Until-Named Rule](#positional-until-named-rule)
-- [Valid Calls](#valid-calls)
-- [Invalid Calls](#invalid-calls)
-- [Argument Binding Algorithm](#argument-binding-algorithm)
-- [Definition Errors](#definition-errors)
-- [Programmatic Access](#programmatic-access)
-- [Freezing Functions](#freezing-functions)
-- [Style Guidelines](#style-guidelines)
-- [Summary](#summary)
-- [Open Questions](#open-questions)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -60,7 +31,7 @@ the runtime binds them).
 ---
 
 <a id="basic-definition"></a>
-## 3 Basic Definition
+## Basic Definition
 
 ~~~json
 {"vibecode": {
@@ -91,7 +62,7 @@ Each parameter has two names:
 ---
 
 <a id="inline-metadata-declaration"></a>
-## 4 Inline Metadata Declaration
+## Inline Metadata Declaration
 
 ~~~json
 {"vibecode": {
@@ -135,7 +106,7 @@ $foo.params['bar'].lazy = true
 ---
 
 <a id="known-metadata-properties"></a>
-## 5 Known Metadata Properties
+## Known Metadata Properties
 
 ~~~json
 {"vibecode": {
@@ -156,7 +127,7 @@ $foo.params['bar'].lazy = true
 ---
 
 <a id="public-and-private-names"></a>
-## 6 Public and Private Names
+## Public and Private Names
 
 ~~~json
 {"vibecode": {
@@ -196,7 +167,7 @@ can only use public names.
 ---
 
 <a id="required-and-optional-parameters"></a>
-## 7 Required and Optional Parameters
+## Required and Optional Parameters
 
 ~~~json
 {"vibecode": {
@@ -254,7 +225,7 @@ Setting a `default` implicitly makes the parameter optional, so writing
 ---
 
 <a id="type-constraints"></a>
-## 8 Type Constraints
+## Type Constraints
 
 ~~~json
 {"vibecode": {
@@ -294,7 +265,7 @@ $foo.params['bar'].nullable = true
 ---
 
 <a id="lazy-parameters"></a>
-## 9 Lazy Parameters
+## Lazy Parameters
 
 ~~~json
 {"vibecode": {
@@ -342,7 +313,7 @@ short-circuit evaluation with no special parser support.
 ---
 
 <a id="rest-positional-parameters-args"></a>
-## 10 Rest Positional Parameters: `*args`
+## Rest Positional Parameters: `*args`
 
 ~~~json
 {"vibecode": {
@@ -371,7 +342,7 @@ If no extra positional arguments are passed, `$args` is an empty array.
 ---
 
 <a id="rest-named-parameters-opts"></a>
-## 11 Rest Named Parameters: `**opts`
+## Rest Named Parameters: `**opts`
 
 ~~~json
 {"vibecode": {
@@ -404,7 +375,7 @@ are quietly absorbed into the hash.
 ---
 
 <a id="combined-rest-parameters"></a>
-## 12 Combined Rest Parameters
+## Combined Rest Parameters
 
 ~~~json
 {"vibecode": {
@@ -434,7 +405,7 @@ At most one `*args` and one `**opts` per signature.
 ---
 
 <a id="call-site-splat-expansion"></a>
-## 13 Call-Site Splat Expansion
+## Call-Site Splat Expansion
 
 ~~~json
 {"vibecode": {
@@ -468,7 +439,7 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 ---
 
 <a id="calling-functions"></a>
-## 14 Calling Functions
+## Calling Functions
 
 ~~~json
 {"vibecode": {
@@ -502,7 +473,7 @@ formatter-enforced.
 ---
 
 <a id="positional-until-named-rule"></a>
-## 15 Positional-Until-Named Rule
+## Positional-Until-Named Rule
 
 ~~~json
 {"vibecode": {
@@ -528,7 +499,7 @@ argument appears, all remaining arguments must be named.
 ---
 
 <a id="valid-calls"></a>
-## 16 Valid Calls
+## Valid Calls
 
 Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 `$phrase` is implicitly optional via propagation):
@@ -544,7 +515,7 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 ---
 
 <a id="invalid-calls"></a>
-## 17 Invalid Calls
+## Invalid Calls
 
 ~~~json
 {"vibecode": {
@@ -568,7 +539,7 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 ---
 
 <a id="argument-binding-algorithm"></a>
-## 18 Argument Binding Algorithm
+## Argument Binding Algorithm
 
 ~~~json
 {"vibecode": {
@@ -604,7 +575,7 @@ order:
 ---
 
 <a id="definition-errors"></a>
-## 19 Definition Errors
+## Definition Errors
 
 ~~~json
 {"vibecode": {
@@ -635,7 +606,7 @@ $foo = function(**a, **b)
 ---
 
 <a id="programmatic-access"></a>
-## 20 Programmatic Access
+## Programmatic Access
 
 ~~~json
 {"vibecode": {
@@ -665,7 +636,7 @@ frameworks, validators, and generated functions.
 ---
 
 <a id="freezing-functions"></a>
-## 21 Freezing Functions
+## Freezing Functions
 
 ~~~json
 {"vibecode": {
@@ -698,7 +669,7 @@ modification.
 ---
 
 <a id="style-guidelines"></a>
-## 22 Style Guidelines
+## Style Guidelines
 
 ~~~json
 {"vibecode": {
@@ -762,7 +733,7 @@ $foo = function($required1,
 ---
 
 <a id="summary"></a>
-## 23 Summary
+## Summary
 
 ~~~json
 {"vibecode": {
@@ -791,7 +762,7 @@ $foo = function($required1,
 ---
 
 <a id="open-questions"></a>
-## 24 Open Questions
+## Open Questions
 
 - Should type checking be enforced at definition time (static) or call
   time (dynamic)? Current assumption: call time.

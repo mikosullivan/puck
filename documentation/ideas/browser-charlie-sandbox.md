@@ -17,7 +17,7 @@ Brainstorm in progress.
 ---
 
 <a id="why"></a>
-## 1 Why
+## Why
 
 ~~~json
 {"vibecode": {
@@ -48,7 +48,7 @@ let people experience Charlie before buying into the whole system.
 ---
 
 <a id="architecture-three-independent-artifacts"></a>
-## 2 Architecture: three independent artifacts
+## Architecture: three independent artifacts
 
 ~~~json
 {"vibecode": {
@@ -68,7 +68,7 @@ shippable. The browser sandbox uses one (the WASM engine); the other
 two are for adjacent purposes that compose freely with it.
 
 <a id="artifact-1-wasm-compiled-lua-engine-the-browser-sandbox"></a>
-### 2.1 Artifact 1: WASM-compiled Lua engine — the browser sandbox
+### Artifact 1: WASM-compiled Lua engine — the browser sandbox
 
 The canonical Lua reference engine compiled to WASM (Fengari, lua.vm.js,
 wasm-lua, or similar). Run the same engine bytes in the browser as on
@@ -84,7 +84,7 @@ the server.
 This is the **primary browser sandbox approach**.
 
 <a id="artifact-2-ts-charliejson-only-engine-community-and-portability"></a>
-### 2.2 Artifact 2: TS CharlieJSON-only engine — community and portability
+### Artifact 2: TS CharlieJSON-only engine — community and portability
 
 A TypeScript engine that **consumes canonical CharlieJSON** and
 executes it. No Charlie source parser. No transpiler. Just the
@@ -112,7 +112,7 @@ the Lua engine and this TS engine; both must return a value with
 engine's existing tests (now 213/213) become the conformance suite.
 
 <a id="artifact-3-ts-source-parser-already-in-v2-extension-plans"></a>
-### 2.3 Artifact 3: TS source parser — already in V2 extension plans
+### Artifact 3: TS source parser — already in V2 extension plans
 
 A TS-only Charlie parser, planned in
 [vscode-extension-v2.md](vscode-extension-v2.md) for the formatter
@@ -126,7 +126,7 @@ work. Source → CharlieJSON.
   required (some embedded JS environments don't support WASM).
 
 <a id="what-was-rejected"></a>
-### 2.4 What was rejected
+### What was rejected
 
 A **hybrid** (TS parser handing CharlieJSON to a WASM-Lua engine) was on the
 table but rejected as too much glue for not enough benefit. Each side
@@ -137,7 +137,7 @@ saving meaningful effort.
 ---
 
 <a id="why-charlie-is-particularly-well-suited"></a>
-## 3 Why Charlie is particularly well-suited
+## Why Charlie is particularly well-suited
 
 ~~~json
 {"vibecode": {
@@ -166,7 +166,7 @@ saving meaningful effort.
 ---
 
 <a id="open-questions"></a>
-## 4 Open questions
+## Open questions
 
 - **Which architectural option?** Native TS reimplementation vs WASM
   Lua vs hybrid. Each has real trade-offs; no clear winner without

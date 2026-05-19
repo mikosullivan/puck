@@ -16,7 +16,7 @@ the Charlie runtime.
 ---
 
 <a id="architecture"></a>
-## 1 Architecture
+## Architecture
 
 ```
 Ruby (host / policy layer)
@@ -34,7 +34,7 @@ callback.
 ---
 
 <a id="the-ruby-api"></a>
-## 2 The Ruby API
+## The Ruby API
 
 The host creates a runtime object, configures it, then runs code:
 
@@ -57,7 +57,7 @@ result.elapsed_seconds  # wall time
 ---
 
 <a id="how-the-script-accesses-host-resources"></a>
-## 3 How the Script Accesses Host Resources
+## How the Script Accesses Host Resources
 
 The top-level script uses `%engine` to pull in whatever the host has made available:
 
@@ -76,7 +76,7 @@ by convention.
 ---
 
 <a id="injecting-capabilities"></a>
-## 4 Injecting Capabilities
+## Injecting Capabilities
 
 Charlie has no ambient authority — no global filesystem access, no network. Everything
 the program can do must be explicitly granted by the host. Built-in system methods like
@@ -99,7 +99,7 @@ This means a Charlie program can only do what the host explicitly hands it. Noth
 available by default.
 
 <a id="stdout-and-stderr"></a>
-### 4.1 stdout and stderr
+### stdout and stderr
 
 stdout and stderr follow the same capability model — they are not special. A program can
 only write to stdout or stderr if the host has injected them.
@@ -128,7 +128,7 @@ code can only write to stdout if it has been explicitly handed the capability.
 ---
 
 <a id="data-vs-capabilities-vs-chain"></a>
-## 5 Data vs Capabilities vs Chain
+## Data vs Capabilities vs Chain
 
 Three distinct channels carry information into a Charlie execution:
 
@@ -149,7 +149,7 @@ Context     →  passed by chain
 ---
 
 <a id="filesystem-sandboxing"></a>
-## 6 Filesystem Sandboxing
+## Filesystem Sandboxing
 
 Filesystem access is granted via jail objects — scoped handles to specific directories
 with explicit read/write permissions:
@@ -172,7 +172,7 @@ The host resolves them. A program cannot escape its jail.
 ---
 
 <a id="timeouts"></a>
-## 7 Timeouts
+## Timeouts
 
 A compliant engine must enforce timeouts in a way that Charlie code cannot interfere with
 or disable. In the Lua reference implementation this is done using `debug.sethook`.
@@ -201,7 +201,7 @@ effective_timeout = min(requested, remaining_parent_budget)
 ---
 
 <a id="chain-and-security"></a>
-## 8 %chain and Security
+## %chain and Security
 
 `%chain` is cleared when entering an untrusted execution boundary. This prevents a
 downloaded function from reading the caller's user context, request ID, or any other
@@ -213,7 +213,7 @@ of `%chain` are to be discussed separately.
 ---
 
 <a id="summary"></a>
-## 9 Summary
+## Summary
 
 The bootstrapping process in a Ruby host:
 

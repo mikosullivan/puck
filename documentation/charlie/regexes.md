@@ -1,7 +1,7 @@
 # Patterns
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -21,7 +21,7 @@ quantifiers. If you need those features, restructure the logic in Charlie rather
 reaching for a more powerful pattern language.
 
 <a id="pattern-engine"></a>
-## 2 Pattern Engine
+## Pattern Engine
 
 ~~~json
 {"vibecode": {
@@ -47,7 +47,7 @@ engine. If a richer engine is plugged in, those features become available automa
 — no changes to the calling code required.
 
 <a id="pattern-syntax"></a>
-### 2.1 Pattern syntax
+### Pattern syntax
 
 | Pattern | Meaning |
 |---|---|
@@ -71,7 +71,7 @@ engine. If a richer engine is plugged in, those features become available automa
 ---
 
 <a id="methods"></a>
-## 3 Methods
+## Methods
 
 ~~~json
 {"vibecode": {
@@ -82,7 +82,7 @@ engine. If a richer engine is plugged in, those features become available automa
 ~~~
 
 <a id="stringmatchpattern"></a>
-### 3.1 `$string.match(pattern)`
+### `$string.match(pattern)`
 
 Returns a `Match` object if the pattern matches, or `null` if it does not. Use safe
 navigation to handle the null case:
@@ -92,7 +92,7 @@ $string.match('pattern')&.text
 ```
 
 <a id="stringmatchpattern-1"></a>
-### 3.2 `$string.match?(pattern)`
+### `$string.match?(pattern)`
 
 Returns a boolean. Does not allocate a match object — use this when you only need to
 know whether the pattern matched:
@@ -103,7 +103,7 @@ end
 ```
 
 <a id="chaining"></a>
-### 3.3 Chaining
+### Chaining
 
 `.match()` can be chained. Each call narrows the result, operating on the text of the
 previous match:
@@ -113,7 +113,7 @@ $string.match('blah blah').match('blue')
 ```
 
 <a id="negation"></a>
-### 3.4 Negation
+### Negation
 
 ```
 $string.match('pattern', not:true)
@@ -122,7 +122,7 @@ $string.match('pattern', not:true)
 ---
 
 <a id="match-object"></a>
-## 4 Match Object
+## Match Object
 
 ~~~json
 {"vibecode": {
@@ -144,7 +144,7 @@ $string.match('pattern', not:true)
 | `$match.count` | Number of matches |
 
 <a id="string-conversion"></a>
-### 4.1 String Conversion
+### String Conversion
 
 A `Match` object converts to its matched text when used in a string context:
 

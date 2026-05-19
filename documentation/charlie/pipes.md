@@ -1,29 +1,7 @@
 # Charlie Pipe Operator Design
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Basic Pipe Operator](#basic-pipe-operator)
-  - [Syntax](#syntax)
-  - [Semantics](#semantics)
-- [Chaining Pipes](#chaining-pipes)
-- [Example: Method Calls](#example-method-calls)
-- [Design Principle](#design-principle)
-- [Null-Safe Pipe Operator (`|&`)](#null-safe-pipe-operator)
-  - [Motivation](#motivation)
-- [Syntax](#syntax-1)
-- [Semantics](#semantics-1)
-  - [Example](#example)
-- [Execution Model](#execution-model)
-- [Design Rule](#design-rule)
-- [Summary](#summary)
-- [Future Considerations (Optional)](#future-considerations-optional)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -40,7 +18,7 @@ This provides a more readable and intuitive alternative to deeply nested express
 ---
 
 <a id="basic-pipe-operator"></a>
-## 3 Basic Pipe Operator
+## Basic Pipe Operator
 
 ~~~json
 {"vibecode": {
@@ -51,14 +29,14 @@ This provides a more readable and intuitive alternative to deeply nested express
 ~~~
 
 <a id="syntax"></a>
-### 3.1 Syntax
+### Syntax
 
 ```charlie
 a | b
 ```
 
 <a id="semantics"></a>
-### 3.2 Semantics
+### Semantics
 
 The pipe operator passes the result of the left-hand expression as the **first positional argument** to the right-hand expression. The right-hand side may also accept additional positional or named arguments at the call site; the piped value occupies the first positional slot and the rest of the arguments are bound normally.
 
@@ -91,7 +69,7 @@ Same shape as Elixir's `|>`, F#'s `|>`, R's `%>%`.
 ---
 
 <a id="chaining-pipes"></a>
-## 4 Chaining Pipes
+## Chaining Pipes
 
 ~~~json
 {"vibecode": {
@@ -118,7 +96,7 @@ desugars to:
 ---
 
 <a id="example-method-calls"></a>
-## 5 Example: Method Calls
+## Example: Method Calls
 
 ~~~json
 {"vibecode": {
@@ -147,7 +125,7 @@ This allows writing code in the same order as execution.
 ---
 
 <a id="design-principle"></a>
-## 6 Design Principle
+## Design Principle
 
 ~~~json
 {"vibecode": {
@@ -164,7 +142,7 @@ Each stage receives exactly one input: the result of the previous stage.
 ---
 
 <a id="null-safe-pipe-operator"></a>
-## 7 Null-Safe Pipe Operator (`|&`)
+## Null-Safe Pipe Operator (`|&`)
 
 ~~~json
 {"vibecode": {
@@ -175,7 +153,7 @@ Each stage receives exactly one input: the result of the previous stage.
 ~~~
 
 <a id="motivation"></a>
-### 7.1 Motivation
+### Motivation
 
 Charlie supports null-safe chaining in method calls:
 
@@ -190,7 +168,7 @@ The pipe system introduces a similar concept.
 ---
 
 <a id="syntax-1"></a>
-## 8 Syntax
+## Syntax
 
 ~~~json
 {"vibecode": {
@@ -207,7 +185,7 @@ a |& b
 ---
 
 <a id="semantics-1"></a>
-## 9 Semantics
+## Semantics
 
 ~~~json
 {"vibecode": {
@@ -222,7 +200,7 @@ The `|&` operator enables **null propagation mode** for the remainder of the pip
 Once `|&` is used, all subsequent pipe stages automatically become null-safe.
 
 <a id="example"></a>
-### 9.1 Example
+### Example
 
 ```charlie
 &foo |&
@@ -241,7 +219,7 @@ is equivalent to:
 ---
 
 <a id="execution-model"></a>
-## 10 Execution Model
+## Execution Model
 
 ~~~json
 {"vibecode": {
@@ -274,7 +252,7 @@ return &gup(y)
 ---
 
 <a id="design-rule"></a>
-## 11 Design Rule
+## Design Rule
 
 ~~~json
 {"vibecode": {
@@ -291,7 +269,7 @@ This avoids repetition while keeping intent clear.
 ---
 
 <a id="summary"></a>
-## 12 Summary
+## Summary
 
 ~~~json
 {"vibecode": {
@@ -309,7 +287,7 @@ This avoids repetition while keeping intent clear.
 ---
 
 <a id="future-considerations-optional"></a>
-## 13 Future Considerations (Optional)
+## Future Considerations (Optional)
 
 ~~~json
 {"vibecode": {

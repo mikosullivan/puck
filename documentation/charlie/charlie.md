@@ -1,35 +1,7 @@
 # Charlie
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Formatting standards, or lack thereof](#formatting-standards-or-lack-thereof)
-- [Security model](#security-model)
-- [Syntax](#syntax)
-  - [Strings](#strings)
-  - [Booleans and null](#booleans-and-null)
-  - [Variables](#variables)
-  - [Blocks](#blocks)
-  - [Multi-section blocks](#multi-section-blocks)
-  - [When `do` is Required](#when-do-is-required)
-  - [Statement Termination](#statement-termination)
-  - [The `__END__` Marker](#the-__end__-marker)
-  - [Functions](#functions)
-  - [Classes](#classes)
-  - [Loops](#loops)
-  - [The `as` Keyword](#the-as-keyword)
-  - [Return and Emit](#return-and-emit)
-  - [Safe Navigation](#safe-navigation)
-  - [Pipe Operator](#pipe-operator)
-  - [Unicode Method Names](#unicode-method-names)
-  - [Method Naming Conventions](#method-naming-conventions)
-- [Transpilation](#transpilation)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -51,7 +23,7 @@ Charlie's style is influenced by Ruby with some Perl and Bash mixed in.
 ---
 
 <a id="formatting-standards-or-lack-thereof"></a>
-## 3 Formatting standards, or lack thereof
+## Formatting standards, or lack thereof
 
 ~~~json
 {"vibecode": {
@@ -77,7 +49,7 @@ review. Tabs-vs-spaces is a setting that each developer owns.
 ---
 
 <a id="security-model"></a>
-## 4 Security model
+## Security model
 
 ~~~json
 {"vibecode": {
@@ -126,7 +98,7 @@ cross-role exception handling, and what is and isn't checked at a boundary
 ---
 
 <a id="syntax"></a>
-## 5 Syntax
+## Syntax
 
 ~~~json
 {"vibecode": {
@@ -140,7 +112,7 @@ cross-role exception handling, and what is and isn't checked at a boundary
 ---
 
 <a id="strings"></a>
-### 5.1 Strings
+### Strings
 
 ~~~json
 {"vibecode": {
@@ -154,13 +126,13 @@ cross-role exception handling, and what is and isn't checked at a boundary
 ~~~
 
 <a id="default-to-single-quotes"></a>
-#### 5.1.1 Default to single quotes
+#### Default to single quotes
 
 Use single quotes unless interpolation is needed. All documentation examples follow this
 convention.
 
 <a id="single-quoted-strings"></a>
-#### 5.1.2 Single-quoted strings
+#### Single-quoted strings
 
 Not interpolated. What you write is what you get:
 
@@ -169,7 +141,7 @@ Not interpolated. What you write is what you get:
 ```
 
 <a id="colon-shorthand"></a>
-#### 5.1.3 Colon shorthand
+#### Colon shorthand
 
 `:foo` is shorthand for `'foo'`.  Charlie does not have a symbol type,
 but sometimes it's handy to have something look symboly.
@@ -180,7 +152,7 @@ but sometimes it's handy to have something look symboly.
 ```
 
 <a id="bare-word-keys"></a>
-#### 5.1.4 Bare word keys
+#### Bare word keys
 
 Bare words used as hash keys or keyword argument names are also strings. All three forms
 are identical:
@@ -201,7 +173,7 @@ Hash keys must be strings. Numbers, booleans, objects, and all other types are i
 hash keys — using one is an error.
 
 <a id="double-quoted-strings"></a>
-#### 5.1.5 Double-quoted strings
+#### Double-quoted strings
 
 Interpolated. Variables and expressions can be embedded:
 
@@ -214,7 +186,7 @@ Interpolated. Variables and expressions can be embedded:
 `$variable` interpolates directly. `#{}` interpolates any expression.
 
 <a id="heredocs"></a>
-#### 5.1.6 Heredocs
+#### Heredocs
 
 ```
 $string = <<'EOF'
@@ -237,7 +209,7 @@ own fault and they deserve it.
 ---
 
 <a id="booleans-and-null"></a>
-### 5.2 Booleans and null
+### Booleans and null
 
 ~~~json
 {"vibecode": {
@@ -267,7 +239,7 @@ for the flavor model.
 ---
 
 <a id="variables"></a>
-### 5.3 Variables
+### Variables
 
 ~~~json
 {"vibecode": {
@@ -304,7 +276,7 @@ community wants to.
 ---
 
 <a id="blocks"></a>
-### 5.4 Blocks
+### Blocks
 
 ~~~json
 {"vibecode": {
@@ -375,7 +347,7 @@ puts $play     # 'Hamlet'
 ---
 
 <a id="multi-section-blocks"></a>
-### 5.5 Multi-section blocks
+### Multi-section blocks
 
 ~~~json
 {"vibecode": {
@@ -443,7 +415,7 @@ prefer a form where each path stands on its own.
 ---
 
 <a id="when-do-is-required"></a>
-### 5.6 When `do` is Required
+### When `do` is Required
 
 ~~~json
 {"vibecode": {
@@ -518,7 +490,7 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 ---
 
 <a id="statement-termination"></a>
-### 5.7 Statement Termination
+### Statement Termination
 
 ~~~json
 {"vibecode": {
@@ -567,7 +539,7 @@ similar languages use.
 ---
 
 <a id="the-__end__-marker"></a>
-### 5.8 The `__END__` Marker
+### The `__END__` Marker
 
 ~~~json
 {"vibecode": {
@@ -600,7 +572,7 @@ Borrowed from Perl and Ruby.
 ---
 
 <a id="functions"></a>
-### 5.9 Functions
+### Functions
 
 ~~~json
 {"vibecode": {
@@ -616,7 +588,7 @@ Borrowed from Perl and Ruby.
 ~~~
 
 <a id="definition"></a>
-#### 5.9.1 Definition
+#### Definition
 
 There are two kinds of stored callable: **functions** and **closures**. They differ in
 whether they capture the lexical scope at the point of creation.
@@ -654,7 +626,7 @@ end
 After any of these forms, `$foo` refers to the function object and `&foo` calls it.
 
 <a id="inline-do-blocks"></a>
-#### 5.9.2 Inline do blocks
+#### Inline do blocks
 
 Inline `do` blocks passed to method calls (`.each`, route handlers, etc.) behave like
 closures — they capture the outer lexical scope:
@@ -668,7 +640,7 @@ end
 ```
 
 <a id="scope-summary"></a>
-#### 5.9.3 Scope summary
+#### Scope summary
 
 | Form | Captures outer scope? |
 |------|-----------------------|
@@ -678,7 +650,7 @@ end
 | inline `do ... end` block | Yes |
 
 <a id="calling"></a>
-#### 5.9.4 Calling
+#### Calling
 
 The `&` sigil calls a function. All of the following are equivalent call forms:
 
@@ -693,7 +665,7 @@ The `&` sigil calls a function. All of the following are equivalent call forms:
 it makes passing functions as objects unambiguous.
 
 <a id="remote-functions"></a>
-#### 5.9.5 Remote functions
+#### Remote functions
 
 `remote function` declares a method that delegates to `%puck.call`. It is shorthand
 for an explicit remote dispatch — the two forms are equivalent:
@@ -715,7 +687,7 @@ for the full `%puck.call` design.
 ---
 
 <a id="classes"></a>
-### 5.10 Classes
+### Classes
 
 ~~~json
 {"vibecode": {
@@ -730,7 +702,7 @@ for the full `%puck.call` design.
 ~~~
 
 <a id="definition-1"></a>
-#### 5.10.1 Definition
+#### Definition
 
 A class is defined with the `class` keyword and a UNS name. The block contains schema
 declarations and method definitions:
@@ -751,7 +723,7 @@ end
 ```
 
 <a id="anonymous-bare-class"></a>
-#### 5.10.2 Anonymous (bare) class
+#### Anonymous (bare) class
 
 The UNS name may be omitted. A bare `class ... end` block produces an
 **anonymous class** — a class with no UNS identity of its own. The class
@@ -785,7 +757,7 @@ end
 ```
 
 <a id="schema-declarations"></a>
-#### 5.10.3 Schema declarations
+#### Schema declarations
 
 Schema declarations define the class's structure. They map directly to the JSON class
 definition stored in the mikobase.
@@ -798,7 +770,7 @@ definition stored in the mikobase.
 | `join :a, :b` | Required, unique-in-combination, immutable fields |
 
 <a id="field"></a>
-#### 5.10.4 `field`
+#### `field`
 
 `field` declares a field with a name and keyword options. The options map directly to the
 JSON field definition:
@@ -813,7 +785,7 @@ Built-in type names are strings — `:string` and `'string'` are identical. UNS 
 the quoted form by convention since they contain dots and slashes.
 
 <a id="property"></a>
-#### 5.10.5 `property`
+#### `property`
 
 `property` declares a `%bucket`-backed accessor — instance state that lives in the object,
 not in the mikobase schema. It does not appear in the JSON class definition. The first
@@ -829,7 +801,7 @@ property @nickname, :get, :set  # creates both
 ```
 
 <a id="abstract-classes"></a>
-#### 5.10.6 Abstract classes
+#### Abstract classes
 
 `abstract true` prevents direct instantiation. Subclasses may still be instantiated:
 
@@ -840,7 +812,7 @@ end
 ```
 
 <a id="join-classes"></a>
-#### 5.10.7 Join classes
+#### Join classes
 
 `join` marks the listed fields as required, unique in combination, and immutable after write:
 
@@ -854,7 +826,7 @@ end
 ```
 
 <a id="helpers"></a>
-#### 5.10.8 Helpers
+#### Helpers
 
 `helper` creates a lazily initialized helper object namespaced off the parent:
 
@@ -872,7 +844,7 @@ $character.stats.average
 ---
 
 <a id="loops"></a>
-### 5.11 Loops
+### Loops
 
 All loop forms — `while`, `.each`, and the numeric iteration helpers
 (`.times`, `.upto`, `.downto`) — and everything about them (loop
@@ -882,7 +854,7 @@ object via `as`, control methods, structural `before` / `between` /
 ---
 
 <a id="the-as-keyword"></a>
-### 5.12 The `as` Keyword
+### The `as` Keyword
 
 ~~~json
 {"vibecode": {
@@ -905,7 +877,7 @@ meaning ("give me a handle on this block"), different richness based on
 context.
 
 <a id="placement"></a>
-#### 5.12.1 Placement
+#### Placement
 
 `as $name` **always immediately follows the block declaration** — never
 the receiver. Examples:
@@ -922,7 +894,7 @@ In the last two, `as` follows `do(...)` — not `5.times` or
 `$foo.action`. The block is what `as` names.
 
 <a id="handle-api-by-caller"></a>
-#### 5.12.2 Handle API by caller
+#### Handle API by caller
 
 The handle's methods depend on who's invoking the block. Three common
 shapes:
@@ -938,7 +910,7 @@ genuine information about what kind of context the block is running in —
 not a contradiction.
 
 <a id="if-elsif-else"></a>
-#### 5.12.3 `if` / `elsif` / `else`
+#### `if` / `elsif` / `else`
 
 ```
 $gup =
@@ -956,7 +928,7 @@ across all branches (`elsif`, `else`). If `$if.return` is not called,
 the block returns the value of its last statement.
 
 <a id="loops-1"></a>
-#### 5.12.4 Loops
+#### Loops
 
 ```
 while (&foo) as $loop
@@ -1010,7 +982,7 @@ For the prefix-free `break` / `break N` bwc form (no `$loop` reference
 needed; supports multi-level exit), see [loops.md § break](loops.md#break).
 
 <a id="plain-method-call"></a>
-#### 5.12.5 Plain method call
+#### Plain method call
 
 ```
 $foo.action do($i) as $call
@@ -1025,7 +997,7 @@ It's the same shape as the engine's `%call` reference.
 ---
 
 <a id="return-and-emit"></a>
-### 5.13 Return and Emit
+### Return and Emit
 
 ~~~json
 {"vibecode": {
@@ -1037,7 +1009,7 @@ It's the same shape as the engine's `%call` reference.
 ~~~
 
 <a id="return"></a>
-#### 5.13.1 `return`
+#### `return`
 
 `return` exits the current function, raising `puck.uno/return`. Inside a
 closure, `return` propagates through the closure boundary and exits the calling function.
@@ -1049,7 +1021,7 @@ end
 ```
 
 <a id="callreturn"></a>
-#### 5.13.2 `%call.return`
+#### `%call.return`
 
 `%call.return` exits the current call — function or closure — and returns a value from
 it. Inside a closure, it exits the closure without affecting the calling function.
@@ -1071,7 +1043,7 @@ The distinction:
 ---
 
 <a id="safe-navigation"></a>
-### 5.14 Safe Navigation
+### Safe Navigation
 
 ~~~json
 {"vibecode": {
@@ -1093,7 +1065,7 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 ---
 
 <a id="pipe-operator"></a>
-### 5.15 Pipe Operator
+### Pipe Operator
 
 ~~~json
 {"vibecode": {
@@ -1111,7 +1083,7 @@ first positional argument to the next. Pipes are syntactic sugar — the transpi
 them into ordinary nested calls in CharlieJSON.
 
 <a id="basic-pipe"></a>
-#### 5.15.1 Basic pipe
+#### Basic pipe
 
 ```
 &baz |
@@ -1134,7 +1106,7 @@ Pipes can appear on the same line or split across lines:
 Both forms are identical. The multi-line form is preferred for long chains.
 
 <a id="null-safe-pipe"></a>
-#### 5.15.2 Null-safe pipe (`|&`)
+#### Null-safe pipe (`|&`)
 
 `|&` activates null propagation for the remainder of the chain. Once used, every
 subsequent stage short-circuits to `null` if its input is `null`:
@@ -1156,7 +1128,7 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 ---
 
 <a id="unicode-method-names"></a>
-### 5.16 Unicode Method Names
+### Unicode Method Names
 
 ~~~json
 {"vibecode": {
@@ -1183,7 +1155,7 @@ any valid Unicode identifier as a method name.
 ---
 
 <a id="method-naming-conventions"></a>
-### 5.17 Method Naming Conventions
+### Method Naming Conventions
 
 ~~~json
 {"vibecode": {
@@ -1194,7 +1166,7 @@ any valid Unicode identifier as a method name.
 ~~~
 
 <a id="the-suffix"></a>
-#### 5.17.1 The `?` suffix
+#### The `?` suffix
 
 The `?` suffix is a Puck convention, not a language-enforced
 contract — the Charlie parser doesn't treat names ending in `?`
@@ -1248,7 +1220,7 @@ Further design will be added as Charlie develops.
 ---
 
 <a id="transpilation"></a>
-## 6 Transpilation
+## Transpilation
 
 ~~~json
 {"vibecode": {

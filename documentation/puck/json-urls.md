@@ -24,7 +24,7 @@ https://www.puck.uno/something?{"map":true,"nw":[40.7,-74.0],"se":[40.8,-73.9]}
 after the `?`.)
 
 <a id="why"></a>
-## 1 Why
+## Why
 
 For machine-generated URLs, JSON has real advantages over the
 traditional key-value query string:
@@ -44,7 +44,7 @@ traditional key-value query string:
   with that.
 
 <a id="when-to-use-it"></a>
-## 2 When to use it
+## When to use it
 
 **Rule of thumb: if a machine generates the URL for one of our
 services on puck.uno, it should use the JSON form.** That covers
@@ -100,7 +100,7 @@ The convention is a **preference, not a hard rule**. Services may
 support both forms where it makes sense.
 
 <a id="trade-offs-and-caveats"></a>
-## 3 Trade-offs and caveats
+## Trade-offs and caveats
 
 Things to keep in mind:
 
@@ -127,7 +127,7 @@ Things to keep in mind:
   before doing cache lookups.
 
 <a id="implementation-guidance"></a>
-## 4 Implementation guidance
+## Implementation guidance
 
 When Puck services emit URLs that take parameters:
 
@@ -144,7 +144,7 @@ When Puck services receive a URL with parameters:
    work with.
 
 <a id="scope"></a>
-## 5 Scope
+## Scope
 
 Applies to every Puck service that generates URLs with parameters.
 The first concrete instance is the `puck.uno/geo` map embeds (iframe
@@ -152,7 +152,7 @@ The first concrete instance is the `puck.uno/geo` map embeds (iframe
 else in the ecoverse that emits URLs containing structured params.
 
 <a id="dogberry-support"></a>
-## 6 Dogberry support
+## Dogberry support
 
 **[Dogberry](../ideas/dogberry.md) is currently undefined** — see the
 brainstorm doc for the current shape (transforming proxy that fetches

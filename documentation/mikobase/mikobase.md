@@ -1,55 +1,7 @@
 # Mikobase
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [v1 Scope](#v1-scope)
-- [Temporal vs Non-temporal Mode](#temporal-vs-non-temporal-mode)
-  - [Single read and write paths](#single-read-and-write-paths)
-  - [Temporal-only operations on a non-temporal database](#temporal-only-operations-on-a-non-temporal-database)
-  - [Changing modes later](#changing-modes-later)
-  - [Worldlets and the temporal flag](#worldlets-and-the-temporal-flag)
-- [Export formats](#export-formats)
-  - [Worldlets play two roles](#worldlets-play-two-roles)
-  - [Import / export functions](#import-export-functions)
-- [Single-process vs. cross-fork use](#single-process-vs-cross-fork-use)
-- [The Maintaining Process](#the-maintaining-process)
-- [Object Ownership](#object-ownership)
-- [Class Hierarchy](#class-hierarchy)
-- [Managed Mikobase Server (`puck.uno/mikobase/server`)](#managed-mikobase-server-puckunomikobaseserver)
-- [HTTP Mikobase](#http-mikobase)
-  - [Unix Domain Sockets (preferred)](#unix-domain-sockets-preferred)
-  - [TCP (for network access)](#tcp-for-network-access)
-  - [Authentication](#authentication)
-  - [POSTable Updates](#postable-updates)
-- [Hot and Cold Connections](#hot-and-cold-connections)
-  - [Cold (default)](#cold-default)
-  - [Hot](#hot)
-  - [Local mikobases](#local-mikobases)
-  - [Multiple connections, different modes](#multiple-connections-different-modes)
-  - [Per-query override](#per-query-override)
-- [Locking](#locking)
-- [Transactions](#transactions)
-- [`%bucket` in the Mikobase](#bucket-in-the-mikobase)
-- [Record Change Signals](#record-change-signals)
-  - [Listening to records](#listening-to-records)
-  - [`before_save` and `after_save`](#before_save-and-after_save)
-  - [Signals stay within the mikobase](#signals-stay-within-the-mikobase)
-  - [Listener matching](#listener-matching)
-  - [Future: remote validation](#future-remote-validation)
-- [Packaged Mikobases](#packaged-mikobases)
-  - [Worldlets](#worldlets)
-  - [Format](#format)
-  - [Capabilities Manifest](#capabilities-manifest)
-  - [Lifecycle](#lifecycle)
-  - [Use Cases](#use-cases-1)
-  - [What Is Not Yet Designed](#what-is-not-yet-designed)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -59,22 +11,30 @@
 }}
 ~~~
 
-An mikobase is a full object store — in memory, file-backed, or served over a network.
-It supports Q0 queries, class definitions, record history, transactions, and locking.
+A mikobase is a full object store — in memory, file-backed, or served over a network.
+It supports Q0 queries, class definitions, transactions, and locking.
 Any process that connects to a mikobase can reach in and use its objects at any time.
 
-Objects in the mikobase are always alive for as long as the mikobase exists. A process's local
-objects stay local. If an object needs to be shared, it must live in the mikobase.
+Objects in the mikobase are always alive for as long as the mikobase exists. A
+process's local objects stay local. If an object needs to be shared, it must live
+in the mikobase.
 
-**Worldlets are the primary use case for mikobase** — packaged, portable mikobases
-used for scenarios, scratch state, AI conversation captures, and similar
-short-lived or snapshot-shaped workloads. Other use cases (microservices, larger
-services) are supported, but worldlets drive design decisions.
+A mikobase can live in a database backend like SQLite, or in memory.
+A small mikobase packaged as a single JSON file is called a
+**worldlet** — see [Worldlets: Mikobase on a microscale](#worldlets-mikobase-on-a-microscale).
+
+<a id="record-identity"></a>
+### Record identity
+
+Every record has a primary key. By convention that key is a **UUID v4**,
+but Mikobase is not fussy about it. Currently, Mikobase actually accepts
+anything for primary key fields called "uuid". We'll revisit the subject
+of cryptographically strong UUIDs if the community wants to do so.
 
 ---
 
 <a id="v1-scope"></a>
-## 3 v1 Scope
+## v1 Scope
 
 Mikobase is large by ambition. The v1 release keeps the surface
 focused:
@@ -84,221 +44,17 @@ focused:
   2. **SQLite in-memory** (`:memory:`) — ephemeral SQLite-backed
      databases. Same SQLite backend as file-backed; only the
      storage target differs. Q0 queries are just SQL in both cases.
-  3. **Worldlet-direct** — operates on the worldlet JSON structure
-     directly, with no SQLite import/export step. Built for very
-     short-lived workloads (AI2AI conversations, scratch sessions
-     measured in milliseconds) where the import/export cost would
-     dominate the actual work. Q0 queries are implemented against
-     the JSON structure instead of via SQL.
+  3. **Worldlet** — in memory native Mikobase. Built for very
+     short-lived workloads. See [AI2AI](AI2AI.md) for an example.
 
-  Mikobase still supports multiple engines as pluggable backends;
+  Mikobase supports multiple engines as pluggable backends;
   these three are what ships in v1. Other backends (Postgres,
   etc.) come later as add-ons.
-- **Time-travel stays in core.** It's well-designed already, not
-  particularly expensive, and the toggle exists via
-  [temporal vs non-temporal mode](#temporal-vs-non-temporal-mode)
-  for cases that don't want it (opt in via `"temporal": false`).
-- **Mikobase-as-filesystem: not in v1.** That whole brainstorm
-  (see [ideas/mikobase-as-filesystem.md](../ideas/apps/mikobase-as-filesystem.md))
-  is speculative. The filesystem-shaped interface, the
-  SSH/SSHFS access pattern, the RCS-style versioning use case —
-  none of it lands in v1. Revisit later.
-- **Delta storage: deferred.** v1 ships with chunk storage only.
-  The delta-based revision storage discussion is for later, when
-  the filesystem-mode use case becomes real (which is also
-  later). **And when we revisit it, deltas may turn out to be the
-  *only* storage shape, not an alternative alongside chunks** —
-  one mechanism covering everything (chunks for static content is
-  trivially a degenerate delta against an empty base). Not
-  decided; flagged so the eventual revisit doesn't assume the
-  two-modes framing.
-
----
-
-<a id="temporal-vs-non-temporal-mode"></a>
-## 4 Temporal vs Non-temporal Mode
-
-~~~json
-{"vibecode": {
-	"section": "temporal_mode",
-	"role": "specifies the per-database mode flag that controls whether records keep version history",
-	"key_concepts": ["temporal", "non_temporal", "mode_flag", "history", "worldlet", "immutable_at_init"]
-}}
-~~~
-
-A mikobase is either **temporal** (every write appends a history row; older versions are
-recoverable) or **non-temporal** (each record is stored as a single object; writes
-overwrite in place). The choice is a per-database flag set at initialization and is
-**immutable** for the life of the database.
-
-**Temporal is the default. Non-temporal must be opted into explicitly** via the
-top-level flag:
-
-```json
-{
-    "temporal": false,
-    ...
-}
-```
-
-A database without the `temporal` key — or with `"temporal": true` — is temporal.
-
-Non-temporal mode was added because **worldlets are the primary use case for
-mikobase** (see [overview](#overview)), and most worldlets don't
-benefit from history — they're snapshots of conversations, scenarios, or
-scratch state, not audit logs. After working with worldlets in temporal mode,
-reading through history records that each only appeared once was annoying;
-non-temporal mode is the direct fix.
-
-The same logic applies beyond worldlets: a microservice that doesn't need to
-audit past versions of its records probably doesn't need a temporal database
-either. Non-temporal isn't a niche mode; it's the right choice for any
-workload where version history adds clutter without payoff.
-
-<a id="single-read-and-write-paths"></a>
-### 4.1 Single read and write paths
-
-The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
-
-- One **retrieval** method understands how to find the latest version of a record. In
-  temporal mode it scans history for the latest `updated_at`; in non-temporal mode it
-  reads the record directly. Callers don't branch.
-- One **save** method understands how to persist a write. In temporal mode it appends a
-  history row; in non-temporal mode it overwrites in place. Callers don't branch.
-
-For SQLite-backed mikobases, the retrieval abstraction can be a database view named
-`latest_records` that resolves to either `SELECT current rows from history` or
-`SELECT * FROM records` depending on mode. The engine queries the view; the database
-itself encodes the mode.
-
-<a id="temporal-only-operations-on-a-non-temporal-database"></a>
-### 4.2 Temporal-only operations on a non-temporal database
-
-Operations that only make sense on a temporal database — rollback, version-at-timestamp,
-history scans, audit queries — raise an exception when called on a non-temporal database.
-No silent degradation, no empty results. The caller knows immediately that the operation
-isn't supported.
-
-<a id="changing-modes-later"></a>
-### 4.3 Changing modes later
-
-The flag is immutable at the database level. To convert a non-temporal database to
-temporal (or vice versa), import the data into a new database created with the desired
-mode. A future engine release may add a refactor tool, but the chosen mode is permanent
-for the database it was set on.
-
-<a id="worldlets-and-the-temporal-flag"></a>
-### 4.4 Worldlets and the temporal flag
-
-A worldlet is a **serialized export** of a mikobase, not a mikobase itself
-(see [Export formats](#export-formats) below). The worldlet JSON captures
-the source mikobase's `temporal` setting at the top level; on import, a
-fresh mikobase is created with the same temporal mode. Worldlets that
-represent a snapshot of a conversation, scenario, or scratch space — where
-version history adds nothing — were typically exported from a non-temporal
-mikobase and re-import into a non-temporal one. Worldlets that *do* care
-about version history come from temporal mikobases and round-trip the
-history block.
-
-**Open: a worldlet with both `records` populated as current-state AND a
-populated `history` block.** Combining the two modes' shapes in one export
-isn't specified and isn't a priority to resolve.
-
----
-
-<a id="export-formats"></a>
-## 5 Export formats
-
-~~~json
-{"vibecode": {
-    "section": "export_formats",
-    "role": "frames worldlets as one of multiple serialized export formats of a mikobase; the live mikobase is always engine-backed (currently SQLite)",
-    "key_concepts": ["export_format_not_engine", "worldlet_as_one_format",
-                     "second_export_format_tbd", "import_function_needed",
-                     "live_mikobase_is_always_sqlite_backed_in_v1"]
-}}
-~~~
-
-A mikobase is always **live and engine-backed** (see
-[Class Hierarchy](#class-hierarchy-olympic)). **Exports** serialize a
-mikobase to a portable format that can be stored, shared, or
-re-imported. Exports are not live — they're pure data on disk.
-
-Mikobase v1 will support at least two export formats:
-
-| Format | Status | Description |
-|---|---|---|
-| **Worldlet** (JSON) | Format defined — [worldlet.md](worldlets/worldlet.md) | Single JSON document; portable; human-readable; suitable for sharing, AI conversation captures, snapshots |
-| (Second format) | TBD | A second export format is planned; shape not yet specified |
-
-<a id="worldlets-play-two-roles"></a>
-### 5.1 Worldlets play two roles
-
-Worldlet JSON is **both** an export format (from any engine) **and**
-the live storage of the [`puck.uno/mikobase/worldlet`](#class-hierarchy-olympic)
-engine. From a SQLite-backed mikobase, exporting to a worldlet
-serializes the database; from the worldlet engine, the worldlet IS the
-database (no serialization step).
-
-This means:
-
-- **SQLite engine + worldlet file**: the worldlet is a snapshot. Load
-  via import (incurs the import cost); save via export (incurs the
-  export cost). Suitable for long-lived databases that occasionally
-  exchange data.
-- **Worldlet engine + worldlet file**: the worldlet is the live store.
-  Load by reading the file (parse JSON, done); save by writing the
-  file (serialize JSON, done). Suitable for very short-lived
-  workloads where import/export overhead would dominate.
-
-The choice of engine is the choice between persistence-cost and
-serialization-cost. Both engines speak the same `puck.uno/mikobase`
-interface; Charlie code that doesn't care which backend it's on works
-identically against either.
-
-<a id="import-export-functions"></a>
-### 5.2 Import / export functions
-
-The pipeline between an engine-backed mikobase and an export format is
-exactly two functions per format:
-
-- **Export** — read the live mikobase, produce the format's bytes.
-- **Import** — read the format's bytes, produce a fresh engine-backed
-  mikobase.
-
-For the SQLite engines, both functions involve real work: import maps
-JSON shape to SQL schema, inserts every row; export reads tables, serializes
-to JSON. For the worldlet engine, "import" is just parsing the JSON
-into the engine's in-memory structure (and "export" is just serializing
-it back) — there's no schema-mapping step because the worldlet IS the
-storage shape.
-
-Neither function is specified in detail yet. Open work for the worldlet
-import in particular:
-
-- Method signature and ownership: instance method on the mikobase
-  (`$mb.export_worldlet()`, `$mb.import_worldlet(json)`), free function
-  (`%puck['puck.uno/mikobase'].import_worldlet(json)`), or a
-  constructor (`puck.uno/mikobase.from_worldlet(json) → mikobase`).
-- Schema mapping for the temporal flag (the worldlet's
-  `"temporal": false` must produce the corresponding SQLite schema for
-  the SQLite engines).
-- UUID and timestamp preservation on import (`updated_at` on temporal
-  history rows must round-trip exactly; `created_at` on non-temporal
-  records must round-trip exactly).
-- Error handling for malformed JSON, unknown `format_version`,
-  unknown classes, etc.
-- Round-trip equivalence guarantee (export then import should produce
-  a mikobase indistinguishable from the original modulo file handles).
-- For the worldlet engine: how Q0 queries are implemented against the
-  JSON structure (joins, aggregations, indexes), and whether the
-  engine supports both temporal and non-temporal modes or only
-  non-temporal.
 
 ---
 
 <a id="single-process-vs-cross-fork-use"></a>
-## 6 Single-process vs. cross-fork use
+## Single-process vs. cross-fork use
 
 ~~~json
 {"vibecode": {
@@ -316,7 +72,7 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 ---
 
 <a id="the-maintaining-process"></a>
-## 7 The Maintaining Process
+## The Maintaining Process
 
 ~~~json
 {"vibecode": {
@@ -339,7 +95,7 @@ connecting to a live process, not reading from a file.
 ---
 
 <a id="object-ownership"></a>
-## 8 Object Ownership
+## Object Ownership
 
 ~~~json
 {"vibecode": {
@@ -355,14 +111,14 @@ they connect to the mikobase and interact with whatever is already there.
 ---
 
 <a id="class-hierarchy"></a>
-## 9 Class Hierarchy
+## Class Hierarchy
 
 ~~~json
 {"vibecode": {
 	"section": "class_hierarchy",
 	"role": "lists all mikobase implementation classes and their relationships",
 	"key_concepts": ["puck.uno/mikobase", "puck.uno/mikobase/memory", "puck.uno/mikobase/sqlite",
-		"puck.uno/mikobase/http", "puck.uno/mikobase/server", "abstract_base_class"]
+		"puck.uno/mikobase/http", "abstract_base_class"]
 }}
 ~~~
 
@@ -373,7 +129,6 @@ they connect to the mikobase and interact with whatever is already there.
 | `puck.uno/mikobase/sqlite` | SQLite file-backed database |
 | `puck.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (AI2AI conversations, scratch sessions) where import/export cost would dominate |
 | `puck.uno/mikobase/http` | HTTP server that exposes a mikobase over the network |
-| `puck.uno/mikobase/server` | Managed mikobase server for fork-based coordination |
 
 The two SQLite implementations run on the same backend — the only difference is
 whether SQLite is pointed at memory or a file. Q0 is just SQL in both cases, with
@@ -385,39 +140,8 @@ Charlie code interacts only with the `puck.uno/mikobase` interface and is unawar
 
 ---
 
-<a id="managed-mikobase-server-puckunomikobaseserver"></a>
-## 10 Managed Mikobase Server (`puck.uno/mikobase/server`)
-
-~~~json
-{"vibecode": {
-	"section": "managed_mikobase_server",
-	"role": "documents the server class that manages mikobase lifetime around a fork pool",
-	"key_concepts": ["puck.uno/mikobase/server", "fork_coordination", "block_scoped_lifetime", "clean_shutdown"]
-}}
-~~~
-
-`puck.uno/mikobase/server` is a managed mikobase server designed for fork-based coordination.
-It starts a server process, yields the mikobase to a block, waits for all forks spawned in
-that block to complete, then shuts the server down cleanly:
-
-```
-%puck['puck.uno/mikobase/server'].run as $mikobase
-    %forks.pool do
-        %forks.run(mikobase: $mikobase, times: 4) do($mikobase)
-        end
-    end
-    # all forks are done here
-end
-# server is shut down here
-```
-
-The server shuts down after the block exits — not before. Any forks still running when
-the block exits will cause the server to wait before shutting down.
-
----
-
 <a id="http-mikobase"></a>
-## 11 HTTP Mikobase
+## HTTP Mikobase
 
 ~~~json
 {"vibecode": {
@@ -436,7 +160,7 @@ can serve a mikobase, and other Charlie processes — including forks from the o
 forking feature — can connect to it as a shared mikobase.
 
 <a id="unix-domain-sockets-preferred"></a>
-### 11.1 Unix Domain Sockets (preferred)
+### Unix Domain Sockets (preferred)
 
 For local communication, Charlie steers developers toward Unix domain sockets. They use a
 file path instead of a port number, bypass the network stack entirely, and access is
@@ -449,7 +173,7 @@ $server.start
 ```
 
 <a id="tcp-for-network-access"></a>
-### 11.2 TCP (for network access)
+### TCP (for network access)
 
 Port-based listening is supported when the mikobase needs to be reachable over a network:
 
@@ -462,7 +186,7 @@ Unix domain sockets are the default and recommended approach for local use. TCP 
 cases where remote access is explicitly needed.
 
 <a id="authentication"></a>
-### 11.3 Authentication
+### Authentication
 
 The `auth:` parameter is required — there is no default. Three options:
 
@@ -502,14 +226,14 @@ $server = %puck['puck.uno/mikobase/http'].new(
 ```
 
 <a id="postable-updates"></a>
-### 11.4 POSTable Updates
+### POSTable Updates
 
 `puck.uno/mikobase/http` exposes a POST endpoint for submitting append-only updates
 without opening a live connection. This is a distinct ingress mode — not a replacement
 for hot/cold connections or Q0, but a stateless path for depositing history entries.
 
 <a id="the-payload-is-a-worldlet"></a>
-#### 11.4.1 The payload is a worldlet
+#### The payload is a worldlet
 
 The request body is a standard worldlet JSON object. A history-only worldlet is a valid
 payload. No new wire format is needed — the worldlet format already supports this.
@@ -531,16 +255,18 @@ Content-Type: application/json
 ```
 
 <a id="engine-behaviour-on-receipt"></a>
-#### 11.4.2 Engine behaviour on receipt
+#### Engine behaviour on receipt
 
-1. Validate the worldlet shape and all UUID v4 constraints.
+1. Validate the worldlet shape and that all primary keys are unique
+   (see [Record identity](#record-identity); UUID v4 is the recommended
+   shape but not strictly enforced for now).
 2. For each history entry: skip if an identical entry already exists; reject if an entry
-   with the same UUID exists with different content.
+   with the same key exists with different content.
 3. If all entries pass, append them and recompute current state. If any entry fails,
    reject the entire payload — no partial writes.
 
 <a id="response"></a>
-#### 11.4.3 Response
+#### Response
 
 The response reports what happened to each entry:
 
@@ -553,14 +279,14 @@ The response reports what happened to each entry:
 ```
 
 <a id="authorization"></a>
-#### 11.4.4 Authorization
+#### Authorization
 
 In v1, authorization is coarse-grained: either a caller may POST updates to this
 mikobase or it may not. The `post_updates` auth flag is set when configuring the server.
 Fine-grained per-class or per-record permissions are deferred to a future version.
 
 <a id="use-cases"></a>
-#### 11.4.5 Use cases
+#### Use cases
 
 - **Worldlet deltas** — the natural format for AI-to-AI update exchanges
 - **Offline agents** — work from a snapshot, submit results later
@@ -571,7 +297,7 @@ Fine-grained per-class or per-record permissions are deferred to a future versio
 - **Audit-native APIs** — every integration call is already a history entry
 
 <a id="deferred"></a>
-#### 11.4.6 Deferred
+#### Deferred
 
 Signatures, replay protection, timestamp authority, distributed merge, and fine-grained
 permissions are not part of v1.
@@ -579,7 +305,7 @@ permissions are not part of v1.
 ---
 
 <a id="hot-and-cold-connections"></a>
-## 12 Hot and Cold Connections
+## Hot and Cold Connections
 
 ~~~json
 {"vibecode": {
@@ -593,7 +319,7 @@ Every connection to a mikobase is either **cold** (the default) or **hot**. The 
 at connection time and applies to all objects retrieved through that connection.
 
 <a id="cold-default"></a>
-### 12.1 Cold (default)
+### Cold (default)
 
 A cold connection returns local copies of records. You fetch a record, work with it
 locally, and save it back explicitly:
@@ -610,7 +336,7 @@ Cold is the default because most database interaction is traditional, and accide
 using a cold connection is safe — you just work with a local copy.
 
 <a id="hot"></a>
-### 12.2 Hot
+### Hot
 
 A hot connection returns live objects. Every read and write is a round trip to the mikobase,
 with locking applied automatically. There is no local copy and no explicit save:
@@ -626,7 +352,7 @@ Hot connections are the correct choice when multiple forks share a mikobase — 
 needs to be atomic and consistent across concurrent readers and writers.
 
 <a id="local-mikobases"></a>
-### 12.3 Local mikobases
+### Local mikobases
 
 The same `hot:` parameter applies to local mikobases:
 
@@ -639,7 +365,7 @@ On a local mikobase, hot means every field access hits SQLite directly. Cold mea
 record into memory, work with it locally, save explicitly.
 
 <a id="multiple-connections-different-modes"></a>
-### 12.4 Multiple connections, different modes
+### Multiple connections, different modes
 
 Two connections to the same mikobase can have different modes:
 
@@ -652,7 +378,7 @@ This is valid — for example, one hot connection for fork coordination and one 
 connection for bulk record processing.
 
 <a id="per-query-override"></a>
-### 12.5 Per-query override
+### Per-query override
 
 The connection mode can be overridden on any individual query. The query-level setting
 takes precedence over the connection default:
@@ -668,7 +394,7 @@ $record = $mikobase.q0({...}, hot: false)
 ---
 
 <a id="locking"></a>
-## 13 Locking
+## Locking
 
 ~~~json
 {"vibecode": {
@@ -690,7 +416,7 @@ automatically. There is no explicit lock/unlock API in normal usage.
 ---
 
 <a id="transactions"></a>
-## 14 Transactions
+## Transactions
 
 ~~~json
 {"vibecode": {
@@ -711,7 +437,7 @@ Mikobases support transactions using the following model:
 ---
 
 <a id="bucket-in-the-mikobase"></a>
-## 15 `%bucket` in the Mikobase
+## `%bucket` in the Mikobase
 
 ~~~json
 {"vibecode": {
@@ -739,7 +465,7 @@ end
 ---
 
 <a id="record-change-signals"></a>
-## 16 Record Change Signals
+## Record Change Signals
 
 ~~~json
 {"vibecode": {
@@ -750,7 +476,7 @@ end
 ~~~
 
 <a id="listening-to-records"></a>
-### 16.1 Listening to records
+### Listening to records
 
 A process can register listeners on the mikobase for specific records or Q0 queries:
 
@@ -783,7 +509,7 @@ $change.fields    # hash of changed fields: {field: {old:, new:}}
 ```
 
 <a id="before_save-and-after_save"></a>
-### 16.2 `before_save` and `after_save`
+### `before_save` and `after_save`
 
 **`:before_save`** fires within the transaction, before the commit. If the handler raises
 an error, the entire transaction is rolled back. This is the mechanism for enforcing
@@ -794,7 +520,7 @@ cancelled. This is the mechanism for side effects — notifications, derived rec
 background work.
 
 <a id="signals-stay-within-the-mikobase"></a>
-### 16.3 Signals stay within the mikobase
+### Signals stay within the mikobase
 
 By default, `:before_save` signals are dispatched within the mikobase process only. They are
 not forwarded over the network to remote clients. This is intentional — a network round
@@ -805,7 +531,7 @@ validate on the client side before saving, or to register `:before_save` handler
 part of the mikobase server's own setup code.
 
 <a id="listener-matching"></a>
-### 16.4 Listener matching
+### Listener matching
 
 A listener fires when the record being saved matches its target:
 
@@ -814,88 +540,144 @@ A listener fires when the record being saved matches its target:
   applied. This includes records transitioning into the match set.
 
 <a id="future-remote-validation"></a>
-### 16.5 Future: remote validation
+### Future: remote validation
 
 The current design puts remote validation responsibility on the developer. 
 A future addition could provide a structured layer on top of `:before_save` signals — a declarative way to attach remote validation to the :before_save process.
 
 ---
 
-<a id="packaged-mikobases"></a>
-## 17 Packaged Mikobases
+<a id="temporal-vs-non-temporal-mode"></a>
+## Temporal vs Non-temporal Mode
 
 ~~~json
 {"vibecode": {
-	"section": "packaged_mikobases",
-	"role": "describes the packaged mikobase format: bundled schema, Charlie, records, and capabilities",
-	"key_concepts": ["packaged_mikobase", "worldlet", "capabilities_manifest", "portable_distribution",
-		"use_cases", "lifecycle"]
+	"section": "temporal_mode",
+	"role": "specifies the per-database mode flag that controls whether records keep version history; opt-in feature for workloads that need audit history",
+	"key_concepts": ["temporal", "non_temporal", "mode_flag", "history",
+		"opt_in", "immutable_at_init"]
 }}
 ~~~
 
-<a id="worldlets"></a>
-### 17.1 Worldlets
+By default a mikobase is **non-temporal**: each record is stored as a single
+object, and writes overwrite in place. Most workloads want this — snapshots,
+scenarios, scratch state, conversation captures, and most service-backing
+databases just want the current value of each record.
 
-A **worldlet** is the marketing name for a packaged mikobase. The technical concept and
-implementation are always referred to as a "packaged mikobase" in internal documentation
-and developer-facing APIs. When speaking to end users or publishing to a registry, the
-term is "worldlet."
+A mikobase can be set to **temporal** mode at initialization, in which case
+every write appends a history row and older versions are recoverable. Use it
+when audit history is a real requirement: regulatory logging, recoverable
+edits, time-travel queries.
 
-See [worldlet.md](worldlets/worldlet.md) for the worldlet file format.
+The choice is a per-database flag set at initialization and is **immutable**
+for the life of the database. Temporal mode is opted into explicitly via the
+top-level flag:
+
+```json
+{
+    "temporal": true,
+    ...
+}
+```
+
+A database without the `temporal` key — or with `"temporal": false` — is
+non-temporal.
+
+<a id="single-read-and-write-paths"></a>
+### Single read and write paths
+
+The mode is encapsulated in two methods. Everywhere else in the engine is mode-agnostic:
+
+- One **retrieval** method understands how to find the latest version of a record. In
+  temporal mode it scans history for the latest `updated_at`; in non-temporal mode it
+  reads the record directly. Callers don't branch.
+- One **save** method understands how to persist a write. In temporal mode it appends a
+  history row; in non-temporal mode it overwrites in place. Callers don't branch.
+
+For SQLite-backed mikobases, the retrieval abstraction can be a database view named
+`latest_records` that resolves to either `SELECT current rows from history` or
+`SELECT * FROM records` depending on mode. The engine queries the view; the database
+itself encodes the mode.
+
+<a id="temporal-only-operations-on-a-non-temporal-database"></a>
+### Temporal-only operations on a non-temporal database
+
+Operations that only make sense on a temporal database — rollback, version-at-timestamp,
+history scans, audit queries — raise an exception when called on a non-temporal database.
+No silent degradation, no empty results. The caller knows immediately that the operation
+isn't supported.
+
+<a id="changing-modes-later"></a>
+### Changing modes later
+
+The flag is immutable at the database level. To convert a non-temporal database to
+temporal (or vice versa), import the data into a new database created with the desired
+mode. A future engine release may add a refactor tool, but the chosen mode is permanent
+for the database it was set on.
 
 ---
 
-A mikobase can be packaged as a portable, self-contained file. A packaged mikobase bundles
-structure, behavior, and state into a single unit that can be shared, imported, or executed
-remotely.
+<a id="worldlets-mikobase-on-a-microscale"></a>
+## Worldlets: Mikobase on a microscale
 
-Traditional systems separate code, data, APIs, and runtime. A packaged mikobase unifies them:
+~~~json
+{"vibecode": {
+	"section": "worldlets",
+	"role": "small-scale mikobases packaged as a single JSON file; covers format, dual role (export + native engine storage), contents, capabilities, lifecycle, use cases, and temporal-flag interaction",
+	"key_concepts": ["worldlet", "single_json_file", "small_scale_mikobase",
+		"export_format_and_native_engine_storage", "capabilities_manifest",
+		"portable_distribution"]
+}}
+~~~
 
-| Concept | What it offers |
-|---|---|
-| Library | Reusable code |
-| API | Interface to a system |
-| Database dump | Static data snapshot |
-| Container | Runtime environment |
-| **Packaged mikobase** | **Code + data + behavior, as a living object world** |
+A **worldlet** is a mikobase packaged as a single JSON file — the
+small-scale form of mikobase. Worldlets are suitable for snapshots,
+scratch state, AI conversation captures, test fixtures, and any
+short-lived or portable workload where the full machinery of a
+SQLite-backed mikobase would be overkill.
 
-A library says: "here are functions you can call."
-A packaged mikobase says: "here is a functioning object ecosystem you can import."
+The file format is specified in [worldlet.md](worldlets/worldlet.md).
+
+<a id="dual-role-export-format-and-native-engine-storage"></a>
+### Dual role: export format and native engine storage
+
+A worldlet JSON file plays two roles:
+
+- **As an export format** from any engine. A SQLite-backed mikobase can
+  export to a worldlet (serializes the database to JSON) and import from
+  one (parses JSON back into the database). The worldlet is a snapshot;
+  load and save incur import/export cost.
+- **As the live storage** of the `puck.uno/mikobase/worldlet` engine. For
+  this engine the worldlet IS the database — there's no serialization
+  step. Load is JSON parse, save is JSON write. Suitable for very
+  short-lived workloads where import/export overhead would dominate.
+
+Both engines speak the same `puck.uno/mikobase` interface; Charlie code
+that doesn't care which backend it's on works identically against either.
 
 <a id="contents-1"></a>
-### 17.2 Contents
+### Contents
 
-A packaged mikobase may include:
+A worldlet may include:
 
 - **Class definitions** — the schema, including fields, joins, and constraints
-- **Charlie** — methods and behavior attached to those classes
 - **Records** — seed objects or full data exports
+- **Charlie** — methods and behavior attached to those classes
 - **Hooks** — `before_save` / `after_save` listeners
-- **Capabilities** — a manifest declaring what the mikobase requires to run
+- **Capabilities** — a manifest declaring what the worldlet requires to run
 - **Scheduled jobs** — time-based tasks (not yet designed)
 - **External connectors** — outbound integrations (not yet designed)
 
-Class names inside a packaged mikobase use UNS — the publisher's domain provides a globally
-unique namespace automatically. A mikobase published by `borg.com` installs classes like
-`borg.com/character`, `borg.com/ship`, etc. No registration required, no collision possible.
-
-<a id="format"></a>
-### 17.3 Format
-
-A packaged mikobase is a single file. The format is not yet defined in detail, but the
-contents are:
-
-- A mikobase export (class definitions and records as Q0-compatible JSON)
-- Charlie source for any attached methods and hooks
-- A capabilities manifest
-
-The format design should happen alongside the CharlieJSON format discussion.
+Class names inside a worldlet use UNS — the publisher's domain provides a
+globally unique namespace automatically. A worldlet published by `borg.com`
+installs classes like `borg.com/character`, `borg.com/ship`. No registration
+required, no collision possible.
 
 <a id="capabilities-manifest"></a>
-### 17.4 Capabilities Manifest
+### Capabilities Manifest
 
-A packaged mikobase declares what it needs before it is installed. The host asks the user to
-approve these capabilities explicitly — nothing is granted silently.
+A worldlet declares what it needs before it is installed. The host asks the
+user to approve these capabilities explicitly — nothing is granted silently.
 
 ```
 requires:
@@ -907,58 +689,79 @@ requires:
     - create objects: PricePoint
 ```
 
-This connects directly to Charlie's security model. The capabilities declaration is
-essentially an upfront jail configuration — the mikobase runs with only the permissions
-it declared. Undeclared capabilities are unavailable.
+This connects directly to Charlie's security model. The capabilities
+declaration is essentially an upfront jail configuration — the worldlet runs
+with only the permissions it declared. Undeclared capabilities are
+unavailable.
 
 <a id="lifecycle"></a>
-### 17.5 Lifecycle
+### Lifecycle
 
 ```
-Author packages mikobase
+Author packages worldlet
         ↓
-Mikobase shared (file, URL, registry)
+Worldlet shared (file, URL, registry)
         ↓
-Recipient imports mikobase into their running mikobase
+Recipient imports worldlet into their running mikobase
         ↓
 Capabilities reviewed and approved
         ↓
 Classes, records, and Charlie installed
         ↓
-Mikobase runs inside recipient's environment
+Worldlet runs inside recipient's environment
 ```
 
-A packaged mikobase can also be sent to a remote system for execution via Puck, without
-installing it locally:
+A worldlet can also be sent to a remote system for execution via Puck,
+without installing it locally:
 
 ```
-send packaged mikobase → remote mikobase → execute → return result
+send worldlet → remote mikobase → execute → return result
 ```
+
+<a id="temporal-flag"></a>
+### Temporal flag
+
+A worldlet captures the source mikobase's `temporal` setting at the top
+level; on import, a fresh mikobase is created with the same temporal mode.
+Most worldlets are non-temporal (the default) — snapshots of conversations,
+scenarios, or scratch space where version history adds nothing. Worldlets
+that *do* care about version history come from temporal mikobases and
+round-trip the history block. See
+[Temporal vs Non-temporal Mode](#temporal-vs-non-temporal-mode) for the
+full mode rules.
+
+**Open: a worldlet with both `records` populated as current-state AND a
+populated `history` block.** Combining the two modes' shapes in one export
+isn't specified and isn't a priority to resolve.
 
 <a id="use-cases-1"></a>
-### 17.6 Use Cases
+### Use cases
 
-**Open-source object systems** — publish a mikobase the way you publish a library.
-Anyone who imports it gets the full schema and behavior, not just a data dump.
+**Test fixtures** — seed a mikobase with a known starting state for testing.
+Worldlets are deterministic and portable across machines.
 
-**Reproducible bugs** — ship the exact mikobase state that triggered a bug. The recipient
-gets the object structure, the data, and the behavior in one file. No setup required.
+**Reproducible bugs** — ship the exact mikobase state that triggered a bug.
+The recipient gets the object structure, the data, and the behavior in one
+file. No setup required.
 
-**Test fixtures** — seed a mikobase with a known starting state for testing. Packaged
-mikobases are deterministic and portable across machines.
+**AI conversation captures** — see [AI2AI.md](AI2AI.md).
 
-**Portable computation** — send a packaged mikobase to a remote system, run its logic
-there, and get a result back. The computation travels with its data.
+**Portable computation** — send a worldlet to a remote system, run its
+logic there, and get a result back. The computation travels with its data.
 
-**Installable data models** — a recipe manager, a home inventory, a CRM, a research
-notebook. Publish a mikobase; others install a working system, not a blank schema.
+**Small installable apps** — a recipe manager, a home inventory, a research
+notebook. Publish a worldlet; others install a working system, not a blank
+schema.
 
 <a id="what-is-not-yet-designed"></a>
-### 17.7 What Is Not Yet Designed
+### What is not yet designed
 
-- The packaged mikobase file format (depends on CharlieJSON format design)
+- The full worldlet file format (depends on CharlieJSON format design)
 - The capabilities manifest syntax and enforcement mechanism
 - Scheduled jobs
 - External connectors
-- A mikobase registry or distribution mechanism
-- Storage backends beyond SQLite
+- A worldlet registry or distribution mechanism
+- Worldlet import/export method signatures and ownership (instance method
+  vs free function vs constructor)
+- Round-trip equivalence guarantees and error handling for malformed JSON,
+  unknown `format_version`, unknown classes

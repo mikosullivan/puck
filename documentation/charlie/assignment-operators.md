@@ -1,7 +1,7 @@
 # Assignment Operators
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -23,7 +23,7 @@ to pass a **receiver object** as an extra parameter.
 ---
 
 <a id="the-receiver-object"></a>
-## 2 The Receiver Object
+## The Receiver Object
 
 ~~~json
 {"vibecode": {
@@ -56,7 +56,7 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 ---
 
 <a id="operator-classes"></a>
-## 3 Operator Classes
+## Operator Classes
 
 ~~~json
 {"vibecode": {
@@ -76,7 +76,7 @@ passes the receiver as the final parameter. Classes that need the current value 
 `$receiver.get`; all classes write back via `$receiver.set`.
 
 <a id="section-3-1"></a>
-### 3.1 `=`
+### `=`
 
 ```
 class 'charlie.uno/assign'
@@ -89,7 +89,7 @@ end
 ```
 
 <a id="section-3-2"></a>
-### 3.2 `+=`
+### `+=`
 
 ```
 class 'charlie.uno/assign_add'
@@ -102,7 +102,7 @@ end
 ```
 
 <a id="section-3-3"></a>
-### 3.3 `||=`
+### `||=`
 
 ```
 class 'charlie.uno/assign_or'
@@ -117,7 +117,7 @@ end
 ```
 
 <a id="section-3-4"></a>
-### 3.4 `&&=`
+### `&&=`
 
 ```
 class 'charlie.uno/assign_and'
@@ -134,7 +134,7 @@ end
 ---
 
 <a id="built-in-assignment-operators"></a>
-## 4 Built-in Assignment Operators
+## Built-in Assignment Operators
 
 ~~~json
 {"vibecode": {
@@ -159,7 +159,7 @@ end
 ---
 
 <a id="increment-and-decrement"></a>
-## 5 Increment and Decrement
+## Increment and Decrement
 
 ~~~json
 {"vibecode": {
@@ -196,7 +196,7 @@ $word++      # 'ab'  (if String defines incremented)
 ---
 
 <a id="open-questions"></a>
-## 6 Open Questions
+## Open Questions
 
 - Should `++` and `--` ever be added as prefix operators? Currently postfix only.
 - What should `String.incremented` and `String.decremented` do? Not yet defined.

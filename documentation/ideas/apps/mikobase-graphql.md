@@ -11,14 +11,14 @@
 ~~~
 
 <a id="idea"></a>
-## 1 Idea
+## Idea
 
 Eventually, expose Mikobase data via GraphQL — clients can issue
 GraphQL queries against a Mikobase and receive structured
 responses, the same shape they'd get from any GraphQL backend.
 
 <a id="why"></a>
-## 2 Why
+## Why
 
 - GraphQL is widely understood; many front-end ecosystems
   expect it.
@@ -28,7 +28,7 @@ responses, the same shape they'd get from any GraphQL backend.
   is mostly translation between query languages.
 
 <a id="sketch-not-committed"></a>
-## 3 Sketch (not committed)
+## Sketch (not committed)
 
 - Each Mikobase class becomes a GraphQL type.
 - Class properties become GraphQL fields.
@@ -37,7 +37,7 @@ responses, the same shape they'd get from any GraphQL backend.
   and returns the resolved JSON.
 
 <a id="implementation-cost"></a>
-## 4 Implementation cost
+## Implementation cost
 
 Substantial. Beyond bundling a GraphQL parser (Lua has
 `graphql-lua` or similar; size ~1500–3000 lines), the
@@ -51,7 +51,7 @@ translation layer needs to:
   the Mikobase class catalog.
 
 <a id="status"></a>
-## 5 Status
+## Status
 
 Not in v1. Not in v2. Filed so the design space doesn't get
 forgotten. Revisit when Mikobase has stabilized and there's a

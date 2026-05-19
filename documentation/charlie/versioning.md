@@ -23,7 +23,7 @@ For now, timestamp versioning is the only versioning system.
 ---
 
 <a id="why-date-pinned"></a>
-## 1 Why Date-Pinned
+## Why Date-Pinned
 
 ~~~json
 {"vibecode": {
@@ -54,7 +54,7 @@ Three concrete benefits:
 ---
 
 <a id="the-cutoff-in-chain"></a>
-## 2 The Cutoff in %chain
+## The Cutoff in %chain
 
 ~~~json
 {"vibecode": {
@@ -94,7 +94,7 @@ gone.
 ---
 
 <a id="out-of-range-exceptions"></a>
-## 3 Out-of-Range Exceptions
+## Out-of-Range Exceptions
 
 ~~~json
 {"vibecode": {
@@ -129,7 +129,7 @@ treated with the same severity as any other security exception, not as ordinary 
 flow.
 
 <a id="forensic-payload"></a>
-### 3.1 Forensic payload
+### Forensic payload
 
 The exception carries a structured payload describing exactly what happened:
 
@@ -144,7 +144,7 @@ This is the information a security responder or audit log needs to investigate.
 ---
 
 <a id="resolution-rules"></a>
-## 4 Resolution Rules
+## Resolution Rules
 
 ~~~json
 {"vibecode": {
@@ -176,14 +176,14 @@ for their cutoff; no program's lookup affects any other's.
 The "canonical date" of a library is whatever the provider has authoritatively recorded.
 For a blockchain-backed provider, this is the `posted` timestamp on the chain (or the
 `effective_date`, if explicitly set; see the deferred
-[blockchain design](../blockchain.md#versioning) for the details). For a plain
+[blockchain design](blockchain.md#versioning) for the details). For a plain
 HTTPS provider, this is whatever the provider asserts — the date is no stronger than
 the trust placed in the provider.
 
 ---
 
 <a id="semver-as-a-label"></a>
-## 5 Semver as a Label
+## Semver as a Label
 
 ~~~json
 {"vibecode": {
@@ -211,7 +211,7 @@ asked for; whether it ever does more is a question for future demand.
 ---
 
 <a id="what-this-replaces"></a>
-## 6 What This Replaces
+## What This Replaces
 
 ~~~json
 {"vibecode": {
@@ -243,7 +243,7 @@ should be high.
 ---
 
 <a id="relationship-to-the-blockchain"></a>
-## 7 Relationship to the Blockchain
+## Relationship to the Blockchain
 
 ~~~json
 {"vibecode": {
@@ -254,7 +254,7 @@ should be high.
 ~~~
 
 The Puck blockchain (currently deferred from production — see
-[blockchain.md](../blockchain.md)) provides a cryptographically anchored
+[blockchain.md](blockchain.md)) provides a cryptographically anchored
 `posted` timestamp for every library version. When a chain is available, the cutoff
 is genuinely tamper-evident — a library's date cannot be forged.
 

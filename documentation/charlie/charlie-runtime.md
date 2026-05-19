@@ -1,135 +1,7 @@
 # Charlie
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Host Language: Why Lua](#host-language-why-lua)
-  - [Why not Python](#why-not-python)
-  - [Why not C](#why-not-c)
-- [Philosophy](#philosophy)
-  - [Charlie Written in Charlie](#charlie-written-in-charlie)
-  - [Dependencies (Lua reference implementation)](#dependencies-lua-reference-implementation)
-  - [Error Messages](#error-messages)
-- [Design Principles](#design-principles)
-  - [Lightweight and Embeddable](#lightweight-and-embeddable)
-  - [No Threading or Forking](#no-threading-or-forking)
-  - [Timeouts](#timeouts)
-  - [CharlieJSON as the Runtime Format](#charliejson-as-the-runtime-format)
-- [Relationship to Other Systems](#relationship-to-other-systems)
-- [Primitives](#primitives)
-  - [Charlie as an Extension of JSON](#charlie-as-an-extension-of-json)
-  - [Types](#types)
-  - [Strings](#strings)
-  - [Hashes](#hashes)
-  - [Numbers](#numbers)
-  - [Truthiness](#truthiness)
-  - [`null`, `true`, and `false` as Classes](#null-true-and-false-as-classes)
-  - [Null Flavors](#null-flavors)
-  - [Operators](#operators)
-  - [Boolean Operators](#boolean-operators)
-  - [Core bwcs](#core-bwcs)
-  - [`self`](#self)
-- [Variables](#variables)
-- [Exceptions and Warnings](#exceptions-and-warnings)
-  - [Shared shape](#shared-shape)
-  - [The two top-level classes](#the-two-top-level-classes)
-  - [Error vs exception](#error-vs-exception)
-  - [Raising standard flags](#raising-standard-flags)
-  - [Raising custom flags](#raising-custom-flags)
-  - [Class hierarchy](#class-hierarchy)
-  - [`return`, `exit`, `abort`](#return-exit-abort)
-  - [Catching exceptions](#catching-exceptions)
-  - [Heeding warnings](#heeding-warnings)
-  - [Auto-recording into Jasmine](#auto-recording-into-jasmine)
-  - [Cleanup with `begin` / `ensure`](#cleanup-with-begin-ensure)
-- [Structured Non-Local Control Flow](#structured-non-local-control-flow)
-  - [The exception family, extended](#the-exception-family-extended)
-  - [Handler registration via `as`](#handler-registration-via-as)
-  - [Target matching](#target-matching)
-  - [`ensure` blocks](#ensure-blocks)
-  - [Stale handlers](#stale-handlers)
-  - [Cross-role boundaries — open](#cross-role-boundaries-open)
-  - [What this buys the implementation](#what-this-buys-the-implementation)
-- [Conditional Constructs Share One Primitive](#conditional-constructs-share-one-primitive)
-  - [The shared primitive](#the-shared-primitive)
-  - [`if` as one shape](#if-as-one-shape)
-  - [`while` as another shape](#while-as-another-shape)
-  - [What this buys the implementation](#what-this-buys-the-implementation-1)
-  - [Extensibility](#extensibility)
-  - [What this does NOT cover](#what-this-does-not-cover)
-- [Block Parameter Binding](#block-parameter-binding)
-  - [The shared primitive](#the-shared-primitive-1)
-  - [Constructs](#constructs)
-  - [What this buys the implementation](#what-this-buys-the-implementation-2)
-  - [Open](#open)
-- [Unified Name Resolution](#unified-name-resolution)
-  - [The shared primitive](#the-shared-primitive-2)
-  - [Constructs](#constructs-1)
-  - [What this buys the implementation](#what-this-buys-the-implementation-3)
-  - [Open](#open-1)
-- [Typed Structured Events](#typed-structured-events)
-  - [The shared shape](#the-shared-shape)
-  - [Behaviors](#behaviors)
-  - [The shared primitive](#the-shared-primitive-3)
-  - [What this buys the implementation](#what-this-buys-the-implementation-4)
-  - [Open](#open-2)
-- [Object Model](#object-model)
-  - [Two-Property Objects](#two-property-objects)
-  - [`%bucket`](#bucket)
-  - [The Class Stack](#the-class-stack)
-  - [The `object` Helper](#the-object-helper)
-  - [Explicit Class Dispatch](#explicit-class-dispatch)
-- [Garbage Collection](#garbage-collection)
-  - [Perfect garbage collection](#perfect-garbage-collection)
-  - [How it works](#how-it-works)
-  - [`$foo.object.close`](#fooobjectclose)
-  - [The rule](#the-rule)
-- [Helpers](#helpers)
-  - [Defining a helper](#defining-a-helper)
-  - [`object` as a Reserved Helper](#object-as-a-reserved-helper)
-- [Classes](#classes)
-  - [`%puck`](#puck)
-  - [Instantiation](#instantiation)
-  - [Defining a class](#defining-a-class)
-  - [Subclassing](#subclassing)
-  - [Properties](#properties)
-  - [Abstract Classes](#abstract-classes)
-  - [Initializer](#initializer)
-  - [Methods](#methods)
-  - [Full Example](#full-example)
-  - [Subclass Example](#subclass-example)
-- [Functions](#functions)
-  - [Blocks and Yielding](#blocks-and-yielding)
-  - [Bare Word Commands](#bare-word-commands)
-  - [DSL Receivers](#dsl-receivers)
-- [Scoping](#scoping)
-- [System Methods](#system-methods)
-  - [`%chain`](#chain)
-  - [`%engine`](#engine)
-  - [Function and closure opacity](#function-and-closure-opacity)
-  - [`%call`](#call)
-  - [Caller Objects](#caller-objects)
-  - [The `&` Method](#the-method)
-- [Jail](#jail)
-  - [Internal structure](#internal-structure)
-  - [Creating a jail](#creating-a-jail)
-- [Freezing](#freezing)
-  - [The three freeze operations](#the-three-freeze-operations)
-  - [Permanent vs. temporary](#permanent-vs-temporary)
-  - [What each freeze prevents](#what-each-freeze-prevents)
-  - [`$foo.object.bucket`](#fooobjectbucket)
-- [Change Signals](#change-signals)
-  - [What a change is](#what-a-change-is)
-  - [Listening to field changes](#listening-to-field-changes)
-  - [Signal propagation](#signal-propagation)
-  - [The signal stack](#the-signal-stack)
-  - [Underlying hot records](#underlying-hot-records)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -151,7 +23,7 @@ Charlie has been in development conceptually for approximately twenty years.
 ---
 
 <a id="host-language-why-lua"></a>
-## 3 Host Language: Why Lua
+## Host Language: Why Lua
 
 ~~~json
 {"vibecode": {
@@ -180,7 +52,7 @@ choice is deliberate; the reasoning:
   Lua, it can run Puck.
 
 <a id="why-not-python"></a>
-### 3.1 Why not Python
+### Why not Python
 
 Python is also a solid candidate — installed everywhere, possibly
 the biggest software community of any language. But **Python is
@@ -190,7 +62,7 @@ light. A small, reliable cross-OS footprint matters more than a
 larger ecosystem.
 
 <a id="why-not-c"></a>
-### 3.2 Why not C
+### Why not C
 
 C is the "obvious" choice in the sense that you *can* write very
 efficient systems in it. But C's syntax is complicated and the
@@ -201,7 +73,7 @@ gets us most of the way without it.
 ---
 
 <a id="philosophy"></a>
-## 4 Philosophy
+## Philosophy
 
 ~~~json
 {"vibecode": {
@@ -213,14 +85,14 @@ gets us most of the way without it.
 		"primitive_types", "puck.uno/object", "puck.uno/helper",
 		"system_methods_%call_%chain_%bucket"],
 	"goal": "standard_library_written_in_charlie_visible_and_inspectable",
-	"lua_reference_deps": ["SQLite", "libmicrohttpd"],
+	"lua_reference_deps": ["SQLite", "libmicrohttpd", "libsodium"],
 	"size_target": "500k_for_charlie_own_code_excluding_deps",
 	"threading": "not_supported_single_threaded_by_design"
 }}
 ~~~
 
 <a id="charlie-written-in-charlie"></a>
-### 4.1 Charlie Written in Charlie
+### Charlie Written in Charlie
 
 Everything that can be written in Charlie should be written in Charlie. The Lua layer
 exists for things that cannot be expressed in Charlie at all — the interpreter loop,
@@ -249,7 +121,7 @@ how a feature works can read Charlie source rather than implementation source. B
 the standard library are fixable without touching the host language.
 
 <a id="lua-reference-implementation"></a>
-#### 4.1.1 Lua reference implementation
+#### Lua reference implementation
 
 The Lua reference implementation provides the kernel above plus:
 
@@ -261,20 +133,24 @@ directly — this is the bootstrapping constraint. Once the parser is working, f
 rewrites can use Charlie.
 
 <a id="dependencies-lua-reference-implementation"></a>
-### 4.2 Dependencies (Lua reference implementation)
+### Dependencies (Lua reference implementation)
 
-The Lua implementation requires Lua plus two C libraries:
+The Lua implementation requires Lua plus three C libraries:
 
 - **SQLite** — used by the mikobase implementation; both `puck.uno/mikobase/memory` (in-memory
   mode) and `puck.uno/mikobase/sqlite` (file-backed mode) run on SQLite
-- **libmicrohttpd** — embedded HTTP server powering `puck.uno/mikobase/http` and
-  `puck.uno/mikobase/server`; handles concurrent connections at the C level
+- **libmicrohttpd** — embedded HTTP server powering `puck.uno/mikobase/http`;
+  handles concurrent connections at the C level
+- **libsodium** — all cryptographic needs: `%utils.random.uuid` (CSPRNG-backed
+  UUIDs, see [utils.md](utils.md#utilsrandomuuid)), Ed25519 signing for the
+  Puck blockchain (see [blockchain.md](blockchain.md)). One audited
+  security-focused library covers both, on every platform Lua runs on
 
 Performance concerns are addressed by optimizing the interpreter, not by abandoning
 the principle.
 
 <a id="error-messages"></a>
-### 4.3 Error Messages
+### Error Messages
 
 Sometimes complexity is unavoidable. When it is, the key to helping the developer is good
 error messages. If something goes wrong, Charlie should pinpoint the problem precisely and
@@ -283,7 +159,7 @@ explain the mistake clearly. A confusing error message is a bug.
 ---
 
 <a id="design-principles"></a>
-## 5 Design Principles
+## Design Principles
 
 ~~~json
 {"vibecode": {
@@ -298,7 +174,7 @@ explain the mistake clearly. A confusing error message is a bug.
 ~~~
 
 <a id="lightweight-and-embeddable"></a>
-### 5.1 Lightweight and Embeddable
+### Lightweight and Embeddable
 
 The Charlie interpreter must be embeddable in every major language (Python, Ruby, etc.)
 as a library dependency. It ships with mikobase support built in, which means SQLite is a
@@ -315,7 +191,7 @@ This matters because Charlie will run inside engines — for dynamic firewall ru
 records, and other engine-level logic. Every engine needs to run it.
 
 <a id="no-threading-or-forking"></a>
-### 5.2 No Threading or Forking
+### No Threading or Forking
 
 Charlie does not support threading, forking, or concurrency primitives. It is
 single-threaded by design. The host language handles concurrency; Charlie runs within a
@@ -327,7 +203,7 @@ engine grants on request (off by default) — see
 [ideas/plusplus/threads.md](../ideas/plusplus/threads.md).
 
 <a id="timeouts"></a>
-### 5.3 Timeouts
+### Timeouts
 
 Charlie does not use threads, but untrusted code must not be allowed to run indefinitely.
 A function downloaded from a remote Puck object — `%puck['borg.com/riker']` — might
@@ -376,7 +252,7 @@ When running untrusted code, the engine is responsible for wrapping execution in
 Charlie code inside cannot extend or escape that outer timeout.
 
 <a id="the-unwind-option"></a>
-#### 5.3.1 The `unwind:` option
+#### The `unwind:` option
 
 For *cooperative* code that wants a polite "time's up, clean up and exit"
 signal — not the security-boundary form — pass `unwind: true`:
@@ -405,7 +281,7 @@ bubbles up uncatchably and bypasses the inner's `begin`/`ensure`. The inner's
 mode applies only when the inner's own deadline fires.
 
 <a id="the-form-utilstimeout"></a>
-#### 5.3.2 The `?` form: `%utils.timeout?`
+#### The `?` form: `%utils.timeout?`
 
 `%utils.timeout?` (with the `?` suffix) is the **tolerant form** that returns
 the timeout flag as a value instead of raising it at the boundary:
@@ -434,7 +310,7 @@ otherwise be `catch('error/timeout')` wrapping around
 compressed into the method name.
 
 <a id="the-form-combines-with-unwind"></a>
-#### 5.3.3 The `?` form combines with `unwind:`
+#### The `?` form combines with `unwind:`
 
 `unwind:` controls *what fires inside the block* when the deadline hits;
 the `?` form controls *what happens at the boundary* when a timeout flag
@@ -453,7 +329,7 @@ block doesn't catch, the `?` form converts the escaping timeout to a return
 value.
 
 <a id="spec-compliant-engine-requirements"></a>
-#### 5.3.4 Spec: compliant engine requirements
+#### Spec: compliant engine requirements
 
 A compliant engine must:
 
@@ -475,7 +351,7 @@ A compliant engine must:
   native blocking call
 
 <a id="lua-reference-implementation-1"></a>
-#### 5.3.5 Lua reference implementation
+#### Lua reference implementation
 
 `%utils.timeout` is implemented using `debug.sethook`. A hook is registered that
 fires every N VM instructions and checks `os.time()` against the deadline. When
@@ -504,7 +380,7 @@ expressions, and `begin`/`ensure` re-raises `timeout_handle`-tagged errors.
 cooperative-timeout contract.
 
 <a id="charliejson-as-the-runtime-format"></a>
-### 5.4 CharlieJSON as the Runtime Format
+### CharlieJSON as the Runtime Format
 
 Charlie programs are written in Charlie and transpiled to CharlieJSON for execution.
 CharlieJSON is easy to store, transmit, and parse in any language — which makes Charlie
@@ -519,7 +395,7 @@ is the language; CharlieJSON is the wire format.
 ---
 
 <a id="relationship-to-other-systems"></a>
-## 6 Relationship to Other Systems
+## Relationship to Other Systems
 
 ~~~json
 {"vibecode": {
@@ -540,7 +416,7 @@ is the language; CharlieJSON is the wire format.
 ---
 
 <a id="primitives"></a>
-## 7 Primitives
+## Primitives
 
 ~~~json
 {"vibecode": {
@@ -556,14 +432,14 @@ is the language; CharlieJSON is the wire format.
 ~~~
 
 <a id="charlie-as-an-extension-of-json"></a>
-### 7.1 Charlie as an Extension of JSON
+### Charlie as an Extension of JSON
 
 Think of Charlie as an extension of JSON. Primitives work like in JSON: strings, numbers,
 booleans, null, arrays, and objects. Charlie builds on these rather than introducing new
 ones.
 
 <a id="types"></a>
-### 7.2 Types
+### Types
 
 | Type | Examples |
 |---|---|
@@ -575,7 +451,7 @@ ones.
 | Hash | `{key: 'value'}` |
 
 <a id="strings"></a>
-### 7.3 Strings
+### Strings
 
 All strings in Charlie are UTF-8. There is no other encoding. Strings are immutable —
 operations on a string return a new string; the original is never modified.
@@ -586,7 +462,7 @@ The reference Lua implementation converts whatever encodings Lua natively suppor
 Strings arriving in unsupported encodings should raise an error at the boundary.
 
 <a id="hashes"></a>
-### 7.4 Hashes
+### Hashes
 
 Hash key order is significant. `{foo: true, bar: true}` and `{bar: true, foo: true}` are
 distinct values. The order in which keys are written is the order in which they are stored
@@ -597,7 +473,7 @@ This matters for serialization, comparison, and anywhere key order carries seman
 (e.g., field ordering in a record schema).
 
 <a id="numbers"></a>
-### 7.5 Numbers
+### Numbers
 
 There is no distinction between integers and floats — there is only `number`. JSON makes
 no such distinction, and neither does Charlie. The interpreter handles numeric
@@ -605,12 +481,12 @@ representation internally, using integer or float arithmetic as appropriate for
 efficiency.
 
 <a id="truthiness"></a>
-### 7.6 Truthiness
+### Truthiness
 
 `null` and `false` are falsy. Everything else is truthy — including `0` and `''`.
 
 <a id="null-true-and-false-as-classes"></a>
-### 7.7 `null`, `true`, and `false` as Classes
+### `null`, `true`, and `false` as Classes
 
 In most languages, `null`, `true`, and `false` are global singletons whose underlying
 classes cannot be instantiated. In Charlie, the underlying classes are fully instantiable
@@ -629,7 +505,7 @@ falsey. Any instance of `puck.uno/true` is always truthy. Any instance of `puck.
 is always falsey. Subclassing or adding methods cannot change this.
 
 <a id="null-flavors"></a>
-### 7.8 Null Flavors
+### Null Flavors
 
 The most compelling use case for subclassing `puck.uno/null` is null flavors — a concept
 from HL7, the healthcare data standard. In HL7, null values carry a reason: "unknown",
@@ -663,7 +539,7 @@ The same subclassing pattern applies to `puck.uno/true` and `puck.uno/false`, th
 null flavors are the primary use case.
 
 <a id="operators"></a>
-### 7.9 Operators
+### Operators
 
 The following operators are methods that any class can implement:
 
@@ -674,7 +550,7 @@ The following operators are methods that any class can implement:
 `1 + 2` is equivalent to `1.+(2)`. Classes can override these for custom types.
 
 <a id="boolean-operators"></a>
-### 7.10 Boolean Operators
+### Boolean Operators
 
 `and`, `or`, and `not` are core bwcs implemented in Lua. They use short-circuit evaluation
 and cannot be overridden. Symbol shortcuts:
@@ -686,7 +562,7 @@ and cannot be overridden. Symbol shortcuts:
 | `not` | `!` |
 
 <a id="core-bwcs"></a>
-### 7.11 Core bwcs
+### Core bwcs
 
 The following bwcs are implemented in Lua and cannot be overridden:
 
@@ -708,14 +584,14 @@ keywords; the loop runner consumes them. Outside a loop body their
 appearance is a parse error.
 
 <a id="self"></a>
-### 7.12 `self`
+### `self`
 
 `self` is a bwc shortcut for `%self`, which returns the current object instance.
 
 ---
 
 <a id="variables"></a>
-## 8 Variables
+## Variables
 
 ~~~json
 {"vibecode": {
@@ -738,7 +614,7 @@ around other use cases in the future.
 ---
 
 <a id="exceptions-and-warnings"></a>
-## 9 Exceptions and Warnings
+## Exceptions and Warnings
 
 ~~~json
 {"vibecode": {
@@ -774,7 +650,7 @@ the umbrella *and* the default-behavior class; in practice no one talks about
 the umbrella, so the ambiguity stays out of the way.
 
 <a id="shared-shape"></a>
-### 9.1 Shared shape
+### Shared shape
 
 Every flag is a Charlie object with:
 
@@ -800,7 +676,7 @@ This matches the universal Charlie object model (class stack + bucket). Exceptio
 errors, and warnings are regular objects following that model — no special accessors.
 
 <a id="the-two-top-level-classes"></a>
-### 9.2 The two top-level classes
+### The two top-level classes
 
 | Class | Propagation |
 |---|---|
@@ -827,7 +703,7 @@ Subclasses override one or both properties as needed:
   [Timeouts](#timeouts)).
 
 <a id="error-vs-exception"></a>
-### 9.3 Error vs exception
+### Error vs exception
 
 `puck.uno/error` is a **semantic marker**, not a behavioral
 distinction. Both `exception` and `error` carry stack traces, both unwind,
@@ -865,7 +741,7 @@ to the same hash; serialization for the wire format used by
 trimming as the doc describes).
 
 <a id="raising-standard-flags"></a>
-### 9.4 Raising standard flags
+### Raising standard flags
 
 Each of the standard flag classes has a shortcut method on `%chain`. All take an
 id and a bucket; the class is implied by the method:
@@ -903,7 +779,7 @@ unwind the chain, warnings travel up it, aborts terminate it. The chain owns the
 flow-control surface.
 
 <a id="raising-custom-flags"></a>
-### 9.5 Raising custom flags
+### Raising custom flags
 
 For custom flag classes (a specific exception subclass, a Sammy redirect, a
 custom warning, etc.), use the standard object-instantiation pattern:
@@ -926,7 +802,7 @@ This pattern is uniform with how every other object is created in Charlie: `.new
 configure, use. Nothing special.
 
 <a id="class-hierarchy"></a>
-### 9.6 Class hierarchy
+### Class hierarchy
 
 ```
 puck.uno/warning
@@ -972,7 +848,7 @@ Custom flag classes can extend any concrete class — `foo.com/error/network`,
 profile unless it overrides.
 
 <a id="return-exit-abort"></a>
-### 9.7 `return`, `exit`, `abort`
+### `return`, `exit`, `abort`
 
 These are Charlie flow primitives:
 
@@ -1022,7 +898,7 @@ This means code running under a role without abort capability can only
 abort itself, not the process that contains it.
 
 <a id="catching-exceptions"></a>
-### 9.8 Catching exceptions
+### Catching exceptions
 
 `catch()` matches **user-territory exceptions** — classes whose `catcher`
 property is "user." That's `puck.uno/exception`, `puck.uno/error`,
@@ -1089,7 +965,7 @@ unwinding up the stack until something does match (or nothing does and it
 propagates to the engine top).
 
 <a id="heeding-warnings"></a>
-### 9.9 Heeding warnings
+### Heeding warnings
 
 `heed()` matches **non-unwinding events** — warnings:
 
@@ -1127,7 +1003,7 @@ $warning.warn         # short form, on the warning object
 ```
 
 <a id="auto-recording-into-jasmine"></a>
-### 9.10 Auto-recording into Jasmine
+### Auto-recording into Jasmine
 
 Anything that propagates *out of* a `.entry do` block — error, exception, or
 warning that wasn't heeded — is **automatically recorded into the entry** before
@@ -1135,7 +1011,7 @@ the entry flushes. Errors include their stack trace; plain exceptions don't.
 See [jasmine.md § Automatic exception recording](jasmine/jasmine.md#automatic-exception-recording).
 
 <a id="cleanup-with-begin-ensure"></a>
-### 9.11 Cleanup with `begin` / `ensure`
+### Cleanup with `begin` / `ensure`
 
 The `begin` bwc creates a scoped variable region. Variables declared inside the
 begin block aren't visible outside it:
@@ -1210,7 +1086,7 @@ familiarity argument carried the day.
 ---
 
 <a id="structured-non-local-control-flow"></a>
-## 10 Structured Non-Local Control Flow
+## Structured Non-Local Control Flow
 
 ~~~json
 {"vibecode": {
@@ -1245,7 +1121,7 @@ to name the underlying mechanism so implementations don't grow N
 parallel control-flow machineries.
 
 <a id="the-exception-family-extended"></a>
-### 10.1 The exception family, extended
+### The exception family, extended
 
 The [exception class hierarchy](#exceptions-and-warnings-romulan-senator)
 already covers function returns and exits as exception subclasses
@@ -1292,7 +1168,7 @@ the architecture level is that they are declared subclasses of
 `puck.uno/exception` and participate in the same machinery.
 
 <a id="handler-registration-via-as"></a>
-### 10.2 Handler registration via `as`
+### Handler registration via `as`
 
 `as $name` is the **handler-registration syntax**. When a construct
 opens a block with `as`, the runtime registers a handler on its
@@ -1316,7 +1192,7 @@ handlers — it unwinds straight through them to the function's
 handler.
 
 <a id="target-matching"></a>
-### 10.3 Target matching
+### Target matching
 
 A control value carries a `target` field — the id of the handler
 it's meant for. The unwinder walks the handler stack from innermost
@@ -1349,7 +1225,7 @@ re-propagates. The outer loop's handler matches; the outer loop
 exits.
 
 <a id="ensure-blocks"></a>
-### 10.4 `ensure` blocks
+### `ensure` blocks
 
 `ensure` blocks register **pass-through** handlers: they run on any
 control that crosses them, then re-propagate the original control.
@@ -1363,7 +1239,7 @@ intentional asymmetry that keeps untrusted code from using `ensure`
 to delay an engine kill.
 
 <a id="stale-handlers"></a>
-### 10.5 Stale handlers
+### Stale handlers
 
 A loop object (or any `as $name` block object) captured in a closure
 and called after its construct has exited is **stale** — its handler
@@ -1386,7 +1262,7 @@ The stale-handler raise is a normal catchable error (default
 with it.
 
 <a id="cross-role-boundaries-open"></a>
-### 10.6 Cross-role boundaries — open
+### Cross-role boundaries — open
 
 ~~~json
 {"vibecode": {
@@ -1423,7 +1299,7 @@ their next pass. The implementation can keep the choice in one
 place (the unwinder's boundary check) once it's made.
 
 <a id="what-this-buys-the-implementation"></a>
-### 10.7 What this buys the implementation
+### What this buys the implementation
 
 ~~~json
 {"vibecode": {
@@ -1458,7 +1334,7 @@ absorbs control then becomes a thin layer over the same primitive.
 ---
 
 <a id="conditional-constructs-share-one-primitive"></a>
-## 11 Conditional Constructs Share One Primitive
+## Conditional Constructs Share One Primitive
 
 ~~~json
 {"vibecode": {
@@ -1486,7 +1362,7 @@ A single shared primitive handles the inner mechanic; `if` and
 `while` differ only in how they orchestrate calls to it.
 
 <a id="the-shared-primitive"></a>
-### 11.1 The shared primitive
+### The shared primitive
 
 ```
 function cond_run_once(cond_expr, body)
@@ -1503,7 +1379,7 @@ one body, report whether it matched. Both `if` and `while` are built
 on top.
 
 <a id="if-as-one-shape"></a>
-### 11.2 `if` as one shape
+### `if` as one shape
 
 `if` calls `cond_run_once` sequentially against each branch's
 condition, stopping at the first match. If no branch matches and an
@@ -1524,7 +1400,7 @@ end
 and `body`.
 
 <a id="while-as-another-shape"></a>
-### 11.3 `while` as another shape
+### `while` as another shape
 
 `while` calls `cond_run_once` repeatedly until it returns false. The
 body lives inside `cond_run_once`'s `execute_body` call, so it runs
@@ -1544,7 +1420,7 @@ both the test and the action; the loop wrapper just calls it until
 it reports done.
 
 <a id="what-this-buys-the-implementation-1"></a>
-### 11.4 What this buys the implementation
+### What this buys the implementation
 
 ~~~json
 {"vibecode": {
@@ -1572,7 +1448,7 @@ flow, handler registration, role transitions on cross-boundary
 calls — all shared.
 
 <a id="extensibility"></a>
-### 11.5 Extensibility
+### Extensibility
 
 The same primitive lines up for several construct shapes that may
 or may not land in Charlie:
@@ -1594,7 +1470,7 @@ insight — "evaluate one condition, optionally run one body, report
 the outcome" — is the same shape.
 
 <a id="what-this-does-not-cover"></a>
-### 11.6 What this does NOT cover
+### What this does NOT cover
 
 `.each` and the numeric iteration helpers (`.times`, `.upto`,
 `.downto`) are **not** built on `cond_run_once`. They have no
@@ -1611,7 +1487,7 @@ mechanism but not the **condition-evaluation** mechanism.
 ---
 
 <a id="block-parameter-binding"></a>
-## 12 Block Parameter Binding
+## Block Parameter Binding
 
 ~~~json
 {"vibecode": {
@@ -1631,7 +1507,7 @@ primitive; the constructs differ only in where their params and
 args come from.
 
 <a id="the-shared-primitive-1"></a>
-### 12.1 The shared primitive
+### The shared primitive
 
 ```
 function bind_params(param_specs, arg_values, scope)
@@ -1650,7 +1526,7 @@ errors, type checks (if any), and variadic handling all live here
 — in one place — instead of in every construct that takes a block.
 
 <a id="constructs"></a>
-### 12.2 Constructs
+### Constructs
 
 | Construct | What it binds |
 |---|---|
@@ -1666,7 +1542,7 @@ errors, type checks (if any), and variadic handling all live here
 that the runtime creates before invoking the block.
 
 <a id="what-this-buys-the-implementation-2"></a>
-### 12.3 What this buys the implementation
+### What this buys the implementation
 
 - **One parameter-binding path.** Default values, missing-arg
   errors, type messages all live in one place; updating any of
@@ -1680,7 +1556,7 @@ that the runtime creates before invoking the block.
   `bind_params` is the runtime implementation.
 
 <a id="open"></a>
-### 12.4 Open
+### Open
 
 - **Two parameter spec docs exist** — `parameters.md` and `params.md`.
   These cover overlapping ground (one focuses on metadata and lazy
@@ -1694,7 +1570,7 @@ that the runtime creates before invoking the block.
 ---
 
 <a id="unified-name-resolution"></a>
-## 13 Unified Name Resolution
+## Unified Name Resolution
 
 ~~~json
 {"vibecode": {
@@ -1715,7 +1591,7 @@ value or null. The sigil determines which namespace chain to
 consult; the lookup mechanism itself is one function.
 
 <a id="the-shared-primitive-2"></a>
-### 13.1 The shared primitive
+### The shared primitive
 
 ```
 function lookup(name, namespace_chain)
@@ -1733,7 +1609,7 @@ first hit wins. Cross-namespace fallback (lexical scope walking, MRO
 for method dispatch) is just a longer chain.
 
 <a id="constructs-1"></a>
-### 13.2 Constructs
+### Constructs
 
 | Reference shape | Namespace chain |
 |---|---|
@@ -1746,7 +1622,7 @@ for method dispatch) is just a longer chain.
 | bucket key access | a single bucket (no chain) |
 
 <a id="what-this-buys-the-implementation-3"></a>
-### 13.3 What this buys the implementation
+### What this buys the implementation
 
 - **One name-resolution path.** Sigil parsing produces a namespace
   chain; the chain goes into `lookup`; the value (or null) comes
@@ -1761,7 +1637,7 @@ for method dispatch) is just a longer chain.
   `lookup(method_name, class_method_chain)`.
 
 <a id="open-1"></a>
-### 13.4 Open
+### Open
 
 - **Whether `lookup` is exposed to user code or kept internal.** A
   user-facing `%puck.lookup` (or similar) might be useful for
@@ -1774,7 +1650,7 @@ for method dispatch) is just a longer chain.
 ---
 
 <a id="typed-structured-events"></a>
-## 14 Typed Structured Events
+## Typed Structured Events
 
 ~~~json
 {"vibecode": {
@@ -1805,7 +1681,7 @@ and emission paths. Filed as an architecture direction rather than
 an immediate-action item.
 
 <a id="the-shared-shape"></a>
-### 14.1 The shared shape
+### The shared shape
 
 Every event is `{class, id, bucket}` plus the same emission path
 through `%chain` (or its equivalent). Already true today for
@@ -1814,7 +1690,7 @@ exceptions and warnings per
 extends to change signals and log entries with no schema change.
 
 <a id="behaviors"></a>
-### 14.2 Behaviors
+### Behaviors
 
 | Behavior | What the runtime does | Used by |
 |---|---|---|
@@ -1830,7 +1706,7 @@ with `behavior=heedable`; the engine emits change signals with
 `behavior=signal`; Jasmine entries are `behavior=log`.
 
 <a id="the-shared-primitive-3"></a>
-### 14.3 The shared primitive
+### The shared primitive
 
 ```
 function emit_event(event)
@@ -1848,7 +1724,7 @@ One emission function; the runtime path is selected from the
 event's class metadata, not from which `%chain.X` method was called.
 
 <a id="what-this-buys-the-implementation-4"></a>
-### 14.4 What this buys the implementation
+### What this buys the implementation
 
 - **One emission path.** No separate functions for raising vs.
   warning vs. signaling vs. logging.
@@ -1861,7 +1737,7 @@ event's class metadata, not from which `%chain.X` method was called.
   emission machinery, no new dispatch path.
 
 <a id="open-2"></a>
-### 14.5 Open
+### Open
 
 ~~~json
 {"vibecode": {
@@ -1894,7 +1770,7 @@ event's class metadata, not from which `%chain.X` method was called.
 ---
 
 <a id="object-model"></a>
-## 15 Object Model
+## Object Model
 
 ~~~json
 {"vibecode": {
@@ -1910,7 +1786,7 @@ event's class metadata, not from which `%chain.X` method was called.
 ~~~
 
 <a id="two-property-objects"></a>
-### 15.1 Two-Property Objects
+### Two-Property Objects
 
 Every object has exactly two fundamental properties:
 
@@ -1922,7 +1798,7 @@ primitives. This maps directly to how mikobase records work: class + bucket. The
 model is consistent across the language and the object store.
 
 <a id="bucket"></a>
-### 15.2 `%bucket`
+### `%bucket`
 
 `%bucket` is a system method that returns the object's private data hash. All instance
 data lives here.
@@ -1980,7 +1856,7 @@ This is a convention, not enforcement. The runtime treats the bucket as a flat
 hash; `uns` is just a reserved key by community agreement.
 
 <a id="the-class-stack"></a>
-### 15.3 The Class Stack
+### The Class Stack
 
 Method calls are resolved top-down through the class stack:
 
@@ -2016,7 +1892,7 @@ end
 ```
 
 <a id="the-object-helper"></a>
-### 15.4 The `object` Helper
+### The `object` Helper
 
 Every object has a reserved helper called `object` that cannot be overridden. It exposes
 meta information about the object:
@@ -2044,7 +1920,7 @@ The trailing `?` is the Charlie convention for predicate methods (boolean-return
 More meta information will be added as needed.
 
 <a id="explicit-class-dispatch"></a>
-### 15.5 Explicit Class Dispatch
+### Explicit Class Dispatch
 
 To call a method from a specific class in the stack, use `object.call_with`. The class
 must be present in the object's class stack:
@@ -2059,7 +1935,7 @@ This is a rare use case — normal method resolution handles the common case.
 ---
 
 <a id="garbage-collection"></a>
-## 16 Garbage Collection
+## Garbage Collection
 
 ~~~json
 {"vibecode": {
@@ -2072,7 +1948,7 @@ This is a rare use case — normal method resolution handles the common case.
 ~~~
 
 <a id="perfect-garbage-collection"></a>
-### 16.1 Perfect garbage collection
+### Perfect garbage collection
 
 Charlie uses what might be called perfect garbage collection: when an object becomes
 unreachable, the runtime immediately collects it and calls a standard cleanup method on
@@ -2083,7 +1959,7 @@ No weak references are needed. No special lifetime annotations. No manual memory
 management.
 
 <a id="how-it-works"></a>
-### 16.2 How it works
+### How it works
 
 Objects live in object space. They do not know what references them — they simply exist
 until nothing holds them.
@@ -2097,7 +1973,7 @@ automatically. Two objects that reference each other but are held by nothing els
 both unreachable from roots — both are collected.
 
 <a id="fooobjectclose"></a>
-### 16.3 `$foo.object.close`
+### `$foo.object.close`
 
 `close` is a standard method defined on every object. The runtime calls it when the
 object is collected. User code cannot call it directly — it can only be invoked by the
@@ -2115,7 +1991,7 @@ end
 ```
 
 <a id="the-rule"></a>
-### 16.4 The rule
+### The rule
 
 Objects die when they become unreachable from roots. That's the whole model — one rule
 covers every object in the system.
@@ -2123,7 +1999,7 @@ covers every object in the system.
 ---
 
 <a id="helpers"></a>
-## 17 Helpers
+## Helpers
 
 ~~~json
 {"vibecode": {
@@ -2143,7 +2019,7 @@ The base helper class defines a single field: `@reference`, which points back to
 parent object. Inside a helper method, `self.reference` accesses the parent.
 
 <a id="defining-a-helper"></a>
-### 17.1 Defining a helper
+### Defining a helper
 
 The `helper` bwc inside a class definition creates a lazily initialized helper:
 
@@ -2173,7 +2049,7 @@ end
 The helper is not created until first accessed.
 
 <a id="object-as-a-reserved-helper"></a>
-### 17.2 `object` as a Reserved Helper
+### `object` as a Reserved Helper
 
 `object` is a built-in helper present on every object. It cannot be overridden. It is
 the home for primitive introspection operations that are rarely needed day-to-day,
@@ -2182,7 +2058,7 @@ keeping them out of the main method namespace.
 ---
 
 <a id="classes"></a>
-## 18 Classes
+## Classes
 
 ~~~json
 {"vibecode": {
@@ -2204,7 +2080,7 @@ class registry and no namespacing system like `Foo::Bar`. A class's identity com
 reference held to it, not from a declared name. To use a class, you need a reference to it.
 
 <a id="puck"></a>
-### 18.1 `%puck`
+### `%puck`
 
 `%puck` is a system method that provides access to the global Puck object namespace.
 `%puck[UNS]` returns the object registered at that UNS address — which may be a class,
@@ -2222,14 +2098,14 @@ Class definition syntax is a DSL — it uses the same dispatcher/bwc mechanism a
 other DSL. There are no special parser rules for class definitions.
 
 <a id="instantiation"></a>
-### 18.2 Instantiation
+### Instantiation
 
 ```
 $my_class.new(...)
 ```
 
 <a id="defining-a-class"></a>
-### 18.3 Defining a class
+### Defining a class
 
 The standard form:
 
@@ -2246,7 +2122,7 @@ end
 ```
 
 <a id="subclassing"></a>
-### 18.4 Subclassing
+### Subclassing
 
 ```
 $new_class = $my_class.subclass do
@@ -2256,7 +2132,7 @@ end
 Subclassing is always a method call on the parent class object.
 
 <a id="properties"></a>
-### 18.5 Properties
+### Properties
 
 Properties are private instance variables declared with `property`. They are not
 accessible from outside the class unless accessors are declared.
@@ -2276,7 +2152,7 @@ properties are just typed sugar over bucket access.
 A `default:` option is reserved for a future revision; not in v1.
 
 <a id="abstract-classes"></a>
-### 18.6 Abstract Classes
+### Abstract Classes
 
 A class declared `abstract true` cannot be directly instantiated. It must be subclassed.
 Attempting to call `.new` on an abstract class raises an exception.
@@ -2288,7 +2164,7 @@ end
 ```
 
 <a id="initializer"></a>
-### 18.7 Initializer
+### Initializer
 
 `init` is the method called when a new instance is created. It is defined using
 `function &init(...)` inside the class block:
@@ -2301,7 +2177,7 @@ end
 ```
 
 <a id="methods"></a>
-### 18.8 Methods
+### Methods
 
 Methods are defined inside the class block using `function &name(...)`:
 
@@ -2312,7 +2188,7 @@ end
 ```
 
 <a id="full-example"></a>
-### 18.9 Full Example
+### Full Example
 
 ```
 $person = class
@@ -2337,7 +2213,7 @@ $p.greet   # "Hello, I am Jean-Luc"
 ```
 
 <a id="subclass-example"></a>
-### 18.10 Subclass Example
+### Subclass Example
 
 ```
 $officer = $person.subclass do
@@ -2356,7 +2232,7 @@ end
 ---
 
 <a id="functions"></a>
-## 19 Functions
+## Functions
 
 ~~~json
 {"vibecode": {
@@ -2382,7 +2258,7 @@ objects. In Charlie, all functions are already objects.
 See `charlie.md` for function definition and call syntax.
 
 <a id="blocks-and-yielding"></a>
-### 19.1 Blocks and Yielding
+### Blocks and Yielding
 
 A `do...end` block passed to a function call is a closure. Multiple blocks can be chained.
 Inside the function, `%call.blocks` is an array of the passed blocks in order.
@@ -2434,7 +2310,7 @@ block 0.
 If you want named blocks, pass functions as named parameters instead.
 
 <a id="bare-word-commands"></a>
-### 19.2 Bare Word Commands
+### Bare Word Commands
 
 A bare word command (bwc) is an unqualified word used as a method call. When the
 interpreter encounters a bwc, it looks in `%scope` to find the correct association.
@@ -2448,7 +2324,7 @@ Resolution order:
 3. **Scope variables** — the normal lexical scope.
 
 <a id="dsl-receivers"></a>
-### 19.3 DSL Receivers
+### DSL Receivers
 
 The dispatcher object has a `dsl` hash. Entries map bare words inside the yielded block
 to objects — a bwc resolves to a method call on the mapped object.
@@ -2477,7 +2353,7 @@ yielded block — any nested function calls or blocks inside that block run with
 ---
 
 <a id="scoping"></a>
-## 20 Scoping
+## Scoping
 
 ~~~json
 {"vibecode": {
@@ -2499,7 +2375,7 @@ is no special closure type — any function becomes a closure when passed a scop
 ---
 
 <a id="system-methods"></a>
-## 21 System Methods
+## System Methods
 
 ~~~json
 {"vibecode": {
@@ -2524,7 +2400,7 @@ System methods are defined only by the engine at boot time. User code cannot cre
 `%`-prefixed methods.
 
 <a id="chain"></a>
-### 21.1 `%chain`
+### `%chain`
 
 > **Use `%chain` sparingly.** It is ambient state that is invisible in function signatures
 > and can carry security-sensitive information. Prefer explicit arguments when possible.
@@ -2538,7 +2414,7 @@ requiring it to be threaded through every function signature.
 call stack.
 
 <a id="block-vs-function-isolation"></a>
-#### 21.1.1 Block vs function isolation
+#### Block vs function isolation
 
 `%chain` does **not** isolate at block boundaries. A write to `%chain['foo']` inside an
 `if`, loop, or bare block persists after the block ends — chain flows freely through
@@ -2571,7 +2447,7 @@ role), while outgoing handles can be ambient (writes don't carry a role label, s
 chain-replacement pattern works cleanly).
 
 <a id="misc-values"></a>
-#### 21.1.2 Misc values
+#### Misc values
 
 ```
 %chain.misc['foo'] = 'bar'
@@ -2581,7 +2457,7 @@ chain-replacement pattern works cleanly).
 `%chain['foo']` is shorthand for `%chain.misc['foo']`.
 
 <a id="sandboxing"></a>
-#### 21.1.3 Sandboxing
+#### Sandboxing
 
 Each component can be cleared within a block, hiding it from code running inside:
 
@@ -2606,7 +2482,7 @@ After each block, the original values are restored. `%chain.clear()` will clear 
 components, including any added in future.
 
 <a id="explicit-scope-block"></a>
-#### 21.1.4 Explicit scope block
+#### Explicit scope block
 
 `%chain.scope do...end` creates an explicit scope boundary:
 
@@ -2623,7 +2499,7 @@ end
 ```
 
 <a id="clean-scope"></a>
-#### 21.1.5 Clean scope
+#### Clean scope
 
 `%chain.scope(inherit:false)` starts with an empty chain, inheriting nothing:
 
@@ -2640,7 +2516,7 @@ end
 ---
 
 <a id="engine"></a>
-### 21.2 `%engine`
+### `%engine`
 
 `%engine` is a method that returns the engine object — the gateway through which the
 top-level script accesses resources provided by the host (capabilities, configuration,
@@ -2681,7 +2557,7 @@ Closures defined at the top level can reference `%engine` directly if useful —
 auto-capture lets them. Functions need things passed explicitly.
 
 <a id="function-and-closure-opacity"></a>
-### 21.3 Function and closure opacity
+### Function and closure opacity
 
 **Once a function or closure is defined, it exposes nothing about its internals to its
 caller.** This is a general default that applies to every callable in the language. A
@@ -2724,7 +2600,7 @@ Not in v1; flagged if a real debugging story needs it.
 ---
 
 <a id="call"></a>
-### 21.4 `%call`
+### `%call`
 
 `%call` returns the call object for the current function or closure. Inside a closure,
 `%call` refers to the closure call. Inside a function, it refers to the function call.
@@ -2750,7 +2626,7 @@ end
 `%call.blocks` is an array of `do...end` blocks passed to the current function, in order.
 
 <a id="caller-objects"></a>
-### 21.5 Caller Objects
+### Caller Objects
 
 `$foo.caller` returns a caller object — a reusable, configurable pending call to `$foo`.
 Parameters are set as properties, blocks are attached with `do`, and the call is executed
@@ -2770,14 +2646,14 @@ executed by whoever holds them. Setting a param before passing restricts what th
 needs to supply.
 
 <a id="setting-params"></a>
-#### 21.5.1 Setting params
+#### Setting params
 
 ```
 $caller.gup = 'bear'
 ```
 
 <a id="attaching-blocks"></a>
-#### 21.5.2 Attaching blocks
+#### Attaching blocks
 
 Official form:
 
@@ -2797,7 +2673,7 @@ Multiple anonymous blocks are available via `$caller.blocks`, which is an array.
 anything beyond simple cases, use named params instead.
 
 <a id="executing"></a>
-#### 21.5.3 Executing
+#### Executing
 
 ```
 $caller.call
@@ -2808,7 +2684,7 @@ Locking and freezing a caller before passing it around is deferred for later des
 ---
 
 <a id="the-method"></a>
-### 21.6 The `&` Method
+### The `&` Method
 
 Any class can define a `&` method to make its instances invokable with the `&` sigil.
 `&` means "do the main thing on this object."
@@ -2828,7 +2704,7 @@ syntax is designed.
 ---
 
 <a id="jail"></a>
-## 22 Jail
+## Jail
 
 ~~~json
 {"vibecode": {
@@ -2852,7 +2728,7 @@ Jail fits naturally with the object-capability security model: pass a jail inste
 full object when the recipient only needs a subset of its capabilities.
 
 <a id="internal-structure"></a>
-### 22.1 Internal structure
+### Internal structure
 
 A jail stores the wrapped object in `%bucket`:
 
@@ -2864,7 +2740,7 @@ A jail stores the wrapped object in `%bucket`:
 External code cannot reach `@prisoner` directly through the jail — that is the point.
 
 <a id="creating-a-jail"></a>
-### 22.2 Creating a jail
+### Creating a jail
 
 ```
 $jail = $foo.object.jail(:greet, :save)
@@ -2883,7 +2759,7 @@ $bar = $foo.object.jail(:call)
 ---
 
 <a id="freezing"></a>
-## 23 Freezing
+## Freezing
 
 ~~~json
 {"vibecode": {
@@ -2903,7 +2779,7 @@ Freezing locks an object against modification. Charlie breaks this into two inde
 axes — the class stack and bucket — rather than conflating them into a single freeze.
 
 <a id="the-three-freeze-operations"></a>
-### 23.1 The three freeze operations
+### The three freeze operations
 
 ```
 $foo.object.freeze          # freeze both classes and bucket
@@ -2915,7 +2791,7 @@ Any of these can be called by whoever holds a reference to the object — freezi
 restricted to the object itself.
 
 <a id="permanent-vs-temporary"></a>
-### 23.2 Permanent vs. temporary
+### Permanent vs. temporary
 
 Without a block, a freeze is permanent. There is no `unfreeze` method. Once frozen, that
 axis stays frozen for the lifetime of the object.
@@ -2938,7 +2814,7 @@ end
 ```
 
 <a id="what-each-freeze-prevents"></a>
-### 23.3 What each freeze prevents
+### What each freeze prevents
 
 **Classes freeze** — the class stack cannot be modified. No classes can be added or
 removed, and `object.define` is blocked. The methods the object has
@@ -2948,7 +2824,7 @@ at freeze time are the methods it will always have.
 otherwise modify the bucket hash raises an error.
 
 <a id="fooobjectbucket"></a>
-### 23.4 `$foo.object.bucket`
+### `$foo.object.bucket`
 
 `$foo.object.bucket` returns a jail wrapping `%bucket` with only `:freeze` permitted.
 It gives external code the ability to freeze the object's bucket without exposing
@@ -2962,7 +2838,7 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 ---
 
 <a id="change-signals"></a>
-## 24 Change Signals
+## Change Signals
 
 ~~~json
 {"vibecode": {
@@ -2979,7 +2855,7 @@ $foo.object.bucket['key']       # fails — not in the allowed method list
 ~~~
 
 <a id="what-a-change-is"></a>
-### 24.1 What a change is
+### What a change is
 
 A change is a hash key being assigned a new object:
 
@@ -2992,7 +2868,7 @@ replaces a reference. Only hashes produce change events, because only hashes hol
 references that can be reassigned.
 
 <a id="listening-to-field-changes"></a>
-### 24.2 Listening to field changes
+### Listening to field changes
 
 ```
 $foo.object.listen field: 'bar', :on_change do($change)
@@ -3009,7 +2885,7 @@ $change.new_value  # the newly assigned object
 ```
 
 <a id="signal-propagation"></a>
-### 24.3 Signal propagation
+### Signal propagation
 
 When a hash key is reassigned, the signal propagates automatically up through every
 object that holds the changed object. Given:
@@ -3027,7 +2903,7 @@ Each object in the chain automatically re-signals its own listeners when it hear
 signal from an object it holds.
 
 <a id="the-signal-stack"></a>
-### 24.4 The signal stack
+### The signal stack
 
 Signals are processed through a central stack, one at a time, in order. In Charlie's
 single-threaded execution model, there is always either zero or one signal being
@@ -3051,7 +2927,7 @@ signals. Cycles only arise when a listener reassigns a hash key, which is the un
 case.
 
 <a id="underlying-hot-records"></a>
-### 24.5 Underlying hot records
+### Underlying hot records
 
 The change signal system is the mechanism that makes hot mikobase records work. When a hot
 connection returns a record, the runtime automatically registers listeners up the

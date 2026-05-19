@@ -1,7 +1,7 @@
 # Operators
 
 <a id="overview"></a>
-## 1 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -22,7 +22,7 @@ Charlie has three categories of operators:
 ---
 
 <a id="method-operators"></a>
-## 2 Method Operators
+## Method Operators
 
 ~~~json
 {"vibecode": {
@@ -42,7 +42,7 @@ See the individual type docs for the operators each type supports.
 ---
 
 <a id="binary-operators"></a>
-## 3 Binary Operators
+## Binary Operators
 
 ~~~json
 {"vibecode": {
@@ -72,7 +72,7 @@ scope.operators['assimilates'] = 'borg.com/assimilates'
 ```
 
 <a id="resolution"></a>
-### 3.1 Resolution
+### Resolution
 
 When the interpreter encounters `$foo OP $bar`, it first checks whether `OP` is a method
 on `$foo`'s type. If it is, it calls the method. If not, it looks up `OP` in
@@ -84,7 +84,7 @@ the binary operator. This is intentional — developers who do this can deal wit
 consequences.
 
 <a id="evaluator-classes"></a>
-### 3.2 Evaluator Classes
+### Evaluator Classes
 
 Every binary operator maps to an evaluator class. The class must implement an `evaluate`
 method that takes two lazy parameters — one for each operand:
@@ -117,7 +117,7 @@ end
 ```
 
 <a id="precedence"></a>
-### 3.3 Precedence
+### Precedence
 
 Binary operators are evaluated left to right. There is no precedence table. Use
 parentheses to control evaluation order:
@@ -127,7 +127,7 @@ $foo and ($bar or $gup)
 ```
 
 <a id="custom-binary-operators"></a>
-### 3.4 Custom Binary Operators
+### Custom Binary Operators
 
 Any developer can register a custom binary operator in the current scope:
 
@@ -141,7 +141,7 @@ The evaluator class follows the same contract as built-in operators — implemen
 ---
 
 <a id="unary-operators"></a>
-## 4 Unary Operators
+## Unary Operators
 
 ~~~json
 {"vibecode": {
@@ -179,7 +179,7 @@ end
 ---
 
 <a id="built-in-operators"></a>
-## 5 Built-in Operators
+## Built-in Operators
 
 ~~~json
 {"vibecode": {
@@ -199,7 +199,7 @@ end
 ~~~
 
 <a id="binary"></a>
-### 5.1 Binary
+### Binary
 
 | Operator | Class | Description |
 |----------|-------|-------------|
@@ -211,7 +211,7 @@ end
 | `xnor` | `charlie.uno/xnor` | Logical XNOR. |
 
 <a id="unary"></a>
-### 5.2 Unary
+### Unary
 
 | Operator | Class | Description |
 |----------|-------|-------------|
@@ -220,7 +220,7 @@ end
 ---
 
 <a id="ternary-operator"></a>
-## 6 Ternary Operator
+## Ternary Operator
 
 ~~~json
 {"vibecode": {
@@ -252,7 +252,7 @@ end
 ---
 
 <a id="open-questions"></a>
-## 7 Open Questions
+## Open Questions
 
 - Should `scope.operators` be inheritable — i.e. does a child scope see parent scope
   operators automatically?

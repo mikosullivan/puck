@@ -20,49 +20,8 @@ abstraction.
 
 ---
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Status](#status)
-- [Core classes](#core-classes)
-- [Construction](#construction)
-- [Node IDs](#node-ids)
-  - [Tree-wide uniqueness](#tree-wide-uniqueness)
-  - [Cross-tree behavior](#cross-tree-behavior)
-  - [Disconnected nodes](#disconnected-nodes)
-  - [Subclass override](#subclass-override)
-- [Relationships](#relationships)
-  - [`rehome` — the One True move](#rehome-the-one-true-move)
-  - [Sugar for rehome](#sugar-for-rehome)
-  - [What rehome doesn't do](#what-rehome-doesnt-do)
-  - [Cycle prevention](#cycle-prevention)
-- [Children](#children)
-  - [Reading](#reading)
-  - [Modifying](#modifying)
-- [Traversal](#traversal)
-  - [Including the root](#including-the-root)
-  - [Pruning a branch](#pruning-a-branch)
-  - [Walking only node objects](#walking-only-node-objects)
-- [Query](#query)
-  - [Stopping descent at matches](#stopping-descent-at-matches)
-  - [`query_first`](#query_first)
-- [Mutation](#mutation)
-- [Child validation](#child-validation)
-- [Output](#output)
-- [Document](#document)
-  - [Document vs root](#document-vs-root)
-  - [Why a Document is useful](#why-a-document-is-useful)
-  - [Document API](#document-api)
-  - [`$node.document` from inside the tree](#nodedocument-from-inside-the-tree)
-- [Subclassing](#subclassing)
-- [Bucket discipline: the `uns` slot](#bucket-discipline-the-uns-slot)
-- [Mental model](#mental-model)
-- [Open questions](#open-questions)
-
----
-
 <a id="status"></a>
-## 2 Status
+## Status
 
 Spec in development. The Ruby Trivet has been in use since 2020;
 the design here is the Charlie adaptation. The semantics carry
@@ -71,7 +30,7 @@ over directly; method naming follows Charlie conventions.
 ---
 
 <a id="core-classes"></a>
-## 3 Core classes
+## Core classes
 
 Three classes form the Trivet surface:
 
@@ -104,7 +63,7 @@ into nodes; non-node children are leaves.
 ---
 
 <a id="construction"></a>
-## 4 Construction
+## Construction
 
 ```
 $food = %['puck.uno/trivet/node'].new('food')
@@ -135,7 +94,7 @@ creates and returns the child.
 ---
 
 <a id="node-ids"></a>
-## 5 Node IDs
+## Node IDs
 
 Every node has an `id` slot. The id is optional in the sense
 that nodes can exist without one (id is null by default), but
@@ -148,7 +107,7 @@ $node.id = 'food'     # sets the id
 ```
 
 <a id="tree-wide-uniqueness"></a>
-### 5.1 Tree-wide uniqueness
+### Tree-wide uniqueness
 
 **Within a single tree, an id belongs to at most one node.**
 Assigning an id that's already taken elsewhere in the tree
@@ -169,7 +128,7 @@ assignment; the new owner gets the id, the old owner loses it,
 and execution continues.
 
 <a id="cross-tree-behavior"></a>
-### 5.2 Cross-tree behavior
+### Cross-tree behavior
 
 Uniqueness is **per-tree**, defined as "the connected tree
 under this node's root." Nodes in different trees can share
@@ -178,14 +137,14 @@ check at the moment of insertion (TBD whether on `set_parent`
 or only on subsequent id assignments).
 
 <a id="disconnected-nodes"></a>
-### 5.3 Disconnected nodes
+### Disconnected nodes
 
 A node with no parent is its own one-node tree. Setting an id
 on it has no conflicts to resolve. Once added to a parent, the
 new tree's uniqueness rule starts applying.
 
 <a id="subclass-override"></a>
-### 5.4 Subclass override
+### Subclass override
 
 Subclasses commonly need to sync the id with some other piece
 of state — Uma's element class, for example, mirrors the node
@@ -214,7 +173,7 @@ subclass handles where the id actually lives.
 ---
 
 <a id="relationships"></a>
-## 6 Relationships
+## Relationships
 
 | Method | Returns | Description |
 |---|---|---|
@@ -232,7 +191,7 @@ subclass handles where the id actually lives.
 | `$node.index` | Integer or null | Position in parent's children array (null if no parent) |
 
 <a id="rehome-the-one-true-move"></a>
-### 6.1 `rehome` — the One True move
+### `rehome` — the One True move
 
 Every reparenting operation funnels through a single canonical
 method: **`$node.rehome($new_parent, index: ...)`**. This is
@@ -267,7 +226,7 @@ valid — `$paprika.rehome($paprika.parent, index: 0)` moves
 paprika to the front of its existing parent's children.
 
 <a id="sugar-for-rehome"></a>
-### 6.2 Sugar for rehome
+### Sugar for rehome
 
 The public API exposes friendlier names that all delegate to
 `rehome`:
@@ -285,7 +244,7 @@ reads as "pepper gains a child" rather than the more clinical
 "paprika changes home." Same underlying operation either way.
 
 <a id="what-rehome-doesnt-do"></a>
-### 6.3 What rehome doesn't do
+### What rehome doesn't do
 
 - **`$node.children.push($x)` directly on the array** is plain
   array manipulation; it doesn't go through rehome and doesn't
@@ -297,7 +256,7 @@ reads as "pepper gains a child" rather than the more clinical
   it's a rehome of `$other` plus an unlink of `$node`.
 
 <a id="cycle-prevention"></a>
-### 6.4 Cycle prevention
+### Cycle prevention
 
 A tree, by definition, has no cycles. Any operation that would
 make a node its own descendant — directly or transitively —
@@ -327,14 +286,14 @@ the operation always fails.
 ---
 
 <a id="children"></a>
-## 7 Children
+## Children
 
 `$node.children` is a `child_set` — a thin subclass of Array.
 All standard array operations work directly, plus the mutation
 methods are overridden to keep parent pointers in sync.
 
 <a id="reading"></a>
-### 7.1 Reading
+### Reading
 
 ```
 $pepper.children                          # the child_set (array subclass)
@@ -349,7 +308,7 @@ All array reading and iteration works because child_set inherits
 from Array.
 
 <a id="modifying"></a>
-### 7.2 Modifying
+### Modifying
 
 Every mutation path is safe — child_set's overrides on `push`,
 `pop`, `shift`, `unshift`, `insert`, and `delete_at` maintain
@@ -427,7 +386,7 @@ $node.node_by_id('paprika')            # find a child node by id (depth-first in
 ---
 
 <a id="traversal"></a>
-## 8 Traversal
+## Traversal
 
 ```
 $food.traverse do($node)
@@ -440,7 +399,7 @@ each node. Non-node children (strings, etc.) are visited too
 unless the developer filters them.
 
 <a id="including-the-root"></a>
-### 8.1 Including the root
+### Including the root
 
 By default `traverse` skips the root and starts with its
 children. Pass `self: true` to include the root:
@@ -452,7 +411,7 @@ end
 ```
 
 <a id="pruning-a-branch"></a>
-### 8.2 Pruning a branch
+### Pruning a branch
 
 A control object as a second block parameter lets the traversal
 skip a subtree:
@@ -469,7 +428,7 @@ end
 The block can also call `$ctl.stop` to halt traversal entirely.
 
 <a id="walking-only-node-objects"></a>
-### 8.3 Walking only node objects
+### Walking only node objects
 
 `traverse` visits any child object; `traverse_nodes` visits only
 those that are actual nodes (skipping strings, hashes, etc.).
@@ -477,7 +436,7 @@ those that are actual nodes (skipping strings, hashes, etc.).
 ---
 
 <a id="query"></a>
-## 9 Query
+## Query
 
 `query` finds nodes matching a developer-supplied predicate.
 The predicate is the `match?` method on the node class.
@@ -515,7 +474,7 @@ Returns all matching nodes via the block. Without a block,
 returns an array.
 
 <a id="stopping-descent-at-matches"></a>
-### 9.1 Stopping descent at matches
+### Stopping descent at matches
 
 By default, `query` keeps descending into a node's children
 even when the node itself matched. Pass `recurse: 'until_match'`
@@ -528,7 +487,7 @@ end
 ```
 
 <a id="query_first"></a>
-### 9.2 `query_first`
+### `query_first`
 
 Shorthand for "give me just the first matching node, or null":
 
@@ -539,7 +498,7 @@ $first = $food.query_first('paprika')
 ---
 
 <a id="mutation"></a>
-## 10 Mutation
+## Mutation
 
 Most reparenting goes through [rehome](#rehome--the-one-true-move)
 and its sugar. A few additional node-level methods:
@@ -557,7 +516,7 @@ instead. Same operation, expressed from the child's perspective.
 ---
 
 <a id="child-validation"></a>
-## 11 Child validation
+## Child validation
 
 A node can constrain what kinds of children it accepts by
 overriding `allow_child?`:
@@ -591,7 +550,7 @@ is `puck.uno/trivet/node`; subclasses override to make their
 ---
 
 <a id="output"></a>
-## 12 Output
+## Output
 
 | Method | Returns |
 |---|---|
@@ -620,7 +579,7 @@ food
 ---
 
 <a id="document"></a>
-## 13 Document
+## Document
 
 `puck.uno/trivet/document` is **not** a node. It is a separate
 container class that holds a tree's root and exists outside the
@@ -634,7 +593,7 @@ $food.document            # returns $doc
 ```
 
 <a id="document-vs-root"></a>
-### 13.1 Document vs root
+### Document vs root
 
 | Concept | Class | Meaning |
 |---|---|---|
@@ -648,7 +607,7 @@ returns it — but the Document is not the root and is not in the
 tree.
 
 <a id="why-a-document-is-useful"></a>
-### 13.2 Why a Document is useful
+### Why a Document is useful
 
 Most trees never need one. Reach for a Document when:
 
@@ -666,7 +625,7 @@ For everyday "I have a root node and I'm building it out," no
 Document is needed.
 
 <a id="document-api"></a>
-### 13.3 Document API
+### Document API
 
 | Method | Returns | Description |
 |---|---|---|
@@ -677,7 +636,7 @@ Document is needed.
 | `$doc.to_tree(...)` | String | Convenience — delegates to `$doc.root.to_tree(...)` |
 
 <a id="nodedocument-from-inside-the-tree"></a>
-### 13.4 `$node.document` from inside the tree
+### `$node.document` from inside the tree
 
 A node finds the Document holding its tree (if any) via
 `$node.document`:
@@ -692,7 +651,7 @@ returns null.
 ---
 
 <a id="subclassing"></a>
-## 14 Subclassing
+## Subclassing
 
 The expected use pattern. Most consumers of Trivet subclass
 `trivet/node`:
@@ -711,7 +670,7 @@ unchanged on any subclass.
 ---
 
 <a id="bucket-discipline-the-uns-slot"></a>
-## 15 Bucket discipline: the `uns` slot
+## Bucket discipline: the `uns` slot
 
 Trivet's node class is designed to be **added to any object** —
 strings (for HTML text nodes), hashes, custom classes, anything.
@@ -762,7 +721,7 @@ without stepping on each other.
 ---
 
 <a id="mental-model"></a>
-## 16 Mental model
+## Mental model
 
 A Trivet tree is a recursive structure where every interior
 node is a `trivet/node` (or subclass), and leaves can be
@@ -777,7 +736,7 @@ in libraries built on top (Uma being the canonical example).
 ---
 
 <a id="open-questions"></a>
-## 17 Open questions
+## Open questions
 
 - **Iteration order in queries**: depth-first vs breadth-first.
   Ruby version is depth-first.

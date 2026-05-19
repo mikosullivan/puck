@@ -15,7 +15,7 @@ pattern — receive the value in a block, run side-effecting
 logic on it, return the value unchanged.
 
 <a id="use-case"></a>
-## 1 Use case
+## Use case
 
 Brief use of a value without breaking a chain or assigning to
 a throwaway variable:
@@ -30,7 +30,7 @@ Returns the value `do_something` produced; the `log` call is a
 side-effect inserted into the chain.
 
 <a id="open-where-does-it-live"></a>
-## 2 Open: where does it live?
+## Open: where does it live?
 
 Two reasonable readings:
 
@@ -52,7 +52,7 @@ carry it). Receiver in, receiver out. Matches Ruby exactly and
 preserves chain ergonomics.
 
 <a id="open-what-does-the-block-receive"></a>
-## 3 Open: what does the block receive?
+## Open: what does the block receive?
 
 - The receiver itself — natural and useful.
 
@@ -61,7 +61,7 @@ either the original value or the object helper — another reason
 the on-the-value placement is simpler.)
 
 <a id="status"></a>
-## 4 Status
+## Status
 
 Not in v1 core. Trivial to add when wanted. Filed here so the
 discussion isn't lost.

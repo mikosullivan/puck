@@ -1,49 +1,7 @@
 # CharlieJSON
 
-<a id="contents"></a>
-## 1 Contents
-
-- [Overview](#overview)
-- [Core Principle](#core-principle)
-- [Comments](#comments)
-- [Expressions](#expressions)
-  - [Literals](#literals)
-  - [Variables](#variables)
-  - [Bare Word Commands](#bare-word-commands)
-  - [Array Literals](#array-literals)
-  - [Hash Literals](#hash-literals)
-  - [Functions and Closures](#functions-and-closures)
-- [Statements](#statements)
-  - [Assignment](#assignment)
-  - [Method Calls](#method-calls)
-  - [Function Calls](#function-calls)
-  - [Bare Word Command Calls](#bare-word-command-calls)
-  - [Operators](#operators)
-- [Control Flow](#control-flow)
-  - [If / elsif / else](#if-elsif-else)
-  - [While](#while)
-  - [Break](#break)
-- [Blocks](#blocks)
-- [Function and Closure Definitions](#function-and-closure-definitions)
-- [Return](#return)
-- [Exception Handling](#exception-handling)
-  - [catch](#catch)
-  - [raise](#raise)
-- [System Methods](#system-methods)
-- [Document Statements](#document-statements)
-- [Source Position Annotations](#source-position-annotations)
-  - [What gets annotated](#what-gets-annotated)
-  - [CharlieJSON-only origins](#charliejson-only-origins)
-  - [Open questions](#open-questions)
-- [Known Gaps](#known-gaps)
-  - [Hash key order](#hash-key-order)
-- [Open Questions](#open-questions-1)
-  - [Class definitions](#class-definitions)
-
----
-
 <a id="overview"></a>
-## 2 Overview
+## Overview
 
 ~~~json
 {"vibecode": {
@@ -78,7 +36,7 @@ itself before the parser exists.
 ---
 
 <a id="core-principle"></a>
-## 3 Core Principle
+## Core Principle
 
 ~~~json
 {"vibecode": {
@@ -108,7 +66,7 @@ arguments or a single expression for positional calls.
 ---
 
 <a id="comments"></a>
-## 4 Comments
+## Comments
 
 ~~~json
 {"vibecode": {
@@ -132,7 +90,7 @@ It is ignored by the interpreter.
 ---
 
 <a id="expressions"></a>
-## 5 Expressions
+## Expressions
 
 ~~~json
 {"vibecode": {
@@ -156,7 +114,7 @@ It is ignored by the interpreter.
 Expressions are JSON objects that produce a value.
 
 <a id="literals"></a>
-### 5.1 Literals
+### Literals
 
 ```json
 {"value": "hello"}
@@ -166,7 +124,7 @@ Expressions are JSON objects that produce a value.
 ```
 
 <a id="variables"></a>
-### 5.2 Variables
+### Variables
 
 ```json
 {"var": "foo"}        // $foo
@@ -176,7 +134,7 @@ Expressions are JSON objects that produce a value.
 ```
 
 <a id="bare-word-commands"></a>
-### 5.3 Bare Word Commands
+### Bare Word Commands
 
 A `{"bwc": "name"}` defers lookup to the runtime. The interpreter resolves the name
 through the scope dispatcher to find the associated object and method. It is syntactic
@@ -188,7 +146,7 @@ sugar — it does not expand in CharlieJSON.
 ```
 
 <a id="array-literals"></a>
-### 5.4 Array Literals
+### Array Literals
 
 ```json
 {"array": [{"value": 1}, {"value": 2}, {"value": 3}]}
@@ -197,7 +155,7 @@ sugar — it does not expand in CharlieJSON.
 Charlie equivalent: `[1, 2, 3]`
 
 <a id="hash-literals"></a>
-### 5.5 Hash Literals
+### Hash Literals
 
 Hashes are represented as an array of `[key, expr]` pairs to preserve insertion order.
 
@@ -208,7 +166,7 @@ Hashes are represented as an array of `[key, expr]` pairs to preserve insertion 
 Charlie equivalent: `{name: 'Picard', rank: 'Captain'}`
 
 <a id="functions-and-closures"></a>
-### 5.6 Functions and Closures
+### Functions and Closures
 
 ```json
 {"function": {"params": ["a", "b"], "body": [stmt, ...]}}
@@ -220,7 +178,7 @@ A `function` does not capture the outer scope. A `closure` does.
 ---
 
 <a id="statements"></a>
-## 6 Statements
+## Statements
 
 ~~~json
 {"vibecode": {
@@ -234,7 +192,7 @@ A `function` does not capture the outer scope. A `closure` does.
 ~~~
 
 <a id="assignment"></a>
-### 6.1 Assignment
+### Assignment
 
 Assignment is the `=` operator — consistent with the `[receiver, method, args]` form.
 
@@ -251,7 +209,7 @@ Charlie equivalent: `$foo = 'hello'`
 Charlie equivalent: `$greeting = $foo + ' world'`
 
 <a id="method-calls"></a>
-### 6.2 Method Calls
+### Method Calls
 
 ```json
 [{"var": "foo"}, "save"]
@@ -274,7 +232,7 @@ Chained calls — the receiver of the outer call is the result of the inner:
 Charlie equivalent: `$foo.bar.gup`
 
 <a id="function-calls"></a>
-### 6.3 Function Calls
+### Function Calls
 
 `&foo` calls the function object in `$foo`. This is a `call` method on the variable:
 
@@ -291,7 +249,7 @@ Charlie equivalent: `&foo`
 Charlie equivalent: `&foo(name: 'Picard')`
 
 <a id="bare-word-command-calls"></a>
-### 6.4 Bare Word Command Calls
+### Bare Word Command Calls
 
 ```json
 [{"bwc": "puts"}, {"value": "hello world"}]
@@ -306,7 +264,7 @@ Charlie equivalent: `puts 'hello world'`
 Charlie equivalent: `puts`
 
 <a id="operators"></a>
-### 6.5 Operators
+### Operators
 
 Operators are method calls. The left operand is the receiver, the operator is the method,
 the right operand is the argument:
@@ -322,7 +280,7 @@ Charlie equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 ---
 
 <a id="control-flow"></a>
-## 7 Control Flow
+## Control Flow
 
 ~~~json
 {"vibecode": {
@@ -335,7 +293,7 @@ Charlie equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 ~~~
 
 <a id="if-elsif-else"></a>
-### 7.1 If / elsif / else
+### If / elsif / else
 
 ```json
 [{"bwc": "if"}, {
@@ -366,7 +324,7 @@ end
 statement returns `null`. Not an error.
 
 <a id="while"></a>
-### 7.2 While
+### While
 
 ```json
 [{"bwc": "while"}, {
@@ -385,7 +343,7 @@ end
 ```
 
 <a id="break"></a>
-### 7.3 Break
+### Break
 
 ~~~json
 {"vibecode": {
@@ -432,7 +390,7 @@ about `break $named_loop` as a targeting alternative.
 ---
 
 <a id="blocks"></a>
-## 8 Blocks
+## Blocks
 
 ~~~json
 {"vibecode": {
@@ -465,7 +423,7 @@ end
 ---
 
 <a id="function-and-closure-definitions"></a>
-## 9 Function and Closure Definitions
+## Function and Closure Definitions
 
 ~~~json
 {"vibecode": {
@@ -521,7 +479,7 @@ end
 ---
 
 <a id="return"></a>
-## 10 Return
+## Return
 
 ~~~json
 {"vibecode": {
@@ -546,7 +504,7 @@ Return with no value:
 ---
 
 <a id="exception-handling"></a>
-## 11 Exception Handling
+## Exception Handling
 
 ~~~json
 {"vibecode": {
@@ -558,7 +516,7 @@ Return with no value:
 ~~~
 
 <a id="catch"></a>
-### 11.1 catch
+### catch
 
 ```json
 [{"var": "exception"}, "=", [{"bwc": "catch"}, {
@@ -575,7 +533,7 @@ end
 ```
 
 <a id="raise"></a>
-### 11.2 raise
+### raise
 
 ```json
 [{"bwc": "raise"}, {"value": "borg.com/exception/assimilation"}]
@@ -586,7 +544,7 @@ Charlie equivalent: `raise 'borg.com/exception/assimilation'`
 ---
 
 <a id="system-methods"></a>
-## 12 System Methods
+## System Methods
 
 ~~~json
 {"vibecode": {
@@ -615,7 +573,7 @@ Charlie equivalent: `%chain['user']`
 ---
 
 <a id="document-statements"></a>
-## 13 Document Statements
+## Document Statements
 
 ~~~json
 {"vibecode": {
@@ -643,7 +601,7 @@ in the program array. They are no-ops at runtime.
 ---
 
 <a id="source-position-annotations"></a>
-## 14 Source Position Annotations
+## Source Position Annotations
 
 ~~~json
 {"vibecode": {
@@ -676,7 +634,7 @@ log frame `location` fields (see
 happened at line N," etc.
 
 <a id="what-gets-annotated"></a>
-### 14.1 What gets annotated
+### What gets annotated
 
 Every node emitted from a Charlie-source transpile carries a `line`
 field. Granularity is per-statement at minimum and per-expression
@@ -684,7 +642,7 @@ where reasonable — enough that any runtime position can resolve back
 to a source line.
 
 <a id="charliejson-only-origins"></a>
-### 14.2 CharlieJSON-only origins
+### CharlieJSON-only origins
 
 Code that originated as CharlieJSON directly (no Charlie source) has
 **no `line` field** — there's nothing to annotate. Tools that inspect
@@ -692,7 +650,7 @@ positions check whether `line` is present; if it isn't, the source
 position is genuinely unknown.
 
 <a id="open-questions"></a>
-### 14.3 Open questions
+### Open questions
 
 - **File identifier alongside line.** Line numbers alone aren't
   enough to locate code; you also need to know which file. Probably
@@ -710,7 +668,7 @@ position is genuinely unknown.
 ---
 
 <a id="known-gaps"></a>
-## 15 Known Gaps
+## Known Gaps
 
 ~~~json
 {"vibecode": {
@@ -721,7 +679,7 @@ position is genuinely unknown.
 ~~~
 
 <a id="hash-key-order"></a>
-### 15.1 Hash key order
+### Hash key order
 
 Charlie hashes have significant key order — `{foo: true, bar: true}` and
 `{bar: true, foo: true}` are distinct values. A compliant engine must preserve key
@@ -730,10 +688,10 @@ insertion order through serialization and deserialization.
 ---
 
 <a id="open-questions-1"></a>
-## 16 Open Questions
+## Open Questions
 
 <a id="class-definitions"></a>
-### 16.1 Class definitions
+### Class definitions
 
 Class definitions in CharlieJSON follow the same `[receiver, method, args]` pattern as
 everything else. The class body statements (`field`, `inherits`, `function`, etc.) are

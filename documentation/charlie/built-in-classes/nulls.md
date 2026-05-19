@@ -13,7 +13,7 @@
 class.
 
 <a id="too-long-didnt-read"></a>
-## 1 Too Long, Didn't Read
+## Too Long, Didn't Read
 
 `null` returns a new instance of `puck.uno/null`. You do not get the same null
 object every time. Every null object has a `flavor` field to which you can
@@ -23,7 +23,7 @@ Claude got pretty wordy in this document but it's a nice read if you're into
 the finer points of null.
 
 <a id="construction"></a>
-## 2 Construction
+## Construction
 
 ~~~json
 {"vibecode": {
@@ -48,7 +48,7 @@ A program that tries to redefine these names raises a runtime error.
 ---
 
 <a id="equality"></a>
-## 3 Equality
+## Equality
 
 ~~~json
 {"vibecode": {
@@ -95,7 +95,7 @@ end
 ---
 
 <a id="identity-guarantees"></a>
-## 4 Identity Guarantees
+## Identity Guarantees
 
 ~~~json
 {"vibecode": {
@@ -136,7 +136,7 @@ The same applies symmetrically to `true` and `false`. The mechanism is
 ---
 
 <a id="null-flavors"></a>
-## 5 Null Flavors
+## Null Flavors
 
 Null flavors let a program distinguish *why* a value is null, not just that it is
 null. The rest of this section explains the problem they solve, how the canonical
@@ -144,7 +144,7 @@ healthcare standard (HL7) handles it, and Puck's deliberately simple
 implementation.
 
 <a id="background-the-challenge"></a>
-### 5.1 Background: The Challenge
+### Background: The Challenge
 
 ~~~json
 {"vibecode": {
@@ -190,7 +190,7 @@ Wherever distinguishing absence reasons matters, a single `NULL` forces awkward
 sentinel values, side-channel error codes, or out-of-band state tracking.
 
 <a id="background-how-hl7-handles-it"></a>
-### 5.2 Background: How HL7 Handles It
+### Background: How HL7 Handles It
 
 ~~~json
 {"vibecode": {
@@ -253,7 +253,7 @@ The pattern across all of these: when "missing" matters, distinguishing reasons
 pays off.
 
 <a id="pucks-approach"></a>
-### 5.3 Puck's Approach
+### Puck's Approach
 
 ~~~json
 {"vibecode": {
@@ -291,7 +291,7 @@ finance, etc.), that domain's conventions can be defined and adopted as communit
 standards on top of the Puck primitive.
 
 <a id="the-flavor-field"></a>
-### 5.4 The `flavor` Field
+### The `flavor` Field
 
 ~~~json
 {"vibecode": {
@@ -314,7 +314,7 @@ $y.flavor          # null
 The flavor field is mutable. Assigning a new flavor replaces the previous one.
 
 <a id="standard-flavors"></a>
-### 5.5 Standard Flavors
+### Standard Flavors
 
 ~~~json
 {"vibecode": {
@@ -399,7 +399,7 @@ code that needs more specific reasons uses its own flavor values
 canonical namespace.
 
 <a id="when-to-use-a-flavor"></a>
-### 5.6 When to Use a Flavor
+### When to Use a Flavor
 
 A flavor is only useful if **callers will actually branch on it**.
 The rule: *return a flavored null only when someone is expected to
@@ -429,7 +429,7 @@ distinguish ("no puck here" is the whole story; no further branch
 is implied).
 
 <a id="flavor-propagation"></a>
-### 5.7 Flavor Propagation
+### Flavor Propagation
 
 ~~~json
 {"vibecode": {
@@ -467,7 +467,7 @@ end
 ```
 
 <a id="use-cases"></a>
-### 5.8 Use Cases
+### Use Cases
 
 ~~~json
 {"vibecode": {
@@ -492,7 +492,7 @@ Null flavors carry information that single-NULL systems lose. Common application
   "explicitly cleared" from "cleared at security boundary."
 
 <a id="serialization"></a>
-### 5.9 Serialization
+### Serialization
 
 ~~~json
 {"vibecode": {
@@ -553,7 +553,7 @@ serializable. Flavors holding live objects (functions, capabilities, etc.) canno
 survive serialization — the engine raises if asked to serialize one.
 
 <a id="relation-to-the-trust-model"></a>
-### 5.10 Relation to the Trust Model
+### Relation to the Trust Model
 
 ~~~json
 {"vibecode": {
