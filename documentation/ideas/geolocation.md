@@ -929,7 +929,7 @@ anything that references remote resources at render time), the
 **ecoverse-wide CSP policy** applies: alongside the HTML snippet,
 the service provides the information needed to construct a
 `Content-Security-Policy` header that permits the embed. See
-[csp.md](../charlie/csp.md) for the full policy.
+[csp.md](../charlie/packages/touchstone/csp.md) for the full policy.
 
 Consumers can use that info or not — but it's always provided.
 
@@ -972,7 +972,7 @@ developers don't have to handle attribution separately.
 
 **CSP info.** When this URL is provided as part of a larger HTML
 snippet (e.g., an embed code), the corresponding CSP info bundle
-(see [csp.md](../charlie/csp.md)) accompanies it. For the bare image URL alone,
+(see [csp.md](../charlie/packages/touchstone/csp.md)) accompanies it. For the bare image URL alone,
 adding `img-src https://puck.uno` to a site's CSP is what's needed
 to allow the embed.
 
@@ -1267,7 +1267,7 @@ library is configured to fetch tiles from) to its
 `Content-Security-Policy`. Plus any `connect-src` directives the
 script needs for runtime API calls.
 
-Per the [ecoverse CSP policy](../charlie/csp.md), `$map.html` makes the CSP
+Per the [ecoverse CSP policy](../charlie/packages/touchstone/csp.md), `$map.html` makes the CSP
 info available alongside the HTML — exact bundling format TBD.
 
 <a id="privacy-and-osm-stewardship"></a>

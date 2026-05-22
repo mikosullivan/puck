@@ -12,13 +12,13 @@ local socket       = require("socket")
 local page         = require("orlando.page")
 local content_type = require("orlando.content_type")
 local route        = require("orlando.route")
+local api          = require("orlando.api")
 
 local M = {}
 
 local DEFAULT_PORT = 8181
 local DEFAULT_HOST = "127.0.0.1"  -- loopback by default; nginx fronts public traffic
 
-local README_TITLE = "Puck"
 
 local CSP = "img-src 'self'; style-src 'self'; script-src 'self'"
 
@@ -58,8 +58,34 @@ end
 
 local NOT_FOUND_BODY = "<!DOCTYPE html><html><body><h1>404 Not Found</h1></body></html>\n"
 
+local function read_headers(client)
+    local headers = {}
+    while true do
+        local line = client:receive("*l")
+        if not line or line == "" then break end
+        local k, v = line:match("^([^:]+):%s*(.+)$")
+        if k then headers[k:lower()] = v end
+    end
+    return headers
+end
+
 local function respond(client, request_line)
     local method, path = parse_request_line(request_line)
+    local headers = read_headers(client)
+
+    local body = ""
+    local clen = tonumber(headers["content-length"])
+    if clen and clen > 0 then
+        body = client:receive(clen) or ""
+    end
+
+    -- /api/* endpoints are side-effecting and bypass route.resolve.
+    if path and path:sub(1, 5) == "/api/" then
+        local resp = api.dispatch({ method = method, path = path, body = body })
+        client:send(build_response(resp.status, resp.body, resp.content_type))
+        return
+    end
+
     if method ~= "GET" then
         client:send(build_response("405 Method Not Allowed", "Method Not Allowed\n", "text/plain; charset=utf-8"))
         return
@@ -70,27 +96,24 @@ local function respond(client, request_line)
     if r.kind == "redirect" then
         local body = '<!DOCTYPE html><html><body>Moved to <a href="'
                   .. r.location .. '">' .. r.location .. '</a></body></html>\n'
+        -- Cache-Control: no-store stops browsers from caching the 301.
+        -- Without this, if a routing rule is later corrected, viewers
+        -- can stay stuck on the old destination because their browser
+        -- never re-asks the server. Orlando's no-caching design carries
+        -- through to its 301s too.
         client:send(build_response("301 Moved Permanently", body,
-            "text/html; charset=utf-8", {"Location: " .. r.location}))
-        return
-    end
-
-    if r.kind == "home" then
-        local html = page.render_request({
-            md_path = r.path,
-            title   = README_TITLE,
-            is_home = true,
-        })
-        client:send(build_response("200 OK", html, content_type.for_ext("html")))
+            "text/html; charset=utf-8",
+            {"Location: " .. r.location, "Cache-Control: no-store"}))
         return
     end
 
     if r.kind == "markdown" then
-        local title = r.path:match("([^/]+)%.md$") or r.path
+        local title = r.path == "README.md"
+            and "Puck"
+            or (r.path:match("([^/]+)%.md$") or r.path)
         local html = page.render_request({
             md_path = r.path,
             title   = title,
-            is_home = false,
         })
         client:send(build_response("200 OK", html, content_type.for_ext("html")))
         return
@@ -132,9 +155,6 @@ function M.serve(opts)
         local client = listener:accept()
         client:settimeout(5)
         local request_line = client:receive("*l")
-        repeat
-            local line = client:receive("*l")
-        until not line or line == ""
         respond(client, request_line)
         client:close()
     end

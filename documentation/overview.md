@@ -156,11 +156,11 @@ explicitly send them in as paramters. See [roles.md](charlie/roles.md).
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception. See
-  [charlie-runtime.md](charlie/charlie-runtime.md).
-- **Built-in [HTTP middleware](charlie/http-middleware/http-middleware.md) family.**
-  [Touchstone](charlie/http-middleware/touchstone.md) provides the
+  [charlie-runtime.md](charlie/lucy/lucy.md).
+- **Built-in [HTTP middleware](charlie/packages/touchstone/) family.**
+  [Touchstone](charlie/packages/touchstone/touchstone.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). [Sammy](charlie/http-middleware/sammy.md) is a built-in
+  CSP). [Sammy](charlie/packages/touchstone/sammy.md) is a built-in
   framework on Touchstone for route-style serving.
 
 ---

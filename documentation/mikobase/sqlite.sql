@@ -1,4 +1,4 @@
--- Hive SQLite Schema
+-- Mikobase SQLite Schema
 
 -- ============================================================
 -- records

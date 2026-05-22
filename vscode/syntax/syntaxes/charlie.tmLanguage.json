@@ -110,7 +110,7 @@
                 },
                 {
                     "name": "keyword.declaration.charlie",
-                    "match": "\\b(function|remote|class|inherits|abstract|record_class|field|property|helper|join)\\b"
+                    "match": "\\b(function|remote|class|inherits|abstract|record_class|field|accessor|helper|join)\\b"
                 },
                 {
                     "name": "keyword.other.charlie",

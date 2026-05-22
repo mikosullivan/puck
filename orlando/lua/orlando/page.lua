@@ -6,15 +6,17 @@
     "render":         "markdown string -> body HTML string (lunamark with fenced code + pipe tables enabled)",
     "wrap_minimal":   "body HTML + title -> minimal HTML doc (used by CLI render.lua; no chrome)",
     "render_file":    "path + title -> minimal HTML doc; reads, renders, wraps (CLI)",
-    "render_request": "ctx { md_path, title, is_home } -> full HTML page with chrome"
+    "render_request": "ctx { md_path, title } -> full HTML page with chrome"
   },
   "no_caching": "every call re-reads source and re-runs the pipeline per the Orlando no-caching design"
 }
 ]]
-local lunamark       = require("lunamark")
-local quick_builder  = require("orlando.quick_builder")
-local nav            = require("orlando.nav")
-local json_highlight = require("orlando.json_highlight")
+local lunamark          = require("lunamark")
+local quick_builder     = require("orlando.quick_builder")
+local nav               = require("orlando.nav")
+local json_highlight    = require("orlando.json_highlight")
+local charlie_highlight = require("orlando.charlie_highlight")
+local issues_fetcher    = require("orlando.issues")
 
 local M = {}
 
@@ -65,11 +67,11 @@ local function link_existing_hero_logo(body_html)
 end
 
 -- Rewrite internal href and src URLs to the paths Orlando serves:
---   "documentation/foo/bar.md"       -> "/foo/bar"
---   "foo.md"                         -> "foo"
---   "orlando/static/logo.svg"        -> "/static/logo.svg"
---   "orlando/client-assets/style.css"-> "/client-assets/style.css"
---   "../baz.md#frag"                 -> "../baz#frag"
+--   "documentation/foo/bar.md"        -> "/documentation/foo/bar"
+--   "foo.md"                          -> "foo"
+--   "orlando/static/logo.svg"         -> "/static/logo.svg"
+--   "orlando/client-assets/style.css" -> "/client-assets/style.css"
+--   "../baz.md#frag"                  -> "../baz#frag"   (relative; browser resolves)
 -- External http(s), # anchors, and mailto: are left alone.
 local function rewrite_one_url(url)
     if url:match("^https?://") or url:sub(1,1) == "#" or url:sub(1,7) == "mailto:" then
@@ -77,9 +79,9 @@ local function rewrite_one_url(url)
     end
     local path, frag = url:match("^([^#]+)(#.*)$")
     if not path then path, frag = url, "" end
-    path = path:gsub("^orlando/static/",        "/static/")
+    path = path:gsub("^orlando/static/",         "/static/")
     path = path:gsub("^orlando/client%-assets/", "/client-assets/")
-    path = path:gsub("^documentation/",         "/")
+    path = path:gsub("^documentation/",          "/documentation/")
     path = path:gsub("%.md$", "")
     return path .. frag
 end
@@ -196,6 +198,7 @@ local function render_toc_li(parent_qb, item)
             li:tag("label", function(l)
                 l:attr("class", "toc")
                 l:attr("for",   cb_id)
+                l:text("")  -- force <label></label>; the arrow is from CSS ::before
             end)
             li:text(" ")
             li:tag("a", function(a)
@@ -241,7 +244,16 @@ local function strip_manual_toc(body_html)
     return body_html
 end
 
+-- TOC goes at the boundary between front matter (H1, subtitle, vibecode,
+-- intro prose) and body sections — i.e. immediately before the first H2.
+-- This puts TOC after the doc-level vibecode block without trying to
+-- pattern-match where vibecode ends.
 local function insert_auto_toc(body_html, toc_html)
+    local h2_start = body_html:find("<h2", 1, true)
+    if h2_start then
+        return body_html:sub(1, h2_start - 1) .. toc_html .. body_html:sub(h2_start)
+    end
+    -- Fallback: no H2 (only reachable if MIN_HEADINGS_FOR_TOC is lowered).
     local h1_end = body_html:find("</h1>", 1, true)
     if h1_end then
         return body_html:sub(1, h1_end + 4) .. toc_html .. body_html:sub(h1_end + 5)
@@ -263,10 +275,146 @@ local function transform_toc(body_html)
     return insert_auto_toc(body_html, toc_html)
 end
 
--- Wrap any fenced ```json block whose content begins with `{"vibecode":` in
--- a collapsible <details class="vibecode"> shell with Monokai syntax-
--- highlighted JSON inside. style.css handles the dark colouring and the
--- open/closed arrow. Default state: collapsed.
+------------------------------------------------------------
+-- GitHub issue links on H1 and every H2/H3 heading.
+-- Each link prefills a GitHub issue with the file path (and
+-- section title + anchor, for H2/H3) so a reader can open a
+-- doc bug straight from the page.
+------------------------------------------------------------
+
+local GITHUB_REPO = "https://github.com/mikosullivan/puck"
+
+local function url_encode(s)
+    return (s:gsub("[^%w%-._~]", function(c)
+        return string.format("%%%02X", string.byte(c))
+    end))
+end
+
+local function issue_link(md_path, section_text, section_id)
+    local title, body
+    if section_text then
+        title = md_path .. " § " .. section_text
+        body  = "File: " .. md_path .. "\n\nSection: " .. section_text
+        if section_id then
+            body = body .. "\nAnchor: #" .. section_id
+        end
+    else
+        title = md_path
+        body  = "File: " .. md_path
+    end
+    local href = GITHUB_REPO .. "/issues/new?title=" .. url_encode(title)
+        .. "&body=" .. url_encode(body)
+    return '<a href="' .. href .. '" class="section-issue" '
+        .. 'target="_blank" rel="noopener">GitHub issue</a>'
+end
+
+-- HTML-escape suitable for attribute values AND textarea content.
+local function html_escape(s)
+    return (s:gsub("&", "&amp;")
+             :gsub("<", "&lt;")
+             :gsub(">", "&gt;")
+             :gsub('"', "&quot;"))
+end
+
+-- Build the "Quick add" toggle label + the hidden checkbox + the form.
+-- The form POSTs to Orlando's /api/quick-add-issue endpoint, which calls
+-- `gh issue create` server-side. target="qa-target" sends the response
+-- into a single hidden iframe at the page bottom — the reader stays put.
+-- quick-add.js handles two concerns:
+--   1. focus the body textarea when the toggle flips on (autofocus
+--      can't fire on a hidden form);
+--   2. on submit, swap the form for a "Issue submitted" status that
+--      links to the created issue (read from the iframe response).
+local function quick_add_block(md_path, section_text, section_id, dom_id)
+    local title_prefill = "File: " .. md_path
+    if section_text then
+        title_prefill = title_prefill .. " § " .. section_text
+        if section_id then
+            title_prefill = title_prefill .. " (#" .. section_id .. ")"
+        end
+    end
+    return table.concat({
+        '\n<input type="checkbox" hidden class="quick-add-toggle" id="', dom_id, '"/>',
+        '\n<div class="quick-add-form">',
+        '<form action="/api/quick-add-issue" method="POST" target="qa-target">',
+        '<input type="text" name="title" value="', html_escape(title_prefill), '" required>',
+        '<textarea name="body" rows="6"></textarea>',
+        '<div class="quick-add-actions">',
+        '<button type="submit">Submit issue</button>',
+        '<label for="', dom_id, '" class="quick-add-cancel">Cancel</label>',
+        '</div>',
+        '</form>',
+        '</div>',
+        '<div class="quick-add-status" hidden></div>',
+    })
+end
+
+local function quick_add_label(dom_id)
+    return '<label class="section-issue" for="' .. dom_id .. '">Quick add</label>'
+end
+
+-- Render the per-section open-issues panel (used under each H2-H6 heading
+-- that has issues whose title ends with `(#<anchor>)`). Same look as the
+-- page-top panel, but the section-context is implied so the "§ Section"
+-- chip on each item is omitted. Returns "" when the section has no issues.
+local function render_section_issues_panel(md_path, anchor)
+    local issues = issues_fetcher.fetch_section(md_path, anchor)
+    if not issues or #issues == 0 then return "" end
+    local parts = {}
+    parts[#parts + 1] = '<details class="issues-panel section-issues-panel">'
+    parts[#parts + 1] = '<summary>Open issues (' .. tostring(#issues) .. ')</summary>'
+    parts[#parts + 1] = '<ul class="issues-list">'
+    for _, issue in ipairs(issues) do
+        local body_html = ""
+        if issue.body and issue.body ~= "" then
+            body_html = M.render(issue.body)
+        end
+        parts[#parts + 1] = '<li class="issue-item">'
+            .. '<div class="issue-head">'
+            ..   '<a href="' .. html_escape(issue.url or "#") .. '" '
+            ..     'class="issue-number" target="_blank" rel="noopener">#'
+            ..     tostring(issue.number) .. '</a>'
+            ..   ' <button type="button" class="issue-close" '
+            ..     'data-issue-number="' .. tostring(issue.number) .. '">'
+            ..     'Close</button>'
+            .. '</div>'
+            .. '<div class="issue-body">' .. body_html .. '</div>'
+            .. '</li>'
+    end
+    parts[#parts + 1] = '</ul>'
+    parts[#parts + 1] = '</details>'
+    return table.concat(parts)
+end
+
+local function inject_issue_links(body_html, md_path)
+    -- Page H1: issue link + Quick add label, then checkbox + form after.
+    body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
+        local dom_id = "qa-h1"
+        return open .. inner .. " " .. issue_link(md_path)
+            .. " " .. quick_add_label(dom_id) .. close
+            .. quick_add_block(md_path, nil, nil, dom_id)
+    end, 1)
+    -- Each H2 through H6: same treatment, plus a per-section issues panel
+    -- if the section has issues filed against it.
+    body_html = body_html:gsub("(<(h[2-6])([^>]*)>)(.-)(</%2>)",
+        function(open, _, attrs, inner, close)
+            local id     = attrs:match('id="([^"]+)"')
+            local text   = clean_heading_text(inner)
+            local dom_id = "qa-" .. (id or slugify(text))
+            return open .. inner .. " " .. issue_link(md_path, text, id)
+                .. " " .. quick_add_label(dom_id) .. close
+                .. quick_add_block(md_path, text, id, dom_id)
+                .. render_section_issues_panel(md_path, id)
+        end)
+    return body_html
+end
+
+-- Highlight every fenced ```json block in the rendered body.
+-- Blocks whose content begins with `{"vibecode":` get wrapped in a
+-- collapsible <details class="vibecode"> shell with the Monokai
+-- (dark) theme inside; every other JSON block is highlighted in place
+-- with the pygments default (light) theme. style.css supplies both
+-- palettes.
 local function decode_html_entities(s)
     return (s:gsub("&quot;", '"')
              :gsub("&lt;",   "<")
@@ -275,25 +423,127 @@ local function decode_html_entities(s)
              :gsub("&amp;",  "&"))
 end
 
-local function wrap_vibecode_blocks(body_html)
+local function highlight_json_blocks(body_html)
     return (body_html:gsub(
-        '<pre><code class="language%-json">({&quot;vibecode&quot;.-)</code></pre>',
+        '<pre><code class="language%-json">(.-)</code></pre>',
         function(escaped_json)
             local json = decode_html_entities(escaped_json)
             local highlighted = json_highlight.highlight(json)
-            return '<details class="vibecode"><summary>vibecode</summary>'
-                .. '<div class="vibecode-code"><pre>' .. highlighted
-                .. '</pre></div></details>'
+            if escaped_json:match("^{&quot;vibecode&quot;") then
+                return '<details class="vibecode"><summary>vibecode</summary>'
+                    .. '<div class="vibecode-code"><pre>' .. highlighted
+                    .. '</pre></div></details>'
+            end
+            return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
         end))
 end
 
--- Add target="_blank" rel="noopener" to any <a> with an external href.
+local function highlight_charlie_blocks(body_html)
+    return (body_html:gsub(
+        '<pre><code class="language%-charlie">(.-)</code></pre>',
+        function(escaped_source)
+            local source = decode_html_entities(escaped_source)
+            local highlighted = charlie_highlight.highlight(source)
+            return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
+        end))
+end
+
+------------------------------------------------------------
+-- Open-issues panel at the top of each page.
+-- Lists every open GitHub issue whose title is "File: <md_path> ..."
+-- (the prefix the per-section Quick-add panel files issues with).
+-- Rendered as a collapsible <details open> just below the vibecode,
+-- or just below the H1 if the page has no vibecode.
+------------------------------------------------------------
+
+local function render_issues_panel(issues)
+    if not issues or #issues == 0 then return "" end
+    local parts = {}
+    parts[#parts + 1] = '<details class="issues-panel">'
+    parts[#parts + 1] = '<summary>Open issues (' .. tostring(#issues) .. ')</summary>'
+    parts[#parts + 1] = '<ul class="issues-list">'
+    for _, issue in ipairs(issues) do
+        local section = ""
+        -- Title format is "File: <path>" or "File: <path> § Section (#anchor)"
+        local sect = (issue.title or ""):match("§%s*(.-)%s*%(")
+        if not sect then sect = (issue.title or ""):match("§%s*(.+)$") end
+        if sect then
+            section = ' <span class="issue-section">§ ' .. html_escape(sect) .. '</span>'
+        end
+        local body_html = ""
+        if issue.body and issue.body ~= "" then
+            body_html = M.render(issue.body)
+        end
+        parts[#parts + 1] = '<li class="issue-item">'
+            .. '<div class="issue-head">'
+            ..   '<a href="' .. html_escape(issue.url or "#") .. '" '
+            ..     'class="issue-number" target="_blank" rel="noopener">#'
+            ..     tostring(issue.number) .. '</a>'
+            ..   ' <button type="button" class="issue-close" '
+            ..     'data-issue-number="' .. tostring(issue.number) .. '">'
+            ..     'Close</button>'
+            ..   section
+            .. '</div>'
+            .. '<div class="issue-body">' .. body_html .. '</div>'
+            .. '</li>'
+    end
+    parts[#parts + 1] = '</ul>'
+    parts[#parts + 1] = '</details>'
+    return table.concat(parts)
+end
+
+-- Inject the panel just below the first vibecode <details> (the page-level
+-- vibecode block). If no vibecode is present, insert just after the first
+-- </h1>. If neither exists, prepend to the body.
+local function inject_issues_panel(body_html, md_path)
+    local issues = issues_fetcher.fetch(md_path)
+    local panel = render_issues_panel(issues)
+    if panel == "" then return body_html end
+
+    -- The vibecode wrapper is '<details class="vibecode">...</details>'.
+    -- Find its closing tag.
+    local vc_start = body_html:find('<details class="vibecode">', 1, true)
+    if vc_start then
+        local close = body_html:find('</details>', vc_start, true)
+        if close then
+            local cut = close + #'</details>'
+            return body_html:sub(1, cut) .. panel .. body_html:sub(cut + 1)
+        end
+    end
+
+    -- Fallback: after the first </h1>.
+    local h1_end = body_html:find('</h1>', 1, true)
+    if h1_end then
+        local cut = h1_end + #'</h1>'
+        return body_html:sub(1, cut) .. panel .. body_html:sub(cut + 1)
+    end
+
+    return panel .. body_html
+end
+
+-- Add target="_blank" rel="noopener" to any <a> that points elsewhere:
+--   - External (http://, https://) URLs.
+--   - Local URLs pointing at a non-markdown file (.html, .css, .js,
+--     .charlie, .json, images, etc.) — these are static assets the
+--     reader expects to view alongside the doc, not navigate to.
+-- Same-tab links: extensionless URLs (markdown renders), .md URLs (raw
+-- markdown), pure-anchor hrefs (#section), and any <a> that already has
+-- a target attribute.
 local function mark_external_links(body_html)
     return (body_html:gsub('<a%s+([^>]*)>', function(attrs)
         local href = attrs:match('href="([^"]+)"')
-        if not href or not href:match("^https?://") then return nil end
+        if not href then return nil end
         if attrs:find('target=') then return nil end
-        return '<a ' .. attrs .. ' target="_blank" rel="noopener">'
+        if href:match("^https?://") then
+            return '<a ' .. attrs .. ' target="_blank" rel="noopener">'
+        end
+        -- Local link: check extension, strip any query or anchor first.
+        local clean = href:gsub("[?#].*$", "")
+        local ext = clean:match("%.([a-zA-Z0-9]+)$")
+        if ext and ext:lower() ~= "md" then
+            return '<a ' .. attrs .. ' target="_blank" rel="noopener">'
+        end
+        return nil
     end))
 end
 
@@ -313,6 +563,82 @@ local function add_head(html_tag, title)
             l:attr("rel",  "stylesheet")
             l:attr("href", "/client-assets/style.css")
         end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/quick-add.js")
+            s:attr("defer", "")
+            s:text("")  -- force <script></script>; QuickBuilder would self-close otherwise
+        end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/issue-actions.js")
+            s:attr("defer", "")
+            s:text("")
+        end)
+    end)
+end
+
+-- True if documentation/<rel>/<lastpart>.md exists — i.e., the dir has a
+-- same-named index file we can link the breadcrumb segment to.
+local function has_dir_index(rel)
+    if rel == "" then return false end
+    local last = rel:match("([^/]+)$")
+    if not last then return false end
+    local f = io.open("documentation/" .. rel .. "/" .. last .. ".md", "rb")
+    if not f then return false end
+    local _, err = f:read(1)
+    f:close()
+    return err == nil
+end
+
+-- Map an fs md_path to the canonical URL Orlando serves it at.
+-- README.md is served at /documentation/ (the docs entry); everything
+-- else lives under /documentation/<path>.
+local function md_path_to_url(md_path)
+    if md_path == "README.md" then return "/documentation/" end
+    local rel = md_path:gsub("^documentation/", ""):gsub("%.md$", "")
+    local parent, name = rel:match("^(.*)/([^/]+)$")
+    if parent and name then
+        local parent_last = parent:match("([^/]+)$") or parent
+        if parent_last == name then
+            return "/documentation/" .. parent .. "/"
+        end
+    end
+    return "/documentation/" .. rel
+end
+
+-- Does a given URL path serve a markdown page? Used by the breadcrumb
+-- to decide whether each intermediate segment links somewhere.
+local function url_has_index(url_path)
+    if url_path == "/documentation" then return true end  -- README.md is the index
+    local rel = url_path:gsub("^/documentation/", "")
+    if rel == url_path then return false end  -- not under /documentation/
+    return has_dir_index(rel)
+end
+
+local function add_breadcrumb(parent_qb, md_path)
+    parent_qb:tag("nav", function(bc)
+        bc:attr("class", "breadcrumb")
+        local segments = {}
+        for s in md_path_to_url(md_path):gmatch("[^/]+") do
+            segments[#segments + 1] = s
+        end
+        -- Site root link is always first.
+        bc:tag("a", function(a) a:attr("href", "/"); a:text("home") end)
+        local cumulative = ""
+        for i, seg in ipairs(segments) do
+            bc:tag("span", function(s) s:attr("class", "sep"); s:text("/") end)
+            cumulative = cumulative .. "/" .. seg
+            local is_last = (i == #segments)
+            if is_last then
+                bc:tag("span", function(s) s:attr("class", "current"); s:text(seg) end)
+            elseif url_has_index(cumulative) then
+                bc:tag("a", function(a)
+                    a:attr("href", cumulative .. "/")
+                    a:text(seg)
+                end)
+            else
+                bc:tag("span", function(s) s:text(seg) end)
+            end
+        end
     end)
 end
 
@@ -334,7 +660,7 @@ local function add_sidebar(nav_tag, current_md_path)
 end
 
 --[[ {
-    "in":  {"ctx": "table { md_path = string (fs path), title = string?, is_home = boolean? }"},
+    "in":  {"ctx": "table { md_path = string (fs path), title = string? }"},
     "out": "string (full HTML page, ready to send over HTTP)"
 } ]]
 function M.render_request(ctx)
@@ -350,14 +676,16 @@ function M.render_request(ctx)
     body = link_existing_hero_logo(body)
     body = rewrite_links(body)
     body = mark_external_links(body)
-    body = wrap_vibecode_blocks(body)
+    body = highlight_json_blocks(body)
+    body = highlight_charlie_blocks(body)
+    body = inject_issues_panel(body, ctx.md_path)
     body = transform_toc(body)
+    body = inject_issue_links(body, ctx.md_path)
 
     local html = quick_builder.new("html")
     html:attr("lang", "en")
     add_head(html, ctx.title)
     html:tag("body", function(b)
-        if ctx.is_home then b:attr("class", "home") end
         b:tag("div", function(layout)
             layout:attr("class", "layout")
             layout:tag("nav", function(n)
@@ -366,8 +694,21 @@ function M.render_request(ctx)
             end)
             layout:tag("main", function(m)
                 m:attr("class", "content")
+                add_breadcrumb(m, ctx.md_path)
                 m:raw(body)
             end)
+        end)
+        -- Shared hidden target for every Quick-add form on the page.
+        b:tag("iframe", function(f)
+            f:attr("name",   "qa-target")
+            f:attr("class",  "quick-add-iframe")
+            f:attr("hidden", "")
+            f:text("")
+        end)
+        b:tag("hr", function(_) end)
+        b:tag("span", function(s)
+            s:attr("class", "about")
+            s:text("© 2026 Puck.uno")
         end)
     end)
 

@@ -77,7 +77,7 @@ consistent with recent design decisions:
 - **`block` bwc → `begin` bwc rename** — all usages already use
   `begin...end`.
 - **Deleted `hosted-logging-service.md`** — no broken links.
-- **Dogberry-as-framework framing** — the http-middleware/ docs
+- **Dogberry-as-framework framing** — the touchstone/ docs
   correctly reflect Sammy and Robinson as standalone servers.
 - **`%[...]` shorthand for `%puck[...]`** — properly documented
   in system-methods.md.
@@ -102,7 +102,7 @@ A follow-up pass should target:
   every doc that talks about exceptions or warnings.
 - Verify the `begin/ensure/end` pattern hasn't slipped in as
   `block/ensure/end` anywhere.
-- Walk the http-middleware/ tree for any lingering Dogberry-first
+- Walk the touchstone/ tree for any lingering Dogberry-first
   framing.
 - Check mikobase docs for the v1-scope decisions (SQLite + memory
   engines; no filesystem mode; deferred delta storage).

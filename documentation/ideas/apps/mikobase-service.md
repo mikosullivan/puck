@@ -33,7 +33,7 @@ production workloads.
 <a id="why-a-free-tier"></a>
 ## Why a Free Tier
 
-Same logic as the [logging service](logging-service.md#strategic-role-an-adoption-lever-for-puck):
+Same logic as the [logging service](logging-service.md#strategic-note):
 **a free tier is an adoption lever for the Puck ecoverse.**
 
 Mikobase by itself is just a database. To get someone to use it,
@@ -122,7 +122,7 @@ ride on the same infrastructure.
   some blend.
 - **Data portability.** Customer should be able to export their
   full mikobase at any time (consistent with the
-  [logging service's](logging-service.md#leaving-data-portability)
+  [logging service's](logging-service.md#out-of-scope-for-now)
   no-lock-in posture).
 
 ---

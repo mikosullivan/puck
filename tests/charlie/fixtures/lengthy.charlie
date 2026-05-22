@@ -5,7 +5,7 @@ class 'starfleet.com/person'
     field :birthdate, class: :string
     field :species,   class: :string, default: 'Human'
 
-    property :nickname
+    accessor :nickname
 
     function &greet
         'Hello, I am ' + @nickname

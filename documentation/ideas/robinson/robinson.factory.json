@@ -1,0 +1,25 @@
+{
+	"vibecode": {
+		"doc": "robinson-factory",
+		"role": "Robinson-specific factory configuration. Layers on top of Touchstone's factory.json (Sammy and Robinson both inherit from there); this file holds settings only Robinson needs.",
+		"scope": "extension dispatch and backstop handlers for Robinson"
+	},
+
+	"extensions": {
+		"css": {
+			"static": true,
+			"mime": "text/css",
+			"backstops": ["sass"]
+		},
+
+		"sass": {
+			"handler": "puck.uno/sass/converter",
+			"mime": "text/css"
+		},
+
+		"png": {
+			"handler": "puck.uno/image/png",
+			"mime": "image/png"
+		}
+	}
+}

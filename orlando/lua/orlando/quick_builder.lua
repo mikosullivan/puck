@@ -1,7 +1,7 @@
 --[[
 {
   "module": "orlando.quick_builder",
-  "role": "Tiny HTML/XML builder. Build a document by nesting calls; output is well-formed HTML.",
+  "role": "Tiny XML-shape builder. Build a document by nesting calls; output is well-formed XML that browsers will also accept as HTML in most cases.",
   "shape": {
     "QuickBuilder.new('root')":       "create a root tag, returns a Tag",
     "tag:tag('name', function(t))":   "add a child tag; call the function with the new child for nesting; returns the parent (self)",
@@ -10,7 +10,7 @@
     "tag:attr('name', 'value')":      "set an attribute; auto-escapes; preserves insertion order; returns self",
     "tag:render()":                   "serialize the whole tree as a string"
   },
-  "empty_tags": "only HTML5 void elements (area, base, br, col, embed, hr, img, input, link, meta, source, track, wbr) self-close as <x/>; every other empty tag renders as <tag></tag> so browsers don't mis-parse a non-void self-close like <label/> as an unclosed opening tag",
+  "empty_tags": "any tag with no children renders self-closing as <x/>. This is XML semantics, not HTML — HTML5 ignores the slash on non-void elements, which can make <label/> parse as an unclosed <label>. To force an explicit close for such elements, give the tag a child (e.g. tag:text('')). Keeping QuickBuilder ignorant of HTML's void-element list is deliberate; that knowledge belongs in the consumer.",
   "escaping": "text escapes & < >; attribute values escape & < > (don't put a literal \" in an attribute value); safe by construction",
   "no_prettification": "output is exactly what was built; no indentation or newlines added"
 }
@@ -28,16 +28,6 @@ local function escape(s)
     s = s:gsub(">", "&gt;")
     return s
 end
-
--- HTML5 void elements: empty without a closing tag. Anything else with no
--- children must render as <tag></tag>, NOT <tag/>, or browsers parse the
--- self-close form as an unclosed opening tag (the slash is ignored on
--- non-void elements in HTML5).
-local VOID = {
-    area = true, base = true, br = true, col = true, embed = true,
-    hr   = true, img  = true, input = true, link = true, meta = true,
-    source = true, track = true, wbr = true,
-}
 
 local Tag = {}
 Tag.__index = Tag
@@ -91,13 +81,7 @@ local function render_into(tag, parts)
         parts[#parts + 1] = '"'
     end
     if #tag.children == 0 then
-        if VOID[tag.name:lower()] then
-            parts[#parts + 1] = "/>"
-        else
-            parts[#parts + 1] = "></"
-            parts[#parts + 1] = tag.name
-            parts[#parts + 1] = ">"
-        end
+        parts[#parts + 1] = "/>"
         return
     end
     parts[#parts + 1] = ">"

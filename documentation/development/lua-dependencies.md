@@ -34,9 +34,9 @@ provides Ed25519 signing among other primitives.
 
 **What uses it.**
 
-- [`%utils.random`](../charlie/utils.md) — crypto-strong random
+- [`%utils.random`](../charlie/utils/utils.md) — crypto-strong random
   bytes and UUIDs (`randombytes_buf`).
-- The [Puck blockchain](../blockchain.md) — Ed25519 signing.
+- The [Puck blockchain](../charlie/blockchain/.md) — Ed25519 signing.
 
 **Why this one.** Smaller and more opinionated than OpenSSL, with
 a security-first design and a permissive licence. One library

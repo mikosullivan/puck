@@ -1,7 +1,7 @@
 --[[
 {
   "file": "orlando/tests/quick_builder/test_quick_builder.lua",
-  "role": "Tests for the QuickBuilder HTML/XML builder."
+  "role": "Tests for the QuickBuilder XML-shape builder."
 }
 ]]
 local runner  = require("support.runner")
@@ -10,14 +10,14 @@ local QB      = require("orlando.quick_builder")
 
 runner.suite("quick_builder")
 
-runner.test("empty non-void element renders as <x></x>", function()
+runner.test("empty tag renders self-closing", function()
     local doc = QB.new("html")
-    assert_.equal(doc:render(), "<html></html>")
+    assert_.equal(doc:render(), "<html/>")
 end)
 
-runner.test("attribute on root, no children (non-void)", function()
+runner.test("attribute on root, no children", function()
     local doc = QB.new("html"):attr("lang", "en")
-    assert_.equal(doc:render(), '<html lang="en"></html>')
+    assert_.equal(doc:render(), '<html lang="en"/>')
 end)
 
 runner.test("multiple attributes preserve insertion order", function()
@@ -26,12 +26,12 @@ runner.test("multiple attributes preserve insertion order", function()
         :attr("rel", "noopener")
         :attr("target", "_blank")
     assert_.equal(doc:render(),
-        '<a href="https://example.com" rel="noopener" target="_blank"></a>')
+        '<a href="https://example.com" rel="noopener" target="_blank"/>')
 end)
 
 runner.test("re-setting an attribute updates in place, does not reorder", function()
     local doc = QB.new("a"):attr("a", "1"):attr("b", "2"):attr("a", "3")
-    assert_.equal(doc:render(), '<a a="3" b="2"></a>')
+    assert_.equal(doc:render(), '<a a="3" b="2"/>')
 end)
 
 runner.test("text content", function()
@@ -46,13 +46,13 @@ end)
 
 runner.test("attribute escape: same as text — & < > only, no \" escape", function()
     local doc = QB.new("a"):attr("title", 'q&q <x> y')
-    assert_.equal(doc:render(), '<a title="q&amp;q &lt;x&gt; y"></a>')
+    assert_.equal(doc:render(), '<a title="q&amp;q &lt;x&gt; y"/>')
 end)
 
 runner.test("attribute key is case-sensitive (XML semantics — stored as given)", function()
     local doc = QB.new("a"):attr("Title", "first"):attr("title", "second")
     -- Different slots: both attributes appear in insertion order.
-    assert_.equal(doc:render(), '<a Title="first" title="second"></a>')
+    assert_.equal(doc:render(), '<a Title="first" title="second"/>')
 end)
 
 runner.test("nested tag with block", function()
@@ -65,19 +65,19 @@ runner.test("nested tag with block", function()
     assert_.equal(doc:render(), "<html><head><title>foo</title></head></html>")
 end)
 
-runner.test("HTML5 void elements self-close, non-void use explicit close tag", function()
+runner.test("any tag with no children self-closes (XML semantics)", function()
     local doc = QB.new("p")
     doc:tag("br")
     doc:tag("img", function(img) img:attr("src", "/x.png") end)
-    doc:tag("span")  -- non-void: must NOT self-close or browsers misparse
-    assert_.equal(doc:render(), '<p><br/><img src="/x.png"/><span></span></p>')
+    doc:tag("span")
+    assert_.equal(doc:render(), '<p><br/><img src="/x.png"/><span/></p>')
 end)
 
-runner.test("empty <label> renders as <label></label> (not self-closing)", function()
-    -- The bug that motivated the void-element list: <label/> is parsed
-    -- by HTML5 as an unclosed opening tag, swallowing siblings.
+runner.test("empty text child forces explicit close (workaround for HTML <label/>)", function()
+    -- Consumers that need <label></label> (HTML5 ignores the slash on
+    -- non-void elements) add an empty text child to force the open/close form.
     local doc = QB.new("li")
-    doc:tag("label", function(l) l:attr("for", "x") end)
+    doc:tag("label", function(l) l:attr("for", "x"); l:text("") end)
     doc:tag("a", function(a) a:attr("href", "#x"); a:text("X") end)
     assert_.equal(doc:render(),
         '<li><label for="x"></label><a href="#x">X</a></li>')
@@ -90,7 +90,7 @@ end)
 
 runner.test("tag with child tag closes normally", function()
     local doc = QB.new("div"):tag("span")
-    assert_.equal(doc:render(), "<div><span></span></div>")
+    assert_.equal(doc:render(), "<div><span/></div>")
 end)
 
 runner.test("ports the Ruby reference example", function()
@@ -122,7 +122,7 @@ runner.test("tag() without function still works", function()
     local doc = QB.new("ul")
     doc:tag("li")  -- empty li, no block
     doc:tag("li", function(li) li:text("x") end)
-    assert_.equal(doc:render(), "<ul><li></li><li>x</li></ul>")
+    assert_.equal(doc:render(), "<ul><li/><li>x</li></ul>")
 end)
 
 runner.test("raw() inserts pre-rendered HTML verbatim", function()

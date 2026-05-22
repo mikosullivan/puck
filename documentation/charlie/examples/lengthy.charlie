@@ -26,7 +26,7 @@ EOF
     "birthdate": "optional string; no format enforced at this level",
     "species":   "optional string; defaults to Human"
   },
-  "property :nickname": "private instance variable with no automatic accessor — stored in %private but not exposed as a field"
+  "accessor :nickname": "private instance variable with no automatic getter/setter — stored in %private but not exposed as a field"
 }
 EOF
 
@@ -35,7 +35,7 @@ class 'starfleet.com/person'
     field :birthdate, class: :string
     field :species,   class: :string, default: 'Human'
 
-    property :nickname
+    accessor :nickname
 
     %vibecode <<EOF
     {

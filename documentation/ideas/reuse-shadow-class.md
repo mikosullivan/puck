@@ -13,7 +13,7 @@
 Speculative metaprogramming idea. Filed for exploration, not as a
 proposed feature.
 
-See [charlie-runtime.md § Object Model](../charlie/charlie-runtime.md#object-model)
+See [charlie-runtime.md § Object Model](../charlie/lucy/lucy.md#object-model)
 for the established shadow-class concept this idea builds on.
 
 ---

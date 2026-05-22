@@ -77,7 +77,7 @@ This is part of Puck's broader **first-contact strategy** —
 developers should be able to get useful results from Puck
 services before buying into the whole framework. Free service
 tiers (see e.g.
-[the planned logging service](../ideas/apps/logging-service.md#strategic-role-an-adoption-lever-for-puck))
+[the planned logging service](../ideas/apps/logging-service.md#strategic-note))
 are one expression of this; pages-as-plain-APIs is another. Both
 serve the same goal: the lowest possible barrier to a first
 useful interaction.

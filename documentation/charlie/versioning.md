@@ -59,37 +59,42 @@ Three concrete benefits:
 ~~~json
 {"vibecode": {
 	"section": "cutoff_in_chain",
-	"role": "documents how the version cutoff lives on the puck object and applies to UNS lookups",
-	"key_concepts": ["puck_version_window", "upper_property", "lower_property",
-		"immutable_after_creation", "narrowing_only_derivation"]
+	"role": "documents how the version cutoff is set as a block-scoped timespan on %chain and applied to UNS lookups",
+	"method": "%chain.version_timespan(upper:, lower:) do ... end",
+	"key_concepts": ["block_scoped_on_chain", "upper_and_lower_kwargs",
+		"nesting_can_only_narrow", "does_not_cross_role_boundaries"]
 }}
 ~~~
 
-The version cutoff lives on the **puck object** as part of its **version
-window** (see [puck.md](../puck/puck.md) — Version Window). The engine sets it
-when creating the puck, and it is **immutable thereafter**:
+The version cutoff lives on `%chain`, set inside a block:
 
+```charlie
+%chain.version_timespan(upper: 'may 17, 2023') do
+    # Every UNS lookup in this block is bounded by upper.
+    $foo = %puck['some.org/foo']
+end
 ```
-%puck.upper = 'may 3, 2026'    # set at puck creation; immutable after
-%puck.lower = 'may 3, 2018'    # optional floor; also immutable
+
+Both `upper:` and `lower:` are accepted; either or both can be given:
+
+```charlie
+%chain.version_timespan(upper: 'may 17, 2023', lower: 'jan 1, 2020') do
+    ...
+end
 ```
 
-The window's `upper` is the version cutoff in the binary-trust sense.
-Once the engine creates the puck with its `upper` set, every
-`%puck['foo.com/bar']` lookup is bounded by that cutoff. User code
-cannot widen the window — assignments to `%puck.upper` or `%puck.lower`
-are not allowed once the puck exists.
+The timespan applies for the synchronous lifetime of the block.
+After the block exits, the previous timespan (the one in effect at
+the caller's scope, or unbounded if none) is restored.
 
-To run a narrower window inside a block, use `%puck.restrict do ... end`
-(see [puck.md](../puck/puck.md) — `restrict do ... end`). The restricted puck
-must be narrower than or equal to the parent; widening is impossible.
+**Inner blocks can only narrow.** A nested `version_timespan` block
+must lie within the enclosing window — widening is rejected with
+`puck.uno/error/version_timespan/widen`.
 
-**Historical note.** The cutoff previously lived on `%chain` as
-`%chain.cutoff`. Under the current model (the role-based security model
-in [roles.md](roles.md)), the cutoff has moved to the puck object,
-which is the natural unit of configuration — a puck knows its own
-window and applies it during lookup. The `%chain.cutoff` mechanism is
-gone.
+Block-scoped on `%chain` means the timespan **does not cross role
+boundaries** — see [roles.md](roles.md). Each role starts with
+whatever timespan the engine installed at the boundary (typically
+none, or a deployment-wide upper).
 
 ---
 
@@ -106,8 +111,8 @@ gone.
 }}
 ~~~
 
-When a library lookup returns nothing dated within the puck's
-`[lower, upper]` window, the engine raises `puck.uno/error/out_of_range`.
+When a library lookup returns nothing dated within the active
+`[lower, upper]` timespan, the engine raises `puck.uno/error/out_of_range`.
 This is an **alarm** under the role model (see
 [roles.md](roles.md) — Exceptions and Alarms): always fatal, no
 unwinding, no `finally` blocks, no catch handlers from Charlie code. The
@@ -122,7 +127,7 @@ out-of-range exception means one of the following has happened:
 - The cache or provider chain has been tampered with — a library has been backdated,
   removed, or replaced
 - The versioning system itself has a flaw — a bug in the resolver, cache corruption,
-  the puck's window not being applied correctly
+  the active timespan not being applied correctly
 
 In each case, the integrity of the deployment is in question. The exception is therefore
 treated with the same severity as any other security exception, not as ordinary control
@@ -155,7 +160,7 @@ This is the information a security responder or audit log needs to investigate.
 }}
 ~~~
 
-For a lookup `%puck['foo.com/bar']` under a puck with window `[L, U]`:
+For a lookup `%puck['foo.com/bar']` under an active timespan `[L, U]`:
 
 1. The puck walks its getters (per [puck.md](../puck/puck.md) — Lookup
    Mechanism), each consulting its faucets (cache first, then remote
@@ -174,8 +179,8 @@ through the same engine under different cutoffs will each get the appropriate ve
 for their cutoff; no program's lookup affects any other's.
 
 The "canonical date" of a library is whatever the provider has authoritatively recorded.
-For a blockchain-backed provider, this is the `posted` timestamp on the chain (or the
-`effective_date`, if explicitly set; see the deferred
+For a [blockchain](blockchain.md)-backed provider, this is the `posted` timestamp
+on the chain (or the `effective_date`, if explicitly set; see the
 [blockchain design](blockchain.md#versioning) for the details). For a plain
 HTTPS provider, this is whatever the provider asserts — the date is no stronger than
 the trust placed in the provider.
@@ -233,7 +238,7 @@ The model intentionally starts without:
   flat query against the cutoff.
 - **Transitive version conflicts** — a library deep in the call stack cannot pin a
   different version than the rest of the tree, because every lookup uses the same
-  puck (and therefore the same window).
+  active timespan.
 
 The design starts from a position of not needing these mechanisms. Adding any of them
 later is possible — but each one increases the burden on every script (versions to
@@ -253,14 +258,13 @@ should be high.
 }}
 ~~~
 
-The Puck blockchain (currently deferred from production — see
-[blockchain.md](blockchain.md)) provides a cryptographically anchored
-`posted` timestamp for every library version. When a chain is available, the cutoff
-is genuinely tamper-evident — a library's date cannot be forged.
+The Puck [blockchain](blockchain.md) provides a cryptographically anchored
+`posted` timestamp for every library version. When a chain is available,
+the cutoff is genuinely tamper-evident — a library's date cannot be forged.
 
 When the cutoff is enforced against non-chain providers, dates are only as trustworthy
 as the providers themselves. The model still works — the engine still picks the latest
 version on or before the cutoff — but the integrity guarantee is weaker.
 
-The date-pinning model itself does not require a blockchain. It is the simpler primitive;
-the chain is one (eventual) implementation of trustworthy dates.
+The date-pinning model itself does not require a [blockchain](blockchain.md). It is the simpler primitive;
+the chain is one implementation of trustworthy dates.

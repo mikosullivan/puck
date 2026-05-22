@@ -383,7 +383,7 @@ integer — a literal, a variable, or a computed value:
 
 Charlie equivalent: `break $depth`
 
-See [loops.md § break](loops.md#break) for full semantics,
+See [loops.md § break](syntax/loops.md#break) for full semantics,
 including interaction with structural blocks and the open question
 about `break $named_loop` as a targeting alternative.
 
@@ -630,7 +630,7 @@ The transpiler populates `line` on every emitted node. The runtime
 preserves the annotation as it dispatches and can expose the current
 executing position via runtime introspection — used by Jasmine for
 log frame `location` fields (see
-[jasmine.md](jasmine/jasmine.md)), by error messages for "this error
+[jasmine.md](packages/jasmine/jasmine.md)), by error messages for "this error
 happened at line N," etc.
 
 <a id="what-gets-annotated"></a>

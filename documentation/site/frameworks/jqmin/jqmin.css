@@ -1,0 +1,38 @@
+/*
+ * jqmin.css — generally-useful client-side styles.
+ * jqmin is the generalizable companion to Peaseblossom (site-specific
+ * library); see jqmin.md for the catalog and the jqmin / Peaseblossom
+ * divide.
+ */
+
+/* ============================================================
+ * custom-checkbox — checkbox that toggles between two visible
+ *   inline elements. The native <input> is hidden; CSS shows
+ *   whichever sibling matches the current :checked state.
+ *
+ *   Markup convention: checked-state element FIRST, unchecked
+ *   second. (The selectors below hide position-1 when unchecked
+ *   and position-2 when checked, so position-1 = "show when
+ *   checked.")
+ *
+ *   Basic:
+ *     <label class="custom-checkbox">
+ *         <input type="checkbox">
+ *         <span>checked-glyph</span>
+ *         <span>unchecked-glyph</span>
+ *     </label>
+ *
+ *   With an embedded prompt — clicking the prompt also toggles:
+ *     <label class="custom-checkbox">
+ *         <span class="prompt">My prompt:</span>
+ *         <input type="checkbox">
+ *         <span>checked-glyph</span>
+ *         <span>unchecked-glyph</span>
+ *     </label>
+ *
+ *   Pure CSS, zero JS. Inherited verbatim from unotate's jqmin.css.
+ * ============================================================ */
+
+.custom-checkbox > input { display: none }
+.custom-checkbox > input:not(:checked) + * { display: none }
+.custom-checkbox > input:checked + * + * { display: none }

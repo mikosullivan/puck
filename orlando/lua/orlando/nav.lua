@@ -81,9 +81,25 @@ local function pull_index_file(files, dir_name)
 end
 
 local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
+    -- Don't emit an empty <ul>; <ul/> self-close is misparsed by HTML5 as
+    -- an unclosed opening tag (QuickBuilder has XML semantics).
+    if #tree.files == 0 and next(tree.subdirs) == nil then return end
+
+    -- Merge files and subdirs into one alphabetically sorted list so the
+    -- nav reads top-to-bottom in name order regardless of kind.
+    local entries = {}
+    for _, name in ipairs(tree.files) do
+        entries[#entries + 1] = { name = name, kind = "file" }
+    end
+    for name, _ in pairs(tree.subdirs) do
+        entries[#entries + 1] = { name = name, kind = "dir" }
+    end
+    table.sort(entries, function(a, b) return a.name < b.name end)
+
     parent:tag("ul", function(ul)
-        -- Files first.
-        for _, name in ipairs(tree.files) do
+        for _, entry in ipairs(entries) do
+        if entry.kind == "file" then
+            local name = entry.name
             local fs_path  = fs_prefix .. "/" .. name
             local is_md    = name:sub(-3) == ".md"
             local label, url
@@ -104,13 +120,20 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
                 else
                     li:tag("a", function(a)
                         a:attr("href", url)
+                        if not is_md then
+                            -- Non-md assets (.html, .css, .json, .charlie,
+                            -- images) open in a new tab so the doc context
+                            -- isn't lost.
+                            a:attr("target", "_blank")
+                            a:attr("rel",    "noopener")
+                        end
                         a:text(label)
                     end)
                 end
             end)
-        end
-        -- Then subdirectories.
-        for name, subtree in pairs(tree.subdirs) do
+        else
+            local name = entry.name
+            local subtree = tree.subdirs[name]
             local sub_fs       = fs_prefix .. "/" .. name
             local sub_url      = url_prefix .. "/" .. name
             local expanded     = on_path(current_md_path, sub_fs)
@@ -118,28 +141,50 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
             local files, has_index = pull_index_file(subtree.files, name)
             local sub_tree     = { files = files, subdirs = subtree.subdirs }
             local is_current_index = has_index and current_md_path == index_fs
-            local li_class     = is_current_index and "dir current" or "dir"
-            ul:tag("li", function(li)
-                li:attr("class", li_class)
-                li:tag("details", function(d)
-                    if expanded then d:attr("open", "") end
-                    d:tag("summary", function(s)
-                        if has_index then
-                            if is_current_index then
-                                s:tag("span", function(sp) sp:text(name .. "/") end)
-                            else
-                                s:tag("a", function(a)
-                                    a:attr("href", sub_url .. "/")
-                                    a:text(name .. "/")
-                                end)
-                            end
-                        else
-                            s:text(name .. "/")
-                        end
-                    end)
-                    render_ul(d, sub_tree, sub_fs, sub_url, current_md_path)
+            local has_children = #files > 0 or next(subtree.subdirs) ~= nil
+
+            if has_index and not has_children then
+                -- Dir contains only its same-named index file: render as a
+                -- leaf (no <details> toggle to nothing).
+                local li_class = is_current_index and "dir current" or "dir"
+                ul:tag("li", function(li)
+                    li:attr("class", li_class)
+                    if is_current_index then
+                        li:tag("span", function(s) s:text(name .. "/") end)
+                    else
+                        li:tag("a", function(a)
+                            a:attr("href", sub_url .. "/")
+                            a:text(name .. "/")
+                        end)
+                    end
                 end)
-            end)
+            elseif not has_index and not has_children then
+                -- Truly empty dir (no index, no children): skip entirely.
+            else
+                local li_class = is_current_index and "dir current" or "dir"
+                ul:tag("li", function(li)
+                    li:attr("class", li_class)
+                    li:tag("details", function(d)
+                        if expanded then d:attr("open", "") end
+                        d:tag("summary", function(s)
+                            if has_index then
+                                if is_current_index then
+                                    s:tag("span", function(sp) sp:text(name .. "/") end)
+                                else
+                                    s:tag("a", function(a)
+                                        a:attr("href", sub_url .. "/")
+                                        a:text(name .. "/")
+                                    end)
+                                end
+                            else
+                                s:text(name .. "/")
+                            end
+                        end)
+                        render_ul(d, sub_tree, sub_fs, sub_url, current_md_path)
+                    end)
+                end)
+            end
+        end
         end
     end)
 end
@@ -151,7 +196,7 @@ end
 function M.build(current_md_path)
     local tree = build_tree(DOC_ROOT)
     local root = quick_builder.new("div")  -- throwaway wrapper; we'll strip it
-    render_ul(root, tree, DOC_ROOT, "", current_md_path)
+    render_ul(root, tree, DOC_ROOT, "/documentation", current_md_path)
     -- Render the wrapper and strip the <div>...</div>.
     local html = root:render()
     return (html:gsub("^<div>", ""):gsub("</div>$", ""))

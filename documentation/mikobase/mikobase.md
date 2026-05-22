@@ -45,7 +45,7 @@ focused:
      databases. Same SQLite backend as file-backed; only the
      storage target differs. Q0 queries are just SQL in both cases.
   3. **Worldlet** — in memory native Mikobase. Built for very
-     short-lived workloads. See [AI2AI](AI2AI.md) for an example.
+     short-lived workloads. See [AI2AI](AI2AI/AI2AI.md) for an example.
 
   Mikobase supports multiple engines as pluggable backends;
   these three are what ships in v1. Other backends (Postgres,
@@ -137,6 +137,49 @@ that implements Q0 against the worldlet's JSON structure directly (no SQLite
 involvement).
 
 Charlie code interacts only with the `puck.uno/mikobase` interface and is unaware of the backend.
+
+---
+
+<a id="field-declarations"></a>
+## Field declarations
+
+~~~json
+{"vibecode": {
+	"section": "field_declarations",
+	"role": "spec for the JSON shape that declares a single field on a class — the field-level constraint vocabulary",
+	"keys": ["class", "items", "required", "default", "enum", "format"],
+	"collection_element_typing": "use `items` to declare what an array or hash holds"
+}}
+~~~
+
+Each field on a class is declared as a small object:
+
+```json
+"field_name": {"class": "<type>", ...}
+```
+
+`class` is required; everything else is optional. The recognized keys:
+
+| Key | Applies to | Meaning |
+|---|---|---|
+| `class`    | every field | The type. Either a primitive (`string`, `number`, `array`, `hash`, etc.) or a UNS class name (`foo.com/widget`). |
+| `items`    | `array` / `hash` fields | The class definition for elements in the hash or array. |
+| `required` | any field | `true` if the field must be present. |
+| `default`  | any field | Value to use when the field is omitted. |
+| `enum`     | `string` fields with a closed vocabulary | List of allowed values. |
+| `format`   | `string` fields | Shape hint — e.g., `"uuid"` for a UUID reference, `"identifier"` for an arbitrary external identifier. |
+
+For collection fields, **`items` declares the element (or value) type**:
+
+```json
+"participants": {"class": "array", "items": "puck.uno/ai/agent"}
+"tags":         {"class": "array", "items": "string"}
+"by_name":      {"class": "hash",  "items": "foo.com/person"}
+```
+
+A consumer reading these can validate `participants` element-by-element as agent UUIDs, `tags` as plain strings, and the values of `by_name` as person references — without needing to scrape the surrounding prose.
+
+For fields whose `class` is already a UNS class name (e.g., `"class": "foo.com/widget"`), the class itself is the type constraint — `items` only applies when the outer `class` is a collection.
 
 ---
 
@@ -636,7 +679,7 @@ scratch state, AI conversation captures, test fixtures, and any
 short-lived or portable workload where the full machinery of a
 SQLite-backed mikobase would be overkill.
 
-The file format is specified in [worldlet.md](worldlets/worldlet.md).
+The file format is specified in [worldlet.md](worldlets/worldlets.md).
 
 <a id="dual-role-export-format-and-native-engine-storage"></a>
 ### Dual role: export format and native engine storage
@@ -744,7 +787,7 @@ Worldlets are deterministic and portable across machines.
 The recipient gets the object structure, the data, and the behavior in one
 file. No setup required.
 
-**AI conversation captures** — see [AI2AI.md](AI2AI.md).
+**AI conversation captures** — see [AI2AI.md](AI2AI/AI2AI.md).
 
 **Portable computation** — send a worldlet to a remote system, run its
 logic there, and get a result back. The computation travels with its data.

@@ -17,8 +17,8 @@ personal formatter before displaying it.
 The idea: code has one author style, but every reader sees it in their own style. Formatting
 becomes a true presentation layer, invisible to the workflow.
 
-This extends the formatter philosophy naturally: just as a developer runs `charlie fmt`
-locally before reading someone's code, a platform could do it automatically on their behalf.
+This extends the formatter philosophy naturally: a platform reformats on the viewer's
+behalf instead of the viewer running anything locally.
 
 Not designed yet. Questions to answer when revisiting:
 

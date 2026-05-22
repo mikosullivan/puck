@@ -40,7 +40,7 @@ sidebar nav, content shell). We considered three approaches: raw
 string concatenation, an external templating library (etlua,
 lustache, etc.), and an in-tree builder. We picked the in-tree
 builder and implemented
-[`orlando.quick_builder`](../../../code/orlando/lua/orlando/quick_builder.lua) —
+[`orlando.quick_builder`](https://github.com/mikosullivan/puck/blob/main/orlando/lua/orlando/quick_builder.lua) —
 one `Tag` class where every node is the same type, with a recursive
 `render()` that emits the tag plus its children.
 
@@ -227,7 +227,7 @@ existing pygments-themed CSS ecosystem applies directly.
   for rendering source snippets in test failures or trace
   output.
 
-The Orlando JSON tokenizer ([orlando.json_highlight](../../../orlando/lua/orlando/json_highlight.lua))
+The Orlando JSON tokenizer ([orlando.json_highlight](https://github.com/mikosullivan/puck/blob/main/orlando/lua/orlando/json_highlight.lua))
 is worth keeping as a reference for how the output should be
 shaped (pygments-class spans, key-vs-value distinction via
 look-ahead). It's not worth generalizing into the framework —
@@ -300,3 +300,51 @@ lessons here. Each lesson is the answer to a question that
 arose naturally. A Robinson markdown handler that re-derives
 those answers from scratch will spend time on problems Orlando
 already solved.
+
+---
+
+<a id="dont-bake-host-language-quirks-into-the-builder"></a>
+## Don't bake host-language quirks into the builder
+
+**What we did.** QuickBuilder was a clean XML-shape builder: any
+empty tag rendered self-closing as `<x/>`. We hit a real bug —
+`<label/>` is misparsed by HTML5 browsers as an unclosed
+`<label>` (the slash is ignored on non-void elements), so the
+TOC labels swallowed everything that followed them. The first
+fix was to teach QuickBuilder the HTML5 void-element list
+(`<br>`, `<img>`, `<input>`, etc., self-close; everything else
+explicit-close). It worked, but it pulled HTML-specific
+knowledge into what was supposed to be a generic builder.
+
+**What we noticed.** When Miko reviewed the change, his
+question was the right one: *"It's just a rudimentary XML
+builder. If you want a child to be void, don't add any elements
+to it."* The void-element list was scope creep — domain
+knowledge from one consumer (the browser parsing as HTML)
+leaking into a tool that should have stayed neutral.
+
+We reverted. The builder is again "empty = self-close, no
+exceptions." The HTML quirk is the consumer's problem; the
+consumer marks intentionally-empty non-void elements by giving
+them a child, e.g. `l:text("")`. In our codebase that's
+literally one place — the TOC parent toggle labels in
+[page.lua](https://github.com/mikosullivan/puck/blob/main/orlando/lua/orlando/page.lua). One ugly
+line, and the abstraction stayed honest.
+
+**Possible application elsewhere.**
+
+- **Lucy / Charlie** if it ever grows a tree-builder primitive,
+  the same temptation will arise: "the framework should know
+  that HTML `<label>` is non-void, just do the right thing."
+  Resist it. Keep the builder mechanical; let consumers handle
+  output-format quirks.
+- **Any future framework primitive** in the Puck ecoverse
+  (Sammy's response builders, Mikobase's serializers, Trivet's
+  fixture emitters) should pass the same test: is the rule one
+  consumer's quirk or universal? If quirk, push it to the
+  consumer. The Orlando lessons doc itself is a good place to
+  index these "we tried, we reverted" examples so the next
+  similar PR gets caught earlier.
+
+The general shape of this lesson: **a small builder gets
+better the more it refuses to know.**

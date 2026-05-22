@@ -39,7 +39,7 @@
     "{decl:'abstract', value}",
     "{decl:'field',    name, opts}",
     "{decl:'join',     fields}",
-    "{decl:'property', name}",
+    "{decl:'accessor', name}",
     "{decl:'helper',   name, body}",
     "{decl:'function', name, type, remote, params, kwparams, body}"
   ]
@@ -367,8 +367,8 @@ local function transpile_class_body(body)
         elseif d.kind == "join_decl" then
             decls[#decls + 1] = { decl = "join", fields = d.fields }
 
-        elseif d.kind == "property_decl" then
-            decls[#decls + 1] = { decl = "property", name = d.name }
+        elseif d.kind == "accessor_decl" then
+            decls[#decls + 1] = { decl = "accessor", name = d.name }
 
         elseif d.kind == "helper_decl" then
             decls[#decls + 1] = {

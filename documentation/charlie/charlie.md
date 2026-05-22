@@ -1,11 +1,8 @@
 # Charlie
 
-<a id="overview"></a>
-## Overview
-
 ~~~json
 {"vibecode": {
-	"section": "overview",
+	"doc": "charlie",
 	"language": "Charlie",
 	"runtime_format": "CharlieJSON",
 	"influences": ["Ruby", "Perl"],
@@ -14,11 +11,40 @@
 }}
 ~~~
 
-Charlie is the programming language of the Puck ecoverse. Programs are written in Charlie
-and transpiled to CharlieJSON for execution. CharlieJSON is the canonical runtime format;
-Charlie is the human-facing form.
+<a id="overview"></a>
+## Overview
 
-Charlie's style is influenced by Ruby with some Perl and Bash mixed in.
+Charlie is the programming language of the Puck ecoverse.
+Charlie is designed from the ground up to handle running
+untrusted code.
+
+Charlie's style is influenced by Ruby with some Perl and
+Bash mixed in.
+
+A few examples of Charlie:
+
+```charlie
+# Variables and string interpolation.
+$name = 'Hamlet'
+puts "Hello, #{$name}!"
+```
+
+```charlie
+# A function. Definitions use & on the name; calls pass keyword args.
+function &greet($name)
+    'Hello, ' + $name + '!'
+end
+
+puts &greet(name: 'Ophelia')
+```
+
+```charlie
+# Iterating an array with a do block.
+$plays = ['Hamlet', 'Macbeth', 'King Lear']
+$plays.each do($play)
+    puts $play
+end
+```
 
 ---
 
@@ -36,15 +62,14 @@ Charlie's style is influenced by Ruby with some Perl and Bash mixed in.
 ~~~
 
 To avoid debates about tabs-vs-spaces and other bickering, a
-Charlie VS Code extension is available (link here when it actually
-exists). That extension allows you to format Charlie to your own
-preference. The rule is simple:
+Visual Studio Code extension for Charlie is available (link here when
+it actually exists). That extension allows you to format Charlie to your
+own preference. The rule is simple:
 
 - Submit code formatted however you want.
 - Run downloaded code through your formatter.
 
-That's it. No house style, no enforced repo-wide config, no formatting nits in code
-review. Tabs-vs-spaces is a setting that each developer owns.
+That's it. Tabs-vs-spaces is a setting that each developer owns.
 
 ---
 
@@ -82,7 +107,7 @@ Charlie can reach for host-controlled capabilities — typically:
 - **Bindings** for network, OS, database, and similar host services. See
   [bindings.md](bindings.md).
 - **`%engine` and other `%`-system methods** as the gateway to host-granted
-  capabilities. Non-capturable; see [system-methods.md](system-methods.md).
+  capabilities. Non-capturable; see [system-methods.md](syntax/system-methods.md).
 
 Default posture is **safe by default, with explicit overrides**. A script
 that doesn't ask for filesystem access doesn't get any; a script that
@@ -105,9 +130,12 @@ cross-role exception handling, and what is and isn't checked at a boundary
 	"section": "syntax",
 	"role": "umbrella for all of Charlie's source syntax: strings, variables, blocks, control flow, functions, classes, loops, and related conventions",
 	"key_concepts": ["surface_syntax", "ruby_perl_bash_influences",
-		"end_terminated_blocks", "sigils_dollar_at_percent_amp"]
+		"end_terminated_blocks", "sigils_dollar_at_percent_amp",
+		"dsl_first_design_with_parser_shortcuts_only_when_necessary"]
 }}
 ~~~
+
+Most of what looks like a keyword in Charlie source is actually a bare-word command (bwc) resolved through a DSL, not a parser keyword. See [dsl.md](dsl.md) for the language-wide DSL commitment, the four-tier token model (parser-built / reserved invariants / DSL-overridable / pure DSL), and the cheat clause for cases where parser shortcuts are warranted.
 
 ---
 
@@ -344,10 +372,8 @@ end
 puts $play     # 'Hamlet'
 ~~~
 
----
-
 <a id="multi-section-blocks"></a>
-### Multi-section blocks
+#### Multi-section blocks
 
 ~~~json
 {"vibecode": {
@@ -412,10 +438,8 @@ itself runs through, or is it an alternative path the developer
 chose?** If the former, multi-boundary syntax is fine. If the latter,
 prefer a form where each path stands on its own.
 
----
-
 <a id="when-do-is-required"></a>
-### When `do` is Required
+#### When `do` is Required
 
 ~~~json
 {"vibecode": {
@@ -635,7 +659,7 @@ closures — they capture the outer lexical scope:
 $x = 'hello'
 
 $items.each($item) do
-    puts($x)    # $x is visible
+    puts $x    # $x is visible
 end
 ```
 
@@ -696,7 +720,7 @@ for the full `%puck.call` design.
 	"class_name_format": "UNS",
 	"schema_declarations": ["inherits", "abstract", "field", "join"],
 	"field_types": ["built_in_string_names", "UNS_addresses"],
-	"property": "bucket_backed_accessor_not_in_json_schema",
+	"accessor": "bucket_backed_instance_state_not_in_json_schema",
 	"helper": "lazily_initialized_namespaced_sub_object"
 }}
 ~~~
@@ -714,7 +738,7 @@ class 'foo.com/character'
     field :name, class: :string, required: true, collapse: true
     field :age,  class: :number, min: 0, integer_only: true
 
-    property :nickname
+    accessor :nickname
 
     function &greet(name:)
         'Hello, ' + name
@@ -784,20 +808,16 @@ field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
 Built-in type names are strings — `:string` and `'string'` are identical. UNS names use
 the quoted form by convention since they contain dots and slashes.
 
-<a id="property"></a>
-#### `property`
+<a id="accessor"></a>
+#### `accessor`
 
-`property` declares a `%bucket`-backed accessor — instance state that lives in the object,
-not in the mikobase schema. It does not appear in the JSON class definition. The first
-argument is the sigil-prefixed instance-variable name; subsequent arguments are accessor
-flags (`:get`, `:set`). Mechanically, the flags create getter/setter methods that read
-from and write to `%bucket['<name>']`.
+`accessor` declares `%bucket`-backed instance state with optional getter/setter — state that lives in the object, not in the mikobase schema. It does not appear in the JSON class definition. The first argument is the sigil-prefixed instance-variable name; subsequent arguments are flags (`:get`, `:set`). Mechanically, the flags create getter/setter methods that read from and write to `%bucket['<name>']`.
 
 ```
-property @nickname              # private, no external access
-property @nickname, :get        # creates a getter: $obj.nickname
-property @nickname, :set        # creates a setter: $obj.nickname=()
-property @nickname, :get, :set  # creates both
+accessor @nickname              # private, no external access
+accessor @nickname, :get        # creates a getter: $obj.nickname
+accessor @nickname, :set        # creates a setter: $obj.nickname=()
+accessor @nickname, :get, :set  # creates both
 ```
 
 <a id="abstract-classes"></a>
@@ -849,7 +869,7 @@ $character.stats.average
 All loop forms — `while`, `.each`, and the numeric iteration helpers
 (`.times`, `.upto`, `.downto`) — and everything about them (loop
 object via `as`, control methods, structural `before` / `between` /
-`after` / `noloop` blocks) live in [loops.md](loops.md).
+`after` / `noloop` blocks) live in [loops.md](syntax/loops.md).
 
 ---
 
@@ -975,11 +995,11 @@ end
 ~~~
 
 The loop object exposes `.count`, `.active`, `.index`, `.next`,
-`.return`, and `.break` — see [loops.md § Loop object methods](loops.md#loop-object-methods).
+`.return`, and `.break` — see [loops.md § Loop object methods](syntax/loops.md#loop-object-methods).
 `$loop.return` and `$loop.break` are aliases.
 
 For the prefix-free `break` / `break N` bwc form (no `$loop` reference
-needed; supports multi-level exit), see [loops.md § break](loops.md#break).
+needed; supports multi-level exit), see [loops.md § break](syntax/loops.md#break).
 
 <a id="plain-method-call"></a>
 #### Plain method call

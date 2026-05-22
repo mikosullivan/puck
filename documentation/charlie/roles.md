@@ -18,14 +18,13 @@ isn't owned; the code currently executing belongs to a function-object, and
 that function-object's owning role is the current role. Trust is a directed
 relationship between roles, not a global property of code or data.
 
-This supersedes an earlier binary trust/untrust model. New code
-follows the role model described here.
-
 ---
 
 <a id="motivation"></a>
 ## Motivation
 
+This role design supersedes an earlier binary trust/untrust model.
+That model was found to be insufficient fore security purposes.
 The previous model classified every value and every running function as
 either *trusted* or *untrusted*, based on its source. The model worked but
 was too coarse:
@@ -99,7 +98,7 @@ $current = %role    # the role currently in effect
 {"vibecode": {
     "section": "engine_startup_roles",
     "minimum": ["user", "stdlib", "clock", "randomizer", "utils"],
-    "engine_dependent": ["dirjails", "network_faucets", "stdin", "env_vars", "cli_args", "puck"]
+    "engine_dependent": ["directory jails", "network_faucets", "stdin", "env_vars", "cli_args", "puck"]
 }}
 ~~~
 
@@ -127,7 +126,7 @@ necessary for the objects it's about to pass into the runtime. At minimum:
   regardless of which specific method was called.
 
 Engines will typically wire up more depending on what they're exposing:
-roles for STDIN, env vars, CLI args, the puck, each dirjail, each
+roles for STDIN, env vars, CLI args, the puck, each directory jail, each
 network faucet, etc. The minimum above is what every engine has; the rest
 varies by engine configuration.
 
@@ -215,8 +214,8 @@ $jail = $foo.object.jail(:safe_method, :harmless_method)
 
 `$foo` retains its full surface for the caller; `$jail` exposes only the
 listed methods. The general "Jail (Object Firewall)" mechanism in
-[charlie/charlie-runtime.md](charlie-runtime.md) covers this;
-the dirjail rules below are one specialization. The same pattern applies
+[charlie/charlie-runtime.md](lucy/lucy.md) covers this;
+the directory jail rules below are one specialization. The same pattern applies
 to any object the developer wants to restrict before handing it across a
 role boundary.
 
@@ -377,14 +376,14 @@ value; it doesn't change because the value's location changed.
     "section": "faucets",
     "definition": "any_resource_through_which_objects_enter_the_runtime",
     "rule": "faucets_are_the_only_inbound_path",
-    "examples": ["filesystem_dirjail", "database_connection", "http_client", "stdin", "env_vars",
+    "examples": ["filesystem_directory_jail", "database_connection", "http_client", "stdin", "env_vars",
         "cli_args"]
 }}
 ~~~
 
 The Puck vocabulary for source-side resources is **faucet** — any
 resource through which objects are pulled into the runtime. Examples: a
-filesystem dirjail, a database connection, an HTTP client, a socket, an
+filesystem directory jail, a database connection, an HTTP client, a socket, an
 IPC channel.
 
 (Complement: a **sink** is an operation that consumes a value in a
@@ -404,46 +403,46 @@ The `user` role pulling data from database D ends up holding values that
 are owned by role-D — not by `user`. User-role code can *hold* the
 values but doesn't *own* them.
 
-<a id="filesystem-dirjails"></a>
-### Filesystem: dirjails
+<a id="filesystem-directory-jails"></a>
+### Filesystem: directory jails
 
 ~~~json
 {"vibecode": {
-    "section": "dirjails",
+    "section": "directory_jails",
     "definition": "directory_object_that_hides_its_real_path",
-    "rule": "dirjails_are_only_filesystem_faucets",
-    "subdirjail_ownership": "deriver_owns_wrapper_objects_through_still_have_source_role"
+    "rule": "directory_jails_are_only_filesystem_faucets",
+    "subdirectory_jail_ownership": "deriver_owns_wrapper_objects_through_still_have_source_role"
 }}
 ~~~
 
-The filesystem-flavored jail is called a **dirjail** — to distinguish it
+The filesystem-flavored jail is called a **directory jail** — to distinguish it
 from the broader "jail" concept (a capability-restricting wrapper around
-any object). Dirjails are jails specifically around directory objects.
+any object). Directory jails are jails specifically around directory objects.
 
 The rules:
 
-- **A dirjail is barely more than a directory object that won't tell you
+- **A directory jail is barely more than a directory object that won't tell you
   where it lives.** Same methods, same navigation, same permissions —
   just a hidden real path.
-- **Dirjails are the only filesystem faucets.** No filesystem access in
-  Charlie without a dirjail.
-- **The engine creates and stamps the main dirjails with their own role —
-  not `user`.** Each engine-introduced dirjail has its own owner role,
-  distinct from `user`. User can choose to trust the dirjail's role but
-  doesn't own the dirjail itself.
-- **Files pulled through a dirjail are owned by the dirjail's owner
+- **Directory jails are the only filesystem faucets.** No filesystem access in
+  Charlie without a directory jail.
+- **The engine creates and stamps the main directory jails with their own role —
+  not `user`.** Each engine-introduced directory jail has its own owner role,
+  distinct from `user`. User can choose to trust the directory jail's role but
+  doesn't own the directory jail itself.
+- **Files pulled through a directory jail are owned by the directory jail's owner
   role.** Includes directory objects, file contents, anything coming out
-  of the dirjail.
-- **Subdirjails (derived via `.jail()`) are themselves owned by the
+  of the directory jail.
+- **Subdirectory jails (derived via `.jail()`) are themselves owned by the
   deriver** — the deriver created the wrapper object, so the deriver
-  owns it. But **the objects coming through the subdirjail are still
+  owns it. But **the objects coming through the subdirectory jail are still
   owned by the source role**, not the deriver.
-- **Subdirjail authority can never exceed the parent's** — operations
+- **Subdirectory jail authority can never exceed the parent's** — operations
   route through the parent, which is engine-bounded.
 
 The key principle: **ownership is per-object, and one object owning a
 wrapper doesn't transfer ownership of what flows through that wrapper**.
-A user-owned subdirjail can hand back files that are still source-owned.
+A user-owned subdirectory jail can hand back files that are still source-owned.
 No laundering by derivation; provenance is preserved naturally.
 
 This principle generalizes: **a container's role applies to the
@@ -553,7 +552,7 @@ established framework, not blockers.
   roles = better isolation, larger runtime namespace.
 
 **Role consolidation pass (revisit later).** As the design has proceeded,
-roles have proliferated — `user`, per-dirjail roles, per-network-faucet
+roles have proliferated — `user`, per-directory jail roles, per-network-faucet
 roles, STDIN, env-vars, CLI-args, and counting. The current direction is
 to keep proliferating; once the model has been used in practice, take a
 deliberate pass to see which roles can be consolidated without losing

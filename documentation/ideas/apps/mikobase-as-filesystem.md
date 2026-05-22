@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "mikobase-as-filesystem",
-	"role": "brainstorm about exposing a mikobase as a directory-tree filesystem so storage-agnostic consumers (Sammy static, Jasmine stores, DirJails) can use mikobase transparently; explores the two superpowers POSIX cannot offer",
+	"role": "brainstorm about exposing a mikobase as a directory-tree filesystem so storage-agnostic consumers (Sammy static, Jasmine stores, directory jails) can use mikobase transparently; explores the two superpowers POSIX cannot offer",
 	"key_concepts": ["mikobase_backed_filesystem", "storage_agnostic_consumers",
 		"transactions_over_files", "history_over_files"],
 	"status": "brainstorm"
@@ -24,9 +24,9 @@ directory-tree interface backed by mikobase data?
 ## Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
-  object is expected ([Sammy static serving](../../charlie/http-middleware/sammy.md#static-file-serving),
-  [Jasmine directory stores](../../charlie/jasmine/jasmine.md#stores),
-  [%utils.tempdir DirJails](../../charlie/utils.md), etc.) without those
+  object is expected ([Sammy static serving](../../charlie/packages/touchstone/sammy.md#static-file-serving),
+  [Jasmine directory stores](../../charlie/packages/jasmine/jasmine.md#stores),
+  [%utils.tempdir directory jails](../../charlie/utils/utils.md), etc.) without those
   consumers knowing anything about mikobase.
 - "Storage-agnostic" gets real teeth: a developer can swap a real
   filesystem for a mikobase-backed one and the rest of the code
@@ -169,7 +169,7 @@ above.
 ## FSO and the path forward
 
 By the time the broader **FSO (file system objects)** abstraction
-is finished — directory objects, file objects, DirJails, the
+is finished — directory objects, file objects, directory jails, the
 interface that Sammy's `$server.static` consumes — a rudimentary
 mikobase-backed filesystem implementation should be a small
 additional step. Not committed yet; flagged as a likely outcome

@@ -1,0 +1,36 @@
+{
+	"vibecode": {
+		"doc": "miko-formatting-preferences",
+		"role": "Miko's personal formatting preferences. Single source of truth for what Miko personally uses; feeds the formatter defaults, the VS Code Charlie extension, Gitter's format toggle, and Differ's normalization layer. Living document — values are added or refined as decisions land.",
+		"format_spec": "../formatting.md",
+		"scope": "personal, not project policy (see formatting.md philosophy)",
+		"shape": "follows the style.json structure defined in formatting.md: three top-level groups (indent, lines, languages); per-language overrides under languages"
+	},
+
+	"indent": {
+		"character": "tab",
+		"width": 4
+	},
+
+	"lines": {
+		"max_length": 80,
+		"trim_trailing_whitespace": true,
+		"empty_line_treatment": "neighbors",
+		"max_consecutive_blank_lines": 1,
+		"final_newline": false,
+		"blank_line_around_blocks": true
+	},
+
+	"languages": {
+		"charlie": {
+			"class_body_packing": "tight",
+			"empty_param_parens": true,
+			"hash_spacing": "tight",
+			"return_parens": true,
+			"vibecode_placement": "top_of_section"
+		},
+		"html": {
+			"blank_line_around_block_tags": true
+		}
+	}
+}

@@ -8,13 +8,19 @@
 	"section": "overview",
 	"type": "Array",
 	"notes": ["ordered_collection", "zero_based_indexing",
-		"set_theory_methods_use_unicode_symbols_with_named_aliases"],
+		"set_theory_methods_use_unicode_symbols_with_named_aliases",
+		"sparse_storage_large_gaps_cost_nothing"],
 	"example_universe": "Narnia"
 }}
 ~~~
 
 Arrays are ordered collections. Indices are zero-based. Array methods that return a new
 array do not mutate the original.
+
+**Sparse-friendly.** Assigning to a large index doesn't allocate the
+intervening slots. `$arr[109993] = 'bar'` costs the same as
+`$arr[0] = 'bar'` — only populated cells take memory. The unset cells in
+between read as unflavored `null`.
 
 ---
 
@@ -329,6 +335,79 @@ matches." Each has its own return-type quirks.
 - "All matches?" → the array itself
 
 One method, one return shape, no nil-on-no-match special case.
+
+---
+
+<a id="random"></a>
+## `random`
+
+~~~json
+{"vibecode": {
+	"section": "random",
+	"role": "spec for $array.random — uniform random selection of one or more elements from an array, with options for unique sampling and element-object wrappers; crypto-strong via libsodium",
+	"key_concepts": ["single_or_multi_pick", "with_replacement_by_default",
+		"unique_kwarg_for_without_replacement", "elements_kwarg_for_wrapper_objects",
+		"crypto_strong_via_libsodium"]
+}}
+~~~
+
+Picks one or more elements uniformly at random from the array. Uses
+the same cryptographically strong source as
+[`%utils.random`](../utils/utils.md#utilsrandom) — libsodium's
+unbiased range function, no modulo bias.
+
+```
+$array = ['a', 'b', 'c', 'd', 'e']
+
+$array.random                        # one element, e.g. 'c'
+$array.random(3)                     # three elements, with replacement; e.g. ['a', 'a', 'c']
+$array.random(3, unique: true)       # three elements, no repeats; e.g. ['d', 'a', 'b']
+$array.random(3, elements: true)     # three element objects (see Elements section above)
+```
+
+<a id="random-shape"></a>
+### Shape
+
+| Form | Returns |
+|------|---------|
+| `$array.random` | A single value picked uniformly. |
+| `$array.random(n)` | An array of `n` values, **with replacement** (the same index may be picked more than once). |
+| `$array.random(n, unique: true)` | An array of `n` values, **without replacement** (each index picked at most once). |
+| `$array.random(n, elements: true)` | An array of `n` [element objects](#elements) instead of values. Combinable with `unique:`. |
+
+`unique:` and `elements:` are independent; either or both may be set.
+
+<a id="random-order"></a>
+### Order
+
+Returned arrays are in **random order**, not source order. Each pick is
+independent; preserving source order would leak information about the
+source.
+
+<a id="random-element-objects-with-replacement"></a>
+### Element objects with replacement
+
+When `elements: true` is combined with the default (with-replacement)
+sampling, the same index can appear more than once. Each appearance
+is a **distinct element-object wrapper** pointing at that index;
+calling `.delete` on one removes the underlying element, and any
+subsequent method call on the other wrapper raises per the
+[Deleted Elements](#deleted-elements) rule.
+
+If that's a foothold for surprise, pass `unique: true` to guarantee
+each wrapper refers to a different index.
+
+<a id="random-errors"></a>
+### Errors
+
+- `[].random` (empty array) — raises. An empty array has nothing to pick.
+- `[].random(n)` — raises, same reason.
+- `$array.random(n, unique: true)` with `n > $array.length` — raises;
+  can't draw that many unique values.
+- `$array.random(n)` with `n < 0` — raises.
+
+`$array.random(0)` is **not** an error — it returns `[]`. Zero
+random picks is a degenerate but well-defined request.
 
 ---
 

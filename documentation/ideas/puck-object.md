@@ -5,8 +5,9 @@
 	"doc": "puck-object",
 	"role": "historical brainstorm that worked out the puck-object-vs-%puck distinction; superseded by the canonical puck.md but kept as a record of how the design developed",
 	"key_concepts": ["puck_object_vs_system_method", "chain_scoped_puck",
-		"restrict_block_substitution", "historical_record"],
-	"status": "folded_into_canonical"
+		"historical_record"],
+	"status": "folded_into_canonical",
+	"note": "version-window-on-puck design has since moved off the puck to %chain.version_timespan; see versioning.md"
 }}
 ~~~
 
@@ -17,6 +18,13 @@
 >
 > For the current spec, read [documentation/puck.md](../puck/puck.md)
 > (specifically the "The Puck Object" section and below).
+>
+> **Update — the version window has since moved off the puck object.**
+> The current design puts the cutoff on `%chain` via a block-scoped
+> `%chain.version_timespan(upper:, lower:) do ... end` form (see
+> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain)).
+> The "Version Window" and "restrict do ... end" sections below are
+> preserved as the earlier design.
 
 ---
 
@@ -70,6 +78,12 @@ block.
 <a id="restrict-do-end"></a>
 ### `restrict do ... end`
 
+> **Superseded.** Replaced by `%chain.version_timespan(upper:, lower:)
+> do ... end` — see
+> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
+> The block-scoped narrowing pattern survives; the verb and the
+> property location moved from the puck object to `%chain`.
+
 `restrict` is the canonical way to scope `%puck` to a narrower
 window for a block of code:
 
@@ -101,6 +115,15 @@ Same shape as the other scoped-block primitives in the framework
 
 <a id="version-window"></a>
 ## Version Window
+
+> **Superseded.** The version window no longer lives on the puck
+> object. Current design puts the cutoff on `%chain` as a
+> block-scoped `%chain.version_timespan(upper:, lower:) do ... end`
+> form — see
+> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
+> The technical observations about lookup mechanics (multi-getter
+> walking under bounds, tie-breaking, etc.) still apply; only the
+> property location and verbs have changed.
 
 Each puck carries a **version window** — two timestamps that bound
 which versions of an object are eligible to be returned. The window
@@ -412,8 +435,10 @@ the result and the checks.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
   [roles.md](../charlie/roles.md).)
-- **Where the version cutoff lives.** Resolved: on the puck object
-  itself. See "Version Cutoff" section above.
+- **Where the version cutoff lives.** Resolved twice: first onto the
+  puck object (see "Version Window" section above), then off it again
+  onto `%chain` as a block-scoped `version_timespan` — see
+  [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
 - **Granularity of puck-source roles** — one role per **getter**
   inside the puck. Faucets *inside* a getter (download + cache)
   share the getter's role to keep cache state from changing the

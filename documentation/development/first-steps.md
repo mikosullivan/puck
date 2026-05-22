@@ -237,7 +237,7 @@ whatever was passing before.
 
 At this point the engine loads, parses, and returns the parsed tree.
 **It doesn't execute anything yet.** The V0.01 acceptance test
-([T1.7 in the main plan](development.md#phase-1-test-plan)) wants
+([T1.7 in the main plan](v0.01.md#phase-1-test-plan)) wants
 `engine.run(...)` to return a value whose payload equals the string
 `"hello"`. To get there, the next concrete slice is one of:
 
@@ -259,8 +259,8 @@ result.
 For each slice:
 
 1. **Write the unit test first** under `tests/charlie/v001/`, named
-   `test_<slice>.lua`. The test plans in [development.md
-   §Phase 1 test plan](development.md#phase-1-test-plan) (T1.2
+   `test_<slice>.lua`. The test plans in
+   [v0.01.md § Phase 1 test plan](v0.01.md#phase-1-test-plan) (T1.2
    through T1.6) spell out what each one should assert.
 2. **Implement the slice** in `code/charlie/lua/charlie/engine.lua`
    (or its companions). Keep each implementation small — just enough

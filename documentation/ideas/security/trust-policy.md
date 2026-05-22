@@ -155,4 +155,4 @@ The trust policy only applies to signed objects. An unsigned object is rejected 
 regardless of policy. The policy controls what signed objects are permitted and at what
 permission level — it assumes the signing problem is already solved.
 
-See [signing.md](signing.md) for how object signatures work.
+See [signing.md](../../charlie/blockchain/blockchain.md) for how object signatures work.

@@ -7,13 +7,20 @@
 	"key_concepts": ["%puck_system_method", "puck_bracket_lookup_shorthand",
 		"%puck.call_remote_invocation", "remote_function_sugar",
 		"puck_scoping_via_%chain"],
-	"example_universe": "Star Trek"
+	"running_example": "puck.uno/geo — still in design; see ideas/geolocation.md"
 }}
 ~~~
 
 This doc covers how Charlie code talks to the [Puck protocol](../puck/puck.md).
 The protocol itself is language-agnostic; this doc is about the Charlie
 syntax and system methods that wrap it.
+
+> The examples here use `puck.uno/geo`, a geolocation service planned
+> for launch at puck.uno. **It's not deployed yet** — the design lives
+> in [ideas/geolocation.md](../ideas/geolocation.md). It's used here as
+> the running example because it's the canonical remote-first class
+> (client-side stub, all logic on the server) and shows off the
+> remote-call surface cleanly.
 
 ---
 
@@ -25,26 +32,17 @@ object** — the resolver for UNS lookups. See
 [puck/puck.md](../puck/puck.md) for what Puck is and how it works;
 this section covers the Charlie sugar around it.
 
-`%puck[UNS]` is shorthand for the puck's `lookup` method:
+`%puck[UNS]` is shorthand for the puck's `lookup` method. The
+lookup returns a **class**; call `.new(...)` to get an instance:
 
 ~~~charlie
-$officer = %puck['starfleet.com/character/picard']
-$officer.greet
+$here = %puck['puck.uno/geo'].new(lat: 40.7128, long: -74.0060)
+puts $here.city           # "New York"
+puts $here.country_code   # "US"
 ~~~
 
-<a id="shorthand-for-built-in-classes"></a>
-### Shorthand for built-in classes
-
-Bare names in `%puck[...]` — any key without a domain — resolve to
-`puck.uno/...`:
-
-~~~charlie
-%puck['null']             # same as %puck['puck.uno/null']
-%puck['true']             # same as %puck['puck.uno/true']
-%puck['mikobase/memory']  # same as %puck['puck.uno/mikobase/memory']
-~~~
-
-`puck.uno` is the default namespace for `%puck` lookups.
+Methods on the instance dispatch as if local — the remote call
+machinery is invisible at the call site.
 
 <a id="scoping-via-chain"></a>
 ### Scoping via `%chain`
@@ -65,10 +63,14 @@ may leave `%puck` null for that role. Per-role policy, not global.
 <a id="puckcall"></a>
 ## `%puck.call`
 
-`%puck.call` is the Charlie syntax for an explicit remote method call:
+`%puck.call` is the Charlie syntax for an explicit remote method call.
+Most code uses dot-call syntax (`$here.address`) — the explicit form
+is for when the method name is dynamic, or when you want the
+remote-ness to be visible at the call site:
 
 ~~~charlie
-%puck.call($officer, :greet, name: 'Jean-Luc')
+%puck.call($here, :address)
+%puck.call($here, :address, locale: 'en_GB')
 ~~~
 
 Three arguments:
@@ -81,7 +83,7 @@ Three arguments:
 call — the same chain the calling function is running under.
 
 For the protocol-level remote-invocation model (request shape, response
-shape, error catalog), see [puck/puck.md § Remote method invocation](../puck/puck.md#remote-method-invocation).
+shape, error catalog), see [puck/puck.md](../puck/puck.md).
 
 <a id="return-and-error-handling-in-charlie"></a>
 ### Return and error handling in Charlie
@@ -95,14 +97,14 @@ shape, error catalog), see [puck/puck.md § Remote method invocation](../puck/pu
   Catch with `catch` as usual:
 
 ~~~charlie
-$result = catch('puck.uno/error/transport')
-    %puck.call($officer, :greet, name: 'Jean-Luc')
+$addr = catch('puck.uno/error/transport')
+    $here.address
 end
 ~~~
 
 If the remote method itself raises, that exception propagates to the
 caller as if thrown locally, with the remote stack trace preserved (per
-[charlie-runtime.md § stack traces](charlie-runtime.md#all-exceptions-carry-a-stack-trace)).
+[charlie-runtime.md § Exceptions and Warnings](lucy/lucy.md#exceptions-and-warnings)).
 
 ---
 
@@ -110,42 +112,33 @@ caller as if thrown locally, with the remote stack trace preserved (per
 ## `remote function`
 
 `remote function` is Charlie sugar for a method that delegates to
-`%puck.call`. Inside a class definition:
+`%puck.call`. The geo class is a remote-first class — almost every
+method is a `remote function`:
 
 ~~~charlie
-class 'starfleet.com/character'
-    remote function &greet(name:)
+class 'puck.uno/geo'
+    field :lat
+    field :long
+    field :alt
+
+    remote function &address
+    end
+
+    remote function &distance_to($other)
+    end
+
+    remote function &city
     end
 end
 ~~~
 
-is equivalent to:
+`remote function &address` is equivalent to:
 
 ~~~charlie
-class 'starfleet.com/character'
-    function &greet(name:)
-        %puck.call(self, :greet, name: name)
-    end
+function &address
+    %puck.call(self, :address)
 end
 ~~~
 
 Pure syntactic sugar; the two forms are interchangeable. `%chain` is
 forwarded automatically in both.
-
----
-
-<a id="versioning"></a>
-## Versioning
-
-The Puck protocol takes a deliberately light approach to versioning
-— see [puck/protocol.md § Versioning](../puck/protocol.md#versioning).
-Charlie doesn't add a `restrict` block or any other syntax for
-version windows; to use a specific API version, look it up at its
-versioned UNS:
-
-~~~charlie
-$geo = %puck['puck.uno/geo/v2']
-~~~
-
-Charlie's blockchain-signed versioning of library identity is a
-separate story; see [blockchain.md](blockchain.md).

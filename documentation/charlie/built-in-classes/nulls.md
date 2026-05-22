@@ -552,13 +552,13 @@ string flavors round-trip cleanly. Hash flavors round-trip if the hash is itself
 serializable. Flavors holding live objects (functions, capabilities, etc.) cannot
 survive serialization — the engine raises if asked to serialize one.
 
-<a id="relation-to-the-trust-model"></a>
-### Relation to the Trust Model
+<a id="relation-to-the-role-model"></a>
+### Relation to the role model
 
 ~~~json
 {"vibecode": {
-	"section": "relation_to_trust_model",
-	"trust": "flavor_independent_of_trust_and_source"
+	"section": "relation_to_role_model",
+	"role_and_flavor": "independent"
 }}
 ~~~
 

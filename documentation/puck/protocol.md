@@ -59,7 +59,7 @@ object** — the actual ship data on the Starfleet server.
 ## Class definition
 
 A Puck class is defined in JSON, using the **same shape Charlie and
-Mikobase use** (see [class-definition.md](../charlie/class-definition.md)
+Mikobase use** (see [class-definition.md](../mikobase/class-definition.md)
 for the full Mikobase/Charlie spec). Here's `puck.uno/geo` with two
 fields and three remote methods:
 
@@ -176,7 +176,7 @@ re-parsing the URL, and for logs and replay.
 The response body is the method's return value, encoded as JSON
 with no envelope. The HTTP status code carries success/failure
 (`200 OK` for normal returns, error codes for the
-[error catalog](puck.md#error-catalog) — TBD here).
+[error catalog](puck.md) — TBD here).
 
 For a **primitive return**, the body is just the primitive. For
 example, the response from a hypothetical `hq.name` (returning a

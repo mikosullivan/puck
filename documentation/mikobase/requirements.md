@@ -36,25 +36,7 @@ is out of scope for now — only the engine is being developed at this stage.
 <a id="universal-namespace"></a>
 ## Universal Namespace
 
-~~~json
-{"vibecode": {
-	"section": "universal_namespace",
-	"role": "defines UNS class naming for the requirements context",
-	"key_concepts": ["UNS", "domain_namespace", "puck.uno_built-ins", "foo.com_examples"]
-}}
-~~~
-
-Class names use UNS — a URL without the `https://` protocol prefix. The domain provides a
-globally unique namespace.
-
-Examples:
-
-- `puck.uno/record`
-- `puck.uno/record/class`
-- `puck.uno/reference`
-- `puck.uno/dbfile`
-- `foo.com/bar`
-- `mycompany.com/character`
+Class names use UNS. See [UNS](../ecoverse/uns.md).
 
 ---
 
@@ -590,7 +572,7 @@ The engine provides methods for importing and exporting schemas.
 - `engine.export_schema()` — returns the current schema as a dict
 - `engine.export_schema_file(path)` — writes the current schema to a JSON file
 
-See [class-definition.md](../charlie/class-definition.md) for schema format and import rules.
+See [class-definition.md](class-definition.md) for schema format and import rules.
 
 ---
 

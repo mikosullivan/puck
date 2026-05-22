@@ -236,7 +236,7 @@ $foo.round_down(multiple: 10) -> -10
 ## Iteration
 
 Numeric iteration helpers (`.times`, `.upto`, `.downto`) live in
-[loops.md § Numeric iteration helpers](../loops.md#numeric-iteration-helpers).
+[loops.md § Numeric iteration helpers](../syntax/loops.md#numeric-iteration-helpers).
 
 ---
 

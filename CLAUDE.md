@@ -77,6 +77,12 @@ These are project-wide, not personal preferences — follow them in any file you
 - **Field names use underscores; file names use dashes.** `fail_fast` in JSON, `foo-bar.md` on disk.
 - **MIT license** for any code distributed through the ecosystem.
 
+## Miko's formatting preferences
+
+Miko's personal code-formatting preferences live at [documentation/ecoverse/formatting/miko.json](documentation/ecoverse/formatting/miko.json) — the canonical source of truth. Consult it when generating or editing code in this repo: it covers indent, line rules, and per-language overrides.
+
+The format spec the file follows is at [documentation/ecoverse/formatting/formatting.md](documentation/ecoverse/formatting/formatting.md). Per that spec's philosophy, these are personal preferences and not project policy, but for code written for Miko in this repo, miko.json is the working default.
+
 ## Design principles to honor when proposing changes
 
 - **No nanny code.** The system does not block legitimate developer choices for paternalism. Safe defaults and security guarantees stay; "you can't because I think you shouldn't" is rejected. See [documentation/overview.md](documentation/overview.md) "No Nanny Code".

@@ -216,7 +216,7 @@ constraints on a single element (compound selectors). It
 `+` — those describe relationships across the tree and live at
 the find/find_first level.
 
-`match_css?` follows the [`?` suffix convention](../../charlie/charlie.md#the--suffix):
+`match_css?` follows the [`?` suffix convention](../../charlie/charlie.md#the-suffix):
 truthy on match, falsey on no-match, never throws.
 
 Direct use:

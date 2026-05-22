@@ -11,7 +11,7 @@
     "func_call", "method_call", "safe_call", "call", "index",
     "string", "number", "bool", "null", "array", "hash",
     "binop", "unop", "pipe", "block",
-    "untrusted", "inherits", "field_decl", "join_decl", "property_decl", "abstract_decl", "helper_decl"
+    "untrusted", "inherits", "field_decl", "join_decl", "accessor_decl", "abstract_decl", "helper_decl"
   ],
   "operator_precedence": ["pipe (| |&)", "or (||)", "and (&&)", "cmp (== != < > <= >=)", "add (+ -)", "mul (* /)", "unary (! -)"],
   "note": "String interpolation in double-quoted strings stored raw; evaluator handles it"
@@ -596,7 +596,7 @@ local function new_parser(tokens)
     end
 
     -- -------------------------------------------------------------------------
-    -- Class body: inherits, abstract, field, join, property, helper, function
+    -- Class body: inherits, abstract, field, join, accessor, helper, function
     -- -------------------------------------------------------------------------
     --[[ { "out": "decl[]  (array of AST nodes)", "note": "parses class body declarations until 'end' or EOF; also used recursively for helper bodies" } ]]
     local function parse_class_body()
@@ -640,12 +640,12 @@ local function new_parser(tokens)
                 until cur_type() ~= "SYMBOL" and cur_type() ~= "STRING"
                 decls[#decls + 1] = node("join_decl", { fields = fields })
 
-            elseif kw("property") then
+            elseif kw("accessor") then
                 advance()
                 local name
                 if     cur_type() == "SYMBOL" then name = advance().value
                 elseif cur_type() == "STRING" then name = advance().value end
-                decls[#decls + 1] = node("property_decl", { name = name })
+                decls[#decls + 1] = node("accessor_decl", { name = name })
 
             elseif kw("helper") then
                 advance()

@@ -2,7 +2,7 @@
   "format": "worldlet",
   "format_version": "1.0",
 
-  "comment": "AI2AI session template. Drop in records under `records`, send to the other agent. Empty out of the box. The `vibecode` block below is the full machine-readable protocol spec — read that if you're an AI agent. This `comment` is for the human glancing at the file in an editor.",
+  "comment": "AI2AI is a collaboration format for agent conversations. The `vibecode` block below is the full machine-readable protocol spec — read that if you're an AI agent. This `comment` is for the human glancing at the file in an editor.",
 
   "vibecode": {
     "doc": "AI2AI",
@@ -114,9 +114,10 @@
       },
       "fields": {
         "agenda":        {"class": "string", "required": true},
-        "participants":  {"class": "array"},
+        "participants":  {"class": "array", "items": "puck.uno/ai/agent"},
         "human":          {"class": "string"},
-        "status":         {"class": "string", "default": ":open"},
+        "status":         {"class": "string", "default": ":open",
+                           "enum": [":open", ":resolved", ":impasse", ":withdrawn"]},
         "created_at":    {"class": "string"}
       }
     },
@@ -154,7 +155,8 @@
         "session":        {"class": "puck.uno/ai/session", "required": true},
         "to":             {"class": "string", "required": true},
         "body":           {"class": "string", "required": true},
-        "severity":       {"class": "string", "default": ":concern"},
+        "severity":       {"class": "string", "default": ":concern",
+                           "enum": [":blocking", ":concern", ":minor"]},
         "status":         {"class": "string", "default": ":open"}
       }
     },
@@ -220,7 +222,8 @@
         "from":          {"class": "puck.uno/ai/agent",  "required": true},
         "session":        {"class": "puck.uno/ai/session", "required": true},
         "about":          {"class": "string", "required": true},
-        "kind":            {"class": "string"},
+        "kind":            {"class": "string",
+                            "enum": [":fact", ":example", ":counterexample", ":citation", ":measurement"]},
         "source":         {"class": "string"},
         "body":           {"class": "string"},
         "confidence":      {"class": "number"}
@@ -285,9 +288,9 @@
         "session":        {"class": "puck.uno/ai/session", "required": true},
         "body":           {"class": "string", "required": true},
         "based_on":       {"class": "string"},
-        "agreed_by":      {"class": "array"},
+        "agreed_by":      {"class": "array", "items": "puck.uno/ai/agent"},
         "confidence":     {"class": "number"},
-        "risks":          {"class": "array"}
+        "risks":          {"class": "array", "items": "string"}
       }
     },
 
@@ -303,24 +306,25 @@
       "fields": {
         "session":        {"class": "puck.uno/ai/session", "required": true},
         "summary":         {"class": "string", "required": true},
-        "decisions":       {"class": "array"},
-        "open_items":      {"class": "array"},
-        "next_steps":      {"class": "array"},
+        "decisions":       {"class": "array", "items": "puck.uno/ai/decision"},
+        "open_items":      {"class": "array", "items": "string"},
+        "next_steps":      {"class": "array", "items": "string"},
         "impasse":         {"class": "puck.uno/ai/impasse"},
-        "positions":       {"class": "array"},
+        "positions":       {"class": "array", "items": "puck.uno/ai/position"},
         "markdown":        {"class": "string"}
       }
     },
 
     "puck.uno/ai/human_instruction": {
       "vibecode": {
-        "purpose": "Instruction posted by the human into the session mikobase, mid-session.",
+        "purpose": "A record of an instruction from the human. Normally written by an agent on the human's behalf — humans do not generally post to worldlets directly.",
         "from_field_is_string": "Unlike other records, `from` here is a plain string identifier for the human (email, UNS, etc.) — not a UUID. Humans do not register agent records.",
-        "agent_response": "Agents must read and respect human_instructions. Treat them as authoritative overrides for the agenda or process."
+        "agent_response": "How agents factor a human_instruction into the session is agent policy; the format does not enforce a response. The initiating agent (the one running the session) holds whatever session authority exists.",
+        "transport_authentication": "Out of scope for AI2AI. Authenticating that a record really originated with the named human is a transport-layer concern, not a format concern."
       },
       "fields": {
         "session":        {"class": "puck.uno/ai/session", "required": true},
-        "from":           {"class": "string", "required": true},
+        "from":           {"class": "string", "required": true, "format": "identifier"},
         "body":           {"class": "string", "required": true},
         "created_at":     {"class": "string"}
       }
@@ -334,7 +338,7 @@
       },
       "fields": {
         "session":        {"class": "puck.uno/ai/session", "required": true},
-        "from":           {"class": "string", "required": true},
+        "from":           {"class": "string", "required": true, "format": "identifier"},
         "body":           {"class": "string", "required": true},
         "resolves":       {"class": "string"},
         "created_at":     {"class": "string"}

@@ -46,25 +46,33 @@ local function http_get(host, port, path)
     return response
 end
 
-runner.test("server returns the rendered README as the home page", function()
+runner.test("server returns the hand-edited index.html at /", function()
     local pid = start_server(TEST_PORT)
     local ok, response_or_err = pcall(http_get, "127.0.0.1", TEST_PORT, "/")
     stop_server(pid)
     assert_.is_true(ok, "http_get raised: " .. tostring(response_or_err))
     local response = response_or_err
-    assert_.not_nil(response:match("^HTTP/1%.1 200 OK"),       "expected '200 OK' status line")
-    assert_.not_nil(response:match("Content%-Type: text/html"), "expected text/html content-type")
-    assert_.not_nil(response:match("<!DOCTYPE html>"),          "expected HTML5 doctype")
-    assert_.not_nil(response:match("<title>Puck</title>"),      "expected the README title to land in <title>")
-    -- README starts with `# <img ...> Puck`, so the rendered H1 contains 'Puck'.
-    assert_.not_nil(response:match("<h1>.-Puck</h1>"),          "expected <h1> containing 'Puck'")
-    -- A section that's stable across README edits.
-    assert_.not_nil(response:match("The three packages"),       "expected the 'three packages' section header")
+    assert_.not_nil(response:match("^HTTP/1%.1 200 OK"),         "expected '200 OK' status line")
+    assert_.not_nil(response:match("Content%-Type: text/html"),  "expected text/html content-type")
+    assert_.not_nil(response:match("<!DOCTYPE html>"),           "expected HTML5 doctype")
+    -- Initial index.html links to the documentation entry.
+    assert_.not_nil(response:match('href="/documentation/"'),    "expected link to /documentation/")
 end)
 
-runner.test("server renders a doc by path: /overview", function()
+runner.test("server renders the README at /documentation/", function()
+    local pid = start_server(TEST_PORT + 4)
+    local ok, response = pcall(http_get, "127.0.0.1", TEST_PORT + 4, "/documentation/")
+    stop_server(pid)
+    assert_.is_true(ok, "http_get raised: " .. tostring(response))
+    assert_.not_nil(response:match("^HTTP/1%.1 200 OK"))
+    assert_.not_nil(response:match("<title>Puck</title>"),  "README title should be 'Puck'")
+    assert_.not_nil(response:match("<h1>.-Puck.-</h1>"),    "expected <h1> containing 'Puck'")
+    assert_.not_nil(response:match("The three packages"),   "expected the 'three packages' section header")
+end)
+
+runner.test("server renders a doc by path: /documentation/overview", function()
     local pid = start_server(TEST_PORT + 1)
-    local ok, response = pcall(http_get, "127.0.0.1", TEST_PORT + 1, "/overview")
+    local ok, response = pcall(http_get, "127.0.0.1", TEST_PORT + 1, "/documentation/overview")
     stop_server(pid)
     assert_.is_true(ok, "http_get raised: " .. tostring(response))
     assert_.not_nil(response:match("^HTTP/1%.1 200 OK"))

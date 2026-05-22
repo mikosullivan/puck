@@ -53,7 +53,7 @@ The three values are `true`, `false`, and `null`. `null` represents "could be tr
 could be false, we don't know."
 
 Trilean operators classify each operand by reading `.object.bool` on it (see
-[object.md](object.md)). The result is one of three categories: `true` for any
+[object.md](../charlie/built-in-classes/object.md)). The result is one of three categories: `true` for any
 truthy value (the boolean `true`, the number `1`, a non-empty string, etc.),
 `false` for the boolean `false` value (and other strictly-falsy values like
 `0`, empty strings, etc.), or `null` for null values.
@@ -327,7 +327,7 @@ unknown case, ordinary `if $result` is safe.
 
 The `.object.null?`, `.object.defined?`, `.object.truthy?`, and `.object.bool`
 methods are universal — they are not specific to trilean. They are general-purpose
-introspection available on any value. See [object.md](object.md) for the full
+introspection available on any value. See [object.md](../charlie/built-in-classes/object.md) for the full
 set.
 
 ---
@@ -392,7 +392,7 @@ Two reasons:
   module passes its own truth-table tests, that's evidence the runtime handles
   conditional logic, function definition, and null-comparison correctly.
 
-The implementation lives at [code/charlie/stdlib/trilean.charlie](../../../code/charlie/stdlib/trilean.charlie).
+The implementation lives at [code/charlie/stdlib/trilean.charlie](https://github.com/mikosullivan/puck/blob/main/code/charlie/stdlib/trilean.charlie).
 
 ---
 

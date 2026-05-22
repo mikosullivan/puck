@@ -11,9 +11,9 @@ introspection that doesn't belong to any one class but applies uniformly to all.
 ~~~json
 {"vibecode": {
 	"section": "methods",
-	"role": "documents the four engine-controlled methods on the universal .object helper: bool plus three derived predicates",
+	"role": "documents the engine-controlled surface of the universal .object helper: bool plus three derived predicates, plus identity equality via ==",
 	"key_concepts": ["bool_is_underlying_property", "predicates_derived_from_bool",
-		"all_four_engine_enforced_and_read_only"]
+		"equality_on_.object_is_identity_not_value", "all_engine_enforced_and_read_only"]
 }}
 ~~~
 
@@ -25,8 +25,9 @@ The current set:
 | `truthy?` | strict boolean | `bool` is `true` |
 | `null?` | strict boolean | `bool` is `null` |
 | `defined?` | strict boolean | `bool` is `true` or `false` (not null) |
+| `==` | strict boolean | the other side's `.object` refers to the same underlying value (see [Identity](#identity) below) |
 
-All four are **read-only** and **engine-enforced**: user code cannot override them
+All of these are **read-only** and **engine-enforced**: user code cannot override them
 or change what they return for a given object. They give consistent answers
 regardless of what classes, fields, or methods user code attaches to the object.
 
@@ -133,6 +134,50 @@ false.object.defined?    # true   ← false is still defined
 "".object.defined?       # true
 null.object.defined?     # false  ← only null is undefined
 ```
+
+---
+
+<a id="identity"></a>
+## Identity
+
+~~~json
+{"vibecode": {
+	"section": "identity",
+	"role": "reference-equality semantics on .object",
+	"key_concepts": ["==_between_two_.object_results_is_identity_not_value_equality",
+		"engine_enforced_cannot_be_overridden",
+		"split_value_eq_on_the_value_identity_on_.object"]
+}}
+~~~
+
+Comparing two `.object` results with `==` tests **object identity** (reference
+equality) — true only when both `.object` accesses refer to the same underlying
+value:
+
+```
+$foo = {name: 'Picard'}
+$bar = $foo
+$baz = {name: 'Picard'}
+
+$foo.object == $bar.object   # true  ← same underlying object
+$foo.object == $baz.object   # false ← distinct objects, equal contents
+$foo == $baz                 # true  ← value equality
+```
+
+The split is clean:
+
+- `$foo == $bar` — **value equality**. Controlled by the value's class; can be
+  overridden by user code (e.g., a class defining its own `==`).
+- `$foo.object == $bar.object` — **object identity**. Engine-enforced;
+  cannot be overridden.
+
+A reader seeing `==` between two `.object` accesses knows immediately that it's
+an identity check, not a value comparison. The `.object` namespace already
+signals "the engine talking, not the class," and `==` between two engine views
+is the natural place for identity semantics — no new operator is needed.
+
+Like the other `.object` methods, identity equality is **read-only and
+engine-enforced**. No user class can change what counts as "the same object."
 
 ---
 

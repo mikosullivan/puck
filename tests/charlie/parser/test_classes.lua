@@ -1,7 +1,7 @@
 --[[
 {
   "suite": "parser / classes",
-  "covers": "class_def node: empty class, inherits, field, abstract, join, function, remote function, property"
+  "covers": "class_def node: empty class, inherits, field, abstract, join, function, remote function, accessor"
 }
 ]]
 local runner = require("support.runner")
@@ -77,9 +77,9 @@ runner.test("class with remote function", function()
     assert.is_true(n.body[1].remote)
 end)
 
-runner.test("class with property", function()
-    local n = stmt("class 'fleet.officer'\nproperty :full_name\nend")
+runner.test("class with accessor", function()
+    local n = stmt("class 'fleet.officer'\naccessor :full_name\nend")
     assert.kind(n, "class_def")
-    assert.kind(n.body[1], "property_decl")
+    assert.kind(n.body[1], "accessor_decl")
     assert.equal(n.body[1].name, "full_name")
 end)

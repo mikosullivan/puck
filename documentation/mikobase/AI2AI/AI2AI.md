@@ -48,10 +48,10 @@
 
 **AI2AI** is a protocol for two AI agents to collaborate on a task, reach
 conclusions, and deliver a report to a human. It ships with
-[Puck](../puck/puck.md) but is usable on its own — you do not need to know
-anything else about the [Puck ecoverse](../overview.md) to use it.
+[Puck](../../puck/puck.md) but is usable on its own — you do not need to know
+anything else about the [Puck ecoverse](../../overview.md) to use it.
 
-AI2AI sessions run on a shared [**mikobase**](mikobase.md) — a live
+AI2AI sessions run on a shared [**mikobase**](../mikobase.md) — a live
 in-memory database. Agents exchange structured records (proposals,
 objections, decisions, etc.) using the standard class library defined
 below. When the session concludes, the agents assemble a report and deliver
@@ -67,7 +67,7 @@ shared vocabulary without enforcing rigid structure — a mikobase will accept
 any well-formed record, but using these classes makes the session output
 readable by any AI or human without prior coordination.
 
-**Template worldlet:** [AI2AI/ai2ai.json](AI2AI/ai2ai.json) — every class
+**Template worldlet:** [AI2AI/ai2ai.json](ai2ai.json) — every class
 defined, ready for an agent to populate `records` with a session.
 
 ---
@@ -82,18 +82,17 @@ defined, ready for an agent to populate `records` with a session.
 "purpose":"portable JSON document for exchanging AI2AI session state between agents",
 "top_level_required":["records"],
 "top_level_optional":["classes","format","format_version"],
-"ai2ai_omits":["meta","properties","allow","history","files","file_chunks"],
+"ai2ai_omits":["meta","properties","history","files","file_chunks"],
 "record_fields":["class","created_at","bucket"],
 "uuid_format":"UUID v4 for all record IDs and reference values",
 "import_policy":{
-"idempotent":"identical record UUIDs are no-ops",
-"conflict":"differing content under same UUID aborts entire import",
-"atomicity":"all-or-nothing"}}}
+"overwrite":"incoming record with existing UUID overwrites the existing one",
+"conflict_handling":"application_concern_not_worldlet_primitive"}}}
 ~~~
 
 A **worldlet** is the JSON file format AI2AI agents exchange. It is a
 subset of the full Mikobase format — see
-[worldlet.md](worldlets/worldlet.md) for the standalone spec. This section
+[worldlet.md](../worldlets/worldlets.md) for the standalone spec. This section
 covers just what an agent needs to produce and consume worldlets for an
 AI2AI session.
 
@@ -118,7 +117,7 @@ top-level strings to identify the document; both are optional.
 "ai2ai_classes":"puck.uno/ai/agent, puck.uno/ai/proposal, puck.uno/ai/objection, etc. — see class summary below"}}
 ~~~
 
-`classes` is an object keyed by [UNS](../ecoverse/uns.md) class name. The
+`classes` is an object keyed by [UNS](../../ecoverse/uns.md) class name. The
 class name is always taken from the dictionary key; any `name` field inside
 the definition is ignored. AI2AI uses the `puck.uno/ai/*` classes defined
 in [The conversation](#the-conversation). Agents do not need to declare
@@ -158,13 +157,10 @@ strings pointing at other records.
 ~~~json
 {"vibecode": {"concept":"worldlet_import_rules",
 "uuid_constraint":"record keys and reference values should be unique strings; UUID v4 is the convention but Mikobase is not fussy about format; see mikobase.md § Record identity",
-"conflict_policy":[
-{"case":"record key exists with identical content","action":"skip; idempotent"},
-{"case":"record key exists with different content","action":"error; abort entire import"}],
+"conflict_policy":"incoming record with existing UUID overwrites; any stricter policy (skip / abort / prompt) is an application concern, not a worldlet primitive",
 "validation_checks":["all records have class and bucket",
-"all class values are known to the receiver",
 "created_at is ISO 8601 with millisecond precision"],
-"atomicity":"all-or-nothing; any error aborts entire import; no partial writes"}}
+"atomicity":"all-or-nothing on validation errors; no partial writes"}}
 ~~~
 
 When an agent imports another agent's delta worldlet:
@@ -173,12 +169,14 @@ When an agent imports another agent's delta worldlet:
   unique strings. UUID v4 is the recommended shape (the wider Puck
   convention), but Mikobase isn't fussy about format and doesn't require
   cryptographic soundness — it only checks for uniqueness. See
-  [mikobase.md § Record identity](mikobase.md#record-identity).
-- **Idempotent**: a record key that already exists with identical content
-  is silently skipped.
-- **Conflict aborts**: a record key that already exists with **different**
-  content aborts the entire import — no partial writes.
-- **All-or-nothing**: any validation error aborts the entire import.
+  [mikobase.md § Record identity](../mikobase.md#record-identity).
+- **Overwrite on UUID match.** An incoming record with the same UUID as
+  one already in the mikobase overwrites the existing one. Identical
+  content is therefore a no-op. Stricter policies (skip-on-conflict,
+  abort-on-conflict, prompt for review, etc.) are application concerns,
+  not part of the worldlet primitive.
+- **All-or-nothing on validation errors.** Any validation error aborts
+  the entire import. No partial writes.
 
 ---
 
@@ -224,7 +222,7 @@ available for audit.
 
 Multiple agents can write to the same session simultaneously without
 coordination. Each agent simply appends new records. The session mikobase is
-the union of all appended records, ordered by `updated_at`.
+the union of all appended records, ordered by `created_at`.
 
 **Agents never:**
 
@@ -266,8 +264,8 @@ now contains both as siblings, in timestamp order. No merge algorithm needed
 | `puck.uno/ai/position` | An agent's final stated position after impasse is declared |
 | `puck.uno/ai/decision` | A conclusion both agents agreed on |
 | `puck.uno/ai/report` | Final output forwarded to the human |
-| `puck.uno/ai/human_instruction` | An instruction posted by the human into the session |
-| `puck.uno/ai/human_decision` | A decision made by the human, typically to resolve an impasse |
+| `puck.uno/ai/human_instruction` | A record of a human instruction (usually recorded by an agent on the human's behalf) |
+| `puck.uno/ai/human_decision` | A record of a human decision (same recording pattern) |
 | `puck.uno/ai/sign_off` | Signals that an agent is done sending and disconnecting |
 
 ---
@@ -294,11 +292,11 @@ it registers a new agent record. Duplicate registrations from reconnects are acc
 
 ```
 class 'puck.uno/ai/agent'
-    property @name          # human-readable name for this agent
-    property @uns           # UNS address of the agent, if it has one
-    property @owner         # UNS or identifier of the human or org this agent belongs to
-    property @model         # model name/version, if applicable
-    property @registered_at
+    accessor @name          # human-readable name for this agent
+    accessor @uns           # UNS address of the agent, if it has one
+    accessor @owner         # UNS or identifier of the human or org this agent belongs to
+    accessor @model         # model name/version, if applicable
+    accessor @registered_at
 end
 ```
 
@@ -314,11 +312,11 @@ instance for two agents.
 
 ```
 class 'puck.uno/ai/session'
-    property @agenda        # what the session is here to resolve
-    property @participants  # array of agent record primary keys
-    property @human         # UNS or identifier of the human owner
-    property @status        # :open, :resolved, :impasse, :withdrawn
-    property @created_at
+    accessor @agenda        # what the session is here to resolve
+    accessor @participants  # array of agent record primary keys
+    accessor @human         # UNS or identifier of the human owner
+    accessor @status        # :open, :resolved, :impasse, :withdrawn
+    accessor @created_at
 end
 ```
 
@@ -333,12 +331,12 @@ Something being put forward for consideration.
 
 ```
 class 'puck.uno/ai/proposal'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @subject       # short title
-    property @body          # the proposal content
-    property @rationale     # why this is being proposed
-    property @status        # :open, :accepted, :rejected, :superseded
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @subject       # short title
+    accessor @body          # the proposal content
+    accessor @rationale     # why this is being proposed
+    accessor @status        # :open, :accepted, :rejected, :superseded
 end
 ```
 
@@ -353,12 +351,12 @@ A reasoned disagreement with a proposal or refinement.
 
 ```
 class 'puck.uno/ai/objection'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @to            # reference to proposal or refinement
-    property @body          # the objection
-    property @severity      # :blocking, :concern, :minor
-    property @status        # :open, :addressed, :withdrawn
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @to            # reference to proposal or refinement
+    accessor @body          # the objection
+    accessor @severity      # :blocking, :concern, :minor
+    accessor @status        # :open, :addressed, :withdrawn
 end
 ```
 
@@ -377,12 +375,12 @@ An updated version of a proposal, typically in response to an objection.
 
 ```
 class 'puck.uno/ai/refinement'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @of            # reference to the original proposal
-    property @previous      # reference to the immediately preceding proposal or refinement
-    property @body          # the full revised proposal
-    property @changes       # summary of what changed and why
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @of            # reference to the original proposal
+    accessor @previous      # reference to the immediately preceding proposal or refinement
+    accessor @body          # the full revised proposal
+    accessor @changes       # summary of what changed and why
 end
 ```
 
@@ -400,10 +398,10 @@ A clarifying question about anything in the session.
 
 ```
 class 'puck.uno/ai/question'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @about         # reference to the thing being questioned
-    property @body
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @about         # reference to the thing being questioned
+    accessor @body
 end
 ```
 
@@ -418,10 +416,10 @@ A reply to a question.
 
 ```
 class 'puck.uno/ai/response'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @to            # reference to question
-    property @body
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @to            # reference to question
+    accessor @body
 end
 ```
 
@@ -437,13 +435,13 @@ example, or counterexample that grounds a proposal or objection in external fact
 
 ```
 class 'puck.uno/ai/evidence'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @about         # reference to the record this evidence supports
-    property @kind          # :fact, :example, :counterexample, :citation, :measurement
-    property @source        # URL or description of the source
-    property @body          # the evidence content
-    property @confidence    # 0.0–1.0, agent's confidence in this evidence
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @about         # reference to the record this evidence supports
+    accessor @kind          # :fact, :example, :counterexample, :citation, :measurement
+    accessor @source        # URL or description of the source
+    accessor @body          # the evidence content
+    accessor @confidence    # 0.0–1.0, agent's confidence in this evidence
 end
 ```
 
@@ -459,11 +457,11 @@ trail of who accepted what and under what conditions.
 
 ```
 class 'puck.uno/ai/acceptance'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @of            # reference to the proposal or refinement being accepted
-    property @body          # optional remarks
-    property @conditions    # any conditions attached to the acceptance
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @of            # reference to the proposal or refinement being accepted
+    accessor @body          # optional remarks
+    accessor @conditions    # any conditions attached to the acceptance
 end
 ```
 
@@ -480,10 +478,10 @@ stops and both agents move to stating their final positions.
 
 ```
 class 'puck.uno/ai/impasse'
-    property @from           # primary key of the agent record declaring impasse
-    property @session        # reference to the session record
-    property @body           # explanation of why agreement cannot be reached
-    property @sticking_point # the specific issue that cannot be reconciled
+    accessor @from           # primary key of the agent record declaring impasse
+    accessor @session        # reference to the session record
+    accessor @body           # explanation of why agreement cannot be reached
+    accessor @sticking_point # the specific issue that cannot be reconciled
 end
 ```
 
@@ -500,10 +498,10 @@ the human can make an informed decision.
 
 ```
 class 'puck.uno/ai/position'
-    property @from           # primary key of the agent record
-    property @session        # reference to the session record
-    property @body           # the agent's final position
-    property @supports       # reference to the last proposal or refinement this agent endorses
+    accessor @from           # primary key of the agent record
+    accessor @session        # reference to the session record
+    accessor @body           # the agent's final position
+    accessor @supports       # reference to the last proposal or refinement this agent endorses
 end
 ```
 
@@ -518,12 +516,12 @@ A conclusion both agents have agreed on. A session may contain multiple decision
 
 ```
 class 'puck.uno/ai/decision'
-    property @session       # reference to the session record
-    property @body          # the agreed-upon text
-    property @based_on      # reference to the proposal or refinement that was accepted
-    property @agreed_by     # array of agent record primary keys
-    property @confidence    # 0.0–1.0, agents' collective confidence in this decision
-    property @risks         # array of identified risks or caveats
+    accessor @session       # reference to the session record
+    accessor @body          # the agreed-upon text
+    accessor @based_on      # reference to the proposal or refinement that was accepted
+    accessor @agreed_by     # array of agent record primary keys
+    accessor @confidence    # 0.0–1.0, agents' collective confidence in this decision
+    accessor @risks         # array of identified risks or caveats
 end
 ```
 
@@ -539,14 +537,14 @@ concludes.
 
 ```
 class 'puck.uno/ai/report'
-    property @session       # reference to the full session for audit
-    property @summary       # executive summary — what the human needs to read first
-    property @decisions     # array of decisions reached
-    property @open_items    # things not resolved, with context
-    property @next_steps    # recommended actions for the human
-    property @impasse       # reference to the impasse record, if the session ended in impasse
-    property @positions     # array of position records, if the session ended in impasse
-    property @markdown      # full human-readable narrative of the session in Markdown
+    accessor @session       # reference to the full session for audit
+    accessor @summary       # executive summary — what the human needs to read first
+    accessor @decisions     # array of decisions reached
+    accessor @open_items    # things not resolved, with context
+    accessor @next_steps    # recommended actions for the human
+    accessor @impasse       # reference to the impasse record, if the session ended in impasse
+    accessor @positions     # array of position records, if the session ended in impasse
+    accessor @markdown      # full human-readable narrative of the session in Markdown
 end
 ```
 
@@ -561,16 +559,21 @@ The `summary` and `next_steps` fields should make clear that the human must deci
 
 `puck.uno/ai/human_instruction`
 
-An instruction posted by the human into the session mikobase. Agents must read and
-respect it. `from` is a string identifier rather than an agent record reference since
-the human does not register as an agent.
+A record of an instruction from the human. Humans don't generally write to worldlets
+directly; an agent typically records the instruction on the human's behalf. `from`
+is a plain string identifier (email, UNS, etc.) rather than an agent record reference.
+
+How agents factor a `human_instruction` into the session is a matter of agent
+policy — AI2AI doesn't enforce any particular response. The initiating agent (the
+one running the session) holds whatever session authority exists. Transport-level
+authentication of the record's provenance is out of scope for the format.
 
 ```
 class 'puck.uno/ai/human_instruction'
-    property @session       # reference to the session record
-    property @from          # identifier of the human (string, not an agent record)
-    property @body          # the instruction
-    property @created_at
+    accessor @session       # reference to the session record
+    accessor @from          # identifier of the human (string, not an agent record)
+    accessor @body          # the instruction
+    accessor @created_at
 end
 ```
 
@@ -581,16 +584,18 @@ end
 
 `puck.uno/ai/human_decision`
 
-A decision made by the human, typically to resolve an impasse or override the agents.
-`from` is a string identifier for the same reason as in `human_instruction`.
+A record of a decision from the human, typically to resolve an impasse or settle a
+question. As with `human_instruction`, it's normally recorded by an agent on the
+human's behalf, `from` is a plain string identifier, and acting on the record is
+agent policy rather than a format requirement.
 
 ```
 class 'puck.uno/ai/human_decision'
-    property @session       # reference to the session record
-    property @from          # identifier of the human (string, not an agent record)
-    property @body          # the decision
-    property @resolves      # reference to the impasse or open item being resolved
-    property @created_at
+    accessor @session       # reference to the session record
+    accessor @from          # identifier of the human (string, not an agent record)
+    accessor @body          # the decision
+    accessor @resolves      # reference to the impasse or open item being resolved
+    accessor @created_at
 end
 ```
 
@@ -610,9 +615,9 @@ nothing more to add right now. The session status is a separate concern entirely
 
 ```
 class 'puck.uno/ai/sign_off'
-    property @from          # primary key of the agent record
-    property @session       # reference to the session record
-    property @body          # optional closing remarks
+    accessor @from          # primary key of the agent record
+    accessor @session       # reference to the session record
+    accessor @body          # optional closing remarks
 end
 ```
 
