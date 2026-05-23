@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "crypto-mining-payments",
-	"role": "speculative app concept: use Charlie's sandbox, trust policy, and blockchain integration as a platform for opt-in compute-time donations as payment for services",
+	"role": "speculative app concept: use Caspian's sandbox, trust policy, and blockchain integration as a platform for opt-in compute-time donations as payment for services",
 	"key_concepts": ["compute_for_value", "sandboxed_mining", "blockchain_verification",
 		"opt_in_user_consent", "puck_uno_agnostic"],
 	"status": "brainstorm"
@@ -20,13 +20,13 @@ Future consideration. Not part of early versions.
 <a id="overview"></a>
 ## Overview
 
-Charlie's sandbox, trust policy, and blockchain integration make it a natural platform
+Caspian's sandbox, trust policy, and blockchain integration make it a natural platform
 for a generalised opt-in compute payment system. Any two parties can use it: a user pays
 for a service by donating compute time; the recipient verifies and records the work on
 the blockchain.
 
 This is not specific to puck.uno. Any site can offer it, accept it, or build on top of
-it using a standard Charlie library.
+it using a standard Caspian library.
 
 ---
 
@@ -36,7 +36,7 @@ it using a standard Charlie library.
 1. A site offers something in exchange for compute time — a service, credits, a free
    tier, a charitable donation.
 2. The user agrees explicitly. The mining session is clearly marked as such in the UI.
-3. The Charlie runtime executes the mining library in a sandboxed environment for a
+3. The Caspian runtime executes the mining library in a sandboxed environment for a
    defined duration. The sandbox enforces the time limit; the user's machine cannot be
    exploited beyond what was agreed.
 4. The completed work is verified and recorded on the blockchain. Both parties can audit
@@ -45,8 +45,8 @@ it using a standard Charlie library.
 
 ---
 
-<a id="why-charlie-is-a-good-fit"></a>
-## Why Charlie Is a Good Fit
+<a id="why-caspian-is-a-good-fit"></a>
+## Why Caspian Is a Good Fit
 
 - **Sandbox** — secure, time-limited execution. Mining runs in a controlled environment
   with explicit permissions. The trust policy governs what the mining code is allowed

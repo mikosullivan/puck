@@ -29,11 +29,11 @@ vibecode wins.
 | Version | Codename | Page |
 |---|---|---|
 | **V0.01** | hello-world | [v0.01.md](v0.01.md) |
-| **V0.02** | charlie-source-hello | [v0.02.md](v0.02.md) |
-| **V0.03** | charlie-with-stdout | [v0.03.md](v0.03.md) |
-| **V0.04** | charlie-with-hashes | [v0.04.md](v0.04.md) |
-| **V0.05** | charlie-with-json-serialization | [v0.05.md](v0.05.md) |
-| **V0.0X** | Charlie command-line execution | [v0.0x.md](v0.0x.md) |
+| **V0.02** | caspian-source-hello | [v0.02.md](v0.02.md) |
+| **V0.03** | caspian-with-stdout | [v0.03.md](v0.03.md) |
+| **V0.04** | caspian-with-hashes | [v0.04.md](v0.04.md) |
+| **V0.05** | caspian-with-json-serialization | [v0.05.md](v0.05.md) |
+| **V0.0X** | Caspian command-line execution | [v0.0x.md](v0.0x.md) |
 | **V0.1** | Bryton | [v0.1.md](v0.1.md) |
 
 Read them in order. Each page is self-contained: goal, definition of
@@ -54,18 +54,18 @@ The very first developer pass — getting from "nothing started" to
 {"vibecode": {"section": "testing_strategy", "model": "two_tier",
 "tier_1": {"name": "lua_side_tests", "scope":
 "engine_internals_and_bryton_runner_itself", "framework":
-"tests_charlie_support_runner_and_support_assert", "permanence":
+"tests_caspian_support_runner_and_support_assert", "permanence":
 "permanent_engine_is_in_lua_tests_live_in_lua_next_to_it"},
 "tier_2": {"name": "bryton_tests", "scope":
-"charlie_level_behavior", "framework":
+"caspian_level_behavior", "framework":
 "bryton_walks_directory_runs_each_file_aggregates_xeme",
 "arrives": "v0.1"}, "pre_v01_bridge":
-"lua_host_harness_calling_engine_run_charlie_test_and_asserting_on_return_value",
+"lua_host_harness_calling_engine_run_caspian_test_and_asserting_on_return_value",
 "no_bryton_lite_name":
 "one_product_named_bryton_versioned_v01_minimum_v0X_grows_features",
 "no_circularity":
-"lua_independent_of_charlie_tier_1_self_contained;
-bryton_depends_on_charlie_and_lua_but_is_tested_by_lua"}}
+"lua_independent_of_caspian_tier_1_self_contained;
+bryton_depends_on_caspian_and_lua_but_is_tested_by_lua"}}
 ~~~
 
 Testing in Puck operates on two tiers, each with its own tooling and
@@ -74,23 +74,23 @@ its own permanent home.
 **Tier 1: Lua-side tests** — for the engine and other Lua-implemented
 infrastructure (including the Bryton runner itself). Tests are Lua
 files using the project's existing framework at
-`tests/charlie/support/runner.lua` + `support/assert.lua`. **Tier 1 is
+`tests/caspian/support/runner.lua` + `support/assert.lua`. **Tier 1 is
 permanent** — the engine is implemented in Lua; tests of the engine
 live in Lua next to the implementation.
 
-**Tier 2: Bryton tests** — for Charlie-level behavior. Tests are
-`.charlie` files that emit Xeme JSON; the Bryton runner walks a
+**Tier 2: Bryton tests** — for Caspian-level behavior. Tests are
+`.casp` files that emit Xeme JSON; the Bryton runner walks a
 directory of them and aggregates results. Tier 2 arrives at
-[V0.1](v0.1.md). Before V0.1, Charlie-level behavior is tested via
-**Lua-host harnesses** that invoke `engine.run("test.charlie")` and
+[V0.1](v0.1.md). Before V0.1, Caspian-level behavior is tested via
+**Lua-host harnesses** that invoke `engine.run("test.casp")` and
 assert on the return value — a manual proto-Bryton in Tier 1 form.
 
 The boundary stays sharp:
 
 - **Bryton tests the language.** Does `for` terminate correctly? Do
   hashes preserve insertion order? Does `%role` return the right role
-  inside a cross-role call? These are tests of Charlie's behavior —
-  written in Charlie, run by Bryton.
+  inside a cross-role call? These are tests of Caspian's behavior —
+  written in Caspian, run by Bryton.
 - **Lua tests the implementation.** Does the lexer produce the right
   tokens? Does the dispatcher transition roles correctly? Does the
   engine return the last-statement value to its host? These are tests
@@ -104,16 +104,16 @@ for Tier 2.
 <a id="bootstrap-path"></a>
 ### Bootstrap path
 
-| Phase | Engine tests | Charlie-behavior tests | Bryton tests |
+| Phase | Engine tests | Caspian-behavior tests | Bryton tests |
 |---|---|---|---|
-| V0.01 | Lua-side (`support/runner.lua`) | — (no Charlie text execution yet) | — |
-| V0.02 → V0.0X | Lua-side | Lua-host harness calling `engine.run("X.charlie")` | — |
-| V0.1 | Lua-side | (migration begins) | Bryton tests: `.charlie` files emitting Xeme |
+| V0.01 | Lua-side (`support/runner.lua`) | — (no Caspian text execution yet) | — |
+| V0.02 → V0.0X | Lua-side | Lua-host harness calling `engine.run("X.casp")` | — |
+| V0.1 | Lua-side | (migration begins) | Bryton tests: `.casp` files emitting Xeme |
 | V0.1+ | Lua-side (forever) | (mostly migrated) | Bryton (primary) |
 
-**No circularity.** Lua is independent of Charlie; Tier 1 tests
-are trustworthy from day one. Bryton depends on Charlie (it runs
-Charlie test files) and on Lua (its V0.1 runner is in Lua), but is
+**No circularity.** Lua is independent of Caspian; Tier 1 tests
+are trustworthy from day one. Bryton depends on Caspian (it runs
+Caspian test files) and on Lua (its V0.1 runner is in Lua), but is
 itself tested by Lua. There's no spot where "testing X requires X
 to already work."
 
@@ -121,9 +121,9 @@ to already work."
 ### One product named Bryton, not "bryton-lite"
 
 V0.1 Bryton (Lua-implemented, strict feature subset) and an eventual
-Charlie-hosted Bryton are the same product at different stages, not
+Caspian-hosted Bryton are the same product at different stages, not
 distinct tools. Same purpose, same Xeme contract, same
-directory-walking model. The implementation language (Lua → Charlie)
+directory-walking model. The implementation language (Lua → Caspian)
 is an internal detail. Versioning the feature set is enough —
 re-branding would create a docs tax and an implication that "lite"
 means "less correct." Same shape as `gcc` 1.0 vs `gcc` 14: same
@@ -153,13 +153,13 @@ guards spec quality; this lock guards build momentum.
 {"vibecode": {"additions_since_lock":
 [{"date": "2026-05-17", "feature":
 "break_bwc_with_optional_level_count", "version_target": "v1",
-"spec_locations": ["documentation/charlie/loops.md#break-riker",
-"documentation/charlie/charliejson.md_control_flow_break_section"],
+"spec_locations": ["documentation/caspian/loops.md#break-riker",
+"documentation/caspian/caspianj.md_control_flow_break_section"],
 "rationale":
 "loop_exit_without_loop_object_reference; multi_level_exit; explicit_user_request",
 "side_effects":
 ["$loop.return_and_$loop.break_now_aliased",
-"charlie_md_line_683_updated_to_reflect_aliasing"]}]}}
+"caspian_md_line_683_updated_to_reflect_aliasing"]}]}}
 ~~~
 
 Running log of features that broke the soft lock. Each entry names
@@ -172,10 +172,10 @@ not a wall — but the budget should be visible.
 ## V1 scope (after 0.01)
 
 ~~~json
-{"vibecode": {"v1_in": ["charlie", "charlie_cli", "mikobase", "touchstone",
+{"vibecode": {"v1_in": ["caspian", "caspian_cli", "mikobase", "touchstone",
 "sammy", "trivet", "uma", "bryton", "jasmine", "puck_identity",
 "deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
-"external_service; charlie_client_is_thin_http", "v1_http_path":
+"external_service; caspian_client_is_thin_http", "v1_http_path":
 "sammy_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
 "handler_implements_directly; no_declarative_role_policy"}}
 ~~~
@@ -191,7 +191,7 @@ Robinson never pull it in; programs that want it call
 Authentication is signed-request based; authorization is whatever the handler
 implements directly.
 
-The blockchain is treated as an external service. Charlie's blockchain
+The blockchain is treated as an external service. Caspian's blockchain
 involvement is a thin HTTP client (~20 lines) that calls the blockchain API
 for signature verification, key lookups, etc. The chain itself runs as
 separate infrastructure (the existing Python `blockchain/sim/` evolved to
@@ -207,18 +207,18 @@ production).
 "each_phase_runnable_end_to_end; expand_outward_feature_by_feature", "phases":
 [{"v": "0.01", "name": "hello_world_ksj", "proves":
 "json_parser; ksj_interpreter; stdlib_minimum"}, {"v": "0.02", "name":
-"hello_world_charlie", "proves":
-"charlie_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
-"name": "charlie_with_stdout", "proves":
+"hello_world_caspian", "proves":
+"caspian_text_parser; transpiler_to_ksj; round_trip"}, {"v": "0.03",
+"name": "caspian_with_stdout", "proves":
 "bwc_dispatch; stdout_sink_and_role; puts_bwc"}, {"v": "0.04",
-"name": "charlie_with_hashes", "proves":
+"name": "caspian_with_hashes", "proves":
 "hash_class; hash_literal; key_access; ordered_iteration"}, {"v": "0.05",
-"name": "charlie_with_json_serialization", "proves":
+"name": "caspian_with_json_serialization", "proves":
 "to_json_method_on_built_in_classes; round_trip_with_json_parse"},
-{"v": "0.0X", "name": "charlie_cli", "proves":
-"os_executable_charlie_files; shebang_support; permission_flag_machinery_with_default_restrictive_posture"},
+{"v": "0.0X", "name": "caspian_cli", "proves":
+"os_executable_caspian_files; shebang_support; permission_flag_machinery_with_default_restrictive_posture"},
 {"v": "0.1", "name": "bryton", "proves":
-"first_usable_test_framework_for_charlie_code; runner_walks_dir_and_aggregates_xemes"},
+"first_usable_test_framework_for_caspian_code; runner_walks_dir_and_aggregates_xemes"},
 {"v": "0.0X", "name": "first_http_response", "proves":
 "sammy_routing; handler_chain; response_object"}, {"v": "0.0X", "name":
 "first_db_read", "proves": "mikobase_client; data_flow"}, {"v": "0.0X",
@@ -236,7 +236,7 @@ demo proving a thin band of the stack. The order follows dependencies —
 earlier slices unblock later ones. Bryton (tests) and Jasmine (logs) are
 continuous threads, used from V0.01 onward.
 
-V0.01 (hello-world in CharlieJSON) and V0.02 (hello-world in Charlie
+V0.01 (hello-world in CaspianJ) and V0.02 (hello-world in Caspian
 source, via the new transpiler) bracket the engine's bootstrapping.
 V0.03, V0.04, and V0.05 are atomic prerequisites Bryton needs: real
 stdout, hash data structures, and JSON serialization. They were once
@@ -265,9 +265,9 @@ used wherever a layer needs to surface diagnostic output.
 "source_side_propagation", "chain_isolate_developer_facing"]}}
 ~~~
 
-Roles are not a bolt-on to Charlie — they are part of the engine's core
+Roles are not a bolt-on to Caspian — they are part of the engine's core
 architecture from V0.01 onward. The role spec lives in
-[roles.md](../charlie/roles.md); this section is the implementation plan for layering
+[roles.md](../caspian/roles.md); this section is the implementation plan for layering
 it in incrementally.
 
 **Why roles cannot be deferred.** Every value in the runtime needs an
@@ -292,7 +292,7 @@ cross-role call (`user` → string-class role → `user`):
 - **Role registry.** Engine maintains a name → role-object map.
   Populated at startup with `user` and the engine role owning the
   built-in string class (and any other built-in classes V0.01 touches).
-  Per [roles.md](../charlie/roles.md), the broader minimum is `user`, `clock`,
+  Per [roles.md](../caspian/roles.md), the broader minimum is `user`, `clock`,
   `randomizer`, `utils`; V0.01 needs only what it actually exercises.
   The others arrive as their values get wired up in later slices.
 - **Owning role on every value.** Each value carries an `owning_role`
@@ -342,7 +342,7 @@ cross-role call (`user` → string-class role → `user`):
 | Slice | Role additions |
 |---|---|
 | V0.01 | Core: registry, `owning_role` on values, transition-on-call, `%role`, `%chain` wipe |
-| V0.02 | Transpiler role; emitted CharlieJSON tagged with caller role |
+| V0.02 | Transpiler role; emitted CaspianJ tagged with caller role |
 | V0.03 | `stdout` role; owns the stdout sink and the `puts` bwc; first cross-role boundary for engine-supplied I/O |
 | V0.04 | No new role primitives; built-in hash class is registered under the existing `stdlib` role (same pattern as V0.01's string class) |
 | V0.05 | No new role primitives; `to_json` methods register on existing `stdlib`-owned classes |
@@ -358,7 +358,7 @@ Jails arrive when a slice has values worth narrowing. Cross-role trust
 declarations arrive when a slice needs to grant trust. Alarms (vs.
 regular exceptions) arrive when a slice has sinks that must hard-stop.
 Source-side propagation is deferred until the
-[string-provenance question](../charlie/roles.md#open-questions) settles.
+[string-provenance question](../caspian/roles.md#open-questions) settles.
 
 **Hello-world's role behavior end-to-end.** Program starts in role
 `user`. The fixture materializes the literal `"hello"` — a string value
@@ -385,7 +385,7 @@ possible scale; every later slice exercises more of the model.
 "phase_completion_requires_acceptance_criterion_passing",
 "inventory_before_implement; never_rewrite_without_understanding",
 "minimal_surface_per_slice; not_full_spec_upfront",
-"ksj_is_runtime_format; charlie_text_is_for_humans"]}}
+"ksj_is_runtime_format; caspian_text_is_for_humans"]}}
 ~~~
 
 - Vibecode blocks are canonical; prose is derivative.
@@ -396,11 +396,11 @@ possible scale; every later slice exercises more of the model.
 - A phase isn't complete until its acceptance criterion passes.
 - Inventory existing code before adding new code; never rewrite without
   understanding what's there.
-- Each slice builds the minimal surface it needs. The full CharlieJSON
-  spec, the full Charlie grammar, and the full stdlib emerge over many
+- Each slice builds the minimal surface it needs. The full CaspianJ
+  spec, the full Caspian grammar, and the full stdlib emerge over many
   slices, not as single upfront efforts.
-- CharlieJSON is the runtime format the engine consumes; Charlie text is
-  for human authors and gets transpiled to CharlieJSON before execution.
+- CaspianJ is the runtime format the engine consumes; Caspian text is
+  for human authors and gets transpiled to CaspianJ before execution.
 
 ---
 
@@ -433,20 +433,20 @@ they're adopted, with a short note on what uses each and why.
 ["string_class_role_name_resolved_2026-05-17_as_stdlib_for_all_built_in_classes"]}}
 ~~~
 
-- **Test runner.** Use the existing `tests/charlie/run.lua` or evolve it?
+- **Test runner.** Use the existing `tests/caspian/run.lua` or evolve it?
   To be decided during Step 1 (inventory) of V0.01.
-- **Fixture layout.** The proposed `tests/charlie/fixtures/` path mirrors
+- **Fixture layout.** The proposed `tests/caspian/fixtures/` path mirrors
   the existing test directory structure but should be confirmed on
   inventory.
 - **Vibecode attachment form.** The mechanism for attaching vibecode blocks
   to runtime statements is TBD per the existing memory. Doesn't block V0.01
   — vibecode in docs is fine for now.
-- **Bootstrap parser.** The CharlieJSON spec notes that the bootstrap
-  parser (Charlie text → CharlieJSON) must be written directly in
-  CharlieJSON. This is V0.02 work, not V0.01, but flagged here so it isn't
+- **Bootstrap parser.** The CaspianJ spec notes that the bootstrap
+  parser (Caspian text → CaspianJ) must be written directly in
+  CaspianJ. This is V0.02 work, not V0.01, but flagged here so it isn't
   lost.
 - **String-class role name.** The engine role owning the built-in string
-  class needs a name. Per [roles.md](../charlie/roles.md) the broader minimum role
+  class needs a name. Per [roles.md](../caspian/roles.md) the broader minimum role
   set includes `user`, `clock`, `randomizer`, `utils` — the string class
   isn't named there explicitly. Provisional name to be decided at V0.01
   implementation.

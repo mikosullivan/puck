@@ -73,13 +73,13 @@ change immediately — without running the full static-site build.
 This is important enough to call out explicitly:
 
 - Orlando is **not** Touchstone. Touchstone is per-request
-  infrastructure for Charlie/Sammy applications (transactions,
+  infrastructure for Caspian/Sammy applications (transactions,
   sessions, body buffering, CSP). Orlando shares none of that.
 - Orlando is **not** Sammy. Sammy is a route-style serving framework
   built on Touchstone, intended for real applications. Orlando is a
   practice tool for serving static files.
 - Orlando does **not** use the Puck ecoverse. No UNS lookup, no
-  Mikobase, no Charlie engine, no Puck blockchain, no Puck client.
+  Mikobase, no Caspian engine, no Puck blockchain, no Puck client.
   Orlando is a plain Lua program that reads files from disk and
   writes bytes to a socket.
 
@@ -313,9 +313,9 @@ These need to be settled before any code is written.
   evolving from there.
 - **Repository placement.** Where in this repo does the Lua source
   live? `code/orlando/lua/orlando/` would match the convention
-  Charlie uses. `code/orlando/` standalone might be cleaner since
+  Caspian uses. `code/orlando/` standalone might be cleaner since
   Orlando isn't multi-language.
-- **Tests.** Same Lua test harness as Charlie (`tests/charlie/run.lua`
+- **Tests.** Same Lua test harness as Caspian (`tests/caspian/run.lua`
   style), or something separate? Plus: how do we test that
   Orlando's HTML output matches the Python reference? Golden-file
   comparison against the build script's output is the obvious

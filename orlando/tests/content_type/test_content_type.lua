@@ -54,7 +54,7 @@ runner.test("by extension: code/config types map to text/plain", function()
     local plain = "text/plain; charset=utf-8"
     assert_.equal(ct.for_ext("sh"),      plain)
     assert_.equal(ct.for_ext("lua"),     plain)
-    assert_.equal(ct.for_ext("charlie"), plain)
+    assert_.equal(ct.for_ext("caspian"), plain)
     assert_.equal(ct.for_ext("sql"),     plain)
     assert_.equal(ct.for_ext("toml"),    plain)
     assert_.equal(ct.for_ext("conf"),    plain)

@@ -39,7 +39,7 @@ local BY_EXT = {
     txt      = "text/plain; charset=utf-8",
     sh       = "text/plain; charset=utf-8",
     lua      = "text/plain; charset=utf-8",
-    charlie  = "text/plain; charset=utf-8",
+    caspian  = "text/plain; charset=utf-8",
     sql      = "text/plain; charset=utf-8",
     toml     = "text/plain; charset=utf-8",
     conf     = "text/plain; charset=utf-8",

@@ -3,9 +3,9 @@
 ~~~json
 {"vibecode": {
 	"doc": "plusplus-threads",
-	"role": "Charlie++ design notes for forking and concurrency; threads are forks with a shared mikobase as the sole coordination mechanism, so Charlie itself has no threading primitives",
+	"role": "Caspian++ design notes for forking and concurrency; threads are forks with a shared mikobase as the sole coordination mechanism, so Caspian itself has no threading primitives",
 	"key_concepts": ["forking_model", "mikobase_as_coordination", "no_shared_memory",
-		"forks_and_tmp", "single_threaded_charlie"],
+		"forks_and_tmp", "single_threaded_caspian"],
 	"status": "brainstorm"
 }}
 ~~~
@@ -35,10 +35,10 @@ Strictly speaking, the forking feature does not provide threads. Instead, it pro
 easy way for processes to talk to each other.
 
 A "thread" is just a fork that has access to a shared mikobase. Each fork runs a
-single-threaded Charlie interpreter independently. Forks do not share memory with each
+single-threaded Caspian interpreter independently. Forks do not share memory with each
 other — all coordination happens through the mikobase.
 
-This means Charlie itself has no threading primitives. The mikobase is the entire coordination
+This means Caspian itself has no threading primitives. The mikobase is the entire coordination
 mechanism.
 
 See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
@@ -48,7 +48,7 @@ See [mikobase.md](../../mikobase/mikobase.md) for the mikobase design.
 <a id="forks-and-tmp"></a>
 ## `%forks` and `%tmp`
 
-Forking is a standard Charlie feature, but it requires explicit engine permission. The
+Forking is a standard Caspian feature, but it requires explicit engine permission. The
 engine grants it by providing `%forks` and optionally `%tmp` — both are `null` if the
 engine did not grant the corresponding permission.
 

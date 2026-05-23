@@ -100,7 +100,7 @@ There's no good middle path. The richer the Bootstrap usage, the deeper the rend
 
 ### Sass build introduces a step the project doesn't otherwise have
 
-Orlando is Lua, Gitter is Charlie. There is no Node, no webpack, no bundler in the picture. The Bootstrap "use it like an adult" workflow (per-component Sass imports, custom theme, tree-shaken JS) needs that toolchain. Adopting Bootstrap honestly probably means adopting a build step honestly, which is its own architectural decision worth surfacing.
+Orlando is Lua, Gitter is Caspian. There is no Node, no webpack, no bundler in the picture. The Bootstrap "use it like an adult" workflow (per-component Sass imports, custom theme, tree-shaken JS) needs that toolchain. Adopting Bootstrap honestly probably means adopting a build step honestly, which is its own architectural decision worth surfacing.
 
 ### Bootstrap's "no nanny" status is mixed
 

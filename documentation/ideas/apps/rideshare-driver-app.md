@@ -90,8 +90,8 @@ only with the driver-PWA side and its use of puck.uno/geo.
 - **Framework**: TBD (could be vanilla, could be a small framework
   like Lit or Svelte). PWA capabilities are what matter; the
   framework choice is secondary.
-- **Maps and geo**: `puck.uno/geo` services via remote calls (Charlie
-  client-side or, in non-Charlie browsers, the JSON-over-HTTP form).
+- **Maps and geo**: `puck.uno/geo` services via remote calls (Caspian
+  client-side or, in non-Caspian browsers, the JSON-over-HTTP form).
 - **Real-time driver↔backend**: WebSocket connection to the
   rideshare backend for ride requests and lifecycle events.
 - **Offline storage**: IndexedDB for the current ride state and a
@@ -288,7 +288,7 @@ Cross-checking the table above against the geo spec:
 
 The earlier "live-tracking map embed" and "route-as-map" gaps are
 now resolved by the simpler navigation paradigm — the rendered map
-handles all dynamic behavior internally; Charlie just toggles
+handles all dynamic behavior internally; Caspian just toggles
 features.
 
 ---

@@ -4,9 +4,9 @@
 {"vibecode": {
 	"doc": "formatting",
 	"role": "canonical doc on how formatting works across the Puck ecoverse — philosophy, style.json structure, options, and the tools that consume it",
-	"scope": "Charlie source, JSON, future per-language formatters, markdown code fences, file-system conventions",
+	"scope": "Caspian source, JSON, future per-language formatters, markdown code fences, file-system conventions",
 	"status": "living — options accumulate as the formatter is built",
-	"consumed_by": ["VS Code Charlie extension", "Gitter format toggle", "Differ normalization layer"]
+	"consumed_by": ["VS Code Caspian extension", "Gitter format toggle", "Differ normalization layer"]
 }}
 ~~~
 
@@ -24,12 +24,12 @@ Formatting in the Puck ecoverse is a personal concern, not a project policy. Thi
 }}
 ~~~
 
-There is no canonical style for formatting Charlie. Instead, we developed
+There is no canonical style for formatting Caspian. Instead, we developed
 a `VS Code` extension so that you can easily format code to your own preference.
 
 The rules are simple:
 
-- Upload Charlie formatted however you like.
+- Upload Caspian formatted however you like.
 - When you read someone else's code, run it through your own formatter.
 
 Let's keep bickering about tabs and spaces out of our community.
@@ -39,14 +39,14 @@ Let's keep bickering about tabs and spaces out of our community.
 ~~~json
 {"vibecode": {
 	"section": "style_file",
-	"location": "~/.config/charlie/style.json",
+	"location": "~/.config/caspian/style.json",
 	"scope": "personal_not_project",
 	"format": "strict JSON",
 	"structure": "three top-level groups: indent, lines, languages"
 }}
 ~~~
 
-Personal style lives in `~/.config/charlie/style.json`. JSON keeps it consistent with the rest of the Puck ecosystem (CJS, vibecode blocks, Mikobase records, Puck wire format are all JSON) and avoids pulling in a separate parser. The file may carry a top-level `vibecode` block or `comment` field for human notes ([standard fields](../standard-fields.md)).
+Personal style lives in `~/.config/caspian/style.json`. JSON keeps it consistent with the rest of the Puck ecosystem (CJS, vibecode blocks, Mikobase records, Puck wire format are all JSON) and avoids pulling in a separate parser. The file may carry a top-level `vibecode` block or `comment` field for human notes ([standard fields](../standard-fields.md)).
 
 The format is **strict JSON** — no trailing commas, no `#` comments. Human notes go in the standard `vibecode` / `comment` fields.
 
@@ -66,12 +66,12 @@ Three top-level groups: **`indent`**, **`lines`**, **`languages`**. Universal se
     "trim_trailing_whitespace": true,
     "empty_line_treatment": null,
     "max_consecutive_blank_lines": 1,
-    "final_newline": false
+    "final_newline": false,
+    "blank_line_around_blocks": true
   },
 
   "languages": {
-    "charlie": {
-      "blank_line_around_blocks": true,
+    "caspian": {
       "class_body_packing": "tight",
       "empty_param_parens": true,
       "hash_spacing": "tight",
@@ -152,7 +152,7 @@ How to treat empty lines (lines with only whitespace).
 - **`"blank"`** — strip to a true blank line, regardless of the populated-line rule.
 - **`"neighbors"`** — match the **least-indented neighbor**. Works even when neighbors differ in indent.
 
-Note: `"neighbors"` causes generic `trim_trailing_whitespace` tools (editors, linters, `.editorconfig`) to fight the formatter. The Charlie formatter is the source of truth; other tools defer to it. Diff noise on whitespace changes is accepted — GitHub's diff renderer handles it fine.
+Note: `"neighbors"` causes generic `trim_trailing_whitespace` tools (editors, linters, `.editorconfig`) to fight the formatter. The Caspian formatter is the source of truth; other tools defer to it. Diff noise on whitespace changes is accepted — GitHub's diff renderer handles it fine.
 
 #### `lines.max_consecutive_blank_lines`
 
@@ -164,41 +164,28 @@ Boolean. When false, the file ends with the last meaningful character — no tra
 
 The Puck formatter also strips trailing empty lines from the end of the file regardless of `final_newline`'s value; the setting only controls whether one newline gets added back.
 
-### Terminology: blank vs empty
-
-Two distinct concepts:
-
-- **Blank line** — a line with zero characters. Truly empty.
-- **Empty line** — a line with only whitespace characters (spaces, tabs) and nothing else.
-
-**Blank ⊂ empty.** All blank lines are empty; not all empty lines are blank.
-
-## Charlie-specific options
-
-These appear under `languages.charlie` in `style.json`.
-
-### `blank_line_around_blocks`
+#### `lines.blank_line_around_blocks`
 
 ~~~json
 {"vibecode": {
-	"option": "blank_line_around_blocks",
+	"option": "lines.blank_line_around_blocks",
 	"type": "boolean",
-	"effect": "every multi-line block gets a blank line before and after, except at parent boundaries"
+	"effect": "every multi-line block construct gets a blank line before and after, except at parent boundaries"
 }}
 ~~~
 
-When `true`, every **multi-line block** (anything that spans multiple lines because it has its own `end` keyword — `do…end`, `if…end`, `while…end`, nested `function…end`, etc.) gets a blank line before it and a blank line after it.
+When `true`, every **multi-line block construct** — control-flow blocks (`if`, `for`, `while`, `do`), nested function or class definitions, and any other multi-line statement that opens with a header and closes with an end-marker (`end` in Caspian/Lua, `}` in C-family languages, indentation drop in Python) — gets a blank line before it and a blank line after it.
 
 **Exceptions:**
 
 - No blank line before the block if it's the first statement in its parent.
 - No blank line after the block if it's the last statement in its parent.
 
-Single-line statements are *not* padded — they pack together. The rule visually distinguishes "blocks of logic" from "linear statements."
+Single-line statements pack together — the rule visually distinguishes "blocks of logic" from "linear statements." Applies to any language whose grammar has multi-line block constructs.
 
-**Example** (`function &name` from `puck.uno/color`):
+**Example** (Caspian, `function &name` from `puck.uno/color`):
 
-~~~charlie
+~~~caspian
 function &name
 	$h = .hex
 
@@ -214,13 +201,53 @@ end
 
 The `each…end` block is multi-line and sits between two single-line statements, so it gets blank lines on both sides. The first statement (`$h = .hex`) has no blank line before it (first in parent), and the last statement (`return (null)`) has no blank line after it (last in parent).
 
+**Example** (Lua):
+
+~~~lua
+local function list_md_files()
+	local files = {}
+
+	if io.open("README.md", "rb") then
+		files[#files + 1] = "README.md"
+	end
+
+	local handle = io.popen('find documentation -type f -name "*.md" 2>/dev/null')
+
+	if handle then
+		for line in handle:lines() do
+			files[#files + 1] = line
+		end
+
+		handle:close()
+	end
+
+	table.sort(files)
+	return files
+end
+~~~
+
+Same rule: each `if … end` and the nested `for … end` are blocks, so they get blank lines on both sides. The two trailing single-line statements (`table.sort(files)` and `return files`) pack together.
+
+### Terminology: blank vs empty
+
+Two distinct concepts:
+
+- **Blank line** — a line with zero characters. Truly empty.
+- **Empty line** — a line with only whitespace characters (spaces, tabs) and nothing else.
+
+**Blank ⊂ empty.** All blank lines are empty; not all empty lines are blank.
+
+## Caspian-specific options
+
+These appear under `languages.casp` in `style.json`. (For the cross-language `blank_line_around_blocks` rule, see [`lines.blank_line_around_blocks`](#linesblank_line_around_blocks) under Universal options.)
+
 ### `class_body_packing`
 
 `"tight"` packs class bodies like function bodies: no blank line between the `class 'foo'` opening and the first body member; no blank line between the last member's `end` and the class's closing `end`. The same rule applies uniformly — class bodies are not visually framed.
 
 ### `empty_param_parens`
 
-Boolean. When true, function definitions include empty parens even when the parameter list is empty. Charlie's parser accepts both forms; this preference makes the parens explicit so every function definition has the same visual shape.
+Boolean. When true, function definitions include empty parens even when the parameter list is empty. Caspian's parser accepts both forms; this preference makes the parens explicit so every function definition has the same visual shape.
 
 ```
 function &to_hash()    # empty_param_parens: true
@@ -257,7 +284,7 @@ These appear under `languages.html` in `style.json`. HTML inherits the universal
 
 When `true`, sibling HTML elements get a blank line at the boundary between a **block-tag** run (multi-line elements like `<details>`, `<div>`, `<section>`, `<ul>`) and an **inline-tag** run (single-line elements like `<a>`, `<span>`, `<img>`). Same-kind siblings (two inlines in a row, two blocks in a row) get no blank between them; the transition is what carries the blank.
 
-Mirrors the spirit of Charlie's [`blank_line_around_blocks`](#blank_line_around_blocks): visually distinguishes block-of-markup from a run of inline siblings.
+Mirrors the spirit of [`lines.blank_line_around_blocks`](#linesblank_line_around_blocks): visually distinguishes block-of-markup from a run of inline siblings.
 
 **Example:**
 
@@ -281,15 +308,15 @@ These are formatting decisions that apply to the project's docs and file layout 
 
 ### Code fences
 
-- **`~~~charlie`** for Charlie code samples. Honest label, future-Linguist friendly.
+- **`~~~caspian`** for Caspian code samples. Honest label, future-Linguist friendly.
 - **`~~~json`** for JSON samples (including vibecode blocks).
 
 ### Vibecode blocks in markdown
 
-- **Always present** in Charlie source and markdown docs.
+- **Always present** in Caspian source and markdown docs.
 - **At the top of a section** — immediately after the heading, before any prose intro.
 - Pretty-printed JSON in a `~~~json` fence, soft-wrapped at 100 columns, opening `{"vibecode": {` on the same line, closing `}}` flush at column 0.
-- Charlie source vibecode (`%vibecode <<EOF ... EOF`): pretty JSON with 2-space indent inside the heredoc.
+- Caspian source vibecode (`%vibecode <<EOF ... EOF`): pretty JSON with 2-space indent inside the heredoc.
 
 ### Nest concepts under headings, not bullet lists
 
@@ -299,7 +326,7 @@ Plain prose paragraphs stay plain prose. Tight enumerations where the items aren
 
 ### Headers
 
-- **Sentence case.** "Construction", not "Construction Section". Proper nouns (Charlie, Puck, Mikobase) and acronyms (HTTP, JSON) keep their case.
+- **Sentence case.** "Construction", not "Construction Section". Proper nouns (Caspian, Puck, Mikobase) and acronyms (HTTP, JSON) keep their case.
 - **No numbered headings.** TOCs are auto-generated by Orlando.
 
 ### Naming
@@ -317,14 +344,14 @@ The same `style.json` is the single source of truth across all surfaces:
 
 | Tool | Status | Description |
 |---|---|---|
-| VS Code Charlie extension | V1.1 | Format-on-save and Format Document (`Shift+Alt+F`); reads `~/.config/charlie/style.json`; no project-level VS Code settings needed. |
+| VS Code Caspian extension | V1.1 | Format-on-save and Format Document (`Shift+Alt+F`); reads `~/.config/caspian/style.json`; no project-level VS Code settings needed. |
 | Gitter format toggle | TBD | Per-language formatting on code blocks in any rendered file. See [gitter.md](../../ideas/github/puck-site/gitter.md). |
-| Differ normalization | TBD | Diff normalization layer for Charlie-aware diff service. See [differ.md](../../ideas/differ.md). |
-| `charlie lint` | TBD | Optional linter (separate from formatting). |
+| Differ normalization | TBD | Diff normalization layer for Caspian-aware diff service. See [differ.md](../../ideas/differ.md). |
+| `caspian lint` | TBD | Optional linter (separate from formatting). |
 
-There is no command-line formatter for Charlie. Formatting happens inside the tools above (editor extension, web viewer, diff service); no `charlie fmt` CLI is planned.
+There is no command-line formatter for Caspian. Formatting happens inside the tools above (editor extension, web viewer, diff service); no `caspian fmt` CLI is planned.
 
-For Charlie specifically, formatters are CJS-in / Charlie-out generators on top of the canonical Charlie→CJS transpiler — no separate Charlie parsers in any tool. This depends on CJS preserving comments and `%vibecode` heredocs as first-class nodes ([issue #56](https://github.com/mikosullivan/puck/issues/56)).
+For Caspian specifically, formatters are CJS-in / Caspian-out generators on top of the canonical Caspian→CJS transpiler — no separate Caspian parsers in any tool. This depends on CJS preserving comments and `%vibecode` heredocs as first-class nodes ([issue #56](https://github.com/mikosullivan/puck/issues/56)).
 
 ### Parse-fail behavior
 
@@ -341,9 +368,9 @@ Unresolved formatter rules. The list shrinks as decisions land; answers move int
 
 ## Revisit at V1: own format vs. adopting an existing one
 
-We surveyed open-source formatting-config formats before deciding to build our own; none currently checks every box we need (viewer-side, multi-language with real inheritance, hand-editable JSON, room for Charlie-specific rules). Candidates looked at: **EditorConfig**, **dprint**, **Biome**, **Prettier**, **rustfmt**, **clang-format**, **Topiary**, **Treefmt**.
+We surveyed open-source formatting-config formats before deciding to build our own; none currently checks every box we need (viewer-side, multi-language with real inheritance, hand-editable JSON, room for Caspian-specific rules). Candidates looked at: **EditorConfig**, **dprint**, **Biome**, **Prettier**, **rustfmt**, **clang-format**, **Topiary**, **Treefmt**.
 
-The decision: build our own for now. **Revisit close to V1** — by then the format will have been exercised across the VS Code Charlie extension, Gitter, and Differ, and we'll know which warts matter. Options at that point:
+The decision: build our own for now. **Revisit close to V1** — by then the format will have been exercised across the VS Code Caspian extension, Gitter, and Differ, and we'll know which warts matter. Options at that point:
 
 - Keep our format, optionally emit a derived `.editorconfig` for editor interop.
 - Switch to EditorConfig as the universal subset with our own per-language overrides layered on top.
@@ -368,12 +395,12 @@ The values Miko personally uses. Not project policy — see Philosophy above —
     "trim_trailing_whitespace": true,
     "empty_line_treatment": null,
     "max_consecutive_blank_lines": 1,
-    "final_newline": false
+    "final_newline": false,
+    "blank_line_around_blocks": true
   },
 
   "languages": {
-    "charlie": {
-      "blank_line_around_blocks": true,
+    "caspian": {
       "class_body_packing": "tight",
       "empty_param_parens": true,
       "hash_spacing": "tight",

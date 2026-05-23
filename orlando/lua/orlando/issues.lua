@@ -1,11 +1,11 @@
 --[[
 {
   "module": "orlando.issues",
-  "role": "Fetch open GitHub issues for a documentation page via the gh CLI, with simple in-memory TTL caching. Issues are matched by title prefix 'File: <md_path>' — the convention the per-section 'Quick add' panel uses.",
+  "role": "Fetch open GitHub issues (with their comments) for a documentation page via the gh CLI, with simple in-memory TTL caching. Issues are matched by title prefix 'File: <md_path>' — the convention the per-section 'Quick add' panel uses.",
   "exports": {
-    "fetch": "md_path -> list of {number, title, body, url}; [] on failure, no issues, or no gh"
+    "fetch": "md_path -> list of {number, title, body, url, comments}; [] on failure, no issues, or no gh. Each comment is {author, created_at, body}."
   },
-  "implementation": "single `gh issue list ... --jq` shell-out per cache window covers the whole repo and emits tab-separated records (gh bundles jq, so no Lua-side JSON parser is needed). The body field has its newlines pre-escaped to backslash-n; we unescape after splitting.",
+  "implementation": "single `gh issue list ... --jq` shell-out per cache window covers the whole repo. jq emits two record types per issue, one per line: 'I' lines for the issue itself, 'C' lines for each of its comments (with the parent issue number as the second field). gh bundles jq, so no Lua-side JSON parser is needed. The body field has its newlines pre-escaped via @tsv; we unescape after splitting.",
   "caching": "module-local table; CACHE_TTL_SECONDS controls staleness. Fetch failures don't poison the cache — they return [] (or the previous cached value) and the next request retries."
 }
 ]]
@@ -19,15 +19,19 @@ local cache_issues = nil  -- nil = never fetched; {} = fetched, empty
 
 local function now() return os.time() end
 
--- Build the gh command. --jq emits one issue per line as TSV:
---   number<TAB>title<TAB>url<TAB>body
+-- Build the gh command. --jq emits two record types, one per line:
+--   I<TAB>number<TAB>title<TAB>url<TAB>body
+--   C<TAB>parent_number<TAB>author<TAB>created_at<TAB>body
 -- @tsv escapes \n, \t, and \\ in each field automatically, so the only
 -- preprocessing we do is strip \r (GitHub serves CRLF bodies). Lua
 -- long-bracket string keeps the jq escapes literal.
 local function gh_command()
-    local jq_filter = [[.[] | [.number, .title, .url, ((.body // "") | gsub("\r"; ""))] | @tsv]]
+    local jq_filter = [[.[] | . as $i | (
+        ["I", ($i.number|tostring), $i.title, $i.url, (($i.body // "") | gsub("\r"; ""))] | @tsv,
+        ($i.comments[]? | ["C", ($i.number|tostring), (.author.login // ""), .createdAt, ((.body // "") | gsub("\r"; ""))] | @tsv)
+    )]]
     return string.format(
-        "gh issue list --repo %s --state open --limit 200 --json number,title,body,url --jq '%s' 2>/dev/null",
+        "gh issue list --repo %s --state open --limit 200 --json number,title,body,url,comments --jq '%s' 2>/dev/null",
         REPO, jq_filter)
 end
 
@@ -73,15 +77,29 @@ local function fetch_all_from_gh()
     if out == "" then return nil end
 
     local issues = {}
+    local by_number = {}
     for line in out:gmatch("([^\n]+)") do
         local f = split_tsv(line)
-        if #f >= 3 then
-            issues[#issues + 1] = {
-                number = tonumber(f[1]),
-                title  = f[2] or "",
-                url    = f[3] or "",
-                body   = unescape_body(f[4] or "")
+        local kind = f[1] or ""
+        if kind == "I" and #f >= 4 then
+            local issue = {
+                number   = tonumber(f[2]),
+                title    = f[3] or "",
+                url      = f[4] or "",
+                body     = unescape_body(f[5] or ""),
+                comments = {},
             }
+            issues[#issues + 1] = issue
+            if issue.number then by_number[issue.number] = issue end
+        elseif kind == "C" and #f >= 5 then
+            local parent = by_number[tonumber(f[2])]
+            if parent then
+                parent.comments[#parent.comments + 1] = {
+                    author     = f[3] or "",
+                    created_at = f[4] or "",
+                    body       = unescape_body(f[5] or ""),
+                }
+            end
         end
     end
     return issues

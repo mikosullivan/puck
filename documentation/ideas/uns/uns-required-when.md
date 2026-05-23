@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "uns-required-when",
-	"role": "open-question doc: when is a UNS required, optional, forbidden, or recommended across mikobase storage, in-memory Charlie classes, Robinson page files, server classes, and built-ins; to be pinned in a future conversation",
+	"role": "open-question doc: when is a UNS required, optional, forbidden, or recommended across mikobase storage, in-memory Caspian classes, Robinson page files, server classes, and built-ins; to be pinned in a future conversation",
 	"key_concepts": ["uns_requirement_rules", "anonymous_class_identity",
 		"mikobase_storage_requires_uns", "robinson_page_no_uns"],
 	"status": "brainstorm"
@@ -19,7 +19,7 @@ Different subsystems treat UNS names differently:
 
 - **Mikobase storage** requires a class to have a UNS — that's how classes
   are identified and looked up (`%puck['foo.com/character']`).
-- **Charlie in-memory** does not require a UNS for a class.
+- **Caspian in-memory** does not require a UNS for a class.
   `$foo = class ... end` produces a valid anonymous class with no
   identity beyond the variable that holds it.
 - **Robinson page files** invoke to anonymous classes inheriting from
@@ -45,5 +45,5 @@ of these need a UNS and which don't. Worth pinning explicitly:
 ## When to Revisit
 
 When the next conversation surfaces a concrete case where the answer
-isn't obvious — or when the mikobase storage format, Charlie class
+isn't obvious — or when the mikobase storage format, Caspian class
 syntax, or related subsystems need to be more rigorously spec'd.

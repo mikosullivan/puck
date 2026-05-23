@@ -7,7 +7,7 @@
 {"vibecode": {
 	"section": "what_is_this",
 	"role": "introduces the Puck ecoverse organized around its three core packages",
-	"key_concepts": ["Puck_ecoverse", "Puck_protocol", "Charlie", "Mikobase"]
+	"key_concepts": ["Puck_ecoverse", "Puck_protocol", "Caspian", "Mikobase"]
 }}
 ~~~
 
@@ -17,7 +17,7 @@ different languages and systems. The ecoverse is organized around
 **three core packages**:
 
 - **Puck** — a remote object protocol
-- **Charlie** — a programming language
+- **Caspian** — a programming language
 - **Mikobase** — a live object store
 
 Each package has its own features and its own canonical specs. The
@@ -84,7 +84,7 @@ See [puck.md](puck/puck.md) for the full protocol spec.
   `puck.uno/...`. UNS is naming/identity, not type hierarchy:
   `puck.uno/touchstone/error/x` is not a subclass of
   `puck.uno/error/x` unless explicitly declared.
-- **`%puck[UNS]` lookup.** Charlie code retrieves objects by UNS:
+- **`%puck[UNS]` lookup.** Caspian code retrieves objects by UNS:
   `%puck['foo.com/character']`. The puck (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
@@ -98,37 +98,37 @@ See [puck.md](puck/puck.md) for the full protocol spec.
   eligible to be returned. Derived pucks can narrow the window
   (one-way ratchet); you can't broaden it. Enables reproducible
   builds and historical queries.
-- **Libraries are cached, not installed.** Charlie has no install
+- **Libraries are cached, not installed.** Caspian has no install
   step, no lockfile, no manifest. Libraries are referenced by UNS in
   source code and resolved on demand through the provider chain.
   Cached locally on first use; subsequent references hit the cache.
 - **Blockchain identity and provenance.** The Puck blockchain
   provides cryptographically anchored identity and signed
   attestations for library versions — see
-  [blockchain.md](charlie/blockchain.md).
+  [blockchain.md](caspian/blockchain.md).
 
 ---
 
-<a id="charlie"></a>
-## Charlie
+<a id="caspian"></a>
+## Caspian
 
 ~~~json
 {"vibecode": {
-	"section": "charlie_package",
-	"role": "describes the Charlie language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
-	"key_concepts": ["lightweight_embeddable_language", "CharlieJSON_runtime_format",
+	"section": "caspian_package",
+	"role": "describes the Caspian language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
+	"key_concepts": ["lightweight_embeddable_language", "CaspianJ_runtime_format",
 		"classes_with_inheritance", "functions_closures",
 		"single_threaded_by_default_forking_opt_in", "role_based_security",
 		"exception_handling", "multi_syntax_architecture_preserved"]
 }}
 ~~~
 
-Charlie is a **lightweight, embeddable programming language**. It
+Caspian is a **lightweight, embeddable programming language**. It
 is designed from the ground up to support running untrusted code.
 Designed to run inside a Mikobase engine, a browser, a CLI, or anywhere
 else without external runtime dependencies beyond the engine itself.
 
-See [charlie.md](charlie/charlie.md) for the language reference.
+See [caspian.md](caspian/caspian.md) for the language reference.
 
 <a id="features-1"></a>
 ### Features
@@ -137,30 +137,30 @@ See [charlie.md](charlie/charlie.md) for the language reference.
 access to what is explicitely sent to them as parameters.
 They do not have universal access to file systems or network
 connections. They can only use resources like that if you
-explicitly send them in as paramters. See [roles.md](charlie/roles.md).
-- **[Classes and inheritance](charlie/charlie.md#classes).**
+explicitly send them in as paramters. See [roles.md](caspian/roles.md).
+- **[Classes and inheritance](caspian/caspian.md#classes).**
   `class 'UNS' ... end` defines a class with fields, properties,
   methods, and helpers. Bare/anonymous classes
   (`class\n    inherits ... end`) for cases where identity comes
   from location rather than UNS.
-- **[Functions and closures](charlie/charlie.md#functions).**
+- **[Functions and closures](caspian/caspian.md#functions).**
   `function &name(args) ... end` for named functions; closures
   capture lexical scope; functions don't. Parameters carry metadata
   via a uniform hash form (`{lazy: true, classes: ['string']}`);
   first-class param manipulation via `$foo.params['bar']`.
 - **Single-threaded; forking opt-in.** One execution
   context per engine. The opt-in forking feature spawns isolated
-  Charlie processes that coordinate through shared
+  Caspian processes that coordinate through shared
   [Mikobases](mikobase/mikobase.md) — no shared-memory primitives,
   no locks.
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception. See
-  [charlie-runtime.md](charlie/lucy/lucy.md).
-- **Built-in [HTTP middleware](charlie/packages/touchstone/) family.**
-  [Touchstone](charlie/packages/touchstone/touchstone.md) provides the
+  [caspian-runtime.md](caspian/lucy/lucy.md).
+- **Built-in [HTTP middleware](caspian/packages/touchstone/) family.**
+  [Touchstone](caspian/packages/touchstone/touchstone.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). [Sammy](charlie/packages/touchstone/sammy.md) is a built-in
+  CSP). [Sammy](caspian/packages/touchstone/sammy.md) is a built-in
   framework on Touchstone for route-style serving.
 
 ---
@@ -225,17 +225,17 @@ See [mikobase.md](mikobase/mikobase.md) for the full spec.
 	"section": "implementation_status",
 	"role": "tracks the development status of each Puck ecoverse component",
 	"key_concepts": ["active_development", "design_phase", "lua_reference_engine", "Q0",
-		"Charlie", "v01_hello_world_shipped"]
+		"Caspian", "v01_hello_world_shipped"]
 }}
 ~~~
 
 | Component | Status |
 |---|---|
-| Charlie Lua reference engine | V0.01 hello-world ships; 213 tests passing. V0.02 (Charlie source via transpiler) and V0.03–V0.05 plans drafted. |
-| Charlie language | V0.01 surface shipped; broader language spec in active design. |
-| CharlieJSON | Canonical runtime format; V0.01 fixture-and-engine path is fully wired. |
+| Caspian Lua reference engine | V0.01 hello-world ships; 213 tests passing. V0.02 (Caspian source via transpiler) and V0.03–V0.05 plans drafted. |
+| Caspian language | V0.01 surface shipped; broader language spec in active design. |
+| CaspianJ | Canonical runtime format; V0.01 fixture-and-engine path is fully wired. |
 | Mikobase engine | Design only. V1 plan ships three engines (SQLite file, SQLite `:memory:`, worldlet-direct); none yet implemented. |
 | Q0 query language | Designed; will be implemented as SQL passthrough on the SQLite engines and against the JSON structure on the worldlet engine. |
 | Worldlet (packaged mikobase) | Format spec exists; import/export to be implemented alongside the Mikobase engines. |
-| Forking (opt-in Charlie feature) | Early design; not in active development. |
+| Forking (opt-in Caspian feature) | Early design; not in active development. |
 | Puck protocol | Early design. |

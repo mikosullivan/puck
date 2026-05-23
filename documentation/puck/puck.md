@@ -21,9 +21,9 @@ the response unmarshaling — all hidden. The code reads the same whether the
 object is in-process or across the network.
 
 Any language that can speak JSON over HTTP can be a Puck client.
-[Charlie](../charlie/charlie.md) ships first-class integration (see
-[charlie/puck.md](../charlie/puck.md)) and is the primary client today, but
-the protocol is not Charlie-specific.
+[Caspian](../caspian/caspian.md) ships first-class integration (see
+[caspian/puck.md](../caspian/puck.md)) and is the primary client today, but
+the protocol is not Caspian-specific.
 
 For the formal wire-protocol spec — class definitions, request and
 response shapes, dynamic vs stored objects, versioning — see

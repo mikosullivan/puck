@@ -3,23 +3,23 @@
 ~~~json
 {"vibecode": {
 	"doc": "trust-policy",
-	"role": "spec for the three-layer trust-policy model: host injects policy at boot, engine enforces it, Charlie consumes resources via %engine; covers CLI default behavior",
+	"role": "spec for the three-layer trust-policy model: host injects policy at boot, engine enforces it, Caspian consumes resources via %engine; covers CLI default behavior",
 	"key_concepts": ["three_layer_trust_model", "host_injects_policy", "engine_enforces",
-		"cli_default_open_policy", "charlie_blind_to_config"]
+		"cli_default_open_policy", "caspian_blind_to_config"]
 }}
 ~~~
 
 <a id="overview"></a>
 ## Overview
 
-Charlie has no concept of where its trust configuration comes from. That is the host
+Caspian has no concept of where its trust configuration comes from. That is the host
 program's responsibility. The engine enforces whatever policy the host provides; it does
 not decide what that policy is.
 
 The flow is always outside-in:
 
 ```
-config source → host program → engine → %engine → Charlie script
+config source → host program → engine → %engine → Caspian script
 ```
 
 ---
@@ -27,7 +27,7 @@ config source → host program → engine → %engine → Charlie script
 <a id="the-three-layers"></a>
 ## The Three Layers
 
-**Charlie** — knows nothing about trust configuration. Accesses host-provided resources
+**Caspian** — knows nothing about trust configuration. Accesses host-provided resources
 via `%engine`. Cannot read, modify, or influence the trust policy.
 
 **The engine** — knows the structure of the trust policy and enforces it. Accepts the
@@ -44,7 +44,7 @@ sense for its context and passes it to the engine at startup. Two examples:
 <a id="cli-behavior"></a>
 ## CLI Behavior
 
-When a Charlie script is run from the command line, the CLI host applies this default:
+When a Caspian script is run from the command line, the CLI host applies this default:
 
 1. Start with an open policy — any signed object from any domain is permitted
 2. Read `~/.config/puck/trust.json` if it exists
@@ -155,4 +155,4 @@ The trust policy only applies to signed objects. An unsigned object is rejected 
 regardless of policy. The policy controls what signed objects are permitted and at what
 permission level — it assumes the signing problem is already solved.
 
-See [signing.md](../../charlie/blockchain/blockchain.md) for how object signatures work.
+See [signing.md](../../caspian/blockchain/blockchain.md) for how object signatures work.

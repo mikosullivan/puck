@@ -6,7 +6,7 @@
 	"role": "formal spec for the JSON expression of Puck — building up piece by piece, starting with class definitions; the HTML expression is described separately in puck-html.md",
 	"status": "in_development_starting_with_class_definitions",
 	"key_concepts": ["json_wire_format", "class_definition_json",
-		"shared_shape_with_charlie_and_mikobase",
+		"shared_shape_with_caspian_and_mikobase",
 		"remote_methods_block", "method_params_and_returns",
 		"dynamic_objects_are_pucks_on_the_wire",
 		"stored_objects_live_on_servers_referenced_by_dynamic_objects",
@@ -58,9 +58,9 @@ object** — the actual ship data on the Starfleet server.
 <a id="class-definition"></a>
 ## Class definition
 
-A Puck class is defined in JSON, using the **same shape Charlie and
+A Puck class is defined in JSON, using the **same shape Caspian and
 Mikobase use** (see [class-definition.md](../mikobase/class-definition.md)
-for the full Mikobase/Charlie spec). Here's `puck.uno/geo` with two
+for the full Mikobase/Caspian spec). Here's `puck.uno/geo` with two
 fields and three remote methods:
 
 ```json
@@ -372,5 +372,5 @@ recommended paths:
 These two conventions cover the common cases. If the community
 wants a more fine-grained approach then let's have that discussion.
 
-Versioning in Puck is distinct from Charlie's
-[blockchain-signed versioning model](../charlie/blockchain.md).
+Versioning in Puck is distinct from Caspian's
+[blockchain-signed versioning model](../caspian/blockchain.md).

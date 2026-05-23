@@ -18,7 +18,7 @@
       "full_mikobase_spec": "https://www.puck.uno/mikobase/mikobase.html"
     },
 
-    "implementation_independence": "No Puck-ecoverse libraries, Charlie engine, or Mikobase server required. Any language that can read and write JSON can participate. The receiving agent only needs to read the records dict, look up classes for any unfamiliar record types, and post new records back.",
+    "implementation_independence": "No Puck-ecoverse libraries, Caspian engine, or Mikobase server required. Any language that can read and write JSON can participate. The receiving agent only needs to read the records dict, look up classes for any unfamiliar record types, and post new records back.",
 
     "session_flow": [
       "Originating agent populates this template: creates an agent record for themselves, a session record naming both participants, and the first substantive record (typically a proposal or human_instruction relay).",

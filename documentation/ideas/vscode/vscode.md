@@ -1,12 +1,12 @@
-# Charlie VS Code Extension
+# Caspian VS Code Extension
 
 ~~~json
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
-    "subsystem": "vscode_charlie_extension",
+    "subsystem": "vscode_caspian_extension",
     "canonical_location": "ideas/ until firm enough to promote to formatting.md or a new dedicated vscode-extension.md",
-    "scope": "first_contact_polished_self_contained_vs_code_extension_for_charlie_files",
+    "scope": "first_contact_polished_self_contained_vs_code_extension_for_caspian_files",
     "co_authoring": "claude_capturing_miko_decisions_in_realtime"
 }}
 ~~~
@@ -23,21 +23,21 @@ Brainstorm in progress.
     "section": "architectural_constraint",
     "rule_1": "extension_must_be_completely_independent_no_puck_install_required",
     "rule_2": "battle_tested_approach_not_experimental",
-    "context": "first_contact_situation_for_charlie; syntax_must_show_up_nice_and_clean",
-    "rules_out": ["language_server_requiring_charlie_lsp_process",
-                   "wasm_artifact_compiled_from_charlie"],
+    "context": "first_contact_situation_for_caspian; syntax_must_show_up_nice_and_clean",
+    "rules_out": ["language_server_requiring_caspian_lsp_process",
+                   "wasm_artifact_compiled_from_caspian"],
     "implication": "self_contained_typescript_javascript_vs_code_extension"
 }}
 ~~~
 
 The extension must work for someone who has never installed Puck. They
-install the extension from the VS Code Marketplace, open a `.charlie`
+install the extension from the VS Code Marketplace, open a `.casp`
 file, and everything works. No external runtime, no CLI dependency, no
 language server process.
 
 This rules out:
-- Language Server Protocol with a Charlie-based server (requires Puck)
-- WASM artifacts compiled from Charlie (complex build, not battle-tested
+- Language Server Protocol with a Caspian-based server (requires Puck)
+- WASM artifacts compiled from Caspian (complex build, not battle-tested
   for editor extensions)
 
 What's left: a **self-contained TypeScript/JavaScript extension** — the
@@ -56,7 +56,7 @@ buying into the whole system.
     "decision": "use_vs_code_built_in_settings_json",
     "rationale": "simplicity; standard_vs_code_pattern; integrated_with_settings_ui",
     "decided_2026-05-17": true,
-    "diverges_from_formatting_md": "formatting_md_says_extension_reads_external_charlie_style_json; this_brainstorm_supersedes_for_the_vs_code_extension_specifically; other_consumers_gitter_differ_still_read_external_file"
+    "diverges_from_formatting_md": "formatting_md_says_extension_reads_external_caspian_style_json; this_brainstorm_supersedes_for_the_vs_code_extension_specifically; other_consumers_gitter_differ_still_read_external_file"
 }}
 ~~~
 
@@ -65,14 +65,14 @@ The extension's user preferences live in **VS Code's own `settings.json`**.
 - The extension declares its configurable settings in its `package.json`
   (via a `contributes.configuration` block).
 - The settings appear in VS Code's Settings UI (`Ctrl+,`) under a
-  "Charlie" heading.
+  "Caspian" heading.
 - User scope (`~/.config/Code/User/settings.json` or the VS Code Server
   equivalent) applies everywhere; workspace scope (`.vscode/settings.json`
   in a project) overrides for that project.
 
 This is simpler than the existing
 [formatting.md](../ecoverse/formatting/formatting.md) plan to read
-`~/.config/charlie/style.json`. That external file still makes sense
+`~/.config/caspian/style.json`. That external file still makes sense
 for other consumers (Gitter and Differ, which run server-side and
 can't reach into a viewer's VS Code settings), but the VS Code
 extension uses VS Code's native settings instead.
@@ -91,7 +91,7 @@ settings? Not load-bearing for the v1 extension; defer.
 {"vibecode": {
     "section": "formatter_v1",
     "approach": "line_based_regex_rules_no_ast",
-    "rationale": "battle_tested; handles_syntactically_broken_files; no_parallel_charlie_parser_in_typescript_to_maintain; can_evolve_to_parser_based_later",
+    "rationale": "battle_tested; handles_syntactically_broken_files; no_parallel_caspian_parser_in_typescript_to_maintain; can_evolve_to_parser_based_later",
     "language": "typescript",
     "self_contained": true,
     "scope_v1": ["indentation_normalization", "hash_option_spacing",
@@ -120,7 +120,7 @@ export interface FormatterOptions {
     normalizeAssignmentSpacing: boolean; // default true
 }
 
-export function formatCharlie(
+export function formatCaspian(
     source: string,
     options: Partial<FormatterOptions> = {}
 ): string;
@@ -132,7 +132,7 @@ them from `settings.json`; tests can pass them explicitly.
 <a id="rule-pipeline"></a>
 ### Rule pipeline
 
-`formatCharlie()` is a pipeline of independent rules. Order matters:
+`formatCaspian()` is a pipeline of independent rules. Order matters:
 
 1. `applyAssignmentSpacing` — `$x=1` → `$x = 1`
 2. `applyHashSpacing` — `{a:1,b: 2}` → `{a: 1, b: 2}`
@@ -151,11 +151,11 @@ introduces survives the strip pass.
 vscode/syntax/
 ├── package.json                   # manifest, adds main + formatter contributions
 ├── syntaxes/
-│   └── charlie.tmLanguage.json    # existing syntax highlighting
+│   └── caspian.tmLanguage.json    # existing syntax highlighting
 ├── language-configuration.json    # NEW: brackets, comments, indentation
 ├── src/
 │   ├── extension.ts               # NEW: activate(), registers formatter
-│   ├── formatter.ts               # NEW: formatCharlie() + pipeline
+│   ├── formatter.ts               # NEW: formatCaspian() + pipeline
 │   └── rules/                     # NEW: one file per rule
 │       ├── indentation.ts
 │       ├── hashSpacing.ts
@@ -209,13 +209,13 @@ Value-type semantics where they apply:
 - `splat`: `"prefer"` reformats inline keyword args to hash-splat; `"keep"` leaves as written.
 
 Translation to VS Code's `settings.json` (which is flat with dotted
-keys) prefixes each setting with `charlie.formatter.`:
+keys) prefixes each setting with `caspian.formatter.`:
 
 ```json
-"charlie.formatter.tab":        4,
-"charlie.formatter.blanks":     2,
-"charlie.formatter.wrap":       100,
-"charlie.formatter.hashColon":  "loose"
+"caspian.formatter.tab":        4,
+"caspian.formatter.blanks":     2,
+"caspian.formatter.wrap":       100,
+"caspian.formatter.hashColon":  "loose"
 ```
 
 <a id="settings-declaration-in-packagejson"></a>
@@ -227,13 +227,13 @@ The configurable options surface in VS Code's Settings UI through a
 ```json
 "contributes": {
     "configuration": {
-        "title": "Charlie",
+        "title": "Caspian",
         "properties": {
-            "charlie.formatter.indentSize": {
+            "caspian.formatter.indentSize": {
                 "type": "number", "default": 4,
                 "description": "Number of spaces per indent level."
             },
-            "charlie.formatter.indentStyle": {
+            "caspian.formatter.indentStyle": {
                 "type": "string", "enum": ["spaces", "tabs"],
                 "default": "spaces",
                 "description": "Use spaces or tabs for indentation."
@@ -256,15 +256,15 @@ and (when enabled by the user) format-on-save.
 ```ts
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-        vscode.languages.registerDocumentFormattingEditProvider('charlie', {
+        vscode.languages.registerDocumentFormattingEditProvider('caspian', {
             provideDocumentFormattingEdits(document) {
-                const config = vscode.workspace.getConfiguration('charlie.formatter');
+                const config = vscode.workspace.getConfiguration('caspian.formatter');
                 const options: Partial<FormatterOptions> = {
                     indentSize:  config.get('indentSize'),
                     indentStyle: config.get('indentStyle'),
                     // ... other settings ...
                 };
-                const formatted = formatCharlie(document.getText(), options);
+                const formatted = formatCaspian(document.getText(), options);
                 const fullRange = new vscode.Range(
                     document.positionAt(0),
                     document.positionAt(document.getText().length)
@@ -279,10 +279,10 @@ export function activate(context: vscode.ExtensionContext) {
 <a id="testing"></a>
 ### Testing
 
-Each rule has an `input.charlie` and `expected.charlie` fixture pair
+Each rule has an `input.casp` and `expected.casp` fixture pair
 under `tests/formatter/`. The test runner reads the input, applies the
 rule (or the full pipeline), and asserts the output matches expected.
-Same shape as the existing Lua engine's `tests/charlie/fixtures/`
+Same shape as the existing Lua engine's `tests/caspian/fixtures/`
 pattern but in TS.
 
 <a id="marketplace-polish-vasquez"></a>

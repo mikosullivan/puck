@@ -1,0 +1,252 @@
+%vibecode <<EOF
+{
+  "file": "color.casp",
+  "purpose": "Brainstorm-grade reference implementation of puck.uno/color in Caspian. Companion to color.md.",
+  "status": "brainstorm — some syntax is provisional where the canonical class DSL hasn't pinned it down (e.g. class-level methods, regex literals, named-color codegen). Notes flag those spots inline.",
+  "covers": [
+    "field declarations with 0..255 validation",
+    "constructor dispatch on input shape (hex, name, UNS lookup)",
+    "computed accessors for hex and name",
+    "validated setters (inherited from field declarations)",
+    "per-named-color predicates (sketched as a generated pattern, not enumerated)",
+    "collection views: to_arr, to_hash",
+    "geometric operations: distance, spectrum_to",
+    "class-level random with sphere selectors"
+  ]
+}
+EOF
+
+%vibecode <<EOF
+{
+  "purpose": "The color class. A cell in the 256×256×256 cube, plus alpha.",
+  "alpha": "recorded but not part of color geometry; defaults to 255 (opaque)",
+  "mutability": "mutable — setters validate via the field declarations"
+}
+EOF
+
+class 'puck.uno/color'
+	field :red,   class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :green, class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :blue,  class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :alpha, class: :number, min: 0, max: 255, integer_only: true, required: true, default: 255
+	
+	
+	
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Class-level named-color table — standard HTML color names to canonical hex. Lives in the class's %bucket so all instances and class methods can read it.",
+	  "abbreviated": "Showing ~10 of ~110 for readability."
+	}
+	EOF
+	
+	%bucket['named'] = {
+		red:           '#ff0000',
+		green:         '#008000',
+		blue:          '#0000ff',
+		black:         '#000000',
+		white:         '#ffffff',
+		orange:        '#ffa500',
+		purple:        '#800080',
+		rebeccapurple: '#663399',
+		coral:         '#ff7f50',
+		teal:          '#008080'
+		# ... about 100 more, omitted for brevity
+	}
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Constructor: accepts a hex string ('#rrggbb' or '#rrggbbaa') or a named color string ('red').",
+	  "raises": "puck.uno/color/error/format if input matches neither shape"
+	}
+	EOF
+	
+	function &new($input)
+		if %bucket['named'].has_key?($input)
+			return (&from_hex(%bucket['named'][$input]))
+		elseif $input.match('^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$')
+			return (&from_hex($input))
+		else
+			raise 'puck.uno/color/error/format', message: 'not a recognized color: ' + $input
+		end
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Parse a hex string into the four channel integers. Always produces a valid Color.",
+	  "alpha_default": "255 when input is 6-digit"
+	}
+	EOF
+	
+	function &from_hex($hex)
+		@red   = &parse_byte($hex.slice(1, 3))
+		@green = &parse_byte($hex.slice(3, 5))
+		@blue  = &parse_byte($hex.slice(5, 7))
+		
+		if $hex.length == 9
+			@alpha = &parse_byte($hex.slice(7, 9))
+		else
+			@alpha = 255
+		end
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Computed hex accessor. Omits alpha bytes when alpha is the default 255.",
+	  "case": "lowercase"
+	}
+	EOF
+	
+	function &hex()
+		$body = '#' + &to_hex_byte(@red) + &to_hex_byte(@green) + &to_hex_byte(@blue)
+		
+		if @alpha != 255
+			return ($body + &to_hex_byte(@alpha))
+		end
+		
+		return ($body)
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Computed name accessor. Returns the standard HTML name if the cell matches one; null otherwise.",
+	  "match_rule": "exact hex match against the named-color table (alpha-aware)"
+	}
+	EOF
+	
+	function &name()
+		$h = .hex
+		
+		%bucket['named'].each do($n, $named_hex)
+			if $named_hex == $h
+				return ($n)
+			end
+		end
+		
+		return (null)
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Per-named-color predicate. One per entry in %bucket['named'] — ~110 of them.",
+	  "generation": "Each is the same shape: compare self's hex to the named hex. In practice these would be codegen'd at class load from %bucket['named'] rather than hand-written.",
+	  "shown_below": "Three explicit examples; the rest follow the same pattern."
+	}
+	EOF
+	
+	function &red?()
+		return (.hex == %bucket['named'][:red])
+	end
+	
+	function &orange?()
+		return (.hex == %bucket['named'][:orange])
+	end
+	
+	function &rebeccapurple?()
+		return (.hex == %bucket['named'][:rebeccapurple])
+	end
+	
+	# ... ~107 more, all the same shape — would be defined programmatically
+	# from %bucket['named'] at class load.
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Collection views — array and hash representations of the cell.",
+	  "to_arr_shape": "always 4 elements: [r, g, b, a]",
+	  "to_hash_includes_name": "name is always present; value is null when the cell has no standard name"
+	}
+	EOF
+	
+	function &to_arr()
+		return ([@red, @green, @blue, @alpha])
+	end
+	
+	function &to_hash()
+		return ({
+			red:   @red,
+			green: @green,
+			blue:  @blue,
+			alpha: @alpha,
+			hex:   .hex,
+			name:  .name
+		})
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Geometric: Euclidean distance between two cells in the cube.",
+	  "ignores_alpha": "true — distance is color-about-color"
+	}
+	EOF
+	
+	function &distance($other)
+		$dr = @red   - $other.red
+		$dg = @green - $other.green
+		$db = @blue  - $other.blue
+		return (($dr * $dr + $dg * $dg + $db * $db).sqrt)
+	end
+	
+	%vibecode <<EOF
+	{
+	  "purpose": "Geometric: walk a straight line in the cube from self to $other, producing $steps intermediate cells.",
+	  "endpoint_inclusion": "TBD — see open question in color.md; this draft includes both endpoints in the returned array"
+	}
+	EOF
+	
+	function &spectrum_to($other, steps:)
+		$result = []
+		$i = 0
+		
+		while $i < $steps
+			$t = ($i / ($steps - 1))
+			$result << %['puck.uno/color'].new(&interpolate_hex($other, $t))
+			$i = $i + 1
+		end
+		
+		return ($result)
+	end
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Class-level random. Class methods on puck.uno/color.",
+  "syntax_note": "The exact Caspian syntax for declaring class methods (as opposed to instance methods) is not finalized. Shown here as 'function class.&random' as a placeholder; real syntax may differ.",
+  "selectors": "any number of puck.uno/color/sphere instances; the returned color must satisfy each sphere's scoped? predicate"
+}
+EOF
+
+function class 'puck.uno/color'.&random(*selectors)
+	$attempts = 0
+	
+	while $attempts < 10000
+		$candidate = %['puck.uno/color'].new(&random_hex)
+		
+		if &all_satisfied($candidate, selectors)
+			return ($candidate)
+		end
+		
+		$attempts = $attempts + 1
+	end
+	
+	# Fell through — fall back to deterministic search across the bounding box
+	# of the inside-scope selectors, then random-pick from matches.
+	# If no matches, raise.
+	raise 'puck.uno/color/no_match'
+end
+
+%vibecode <<EOF
+{
+  "purpose": "Helper: true if $candidate is in every selector's scoped membership set.",
+  "selectors_arg": "array of sphere instances"
+}
+EOF
+
+function &all_satisfied($candidate, $selectors)
+	$selectors.each do($s)
+		if not $s.scoped?($candidate)
+			return (false)
+		end
+	end
+	
+	return (true)
+end

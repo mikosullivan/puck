@@ -13,6 +13,8 @@ local page         = require("orlando.page")
 local content_type = require("orlando.content_type")
 local route        = require("orlando.route")
 local api          = require("orlando.api")
+local search       = require("orlando.search")
+local random       = require("orlando.random")
 
 local M = {}
 
@@ -69,9 +71,30 @@ local function read_headers(client)
     return headers
 end
 
+-- Resolve the original client IP. Behind nginx, X-Real-IP is the
+-- truthful source (nginx overwrites any client-supplied value with
+-- $remote_addr). Without that, fall back to the first entry of
+-- X-Forwarded-For, then to the raw socket peer. The peer will be
+-- 127.0.0.1 when Orlando sits behind nginx, so XFF/X-Real-IP are
+-- the only paths to the real remote address in production.
+local function get_client_ip(client, headers)
+    local ip = headers["x-real-ip"]
+    if ip and ip ~= "" then return ip end
+
+    local xff = headers["x-forwarded-for"]
+    if xff and xff ~= "" then
+        local first = xff:match("^([^,%s]+)")
+        if first then return first end
+    end
+
+    local peer = client:getpeername()
+    return peer or ""
+end
+
 local function respond(client, request_line)
     local method, path = parse_request_line(request_line)
     local headers = read_headers(client)
+    local client_ip = get_client_ip(client, headers)
 
     local body = ""
     local clen = tonumber(headers["content-length"])
@@ -81,8 +104,36 @@ local function respond(client, request_line)
 
     -- /api/* endpoints are side-effecting and bypass route.resolve.
     if path and path:sub(1, 5) == "/api/" then
-        local resp = api.dispatch({ method = method, path = path, body = body })
+        local resp = api.dispatch({
+            method    = method,
+            path      = path,
+            body      = body,
+            client_ip = client_ip,
+        })
         client:send(build_response(resp.status, resp.body, resp.content_type))
+        return
+    end
+
+    -- /search is a top-level HTML endpoint, not a markdown file.
+    if path and (path == "/search" or path:sub(1, 8) == "/search?") then
+        local resp = search.handle(path)
+        client:send(build_response(resp.status, resp.body, resp.content_type))
+        return
+    end
+
+    -- /random picks a markdown page uniformly at random and 302s to it.
+    if path == "/random" then
+        local resp = random.handle(path)
+        client:send(build_response(resp.status, resp.body, resp.content_type, resp.headers))
+        return
+    end
+
+    -- /whoami returns the IP Orlando sees for this request. Handy for
+    -- discovering what to put in ~/.orlando/config.json's edit.allowed_ips.
+    -- Returns plain text so curl users get just the IP and a newline.
+    if path == "/whoami" then
+        client:send(build_response("200 OK", client_ip .. "\n",
+            "text/plain; charset=utf-8"))
         return
     end
 
@@ -112,8 +163,9 @@ local function respond(client, request_line)
             and "Puck"
             or (r.path:match("([^/]+)%.md$") or r.path)
         local html = page.render_request({
-            md_path = r.path,
-            title   = title,
+            md_path   = r.path,
+            title     = title,
+            client_ip = client_ip,
         })
         client:send(build_response("200 OK", html, content_type.for_ext("html")))
         return
@@ -145,6 +197,10 @@ function M.serve(opts)
     local host = opts.host or DEFAULT_HOST
     local port = opts.port or DEFAULT_PORT
 
+    -- Seed Lua's math.random once at startup so /random and any future
+    -- random callers get a fresh sequence per process run.
+    math.randomseed(os.time())
+
     local listener, err = socket.bind(host, port)
     if not listener then
         error("orlando: could not bind " .. host .. ":" .. port .. " — " .. tostring(err))
@@ -155,7 +211,26 @@ function M.serve(opts)
         local client = listener:accept()
         client:settimeout(5)
         local request_line = client:receive("*l")
-        respond(client, request_line)
+
+        -- Wrap respond() in pcall so a per-request error (lunamark parse
+        -- failure on a particular doc, broken markdown after a save,
+        -- etc.) returns a 500 to that client instead of killing the
+        -- whole server. Without this, one bad page takes Orlando down.
+        local ok, err = pcall(respond, client, request_line)
+
+        if not ok then
+            io.stderr:write("orlando: respond crashed: " .. tostring(err) .. "\n")
+            -- Best-effort 500. May fail if the client connection is gone
+            -- or the headers were already partially sent; ignore in that case.
+            pcall(function()
+                client:send(build_response("500 Internal Server Error",
+                    "<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1>"
+                    .. "<pre>" .. tostring(err):gsub("[<>&]", {["<"]="&lt;",[">"]="&gt;",["&"]="&amp;"})
+                    .. "</pre></body></html>\n",
+                    "text/html; charset=utf-8"))
+            end)
+        end
+
         client:close()
     end
 end

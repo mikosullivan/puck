@@ -3,14 +3,14 @@
 ~~~json
 {"vibecode": {
 	"doc": "auto-format",
-	"role": "speculative note: platforms could auto-render Charlie code through the viewer's personal formatter so every reader sees code in their own style, treating formatting as a presentation layer",
+	"role": "speculative note: platforms could auto-render Caspian code through the viewer's personal formatter so every reader sees code in their own style, treating formatting as a presentation layer",
 	"key_concepts": ["per_viewer_formatting", "presentation_layer_formatting",
 		"platform_integration"],
 	"status": "brainstorm"
 }}
 ~~~
 
-When Charlie code is posted to a platform — a forum, a chat tool, a code review system,
+When Caspian code is posted to a platform — a forum, a chat tool, a code review system,
 a documentation site — the platform could automatically render it through the viewer's
 personal formatter before displaying it.
 
@@ -25,4 +25,4 @@ Not designed yet. Questions to answer when revisiting:
 - How does the platform know the viewer's style preferences?
 - Does the platform reformat on the fly, or store pre-formatted versions per user?
 - How does this interact with syntax highlighting and diffs?
-- Is this a platform feature or a Charlie ecosystem convention?
+- Is this a platform feature or a Caspian ecosystem convention?

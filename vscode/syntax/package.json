@@ -1,7 +1,7 @@
 {
-    "name": "charlie",
-    "displayName": "Charlie",
-    "description": "Syntax highlighting for Charlie (.charlie) files",
+    "name": "caspian",
+    "displayName": "Caspian",
+    "description": "Syntax highlighting for Caspian (.casp) files",
     "version": "0.0.1",
     "publisher": "mikobase",
     "engines": {
@@ -13,16 +13,16 @@
     "contributes": {
         "languages": [
             {
-                "id": "charlie",
-                "aliases": ["Charlie", "charlie"],
-                "extensions": [".charlie"]
+                "id": "caspian",
+                "aliases": ["Caspian", "caspian"],
+                "extensions": [".casp"]
             }
         ],
         "grammars": [
             {
-                "language": "charlie",
-                "scopeName": "source.charlie",
-                "path": "./syntaxes/charlie.tmLanguage.json"
+                "language": "caspian",
+                "scopeName": "source.casp",
+                "path": "./syntaxes/caspian.tmLanguage.json"
             }
         ]
     }

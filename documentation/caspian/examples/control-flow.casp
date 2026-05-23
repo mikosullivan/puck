@@ -1,0 +1,124 @@
+%vibecode <<EOF
+{
+  "purpose": "Caspian control flow — if/elsif/else, each with before/after/noloop, while, if-as expression, catch, heed",
+  "demonstrates": [
+    "if / elsif / else conditional",
+    "each loop with 'as $loop' dispatcher and before/after/noloop clauses",
+    "while loop",
+    "if used as an expression (returns a value via $if.return)",
+    "catch — captures exceptions by class, returns exception or null",
+    "heed — collects warnings of a given class"
+  ]
+}
+EOF
+
+%vibecode <<EOF
+{
+  "purpose": "Standard if/elsif/else — evaluates conditions top-to-bottom, executes first matching branch",
+  "note":    "elsif can repeat as many times as needed; else is optional"
+}
+EOF
+
+$rank = 'Captain'
+
+if ($rank == 'Captain')
+    puts('Aye, captain')
+elsif ($rank == 'Commander')
+    puts('Aye, commander')
+else
+    puts('Aye')
+end
+
+%vibecode <<EOF
+{
+  "purpose": "each loop with 'as $loop' — gives access to the loop dispatcher object",
+  "note":    "$loop.count is available after the loop ends; 'as $loop' is optional but required if you need the dispatcher"
+}
+EOF
+
+$scores = [98, 72, 85, 91]
+$total = 0
+
+$scores.each($score) as $loop
+    $total = $total + $score
+end
+
+puts($loop.count)
+
+%vibecode <<EOF
+{
+  "purpose": "each with before/after/noloop clauses",
+  "clauses": {
+    "before":  "executes once before iteration begins",
+    "after":   "executes once after all elements have been iterated",
+    "noloop":  "executes instead of the loop body if the collection is empty — mutually exclusive with before/after"
+  },
+  "note": "'as $loop' is omitted here because $loop.count is not needed"
+}
+EOF
+
+$scores.each($score)
+    puts($score)
+before
+    puts('--- scores ---')
+after
+    puts('--------------')
+noloop
+    puts('no scores')
+end
+
+%vibecode <<EOF
+{
+  "purpose": "while loop — repeats body while condition is truthy",
+  "note":    "Caspian has no for-loop; iteration over collections uses each; while is for manual index control"
+}
+EOF
+
+$i = 0
+
+while($i < 10)
+    $i = $i + 1
+end
+
+%vibecode <<EOF
+{
+  "purpose": "if used as an expression — returns a value via $if.return",
+  "pattern": "'as $if' binds the if-dispatcher; $if.return sets the value for the expression; $result receives whichever branch ran",
+  "note":    "this allows if to act like a ternary; both branches must call $if.return if a non-null result is expected"
+}
+EOF
+
+$result =
+    if ($rank == 'Captain') as $if
+        $if.return 'in charge'
+    else
+        $if.return 'not in charge'
+    end
+
+%vibecode <<EOF
+{
+  "purpose": "catch — executes a block and captures any exception of the given class",
+  "returns": "the exception object if one was raised, null otherwise",
+  "note":    "$exception is truthy only if an exception was caught; check with if ($exception) before accessing .message"
+}
+EOF
+
+$exception = catch('borg.com/exception/assimilation')
+    &do_something_risky
+end
+
+if ($exception)
+    puts('caught: ' + $exception.message)
+end
+
+%vibecode <<EOF
+{
+  "purpose": "heed — like catch but for warnings; collects all warnings of the given class raised inside the block",
+  "returns": "array of warning objects (may be empty)",
+  "note":    "warnings do not interrupt execution; heed gathers them all; use when validation or other non-fatal signals need to be inspected after the fact"
+}
+EOF
+
+$warnings = heed('foo.com/warning/validation')
+    &validate($person)
+end

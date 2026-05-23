@@ -105,7 +105,7 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
             local label, url
             if is_md then
                 label = name:sub(1, -4)                  -- strip .md
-                url   = url_prefix .. "/" .. label       -- e.g. /charlie/puck
+                url   = url_prefix .. "/" .. label       -- e.g. /caspian/puck
             else
                 label = name                              -- keep extension
                 url   = url_prefix .. "/" .. name        -- e.g. /mikobase/AI2AI/ai2ai.json
@@ -121,7 +121,7 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
                     li:tag("a", function(a)
                         a:attr("href", url)
                         if not is_md then
-                            -- Non-md assets (.html, .css, .json, .charlie,
+                            -- Non-md assets (.html, .css, .json, .casp,
                             -- images) open in a new tab so the doc context
                             -- isn't lost.
                             a:attr("target", "_blank")

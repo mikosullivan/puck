@@ -29,7 +29,7 @@ found so far.
     model (`puck.uno/robinson/page`, `puck.uno/sammy`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
   puck-object cutoff window. Cross-reference to [puck.md](../puck/puck.md)
-  added alongside [versioning.md](../charlie/versioning.md).
+  added alongside [versioning.md](../caspian/versioning.md).
 
 ---
 
@@ -91,7 +91,7 @@ consistent with recent design decisions:
 
 **Paused before completion.** The categories above were swept;
 the rest of the documentation tree (especially the larger files
-like `charlie-runtime.md`, `mikobase.md`, the various ideas/
+like `caspian-runtime.md`, `mikobase.md`, the various ideas/
 files) hasn't been swept in full. Likely more stale items exist
 that this pass didn't reach.
 

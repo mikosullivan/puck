@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "tap",
-	"role": "speculative note exploring a Ruby-style tap method on Charlie objects for inline side effects in chains; open question is whether it lives on every object or on the .object meta-helper",
+	"role": "speculative note exploring a Ruby-style tap method on Caspian objects for inline side effects in chains; open question is whether it lives on every object or on the .object meta-helper",
 	"key_concepts": ["tap_method", "ruby_style_chaining", "side_effect_in_chain",
 		"object_meta_helper_placement"],
 	"status": "brainstorm"
@@ -47,7 +47,7 @@ Two reasonable readings:
   reason for tap.
 
 Recommendation (not committed): put `tap` directly on every
-object (since every Charlie object inherits a root that can
+object (since every Caspian object inherits a root that can
 carry it). Receiver in, receiver out. Matches Ruby exactly and
 preserves chain ergonomics.
 

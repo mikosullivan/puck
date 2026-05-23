@@ -28,7 +28,7 @@ convenience helpers on top.
 
 For HTML and XML, **prefer existing Lua libraries** rather than
 building from scratch. The Ruby version sits on top of Nokogiri;
-the Charlie version will sit on top of an equivalent Lua HTML
+the Caspian version will sit on top of an equivalent Lua HTML
 library — likely **gumbo** (Google's HTML parser, with Lua
 bindings) or another well-maintained option.
 
@@ -38,7 +38,7 @@ The rough split:
   delegate to the Lua library.
 - **Builder DSL, attribute access via `[]`, text helpers,
   block-receiving element methods, schema enforcement** — Uma's
-  contribution; the Charlie-shaped wrapper around the underlying
+  contribution; the Caspian-shaped wrapper around the underlying
   tree.
 
 Diverge from the chosen Lua library only if a specific need
@@ -216,7 +216,7 @@ constraints on a single element (compound selectors). It
 `+` — those describe relationships across the tree and live at
 the find/find_first level.
 
-`match_css?` follows the [`?` suffix convention](../../charlie/charlie.md#the-suffix):
+`match_css?` follows the [`?` suffix convention](../../caspian/caspian.md#the-suffix):
 truthy on match, falsey on no-match, never throws.
 
 Direct use:
@@ -398,7 +398,7 @@ The Ruby version exposes `set_tag_mod(tag_name, mod)` to extend
 matching elements with Ruby modules — `'*'` applies to every
 element. Used for tag-specific behavior injection after parsing.
 
-The Charlie equivalent (probably class extension or duck-typed
+The Caspian equivalent (probably class extension or duck-typed
 dispatch) is a power-user feature. Defer until there's a real use
 case.
 

@@ -3,17 +3,17 @@
 ~~~json
 {"vibecode": {
 	"doc": "robinson-wishlist",
-	"role": "running capture-not-commit list of features wanted in the Charlie Robinson reincarnation, drawing on the prior Ruby Robinson; prioritization happens after the list is reasonably complete",
+	"role": "running capture-not-commit list of features wanted in the Caspian Robinson reincarnation, drawing on the prior Ruby Robinson; prioritization happens after the list is reasonably complete",
 	"key_concepts": ["feature_wishlist", "capture_not_commit", "scales_down_and_up",
 		"ruby_robinson_lineage"],
 	"status": "wishlist"
 }}
 ~~~
 
-A running list of features wanted in Robinson, the Charlie HTTP middleware framework.
+A running list of features wanted in Robinson, the Caspian HTTP middleware framework.
 Background: Miko built a previous Robinson in Ruby — a comprehensive web framework
 in the same conceptual space as Rails or Sammy. This document captures features
-to consider for the Charlie reincarnation.
+to consider for the Caspian reincarnation.
 
 **Purpose**: capture, not commit. Listing a feature here means "we want this
 eventually." It does not commit Robinson to shipping it in any particular release.
@@ -168,7 +168,7 @@ called over HTTP. It owns:
 
 - The HTTP listener (Unix socket when behind a reverse proxy, TCP when serving
   directly, possibly other transports later)
-- The Charlie runtime (one long-lived interpreter for the installation's
+- The Caspian runtime (one long-lived interpreter for the installation's
   lifetime)
 - The installation-level settings (cascade level 2, extending factory defaults)
 - The set of sites it serves, plus the dispatch logic to route incoming
@@ -244,7 +244,7 @@ The hash representation is a convenience for developers: handlers are referred
 to by nickname (`$server.handlers['csrf']`, `$server.handlers['sammy']`)
 rather than by position. The keys are purely labels — Robinson doesn't
 interpret them or enforce any pattern. Because Puck hashes are order-sensitive
-(see [hashes.md](../charlie/built-in-classes/hashes.md)), the handlers still
+(see [hashes.md](../caspian/built-in-classes/hashes.md)), the handlers still
 have a well-defined processing order; the hash just gives each one a memorable
 identifier.
 
@@ -319,7 +319,7 @@ Concurrency is **doubly opt-in**:
 
 1. **The engine must grant `%forks` permission** — without this capability,
    Robinson cannot fork, period. This is the same `%forks` engine permission
-   documented in the Charlie runtime (`%forks` is `null` when the engine
+   documented in the Caspian runtime (`%forks` is `null` when the engine
    hasn't granted it). The developer cannot work around this from within the
    Robinson config; the host has to authorize it.
 2. **The developer must opt into forking in Robinson's settings** — a
@@ -336,7 +336,7 @@ controls the policy; both must agree.
 
 With both gates open, the main Robinson process becomes a supervisor:
 
-- Forks N worker children, each a self-contained Charlie runtime with the full
+- Forks N worker children, each a self-contained Caspian runtime with the full
   handler chain loaded
 - Maintains a pool of "ready" workers (just-forked, no request handled yet)
 - When a request comes in, hands it to a ready worker
@@ -681,7 +681,7 @@ developer opening the docs would see too many concepts at once and bounce.
 
 Robinson must guard against this. Two rules:
 
-1. **The basic installation stays very simple.** A directory of `.charlie`
+1. **The basic installation stays very simple.** A directory of `.casp`
    files and static assets, serving pages. Nothing else. Anyone can sit
    down and have a site running in minutes without learning a vocabulary.
 2. **Introduce features carefully.** Every feature beyond the basic install
@@ -696,7 +696,7 @@ features will still land in Robinson — but the front door stays narrow.
 <a id="page-file-contract"></a>
 #### Page File Contract
 
-`.charlie` files in the tree are page files. Each one's last expression
+`.casp` files in the tree are page files. Each one's last expression
 must be a class inheriting from `puck.uno/Robinson/page` with a `process`
 method. Robinson invokes the file, takes the returned class, instantiates
 it, calls `process($request)`, and uses the returned response as the
@@ -706,8 +706,8 @@ The class lives in the file and has no UNS — its identity is its location
 in the tree. Giving it a global name would defeat the point of filesystem-
 tree routing.
 
-Invocation uses the Charlie runtime's general
-[file-invocation model](../charlie/modules.md#invoking-a-file): a file is
+Invocation uses the Caspian runtime's general
+[file-invocation model](../caspian/modules.md#invoking-a-file): a file is
 invoked like a function call, runs in its own scope, returns the value of
 its last expression. Robinson doesn't need a special invoker — it just
 uses the standard invocation and expects the value to be a
@@ -719,7 +719,7 @@ a function, captures the return value). "Load" is a different word for a
 different operation (slurping bytes into memory) and isn't used here.
 
 For the invocation to succeed, the site root jail must have
-[execute permission](../charlie/built-in-classes/filesystem.md#jail-permissions) enabled.
+[execute permission](../caspian/built-in-classes/filesystem.md#jail-permissions) enabled.
 Execute is off by default on jails (no dangerous defaults), so a Robinson
 site root is configured at injection time with `read + execute` (plus
 `write` if the site needs to author files at runtime — usually not).
@@ -732,7 +732,7 @@ served as-is, with content type inferred from extension.
 
 URLs map to files inside the site's root directory using **jail-based
 lookup**. The site root is exposed to Robinson as a
-[jail](../charlie/built-in-classes/filesystem.md) — a directory-scoped handle that
+[jail](../caspian/built-in-classes/filesystem.md) — a directory-scoped handle that
 permits access only to the site root and everything underneath it. The
 underlying real filesystem path is never exposed to handler code.
 
@@ -744,12 +744,12 @@ Resolution flow:
    `/foo/bar` and `/foo/bar/` are different requests, not the same URL
    with sloppy formatting.
 2. **Hand the path to the site jail** via
-   [`$jail.use_path`](../charlie/built-in-classes/filesystem.md#authorizing-untrusted-paths).
+   [`$jail.use_path`](../caspian/built-in-classes/filesystem.md#authorizing-untrusted-paths).
    This is required (untrusted strings can't be used for FS ops
    directly) and normalizes the path automatically. Robinson does not
    pre-normalize.
 3. **Reconcile request shape with what's at the path**:
-   - File request + entry is a file → serve it (invoke if `.charlie`,
+   - File request + entry is a file → serve it (invoke if `.casp`,
      otherwise serve as static).
    - **File request + entry is a directory → 302 temporary redirect**
      to the path-with-trailing-slash. Keeps URLs canonical without
@@ -783,7 +783,7 @@ Open:
 
 - **What "serving a directory" means.** When a directory request hits
   an actual directory, what does Robinson return? Three options:
-  index file (`index.charlie`, `index.html`, etc. by priority),
+  index file (`index.casp`, `index.html`, etc. by priority),
   directory listing, or 404 (no automatic content). Probably index
   files, but the priority list and listing-by-default question are
   unsettled.
@@ -799,12 +799,12 @@ Open:
 Robinson **refuses to respond to any HTTP request whose target name
 starts with `robinson.`**. The prefix is a reserved namespace for
 Robinson's own internal artifacts — config files, state, scratch
-content, internal Charlie files that Robinson itself invokes.
+content, internal Caspian files that Robinson itself invokes.
 
 **The rule is about the request boundary, not the file's existence.**
 A file at `<site>/robinson.config.json` is perfectly fine on disk and
 may be actively used by Robinson internally (read, written, even
-invoked as a Charlie file in some internal context). What's prohibited
+invoked as a Caspian file in some internal context). What's prohibited
 is **a request from outside resolving to that path** — that request
 gets a 404 regardless of whether the file exists or what it contains.
 Robinson's own internal access to these files happens through different
@@ -815,7 +815,7 @@ is indistinguishable from a missing file; no information disclosure
 about whether the underlying object exists.
 
 - **Blocked from request**: `robinson.json`, `robinson.lock`,
-  `robinson.charlie`, `robinson.html`, etc.
+  `robinson.casp`, `robinson.html`, etc.
 - **Not blocked**: `robinson` (no trailing dot), `robinsons.json`
   (prefix is `robinsons.`, not `robinson.`), `my-robinson.json` (prefix
   not at start of name).
@@ -838,7 +838,7 @@ Open:
   Normalize or pass through?
 - **Specific filesystem-path normalization rules.** Lives in
   `use_path`, not Robinson. Worth pinning the canonical list in
-  [filesystem.md](../charlie/built-in-classes/filesystem.md) when the runtime gets
+  [filesystem.md](../caspian/built-in-classes/filesystem.md) when the runtime gets
   spec'd in detail. URL decoding is upstream (HTTP layer, when
   `$request.path` is built), not part of `use_path`.
 
@@ -924,7 +924,7 @@ exists.
 
 **Bounding rule**: the welcome page appears only when the site is
 genuinely empty. The moment any file is added (even an empty
-`index.charlie`), it disappears permanently for that site. Missing URLs
+`index.casp`), it disappears permanently for that site. Missing URLs
 then return 404 the normal way.
 
 This rule keeps it safe to ship by default: the welcome page cannot
@@ -1213,9 +1213,9 @@ Specifics to be filled in as features are described.
 <a id="robinson-handler-markdown-tree"></a>
 ### Robinson Handler (Markdown-Tree Pages)
 
-A peer handler to the Filesystem-Tree (Charlie) pages: same routing
+A peer handler to the Filesystem-Tree (Caspian) pages: same routing
 philosophy ("the layout *is* the routing"), but the page files are
-`.md` instead of `.charlie`, and Robinson does the markdown → HTML
+`.md` instead of `.casp`, and Robinson does the markdown → HTML
 rendering plus the site chrome (sidebar nav of the tree, hero, TOC,
 etc.). This is the natural shape of a docs site, a personal wiki, a
 knowledge base, or any other content-first project where authors
@@ -1252,7 +1252,7 @@ already proven in Orlando):
   with a recognized language get a pygments-class span treatment;
   vibecode JSON blocks specifically get a dark-themed collapsible
   shell. (Robinson-wide: see the project-wide syntax-highlighting
-  story Sammy needs to provide — Charlie is the top-priority
+  story Sammy needs to provide — Caspian is the top-priority
   language.)
 - **Static asset mounts.** A short ordered list of `(URL prefix,
   filesystem root)` mappings handles site logos, CSS, JS, and
@@ -1263,15 +1263,15 @@ already proven in Orlando):
   it, not before.
 
 **Why this belongs in Robinson rather than a separate framework.**
-A docs site, a `.charlie` site, and a hybrid site all want the same
+A docs site, a `.casp` site, and a hybrid site all want the same
 shell (Robinson chrome, settings hierarchy, installation object,
 auth, etc.). The difference is only the per-page renderer. Adding
-a markdown handler alongside the Charlie handler is a much smaller
+a markdown handler alongside the Caspian handler is a much smaller
 investment than maintaining a second tree-routing framework.
 
-**Migration / scoping.** Implement after the Charlie page handler is
+**Migration / scoping.** Implement after the Caspian page handler is
 stable. The first version can lift Orlando's design (and probably
-most of its code, translated to Charlie) wholesale; later versions
+most of its code, translated to Caspian) wholesale; later versions
 diverge as Robinson-specific needs surface (authenticated pages,
 draft mode, per-page metadata, etc.).
 

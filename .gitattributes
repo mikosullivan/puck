@@ -1,10 +1,10 @@
-# Charlie source files: Ruby is the closest existing Linguist language.
-# Charlie's style is Ruby-influenced, so most syntax highlights cleanly
+# Caspian source files: Ruby is the closest existing Linguist language.
+# Caspian's style is Ruby-influenced, so most syntax highlights cleanly
 # (sigils like $foo and %sys won't be perfect; everything else mostly works).
-# Replace with `linguist-language=Charlie` if/when Charlie lands in
+# Replace with `linguist-language=Caspian` if/when Caspian lands in
 # github-linguist proper.
-*.charlie linguist-language=Ruby
+*.casp linguist-language=Ruby
 
-# CharlieJSON files: JSON-shaped. Linguist would otherwise detect .cjs as
-# CommonJS/JavaScript, which is wrong for this project.
-*.cjs linguist-language=JSON
+# CaspianJ files: JSON-shaped. Linguist would otherwise detect .caspj as
+# something else, which is wrong for this project.
+*.caspj linguist-language=JSON

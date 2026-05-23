@@ -38,7 +38,7 @@ uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 - **Structured values.** Arrays, nested objects, booleans, nulls
   — all natural inside JSON. Standard headers tend to invent
   ad-hoc microsyntaxes for structure.
-- **Consistency with Puck's JSON-everywhere posture** (Charlie,
+- **Consistency with Puck's JSON-everywhere posture** (Caspian,
   mikobase records, JSON URL params, etc.).
 
 <a id="coexistence-and-long-term-vision"></a>

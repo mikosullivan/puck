@@ -99,9 +99,9 @@ jqmin (if used at all) is for the puck.uno site itself — not documented as an 
 
 ### Uma integration (tabled)
 
-An intriguing idea: add jqmin-style helpers to Uma so the same patterns are reachable from Charlie code. Tabled — comes back into scope only if both jqmin sticks and Uma needs the surface.
+An intriguing idea: add jqmin-style helpers to Uma so the same patterns are reachable from Caspian code. Tabled — comes back into scope only if both jqmin sticks and Uma needs the surface.
 
-The drop-in port is the obvious V0 path; the Charlie-native version is the Puck-ecosystem-coherent endpoint.
+The drop-in port is the obvious V0 path; the Caspian-native version is the Puck-ecosystem-coherent endpoint.
 
 ## Patterns
 
@@ -274,7 +274,7 @@ Position 1 (immediate sibling after `<input>`) = **checked-state** visible eleme
 
 ### Does jqmin keep its name in the Puck context?
 
-The name is short and distinctive but jQuery-coupled. If we go jQuery-free or Charlie-native the "jq" prefix becomes misleading. New name worth considering when the port shape is settled.
+The name is short and distinctive but jQuery-coupled. If we go jQuery-free or Caspian-native the "jq" prefix becomes misleading. New name worth considering when the port shape is settled.
 
 ### Which existing pieces survive into the Puck version?
 

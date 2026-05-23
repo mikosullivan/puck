@@ -22,7 +22,7 @@ component requires each. Add new entries as they come up.
 
 ~~~json
 {"vibecode": {"dep": "libsodium", "kind": "c_library_with_lua_binding",
-"used_by": ["charlie.utils.random", "puck_blockchain_signing"],
+"used_by": ["caspian.utils.random", "puck_blockchain_signing"],
 "provides": ["crypto_strong_random_bytes", "ed25519_signing"],
 "home": "https://libsodium.org/",
 "license": "ISC"}}
@@ -34,13 +34,13 @@ provides Ed25519 signing among other primitives.
 
 **What uses it.**
 
-- [`%utils.random`](../charlie/utils/utils.md) — crypto-strong random
+- [`%utils.random`](../caspian/utils/utils.md) — crypto-strong random
   bytes and UUIDs (`randombytes_buf`).
-- The [Puck blockchain](../charlie/blockchain/.md) — Ed25519 signing.
+- The [Puck blockchain](../caspian/blockchain/.md) — Ed25519 signing.
 
 **Why this one.** Smaller and more opinionated than OpenSSL, with
 a security-first design and a permissive licence. One library
-covers both Charlie's random and the blockchain's signing — no
+covers both Caspian's random and the blockchain's signing — no
 second crypto dep needed.
 
 ---

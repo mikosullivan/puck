@@ -11,7 +11,7 @@
 }}
 ~~~
 
-**Status:** brainstorm. A pure-Charlie class at `puck.uno/color/sphere` (or
+**Status:** brainstorm. A pure-Caspian class at `puck.uno/color/sphere` (or
 just `sphere`) representing a spherical region of color space. Pairs with
 the [color class](./) to express constraints like "any color near this
 one" or "any color away from these."
@@ -37,7 +37,7 @@ the [0, 255]³ cube only counts cells that are actually in the cube.
 
 ## Construction
 
-```charlie
+```caspian
 $near_red = %['puck.uno/color/sphere'].new(center: $red, radius: 20)
 $away_red = %['puck.uno/color/sphere'].new(center: $red, radius: 20, scope: 'outside')
 ```
@@ -49,7 +49,7 @@ defaults to `"inside"`.
 
 ## Accessors
 
-```charlie
+```caspian
 $sphere.center   # the Color instance at the center
 $sphere.radius   # the radius
 $sphere.scope    # 'inside' or 'outside'
@@ -61,7 +61,7 @@ $sphere.scope    # 'inside' or 'outside'
 
 Three predicates — two pure geometric, one scope-aware:
 
-```charlie
+```caspian
 $sphere.contains?($color)   # true iff $color is within radius (geometric)
 $sphere.excludes?($color)   # true iff $color is beyond radius (geometric)
 $sphere.scoped?($color)     # true iff $color is in the sphere's member set per scope
@@ -76,7 +76,7 @@ scope: with `scope: "inside"` it equals `contains?`, with `scope:
 
 ## Random
 
-```charlie
+```caspian
 $sphere.random   # a uniform random cell from the sphere's member set
 ```
 
@@ -93,7 +93,7 @@ that hue, with a few regions of color I want to avoid." Selectors map
 naturally to spheres — inside-spheres pull the choice toward where you
 want, outside-spheres push it away from where you don't.
 
-```charlie
+```caspian
 # Aesthetic targets — broad regions, not exact colors.
 $primary_zone   = %['puck.uno/color/sphere'].new(
     center: %['puck.uno/color/teal'],  radius: 40)

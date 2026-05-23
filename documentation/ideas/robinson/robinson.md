@@ -14,14 +14,14 @@ live in directory trees; URL paths map to file paths. Designed
 for content-shaped sites where each URL corresponds to a file.
 
 **Robinson is not bundled with Puck.** It's a **library available
-through Puck** — when Charlie code references
+through Puck** — when Caspian code references
 `%['puck.uno/robinson']`, Puck's resolver fetches it from its UNS
 source on first use and caches it locally; subsequent references
 hit the cache. Programs that don't use Robinson never pull it in.
 See [puck.md](../puck/puck.md) for the resolution + caching
 model that governs all library resolution.
 
-Built on [Touchstone](../charlie/packages/touchstone/touchstone.md) (which **does** ship with
+Built on [Touchstone](../caspian/packages/touchstone/touchstone.md) (which **does** ship with
 Puck), Robinson inherits the transaction model, request/response
 objects, sessions, body buffering, the handler chain, CSRF guard,
 CSP, and the response constructor. Robinson adds multi-site
@@ -118,22 +118,22 @@ A directory handler resolves the request path to a file using
    every step. The first existing file in iteration order wins,
    so literal candidates always come before placeholder
    candidates.
-2. **Extension elision** for `.charlie` files. The terminal
-   segment of the glob includes both with-`.charlie` and
-   without-`.charlie` variants. A request for `/foo` matches
-   both `pages/foo.charlie` and `pages/foo`, with the former
+2. **Extension elision** for `.casp` files. The terminal
+   segment of the glob includes both with-`.casp` and
+   without-`.casp` variants. A request for `/foo` matches
+   both `pages/foo.casp` and `pages/foo`, with the former
    tried first.
 
 Concrete example. Request `/plays/hamlet/act-3/scene-1` against
 the `pages/` handler expands to:
 
 ```
-pages/{plays,robinson.placeholder}/{hamlet,robinson.placeholder}/{act-3,robinson.placeholder}/{scene-1.charlie,robinson.placeholder.charlie,scene-1,robinson.placeholder}
+pages/{plays,robinson.placeholder}/{hamlet,robinson.placeholder}/{act-3,robinson.placeholder}/{scene-1.casp,robinson.placeholder.casp,scene-1,robinson.placeholder}
 ```
 
 That's 2 × 2 × 2 × 4 = 32 candidates. Robinson iterates them in
 the order brace expansion produces (literal-first per segment;
-`.charlie`-with-elision before bare-static within the terminal),
+`.casp`-with-elision before bare-static within the terminal),
 testing each against the filesystem. First hit wins. If nothing
 matches, the handler declines and the next directory handler in
 the chain gets a turn.
@@ -148,7 +148,7 @@ implementation simple — no need to optimize ahead of measurement.
 **Directory-index resolution is a separate rule.** If the glob
 above produces nothing and the request is for a directory (or
 the literal path is a directory), the handler then looks for an
-index file inside that directory by priority (`index.charlie`,
+index file inside that directory by priority (`index.casp`,
 `index.html`, ...). Priority list TBD.
 
 <a id="the-three-built-in-trees"></a>
@@ -180,7 +180,7 @@ $server = %['puck.uno/robinson'].new(dir: $jail)
 $server.run()
 ```
 
-`$dir` is a [jail](../charlie/built-in-classes/filesystem.md) over the Robinson
+`$dir` is a [jail](../caspian/built-in-classes/filesystem.md) over the Robinson
 server's root directory, with `read + execute` permission.
 Robinson reads `server.json` from there, loads each listed site,
 and starts dispatching.
@@ -196,7 +196,7 @@ Content-as-files HTTP serving with filesystem-tree-is-routing:
 - **Canonical domain redirects** declared by domain order in
   `server.json`.
 - **Reserved filename prefix** (`robinson.*`) blocked from HTTP.
-- **Page files** (`.charlie`) invoked per request to produce
+- **Page files** (`.casp`) invoked per request to produce
   responses.
 - **Three built-in trees** per site: `pages/`, `factory/`,
   optional `admin/`.
@@ -283,7 +283,7 @@ tree. URL paths map to files within it.
 <a id="page-file-contract"></a>
 ### Page file contract
 
-A `.charlie` file in the tree is a page file. Its last
+A `.casp` file in the tree is a page file. Its last
 expression must be a class inheriting from
 `puck.uno/robinson/page` with a `process` method:
 
@@ -297,8 +297,8 @@ class
 end
 ```
 
-Robinson invokes the file (via Charlie's
-[file-invocation model](../charlie/modules.md)), takes the
+Robinson invokes the file (via Caspian's
+[file-invocation model](../caspian/modules.md)), takes the
 returned class, instantiates it, calls `process($request)`, and
 uses the returned response. The class has no UNS — its identity
 is its location in the tree.
@@ -312,9 +312,9 @@ filesystem caching mitigates the disk-read cost in practice.
 Class-level caching is planned for later; the design space is
 deferred.
 
-Non-`.charlie` files (HTML, CSS, JS, images, etc.) are served
+Non-`.casp` files (HTML, CSS, JS, images, etc.) are served
 as-is, with content type inferred from extension (via
-[Touchstone's factory map](../charlie/packages/touchstone/touchstone.md#content-type-factory-defaults)).
+[Touchstone's factory map](../caspian/packages/touchstone/touchstone.md#content-type-factory-defaults)).
 
 <a id="path-resolution"></a>
 ### Path resolution
@@ -420,7 +420,7 @@ debugging, never to public clients. See
 
 **Robinson is single-threaded. One request at a time.** Same
 model as Sammy — inherits the simplicity and the constraints.
-Charlie is single-threaded by design; Robinson doesn't depart
+Caspian is single-threaded by design; Robinson doesn't depart
 from that.
 
 Scaling beyond one request at a time is process-level:
@@ -800,10 +800,10 @@ not enabling the admin tree at all.
 
 Minimum admin pages shipped with Robinson:
 
-- **`/r-admin/login.charlie`** — login form, checks credentials
+- **`/r-admin/login.casp`** — login form, checks credentials
   against `site.json`'s `admin.users`, sets the admin cookie on
   success.
-- **`/r-admin/logout.charlie`** — clears the admin cookie,
+- **`/r-admin/logout.casp`** — clears the admin cookie,
   redirects to login.
 
 Future pages (log viewers, configuration inspection, etc.) ship
@@ -870,7 +870,7 @@ fronts.
 <a id="page-file-syntax-errors-admin-visible"></a>
 ### Page-file syntax errors (admin-visible)
 
-When a `.charlie` page file has a syntax error, the developer
+When a `.casp` page file has a syntax error, the developer
 needs to find it fast. The standard 500 page is useless — it
 doesn't say which file or where.
 
@@ -884,7 +884,7 @@ parse:
 - **For non-admins**: a generic factory 500 page. No file paths,
   no source — anything specific would be information leakage.
 
-Robinson knows where it tried to invoke from; the Charlie
+Robinson knows where it tried to invoke from; the Caspian
 runtime knows where parsing failed. Joining the two is
 straightforward.
 
@@ -892,7 +892,7 @@ straightforward.
 ### "Why didn't my route match?" (admin-visible 404)
 
 Filesystem-routed servers have a unique frustration: developer
-creates `pages/blog/post-1.charlie`, requests `/blog/post-1`,
+creates `pages/blog/post-1.casp`, requests `/blog/post-1`,
 gets a 404. Was the file in the wrong place? Wrong extension?
 Permission issue? Wrong site? Without diagnostic information,
 the developer is blind.
@@ -937,7 +937,7 @@ borg.com," developer's custom CORS handler). Without this,
 debugging a chain of handlers means guessing which one threw.
 
 This is a Touchstone feature, not Robinson-specific — see
-[touchstone.md § Handler attribution](../charlie/packages/touchstone/touchstone.md#handler-attribution-on-exceptions).
+[touchstone.md § Handler attribution](../caspian/packages/touchstone/touchstone.md#handler-attribution-on-exceptions).
 
 <a id="cleanup-errors-dont-mask-the-original"></a>
 ### Cleanup errors don't mask the original
@@ -957,23 +957,23 @@ If Jasmine itself fails to log (downstream service down, disk
 full, etc.), the original event isn't silently swallowed — it
 falls through to stderr with a `[JASMINE FAILED]` marker.
 
-A Jasmine feature; see [jasmine.md](../charlie/packages/jasmine/jasmine.md).
+A Jasmine feature; see [jasmine.md](../caspian/packages/jasmine/jasmine.md).
 
 ---
 
 <a id="what-robinson-inherits-from-touchstone"></a>
 ## What Robinson inherits from Touchstone
 
-Everything in [Touchstone](../charlie/packages/touchstone/touchstone.md). Notably:
+Everything in [Touchstone](../caspian/packages/touchstone/touchstone.md). Notably:
 
-- [The transaction object](../charlie/packages/touchstone/touchstone.md#the-transaction-object)
-- [The request object](../charlie/packages/touchstone/touchstone.md#the-request-object) (steps, params, body)
-- [Sessions](../charlie/packages/touchstone/touchstone.md#sessions)
-- [Body buffering](../charlie/packages/touchstone/touchstone.md#body-buffering)
-- [The handler chain](../charlie/packages/touchstone/touchstone.md#the-handler-chain)
-- [The response object](../charlie/packages/touchstone/touchstone.md#the-response-object) (constructor, helpers, headers, redirects)
-- [CSRF Protection](../charlie/packages/touchstone/touchstone.md#csrf-protection)
-- [Content Security Policy (CSP)](../charlie/packages/touchstone/touchstone.md#content-security-policy)
+- [The transaction object](../caspian/packages/touchstone/touchstone.md#the-transaction-object)
+- [The request object](../caspian/packages/touchstone/touchstone.md#the-request-object) (steps, params, body)
+- [Sessions](../caspian/packages/touchstone/touchstone.md#sessions)
+- [Body buffering](../caspian/packages/touchstone/touchstone.md#body-buffering)
+- [The handler chain](../caspian/packages/touchstone/touchstone.md#the-handler-chain)
+- [The response object](../caspian/packages/touchstone/touchstone.md#the-response-object) (constructor, helpers, headers, redirects)
+- [CSRF Protection](../caspian/packages/touchstone/touchstone.md#csrf-protection)
+- [Content Security Policy (CSP)](../caspian/packages/touchstone/touchstone.md#content-security-policy)
 
 A page's `process` method is just a Handler `process` that
 happens to be loaded from a file at request time. No new
@@ -1012,7 +1012,7 @@ Touchstone is in charge.
 ## What's out of scope
 
 If your app is mostly ad-hoc routes rather than content-as-files,
-use [Sammy](../charlie/packages/touchstone/sammy.md). If you need both styles in one
+use [Sammy](../caspian/packages/touchstone/sammy.md). If you need both styles in one
 server, that's possible in principle (both expose Handlers); the
 ergonomics of that combination are deferred until a real use
 case surfaces.
@@ -1029,7 +1029,7 @@ deferred.
   `csrf` property on the page class.
 - **Per-page content-type / cache headers**, declared on the
   page class.
-- **Background page reload.** Reload `.charlie` page files when
+- **Background page reload.** Reload `.casp` page files when
   they change on disk during development (not production).
 
 ---
@@ -1038,11 +1038,11 @@ deferred.
 ## Open issues
 
 Match patterns (large):
-- **Directory-index priority** (`index.charlie` → `index.html` → ...).
+- **Directory-index priority** (`index.casp` → `index.html` → ...).
 - **Directory listings by default** — almost certainly no, but pin it.
 - **Dotfile handling** — case-by-case (`/.well-known/` yes, `/.git/` no).
 - **Directory-request on file** — probably 302 to no-slash form.
-- **Extension elision** — `/about` matching `about.charlie` or `about.html`?
+- **Extension elision** — `/about` matching `about.casp` or `about.html`?
 
 Sites and dispatch:
 - **Overlapping domains across sites** — startup error vs. silent first-match-wins.

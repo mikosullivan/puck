@@ -1,9 +1,9 @@
-# Color (pure-Charlie color library)
+# Color (pure-Caspian color library)
 
 ~~~json
 {"vibecode": {
 	"doc": "color",
-	"role": "brainstorm for puck.uno/color — a pure-Charlie color library built around the 'each color is a cell in a 256×256×256 cube' model; first consumer is the PNG handler, but any code that works with color uses it",
+	"role": "brainstorm for puck.uno/color — a pure-Caspian color library built around the 'each color is a cell in a 256×256×256 cube' model; first consumer is the PNG handler, but any code that works with color uses it",
 	"status": "brainstorm — no implementation yet",
 	"ruby_reference": "/home/miko/projects/oberon/rgbcell/working (RGBCell, ~313 lines)",
 	"key_concepts": ["cell_in_a_cube", "hex_or_name_construction", "alpha_recorded_not_modeled",
@@ -12,7 +12,7 @@
 }}
 ~~~
 
-**Status:** brainstorm. A pure-Charlie library at `puck.uno/color` (or just
+**Status:** brainstorm. A pure-Caspian library at `puck.uno/color` (or just
 `color`) for color values. First consumer is the [PNG handler](png.md);
 anything else that works with color uses the same primitive. Ported from
 the Ruby [RGBCell](file:///home/miko/projects/oberon/rgbcell/working)
@@ -36,7 +36,7 @@ else falls out of it.
 
 Three forms — pick whichever reads best at the call site:
 
-```charlie
+```caspian
 # Hex string — 6 or 8 digits
 $red = %['puck.uno/color'].new('#ff0000')
 $translucent_red = %['puck.uno/color'].new('#ff0000ac')
@@ -61,7 +61,7 @@ Hex forms:
 
 ## Accessors
 
-```charlie
+```caspian
 $red.red      # 255  — integer 0..255
 $red.green    # 0
 $red.blue     # 0
@@ -73,7 +73,7 @@ $red.name     # 'red' (or null if this cell has no standard name)
 **Per-color predicates.** Every named HTML color gets a predicate; each
 returns true if the cell matches that named color exactly.
 
-```charlie
+```caspian
 $red.red?         # true
 $red.orange?      # false
 $red.rebeccapurple?  # false
@@ -81,7 +81,7 @@ $red.rebeccapurple?  # false
 
 **Collection views.**
 
-```charlie
+```caspian
 $red.to_arr   # [255, 0, 0, 255]   — always 4 elements: [r, g, b, a]
 $red.to_hash  # {red: 255, green: 0, blue: 0, alpha: 255, hex: '#ff0000', name: 'red'}
 ```
@@ -94,7 +94,7 @@ $red.to_hash  # {red: 255, green: 0, blue: 0, alpha: 255, hex: '#ff0000', name: 
 
 Mutable. Each setter validates input; bad input raises.
 
-```charlie
+```caspian
 $red.green = 128       # OK
 $red.green = 2928      # raises — out of range; must be 0..255
 $red.green = 'bar'     # raises — wrong type; must be integer
@@ -111,7 +111,7 @@ become `null` if the new coordinates don't match a standard color.
 These are the showcase methods — the reason the cube model is worth having
 in the first place:
 
-```charlie
+```caspian
 $red.distance($blue)               # Euclidean distance between cells
 $red.spectrum_to($blue, steps: 8)  # array of 8 intermediate cells
 ```
@@ -132,7 +132,7 @@ in-between cells are evenly spaced along the line.
 
 A class-level method returns a uniformly random cell from the cube:
 
-```charlie
+```caspian
 %['puck.uno/color'].random   # any cell, uniform over [0,255]³
 ```
 
@@ -140,7 +140,7 @@ A class-level method returns a uniformly random cell from the cube:
 to constrain the choice. The returned color must satisfy **every**
 sphere's membership test (per each sphere's own `scope`):
 
-```charlie
+```caspian
 %['puck.uno/color'].random(
     $primary_zone,   # inside-sphere: pull toward this region
     $too_dark,       # outside-sphere: push away from this region

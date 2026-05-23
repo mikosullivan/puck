@@ -33,6 +33,6 @@ Robinson to be.
 
 Then I stopped coding in Ruby and Dogberry was never quite finished. It was
 pretty cool, though. So now we're back to calling it the Robinson handler —
-the directory-tree-driven page handler living inside the Charlie Dogberry
+the directory-tree-driven page handler living inside the Caspian Dogberry
 framework. Dogberry is the middleware layer; Robinson is the filesystem-tree
 handler that originally inspired the whole thing.

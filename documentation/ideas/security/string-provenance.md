@@ -56,7 +56,7 @@ have been computed.
 <a id="why-this-would-be-powerful"></a>
 ## Why This Would Be Powerful
 
-The coarse model of one role-tag per value (see [roles.md](../../charlie/roles.md)) collapses
+The coarse model of one role-tag per value (see [roles.md](../../caspian/roles.md)) collapses
 construction history down to a single owning role per string. That's enough for
 "should this sink refuse to act on this string," but it loses information that
 could be useful in several places:
@@ -135,11 +135,11 @@ keeping full provenance means keeping the inputs, and inputs accumulate.
 - **Scope.** Does provenance apply only to strings, or also to numbers, hashes,
   arrays? Numbers seem less interesting — a number is usually one value from one
   source. Containers have their own per-element concerns
-  (see the container-vs-contents principle in [roles.md](../../charlie/roles.md)).
+  (see the container-vs-contents principle in [roles.md](../../caspian/roles.md)).
 - **Opt-in mode.** A reasonable design: provenance tracking enabled only when the
   engine is configured for it (debug mode, audit mode, security responder mode).
   Production engines stick with coarse tags for performance; engines that need
-  the richness opt in. The Charlie program doesn't notice the difference because
+  the richness opt in. The Caspian program doesn't notice the difference because
   the API is the same — provenance queries just return less detail (or nothing,
   or a single coarse tag) in the non-provenance case.
 

@@ -20,13 +20,13 @@ read each.
 
 ---
 
-<a id="1-time-travel-debugger-for-charlie"></a>
-## 1. Time-travel debugger for Charlie
+<a id="1-time-travel-debugger-for-caspian"></a>
+## 1. Time-travel debugger for Caspian
 
 Mikobase already supports time-travel reads (querying state as
 of any past timestamp). A debugger could exploit this:
 **step backwards through state changes**, not just forwards.
-Pair with Charlie's deterministic GC (collection happens at known
+Pair with Caspian's deterministic GC (collection happens at known
 moments) and the auto-recorded Jasmine call frames, and you have
 the ingredients for a real "rewind execution to before the bug"
 experience.
@@ -90,18 +90,18 @@ competing with it.
 
 ---
 
-<a id="5-trycharlie-browser-playground"></a>
-## 5. TryCharlie — browser playground
+<a id="5-trycaspian-browser-playground"></a>
+## 5. TryCaspian — browser playground
 
-A web page where someone can type Charlie and see it run. Mimics
+A web page where someone can type Caspian and see it run. Mimics
 TryRuby, Replit, the various "play with this language" pages.
 
-- Sandboxed Charlie runtime in WebAssembly or compiled-to-JS.
+- Sandboxed Caspian runtime in WebAssembly or compiled-to-JS.
 - Persistent saved snippets for sharing.
 - Pre-loaded mikobase examples, blockchain examples,
   Sammy/Bryton skeletons.
 - A real first-contact surface: someone reads a Puck article,
-  clicks a "try it" link, and 30 seconds later is running Charlie
+  clicks a "try it" link, and 30 seconds later is running Caspian
   in their browser.
 
 Aligns with the first-contact strategy memory.

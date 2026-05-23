@@ -3,10 +3,12 @@
   "module": "orlando.page",
   "role": "Markdown-to-HTML rendering plus the page-template chrome (stylesheet link, layout shell, sidebar nav, hero logo). Used by orlando.server for per-request HTML generation and by orlando/lua/render.lua for CLI rendering.",
   "exports": {
-    "render":         "markdown string -> body HTML string (lunamark with fenced code + pipe tables enabled)",
-    "wrap_minimal":   "body HTML + title -> minimal HTML doc (used by CLI render.lua; no chrome)",
-    "render_file":    "path + title -> minimal HTML doc; reads, renders, wraps (CLI)",
-    "render_request": "ctx { md_path, title } -> full HTML page with chrome"
+    "render":              "markdown string -> body HTML string (lunamark with fenced code + pipe tables enabled)",
+    "wrap_minimal":        "body HTML + title -> minimal HTML doc (used by CLI render.lua; no chrome)",
+    "render_file":         "path + title -> minimal HTML doc; reads, renders, wraps (CLI)",
+    "render_request":      "ctx { md_path, title } -> full HTML page with chrome",
+    "render_results_page": "ctx { title, body_html, query? } -> full HTML page with chrome and a body that is not a markdown render (used by orlando.search)",
+    "md_path_to_url":      "fs md_path -> canonical Orlando URL (README.md -> /documentation/, dir-index files -> trailing slash form)"
   },
   "no_caching": "every call re-reads source and re-runs the pipeline per the Orlando no-caching design"
 }
@@ -15,8 +17,9 @@ local lunamark          = require("lunamark")
 local quick_builder     = require("orlando.quick_builder")
 local nav               = require("orlando.nav")
 local json_highlight    = require("orlando.json_highlight")
-local charlie_highlight = require("orlando.charlie_highlight")
+local caspian_highlight = require("orlando.caspian_highlight")
 local issues_fetcher    = require("orlando.issues")
+local config            = require("orlando.config")
 
 local M = {}
 
@@ -353,6 +356,63 @@ local function quick_add_label(dom_id)
     return '<label class="section-issue" for="' .. dom_id .. '">Quick add</label>'
 end
 
+-- Edit form: a "Edit" toggle next to GitHub-issue / Quick-add, plus a
+-- hidden checkbox + form. The textarea is empty in the rendered HTML;
+-- edit.js fetches the section's current markdown from
+-- /api/section-markdown and populates the textarea when the form first
+-- opens. Submission POSTs to /api/edit-suggestion which creates a
+-- labelled GitHub issue with the user's proposed replacement.
+local function edit_label(dom_id)
+    return '<label class="section-issue edit-label" for="' .. dom_id .. '">Edit</label>'
+end
+
+local function edit_block(md_path, section_text, section_id, dom_id)
+    local anchor_value = section_id or ""
+    local title_value  = section_text or ""
+    return table.concat({
+        '\n<input type="checkbox" hidden class="edit-toggle" id="', dom_id, '"/>',
+        '\n<div class="edit-form">',
+        '<form action="/api/edit-suggestion" method="POST" target="edit-target" '
+            .. 'data-md-path="', html_escape(md_path), '" '
+            .. 'data-anchor="', html_escape(anchor_value), '">',
+        '<input type="hidden" name="path" value="',          html_escape(md_path),      '">',
+        '<input type="hidden" name="anchor" value="',        html_escape(anchor_value), '">',
+        '<input type="hidden" name="section_title" value="', html_escape(title_value),  '">',
+        '<textarea name="markdown" rows="16" placeholder="Loading section…" required></textarea>',
+        '<div class="edit-actions">',
+        '<button type="submit">Submit edit</button>',
+        '<label for="', dom_id, '" class="edit-cancel">Cancel</label>',
+        '</div>',
+        '</form>',
+        '</div>',
+        '<div class="edit-status" hidden></div>',
+    })
+end
+
+-- Render the comments list under an issue. Returns "" for issues with
+-- no comments. Each comment shows author, date (YYYY-MM-DD), and body
+-- (run through the markdown renderer just like the issue body).
+local function render_issue_comments(comments)
+    if not comments or #comments == 0 then return "" end
+    local parts = { '<ul class="issue-comments">' }
+    for _, c in ipairs(comments) do
+        local date = (c.created_at or ""):sub(1, 10)
+        local body_html = ""
+        if c.body and c.body ~= "" then
+            body_html = M.render(c.body)
+        end
+        parts[#parts + 1] = '<li class="issue-comment">'
+            .. '<div class="comment-head">'
+            ..   '<span class="comment-author">' .. html_escape(c.author or "") .. '</span>'
+            ..   ' <span class="comment-date">' .. html_escape(date) .. '</span>'
+            .. '</div>'
+            .. '<div class="comment-body">' .. body_html .. '</div>'
+            .. '</li>'
+    end
+    parts[#parts + 1] = '</ul>'
+    return table.concat(parts)
+end
+
 -- Render the per-section open-issues panel (used under each H2-H6 heading
 -- that has issues whose title ends with `(#<anchor>)`). Same look as the
 -- page-top panel, but the section-context is implied so the "§ Section"
@@ -379,6 +439,7 @@ local function render_section_issues_panel(md_path, anchor)
             ..     'Close</button>'
             .. '</div>'
             .. '<div class="issue-body">' .. body_html .. '</div>'
+            .. render_issue_comments(issue.comments)
             .. '</li>'
     end
     parts[#parts + 1] = '</ul>'
@@ -386,26 +447,55 @@ local function render_section_issues_panel(md_path, anchor)
     return table.concat(parts)
 end
 
-local function inject_issue_links(body_html, md_path)
-    -- Page H1: issue link + Quick add label, then checkbox + form after.
+local function inject_issue_links(body_html, md_path, client_ip)
+    local show_edit = config.ip_can_edit(client_ip)
+
+    -- Page H1: issue link, Quick add, (Edit if allowed) — then checkbox + form blocks after.
     body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
-        local dom_id = "qa-h1"
-        return open .. inner .. " " .. issue_link(md_path)
-            .. " " .. quick_add_label(dom_id) .. close
-            .. quick_add_block(md_path, nil, nil, dom_id)
+        local qa_id   = "qa-h1"
+        local edit_id = "edit-h1"
+        local tail = open .. inner .. " " .. issue_link(md_path)
+            .. " " .. quick_add_label(qa_id)
+
+        if show_edit then
+            tail = tail .. " " .. edit_label(edit_id)
+        end
+
+        tail = tail .. close .. quick_add_block(md_path, nil, nil, qa_id)
+
+        if show_edit then
+            tail = tail .. edit_block(md_path, nil, nil, edit_id)
+        end
+
+        return tail
     end, 1)
+
     -- Each H2 through H6: same treatment, plus a per-section issues panel
     -- if the section has issues filed against it.
     body_html = body_html:gsub("(<(h[2-6])([^>]*)>)(.-)(</%2>)",
         function(open, _, attrs, inner, close)
-            local id     = attrs:match('id="([^"]+)"')
-            local text   = clean_heading_text(inner)
-            local dom_id = "qa-" .. (id or slugify(text))
-            return open .. inner .. " " .. issue_link(md_path, text, id)
-                .. " " .. quick_add_label(dom_id) .. close
-                .. quick_add_block(md_path, text, id, dom_id)
-                .. render_section_issues_panel(md_path, id)
+            local id      = attrs:match('id="([^"]+)"')
+            local text    = clean_heading_text(inner)
+            local slug    = id or slugify(text)
+            local qa_id   = "qa-" .. slug
+            local edit_id = "edit-" .. slug
+            local tail = open .. inner .. " " .. issue_link(md_path, text, id)
+                .. " " .. quick_add_label(qa_id)
+
+            if show_edit then
+                tail = tail .. " " .. edit_label(edit_id)
+            end
+
+            tail = tail .. close .. quick_add_block(md_path, text, id, qa_id)
+
+            if show_edit then
+                tail = tail .. edit_block(md_path, text, id, edit_id)
+            end
+
+            tail = tail .. render_section_issues_panel(md_path, id)
+            return tail
         end)
+
     return body_html
 end
 
@@ -438,12 +528,12 @@ local function highlight_json_blocks(body_html)
         end))
 end
 
-local function highlight_charlie_blocks(body_html)
+local function highlight_caspian_blocks(body_html)
     return (body_html:gsub(
-        '<pre><code class="language%-charlie">(.-)</code></pre>',
+        '<pre><code class="language%-caspian">(.-)</code></pre>',
         function(escaped_source)
             local source = decode_html_entities(escaped_source)
-            local highlighted = charlie_highlight.highlight(source)
+            local highlighted = caspian_highlight.highlight(source)
             return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
         end))
 end
@@ -485,6 +575,7 @@ local function render_issues_panel(issues)
             ..   section
             .. '</div>'
             .. '<div class="issue-body">' .. body_html .. '</div>'
+            .. render_issue_comments(issue.comments)
             .. '</li>'
     end
     parts[#parts + 1] = '</ul>'
@@ -524,7 +615,7 @@ end
 -- Add target="_blank" rel="noopener" to any <a> that points elsewhere:
 --   - External (http://, https://) URLs.
 --   - Local URLs pointing at a non-markdown file (.html, .css, .js,
---     .charlie, .json, images, etc.) — these are static assets the
+--     .casp, .json, images, etc.) — these are static assets the
 --     reader expects to view alongside the doc, not navigate to.
 -- Same-tab links: extensionless URLs (markdown renders), .md URLs (raw
 -- markdown), pure-anchor hrefs (#section), and any <a> that already has
@@ -573,6 +664,11 @@ local function add_head(html_tag, title)
             s:attr("defer", "")
             s:text("")
         end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/edit.js")
+            s:attr("defer", "")
+            s:text("")
+        end)
     end)
 end
 
@@ -604,6 +700,8 @@ local function md_path_to_url(md_path)
     end
     return "/documentation/" .. rel
 end
+
+M.md_path_to_url = md_path_to_url
 
 -- Does a given URL path serve a markdown page? Used by the breadcrumb
 -- to decide whether each intermediate segment links somewhere.
@@ -642,7 +740,32 @@ local function add_breadcrumb(parent_qb, md_path)
     end)
 end
 
-local function add_sidebar(nav_tag, current_md_path)
+local function add_search_form(nav_tag, prefill)
+    nav_tag:tag("form", function(form)
+        form:attr("class",  "sidebar-search")
+        form:attr("action", "/search")
+        form:attr("method", "get")
+        form:tag("input", function(i)
+            i:attr("type",        "search")
+            i:attr("name",        "q")
+            i:attr("placeholder", "Search")
+
+            if prefill and prefill ~= "" then
+                i:attr("value", prefill)
+            end
+        end)
+    end)
+end
+
+local function add_random_link(nav_tag)
+    nav_tag:tag("a", function(a)
+        a:attr("class", "sidebar-random")
+        a:attr("href",  "/random")
+        a:text("Random page")
+    end)
+end
+
+local function add_sidebar(nav_tag, current_md_path, search_query)
     nav_tag:tag("h1", function(h1)
         h1:tag("a", function(a)
             a:attr("href", "/")
@@ -656,11 +779,14 @@ local function add_sidebar(nav_tag, current_md_path)
             a:text("Home")
         end)
     end)
+
+    add_search_form(nav_tag, search_query)
+    add_random_link(nav_tag)
     nav_tag:raw(nav.build(current_md_path))
 end
 
 --[[ {
-    "in":  {"ctx": "table { md_path = string (fs path), title = string? }"},
+    "in":  {"ctx": "table { md_path = string (fs path), title = string?, client_ip = string? — used to gate the per-section Edit chip }"},
     "out": "string (full HTML page, ready to send over HTTP)"
 } ]]
 function M.render_request(ctx)
@@ -677,10 +803,10 @@ function M.render_request(ctx)
     body = rewrite_links(body)
     body = mark_external_links(body)
     body = highlight_json_blocks(body)
-    body = highlight_charlie_blocks(body)
+    body = highlight_caspian_blocks(body)
     body = inject_issues_panel(body, ctx.md_path)
     body = transform_toc(body)
-    body = inject_issue_links(body, ctx.md_path)
+    body = inject_issue_links(body, ctx.md_path, ctx.client_ip)
 
     local html = quick_builder.new("html")
     html:attr("lang", "en")
@@ -705,7 +831,53 @@ function M.render_request(ctx)
             f:attr("hidden", "")
             f:text("")
         end)
+
+        -- Separate hidden target for Edit-suggestion forms so the two
+        -- submit flows don't share state or step on each other's iframe
+        -- load events.
+        b:tag("iframe", function(f)
+            f:attr("name",   "edit-target")
+            f:attr("class",  "quick-add-iframe")
+            f:attr("hidden", "")
+            f:text("")
+        end)
         b:tag("hr", function(_) end)
+        b:tag("span", function(s)
+            s:attr("class", "about")
+            s:text("© 2026 Puck.uno")
+        end)
+    end)
+
+    return "<!DOCTYPE html>\n" .. html:render()
+end
+
+--[[ {
+    "in":  {"ctx": "table { title = string?, body_html = string, query = string? }"},
+    "out": "string (full HTML page, ready to send over HTTP)",
+    "note": "Same chrome as render_request but the content body is supplied verbatim (not derived from a markdown source). Used by orlando.search."
+} ]]
+function M.render_results_page(ctx)
+    local html = quick_builder.new("html")
+    html:attr("lang", "en")
+    add_head(html, ctx.title)
+
+    html:tag("body", function(b)
+        b:tag("div", function(layout)
+            layout:attr("class", "layout")
+
+            layout:tag("nav", function(n)
+                n:attr("class", "sidebar")
+                add_sidebar(n, nil, ctx.query)
+            end)
+
+            layout:tag("main", function(m)
+                m:attr("class", "content")
+                m:raw(ctx.body_html)
+            end)
+        end)
+
+        b:tag("hr", function(_) end)
+
         b:tag("span", function(s)
             s:attr("class", "about")
             s:text("© 2026 Puck.uno")

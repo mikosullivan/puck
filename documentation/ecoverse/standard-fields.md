@@ -76,7 +76,7 @@ Other fields may be added as needed. The structure is intentionally open.
 - Individual methods and properties within a class
 - Records
 - Q0 queries
-- Charlie functions
+- Caspian functions
 - Mikobase configurations
 - Firewall rules
 
@@ -89,7 +89,7 @@ There is no object too small to carry `vibecode`.
 
 `vibecode` is especially valuable on remote classes. When an AI is asked to instantiate
 a class from `borg.com/person` and do something with it, it downloads the class definition
-— which includes the method stubs, local Charlie, and all `vibecode`. The AI gets
+— which includes the method stubs, local Caspian, and all `vibecode`. The AI gets
 everything it needs to use the class correctly in a single download, with no external
 documentation required.
 
@@ -100,10 +100,10 @@ good `vibecode`.
 
 ---
 
-<a id="in-charlie-document-and-vibecode"></a>
-## In Charlie: `%document` and `%vibecode`
+<a id="in-caspian-documentation-and-vibecode"></a>
+## In Caspian: `%documentation` and `%vibecode`
 
-In addition to the `%document`, feature, Charlie also has a `%vibecode`
+In addition to the `%documentation` feature, Caspian also has a `%vibecode`
 method:
 
 

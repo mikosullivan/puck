@@ -59,13 +59,13 @@ focused:
 ~~~json
 {"vibecode": {
 	"section": "single_process_vs_cross_fork",
-	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are Charlie features (cross-fork requires the opt-in forking feature)",
-	"key_concepts": ["Charlie", "local_object_store", "fork_sharing", "opt_in_forking"]
+	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are Caspian features (cross-fork requires the opt-in forking feature)",
+	"key_concepts": ["Caspian", "local_object_store", "fork_sharing", "opt_in_forking"]
 }}
 ~~~
 
-Mikobases are a Charlie feature — a mikobase is a useful local object store on its own.
-Sharing a mikobase between forked processes uses the opt-in **forking** feature of Charlie
+Mikobases are a Caspian feature — a mikobase is a useful local object store on its own.
+Sharing a mikobase between forked processes uses the opt-in **forking** feature of Caspian
 (engine-granted via `%forks` / `%tmp`; off by default). See
 [ideas/plusplus/threads.md](../ideas/plusplus/threads.md) for the forking design.
 
@@ -136,7 +136,7 @@ no separate in-memory query engine needed. The worldlet engine is a third backen
 that implements Q0 against the worldlet's JSON structure directly (no SQLite
 involvement).
 
-Charlie code interacts only with the `puck.uno/mikobase` interface and is unaware of the backend.
+Caspian code interacts only with the `puck.uno/mikobase` interface and is unaware of the backend.
 
 ---
 
@@ -196,16 +196,16 @@ For fields whose `class` is already a UNS class name (e.g., `"class": "foo.com/w
 
 `puck.uno/mikobase/http` wraps any mikobase and exposes it over HTTP. The mikobase's locking model
 handles concurrent connections — the HTTP server is a transport layer only. Connection-level
-concurrency lives in the C layer, not in Charlie.
+concurrency lives in the C layer, not in Caspian.
 
 Serving a mikobase over HTTP doesn't require the forking feature. A single-process script
-can serve a mikobase, and other Charlie processes — including forks from the opt-in
+can serve a mikobase, and other Caspian processes — including forks from the opt-in
 forking feature — can connect to it as a shared mikobase.
 
 <a id="unix-domain-sockets-preferred"></a>
 ### Unix Domain Sockets (preferred)
 
-For local communication, Charlie steers developers toward Unix domain sockets. They use a
+For local communication, Caspian steers developers toward Unix domain sockets. They use a
 file path instead of a port number, bypass the network stack entirely, and access is
 controlled by filesystem permissions — faster and more secure than TCP for local use.
 
@@ -695,7 +695,7 @@ A worldlet JSON file plays two roles:
   step. Load is JSON parse, save is JSON write. Suitable for very
   short-lived workloads where import/export overhead would dominate.
 
-Both engines speak the same `puck.uno/mikobase` interface; Charlie code
+Both engines speak the same `puck.uno/mikobase` interface; Caspian code
 that doesn't care which backend it's on works identically against either.
 
 <a id="contents-1"></a>
@@ -705,7 +705,7 @@ A worldlet may include:
 
 - **Class definitions** — the schema, including fields, joins, and constraints
 - **Records** — seed objects or full data exports
-- **Charlie** — methods and behavior attached to those classes
+- **Caspian** — methods and behavior attached to those classes
 - **Hooks** — `before_save` / `after_save` listeners
 - **Capabilities** — a manifest declaring what the worldlet requires to run
 - **Scheduled jobs** — time-based tasks (not yet designed)
@@ -732,7 +732,7 @@ requires:
     - create objects: PricePoint
 ```
 
-This connects directly to Charlie's security model. The capabilities
+This connects directly to Caspian's security model. The capabilities
 declaration is essentially an upfront jail configuration — the worldlet runs
 with only the permissions it declared. Undeclared capabilities are
 unavailable.
@@ -749,7 +749,7 @@ Recipient imports worldlet into their running mikobase
         ↓
 Capabilities reviewed and approved
         ↓
-Classes, records, and Charlie installed
+Classes, records, and Caspian installed
         ↓
 Worldlet runs inside recipient's environment
 ```
@@ -799,7 +799,7 @@ schema.
 <a id="what-is-not-yet-designed"></a>
 ### What is not yet designed
 
-- The full worldlet file format (depends on CharlieJSON format design)
+- The full worldlet file format (depends on CaspianJ format design)
 - The capabilities manifest syntax and enforcement mechanism
 - Scheduled jobs
 - External connectors

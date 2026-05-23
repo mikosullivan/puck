@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "hash-delete-marker",
-	"role": "speculative design for a true-delete marker in Charlie hashes so cascading-config systems like meta-hash can express remove-this-key-from-the-cascade rather than just shadow-with-null",
+	"role": "speculative design for a true-delete marker in Caspian hashes so cascading-config systems like meta-hash can express remove-this-key-from-the-cascade rather than just shadow-with-null",
 	"key_concepts": ["delete_marker", "meta_hash_cascade", "null_flavor_candidate",
 		"has_key_semantics"],
 	"status": "brainstorm"
@@ -13,7 +13,7 @@
 Speculative — for cascading-config systems (meta-hash being the
 first instance) where a deeper layer needs to **truly remove**
 an inherited key, not just shadow it with null. JSON has no
-delete marker; Charlie hashes are ours and could.
+delete marker; Caspian hashes are ours and could.
 
 <a id="why-this-matters"></a>
 ## Why this matters
@@ -99,5 +99,5 @@ null-as-typed-thing model.
 
 Not in v1. Filed for reconsideration when either meta-hash
 genuinely needs it (more than `%chain`'s security barrier, which
-can build a fresh chain instead — see [meta-hash.md](../charlie/built-in-classes/meta-hash.md))
+can build a fresh chain instead — see [meta-hash.md](../caspian/built-in-classes/meta-hash.md))
 or another cascading-config use case surfaces.

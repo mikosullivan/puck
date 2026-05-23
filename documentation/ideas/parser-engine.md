@@ -19,7 +19,7 @@ In v1, each parser is hand-rolled:
 - CSS selector parser: ~200–400 lines.
 - HTML parser (Uma): schema-driven, ~1500 lines, but schemas
   (like html5.json) are easy enough for developers to write.
-- Charlie itself: in Lua bootstrap, not part of the standard
+- Caspian itself: in Lua bootstrap, not part of the standard
   library.
 
 The hand-rolled approach keeps each parser purpose-built and
@@ -48,13 +48,13 @@ in the framework**, with the prospect of more.
 - Pros: don't write a parsing engine ourselves; well-understood
   PEG semantics; fast.
 - Cons: native dependency (more binary surface); LPeg is C, so
-  grammar errors might surface awkwardly across the Charlie/Lua
+  grammar errors might surface awkwardly across the Caspian/Lua
   boundary.
 
-<a id="roll-our-own-peg-or-parser-combinator-engine-in-charlie"></a>
-### Roll our own PEG (or parser-combinator) engine in Charlie
+<a id="roll-our-own-peg-or-parser-combinator-engine-in-caspian"></a>
+### Roll our own PEG (or parser-combinator) engine in Caspian
 
-- ~500–1500 lines of Charlie for a usable engine.
+- ~500–1500 lines of Caspian for a usable engine.
 - Pros: stays in our ecosystem; no native dependency; we
   control the semantics (good error messages, debug hooks).
 - Cons: a substantial chunk of code to write and maintain.

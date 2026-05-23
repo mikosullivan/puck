@@ -3,13 +3,13 @@
 ~~~json
 {"vibecode": {
 	"doc": "uma-parser",
-	"role": "in-progress spec for Uma's pure-Charlie HTML parser; accepts well-formed-ish HTML to avoid bundling a C parser, rejects malformed input rather than attempting browser-style recovery",
-	"key_concepts": ["pure_charlie_parser", "well_formed_ish_input", "void_element_handling",
+	"role": "in-progress spec for Uma's pure-Caspian HTML parser; accepts well-formed-ish HTML to avoid bundling a C parser, rejects malformed input rather than attempting browser-style recovery",
+	"key_concepts": ["pure_caspian_parser", "well_formed_ish_input", "void_element_handling",
 		"opaque_script_style", "no_browser_recovery"]
 }}
 ~~~
 
-**Status:** design in progress. This is the pure-Charlie HTML
+**Status:** design in progress. This is the pure-Caspian HTML
 parser that Uma will use to read existing HTML documents into a
 tree it can manipulate. Goal: avoid bundling a C HTML parser
 (gumbo or similar) at the cost of accepting "well-formed-ish"
@@ -42,7 +42,7 @@ this parser feeds.
   parenting, quirks-mode handling, foreign-element switching for
   SVG/MathML, encoding sniffing).
 - Recovering from messy real-world HTML. Use a Lua HTML library
-  outside Charlie for that.
+  outside Caspian for that.
 - Streaming. Whole-document parsing only.
 
 The trade is: developers feeding Uma their own templates or
@@ -330,13 +330,13 @@ case.
 
 Rough budget:
 
-- Tokenizer: a few hundred lines of Charlie, single linear pass.
+- Tokenizer: a few hundred lines of Caspian, single linear pass.
   Probably 5–10x slower than gumbo, which is fine for
   server-side template parsing where documents are small and
   parsed once.
 - Tree builder: a few hundred more lines, also linear in token
   count.
-- Total: **~1500–2000 lines of Charlie**, ~30–50k of source.
+- Total: **~1500–2000 lines of Caspian**, ~30–50k of source.
 
 Not the fastest HTML parser ever written. Suitable for
 "developer-controlled HTML" use cases (server-side templates,
@@ -348,8 +348,8 @@ for parsing megabytes of scraped wild-world HTML.
 <a id="open-questions"></a>
 ## Open questions
 
-- **Tokenizer implementation language.** Pure Charlie? Lua-native
-  helper for the inner loop? Pure Charlie is simpler to
+- **Tokenizer implementation language.** Pure Caspian? Lua-native
+  helper for the inner loop? Pure Caspian is simpler to
   maintain; Lua-native is faster.
 - **Boolean attributes.** `<input disabled>` — does `attrs['disabled']`
   hold `true`, the empty string, or the attribute name?
@@ -379,7 +379,7 @@ correct on real-world HTML. Pros: zero maintenance burden,
 handles anything. Cons: significant binary-size hit; outside our
 core budget; uses C; depends on Google's release cadence.
 
-If we hand-roll: ~30–50k of Charlie source, less correct on
+If we hand-roll: ~30–50k of Caspian source, less correct on
 weird HTML, but tractable to maintain and entirely inside our
 own ecosystem. Pros: no native dep, fits the budget, can evolve
 with our schema. Cons: never matches a browser exactly; rejects

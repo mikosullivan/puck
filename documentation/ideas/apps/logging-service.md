@@ -11,7 +11,7 @@
 ~~~
 
 **Status:** future product, exploratory. Built on
-[Jasmine](../../charlie/packages/jasmine/jasmine.md).
+[Jasmine](../../caspian/packages/jasmine/jasmine.md).
 
 The general service first — basic and useful. A web-logging
 customization (Robinson-shaped) layers on later in a separate doc.

@@ -4,10 +4,10 @@
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
-    "canonical_location": "ideas/ until firm enough to promote to documentation/charlie/touchstone/",
+    "canonical_location": "ideas/ until firm enough to promote to documentation/caspian/touchstone/",
     "what_is_known": "dogberry_is_http_middleware_peer_of_sammy_and_robinson_but_a_different_kind_of_middleware_entirely_from_robinson",
     "what_is_not": ["not_robinson", "not_role_based_access_control"],
-    "preexisting_file": "documentation/charlie/touchstone/dogberry.md_is_stale_per_project_memory_pending_review_or_replacement_by_this_doc",
+    "preexisting_file": "documentation/caspian/touchstone/dogberry.md_is_stale_per_project_memory_pending_review_or_replacement_by_this_doc",
     "co_authoring": "claude_capturing_miko_brainstorm_in_realtime"
 }}
 ~~~
@@ -57,24 +57,24 @@ the client.
 (Image transformation is one example. More categories of transformation
 TBD as the brainstorm develops.)
 
-<a id="generalization-fetch-and-execute-charlie"></a>
-### Generalization: fetch and execute Charlie
+<a id="generalization-fetch-and-execute-caspian"></a>
+### Generalization: fetch and execute Caspian
 
 The transformation idea extends beyond images. Shasta can also fetch
-**Charlie source** from lune, execute it, and return the result to the
+**Caspian source** from lune, execute it, and return the result to the
 client. The pitch to developers:
 
-> *Host your own Charlie on your own server. Point Dogberry at it.
+> *Host your own Caspian on your own server. Point Dogberry at it.
 > Dogberry runs it and serves the results.*
 
 In other words, lune supplies the code (the developer's own infrastructure
 keeps custody of the source), and shasta supplies the compute (the
-Charlie runtime that actually executes it). Client traffic hits shasta,
+Caspian runtime that actually executes it). Client traffic hits shasta,
 which fetches from lune on demand, runs the code, and responds.
 
 This is the canonical use case for the engine's "run untrusted code with
 a restricted surface" capability that the role model has been building
-toward (see [roles.md](../charlie/roles.md) and the V0.0X CLI permission
+toward (see [roles.md](../caspian/roles.md) and the V0.0X CLI permission
 model in [development/development.md](../development/development.md)).
 Each fetched script runs with whatever capability set the shasta operator
 grants it; the operator gets to decide what shasta exposes to lune's

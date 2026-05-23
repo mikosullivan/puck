@@ -247,7 +247,7 @@ mode rules.
 {"vibecode": {
 	"section": "classes",
 	"format": "dict_keyed_by_uns_class_name",
-	"methods_as": "fields_with_class_function_and_charlie_key",
+	"methods_as": "fields_with_class_function_and_caspian_key",
 	"see": "class-definition.md"
 }}
 ~~~
@@ -255,8 +255,8 @@ mode rules.
 The schema, using the standard class definition format. Each key is a UNS class name; each
 value is the class definition. All classes defined here are record classes.
 
-Methods are defined as fields with `"class": "function"` and a `"charlie"` key containing
-Charlie source. Multiline strings use literal newlines; leading indentation is stripped by
+Methods are defined as fields with `"class": "function"` and a `"caspian"` key containing
+Caspian source. Multiline strings use literal newlines; leading indentation is stripped by
 the importer.
 
 ```json
@@ -269,7 +269,7 @@ the importer.
 
             "greet": {
                 "class": "function",
-                "charlie": "
+                "caspian": "
                     function &greet
                         'Hello, I am ' + @name
                     end
@@ -288,7 +288,7 @@ the importer.
 
             "summary": {
                 "class": "function",
-                "charlie": "
+                "caspian": "
                     function &summary
                         @rank + ' ' + @name + ' (' + @serial + ')'
                     end
@@ -297,7 +297,7 @@ the importer.
 
             "promote": {
                 "class": "function",
-                "charlie": "
+                "caspian": "
                     function &promote(new_rank:)
                         @rank = new_rank
                         self
@@ -442,8 +442,8 @@ avoidance, not security. Any unique string is accepted today; the policy
 may tighten later. See
 [mikobase.md § Record identity](../mikobase.md#record-identity).
 
-Charlie code generating record IDs should use
-[`%utils.random.uuid`](../../charlie/utils/utils.md#utilsrandomuuid), which
+Caspian code generating record IDs should use
+[`%utils.random.uuid`](../../caspian/utils/utils.md#utilsrandomuuid), which
 returns a crypto-strong UUID v4 sourced from the OS CSPRNG via libsodium.
 
 <a id="conflict-policy"></a>
@@ -571,7 +571,7 @@ is omitted too — `puck.uno/record` is a built-in class so no schema is needed.
 
                 "greet": {
                     "class": "function",
-                    "charlie": "
+                    "caspian": "
                         function &greet
                             'Hello, I am ' + @name
                         end
@@ -590,7 +590,7 @@ is omitted too — `puck.uno/record` is a built-in class so no schema is needed.
 
                 "summary": {
                     "class": "function",
-                    "charlie": "
+                    "caspian": "
                         function &summary
                             @rank + ' ' + @name + ' (' + @serial + ')'
                         end
@@ -599,7 +599,7 @@ is omitted too — `puck.uno/record` is a built-in class so no schema is needed.
 
                 "promote": {
                     "class": "function",
-                    "charlie": "
+                    "caspian": "
                         function &promote(new_rank:)
                             @rank = new_rank
                             self

@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "uma-history-changelog",
-	"role": "historical changelog from the prior Ruby Uma project, imported under ideas/uma/history/ for reference while the Charlie Uma spec is being developed",
+	"role": "historical changelog from the prior Ruby Uma project, imported under ideas/uma/history/ for reference while the Caspian Uma spec is being developed",
 	"key_concepts": ["ruby_uma_history", "resolved_entries", "canon_json_changes"],
 	"status": "historical"
 }}

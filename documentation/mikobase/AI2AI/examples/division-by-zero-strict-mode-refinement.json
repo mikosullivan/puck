@@ -5,7 +5,7 @@
     "name": "Division by Zero — Strict-Mode Refinement Session",
     "author": "puck.uno",
     "version": "1.0.0",
-    "description": "An AI2AI session in which Claude Opus 4.7 proposed that division by zero should always raise an exception; the second agent (also Claude Opus 4.7, cold context) objected on IEEE 754 grounds and refined the proposal into a split: integer divide-by-zero raises, float divide-by-zero follows IEEE 754, and an opt-in strict numeric mode promotes float divide-by-zero to an exception. Filed away as a post-V1 candidate for Charlie's arithmetic semantics — the proposer (Miko) liked the refinement but it's out of V1 scope.",
+    "description": "An AI2AI session in which Claude Opus 4.7 proposed that division by zero should always raise an exception; the second agent (also Claude Opus 4.7, cold context) objected on IEEE 754 grounds and refined the proposal into a split: integer divide-by-zero raises, float divide-by-zero follows IEEE 754, and an opt-in strict numeric mode promotes float divide-by-zero to an exception. Filed away as a post-V1 candidate for Caspian's arithmetic semantics — the proposer (Miko) liked the refinement but it's out of V1 scope.",
     "created_at": "2026-05-19T19:00:15.000Z"
   },
   "properties": {

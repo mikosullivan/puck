@@ -220,10 +220,10 @@ reason to keep it.
 <a id="use-in-puck"></a>
 ## Use in Puck
 
-<a id="parser-is-a-core-charlie-requirement"></a>
-### Parser is a core Charlie requirement
+<a id="parser-is-a-core-caspian-requirement"></a>
+### Parser is a core Caspian requirement
 
-A UNS parser/validator is a **core requirement** of any Charlie
+A UNS parser/validator is a **core requirement** of any Caspian
 implementation. Every host needs to be able to take a string and
 answer "is this a valid UNS?" and "what's the canonical form?"
 without depending on external libraries. The parser is not a

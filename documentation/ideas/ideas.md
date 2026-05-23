@@ -15,6 +15,6 @@ Some will eventually be folded into the canonical docs; some will be
 deferred until a specific need surfaces; some will be set aside permanently.
 
 When something graduates to canonical, it moves to its real home (typically
-under `documentation/charlie/`, `documentation/mikobase/`,
+under `documentation/caspian/`, `documentation/mikobase/`,
 `documentation/puck/`, etc.) and the original page here either points at
 the new location or is deleted.

@@ -1,0 +1,61 @@
+{
+  "directory": {
+    "list": false
+  },
+  
+  "extensions": {
+    "html": {
+      "static": true,
+      "mime": "text/html"
+    },
+
+    "css": {
+      "static": true,
+      "mime": "text/css"
+    },
+
+    "js": {
+      "static": true,
+      "mime": "text/javascript"
+    },
+
+    "json": {
+      "static": true,
+      "mime": "application/json"
+    },
+
+    "png": {
+      "static": true,
+      "mime": "image/png"
+    },
+
+    "jpg": {
+      "static": true,
+      "mime": "image/jpeg"
+    },
+
+    "jpeg": {
+      "static": true,
+      "mime": "image/jpeg"
+    },
+
+    "svg": {
+      "static": true,
+      "mime": "image/svg+xml"
+    },
+
+    "ico": {
+      "static": true,
+      "mime": "image/x-icon"
+    },
+
+    "woff2": {
+      "static": true,
+      "mime": "font/woff2"
+    },
+
+    "caspian": {
+      "static": false
+    }
+  }
+}

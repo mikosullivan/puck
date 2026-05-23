@@ -22,7 +22,7 @@
 > **Update — the version window has since moved off the puck object.**
 > The current design puts the cutoff on `%chain` via a block-scoped
 > `%chain.version_timespan(upper:, lower:) do ... end` form (see
-> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain)).
+> [caspian/versioning.md § The Cutoff in %chain](../caspian/versioning.md#the-cutoff-in-chain)).
 > The "Version Window" and "restrict do ... end" sections below are
 > preserved as the earlier design.
 
@@ -46,7 +46,7 @@ system-method handle through which user code gets a puck object back.
 **`%puck` is scoped via `%chain`.** What it returns depends on
 context. The current puck lives in `%chain` — `%puck` reads from
 there. Because `%chain` is wiped at role boundaries (see
-[roles.md](../charlie/roles.md)), the current puck does not propagate across
+[roles.md](../caspian/roles.md)), the current puck does not propagate across
 boundaries; each role gets its own world.
 
 - Outside any `restrict` block, in the outer role, `%puck` returns
@@ -80,7 +80,7 @@ block.
 
 > **Superseded.** Replaced by `%chain.version_timespan(upper:, lower:)
 > do ... end` — see
-> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
+> [caspian/versioning.md § The Cutoff in %chain](../caspian/versioning.md#the-cutoff-in-chain).
 > The block-scoped narrowing pattern survives; the verb and the
 > property location moved from the puck object to `%chain`.
 
@@ -120,7 +120,7 @@ Same shape as the other scoped-block primitives in the framework
 > object. Current design puts the cutoff on `%chain` as a
 > block-scoped `%chain.version_timespan(upper:, lower:) do ... end`
 > form — see
-> [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
+> [caspian/versioning.md § The Cutoff in %chain](../caspian/versioning.md#the-cutoff-in-chain).
 > The technical observations about lookup mechanics (multi-getter
 > walking under bounds, tie-breaking, etc.) still apply; only the
 > property location and verbs have changed.
@@ -195,7 +195,7 @@ give them a network faucet in the first place. Use jails to
 restrict what passes across role boundaries.
 
 Consistent with the broader "developer decides what to expose by
-what they pass" principle (see [roles.md](../charlie/roles.md) — boundary
+what they pass" principle (see [roles.md](../caspian/roles.md) — boundary
 crossings do not gate method access; jails are the explicit
 narrowing mechanism).
 
@@ -264,7 +264,7 @@ one for the latest version of the UNS that falls within the puck's
 across all getters' responses. If no getter has any version of the
 UNS within the window, lookup returns a null with the flavor
 `puck.uno/null/flavor/not_found` (per the HTTP-style null-flavor
-scheme in [nulls.md](../charlie/built-in-classes/nulls.md)). Callers
+scheme in [nulls.md](../caspian/built-in-classes/nulls.md)). Callers
 can inspect `flavor.code` to tell the difference between "lookup
 didn't match" and "the registered value is intentionally null."
 
@@ -305,7 +305,7 @@ differently-tagged objects, because they're genuinely different
 logical sources.
 
 **Faucets inside a getter share the getter's role.** This is the key
-property that resolves the download-vs-cache problem. Charlie caches
+property that resolves the download-vs-cache problem. Caspian caches
 remote objects on demand — first-time fetches go through download,
 subsequent fetches through cache. Both are faucets inside the same
 getter, both produce objects with the getter's role. The same UNS
@@ -385,7 +385,7 @@ layer their own checks; this is one such layering.
 
 Examples:
 
-- **Puck blockchain** ([blockchain.md](../charlie/blockchain.md)) holds
+- **Puck blockchain** ([blockchain.md](../caspian/blockchain.md)) holds
   signed attestations from UNS authorities. Cached objects are
   verified against blockchain entries before being trusted.
 - Traditional public-key signing infrastructures (the source signs
@@ -415,7 +415,7 @@ configuration determines everything about provenance policy:
 Different engines hand in different pucks. A strict, security-
 sensitive deployment hands user code a puck that requires signatures
 and blockchain attestations. A relaxed developer playground hands
-user code a puck that just trusts the cache. The Charlie code is the
+user code a puck that just trusts the cache. The Caspian code is the
 same; the puck differs.
 
 User code typically doesn't reason about which puck it got. It calls
@@ -434,13 +434,13 @@ the result and the checks.
   above.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
-  [roles.md](../charlie/roles.md).)
+  [roles.md](../caspian/roles.md).)
 - **Where the version cutoff lives.** Resolved twice: first onto the
   puck object (see "Version Window" section above), then off it again
   onto `%chain` as a block-scoped `version_timespan` — see
-  [charlie/versioning.md § The Cutoff in %chain](../charlie/versioning.md#the-cutoff-in-chain).
+  [caspian/versioning.md § The Cutoff in %chain](../caspian/versioning.md#the-cutoff-in-chain).
 - **Granularity of puck-source roles** — one role per **getter**
   inside the puck. Faucets *inside* a getter (download + cache)
   share the getter's role to keep cache state from changing the
   tag. Aligns with the broader granularity question in
-  [roles.md](../charlie/roles.md).
+  [roles.md](../caspian/roles.md).

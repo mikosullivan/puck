@@ -24,7 +24,7 @@ The brainstorm that follows is preserved for that future revisit.
 
 ## The idea
 
-```charlie
+```caspian
 $n = %puck['puck.uno/hex'].new(255)
 $n.to_string    # 'ff'
 $n + 1          # 256 (arithmetic stays numeric)

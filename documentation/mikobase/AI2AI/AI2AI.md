@@ -27,7 +27,7 @@
 		merge new records.",
 	"namespace": "puck.uno/ai/",
 	"implementation_independence": "No Puck-ecoverse knowledge required.
-		No Charlie engine required. Any language that can read/write JSON
+		No Caspian engine required. Any language that can read/write JSON
 		can implement an AI2AI agent.",
 	"sections": {
 		"overview": "What AI2AI is; how a session runs end-to-end",

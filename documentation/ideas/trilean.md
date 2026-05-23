@@ -1,19 +1,19 @@
 # Trilean (idea — not in core)
 
-> **Status**: 2026-05-17 — moved from `documentation/charlie/built-in-classes/`
-> to `documentation/ideas/`. Charlie's core primitive for two-valued logic is
+> **Status**: 2026-05-17 — moved from `documentation/caspian/built-in-classes/`
+> to `documentation/ideas/`. Caspian's core primitive for two-valued logic is
 > `boolean`, not `trilean`. Three-valued logic is an idea preserved here for
 > possible future revisit but is not part of the language. The text below
 > describes what trilean *would* be if introduced.
 
 ---
 
-`puck.uno/trilean` is the home for **three-valued logic** in Charlie. It provides
+`puck.uno/trilean` is the home for **three-valued logic** in Caspian. It provides
 the standard operators (`and`, `or`, `not`, `nand`, `nor`, `xor`, `xnor`,
 `implies`, `eq`) under a model where any operand can be `null` ("unknown") in
 addition to `true` and `false`.
 
-Default Charlie operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
+Default Caspian operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
 semantics — null is treated as falsey, just like in most languages. The trilean
 class is **opt-in**: code that wants three-valued logic explicitly calls into it.
 
@@ -25,14 +25,14 @@ class is **opt-in**: code that wants three-valued logic explicitly calls into it
 	"section": "status",
 	"priority": "low",
 	"target_release": "first_production",
-	"implementation": "pure_charlie_in_stdlib"
+	"implementation": "pure_caspian_in_stdlib"
 }}
 ~~~
 
 Low priority but slated for the first production release. Will be implemented in
-**pure Charlie** as part of the standard library — partly because three-valued
+**pure Caspian** as part of the standard library — partly because three-valued
 logic is genuinely useful, partly because it makes a good real-world test case for
-the language runtime. Implementation will live at `code/charlie/stdlib/trilean.charlie`.
+the language runtime. Implementation will live at `code/caspian/stdlib/trilean.casp`.
 
 ---
 
@@ -53,7 +53,7 @@ The three values are `true`, `false`, and `null`. `null` represents "could be tr
 could be false, we don't know."
 
 Trilean operators classify each operand by reading `.object.bool` on it (see
-[object.md](../charlie/built-in-classes/object.md)). The result is one of three categories: `true` for any
+[object.md](../caspian/built-in-classes/object.md)). The result is one of three categories: `true` for any
 truthy value (the boolean `true`, the number `1`, a non-empty string, etc.),
 `false` for the boolean `false` value (and other strictly-falsy values like
 `0`, empty strings, etc.), or `null` for null values.
@@ -209,7 +209,7 @@ above for the truth table and semantics.
 
 The alias exists because "eq" reads more naturally at call sites where the intent
 is "are these the same trilean value." Note this is **not** the place for
-arbitrary value equality — use Charlie's regular `==` for that, with its standard
+arbitrary value equality — use Caspian's regular `==` for that, with its standard
 truthy-falsy semantics.
 
 The SQL trap applies: `eq(null, null)` is `null`, not `true`. To check "is this
@@ -283,7 +283,7 @@ $tri.eq($maybe_null_value) do
 end
 ```
 
-The block-form syntax is consistent with how other Charlie constructs accept
+The block-form syntax is consistent with how other Caspian constructs accept
 deferred work (`%utils.timeout`, `%forks.run`, etc.). The block runs in the caller's
 chain frame, so `%chain` access and exception propagation behave normally.
 
@@ -295,7 +295,7 @@ chain frame, so `%chain` access and exception propagation behave normally.
 A trilean operator always returns one of three strict values: `true`, `false`, or
 `null`. Branching on the result is straightforward — use direct comparisons or
 the universal `.object.null?` / `.object.defined?` helpers (which live on every
-value in Charlie, not just trileans):
+value in Caspian, not just trileans):
 
 ```
 $result = $tri.and($a, $b)
@@ -321,13 +321,13 @@ else
 end
 ```
 
-The second form takes advantage of Charlie's default truthy semantics, where
+The second form takes advantage of Caspian's default truthy semantics, where
 null is treated as falsy in an `if`. After the `null?` check has handled the
 unknown case, ordinary `if $result` is safe.
 
 The `.object.null?`, `.object.defined?`, `.object.truthy?`, and `.object.bool`
 methods are universal — they are not specific to trilean. They are general-purpose
-introspection available on any value. See [object.md](../charlie/built-in-classes/object.md) for the full
+introspection available on any value. See [object.md](../caspian/built-in-classes/object.md) for the full
 set.
 
 ---
@@ -338,7 +338,7 @@ set.
 ~~~json
 {"vibecode": {
 	"section": "usage",
-	"role": "shows typical Charlie code calling into the trilean class"
+	"role": "shows typical Caspian code calling into the trilean class"
 }}
 ~~~
 
@@ -371,35 +371,35 @@ about three-valued logic at all.
 
 ---
 
-<a id="why-pure-charlie"></a>
-## Why Pure Charlie
+<a id="why-pure-caspian"></a>
+## Why Pure Caspian
 
 ~~~json
 {"vibecode": {
-	"section": "why_pure_charlie",
-	"role": "explains the choice to implement trilean in stdlib Charlie rather than the runtime"
+	"section": "why_pure_caspian",
+	"role": "explains the choice to implement trilean in stdlib Caspian rather than the runtime"
 }}
 ~~~
 
 Two reasons:
 
 - **The operations don't need engine-level support.** All trilean methods reduce
-  to ordinary boolean operations and null checks — exactly the operations Charlie
-  already has. Implementing in Charlie keeps the runtime smaller.
-- **It's a useful real-world test of the language.** A short pure-Charlie module
+  to ordinary boolean operations and null checks — exactly the operations Caspian
+  already has. Implementing in Caspian keeps the runtime smaller.
+- **It's a useful real-world test of the language.** A short pure-Caspian module
   with a clear specification, plenty of edge cases (the truth tables), and
   well-defined behavior makes a good fixture for runtime testing. If the trilean
   module passes its own truth-table tests, that's evidence the runtime handles
   conditional logic, function definition, and null-comparison correctly.
 
-The implementation lives at [code/charlie/stdlib/trilean.charlie](https://github.com/mikosullivan/puck/blob/main/code/charlie/stdlib/trilean.charlie).
+The implementation lives at [code/caspian/stdlib/trilean.casp](https://github.com/mikosullivan/puck/blob/main/code/caspian/stdlib/trilean.casp).
 
 ---
 
 <a id="notes"></a>
 ## Notes
 
-- **Operators stay strict-boolean.** Default Charlie `&&`, `||`, `not`, `==`
+- **Operators stay strict-boolean.** Default Caspian `&&`, `||`, `not`, `==`
   treat null as falsey. Trilean is purely a library, not an operator overload.
 - **Operators classify by truthiness, not strict class.** `$tri.and(1, true)`
   returns `true`; `$tri.or(0, "hello")` returns `true`. Any truthy non-null

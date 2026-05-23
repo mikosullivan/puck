@@ -1,14 +1,14 @@
 # Orlando — lessons learned
 
-*Thoughts and experiences from building Orlando, with an eye to what might transfer to Lucy or Charlie*
+*Thoughts and experiences from building Orlando, with an eye to what might transfer to Lucy or Caspian*
 
 ~~~json
 {"vibecode": {
 	"doc": "orlando-lessons",
-	"role": "running log of design and implementation insights from Orlando (the Lua sandbox); each lesson notes what we learned and whether it might apply to Lucy (the Lua reference implementation of Charlie) or to Charlie itself",
+	"role": "running log of design and implementation insights from Orlando (the Lua sandbox); each lesson notes what we learned and whether it might apply to Lucy (the Lua reference implementation of Caspian) or to Caspian itself",
 	"status": "ongoing; add lessons as they arise",
 	"key_concepts": ["sandbox_learnings", "lua_experience",
-		"transferable_patterns", "lucy_candidates", "charlie_candidates"]
+		"transferable_patterns", "lucy_candidates", "caspian_candidates"]
 }}
 ~~~
 
@@ -19,7 +19,7 @@ Orlando is the Lua sandbox (see
 [orlando.md](../orlando.md)). Things we figure out here are not
 automatically requirements for the wider project — but some of them
 will turn out to be useful primitives for **Lucy** (the Lua
-reference implementation of Charlie) or for **Charlie** itself.
+reference implementation of Caspian) or for **Caspian** itself.
 
 This doc captures those lessons as we run into them, so the
 information doesn't evaporate. Each entry follows a small shape:
@@ -55,14 +55,14 @@ not just HTML.
 **Possible application elsewhere.**
 
 - **Lucy** may want a similarly lightweight builder for
-  CharlieJSON output, AST nodes, or query result construction.
+  CaspianJ output, AST nodes, or query result construction.
   Wherever a tree of similar-shaped nodes shows up, the
   one-class-recursive-render pattern is worth considering before
   reaching for something more elaborate.
-- **Charlie** itself may want this at the language level —
-  Charlie's class system already supports the pattern; what's
+- **Caspian** itself may want this at the language level —
+  Caspian's class system already supports the pattern; what's
   novel is the deliberate refusal of node-type hierarchies. If
-  Charlie picks up a tree-builder built-in, this is a good model
+  Caspian picks up a tree-builder built-in, this is a good model
   to start from.
 - The same pattern probably applies to **Mikobase** worldlet
   assembly (constructing a worldlet from scratch in code, rather
@@ -86,11 +86,11 @@ the same author), and lunamark (pure Lua, LPeg-based). Picked
 lunamark to stay pure-Lua.
 
 **What we noticed.** Markdown isn't an Orlando-specific need. As
-soon as any other Charlie web app wants to serve human-readable
+soon as any other Caspian web app wants to serve human-readable
 content (a docs page, a help system, a post body, an AI-generated
 response, an admin notice, a release notes feed), it'll need
 markdown rendering too. The wheel is going to get reinvented in
-every Charlie app unless the framework provides it.
+every Caspian app unless the framework provides it.
 
 The library-evaluation work we did here — knowing that lunamark
 parses Markdown.pl-flavoured by default and needs explicit options
@@ -104,11 +104,11 @@ otherwise have to relearn.
 - **Sammy** (the HTTP framework on Touchstone) is the natural
   place to bake markdown rendering in. A `%sammy.render.markdown`
   or similar helper, with sensible defaults (GFM-ish: fenced
-  code, tables, strikethrough), would mean Charlie web apps get
+  code, tables, strikethrough), would mean Caspian web apps get
   markdown rendering as a one-liner instead of as a per-app
   research project.
 - **Lucy** could expose the underlying parser as a primitive
-  (`%utils.markdown` or similar) so non-web Charlie code — CLI
+  (`%utils.markdown` or similar) so non-web Caspian code — CLI
   tools, AI assistants, content pipelines — has it without
   pulling in HTTP machinery.
 - **AI2AI** records often contain markdown in body fields
@@ -118,7 +118,7 @@ otherwise have to relearn.
   carries human-readable notes that need rendering at display time.
 
 The shape of the helper matters less than that one helper exists.
-Right now, Charlie has no markdown story at all; the first thing
+Right now, Caspian has no markdown story at all; the first thing
 to do is decide which layer owns it (Lucy primitive vs. Sammy
 helper vs. both), and what defaults that layer picks (which
 extensions are on by default, whether the API is `string → string`
@@ -200,8 +200,8 @@ inside vibecode blocks. Evaluated three options:
   axis.
 
 **What we noticed.** JSON happened to be small enough to build,
-but the answer flips for anything with a real grammar (Charlie,
-Python, Lua, SQL, Q0, etc.). Every Charlie web app that serves
+but the answer flips for anything with a real grammar (Caspian,
+Python, Lua, SQL, Q0, etc.). Every Caspian web app that serves
 authored content with code samples will hit this. We don't want
 each adopter re-evaluating the same three options.
 
@@ -213,17 +213,17 @@ existing pygments-themed CSS ecosystem applies directly.
 **Possible application elsewhere.**
 
 - **Sammy** is the natural owner of a `%sammy.highlight(lang,
-  source)` helper. **Charlie itself is the most important
-  language to support** — every doc page about Charlie will
-  contain Charlie source. JSON, Lua, SQL, and the Q0 query
+  source)` helper. **Caspian itself is the most important
+  language to support** — every doc page about Caspian will
+  contain Caspian source. JSON, Lua, SQL, and the Q0 query
   language are the next-priority targets. The mechanism likely
   needs to delegate to pygmentize (or an equivalent) under the
   hood for non-trivial languages; the framework provides the
   caching layer and the language registry.
 - **Lucy** should expose the primitive too (`%utils.highlight`
-  or similar) so non-web Charlie code — CLI tools, AI
+  or similar) so non-web Caspian code — CLI tools, AI
   assistants, content pipelines — gets it without HTTP.
-- **Charlie's own toolchain** (Bryton, Trivet) will want this
+- **Caspian's own toolchain** (Bryton, Trivet) will want this
   for rendering source snippets in test failures or trace
   output.
 
@@ -282,12 +282,12 @@ content without writing code, this is the natural pattern.
 **Possible application elsewhere.**
 
 - **Robinson** wants a markdown-tree handler peer to its
-  Charlie-page handler, lifting Orlando's design directly. See
+  Caspian-page handler, lifting Orlando's design directly. See
   [robinson-wishlist.md "Robinson Handler (Markdown-Tree
   Pages)"](../../ideas/robinson-wishlist.md#robinson-handler-markdown-tree).
-  The translation to Charlie should be roughly mechanical;
+  The translation to Caspian should be roughly mechanical;
   the design decisions are the valuable part.
-- **Charlie's own toolchain** could use the same shape for
+- **Caspian's own toolchain** could use the same shape for
   rendered documentation, runnable examples with embedded
   output, AI2AI session viewers, etc. Anywhere there's a tree
   of source content that should be browsable.
@@ -333,7 +333,7 @@ line, and the abstraction stayed honest.
 
 **Possible application elsewhere.**
 
-- **Lucy / Charlie** if it ever grows a tree-builder primitive,
+- **Lucy / Caspian** if it ever grows a tree-builder primitive,
   the same temptation will arise: "the framework should know
   that HTML `<label>` is non-void, just do the right thing."
   Resist it. Keep the builder mechanical; let consumers handle

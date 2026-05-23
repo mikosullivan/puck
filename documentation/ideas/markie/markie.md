@@ -12,9 +12,13 @@
 
 **Markie is an HTML-DSL transpiler offered as a service.** You submit a document in Markie's DSL — compact, named components, nested constructs, remote-content placeholders — and you get back standard HTML. Same idea as SASS → CSS or TypeScript → JS, but for HTML.
 
-Markie lives at `markie.uno`. Accessible through the Puck protocol (`%['markie.uno']` from Charlie) and through a standalone HTTP API (any client can POST a DSL doc and get HTML back, no Puck dependency).
+Markie lives at `markie.uno`. Accessible through the Puck protocol (`%['markie.uno']` from Caspian) and through a standalone HTTP API (any client can POST a DSL doc and get HTML back, no Puck dependency).
 
 The motivator: get the developer ergonomics of a component framework (compact source, named components, recursive nesting) without committing the browser to a client-side runtime. Markie does the expansion server-side; the client gets fully-formed HTML and only the lightweight CSS/JS it actually needs.
+
+### Markie service vs Markie engine
+
+This doc describes Markie as the public-facing single-document service at `markie.uno`. Markie's underlying transformer engine is also used internally by other Puck services — most directly by [Donnie](https://puck.uno/documentation/ideas/dogberry/donnie), Dogberry's site-hosting service, which invokes the engine on every page request without going through the markie.uno HTTP API. Where this doc says "Markie," it usually means the public service; the engine is implementation detail shared across consumers.
 
 ## Core transpilation
 
@@ -58,6 +62,76 @@ A document declares which Markie vocabulary version it expects. Markie keeps pri
 
 Query Markie for the list of components it knows about, their accepted attributes, and example expansions. Lets tooling (editors, linters, dev consoles) offer autocomplete and validation.
 
+## Syntax highlighting
+
+~~~json
+{"vibecode": {
+	"section": "syntax_highlighting",
+	"role": "server-side syntax highlighting of <pre> elements; emits styled HTML so the visitor needs no client-side highlighter"
+}}
+~~~
+
+### Explicit `syntax` attribute
+
+A `<pre>` element with a `syntax` attribute is highlighted server-side. The attribute names the language; Markie emits HTML with stable token class names that the surrounding stylesheet renders.
+
+Author writes:
+
+```html
+<pre syntax="caspian">
+$name = "Bobby"
+"Hello, ${name}!" |> %print
+</pre>
+```
+
+Markie returns (with token class names — actual set TBD, modeled on the Pygments family):
+
+```html
+<pre class="highlight"><code><span class="hl-var">$name</span> = <span class="hl-string">"Bobby"</span>
+<span class="hl-string">"Hello, ${name}!"</span> <span class="hl-op">|></span> <span class="hl-builtin">%print</span></code></pre>
+```
+
+Server-side highlighting avoids shipping a highlighter to every visitor and avoids the rendering-flash that client-side highlighting causes on initial paint.
+
+### Markdown-derived equivalent
+
+When Markie receives HTML produced from markdown fences (the typical shape when authors write `.md` and a pre-renderer hands Markie the result), `<pre><code class="language-X">…</code></pre>` is recognized as equivalent to `<pre syntax="X">`. Same output. Lets authors who write markdown and authors who write HTML get the same highlighting without thinking about it.
+
+### Language coverage
+
+Same model as [Gitter's language coverage](https://puck.uno/documentation/ideas/github/puck-site/gitter#language-coverage): **native** parsers for the languages Puck owns end-to-end (Caspian, JSON), **off-the-shelf wrapping** for everything mature community highlighters cover (Pygments family — Python, Ruby, JavaScript, TypeScript, HTML, CSS, Bash, SQL, etc.). Markie and Gitter share the same highlighting backend so the two never drift.
+
+### Unknown syntax
+
+`<pre syntax="esoteric-thing-nobody-supports">` renders as plain `<pre>` with no error. The block is still valid markup; only the highlighting is missing. Validation mode (see [Developer ergonomics § Validation mode](#validation-mode)) flags the unknown syntax name so authors notice the typo.
+
+### Theming
+
+Token class names are stable across languages and themes. The visible style comes from the surrounding stylesheet — Markie ships a default light theme and a default dark theme; sites override or replace.
+
+## Markdown add-ons
+
+~~~json
+{"vibecode": {
+	"section": "markdown_addons",
+	"role": "Markie can accept markdown input alongside HTML, and extend standard CommonMark with add-on features the standard doesn't cover — most usefully via special fence types beyond the code-block-with-language convention"
+}}
+~~~
+
+Markie can take markdown as input and extend it with add-on features beyond what standard CommonMark covers. Same shape as the HTML-DSL path — lightly-extended markdown in, standard HTML out.
+
+The most useful extensions are **special fence types**. The fenced-code-block syntax is already familiar; reusing the fence sigil for non-code content (callouts, components, diagrams, math, embeds) lets authors stay in one mental model rather than learning a new syntax per feature:
+
+~~~html
+~~~!warning
+Don't run this command without backups.
+~~~
+~~~
+
+Expands to a styled callout box. Other plausible fence kinds: component invocations (a markdown shortcut for an HTML-DSL component), embeds (the markdown shortcut for `<embed>`), diagrams (Mermaid / Graphviz / similar), math (LaTeX), table-from-CSV. Each is its own feature with its own design; the unifying idea is that fences can carry more than language-tagged source.
+
+Sketched here only. Detailed designs come when individual fence types are picked up.
+
 ## Remote content
 
 ~~~json
@@ -92,13 +166,19 @@ Embedded fetches are cached with sensible TTLs and respect upstream `Cache-Contr
 
 Submit a base layout with placeholder slots plus a derived fragment that fills them; Markie returns the assembled document. Same shape as Robinson's [target/content cascade](https://puck.uno/documentation/ideas/robinson/robinson#targetcontent-cascade), but offered to any client without requiring Robinson to be in the pipeline.
 
+This is the per-call form. For the site-wide form (one base layout registered once, every page in a domain inherits it), see [Donnie's site-wide template inheritance](https://puck.uno/documentation/ideas/dogberry/donnie#site-wide-template-inheritance).
+
 ### Local file includes
 
 `<include src="header.html">` splices a sibling fragment from the same document submission. Lets a multi-file document share common pieces without going through the remote-embed machinery.
 
+This is the per-call form. For the site-wide form (a partial referenced from any page in a domain without bundling it into the submission), see [Donnie's shared partials](https://puck.uno/documentation/ideas/dogberry/donnie#shared-partials).
+
 ### Conditional rendering
 
-`<if condition="...">` for simple conditionals. The condition language is small — equality, presence, comparison against submitted variables. Not a full programming layer.
+Considered and deferred. Conditional logic is a programming-language construct; cramming it into markup conflates two languages that should stay separate — even when the underlying mechanism is CSS-driven. If a document needs conditional rendering, that decision belongs in the caller's code (before submission to Markie) or in client-side JS / CSS state-driven hide-show (after rendering). Markie itself stays out of the control-flow business.
+
+Earlier brainstorms on this section (expression languages, CSS-selector tags, `<if>`/`<elseif>`/`<else>` chains) are in git history for the record. See closed issue [#103](https://github.com/mikosullivan/puck/issues/103) for the conclusion.
 
 ### Iteration
 
@@ -165,7 +245,7 @@ A flag chooses between formatted (indented, commented) output for development an
 
 ### Puck protocol object
 
-`%['markie.uno'].expand(source: '...')` from Charlie. The first-class Puck integration; lets Charlie code generate Markie input and consume its HTML output without HTTP plumbing.
+`%['markie.uno'].expand(source: '...')` from Caspian. The first-class Puck integration; lets Caspian code generate Markie input and consume its HTML output without HTTP plumbing.
 
 ## Open questions
 
@@ -180,10 +260,6 @@ How far should Markie go toward being a full template engine? Conditionals and l
 ### Relationship to Robinson's cascade
 
 Robinson's `<target>` / `<content>` cascade is structurally similar to Markie's template-inheritance feature. They could be the same engine offered in two contexts (inline at Robinson request time + as a service at markie.uno) or two separate implementations. Worth deciding before both grow far.
-
-### Account model
-
-Custom DSL extensions and per-doc resource allowlists imply some form of account or namespace. Public submission with no account works for the basic transpiler; the moment a client wants persistent custom vocabularies, identity matters. What's the minimum identity layer?
 
 ### Caching invalidation
 

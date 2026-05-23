@@ -247,9 +247,9 @@ API version, look up the class at its versioned UNS:
 Geo = puck.lookup('puck.uno/geo/v2')
 ```
 
-Charlie's blockchain-signed versioning of library identity is a
+Caspian's blockchain-signed versioning of library identity is a
 separate story; if you need that, see
-[blockchain.md](../charlie/blockchain.md).
+[blockchain.md](../caspian/blockchain.md).
 
 ---
 

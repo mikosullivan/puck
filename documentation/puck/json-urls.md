@@ -38,8 +38,8 @@ traditional key-value query string:
   reparsing.
 - **Single coherent payload.** The whole parameter set is one
   logical structure; receivers parse it with one `JSON.parse` call.
-- **Aligns with Puck's JSON-everywhere posture.** Charlie, mikobase
-  records, CharlieJSON, blockchain blocks — Puck leans on JSON as
+- **Aligns with Puck's JSON-everywhere posture.** Caspian, mikobase
+  records, CaspianJ, blockchain blocks — Puck leans on JSON as
   the universal data carrier. URL params being JSON is consistent
   with that.
 
@@ -156,7 +156,7 @@ else in the ecoverse that emits URLs containing structured params.
 
 **[Dogberry](../ideas/dogberry.md) is currently undefined** — see the
 brainstorm doc for the current shape (transforming proxy that fetches
-and executes remote Charlie). Whether Dogberry natively parses JSON URL
+and executes remote Caspian). Whether Dogberry natively parses JSON URL
 parameters, and what shape that handler interface takes, is TBD as
 Dogberry firms up. The expectation is that any future HTTP middleware
 in the ecoverse will support both `?key=value` and the
