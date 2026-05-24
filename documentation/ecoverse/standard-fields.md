@@ -6,15 +6,17 @@
 ~~~json
 {"vibecode": {
 	"section": "overview",
-	"role": "introduces the four reserved pass-through fields in all Puckverse JSON objects",
-	"key_concepts": ["vibecode", "comment", "misc", "corporate", "pass-through", "always_present"]
+	"role": "introduces the reserved pass-through fields in all Puckverse JSON objects",
+	"key_concepts": ["vibecode", "comment", "misc", "corporate", "class", "bucket",
+		"pass-through", "always_present"]
 }}
 ~~~
 
-The Puckverse reserves four keys in every JSON hash: `vibecode`, `comment`, `misc`, and
-`corporate`. All four travel silently with any object — passed through transparently by
-engines, firewalls, and network transport without being stripped, validated, or modified.
-An object's schema does not need to declare them; they are always present by convention.
+The Puckverse reserves six keys in every JSON hash: `vibecode`, `comment`, `misc`,
+`corporate`, `class`, and `bucket`. All six travel silently with any object — passed
+through transparently by engines, firewalls, and network transport without being
+stripped, validated, or modified. An object's schema does not need to declare them;
+they are always present by convention.
 
 ---
 
@@ -116,7 +118,7 @@ EOF
 <a id="pass-through"></a>
 ## Pass-Through
 
-All four reserved fields (`vibecode`, `comment`, `misc`, `corporate`) are always passed through. Engines, firewalls, and network transport do not strip or modify them.
+All six reserved fields (`vibecode`, `comment`, `misc`, `corporate`, `class`, `bucket`) are always passed through. Engines, firewalls, and network transport do not strip or modify them.
 
 ---
 

@@ -174,7 +174,7 @@ not a wall — but the budget should be visible.
 ~~~json
 {"vibecode": {"v1_in": ["caspian", "caspian_cli", "mikobase", "touchstone",
 "sammy", "trivet", "uma", "bryton", "jasmine", "puck_identity",
-"deployment"], "v1_out": ["robinson"], "v1_blockchain_role":
+"deployment", "skeletor"], "v1_out": ["robinson"], "v1_blockchain_role":
 "external_service; caspian_client_is_thin_http", "v1_http_path":
 "sammy_explicit_handlers", "v1_authn": "signed_request", "v1_authz":
 "handler_implements_directly; no_declarative_role_policy"}}
@@ -196,6 +196,16 @@ involvement is a thin HTTP client (~20 lines) that calls the blockchain API
 for signature verification, key lookups, etc. The chain itself runs as
 separate infrastructure (the existing Python `blockchain/sim/` evolved to
 production).
+
+**Skeletor** (process state organization) is in V1.0 in a narrow form: the
+runtime is organized around a single in-memory hash that holds all
+execution state (objects, references, frames, globals, PC, iterator
+positions, pending exceptions). The discipline is structural — the
+interpreter accesses runtime state only through the hash interface. **No
+export API in V1.0:** Skeletor V1.0 ships the hash but not the
+serialize/revive machinery, so the snapshot-and-resume capability (and any
+HTTP `promise()` features that depend on it) is deferred to a later
+version. See [skeletor.md](../ideas/skeletor.md).
 
 ---
 

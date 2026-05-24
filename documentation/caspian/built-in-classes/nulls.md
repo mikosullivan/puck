@@ -204,6 +204,8 @@ HL7 (Health Level 7), the standards body for healthcare interoperability, has
 developed the most-formalized treatment of this problem. Both HL7 v3 and FHIR
 define a vocabulary of **null flavors** — codes that explain why a value is
 absent. A receiving system can distinguish reasons without ambient knowledge.
+The canonical reference is the
+[HL7 v3 NullFlavor code system](https://terminology.hl7.org/en/CodeSystem-v3-NullFlavor.html).
 
 The HL7 null-flavor vocabulary:
 

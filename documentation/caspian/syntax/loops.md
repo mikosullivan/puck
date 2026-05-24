@@ -150,7 +150,7 @@ immediately after the block declaration:
 ```
 $bar.each($foo) as $loop
     print $loop.count   # current iteration, 1-based
-    print $loop.active  # true while loop is running
+    print $loop.active?  # true while loop is running
 end
 ```
 
@@ -199,12 +199,12 @@ unified rule.
 | `$loop.break` | Alias for `$loop.return`. Same behavior, same optional value form. |
 | `$loop.next` | Skip to the next iteration |
 | `$loop.count` | Current iteration number (1-based); total count after loop ends |
-| `$loop.active` | `true` while the loop is running, `false` after it ends |
+| `$loop.active?` | `true` while the loop is running, `false` after it ends |
 | `$loop.index` | Current iteration index (0-based) |
 
 `$loop.return` and `$loop.break` are two names for the same operation
 — exit this loop. Both accept the optional value form (`.return value`
-or `.break value`); both leave `$loop.active` false and
+or `.break value`); both leave `$loop.active?` false and
 `$loop.count` equal to the iterations that ran. Pick whichever name
 reads better in context. For the prefix-free top-level form (no
 `$loop` reference needed, multi-level exit), see [break](#break).
@@ -254,7 +254,7 @@ end
 ```
 
 After `break N`, control resumes after the N-th enclosing loop. The
-intervening loop objects' `$loop.active` becomes `false` and their
+intervening loop objects' `$loop.active?` becomes `false` and their
 `$loop.count` reflects the iterations that actually ran.
 
 <a id="function-boundary"></a>

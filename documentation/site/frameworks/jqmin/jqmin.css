@@ -36,3 +36,12 @@
 .custom-checkbox > input { display: none }
 .custom-checkbox > input:not(:checked) + * { display: none }
 .custom-checkbox > input:checked + * + * { display: none }
+
+/* ============================================================
+ * nowrap — prevents text wrapping inside the element. Useful
+ *   for keeping a group of inline children on one line as a
+ *   unit (the group as a whole still wraps to the next line if
+ *   the line is full; nothing inside the group breaks).
+ * ============================================================ */
+
+.nowrap {white-space: nowrap}

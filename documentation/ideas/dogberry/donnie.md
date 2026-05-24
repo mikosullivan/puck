@@ -118,17 +118,19 @@ Domain registration mechanics, DNS pointing, TLS issuance and renewal, the cache
 ~~~json
 {"vibecode": {
 	"section": "naming",
-	"role": "Donnie is a code name; the customer-facing product name is TBD"
+	"role": "Donnie is a code name; the customer-facing product is marketed as Dogberry",
+	"status": "resolved 2026-05-23"
 }}
 ~~~
 
-Donnie is internal shorthand, not necessarily the customer-facing name. The combined service might launch as "Markie Hosting," "Markie Sites," "Dogberry for Markie," or under its own product name. Donnie keeps the conversation precise while the marketing question is open.
+**Donnie is a code name only.** The customer-facing service is expected to be
+marketed as **Dogberry** — a single brand covering the whole hosting offering
+rather than splitting Donnie out as a separately-named product. Donnie keeps
+internal conversations precise about which specific Dogberry mode (remote-source
++ Markie expansion) is being discussed; customers shouldn't need to know the
+distinction.
 
 ## Open questions
-
-### Customer-facing name
-
-Is Donnie also the public name, or do we ship under a different label? The code name is fine for internal docs but the customer story may want something more descriptive.
 
 ### Boundary between Donnie and plain Dogberry
 

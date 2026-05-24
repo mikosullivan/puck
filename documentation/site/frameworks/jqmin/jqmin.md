@@ -91,17 +91,44 @@ The CSS leans heavily on the "hidden checkbox / hidden radio" pattern for JavaSc
 
 ## What jqmin in Puck might look like
 
-Three plausible directions; only sketched here, no commitment.
+<a id="policy-default-client-side-framework"></a>
+### Policy: default client-side framework until close to launch
+
+**Until V1 launch is near, jqmin is the client-side framework for the
+puck.uno site.** Established alternatives (Bootstrap, Tailwind, others)
+are not under active evaluation — settling that question is deferred
+until closer to launch. This freezes the choice during the period when
+the rest of the stack is moving rapidly, so we're not bikeshedding the
+client framework while everything else is in flux. The question reopens
+deliberately when launch approaches.
+
+What this policy means concretely:
+
+- Every new client-side interaction the site needs goes through jqmin
+  (extending jqmin if the pattern isn't there yet)
+- HTML class vocabulary for the site grows alongside jqmin's patterns —
+  see [the standardization discussion](#standardizing-html-classes-around-jqmin)
+  (TBD section)
+- No parallel framework experiments; consolidate effort
+- Pre-launch, the question "should we use a different framework?" is
+  out of scope
 
 ### In-house only
 
-jqmin (if used at all) is for the puck.uno site itself — not documented as an ecosystem API, not committed to long-term. Bootstrap and other established UI frameworks are alternatives under consideration; the choice is open.
+jqmin is for the puck.uno site itself — not (yet) documented as a
+public ecosystem API, not committed to long-term in its current shape.
+Whether jqmin grows into a Puck-ecosystem-published library or stays
+purely an internal tool is a post-launch decision.
 
 ### Uma integration (tabled)
 
-An intriguing idea: add jqmin-style helpers to Uma so the same patterns are reachable from Caspian code. Tabled — comes back into scope only if both jqmin sticks and Uma needs the surface.
+An intriguing idea: add jqmin-style helpers to Uma so the same patterns
+are reachable from Caspian code. Tabled — comes back into scope only if
+both jqmin sticks (the policy above keeps it sticking through V1) and
+Uma needs the surface.
 
-The drop-in port is the obvious V0 path; the Caspian-native version is the Puck-ecosystem-coherent endpoint.
+The drop-in port is the obvious V0 path; the Caspian-native version is
+the Puck-ecosystem-coherent endpoint.
 
 ## Patterns
 

@@ -52,7 +52,7 @@ hq = Geo(lat=37.7980, lon=-122.4626)
 
 # Call the class's manufactured methods
 hq.weather                  # current weather report at that location
-hq.congressional_district          # congressional district info for that point
+hq.congressional_district   # congressional district info for that point
 hq.map_image(zoom=14)       # PNG map image centered on the point
 ```
 

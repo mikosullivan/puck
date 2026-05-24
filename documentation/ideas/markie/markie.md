@@ -170,9 +170,11 @@ This is the per-call form. For the site-wide form (one base layout registered on
 
 ### Local file includes
 
-`<include src="header.html">` splices a sibling fragment from the same document submission. Lets a multi-file document share common pieces without going through the remote-embed machinery.
-
-This is the per-call form. For the site-wide form (a partial referenced from any page in a domain without bundling it into the submission), see [Donnie's shared partials](https://puck.uno/documentation/ideas/dogberry/donnie#shared-partials).
+Not a Markie feature. There is no concept of "local" in Markie — it processes a
+single HTML blob in isolation, with no awareness of sibling files or a
+surrounding submission. Multi-file include semantics make sense only when
+something owns the whole site at once: see
+[Donnie's shared partials](https://puck.uno/documentation/ideas/dogberry/donnie#shared-partials).
 
 ### Conditional rendering
 

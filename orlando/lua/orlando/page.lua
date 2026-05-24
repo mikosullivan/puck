@@ -447,6 +447,15 @@ local function render_section_issues_panel(md_path, anchor)
     return table.concat(parts)
 end
 
+-- Wrap the per-heading chip group ("GitHub issue", "Quick add",
+-- optional "Edit") in a jqmin .nowrap span so they always stay on a
+-- single line. The group as a whole still wraps to the next line if
+-- the heading is too wide; only the chips' internal arrangement is
+-- locked together.
+local function chip_group(chips)
+    return ' <span class="nowrap">' .. chips .. '</span>'
+end
+
 local function inject_issue_links(body_html, md_path, client_ip)
     local show_edit = config.ip_can_edit(client_ip)
 
@@ -454,14 +463,14 @@ local function inject_issue_links(body_html, md_path, client_ip)
     body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
         local qa_id   = "qa-h1"
         local edit_id = "edit-h1"
-        local tail = open .. inner .. " " .. issue_link(md_path)
-            .. " " .. quick_add_label(qa_id)
+        local chips = issue_link(md_path) .. " " .. quick_add_label(qa_id)
 
         if show_edit then
-            tail = tail .. " " .. edit_label(edit_id)
+            chips = chips .. " " .. edit_label(edit_id)
         end
 
-        tail = tail .. close .. quick_add_block(md_path, nil, nil, qa_id)
+        local tail = open .. inner .. chip_group(chips) .. close
+            .. quick_add_block(md_path, nil, nil, qa_id)
 
         if show_edit then
             tail = tail .. edit_block(md_path, nil, nil, edit_id)
@@ -479,14 +488,14 @@ local function inject_issue_links(body_html, md_path, client_ip)
             local slug    = id or slugify(text)
             local qa_id   = "qa-" .. slug
             local edit_id = "edit-" .. slug
-            local tail = open .. inner .. " " .. issue_link(md_path, text, id)
-                .. " " .. quick_add_label(qa_id)
+            local chips = issue_link(md_path, text, id) .. " " .. quick_add_label(qa_id)
 
             if show_edit then
-                tail = tail .. " " .. edit_label(edit_id)
+                chips = chips .. " " .. edit_label(edit_id)
             end
 
-            tail = tail .. close .. quick_add_block(md_path, text, id, qa_id)
+            local tail = open .. inner .. chip_group(chips) .. close
+                .. quick_add_block(md_path, text, id, qa_id)
 
             if show_edit then
                 tail = tail .. edit_block(md_path, text, id, edit_id)
@@ -653,6 +662,13 @@ local function add_head(html_tag, title)
         h:tag("link", function(l)
             l:attr("rel",  "stylesheet")
             l:attr("href", "/client-assets/style.css")
+        end)
+        -- jqmin is the puck.uno site's default client-side framework
+        -- (see documentation/site/frameworks/jqmin/jqmin.md). Served
+        -- straight from its canonical source under /documentation/.
+        h:tag("link", function(l)
+            l:attr("rel",  "stylesheet")
+            l:attr("href", "/documentation/site/frameworks/jqmin/jqmin.css")
         end)
         h:tag("script", function(s)
             s:attr("src",   "/client-assets/quick-add.js")

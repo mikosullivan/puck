@@ -97,6 +97,15 @@ body.home .content h1 .hero-logo {
 	font-weight: 700;
 	color: #222;
 }
+/* Spacer for empty-children directory nodes (rendered without a <details>
+ * toggle and therefore lacking the disclosure arrow). The phantom inline
+ * block matches the disclosure-arrow width so dir names line up regardless
+ * of whether the dir has expandable children or not. */
+.sidebar li.dir:not(:has(details)) > a::before {
+	content: "";
+	display: inline-block;
+	width: 1em;
+}
 .sidebar-search {margin: 0 0 12px}
 .sidebar-search input {
 	width: 100%;

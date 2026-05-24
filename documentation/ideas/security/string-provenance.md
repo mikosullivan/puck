@@ -42,10 +42,10 @@ same way. The distinction is internal.
 $string = "Falstaff"    # creates a base string; $string is a query that returns it
 
 $foo = $string[0, 2]    # returns a query string that asks for the first three
-                          # characters of $string's base
+                        # characters of $string's base
 
 $bar = $foo.upper_case  # returns a query that asks $foo for its result, then
-                          # uppercases it. $foo in turn queries $string.
+                        # uppercases it. $foo in turn queries $string.
 ```
 
 When `$bar`'s value is actually needed — printed, compared, passed to a sink — the

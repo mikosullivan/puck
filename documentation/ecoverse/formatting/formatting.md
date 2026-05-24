@@ -383,6 +383,8 @@ The current spec stays the working format until that revisit.
 
 The values Miko personally uses. Not project policy — see Philosophy above — but a worked example and the source of truth for the formatter's recommended defaults.
 
+Canonical source: **[miko.json](miko.json)** (the actual file the tooling reads). The snippet below is for reading; the file is what runs.
+
 ```json
 {
   "indent": {

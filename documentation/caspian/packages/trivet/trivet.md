@@ -51,6 +51,7 @@ $food = %['puck.uno/trivet/node'].new('food')
 
 $food.node('spices') do($spices)
     $spices.node('paprika')
+
     $spices.node('pepper') do($pepper)
         $pepper.node('java')
         $pepper.node('matico')
