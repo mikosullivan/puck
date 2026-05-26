@@ -34,7 +34,7 @@ Placeholder. Major design questions are still open:
 <a id="open-class-name"></a>
 ### Class name
 
-`puck.uno/time` vs `puck.uno/instant` vs other.
+**Resolved: `puck.uno/time`.**
 
 <a id="open-mutable-vs-immutable"></a>
 ### Mutable vs immutable
@@ -49,11 +49,8 @@ mutable" mental model.
 <a id="open-default-zone"></a>
 ### Default offset for naive parsing
 
-`new('2026-05-23 14:30')` — string has no offset. Default to UTC,
-host-local, or throw?
-
-(Updated 2026-05-23: question is now about **UTC offsets**, not named
-zones — see [Time zones — UTC offsets only](#zones).)
+**Resolved: host-local.** `new('2026-05-23 14:30')` with no offset
+in the string adopts the host machine's local UTC offset.
 
 <a id="open-numbering-base"></a>
 ### Weekday / month numbering base
@@ -65,11 +62,8 @@ convention fits their use; no global toggle.
 <a id="open-calendar-systems"></a>
 ### Calendar systems
 
-Gregorian-only for now? Other calendars (Julian, Hebrew, Hijri, Persian,
-Buddhist, etc.) deferred or supported as extensions?
-
-See [ezdate.md § Open questions](../ideas/ezdate.md#open-questions) for the
-full list and current thinking.
+**Resolved: Gregorian only.** Other calendars (Julian, Hebrew, Hijri,
+Persian, Buddhist, etc.) are out of scope.
 
 ---
 
@@ -132,7 +126,7 @@ $date.year.leap_year?       # false
 ### Day
 
 ~~~caspian
-$date.day.number            # 23  (day-of-month; consider also a 0-based form if needed)
+$date.day.number            # 23  (day-of-month; 1-based only — no 0-based form)
 $date.day.monday?           # false
 $date.day.tuesday?          # false
 # ... predicates for each of the 7 days

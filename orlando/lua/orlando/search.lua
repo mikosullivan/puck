@@ -1,23 +1,39 @@
 --[[
 {
   "module": "orlando.search",
-  "role": "Rudimentary site-wide search across markdown sources. Case-insensitive plain substring match — no stemming, no tokenization, no relevance scoring beyond match count. Re-scans the filesystem on every request, in keeping with the Orlando no-caching design.",
+  "role": "Site-wide search across markdown sources. Case-insensitive plain substring match — no stemming, no tokenization. Ranks results by a small additive score (filename/title/body weights). Re-scans the filesystem on every request, in keeping with the Orlando no-caching design.",
   "exports": {
-    "search":         "query -> list of { md_path, url, count, snippets[] } sorted by count desc",
+    "search":         "query -> list of { md_path, url, count, score, preamble } sorted by score desc",
     "render":         "query -> full HTML results page (uses page.render_results_page for site chrome)",
     "handle":         "request_path (incl. query string) -> { status, body, content_type } — server-facing entry",
     "list_md_files": "() -> sorted list of every markdown source path (README.md + documentation/**/*.md); shared with orlando.random"
   },
+  "ranking": "score = 10*hit_in_filename + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path",
   "notes": ["always case-insensitive — query is folded to lowercase before scanning",
-    "snippet text is plain markdown source with whitespace collapsed; HTML-escaped on render"]
+    "preamble is the doc's intro prose (post-H1, post-vibecode, pre-first-H2); HTML-escaped on render with light markdown stripping; query hits in the preamble are wrapped in <mark>"]
 }
 ]]
 local page = require("orlando.page")
 
 local M = {}
 
-local MAX_SNIPPETS_PER_FILE = 5
-local SNIPPET_RADIUS        = 60
+local PREAMBLE_MAX = 320
+
+-- Score weights for ranking.
+local SCORE_FILENAME = 10
+local SCORE_TITLE    = 5
+local SCORE_BODY_HIT = 1
+
+-- Extract the doc's H1 (first `# ...` line). Returns "" if none.
+local function title_of(text)
+    return text:match("^#%s+([^\n]*)") or text:match("\n#%s+([^\n]*)") or ""
+end
+
+-- Basename without the .md extension. Used for filename-match scoring.
+local function basename_no_ext(path)
+    local name = path:match("([^/]+)$") or path
+    return (name:gsub("%.md$", ""))
+end
 
 local function list_md_files()
     local files = {}
@@ -71,17 +87,60 @@ local function html_escape(s)
              :gsub('"', "&quot;"))
 end
 
-local function snippet_around(text, pos, qlen)
-    local lo = math.max(1, pos - SNIPPET_RADIUS)
-    local hi = math.min(#text, pos + qlen - 1 + SNIPPET_RADIUS)
-    local before = text:sub(lo, pos - 1):gsub("%s+", " ")
-    local hit    = text:sub(pos, pos + qlen - 1)
-    local after  = text:sub(pos + qlen, hi):gsub("%s+", " ")
-    local prefix = (lo > 1)      and "…" or ""
-    local suffix = (hi < #text)  and "…" or ""
-    return prefix .. html_escape(before)
-        .. "<mark>" .. html_escape(hit) .. "</mark>"
-        .. html_escape(after) .. suffix
+-- The doc's intro prose: everything after the H1, after any leading
+-- vibecode fence, up to the first H2. Strips light markdown noise
+-- (bold/italic/code marks, link syntax) and collapses whitespace so
+-- the search result reads as plain text. Highlights the query if it
+-- appears in the preamble.
+local function preamble_of(text, query)
+    -- Cut off at the first H2 if present.
+    local h2_pos = text:find("\n## ", 1, true)
+    if h2_pos then text = text:sub(1, h2_pos - 1) end
+
+    -- Drop the H1 line (the very first line that starts with "# ").
+    text = text:gsub("^#%s+[^\n]*\n", "")
+    text = text:gsub("^%s+", "")
+
+    -- Drop a leading vibecode fence if present (~~~json {...} ~~~).
+    text = text:gsub("^~~~json%s*\n.-\n~~~%s*\n", "")
+    text = text:gsub("^```json%s*\n.-\n```%s*\n", "")
+    text = text:gsub("^%s+", "")
+
+    -- Light markdown / raw-HTML stripping for prose display.
+    text = text:gsub("<[^>]+>", "")                  -- raw HTML tags
+    text = text:gsub("\n%-%-%-+%s*\n", "\n\n")       -- horizontal rules
+    text = text:gsub("%[([^%]]+)%]%([^)]+%)", "%1")  -- links → link text
+    text = text:gsub("`([^`]+)`", "%1")              -- inline code
+    text = text:gsub("%*%*([^%*]+)%*%*", "%1")       -- bold
+    text = text:gsub("([^%w])_([^_]+)_([^%w])", "%1%2%3")  -- italic _x_
+    text = text:gsub("%s+", " ")
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+
+    local truncated = false
+    if #text > PREAMBLE_MAX then
+        text = text:sub(1, PREAMBLE_MAX):gsub("%s+%S*$", "")
+        truncated = true
+    end
+
+    local escaped = html_escape(text)
+    if query and query ~= "" then
+        local q_lower = query:lower()
+        local out = {}
+        local lower = escaped:lower()
+        local i = 1
+        while true do
+            local s, e = lower:find(q_lower, i, true)
+            if not s then break end
+            out[#out + 1] = escaped:sub(i, s - 1)
+            out[#out + 1] = "<mark>" .. escaped:sub(s, e) .. "</mark>"
+            i = e + 1
+        end
+        out[#out + 1] = escaped:sub(i)
+        escaped = table.concat(out)
+    end
+
+    if truncated then escaped = escaped .. "…" end
+    return escaped
 end
 
 local function url_decode(s)
@@ -104,7 +163,7 @@ end
 
 --[[ {
     "in":  {"query": "string"},
-    "out": "table — list of result rows, each { md_path, url, count, snippets[] }; sorted by count desc, ties broken alphabetically by md_path"
+    "out": "table — list of result rows, each { md_path, url, count, score, preamble }; sorted by score desc, ties broken alphabetically by md_path"
 } ]]
 function M.search(query)
     if not query or query == "" then return {} end
@@ -116,26 +175,29 @@ function M.search(query)
 
         if data then
             local positions = find_all(data:lower(), q_lower)
+            local in_filename =
+                basename_no_ext(path):lower():find(q_lower, 1, true) ~= nil
+            local in_title =
+                title_of(data):lower():find(q_lower, 1, true) ~= nil
 
-            if #positions > 0 then
-                local snippets = {}
-
-                for i = 1, math.min(#positions, MAX_SNIPPETS_PER_FILE) do
-                    snippets[#snippets + 1] = snippet_around(data, positions[i], #query)
-                end
+            if #positions > 0 or in_filename or in_title then
+                local score = #positions * SCORE_BODY_HIT
+                if in_filename then score = score + SCORE_FILENAME end
+                if in_title    then score = score + SCORE_TITLE    end
 
                 results[#results + 1] = {
                     md_path  = path,
                     url      = page.md_path_to_url(path),
                     count    = #positions,
-                    snippets = snippets,
+                    score    = score,
+                    preamble = preamble_of(data, query),
                 }
             end
         end
     end
 
     table.sort(results, function(a, b)
-        if a.count ~= b.count then return a.count > b.count end
+        if a.score ~= b.score then return a.score > b.score end
         return a.md_path < b.md_path
     end)
 
@@ -174,13 +236,11 @@ local function render_body(query, results)
             .. html_escape(r.md_path) .. '</a>'
             .. ' <span class="search-count">' .. tostring(r.count)
             .. ' match' .. (r.count == 1 and '' or 'es') .. '</span>'
-        parts[#parts + 1] = '<ul class="search-snippets">'
-
-        for _, snip in ipairs(r.snippets) do
-            parts[#parts + 1] = '<li>' .. snip .. '</li>'
+        if r.preamble and r.preamble ~= "" then
+            parts[#parts + 1] = '<p class="search-preamble">'
+                .. r.preamble .. '</p>'
         end
-
-        parts[#parts + 1] = '</ul></li>'
+        parts[#parts + 1] = '</li>'
     end
 
     parts[#parts + 1] = '</ol>'

@@ -612,6 +612,123 @@ To explore in a future round.
 
 ---
 
+<a id="implementation-growth-path"></a>
+## Implementation growth path
+
+~~~json
+{"vibecode": {
+	"section": "implementation_growth_path",
+	"role": "per-slice plan for layering the role system in, starting at V0.01 and growing through V1",
+	"principle": "roles_are_core_not_bolt_on; bake_primitives_in_from_first_slice; grow_outward",
+	"v001_primitives": ["role_registry", "owning_role_on_every_value",
+		"role_transition_on_method_call", "role_system_method",
+		"chain_wipe_on_cross_role_call"],
+	"v001_deferred": ["faucets", "jails", "cross_role_trust_declarations",
+		"alarms_with_sink_side_checks", "source_side_propagation",
+		"chain_isolate_developer_facing"]
+}}
+~~~
+
+Roles are not a bolt-on. Every value in the runtime carries an
+owning-role tag at creation; every method call checks the receiver's
+role and transitions. Both are pervasive concerns — adding them later
+would mean touching every value-creation path and every method-call
+path. The primitives bake in from the first slice and grow outward.
+
+<a id="implementation-v001-footprint"></a>
+### V0.01 role footprint
+
+The minimum to support hello-world's single cross-role call
+(`user` → string-class role → `user`):
+
+~~~json
+{"vibecode": {"v001_role_footprint":
+	{"registry_entries_min": ["user", "stdlib"],
+	"value_layer": "every_value_carries_owning_role_slot_immutable_after_creation",
+	"dispatcher_layer": "on_method_call_compare_method_owning_role_to_current; if_differ_save_state_set_new_role_wipe_chain_run_restore",
+	"sys_methods_implemented": ["role"],
+	"chain_state": "empty_placeholder_but_wipeable_on_boundary"}}}
+~~~
+
+- **Role registry.** Engine maintains a name → role-object map.
+  Populated at startup with `user` and the engine role owning the
+  built-in string class (and any other built-in classes V0.01 touches).
+  The broader minimum is `user`, `clock`, `randomizer`, `utils`; V0.01
+  needs only what it actually exercises. The others arrive as their
+  values get wired up in later slices.
+- **Owning role on every value.** Each value carries an `owning_role`
+  slot, set at creation, immutable thereafter.
+- **Role transition in the dispatcher.** Method dispatch compares the
+  method-object's owning role to the current role. If different: save
+  current role + chain, set new role, wipe chain, execute, restore.
+- **`%role` system method.** Returns the current role.
+- **`%chain` wipe at boundaries.** Even if `%chain` is just an empty
+  placeholder in V0.01 (hello-world uses no chain entries), the wipe
+  machinery is in place so later slices add chain entries without
+  retrofitting boundary behavior.
+
+<a id="implementation-growth-by-slice"></a>
+### Growth by slice
+
+~~~json
+{"vibecode": {"growth_path": [
+	{"slice": "v0.01", "adds": "core_primitives_registry_owning_role_transition_role_chain_wipe"},
+	{"slice": "v0.02", "adds": "transpiler_role; ksj_emitted_tagged_with_caller_role"},
+	{"slice": "v0.03", "adds": "stdout_role; owns_stdout_sink_and_puts_bwc; first_cross_role_boundary_for_engine_supplied_io"},
+	{"slice": "v0.04", "adds": "no_new_role_primitives; built_in_hash_class_registered_under_existing_stdlib_role; same_pattern_as_v001_string_class"},
+	{"slice": "v0.05", "adds": "no_new_role_primitives; to_json_methods_register_on_existing_stdlib_class_methods"},
+	{"slice": "v0_0x_cli", "adds": "stderr_role; per_dirjail_roles_when_allow_fs_flag_used; per_faucet_roles_when_allow_net_flag_used; env_vars_and_cli_args_roles"},
+	{"slice": "first_http", "adds": "network_faucet_role; request_body_values_inherit_faucet_role"},
+	{"slice": "first_db", "adds": "per_mikobase_instance_role; rows_inherit_db_role"},
+	{"slice": "first_uma", "adds": "no_new_role_primitives; uma_objects_user_owned"},
+	{"slice": "first_signed_request", "adds": "identity_faucet_role; trust_mechanism_scaffolding"},
+	{"slice": "first_deployment", "adds": "no_new_role_primitives; deployment_context_may_add_engine_roles"},
+	{"slice": "first_hosted_service", "adds": "per_tenant_roles_tbd; cross_role_trust_mechanics_tbd"}],
+	"feature_arrival_triggers": {
+		"jails": "when_first_slice_has_values_worth_narrowing",
+		"cross_role_trust_declarations": "when_first_slice_needs_to_grant_trust",
+		"alarms_vs_exceptions": "when_first_slice_has_sinks_that_must_hard_stop",
+		"source_side_propagation": "when_string_provenance_question_settles"}}}
+~~~
+
+| Slice | Role additions |
+|---|---|
+| V0.01 | Core: registry, `owning_role` on values, transition-on-call, `%role`, `%chain` wipe |
+| V0.02 | Transpiler role; emitted CaspianJ tagged with caller role |
+| V0.03 | `stdout` role; owns the stdout sink and the `puts` bwc; first cross-role boundary for engine-supplied I/O |
+| V0.04 | No new role primitives; built-in hash class is registered under the existing `stdlib` role (same pattern as V0.01's string class) |
+| V0.05 | No new role primitives; `to_json` methods register on existing `stdlib`-owned classes |
+| V0.0X CLI | `stderr` role; per-directory jail roles when `--allow-fs` is used; per-faucet roles when `--allow-net` is used; `env_vars` and `cli_args` roles |
+| First HTTP | Network faucet role; request-body values inherit it |
+| First DB | Per-Mikobase-instance role; rows inherit it |
+| First Uma | No new role primitives; Uma objects are user-owned by default |
+| First signed request | Identity faucet role; trust-mechanism scaffolding |
+| First deployment | No new role primitives; deployment context may add engine roles |
+| First hosted service | Per-tenant roles (TBD); cross-role-trust mechanics (TBD) |
+
+Jails arrive when a slice has values worth narrowing. Cross-role trust
+declarations arrive when a slice needs to grant trust. Alarms (vs.
+regular exceptions) arrive when a slice has sinks that must hard-stop.
+Source-side propagation is deferred until the
+[string-provenance question](#open-questions) settles.
+
+<a id="implementation-hello-world-end-to-end"></a>
+### Hello-world's role behavior end-to-end
+
+Program starts in role `user`. The fixture materializes the literal
+`"hello"` — a string value owned by `user` (created by user-role code).
+Method dispatch on `to_string`: the method lives on the built-in string
+class, owned by an engine role. Receiver-method-owning-role differs from
+current → transition. Wipe (empty) chain, set current role to the
+string-class role, execute `to_string` (which returns the receiver,
+since a string's `to_string` is identity), restore current role to
+`user`. The returned value's owning role is the receiver's (user-owned);
+the test harness captures it. This proves the role-transition machinery
+at the smallest possible scale; every later slice exercises more of the
+model.
+
+---
+
 <a id="related-documents"></a>
 ## Related Documents
 
@@ -619,10 +736,6 @@ To explore in a future round.
   concepts (per-getter roles, version windows, etc.).
 - [ideas/catchable-alarms.md](../ideas/catchable-alarms.md) — preserved
   alternate design where alarms could be caught at role boundaries.
-- [ideas/plusplus/roles.md](../ideas/plusplus/roles.md) — earlier draft of
-  `%role` as a chain-scoped identity/context store, explicitly *not* a
-  permission system. The role model reuses the `%role` shape but
-  promotes it to the security primitive.
 - [ideas/string-provenance.md](../ideas/security/string-provenance.md) — deferred
   idea for fine-grained string provenance.
 - [ideas/trusted-database-filtering.md](../ideas/security/trusted-database-filtering.md)

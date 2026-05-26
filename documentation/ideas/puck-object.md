@@ -313,14 +313,14 @@ hands back identically-tagged objects regardless of cache state.
 
 ```
 Puck
-├── Getter for foo.com/*       (role: foo-com-getter)
-│   ├── HTTPS download faucet
-│   └── Cache faucet
-├── Getter for bar.com/*       (role: bar-com-getter)
-│   ├── HTTPS download faucet
-│   └── Cache faucet
-└── Getter for internal/*      (role: internal-getter)
-    └── Internal-network faucet
+├─ Getter for foo.com/*       (role: foo-com-getter)
+│  ├─ HTTPS download faucet
+│  └─ Cache faucet
+├─ Getter for bar.com/*       (role: bar-com-getter)
+│  ├─ HTTPS download faucet
+│  └─ Cache faucet
+└─ Getter for internal/*      (role: internal-getter)
+   └─ Internal-network faucet
 ```
 
 The engine sets up the puck with its getters. Each getter gets its

@@ -56,13 +56,13 @@ or more **directory trees** of content.
 
 ```
 robinson_server/                  ← server root
-├── server.json                   ← lists sites
-└── sites/
-    └── borg/                     ← one site (nickname "borg")
-        ├── site.json             ← per-site config
-        ├── pages/                ← main content tree
-        ├── factory/              ← built-in fallback content
-        └── admin/                ← optional admin pages (opt-in)
+├─ server.json                   ← lists sites
+└─ sites/
+   └─ borg/                     ← one site (nickname "borg")
+      ├─ site.json             ← per-site config
+      ├─ pages/                ← main content tree
+      ├─ factory/              ← built-in fallback content
+      └─ admin/                ← optional admin pages (opt-in)
 ```
 
 The runtime structure: Robinson is a Touchstone subclass that

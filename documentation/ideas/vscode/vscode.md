@@ -149,22 +149,22 @@ introduces survives the strip pass.
 
 ```
 vscode/syntax/
-├── package.json                   # manifest, adds main + formatter contributions
-├── syntaxes/
-│   └── caspian.tmLanguage.json    # existing syntax highlighting
-├── language-configuration.json    # NEW: brackets, comments, indentation
-├── src/
-│   ├── extension.ts               # NEW: activate(), registers formatter
-│   ├── formatter.ts               # NEW: formatCaspian() + pipeline
-│   └── rules/                     # NEW: one file per rule
-│       ├── indentation.ts
-│       ├── hashSpacing.ts
-│       ├── trailingWhitespace.ts
-│       ├── finalNewline.ts
-│       ├── blankLines.ts
-│       └── assignmentSpacing.ts
-├── tests/formatter/               # NEW: input/expected fixtures per rule
-└── tsconfig.json                  # NEW
+├─ package.json                   # manifest, adds main + formatter contributions
+├─ syntaxes/
+│  └─ caspian.tmLanguage.json    # existing syntax highlighting
+├─ language-configuration.json    # NEW: brackets, comments, indentation
+├─ src/
+│  ├─ extension.ts               # NEW: activate(), registers formatter
+│  ├─ formatter.ts               # NEW: formatCaspian() + pipeline
+│  └─ rules/                     # NEW: one file per rule
+│     ├─ indentation.ts
+│     ├─ hashSpacing.ts
+│     ├─ trailingWhitespace.ts
+│     ├─ finalNewline.ts
+│     ├─ blankLines.ts
+│     └─ assignmentSpacing.ts
+├─ tests/formatter/               # NEW: input/expected fixtures per rule
+└─ tsconfig.json                  # NEW
 ```
 
 <a id="user-preferences-shape"></a>

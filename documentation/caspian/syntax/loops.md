@@ -113,13 +113,18 @@ useful value; their job is the side effect of running the block.
 | `upto($n)` | Iterate from the current value up to `$n` inclusive. |
 | `downto($n)` | Iterate from the current value down to `$n` inclusive. |
 
+Examples below use `puts`, which writes its argument to stdout
+**followed by a newline** — distinct from `print`, which writes the
+exact string with no trailing newline. Both are stdlib bwcs; pick
+whichever matches the output shape you want.
+
 ```
 5.times do($i)
-    print $i        # 0 1 2 3 4
+    puts $i        # 0 1 2 3 4 (one per line)
 end
 
 1.upto(3) do($n)
-    print $n        # 1 2 3
+    puts $n        # 1 2 3 (one per line)
 end
 ```
 
@@ -149,8 +154,8 @@ immediately after the block declaration:
 
 ```
 $bar.each($foo) as $loop
-    print $loop.count   # current iteration, 1-based
-    print $loop.active?  # true while loop is running
+    puts $loop.count   # current iteration, 1-based
+    puts $loop.active?  # true while loop is running
 end
 ```
 
@@ -337,15 +342,15 @@ phases, not inside the iteration.
 
 ```
 $bar.each($foo)
-    print $foo.result
+    puts $foo.result
 before
-    print "--- START ------"
+    puts "--- START ------"
 between
-    print "----------------"
+    puts "----------------"
 after
-    print "--- END --------"
+    puts "--- END --------"
 noloop
-    print "--- NO RESULTS -"
+    puts "--- NO RESULTS -"
 end
 ```
 

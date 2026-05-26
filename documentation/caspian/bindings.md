@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "bindings",
-	"role": "spec for the binding mechanism that lets Caspian classes reach Lua-backed functionality (HTTP, filesystem, SQLite, crypto, parsing) without breaching the Caspian/Lua security floor",
+	"role": "spec for the binding mechanism that lets Caspian classes reach Lua-backed functionality (HTTP, filesystem, SQLite, signing, parsing) without breaching the Caspian/Lua security floor",
 	"key_concepts": ["binding_mechanism", "lua_bridge", "operator_install_only",
 		"sandbox_seal", "engine_startup_load", "controlled_capability_surface"]
 }}
@@ -25,7 +25,7 @@ untrusted code could escape the Caspian sandbox into arbitrary Lua
 and from there into the host process.
 
 But Puck's framework needs Lua-backed functionality everywhere:
-HTTP, filesystem, JSON, SQLite, crypto, markup parsing, etc. The
+HTTP, filesystem, JSON, SQLite, signing, markup parsing, etc. The
 question is how user-level Caspian classes (Uma, mikobase, Sammy,
 etc.) get to use these Lua libraries without breaking the seal.
 
@@ -114,7 +114,7 @@ Every engine ships with this baseline set:
 | `puck.uno/binding/sqlite` | SQLite driver (used by mikobase) | LuaSQLite3 or similar |
 | `puck.uno/binding/markup` | HTML + XML parsing/serialization | gumbo bindings or similar |
 | `puck.uno/binding/fork` | Process spawning, IPC, signals | luaposix or similar |
-| `puck.uno/binding/crypto` | Cryptographic primitives — hashing, signing, secure random, encryption | luaossl or similar |
+| `puck.uno/binding/sodium` | Cryptographic primitives — hashing (SHA-256, BLAKE2b), signing (Ed25519), secure random, constant-time comparison | luasodium / libsodium |
 | `puck.uno/binding/time` | Clock, timestamp parsing/formatting, timezone math | OS time + Lua wrappers |
 
 Probably ship (still TBD):
@@ -138,16 +138,8 @@ objects don't work. It's not optional.
 (`flock`/`fcntl`). Jasmine's directory store and several other
 parts of the framework depend on it for concurrency.
 
-<a id="about-crypto"></a>
-### About `crypto`
-
-The name `crypto` here is the **standard software-engineering
-term for cryptographic primitives** — hashing (SHA-256, etc.),
-signing (Ed25519, RSA), secure random, symmetric encryption (AES),
-constant-time comparison. **It is not about cryptocurrency.** The
-word has been colloquially hijacked by cryptocurrency news cycles,
-but the technical meaning predates that by decades and is what's
-intended here.
+<a id="about-sodium-binding"></a>
+### What the sodium binding covers
 
 Puck uses these primitives for:
 
@@ -155,6 +147,12 @@ Puck uses these primitives for:
 - Mikobase file deduplication via SHA-256.
 - Secure random for UUIDs (Jasmine entries, tokens, identifiers).
 - Constant-time secret comparison where needed.
+
+The binding is named `puck.uno/binding/sodium` after libsodium, the
+underlying C library. Naming it that way is intentional — it's
+specific (sodium is a library, not a category) and sidesteps the
+ambiguity of the word "crypto" (which has been colloquially hijacked
+by cryptocurrency contexts).
 
 ---
 

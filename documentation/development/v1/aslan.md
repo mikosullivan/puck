@@ -1,7 +1,7 @@
-# V0.01: "hello-world"
+# Aslan
 
 ~~~json
-{"vibecode": {"version": "0.01", "codename": "hello-world", "goal":
+{"vibecode": {"codename": "Aslan", "delivers": "hello-world", "goal":
 "execute a minimal caspianj program end_to_end and return a literal value to the test harness",
 "medium": "caspianj_hand_written; not_caspian_source", "fixture":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "expected_return": "hello",
@@ -19,12 +19,12 @@ harness. No I/O — no stdout, no sinks beyond what the harness needs to
 observe the return value.
 
 Caspian transpiles to CaspianJ (CaspianJ is the canonical runtime
-format), so the engine consumes CaspianJ, not Caspian text. V0.01
+format), so the engine consumes CaspianJ, not Caspian text. Aslan
 hand-writes the CaspianJ fixture and skips the transpiler entirely. The
 Caspian text parser, the transpiler, and `sys`-reference resolution
 (`%stdout`, `%now`, etc.) are all deferred to later slices.
 
-V0.01 is intentionally tiny. Every layer the engine actually needs to
+Aslan is intentionally tiny. Every layer the engine actually needs to
 execute a single method-call statement has to exist in skeleton form to
 pass — JSON parser, statement dispatcher, method dispatch with role
 transition, literal materialization with owning-role tag, the minimum
@@ -46,7 +46,7 @@ built out fully.
 "last_statement_return_value_equals_string_hello_observed_by_harness"}}}
 ~~~
 
-V0.01 is done when all four are true:
+Aslan is done when all four are true:
 
 1. **The fixture runs.** `[[{"value": "hello"}, "to_string"]]` parses
    and executes through the engine without exception.
@@ -60,7 +60,7 @@ V0.01 is done when all four are true:
    value is captured by the Lua-side harness and matches the string
    `"hello"`.
 
-That's the entirety of V0.01. Soft feature lock applies — no additional
+That's the entirety of Aslan. Soft feature lock applies — no additional
 scope without explicit unlock.
 
 ---
@@ -70,7 +70,7 @@ scope without explicit unlock.
 ~~~json
 {"vibecode": {"section": "engine_startup_and_invocation", "scope":
 "how_a_ksj_program_actually_runs_from_invocation_through_return",
-"applies_from": "v001", "covers": ["host_vs_engine_distinction",
+"applies_from": "aslan", "covers": ["host_vs_engine_distinction",
 "invocation_chain", "bootstrap_sequence", "program_model",
 "what_user_ksj_can_see", "how_later_slices_extend"]}}
 ~~~
@@ -79,7 +79,7 @@ This section spells out the lifecycle of a CaspianJ run end-to-end: who
 launches it, what the engine does before user code executes, what user
 code can actually reference, and how that lifecycle grows in later
 slices. It answers two related questions that came up while scoping
-V0.01: **how do you start a CaspianJ script** and **how does the engine load
+Aslan: **how do you start a CaspianJ script** and **how does the engine load
 allowed objects into the outermost CaspianJ block**.
 
 <a id="host-vs-engine"></a>
@@ -89,9 +89,9 @@ allowed objects into the outermost CaspianJ block**.
 {"vibecode": {"host_vs_engine": {"engine":
 "the_library_that_runs_ksj; located_under_code_caspian_lua",
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
-"v001_host": "lua_test_runner_invoked_from_command_line",
-"later_hosts": ["standalone_cli_via_v00x_caspian_cli_slice",
-"sammy_request_handler_v003_plus",
+"aslan_host": "lua_test_runner_invoked_from_command_line",
+"later_hosts": ["standalone_cli_via_frank_caspian_cli_slice",
+"sammy_request_handler_corin_plus",
 "one_running_ksj_calling_another_via_function_dispatch"]}}}
 ~~~
 
@@ -99,21 +99,21 @@ The **engine** is the Lua library at `lib/lua/` that knows how
 to parse and execute CaspianJ. The **host** is whatever calls into the
 engine. They are different layers.
 
-In V0.01 the host is a Lua test runner invoked from the command line.
+In Aslan the host is a Lua test runner invoked from the command line.
 Later hosts include the standalone `caspian` CLI (arrives in the
-[V0.0X caspian-cli slice](v0.0x.md),
-prerequisite for V0.1 Bryton), a Sammy request handler (at the
+[Frank caspian-cli slice](frank.md),
+prerequisite for Glenstorm Bryton), a Sammy request handler (at the
 first-HTTP slice — every handler closure is itself CaspianJ that the engine
 runs in response to a request), and one piece of running CaspianJ calling
 another (which emerges from normal function dispatch, no separate
 engine API needed). Each host invokes the same `engine.run()` entry
 point; what differs is who triggers it and what they pass in.
 
-<a id="v001-invocation-chain"></a>
-### V0.01 invocation chain
+<a id="aslan-invocation-chain"></a>
+### Invocation chain
 
 ~~~json
-{"vibecode": {"v001_invocation_chain": [{"step": 1, "name":
+{"vibecode": {"aslan_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
 "lua tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj"},
 {"step": 2, "name": "runner_loads_engine_as_lua_library",
@@ -141,19 +141,20 @@ Top-level shape:
    return value.
 6. **Runner compares to expected `"hello"`** and reports PASS or FAIL.
 
-<a id="v001-engine-bootstrap-sequence"></a>
-### V0.01 engine bootstrap sequence
+<a id="aslan-engine-bootstrap-sequence"></a>
+### Engine bootstrap sequence
 
 ~~~json
-{"vibecode": {"v001_bootstrap_sequence": [{"step": 1, "name":
+{"vibecode": {"aslan_bootstrap_sequence": [{"step": 1, "name":
 "create_role_registry", "creates": ["user", "stdlib"],
-"role_object_v001":
+"role_object_aslan":
 "name_only_no_methods_no_state_no_trust_web"}, {"step": 2, "name":
 "create_built_in_string_class", "creates":
 "string_class_object_with_one_method_to_string_returning_self",
 "tagged_with": "stdlib"}, {"step": 3, "name":
-"establish_execution_context", "sets":
-{"current_role": "user", "chain": "empty_placeholder"}}, {"step":
+"create_call_stack_with_top_level_frame", "frame":
+{"action": "top_level", "role": "user_role_ref",
+"chain": "empty_chain"}}, {"step":
 4, "name": "load_and_parse_ksj_file", "uses": "json_parser",
 "produces": "parsed_ksj_tree"}, {"step": 5, "name":
 "execute_top_level_statements", "iterates":
@@ -166,9 +167,9 @@ What happens between `engine.run(path)` being called and the result
 coming back:
 
 1. **Create the role registry.** A small map of role-name → role-object.
-   V0.01 needs two roles: `user` (what the program runs as) and the
+   Aslan needs two roles: `user` (what the program runs as) and the
    string-class role (provisional name TBD; owns the built-in string
-   class). Role objects in V0.01 are barely more than identity tags —
+   class). Role objects in Aslan are barely more than identity tags —
    they have a name and nothing else. Cross-role trust,
    role-introspection, role nicknames are all later.
 
@@ -178,15 +179,16 @@ coming back:
    The class is tagged with the string-class role as its owner; the
    method-object inherits that owner.
 
-3. **Establish the execution context.** Two pieces of state:
-   `current_role` is set to `user`, `chain` is the empty placeholder.
-   From this point forward, every value created counts as user-owned
-   (current role is `user`); every method call goes through the
-   dispatcher.
+3. **Create the call stack with a top-level frame.** `engine.state.call_stack`
+   starts as a one-element array holding a `top_level` frame whose
+   `role` references the `user` role and whose `chain` is an empty
+   placeholder. From this point forward, every value created counts
+   as owned by the top frame's role (in Aslan, the user role); every
+   method call pushes a new frame and pops it on return.
 
 4. **Load and parse the CaspianJ file.** The engine reads the path it was
    handed, gives the text to the JSON parser, gets back a parsed tree.
-   For V0.01 the tree is `[[{"value": "hello"}, "to_string"]]`.
+   For Aslan the tree is `[[{"value": "hello"}, "to_string"]]`.
 
 5. **Execute top-level statements.** The engine iterates the outermost
    array. For each statement, it calls the statement dispatcher; the
@@ -195,13 +197,13 @@ coming back:
    captured; the last one is what gets surfaced.
 
 6. **Return to host.** The captured last-value is returned to the host
-   (in V0.01, the Lua test runner) as a Lua return value.
+   (in Aslan, the Lua test runner) as a Lua return value.
 
 <a id="program-model"></a>
 ### Program model
 
 ~~~json
-{"vibecode": {"program_model_v001": {"shape":
+{"vibecode": {"program_model_aslan": {"shape":
 "top_level_array_of_statements", "entry_point":
 "the_outermost_array_itself_no_main_function",
 "result_of_program":
@@ -214,24 +216,24 @@ executes them in order. The "result" of the program is the value of
 the last top-level statement. There is no `main` function and no
 entry-point declaration — the outermost array IS the entry point.
 
-Statements can define functions and call them, but for V0.01 the
+Statements can define functions and call them, but for Aslan the
 program is just one statement.
 
-<a id="what-user-caspianj-can-see-in-v001"></a>
-### What user CaspianJ can see in V0.01
+<a id="what-user-caspianj-can-see-in-aslan"></a>
+### What user CaspianJ can see
 
 ~~~json
-{"vibecode": {"v001_visibility": {"directly_referenceable_by_name":
+{"vibecode": {"aslan_visibility": {"directly_referenceable_by_name":
 "nothing", "implicitly_available":
 ["string_class_via_literal_materialization",
 "to_string_via_method_dispatch_on_string_values"],
-"explicitly_unavailable_v001":
+"explicitly_unavailable_aslan":
 ["sys_references_percent_stdout_percent_role_etc",
 "other_built_in_classes_integer_hash_array",
 "faucets", "jails", "trust_declarations"]}}}
 ~~~
 
-The V0.01 fixture doesn't reference any object by name. It only:
+The Aslan fixture doesn't reference any object by name. It only:
 
 - Materializes a string literal (`{"value": "hello"}`) — the engine's
   literal-materializer knows about the string class and tags the new
@@ -239,10 +241,10 @@ The V0.01 fixture doesn't reference any object by name. It only:
 - Calls a method on the value (`"to_string"`) — the dispatcher looks
   up the method on the receiver's class.
 
-The string class is **not exposed as a named object** in V0.01. It's
+The string class is **not exposed as a named object** in Aslan. It's
 **discovered** by the dispatcher when a method call lands on a string
 value. This is the simplest possible answer to "how do allowed objects
-get loaded into the outermost CaspianJ block": in V0.01, they don't get
+get loaded into the outermost CaspianJ block": in Aslan, they don't get
 loaded explicitly at all — they're available only through the
 dispatcher's class-lookup mechanism for values the engine itself
 created.
@@ -251,7 +253,7 @@ created.
 ### How later slices grow the lifecycle
 
 ~~~json
-{"vibecode": {"growth_path": {"v002": {"bootstrap_change":
+{"vibecode": {"growth_path": {"bree": {"bootstrap_change":
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
 "runner_may_optionally_transpile_caspian_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
@@ -269,10 +271,10 @@ created.
 "engine_capability_allow_list_for_running_untrusted_code"}}
 ~~~
 
-V0.02 (transpiler) doesn't change the bootstrap sequence — the
+Bree (transpiler) doesn't change the bootstrap sequence — the
 transpiler runs before the engine is invoked (probably as a runner-side
 step that turns `.casp` text into CaspianJ), and the engine consumes the
-CaspianJ exactly as in V0.01.
+CaspianJ exactly as in Aslan.
 
 Later slices extend the lifecycle in these ways:
 
@@ -293,7 +295,7 @@ Later slices extend the lifecycle in these ways:
   during bootstrap. Objects pulled through inherit the faucet's role.
 
 The bigger open question — **how the engine decides which capabilities
-a particular invocation gets** — is V1 work, not V0.01. The shape is
+a particular invocation gets** — is V1 work, not Aslan. The shape is
 still TBD. Likely candidates: engine-config-driven (the deployer
 specifies which built-ins and faucets a given Caspian instance can
 access); role-driven (a role's trust web determines what it can see).
@@ -310,14 +312,14 @@ code cannot escape. Flagged as an open item.
 {"vibecode": {"section": "lua_implementation_sketch", "status":
 "candidate_shape; to_be_reconciled_with_existing_code_during_inventory",
 "language": "lua_5_4_assumed", "style":
-"plain_tables_no_metatables_for_v001; closures_for_role_transition_save_restore",
+"plain_tables_no_metatables_for_aslan; closures_for_role_transition_save_restore",
 "deliberately_not_specified":
 ["module_layout_within_code_caspian_lua_caspian_directory",
 "naming_conventions_for_internal_locals",
 "exact_signature_of_existing_json_lua"]}}
 ~~~
 
-This section sketches the engine's internal Lua shape for V0.01: data
+This section sketches the engine's internal Lua shape for Aslan: data
 structures, key procedures, and a pseudo-code skeleton. It is a
 **candidate target** to be reconciled with what's already in
 `lib/lua/caspian/` during Step 1 (inventory) of Phase 1. Where
@@ -335,16 +337,30 @@ doesn't, the shapes below are the proposal.
 "class_object":
 "{name = string, owning_role = role_object, methods = {[name] = lua_function}}",
 "class_registry": "engine.classes = {[name] = class_object, ...}",
-"execution_context":
-"{current_role = role_object, chain = lua_table_placeholder}"}}}
+"skeletor_state_hash":
+"engine.state = {call_stack = {frame_1, ...}}; each_frame_carries_action_role_chain_locals_pc; aslan_top_frame_is_top_level_with_user_role_empty_chain; grows_in_later_slices_per_skeletor_md",
+"skeletor_doc": "../../caspian/skeletor/skeletor.md"}}}
 ~~~
 
-Every internal object is a plain Lua table — no metatables in V0.01.
+**Skeletor from day one.** Per [skeletor.md](../../caspian/skeletor/skeletor.md),
+all of Caspian's execution state lives in a single hash —
+`engine.state` in this implementation. Aslan's state hash is tiny —
+one field, `call_stack`, holding one frame to start — but the
+discipline is in place from the first slice: the interpreter goes
+through `engine.state` for all execution state, and the role/chain
+context lives in the top-of-stack frame rather than as separate
+top-level fields. Later slices grow the hash's contents (deeper stacks, iterator
+state, pending exceptions, program-wide fields like `argv`) without
+changing the shape. Roles and classes are bootstrap-time registries
+(engine metadata, not execution state) and live alongside the hash as
+`engine.roles` and `engine.classes`.
+
+Every internal object is a plain Lua table — no metatables in Aslan.
 References between tables are Lua's normal table-reference semantics
 (passing a table around shares the same memory; assignment copies the
 reference, not the contents).
 
-- **Role object.** Minimal in V0.01:
+- **Role object.** Minimal in Aslan:
   ```lua
   { name = "user" }
   ```
@@ -365,7 +381,7 @@ reference, not the contents).
   ```
   The `owning_role` field is a *reference* to one of the role objects
   in `engine.roles` — same Lua table, shared. Once set, it's never
-  reassigned (immutable per [roles.md](../caspian/roles.md)).
+  reassigned (immutable per [roles.md](../../caspian/roles.md)).
 
 - **Class object.** Holds methods as a sub-table of Lua functions:
   ```lua
@@ -386,17 +402,31 @@ reference, not the contents).
   engine.classes = { string = { ... } }
   ```
 
-- **Execution context.** One table that holds the current role and
-  current chain:
+- **Execution state (Skeletor hash).** One table that holds all
+  durable execution state. For Aslan, just a `call_stack` array
+  starting with one `top_level` frame:
   ```lua
-  engine.ctx = {
-      current_role = engine.roles.user,
-      chain        = {},  -- empty placeholder for V0.01
+  engine.state = {
+      call_stack = {
+          {
+              action = "top_level",
+              role   = engine.roles.user,
+              chain  = {},        -- empty placeholder for Aslan
+              locals = {},
+          },
+      },
   }
   ```
-  This is the mutable runtime state. Cross-role transitions save and
-  restore this table's fields via Lua locals (closures), not via a
-  separate stack data structure — Lua's own call stack does the work.
+  Each frame is a Lua table carrying `action`, `role`, `chain`,
+  `locals`, and (in later slices) `src`, `iterator`, etc. The "current
+  role" and "current chain" are just the top frame's `role` and
+  `chain` — no separate top-level fields. This is the
+  [Skeletor](../../caspian/skeletor/skeletor.md) hash. Cross-role transitions
+  push a new frame on entry and pop it on return; Lua's own call
+  stack runs alongside the explicit frame stack (the dispatcher
+  function nests, and so does the explicit stack). Working state
+  (intermediate expression results, args being marshaled) stays
+  outside the hash, per skeletor.md.
 
 <a id="key-procedures"></a>
 ### Key procedures
@@ -405,15 +435,15 @@ reference, not the contents).
 {"vibecode": {"procedures": {"engine.run":
 "(path) -> last_statement_value; entry_point",
 "engine.bootstrap":
-"() -> nil; populates_roles_classes_ctx", "engine.dispatch":
+"() -> nil; populates_roles_classes_state_hash", "engine.dispatch":
 "(statement) -> value; handles_one_top_level_statement",
 "engine.materialize": "(expr) -> value; turns_ksj_expression_into_value",
 "engine.transition":
-"(new_role, fn) -> result; save_restore_ctx_around_fn_call",
+"(new_role, fn) -> result; save_restore_state_hash_around_fn_call",
 "engine.lookup_method": "(value, method_name) -> method_fn"}}}
 ~~~
 
-Five procedures cover V0.01:
+Five procedures cover Aslan:
 
 - `engine.run(path)` — entry point called by the host.
 - `engine.bootstrap()` — populates the role registry, class registry,
@@ -423,7 +453,7 @@ Five procedures cover V0.01:
 - `engine.materialize(expr)` — turns a CaspianJ expression
   (`{"value": ...}`, etc.) into a value table with `owning_role` tag.
 - `engine.transition(new_role, fn)` — wraps a Lua function call with
-  save/restore of `engine.ctx`. Uses Lua's call stack via closures;
+  save/restore of `engine.state`. Uses Lua's call stack via closures;
   no explicit transition stack needed.
 - `engine.lookup_method(value, method_name)` — finds the method
   function on the value's class. Looks up the class via `value.type`
@@ -468,10 +498,20 @@ function engine.bootstrap()
             },
         },
     }
-    engine.ctx = {
-        current_role = engine.roles.user,
-        chain        = {},
+    engine.state = {
+        call_stack = {
+            {
+                action = "top_level",
+                role   = engine.roles.user,
+                chain  = {},
+                locals = {},
+            },
+        },
     }
+end
+
+local function top_frame()
+    return engine.state.call_stack[#engine.state.call_stack]
 end
 
 function engine.dispatch(statement)
@@ -481,8 +521,13 @@ function engine.dispatch(statement)
     local method_fn = engine.lookup_method(receiver, method_name)
     local class = engine.classes[receiver.type]
     local target_role = class.owning_role
-    if target_role ~= engine.ctx.current_role then
-        return engine.transition(target_role, function()
+    if target_role ~= top_frame().role then
+        return engine.transition({
+            action        = "method_call",
+            role          = target_role,
+            receiver_type = receiver.type,
+            method        = method_name,
+        }, function()
             return method_fn(receiver, args)
         end)
     end
@@ -497,12 +542,12 @@ function engine.materialize(expr)
         -- other types added in later slices
         return {
             type         = ksj_type,
-            owning_role  = engine.ctx.current_role,
+            owning_role  = top_frame().role,
             payload      = expr.value,
         }
     end
     -- {var:...}, {sys:...}, {function:...}, etc. -- all later slices
-    error("unsupported expression form in V0.01: " ..
+    error("unsupported expression form in Aslan: " ..
           (next(expr) or "<empty>"))
 end
 
@@ -518,14 +563,20 @@ function engine.lookup_method(value, method_name)
     return method_fn
 end
 
-function engine.transition(new_role, fn)
-    local saved_role  = engine.ctx.current_role
-    local saved_chain = engine.ctx.chain
-    engine.ctx.current_role = new_role
-    engine.ctx.chain        = {}            -- wipe at boundary
+function engine.transition(frame_meta, fn)
+    -- Push a new frame; cross-role wipes chain by giving the new
+    -- frame its own fresh chain table.
+    local frame = {
+        action        = frame_meta.action,
+        role          = frame_meta.role,
+        receiver_type = frame_meta.receiver_type,
+        method        = frame_meta.method,
+        chain         = {},
+        locals        = {},
+    }
+    table.insert(engine.state.call_stack, frame)
     local result = fn()
-    engine.ctx.current_role = saved_role
-    engine.ctx.chain        = saved_chain
+    table.remove(engine.state.call_stack)
     return result
 end
 
@@ -536,33 +587,36 @@ return engine
 ### Notes on the sketch
 
 ~~~json
-{"vibecode": {"sketch_notes": ["plain_tables_only_no_metatables_v001",
+{"vibecode": {"sketch_notes": ["plain_tables_only_no_metatables_aslan",
 "role_objects_shared_by_reference_across_owning_role_fields",
-"transition_uses_lua_call_stack_via_closure_no_explicit_transition_stack",
-"chain_is_initialized_to_empty_table_wipe_means_replace_with_fresh_table",
-"errors_use_lua_error_for_v001_no_caspian_exception_machinery_yet",
+"explicit_call_stack_array_in_engine_state_pushed_and_popped_per_transition",
+"each_frame_carries_its_own_chain_so_cross_role_wipe_is_automatic_on_push",
+"errors_use_lua_error_for_aslan_no_caspian_exception_machinery_yet",
 "json_parse_assumed_to_return_nested_lua_tables_arrays_indexed_from_1"]}}
 ~~~
 
 A few specifics worth flagging:
 
-- **No metatables in V0.01.** Plain tables. Metatable-based dispatch
+- **No metatables in Aslan.** Plain tables. Metatable-based dispatch
   is a later optimization (or never — the current explicit lookup is
   perfectly clear).
 - **Role objects are shared by reference.** When ten values all sit
   under role `user`, they all point at the *same* Lua table
-  (`engine.roles.user`). Identity comparison (`a.owning_role == b.owning_role`)
+  (`engine.roles.user`). Identity comparison (`a.role == b.role`)
   is constant-time.
-- **No explicit transition stack.** The save/restore lives in Lua
-  locals inside `engine.transition`. Lua's own call stack handles
-  nesting. If `fn()` itself triggers another transition, that nests
-  naturally via another Lua call frame.
-- **Chain wipe = replace, not clear.** `engine.ctx.chain = {}` creates
-  a fresh empty table; the caller's saved-chain reference still points
-  to the original. On restore, the original is reattached. Safe.
-- **Errors use Lua `error()` for V0.01.** Caspian-level exception
-  machinery (alarms vs. regular exceptions per [roles.md](../caspian/roles.md))
-  lands in a later slice. For V0.01, anything wrong = engine bails
+- **Explicit call stack in `engine.state.call_stack`.** Each
+  transition pushes a frame on entry and pops it on return. Lua's
+  call stack still nests (because `engine.transition` is a regular
+  Lua function), but the Caspian-visible state is the explicit frame
+  array. If `fn()` triggers another transition, another frame goes
+  on top.
+- **Cross-role chain wipe happens by frame creation.** The pushed
+  frame gets `chain = {}` — a fresh table. The caller's chain
+  belongs to its own frame and is untouched. On pop, the caller's
+  frame is back on top and its chain is what it was.
+- **Errors use Lua `error()` for Aslan.** Caspian-level exception
+  machinery (alarms vs. regular exceptions per [roles.md](../../caspian/roles.md))
+  lands in a later slice. For Aslan, anything wrong = engine bails
   with a Lua error.
 - **JSON parser is assumed to return nested Lua tables**, arrays as
   arrays indexed from 1 (Lua-standard). To be confirmed during Step 1
@@ -570,11 +624,11 @@ A few specifics worth flagging:
 
 ---
 
-<a id="v001-phase-0-lua-workbench"></a>
-## V0.01 phase 0: Lua workbench
+<a id="aslan-phase-0-lua-workbench"></a>
+## Phase 0: Lua workbench
 
 ~~~json
-{"vibecode": {"phase": 0, "version": "0.01", "purpose":
+{"vibecode": {"phase": 0, "purpose":
 "set_up_and_verify_lua_dev_environment_before_writing_any_engine_code",
 "explicitly_excludes": "executing_caspian_or_ksj; only_lua_level_sanity",
 "steps_count": 6, "acceptance":
@@ -672,7 +726,7 @@ end)
 "() returns true_if_all_passed"}, "assert_api":
 ["equal", "not_equal", "is_nil", "not_nil", "is_true", "is_false",
 "kind", "count", "parse_error"], "verification":
-"write_one_trivial_test_that_uses_runner_and_assert; require_it_from_run_lua_or_a_v001_entry_point; confirm_passes_and_fails_are_reported_correctly"}}
+"write_one_trivial_test_that_uses_runner_and_assert; require_it_from_run_lua_or_a_aslan_entry_point; confirm_passes_and_fails_are_reported_correctly"}}
 ~~~
 
 The project already has a Lua test framework under
@@ -691,7 +745,7 @@ The project already has a Lua test framework under
 
 The existing lexer/parser/transpiler tests already use this framework
 (`tests/caspian/lexer/test_literals.lua`, etc.). **Use it as-is for
-V0.01.** Don't invent a parallel harness.
+Aslan.** Don't invent a parallel harness.
 
 Verify it works by writing one trivial sanity test that uses the
 framework:
@@ -712,7 +766,7 @@ runner.test("not_nil works", function()
 end)
 ```
 
-Then require it from `tests/caspian/run.lua` (or a temporary V0.01-only
+Then require it from `tests/caspian/run.lua` (or a temporary Aslan-only
 entry point) and run. Expected: two dots and a `2 / 2 passed` summary,
 exit 0.
 
@@ -734,7 +788,7 @@ description in the summary, and exit 1.
 
 The existing `lib/lua/caspian/json.lua` is assumed to provide
 a `parse` function. This step confirms it (and surfaces any API
-surprises for the V0.01 phase 1 inventory step).
+surprises for the Aslan phase 1 inventory step).
 
 ```lua
 -- tests/sanity/test_json_parse.lua
@@ -753,7 +807,7 @@ end)
 
 If `json.lua`'s API differs (different function name, returns wrapped
 result, etc.), this is where we discover it — and the
-[V0.01 phase 1 inventory step](#step-1-inventory) starts here.
+[Aslan phase 1 inventory step](#step-1-inventory) starts here.
 
 <a id="step-06-verify-file-reading"></a>
 ### Step 0.6: Verify file reading
@@ -790,52 +844,15 @@ end)
 When all six steps pass, the workbench is verified and Phase 1 can
 begin.
 
-<a id="phase-0-test-plan"></a>
-### Phase 0 test plan
-
-~~~json
-{"vibecode": {"phase_0_tests":
-[{"id": "T0.1", "verifies": "lua_5_4_installed", "tool":
-"command_line_lua_dash_v", "framework": "none"}, {"id": "T0.2",
-"verifies": "pure_lua_script_runs_and_prints", "tool":
-"tests/sanity/lua_hello.lua", "framework": "none"}, {"id": "T0.3",
-"verifies": "package_path_resolves_caspian_json_via_require",
-"tool": "tests/sanity/test_package_path.lua", "framework":
-"support_runner_and_assert"}, {"id": "T0.4", "verifies":
-"existing_test_framework_reports_pass_fail_and_exit_code", "tool":
-"tests/sanity/test_framework_sanity.lua", "framework":
-"support_runner_and_assert"}, {"id": "T0.5", "verifies":
-"caspian_json_parse_handles_simple_object", "tool":
-"tests/sanity/test_json_parse.lua", "framework":
-"support_runner_and_assert"}, {"id": "T0.6", "verifies":
-"file_io_read_returns_expected_bytes", "tool":
-"tests/sanity/test_file_read.lua", "framework":
-"support_runner_and_assert"}]}}
-~~~
-
-T0.1 and T0.2 are pre-framework — Lua isn't even confirmed working
-yet, so they can't depend on `support/runner.lua`. T0.3 onward use the
-project's existing framework (`tests/caspian/support/runner.lua` +
-`support/assert.lua`).
-
-| ID | Verifies | Tool | Framework |
-|---|---|---|---|
-| T0.1 | Lua 5.4 installed | `lua -v` | none |
-| T0.2 | Pure Lua script runs and prints | `tests/sanity/lua_hello.lua` | none |
-| T0.3 | package.path resolves caspian modules | `tests/sanity/test_package_path.lua` | `support/runner` |
-| T0.4 | Existing framework reports pass/fail | `tests/sanity/test_framework_sanity.lua` | `support/runner` |
-| T0.5 | json.lua parses simple object | `tests/sanity/test_json_parse.lua` | `support/runner` |
-| T0.6 | File I/O read returns expected bytes | `tests/sanity/test_file_read.lua` | `support/runner` |
-
-All six must pass before V0.01 phase 1 begins.
+Phase 0 test coverage lives under [Testing](#testing) below.
 
 ---
 
-<a id="v001-phase-1-hello-world-in-caspianj"></a>
-## V0.01 phase 1: hello-world in CaspianJ
+<a id="aslan-phase-1-hello-world-in-caspianj"></a>
+## Phase 1: hello-world in CaspianJ
 
 ~~~json
-{"vibecode": {"phase": 1, "version": "0.01", "fixture_path":
+{"vibecode": {"phase": 1, "fixture_path":
 "tests/caspian/fixtures/hello_world.caspj", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
 "tests/caspian/run.lua", "acceptance":
@@ -850,23 +867,27 @@ All six must pass before V0.01 phase 1 begins.
 "required_stdlib": ["string_class_min_with_to_string_returning_self"],
 "tactic": "inventory_then_fill_gaps_and_align_format; spec_wins_over_existing_code",
 "canon": "caspianj_md_is_canonical; existing_transpiler_interpreter_format_is_pre_spec_and_gets_brought_into_line",
-"deferred_to_v002":
+"deferred_to_bree":
 ["caspian_text_parser", "transpiler_emitting_canonical_ksj"],
 "deferred_to_later":
 ["sys_references_including_stdout", "stdout_io",
 "any_method_beyond_to_string", "any_class_beyond_string"]}}
 ~~~
 
-The first concrete development task. Work splits into three steps. The
-tactic is **inventory then fill gaps** — but with an important caveat:
-the existing engine consumes a CaspianJ shape that **predates the
-canonical [caspianj.md](../caspian/caspianj.md) spec.** The
-V0.01 fixture (shown at the top of this page) is in the canonical form; the
+The first concrete development task. Work splits into eight steps, each
+small, runnable, and observable on its own. Do them in order; don't
+skip ahead. The point is to get from "Phase 0 done" to "the Aslan
+acceptance tests pass" through a sequence that's hard to fail at.
+
+The tactic is **inventory then fill gaps** — but with an important
+caveat: the existing engine consumes a CaspianJ shape that **predates
+the canonical [caspianj.md](../../caspian/caspianj.md) spec.** The Aslan
+fixture (shown at the top of this page) is in the canonical form; the
 existing interpreter currently isn't.
 
 **Canon: the spec wins.** When `caspianj.md` and the existing
 engine disagree, the spec is authoritative and the engine gets
-brought into line. The format-alignment work is part of V0.01
+brought into line. The format-alignment work is part of Aslan
 scope, not a separate slice — Phase 1 doesn't end until the
 interpreter consumes canonical CaspianJ. (Per the
 `feedback_surface_conflicts` editorial policy: this is a specific
@@ -875,47 +896,265 @@ conflicts get surfaced and resolved case-by-case.)
 
 The existing engine under `lib/lua/caspian/` has a
 `json.lua`, `interpreter.lua`, and other modules with 172 passing
-tests. The V0.01 work is to (a) verify the JSON parser handles the
+tests. The Aslan work is to (a) verify the JSON parser handles the
 canonical form, (b) realign the CaspianJ-execution path to the
 canonical statement shape `[receiver, method, args?]`, and (c)
 complete enough of the executor to run `hello-world`. The Caspian
-text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is V0.02
+text path (`lexer.lua`, `parser.lua`, `transpiler.lua`) is Bree
 work; when it lands, the transpiler must also emit canonical CaspianJ
 so the source→runtime pipeline is end-to-end canonical.
 
-<a id="step-1-inventory"></a>
-### Step 1: Inventory
+<a id="step-1-run-the-existing-test-suite"></a>
+### Step 1: Run the existing test suite
 
 ~~~json
-{"vibecode": {"step": 1, "name": "inventory", "actions":
-["read_existing_json_lua", "read_existing_interpreter_lua",
-"note_state_of_json_parser", "note_state_of_ksj_executor",
-"confirm_text_side_modules_exist_as_scaffolding_only"], "output":
-"state_of_engine_doc; gap_list_for_v001"}}
+{"vibecode": {"step": 1, "name": "baseline_existing_suite", "action":
+"run_lua_tests_caspian_run_lua_from_project_root", "purpose":
+"snapshot_pass_fail_count_before_changing_anything",
+"not_a_goal": "making_all_existing_tests_pass_for_aslan"}}
 ~~~
 
-Read what's already in `lib/lua/caspian/`: in particular `json.lua`
-and `interpreter.lua`. Note the state of each:
+Phase 0 verified the workbench. This is the first action against the
+engine itself. From the project root:
 
-- Does `json.lua` parse the JSON forms `hello-world.caspj` needs (top-level
-  array, nested array, object with string keys, string values)?
-- Does `interpreter.lua` accept a parsed CaspianJ tree and dispatch
-  statements?
+```
+lua tests/caspian/run.lua
+```
 
-`lexer.lua`, `parser.lua`, and `transpiler.lua` are Caspian-text-side
-concerns deferred to V0.02. Confirm they exist as scaffolding; don't trial
-them for V0.01.
+The existing scaffolding includes lexer, parser, and transpiler tests
+from earlier work. **We are not trying to make all of these pass for
+Aslan.** Their purpose at this step is to establish a baseline:
 
-Output: a short gap list — "the JSON parser handles these forms / doesn't
-handle these; the interpreter executes these CaspianJ shapes / doesn't
-execute these; this is what's needed to clear V0.01."
+- Does the test runner load and execute at all?
+- What's the pass / fail count right now?
+- Which tests fail, and roughly why?
 
-<a id="step-2-fill-the-gaps"></a>
-### Step 2: Fill the gaps
+Record the output somewhere casual (a scratch note, a paste into a
+gist — doesn't need to be checked in). This is the "before" snapshot.
+
+If the runner itself errors out before running any tests
+(e.g., `module 'caspian.lexer' not found`), that's a `package.path`
+problem and Phase 0 Step 0.3 is where you'll fix it.
+
+<a id="step-2-inventory-the-engine-source"></a>
+### Step 2: Inventory the engine source
 
 ~~~json
-{"vibecode": {"step": 2, "name": "fill_gaps", "scope":
-"only_what_v001_needs; not_full_ksj_spec",
+{"vibecode": {"step": 2, "name": "inventory", "actions":
+["read_existing_json_lua", "read_existing_interpreter_lua",
+"note_state_of_json_parser", "note_state_of_ksj_executor",
+"confirm_text_side_modules_exist_as_scaffolding_only",
+"identify_format_mismatches_against_canonical_caspianj_spec"],
+"output": "state_of_engine_doc; gap_list_for_aslan; format_mismatch_list"}}
+~~~
+
+Open these files in your editor in this order:
+
+| File | Why first |
+|---|---|
+| `tests/caspian/run.lua` | Confirms how `package.path` is set; that's how every test discovers the engine modules |
+| `tests/caspian/support/runner.lua` | The test framework: `suite`, `test`, `report` |
+| `tests/caspian/support/assert.lua` | The assertion helpers (`equal`, `is_nil`, `not_nil`, etc.) |
+| `lib/lua/caspian/json.lua` | The JSON parser the engine will use to load `.caspj` files |
+| `lib/lua/caspian/interpreter.lua` | The CaspianJ executor in whatever state it's currently in |
+
+Read top-to-bottom, get a sense of:
+
+- Does `json.lua` parse the JSON forms `hello-world.caspj` needs
+  (top-level array, nested array, object with string keys, string values)?
+  Does it export a `parse` function? What does it return for a nested
+  JSON array?
+- Does `interpreter.lua` accept a parsed CaspianJ tree and dispatch
+  statements? Does it have a `run` (or `execute`, or similar) entry
+  point? What does it expect as input?
+- Does `support.runner` have any state we have to clear between test
+  files (a global pass/fail counter, for instance)?
+
+`lexer.lua`, `parser.lua`, and `transpiler.lua` are Caspian-text-side
+concerns deferred to Bree. Confirm they exist as scaffolding; don't
+trial them for Aslan.
+
+**One thing to specifically look for:** the existing interpreter
+consumes a **pre-spec CaspianJ format** (its own docstring notes this).
+Concretely:
+
+- Assignment is emitted as `["scope", "setvar", name, value]` — a
+  four-element shape, not the canonical `[receiver, method, args?]`.
+- BWC calls wrap their args in an extra `{"args": [...]}` layer
+  rather than passing the positional expression directly.
+- Other shapes may differ; only two paths have been checked.
+
+The canonical form lives in
+[caspianj.md](../../caspian/caspianj.md), and the Aslan fixture uses it.
+**The spec wins** — when the interpreter and the spec disagree, the
+interpreter is the thing that changes.
+
+Output: a short list — "the JSON parser handles these forms / doesn't
+handle these; the interpreter executes these CaspianJ shapes / doesn't
+execute these; here are the exact format mismatches that need
+realignment; this is what's needed to clear Aslan."
+
+<a id="step-3-write-the-aslan-fixture"></a>
+### Step 3: Write the fixture
+
+~~~json
+{"vibecode": {"step": 3, "name": "write_fixture", "fixture_path":
+"tests/caspian/fixtures/hello_world.caspj", "fixture_content":
+"[[{\"value\": \"hello\"}, \"to_string\"]]", "shape":
+"outer_array_is_program_inner_array_is_one_statement_in_canonical_receiver_method_args_shape"}}
+~~~
+
+Create the file `tests/caspian/fixtures/hello_world.caspj`. Contents,
+exactly:
+
+```
+[[{"value": "hello"}, "to_string"]]
+```
+
+One line, no trailing comment, no surrounding whitespace beyond the
+final newline. This is the **entire input** for Aslan. The outer array
+is the program (a list of statements); the inner array is one
+statement in the canonical `[receiver, method, args?]` shape; the
+receiver is the string literal `"hello"`; the method is `to_string`;
+no args.
+
+Verify the file is there:
+
+```
+cat tests/caspian/fixtures/hello_world.caspj
+wc -l tests/caspian/fixtures/hello_world.caspj
+```
+
+Expected output: the literal JSON string, and `1` line.
+
+<a id="step-4-first-sanity-test-parse-the-fixture"></a>
+### Step 4: First sanity test — parse the fixture
+
+~~~json
+{"vibecode": {"step": 4, "name": "fixture_parse_test", "test_file":
+"tests/caspian/aslan/test_fixture_parse.lua", "verifies":
+"caspian_json_parses_the_fixture_into_expected_nested_table_shape",
+"wires_into": "tests/caspian/run.lua_via_require_aslan_test_fixture_parse"}}
+~~~
+
+Create `tests/caspian/aslan/test_fixture_parse.lua`:
+
+```lua
+local runner = require("support.runner")
+local assert_ = require("support.assert")
+local json = require("caspian.json")
+
+runner.suite("v0.01 / fixture parse")
+
+runner.test("parses the hello_world fixture", function()
+    local f = assert(io.open("tests/caspian/fixtures/hello_world.caspj"))
+    local source = f:read("*a")
+    f:close()
+
+    local parsed = json.parse(source)
+    assert_.not_nil(parsed, "json.parse returned nil")
+    assert_.equal(type(parsed), "table")
+
+    -- The outermost array should hold exactly one statement.
+    assert_.equal(#parsed, 1)
+    -- That statement should itself be an array of [receiver, method].
+    assert_.equal(type(parsed[1]), "table")
+    assert_.equal(#parsed[1], 2)
+end)
+```
+
+Wire it into the test runner. Open `tests/caspian/run.lua` and add:
+
+```lua
+require("aslan.test_fixture_parse")
+```
+
+…alongside the existing `require("lexer.test_literals")` etc. lines.
+
+Run:
+
+```
+lua tests/caspian/run.lua
+```
+
+Expected: a dot for this test in the runner output, and a final
+summary line showing one additional pass.
+
+If `caspian.json`'s API doesn't match what the test assumes (different
+function name, different return shape), this is where you discover it.
+Update either the test or `caspian.json` as appropriate. Step 2's
+inventory should have told you which.
+
+<a id="step-5-wire-the-engine-entry-point"></a>
+### Step 5: Wire the engine entry point
+
+~~~json
+{"vibecode": {"step": 5, "name": "engine_entry_point", "creates_or_evolves":
+"lib/lua/caspian/init_lua_or_engine_lua", "exports":
+"engine_dot_run_path_returns_parsed_tree_for_now",
+"test_file": "tests/caspian/aslan/test_engine_run.lua"}}
+~~~
+
+In `lib/lua/caspian/`, create `engine.lua` (or evolve whatever
+top-level entry already lives there) so that `require("caspian")`
+returns a table with a `run` function:
+
+```lua
+local engine = {}
+local json = require("caspian.json")
+
+function engine.run(path)
+    local f = assert(io.open(path))
+    local source = f:read("*a")
+    f:close()
+    local tree = json.parse(source)
+
+    -- TODO Steps 6-7: bootstrap roles + classes + state hash, then execute
+    -- the parsed tree's statements, then return the last value.
+    -- For now, return the parsed tree so we can confirm the load path
+    -- works end-to-end before adding executor logic.
+    return tree
+end
+
+return engine
+```
+
+If `lib/lua/caspian/init.lua` already exists and `caspian` is
+already a module, integrate the `run` function there instead. The
+import surface from the test side stays the same:
+
+```lua
+local engine = require("caspian")
+```
+
+Add `tests/caspian/aslan/test_engine_run.lua`:
+
+```lua
+local runner = require("support.runner")
+local assert_ = require("support.assert")
+local engine = require("caspian")
+
+runner.suite("v0.01 / engine.run")
+
+runner.test("engine.run on the fixture returns a parsed tree", function()
+    local result = engine.run("tests/caspian/fixtures/hello_world.caspj")
+    assert_.not_nil(result)
+    assert_.equal(type(result), "table")
+    assert_.equal(#result, 1)
+end)
+```
+
+Wire this into `tests/caspian/run.lua` the same way as Step 4.
+
+Run the suite again. Expected: two new passing tests for Aslan plus
+whatever was passing before.
+
+<a id="step-6-fill-the-gaps"></a>
+### Step 6: Fill the gaps
+
+~~~json
+{"vibecode": {"step": 6, "name": "fill_gaps", "scope":
+"only_what_aslan_needs; not_full_ksj_spec",
 "json_parser_forms": ["json_object", "json_array", "json_string",
 "json_string_escapes_min"], "ksj_executor_forms":
 ["top_level_statement_list", "statement_call_dispatch_with_role_transition",
@@ -928,19 +1167,21 @@ execute these; this is what's needed to clear V0.01."
 ["string_class_with_to_string_returning_self_owned_by_stdlib_role"]}}
 ~~~
 
-For each gap in the inventory, add only what V0.01 needs.
-**Don't generalize ahead of the test.** The required surface is tiny:
+The engine now loads, parses, and returns the parsed tree. **It
+doesn't execute anything yet.** For each gap in the Step 2 inventory,
+add only what Aslan needs. **Don't generalize ahead of the test.** The
+required surface is tiny:
 
 - Enough JSON parsing to read `[[{"value": "hello"}, "to_string"]]`.
 - Enough CaspianJ execution to handle one top-level statement list,
   dispatch a single method call (with role transition), materialize a
   `value` literal with its owning-role tag, and return the last
   statement's value to the test harness.
-- The role primitives from the [Role system](development.md#role-system-baking-from-the-start)
+- The role primitives from the [V1 cross-cutting principles](v1.md#cross-cutting-principles)
   section: a registry with `user` and the string-class role, an
   `owning_role` slot on every value, save/restore of role + chain at
   the boundary, the `%role` system method, and the `%chain` wipe even
-  though chain is empty for V0.01.
+  though chain is empty for Aslan.
 - One stdlib piece: a minimal string class with `to_string` (the
   identity for strings) owned by the string-class role.
 
@@ -948,64 +1189,247 @@ Anything beyond these — `sys` references like `%stdout`, real I/O, any
 class beyond string, any method beyond `to_string` — is later work, not
 this one's.
 
-<a id="step-3-verify"></a>
-### Step 3: Verify
+<a id="step-7-implementation-slices-in-order"></a>
+### Step 7: Implementation slices in order
 
 ~~~json
-{"vibecode": {"step": 3, "name": "verify", "actions":
-["create_ksj_fixture_file", "run_via_engine",
-"capture_last_statement_return_value", "compare_to_expected_string_hello"],
+{"vibecode": {"step": 7, "name": "implementation_slices", "order":
+["bootstrap", "materialize", "lookup_method", "transition", "dispatch",
+"format_alignment_for_rest_of_interpreter"], "acceptance":
+"each_slice_one_test_one_implementation_one_commit",
+"target": "engine_run_returns_a_value_whose_payload_is_hello"}}
+~~~
+
+To get from "parsed tree returned" to "TA.7 passes" (engine.run returns
+a value whose payload equals `"hello"`), the next slices are:
+
+| Candidate | What it does | Lines (rough) |
+|---|---|---|
+| `engine.bootstrap()` | Creates the role registry (`user` + `stdlib`) and the string class with `to_string` (owned by `stdlib`). Sets `engine.state` | ~40 |
+| `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type, owning_role, payload}` | ~20 |
+| `engine.lookup_method(value, name)` | Finds `to_string` on the string class | ~15 |
+| `engine.transition(new_role, fn)` | Save/restore the Skeletor state hash around a Lua function call | ~15 |
+| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore. **Consumes canonical `[receiver, method, args?]` shape per [caspianj.md](../../caspian/caspianj.md)** — the existing interpreter's pre-spec shapes are deprecated by this work. | ~25 |
+| Format alignment for the rest of the interpreter | Migrate the remaining statement-shape handlers (assignment, `if`/`elsif`/`else`, etc.) from the pre-spec format to canonical CaspianJ. Touches every dispatch path in `interpreter.lua`. Existing parser/transpiler tests still pass — they test the source-side, not the runtime format. Some interpreter-level tests may need to be added or rewritten. | varies |
+
+Recommended order: `bootstrap` first (everything else needs the roles
+and classes to exist), then `materialize`, then `lookup_method`, then
+`transition`, then `dispatch`. After `dispatch` exists, hook it into
+`engine.run` to actually execute each statement and return the last
+result.
+
+For each slice:
+
+1. **Write the unit test first** under `tests/caspian/aslan/`, named
+   `test_<slice>.lua`. The test plans in the
+   [Phase 1 test plan](#phase-1-test-plan) below (TA.2 through TA.6)
+   spell out what each one should assert.
+2. **Implement the slice** in `lib/lua/caspian/engine.lua`
+   (or its companions). Keep each implementation small — just enough
+   to make the test pass.
+3. **Run the suite.** Confirm the new test passes and nothing else
+   broke.
+4. **Commit.** One slice per commit makes the history readable.
+
+<a id="step-8-verify-the-fixture-runs-end-to-end"></a>
+### Step 8: Verify the fixture runs end-to-end
+
+~~~json
+{"vibecode": {"step": 8, "name": "verify", "actions":
+["run_engine_run_on_fixture", "capture_last_statement_return_value",
+"compare_to_expected_string_hello", "verify_role_transition_observed"],
 "pass_condition":
-"return_value_equals_hello_and_no_exception_raised", "fail_condition":
+"return_value_equals_hello_and_no_exception_raised_and_role_transition_observed",
+"fail_condition":
 "any_deviation; failure_message_should_name_which_layer_blocked"}}
 ~~~
 
-Create the fixture at `tests/caspian/fixtures/hello_world.caspj` containing
-the CaspianJ encoding, run it via the engine, capture the last
-statement's return value, compare to the string `"hello"`. Pass = exact
-match on return value plus no exception. Fail = capture which layer
-blocked (JSON parse error? statement dispatch failed? literal
-materialization failed? `to_string` method missing? role transition
-botched? return-to-harness path missing?). That layer is the next thing
-to fix; loop back to Step 2.
+Run `engine.run("tests/caspian/fixtures/hello_world.caspj")` via the
+test harness, capture the last statement's return value, compare to
+the string `"hello"`. Pass = exact match on return value plus no
+exception. Fail = capture which layer blocked (JSON parse error?
+statement dispatch failed? literal materialization failed? `to_string`
+method missing? role transition botched? return-to-harness path
+missing?). That layer is the next thing to fix; loop back to Step 7.
 
-When V0.01 passes, V0.02 (hello-world in Caspian source, via the transpiler)
-is selected from the roadmap and planned in the same three-step shape.
+The slice loop ends when TA.7 (engine.run returns a value with payload
+`"hello"`) passes. TA.8 (role transition observed during dispatch)
+closes Aslan.
+
+<a id="step-8-skeletor-snapshots"></a>
+#### Skeletor snapshots during the run
+
+The [Skeletor state hash](#data-structures-lua-tables) (`engine.state`)
+at three moments during the `"hello".to_string` run. Aslan's hash only
+holds `current_role` and `chain` — later slices grow the contents:
+
+**After `engine.bootstrap()`, before any statement dispatches:**
+
+```json
+{
+  "call_stack": [
+    {
+      "action":   "top_level",
+      "role":   "user",
+      "chain":  {"log": {}, "misc": {}},
+      "locals": {}
+    }
+  ]
+}
+```
+
+**Mid-dispatch, inside the `to_string` method call (the cross-role
+transition TA.8 verifies):**
+
+```json
+{
+  "call_stack": [
+    {
+      "action":   "top_level",
+      "role":   "user",
+      "chain":  {"log": {}, "misc": {}},
+      "locals": {}
+    },
+    {
+      "action":          "method_call",
+      "role":          "stdlib",
+      "receiver_type": "string",
+      "method":        "to_string",
+      "chain":         {"log": {}, "misc": {}},
+      "locals":        {}
+    }
+  ]
+}
+```
+
+**After `to_string` returns, control back in the dispatcher:**
+
+```json
+{
+  "call_stack": [
+    {
+      "action":   "top_level",
+      "role":   "user",
+      "chain":  {"log": {}, "misc": {}},
+      "locals": {}
+    }
+  ]
+}
+```
+
+Each frame's `role` is a reference to a role object in `engine.roles`.
+The role object in Aslan is minimal — just a `name` field — but
+later slices grow it (trust webs, role-introspection state, etc.)
+without changing the reference shape. The "current role" is the top
+frame's `role`; the "current chain" is the top frame's `chain`. The
+chain is an empty placeholder for Aslan — no chain operations
+exercised. Working state (the receiver value being materialized, the
+method function being called, the return value being passed back to
+the harness) lives in Lua locals during dispatch, **not** in
+`engine.state`, per [skeletor.md's working-state carve-out](../../caspian/skeletor/skeletor.md#v1-0-scope).
+
+When Aslan passes, Bree (hello-world in Caspian source, via the
+transpiler) is selected from the roadmap and planned in the same
+step-by-step shape.
+
+Phase 1 test coverage lives under [Testing](#testing) below.
+
+---
+
+<a id="testing"></a>
+## Testing
+
+~~~json
+{"vibecode": {"section": "testing",
+"test_framework":
+"project_existing_at_tests_caspian_support_runner_and_assert; do_not_invent_a_new_one",
+"file_naming_convention":
+"test_topic_dot_lua_matching_existing_lexer_parser_transpiler_files",
+"phase_0_tests": ["TA.0.1", "TA.0.2", "TA.0.3", "TA.0.4", "TA.0.5", "TA.0.6"],
+"phase_1_tests": ["TA.1", "TA.2", "TA.3", "TA.4", "TA.5", "TA.6",
+"TA.7", "TA.8"],
+"load_bearing_test":
+"TA.8_role_transition_actually_observed_during_dispatch"}}
+~~~
+
+Aslan has fourteen tests total: six Phase 0 workbench checks plus
+eight Phase 1 unit + integration tests. TA.8 is the load-bearing
+role-system test — without it, role machinery could be missing
+entirely and every other test would still pass.
+
+<a id="phase-0-test-plan"></a>
+### Phase 0 test plan
+
+~~~json
+{"vibecode": {"phase_0_tests":
+[{"id": "TA.0.1", "verifies": "lua_5_4_installed", "tool":
+"command_line_lua_dash_v", "framework": "none"}, {"id": "TA.0.2",
+"verifies": "pure_lua_script_runs_and_prints", "tool":
+"tests/sanity/lua_hello.lua", "framework": "none"}, {"id": "TA.0.3",
+"verifies": "package_path_resolves_caspian_json_via_require",
+"tool": "tests/sanity/test_package_path.lua", "framework":
+"support_runner_and_assert"}, {"id": "TA.0.4", "verifies":
+"existing_test_framework_reports_pass_fail_and_exit_code", "tool":
+"tests/sanity/test_framework_sanity.lua", "framework":
+"support_runner_and_assert"}, {"id": "TA.0.5", "verifies":
+"caspian_json_parse_handles_simple_object", "tool":
+"tests/sanity/test_json_parse.lua", "framework":
+"support_runner_and_assert"}, {"id": "TA.0.6", "verifies":
+"file_io_read_returns_expected_bytes", "tool":
+"tests/sanity/test_file_read.lua", "framework":
+"support_runner_and_assert"}]}}
+~~~
+
+TA.0.1 and TA.0.2 are pre-framework — Lua isn't even confirmed working
+yet, so they can't depend on `support/runner.lua`. TA.0.3 onward use the
+project's existing framework (`tests/caspian/support/runner.lua` +
+`support/assert.lua`).
+
+| ID | Verifies | Tool | Framework |
+|---|---|---|---|
+| TA.0.1 | Lua 5.4 installed | `lua -v` | none |
+| TA.0.2 | Pure Lua script runs and prints | `tests/sanity/lua_hello.lua` | none |
+| TA.0.3 | package.path resolves caspian modules | `tests/sanity/test_package_path.lua` | `support/runner` |
+| TA.0.4 | Existing framework reports pass/fail | `tests/sanity/test_framework_sanity.lua` | `support/runner` |
+| TA.0.5 | json.lua parses simple object | `tests/sanity/test_json_parse.lua` | `support/runner` |
+| TA.0.6 | File I/O read returns expected bytes | `tests/sanity/test_file_read.lua` | `support/runner` |
+
+All six must pass before Aslan phase 1 begins.
 
 <a id="phase-1-test-plan"></a>
 ### Phase 1 test plan
 
 ~~~json
 {"vibecode": {"phase_1_tests":
-[{"id": "T1.1", "verifies":
+[{"id": "TA.1", "verifies":
 "json_parse_handles_the_ksj_fixture_structure", "level": "unit"},
-{"id": "T1.2", "verifies":
-"engine_bootstrap_populates_roles_classes_ctx", "level": "unit"},
-{"id": "T1.3", "verifies":
+{"id": "TA.2", "verifies":
+"engine_bootstrap_populates_roles_classes_state_hash", "level": "unit"},
+{"id": "TA.3", "verifies":
 "engine_materialize_wraps_literal_with_user_owning_role", "level": "unit"},
-{"id": "T1.4", "verifies":
+{"id": "TA.4", "verifies":
 "engine_lookup_method_finds_to_string_on_string_class", "level": "unit"},
-{"id": "T1.5", "verifies":
-"engine_transition_saves_and_restores_ctx_correctly", "level": "unit"},
-{"id": "T1.6", "verifies":
+{"id": "TA.5", "verifies":
+"engine_transition_pushes_and_pops_a_call_stack_frame", "level": "unit"},
+{"id": "TA.6", "verifies":
 "engine_dispatch_runs_one_statement_returns_string_value",
-"level": "unit"}, {"id": "T1.7", "verifies":
+"level": "unit"}, {"id": "TA.7", "verifies":
 "engine_run_on_fixture_file_returns_value_whose_payload_is_hello",
-"level": "integration_end_to_end"}, {"id": "T1.8", "verifies":
+"level": "integration_end_to_end"}, {"id": "TA.8", "verifies":
 "role_transition_actually_happened_during_dispatch", "level":
 "unit_observability_check"}]}}
 ~~~
 
 Seven unit tests plus one end-to-end integration test verify Phase 1.
-Each test is a Lua file under `tests/caspian/v001/` using the existing
+Each test is a Lua file under `tests/caspian/aslan/` using the existing
 project framework (`support.runner` + `support.assert`), required from
-`tests/caspian/run.lua` (or a V0.01-specific entry point) and reported
+`tests/caspian/run.lua` (or a Aslan-specific entry point) and reported
 through `runner.report()`.
 
-Skeleton for a V0.01 test file:
+Skeleton for a Aslan test file:
 
 ```lua
--- tests/caspian/v001/test_bootstrap.lua
+-- tests/caspian/aslan/test_bootstrap.lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
 local engine = require("caspian")
@@ -1026,7 +1450,8 @@ end)
 
 runner.test("execution context starts in user role", function()
     engine.bootstrap()
-    assert_.equal(engine.ctx.current_role, engine.roles.user)
+    local top = engine.state.call_stack[#engine.state.call_stack]
+    assert_.equal(top.role, engine.roles.user)
 end)
 ```
 
@@ -1034,36 +1459,27 @@ Every test in the plan below follows this pattern.
 
 | ID | Level | Verifies | How |
 |---|---|---|---|
-| T1.1 | unit | JSON parses the fixture | `json.parse('[[{"value": "hello"}, "to_string"]]')` returns the expected nested table |
-| T1.2 | unit | bootstrap populates state | After `engine.bootstrap()`: `engine.roles.user` exists, `engine.classes.string` exists with `to_string` method, `engine.ctx.current_role == engine.roles.user` |
-| T1.3 | unit | materialize wraps literal | `engine.materialize({value = "hello"})` returns `{type = "string", payload = "hello", owning_role = engine.roles.user}` |
-| T1.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
-| T1.5 | unit | transition save/restore | Call `engine.transition(engine.roles.stdlib, function() return engine.ctx.current_role end)`; verify return == `engine.roles.stdlib` AND after the call `engine.ctx.current_role == engine.roles.user` and `engine.ctx.chain` is the original table |
-| T1.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
-| T1.7 | integration | full end-to-end | `engine.run("tests/caspian/fixtures/hello_world.caspj")` returns a value whose `payload == "hello"` |
-| T1.8 | unit | transition observed | A spy in the `to_string` method records `engine.ctx.current_role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
+| TA.1 | unit | JSON parses the fixture | `json.parse('[[{"value": "hello"}, "to_string"]]')` returns the expected nested table |
+| TA.2 | unit | bootstrap populates state | After `engine.bootstrap()`: `engine.roles.user` exists, `engine.classes.string` exists with `to_string` method, `engine.state.call_stack` has one frame with `role == engine.roles.user`, `action == "top_level"` |
+| TA.3 | unit | materialize wraps literal | `engine.materialize({value = "hello"})` returns `{type = "string", payload = "hello", owning_role = engine.roles.user}` |
+| TA.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
+| TA.5 | unit | transition push/pop | Call `engine.transition({action="method_call", role=engine.roles.stdlib}, function() return engine.state.call_stack[#engine.state.call_stack].role end)`; verify return == `engine.roles.stdlib` AND after the call `#engine.state.call_stack == 1` and the surviving frame's `role == engine.roles.user` |
+| TA.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
+| TA.7 | integration | full end-to-end | `engine.run("tests/caspian/fixtures/hello_world.caspj")` returns a value whose `payload == "hello"` |
+| TA.8 | unit | transition observed | A spy in the `to_string` method records the top-of-stack frame's `role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
 
-T1.8 is the load-bearing test for the role system: it proves the
-transition *actually happened* (not just that it was set up). Without
-it, role machinery could be missing entirely and the other tests
-would still pass.
-
-All eight pass = V0.01 done.
+All eight pass = Aslan done.
 
 <a id="test-layout"></a>
 ### Test layout
 
 ~~~json
-{"vibecode": {"test_framework":
-"project_existing_at_tests_caspian_support_runner_and_assert; do_not_invent_a_new_one",
-"file_naming_convention":
-"test_topic_dot_lua_matching_existing_lexer_parser_transpiler_files",
-"directory_layout": {"tests/sanity/":
+{"vibecode": {"directory_layout": {"tests/sanity/":
 "phase_0_workbench_sanity_tests_engine_independent",
 "tests/caspian/fixtures/":
 "ksj_and_text_fixtures_consumed_by_engine_or_tests",
-"tests/caspian/v001/":
-"phase_1_unit_and_integration_tests_for_v001",
+"tests/caspian/aslan/":
+"phase_1_unit_and_integration_tests_for_aslan",
 "tests/caspian/run.lua":
 "shared_entry_point_requires_all_test_modules_and_calls_runner_report",
 "tests/caspian/support/":
@@ -1072,19 +1488,18 @@ All eight pass = V0.01 done.
 
 The project uses its existing test framework — `tests/caspian/support/runner.lua`
 (provides `suite`, `test`, `report`) and `tests/caspian/support/assert.lua`
-(assertion helpers). No new framework gets invented for V0.01. File
+(assertion helpers). No new framework gets invented for Aslan. File
 naming follows the existing convention (`test_<topic>.lua`).
 
 | Path | Contents |
 |---|---|
 | `tests/sanity/` | Phase 0 workbench tests (engine-independent) |
 | `tests/caspian/fixtures/` | CaspianJ and text fixtures (e.g., `hello_world.caspj`, `_sanity_text.txt`) |
-| `tests/caspian/v001/` | Phase 1 unit and integration tests (V0.01-specific) |
-| `tests/caspian/run.lua` | Entry point — extended to also require sanity + V0.01 tests |
+| `tests/caspian/aslan/` | Phase 1 unit and integration tests (Aslan-specific) |
+| `tests/caspian/run.lua` | Entry point — extended to also require sanity + Aslan tests |
 | `tests/caspian/support/` | Existing `runner.lua` and `assert.lua`, unchanged |
 
 Existing scaffolding under `tests/caspian/lexer/`, `tests/caspian/parser/`,
-and `tests/caspian/transpiler/` is V0.02+ territory; not exercised by
-V0.01 directly but already uses the same framework so the patterns
+and `tests/caspian/transpiler/` is Bree+ territory; not exercised by
+Aslan directly but already uses the same framework so the patterns
 above mirror what's there.
-

@@ -199,15 +199,14 @@ single execution context.
 
 This constraint keeps the interpreter small and predictable. Forking, fork-shared
 mikobases, and the multi-process coordination model are opt-in Caspian features the
-engine grants on request (off by default) — see
-[ideas/plusplus/threads.md](../../ideas/plusplus/threads.md).
+engine grants on request (off by default).
 
 <a id="timeouts"></a>
 ### Timeouts
 
 Caspian does not use threads, but untrusted code must not be allowed to run indefinitely.
 A function downloaded from a remote Puck object — `%puck['borg.com/riker']` — might
-be an infinite loop or a crypto miner. The `%utils.timeout` method wraps a block with a
+be an infinite loop or a cryptocurrency miner. The `%utils.timeout` method wraps a block with a
 hard time limit:
 
 ```
@@ -242,7 +241,7 @@ end
 Whole-second granularity is used.
 
 The reason `timeout_handle` doesn't unwind: a runaway block (infinite loop,
-crypto miner) can also write infinite-loop cleanup code. Letting `ensure` run
+cryptocurrency miner) can also write infinite-loop cleanup code. Letting `ensure` run
 inside the timeout block during a timeout would let the developer extend their
 budget by an arbitrary amount. The two-stage model denies that path entirely
 while still giving the *caller* a normal catchable error.
@@ -858,7 +857,7 @@ These are Caspian flow primitives:
   interpreter uses the same unwind mechanism for all flow that unwinds.
 - **`exit`** raises `puck.uno/exit`. Graceful: unwinds the stack,
   runs `begin`/`ensure` blocks, runs `close` on objects (see
-  [Garbage Collection](#garbage-collection)), and cleans up before the process
+  [Garbage Collection](../garbage-collection.md)), and cleans up before the process
   ends. Equivalent to `%chain.exit` or `%process.exit`.
 - **`abort`** raises `puck.uno/abort`. **Violent**: the engine
   terminates the execution unit immediately. The stack is not unwound,

@@ -66,8 +66,7 @@ focused:
 
 Mikobases are a Caspian feature — a mikobase is a useful local object store on its own.
 Sharing a mikobase between forked processes uses the opt-in **forking** feature of Caspian
-(engine-granted via `%forks` / `%tmp`; off by default). See
-[ideas/plusplus/threads.md](../ideas/plusplus/threads.md) for the forking design.
+(engine-granted via `%forks` / `%tmp`; off by default).
 
 ---
 

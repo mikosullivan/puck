@@ -444,7 +444,7 @@ may tighten later. See
 
 Caspian code generating record IDs should use
 [`%utils.random.uuid`](../../caspian/utils/utils.md#utilsrandomuuid), which
-returns a crypto-strong UUID v4 sourced from the OS CSPRNG via libsodium.
+returns a cryptographically secure UUID v4 sourced from the OS CSPRNG via libsodium.
 
 <a id="conflict-policy"></a>
 ### Conflict policy

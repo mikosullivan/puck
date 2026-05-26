@@ -96,6 +96,7 @@ a control object captures the first hit and stops:
 
 ```caspian
 $pepper = null
+
 $food.traverse(self: true) do($node, $ctl)
     if $node.id == 'pepper'
         $pepper = $node
@@ -742,6 +743,9 @@ unchanged on any subclass.
 <a id="bucket-discipline-the-uns-slot"></a>
 ## Bucket discipline: the `uns` slot
 
+**Buckets are always hashes.** That fixed shape is what makes the
+discipline below possible.
+
 Trivet's node class is designed to be **added to any object** —
 strings (for HTML text nodes), hashes, custom classes, anything.
 That means the bucket Trivet shares with the host object might
@@ -776,8 +780,8 @@ One reserved key is much easier to remember and audit than
 classes get the rest of the bucket for their own use; mix-in
 platters get the `uns` slot.
 
-Buckets are always hashes. Bucket keys can be anything the
-class designer wants; `uns` is simply reserved by convention.
+Bucket keys can be anything the class designer wants; `uns` is
+simply reserved by convention.
 
 This is a discipline rule, not enforcement. The caspian runtime
 treats the bucket as a shared hash; the `uns` convention is

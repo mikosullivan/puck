@@ -344,10 +344,10 @@ One method, one return shape, no nil-on-no-match special case.
 ~~~json
 {"vibecode": {
 	"section": "random",
-	"role": "spec for $array.random — uniform random selection of one or more elements from an array, with options for unique sampling and element-object wrappers; crypto-strong via libsodium",
+	"role": "spec for $array.random — uniform random selection of one or more elements from an array, with options for unique sampling and element-object wrappers; cryptographically secure via libsodium",
 	"key_concepts": ["single_or_multi_pick", "with_replacement_by_default",
 		"unique_kwarg_for_without_replacement", "elements_kwarg_for_wrapper_objects",
-		"crypto_strong_via_libsodium"]
+		"secure_via_libsodium"]
 }}
 ~~~
 

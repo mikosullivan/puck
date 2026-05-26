@@ -247,19 +247,17 @@ local function strip_manual_toc(body_html)
     return body_html
 end
 
--- TOC goes at the boundary between front matter (H1, subtitle, vibecode,
--- intro prose) and body sections — i.e. immediately before the first H2.
--- This puts TOC after the doc-level vibecode block without trying to
--- pattern-match where vibecode ends.
+-- TOC goes directly under the title — immediately after the closing
+-- </h1> tag, before any subtitle, vibecode, or intro prose.
 local function insert_auto_toc(body_html, toc_html)
-    local h2_start = body_html:find("<h2", 1, true)
-    if h2_start then
-        return body_html:sub(1, h2_start - 1) .. toc_html .. body_html:sub(h2_start)
-    end
-    -- Fallback: no H2 (only reachable if MIN_HEADINGS_FOR_TOC is lowered).
     local h1_end = body_html:find("</h1>", 1, true)
     if h1_end then
         return body_html:sub(1, h1_end + 4) .. toc_html .. body_html:sub(h1_end + 5)
+    end
+    -- Fallback: no H1 — place TOC before the first H2, or prepend.
+    local h2_start = body_html:find("<h2", 1, true)
+    if h2_start then
+        return body_html:sub(1, h2_start - 1) .. toc_html .. body_html:sub(h2_start)
     end
     return toc_html .. body_html
 end
@@ -457,23 +455,31 @@ local function chip_group(chips)
 end
 
 local function inject_issue_links(body_html, md_path, client_ip)
-    local show_edit = config.ip_can_edit(client_ip)
+    -- Both Quick add and Edit are gated on the same IP allowlist —
+    -- Quick add was previously open to anyone, but bulk-spam from
+    -- public IPs (e.g., the 122 "katana" issues) prompted closing it.
+    -- See config.ip_can_edit and ~/.orlando/config.json.
+    local privileged = config.ip_can_edit(client_ip)
 
-    -- Page H1: issue link, Quick add, (Edit if allowed) — then checkbox + form blocks after.
+    -- Page H1: issue link, (Quick add if allowed), (Edit if allowed) —
+    -- then checkbox + form blocks after.
     body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
         local qa_id   = "qa-h1"
         local edit_id = "edit-h1"
-        local chips = issue_link(md_path) .. " " .. quick_add_label(qa_id)
+        local chips = issue_link(md_path)
 
-        if show_edit then
-            chips = chips .. " " .. edit_label(edit_id)
+        if privileged then
+            chips = chips
+                .. " " .. quick_add_label(qa_id)
+                .. " " .. edit_label(edit_id)
         end
 
         local tail = open .. inner .. chip_group(chips) .. close
-            .. quick_add_block(md_path, nil, nil, qa_id)
 
-        if show_edit then
-            tail = tail .. edit_block(md_path, nil, nil, edit_id)
+        if privileged then
+            tail = tail
+                .. quick_add_block(md_path, nil, nil, qa_id)
+                .. edit_block(md_path, nil, nil, edit_id)
         end
 
         return tail
@@ -488,17 +494,20 @@ local function inject_issue_links(body_html, md_path, client_ip)
             local slug    = id or slugify(text)
             local qa_id   = "qa-" .. slug
             local edit_id = "edit-" .. slug
-            local chips = issue_link(md_path, text, id) .. " " .. quick_add_label(qa_id)
+            local chips = issue_link(md_path, text, id)
 
-            if show_edit then
-                chips = chips .. " " .. edit_label(edit_id)
+            if privileged then
+                chips = chips
+                    .. " " .. quick_add_label(qa_id)
+                    .. " " .. edit_label(edit_id)
             end
 
             local tail = open .. inner .. chip_group(chips) .. close
-                .. quick_add_block(md_path, text, id, qa_id)
 
-            if show_edit then
-                tail = tail .. edit_block(md_path, text, id, edit_id)
+            if privileged then
+                tail = tail
+                    .. quick_add_block(md_path, text, id, qa_id)
+                    .. edit_block(md_path, text, id, edit_id)
             end
 
             tail = tail .. render_section_issues_panel(md_path, id)
@@ -535,6 +544,33 @@ local function highlight_json_blocks(body_html)
             end
             return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
         end))
+end
+
+-- Mark JSON code blocks that sit under a Skeletor-snapshot subheading
+-- so style.css can give them a distinguishing border. Walks the body
+-- in section order: each heading whose id contains "skeletor" claims
+-- every <pre class="highlight"> between it and the next heading.
+local function mark_skeletor_blocks(body_html)
+    local result = {}
+    local pos = 1
+    local pattern = '<h(%d)[^>]*id="[^"]*skeletor[^"]*"[^>]*>.-</h%1>'
+    while true do
+        local s, e = body_html:find(pattern, pos)
+        if not s then
+            result[#result + 1] = body_html:sub(pos)
+            break
+        end
+        result[#result + 1] = body_html:sub(pos, e)
+        local next_h = body_html:find("<h%d", e + 1)
+        local section_end = next_h and (next_h - 1) or #body_html
+        local section = body_html:sub(e + 1, section_end)
+        section = section:gsub(
+            '<pre class="highlight">',
+            '<pre class="highlight skeletor-state">')
+        result[#result + 1] = section
+        pos = section_end + 1
+    end
+    return table.concat(result)
 end
 
 local function highlight_caspian_blocks(body_html)
@@ -822,6 +858,7 @@ function M.render_request(ctx)
     body = highlight_caspian_blocks(body)
     body = inject_issues_panel(body, ctx.md_path)
     body = transform_toc(body)
+    body = mark_skeletor_blocks(body)
     body = inject_issue_links(body, ctx.md_path, ctx.client_ip)
 
     local html = quick_builder.new("html")

@@ -41,11 +41,11 @@ itself before the parser exists.
 ~~~json
 {"vibecode": {
 	"section": "core_principle",
-	"value_receiver_form": "[receiver, method, args?]",
-	"bwc_receiver_form": "[{bwc: name}, args?]",
+	"value_receiver_form": "[receiver, method, arg1?, arg2?, ...]",
+	"bwc_receiver_form": "[{bwc: name}, arg1?, arg2?, ...]",
 	"receiver": "any_expression_variable_literal_sys_bwc_or_nested_call",
 	"method": "string_naming_method_or_operator_required_for_value_receivers_omitted_for_bwc_receivers",
-	"args": "optional_keyword_hash_or_single_positional_expression",
+	"args": "zero_or_more_positional_expressions_spread_at_indices_3_plus; or_a_single_kwargs_hash_at_index_3_distinguishable_by_absence_of_expression_marker_key",
 	"two_shapes": "value_receiver_shape_for_method_calls_operators_assignment; bwc_shape_for_built_in_commands_where_the_bwc_name_is_the_call"
 }}
 ~~~
@@ -53,15 +53,45 @@ itself before the parser exists.
 Every statement begins with a receiver. The receiver determines the shape:
 
 - **Value receivers** (variables, literals, system methods, nested calls) take a
-  **method name** next, then optional **args**:
-  `[receiver, method, args?]`. This covers method calls, operators, assignment.
+  **method name** next, then zero or more positional args spread directly
+  across the array: `[receiver, method, arg1?, arg2?, ...]`. This covers method
+  calls, operators, assignment.
 - **Bwc receivers** (`{"bwc": "name"}`) don't take a method — the bwc name
-  IS the call. Any arguments follow directly:
-  `[{"bwc": name}, args?]`. This covers built-in commands like `puts`,
-  `if`, `while`, `return`, `raise`.
+  IS the call. Args spread the same way:
+  `[{"bwc": name}, arg1?, arg2?, ...]`. This covers built-in commands like
+  `puts`, `if`, `while`, `return`, `raise`.
 
-In both shapes, **args** is optional; when present, it's a hash of keyword
-arguments or a single expression for positional calls.
+**Positional arguments** are each their own slot in the array. Each
+comma-separated expression in Caspian source becomes one slot in CaspianJ:
+
+| Caspian | CaspianJ |
+|---|---|
+| `$foo.bar` | `[{"var": "foo"}, "bar"]` |
+| `$foo.bar(a)` | `[{"var": "foo"}, "bar", a]` |
+| `$foo.bar(a, b, c)` | `[{"var": "foo"}, "bar", a, b, c]` |
+| `puts 'hi'` | `[{"bwc": "puts"}, {"value": "hi"}]` |
+
+**Keyword arguments** are a single hash at index 3:
+
+| Caspian | CaspianJ |
+|---|---|
+| `$foo.bar(name: 'X')` | `[{"var": "foo"}, "bar", {"name": {"value": "X"}}]` |
+| `$foo.bar(name: 'X', age: 30)` | `[{"var": "foo"}, "bar", {"name": {"value": "X"}, "age": {"value": 30}}]` |
+
+**Distinguishing single positional from kwargs.** When index 3 is a hash, the
+dispatcher tells which kind it is by checking for an **expression-marker
+key**: `value`, `var`, `bwc`, `array`, `hash`, `call`, `closure`, `sys`, etc.
+A hash that carries one of those keys is a single positional expression
+(e.g. a hash literal `{"hash": [...]}`); a hash without any expression-marker
+key is kwargs.
+
+| Caspian | CaspianJ | Interpretation |
+|---|---|---|
+| `$foo.bar({key: 'X'})` | `[{"var": "foo"}, "bar", {"hash": [...]}]` | Single positional, hash literal |
+| `$foo.bar(key: 'X')` | `[{"var": "foo"}, "bar", {"key": {"value": "X"}}]` | Kwargs |
+
+Positional args and kwargs don't mix in the same call (per Caspian's source-side
+rule — kwargs are all-or-nothing in a single call site).
 
 ---
 
@@ -194,7 +224,8 @@ A `function` does not capture the outer scope. A `closure` does.
 <a id="assignment"></a>
 ### Assignment
 
-Assignment is the `=` operator — consistent with the `[receiver, method, args]` form.
+Assignment is the `=` operator — same `[receiver, method, args]` shape as
+every other method call. The dispatcher does **not** special-case `=`.
 
 ```json
 [{"var": "foo"}, "=", {"value": "hello"}]
@@ -207,6 +238,18 @@ Caspian equivalent: `$foo = 'hello'`
 ```
 
 Caspian equivalent: `$greeting = $foo + ' world'`
+
+**How the dispatcher handles it.** When `{"var": "foo"}` appears in receiver
+position, it materializes to an **lvalue handle** — a runtime value whose
+class has `=`, `+=`, `-=`, etc. as methods that write back to scope. In
+expression position (`{"var": "foo"}` as an argument or sub-expression),
+the same form materializes to the variable's current *value*.
+
+Same JSON shape, two contexts: assignment target vs read. The dispatcher
+already knows which from where the expression sits in the parent statement
+(receiver at index 0 → handle; anywhere else → value). No special form,
+no `setvar` keyword, no four-element statement shape. Pure
+`[receiver, method, args?]` everywhere.
 
 <a id="method-calls"></a>
 ### Method Calls

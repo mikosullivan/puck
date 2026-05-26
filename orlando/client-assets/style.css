@@ -75,6 +75,7 @@ body.home .content h1 .hero-logo {
 .sidebar li.file.current span {
 	font-weight: 700;
 	color: #222;
+	background: yellow;
 }
 .sidebar li.file.asset a {
 	color: #57606a;
@@ -96,12 +97,18 @@ body.home .content h1 .hero-logo {
 .sidebar li.dir.current > details > summary > span {
 	font-weight: 700;
 	color: #222;
+	background: yellow;
 }
-/* Spacer for empty-children directory nodes (rendered without a <details>
- * toggle and therefore lacking the disclosure arrow). The phantom inline
- * block matches the disclosure-arrow width so dir names line up regardless
- * of whether the dir has expandable children or not. */
-.sidebar li.dir:not(:has(details)) > a::before {
+/* Spacer for entries that have no disclosure arrow (anything not
+ * inside a <summary>). Covers files (link or current-page span),
+ * empty-children dir nodes, and the bare-span form used when the
+ * current page is a directory's own index. The phantom inline block
+ * matches the disclosure-arrow width on <details> entries, so every
+ * sidebar entry's name aligns at the same x regardless of shape. */
+.sidebar li.file > a::before,
+.sidebar li.file.current > span::before,
+.sidebar li.dir:not(:has(details)) > a::before,
+.sidebar li.dir:not(:has(details)) > span::before {
 	content: "";
 	display: inline-block;
 	width: 1em;
@@ -161,20 +168,15 @@ body.home .content h1 .hero-logo {
 	font-size: 0.85em;
 	margin-left: 6px;
 }
-.search-snippets {
-	list-style: none;
-	padding-left: 0;
-	margin: 4px 0 0;
-}
-.search-snippets li {
+.search-preamble {
 	color: #57606a;
 	font-size: 0.9em;
-	padding: 2px 0;
-	border-left: 2px solid #eaecef;
+	margin: 4px 0 0;
 	padding-left: 10px;
-	margin-top: 4px;
+	border-left: 2px solid #eaecef;
+	line-height: 1.4;
 }
-.search-snippets mark {
+.search-preamble mark {
 	background: #fff3b8;
 	color: #222;
 	padding: 0 2px;
@@ -239,6 +241,7 @@ body.home .content h1 .hero-logo {
 	margin: 2em 0;
 }
 .highlight {background: #f6f8fa !important}
+.highlight.skeletor-state {border: 2px solid #5319e7}
 .content .section-issue {
 	font-size: 11px;
 	font-weight: normal;

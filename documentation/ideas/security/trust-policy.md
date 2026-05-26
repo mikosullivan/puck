@@ -117,19 +117,19 @@ In `allow_list` mode, domains not listed are denied automatically.
 | `network` | May make network calls |
 | `storage` | May read and write persistent data |
 | `abort` | Abort exception propagates past the security boundary |
-| `mining` | May perform crypto mining. See note below. |
+| `mining` | May perform cryptocurrency mining. See note below. |
 
-<a id="crypto-mining"></a>
-### Crypto Mining
+<a id="cryptocurrency-mining"></a>
+### Cryptocurrency Mining
 
-Any object that performs crypto mining must explicitly declare itself as such. The
+Any object that performs cryptocurrency mining must explicitly declare itself as such. The
 declaration mechanism (a metadata field on the object) is not yet designed — setting TBD.
 
 The `mining` permission is off by default for all domains. An engine will not execute
 mining code unless the permission has been explicitly granted and the object has declared
 its intent.
 
-Failure to properly identify a crypto mining object is an ethical violation.
+Failure to properly identify a cryptocurrency mining object is an ethical violation.
 
 See [crypto-mining-payments.md](../apps/crypto-mining-payments.md) for the broader payment system
 built on this mechanism.

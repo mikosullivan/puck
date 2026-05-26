@@ -90,6 +90,17 @@ local function page(title, body_html)
 end
 
 local function handle_quick_add(req)
+    -- Gated by edit.allowed_ips — same allow-list as the Edit endpoints.
+    -- Was previously open; tightened after bulk-spam (the 122 "katana"
+    -- issues filed via the open endpoint by an unknown automation).
+    if not config.ip_can_edit(req.client_ip) then
+        return {
+            status = "403 Forbidden",
+            body = "quick-add is restricted to allow-listed IPs\n",
+            content_type = "text/plain; charset=utf-8",
+        }
+    end
+
     if req.method ~= "POST" then
         return {
             status = "405 Method Not Allowed",

@@ -17,7 +17,7 @@ local examples = {
     "functions", "system", "lengthy",
 }
 
-local base = "./tests/caspian/fixtures/"
+local base = "./tests/caspian/v00/fixtures/"
 
 --[[ { "in": "path: string", "out": "string?, error?", "note": "reads entire file to string; returns nil + error message on failure" } ]]
 local function read_file(path)
@@ -30,7 +30,7 @@ end
 
 -- Copy example files to a local path the test can read from.
 -- The originals live in documentation/vscode/syntax/examples/.
-local src_base = "./tests/caspian/fixtures/"
+local src_base = "./tests/caspian/v00/fixtures/"
 
 for _, name in ipairs(examples) do
     local path = src_base .. name .. ".casp"
