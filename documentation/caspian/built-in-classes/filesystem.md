@@ -405,8 +405,9 @@ $jail['readme.txt'].read
 ~~~json
 {"vibecode": {
 	"section": "jail_permissions",
-	"permissions": ["read", "write", "execute"],
+	"permissions": ["read", "write", "execute", "lock"],
 	"execute_default": false,
+	"lock_default": false,
 	"set_by": "host_at_injection_time",
 	"violation": "permission_error_regardless_of_disk_state"
 }}
@@ -427,9 +428,31 @@ read-only, read-and-execute, read-write, read-write-execute, etc., in any
 combination. There are no implied permissions — turning one on doesn't imply
 another.
 
-The default-off stance on execute follows the project's general "no dangerous
-defaults" principle: granting execute is a deliberate decision by the host,
-never something that quietly happens.
+**File locking is also a permission that is off by default.** Even a
+read-write jail does not grant the ability to take advisory file locks
+(`flock`-style) unless the lock permission is explicitly enabled. Lock methods
+exist on file objects within the jail, but they raise
+`puck.uno/error/permission_denied` when called without the lock capability.
+
+Why default-off for locks: file locking is a distinct attack surface beyond
+read/write. A library or untrusted script with write access can already
+modify files, but cannot block other code from working on them. With lock
+access, that same code could:
+
+- Hold locks indefinitely on shared files (lock-based DoS within the jail).
+- Cause cross-jail interference where multiple jails share a directory or
+  filesystem — POSIX advisory locks are file-level, not jail-level.
+- Leave files inaccessible across crashes, depending on OS and lock type.
+- Use held locks as a side channel to extend resource lifetimes in
+  non-obvious ways.
+
+Most programs do not need locks. Forcing the host to opt in via a separate
+grant means developers think about whether they actually need locking before
+including it.
+
+The default-off stance on both execute and lock follows the project's general
+"no dangerous defaults" principle: granting either capability is a deliberate
+decision by the host, never something that quietly happens.
 
 <a id="deriving-restricted-jails"></a>
 ### Deriving Restricted Jails

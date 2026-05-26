@@ -740,53 +740,44 @@ unchanged on any subclass.
 
 ---
 
-<a id="bucket-discipline-the-uns-slot"></a>
-## Bucket discipline: the `uns` slot
-
-**Buckets are always hashes.** That fixed shape is what makes the
-discipline below possible.
+<a id="per-platter-storage"></a>
+## Per-platter storage
 
 Trivet's node class is designed to be **added to any object** —
 strings (for HTML text nodes), hashes, custom classes, anything.
-That means the bucket Trivet shares with the host object might
-already contain unrelated state, and the rest of the host's
-class stack might write to that bucket too.
+That meant the bucket Trivet shared with the host object might
+contain unrelated state, and the rest of the host's class stack
+might write to that bucket too. To avoid collisions, an earlier
+design had Trivet stash its state under a reserved bucket key
+(`uns.puck.uno/trivet/node`). The host class had to know to
+leave `uns` alone.
 
-To avoid collisions, Trivet keeps its state under a **single
-reserved bucket key**: `uns`. This is a Puck-wide convention
-(not specific to Trivet) — if a bucket contains an `uns` key,
-it's understood to hold a sub-hash organized by UNS strings.
-Each UNS-keyed entry inside is its own piece of state.
+That workaround is obsolete. Each platter in an object's class
+stack has its own private bucket — Trivet's state lives in
+**Trivet's platter bucket**, accessed via `%platter[...]`.
+The host's bucket is the host's, full stop. No reserved keys,
+no namespace discipline, no convention to remember.
 
 ```caspian
-%bucket = {
-    real_property_1: ...,           # host class's own state
-    real_property_2: ...,
-    uns: {
-        'puck.uno/trivet/node': {parent: ..., children: ..., id: ...},
-        'puck.uno/uma/text':    {...},   # if also a Uma text node
-        ...
-    }
-}
+%platter['parent']   = $other_node
+%platter['children'] = $children_array
+%platter['id']       = 'food'
 ```
 
-**The convention.** Trivet and any other "added to anything"
-class namespaces its state under `uns.<class-UNS>`. Host classes
-treat the bucket key `uns` as off-limits — they don't read it,
-don't write it, don't care what's in it.
+The same object can carry multiple mix-in platters (a Trivet
+node, a Uma text node, anything else), and each keeps its
+state in its own platter bucket. They don't see each other's
+data; the host's bucket isn't touched.
 
-One reserved key is much easier to remember and audit than
-"don't use any bucket key that looks like a class UNS." Host
-classes get the rest of the bucket for their own use; mix-in
-platters get the `uns` slot.
+See [base-class-use.md § Per-platter private storage](../../../ideas/base-class-use.md#per-platter-buckets)
+for the broader design. Trivet was the canonical motivating
+case — the mix-in pattern that justified the per-platter
+mechanism over the old `uns` convention.
 
-Bucket keys can be anything the class designer wants; `uns` is
-simply reserved by convention.
-
-This is a discipline rule, not enforcement. The caspian runtime
-treats the bucket as a shared hash; the `uns` convention is
-just a way for multiple unrelated classes to share an object
-without stepping on each other.
+**Buckets are always hashes.** The engine enforces this for
+both the host's bucket and every platter's bucket; both
+follow the same "no reserved keys" policy. Inside any bucket,
+every key is the class designer's choice.
 
 ---
 

@@ -288,9 +288,11 @@ Content-Type: application/json
     "history": {
         "f1a2b3c4-0001-0001-0001-000000000001": {
             "record":     "e1b2c3d4-0001-0001-0001-000000000001",
-            "class":      "foo.com/reading",
             "updated_at": "2026-05-03T12:00:00.000Z",
-            "bucket":     {"value": 42.7}
+            "bucket":     {"value": 42.7},
+            "classes": {
+                "<platter-uuid>": {"class": "foo.com/reading", "bucket": {}}
+            }
         }
     }
 }

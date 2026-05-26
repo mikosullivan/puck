@@ -1778,7 +1778,7 @@ event's class metadata, not from which `%chain.X` method was called.
 	"two_properties": ["classes", "bucket"],
 	"classes": "class_stack_array_resolved_top_down",
 	"bucket": "%bucket hash shared by all classes in stack",
-	"object_classes_order": ["base_class", "additional_classes"],
+	"object_classes_order": "ordered array of classes, top of stack first; class an object is created with is first pushed (bottom); subsequent classes.add pushes go to the top; later additions shadow earlier ones",
 	"shadow_class": "implicit_always_first_in_resolution_not_in_object_classes",
 	"object_helper": "reserved_built_in_cannot_be_overridden",
 	"explicit_dispatch": "$class.object.call_with($foo, 'method', args)"
@@ -1858,14 +1858,41 @@ hash; `uns` is just a reserved key by community agreement.
 <a id="the-class-stack"></a>
 ### The Class Stack
 
-Method calls are resolved top-down through the class stack:
+Method calls are resolved by walking the class stack top to bottom. The
+first class in the stack that defines the method wins. There is no special
+"shadow class always first" rule; the shadow class is just a pinned platter
+at the top, and dispatch starts there because it's at the top.
 
-1. **Shadow class** — always consulted first. Implicit — not returned by `object.classes`.
-   Used to define methods on a single object without affecting the class.
-2. **Base class** — the class the object was instantiated from.
-3. **Additional classes** — any further classes added to the stack.
+The stack has two regions:
 
-The first class in the resolution order that defines the method wins.
+1. **Pinned region** at the top — contiguous platters that the engine added
+   and locked in place. The shadow class is always the topmost pinned
+   platter. For nulls, falses, and other primitives, additional pinned
+   platters live just below the shadow (truthiness markers like
+   `puck.uno/class/bool_null`). Platters in the pinned region cannot be
+   moved, removed, or replaced.
+2. **Mutable region** below — where user-added platters live.
+   `.classes.add` inserts at the top of this region (which means
+   immediately below the pinned region). Later additions sit higher in
+   the mutable region; **later additions shadow earlier ones** for any
+   method they both define.
+
+**Platter records carry an `active` field.** Default is `true`;
+the field is omitted when true. `.classes.remove(<uuid>)` doesn't
+delete the platter — it sets `active: false`. The platter stays in
+the hash with its bucket intact, but is skipped during method
+dispatch. Reactivation via `.classes.set_active(<uuid>, true)`
+flips it back. See
+[base-class-use.md § Active and inactive platters](../../ideas/base-class-use.md#active-field).
+
+See [base-class-use.md § Pinned and mutable regions](../../ideas/base-class-use.md#pinned-and-mutable-regions)
+for the full model including sticky platters and absorption rules.
+
+Marker classes (like `puck.uno/class/redact`) sit somewhere in the stack
+but have no methods to find — dispatch walks past them to whatever class
+defines the called method. Behavior-adding classes (a `foo.uno/upper` that
+overrides `to_string`) DO intercept dispatch because their methods are
+encountered first.
 
 To add methods to an object's shadow class, use `object.define`:
 
@@ -1877,9 +1904,12 @@ $foo.object.define do
 end
 ```
 
-`object.define` is shorthand for `$foo.object.shadow.define`. Both open the shadow class
-as a definition context for the block. Inside a class body, `self` refers to the class
-object itself, so class-level methods are defined the same way:
+`object.define` is shorthand for `$foo.object.shadow.define`. The shadow
+class is a unique, fresh class the engine creates for each object at
+instantiation — adding methods to it adds methods to that one object only.
+Both forms open the shadow class as a definition context for the block.
+Inside a class body, `self` refers to the class object itself, so
+class-level methods are defined the same way:
 
 ```
 class 'color'
@@ -1891,6 +1921,13 @@ class 'color'
 end
 ```
 
+`null`, `true`, and `false` are special: their entire class stacks are
+fully locked. You cannot `.classes.add` to them, `.classes.remove` from
+them, or define methods on their shadow classes. The whole object is
+sealed — pinned region, shadow, bucket, everything. The reason is
+load-bearing: if any program could mutate `true` or `null`, every
+truthiness check everywhere becomes unreliable.
+
 <a id="the-object-helper"></a>
 ### The `object` Helper
 
@@ -1898,8 +1935,10 @@ Every object has a reserved helper called `object` that cannot be overridden. It
 meta information about the object:
 
 ```
-$foo.object.classes      # the explicit class stack (base class + any additional classes)
-                         # does not include the shadow class
+$foo.object.classes      # the full class stack top to bottom, including the
+                         # shadow platter at position 0 and any other pinned
+                         # platters (e.g. truthiness markers) above the
+                         # mutable region
 
 $foo.object.isa? 'puck.uno/color'    # true if 'puck.uno/color' is in the class stack
                                        # (the object's class or any superclass)
@@ -1931,6 +1970,110 @@ $class.object.call_with($foo, 'greet', name: 'Jean-Luc')
 ```
 
 This is a rare use case — normal method resolution handles the common case.
+
+<a id="borrow"></a>
+### Borrowing a class
+
+Sometimes you want to apply a class's methods to an object **without
+permanently adding that class to the object's stack**. `borrow` is
+sugar for "push the class temporarily, run a block, pop the class."
+
+```
+$foo.object.borrow('bar.gup/whatever') do
+    $foo.borrowed_method
+    $foo.another_borrowed_method(arg)
+end
+```
+
+`borrow(class_uns) do ... end`:
+
+- Pushes `class_uns` onto `$foo`'s class stack (top of mutable region).
+- Runs the block. Inside the block, calling methods on `$foo`
+  dispatches through its now-augmented stack — methods defined by
+  the borrowed class are reachable, alongside everything else
+  `$foo` already had.
+- When the block returns (or raises), pops the class off the stack.
+  Exception-safe — the borrow is removed even if the block raises.
+- The block's return value is the result of the borrow expression.
+
+**The block is required.** There is no bare-call form. The block is
+always how you use the borrowed class. Inside the block, `self` is
+unchanged — it's whatever `self` was in the outer scope. The borrow
+modifies `$foo`'s stack, not the calling context. Method calls go
+through `$foo.method()` explicitly.
+
+```
+$result = $foo.object.borrow('bar.gup/serializer') do
+    $foo.to_xml(indent: 2)
+end
+```
+
+**The borrowed platter is always non-sticky.** Borrow is transient
+by definition — if the platter were sticky, it couldn't be popped at
+block end. Borrow takes no sticky flag; there's no syntactic way to
+request one.
+
+Classes that require stickiness as part of their semantics (e.g.,
+`puck.uno/class/redact`, whose security guarantee depends on never
+being removable) cannot be borrowed. The engine inspects the class's
+definition before pushing; if the class declares itself
+sticky-required, the borrow raises before the block runs. Better to
+fail explicitly than to silently weaken the class's intent.
+
+**Borrow actually removes its platter** at block end, not just
+deactivates it. The general "`.classes.remove` deactivates rather
+than deletes" rule applies to user-facing removals where the
+engine can't know whether the platter's bucket data is still
+needed. Borrow is different: the engine created the platter just
+now, it carries no user-allocated data (no `%platter` access is
+permitted during borrow), and at block end it's safe to delete
+outright. No accumulating inactive borrow platters in the
+`classes` hash.
+
+**This is local borrow, not remote.** It's an in-process call; the
+borrowed class works directly on `$foo` (no clone). For remote
+dispatch — sending a serialized clone of an object to another process
+and getting a result back — use the Puck mechanism (`%puck[...]`)
+directly. The two have meaningfully different semantics: borrow shares
+memory and can mutate; Puck sends a clone and the original is
+untouched.
+
+**What the borrowed class sees.** Same as any platter — `$foo`'s
+shared bucket (via `%bucket` / `@field`), the other classes in the
+stack (via normal dispatch), `self` as `$foo`. It does NOT get its
+own platter bucket (`%platter`) because no platter was allocated for
+it; it's transient. If it tries to access `%platter`, the engine
+raises.
+
+**Role transitions** apply normally. If the borrowed class is owned
+by a different role from `$foo`, dispatch into its methods transitions
+roles the same way any cross-role method call would (fresh chain,
+permission boundary, etc.).
+
+**Use cases:**
+
+- **Pluggable interpretations** — interpret the same data via
+  different specialized classes without committing the object to
+  any one of them.
+- **Visitor pattern** — pass an object to a visitor class that
+  walks or transforms it.
+- **Adapter dispatch** — apply protocol-specific behavior (a
+  serializer, a formatter, a validator) to objects that don't carry
+  the protocol class in their stack.
+
+**Nested borrows compose.** Each borrow pushes onto the stack; each
+block end pops its own. Nested borrows are stacked accordingly:
+
+```
+$foo.object.borrow('class_a') do
+    $foo.object.borrow('class_b') do
+        # both class_a and class_b are in $foo's stack here;
+        # class_b dispatches first (added later, top of mutable region)
+    end
+    # only class_a in $foo's stack now
+end
+# back to $foo's original stack
+```
 
 ---
 

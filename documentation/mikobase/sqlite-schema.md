@@ -37,8 +37,8 @@ end;
 {"vibecode": {
 	"section": "records_history_table",
 	"role": "defines the append-only version history table with class name uniqueness trigger",
-	"key_concepts": ["records_history", "instance_pk", "active", "bucket", "class", "custom_classes",
-		"immutable_rows", "unique_class_name_trigger"]
+	"key_concepts": ["records_history", "instance_pk", "active", "bucket", "classes",
+		"platter_stack", "immutable_rows", "unique_class_name_trigger"]
 }}
 ~~~
 
@@ -52,14 +52,18 @@ create table records_history (
 			hex(randomblob(6))
 		)
 	),
-	record_pk      text not null references records(record_pk),
-	updated_at     text not null default (strftime('%Y-%m-%dT%H:%M:%f', 'now')),
-	active         integer not null default 1 check(active in (0, 1)),
-	bucket         text check(active = 0 or (bucket is not null and json_type(bucket) = 'object')),
-	class          text check(active = 0 or class is not null),
-	custom_classes text check(active = 0 or (custom_classes is not null and json_type(custom_classes) = 'object')),
+	record_pk  text not null references records(record_pk),
+	updated_at text not null default (strftime('%Y-%m-%dT%H:%M:%f', 'now')),
+	active     integer not null default 1 check(active in (0, 1)),
+	bucket     text check(active = 0 or (bucket is not null and json_type(bucket) = 'object')),
+	classes    text check(active = 0 or (classes is not null and json_type(classes) = 'object')),
 	unique(record_pk, updated_at)
 );
+
+-- The `classes` column holds the platter stack as a JSON object keyed by
+-- per-platter UUID; each value is a hash {class, bucket}. Per-platter
+-- buckets live inside this structure, not in the row's top-level `bucket`
+-- column.
 
 create trigger records_history_no_update
 before update on records_history
@@ -67,20 +71,32 @@ begin
 	select raise(fail, 'records_history rows are immutable');
 end;
 
--- Enforce unique class names among active class definition records.
+-- Enforce unique class names among active class-definition records.
+-- A class-definition record has a platter of class 'puck.uno/record/class'
+-- in its `classes` hash; its name lives in that platter's bucket under `name`.
 create trigger records_history_unique_class_name
 before insert on records_history
-when new.active = 1 and new.bucket is not null
+when new.active = 1 and new.classes is not null
 begin
 	select raise(fail, 'duplicate class name')
 	where
-		new.class = 'puck.uno/record/class'
+		exists (
+			select 1
+			from json_each(new.classes) np
+			where json_extract(np.value, '$.class') = 'puck.uno/record/class'
+		)
 		and exists (
-			select 1 from current_records
+			select 1
+			from current_records cr, json_each(cr.classes) op
 			where
-				class = 'puck.uno/record/class'
-				and record_pk != new.record_pk
-				and json_extract(bucket, '$.name') = json_extract(new.bucket, '$.name')
+				cr.record_pk != new.record_pk
+				and json_extract(op.value, '$.class') = 'puck.uno/record/class'
+				and json_extract(op.value, '$.bucket.name') = (
+					select json_extract(np.value, '$.bucket.name')
+					from json_each(new.classes) np
+					where json_extract(np.value, '$.class') = 'puck.uno/record/class'
+					limit 1
+				)
 		);
 end;
 ```
@@ -116,8 +132,7 @@ select
 	updated_at,
 	active,
 	bucket,
-	class,
-	custom_classes
+	classes
 from ranked
 where row_num = 1
 and active = 1;

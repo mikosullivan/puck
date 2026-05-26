@@ -46,9 +46,9 @@ Class names use UNS. See [UNS](../ecoverse/uns.md).
 ~~~json
 {"vibecode": {
 	"section": "object_model",
-	"role": "specifies the record, class, bucket, custom_classes, and built-in class model",
-	"key_concepts": ["records", "classes", "bucket", "custom_classes", "built-in_classes",
-		"record_pk", "append-only_history", "tombstone"]
+	"role": "specifies the record, classes (platter stack), bucket, and built-in class model",
+	"key_concepts": ["records", "classes", "platters", "bucket", "built-in_classes",
+		"record_pk", "append-only_history", "tombstone", "no_reserved_bucket_keys"]
 }}
 ~~~
 
@@ -64,35 +64,71 @@ Class names use UNS. See [UNS](../ecoverse/uns.md).
 <a id="classes"></a>
 ### Classes
 
-- Every record has a class. The default class is `puck.uno/record`.
-- Classes are themselves stored as records with class `puck.uno/record/class`.
-- A class definition is stored in the record's `bucket` field.
+A record's class identity lives in a **`classes`** field: a hash keyed by
+per-platter UUID, where each value is a platter record `{class, bucket}`.
+This matches the universal Caspian object shape (see
+[base-class-use.md](../ideas/base-class-use.md)).
+
+```json
+"classes": {
+    "<uuid-1>": {"class": "foo.com/character", "bucket": {...}},
+    "<uuid-2>": {"class": "puck.uno/trivet/node", "bucket": {parent: ..., children: ..., id: ...}}
+}
+```
+
+Rules:
+
+- Every record has at least one platter. The default platter's class is `puck.uno/record`.
+- Each platter has its own private bucket — its state lives there, not in the record's
+  shared `bucket` field. This is the formal per-platter storage that replaces the
+  earlier `uns.<UNS>` bucket convention.
 - Class names are UNS strings.
-- Inheritance is always explicit via the `inherits` field. There is no path-implied inheritance.
-- All classes defined in the schema are record classes — they can be assigned to records.
+- Classes are themselves stored as records — a class definition is a record whose
+  `classes` contains a platter of class `puck.uno/record/class`. The class's defining
+  properties live in that platter's bucket.
+- **Inheritance** (class-definition-level) is still explicit via the `inherits` field
+  on a class-definition platter. Inheritance describes how class definitions relate;
+  it's orthogonal to the per-instance platter stack.
+- A record can be queried by any class in its platter stack (see
+  [query semantics](#querying-by-class) — `engine.by_class('foo.com/character')`
+  returns records that include that class in their platter stack, regardless of
+  what other platters they carry).
 
 <a id="bucket"></a>
 ### `bucket`
 
-- Each record version stores its payload in `bucket`, a JSON object.
-- Fields not defined in the class are stored as-is without validation.
+- Each record version stores its **shared payload** in `bucket`, a JSON object.
+- **Buckets have no reserved keys.** No `uns` slot, no `_meta`, no engine-claimed
+  keys at all. Every key inside a bucket is the class designer's choice.
+- **Buckets are always hashes** — never scalars, arrays, or null.
+- Mix-in or cross-cutting class state goes in the relevant platter's bucket, not
+  in the record's shared bucket.
+- The same policy applies recursively: every platter's bucket follows the same
+  "always a hash, no reserved keys" rule.
+- Fields not defined in any platter's class are stored as-is without validation.
 
-<a id="custom_classes"></a>
-### `custom_classes`
+<a id="nested-class-marking"></a>
+### Nested class instances in buckets
 
-- `custom_classes` maps UUID marker keys to class references for nested objects in `bucket`.
-- A UUID marker key is embedded inside a nested object in `bucket` with value `true`.
-- The client scans `bucket` for these UUID keys, removes them, and instantiates the
-  appropriate class for each nested object.
-- This avoids field name collisions while supporting arbitrary nested objects.
-- `custom_classes` values have the shape `{"class": "foo.com/bar"}`.
+When a nested class instance is embedded inline in a bucket (e.g., an inline
+sub-record without its own `record_pk`), the engine uses a **UUID marker key**
+to identify it: a random UUID key appears inside the nested hash. The lookup
+resolves against the parent record's own `classes` hash — within-object scope.
+
+This mechanism replaces the older `custom_classes` sidecar, which was a
+per-record UUID→class map. With the lookup now in the record's own `classes`
+hash, the sidecar field is no longer needed.
+
+(Whether inline nested class instances persist as a Mikobase concept at all,
+versus a references-only model using `puck.uno/reference`, is an open design
+question — see [#341](https://github.com/mikosullivan/puck/issues/341).)
 
 <a id="built-in-classes"></a>
 ### Built-in Classes
 
 The following classes are seeded as database records on initialization:
 
-- `puck.uno/record` — base class for all records
+- `puck.uno/record` — base class for all records (the default platter for any new record)
 - `puck.uno/record/class` — class for class definitions
 - `puck.uno/reference` — reference to another record by `record_pk`
 - `puck.uno/dbfile` — file attachment
@@ -209,6 +245,10 @@ else:
     print(results.errors)
 ```
 
+The `class` argument to `select` matches records whose platter stack
+includes the named class. A record with `classes = {<uuid>: {class: "foo.com/character", ...}}`
+matches; a record without that class anywhere in its stack does not.
+
 <a id="create-update-delete-responses"></a>
 ### `create`, `update`, `delete` responses
 
@@ -234,10 +274,11 @@ Each record dict yielded by a `select` resultset has the following fields:
 ```python
 {
     "pk": "92677339-df86-4f68-9397-999e40cf2c40",
-    "class": "foo.com/character",
+    "classes": {
+        "<platter-uuid-1>": {"class": "foo.com/character", "bucket": {...}}
+    },
     "updated_at": "2026-04-21T14:32:00.123",
-    "bucket": {...},
-    "custom_classes": {...}
+    "bucket": {...}
 }
 ```
 
@@ -267,7 +308,9 @@ implementation — only the engine is being developed at this stage.*
 
 The engine returns raw dicts. The client will wrap them into Python objects.
 
-- The record's `class` field is used to look up the corresponding Python class.
+- A class in the record's `classes` field is used to look up the corresponding Python class.
+  Multi-platter records may match more than one registered Python class; the client decides
+  which platter to use as the primary (typically the first platter, or by configured priority).
 - Python classes declare their Mikobase class id via a class-level attribute.
 - Python classes are registered with the client using the `@mikobase.record` decorator,
   which handles both registration and field introspection.
@@ -415,24 +458,34 @@ The engine should translate Q0 operations to SQL where efficient and practical:
 - `path` equality conditions → SQL `WHERE` clauses using `json_extract`
 - `any` (OR narrowing) → SQL `OR` conditions
 - `all` (AND narrowing) → SQL `AND` conditions
-- `class` filtering → recursive CTE to traverse the inheritance tree, then filter records
-  by matching the `class` column against the resolved set of subclass names
+- `class` filtering → two-step lookup:
+  1. Recursive CTE to traverse the inheritance tree and resolve the target class
+     and all of its subclasses (using the `inherits` field on class-definition
+     records).
+  2. Filter records whose `classes` hash contains a platter whose `class` field
+     matches any name in the resolved set. The platter lookup walks each
+     record's `classes` JSON object looking for matching `class` values.
 - Complex cases (e.g. deep `then` chains, nested `path` filtering) may be executed in
   Python after fetching candidate rows from SQLite
 
-Example recursive CTE for class filtering:
+Example recursive CTE for class filtering (the inheritance-tree resolution
+step is unchanged; only the final match-against-records step differs because
+a record may now carry multiple classes in its platter stack):
 
 ```sql
-with recursive subclasses(record_pk) as (
-    select record_pk from current_records
+with recursive subclasses(name) as (
+    select json_extract(bucket, '$.name') from current_records
     where json_extract(bucket, '$.name') = 'foo.com/character'
     union all
-    select cr.record_pk from current_records cr
-    join subclasses s on json_extract(cr.bucket, '$.inherits') =
-        (select json_extract(bucket, '$.name') from current_records where record_pk = s.record_pk)
+    select json_extract(cr.bucket, '$.name') from current_records cr
+    join subclasses s on json_extract(cr.bucket, '$.inherits') = s.name
 )
-select * from current_records
-where class in (select name from subclasses);
+select * from current_records cr
+where exists (
+    select 1
+    from json_each(cr.classes) platter
+    where json_extract(platter.value, '$.class') in (select name from subclasses)
+);
 ```
 
 Correctness takes priority over efficiency.

@@ -7,14 +7,36 @@
 {"vibecode": {
 	"section": "overview",
 	"role": "explains how class definitions are stored in the mikobase",
-	"key_concepts": ["records_history", "class_pk", "bucket", "puck.uno/record/class"]
+	"key_concepts": ["records_history", "classes_field", "platter", "puck.uno/record/class"]
 }}
 ~~~
 
-A class definition is stored as a record in `records_history` with `class_pk` pointing to the
-`puck.uno/record/class` record.
+A class definition is stored as a record whose `classes` field contains a
+platter of class `puck.uno/record/class`. The class definition's properties
+(name, fields, inherits, etc.) live in that platter's bucket.
 
-The class definition is stored in the `bucket` field.
+In other words, a class-definition record looks like:
+
+```json
+{
+    "record_pk": "...",
+    "classes": {
+        "<platter-uuid>": {
+            "class": "puck.uno/record/class",
+            "bucket": {
+                "name": "foo.com/character",
+                "fields": {...},
+                "inherits": "foo.com/being"
+            }
+        }
+    },
+    "bucket": {}
+}
+```
+
+The record's shared `bucket` is typically empty for class-definition records
+— the class's defining properties live in the `puck.uno/record/class`
+platter's bucket, not in the record's shared bucket.
 
 <a id="universal-namespace"></a>
 ## Universal Namespace

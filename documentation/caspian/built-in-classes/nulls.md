@@ -378,6 +378,7 @@ Classes by hundred:
 | 606 | `puck.uno/null/flavor/cancelled` | Operation was explicitly cancelled |
 | 607 | `puck.uno/null/flavor/declined` | Handler chose not to process (pass-to-next pattern) |
 | 608 | `puck.uno/null/flavor/disconnected` | Connection lost |
+| 609 | `puck.uno/null/flavor/delete` | Tombstone — treat this entry as absent in a layered structure (e.g., `meta_hash`); the entry is explicitly removed, not just null-valued |
 
 Each canonical flavor exposes its code via `flavor.code` and its class
 prefix via `flavor.class`:
@@ -499,9 +500,9 @@ Null flavors carry information that single-NULL systems lose. Common application
 ~~~json
 {"vibecode": {
 	"section": "serialization",
-	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_custom_classes",
+	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_uuid_marker",
 	"key_concepts": ["round_trip_preserves_flavor",
-		"unflavored_uses_native_null", "flavored_uses_custom_classes_uuid_marker",
+		"unflavored_uses_native_null", "flavored_uses_uuid_marker_in_classes_hash",
 		"keeps_bucket_namespace_open"]
 }}
 ~~~
@@ -515,39 +516,46 @@ The serialization rule:
 - **Unflavored null** (where `flavor == null`) serializes as the native null of
   the target format (`null` in JSON, `NULL` in SQL, etc.). Cheap, indistinguishable
   from a "plain" null.
-- **Flavored null** serializes as a **typed hash inside the bucket**, with class
-  identification carried out-of-band in `custom_classes`. Mikobase uses this
-  pattern for any nested typed object so that the bucket's key namespace stays
-  fully open to user data — no reserved key like `"class"` is needed inside the
-  bucket itself.
+- **Flavored null** serializes as a **typed hash** carrying a UUID marker key
+  whose value identifies it as an instance of `puck.uno/null` via the
+  enclosing object's own `classes` hash. The bucket's key namespace stays
+  fully open to user data — no reserved key like `"class"` is needed inside
+  the bucket itself.
 
 Example (Mikobase record):
 
 ```
+classes:
+    {
+        "<uuid-host>":   {"class": "foo.com/measurement", "bucket": {}},
+        "<uuid-null-1>": {"class": "puck.uno/null",       "bucket": {}},
+        "<uuid-null-2>": {"class": "puck.uno/null",       "bucket": {}}
+    }
+
 bucket:
     {
         "agent_response": null,
-        "user_status":   {"[uuid-1]": true, "flavor": "declined_to_answer"},
-        "device_reading": {"[uuid-2]": true, "flavor": "puck.uno/null/timeout"}
-    }
-
-custom_classes:
-    {
-        "[uuid-1]": "puck.uno/null",
-        "[uuid-2]": "puck.uno/null"
+        "user_status":   {"<uuid-null-1>": true, "flavor": "declined_to_answer"},
+        "device_reading": {"<uuid-null-2>": true, "flavor": "puck.uno/null/timeout"}
     }
 ```
 
-A typed object in the bucket is recognized by a UUID key (set to `true`) that
-maps to a class UNS in the record's `custom_classes` table. The remaining keys
-in the hash are the object's fields — for nulls, just `flavor`. On read, the
-engine sees the UUID marker, looks up the UNS in `custom_classes`, and
-reconstructs an instance of that class with the captured fields. Anything
-expecting a null still sees a null (per the equality rules above).
+A typed object in the bucket is recognized by a UUID key (set to `true`)
+that matches one of the keys in the record's own `classes` hash. The
+remaining keys in the hash are the object's fields — for nulls, just
+`flavor`. On read, the engine sees the UUID marker, looks up the matching
+platter in `classes`, and reconstructs an instance of that class with the
+captured fields. Anything expecting a null still sees a null (per the
+equality rules above).
 
-This pattern is how all nested typed objects round-trip through Mikobase, not just
-flavored nulls. The same approach allows arbitrary class instances to be embedded
-in buckets without claiming reserved key names.
+This pattern is how all nested typed objects round-trip — flavored nulls,
+inline class instances, anything that needs class identity. The within-
+object lookup keeps the bucket's namespace open without requiring a
+sidecar table.
+
+(Whether inline nested class instances persist as a pattern in Mikobase
+at all, vs always using `puck.uno/reference` to separate records, is an
+open design question — see [#341](https://github.com/mikosullivan/puck/issues/341).)
 
 The flavor value itself must be representable in the target format. Symbol and
 string flavors round-trip cleanly. Hash flavors round-trip if the hash is itself

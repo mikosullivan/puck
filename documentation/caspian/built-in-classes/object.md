@@ -40,25 +40,127 @@ regardless of what classes, fields, or methods user code attaches to the object.
 {"vibecode": {
 	"section": "bool",
 	"returns": "tri_value",
-	"role": "underlying tri-value classification; the other three predicates are derived from this"
+	"role": "underlying tri-value classification; the other three predicates are derived from this; locked at instantiation and engine-enforced",
+	"rule": "only_null_and_false_return_non_true; everything_else_is_true",
+	"locked": "bool_is_set_at_instantiation_and_cannot_change_for_the_object's_lifetime",
+	"mechanism": "two_sticky_restricted_addition_marker_classes_puck_uno_class_bool_null_and_puck_uno_class_bool_false; absence_of_both_means_true",
+	"implementation": "engine_caches_bool_at_instantiation_for_constant_time_read; safe_because_value_never_changes"
 }}
 ~~~
 
 Returns the engine's tri-value classification of the value:
 
-- `true` for any truthy value (the boolean `true`, numbers other than `0`, non-empty
-  strings, hashes, callables, etc.)
-- `false` for the boolean `false` value
-- `null` for null values
+- `null` for null values (regardless of flavor)
+- `false` for the boolean `false` literal
+- `true` for **everything else**
 
 This is the underlying property. The other three methods are derived from it.
 
 ```
-"hello".object.bool   # true
-0.object.bool         # false
+true.object.bool      # true
 false.object.bool     # false
 null.object.bool      # null
+"hello".object.bool   # true
+"".object.bool        # true   ← empty string is still true
+0.object.bool         # true   ← zero is still true
+[].object.bool        # true
+{}.object.bool        # true
+$some_instance.object.bool   # true   ← any user-class instance
 ```
+
+The rule is deliberately simple: there is no notion of "empty is falsy"
+or "zero is falsy." Only the literal `false` and `null` return non-true
+bool. This matches Ruby's semantics and avoids the corner cases that
+make C/Python/JS-style truthiness rules trip people up.
+
+**Truthiness is locked at instantiation.** Whatever bool an object gets
+when it's created stays for the object's lifetime. The bool value can
+**never** change:
+
+- Adding classes to an object's stack doesn't change its bool. A null
+  with platters added is still a null (bool: null), even if its method
+  surface is now richer.
+- Mutating the object's bucket, locals, or platter buckets doesn't
+  change its bool.
+- Even if the program would consider the object "transformed into
+  something else," the engine still answers with the original bool.
+
+This is engine-enforced, by the nanny.
+
+```
+$x = null
+$x.object.bool                              # null
+$x.object.classes.add 'foo.bar/magic'       # adds methods
+$x.object.bool                              # still null
+```
+
+<a id="bool-mechanism"></a>
+#### Mechanism
+
+Conceptually, an object's bool value is determined by which of two
+engine-managed marker classes (if any) appear in its pinned region:
+
+- **`puck.uno/class/bool_null`** — present on every null instance
+- **`puck.uno/class/bool_false`** — present on the literal `false`
+- **Neither** — every other object (defaults to bool true)
+
+```
+null.object.classes      # pinned region includes bool_null
+false.object.classes     # pinned region includes bool_false
+"hello".object.classes   # no bool_* marker → defaults to true
+```
+
+The markers live in the **pinned region** of the class stack (see
+[base-class-use.md § Pinned and mutable regions](../../ideas/base-class-use.md#pinned-and-mutable-regions)),
+which means:
+
+- They sit at fixed positions in the stack and cannot be moved,
+  removed, or replaced. The engine adds them at instantiation;
+  nothing can change them afterward.
+- User code calling `.classes.add 'puck.uno/class/bool_null'` raises
+  — pinned-region addition is restricted to the engine.
+- User code calling `.classes.remove(<marker-uuid>)` on the marker
+  raises — pinned platters can't be removed.
+
+Both classes are **pure markers** — no methods, no bucket contents.
+The engine reads "is this class in the pinned region?" to determine
+the bool.
+
+`puck.uno/class/bool_null` and `puck.uno/class/bool_false` are
+reserved UNS strings. Two more entries in the engine-owned
+namespace; the cost of an inspectable, uniform mechanism that
+uses no parallel structure outside the class stack.
+
+#### Immutable primitives
+
+**`null`, `true`, and `false` are fully immutable.** Their entire
+class stacks (pinned region included) are engine-frozen — no
+`.classes.add`, no `.classes.remove`, no `.object.define`, no
+bucket mutation. The whole object is a sealed unit.
+
+The reason is load-bearing: if any program could mutate `true` or
+`null`, every truthiness check everywhere in the system becomes
+unreliable. These primitives sacrifice flexibility entirely so
+everything else can rely on them.
+
+This is stricter than the marker classes' restriction. The marker
+classes can't be removed from the specific objects they're on
+(nulls, falses), but in general user-class objects can still grow
+their class stacks. The three primitives can't grow at all.
+
+#### Implementation note
+
+The conceptual model is a class-stack check on every `.object.bool`
+call. Under the hood, the engine **caches** the bool value on each
+object at instantiation time — a single internal slot per object,
+read directly on every `.object.bool` call. The cache is safe
+because the rule guarantees the value never changes; there is
+nothing to invalidate.
+
+The cache is not user-visible. Inspecting `$obj.object.classes`
+shows the marker classes (the canonical source of truth); querying
+`$obj.object.bool` returns the cached value (the fast read).
+Programs and debuggers see consistent results either way.
 
 <a id="truthy"></a>
 ### `truthy?`
@@ -79,9 +181,10 @@ branching:
 
 ```
 "hello".object.truthy?    # true
-0.object.truthy?           # false
-false.object.truthy?       # false
-null.object.truthy?        # false
+0.object.truthy?          # true    ← zero is still truthy
+"".object.truthy?         # true    ← empty string is still truthy
+false.object.truthy?      # false
+null.object.truthy?       # false
 ```
 
 The Ruby idiom `def ready?; @ready ? true : false; end` is just
@@ -107,6 +210,7 @@ null` (which works but is less clear than the predicate).
 null.object.null?     # true
 false.object.null?    # false
 0.object.null?        # false
+"".object.null?       # false   ← empty string is not null
 "hello".object.null?  # false
 ```
 

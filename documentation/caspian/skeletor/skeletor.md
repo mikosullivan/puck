@@ -188,7 +188,8 @@ so they'd be tolerated, not stripped.)
       }
     }
   ],
-  "pending_exceptions": []
+  "pending_exceptions": [],
+  "gc_errors": []
 }
 ~~~
 
@@ -245,6 +246,15 @@ Things to notice:
   misdispatch. The registry's per-role entries are empty hashes in
   this example because Aslan-era roles have no metadata yet; later
   slices fill in trust webs, introspection state, etc.
+- **Role keys are proxy-primary keys.** `"user"`, `"stdlib"`,
+  `markdown.uno/render` — these are convenient labels for human
+  readability, but the engine treats them as **opaque
+  identifiers**. Code should not parse role keys, derive meaning
+  from them, or assume any particular naming scheme. They're just
+  unique strings within the registry. Two loaded libraries could
+  in principle use arbitrary-looking keys (`"r0"`, `"r1"`) and the
+  runtime would work identically; readable keys are a convention,
+  not a contract.
 - **Roles alternate down the stack.** user → stdlib → user → user →
   user. Each cross-role transition leaves a frame with its own
   fresh `chain`.
@@ -311,6 +321,16 @@ Things to notice:
   [Exceptions and the captured stack](#exceptions-and-captured-stack)
   below for the per-exception shape and why each entry carries its
   own `captured_stack`.
+- **`gc_errors` is an engine-maintained list of on_close failures.**
+  Stays empty when no GC handler has raised. When one does, the
+  runtime catches the error (so one bad handler doesn't break GC
+  for other objects), appends a record `{class, message, src}` to
+  this list, and continues. Inspectable from any snapshot —
+  a long list is a smell. Programs can read `%state.gc_errors`
+  if they want to check for cleanup failures at shutdown. NOT the
+  per-frame `chain` mechanism; that's frame-scoped ambient context,
+  this is process-wide engine state. See
+  [garbage-collection.md § Errors during on_close](../garbage-collection.md#on-close-errors).
 
 This is what V1.0 Skeletor is **shaped like** — not what it ships in
 Aslan. Aslan's hash is the bottom slice of this (the `roles` registry
@@ -1400,19 +1420,79 @@ require changes to the language's evaluation model. Not in V1.
 <a id="out-of-scope-snapshot-revive-hooks"></a>
 ### `on_snapshot` / `on_revive` class hooks
 
-No per-class hooks fire at snapshot or revive time. The aspiration is **never to
-need them**. The worldlet is the single source of truth for runtime state — if a
-piece of state matters to the program, it lives in the worldlet, and serializing
-the worldlet captures it. If it doesn't live in the worldlet (an open TCP socket
-mid-transaction, a file descriptor, a kernel-managed resource), it isn't user
-state at all — it's the host engine's state, and the engine handles its lifecycle
-around the snapshot transparently to Caspian code.
+No per-class hooks fire at snapshot or revive time **in V1**. The original
+aspiration was "never to need them" — the worldlet is the single source of truth
+for runtime state, and external-resource management belongs in the engine, not in
+user code.
 
-This is a stronger position than "we haven't built the hooks yet." It's a design
-choice that pushes external-resource management out of user code entirely. If we
-ever discover a case where it genuinely can't be — where a Caspian class
-unavoidably needs to participate in pre-pause/post-resume cleanup — we'll revisit.
-Until then, treat the absence of these hooks as deliberate.
+That position is softened by at least one concrete future use case:
+**redaction of sensitive fields before serialization.** If a snapshot is written
+to disk or over a network, sensitive fields (passwords, API tokens, session
+keys) would be exposed in the serialized form. The class needs a chance to
+sanitize itself before the snapshot is taken.
+
+Sketch of the future API (NOT shipping in V1):
+
+```caspian
+class 'myapp.com/auth'
+    @username = nil
+    @password = nil
+
+    on_snapshot do($call)
+        $call.receiver.@password = nil    # redact; value lost forever
+    end
+end
+```
+
+`on_snapshot` fires for every reachable instance before the engine serializes
+the worldlet. The handler can mutate `$call.receiver` to redact fields. The
+mutation is permanent — once `@password` is nilled, the original is gone from
+this snapshot. If the program continues running after the snapshot, it would
+need to re-acquire the password (re-prompt, re-fetch, etc.) to use it again.
+
+Possible sugar for the common "just null out these fields" case:
+
+```caspian
+class 'myapp.com/auth'
+    redact_on_snapshot ['password', 'api_token']
+end
+```
+
+Or a field-level annotation:
+
+```caspian
+class 'myapp.com/auth'
+    @password = nil @redact
+end
+```
+
+`on_revive` would be the companion hook firing after revival — useful for
+re-establishing redacted state from a secure source. Less urgent than
+`on_snapshot` (the program can do this lazily via normal code paths), but
+natural to design alongside.
+
+Open design questions to resolve before implementing:
+
+- **Order of `on_snapshot` calls** across reachable instances. Probably
+  undefined like `on_close`, with the same "don't depend on order" rule.
+- **What happens if `on_snapshot` itself raises?** Probably the same engine-
+  level catch + `state.gc_errors`-style log + continue pattern from
+  [garbage-collection.md § Engine wraps the handler](../garbage-collection.md#on-close-catch-anything).
+  Same time/allocation/I/O constraints might apply.
+- **Mutation visibility to the live program.** If the program continues after
+  the snapshot, do the redactions persist in the live worldlet? Probably yes —
+  the redaction IS the mutation, and a program that snapshotted and continued
+  would see the redacted state. (To preserve live state across a snapshot,
+  the engine would need to copy-then-redact, doubling memory cost. Probably
+  not worth it.)
+- **Composition with non-redaction use cases.** If `on_snapshot` is the
+  general "pre-serialize hook," other use cases might emerge (computed
+  derivations, normalization, etc.). Worth scoping to "just redaction" for
+  the initial implementation and resisting feature creep.
+
+Until then, treat the absence of these hooks as deliberate for V1. **Programs
+that handle sensitive data should not snapshot in V1.** When the hooks land,
+revisit.
 
 ---
 

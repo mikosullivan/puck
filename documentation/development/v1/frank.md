@@ -103,13 +103,21 @@ Deno's local-script model.
 
 | Flag (repeatable where listed) | Grants | Role created |
 |---|---|---|
-| `--allow-fs=PATH` ⟳ | Read-write directory jail rooted at PATH | per-directory jail role |
+| `--allow-fs=PATH` ⟳ | Read-write directory jail rooted at PATH (no locks) | per-directory jail role |
 | `--allow-fs-read=PATH` ⟳ | Read-only directory jail rooted at PATH | per-directory jail role |
+| `--allow-fs-lock=PATH` ⟳ | Read-write directory jail rooted at PATH, **including file-lock capability** | per-directory jail role |
 | `--allow-net=HOST[:PORT]` ⟳ | Network faucet to specific host | per-faucet role |
 | `--allow-net` | Network faucet to any host | broad `net` role |
 | `--allow-env[=NAMES]` | Env-vars faucet, optionally narrowed | `env_vars` role |
 | `--allow-puck` | Puck object access | `puck` role |
 | `--allow-all` (or `-A`) | Everything above | convenience for trusted local scripts |
+
+File locking is split from the basic read-write grant because it's a
+distinct attack surface — see
+[filesystem.md § Permissions](../../caspian/built-in-classes/filesystem.md#permissions).
+A program that needs to read and write files almost never needs locks;
+forcing the user to opt in separately means "I need to coordinate access
+across processes" is a deliberate choice.
 
 `--allow-all` is the escape hatch for "this is my own script and I
 trust myself." Without it, Caspian at the CLI runs sandboxed by
