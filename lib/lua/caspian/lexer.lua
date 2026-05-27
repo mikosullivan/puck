@@ -256,8 +256,26 @@ local function new_lexer(source)
 
             -- Identifiers and keywords
             elseif c:match("[%a_]") then
+                -- Capture start-of-line state BEFORE consuming the name.
+                local at_sol = (#lx.tokens == 0) or (lx.tokens[#lx.tokens].type == T.NEWLINE)
                 local name = read_name()
-                if     name == "true"  then push(T.BOOL, true)
+                if name == "__END__" and at_sol then
+                    -- Check that the rest of the line is only whitespace before \n or EOF.
+                    local p = lx.pos
+                    while p <= #lx.source do
+                        local ch = lx.source:sub(p, p)
+                        if ch == " " or ch == "\t" or ch == "\r" then p = p + 1
+                        else break end
+                    end
+                    local at_eol = (p > #lx.source) or (lx.source:sub(p, p) == "\n")
+                    if at_eol then
+                        -- Stop tokenizing: everything after this point is ignored.
+                        lx.pos = #lx.source + 1
+                    else
+                        -- Not a bare __END__ line; treat as a normal identifier.
+                        push(T.IDENT, name)
+                    end
+                elseif name == "true"  then push(T.BOOL, true)
                 elseif name == "false" then push(T.BOOL, false)
                 elseif name == "null"  then push(T.NULL, nil)
                 else                        push(T.IDENT, name) end

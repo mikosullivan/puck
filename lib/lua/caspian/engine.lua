@@ -1,10 +1,10 @@
 --[[
 {
   "module":  "caspian.engine",
-  "role":    "Aslan slice — canonical-CaspianJ executor. Reads a .caspj file, parses it, executes top-level statements, returns the last value to the host.",
-  "scope":   "Aslan only: a single string literal materialized and a single method (to_string) dispatched. No I/O, no other classes, no other methods, no source-side pipeline.",
+  "role":    "Canonical-CaspianJ executor. Bootstraps engine state, dispatches each statement in a CaspianJ tree, returns the last value to the host. Reads no files and parses no JSON — the caller composes the pipeline (Aslan path: io.open + json.parse; Bree path: io.open + caspian.transpile).",
+  "scope":   "Aslan + Bree: a single string literal materialized and a single method (to_string) dispatched. No I/O, no other classes, no other methods.",
   "exports": {
-    "run":           "(path) -> value      entry point; bootstraps fresh state, reads + parses file, dispatches each statement, returns the last value",
+    "run":           "(tree) -> value      entry point; bootstraps fresh state, dispatches each statement in the pre-parsed CaspianJ tree, returns the last value",
     "bootstrap":     "() -> nil            initializes engine.state (roles + call_stack) and engine.classes; fully resets every call",
     "materialize":   "(expr) -> value      turns a CaspianJ expression into a value table",
     "lookup_method": "(value, name) -> fn  finds a method on the value's class",
@@ -18,12 +18,10 @@
   },
   "value_shape":  "{ type=\"puck.uno/<class>\", owning_role=role_object, payload=any_lua_value }",
   "frame_shape":  "{ action=string, role=role_object, chain={log={},misc={}}, locals={}, ... }",
-  "depends_on":   ["caspian.json"],
-  "docs":         ["documentation/development/v1/aslan.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
+  "depends_on":   [],
+  "docs":         ["documentation/development/v1/aslan.md", "documentation/development/v1/bree.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
 }
 ]]
-
-local json = require("caspian.json")
 
 local M = {}
 
@@ -194,26 +192,17 @@ end
 --[[
 {
   "fn":  "run",
-  "in":  "path: filesystem path to a .caspj file",
+  "in":  "tree: pre-parsed CaspianJ tree (Lua table; array of statements)",
   "out": "value table of the last statement's result, or nil if the program is empty",
-  "note": "calls bootstrap (fresh state), reads file, parses JSON, dispatches each statement, returns the last. Host extracts .payload."
+  "note": "Calls bootstrap (fresh state), then dispatches each statement, returns the last. File reading and JSON parsing are the caller's job. Host extracts .payload from the returned value."
 }
 ]]
-function M.run(path)
-    M.bootstrap()
-
-    local f, err = io.open(path, "r")
-    if not f then
-        error("engine.run: cannot open " .. tostring(path) .. ": " .. tostring(err))
-    end
-
-    local source = f:read("*a")
-    f:close()
-
-    local tree = json.parse(source)
+function M.run(tree)
     if type(tree) ~= "table" then
-        error("engine.run: top-level CaspianJ must be an array of statements")
+        error("engine.run: expected a CaspianJ tree (Lua table), got " .. type(tree))
     end
+
+    M.bootstrap()
 
     local last_value = nil
     for _, statement in ipairs(tree) do

@@ -312,30 +312,30 @@ local function new_parser(tokens)
             advance()
             return parse_postfix(node("sys", { name = t.value }))
 
-        -- String literal
+        -- String literal  (wrapped in parse_postfix so 'hello'.to_string parses)
         elseif t.type == "STRING" then
             advance()
-            return node("string", { value = t.value })
+            return parse_postfix(node("string", { value = t.value }))
 
         -- :symbol is just string shorthand
         elseif t.type == "SYMBOL" then
             advance()
-            return node("string", { value = t.value })
+            return parse_postfix(node("string", { value = t.value }))
 
-        -- Number
+        -- Number  (42.to_string parses; lexer keeps '.' separate when not followed by a digit)
         elseif t.type == "NUMBER" then
             advance()
-            return node("number", { value = t.value })
+            return parse_postfix(node("number", { value = t.value }))
 
         -- Boolean
         elseif t.type == "BOOL" then
             advance()
-            return node("bool", { value = t.value })
+            return parse_postfix(node("bool", { value = t.value }))
 
         -- Null
         elseif t.type == "NULL" then
             advance()
-            return node("null")
+            return parse_postfix(node("null"))
 
         -- self
         elseif t.type == "IDENT" and t.value == "self" then
@@ -379,7 +379,7 @@ local function new_parser(tokens)
                 skip_newlines()
             end
             expect("RBRACK")
-            return node("array", { elements = elems })
+            return parse_postfix(node("array", { elements = elems }))
 
         -- Hash literal: {key: val, 'key': val, :sym => val}
         elseif t.type == "LBRACE" then
@@ -413,7 +413,7 @@ local function new_parser(tokens)
                 skip_newlines()
             end
             expect("RBRACE")
-            return node("hash", { pairs = pairs })
+            return parse_postfix(node("hash", { pairs = pairs }))
 
         -- if as expression: $x = if (cond) ... end
         elseif t.type == "IDENT" and t.value == "if" then

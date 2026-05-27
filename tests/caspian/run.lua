@@ -49,6 +49,21 @@ require("aslan.test_dispatch")
 require("aslan.test_run")
 require("aslan.test_transition_observed")
 
+-- Bree: hello-world from Caspian source
+-- Phase 0: source-side workbench
+require("bree.test_lexer_check")
+require("bree.test_parser_check")
+require("bree.test_transpiler_baseline")
+require("bree.test_engine_run_tree")
+-- Phase 1: hello-world from source + load-bearing extensions
+require("bree.test_parser_literal_receiver")
+require("bree.test_transpiler_canonical")
+require("bree.test_engine_run_returns_hello")
+require("bree.test_integration")
+require("bree.test_call_stack_role")
+require("bree.test_aslan_regression")
+require("bree.test_end_marker")
+
 local runner = require("support.runner")
 local ok = runner.report()
 os.exit(ok and 0 or 1)
