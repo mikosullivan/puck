@@ -33,9 +33,6 @@ The Skeletor hash:
     "user": {},
     "stdlib": {}
   },
-  "classes": {
-    "string": {"role": "stdlib", "methods": ["to_string"]}
-  },
   "call_stack": [
     {
       "action": "top_level",
@@ -59,15 +56,13 @@ What to notice:
 - **Two roles in the registry.** `user` for the program's execution
   context; `stdlib` because the engine pre-loaded the string class
   during bootstrap and the string class is tagged with the stdlib
-  role.
-- **`classes` has just `string`.** Aslan's minimum: one built-in
-  class with one method (`to_string`). Later slices add `hash`,
-  `array`, `integer`, etc. Engine built-ins live in `state.classes`
-  and stay reachable for the program's lifetime.
+  role. Roles live in Skeletor as `state.roles`.
+- **No `classes` field in Skeletor.** Built-in classes (string, etc.)
+  are loaded into engine-private state during bootstrap — see
+  [skeletor.md § Classes are NOT in Skeletor](../skeletor.md#classes-not-in-skeletor).
+  The string class exists and is dispatched against, but it lives in
+  the engine's private class registry, not in the snapshot.
 - **Empty `locals` and empty `chain`.** No bindings yet, no chain
   writes yet.
-- **No frame-level `classes`** on the `top_level` frame because no
-  user code or library has registered any classes yet. Runtime-
-  registered classes appear in `frame.classes` when added.
 - **One frame, with `action: "top_level"`.** The outermost execution
   context the engine pushed during bootstrap.

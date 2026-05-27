@@ -27,8 +27,8 @@ management.
 <a id="how-it-works"></a>
 ## How it works
 
-Objects live in object space. They do not know what references them — they simply exist
-until nothing holds them.
+Objects live in the engine's heap. They do not know what references them — they simply
+exist until nothing holds them.
 
 When a reference to an object is severed, the runtime traces from roots to determine
 whether the object is still reachable. If it is not reachable from any root, the runtime
@@ -38,6 +38,21 @@ Because this is a root trace rather than reference counting, cycles are handled
 automatically. Two objects that reference each other but are held by nothing else are
 both unreachable from roots — both are collected.
 
+**The trace's root set is the uspace references** — reference
+objects whose class declares `uspace: true`. Variables in live
+frames are the canonical example; system-surface references
+(`%foo`, etc.) declare the property too. Hash elements and
+engine-internal references don't, so they're not roots in their
+own right — they're reachable only through the chain of objects
+that some uspace root points at. The `references` hash inside
+Skeletor (see [references.md](skeletor/references.md)) maps every
+reference object to the object it points at, making the trace
+tractable without reference counting. This is what makes
+deterministic GC work: every reference is in one hash, every root
+declares itself via a class-level property, and the engine fires
+the trace at every reference mutation that could drop something
+out of reachability.
+
 <a id="on-close"></a>
 <a id="fooobjectclose"></a>
 ## `on_close`
@@ -45,21 +60,76 @@ both unreachable from roots — both are collected.
 ~~~json
 {"vibecode": {
 	"section": "on_close",
-	"role": "class-body BWC that registers a cleanup handler called by deterministic GC at scope exit",
+	"role": "class-body BWC that registers a cleanup handler called by deterministic GC at scope exit; multicast across every platter in the object's class stack that defines it",
 	"namespace": "separate from the class's main method namespace — not callable from user code",
-	"called_as": "$foo.object.close (by the runtime; never by user code)",
-	"strictness": "hard 2ms cap enforced by raising puck.uno/error/gc_timeout which the engine catches, no resurrection, no allocation, no reliance on collection order; engine-wrapping catch around every invocation catches any exception (user-raised or engine-emitted) and routes to state.gc_errors; no_io is guidance backed by the cap, not a separate runtime check",
+	"called_as": "engine_invokes_each_matching_on_close_handler_top_of_stack_first",
+	"dispatch_kind": "multicast; contrast with normal method calls which are unicast (first match wins)",
+	"strictness": "hard 2ms cap PER HOOK enforced by raising puck.uno/error/gc_timeout which the engine catches per-hook, no resurrection, no allocation, no reliance on collection order; engine-wrapping catch around EACH invocation catches any exception (user-raised or engine-emitted) and routes to state.gc_errors; one platter's bad handler does not suppress the others; no_io is guidance backed by the cap, not a separate runtime check",
 	"escape_hatch": "none in V1 — strict by design; revisit if the community has a concrete need for finer-grained control"
 }}
 ~~~
 
-`on_close` is a **class-body hook**, not a method. It registers a cleanup handler the
-runtime calls during garbage collection. It does not live in the class's main method
-namespace — `$foo.on_close` is not a thing user code can call, and `$foo.close` is not
-either. The runtime calls the handler exactly once, automatically, the moment the object
-becomes unreachable. Per [deterministic garbage collection](#deterministic-garbage-collection), that
-moment is deterministic: the variable that held the last reference goes out of scope and
-the runtime traces, frees, and runs `on_close` immediately.
+`on_close` is a regular function on the class with its `on_call`
+property set to `:all` — that's what makes it multicast (see
+[lucy.md § `on_call` property](lucy/lucy.md#on-call-property)).
+The engine fires it automatically during collection; user code
+calling `$foo.on_close` directly is possible but unusual — the
+`on_*` name is convention signaling "this is for the engine to
+fire," not enforced. The runtime calls the matching handlers
+automatically the moment the object becomes unreachable. Per
+[deterministic garbage collection](#deterministic-garbage-collection),
+that moment is deterministic: the variable that held the last
+reference goes out of scope and the runtime traces, frees, and
+runs the `on_close` handlers immediately.
+
+<a id="on-close-multicast"></a>
+### Multicast across platters
+
+`on_close` is **multicast dispatch**, in contrast to normal method
+calls which are unicast (first match wins). When an object collects,
+the engine walks every platter in its class stack and fires *every*
+`on_close` handler it finds — not just the first one.
+
+The walk:
+
+1. Iterate platters **top to bottom** (newest addition first,
+   original class last).
+2. For each platter, walk its class's `inherits` chain with a
+   visited set (same dedup discipline as normal dispatch — see
+   [base-class-use.md § Method resolution](../ideas/base-class-use.md#method-resolution)).
+3. For each distinct class encountered, if the class defines
+   `on_close`, invoke it.
+
+Top-first ordering mirrors typical destruction-reverses-construction:
+the most recently added platter cleans up first, which is most
+likely the one depending on earlier layers being intact.
+
+**Each hook is wrapped independently** in the engine's catch-anything
+(see [below](#on-close-catch-anything)). One platter's bad handler
+raising or timing out doesn't suppress the others — each runs
+inside its own protected frame, errors accumulate as separate
+entries in `state.gc_errors`, and the next handler still fires.
+
+**The 2 ms cap applies per hook**, not as a budget shared across an
+object's handlers. An object with three `on_close` handlers gets
+2 ms each. Per-hook keeps the budget predictable for each class
+designer; if that turns out to be too generous in aggregate, a
+total cap can be layered on later.
+
+```caspian
+$foo.object.classes   # has platters for myapp.com/connection,
+                      # logging.uno/audit, and the base class
+
+# When $foo collects:
+#   1. connection's on_close fires first (top of stack) → 2ms budget
+#   2. then audit's on_close                            → 2ms budget
+#   3. then any inherited on_close found in the walk    → 2ms budget each
+```
+
+The same multicast model applies to any future class-body lifecycle
+hook (`on_create`, `on_freeze`, `on_thaw`, etc.) when those land. See
+[#343](https://github.com/mikosullivan/puck/issues/343) for the
+broader formalization.
 
 ```caspian
 class 'myapp.com/connection'
@@ -70,10 +140,13 @@ end
 ```
 
 `$call` is the same structured-call object passed to `method_missing` and other
-class-body call hooks. For `on_close`, `$call.receiver` is the dying object; the other
-fields (`args`, `opts`, `block`, `super`) are null, since the GC isn't passing arguments.
+class-body call hooks. For `on_close`, `$call.receiver` is the dying object and
+`$call.platter` is the platter whose `on_close` is currently firing (so the handler
+knows which class it's running as, useful when a single object has multiple
+`on_close` hooks). The other fields (`args`, `opts`, `block`, `super`) are null —
+the GC isn't passing arguments.
 
-`on_close` runs synchronously in the calling function's stack — the function that drops
+The handlers run synchronously in the calling function's stack — the function that drops
 the last reference pays the cleanup cost as part of its own runtime. That makes the
 strict rules below essential: slow, allocating, or fragile handlers don't just break
 themselves; they break the calling code in non-obvious ways.

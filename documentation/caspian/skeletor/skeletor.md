@@ -19,6 +19,16 @@ snapshot-and-revive — letting a Caspian process pause across a remote call, re
 host process during the wait, and revive transparently when the response arrives. The
 foundation (the hash) ships in V1.0; the snapshot/revive machinery is deferred.
 
+**Skeletor is also the foundation for deterministic GC.** The trace
+that determines what's reachable starts from the **uspace roots** —
+reference objects whose class declares `uspace: true` (variables in
+live frames are the canonical example). The `references` hash inside
+Skeletor (see [references.md](references.md)) maps every reference
+object to the object it points at; the engine walks from the uspace
+roots through this hash to determine reachability without reference
+counting. See [garbage-collection.md](../garbage-collection.md#how-it-works)
+for the GC side of this dependency.
+
 <a id="v1-0-scope"></a>
 ## V1.0 scope
 
@@ -127,11 +137,6 @@ so they'd be tolerated, not stripped.)
   "roles": {
     "user": {},
     "stdlib": {}
-  },
-  "classes": {
-    "string": {"role": "stdlib", "methods": ["to_string", "+", "..."]},
-    "array":  {"role": "stdlib", "methods": ["each", "length", "..."]},
-    "hash":   {"role": "stdlib", "methods": ["[]", "keys", "..."]}
   },
   "call_stack": [
     {
@@ -338,69 +343,39 @@ populated with `user` + `stdlib`, and a `call_stack` with one
 `top_level` frame); subsequent slices fill in the other fields as
 the engine grows to need them.
 
-The `classes` top-level field holds engine built-ins (string, array,
-hash, etc.) — present from bootstrap, persistent for the program's
-lifetime. Runtime-registered classes (user-defined via `Class.new`,
-library-defined when a library loads) don't go here; they live in
-the frame that registered them, under that frame's own `classes`
-field (added as a sibling to `locals`). See
-[Class scoping](#class-scoping) below.
-
-<a id="class-scoping"></a>
-### Class scoping
+<a id="classes-not-in-skeletor"></a>
+### Classes are NOT in Skeletor
 
 ~~~json
-{"vibecode": {"section": "class_scoping",
-	"purpose": "describe_where_classes_live_in_skeletor_and_how_class_lookup_walks_the_lexical_chain_parallel_to_variable_lookup",
-	"key_idea": "engine_built_ins_at_top_level_state_classes; runtime_registered_classes_in_the_frame_that_registered_them; lookup_walks_lexical_chain; popped_frames_take_their_classes_out_of_scope",
-	"explicitly_not_a_memory_rule": "engine_caches_as_it_sees_fit; skeletor_only_describes_scope"}}
+{"vibecode": {"section": "classes_not_in_skeletor",
+	"purpose": "establish_that_class_registries_are_engine_private_state_not_part_of_the_observable_skeletor_hash",
+	"contrast_with": "roles_which_DO_live_in_skeletor_as_state_roles",
+	"rationale": "classes_are_implementation_detail_of_the_dispatcher_not_program_visible_execution_state"}}
 ~~~
 
-Classes live in two places:
+Class registries — built-in classes (string, array, hash, integer,
+etc.) plus any runtime-registered classes (user-defined via
+`Class.new`, library-defined when a library loads) — live as
+**engine-private state**, alongside the inverse index, dispatch
+caches, and the object-ID counter. They are **not** top-level fields
+in Skeletor.
 
-- **`state.classes`** — engine built-ins. String, array, hash,
-  integer, etc. Registered at bootstrap, present for the program's
-  lifetime, reachable from anywhere.
-- **`frame.classes`** — runtime-registered classes (user code calls
-  `Class.new`, or a library defines its own classes when it loads).
-  Scoped to the frame that registered them: visible from that frame
-  and from any frame whose lexical chain passes through it. When
-  the frame pops, its classes go out of scope.
+This is a deliberate asymmetry with **roles, which DO live in
+Skeletor** (`state.roles`). Roles are program-visible execution state
+— a running program can inspect `%role`, frames carry role
+references, the role registry is part of "what the program is doing
+right now." Classes, by contrast, are dispatcher implementation
+detail. Programs don't need to inspect the class registry through
+Skeletor to function; the dispatcher reaches into engine-private
+state to resolve method calls.
 
-Class lookup walks the lexical chain, identical to variable lookup:
-own frame → `lexical_parent` → ... → top_level frame → `state.classes`
-as the root. The first match wins; an unresolved class name is a
-dispatch error.
-
-**This is a scope rule, not a memory-management rule.** When a frame
-pops and its classes go out of scope, that just means dispatch can no
-longer reach those classes through the call stack. Whether the engine
-keeps the class table alive in a cache (so re-loading the same
-library is fast), or frees it immediately, or keeps it alive because
-some still-reachable value references it — none of that shows up in
-Skeletor. Skeletor describes what's visible to the running program;
-the engine handles the memory underneath.
-
-Consequences worth knowing:
-
-- **Loading a library at top level** puts its classes in the
-  `top_level` frame's `classes`. That frame doesn't pop until the
-  program ends, so the library's classes are effectively "global"
-  for the program's lifetime.
-- **Loading a library inside a function** puts its classes in that
-  function's frame. When the function returns, the classes go out
-  of scope. Instances that escaped the function (returned, stored
-  elsewhere) become orphans for the program: `obj.method()` can't
-  resolve the class through any in-scope frame. Probably a footgun;
-  most libraries should load at top level.
-- **Dynamic classes via `Class.new`** follow the same rule — they
-  live in the frame where they were created.
-- **Class references in values and on `method_call` frames are just
-  name strings** (e.g., `receiver_type: "string"`,
-  `class_ref: "markdown.uno/render/Renderer"`). The engine
-  resolves the name through the lexical chain at dispatch time.
-  Same-name shadowing in inner scopes is possible; lexical-inner
-  wins, exactly like variable shadowing.
+Class references that appear *in* Skeletor (e.g., `receiver_type:
+"string"` on a `method_call` frame, or `class_ref: "..."` on a
+value) are name strings. The dispatcher resolves names against the
+engine-private registry at dispatch time. Class lookup follows
+Caspian's scoping rules (lexical chain for any per-scope class
+registrations), but the resolution is engine-internal — the
+registry's contents don't show up in snapshots.
 
 <a id="source-location-tagging"></a>
 ### Source-location tagging
@@ -852,12 +827,14 @@ What the deeper stack illustrates that the shorter one didn't:
   iterator state, no implicit nesting trick.
 - **References, not value-copies.** `$node` in frames 1, 4, and 7
   uses `"<ref to ...>"` placeholders in this rendering, but in the
-  actual hash they would be the same kind of value-shape entries as
-  the original `$tree` in the top-level frame — value references
-  through the same expression vocabulary. Real Skeletor
-  serialization will need a reference scheme (probably some form of
-  object-id-with-table); the placeholders here are a notational
-  shorthand, not a committed format.
+  actual hash each binding is a short object ID (see
+  [references.md § Object IDs](references.md#object-ids)) whose
+  target lives in the top-level `references` hash. The shared
+  `$node` aliasing is recorded by multiple reference IDs pointing
+  at the same target object — see
+  [example 07](examples/07-references.md) for what that looks like
+  concretely. The placeholders here are a notational shorthand for
+  readability.
 - **src granularity matters.** Frames 1 and 4 both sit at "line 3"
   (the `puts` statement), but they're at different points in their
   respective executions: frame 1 finished `puts 'root'` and is now
@@ -1152,11 +1129,6 @@ output string.
       "trust": []
     }
   },
-  "classes": {
-    "string": {"role": "stdlib", "methods": ["..."]},
-    "array":  {"role": "stdlib", "methods": ["..."]},
-    "hash":   {"role": "stdlib", "methods": ["..."]}
-  },
   "call_stack": [
     {
       "action": "top_level",
@@ -1165,9 +1137,6 @@ output string.
       "src": ["a", 3],
       "locals": {
         "markdown": {"class_ref": "Renderer", "src": ["a", 1]}
-      },
-      "classes": {
-        "Renderer": {"role": "markdown.uno/render", "methods": ["to_html", "..."]}
       },
       "chain": {
         "log": {},
@@ -1217,17 +1186,17 @@ Things to notice:
   as a role name is fine — names are arbitrary strings, and UNS
   gives a globally unique identifier with no risk of collision
   with other loaded libraries.
-- **The library's class lives in the `top_level` frame's `classes`.**
+- **The library's class is not visible in the snapshot.** Class
+  registries are engine-private state, not part of Skeletor (see
+  [Classes are NOT in Skeletor](#classes-not-in-skeletor)).
   `Renderer` was registered when `%puck['markdown.uno/render']`
-  executed on line 1, which ran at top level — so the class lives
-  in `top_level`'s `classes` and stays in scope for the program's
-  lifetime. If the library had been loaded inside a function,
-  `Renderer` would live in that function's frame and disappear
-  when the function returned. Dispatch resolves
-  `class_ref: "Renderer"` (on `markdown`) and `receiver_type: "Renderer"`
-  (on the `method_call` frame) by walking the lexical chain to
-  find `Renderer` — own frame → ... → top_level → `state.classes`.
-  Found at top_level.
+  executed on line 1; the dispatcher knows about it because the
+  engine's registry knows about it, not because it appears in any
+  frame. Dispatch resolves `class_ref: "Renderer"` (on `markdown`)
+  and `receiver_type: "Renderer"` (on the `method_call` frame) by
+  looking up "Renderer" in the engine's class registry following
+  whatever scope rules apply. The lookup is engine-internal; the
+  snapshot just shows the *name* being resolved.
 - **The trust barrier is invisible in the snapshot, by design.**
   Look at the two frames' `chain` fields. The user's frame
   (frame 0) has `chain.misc.api_token = "sk-secret-abc123"`. The

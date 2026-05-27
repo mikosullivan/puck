@@ -3,20 +3,20 @@
 ~~~json
 {"vibecode": {
 	"doc": "references",
-	"role": "the foundational data structure inside Skeletor that maps references to the objects they point to; the table the engine scans to determine reachability for deterministic garbage collection",
-	"status": "design — being rebuilt from earlier conversational concept",
-	"key_concepts": ["refs_table", "ref_id", "object_id", "many_to_many",
-		"reachability_via_scan", "cycle_detection_via_walk_back_to_roots",
-		"foundation_for_deterministic_gc"]
+	"role": "the foundational data structure inside Skeletor that maps reference objects to the objects they point at; the table the engine scans to determine reachability for deterministic garbage collection",
+	"status": "design — refs hash + reference class hierarchy + uspace as class-level property",
+	"key_concepts": ["refs_hash", "reference_class_hierarchy",
+		"variable_and_hash_element_subclasses", "uspace_is_a_class_property",
+		"deduplicated_pointer_storage", "foundation_for_deterministic_gc"]
 }}
 ~~~
 
-The `refs` table is the structural foundation that makes Skeletor's
+The `references` hash is the structural foundation that makes Skeletor's
 **deterministic garbage collection** work without reference counting. Every
-"thing that can hold an object reference" is a row in this table; every
-"object that can be pointed at" is the other side of a row. When a reference
-is removed, the engine scans the table to determine whether any other
-references still point at the affected object — if not, it's orphan and gets
+"thing that can hold an object reference" is an entry in this hash, mapping
+its own ID to the object it points at. When a reference is removed, the
+engine traces from a root set of `uspace` references to determine whether
+the affected object is still reachable — if not, it's orphan and gets
 collected.
 
 This is the mechanism behind the "root trace at the mutation point" model in
@@ -25,157 +25,293 @@ This is the mechanism behind the "root trace at the mutation point" model in
 <a id="shape"></a>
 ## Shape
 
-The `refs` table is a top-level field in the Skeletor hash. It holds an
-array (or equivalent structure) of `[ref_id, object_id]` pairs:
+The `references` hash is a top-level field in the Skeletor hash. Keys are
+reference IDs; values are object IDs:
 
 ```json
-"refs": [
-  ["ref1", "objecta"],
-  ["ref1", "objectb"],
-  ["ref2", "objecta"],
-  ["ref2", "objectb"]
-]
+"references": {
+  "2": "4",
+  "3": "4",
+  "5": "6"
+}
 ```
 
-A ref can appear multiple times in different rows (e.g., a single variable
-binding might point at multiple objects if it's a container of references).
-An object can appear multiple times (e.g., shared object pointed at by
-multiple bindings).
+Every reference points at exactly one object — that's the contract of a
+reference. Multiple references can point at the same object (`2` and
+`3` both point at `4` above); that's how sharing works. The hash
+captures the full edge set of the program's reference graph.
 
-**This is a conceptual shape.** The actual in-memory representation may be
-denormalized for lookup speed — e.g., a hash from `ref_id` to a list of
-`object_id`s, plus the inverse hash from `object_id` to a list of `ref_id`s.
-What matters is the **bipartite graph of references → objects** that the
-table represents.
+The reference ID is the reference object's own object ID. There's no
+separate `ref_id` namespace — a reference is itself an object (instance
+of `puck.uno/reference` or a subclass), and the hash maps its identity
+to whatever target it currently holds.
 
-<a id="what-counts-as-a-ref"></a>
-## What counts as a ref
+<a id="object-ids"></a>
+### Object IDs
 
-A ref is any named slot inside `state` that holds an object reference. The
-canonical sources:
+Object IDs are integers-as-strings drawn from a single program-wide
+counter. The counter starts at `"1"` and proceeds `"1", "2", "3",
+..., "999", "1000", ...` in encounter order. Every object created
+in the program — variables, hash elements, hashes, function objects,
+class instances — draws its ID from the same counter, so every ID
+in a running program is unique across all object kinds.
 
-- **A frame's local** — `state.call_stack[i].locals[name]` is a ref. The
-  `ref_id` is the qualified path, something like `"frame[i].locals.foo"`.
-- **A chain entry** — `state.call_stack[i].chain.misc[name]` is a ref.
-- **An object's field** — if object `objA` has a field `@bar` pointing at
-  `objB`, that's a ref `"objA.@bar"` → `objB`. Object-to-object edges are
-  refs too; the same table covers them.
-- **An array element** — `objA.@items[3]` is a ref slot.
-- **A hash value** — `objA.@settings["color"]` is a ref slot.
-- **An engine-level binding** — `state.objects[name]` (engine-provided
-  objects), entries in the top-level `state.classes` registry, role
-  metadata — these are roots; they're refs that always count as reachable.
+**The counter is stored as a string**, not as an integer, so the
+sequence can grow indefinitely without bigint machinery. A small
+increment-the-string-by-one routine handles the counter — rightmost
+digit increments, carry propagates left. No overflow concern for
+long-running programs that allocate billions of objects.
 
-The qualifying form of a `ref_id` is whatever the engine uses to address the
-slot. The exact string form isn't load-bearing; what matters is that each
-ref slot has a unique identifier.
+Properties:
 
-<a id="what-counts-as-an-object"></a>
-## What counts as an object
+- **Stable within a program's lifetime.** Once `"2"` refers to an
+  object, that mapping holds until the object collects.
+- **Not stable across runs.** A new program execution starts the
+  counter fresh; the same object might be `"2"` in one run and
+  `"47"` in another.
+- **Not designed for cross-process merging.** Snapshots from
+  two different processes will have colliding IDs. Programs that
+  need to combine state from multiple processes resolve that
+  explicitly at the application level — not the engine's job.
+- **No namespace prefix, no sigil.** IDs are bare strings. Context
+  disambiguates: an ID appears as a key or value in `references`,
+  as a value in a frame's `locals`, etc. Plain values in those
+  positions are always wrapped in the standard skeletor value
+  shape (`{"value": ..., "src": [...]}`), so a bare string in a
+  reference-typed slot is unambiguously an ID.
 
-Anything with **object identity** — something `.object ==` could compare
-against another. Concretely:
+The counter is cheap (one string-increment per allocation), the IDs
+are short (1-4 characters for typical programs), and Skeletor
+snapshots stay readable — `references: {"2": "4", "3": "4"}` is
+far more inspectable than UUID equivalents.
 
-- **User-class instances.** Each has a unique `object_id` assigned at
-  creation time.
-- **Built-in containers** with mutable identity — hash and array instances.
-- **Engine-provided objects** in `state.objects` (stdout, clock, etc.).
-- **Class definitions themselves** (each class is an object).
+For persistent object identity across process restarts (Mikobase
+records, blockchain entries, etc.), different ID schemes apply —
+those systems use UUIDs because the cross-process uniqueness
+requirement is real for them. The in-process Caspian counter is
+for in-memory program state only.
 
-Primitives — strings, integers, booleans, null — may or may not need
-object_ids depending on whether the implementation treats them as immutable
-value types or as identity-bearing objects. (Open question; see below.)
+<a id="reference-classes"></a>
+## Reference classes
 
-<a id="how-gc-uses-the-table"></a>
-## How GC uses the table
+Every entry on the left side of the hash is a **reference object** —
+an instance of `puck.uno/reference` or one of its subclasses. The
+reference's class determines what role it plays in the program; the
+hash entry itself only carries the pointer.
 
-When the engine modifies a reference (rebinds a variable, pops a frame,
-overwrites an object field, etc.), it updates the `refs` table and then
-checks for orphans:
+`puck.uno/reference` is the base. Its responsibility is exactly:
 
-1. **Remove the changed row(s).** A rebinding removes the old `[ref, object]`
-   pair before adding the new one. A frame pop removes every row whose
-   `ref_id` belongs to that frame.
-2. **For each object that lost a ref:** scan the table for other rows
-   pointing at it.
-3. **If at least one other ref points at it:** done, nothing to collect.
-4. **If no other refs point at it:** the object is a candidate orphan. But
-   it might still be reachable via a cycle. Walk back from the object —
-   what does it reference? — and from those, walk back again, until the
-   walk either:
-   - Reaches a root (a ref that originates from `state.call_stack` or
-     another always-reachable origin) → the candidate is reachable; do not
-     collect.
-   - Exhausts all paths without reaching a root → the candidate is orphan,
-     along with everything in its reachability island. Collect them all.
+- Own one pointer (stored in the `references` hash, not in the
+  reference object itself).
+- Participate in GC tracing.
 
-The walk handles cycles naturally. Two objects referencing each other but
-with no external refs are both unreachable from roots, even though each
-keeps the other in its own reference list.
+The reference object's classes and bucket carry semantic metadata
+about *what kind* of reference this is. The pointer lives in exactly
+one place — the `references` hash — so there's no risk of drift
+between the reference's internal state and the table.
 
-The cost of the scan is proportional to the size of the table and the size
-of the affected reachability island. In practice both are bounded by what
-the program is actually doing: most reference changes affect tiny graphs.
-The 2ms cap on `on_close` handlers
-([see GC doc](../garbage-collection.md#on-close-2ms-cap)) is the relevant
-runtime budget; collection scans are typically far under that.
+Two subclasses, both V1.0:
+
+| Class | Plays the role of |
+|---|---|
+| `puck.uno/variable` | A named slot in a scope frame |
+| `puck.uno/hash_element` | A key inside a hash |
+
+`puck.uno/variable` carries the lexical name and the scope frame
+in its bucket. Assignment to a variable (`$foo = $bar`) rebinds the
+variable's entry in the `references` hash to point at the new
+target.
+
+`puck.uno/hash_element` carries the parent hash and the key.
+`hash[key] = obj` rebinds the hash element's entry to point at the
+new target. Hash internals are first-class reference objects, not
+some special-cased container scheme — GC walks the `references`
+hash uniformly.
+
+Future reference subclasses (return slots, system-surface
+references, etc.) can be added without changing the hash shape.
+
+<a id="reference-api"></a>
+### Reference API
+
+The base class provides two operations:
+
+- **`.target`** — returns the object the reference currently points
+  at. Under the hood: `state.references[self.id]`.
+- **`.rebind(obj)`** — updates the pointer to a new target. Under
+  the hood: `state.references[self.id] = obj.id`. The engine fires
+  a GC trace from the previous target before returning.
+
+Both are engine-managed. User code typically doesn't call them
+directly — assignment expressions and hash mutation drive them.
+
+<a id="uspace-class-property"></a>
+## Uspace: a class-level property
+
+Caspian distinguishes **uspace** (user space) — the reachability
+graph as the program sees it — from **engine bookkeeping** that
+also lives in `state` but is not part of the program's data.
+
+The distinction matters for GC: an object is in uspace if a trace
+through `references` lands on a uspace **root**. Roots are the
+subset of reference objects that ground the program's data graph.
+Engine-internal references (the slots holding the call stack
+itself, the `references` hash itself, etc.) don't count as roots
+even though they're also reference objects.
+
+**Uspace is a class-level property, not a per-instance flag.**
+Each reference subclass declares `uspace: true` or `uspace: false`
+in its class definition. The declaration is fixed for the class's
+lifetime — every instance of the class is uspace if the class
+declares it, and not otherwise.
+
+The classification:
+
+| Class | `uspace` |
+|---|---|
+| `puck.uno/reference` (base) | `false` |
+| `puck.uno/variable` | `true` |
+| `puck.uno/hash_element` | `false` |
+| Engine-internal subclasses (`state` slots, etc.) | `false` |
+
+Why hash_element is **not** uspace: a hash element only matters
+if the hash containing it is reachable through some uspace root.
+The element itself isn't a root — the variable (or other root)
+that holds the hash is. Walking from variable roots picks up all
+reachable hash elements naturally; making hash_element a root in
+its own right would double-count.
+
+Why variable **is** uspace: variables in active scope frames are
+the program's data anchors. Everything the program "has access
+to" traces back to a variable.
+
+System surfaces (`%foo` methods, `state` slots that the engine
+exposes as program-visible) get their own reference subclasses
+that declare `uspace: true`. Adding new uspace-rooting reference
+kinds is a class-definition act, not a per-call decision.
+
+Why class-level rather than per-instance: it matches the rest of
+the design. Truthiness is determined by class membership
+([see object.md](../built-in-classes/object.md#bool)); identity-bearing
+properties (redact-status, etc.) likewise. The uspace classification
+is the same kind of thing — *what kind of reference is this?* —
+so it lives in the same place.
+
+<a id="when-references-are-created-and-destroyed"></a>
+## Lifecycle: creating and destroying references
+
+A reference object is created when a slot opens (variable declared,
+hash key assigned for the first time). The engine:
+
+1. Allocates the reference object (with the appropriate subclass).
+2. Inserts a row in `references`: `state.references[ref.id] = target.id`.
+3. The reference is now live.
+
+A reference object is destroyed when its slot closes (variable
+goes out of scope, hash key deleted). The engine:
+
+1. Removes the row from `references` (`state.references[ref.id] = nil`
+   in implementation terms).
+2. Fires a GC trace from the former target — if the target is no
+   longer reachable from any uspace root, it's orphan and gets
+   collected.
+3. The reference object itself is also collected.
+
+The invariant: `references` hash has exactly one entry per live
+reference object, and no entries for destroyed ones.
+
+<a id="how-gc-uses-the-hash"></a>
+## How GC uses the hash
+
+When the engine modifies a reference (rebinds a variable, pops a
+frame, overwrites a hash element, etc.), it updates the
+`references` hash and then checks for orphans:
+
+1. **Update the row.** A rebinding writes the new target in place;
+   a destruction removes the row entirely.
+2. **Identify candidate orphans.** Any object that just lost an
+   incoming pointer is a candidate.
+3. **Trace from uspace roots.** Walk every reference where the
+   reference's class declares `uspace: true`. Follow each one's
+   target. From each target, follow every outgoing reference
+   (other entries in `references` whose target is that object).
+4. **Mark reachable objects.** Anything the walk reaches is alive.
+5. **Collect what wasn't reached.** Candidates not in the
+   reachable set are orphans, along with everything in their
+   reachability island. The engine fires `on_close` deepest-first
+   (see [garbage-collection.md § Cleanup order](../garbage-collection.md#on-close-deepest-first-order)).
+
+The walk handles cycles naturally. Two objects pointing at each
+other but unreachable from any uspace root are both collected.
+
+Cost: O(reachable objects) per trace, bounded by what the program
+is actually doing. Most reference changes affect tiny graphs.
+
+<a id="why-a-hash-not-an-array"></a>
+## Why a hash, not an array of pairs
+
+An earlier sketch used `"refs": [[ref_id, object_id], ...]` — an
+array of pairs. A hash is better for three reasons:
+
+- **One source of truth.** Every reference points at exactly one
+  object. Storing the pointer once in the hash (instead of
+  duplicating it in the reference object's own state) means no
+  drift.
+- **O(1) lookup.** `state.references[ref.id]` is constant-time;
+  scanning an array of pairs isn't.
+- **Future metadata fits naturally.** If a per-reference field
+  ever needs to live alongside the pointer (cached uspace flag
+  for fast trace, last-mutation timestamp, etc.), the hash's
+  value can grow from a bare object ID to a small record without
+  reshaping the table.
+
+The cost of a hash over an array is a few extra bytes per entry
+for the hash overhead — negligible against the cleanup-without-
+refcounting benefit.
 
 <a id="snapshot-serialization"></a>
 ## Snapshot serialization
 
 When the engine snapshots Skeletor (post-V1.0 feature; see
-[skeletor.md § V1.0 scope](skeletor.md#v1-0-scope)), the `refs` table is
-serialized like any other top-level field — `to_json` on the table emits
-the array of pairs verbatim. No special machinery needed; the table is
-already in a serializable shape.
+[skeletor.md § V1.0 scope](skeletor.md#v1-0-scope)), the
+`references` hash serializes verbatim — just IDs on both sides,
+trivially representable in JSON.
 
-The actual objects referenced (`objecta`, `objectb`, etc.) are serialized
-via their classes' `to_json` methods — this is where
+The actual reference objects (instances of
+`puck.uno/variable` etc.) and the objects they point at serialize
+via their classes' `to_json` methods. This is where
 [redaction of sensitive fields](skeletor.md#out-of-scope-snapshot-revive-hooks)
-happens. Each class controls what its instance becomes on disk.
+happens.
 
-The `refs` table is the **structure**; the objects' `to_json` outputs
-are the **content**. Both together let the snapshot capture and revive the
-full object graph.
+The `references` hash is the **structure**; the objects' `to_json`
+outputs are the **content**.
 
 <a id="open-questions"></a>
 ## Open questions
 
-- **Are primitives in the table, or are they always inlined?** Strings,
-  integers, etc. are immutable value types; treating them as identity-bearing
-  objects in the `refs` table adds bulk for little benefit. Probably
-  inlined as values in their referring containers, with no row in the
-  `refs` table. But there are edge cases (interned strings, large
-  strings shared by reference) worth thinking through.
-- **`ref_id` string form** — the qualifying path scheme isn't pinned down.
-  Could be hierarchical strings (`"frame[1].locals.foo"`), structured
-  records (`{"kind": "local", "frame": 1, "name": "foo"}`), or opaque
-  surrogate IDs. The choice affects readability of snapshots, parser cost,
-  and how easy `ref_id`-to-actual-slot resolution is.
-- **`object_id` allocation** — sequential? UUIDs? Hashes of creation
-  context? Sequential is cheapest and most readable but breaks down
-  across snapshot/revive on different processes.
-- **Updates during snapshot.** If a snapshot is taken mid-execution, the
-  table is frozen for the snapshot but the program may continue. Need to
-  ensure the snapshot is a consistent view, not a mid-mutation tear.
-- **Container internals.** When a hash adds/removes entries, that's
-  multiple `refs`-table mutations bundled into one logical operation.
-  Probably the engine batches the updates and runs the orphan scan once.
-- **The on-close example's open question** — "how user-defined instances
-  are stored in Skeletor" — is answered by this doc: instances live in
-  the engine's object pool (an addressable region not directly shown in
-  Skeletor's top-level fields), and the `refs` table connects refs
-  to them. Where exactly the object pool lives (in another top-level
-  Skeletor field? In an implicit engine-managed structure?) is the next
-  question down the chain.
+- **Are primitives reference targets?** Strings, integers, etc.
+  are immutable value types. Treating them as identity-bearing
+  objects in the `references` hash adds bulk for little benefit.
+  Probably inlined in their referring containers — a variable
+  holding a string stores the string value directly in the
+  variable's bucket, not via the references hash. But interned
+  strings and large strings shared by reference are edge cases
+  worth thinking through.
+- **Updates during snapshot.** Mid-execution snapshots must
+  freeze the hash for a consistent view, not a mid-mutation
+  tear.
 
 <a id="related-docs"></a>
 ## Related docs
 
-- [skeletor.md](skeletor.md) — the overall Skeletor state hash, of which
-  this table is a part.
-- [garbage-collection.md](../garbage-collection.md) — the GC model the
-  `refs` table makes tractable.
-- [object.md](../built-in-classes/object.md) — `.object` and object
-  identity, the user-facing surface that the `refs` table implements
-  under the hood.
+- [skeletor.md](skeletor.md) — the overall Skeletor state hash, of
+  which `references` is a part.
+- [garbage-collection.md](../garbage-collection.md) — the GC model
+  the `references` hash makes tractable.
+- [object.md](../built-in-classes/object.md) — `.object` and
+  object identity, the user-facing surface that `references`
+  implements under the hood.
+- [base-class-use.md](../../ideas/base-class-use.md) — the platter
+  model, including the `engine_only` class property that the
+  reference classes use to keep user code from constructing
+  arbitrary reference instances.

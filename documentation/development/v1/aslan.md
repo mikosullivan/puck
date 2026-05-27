@@ -41,7 +41,7 @@ built out fully.
 "runs_under_a_role":
 "program_executes_in_user_role; dispatch_transitions_to_stdlib_role_and_back",
 "has_a_string_class":
-"minimum_built_in_string_class_with_to_string_returning_self; owned_by_engine_role",
+"minimum_built_in_puck_uno_string_class_with_to_string_returning_self; owned_by_stdlib_role",
 "returns_hello":
 "last_statement_return_value_equals_string_hello_observed_by_harness"}}}
 ~~~
@@ -51,11 +51,11 @@ Aslan is done when all four are true:
 1. **The fixture runs.** `[[{"value": "hello"}, "to_string"]]` parses
    and executes through the engine without exception.
 2. **Code runs under a role.** The engine assigns the program to the
-   `user` role; method dispatch transitions to the string-class role
-   for the `to_string` call and back to `user` on return.
+   `user` role; method dispatch transitions to the `stdlib` role for
+   the `to_string` call and back to `user` on return.
 3. **A string class exists.** The engine has a minimum built-in
-   string class, owned by an engine role, supporting `to_string` (which
-   for strings is identity).
+   `puck.uno/string` class, owned by the `stdlib` role, supporting
+   `to_string` (which for strings is identity).
 4. **The harness receives `"hello"`.** The last statement's return
    value is captured by the Lua-side harness and matches the string
    `"hello"`.
@@ -115,9 +115,9 @@ point; what differs is who triggers it and what they pass in.
 ~~~json
 {"vibecode": {"aslan_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
-"lua tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj"},
+"lua5.4 tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj"},
 {"step": 2, "name": "runner_loads_engine_as_lua_library",
-"example": "local engine = require(\"caspian\")"}, {"step": 3,
+"example": "local engine = require(\"caspian.engine\")"}, {"step": 3,
 "name": "runner_calls_engine_run_with_file_path", "example":
 "local result = engine.run(\"tests/caspian/fixtures/hello_world.caspj\")"},
 {"step": 4, "name": "engine_bootstrap_then_parse_then_execute",
@@ -130,9 +130,9 @@ point; what differs is who triggers it and what they pass in.
 Top-level shape:
 
 1. **Command-line invocation.** Something like
-   `lua tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj`.
+   `lua5.4 tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj`.
 2. **Runner loads the engine as a Lua library.** Roughly
-   `local engine = require("caspian")`.
+   `local engine = require("caspian.engine")`.
 3. **Runner calls `engine.run()` with the fixture path.** Roughly
    `local result = engine.run("...fixtures/hello_world.caspj")`.
 4. **Engine bootstrap, parse, and execute happen behind that one
@@ -166,25 +166,33 @@ Top-level shape:
 What happens between `engine.run(path)` being called and the result
 coming back:
 
-1. **Create the role registry.** A small map of role-name → role-object.
-   Aslan needs two roles: `user` (what the program runs as) and the
-   string-class role (provisional name TBD; owns the built-in string
-   class). Role objects in Aslan are barely more than identity tags —
-   they have a name and nothing else. Cross-role trust,
-   role-introspection, role nicknames are all later.
+1. **Create the role registry inside Skeletor.** A small map of
+   role-name → role-object at `engine.state.roles`. Aslan needs two
+   roles: `user` (what the program runs as) and `stdlib` (owns the
+   built-in string class). Role objects in Aslan are barely more
+   than identity tags — they have a name and nothing else.
+   Cross-role trust, role-introspection, role nicknames are all
+   later. Roles live in Skeletor because they're program-visible
+   execution state.
 
-2. **Create the built-in string class.** The engine constructs the
-   string class object — internally a class-registry entry with one
-   method, `to_string`, whose implementation is "return the receiver."
-   The class is tagged with the string-class role as its owner; the
-   method-object inherits that owner.
+2. **Create the built-in string class in the engine-private
+   registry.** The engine constructs the string class object at
+   `engine.classes["puck.uno/string"]` — a class-registry entry
+   with one method, `to_string`, whose implementation is "return
+   the receiver." The class is tagged with the `stdlib` role as
+   its owner; the method-object inherits that owner. The class
+   registry is **not** in Skeletor (see
+   [skeletor.md § Classes are NOT in Skeletor](../../caspian/skeletor/skeletor.md#classes-not-in-skeletor))
+   — it's dispatcher implementation detail, not program-visible
+   state. Registry keys use UNS-prefixed class names.
 
 3. **Create the call stack with a top-level frame.** `engine.state.call_stack`
    starts as a one-element array holding a `top_level` frame whose
-   `role` references the `user` role and whose `chain` is an empty
-   placeholder. From this point forward, every value created counts
-   as owned by the top frame's role (in Aslan, the user role); every
-   method call pushes a new frame and pops it on return.
+   `role` references the `user` role and whose `chain` is the
+   fresh `{ log = {}, misc = {} }` shape. From this point forward,
+   every value created counts as owned by the top frame's role
+   (in Aslan, the user role); every method call pushes a new
+   frame and pops it on return.
 
 4. **Load and parse the CaspianJ file.** The engine reads the path it was
    handed, gives the text to the JSON parser, gets back a parsed tree.
@@ -332,28 +340,38 @@ doesn't, the shapes below are the proposal.
 ~~~json
 {"vibecode": {"data_structures": {"role_object":
 "{name = string}", "role_registry":
-"engine.roles = {[name] = role_object, ...}", "value":
+"engine.state.roles = {[name] = role_object, ...}; lives_inside_skeletor",
+"value":
 "{type = string, owning_role = role_object, payload = any_lua_value}",
 "class_object":
 "{name = string, owning_role = role_object, methods = {[name] = lua_function}}",
-"class_registry": "engine.classes = {[name] = class_object, ...}",
+"class_registry":
+"engine.classes = {[name] = class_object, ...}; engine_private_NOT_in_skeletor",
 "skeletor_state_hash":
-"engine.state = {call_stack = {frame_1, ...}}; each_frame_carries_action_role_chain_locals_pc; aslan_top_frame_is_top_level_with_user_role_empty_chain; grows_in_later_slices_per_skeletor_md",
+"engine.state = {roles = {...}, call_stack = {frame_1, ...}}; aslan_state_holds_roles_and_call_stack_only; each_frame_carries_action_role_chain_locals_src; aslan_top_frame_is_top_level_with_user_role_empty_chain; grows_in_later_slices_per_skeletor_md",
 "skeletor_doc": "../../caspian/skeletor/skeletor.md"}}}
 ~~~
 
 **Skeletor from day one.** Per [skeletor.md](../../caspian/skeletor/skeletor.md),
 all of Caspian's execution state lives in a single hash —
 `engine.state` in this implementation. Aslan's state hash is tiny —
-one field, `call_stack`, holding one frame to start — but the
-discipline is in place from the first slice: the interpreter goes
-through `engine.state` for all execution state, and the role/chain
-context lives in the top-of-stack frame rather than as separate
-top-level fields. Later slices grow the hash's contents (deeper stacks, iterator
-state, pending exceptions, program-wide fields like `argv`) without
-changing the shape. Roles and classes are bootstrap-time registries
-(engine metadata, not execution state) and live alongside the hash as
-`engine.roles` and `engine.classes`.
+two fields, `roles` (the role registry) and `call_stack` (one
+`top_level` frame to start) — but the discipline is in place from
+the first slice: the interpreter goes through `engine.state` for
+all execution state. The "current role" / "current chain" are
+derived from the top-of-stack frame rather than living as separate
+top-level fields. Later slices grow the hash's contents (deeper
+stacks, iterator state, pending exceptions, program-wide fields
+like `argv`) without changing the shape.
+
+**Roles live in Skeletor; classes do not.** This is a deliberate
+asymmetry: roles are program-visible execution state (frames carry
+role references, `%role` reads them, programs can inspect the
+registry), while classes are dispatcher implementation detail
+(see [skeletor.md § Classes are NOT in Skeletor](../../caspian/skeletor/skeletor.md#classes-not-in-skeletor)).
+So Aslan ships `engine.state.roles` (the role registry as a
+Skeletor field) and `engine.classes` (the class registry as
+engine-private state alongside, but not in, the hash).
 
 Every internal object is a plain Lua table — no metatables in Aslan.
 References between tables are Lua's normal table-reference semantics
@@ -366,10 +384,12 @@ reference, not the contents).
   ```
   Later slices will add trust webs, role-introspection state, etc.
 
-- **Role registry.** A flat table mapping role-name to role-object:
+- **Role registry.** A flat table mapping role-name to role-object,
+  **living inside Skeletor at `engine.state.roles`** (a top-level
+  Skeletor field, not engine-private state):
   ```lua
-  engine.roles = {
-      user         = { name = "user" },
+  engine.state.roles = {
+      user   = { name = "user" },
       stdlib = { name = "stdlib" },
   }
   ```
@@ -377,29 +397,35 @@ reference, not the contents).
 - **Value.** Every CaspianJ value the runtime holds is a Lua table with
   three fields:
   ```lua
-  { type = "string", owning_role = engine.roles.user, payload = "hello" }
+  { type = "puck.uno/string", owning_role = engine.state.roles.user, payload = "hello" }
   ```
-  The `owning_role` field is a *reference* to one of the role objects
-  in `engine.roles` — same Lua table, shared. Once set, it's never
+  The `type` field holds the **UNS-prefixed class name** — every class
+  identifier in Caspian uses its UNS, per the broader convention
+  (see [cheat-sheet.md § Conventions](../../cheat-sheet.md)). The
+  `owning_role` field is a *reference* to one of the role objects in
+  `engine.state.roles` — same Lua table, shared. Once set, it's never
   reassigned (immutable per [roles.md](../../caspian/roles.md)).
 
 - **Class object.** Holds methods as a sub-table of Lua functions:
   ```lua
   {
-      name = "string",
-      owning_role = engine.roles.stdlib,
+      name = "puck.uno/string",
+      owning_role = engine.state.roles.stdlib,
       methods = {
-          to_string = function(receiver, args) return receiver end,
+          to_string = function(receiver) return receiver end,
       },
   }
   ```
-  The method function takes the receiver value and optional args; it
-  returns a value (another `{type, owning_role, payload}` table or one
-  of its inputs).
+  The method function takes the receiver value and (in later slices)
+  any args; it returns a value (another `{type, owning_role, payload}`
+  table or one of its inputs). Aslan's `to_string` ignores args
+  entirely — the fixture passes none.
 
-- **Class registry.** Flat name → class table:
+- **Class registry.** Flat UNS → class table. UNS keys with slashes
+  require bracket notation in Lua:
   ```lua
-  engine.classes = { string = { ... } }
+  engine.classes = { ["puck.uno/string"] = { ... } }
+  -- Access: engine.classes["puck.uno/string"]
   ```
 
 - **Execution state (Skeletor hash).** One table that holds all
@@ -410,8 +436,8 @@ reference, not the contents).
       call_stack = {
           {
               action = "top_level",
-              role   = engine.roles.user,
-              chain  = {},        -- empty placeholder for Aslan
+              role   = engine.state.roles.user,
+              chain  = { log = {}, misc = {} },
               locals = {},
           },
       },
@@ -421,11 +447,12 @@ reference, not the contents).
   `locals`, and (in later slices) `src`, `iterator`, etc. The "current
   role" and "current chain" are just the top frame's `role` and
   `chain` — no separate top-level fields. This is the
-  [Skeletor](../../caspian/skeletor/skeletor.md) hash. Cross-role transitions
-  push a new frame on entry and pop it on return; Lua's own call
-  stack runs alongside the explicit frame stack (the dispatcher
-  function nests, and so does the explicit stack). Working state
-  (intermediate expression results, args being marshaled) stays
+  [Skeletor](../../caspian/skeletor/skeletor.md) hash. Every method call
+  pushes a frame on entry and pops on return — regardless of role.
+  Role is one field on the frame, not the trigger for frame creation.
+  Lua's own call stack runs alongside the explicit frame stack (the
+  dispatcher function nests, and so does the explicit stack). Working
+  state (intermediate expression results, args being marshaled) stays
   outside the hash, per skeletor.md.
 
 <a id="key-procedures"></a>
@@ -445,15 +472,24 @@ reference, not the contents).
 
 Five procedures cover Aslan:
 
-- `engine.run(path)` — entry point called by the host.
+- `engine.run(path)` — entry point called by the host. Returns the
+  **value table** of the last statement's result (a `{type,
+  owning_role, payload}` Lua table), not the bare payload. The host
+  extracts what it needs (typically `result.payload`).
 - `engine.bootstrap()` — populates the role registry, class registry,
-  and execution context. Runs once per `engine.run` invocation.
+  and execution context. Runs once per `engine.run` invocation. Each
+  call fully resets `engine.state` and `engine.classes` — no state
+  carries between runs.
 - `engine.dispatch(statement)` — handles one parsed statement (the
-  `[receiver, method, args?]` triple).
+  `[receiver, method, args?]` triple). Returns the method's return
+  value (a value table).
 - `engine.materialize(expr)` — turns a CaspianJ expression
   (`{"value": ...}`, etc.) into a value table with `owning_role` tag.
-- `engine.transition(new_role, fn)` — wraps a Lua function call with
-  save/restore of `engine.state`. Uses Lua's call stack via closures;
+  Aslan only handles `{"value": <string>}`; anything else raises.
+- `engine.transition(frame_meta, fn)` — pushes a method_call (or
+  similar) frame onto `engine.state.call_stack`, runs `fn`, pops the
+  frame. Called unconditionally on every method call — same-role and
+  cross-role both push frames. Uses Lua's call stack via closures;
   no explicit transition stack needed.
 - `engine.lookup_method(value, method_name)` — finds the method
   function on the value's class. Looks up the class via `value.type`
@@ -473,39 +509,45 @@ local json = require("caspian.json")     -- existing json.lua
 
 function engine.run(path)
     engine.bootstrap()
-    local source = read_file(path)
-    local tree = json.parse(source)      -- top-level array
+    local f = assert(io.open(path, "r"))
+    local source = f:read("*a")
+    f:close()
+    local tree = json.parse(source)      -- top-level array of statements
     local last_value = nil
     for _, statement in ipairs(tree) do
         last_value = engine.dispatch(statement)
     end
-    return last_value                    -- handed to the host
+    return last_value                    -- value table, host extracts .payload
 end
 
 function engine.bootstrap()
-    engine.roles = {
-        user         = { name = "user" },
-        stdlib = { name = "stdlib" },
+    -- Skeletor first: roles registry lives inside the state hash.
+    engine.state = {
+        roles = {
+            user   = { name = "user" },
+            stdlib = { name = "stdlib" },
+        },
+        call_stack = {},  -- filled in below once roles exist
     }
+    -- Engine-private class registry (NOT in engine.state).
+    -- Class keys use UNS-prefixed names (slashes require bracket notation).
     engine.classes = {
-        string = {
-            name = "string",
-            owning_role = engine.roles.stdlib,
+        ["puck.uno/string"] = {
+            name = "puck.uno/string",
+            owning_role = engine.state.roles.stdlib,
             methods = {
-                to_string = function(receiver, args)
+                to_string = function(receiver)
                     return receiver       -- identity on a string
                 end,
             },
         },
     }
-    engine.state = {
-        call_stack = {
-            {
-                action = "top_level",
-                role   = engine.roles.user,
-                chain  = {},
-                locals = {},
-            },
+    engine.state.call_stack = {
+        {
+            action = "top_level",
+            role   = engine.state.roles.user,
+            chain  = { log = {}, misc = {} },
+            locals = {},
         },
     }
 end
@@ -515,31 +557,39 @@ local function top_frame()
 end
 
 function engine.dispatch(statement)
+    -- Aslan-only shape: statement is [receiver, method] — no args.
+    -- Later slices handle variadic args at statement[3+] per caspianj.md.
     local receiver = engine.materialize(statement[1])
     local method_name = statement[2]
-    local args = statement[3]            -- may be nil
     local method_fn = engine.lookup_method(receiver, method_name)
     local class = engine.classes[receiver.type]
-    local target_role = class.owning_role
-    if target_role ~= top_frame().role then
-        return engine.transition({
-            action        = "method_call",
-            role          = target_role,
-            receiver_type = receiver.type,
-            method        = method_name,
-        }, function()
-            return method_fn(receiver, args)
-        end)
-    end
-    return method_fn(receiver, args)
+
+    -- Every method call pushes a method_call frame, regardless of role.
+    -- Per skeletor.md, frames are per-call (role is one field on the frame,
+    -- not the trigger for whether to create it). Same-role calls push and
+    -- pop just like cross-role calls; the only role-dependent behavior is
+    -- chain isolation, which is automatic via the fresh chain on every
+    -- frame.
+    return engine.transition({
+        action        = "method_call",
+        role          = class.owning_role,
+        receiver_type = receiver.type,
+        method        = method_name,
+    }, function()
+        return method_fn(receiver)
+    end)
 end
 
 function engine.materialize(expr)
     if expr.value ~= nil then
         local lua_type = type(expr.value)
         local ksj_type
-        if lua_type == "string" then ksj_type = "string" end
-        -- other types added in later slices
+        -- JSON type → UNS-prefixed Caspian class. Aslan supports string only;
+        -- later slices add integer, decimal, true/false, null, etc.
+        if lua_type == "string" then ksj_type = "puck.uno/string" end
+        if not ksj_type then
+            error("unsupported literal type in Aslan: " .. lua_type)
+        end
         return {
             type         = ksj_type,
             owning_role  = top_frame().role,
@@ -564,14 +614,15 @@ function engine.lookup_method(value, method_name)
 end
 
 function engine.transition(frame_meta, fn)
-    -- Push a new frame; cross-role wipes chain by giving the new
-    -- frame its own fresh chain table.
+    -- Push a new frame. Every frame gets its own fresh chain regardless
+    -- of role — same-role and cross-role transitions both isolate chain
+    -- per skeletor.md's per-frame-chain model.
     local frame = {
         action        = frame_meta.action,
         role          = frame_meta.role,
         receiver_type = frame_meta.receiver_type,
         method        = frame_meta.method,
-        chain         = {},
+        chain         = { log = {}, misc = {} },
         locals        = {},
     }
     table.insert(engine.state.call_stack, frame)
@@ -602,7 +653,7 @@ A few specifics worth flagging:
   perfectly clear).
 - **Role objects are shared by reference.** When ten values all sit
   under role `user`, they all point at the *same* Lua table
-  (`engine.roles.user`). Identity comparison (`a.role == b.role`)
+  (`engine.state.roles.user`). Identity comparison (`a.role == b.role`)
   is constant-time.
 - **Explicit call stack in `engine.state.call_stack`.** Each
   transition pushes a frame on entry and pops it on return. Lua's
@@ -610,10 +661,13 @@ A few specifics worth flagging:
   Lua function), but the Caspian-visible state is the explicit frame
   array. If `fn()` triggers another transition, another frame goes
   on top.
-- **Cross-role chain wipe happens by frame creation.** The pushed
-  frame gets `chain = {}` — a fresh table. The caller's chain
-  belongs to its own frame and is untouched. On pop, the caller's
-  frame is back on top and its chain is what it was.
+- **Chain is per-frame, regardless of role.** Every pushed frame
+  gets `chain = { log = {}, misc = {} }` — a fresh chain with the
+  two standard sub-fields pre-allocated. The caller's chain belongs
+  to its own frame and is untouched. On pop, the caller's frame is
+  back on top and its chain is what it was. Same-role and cross-role
+  calls behave identically here; "chain wipe at the role boundary"
+  is a special case of "every frame gets its own chain."
 - **Errors use Lua `error()` for Aslan.** Caspian-level exception
   machinery (alarms vs. regular exceptions per [roles.md](../../caspian/roles.md))
   lands in a later slice. For Aslan, anything wrong = engine bails
@@ -646,13 +700,21 @@ happens in Phase 0** — this is purely Lua-level sanity.
 
 ~~~json
 {"vibecode": {"step": "0.1", "name": "confirm_lua_5_4", "action":
-"run_lua_dash_v_from_project_root", "expected_stdout_contains":
-"Lua_5_4", "remedy_if_fail": "install_lua_5_4"}}
+"run_lua5_4_dash_v_from_project_root",
+"expected_stdout_contains": "Lua_5_4",
+"remedy_if_fail": "install_lua_5_4",
+"note": "use_lua5_4_explicitly_not_bare_lua_because_distros_may_default_lua_to_an_older_version"}}
 ~~~
 
-`lua -v` from the project root. Expected: a line containing `Lua 5.4`.
-If a different major version is installed, install Lua 5.4 before
+`lua5.4 -v` from the project root. Expected: a line containing
+`Lua 5.4`. If the command isn't found, install Lua 5.4 before
 proceeding.
+
+**Use `lua5.4` explicitly throughout the test suite**, not the
+bare `lua` command. On Debian/Ubuntu-style systems with multiple
+Lua versions coexisting, bare `lua` may resolve to an older
+version (5.1 or 5.3) even when 5.4 is installed. See the
+[Lessons learned](#lessons-learned) entry for context.
 
 <a id="step-02-run-a-sanity-hello-in-pure-lua"></a>
 ### Step 0.2: Run a sanity hello in pure Lua
@@ -661,7 +723,7 @@ proceeding.
 {"vibecode": {"step": "0.2", "name": "lua_hello",
 "fixture_path": "tests/sanity/lua_hello.lua", "fixture_content":
 "print(\"hello from lua\")\n", "run":
-"lua tests/sanity/lua_hello.lua", "expected_stdout":
+"lua5.4 tests/sanity/lua_hello.lua", "expected_stdout":
 "hello from lua\\n", "expected_exit_code": 0}}
 ~~~
 
@@ -671,7 +733,7 @@ Create `tests/sanity/lua_hello.lua`:
 print("hello from lua")
 ```
 
-Run: `lua tests/sanity/lua_hello.lua`. Expected stdout: `hello from lua`
+Run: `lua5.4 tests/sanity/lua_hello.lua`. Expected stdout: `hello from lua`
 followed by a newline. Exit code 0.
 
 <a id="step-03-verify-packagepath-resolves-engine-modules"></a>
@@ -918,7 +980,7 @@ Phase 0 verified the workbench. This is the first action against the
 engine itself. From the project root:
 
 ```
-lua tests/caspian/run.lua
+lua5.4 tests/caspian/run.lua
 ```
 
 The existing scaffolding includes lexer, parser, and transpiler tests
@@ -1074,7 +1136,7 @@ require("aslan.test_fixture_parse")
 Run:
 
 ```
-lua tests/caspian/run.lua
+lua5.4 tests/caspian/run.lua
 ```
 
 Expected: a dot for this test in the runner output, and a final
@@ -1095,9 +1157,8 @@ inventory should have told you which.
 "test_file": "tests/caspian/aslan/test_engine_run.lua"}}
 ~~~
 
-In `lib/lua/caspian/`, create `engine.lua` (or evolve whatever
-top-level entry already lives there) so that `require("caspian")`
-returns a table with a `run` function:
+In `lib/lua/caspian/`, create `engine.lua` so that
+`require("caspian.engine")` returns a table with a `run` function:
 
 ```lua
 local engine = {}
@@ -1124,7 +1185,7 @@ already a module, integrate the `run` function there instead. The
 import surface from the test side stays the same:
 
 ```lua
-local engine = require("caspian")
+local engine = require("caspian.engine")
 ```
 
 Add `tests/caspian/aslan/test_engine_run.lua`:
@@ -1132,7 +1193,7 @@ Add `tests/caspian/aslan/test_engine_run.lua`:
 ```lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local engine = require("caspian")
+local engine = require("caspian.engine")
 
 runner.suite("v0.01 / engine.run")
 
@@ -1178,12 +1239,12 @@ required surface is tiny:
   `value` literal with its owning-role tag, and return the last
   statement's value to the test harness.
 - The role primitives from the [V1 cross-cutting principles](v1.md#cross-cutting-principles)
-  section: a registry with `user` and the string-class role, an
-  `owning_role` slot on every value, save/restore of role + chain at
-  the boundary, the `%role` system method, and the `%chain` wipe even
-  though chain is empty for Aslan.
-- One stdlib piece: a minimal string class with `to_string` (the
-  identity for strings) owned by the string-class role.
+  section: a registry with `user` and `stdlib`, an `owning_role` slot
+  on every value, save/restore of role + chain at the boundary, the
+  `%role` system method, and the `%chain` wipe even though chain is
+  empty for Aslan.
+- One stdlib piece: a minimal `puck.uno/string` class with
+  `to_string` (the identity for strings) owned by the `stdlib` role.
 
 Anything beyond these — `sys` references like `%stdout`, real I/O, any
 class beyond string, any method beyond `to_string` — is later work, not
@@ -1205,11 +1266,11 @@ a value whose payload equals `"hello"`), the next slices are:
 
 | Candidate | What it does | Lines (rough) |
 |---|---|---|
-| `engine.bootstrap()` | Creates the role registry (`user` + `stdlib`) and the string class with `to_string` (owned by `stdlib`). Sets `engine.state` | ~40 |
-| `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type, owning_role, payload}` | ~20 |
-| `engine.lookup_method(value, name)` | Finds `to_string` on the string class | ~15 |
-| `engine.transition(new_role, fn)` | Save/restore the Skeletor state hash around a Lua function call | ~15 |
-| `engine.dispatch(statement)` | Ties it all together: materialize receiver, look up method, transition if needed, call, restore. **Consumes canonical `[receiver, method, args?]` shape per [caspianj.md](../../caspian/caspianj.md)** — the existing interpreter's pre-spec shapes are deprecated by this work. | ~25 |
+| `engine.bootstrap()` | Initializes `engine.state` with `roles` (user + stdlib) and an empty call_stack, populates `engine.classes` with the `puck.uno/string` class (owned by stdlib), then pushes the top_level frame. Fully resets state on every call. | ~40 |
+| `engine.materialize(expr)` | Turns `{"value": "hello"}` into a value table `{type = "puck.uno/string", owning_role, payload}`. Errors on any other expression form. | ~20 |
+| `engine.lookup_method(value, name)` | Finds `to_string` on the value's class via `engine.classes[value.type]`. Errors if class or method missing. | ~15 |
+| `engine.transition(frame_meta, fn)` | Pushes a frame with `chain = {log={}, misc={}}` onto `engine.state.call_stack`, runs `fn()`, pops the frame, returns `fn`'s result. Called for every method call (same-role and cross-role both push). | ~15 |
+| `engine.dispatch(statement)` | Materialize the receiver, look up the method, push a method_call frame via `engine.transition`, invoke the method, return its result. **Consumes canonical `[receiver, method, args?]` shape per [caspianj.md](../../caspian/caspianj.md)** — Aslan's fixture passes no args; later slices add variadic args at statement[3+]. | ~25 |
 | Format alignment for the rest of the interpreter | Migrate the remaining statement-shape handlers (assignment, `if`/`elsif`/`else`, etc.) from the pre-spec format to canonical CaspianJ. Touches every dispatch path in `interpreter.lua`. Existing parser/transpiler tests still pass — they test the source-side, not the runtime format. Some interpreter-level tests may need to be added or rewritten. | varies |
 
 Recommended order: `bootstrap` first (everything else needs the roles
@@ -1260,13 +1321,18 @@ closes Aslan.
 #### Skeletor snapshots during the run
 
 The [Skeletor state hash](#data-structures-lua-tables) (`engine.state`)
-at three moments during the `"hello".to_string` run. Aslan's hash only
-holds `current_role` and `chain` — later slices grow the contents:
+at three moments during the `"hello".to_string` run. Aslan's hash
+holds two top-level fields — `roles` (the role registry) and
+`call_stack` — and later slices grow the contents:
 
 **After `engine.bootstrap()`, before any statement dispatches:**
 
 ```json
 {
+  "roles": {
+    "user":   {"name": "user"},
+    "stdlib": {"name": "stdlib"}
+  },
   "call_stack": [
     {
       "action":   "top_level",
@@ -1283,6 +1349,10 @@ transition TA.8 verifies):**
 
 ```json
 {
+  "roles": {
+    "user":   {"name": "user"},
+    "stdlib": {"name": "stdlib"}
+  },
   "call_stack": [
     {
       "action":   "top_level",
@@ -1293,7 +1363,7 @@ transition TA.8 verifies):**
     {
       "action":          "method_call",
       "role":          "stdlib",
-      "receiver_type": "string",
+      "receiver_type": "puck.uno/string",
       "method":        "to_string",
       "chain":         {"log": {}, "misc": {}},
       "locals":        {}
@@ -1306,6 +1376,10 @@ transition TA.8 verifies):**
 
 ```json
 {
+  "roles": {
+    "user":   {"name": "user"},
+    "stdlib": {"name": "stdlib"}
+  },
   "call_stack": [
     {
       "action":   "top_level",
@@ -1317,7 +1391,14 @@ transition TA.8 verifies):**
 }
 ```
 
-Each frame's `role` is a reference to a role object in `engine.roles`.
+The `roles` registry and `call_stack` are the only two top-level
+Skeletor fields in Aslan. **The string class is not in any of these
+snapshots** — it lives in the engine's private class registry
+(`engine.classes`), not in Skeletor. The dispatcher resolves
+`receiver_type: "puck.uno/string"` against the engine's registry;
+the snapshot just shows the name being resolved.
+
+Each frame's `role` is a reference to a role object in `engine.state.roles`.
 The role object in Aslan is minimal — just a `name` field — but
 later slices grow it (trust webs, role-introspection state, etc.)
 without changing the reference shape. The "current role" is the top
@@ -1426,32 +1507,39 @@ project framework (`support.runner` + `support.assert`), required from
 `tests/caspian/run.lua` (or a Aslan-specific entry point) and reported
 through `runner.report()`.
 
+**Every test calls `engine.bootstrap()` at the top of its function body.**
+Tests do not assume residual state from a previous test. Bootstrap is
+designed to fully reset `engine.state` and `engine.classes` on every
+call, so test order is irrelevant and tests can be run individually
+or in any order.
+
 Skeleton for a Aslan test file:
 
 ```lua
 -- tests/caspian/aslan/test_bootstrap.lua
 local runner = require("support.runner")
 local assert_ = require("support.assert")
-local engine = require("caspian")
+local engine = require("caspian.engine")
 
 runner.suite("v0.01 / bootstrap")
 
-runner.test("populates the role registry with user and string-class roles", function()
+runner.test("populates the role registry with user and stdlib roles", function()
     engine.bootstrap()
-    assert_.not_nil(engine.roles.user)
-    assert_.not_nil(engine.roles.stdlib)
+    assert_.not_nil(engine.state.roles.user)
+    assert_.not_nil(engine.state.roles.stdlib)
 end)
 
 runner.test("populates the class registry with the string class", function()
     engine.bootstrap()
-    assert_.not_nil(engine.classes.string)
-    assert_.equal(type(engine.classes.string.methods.to_string), "function")
+    local string_class = engine.classes["puck.uno/string"]
+    assert_.not_nil(string_class)
+    assert_.equal(type(string_class.methods.to_string), "function")
 end)
 
 runner.test("execution context starts in user role", function()
     engine.bootstrap()
     local top = engine.state.call_stack[#engine.state.call_stack]
-    assert_.equal(top.role, engine.roles.user)
+    assert_.equal(top.role, engine.state.roles.user)
 end)
 ```
 
@@ -1460,13 +1548,13 @@ Every test in the plan below follows this pattern.
 | ID | Level | Verifies | How |
 |---|---|---|---|
 | TA.1 | unit | JSON parses the fixture | `json.parse('[[{"value": "hello"}, "to_string"]]')` returns the expected nested table |
-| TA.2 | unit | bootstrap populates state | After `engine.bootstrap()`: `engine.roles.user` exists, `engine.classes.string` exists with `to_string` method, `engine.state.call_stack` has one frame with `role == engine.roles.user`, `action == "top_level"` |
-| TA.3 | unit | materialize wraps literal | `engine.materialize({value = "hello"})` returns `{type = "string", payload = "hello", owning_role = engine.roles.user}` |
-| TA.4 | unit | method lookup | `engine.lookup_method(string_value, "to_string")` returns a function |
-| TA.5 | unit | transition push/pop | Call `engine.transition({action="method_call", role=engine.roles.stdlib}, function() return engine.state.call_stack[#engine.state.call_stack].role end)`; verify return == `engine.roles.stdlib` AND after the call `#engine.state.call_stack == 1` and the surviving frame's `role == engine.roles.user` |
+| TA.2 | unit | bootstrap populates state | After `engine.bootstrap()`: `engine.state.roles.user` exists, `engine.classes["puck.uno/string"]` exists with `to_string` method, `engine.state.call_stack` has one frame with `role == engine.state.roles.user`, `action == "top_level"` |
+| TA.3 | unit | materialize wraps literal | `engine.materialize({value = "hello"})` returns `{type = "puck.uno/string", payload = "hello", owning_role = engine.state.roles.user}` |
+| TA.4 | unit | method lookup | Construct a string value: `local v = engine.materialize({value = "hello"})`. Then `engine.lookup_method(v, "to_string")` returns a function. |
+| TA.5 | unit | transition push/pop | Call `engine.transition({action="method_call", role=engine.state.roles.stdlib}, function() return engine.state.call_stack[#engine.state.call_stack].role end)`; verify return == `engine.state.roles.stdlib` AND after the call `#engine.state.call_stack == 1` and the surviving frame's `role == engine.state.roles.user` |
 | TA.6 | unit | dispatch one statement | `engine.dispatch({{value="hello"}, "to_string"})` returns a value with `payload == "hello"` |
 | TA.7 | integration | full end-to-end | `engine.run("tests/caspian/fixtures/hello_world.caspj")` returns a value whose `payload == "hello"` |
-| TA.8 | unit | transition observed | A spy in the `to_string` method records the top-of-stack frame's `role` at call time; assert it was `engine.roles.stdlib`, not `engine.roles.user` |
+| TA.8 | unit | transition observed | A spy in the `to_string` method records the top-of-stack frame's `role` at call time; assert it was `engine.state.roles.stdlib`, not `engine.state.roles.user` |
 
 All eight pass = Aslan done.
 
@@ -1503,3 +1591,67 @@ Existing scaffolding under `tests/caspian/lexer/`, `tests/caspian/parser/`,
 and `tests/caspian/transpiler/` is Bree+ territory; not exercised by
 Aslan directly but already uses the same framework so the patterns
 above mirror what's there.
+
+---
+
+<a id="lessons-learned"></a>
+## Lessons learned
+
+~~~json
+{"vibecode": {"section": "lessons_learned",
+	"role": "running log of what went well, what didn't, and what we'd do differently next time during Aslan's build; intended to inform Bree and later slices",
+	"populated": "iteratively as the build progresses",
+	"format": "dated entries with short observations; one entry per non-trivial discovery"}}
+~~~
+
+This section is a running log of what's discovered during the build —
+spec gaps that surfaced, places where the doc didn't match the
+code, conventions that needed retroactive decisions, things that
+turned out to be easier or harder than expected, patterns that
+should be carried into Bree and beyond.
+
+Entries get added during the build, not just at the end. The goal
+is to make the next slice cheaper by learning from this one.
+
+### Format
+
+Each entry is a dated bullet. Keep them short — full context lives
+elsewhere (the issue, the commit, the doc that got updated). The
+entry is just a finder.
+
+```
+- **YYYY-MM-DD**: short observation. [Optional link to issue or commit.]
+```
+
+### Entries
+
+- **2026-05-27 — Lua 5.4 not the default `lua` binary.** Phase 0
+  step 0.1 assumed `lua -v` would show 5.4. On Debian/Ubuntu-style
+  systems where multiple Lua versions coexist via `update-alternatives`,
+  the bare `lua` may point at an older version (5.1 on this dev box)
+  while 5.4 lives at `/usr/bin/lua5.4`. Phase 0 step 0.1's wording
+  has been updated to check `lua5.4` directly, and all Aslan test
+  invocations use `lua5.4 tests/caspian/run.lua` rather than `lua`.
+  Future slices and any install scripts should follow the same
+  convention.
+
+- **2026-05-27 — Aslan was a refactor, not a from-scratch build.**
+  Pre-existing `engine.lua` + 9 tests in `v001/` already implemented
+  a working V0.01 engine, but using the pre-spec design (bare class
+  names, `M.ctx.current_role` + `M.ctx.chain` instead of a
+  `state.call_stack`, no per-call frames, etc.). Wipe-and-rewrite was
+  cleaner than refactor because the structural changes touched every
+  state-handling site. Total work: ~250 lines (engine.lua) plus 8
+  test files (~250 lines total). Time from first edit to all 208
+  tests green: under an hour. Lesson for Bree: if existing code is
+  pre-spec and the structural shape has changed, prefer wipe-and-
+  rewrite over piecemeal refactor; tests have to be rewritten either
+  way.
+
+- **2026-05-27 — Engine module path is `caspian.engine`, not
+  `caspian`.** The pseudocode in aslan.md used `local engine = require("caspian.engine")`,
+  but `caspian` (init.lua) is the source-pipeline module (lexer →
+  parser → transpiler → CaspianJ). The new executor lives at
+  `caspian.engine` to avoid clashing with the existing init.lua
+  surface. Tests do `local engine = require("caspian.engine")`. The
+  doc's test skeleton should be updated to match (minor).

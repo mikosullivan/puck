@@ -11,6 +11,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Cheat sheet — read it
+
+[documentation/cheat-sheet.md](documentation/cheat-sheet.md) is a compact reference to settled design decisions that span many docs. Read it at the start of every conversation, and re-read the relevant section before making claims about object model, IDs, dispatch, equality, Skeletor fields, or engine-only classes. When a question lands and you're not sure of the current state, check the cheat sheet first.
+
+It's a finder, not the spec — each entry points to the canonical doc where the full context lives. When this cheat sheet disagrees with a canonical doc, the canonical doc wins and the cheat sheet needs updating.
+
 ## What this repo is
 
 The Puck ecoverse: a designed-from-scratch suite of interconnected tools (Caspian language, Mikobase object store, Puck remote-object protocol, etc.). The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and code under [code/](code/) is a walking skeleton.
@@ -36,9 +42,13 @@ There is no build step. The Lua reference engine runs directly.
 
 **Run the Lua test suite (currently the only test suite):**
 ```
-lua tests/caspian/run.lua
+lua5.4 tests/caspian/run.lua
 ```
 Run from the repo root — the runner sets `package.path` to resolve `require("caspian")` against `lib/lua/caspian/` and test modules against `tests/caspian/`. Exits 0 on all pass, 1 on any failure. Requires Lua 5.4.
+
+**Use `lua5.4` explicitly, not bare `lua`.** On systems with multiple Lua versions, `lua` may resolve to an older version; `lua5.4` is unambiguous. See [aslan.md § Lessons learned](documentation/development/v1/aslan.md#lessons-learned) for context.
+
+**Always run the full test suite before moving to a new milestone.** No "I'll just check this one file" — run everything. Regressions in unrelated areas are how walking-skeleton development falls apart. The full suite is fast (under a second for current scope); there's no cost reason to skip it.
 
 **Run a single test file:** edit [tests/caspian/run.lua](tests/caspian/run.lua) and comment out the other `require` lines, or `require` the single file from a one-liner with the same `package.path` prefix. There is no built-in single-test filter.
 

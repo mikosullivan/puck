@@ -125,11 +125,12 @@ the class is purely a tag the engine reads.
   be in the snapshot so revive reconstructs the same augmented
   behavior. Markers, capability stamps, and behavior-adding
   classes all need to round-trip.
-- **Interaction with the `refs` table.** Each instance's class chain
-  is part of its identity. The engine's reference graph already
-  tracks objects; does it also track which classes are attached? The
-  refs table model probably needs a sibling concept for "class
-  membership."
+- **Interaction with the `references` hash.** Each instance's
+  class chain is part of its identity, stored on the object
+  itself. The `references` hash maps reference objects to their
+  targets but doesn't track classes attached to those targets;
+  class membership is read directly off each object's `classes`
+  field. No sibling concept needed.
 
 <a id="pinned-and-mutable-regions"></a>
 ## Pinned and mutable regions
@@ -149,7 +150,7 @@ top of stack
    ↓
    ┌─────────────────────┐
    │ shadow              │  ← pinned, empty by default
-   │ (other pinned)      │  ← pinned (e.g., bool_null, bool_false)
+   │ (other pinned)      │  ← pinned (e.g., truthiness)
    ├─────────────────────┤  ← pinned/mutable boundary
    │ <most recent add>   │  ← top of mutable region
    │ ...                 │
@@ -170,7 +171,7 @@ below the pinned region. User code can't accidentally push
 something into the pinned region.
 
 **Attempts to manipulate platters in the pinned region fail.**
-Calling `.classes.remove(<pinned-uuid>)` raises; calling
+Calling `.classes.remove(<pinned-id>)` raises; calling
 `.classes.move(...)` on a pinned platter raises.
 
 **Sticky platters in the mutable region** can be moved within
@@ -184,15 +185,43 @@ gets absorbed into the pinned region (locks at that position).
 Method resolution is now just "walk the stack top to bottom" —
 no special rule for the shadow class. The shadow happens to be
 at the top because it's a pinned platter at the top, not because
-of a separate rule. The same is true for the truthiness markers
-(`puck.uno/class/bool_null`, `puck.uno/class/bool_false`) when
-present — they're pinned platters in the pinned region,
-participating in normal dispatch order.
+of a separate rule. The same is true for the `puck.uno/truthiness`
+platter when present — it's a pinned platter in the pinned region,
+participating in normal dispatch order. See
+[object.md § Mechanism](../caspian/built-in-classes/object.md#bool-mechanism)
+for how the truthiness platter encodes null / false / true via a
+single class with a bucket-carried `truthy` field.
 
 `$foo.object.classes` returns all platters in stack order
 (top to bottom), **including the shadow platter at position 0**.
 Programs that want to iterate only "user-relevant" platters can
 filter by sticky/class-uns/etc.
+
+<a id="engine-only"></a>
+### `engine_only` class property
+
+A class can declare `engine_only: true` at the class level. The
+engine then refuses any `.classes.add` call that targets that
+class — only the engine itself can push such a platter (typically
+during primitive instantiation).
+
+This is the mechanism behind locked-at-instantiation identity
+properties. `puck.uno/truthiness` declares `engine_only: true`,
+so a program can't fake its way into changing an object's
+truthiness by adding the platter after the fact. Same idea
+applies to any future identity-bearing platter that must only
+exist when the engine put it there.
+
+The property is at the class level, fixed for the class's
+lifetime. Unlike `sticky` (which is per-platter and tracks
+"can this be removed from this object"), `engine_only` tracks
+"can user code create instances of this on any object." Both
+properties can apply to the same class — typically do, since
+identity-bearing platters are both pinned and engine-only.
+
+There's no opt-out. The developer's "out" is to instantiate the
+object they actually want — not to mutate identity after the
+fact.
 
 <a id="three-immutable-primitives"></a>
 ### Three immutable primitives
@@ -217,15 +246,33 @@ The shape of a `null` (illustrative):
 ```json
 {
     "classes": {
-        "<shadow-uuid>":    {"class": "puck.uno/class/shadow",    "bucket": {}},
-        "<bool_null-uuid>": {"class": "puck.uno/class/bool_null", "bucket": {}}
+        "<shadow-id>":     {"class": "puck.uno/class/shadow",  "bucket": {}},
+        "<truthiness-id>": {"class": "puck.uno/truthiness",    "bucket": {"truthy": null}}
     },
     "bucket": {}
 }
 ```
 
-Both platters are pinned. The entire object is immutable. Adding
-or removing anything raises.
+The shape of a `false`:
+
+```json
+{
+    "classes": {
+        "<shadow-id>":     {"class": "puck.uno/class/shadow",  "bucket": {}},
+        "<truthiness-id>": {"class": "puck.uno/truthiness",    "bucket": {"truthy": false}}
+    },
+    "bucket": {}
+}
+```
+
+The shape of a `true` is the same as `false` but with
+`bucket: {truthy: true}`. (Or `bucket: {}` — the absent and
+`truthy: true` encodings are equivalent.)
+
+Both platters are pinned. `puck.uno/truthiness` is also `engine_only`
+(see above), which is what blocks `.classes.add 'puck.uno/truthiness'`
+on a previously-truthy object. The entire primitive is immutable —
+adding or removing anything raises.
 
 <a id="alternative-not-replacement"></a>
 ## Alternative, not replacement
@@ -273,21 +320,39 @@ Today the object's universal shape is `{bucket, classes}`, where
 ```
 
 The proposal changes `classes` from an array of class names into
-a **hash keyed by per-platter UUID**, with each value being a
-platter record (the class reference plus its own private bucket):
+a **hash keyed by platter ID**, with each value being a platter
+record (the class reference plus its own private bucket):
 
 ```json
 {
     "bucket": {},
     "classes": {
-        "<uuid-1>": {"class": "foo.bar/gup",  "bucket": {}},
-        "<uuid-2>": {"class": "foo.bar/bear", "bucket": {}}
+        "<id-1>": {"class": "foo.bar/gup",  "bucket": {}},
+        "<id-2>": {"class": "foo.bar/bear", "bucket": {}}
     }
 }
 ```
 
-Why a hash, not an array of `{uuid, class, bucket}` records: the
-UUID is the platter's natural identifier, so putting it in the
+**Platter IDs are drawn from the engine's global sequence** (see
+[sequence.md § Engine use](../caspian/built-in-classes/sequence.md#engine-use)),
+the same counter that mints object IDs. Reusing the global
+counter is cheaper than maintaining a per-object platter-ID
+counter: no extra state per object, no new code path, no new
+allocation surface. The cost is that platter IDs are slightly
+longer in display (integer-strings instead of `p1` / `p2`-style
+local labels), but you don't read raw platter IDs unless
+debugging.
+
+Drawing from the global sequence means a platter ID is unique
+not just within its containing object but across the entire
+program. That's stronger uniqueness than strictly needed (any
+within-object-unique scheme would work), but it falls out of
+reusing the existing counter — and disambiguates platter IDs
+from object IDs naturally since no two strings from the sequence
+are ever equal.
+
+Why a hash, not an array of `{id, class, bucket}` records: the
+ID is the platter's natural identifier, so putting it in the
 key position (instead of repeating it inside each value) is
 cleaner and gives O(1) lookup. Caspian's hashes preserve
 insertion order, so the class stack's dispatch order (top to
@@ -298,7 +363,7 @@ hash-internal positioning to the user.
 The top-level object's shape stays `{bucket, classes}` — same two
 keys, no new universal reserved key. What changes is the shape of
 the `classes` field: hash instead of array, entries are platter
-records keyed by UUID.
+records keyed by ID.
 
 <a id="design-rationale"></a>
 ### Design rationale
@@ -436,7 +501,7 @@ e.g., a query target). Code with both meanings in proximity is
 hard to read.
 
 By moving object identity to the `classes` field (plural, a hash
-of platter records keyed by UUID), the singular word `class` is
+of platter records keyed by ID), the singular word `class` is
 **freed from identity duty**. When `class` appears as a parameter,
 field name, or variable, it's unambiguously "a class reference."
 
@@ -474,7 +539,7 @@ Settled changes that propagate:
   shape needs to handle the new structure: each platter record
   serializes with its class UNS and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become
-  `{classes: {<uuid>: {class, bucket}, ...}, bucket}` to match.
+  `{classes: {<id>: {class, bucket}, ...}, bucket}` to match.
   Worth flagging this in the Mikobase spec.
 - Every doc that says "object's class" needs to either say "the
   class an object is an instance of" (still meaningful) or
@@ -489,7 +554,7 @@ explicitly carry `active: false`. So most platter records have just
 `{class, bucket}` (or `{class, bucket, sticky}` if sticky); only
 deactivated platters add the field.
 
-**`.classes.remove(<uuid>)` doesn't actually remove the platter — it
+**`.classes.remove(<id>)` doesn't actually remove the platter — it
 sets `active: false`.** The platter's bucket and metadata stay in the
 `classes` hash. The rationale is simple: rather than trace whether
 the deactivated platter's bucket data is still needed by something
@@ -519,7 +584,7 @@ accumulation cost is worth not tracing.
 to "can't be set inactive." Pinned-region platters and user-marked
 sticky platters stay active for the object's lifetime by definition.
 
-**Reactivation** — `.classes.set_active(<uuid>, true)` flips the
+**Reactivation** — `.classes.set_active(<id>, true)` flips the
 field back. The platter rejoins normal dispatch with its bucket
 intact.
 
@@ -546,6 +611,68 @@ The walk:
 4. First match wins. If no platter yields a match across its
    inheritance chain, the method is unknown — raise
    `puck.uno/error/method_missing` (or similar).
+
+<a id="unicast-vs-multicast"></a>
+### Unicast vs multicast dispatch
+
+The walk above is **unicast** — first match wins, stop. That's
+the default for normal method dispatch (`$foo.bar`).
+
+Some methods are **multicast** instead — same walk, but *every*
+match invokes. The engine collects all matching handlers across
+platters and inheritance chains, then invokes each in walk order
+(top platter first, ancestor-class match before sibling-platter
+match per the visited set's encounter order).
+
+| Dispatch kind | Stops at | Used by |
+|---|---|---|
+| Unicast | First match | Regular method calls (`$foo.bar`) |
+| Multicast | End of walk | Class-body lifecycle hooks (`on_close`, `after_set`, etc.) |
+
+The two share the walk; they differ only in stopping rule.
+Multicast isn't a special case grafted onto dispatch — it's a
+second mode of the same walk, with a different terminator.
+
+<a id="how-dispatch-kind-is-declared"></a>
+#### How dispatch kind is declared
+
+Dispatch kind is **a property of the function object**, not a
+keyword in the declaration. Functions carry an `on_call` field;
+the value selects between dispatch modes:
+
+| `on_call` value | Dispatch |
+|---|---|
+| `:first` (or absent) | Unicast — first match wins |
+| `:all` | Multicast — every match fires |
+
+```caspian
+class
+    function &on_close($call)
+        @socket.close
+    end
+    $on_close.on_call = :all      # declares this as multicast
+
+    function &to_string()
+        ...
+    end
+                                  # unicast (default)
+end
+```
+
+Property assignment goes immediately after the function
+definition by convention — the two-line pair carries the
+visibility a keyword would have. See
+[lucy.md § `on_call` property](../caspian/lucy/lucy.md#on-call-property)
+for the full design (mutability, caching consequences, future
+properties in the same family).
+
+`on_close` is the canonical multicast case — every platter that
+defines `on_close` gets to clean up its own state, not just the
+top one. See
+[garbage-collection.md § Multicast across platters](../caspian/garbage-collection.md#on-close-multicast).
+The same model covers `after_set` / `after_delete` on hashes and
+any future class-body lifecycle hook — see
+[#343](https://github.com/mikosullivan/puck/issues/343).
 
 Properties:
 

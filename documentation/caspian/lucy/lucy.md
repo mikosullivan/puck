@@ -1878,10 +1878,10 @@ The stack has two regions:
    method they both define.
 
 **Platter records carry an `active` field.** Default is `true`;
-the field is omitted when true. `.classes.remove(<uuid>)` doesn't
+the field is omitted when true. `.classes.remove(<id>)` doesn't
 delete the platter — it sets `active: false`. The platter stays in
 the hash with its bucket intact, but is skipped during method
-dispatch. Reactivation via `.classes.set_active(<uuid>, true)`
+dispatch. Reactivation via `.classes.set_active(<id>, true)`
 flips it back. See
 [base-class-use.md § Active and inactive platters](../../ideas/base-class-use.md#active-field).
 
@@ -2335,6 +2335,76 @@ There is no lambda syntax. In other languages, lambdas exist to create passable 
 objects. In Caspian, all functions are already objects.
 
 See `caspian.md` for function definition and call syntax.
+
+<a id="on-call-property"></a>
+### `on_call`: dispatch identity as a function property
+
+~~~json
+{"vibecode": {
+	"section": "on_call_property",
+	"role": "function objects carry an on_call property that selects unicast (:first, the default) or multicast (:all) dispatch behavior; data not syntax — same dispatch walk, different stopping rule",
+	"values": [":first_default_unicast_first_match_wins", ":all_multicast_every_match_fires_in_walk_order"],
+	"mutability": "no_lock; metaprogrammer_can_flip_at_any_time; role_boundary_is_the_safety_story",
+	"caching": "engine_must_re_read_on_each_invocation_or_invalidate_on_write_cannot_be_cached_aggressively",
+	"convention": "property_assignment_immediately_after_function_definition_for_visibility"
+}}
+~~~
+
+Function objects carry an `on_call` property that selects how dispatch
+treats them when multiple matches exist on a platter stack walk.
+Default is `:first` (unicast — first match wins, stop). Setting it to
+`:all` makes it multicast (every match fires in walk order). Same
+dispatch walk; the property just changes the stopping rule.
+
+```caspian
+class
+    function &on_close($call)
+        @socket.close
+    end
+    $on_close.on_call = :all      # multicast lifecycle hook
+
+    function &to_string()
+        ...
+    end
+                                  # unicast (default), no annotation needed
+end
+```
+
+**Convention**: put the property assignment immediately after the
+function definition. The two-line pair tells a reader what kind of
+dispatch the function uses. No keyword needed — the visibility
+comes from formatting.
+
+**Lifecycle hooks declare `:all`.** `on_close`, `after_set`,
+`after_delete`, and any future class-body lifecycle hook is just a
+function with `on_call = :all`. The `on_*` / `after_*` naming is
+convention; the *behavior* is the property value.
+
+**No lock.** `on_call` can be flipped at any time during a program's
+run. The role boundary handles safety: other roles can't reach in and
+change your function objects, so metaprogrammers in their own role
+can fiddle freely. The engine consequence is that dispatch identity
+can't be cached aggressively on a function object — the engine re-reads
+`on_call` on each invocation, or invalidates a per-function cache on
+write. Cheap either way.
+
+**Generalizes to other dispatch metadata.** `on_call` is the first
+property in this family. Future ones can slot in without growing the
+language:
+
+```caspian
+$on_close.on_call = :all
+$on_close.priority = 10                  # ordering hint among multicast siblings
+$on_close.error_strategy = :collect      # what to do if one raises
+```
+
+Introspection is free — `$some_function.on_call` tells you the
+dispatch kind without any reflective API.
+
+See [base-class-use.md § Unicast vs multicast dispatch](../../ideas/base-class-use.md#unicast-vs-multicast)
+for the dispatch model `on_call` selects between, and
+[garbage-collection.md § Multicast across platters](../garbage-collection.md#on-close-multicast)
+for the `on_close` case.
 
 <a id="blocks-and-yielding"></a>
 ### Blocks and Yielding

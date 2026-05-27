@@ -73,8 +73,18 @@ $a == $b                     # true — both are null
 $a.flavor == $b.flavor       # false — different flavors
 ```
 
-Identity comparison (`===`) compares instances and so distinguishes any two distinct
-nulls regardless of flavor.
+To distinguish two distinct null instances by identity (each null
+is a fresh object), compare their `.object` views directly:
+
+```
+$a.object == $b.object       # false — distinct null instances
+$a.object == $a.object       # true  — same null instance
+```
+
+There is **no built-in `===` operator** in Caspian. `$foo.object ==
+$bar.object` is the spelling for "same object." Individual programs
+or libraries can define their own `===` if they have a use for it
+— it's not reserved.
 
 To check whether a value is null at all (any flavor):
 
@@ -132,6 +142,25 @@ User code may **not**:
 
 The same applies symmetrically to `true` and `false`. The mechanism is
 `.object.bool`; the contract is the four predicate methods.
+
+<a id="engine-only-class"></a>
+### `puck.uno/null` is `engine_only`
+
+The class itself declares `engine_only: true` at the class level
+(see [base-class-use.md § engine_only](../../ideas/base-class-use.md#engine-only)).
+User code cannot push `puck.uno/null` onto another object's class
+stack:
+
+```
+$foo = 'bar'
+$foo.object.classes.add 'puck.uno/null'    # raises — engine_only
+```
+
+This closes the loophole where a truthy object could be made to
+answer `$x == null` with `true` by inheriting the null class's
+`==` override. The override only applies to objects the engine
+itself created as null. `puck.uno/false` and `puck.uno/true`
+declare `engine_only: true` for the same reason.
 
 ---
 
@@ -500,9 +529,9 @@ Null flavors carry information that single-NULL systems lose. Common application
 ~~~json
 {"vibecode": {
 	"section": "serialization",
-	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_uuid_marker",
+	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_id_marker",
 	"key_concepts": ["round_trip_preserves_flavor",
-		"unflavored_uses_native_null", "flavored_uses_uuid_marker_in_classes_hash",
+		"unflavored_uses_native_null", "flavored_uses_id_marker_in_classes_hash",
 		"keeps_bucket_namespace_open"]
 }}
 ~~~
@@ -516,34 +545,36 @@ The serialization rule:
 - **Unflavored null** (where `flavor == null`) serializes as the native null of
   the target format (`null` in JSON, `NULL` in SQL, etc.). Cheap, indistinguishable
   from a "plain" null.
-- **Flavored null** serializes as a **typed hash** carrying a UUID marker key
+- **Flavored null** serializes as a **typed hash** carrying an ID marker key
   whose value identifies it as an instance of `puck.uno/null` via the
   enclosing object's own `classes` hash. The bucket's key namespace stays
   fully open to user data — no reserved key like `"class"` is needed inside
   the bucket itself.
 
-Example (Mikobase record):
+Example (Mikobase record — Mikobase uses UUIDs as its concrete ID format
+for cross-process uniqueness; the in-process Caspian engine uses
+integer-strings instead, but the structural pattern is the same):
 
 ```
 classes:
     {
-        "<uuid-host>":   {"class": "foo.com/measurement", "bucket": {}},
-        "<uuid-null-1>": {"class": "puck.uno/null",       "bucket": {}},
-        "<uuid-null-2>": {"class": "puck.uno/null",       "bucket": {}}
+        "<id-host>":   {"class": "foo.com/measurement", "bucket": {}},
+        "<id-null-1>": {"class": "puck.uno/null",       "bucket": {}},
+        "<id-null-2>": {"class": "puck.uno/null",       "bucket": {}}
     }
 
 bucket:
     {
         "agent_response": null,
-        "user_status":   {"<uuid-null-1>": true, "flavor": "declined_to_answer"},
-        "device_reading": {"<uuid-null-2>": true, "flavor": "puck.uno/null/timeout"}
+        "user_status":   {"<id-null-1>": true, "flavor": "declined_to_answer"},
+        "device_reading": {"<id-null-2>": true, "flavor": "puck.uno/null/timeout"}
     }
 ```
 
-A typed object in the bucket is recognized by a UUID key (set to `true`)
+A typed object in the bucket is recognized by an ID key (set to `true`)
 that matches one of the keys in the record's own `classes` hash. The
 remaining keys in the hash are the object's fields — for nulls, just
-`flavor`. On read, the engine sees the UUID marker, looks up the matching
+`flavor`. On read, the engine sees the ID marker, looks up the matching
 platter in `classes`, and reconstructs an instance of that class with the
 captured fields. Anything expecting a null still sees a null (per the
 equality rules above).

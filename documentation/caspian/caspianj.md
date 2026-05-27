@@ -126,7 +126,7 @@ It is ignored by the interpreter.
 {"vibecode": {
 	"section": "expressions",
 	"forms": {
-		"literal": "{\"value\": ...}",
+		"literal": "{\"value\": ..., \"class\"?: \"uns/name\"}",
 		"variable": "{\"var\": \"foo\"}",
 		"ivar": "{\"ivar\": \"foo\"}",
 		"varobj": "{\"varobj\": \"foo\"}",
@@ -146,12 +146,67 @@ Expressions are JSON objects that produce a value.
 <a id="literals"></a>
 ### Literals
 
+~~~json
+{"vibecode": {
+	"section": "literals",
+	"form": "{\"value\": <json>, \"class\"?: <uns>}",
+	"inferred_classes": {"json_string": "puck.uno/string",
+		"json_integer": "puck.uno/integer", "json_decimal": "puck.uno/decimal",
+		"json_true": "puck.uno/true", "json_false": "puck.uno/false",
+		"json_null": "puck.uno/null"},
+	"explicit_class_field": "optional; names the puck UNS the value should be an instance of; engine calls that class's materializer to parse the JSON value",
+	"primitives_omit_class": "the class field is omitted for primitives because the JSON type already determines it; including it is allowed but redundant",
+	"non_primitives_require_class": "any value whose target class cannot be inferred from JSON type must name it explicitly via class field"
+}}
+~~~
+
+A literal is `{"value": <json>}` with an optional `class` field
+naming the UNS of the class the value should be an instance of.
+
+**For primitives, omit the `class` field.** The engine infers the
+target class from the JSON type:
+
 ```json
-{"value": "hello"}
-{"value": 42}
-{"value": true}
-{"value": null}
+{"value": "hello"}     // puck.uno/string
+{"value": 42}          // puck.uno/integer
+{"value": 3.14}        // puck.uno/decimal
+{"value": true}        // puck.uno/true
+{"value": false}       // puck.uno/false
+{"value": null}        // puck.uno/null
 ```
+
+**For non-primitives, include the `class` field.** The named class's
+materializer is responsible for parsing the JSON value into an
+instance:
+
+```json
+{"value": "2026-05-27",                  "class": "puck.uno/date"}
+{"value": "550e8400-e29b-41d4-a716-...", "class": "puck.uno/uuid"}
+{"value": {"lat": 47.6, "lon": -122.3},  "class": "geo.uno/point"}
+```
+
+The materializer is a class-level method (declared on the class
+that the literal targets) that accepts the raw JSON value and
+returns a constructed instance. Most user-defined classes won't
+declare one — values of those classes typically come from `.new`
+calls in source, not from CaspianJ literal expressions. Classes
+that do declare a materializer can appear as literals; those that
+don't, can't.
+
+**Mismatch handling.** If `class` is specified and the JSON type
+doesn't match what the class's materializer accepts, the materializer
+raises. The engine doesn't second-guess the materializer; whatever
+it accepts is the contract.
+
+**Stack at instantiation.** A literal produces an instance with
+its initial platter stack — the shadow class plus the named class
+plus any platters the class declares (truthiness, sticky markers,
+etc.). The `class` field expresses the **instantiation class**, not
+a full platter stack. Programs that want more platters add them
+via `.classes.add` after materialization. Full-stack round-tripping
+of serialized state uses a different mechanism (see
+[nulls.md § Serialization](built-in-classes/nulls.md#serialization)
+for the id-marker-in-classes-hash pattern).
 
 <a id="variables"></a>
 ### Variables

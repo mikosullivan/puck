@@ -43,7 +43,7 @@ regardless of what classes, fields, or methods user code attaches to the object.
 	"role": "underlying tri-value classification; the other three predicates are derived from this; locked at instantiation and engine-enforced",
 	"rule": "only_null_and_false_return_non_true; everything_else_is_true",
 	"locked": "bool_is_set_at_instantiation_and_cannot_change_for_the_object's_lifetime",
-	"mechanism": "two_sticky_restricted_addition_marker_classes_puck_uno_class_bool_null_and_puck_uno_class_bool_false; absence_of_both_means_true",
+	"mechanism": "single_pinned_engine_only_platter_class_puck_uno_truthiness_with_truthy_value_in_its_bucket; absence_of_platter_means_true",
 	"implementation": "engine_caches_bool_at_instantiation_for_constant_time_read; safe_because_value_never_changes"
 }}
 ~~~
@@ -97,39 +97,52 @@ $x.object.bool                              # still null
 <a id="bool-mechanism"></a>
 #### Mechanism
 
-Conceptually, an object's bool value is determined by which of two
-engine-managed marker classes (if any) appear in its pinned region:
+An object's bool value is determined by a single engine-managed
+platter class, `puck.uno/truthiness`. When present in the pinned
+region of the class stack, the platter's bucket holds the bool
+value in a `truthy` field:
 
-- **`puck.uno/class/bool_null`** — present on every null instance
-- **`puck.uno/class/bool_false`** — present on the literal `false`
-- **Neither** — every other object (defaults to bool true)
+| Platter | `bucket.truthy` | `.object.bool` returns |
+|---|---|---|
+| not present | (n/a) | `true` |
+| present | `null` | `null` |
+| present | `false` | `false` |
+| present | `true` | `true` (equivalent to platter absence) |
 
 ```
-null.object.classes      # pinned region includes bool_null
-false.object.classes     # pinned region includes bool_false
-"hello".object.classes   # no bool_* marker → defaults to true
+null.object.classes      # pinned region includes puck.uno/truthiness, bucket {truthy: null}
+false.object.classes     # pinned region includes puck.uno/truthiness, bucket {truthy: false}
+"hello".object.classes   # no truthiness platter → defaults to true
 ```
 
-The markers live in the **pinned region** of the class stack (see
-[base-class-use.md § Pinned and mutable regions](../../ideas/base-class-use.md#pinned-and-mutable-regions)),
+Both `truthy: true` and "platter absent" mean the same thing
+(bool: true). Both are accepted as valid encodings; programs
+typically see the absent form. The engine doesn't normalize one
+to the other — they're treated as equivalent at read time.
+
+The platter lives in the **pinned region** of the class stack
+(see [base-class-use.md § Pinned and mutable regions](../../ideas/base-class-use.md#pinned-and-mutable-regions)),
 which means:
 
-- They sit at fixed positions in the stack and cannot be moved,
-  removed, or replaced. The engine adds them at instantiation;
-  nothing can change them afterward.
-- User code calling `.classes.add 'puck.uno/class/bool_null'` raises
-  — pinned-region addition is restricted to the engine.
-- User code calling `.classes.remove(<marker-uuid>)` on the marker
-  raises — pinned platters can't be removed.
+- It sits at a fixed position in the stack and cannot be moved,
+  removed, or replaced. The engine adds it at instantiation;
+  nothing can change it afterward.
+- The bucket inside the truthiness platter is set at
+  instantiation and is immutable thereafter — `%platter['truthy'] = ...`
+  from any class body raises if the active platter is the
+  truthiness platter.
 
-Both classes are **pure markers** — no methods, no bucket contents.
-The engine reads "is this class in the pinned region?" to determine
-the bool.
+The truthiness class declares `engine_only: true` at the class
+level (see [base-class-use.md § engine_only](../../ideas/base-class-use.md#engine-only)).
+That property is what prevents the obvious attack on the
+locked-at-instantiation rule: `$truthy_obj.object.classes.add 'puck.uno/truthiness'`
+raises because `.classes.add` refuses to add any class whose
+definition declares `engine_only`. The engine is the only entity
+that can push this platter, and it only does so during
+primitive instantiation.
 
-`puck.uno/class/bool_null` and `puck.uno/class/bool_false` are
-reserved UNS strings. Two more entries in the engine-owned
-namespace; the cost of an inspectable, uniform mechanism that
-uses no parallel structure outside the class stack.
+`puck.uno/truthiness` is a reserved UNS string — one entry in the
+engine-owned namespace covering all three tri-value states.
 
 #### Immutable primitives
 
@@ -274,6 +287,39 @@ The split is clean:
   overridden by user code (e.g., a class defining its own `==`).
 - `$foo.object == $bar.object` — **object identity**. Engine-enforced;
   cannot be overridden.
+
+**Default `==` is identity equality.** Every object inherits a base
+`==` from the root that returns `true` only when the other side is
+the same object — equivalent to `$foo.object == $other.object`.
+Classes that want value-based equality (string, number, hash,
+array, null) override `==` for their own use case. A class that
+doesn't override gets the identity default automatically, so
+unfamiliar user-defined classes start with the safe behavior
+(two distinct instances are not equal) instead of an undefined
+state.
+
+**No built-in `===` operator.** Caspian does not define `===` at the
+language level. The canonical "same object?" check is
+`$foo.object == $bar.object`. Programs or libraries are free to
+define their own `===` for whatever semantics make sense in their
+domain — the operator name is not reserved by the engine.
+
+**Engine-only equality classes.** `puck.uno/null`,
+`puck.uno/false`, and `puck.uno/true` all declare
+`engine_only: true` at the class level
+(see [base-class-use.md § engine_only](../../ideas/base-class-use.md#engine-only)).
+User code cannot push any of them onto another object's class
+stack:
+
+```
+$foo = 'bar'
+$foo.object.classes.add 'puck.uno/null'    # raises — engine_only
+```
+
+This closes off the path where a truthy object could be made to
+return `true` for `$x == null` by inheriting the null class's
+`==` override. The classes' identity-bearing `==` only applies
+to objects the engine itself created as null, false, or true.
 
 A reader seeing `==` between two `.object` accesses knows immediately that it's
 an identity check, not a value comparison. The `.object` namespace already

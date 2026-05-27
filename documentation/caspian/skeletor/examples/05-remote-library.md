@@ -42,11 +42,6 @@ tokenized the input and started building output.
       "trust": []
     }
   },
-  "classes": {
-    "string": {"role": "stdlib", "methods": ["..."]},
-    "array":  {"role": "stdlib", "methods": ["..."]},
-    "hash":   {"role": "stdlib", "methods": ["..."]}
-  },
   "call_stack": [
     {
       "action": "top_level",
@@ -55,9 +50,6 @@ tokenized the input and started building output.
       "src": ["a", 3],
       "locals": {
         "markdown": {"class_ref": "Renderer", "src": ["a", 1]}
-      },
-      "classes": {
-        "Renderer": {"role": "markdown.uno/render", "methods": ["to_html", "..."]}
       },
       "chain": {
         "log": {},
@@ -100,15 +92,16 @@ What to notice:
   role name is fine — names are arbitrary strings, and UNS gives a
   globally unique identifier with no collision risk between loaded
   libraries.
-- **The library's class lives in the `top_level` frame's `classes`.**
+- **The library's class is not visible in the snapshot.** Class
+  registries are engine-private state, not part of Skeletor — see
+  [skeletor.md § Classes are NOT in Skeletor](../../skeletor/skeletor.md#classes-not-in-skeletor).
   `Renderer` was registered when `%puck['markdown.uno/render']` ran
-  at top level on line 1, so it lives in `top_level`'s `classes` and
-  stays in scope for the program's lifetime. If the library had been
-  loaded inside a function instead, `Renderer` would live in that
-  function's frame and go out of scope on return. Dispatch resolves
-  `class_ref: "Renderer"` and `receiver_type: "Renderer"` by walking
-  the lexical chain: own frame → ... → top_level → `state.classes`
-  (the engine built-ins). Found at top_level.
+  at top level on line 1; the dispatcher knows about it because the
+  engine's class registry knows about it, not because the snapshot
+  shows it. Dispatch resolves `class_ref: "Renderer"` and
+  `receiver_type: "Renderer"` by looking up "Renderer" in the
+  engine's registry; the snapshot just shows the *name* being
+  resolved.
 - **Trust barrier is invisible by design — the chain shows it.**
   Frame 0 (user) has `chain.misc.api_token = "sk-secret-abc123"`.
   Frame 1 (the library's `to_html`) has `chain: {"log": {}, "misc": {}}`

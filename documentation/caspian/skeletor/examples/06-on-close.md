@@ -44,33 +44,19 @@ user-code reference) has been nilled.
     "stdlib": {},
     "engine": {}
   },
-  "classes": {
-    "string": {"role": "stdlib", "methods": ["..."]},
-    "array":  {"role": "stdlib", "methods": ["..."]},
-    "hash":   {"role": "stdlib", "methods": ["..."]}
-  },
   "objects": {
     "stdout": {"class": "stream", "owner": "engine"},
     "stderr": {"class": "stream", "owner": "engine"}
   },
   "call_stack": [
     {
-      "comment": "Frame 0: top-level. $conn was set on line 7, then reassigned to nil on line 8. The local still exists in locals as nil. The class definition is in this frame's classes (it was defined at top level).",
+      "comment": "Frame 0: top-level. $conn was set on line 7, then reassigned to nil on line 8. The local still exists in locals as nil. The class `myapp.com/connection` was defined at top level, but the class registry itself lives in engine-private state, not in this frame.",
       "action": "top_level",
       "role": "user",
       "lexical_parent": null,
       "src": ["a", 8],
       "locals": {
         "conn": null
-      },
-      "classes": {
-        "myapp.com/connection": {
-          "role": "user",
-          "fields": ["@socket"],
-          "methods": [],
-          "hooks": {"on_close": {"src": ["a", 2]}},
-          "src": ["a", 1]
-        }
       }
     },
     {
@@ -149,12 +135,16 @@ What to notice:
   on_close doesn't change the role's visibility set. But the
   handler can't use stdout (no I/O), so visibility is irrelevant
   in practice during the handler's lifetime.
-- **Frame 0's `classes` registry holds the user-defined class.**
-  `myapp.com/connection` lives where it was defined (top-level
-  frame). Its `hooks.on_close` entry points at the handler's
-  source location. If a class is defined inside a function, its
-  hook references would live in that function's frame and
-  disappear with it — same scope rules as everything else.
+- **The class definition itself isn't in the snapshot.** Class
+  registries are engine-private state, not part of Skeletor — see
+  [skeletor.md § Classes are NOT in Skeletor](../skeletor.md#classes-not-in-skeletor).
+  `myapp.com/connection` was defined on lines 1-5; the dispatcher
+  knows about it because the engine's registry knows about it, and
+  knows where to find the `on_close` handler when an instance
+  collects. Whether the class is per-scope-visible (defined inside
+  a function vs. at top level) follows Caspian's class-scoping
+  rules — the resolution happens engine-internally, the snapshot
+  just shows the names being resolved.
 
 Open question:
 

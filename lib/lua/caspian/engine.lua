@@ -1,78 +1,95 @@
 --[[
 {
-  "module": "caspian.engine",
-  "role": "V0.01 canonical-CaspianJ executor — consumes the [receiver, method, args?] statement shape from caspianj.md",
-  "scope": "V0.01 hello-world only: string literal materialization, single method dispatch, role transition, last-statement value capture",
+  "module":  "caspian.engine",
+  "role":    "Aslan slice — canonical-CaspianJ executor. Reads a .caspj file, parses it, executes top-level statements, returns the last value to the host.",
+  "scope":   "Aslan only: a single string literal materialized and a single method (to_string) dispatched. No I/O, no other classes, no other methods, no source-side pipeline.",
   "exports": {
-    "bootstrap":     "() → nil  populate engine.roles, engine.classes, engine.ctx",
-    "materialize":   "(expr) → value  turn a CaspianJ expression into a tagged value table",
-    "lookup_method": "(value, name) → method_fn  resolve a method via the value's class",
-    "transition":    "(new_role, fn) → result  save/restore ctx around fn(); wipes chain at boundary",
-    "dispatch":      "(statement) → value  execute one [receiver, method, args?] statement",
-    "run":           "(path) → value  read a .caspj file, parse, execute, return last statement's value"
+    "run":           "(path) -> value      entry point; bootstraps fresh state, reads + parses file, dispatches each statement, returns the last value",
+    "bootstrap":     "() -> nil            initializes engine.state (roles + call_stack) and engine.classes; fully resets every call",
+    "materialize":   "(expr) -> value      turns a CaspianJ expression into a value table",
+    "lookup_method": "(value, name) -> fn  finds a method on the value's class",
+    "transition":    "(frame_meta, fn) -> result   pushes a frame, runs fn, pops, returns fn's result",
+    "dispatch":      "(statement) -> value handles one [receiver, method, args?] statement; pushes a method_call frame unconditionally"
   },
   "state": {
-    "roles":   "{ user, stdlib }  populated by bootstrap; role objects are {name=string} only; stdlib owns all built-in classes",
-    "classes": "{ string }  populated by bootstrap; class objects are {name, owning_role, methods}; all are owned by the stdlib role",
-    "ctx":     "{ current_role, chain }  mutable execution context; restored across transitions"
+    "engine.state.roles":      "role registry; lives IN skeletor (program-visible)",
+    "engine.state.call_stack": "the call stack; one top_level frame after bootstrap",
+    "engine.classes":          "class registry; engine-private, NOT in skeletor; keyed by UNS-prefixed class name (e.g. \"puck.uno/string\")"
   },
-  "value_shape": "{ type=string, owning_role=role_object, payload=any_lua_value }",
-  "relationship_to_existing_interpreter": "engine.lua handles canonical CaspianJ for V0.01; interpreter.lua handles the pre-canonical shape emitted by the existing transpiler. They coexist; no shared state.",
-  "depends_on": ["caspian.json"],
-  "docs": ["documentation/development/development.md (Rand sketch)", "documentation/caspian/caspianj.md", "documentation/caspian/roles.md"]
+  "value_shape":  "{ type=\"puck.uno/<class>\", owning_role=role_object, payload=any_lua_value }",
+  "frame_shape":  "{ action=string, role=role_object, chain={log={},misc={}}, locals={}, ... }",
+  "depends_on":   ["caspian.json"],
+  "docs":         ["documentation/development/v1/aslan.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
 }
 ]]
+
 local json = require("caspian.json")
 
 local M = {}
 
 --[[
 {
-  "in":  "(none)",
-  "out": "nil",
-  "side_effect": "populates M.roles, M.classes, M.ctx",
-  "notes": [
-    "idempotent — calling twice replaces the state with a fresh copy",
-    "string class methods.to_string is identity (returns its receiver unchanged)",
-    "ctx.chain is a fresh empty table; the wipe-at-boundary contract relies on transition replacing it (not clearing in place)"
-  ]
+  "fn":   "top_frame",
+  "in":   "(none)",
+  "out":  "frame (Lua table)",
+  "note": "local helper; returns the topmost frame on engine.state.call_stack"
+}
+]]
+local function top_frame()
+    return M.state.call_stack[#M.state.call_stack]
+end
+
+--[[
+{
+  "fn":   "bootstrap",
+  "in":   "(none)",
+  "out":  "nil",
+  "note": "fully resets engine.state and engine.classes; safe to call repeatedly. After: state has user+stdlib roles and one top_level frame; classes has puck.uno/string."
 }
 ]]
 function M.bootstrap()
-    M.roles = {
-        user   = { name = "user" },
-        stdlib = { name = "stdlib" },
+    -- Skeletor: roles registry lives inside state.
+    M.state = {
+        roles = {
+            user   = { name = "user" },
+            stdlib = { name = "stdlib" },
+        },
+        call_stack = {},
     }
+
+    -- Engine-private: class registry is NOT in state. Keys are UNS-prefixed.
     M.classes = {
-        string = {
-            name        = "string",
-            owning_role = M.roles.stdlib,
-            methods = {
-                to_string = function(receiver, args) return receiver end,
+        ["puck.uno/string"] = {
+            name        = "puck.uno/string",
+            owning_role = M.state.roles.stdlib,
+            methods     = {
+                to_string = function(receiver)
+                    return receiver
+                end,
             },
         },
     }
-    M.ctx = {
-        current_role = M.roles.user,
-        chain        = {},
+
+    -- Top-level frame, with the canonical chain shape (log + misc pre-allocated).
+    M.state.call_stack[1] = {
+        action = "top_level",
+        role   = M.state.roles.user,
+        chain  = { log = {}, misc = {} },
+        locals = {},
     }
 end
 
 --[[
 {
-  "in":  "expr: a CaspianJ expression",
+  "fn":  "materialize",
+  "in":  "expr (CaspianJ expression table; Aslan supports {value:<string>} only)",
   "out": "value table {type, owning_role, payload}",
-  "owning_role": "always M.ctx.current_role at the moment of materialization",
-  "supported_forms": {
-    "literal_string": "{value: <string>}",
-    "sys_role":       "{sys: 'role'} — returns the current role wrapped as a value"
-  },
-  "errors": "raises on unsupported expression forms; sys references other than 'role' are deferred"
+  "note": "owning_role is the current top-frame's role; raises on any unsupported expression form or non-string literal payload."
 }
 ]]
 function M.materialize(expr)
     if type(expr) ~= "table" then
-        error("engine.materialize: expected a table, got " .. type(expr))
+        error("engine.materialize: expected an expression table, got " .. type(expr))
     end
 
     if expr.value ~= nil then
@@ -80,40 +97,30 @@ function M.materialize(expr)
         local ksj_type
 
         if lua_type == "string" then
-            ksj_type = "string"
-        else
-            error("engine.materialize: V0.01 only supports string literals; got " .. lua_type)
+            ksj_type = "puck.uno/string"
+        end
+
+        if not ksj_type then
+            error("engine.materialize: unsupported literal type in Aslan: " .. lua_type)
         end
 
         return {
             type        = ksj_type,
-            owning_role = M.ctx.current_role,
+            owning_role = top_frame().role,
             payload     = expr.value,
         }
     end
 
-    if expr.sys ~= nil then
-        --[[ V0.01 ships only %role; other sys methods land with the slices that need them ]]
-        if expr.sys == "role" then
-            return {
-                type        = "role",
-                owning_role = M.ctx.current_role,
-                payload     = M.ctx.current_role,
-            }
-        end
-
-        error("engine.materialize: unsupported sys reference in V0.01: " .. tostring(expr.sys))
-    end
-
-    error("engine.materialize: unsupported expression form in V0.01")
+    error("engine.materialize: unsupported expression form in Aslan: "
+        .. (next(expr) or "<empty>"))
 end
 
 --[[
 {
+  "fn":  "lookup_method",
   "in":  "(value, method_name)",
-  "out": "method_fn",
-  "lookup": "value.type → M.classes[type] → class.methods[name]",
-  "errors": "raises if the class or the method is missing"
+  "out": "method function",
+  "note": "resolves via engine.classes[value.type].methods[method_name]; raises if class or method is missing."
 }
 ]]
 function M.lookup_method(value, method_name)
@@ -135,42 +142,33 @@ end
 
 --[[
 {
-  "in":  "(new_role, fn)",
+  "fn":  "transition",
+  "in":  "(frame_meta, fn)",
   "out": "fn's return value",
-  "behavior": [
-    "saves M.ctx.current_role and M.ctx.chain into Lua locals",
-    "sets current_role = new_role; replaces chain with a fresh empty table (wipe at boundary)",
-    "calls fn()",
-    "restores both fields"
-  ],
-  "nesting": "uses Lua's call stack via the local closure; no separate transition stack",
-  "no_op_case": "if new_role equals the current role, save/restore still happens (chain is still wiped); callers can short-circuit upstream if they want to skip the no-op",
-  "errors": "if fn raises, ctx is NOT restored (V0.01 has no exception machinery yet); document and revisit when alarms land"
+  "note": "pushes a frame onto state.call_stack with the canonical chain shape, runs fn, pops the frame, returns fn's result. Called for every method call regardless of role; the per-frame fresh chain provides isolation."
 }
 ]]
-function M.transition(new_role, fn)
-    local saved_role  = M.ctx.current_role
-    local saved_chain = M.ctx.chain
-    M.ctx.current_role = new_role
-    M.ctx.chain        = {}
+function M.transition(frame_meta, fn)
+    local frame = {
+        action        = frame_meta.action,
+        role          = frame_meta.role,
+        receiver_type = frame_meta.receiver_type,
+        method        = frame_meta.method,
+        chain         = { log = {}, misc = {} },
+        locals        = {},
+    }
+    table.insert(M.state.call_stack, frame)
     local result = fn()
-    M.ctx.current_role = saved_role
-    M.ctx.chain        = saved_chain
+    table.remove(M.state.call_stack)
     return result
 end
 
 --[[
 {
-  "in":  "statement: a [receiver, method, args?] array",
-  "out": "the method's return value",
-  "steps": [
-    "1. materialize statement[1] → receiver value",
-    "2. lookup_method(receiver, statement[2]) → method_fn",
-    "3. determine target_role from the receiver's class",
-    "4. if target_role differs from current, run inside transition(target_role, ...)",
-    "5. otherwise call method_fn(receiver, args) directly"
-  ],
-  "args": "statement[3] may be nil; passed through to the method unchanged"
+  "fn":  "dispatch",
+  "in":  "statement: [receiver_expr, method_name, args?]  (Aslan: no args)",
+  "out": "the method's return value (a value table)",
+  "note": "pushes a method_call frame unconditionally (same-role and cross-role both push); the new frame's chain is fresh per skeletor.md's per-frame-chain model. Args at statement[3+] are deferred to Bree."
 }
 ]]
 function M.dispatch(statement)
@@ -180,51 +178,44 @@ function M.dispatch(statement)
 
     local receiver    = M.materialize(statement[1])
     local method_name = statement[2]
-    local args        = statement[3]
     local method_fn   = M.lookup_method(receiver, method_name)
     local class       = M.classes[receiver.type]
-    local target_role = class.owning_role
 
-    if target_role ~= M.ctx.current_role then
-        return M.transition(target_role, function()
-            return method_fn(receiver, args)
-        end)
-    end
-
-    return method_fn(receiver, args)
+    return M.transition({
+        action        = "method_call",
+        role          = class.owning_role,
+        receiver_type = receiver.type,
+        method        = method_name,
+    }, function()
+        return method_fn(receiver)
+    end)
 end
 
 --[[
 {
+  "fn":  "run",
   "in":  "path: filesystem path to a .caspj file",
-  "out": "the value of the last top-level statement, or nil if the program is empty",
-  "steps": [
-    "1. bootstrap (fresh role/class/ctx state)",
-    "2. read the file as a string",
-    "3. json.parse → top-level array of statements",
-    "4. iterate, dispatch each, capture the last return value"
-  ],
-  "host_contract": "returns a Lua value (the captured last value); errors propagate as Lua errors"
+  "out": "value table of the last statement's result, or nil if the program is empty",
+  "note": "calls bootstrap (fresh state), reads file, parses JSON, dispatches each statement, returns the last. Host extracts .payload."
 }
 ]]
 function M.run(path)
     M.bootstrap()
-    local f, err = io.open(path, "r")
 
+    local f, err = io.open(path, "r")
     if not f then
         error("engine.run: cannot open " .. tostring(path) .. ": " .. tostring(err))
     end
 
     local source = f:read("*a")
     f:close()
-    local tree = json.parse(source)
 
+    local tree = json.parse(source)
     if type(tree) ~= "table" then
         error("engine.run: top-level CaspianJ must be an array of statements")
     end
 
     local last_value = nil
-
     for _, statement in ipairs(tree) do
         last_value = M.dispatch(statement)
     end
