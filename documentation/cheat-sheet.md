@@ -99,6 +99,20 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 - **Directory jails** are a different specialization — a directory object that won't tell you where it lives on disk. Same conceptual pattern (restrict what's exposed), different concrete class. See [filesystem.md](caspian/built-in-classes/filesystem.md).
 - **Inline construction idiom**: `%['puck.uno/sequence'].new.object.jail('next', 'peek')` — instantiate-and-wrap on one line, raw object never gets a name.
 
+## Time and time spans
+
+- **`puck.uno/time` represents a single point in time**; immutable. Properties addressable as hierarchical accessors via helpers: `.month`, `.year`, `.day` return helper objects (`.month.short_name`, `.year.leap_year?`); `.hour`, `.seconds` are plain numbers. See [time.md](caspian/time.md).
+- **Time spans are a peer class**, not a sub-feature of time. A span is a length of time; `time - time = span` is the confirmed bridge. Class name still TBD between `puck.uno/timespan` and `puck.uno/duration`. See [time.md § Time spans](caspian/time.md#time-spans).
+- **Both classes are immutable.** Every "modifying" operation returns a new object. Matches the [Fiona-inspired](ideas/fiona.md) "objects immutable, relationships mutable" model.
+- **Time zones: UTC offsets only.** No IANA named zones, no DST, no tzdata. Forms: `'UTC'` / `'Z'`, `'+05:00'`, `'-08:00'`, `'+0500'`. Apps that need DST-aware named-zone behavior compute the offset externally and pass it in. See [time.md § Time zones](caspian/time.md#zones).
+- **`.offset = X` vs `.in_zone(X)` are NOT the same.** `.offset =` preserves wall-clock numbers and moves the real instant. `.in_zone()` preserves the real instant and moves the displayed numbers. Mixing them silently shifts a time.
+- **Default offset for naive parsing: host-local.** `new('2026-05-23 14:30')` with no offset adopts the host machine's local UTC offset.
+- **Numbering: both `.index` (0-based) and `.number` (1-based) exposed** for month and weekday. No global toggle — caller picks per use. Day-of-month is 1-based only.
+- **Calendar: Gregorian only.** Julian, Hebrew, Hijri, Persian, Buddhist all out of scope.
+- **Format strings: case-sensitive tokens in `{braces}`, `pad` suffix for zero-pad.** `{Mon}` → `Jan`, `{MON}` → `JAN`, `{hour}` → `2`, `{hour pad}` → `02`. Literal braces via `{lb}` / `{rb}`. See [time.md § Formatting](caspian/time.md#formatting).
+- **Predicates end with `?`**: `.january?`, `.leap_year?`, `.monday?`, `.leap_day?`. Consistent with Caspian's `?`-suffix convention.
+- **Smart range formatting (EzDate's `range_string` and `day_lumps`) is NOT V1.** Eventually lands on the time span class; do not propose it for V1.0. See [ezdate.md § Smart range formatting](ideas/ezdate.md#smart-range-formatting).
+
 ## CaspianJ
 
 - **Canonical statement shape**: `[receiver, method, arg1?, arg2?, ...]`. Uniform across the language. Assignment is just `[{"var":"foo"}, "=", expr]`. See [caspianj.md § Core Principle](caspian/caspianj.md#core-principle), [decisions.md § Engine and runtime](development/v1/decisions.md#engine-and-runtime).

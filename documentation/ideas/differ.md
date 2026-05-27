@@ -27,7 +27,18 @@ Point Differ at a `github.com/user/repo/blob/.../file.casp` URL and it walks the
 
 ## Style source
 
-The viewer's `~/.config/caspian/style.json`, uploaded once per session or pasted in. Determines how both sides get formatted before the diff runs. No account required — the style file is the whole identity.
+Differ uses the viewer's personal style to normalize both sides before diffing. Two paths in, one policy:
+
+- **Logged-in puck.uno user**: their puck.uno style preferences travel with their session — no upload, no per-tool configuration.
+- **Anonymous user**: starts with the puck.uno canonical default, adjustable inline on the page.
+
+### Policy: anonymous default equals canonical default
+
+The style applied to an anonymous user must be **the exact same file** as the puck.uno canonical default — the same file a logged-in user sees when they haven't customized anything yet. The canonical default is the floor; user preferences are deltas on top.
+
+Rationale: a logged-in user with an unconfigured profile should see identical results to an anonymous user. No surprise difference based on "did you make an account but skip the style step." First-contact and second-contact converge on the same baseline.
+
+This makes the model boringly predictable: there is one default, used everywhere, and everything else is a delta from it.
 
 ## How it works (and why to trust it)
 
