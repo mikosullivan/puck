@@ -8,7 +8,7 @@
 "tests/caspian/fixtures/hello_world.casp", "expected_return": "hello",
 "expected_canonical_ksj": "[[{\"value\": \"hello\"}, \"to_string\"]]",
 "observation":
-"test_harness_captures_last_statement_value_through_engine_run_source; no_stdout_io",
+"test_harness_composes_transpile_plus_engine_run_and_captures_last_statement_value; no_stdout_io",
 "covers": ["caspian_lexer", "caspian_parser",
 "transpiler_to_canonical_ksj", "source_to_runtime_pipeline_wiring"],
 "reuses_from_aslan": ["bootstrap", "materialize", "lookup_method",
@@ -32,46 +32,171 @@ paths converge on the same runtime tree.
 Bree reuses every engine layer Aslan built: bootstrap, materialize,
 lookup_method, transition, dispatch. The new work is on the source side
 — the existing lexer/parser scaffolding gets exercised against the
-fixture, the transpiler gets realigned to emit canonical CaspianJ for the
-AST shape hello-world produces, and a thin source-side entry point
-combines transpile + dispatch.
+fixture, a parser extension is added for the specific syntactic gap
+the fixture exposes, the transpiler is verified to emit canonical
+CaspianJ for that AST, and a thin source-side entry point combines
+transpile + dispatch.
 
-The transpiler realignment is **scoped to the hello-world AST nodes
-only**. The full transpiler retrofit is incremental — later slices
-realign more AST node types as later versions exercise them. Per
+<a id="parser-extension"></a>
+### Parser extension needed: literal-as-receiver
+
+Phase-0 probing (2026-05-27) found a real gap: the current parser
+rejects `'hello'.to_string` with "unexpected token DOT" — the grammar
+treats string literals as terminal expressions and doesn't accept
+them as receivers for method calls. The workaround `('hello').to_string`
+parses fine because the parens promote the literal to a parenthesized
+expression that can serve as a receiver.
+
+**Bree extends the parser** to accept method calls on literal
+expressions directly. The fixture stays as the natural form
+`'hello'.to_string`.
+
+**Scope of the extension: ALL literal kinds**, not just the string
+literal Bree's fixture exercises. Once the postfix-method-call rule
+is opened up, it accepts string, integer, decimal, boolean, null,
+array, and hash literals as receivers:
+
+```caspian
+'hello'.to_string       # Bree's fixture
+42.to_string            # integer literal as receiver
+true.bool               # boolean as receiver
+null.flavor             # null as receiver
+[1, 2, 3].length        # array literal as receiver
+{a: 1}.keys             # hash literal as receiver
+```
+
+Bree only **tests** the string case (per the fixture). The grammar
+rule covers everything else for consistency — later slices that
+exercise array, hash, or other literal receivers don't need to revisit
+the parser. One small grammar change avoids four piecemeal updates.
+
+**The transpiler does NOT need changes for Bree.** Existing transpiler
+output for `('hello').to_string` is already `[[{"value": "hello"}, "to_string"]]`
+— exactly canonical. Once the parser accepts the bare-literal form,
+the transpiler walks the AST and produces the same canonical CaspianJ.
+For Bree's specific AST shape (literal receiver + bare method name +
+no args), pre-spec and canonical happen to agree.
+
+<a id="lexer-end-marker"></a>
+### Lexer extension: `__END__` recognition
+
+A line containing only `__END__` terminates Caspian source — see
+[caspian.md § The `__END__` Marker](../caspian/caspian.md#the-__end__-marker).
+The current lexer has no handling for it (`grep __END__ lib/lua/caspian/lexer.lua`
+on 2026-05-27 returned nothing).
+
+Bree's hello-world fixture doesn't use `__END__`, so strictly the
+walking-skeleton principle would defer this. But the change is small —
+when the lexer starts a new line and sees `__END__` followed by a
+newline or EOF (with optional trailing whitespace before the newline),
+stop tokenizing and return the tokens collected so far. The two spec
+rules from caspian.md:
+
+- **Must be on its own line.** `foo __END__ bar` does not trigger. The
+  check only fires at start-of-line (after handling whitespace).
+- **Must not be inside a string literal or heredoc body.** The existing
+  lexer reads heredoc and string bodies inline (see
+  `read_heredoc` in `lexer.lua`), so by the time the start-of-line check
+  fires, we're already outside any string context. Spec rule satisfied
+  by placement, no extra logic required.
+
+Bundling this into Bree saves every later slice from hitting the same
+gap the first time a real `.casp` file uses the construct.
+
+<a id="format-alignment-deferred"></a>
+### Pre-spec format alignment is deferred
+
+The wider transpiler still emits pre-spec CaspianJ for other AST node
+types — `["scope", "setvar", name, value]` for assignment,
+`[bwc, "&", {"args": [...]}]` for BWC dispatch, `["command", "if", ...]`
+for if/elsif/else, etc. **Those are not Bree's problem.** Bree only
+needs the hello-world AST shape to produce canonical CaspianJ, and
+the transpiler already does that for the literal-method-call form.
+
+The full pre-spec retrofit is incremental — later slices realign more
+AST node types as later versions exercise them. Per
 "don't generalize ahead of the test."
 
 <a id="definition-of-done-bree"></a>
 ### Definition of done
 
 ~~~json
-{"vibecode": {"scope_status": "drafted_2026-05-16", "done_criteria":
-{"source_fixture_parses":
+{"vibecode": {"scope_status": "drafted_2026-05-16; updated_2026-05-27_to_add_parser_extension_and_end_marker_criteria",
+"done_criteria":
+{"parser_accepts_literal_method_call":
+"parser_extended_to_accept_string_or_other_literal_as_method_receiver_so_hello_to_string_parses_without_workaround",
+"lexer_recognizes_end_marker":
+"lexer_extended_to_stop_tokenizing_at_a_bare_end_marker_line_per_caspian_md_spec",
+"source_fixture_parses":
 "tests_caspian_fixtures_hello_world_caspian_lexes_and_parses_without_error",
 "transpiler_emits_canonical_ksj":
 "transpiler_output_for_the_fixture_deep_equals_the_aslan_hand_written_fixture",
-"source_side_entry_point_exists":
-"engine_run_source_path_or_equivalent_takes_a_caspian_file_through_to_dispatch",
+"executor_takes_tree_not_path":
+"engine_run_refactored_to_accept_a_pre_parsed_caspianj_tree; file_reading_and_json_parsing_move_to_caller",
 "returns_hello":
-"engine_run_source_of_the_fixture_returns_a_value_whose_payload_equals_hello"}}}
+"compose_caspian_transpile_with_caspian_engine_run_on_the_fixture_returns_a_value_whose_payload_equals_hello"}}}
 ~~~
 
-Bree is done when all four are true:
+Bree is done when all six are true:
 
-1. **The source fixture parses.** `'hello'.to_string` lexes and parses
+1. **The parser accepts literal-as-receiver for all literal kinds.**
+   The fixture `'hello'.to_string` parses without the paren workaround.
+   The parser's postfix-method-call rule accepts **all literal kinds**
+   as receivers — string, integer, decimal, boolean, null, array, and
+   hash literals — not just identifiers and parenthesized expressions.
+   Bree only tests the string case, but the grammar rule covers
+   everything for consistency.
+2. **The lexer recognizes `__END__`.** A line containing only `__END__`
+   (with optional trailing whitespace before the newline) terminates
+   tokenization, per [caspian.md § The `__END__` Marker](../caspian/caspian.md#the-__end__-marker).
+   Bree's fixture doesn't use `__END__`, but a dedicated unit test
+   covers the construct so every later slice inherits a working lexer.
+3. **The source fixture parses.** `'hello'.to_string` lexes and parses
    without error using the existing `caspian.lexer` and `caspian.parser`
-   modules.
-2. **The transpiler emits canonical CaspianJ.** Running the source through
+   modules (with the extensions from criteria 1 and 2).
+4. **The transpiler emits canonical CaspianJ.** Running the source through
    the transpiler produces a Lua table deep-equal to the Aslan
    hand-written `[[{"value": "hello"}, "to_string"]]` fixture.
-3. **A source-side entry point exists.** A function in the engine
-   (working name: `engine.run_source(path)`) reads a `.casp` file,
-   transpiles to canonical CaspianJ, and dispatches the result. The internal
-   `engine.run(path)` (CaspianJ file) is refactored to share an
-   `engine.run_tree(tree)` helper so both source and CaspianJ paths converge
-   on the same dispatch loop.
-4. **The harness receives `"hello"`.** `engine.run_source(fixture_path)`
-   returns a value whose `.payload == "hello"`.
+5. **The executor takes a CaspianJ tree, not a path.** Aslan's
+   `engine.run(path)` is refactored during Bree to **`engine.run(tree)`**:
+   it accepts a pre-parsed CaspianJ tree (Lua table), bootstraps, dispatches
+   each statement, returns the last value. File reading and parsing
+   move out of the executor entirely.
+
+   **Signature: one positional argument.** `engine.run(tree)`, full stop.
+   No options table, no env, no harness hooks. Capabilities (stdout, dirjails,
+   etc.) are not part of the `run` signature; they get configured on the engine
+   object before `run` is called, matching the Ruby host API model in
+   [bootstrap.md](../../caspian/bootstrap.md). Bree itself injects no
+   capabilities — the hello-world program just returns a value. Capability
+   wiring arrives in later slices ([Corin](corin.md) for stdout/puts, etc.).
+
+   Two clear pipeline paths converge on `engine.run(tree)`:
+
+   ```lua
+   -- Running CaspianJ from a file:
+   local f = assert(io.open(path, "r"))
+   local source = f:read("*a")
+   f:close()
+   local tree = caspian.json.parse(source)
+   local result = caspian.engine.run(tree)
+
+   -- Running Caspian source from a file:
+   local f = assert(io.open(path, "r"))
+   local source = f:read("*a")
+   f:close()
+   local tree = caspian.transpile(source)
+   local result = caspian.engine.run(tree)
+   ```
+
+   Single-responsibility per function. **The Caspian parser just
+   transpiles** (`caspian.transpile`); **the CaspianJ executor just
+   runs** (`engine.run`). No wrappers, no auto-detection, no magic.
+   If a common helper emerges naturally during implementation, it's
+   added then — not speculatively.
+6. **The harness receives `"hello"`.** Reading the fixture, calling
+   `caspian.transpile` on it, and passing the result to
+   `caspian.engine.run` returns a value whose `.payload == "hello"`.
 
 That's the entirety of Bree. Soft feature lock applies — same posture
 as Aslan.
@@ -84,9 +209,9 @@ as Aslan.
 
 ~~~json
 {"vibecode": {"phase": 0, "purpose":
-"characterize_existing_lexer_parser_transpiler_state_against_bree_fixture; no_realignment_work_yet",
+"characterize_existing_lexer_parser_transpiler_state_against_bree_fixture; refactor_engine_run_from_path_to_tree",
 "steps_count": 4, "acceptance":
-"all_four_workbench_checks_pass_and_produce_a_concrete_gap_list_for_phase_1; no_engine_code_changed",
+"all_four_workbench_checks_pass_and_produce_a_concrete_gap_list_for_phase_1; engine_run_refactored_to_take_a_tree",
 "tactic":
 "exercise_existing_pipeline_with_bree_fixture_string; observe_each_layer_output",
 "differs_from_aslan_phase_0":
@@ -98,8 +223,9 @@ parser → transpiler). Before realigning the transpiler, Phase 0
 characterizes what each layer produces today for the Bree fixture
 string. The output is a concrete gap list driving Phase 1 step 2.
 
-Phase 0 changes no engine code. It exists to surface surprises before
-implementation.
+Phase 0 also performs one engine refactor — `engine.run` changes from
+taking a path to taking a pre-parsed tree (Step 0.4) — to set up the
+single-responsibility split that Phase 1 builds on.
 
 <a id="step-01-confirm-the-lexer-tokenizes-the-fixture"></a>
 ### Step 0.1: Confirm the lexer tokenizes the fixture
@@ -144,40 +270,52 @@ literal node so Phase 1 step 1 can compare directly.
 "input": "'hello'.to_string",
 "tool": "caspian.transpile from init.lua",
 "expected":
-"captures_actual_current_output_for_comparison_to_canonical_in_phase_1",
+"captures_actual_current_output; phase_0_probing_2026_05_27_found_it_already_canonical_for_this_ast",
 "acceptance":
-"transpile_completes_without_error; output_recorded_as_phase_1_baseline; current_shape_is_pre_canonical_and_that_is_expected"}}
+"transpile_completes_without_error; output_recorded; current_shape_already_canonical_for_the_literal_method_call_ast_no_transpiler_changes_needed_for_bree"}}
 ~~~
 
-`caspian.transpile("'hello'.to_string")` returns a Lua table. The
-current output is pre-canonical — it matches `interpreter.lua`'s
-consumption shape, not `caspianj.md`'s `[receiver, method, args?]`
-shape. Phase 0 captures what comes out today; the diff against canonical
-is computed in Phase 1.
+`caspian.transpile("'hello'.to_string")` returns a Lua table. Phase-0
+probing on 2026-05-27 found the output is **already canonical** for
+this AST — `[[{"value": "hello"}, "to_string"]]`, exactly the Aslan
+hand-written fixture. The transpiler still emits pre-spec shapes for
+other AST node types (assignment, BWC, if/else, etc.), but for the
+specific literal-method-call AST Bree exercises, pre-spec and canonical
+happen to coincide. No transpiler changes are needed for Bree; Step 0.3
+just records the actual output for Step 3 verification.
 
-<a id="step-04-confirm-enginerun-handles-a-hand-built-canonical-tree"></a>
-### Step 0.4: Confirm engine.run handles a hand-built canonical tree
+<a id="step-04-refactor-enginerun-to-take-a-tree"></a>
+### Step 0.4: Refactor engine.run to take a tree
 
 ~~~json
-{"vibecode": {"step": "0.4", "name": "engine_tree_entry_check",
+{"vibecode": {"step": "0.4", "name": "engine_run_takes_tree",
 "action":
-"build_the_aslan_canonical_tree_in_lua_pass_to_a_run_tree_helper_or_equivalent_path",
+"refactor_engine_run_from_taking_a_path_to_taking_a_pre_parsed_caspianj_tree; file_reading_and_json_parsing_move_to_caller",
 "acceptance":
-"end_to_end_returns_value_with_payload_hello_using_a_lua_built_tree_not_a_file",
+"end_to_end_still_returns_value_with_payload_hello_when_caller_does_file_read_plus_json_parse_separately",
 "note":
-"validates_the_run_tree_internal_split_before_phase_1_wires_it_to_transpiler_output"}}
+"establishes_the_single_responsibility_split_caspian_transpile_makes_trees_engine_run_runs_trees_callers_compose"}}
 ~~~
 
-The Aslan engine takes a path (`engine.run(path)`) — it reads the file,
-parses JSON, then iterates. To wire the transpiler in, the file-read +
-JSON-parse step has to be separable from the dispatch loop. Step 0.4
-confirms (or, if needed, introduces) a callable
-`engine.run_tree(tree)` that takes a pre-built canonical CaspianJ Lua table
-and returns the same result the file-based path would.
+The Aslan engine took a path (`engine.run(path)`) — it read the file,
+parsed JSON, then iterated. **Bree refactors this** to
+`engine.run(tree)`: the executor takes a pre-parsed CaspianJ Lua table
+directly. File reading and JSON parsing move out of the executor.
 
-If the Aslan implementation already factored this out, Step 0.4 is a
-one-line test. If not, Step 0.4 adds the helper purely as refactoring
-(behavior unchanged for the existing path).
+After the refactor, the caller composes the pipeline:
+
+```lua
+local f = assert(io.open(path, "r"))
+local source = f:read("*a")
+f:close()
+local tree = caspian.json.parse(source)
+local result = caspian.engine.run(tree)
+```
+
+Aslan's tests are updated to use this composed form. The refactor
+preserves behavior — same fixture, same return value — and sets up
+the Caspian-source path to converge on the same `engine.run(tree)`
+call by substituting `caspian.transpile(source)` for `caspian.json.parse(source)`.
 
 <a id="bree-step-04-skeletor-snapshot"></a>
 #### Skeletor snapshot during the hand-built-tree run
@@ -198,10 +336,10 @@ snapshots match aslan.md Step 8 exactly:
 ```
 
 after bootstrap, a `method_call` frame for `stdlib` pushed mid
-`to_string`, then popped on return. Step
-0.4's job is to confirm `engine.run_tree(tree)` walks this path
-without depending on a `.caspj` file — the refactor doesn't change
-what the hash looks like, only how the tree got into the dispatcher.
+`to_string`, then popped on return. Step 0.4's job is to confirm
+`engine.run(tree)` walks this path with the tree passed in directly,
+not read from a file — the refactor doesn't change what the hash
+looks like, only how the tree got into the dispatcher.
 
 Bree phase 0 test coverage lives under [Testing](#testing) below.
 
@@ -215,16 +353,15 @@ Bree phase 0 test coverage lives under [Testing](#testing) below.
 "tests/caspian/fixtures/hello_world.casp", "fixture_content":
 "'hello'.to_string", "runner_path":
 "tests/caspian/run.lua", "acceptance":
-"fixture_transpiles_to_canonical_ksj_and_engine_run_source_returns_value_payload_hello",
+"fixture_parses_via_extended_parser_transpiles_to_canonical_ksj_and_engine_run_on_the_tree_returns_value_payload_hello",
 "required_work":
-["transpiler_realignment_for_hello_world_ast_only",
-"engine_run_source_entry_point",
-"engine_run_tree_internal_helper_if_not_already_present",
+["parser_extension_for_literal_as_receiver_all_literal_kinds",
+"engine_run_refactored_to_take_a_tree_not_a_path",
 "deep_equal_assert_helper"], "reuses_from_aslan":
 ["bootstrap", "materialize", "lookup_method", "transition", "dispatch"],
 "out_of_scope":
-["full_transpiler_retrofit", "interpreter_lua_removal",
-"renaming_or_deprecation_of_existing_caspian_run_source_in_init_lua",
+["full_transpiler_retrofit_for_pre_spec_ast_node_types",
+"interpreter_lua_removal",
 "sys_references_or_stdout_io",
 "additional_classes_or_methods_beyond_to_string"],
 "tactic":
@@ -242,11 +379,11 @@ Three steps. Same shape as Aslan Phase 1: inventory, fill gaps, verify.
 {"vibecode": {"step": 1, "name": "inventory", "actions":
 ["catalog_existing_lexer_parser_transpiler_against_bree_fixture",
 "document_ast_shape_for_method_call_on_string_literal",
-"document_current_transpiler_output_for_that_ast",
-"compute_diff_to_canonical_ksj_target",
-"identify_which_transpiler_test_files_will_need_updating"],
+"document_current_transpiler_output_for_that_ast"],
 "output":
-"concrete_gap_description_for_step_2; list_of_existing_transpiler_tests_to_be_updated"}}
+"concrete_record_of_ast_shape_and_transpiler_output_for_phase_1_step_3_verification",
+"note":
+"phase_0_probing_2026_05_27_already_established_that_transpiler_output_for_this_ast_is_canonical; no_diff_to_compute_and_no_transpiler_tests_need_updating_for_bree"}}
 ~~~
 
 Read the existing `lexer.lua`, `parser.lua`, and `transpiler.lua` with
@@ -255,15 +392,11 @@ the Bree fixture in mind. Document:
 - The exact AST node `kind` returned for `'hello'.to_string`.
 - The exact Lua-table shape the current transpiler emits for that AST
   node.
-- The diff between that shape and the canonical
-  `[[{"value": "hello"}, "to_string"]]`.
-- The set of existing transpiler tests under
-  `tests/caspian/transpiler/` that assert on the pre-canonical shape
-  for the AST nodes we'll realign. These will need updating in Step 2.
 
-Output: a short text summary of the gap (which fields differ, which
-wrapper objects are present in one but not the other) plus the list of
-transpiler tests requiring updates.
+Phase-0 probing on 2026-05-27 already established that the transpiler
+output for this AST is canonical — there is no diff to compute and no
+transpiler tests need updating for Bree. Step 1 just records the shape
+for use in Step 3 verification.
 
 <a id="bree-step-2-fill-the-gaps"></a>
 ### Step 2: Fill the gaps
@@ -272,43 +405,54 @@ transpiler tests requiring updates.
 {"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "transpiler_path_for_hello_world_ast_only; not_full_realignment",
 "work_items":
-["transpiler_emit_canonical_for_string_literal_expression",
-"transpiler_emit_canonical_for_method_call_expression",
-"transpiler_emit_canonical_for_top_level_expression_statement_wrapper",
-"engine_run_tree_helper_extracted_from_engine_run_if_not_already",
-"engine_run_source_function_combining_transpile_and_run_tree",
+["parser_extension_for_literal_as_receiver_all_literal_kinds",
+"lexer_extension_for_bare_end_marker_line",
+"transpiler_path_verified_unchanged_for_hello_world_ast",
+"engine_run_refactored_from_taking_a_path_to_taking_a_tree",
+"aslan_tests_updated_to_compose_file_read_plus_json_parse_plus_engine_run",
 "support_assert_deep_equal_helper_added"], "non_work":
-["other_ast_node_types_left_pre_canonical",
-"interpreter_lua_and_its_tests_left_untouched",
-"existing_transpiler_tests_updated_only_for_realigned_paths"]}}
+["transpiler_realignment_for_other_pre_spec_ast_node_types",
+"interpreter_lua_and_its_tests_left_untouched"]}}
 ~~~
 
 For each gap from Step 1, add only what Bree needs:
 
-- **Transpiler.** Realign the path covering the AST nodes the Bree
-  fixture produces — likely the string-literal expression, the
-  method-call expression, and the top-level expression-statement
-  wrapper. Other AST node types (assignment, if, while, bwc, function
-  definition, etc.) stay pre-canonical for now.
-- **Engine wiring.** Add `engine.run_source(path)` that reads a
-  `.casp` file, transpiles to canonical CaspianJ, and iterates the
-  dispatch loop. If `engine.run` doesn't already separate file-read
-  from dispatch, extract `engine.run_tree(tree)` and refactor
-  `engine.run` to call it. `engine.run_source(path)` also calls
-  `engine.run_tree`. **The Skeletor hash is unchanged by this
-  wiring** — `engine.run_source` calls into the same
-  `engine.bootstrap()` + dispatch loop as `engine.run`, so
-  [`engine.state`](aslan.md#data-structures-lua-tables) goes through
-  the same transitions whether the tree arrived from a file or from
-  the transpiler.
-- **Existing transpiler tests.** Any tests asserting on the
-  pre-canonical shape for AST nodes we realign will fail; update those
-  tests to the canonical shape. Tests for AST nodes we don't touch
-  stay as-is.
+- **Parser extension.** Allow literal expressions (string, integer,
+  decimal, boolean, null, array, hash) as receivers in the
+  postfix-method-call rule. The grammar change is small; Bree only
+  tests the string case, but the rule covers all literals for
+  consistency.
+- **Lexer extension.** Add `__END__` recognition. At start-of-line,
+  if the next characters are `__END__` followed by optional trailing
+  whitespace and a newline or EOF, stop tokenizing and return the tokens
+  collected so far. See the [Lexer extension](#lexer-end-marker) section
+  for the full rule.
+- **Transpiler.** No work needed for Bree's specific fixture — the
+  existing transpiler already emits canonical CaspianJ for the
+  literal-method-call AST shape (verified via `('hello').to_string`
+  during Phase-0 probing). Other AST node types stay pre-canonical;
+  later slices realign them as needed.
+- **Engine refactor.** `engine.run` changes from taking a path to
+  taking a pre-parsed tree. Aslan's tests get a small update to
+  do the file-read + json.parse separately and pass the tree to
+  `engine.run`. **The Skeletor hash is unchanged by this refactor** —
+  same dispatch loop, same transitions, just the tree arrives via
+  the caller composing the pipeline rather than the executor doing
+  it all.
 - **Assertion helper.** Add `assert.deep_equal(got, expected, msg)` to
-  `tests/caspian/support/assert.lua` for table equality with a
-  first-divergent-path failure message. Needed by TB.1 and useful for
-  every later slice that compares trees.
+  `tests/caspian/support/assert.lua`. Signature: three arguments, `msg`
+  optional. Compares Lua tables structurally (recursively, with primitive
+  equality at leaves). On mismatch, raises an error whose message names
+  the first divergent path in the form:
+
+  ```
+  mismatch at [1][2]: expected "to_string", got "tostring"
+  ```
+
+  Path segments are `[k]` for any key (numeric or string, with strings
+  quoted: `["foo"]`). When `msg` is provided, it prefixes the mismatch
+  line: `<msg>: mismatch at [1][2]: expected ..., got ...`. Needed by
+  TB.2 and useful for every later slice that compares trees.
 
 Anything beyond this — realigning the bwc path, the assignment path,
 the if path, etc. — is later work. The principle: realign as later
@@ -320,7 +464,7 @@ slices exercise each AST node, not all at once.
 ~~~json
 {"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_caspian_source_fixture",
-"run_via_engine_run_source",
+"compose_file_read_plus_caspian_transpile_plus_engine_run",
 "compare_returned_value_payload_to_hello",
 "compare_transpiled_tree_to_aslan_hand_written_canonical_fixture"],
 "pass_condition":
@@ -330,11 +474,20 @@ slices exercise each AST node, not all at once.
 ~~~
 
 Create `tests/caspian/fixtures/hello_world.casp` containing
-`'hello'.to_string`. Run it via `engine.run_source(path)`. Verify two
-things:
+`'hello'.to_string`. Read it, transpile it, run the tree:
+
+```lua
+local f = assert(io.open("tests/caspian/fixtures/hello_world.casp", "r"))
+local source = f:read("*a")
+f:close()
+local tree = caspian.transpile(source)
+local result = caspian.engine.run(tree)
+```
+
+Verify two things:
 
 1. The returned value has `payload == "hello"`.
-2. The transpiled tree (captured before dispatch) deep-equals the Aslan
+2. The transpiled tree (`tree` above) deep-equals the Aslan
    hand-written `[[{"value": "hello"}, "to_string"]]` tree — the
    round-trip equivalence check that proves canonical alignment.
 
@@ -411,7 +564,7 @@ locals, not in `engine.state`.
 ```
 
 Bree doesn't grow the Skeletor hash — the new source-side machinery
-(lexer, parser, transpiler, `engine.run_source`, `engine.run_tree`)
+(lexer, parser, transpiler, plus the `engine.run(tree)` refactor)
 all operates on working state outside the hash. The state hash next
 changes shape in [Corin](corin.md), when the `stdout` role
 joins the registry and shows up as the `role` on a pushed frame
@@ -424,29 +577,13 @@ Bree phase 1 test coverage lives under [Testing](#testing) below.
 
 ~~~json
 {"vibecode": {"open_questions":
-["api_naming_for_source_side_entry_point",
-"deep_equal_assert_helper_signature_and_first_divergent_path_format",
-"whether_existing_caspian_run_source_in_init_lua_should_be_renamed_or_deprecated_in_bree_or_later",
-"how_much_transpiler_test_churn_in_practice"]}}
+["whether_legacy_caspian_run_in_init_lua_should_be_renamed_or_deprecated_in_bree_or_later"]}}
 ~~~
 
-- **API naming.** `engine.run_source(path)` is the working name.
-  Alternatives: `engine.run_caspian(path)`, `caspian.run_source(path)`,
-  `caspian.execute_file(path)`. Decision can wait until the function is
-  written — easy to rename.
-- **`assert.deep_equal` signature.** Existing `support/assert.lua` uses
-  descriptive failure messages. The deep_equal helper should surface
-  the first divergent path on mismatch (e.g.,
-  `mismatch at [1][2]: expected "to_string", got "tostring"`). Exact
-  message format settled when implemented.
 - **Legacy `M.run(source, env)` in `init.lua`.** Currently goes through
   the pre-canonical pipeline + `interpreter.lua`. Out of scope for Bree
   — flagged for renaming or deprecation in a later slice once the
   transpiler is more broadly realigned.
-- **Transpiler test churn.** Phase 0 step 3 will quantify how many
-  existing transpiler tests assert on output shape that Bree changes.
-  Expected to be small (only the string-literal and method-call paths)
-  but worth confirming before Phase 1 starts.
 
 ---
 
@@ -459,18 +596,18 @@ Bree phase 1 test coverage lives under [Testing](#testing) below.
 "fixture_path": "tests/caspian/fixtures/hello_world.casp",
 "framework": "support_runner_and_assert",
 "phase_0_tests": ["TB.0.1", "TB.0.2", "TB.0.3", "TB.0.4"],
-"phase_1_tests": ["TB.1", "TB.2", "TB.3", "TB.4", "TB.5", "TB.6"],
+"phase_1_tests": ["TB.1", "TB.2", "TB.3", "TB.4", "TB.5", "TB.6", "TB.7"],
 "load_bearing_tests":
 ["TB.1_transpiler_canonical_match", "TB.5_t2_6_regression_checks"]}}
 ~~~
 
-Bree has ten tests total: four Phase 0 source-pipeline characterization
-tests plus six Phase 1 unit + integration + regression tests. TB.1
-(transpiler emits canonical for the fixture, deep-equal to the Aslan
-hand-written tree) is the load-bearing correctness check; TB.5 and TB.6
-are the load-bearing regression checks proving Bree's transpiler work
-didn't break the Aslan CaspianJ path or pre-canonical AST nodes left
-alone.
+Bree has eleven tests total: four Phase 0 source-pipeline
+characterization tests plus seven Phase 1 unit + integration + regression
+tests. TB.2 (transpiler emits canonical for the fixture, deep-equal to
+the Aslan hand-written tree) is the load-bearing correctness check;
+TB.5 and TB.6 are the load-bearing regression checks proving Bree's
+work didn't break the Aslan CaspianJ path or pre-canonical AST nodes
+left alone. TB.7 covers the `__END__` lexer extension.
 
 <a id="bree-phase-0-test-plan"></a>
 ### Phase 0 test plan
@@ -487,7 +624,7 @@ alone.
 "transpiler_completes_without_error_for_bree_fixture_string; current_output_captured_for_phase_1_comparison",
 "tool": "tests/caspian/bree/test_transpiler_baseline.lua",
 "level": "unit"}, {"id": "TB.0.4", "verifies":
-"engine_run_tree_returns_value_for_hand_built_canonical_tree",
+"engine_run_returns_value_for_hand_built_canonical_tree_after_refactor",
 "tool": "tests/caspian/bree/test_engine_run_tree.lua",
 "level": "unit"}]}}
 ~~~
@@ -497,7 +634,7 @@ alone.
 | TB.0.1 | unit | Lexer handles the fixture string | `test_lexer_check.lua` |
 | TB.0.2 | unit | Parser returns an AST for the fixture | `test_parser_check.lua` |
 | TB.0.3 | unit | Transpiler completes for the fixture; baseline captured | `test_transpiler_baseline.lua` |
-| TB.0.4 | unit | `engine.run_tree` returns expected value for a hand-built tree | `test_engine_run_tree.lua` |
+| TB.0.4 | unit | `engine.run(tree)` returns expected value for a hand-built tree | `test_engine_run_tree.lua` |
 
 All four must pass (or the underlying issues must be resolved) before
 Bree phase 1 begins.
@@ -508,33 +645,37 @@ Bree phase 1 begins.
 ~~~json
 {"vibecode": {"phase_1_tests":
 [{"id": "TB.1", "verifies":
-"transpiler_emits_canonical_ksj_for_bree_fixture_deep_equal_to_aslan_hand_written_tree",
+"parser_accepts_literal_as_receiver; hello_to_string_parses_natively",
 "level": "unit"}, {"id": "TB.2", "verifies":
-"engine_run_tree_returns_payload_hello_for_aslan_canonical_tree",
+"transpiler_emits_canonical_ksj_for_bree_fixture_deep_equal_to_aslan_hand_written_tree",
 "level": "unit"}, {"id": "TB.3", "verifies":
-"engine_run_source_returns_payload_hello_for_bree_caspian_fixture_file",
-"level": "integration_end_to_end"}, {"id": "TB.4", "verifies":
-"ctx_back_to_user_after_engine_run_source_returns",
-"level": "unit_observability_check"}, {"id": "TB.5", "verifies":
-"existing_aslan_engine_run_path_still_returns_payload_hello_for_aslan_ksj_fixture",
-"level": "regression_check"}, {"id": "TB.6", "verifies":
-"existing_pre_canonical_transpiler_paths_for_unrelated_ast_types_unchanged_and_their_tests_still_pass",
-"level": "regression_check"}]}}
+"engine_run_returns_payload_hello_for_aslan_canonical_tree_post_refactor",
+"level": "unit"}, {"id": "TB.4", "verifies":
+"compose_transpile_plus_engine_run_returns_payload_hello_for_bree_caspian_fixture_file",
+"level": "integration_end_to_end"}, {"id": "TB.5", "verifies":
+"top_frame_on_call_stack_has_role_user_after_bree_pipeline_returns",
+"level": "unit_observability_check"}, {"id": "TB.6", "verifies":
+"aslan_test_files_edited_to_compose_file_read_plus_json_parse_plus_engine_run_with_tree; all_updated_aslan_tests_pass",
+"level": "regression_check"},
+{"id": "TB.7", "verifies":
+"lexer_stops_tokenizing_at_bare_end_marker_line; tokens_after_end_marker_are_not_emitted",
+"level": "unit"}]}}
 ~~~
 
-Six tests for Bree phase 1. Each lives under `tests/caspian/bree/`
+Seven tests for Bree phase 1. Each lives under `tests/caspian/bree/`
 using the same framework (`support.runner` + `support.assert`).
 
 | ID | Level | Verifies | How |
 |---|---|---|---|
-| TB.1 | unit | Transpiler emits canonical for the fixture | `assert.deep_equal(caspian.transpile("'hello'.to_string"), {{ {value="hello"}, "to_string" }})` |
-| TB.2 | unit | `engine.run_tree` returns payload `"hello"` | Hand-build the canonical tree in Lua, pass to `engine.run_tree`, assert on result |
-| TB.3 | integration | `engine.run_source` returns payload `"hello"` from the source fixture file | `engine.run_source("tests/caspian/fixtures/hello_world.casp")` |
-| TB.4 | unit | ctx restored to user after `engine.run_source` returns | Mirror of Aslan TA.7's second assertion |
-| TB.5 | regression | `engine.run` of Aslan CaspianJ fixture still works | Identical to Aslan TA.7 — must not regress |
-| TB.6 | regression | Pre-canonical transpiler tests for unrelated AST types still pass | The unchanged transpiler test files continue to pass; the changed ones reflect canonical output |
+| TB.1 | unit | Parser accepts literal-as-receiver | `caspian.parse("'hello'.to_string")` returns an AST without raising |
+| TB.2 | unit | Transpiler emits canonical for the fixture | `assert.deep_equal(caspian.transpile("'hello'.to_string"), {{ {value="hello"}, "to_string" }})` |
+| TB.3 | unit | `engine.run(tree)` returns payload `"hello"` | Hand-build the canonical tree in Lua, pass to `engine.run(tree)`, assert on result |
+| TB.4 | integration | Compose source → transpile → run | Read fixture, `caspian.transpile`, `caspian.engine.run`, assert `.payload == "hello"` |
+| TB.5 | unit | Top frame on `call_stack` has `role == "user"` after Bree pipeline returns | Mirror of Aslan TA.7's second assertion |
+| TB.6 | regression | Aslan test files **edited** to compose `io.open` + `json.parse` + `engine.run(tree)`; all updated Aslan tests pass | Edit each Aslan TA.* test that currently calls `engine.run(path)` to do the file-read and JSON parse separately, then pass the tree to `engine.run`; rerun the Aslan suite and confirm green |
+| TB.7 | unit | Lexer stops tokenizing at a bare `__END__` line | Tokenize `"$foo = 'hello'\n__END__\nignored garbage that would otherwise lex-error\n"` and assert the token stream ends cleanly after the assignment (no error, no tokens from the post-`__END__` text) |
 
-All six pass = Bree done.
+All seven pass = Bree done.
 
 <a id="bree-test-layout"></a>
 ### Test layout
@@ -552,7 +693,7 @@ All six pass = Bree done.
 
 | Path | Contents |
 |---|---|
-| `tests/caspian/fixtures/hello_world.casp` | Caspian source fixture (sibling of `hello_world.caspj`) |
+| `tests/caspian/fixtures/hello_world.casp` | Caspian source fixture (sibling of `hello_world.caspj`). File ends with a trailing newline — source string is `"'hello'.to_string\n"`. The lexer must handle the trailing newline cleanly (no spurious tokens, no error) since real-world `.casp` files will always have one. |
 | `tests/caspian/bree/` | Phase 0 and Phase 1 unit + integration tests |
 | `tests/caspian/run.lua` | Extended to require Bree test modules |
 | `tests/caspian/support/assert.lua` | Gains a `deep_equal` helper |
