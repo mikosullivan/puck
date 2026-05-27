@@ -119,7 +119,7 @@ Maximum source size (in bytes and in pixel dimensions) prevents resource-exhaust
 
 Maximum output dimensions prevent `?width=999999` from allocating gigabytes. Hard cap regardless of account.
 
-### Format whitelist
+### Format allowlist
 
 Cobweb only decodes well-known image formats. Random binary payloads are rejected before any decoder runs.
 

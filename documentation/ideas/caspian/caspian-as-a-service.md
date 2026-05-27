@@ -248,7 +248,7 @@ What the script can *produce*:
 Worth being explicit about:
 
 - No raw socket access.
-- No arbitrary outbound HTTP (whitelisted hosts only).
+- No arbitrary outbound HTTP (allowlisted hosts only).
 - No code execution that escapes the engine (no shell, no `eval`).
 - No unbounded compute (alarm/timeout caps; memory caps).
 

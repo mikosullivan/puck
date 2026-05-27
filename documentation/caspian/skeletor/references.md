@@ -56,6 +56,15 @@ in the program — variables, hash elements, hashes, function objects,
 class instances — draws its ID from the same counter, so every ID
 in a running program is unique across all object kinds.
 
+**Platter IDs are different**: they're UUIDs (see
+[base-class-use.md § Proposed shape](../../ideas/base-class-use.md#proposed-shape)),
+not from this counter. The reason: platter IDs appear as keys
+inside user buckets (per [nulls.md § Serialization](../built-in-classes/nulls.md#serialization)),
+where integer-strings could collide with user-chosen field names.
+Object IDs don't have this exposure — they only appear in
+references, frame locals, and the objects-hash keys, never as
+markers inside user-controlled bucket data.
+
 **The counter is stored as a string**, not as an integer, so the
 sequence can grow indefinitely without bigint machinery. A small
 increment-the-string-by-one routine handles the counter — rightmost

@@ -23,21 +23,19 @@ $count = 1
 ~~~
 
 Paused at the comment line. Three variables bound, one hash with one
-element, and `$alias` aliasing `$shared`. IDs are integers-as-strings
-drawn from the engine's **single global sequence** (see
-[sequence.md § Engine use](../../built-in-classes/sequence.md#engine-use)
-and [references.md § Object IDs](../references.md#object-ids)). Both
-object IDs **and** platter IDs come from the same counter — there's
-no separate per-object platter-ID namespace, just one unique-string
-generator feeding everything.
+element, and `$alias` aliasing `$shared`. **Two ID formats** appear
+in the snapshot:
 
-So in a real allocation order, object IDs and platter IDs
-interleave. Creating one object draws ~3 IDs from the counter: one
-for the object itself, two for its initial platters (shadow + base
-class). For the example below, the assumed allocation order is
-`$shared` first, then the hash, then its hash_element, then the
-string, then `$alias`, then `$count`, then the number — which
-spreads object IDs across `1, 4, 7, 10, 13, 16, 19`.
+- **Object IDs**: integer-strings from the global sequencer — `"1"`,
+  `"2"`, etc. See
+  [references.md § Object IDs](../references.md#object-ids).
+- **Platter IDs**: UUIDs (because they appear inside user buckets and
+  need collision safety against user-chosen field names). See
+  [base-class-use.md § Proposed shape](../../../ideas/base-class-use.md#proposed-shape).
+
+For readability, the example below uses short hex-shaped placeholders
+like `"a01..."` for platter IDs; real snapshots have full 36-char
+UUIDs.
 
 ```json
 {
@@ -56,64 +54,64 @@ spreads object IDs across `1, 4, 7, 10, 13, 16, 19`.
       "src": ["a", 4],
       "locals": {
         "shared": "1",
-        "alias":  "13",
-        "count":  "16"
+        "alias":  "5",
+        "count":  "6"
       }
     }
   ],
   "references": {
-    "1":  "4",
-    "13": "4",
-    "16": "19",
-    "7":  "10"
+    "1": "2",
+    "5": "2",
+    "6": "7",
+    "3": "4"
   },
   "objects": {
     "1": {
       "classes": {
-        "2": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "3": {"class": "puck.uno/variable",    "bucket": {"name": "shared", "frame": 0}, "sticky": true}
+        "a01-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a01-variable": {"class": "puck.uno/variable",    "bucket": {"name": "shared", "frame": 0}, "sticky": true}
+      },
+      "bucket": {}
+    },
+    "2": {
+      "classes": {
+        "a02-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a02-hash":   {"class": "puck.uno/hash",        "bucket": {}}
+      },
+      "bucket": {"name": "3"}
+    },
+    "3": {
+      "classes": {
+        "a03-shadow":  {"class": "puck.uno/class/shadow",  "bucket": {}},
+        "a03-element": {"class": "puck.uno/hash_element", "bucket": {"parent": "2", "key": "name"}, "sticky": true}
       },
       "bucket": {}
     },
     "4": {
       "classes": {
-        "5": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "6": {"class": "puck.uno/hash",        "bucket": {}}
-      },
-      "bucket": {"name": "7"}
-    },
-    "7": {
-      "classes": {
-        "8": {"class": "puck.uno/class/shadow",   "bucket": {}},
-        "9": {"class": "puck.uno/hash_element", "bucket": {"parent": "4", "key": "name"}, "sticky": true}
-      },
-      "bucket": {}
-    },
-    "10": {
-      "classes": {
-        "11": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "12": {"class": "puck.uno/string",      "bucket": {}}
+        "a04-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a04-string": {"class": "puck.uno/string",      "bucket": {}}
       },
       "bucket": {"value": "Picard"}
     },
-    "13": {
+    "5": {
       "classes": {
-        "14": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "15": {"class": "puck.uno/variable",    "bucket": {"name": "alias",  "frame": 0}, "sticky": true}
+        "a05-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a05-variable": {"class": "puck.uno/variable",    "bucket": {"name": "alias",  "frame": 0}, "sticky": true}
       },
       "bucket": {}
     },
-    "16": {
+    "6": {
       "classes": {
-        "17": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "18": {"class": "puck.uno/variable",    "bucket": {"name": "count",  "frame": 0}, "sticky": true}
+        "a06-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a06-variable": {"class": "puck.uno/variable",    "bucket": {"name": "count",  "frame": 0}, "sticky": true}
       },
       "bucket": {}
     },
-    "19": {
+    "7": {
       "classes": {
-        "20": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "21": {"class": "puck.uno/number",      "bucket": {}}
+        "a07-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
+        "a07-number": {"class": "puck.uno/number",      "bucket": {}}
       },
       "bucket": {"value": 1}
     }
@@ -127,60 +125,59 @@ ID legend, to read the `objects` hash above:
 
 | ID | What it is | Where to look |
 |---|---|---|
-| `"1"` | variable `$shared` (`puck.uno/variable`) | platter `"3"`'s bucket carries name + frame |
-| `"4"` | the hash `{name: 'Picard'}` (`puck.uno/hash`) | top-level bucket maps key → hash_element ID |
-| `"7"` | hash element for key `'name'` (`puck.uno/hash_element`) | platter `"9"`'s bucket carries parent + key |
-| `"10"` | the string `'Picard'` (`puck.uno/string`) | top-level bucket carries the value |
-| `"13"` | variable `$alias` (`puck.uno/variable`) | platter `"15"`'s bucket carries name + frame |
-| `"16"` | variable `$count` (`puck.uno/variable`) | platter `"18"`'s bucket carries name + frame |
-| `"19"` | the number `1` (`puck.uno/number`) | top-level bucket carries the value |
+| `"1"` | variable `$shared` (`puck.uno/variable`) | classes `a01-variable`'s bucket carries name + frame |
+| `"2"` | the hash `{name: 'Picard'}` (`puck.uno/hash`) | top-level bucket maps key → hash_element ID |
+| `"3"` | hash element for key `'name'` (`puck.uno/hash_element`) | classes `a03-element`'s bucket carries parent + key |
+| `"4"` | the string `'Picard'` (`puck.uno/string`) | top-level bucket carries the value |
+| `"5"` | variable `$alias` (`puck.uno/variable`) | classes `a05-variable`'s bucket carries name + frame |
+| `"6"` | variable `$count` (`puck.uno/variable`) | classes `a06-variable`'s bucket carries name + frame |
+| `"7"` | the number `1` (`puck.uno/number`) | top-level bucket carries the value |
+
+Object IDs are sequential from the global sequencer; platter IDs are
+UUIDs (shown abbreviated above).
 
 The frame's `locals` doesn't store the bound objects directly — each
-entry is a **reference object ID** (`"1"`, `"13"`, `"16"`); resolve
-it through `objects` for the object's structure and through
-`references` for what it points at. Same for hash internals: `"7"`
+entry is a **reference object ID** (`"1"`, `"5"`, `"6"`); resolve it
+through `objects` for the object's structure and through
+`references` for what it points at. Same for hash internals: `"3"`
 is the reference object representing the `name` key inside the
-hash; it points at `"10"`, the `"Picard"` string object.
+hash; it points at `"4"`, the `"Picard"` string object.
 
 **The two top-level hashes work together.** `references` holds bare
 pointers (id → id); `objects` holds the actual object records (id →
 {classes, bucket}). Resolve a name like `$shared` by reading the
-frame's local (`"1"`) → look up its target in `references` (`"4"`) →
+frame's local (`"1"`) → look up its target in `references` (`"2"`) →
 look up the target's structure in `objects` (the hash record). Every
 piece of state the program can see is reachable through these two
 hashes plus the call stack.
 
-**Every ID in the snapshot comes from the same global sequence.**
-Object IDs (`"1"`, `"4"`, ...) and platter IDs (`"2"`, `"3"`,
-`"5"`, `"6"`, ...) draw from the same counter. No two IDs in the
-running program are ever equal regardless of what they identify —
-which means a platter ID can never collide with an object ID and
-context fully disambiguates them: platter IDs only appear as
-keys inside an `objects` entry's `classes` field; object IDs
-appear everywhere else.
+**Why two ID formats.** Object IDs only appear in engine-controlled
+positions (frame locals, `references` keys/values, `objects` keys),
+where collisions with user data aren't possible. Platter IDs appear
+as **keys inside user buckets** (via the per-platter-marker
+mechanism in [nulls.md § Serialization](../../built-in-classes/nulls.md#serialization)),
+where they need collision safety against arbitrary user-chosen
+field names. Integer-strings could collide; UUIDs can't, in
+practice.
 
 Things to notice:
 
-- **Aliasing is visible in `references`.** Both `"1"` and `"13"` map
-  to the same `"4"`. The shared object has two incoming references;
+- **Aliasing is visible in `references`.** Both `"1"` and `"5"` map
+  to the same `"2"`. The shared object has two incoming references;
   if one is severed, the other keeps it alive.
-- **Hash internals are first-class reference objects.** `"7"` is
+- **Hash internals are first-class reference objects.** `"3"` is
   the reference object inside the hash for the `name` key. When you
   write `$shared['name'] = 'Riker'`, the engine updates
-  `references["7"]` to point at the new string object.
+  `references["3"]` to point at the new string object.
 - **`uspace` is a class property.** `puck.uno/variable` declares
-  `uspace: true`, so `"1"`, `"13"`, and `"16"` are GC roots.
-  `puck.uno/hash_element` declares `uspace: false`, so `"7"` is not
-  a root in its own right — it's only reachable because `"4"` is
+  `uspace: true`, so `"1"`, `"5"`, and `"6"` are GC roots.
+  `puck.uno/hash_element` declares `uspace: false`, so `"3"` is not
+  a root in its own right — it's only reachable because `"2"` is
   reachable from a uspace root that points at it.
 - **The `references` hash holds bare pointers.** Just
   `{ref_id: object_id}` — the cheapest possible representation. All
   metadata lives on the reference objects themselves, not in the
   hash.
-- **IDs are short even with platter IDs in the pool.** This
-  seven-object program consumed 21 IDs total (one per object plus
-  two per platter). Even at 10k objects with three platters each,
-  IDs stay under 6 characters.
 
 <a id="what-happens-on-mutation"></a>
 ## What happens on mutation
@@ -195,25 +192,23 @@ $count = $count + 1
 # CAPTURED HERE
 ~~~
 
-The `+` operator allocates a new number object plus its two
-platters (shadow + number) — three new IDs. Say the next free ID
-is `"22"`, so the new number object becomes `"22"` with platters
-`"23"` and `"24"`. After the rebinding:
+The `+` operator allocates a new number object — `"8"`. After the
+rebinding:
 
 ```json
 "references": {
-  "1":  "4",
-  "13": "4",
-  "16": "22",
-  "7":  "10"
+  "1": "2",
+  "5": "2",
+  "6": "8",
+  "3": "4"
 }
 ```
 
-`"16"` now points at `"22"` (the new number). The old `"19"` lost
-its only incoming pointer — the engine fires a trace, finds no
-uspace root reaches it, and collects it (along with its platters
-`"20"` and `"21"`). The reference object `"16"` is unchanged; only
-its target in the `references` hash moved.
+`"6"` now points at `"8"` (the new number). The old `"7"` lost its
+only incoming pointer — the engine fires a trace, finds no uspace
+root reaches it, and collects it (along with its two platters). The
+reference object `"6"` is unchanged; only its target in the
+`references` hash moved.
 
 Sever the alias instead:
 
@@ -224,20 +219,19 @@ $alias = null
 # CAPTURED HERE
 ~~~
 
-`null` allocates a fresh null instance — `"22"` with its platters
-`"23"` and `"24"`. After:
+`null` allocates a fresh null instance — `"8"`. After:
 
 ```json
 "references": {
-  "1":  "4",
-  "13": "22",
-  "16": "19",
-  "7":  "10"
+  "1": "2",
+  "5": "8",
+  "6": "7",
+  "3": "4"
 }
 ```
 
-`"13"` now points at the null instance. `"4"` is still reachable
-via `"1"` (still uspace, still in the hash), so nothing collects.
+`"5"` now points at the null instance. `"2"` is still reachable via
+`"1"` (still uspace, still in the hash), so nothing collects.
 
 <a id="inverse-index-engine-internal"></a>
 ## Engine-internal: the inverse index
@@ -251,9 +245,9 @@ Conceptually (engine-internal, illustrative only) for the original
 snapshot:
 
 ```
-inverse["4"]  = {"1", "13"}
-inverse["19"] = {"16"}
-inverse["10"] = {"7"}
+inverse["2"] = {"1", "5"}
+inverse["7"] = {"6"}
+inverse["4"] = {"3"}
 ```
 
 Maintained automatically by hash-mutation hooks on the `references`

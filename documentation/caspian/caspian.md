@@ -107,7 +107,8 @@ Caspian can reach for host-controlled capabilities — typically:
 - **Bindings** for network, OS, database, and similar host services. See
   [bindings.md](bindings.md).
 - **`%engine` and other `%`-system methods** as the gateway to host-granted
-  capabilities. Non-capturable; see [system-methods.md](syntax/system-methods.md).
+  capabilities. `%engine` is user-role-only by a deliberate special-case
+  check; see [system-methods.md](syntax/system-methods.md).
 
 Default posture is **safe by default, with explicit overrides**. A script
 that doesn't ask for filesystem access doesn't get any; a script that

@@ -333,23 +333,22 @@ record (the class reference plus its own private bucket):
 }
 ```
 
-**Platter IDs are drawn from the engine's global sequence** (see
-[sequence.md § Engine use](../caspian/built-in-classes/sequence.md#engine-use)),
-the same counter that mints object IDs. Reusing the global
-counter is cheaper than maintaining a per-object platter-ID
-counter: no extra state per object, no new code path, no new
-allocation surface. The cost is that platter IDs are slightly
-longer in display (integer-strings instead of `p1` / `p2`-style
-local labels), but you don't read raw platter IDs unless
-debugging.
+**Platter IDs are UUIDs** generated fresh per allocation from
+libsodium. Object IDs use the engine's global sequencer
+(integer-strings), but platter IDs cannot — they appear as **keys
+inside user buckets** (via the per-platter-marker mechanism in
+[nulls.md § Serialization](../caspian/built-in-classes/nulls.md#serialization))
+where they need to be collision-safe against arbitrary user-chosen
+field names. An integer-string `"7"` could collide with a user
+bucket key; a UUID's 128-bit address space can't, in practice.
 
-Drawing from the global sequence means a platter ID is unique
-not just within its containing object but across the entire
-program. That's stronger uniqueness than strictly needed (any
-within-object-unique scheme would work), but it falls out of
-reusing the existing counter — and disambiguates platter IDs
-from object IDs naturally since no two strings from the sequence
-are ever equal.
+**Every UUID comes fresh from libsodium per call. No caching, no
+seeded PRNG.** Caches and PRNG state are attack vectors — anyone
+who can read them gets future UUIDs, which matters because
+Mikobase record_pks leak externally through worldlet exports and
+query results. Cache-based optimizations were considered and
+rejected on security grounds; see
+[#354](https://github.com/mikosullivan/puck/issues/354).
 
 Why a hash, not an array of `{id, class, bucket}` records: the
 ID is the platter's natural identifier, so putting it in the

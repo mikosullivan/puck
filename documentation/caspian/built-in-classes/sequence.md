@@ -112,25 +112,35 @@ string of digits.
 ## Engine use
 
 The Caspian engine maintains one global counter that mints unique
-strings for any engine bookkeeping that needs them. The current
-consumers:
+strings for engine bookkeeping where collision safety against
+user-controlled data isn't required. The current consumers:
 
 - **Object IDs** — every allocated object draws an ID from this
   counter. See
   [references.md § Object IDs](../skeletor/references.md#object-ids).
-- **Platter IDs** — every platter pushed onto an object's class
-  stack also draws an ID from this counter. See
-  [base-class-use.md § Proposed shape](../../ideas/base-class-use.md#proposed-shape).
 - **srcs registry keys** — each source file (local or UNS-loaded)
   registered in `state.srcs` gets a key from this counter. See
   [skeletor.md § Source-location tagging](../skeletor/skeletor.md#source-location-tagging).
 
-Future engine bookkeeping that needs unique strings can pull from
-the same counter without inventing a separate namespace. Two
-strings drawn from the global counter are never equal, regardless
-of what they identify — so an object ID can never collide with a
-platter ID can never collide with a srcs key, even though they
-share the pool.
+Two strings drawn from the global counter are never equal,
+regardless of what they identify — so an object ID can never
+collide with a srcs key.
+
+**What does NOT use this counter:** **platter IDs** are UUIDs
+generated fresh per allocation from libsodium. The reason: platter
+IDs appear as keys **inside user buckets** (per the
+per-platter-marker mechanism in
+[nulls.md § Serialization](nulls.md#serialization)) where they
+need collision safety against arbitrary user-chosen field names.
+An integer-string `"7"` could collide with a user bucket key; a
+UUID's 128-bit address space can't, in practice.
+
+**No UUID caching, no seeded PRNG.** Every UUID comes fresh from
+libsodium per call. Cache-based optimizations (batching, fast-PRNG
+seeded once) were considered and rejected — caches expose future
+UUIDs, which is an attack vector for externally-leaked UUIDs like
+Mikobase record_pks. See
+[#354](https://github.com/mikosullivan/puck/issues/354).
 
 **The engine's hot path bypasses the class entirely.** Object ID
 minting is one of the highest-frequency operations in the whole
@@ -141,7 +151,7 @@ with the increment routine inlined**, not an instance of
 `puck.uno/sequence`. In Lucy that means a Lua function with a
 captured counter string and direct in-place increment — no table
 access, no method dispatch, no class-stack walk, no jail
-whitelist check. Just `counter = increment(counter); return counter`.
+allowlist check. Just `counter = increment(counter); return counter`.
 
 This is a deliberate trade. The class still exists at the Caspian
 level — defined in the host language, exposed as

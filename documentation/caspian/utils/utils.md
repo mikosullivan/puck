@@ -149,6 +149,13 @@ random value.
 [This article](https://www.atsec.com/sp800-90a-and-sp800-90b-compliant-linux-random-number-generator/)
 discusses Linux's compliance with US government cryptographic standards.
 
+**Engine implementation note**: every UUID comes fresh from libsodium
+per call — no caching, no PRNG state. See
+[uuid-generation.md](../uuid-generation.md) for the engine-level
+implementation guidance (one-C-function-per-call, hex lookup table,
+literal-dash writes, etc.) and the security rationale behind the
+no-caching rule.
+
 <a id="utilsrandomnumber"></a>
 ### `%utils.random.number`
 

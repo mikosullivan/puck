@@ -66,12 +66,13 @@ $db   = %engine['db']
 $docs = %engine['docs']
 ```
 
-From there, resources are passed down to functions explicitly as parameters. Inner
-functions never see `%engine` — they only have access to what they are handed.
+From there, resources are passed down to functions and libraries explicitly as
+parameters.
 
-`%engine` is non-capturable: the runtime prevents it from being stored in a variable,
-passed as an argument, or captured by a closure. This is enforced by the runtime, not
-by convention.
+**Only the `user` role can call methods on the engine object** — a deliberate
+special case enforced by a dedicated check in the engine object itself. Loaded
+libraries (running in their own roles) cannot reach `%engine`, even if passed a
+reference to it. See [lucy.md § `%engine`](../caspian/lucy/lucy.md#engine).
 
 ---
 

@@ -215,7 +215,7 @@ enough to matter will be aborted by the cap.
 That deliberately puts the responsibility on the programmer. Closing a socket
 in `on_close` is fine — until you've configured `SO_LINGER` on it, at which
 point `close()` can block past the cap and you'll see the abort. The fix is
-not for the runtime to maintain a syscall whitelist; the fix is to either
+not for the runtime to maintain a syscall allowlist; the fix is to either
 clear `SO_LINGER` before the object goes out of scope or close the socket
 explicitly outside of `on_close`. The runtime doesn't try to second-guess
 which file descriptors are "really" non-blocking; it just enforces the

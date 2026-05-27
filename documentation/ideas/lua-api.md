@@ -160,9 +160,9 @@ the standard role machinery. The caller's `chain` is wiped at the
 boundary; sodium runs in its own context; on return, the caller's
 context is restored.
 
-`%engine` itself is non-capturable per the existing
-[engine-namespace memory](../../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/project_caspian_engine.md);
-its children are normal objects. Capability is enforced at each method
+`%engine` is user-role-only by a dedicated check in the engine object
+itself; see [lucy.md § `%engine`](../caspian/lucy/lucy.md#engine). Its
+children are normal objects. Capability is enforced at each method
 call by the role transition, not by the namespace.
 
 <a id="lpeg-and-json"></a>
@@ -198,10 +198,12 @@ namespace lives in the user's runtime environment alongside
 `%stdout`, `%utils`, `%argv`, etc. — set at bootstrap, available as
 soon as user code runs.
 
-`%engine` itself is non-capturable. `$x = %engine` is a syntax error
-(or runtime error, depending on enforcement). Its children
-(`%engine.sodium` etc.) are capturable normal objects; capturing one
-doesn't bypass the role transition that fires on each method call.
+`%engine` is user-role-only — a deliberate special-case check in
+the engine object refuses calls from any role other than `user`.
+See [lucy.md § `%engine`](../caspian/lucy/lucy.md#engine). Its
+children (`%engine.sodium` etc.) are normal objects; capability is
+enforced at each method call by the role transition, not by the
+namespace structure.
 
 <a id="role-assignment"></a>
 ### Role assignment

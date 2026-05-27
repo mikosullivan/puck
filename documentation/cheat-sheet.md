@@ -23,12 +23,25 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 - **Pinned vs mutable regions**: pinned platters at the top, fixed position, engine-managed; mutable region below, where `.classes.add` inserts. See [base-class-use.md § Pinned and mutable regions](ideas/base-class-use.md#pinned-and-mutable-regions).
 - **Method resolution**: walk platter stack top-to-bottom × each platter's class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast. See [base-class-use.md § Method resolution](ideas/base-class-use.md#method-resolution).
 
-## IDs and the global sequence
+## IDs
 
-- **One global counter mints every unique string** in the engine — object IDs, platter IDs, srcs registry keys, future bookkeeping. Integer-string format (`"1"`, `"2"`, ..., `"99"`, `"100"`, ...), stable within a program's lifetime, not stable across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/skeletor/references.md#object-ids).
-- **The class is `puck.uno/sequence`**: array of digit-strings + transitions hash + lazy string cache. Engine's hot-path minter bypasses the class entirely (closed-over Lua local). See [sequence.md § Implementation](caspian/built-in-classes/sequence.md#implementation).
-- **Engine holds a jailed sequence** with `(:next, :peek)` — no `.reset`. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use).
-- **Future compaction**: `%utils.sequence.compact(threshold)` is V1.1+, not V1. See [#345](https://github.com/mikosullivan/puck/issues/345).
+**Two ID formats**, split by where the ID will appear:
+
+- **Integer-strings from the global sequencer** — for IDs that **don't** appear in user buckets. Used by: object IDs, srcs registry keys. Format: `"1"`, `"2"`, ..., `"100"`, ... in encounter order. Stable within a program's lifetime, not across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/skeletor/references.md#object-ids).
+- **UUIDs (from libsodium)** — for IDs that **do** appear in user buckets and need to be collision-safe with arbitrary user-chosen keys. Used by: platter IDs, Mikobase record UUIDs. See [base-class-use.md § Proposed shape](ideas/base-class-use.md#proposed-shape).
+
+The split exists because the per-platter-marker mechanism in [nulls.md § Serialization](caspian/built-in-classes/nulls.md#serialization) places platter IDs as keys inside user buckets, where integer-strings would collide with user-chosen field names. Object IDs never appear in user buckets (only in `references`, `objects` keys, frame locals), so they can use the cheaper sequencer.
+
+**The sequence class is `puck.uno/sequence`**: array of digit-strings + transitions hash + lazy string cache. Engine's hot-path minter bypasses the class entirely (closed-over Lua local). See [sequence.md § Implementation](caspian/built-in-classes/sequence.md#implementation).
+
+**Engine holds a jailed sequence** with `(:next, :peek)` — no `.reset`. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use).
+
+**UUID generation: no caching, no PRNG.** Every UUID comes fresh from libsodium per call. Cache-based optimizations (batching, fast-PRNG-seeded-once) were considered and **rejected on security grounds** — any cache state that predicts future UUIDs is an attack vector for externally-leaked UUIDs like Mikobase record_pks. See [#354](https://github.com/mikosullivan/puck/issues/354).
+
+**Per-call UUID optimizations** (one C function per UUID, hex lookup table, literal dashes, stack buffer, direct libsodium primitive) live at [uuid-generation.md](caspian/uuid-generation.md). Engine implementers consult that doc; everyone else just calls `%utils.random.uuid`.
+
+**Deferred optimizations:**
+- `%utils.sequence.compact(threshold)` — V1.1+, see [#345](https://github.com/mikosullivan/puck/issues/345).
 
 ## Skeletor fields
 
@@ -102,6 +115,11 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 - **Chain shape**: every frame's chain is `{ log = {}, misc = {} }` — two reserved sub-fields pre-allocated, even when empty.
 - **Value shape**: `{type, owning_role, payload}` Lua tables; `type` is the UNS-prefixed class name (e.g., `"puck.uno/string"`).
 - **No platter model, no references hash, no objects hash, no IDs, no truthiness platter** — these arrive in later slices. See [aslan.md](development/v1/aslan.md).
+
+## Phrasing pet peeves
+
+- **Don't call scenarios "edge cases."** The framing is often inaccurate and dismissive — the "edges" are precisely where bugs and attack vectors hide. If a scenario is worth mentioning, it's worth taking seriously, not flicking away with the "edge" label. Use specific descriptions instead: "the case where X happens during Y," "the failure mode when Z is absent," etc. See [feedback_no_edge_case_dismissal](../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_no_edge_case_dismissal.md).
+- **Don't use "honest" / "honestly" as filler.** It implies other statements aren't. See [feedback_no_honest_filler](../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_no_honest_filler.md).
 
 ## Conventions specific to this project
 

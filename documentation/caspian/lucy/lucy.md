@@ -2666,7 +2666,7 @@ is no special closure type — any function becomes a closure when passed a scop
 	"defined_by": "engine_at_boot_time_only",
 	"key_methods": {
 		"%chain": "ambient_context_carries_request_scoped_values",
-		"%engine": "gateway_to_host_resources_top_level_only_non_capturable",
+		"%engine": "gateway_to_host_resources_user_role_only_deliberate_special_case",
 		"%call": "current_call_object_function_or_closure"
 	}
 }}
@@ -2799,42 +2799,50 @@ end
 ### `%engine`
 
 `%engine` is a method that returns the engine object — the gateway through which the
-top-level script accesses resources provided by the host (capabilities, configuration,
-injected objects).
-
-Two distinct properties make it secure:
-
-**The method is scope-restricted.** `%engine` only exists in the outermost script scope.
-**Functions** do not have it in their scope — they don't capture outer scope at all, so
-`%engine` is simply absent inside any function. **Closures** defined at the outermost
-scope *do* see `%engine`, because closures capture their lexical scope by design and the
-outermost scope is part of what they capture. A closure defined inside a function doesn't
-see `%engine` either (the function it was defined inside doesn't have it).
-
-This matches the language's own promise about closures: they capture what's in their
-defining scope. Forcing closures to omit `%engine` specifically would be a special-case
-exception that goes against the model. The developer chose `closure` over `function`
-precisely to opt in to scope capture; the runtime honors that choice.
-
-**The engine object is non-storable.** Even in the outermost scope (or inside a closure
-that captured the outermost scope), the object returned by `%engine` cannot be assigned
-to a variable. This is enforced by the runtime:
+running script accesses resources provided by the host (capabilities, configuration,
+injected objects). Standard slots like `%stdout` and `%clock` cover the well-known
+universal capabilities; `%engine[name]` is the catch-all for host-provided
+application-specific data:
 
 ```
-$db   = %engine['db']    # fine — using the object directly
-$docs = %engine['docs']  # fine
-
-$e = %engine             # raises — engine object is non-storable
+$db   = %engine['db']
+$docs = %engine['docs']
+$request = %engine['request']    # in an HTTP handler context
 ```
 
-The non-storable rule is the load-bearing security guarantee: `%engine` itself can't be
-extracted into a variable that can be passed around. Specific resources pulled out of it
-can be passed around freely.
+The shape of `%engine`'s key set is host-defined.
 
-The bootstrap pattern: the top-level script calls methods on `%engine` directly to pull
-out what it needs, then passes those resources down to functions explicitly as parameters.
-Closures defined at the top level can reference `%engine` directly if useful — their
-auto-capture lets them. Functions need things passed explicitly.
+<a id="engine-user-only"></a>
+#### `%engine` is user-only — deliberate special case
+
+**Only the `user` role can call methods on the engine object.** This is enforced
+by a **dedicated check in the engine object itself**, not derived from any general
+role-based access control system. Any role other than `user` reaching the engine
+object — by writing `%engine` in source, or by being passed a reference to it,
+or via any other path — raises.
+
+This is **deliberately a special case**. The engine object is too critical a
+security boundary to ride on whatever general role-access mechanism Caspian
+eventually grows. The dedicated check is defense in depth: even if a future
+general system has bugs or gaps, the engine object's hard-coded user-only rule
+keeps holding.
+
+The general language rule otherwise stands — *if you can see an object you can
+call its methods*. The engine object is the one named exception.
+
+**What this looks like in practice:**
+
+- User code freely writes `%engine[...]` and gets the data. Normal.
+- Loaded libraries (running in their own roles) cannot reach `%engine`. Even if
+  user passes the engine reference as a parameter, the library's call into it
+  raises because the calling role isn't `user`.
+- Closures defined in user scope that captured `%engine` work when called
+  *from* user code. If somehow invoked from a non-user role, the engine object's
+  check still fires.
+
+The bootstrap pattern: user code calls methods on `%engine` directly to pull
+out the resources it needs, then passes those resources down to libraries
+explicitly as parameters. Libraries never reach back to `%engine` themselves.
 
 <a id="function-and-closure-opacity"></a>
 ### Function and closure opacity
