@@ -130,18 +130,24 @@ these classes themselves — the receiving mikobase already knows them.
 {"vibecode": {"concept":"worldlet_records","required":true,
 "format":"object keyed by record UUID v4",
 "fields":[
-{"field":"class","type":"string","note":"UNS class name"},
+{"field":"classes","type":"object","note":"platter stack: hash keyed by platter ID, each value {class, bucket}"},
 {"field":"created_at","type":"string","note":"ISO 8601 timestamp with millisecond precision"},
 {"field":"bucket","type":"object","note":"field values for this record"}]}}
 ~~~
 
 `records` is an object keyed by record UUID v4. Each value carries the
-record's class, its creation timestamp, and its bucket of field values:
+record's classes (platter stack), creation timestamp, and bucket of field
+values:
 
 ```json
 "records": {
     "e1b2c3d4-0001-0001-0001-000000000001": {
-        "class":      "puck.uno/ai/proposal",
+        "classes": {
+            "p1a2b3c4-0001-0001-0001-000000000001": {
+                "class":  "puck.uno/ai/proposal",
+                "bucket": {}
+            }
+        },
         "created_at": "2026-05-19T12:00:00.000Z",
         "bucket":     {"from": "...", "subject": "...", "body": "..."}
     }

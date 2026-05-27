@@ -398,19 +398,25 @@ each tagged thing.
 
 ```json
 "srcs": {
-  "a": {"file": "/path/to/greetings.casp"},
-  "b": {"file": "/path/to/lib/io.casp"}
+  "1": {"file": "/path/to/greetings.casp"},
+  "8": {"file": "/path/to/lib/io.casp"}
 }
 ```
 
-Each entry is a tagged object — its key declares what kind of
-source the entry refers to. Local files use `{"file": "..."}`;
-Puck UNS sources use `{"uns": "..."}`. Future kinds can be added
+Each entry is a tagged object — the entry's value declares what
+kind of source it refers to. Local files use `{"file": "..."}`;
+Puck UNS sources use `{"uns": "..."}`. **For multi-file Puck
+libraries, each source file gets its own registry entry** with
+the file name in the UNS path (e.g., `{"uns":
+"markdown.uno/render/render.casp"}`). Future kinds can be added
 (`{"url": ...}`, `{"git": ...}`, etc.) without changing the
 registry shape.
 
-Keys are short strings assigned in encounter order (`a`, `b`, ...,
-`z`, `aa`, `ab`, ...). Keys are stable within a single program
+**Keys come from the global sequencer** — the same counter that
+mints object IDs and platter IDs (see
+[sequence.md § Engine use](../built-in-classes/sequence.md#engine-use)).
+They're integer-strings drawn from the shared pool, interleaved
+with object/platter IDs. Keys are stable within a single program
 execution but not across runs — the registry is in the snapshot,
 so anything reading it can resolve. Typical program has 1-50 src
 entries; the registry itself is tiny.
@@ -479,9 +485,12 @@ structure leaves room to grow.
 
 - **Top-level field is `srcs`** (plural of `src`, matching the convention
   used for `roles`). Maps short keys to full paths.
-- **Keys are short strings** assigned in encounter order: `a`, `b`,
-  ..., `z`, `aa`, `ab`, ... Stable within a single program
-  execution; not stable across runs.
+- **Keys come from the global sequencer** — integer-strings drawn from
+  the shared pool that also mints object IDs and platter IDs. Stable
+  within a single program execution; not stable across runs.
+- **Multi-file Puck libraries get one srcs entry per file**, with
+  the file name in the UNS value (e.g., `{"uns":
+  "markdown.uno/render/render.casp"}`).
 - **The reference field is `src`** (chose this over `loc`, the
   named `{"file": "a", "line": 42}` split form, etc.). Holds a
   2-element tuple `[src_key, line]`.
@@ -511,16 +520,18 @@ structure leaves room to grow.
   (see [Future possibilities](#future-debugger-plugin-interface)),
   can fill in gaps later without changing the V1.0 structure.
 
-**Open question.** If a UNS-loaded library has multiple source
-files, how does that show up in `srcs`? The simplest answer is
-one registry entry per file, with each entry's `uns` value
-identifying the specific file (e.g., `{"uns":
-"foo.bar/baz/render.casp"}` vs `{"uns":
-"foo.bar/baz/parser.casp"}`). That keeps line numbers within
-each entry unambiguous. The alternative — one entry per library
-with file disambiguation elsewhere — is more compact but pushes
-the file-within-library detail somewhere else. Not yet settled;
-needs a multi-file remote library to test against.
+**Multi-file libraries: one entry per file.** A UNS-loaded library
+with multiple source files registers one `srcs` entry per file,
+with the file name baked into each entry's `uns` value (e.g.,
+`{"uns": "foo.bar/baz/render.casp"}` vs `{"uns":
+"foo.bar/baz/parser.casp"}`). That keeps the src tuple uniform
+at 2 elements — `[src_key, line]` — everywhere, regardless of
+whether the source is a single file, a library file, or anything
+else added later. The alternative (one entry per library with
+file disambiguation inside the src tuple) was rejected because it
+makes every src consumer handle two tuple shapes; pushing the
+cost to one registry table instead of many readers is the better
+trade.
 
 <a id="src-examples"></a>
 #### Examples

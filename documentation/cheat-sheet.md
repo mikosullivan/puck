@@ -25,7 +25,7 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 
 ## IDs and the global sequence
 
-- **One global counter mints every unique string** in the engine — object IDs, platter IDs, future bookkeeping. Integer-string format (`"1"`, `"2"`, ..., `"99"`, `"100"`, ...), stable within a program's lifetime, not stable across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/skeletor/references.md#object-ids).
+- **One global counter mints every unique string** in the engine — object IDs, platter IDs, srcs registry keys, future bookkeeping. Integer-string format (`"1"`, `"2"`, ..., `"99"`, `"100"`, ...), stable within a program's lifetime, not stable across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/skeletor/references.md#object-ids).
 - **The class is `puck.uno/sequence`**: array of digit-strings + transitions hash + lazy string cache. Engine's hot-path minter bypasses the class entirely (closed-over Lua local). See [sequence.md § Implementation](caspian/built-in-classes/sequence.md#implementation).
 - **Engine holds a jailed sequence** with `(:next, :peek)` — no `.reset`. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use).
 - **Future compaction**: `%utils.sequence.compact(threshold)` is V1.1+, not V1. See [#345](https://github.com/mikosullivan/puck/issues/345).

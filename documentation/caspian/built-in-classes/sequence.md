@@ -112,8 +112,8 @@ string of digits.
 ## Engine use
 
 The Caspian engine maintains one global counter that mints unique
-strings for any engine bookkeeping that needs them. The two
-current consumers:
+strings for any engine bookkeeping that needs them. The current
+consumers:
 
 - **Object IDs** — every allocated object draws an ID from this
   counter. See
@@ -121,12 +121,16 @@ current consumers:
 - **Platter IDs** — every platter pushed onto an object's class
   stack also draws an ID from this counter. See
   [base-class-use.md § Proposed shape](../../ideas/base-class-use.md#proposed-shape).
+- **srcs registry keys** — each source file (local or UNS-loaded)
+  registered in `state.srcs` gets a key from this counter. See
+  [skeletor.md § Source-location tagging](../skeletor/skeletor.md#source-location-tagging).
 
 Future engine bookkeeping that needs unique strings can pull from
 the same counter without inventing a separate namespace. Two
 strings drawn from the global counter are never equal, regardless
 of what they identify — so an object ID can never collide with a
-platter ID even though they share the pool.
+platter ID can never collide with a srcs key, even though they
+share the pool.
 
 **The engine's hot path bypasses the class entirely.** Object ID
 minting is one of the highest-frequency operations in the whole

@@ -329,20 +329,26 @@ See [class-definition.md](../class-definition.md) for the full class definition 
 {"vibecode": {
 	"section": "records",
 	"format": "dict_keyed_by_uuid",
-	"fields": ["class", "created_at", "bucket"]
+	"fields": ["classes", "created_at", "bucket"],
+	"shape": "platter_model_classes_hash_keyed_by_platter_id"
 }}
 ~~~
 
-A dict of records, keyed by record UUID. Each entry carries the record's class, its
-creation timestamp, and its current bucket directly. The non-temporal worldlet shape
-documented here has no separate history block and no per-version entries; for the
-temporal shape with per-version history, see
-[AI2AI.md](../AI2AI.md).
+A dict of records, keyed by record UUID. Each entry carries the record's
+classes (its platter stack), creation timestamp, and current bucket. The
+non-temporal worldlet shape documented here has no separate history block
+and no per-version entries; for the temporal shape with per-version
+history, see [AI2AI.md](../AI2AI.md).
 
 ```json
 "records": {
     "e1b2c3d4-0001-0001-0001-000000000001": {
-        "class":      "starfleet.com/officer",
+        "classes": {
+            "p1a2b3c4-0001-0001-0001-000000000001": {
+                "class":  "starfleet.com/officer",
+                "bucket": {}
+            }
+        },
         "created_at": "2364-01-01T00:00:00.000Z",
         "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
     }
@@ -351,9 +357,17 @@ temporal shape with per-version history, see
 
 | Field        | Required | Description |
 |--------------|----------|-------------|
-| `class`      | yes      | UNS class name |
-| `created_at` | no       | ISO 8601 timestamp with millisecond precision; record-level metadata, not bucket data |
-| `bucket`     | yes      | The record's field values |
+| `classes`    | yes      | Platter stack: a hash keyed by platter ID, each value `{class, bucket}` per the [platter model](../../ideas/base-class-use.md). Every record has at least one platter. |
+| `created_at` | no       | ISO 8601 timestamp with millisecond precision; record-level metadata, not bucket data. |
+| `bucket`     | yes      | The record's user-facing field values (those declared by its class definitions). Free-form, no reserved keys. |
+
+**Where do values live?** For a regular record with a single class platter,
+the class's declared field values (e.g., `name`, `rank`, `serial` for an
+officer) live in the **top-level `bucket`**. Per-platter buckets are for
+class-internal state (mix-ins, cross-cutting concerns) — usually empty
+for ordinary records. Class-definition records are a special case where
+the platter's bucket holds the definition itself; see
+[class-definition.md](../class-definition.md).
 
 ---
 
@@ -468,23 +482,26 @@ field type — a field with class `puck.uno/reference` or `puck.uno/dbfile` tell
 engine the value is a reference. No special wrapper syntax is used in the bucket itself.
 
 <a id="the-class-field"></a>
-### The `class` field
+### The `class` field inside platter records
 
-In all Puck-compliant hashes, the `class` field is reserved to indicate the class or
-classes the hash belongs to. This applies to Q0 queries, record entries, class
+In all Puck-compliant platter records, the `class` field identifies the
+class for that platter. This applies to Q0 queries, record entries' class
 definitions, and any other Puck-level objects.
 
-Bucket objects are not Puck-compliant. The `class` field has no special meaning inside
-a bucket and may be used freely as an application field.
+Bucket objects (top-level or platter-internal) are not Puck-compliant.
+The `class` key has no special meaning inside a bucket and may be used
+freely as an application field.
 
 <a id="validation"></a>
 ### Validation
 
 The importer validates the following before writing anything:
 
-- All record entries have a `class` and a `bucket`.
-- All `class` values are either built-in classes or defined in `classes` or already
-  present in the target mikobase.
+- All record entries have a `classes` hash and a `bucket`.
+- Every record's `classes` hash contains at least one platter entry.
+- All `class` values inside platter records are either built-in classes,
+  defined in this worldlet's `classes` section, or already present in
+  the target mikobase.
 - All `file` values in `file_chunks` reference a UUID present in `files`.
 - The target mikobase is non-temporal.
 
@@ -503,10 +520,9 @@ written to the target mikobase. Partial imports do not happen.
 {"vibecode": {
 	"section": "minimal_valid_example",
 	"shows": "smallest_complete_worldlet_that_imports_without_error",
-	"omits": ["meta", "properties", "classes", "files",
-		"file_chunks", "class_field_on_the_record"],
+	"omits": ["meta", "properties", "classes", "files", "file_chunks"],
 	"defaults_relied_on": {
-		"record_class": "puck.uno/record (built_in)",
+		"record_classes": "single platter of class puck.uno/record (built_in) when classes is omitted",
 		"classes_section": "not_needed_when_only_built_in_classes_used"
 	}
 }}
@@ -526,8 +542,11 @@ The smallest possible worldlet — one record, no schema, no files:
 }
 ```
 
-`class` is omitted — the in-context default is `puck.uno/record`. `classes`
-is omitted too — `puck.uno/record` is a built-in class so no schema is needed.
+The `classes` field on the record is omitted; the importer applies the
+default — a single platter of class `puck.uno/record`, with an
+engine-generated platter ID. The top-level worldlet `classes` section is
+also omitted because `puck.uno/record` is a built-in class so no schema
+is needed.
 
 ---
 
@@ -621,25 +640,33 @@ is omitted too — `puck.uno/record` is a built-in class so no schema is needed.
 
     "records": {
         "e1b2c3d4-0001-0001-0001-000000000001": {
-            "class":      "starfleet.com/officer",
+            "classes": {
+                "p1a2b3c4-0001-0001-0001-000000000001": {"class": "starfleet.com/officer", "bucket": {}}
+            },
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
         },
 
         "e1b2c3d4-0002-0002-0002-000000000002": {
-            "class":      "starfleet.com/officer",
+            "classes": {
+                "p1a2b3c4-0002-0002-0002-000000000002": {"class": "starfleet.com/officer", "bucket": {}}
+            },
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "Riker, William", "rank": "Captain", "serial": "SC-231-427"}
         },
 
         "e1b2c3d4-0003-0003-0003-000000000003": {
-            "class":      "starfleet.com/ship",
+            "classes": {
+                "p1a2b3c4-0003-0003-0003-000000000003": {"class": "starfleet.com/ship", "bucket": {}}
+            },
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "USS Enterprise", "registry": "NCC-1701-D", "ship_class": "Galaxy"}
         },
 
         "e1b2c3d4-0004-0004-0004-000000000004": {
-            "class":      "starfleet.com/officer",
+            "classes": {
+                "p1a2b3c4-0004-0004-0004-000000000004": {"class": "starfleet.com/officer", "bucket": {}}
+            },
             "created_at": "2364-01-01T00:00:00.000Z",
             "bucket":     {"name": "Data", "rank": "Lieutenant Commander", "serial": "SA-789-012", "photo": "d1e2f3a4-0001-0001-0001-000000000001"}
         }

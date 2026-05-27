@@ -2087,15 +2087,142 @@ end
 	"purpose": "namespace_methods_without_polluting_main_object_namespace",
 	"access": "self.reference points back to parent object",
 	"initialization": "lazy_not_created_until_first_accessed",
-	"reserved_helper": "object built_in_present_on_every_object_cannot_be_overridden"
+	"reserved_helper": "object built_in_present_on_every_object_cannot_be_overridden",
+	"pattern_in_other_languages": "ActiveRecord_associations_jQuery_data_python_descriptors_ORM_query_proxies"
 }}
 ~~~
+
+<a id="why-helpers-exist"></a>
+### Why helpers exist
+
+Object helpers are a common pattern across many languages: an object owns a
+**separate sub-object** that knows about its owner and provides a focused,
+related set of operations. Examples elsewhere:
+
+- ActiveRecord's `user.posts` — a collection proxy that knows it belongs to that
+  user and exposes association-specific methods (`.create`, `.where`, etc.).
+- jQuery's `$elem.data()` — a per-element data namespace accessed through a
+  helper.
+- Python descriptors / `@property` namespaces — sub-objects bound to an instance
+  that expose related getters and setters.
+- Fluent-builder patterns where chained methods live on a separate builder
+  instance bound to the parent.
+
+The common shape across all of these:
+
+- The helper is a **distinct object** with its own identity, not the owner in
+  disguise.
+- It **knows its owner** through a backreference, so its methods can reach back
+  into the parent's state.
+- Access is **namespaced via dot-chaining**: `$owner.helper.method`, never
+  `$owner.method` directly.
+- It hosts a **coherent cluster of related tasks** — validation, serialization,
+  association management, audit logging, etc. — that conceptually belong to the
+  owner but would crowd the owner's main namespace if put there.
+
+Caspian formalizes this pattern. A helper is an instance of `puck.uno/helper`
+(or a subclass) held by its owner, with `@reference` pointing back so its
+methods can call into the owner. The `helper` BWC inside a class body provides
+the syntactic sugar for declaring one.
+
+This is structurally different from the [platter model](../../ideas/base-class-use.md):
+platters add methods to the same object's identity (one identity, many class
+contributions); helpers introduce a sibling object with its own identity (one
+identity, one helper-owner relationship, separate dot-namespace access). Use a
+platter when extending what the object *is*; use a helper when adding a
+sub-area of related operations the object *has access to*.
+
+<a id="why-object-is-a-helper"></a>
+### Why `.object` is a helper: namespace hygiene by default
+
+The original motivation for the helper mechanism is a specific problem: **how
+to keep user classes from inheriting a noisy cloud of base-class methods**.
+
+Every Caspian object ultimately derives from `puck.uno/object`, which provides
+a substantial set of universal operations: tri-value truthiness (`bool`,
+`truthy?`, `null?`, `defined?`), identity equality, role introspection
+(`role`, `chain` access), classes-stack inspection, the close-handler
+mechanism, and more. If those methods lived directly on every object, then a
+user defining a trivial class with one method:
+
+```caspian
+class 'myapp.com/connection'
+    function &send($msg)
+        ...
+    end
+end
+```
+
+…would produce instances exposing **fifteen-plus methods**, only one of which
+the user actually wrote. Auto-completion lists would be cluttered. The
+namespace of "what this thing does" would be drowned in inherited
+infrastructure.
+
+`puck.uno/object` solves this by declaring **exactly one helper**, called
+`object`, and putting every universal operation on that helper instead of
+on the object directly:
+
+```caspian
+$foo.object              # the universal helper for $foo
+$foo.object.role         # current role of $foo's frame
+$foo.object.bool         # tri-value truthiness
+$foo.object.classes      # the platter stack
+$foo.object.on_close ... # close-handler introspection
+```
+
+So `$conn` from the example above exposes only **two** methods at its top
+level: `.send` (what the user wrote) plus `.object` (the universal helper).
+The universal cloud is reachable but namespaced away.
+
+That makes helpers **infrastructural, not just a convenience pattern**.
+They're how Caspian keeps every user class from inheriting noise from the
+base. The mechanism exists to solve a specific design problem; the `helper`
+BWC is the syntactic sugar that lets user classes apply the same hygiene to
+their own concerns.
+
+User code uses the same pattern. A `myapp.com/connection` class might declare:
+
+```caspian
+class 'myapp.com/connection'
+    function &send($msg) ... end
+
+    helper transport
+        function &configure(...) ... end
+        function &reconnect() ... end
+        function &teardown() ... end
+    end
+
+    helper metrics
+        function &bytes_sent() ... end
+        function &uptime() ... end
+        function &reset() ... end
+    end
+end
+```
+
+Now `$conn.send` is the hot-path method developers reach for; `.transport.<x>`
+and `.metrics.<x>` cluster related operations under their own namespaces;
+the top-level method list of `$conn` stays short.
+
+**The self-recursive case:** `$foo.object` is itself an object, so it has its
+own `.object` helper. That bottoms out cleanly — the engine recognizes the
+recursion and returns a degenerate helper for the helper-of-a-helper case
+rather than infinitely nesting. (Users rarely need this; it's mentioned for
+completeness because the rule "every object has .object" is universal.)
+
+<a id="helpers-mechanism-summary"></a>
+
+<a id="helpers-mechanism"></a>
+### Mechanism
 
 A helper is an instance of `puck.uno/helper`. It provides a way to namespace methods
 without polluting the main method namespace of an object.
 
-The base helper class defines a single field: `@reference`, which points back to the
-parent object. Inside a helper method, `self.reference` accesses the parent.
+The base helper class defines a single field, `@reference`, which points back to the
+parent object, and an accessor that exposes it as `self.reference` from inside
+helper methods (declared as `accessor @reference :get` in the base class). So
+`@reference` is the bucket field; `self.reference` is the method-style reader
+of that field. Two surfaces, one piece of state.
 
 <a id="defining-a-helper"></a>
 ### Defining a helper
