@@ -109,6 +109,20 @@ runner.test("dir_listing: no-slash form 301s to trailing-slash", function()
     assert_.equal(r.location, "/documentation/caspian/examples/")
 end)
 
+runner.test("redirect: /documentation/foo/index → /documentation/foo/", function()
+    -- Direct hits on the index.md file should 301 to the canonical
+    -- trailing-slash form rather than serve the page directly.
+    local r = route.resolve("/documentation/ecoverse/formatting/index")
+    assert_.equal(r.kind, "redirect")
+    assert_.equal(r.location, "/documentation/ecoverse/formatting/")
+end)
+
+runner.test("redirect: .html variant of /foo/index also collapses", function()
+    local r = route.resolve("/documentation/ecoverse/formatting/index.html")
+    assert_.equal(r.kind, "redirect")
+    assert_.equal(r.location, "/documentation/ecoverse/formatting/")
+end)
+
 runner.test("static: /static/* resolves under orlando/static/", function()
     local r = route.resolve("/static/README.md")
     assert_.equal(r.kind, "static")

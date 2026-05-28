@@ -92,7 +92,7 @@ location wins**; this log is just a finder.
 | Interactive install: examples copied to `~/caspian/` by default (Y). Non-interactive: no copy. | [non-interactive.md](../../ideas/installation/non-interactive.md) |
 | The installer itself is a Caspian program (`install.casp`) bootstrapped from a tiny POSIX wrapper. First-contact dogfooding. | [linux.md § Under the hood](../../ideas/installation/linux.md#under-the-hood) |
 | Caspian always bundles its own Lua — never shares with system Lua, even if versions match. ABI guarantee. | [linux-with-existing-lua.md](../../ideas/installation/linux-with-existing-lua.md) |
-| VSCode extension is a thin LSP client. Caspian itself comes from the standard install; the extension offers to run it if missing. | [vscode.md](../../ideas/installation/vscode.md) |
+| VSCode extension is a thin shell — syntax highlighting + a Format Document command that shells out to `caspian fmt`. No LSP, no in-extension parser. Lives in its own repo. | [caspian-vscode](https://github.com/mikosullivan/caspian-vscode) |
 
 ---
 

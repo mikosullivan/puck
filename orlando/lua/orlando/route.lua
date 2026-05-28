@@ -147,6 +147,13 @@ function M.resolve(url_path)
         -- Standard markdown lookup.
         local md_path = MARKDOWN_ROOT .. "/" .. md_base .. ".md"
         if file_exists(md_path) then
+            -- /foo/index → /foo/ (canonical dir-index form). Otherwise
+            -- direct hits on index.md would serve the page without
+            -- redirecting to the canonical trailing-slash URL.
+            local parent = md_base:match("^(.+)/index$")
+            if parent then
+                return { kind = "redirect", location = DOC_URL_PREFIX_S .. parent .. "/" }
+            end
             return { kind = "markdown", path = md_path }
         end
     end

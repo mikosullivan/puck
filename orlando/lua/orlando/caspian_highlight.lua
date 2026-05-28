@@ -1,7 +1,7 @@
 --[[
 {
   "module": "orlando.caspian_highlight",
-  "role": "Tokenize Caspian source and emit HTML with pygments-compatible span classes so the pygments CSS in style.css colours it. Mirrors the token categories defined by vscode/syntax/syntaxes/caspian.tmLanguage.json; the V1 lexer is intentionally regex-grade rather than reusing caspian.lexer (which is line/col-aware and overkill for HTML markup).",
+  "role": "Tokenize Caspian source and emit HTML with pygments-compatible span classes so the pygments CSS in style.css colours it. Mirrors the token categories defined by the TextMate grammar in the separate caspian-vscode repo (https://github.com/mikosullivan/caspian-vscode, file syntaxes/caspian.tmLanguage.json); the V1 lexer is intentionally regex-grade rather than reusing caspian.lexer (which is line/col-aware and overkill for HTML markup).",
   "exports": {
     "highlight": "caspian source -> HTML string of <span class=\"...\">...</span> pieces; whitespace and unrecognized characters pass through escaped"
   },

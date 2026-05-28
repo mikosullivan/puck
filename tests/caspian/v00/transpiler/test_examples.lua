@@ -3,7 +3,7 @@
   "suite": "transpiler / example files",
   "covers": "smoke-tests: parse + transpile all 7 .casp example files without error; to_json round-trip (compact and pretty)",
   "examples": ["hello", "strings", "pipes", "control_flow", "functions", "system", "lengthy"],
-  "source_dir": "../documentation/vscode/syntax/examples/"
+  "fixtures_dir": "./tests/caspian/v00/fixtures/"
 }
 ]]
 local runner = require("support.runner")
@@ -30,8 +30,7 @@ local function read_file(path)
     return src
 end
 
--- Copy example files to a local path the test can read from.
--- The originals live in documentation/vscode/syntax/examples/.
+-- Fixtures live locally; this loop just iterates them by name.
 local src_base = "./tests/caspian/v00/fixtures/"
 
 for _, name in ipairs(examples) do

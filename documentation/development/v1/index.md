@@ -31,6 +31,7 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 	"v1_in": ["caspian", "caspian_cli", "mikobase", "touchstone", "sammy",
 		"trivet", "uma", "bryton", "jasmine", "puck_identity",
 		"deployment", "skeletor"],
+	"v1_companion_projects": ["caspian_vscode_extension_separate_repo"],
 	"v1_out": ["robinson"],
 	"v1_blockchain_role": "external_service; caspian_client_is_thin_http",
 	"v1_http_path": "sammy_explicit_handlers",
@@ -51,6 +52,14 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 | **jasmine** | (component plan TBD) | TBD |
 | **Puck identity** | signed-request authentication scaffolding | TBD |
 | **Deployment** | the actual puck.uno service shape | TBD |
+
+### Companion projects (separate repos)
+
+These ship alongside Puck V1 but live in their own GitHub repositories:
+
+| Project | Role | Repo |
+|---|---|---|
+| **Caspian VSCode extension** (codename Reepicheep / reep) | syntax highlighting + format-document command for `.casp` files in VSCode | [caspian-vscode](https://github.com/mikosullivan/caspian-vscode) |
 
 **Robinson** (the filesystem-tree page-server) is **not** bundled with
 V1; it lands on its own timeline as a Puck-resolved library.

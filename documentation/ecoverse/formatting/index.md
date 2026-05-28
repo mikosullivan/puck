@@ -72,11 +72,12 @@ Three top-level groups: **`indent`**, **`lines`**, **`languages`**. Universal se
 
   "languages": {
     "caspian": {
-      "class_body_packing": "tight",
-      "empty_param_parens": true,
-      "hash_spacing": "tight",
-      "return_parens": true,
-      "vibecode_placement": "top_of_section"
+      "class_body_packing":    "tight",
+      "empty_param_parens":    true,
+      "bareword_call_parens":  "omit",
+      "hash_spacing":          "tight",
+      "return_parens":         true,
+      "vibecode_placement":    "top_of_section"
     },
     "json": {
       "indent": {
@@ -256,6 +257,20 @@ function &to_hash      # empty_param_parens: false (also accepted by the parser)
 
 Applies to definitions only; call sites are unaffected.
 
+### `bareword_call_parens`
+
+`"omit"`: bareword call sites drop the parens around their arguments. `"always"`: parens are required at every call site. Caspian's parser accepts both forms — this preference picks one representation.
+
+```
+puts 'Aye, captain'         # bareword_call_parens: "omit"
+puts('Aye, captain')        # bareword_call_parens: "always"
+
+puts $loop.count            # "omit"
+puts($loop.count)           # "always"
+```
+
+Applies to **bareword calls only** (e.g. `puts`, `raise`, `catch`). Method calls (`$h.foo(x)`) and function-reference calls (`&foo(x)`) are unaffected; both keep their parens regardless.
+
 ### `hash_spacing`
 
 `"tight"`: `{lazy: true}` — no space after `{` or before `}`. `"loose"` would be `{ lazy: true }`.
@@ -344,12 +359,13 @@ The same `style.json` is the single source of truth across all surfaces:
 
 | Tool | Status | Description |
 |---|---|---|
-| VS Code Caspian extension | V1.1 | Format-on-save and Format Document (`Shift+Alt+F`); reads `~/.config/caspian/style.json`; no project-level VS Code settings needed. |
+| VS Code Caspian extension | V1 (separate project) | Syntax highlighting + Format Document command. The extension contains no parser — it shells out to `caspian fmt` per invocation. Lives in its own repo at [caspian-vscode](https://github.com/mikosullivan/caspian-vscode). |
+| `caspian fmt` subcommand | V1 (TBD slice) | Command-line formatter on the existing `caspian` CLI. Reads source on stdin, writes formatted source on stdout, applies the user's style.json. Powers the VS Code Format Document command and any other shelling tool. |
 | Gitter format toggle | TBD | Per-language formatting on code blocks in any rendered file. See [gitter.md](../../ideas/github/puck-site/gitter.md). |
 | Differ normalization | TBD | Diff normalization layer for Caspian-aware diff service. See [differ.md](../../ideas/differ.md). |
 | `caspian lint` | TBD | Optional linter (separate from formatting). |
 
-There is no command-line formatter for Caspian. Formatting happens inside the tools above (editor extension, web viewer, diff service); no `caspian fmt` CLI is planned.
+The `caspian fmt` subcommand is the canonical formatter. Other tools that need formatted Caspian (the VS Code extension, Gitter, Differ) shell out to it rather than each running their own parser/formatter pipeline.
 
 For Caspian specifically, formatters are CJS-in / Caspian-out generators on top of the canonical Caspian→CJS transpiler — no separate Caspian parsers in any tool. This depends on CJS preserving comments and `%vibecode` heredocs as first-class nodes ([issue #56](https://github.com/mikosullivan/puck/issues/56)).
 
@@ -403,11 +419,12 @@ Canonical source: **[miko.json](miko.json)** (the actual file the tooling reads)
 
   "languages": {
     "caspian": {
-      "class_body_packing": "tight",
-      "empty_param_parens": true,
-      "hash_spacing": "tight",
-      "return_parens": true,
-      "vibecode_placement": "top_of_section"
+      "class_body_packing":    "tight",
+      "empty_param_parens":    true,
+      "bareword_call_parens":  "omit",
+      "hash_spacing":          "tight",
+      "return_parens":         true,
+      "vibecode_placement":    "top_of_section"
     }
   }
 }

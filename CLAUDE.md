@@ -11,6 +11,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Cross-project AI preferences
+
+User-level AI collaboration preferences live in [~/CLAUDE.md](../../../CLAUDE.md) — communication style, workflow cadence, writing conventions, and engineering principles that travel with Miko across every project. Claude Code reads that file automatically. This project's CLAUDE.md (the one you're reading) only covers things specific to this codebase.
+
 ## Cheat sheet — read it
 
 [documentation/cheat-sheet.md](documentation/cheat-sheet.md) is a compact reference to settled design decisions that span many docs. Read it at the start of every conversation, and re-read the relevant section before making claims about object model, IDs, dispatch, equality, Skeletor fields, or engine-only classes. When a question lands and you're not sure of the current state, check the cheat sheet first.
