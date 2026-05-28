@@ -29,7 +29,7 @@ remotely**. There is very little Caspian in the class definition; all
 methods are remote calls. The class on the client side is essentially a
 stub that exposes the method surface and dispatches each call to the
 puck.uno server via `%puck.call` (see
-[puck.md](../puck/puck.md) — `remote function`).
+[puck.md](../puck/index.md) — `remote function`).
 
 The actual geolocation logic — databases, caches, algorithms — lives on
 the puck.uno servers. Clients hold the class for its method names and
@@ -52,7 +52,7 @@ A geo instance carries three coordinate fields:
 <a id="remote-call-semantics"></a>
 ### Remote call semantics
 
-Standard Puck remote-call mechanics apply (see [puck.md](../puck/puck.md)):
+Standard Puck remote-call mechanics apply (see [puck.md](../puck/index.md)):
 
 - The client retrieves the class definition from UNS (or cache) and
   instantiates locally. The instance lives in client memory with its

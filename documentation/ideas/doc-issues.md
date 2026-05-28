@@ -28,7 +28,7 @@ found so far.
     `puck.uno/dogberry/sammy`) updated to the new standalone
     model (`puck.uno/robinson/page`, `puck.uno/sammy`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
-  puck-object cutoff window. Cross-reference to [puck.md](../puck/puck.md)
+  puck-object cutoff window. Cross-reference to [puck.md](../puck/index.md)
   added alongside [versioning.md](../caspian/versioning.md).
 
 ---

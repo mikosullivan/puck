@@ -19,7 +19,7 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 
 - **Object shape**: `{classes, bucket}`. `classes` is a hash keyed by platter ID; each platter is `{class, bucket, sticky?, active?}`. See [base-class-use.md § Per-platter buckets](ideas/base-class-use.md#per-platter-buckets).
 - **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys, anywhere. Top-level bucket and each platter bucket follow the same rules. See [base-class-use.md § Bucket policy](ideas/base-class-use.md#bucket-policy).
-- **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton, not platter model. The platter model arrives in a later slice. See [aslan.md](development/v1/aslan.md), [decisions.md § Engine and runtime](development/v1/decisions.md#engine-and-runtime).
+- **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton, not platter model. The platter model arrives in a later slice. See [aslan.md](development/v1/caspian/aslan.md), [decisions.md § Engine and runtime](development/v1/caspian/decisions.md#engine-and-runtime).
 - **Pinned vs mutable regions**: pinned platters at the top, fixed position, engine-managed; mutable region below, where `.classes.add` inserts. See [base-class-use.md § Pinned and mutable regions](ideas/base-class-use.md#pinned-and-mutable-regions).
 - **Method resolution**: walk platter stack top-to-bottom × each platter's class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast. See [base-class-use.md § Method resolution](ideas/base-class-use.md#method-resolution).
 
@@ -46,10 +46,10 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 ## Skeletor fields
 
 - **In skeletor**: `roles` (the role registry), `call_stack`, `references` (the ref-id → object-id hash), `objects` (the object record store), `srcs` (source-path interning), `pending_exceptions`, `gc_errors`.
-- **NOT in skeletor**: classes. Class registry is engine-private — alongside the inverse index, dispatch caches, etc. See [skeletor.md § Classes are NOT in Skeletor](caspian/skeletor/skeletor.md#classes-not-in-skeletor).
-- **Aslan ships**: only `state.roles` + `state.call_stack`. Everything else fills in over later slices. See [aslan.md § Data structures](development/v1/aslan.md#data-structures-lua-tables).
-- **`current_role` / `current_chain` are NOT top-level fields** — they're the top-of-stack frame's `role` and `chain`. See [skeletor.md § Worked example](caspian/skeletor/skeletor.md#worked-example).
-- **Working state stays OUT of skeletor** — intermediate expression results, args being marshaled, etc. live in Lua locals during dispatch. See [skeletor.md § V1.0 scope](caspian/skeletor/skeletor.md#v1-0-scope).
+- **NOT in skeletor**: classes. Class registry is engine-private — alongside the inverse index, dispatch caches, etc. See [skeletor.md § Classes are NOT in Skeletor](caspian/skeletor/index.md#classes-not-in-skeletor).
+- **Aslan ships**: only `state.roles` + `state.call_stack`. Everything else fills in over later slices. See [aslan.md § Data structures](development/v1/caspian/aslan.md#data-structures-lua-tables).
+- **`current_role` / `current_chain` are NOT top-level fields** — they're the top-of-stack frame's `role` and `chain`. See [skeletor.md § Worked example](caspian/skeletor/index.md#worked-example).
+- **Working state stays OUT of skeletor** — intermediate expression results, args being marshaled, etc. live in Lua locals during dispatch. See [skeletor.md § V1.0 scope](caspian/skeletor/index.md#v1-0-scope).
 
 ## Truthiness
 
@@ -72,10 +72,10 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## Dispatch
 
-- **Every method call pushes a `method_call` frame**, regardless of role. Same-role and cross-role calls both push. Role is one field on the frame, not the trigger for frame creation. See [skeletor.md § Worked example](caspian/skeletor/skeletor.md#worked-example).
+- **Every method call pushes a `method_call` frame**, regardless of role. Same-role and cross-role calls both push. Role is one field on the frame, not the trigger for frame creation. See [skeletor.md § Worked example](caspian/skeletor/index.md#worked-example).
 - **Default is unicast**: first match wins, walk stops. Used by all normal method calls.
 - **Multicast for lifecycle hooks**: every match fires, in walk order. Used by `on_close` and (when they land) `after_set`, `after_delete`, etc.
-- **Dispatch kind is a function property**: `$foo.on_call = :first` (default) or `:all` (multicast). Convention is to put the property assignment on the line after the function definition. See [lucy.md § `on_call` property](caspian/lucy/lucy.md#on-call-property), [base-class-use.md § Unicast vs multicast](ideas/base-class-use.md#unicast-vs-multicast).
+- **Dispatch kind is a function property**: `$foo.on_call = :first` (default) or `:all` (multicast). Convention is to put the property assignment on the line after the function definition. See [lucy.md § `on_call` property](caspian/lucy/index.md#on-call-property), [base-class-use.md § Unicast vs multicast](ideas/base-class-use.md#unicast-vs-multicast).
 - **`on_call` is mutable**: metaprogrammers can flip it any time; role boundary handles safety. Engine can't cache dispatch identity aggressively.
 - **`on_close` specifically**: 2ms cap per hook, engine catches per hook, deepest-first across objects, top-of-stack first within one object. See [garbage-collection.md § Multicast across platters](caspian/garbage-collection.md#on-close-multicast).
 
@@ -87,7 +87,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## Roles
 
-- **Roles live in Skeletor** at `state.roles`. Program-visible execution state. See [aslan.md § Data structures](development/v1/aslan.md#data-structures-lua-tables).
+- **Roles live in Skeletor** at `state.roles`. Program-visible execution state. See [aslan.md § Data structures](development/v1/caspian/aslan.md#data-structures-lua-tables).
 - **Role on the object, not per-platter**: when an object has multiple platters, the owning role is on the object itself; the role that owns the object owns the whole stack.
 - **Chain is per-frame**, regardless of role. Every frame gets a fresh `{log: {}, misc: {}}` on push — two reserved sub-fields pre-allocated even when empty. See [jasmine/caspian.md](caspian/packages/jasmine/caspian.md), [nulls.md § Use cases](caspian/built-in-classes/nulls.md#use-cases).
 - **"Chain wipe at the role boundary" is a special case of per-frame chain isolation** — same-role and cross-role calls both push a fresh chain.
@@ -95,7 +95,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 ## Jails
 
 - **"Jail" is a concept, not a specific class.** A jail is any object that contains another object and exposes only a selected list of its methods. The pattern shows up often in Caspian.
-- **`puck.uno/jail` is the convenience class** for building one quickly via `$foo.object.jail(:method1, :method2)`. Useful when you don't want to write a custom wrapper. See [lucy.md § Jail](caspian/lucy/lucy.md#jail).
+- **`puck.uno/jail` is the convenience class** for building one quickly via `$foo.object.jail(:method1, :method2)`. Useful when you don't want to write a custom wrapper. See [lucy.md § Jail](caspian/lucy/index.md#jail).
 - **Directory jails** are a different specialization — a directory object that won't tell you where it lives on disk. Same conceptual pattern (restrict what's exposed), different concrete class. See [filesystem.md](caspian/built-in-classes/filesystem.md).
 - **Inline construction idiom**: `%['puck.uno/sequence'].new.object.jail('next', 'peek')` — instantiate-and-wrap on one line, raw object never gets a name.
 
@@ -115,7 +115,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## CaspianJ
 
-- **Canonical statement shape**: `[receiver, method, arg1?, arg2?, ...]`. Uniform across the language. Assignment is just `[{"var":"foo"}, "=", expr]`. See [caspianj.md § Core Principle](caspian/caspianj.md#core-principle), [decisions.md § Engine and runtime](development/v1/decisions.md#engine-and-runtime).
+- **Canonical statement shape**: `[receiver, method, arg1?, arg2?, ...]`. Uniform across the language. Assignment is just `[{"var":"foo"}, "=", expr]`. See [caspianj.md § Core Principle](caspian/caspianj.md#core-principle), [decisions.md § Engine and runtime](development/v1/caspian/decisions.md#engine-and-runtime).
 - **Literal expressions**: `{"value": <json>}` for primitives (class inferred from JSON type) or `{"value": <json>, "class": "uns/name"}` for non-primitives (class's materializer parses). See [caspianj.md § Literals](caspian/caspianj.md#literals).
 - **Program shape**: array of statements. `[[stmt1], [stmt2], ...]`. Outer array is always there even for a single statement.
 
@@ -145,7 +145,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 - **Method dispatch**: every method call pushes a `method_call` frame (regardless of role). For Aslan's fixture, dispatch is cross-role `user → stdlib → user`. TA.8 verifies the role transition is observed.
 - **Chain shape**: every frame's chain is `{ log = {}, misc = {} }` — two reserved sub-fields pre-allocated, even when empty.
 - **Value shape**: `{type, owning_role, payload}` Lua tables; `type` is the UNS-prefixed class name (e.g., `"puck.uno/string"`).
-- **No platter model, no references hash, no objects hash, no IDs, no truthiness platter** — these arrive in later slices. See [aslan.md](development/v1/aslan.md).
+- **No platter model, no references hash, no objects hash, no IDs, no truthiness platter** — these arrive in later slices. See [aslan.md](development/v1/caspian/aslan.md).
 
 ## Phrasing pet peeves
 
@@ -164,7 +164,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 ## Where to file things
 
 - **New bugs / design issues**: `gh issue create --repo mikosullivan/puck` (per `feedback_new_issues_to_github` memory). NOT `documentation/issues.md`.
-- **Design decisions log**: [decisions.md](development/v1/decisions.md) — one row per decision pointing to its canonical home.
+- **Design decisions log**: [decisions.md](development/v1/caspian/decisions.md) — one row per decision pointing to its canonical home.
 
 ## What this cheat sheet is NOT
 

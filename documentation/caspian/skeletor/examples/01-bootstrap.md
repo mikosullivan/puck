@@ -59,7 +59,7 @@ What to notice:
   role. Roles live in Skeletor as `state.roles`.
 - **No `classes` field in Skeletor.** Built-in classes (string, etc.)
   are loaded into engine-private state during bootstrap — see
-  [skeletor.md § Classes are NOT in Skeletor](../skeletor.md#classes-not-in-skeletor).
+  [skeletor.md § Classes are NOT in Skeletor](../index.md#classes-not-in-skeletor).
   The string class exists and is dispatched against, but it lives in
   the engine's private class registry, not in the snapshot.
 - **Empty `locals` and empty `chain`.** No bindings yet, no chain

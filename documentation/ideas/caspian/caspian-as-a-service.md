@@ -123,7 +123,7 @@ Service" as a placeholder, not a final name.
 - **Resource limits.** CPU time, memory, network, disk. The server
   needs guardrails to avoid abuse — likely an alarm + per-request
   timeout (per the `%utils.timeout` machinery in
-  [caspian-runtime.md](../caspian/lucy/lucy.md)).
+  [caspian-runtime.md](../caspian/lucy/index.md)).
 - **Statelessness vs sessions.** Each request a fresh engine, or
   long-lived sessions with persistent context (mikobase-backed)?
   Probably both, picked per endpoint.

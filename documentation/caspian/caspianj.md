@@ -728,7 +728,7 @@ The transpiler populates `line` on every emitted node. The runtime
 preserves the annotation as it dispatches and can expose the current
 executing position via runtime introspection — used by Jasmine for
 log frame `location` fields (see
-[jasmine.md](packages/jasmine/jasmine.md)), by error messages for "this error
+[jasmine.md](packages/jasmine/index.md)), by error messages for "this error
 happened at line N," etc.
 
 <a id="what-gets-annotated"></a>

@@ -700,7 +700,7 @@ local function add_head(html_tag, title)
             l:attr("href", "/client-assets/style.css")
         end)
         -- jqmin is the puck.uno site's default client-side framework
-        -- (see documentation/site/frameworks/jqmin/jqmin.md). Served
+        -- (see documentation/site/frameworks/jqmin/index.md). Served
         -- straight from its canonical source under /documentation/.
         h:tag("link", function(l)
             l:attr("rel",  "stylesheet")
@@ -902,6 +902,74 @@ function M.render_request(ctx)
     end)
 
     return "<!DOCTYPE html>\n" .. html:render()
+end
+
+--[[ {
+    "in":  {"ctx": "table { fs_path = string, url_path = string, title = string?, client_ip = string? }"},
+    "out": "string (full HTML page, ready to send over HTTP)",
+    "note": "Renders a directory listing for directories that have no index.md. Shows subdirs and md/asset files as a simple list, with the standard site chrome."
+} ]]
+function M.render_dir_listing(ctx)
+    local fs_path  = ctx.fs_path
+    local url_path = ctx.url_path  -- e.g. "/documentation/ideas/" — always trailing-slash
+    if url_path:sub(-1) ~= "/" then url_path = url_path .. "/" end
+
+    -- Use `ls -1aF` (same convention as nav.lua) so dirs get a trailing /.
+    local entries = {}
+    local handle = io.popen('ls -1aF "' .. fs_path .. '" 2>/dev/null')
+    if handle then
+        for entry in handle:lines() do
+            if entry ~= "./" and entry ~= "../" then
+                local is_dir = entry:sub(-1) == "/"
+                local name   = is_dir and entry:sub(1, -2)
+                                       or entry:gsub("[%*%@%|%=]$", "")
+                if name:sub(1, 1) ~= "." then
+                    entries[#entries + 1] = { name = name, is_dir = is_dir }
+                end
+            end
+        end
+        handle:close()
+    end
+    table.sort(entries, function(a, b)
+        if a.is_dir ~= b.is_dir then return a.is_dir end
+        return a.name < b.name
+    end)
+
+    -- Build the listing body as HTML.
+    local body = quick_builder.new("div")
+    body:tag("h1", function(h) h:text(ctx.title or url_path) end)
+
+    if #entries == 0 then
+        body:tag("p", function(p) p:text("(empty directory)") end)
+    else
+        body:tag("ul", function(ul)
+            ul:attr("class", "dir-listing")
+            for _, e in ipairs(entries) do
+                ul:tag("li", function(li)
+                    local label, href
+                    if e.is_dir then
+                        label = e.name .. "/"
+                        href  = url_path .. e.name .. "/"
+                    elseif e.name:sub(-3) == ".md" then
+                        label = e.name:sub(1, -4)
+                        href  = url_path .. label
+                    else
+                        label = e.name
+                        href  = url_path .. e.name
+                    end
+                    li:tag("a", function(a)
+                        a:attr("href", href)
+                        a:text(label)
+                    end)
+                end)
+            end
+        end)
+    end
+
+    return M.render_results_page({
+        title     = ctx.title or url_path,
+        body_html = body:render():gsub("^<div>", ""):gsub("</div>$", ""),
+    })
 end
 
 --[[ {

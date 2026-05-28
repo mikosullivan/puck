@@ -7,11 +7,11 @@
 	"key_concepts": ["html5_validator_service", "html_tidy", "uma_complement",
 		"service_not_embedded", "whatwg_spec_check"],
 	"status": "brainstorm",
-	"related": "markie may absorb this functionality — see [markie.md](../markie/markie.md)"
+	"related": "markie may absorb this functionality — see [markie.md](../markie/index.md)"
 }}
 ~~~
 
-> **Possible consolidation:** [Markie](../markie/markie.md) is a related
+> **Possible consolidation:** [Markie](../markie/index.md) is a related
 > puck.uno-hosted service idea that could grow to include HTML validation and
 > tidying. Worth deciding whether this remains a separate service or folds into
 > Markie before either is built.

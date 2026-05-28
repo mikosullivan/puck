@@ -63,15 +63,14 @@ local function on_path(current_md_path, fs_dir)
     return current_md_path:sub(1, #fs_dir + 1) == fs_dir .. "/"
 end
 
--- Return (filtered_files, has_index) where has_index is true iff `dir_name`
--- has a `<dir_name>.md` child (which is the dir's index page) and that
+-- Return (filtered_files, has_index) where has_index is true iff the dir
+-- has an `index.md` child (which is the dir's index page) and that
 -- file has been removed from the returned list.
 local function pull_index_file(files, dir_name)
-    local index_filename = dir_name .. ".md"
     local out = {}
     local has_index = false
     for _, f in ipairs(files) do
-        if f == index_filename then
+        if f == "index.md" then
             has_index = true
         else
             out[#out + 1] = f
@@ -137,7 +136,7 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
             local sub_fs       = fs_prefix .. "/" .. name
             local sub_url      = url_prefix .. "/" .. name
             local expanded     = on_path(current_md_path, sub_fs)
-            local index_fs     = sub_fs .. "/" .. name .. ".md"
+            local index_fs     = sub_fs .. "/index.md"
             local files, has_index = pull_index_file(subtree.files, name)
             local sub_tree     = { files = files, subdirs = subtree.subdirs }
             local is_current_index = has_index and current_md_path == index_fs

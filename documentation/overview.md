@@ -73,7 +73,7 @@ systems**. It gives every object in the ecoverse a global address (a
 UNS) and a uniform way to retrieve, query, and invoke methods on
 objects regardless of where they physically live.
 
-See [puck.md](puck/puck.md) for the full protocol spec.
+See [puck.md](puck/index.md) for the full protocol spec.
 
 <a id="features"></a>
 ### Features
@@ -128,7 +128,7 @@ is designed from the ground up to support running untrusted code.
 Designed to run inside a Mikobase engine, a browser, a CLI, or anywhere
 else without external runtime dependencies beyond the engine itself.
 
-See [caspian.md](caspian/caspian.md) for the language reference.
+See [caspian.md](caspian/index.md) for the language reference.
 
 <a id="features-1"></a>
 ### Features
@@ -138,12 +138,12 @@ access to what is explicitely sent to them as parameters.
 They do not have universal access to file systems or network
 connections. They can only use resources like that if you
 explicitly send them in as paramters. See [roles.md](caspian/roles.md).
-- **[Classes and inheritance](caspian/caspian.md#classes).**
+- **[Classes and inheritance](caspian/index.md#classes).**
   `class 'UNS' ... end` defines a class with fields, properties,
   methods, and helpers. Bare/anonymous classes
   (`class\n    inherits ... end`) for cases where identity comes
   from location rather than UNS.
-- **[Functions and closures](caspian/caspian.md#functions).**
+- **[Functions and closures](caspian/index.md#functions).**
   `function &name(args) ... end` for named functions; closures
   capture lexical scope; functions don't. Parameters carry metadata
   via a uniform hash form (`{lazy: true, classes: ['string']}`);
@@ -151,14 +151,14 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
 - **Single-threaded; forking opt-in.** One execution
   context per engine. The opt-in forking feature spawns isolated
   Caspian processes that coordinate through shared
-  [Mikobases](mikobase/mikobase.md) — no shared-memory primitives,
+  [Mikobases](mikobase/index.md) — no shared-memory primitives,
   no locks.
 - **Exception handling.** Standard `catch`/`raise` for user-territory
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception. See
-  [caspian-runtime.md](caspian/lucy/lucy.md).
+  [caspian-runtime.md](caspian/lucy/index.md).
 - **Built-in [HTTP middleware](caspian/packages/touchstone/) family.**
-  [Touchstone](caspian/packages/touchstone/touchstone.md) provides the
+  [Touchstone](caspian/packages/touchstone/index.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
   CSP). [Sammy](caspian/packages/touchstone/sammy.md) is a built-in
   framework on Touchstone for route-style serving.
@@ -184,7 +184,7 @@ locking, and a JSON query language. Both database-shaped use
 (long-lived service backing store) and worldlet-shaped use (packaged,
 portable snapshots) are first-class.
 
-See [mikobase.md](mikobase/mikobase.md) for the full spec.
+See [mikobase.md](mikobase/index.md) for the full spec.
 
 <a id="features-2"></a>
 ### Features

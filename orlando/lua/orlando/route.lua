@@ -1,16 +1,17 @@
 --[[
 {
   "module": "orlando.route",
-  "role": "Resolve an incoming URL path to either a markdown file (to be rendered), a static file (to be served verbatim), or a 301 redirect target. No caching, no I/O retries; one lookup per call.",
+  "role": "Resolve an incoming URL path to either a markdown file (to be rendered), a directory listing (for dirs without an index.md), a static file (to be served verbatim), or a 301 redirect target. No caching, no I/O retries; one lookup per call.",
   "exports": {
-    "resolve": "url_path -> { kind = 'markdown'|'static'|'redirect'|'not_found', path? = '...', location? = '...' }"
+    "resolve": "url_path -> { kind = 'markdown'|'dir_listing'|'static'|'redirect'|'not_found', path? = '...', location? = '...' }"
   },
   "rules": {
     "site_root":     "GET / serves orlando/static/index.html — a hand-editable landing page outside the docs tree",
     "doc_root":      "GET /documentation/ serves README.md (rendered with full site chrome)",
     "doc_prefix":    "all markdown lives under /documentation/...; URL /documentation/foo/bar maps to documentation/foo/bar.md",
-    "dir_index":     "if documentation/<path>/<lastpart>.md exists, /documentation/<path>/ serves that file as the dir index",
-    "redirect_dir":  "/documentation/foo/foo (the long form) and /documentation/foo (no slash, when foo is a dir-index) both 301 to /documentation/foo/",
+    "dir_index":     "if documentation/<path>/index.md exists, /documentation/<path>/ serves that file as the dir index",
+    "dir_listing":   "if /documentation/<path>/ has no index.md, returns kind='dir_listing' with the FS path so the page module can render a listing",
+    "redirect_dir":  "/documentation/foo (no slash, when foo is a directory) 301s to /documentation/foo/ — directories are always served with a trailing slash",
     "static_mounts": "/static/, /client-assets/, and /documentation/ are mount roots; first match wins",
     "safety":        "any path containing '..' or backslashes is rejected as not_found"
   }
@@ -45,6 +46,15 @@ local function file_exists(path)
     return err == nil
 end
 
+local function dir_exists(path)
+    -- A directory on Linux: io.open succeeds but the one-byte read errors.
+    local f = io.open(path, "rb")
+    if not f then return false end
+    local _, err = f:read(1)
+    f:close()
+    return err ~= nil
+end
+
 local function is_unsafe(path)
     if path:find("%.%.") then return true end
     if path:find("\\")    then return true end
@@ -59,27 +69,12 @@ local function strip_trailing_html(p)
     return (p:gsub("%.html$", ""))
 end
 
--- documentation/foo/bar exists as a dir AND has a bar.md inside it → that's
+-- documentation/foo/bar exists as a dir AND has an index.md inside it → that's
 -- the directory's index. Returns the .md path, or nil. Argument is
 -- relative to documentation/ (no leading or trailing slash).
 local function dir_index_for(rel)
-    local last = rel:match("([^/]+)$")
-    if not last then return nil end
-    local candidate = MARKDOWN_ROOT .. "/" .. rel .. "/" .. last .. ".md"
+    local candidate = MARKDOWN_ROOT .. "/" .. rel .. "/index.md"
     if file_exists(candidate) then return candidate end
-    return nil
-end
-
--- A markdown path "foo/bar/bar" where the filename equals the parent dir
--- has a canonical short form ("/documentation/foo/bar/"). Returns the
--- redirect target URL, or nil if the path is not in that shape.
-local function canonical_dir_url(rel)
-    local parent, filename = rel:match("^(.*)/([^/]+)$")
-    if not (parent and filename) then return nil end
-    local parent_last = parent:match("([^/]+)$") or parent
-    if parent_last == filename then
-        return DOC_URL_PREFIX_S .. parent .. "/"
-    end
     return nil
 end
 
@@ -130,7 +125,7 @@ function M.resolve(url_path)
 
         local md_base = strip_trailing_html(doc_rel)
 
-        -- Dir-index rule: trailing-slash form is canonical, no-slash 301s.
+        -- Dir-index rule (index.md): trailing-slash form is canonical, no-slash 301s.
         local index_path = dir_index_for(md_base)
         if index_path then
             if not had_trailing_slash then
@@ -139,14 +134,19 @@ function M.resolve(url_path)
             return { kind = "markdown", path = index_path }
         end
 
+        -- Directory exists but has no index.md → directory listing.
+        -- Same canonical-trailing-slash rule applies.
+        local dir_path = MARKDOWN_ROOT .. "/" .. md_base
+        if md_base ~= "" and dir_exists(dir_path) then
+            if not had_trailing_slash then
+                return { kind = "redirect", location = DOC_URL_PREFIX_S .. md_base .. "/" }
+            end
+            return { kind = "dir_listing", path = dir_path }
+        end
+
         -- Standard markdown lookup.
         local md_path = MARKDOWN_ROOT .. "/" .. md_base .. ".md"
         if file_exists(md_path) then
-            -- File whose name matches its parent dir → 301 to the dir form.
-            local redirect_to = canonical_dir_url(md_base)
-            if redirect_to then
-                return { kind = "redirect", location = redirect_to }
-            end
             return { kind = "markdown", path = md_path }
         end
     end

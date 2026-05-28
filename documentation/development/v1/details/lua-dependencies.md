@@ -40,9 +40,9 @@ without losing `randombytes_buf` or Ed25519 sign/verify.
 
 **What uses it.**
 
-- [`%utils.random`](../../../caspian/utils/utils.md) — secure random
+- [`%utils.random`](../../../caspian/utils/index.md) — secure random
   bytes and UUIDs (`randombytes_buf`).
-- Signed-request auth (per [V1 scope](../v1.md#v1-scope)) — Ed25519
+- Signed-request auth (per [V1 scope](../index.md#v1-scope)) — Ed25519
   client-side signing.
 
 The Puck blockchain is an external HTTP service and does its own

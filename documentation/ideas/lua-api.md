@@ -12,7 +12,7 @@
 		"per_program_dependency_declaration",
 		"third_party_binding_distribution"],
 	"running_example": "libsodium",
-	"design_log": "../development/v1/decisions.md"
+	"design_log": "../development/v1/caspian/decisions.md"
 }}
 ~~~
 
@@ -30,7 +30,7 @@ This page documents:
    that doesn't have to be torn up later.
 
 The decisions log for V1 design overall lives at
-[development/v1/decisions.md](../development/v1/decisions.md).
+[development/v1/decisions.md](../development/v1/caspian/decisions.md).
 
 ---
 
@@ -161,7 +161,7 @@ boundary; sodium runs in its own context; on return, the caller's
 context is restored.
 
 `%engine` is user-role-only by a dedicated check in the engine object
-itself; see [lucy.md § `%engine`](../caspian/lucy/lucy.md#engine). Its
+itself; see [lucy.md § `%engine`](../caspian/lucy/index.md#engine). Its
 children are normal objects. Capability is enforced at each method
 call by the role transition, not by the namespace.
 
@@ -200,7 +200,7 @@ soon as user code runs.
 
 `%engine` is user-role-only — a deliberate special-case check in
 the engine object refuses calls from any role other than `user`.
-See [lucy.md § `%engine`](../caspian/lucy/lucy.md#engine). Its
+See [lucy.md § `%engine`](../caspian/lucy/index.md#engine). Its
 children (`%engine.sodium` etc.) are normal objects; capability is
 enforced at each method call by the role transition, not by the
 namespace structure.

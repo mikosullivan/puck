@@ -163,7 +163,7 @@ an ordered **class stack** rather than a single-parent chain, and
 method/field resolution walks the stack top-down. The class declared
 in the record's `class` field is the base; additional classes can be
 added to the stack at runtime. See
-[caspian-runtime.md § Object Model](../lucy/lucy.md#object-model)
+[caspian-runtime.md § Object Model](../lucy/index.md#object-model)
 for the full picture — class stack, shadow class, shared bucket —
 and the mechanisms for adding classes to a stack.
 

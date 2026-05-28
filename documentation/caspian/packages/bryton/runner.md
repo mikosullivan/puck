@@ -10,7 +10,7 @@
 ~~~
 
 The Bryton runner walks a tree of test files, executes them, and
-assembles the results as a [Xeme](xeme/xeme.md) tree.
+assembles the results as a [Xeme](xeme/index.md) tree.
 
 This doc focuses on **test aggregation** and **dynamic directory
 configuration**. The runner's full behavior (concurrency,
@@ -656,7 +656,7 @@ orthogonal metadata for which subtrees to include.
 
 When a tagged node produces a Xeme, **its tags are included in
 the Xeme's `location.tags`** (see
-[Xeme § Location tags](xeme/xeme.md#location-tags)). Tags live in
+[Xeme § Location tags](xeme/index.md#location-tags)). Tags live in
 `location` because that's where they came from — declared at the
 source of the test, carried through to the result.
 
@@ -696,7 +696,7 @@ Settings **not** on the allow-list are directory-local:
 
 The `trim` setting (default `false`) tells consumers to **remove
 successful leaves** from the Xeme tree — see
-[Xeme § Trimming](xeme/xeme.md#trimming) for the rules.
+[Xeme § Trimming](xeme/index.md#trimming) for the rules.
 
 When `trim: true` propagates down the chain, two things happen:
 

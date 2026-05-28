@@ -159,11 +159,34 @@ local function respond(client, request_line)
     end
 
     if r.kind == "markdown" then
-        local title = r.path == "README.md"
-            and "Puck"
-            or (r.path:match("([^/]+)%.md$") or r.path)
+        local title
+        if r.path == "README.md" then
+            title = "Puck"
+        elseif r.path:match("/index%.md$") then
+            -- index.md gets titled by its containing directory.
+            title = r.path:match("([^/]+)/index%.md$") or r.path
+        else
+            title = r.path:match("([^/]+)%.md$") or r.path
+        end
         local html = page.render_request({
             md_path   = r.path,
+            title     = title,
+            client_ip = client_ip,
+        })
+        client:send(build_response("200 OK", html, content_type.for_ext("html")))
+        return
+    end
+
+    if r.kind == "dir_listing" then
+        -- r.path is the FS dir (e.g. "documentation/ideas"); the URL is the
+        -- requested path with a guaranteed trailing slash (route enforces that
+        -- via the redirect rule).
+        local url_path = path
+        if url_path:sub(-1) ~= "/" then url_path = url_path .. "/" end
+        local title = r.path:match("([^/]+)$") or r.path
+        local html = page.render_dir_listing({
+            fs_path   = r.path,
+            url_path  = url_path,
             title     = title,
             client_ip = client_ip,
         })

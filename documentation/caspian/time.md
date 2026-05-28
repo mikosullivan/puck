@@ -345,7 +345,7 @@ so they're consistent as more methods are added:
 ### Helpers for grouped methods
 
 `.month`, `.year`, `.day` aren't plain sub-objects — they're
-**[helpers](lucy/lucy.md#helpers)**, the established Caspian mechanism for
+**[helpers](lucy/index.md#helpers)**, the established Caspian mechanism for
 namespacing methods on an object without polluting the main method namespace.
 So `$date.month.short_name` calls a method on the `month` helper, which
 carries a `@reference` back to `$date`.

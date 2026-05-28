@@ -137,7 +137,7 @@ What to notice:
   in practice during the handler's lifetime.
 - **The class definition itself isn't in the snapshot.** Class
   registries are engine-private state, not part of Skeletor — see
-  [skeletor.md § Classes are NOT in Skeletor](../skeletor.md#classes-not-in-skeletor).
+  [skeletor.md § Classes are NOT in Skeletor](../index.md#classes-not-in-skeletor).
   `myapp.com/connection` was defined on lines 1-5; the dispatcher
   knows about it because the engine's registry knows about it, and
   knows where to find the `on_close` handler when an instance

@@ -21,7 +21,7 @@ That's the whole user-facing surface. Any function can write to
 When the function returns, the entry is flushed (if a framework
 configured a destination) or nested into the caller's entry as a
 child frame. The Jasmine file format and storage layer live in
-[jasmine.md](jasmine.md).
+[jasmine.md](index.md).
 
 ---
 

@@ -19,7 +19,7 @@ package.path = "./lib/lua/?.lua;./lib/lua/?/init.lua;"
             .. package.path
 
 -- Phase 0 sanity tests — must pass before any engine tests have meaning
--- (T0.1-T0.6 per documentation/development/development.md Pike section)
+-- (T0.1-T0.6 per documentation/development/index.md Pike section)
 require("test_lua_version")
 require("test_lua_hello")
 require("test_package_path")
@@ -77,6 +77,32 @@ require("corin.test_role_transition")
 require("corin.test_integration")
 require("corin.test_regression")
 require("corin.test_puts_no_sink")
+
+-- Digory: hashes (literal materialization, method_missing key access)
+-- Phase 0
+require("digory.test_source_baseline")
+-- Phase 1
+require("digory.test_transpiler_canonical")
+require("digory.test_bootstrap_hash_class")
+require("digory.test_insertion_order")
+require("digory.test_key_access")
+require("digory.test_role_transition")
+require("digory.test_integration")
+require("digory.test_regression")
+
+-- Edmund: JSON serialization (.to_json on every primitive class)
+-- Phase 0
+require("edmund.test_source_baseline")
+-- Phase 1
+require("edmund.test_transpiler_canonical")
+require("edmund.test_bootstrap_primitives")
+require("edmund.test_materialize_primitives")
+require("edmund.test_to_json_string")
+require("edmund.test_insertion_order")
+require("edmund.test_round_trip")
+require("edmund.test_integration")
+require("edmund.test_regression")
+require("edmund.test_null_distinctness")
 
 local runner = require("support.runner")
 local ok = runner.report()

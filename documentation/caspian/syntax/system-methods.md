@@ -24,8 +24,8 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 
 | Method | Description |
 |--------|-------------|
-| `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. **Wiped at role boundaries** (see [roles.md](../roles.md)). Use `%chain.isolate do...end` for a voluntary inline wipe plus fresh ephemeral role. Engine-installed methods on `%chain` include flag-raising (`%chain.warn`, `%chain.throw`, `%chain.error`, `%chain.exit`, `%chain.abort` — see [caspian-runtime.md § Exceptions](../lucy/lucy.md#exceptions-and-warnings)) and logging (`%chain.log` — see [jasmine.md](../packages/jasmine/jasmine.md)). |
-| `%engine` | Returns the engine object — the gateway to host-injected resources (standard slots like `%stdout` plus arbitrary host-defined entries via `%engine['name']`). **Only the `user` role can call methods on the engine object** — a deliberate special case, enforced by a dedicated check in the engine object itself rather than via the general role-access mechanism. See [lucy.md § `%engine`](../lucy/lucy.md#engine) for the full rationale. |
+| `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. **Wiped at role boundaries** (see [roles.md](../roles.md)). Use `%chain.isolate do...end` for a voluntary inline wipe plus fresh ephemeral role. Engine-installed methods on `%chain` include flag-raising (`%chain.warn`, `%chain.throw`, `%chain.error`, `%chain.exit`, `%chain.abort` — see [caspian-runtime.md § Exceptions](../lucy/index.md#exceptions-and-warnings)) and logging (`%chain.log` — see [jasmine.md](../packages/jasmine/index.md)). |
+| `%engine` | Returns the engine object — the gateway to host-injected resources (standard slots like `%stdout` plus arbitrary host-defined entries via `%engine['name']`). **Only the `user` role can call methods on the engine object** — a deliberate special case, enforced by a dedicated check in the engine object itself rather than via the general role-access mechanism. See [lucy.md § `%engine`](../lucy/index.md#engine) for the full rationale. |
 | `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
 | `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
 | `%puck` | Returns the current puck object (scoped via `%chain`). The puck resolves UNS addresses through its configured getters. `%puck['foo.com/bar']` is a shorthand for the puck's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no puck is in the chain. See [puck.md](../puck.md) for the full puck-object model. |
@@ -283,7 +283,7 @@ The `?` form is sugar for what would otherwise be `catch(...)`
 boilerplate around `%utils.timeout`. It compresses the common
 pattern "try for N seconds; if it works great, otherwise move on"
 into the method name itself. This follows the language-wide
-[`?` suffix convention](../caspian.md#the-suffix):
+[`?` suffix convention](../index.md#the-suffix):
 falsey on the happy path, truthy (the flag itself) on the failure
 path.
 
@@ -360,7 +360,7 @@ end
 ```
 
 The `?` suffix follows the language-wide
-[`?` suffix convention](../caspian.md#the-suffix):
+[`?` suffix convention](../index.md#the-suffix):
 truthy on success, falsey on failure, never throws on the
 failure path. Use `parse?` when bad input is expected (parsing
 user-supplied query strings, optional config blobs, etc.); use

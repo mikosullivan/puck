@@ -86,11 +86,14 @@ runner.test("array literal", function()
     assert.equal(n.array[3].value, 3)
 end)
 
-runner.test("hash literal bare keys", function()
+runner.test("hash literal bare keys (canonical array-of-pairs shape)", function()
     local n = tx("{name: 'Picard', rank: 'Captain'}")
     assert.not_nil(n.hash)
-    assert.equal(n.hash.name.value, "Picard")
-    assert.equal(n.hash.rank.value, "Captain")
+    assert.equal(#n.hash, 2, "hash should have 2 pairs")
+    assert.equal(n.hash[1][1], "name")
+    assert.equal(n.hash[1][2].value, "Picard")
+    assert.equal(n.hash[2][1], "rank")
+    assert.equal(n.hash[2][2].value, "Captain")
 end)
 
 -- Operators (method calls) -----------------------------------------------

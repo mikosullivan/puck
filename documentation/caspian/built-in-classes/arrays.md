@@ -353,7 +353,7 @@ One method, one return shape, no nil-on-no-match special case.
 
 Picks one or more elements uniformly at random from the array. Uses
 the same cryptographically strong source as
-[`%utils.random`](../utils/utils.md#utilsrandom) — libsodium's
+[`%utils.random`](../utils/index.md#utilsrandom) — libsodium's
 unbiased range function, no modulo bias.
 
 ```

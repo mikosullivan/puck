@@ -16,8 +16,8 @@ unmatched requests fall through to a catch-all.
 Named after **Sammy Davis Jr.**; the route-handler design is inspired
 by [**Ruby Sinatra**](https://sinatrarb.com/).
 
-Built on [Touchstone](touchstone.md), which provides content-type
-defaults, [Jasmine](../jasmine/jasmine.md) integration, and shared
+Built on [Touchstone](index.md), which provides content-type
+defaults, [Jasmine](../jasmine/index.md) integration, and shared
 HTTP plumbing. Sammy
 adds the route-handler layer and its own approach to static file
 serving on top.
@@ -72,7 +72,7 @@ What each piece does:
   response constructor. The handler returns the response object;
   Sammy writes it to the wire. Convenience helpers
   (`response.html(...)`, `response.json(...)`, etc.) live in
-  [Touchstone § The response object](touchstone.md#the-response-object).
+  [Touchstone § The response object](index.md#the-response-object).
 - **`{play}` in `/shakespeare/{play}/`** is a named single-segment
   placeholder. A request to `GET /shakespeare/hamlet/` matches, and
   `$request.steps['play']` is `'hamlet'`. Full placeholder + splat
@@ -214,7 +214,7 @@ If the placeholder route had been registered first, it would
 have matched `/user/edit` (capturing `edit` as the id) — and
 the literal route would never be reached. This is the same
 first-response-wins rule as the
-[handler chain](touchstone.md#the-handler-chain) itself.
+[handler chain](index.md#the-handler-chain) itself.
 
 <a id="method-agnostic-registration"></a>
 ### Method-agnostic registration
@@ -343,7 +343,7 @@ supported).
 
 **It's a handler, not a special dispatch path.** At construction,
 Sammy appends a final-position OPTIONS-matching handler to the
-[handler chain](touchstone.md#the-handler-chain). The chain's
+[handler chain](index.md#the-handler-chain). The chain's
 normal first-match-wins rule applies:
 explicit `$server.options(path) do ... end` registrations live
 earlier in the chain and win. This is the path for CORS
@@ -427,19 +427,19 @@ path.
 ## Request, transaction, sessions, body buffering
 
 All of these are universal HTTP infrastructure and live in
-[Touchstone](touchstone.md):
+[Touchstone](index.md):
 
-- The [`$request` object](touchstone.md#the-request-object) —
+- The [`$request` object](index.md#the-request-object) —
   `steps` (positional and nickname), `params`, `param_array`,
   `param_hash`, `body`. Steps nicknames are populated by
   Touchstone's pattern matcher before the request is locked, so
   Sammy path-selector closures see fully-formed steps
   including `{name}` captures.
-- The [`$transaction` object](touchstone.md#the-transaction-object) —
+- The [`$transaction` object](index.md#the-transaction-object) —
   `request`, `response`, `session`.
-- [Sessions](touchstone.md#sessions) — `$transaction.session`
+- [Sessions](index.md#sessions) — `$transaction.session`
   hash, domain configuration, default cookie attributes.
-- [Body buffering](touchstone.md#body-buffering) — memory and
+- [Body buffering](index.md#body-buffering) — memory and
   FSO modes, `puck.uno/touchstone/error/cannot_store_files`.
 
 Sammy inherits these unchanged.
@@ -471,7 +471,7 @@ filesystem path, an in-memory tree, a remote source, a tarball,
 anything that implements the directory interface. Sammy just
 asks the directory for files by name and serves whatever comes
 back, applying the content-type factory defaults from
-[Touchstone](touchstone.md).
+[Touchstone](index.md).
 
 Multiple `static` registrations are fine; they layer in
 registration order.
@@ -518,7 +518,7 @@ won't be in Version 1.0.
 The handler chain, three-stage dispatch (`before` / `process` /
 `after`), the `$transaction` object, per-handler state, uncaught
 exception handling, and short-circuit semantics all live in
-[Touchstone](touchstone.md#the-handler-chain). Sammy inherits
+[Touchstone](index.md#the-handler-chain). Sammy inherits
 the full machinery; this section just notes the Sammy-specific
 details on top.
 
@@ -539,19 +539,19 @@ Registration order is dispatch order.
 
 **Catch-all.** Sammy's `$server.run() do ... end` catch-all is
 the Sammy-specific fallback when no handler returned a response.
-See [The three stages](touchstone.md#the-three-stages) in
+See [The three stages](index.md#the-three-stages) in
 Touchstone for how that slots into the dispatch flow.
 
 <a id="csrf-protection-and-csp"></a>
 ## CSRF Protection and CSP
 
 Both are universal HTTP security features and live in
-[Touchstone](touchstone.md):
+[Touchstone](index.md):
 
-- [CSRF Protection](touchstone.md#csrf-protection) — opt-in via
+- [CSRF Protection](index.md#csrf-protection) — opt-in via
   `$server.csrf_guard = true`. Sammy exposes the per-route
   `csrf: false` opt-out as a path-selector kwarg.
-- [Content Security Policy (CSP)](touchstone.md#content-security-policy) —
+- [Content Security Policy (CSP)](index.md#content-security-policy) —
   per-response `$response.csp` hash.
 
 Sammy inherits both unchanged.
@@ -584,7 +584,7 @@ full spec section above) or moved to add-on territory.
 ### Comfort middleware
 
 - **Cookies API / sessions.** **Promoted to scope** — see
-  [`$transaction.session`](touchstone.md#sessions). Basic JSON-hash cookie
+  [`$transaction.session`](index.md#sessions). Basic JSON-hash cookie
   with safe defaults; light enough to ship in core. Richer
   session semantics (server-side store, multiple cookies,
   persistent expiry) stay add-on.
@@ -651,7 +651,7 @@ full spec section above) or moved to add-on territory.
 <a id="observability"></a>
 ### Observability
 
-- **A logger interface separate from [Jasmine](../jasmine/jasmine.md).**
+- **A logger interface separate from [Jasmine](../jasmine/index.md).**
   Jasmine is the logging surface. Don't expose a second one.
 - **Metrics / Prometheus endpoints.** Add-on territory.
 
@@ -659,7 +659,7 @@ full spec section above) or moved to add-on territory.
 ### Testing
 
 - **A built-in test client / mock request builder.**
-  [Bryton](../bryton/bryton.md) plus a real loopback socket
+  [Bryton](../bryton/index.md) plus a real loopback socket
   is the path. No test-only mode inside the server.
 
 <a id="streaming-async"></a>
@@ -718,7 +718,7 @@ header conventions (raw HTTP names, snake_case aliases for
 `content_type` and `location`, multi-value flat arrays), the
 duplicate-cookie-name warning, and the redirect machinery
 (`response.redirect.permanent`, etc.) all live in
-[Touchstone § The response object](touchstone.md#the-response-object).
+[Touchstone § The response object](index.md#the-response-object).
 Sammy inherits them unchanged.
 
 ---

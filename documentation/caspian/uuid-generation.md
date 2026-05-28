@@ -198,5 +198,5 @@ UUIDs in memory** (rejected on security grounds).
 
 - [sequence.md](built-in-classes/sequence.md) — the global sequencer for object IDs and srcs keys (NOT platter IDs; those are UUIDs).
 - [base-class-use.md § Proposed shape](../ideas/base-class-use.md#proposed-shape) — platter IDs are UUIDs, with the rationale.
-- [utils.md § `%utils.random.uuid`](utils/utils.md#utilsrandomuuid) — the user-facing UUID API.
+- [utils.md § `%utils.random.uuid`](utils/index.md#utilsrandomuuid) — the user-facing UUID API.
 - [#354](https://github.com/mikosullivan/puck/issues/354) — rejection of UUID caching on security grounds.

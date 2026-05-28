@@ -22,7 +22,7 @@ This doc defines the **Puck wire protocol expressed in JSON** — the
 message structures and behaviors that a Puck server and client
 agree on when speaking JSON over HTTP.
 
-The conceptual overview is in [puck.md](puck.md); a Python client
+The conceptual overview is in [puck.md](index.md); a Python client
 sketch is in [python.md](python.md); this doc is the formal spec.
 
 JSON is the primary wire format. Puck can also be expressed in HTML.
@@ -176,7 +176,7 @@ re-parsing the URL, and for logs and replay.
 The response body is the method's return value, encoded as JSON
 with no envelope. The HTTP status code carries success/failure
 (`200 OK` for normal returns, error codes for the
-[error catalog](puck.md) — TBD here).
+[error catalog](index.md) — TBD here).
 
 For a **primitive return**, the body is just the primitive. For
 example, the response from a hypothetical `hq.name` (returning a

@@ -12,11 +12,11 @@
 ~~~
 
 > **Status: this brainstorm has been folded into the official
-> [documentation/puck.md](../puck/puck.md).** The puck-object model is
+> [documentation/puck.md](../puck/index.md).** The puck-object model is
 > now part of the canonical Puck documentation. This file is preserved
 > as a historical record of how the design developed.
 >
-> For the current spec, read [documentation/puck.md](../puck/puck.md)
+> For the current spec, read [documentation/puck.md](../puck/index.md)
 > (specifically the "The Puck Object" section and below).
 >
 > **Update — the version window has since moved off the puck object.**
@@ -31,7 +31,7 @@
 **(Original status:)** brainstorming. Captures notes from the role-model
 discussion about what a puck *is* as an object, distinct from the
 `%puck` system method that returns one. Once the model stabilizes,
-material here may be folded into [puck.md](../puck/puck.md).
+material here may be folded into [puck.md](../puck/index.md).
 
 ---
 

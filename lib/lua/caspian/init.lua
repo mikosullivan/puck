@@ -19,7 +19,7 @@
     "caspian.engine.run":           "execute a tree staged on engine.caspianj"
   },
   "depends_on": ["caspian.lexer", "caspian.parser", "caspian.json"],
-  "docs": ["documentation/caspian/caspian.md", "documentation/caspian/caspianj.md"],
+  "docs": ["documentation/caspian/index.md", "documentation/caspian/caspianj.md"],
   "tests": "tests/caspian/run.lua"
 }
 ]]

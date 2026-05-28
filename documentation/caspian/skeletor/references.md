@@ -282,14 +282,14 @@ refcounting benefit.
 ## Snapshot serialization
 
 When the engine snapshots Skeletor (post-V1.0 feature; see
-[skeletor.md § V1.0 scope](skeletor.md#v1-0-scope)), the
+[skeletor.md § V1.0 scope](index.md#v1-0-scope)), the
 `references` hash serializes verbatim — just IDs on both sides,
 trivially representable in JSON.
 
 The actual reference objects (instances of
 `puck.uno/variable` etc.) and the objects they point at serialize
 via their classes' `to_json` methods. This is where
-[redaction of sensitive fields](skeletor.md#out-of-scope-snapshot-revive-hooks)
+[redaction of sensitive fields](index.md#out-of-scope-snapshot-revive-hooks)
 happens.
 
 The `references` hash is the **structure**; the objects' `to_json`
@@ -313,7 +313,7 @@ outputs are the **content**.
 <a id="related-docs"></a>
 ## Related docs
 
-- [skeletor.md](skeletor.md) — the overall Skeletor state hash, of
+- [skeletor.md](index.md) — the overall Skeletor state hash, of
   which `references` is a part.
 - [garbage-collection.md](../garbage-collection.md) — the GC model
   the `references` hash makes tractable.

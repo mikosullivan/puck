@@ -94,7 +94,7 @@ What to notice:
   libraries.
 - **The library's class is not visible in the snapshot.** Class
   registries are engine-private state, not part of Skeletor — see
-  [skeletor.md § Classes are NOT in Skeletor](../../skeletor/skeletor.md#classes-not-in-skeletor).
+  [skeletor.md § Classes are NOT in Skeletor](../../skeletor/index.md#classes-not-in-skeletor).
   `Renderer` was registered when `%puck['markdown.uno/render']` ran
   at top level on line 1; the dispatcher knows about it because the
   engine's class registry knows about it, not because the snapshot

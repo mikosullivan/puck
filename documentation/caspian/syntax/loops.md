@@ -25,7 +25,7 @@ Caspian has three ways to loop:
 Any of them can be named with `as $loop` to bind a loop object that
 exposes iteration state and control methods. The general `as` keyword
 mechanism (which applies to any block, not just loops) is covered in
-[caspian.md § The `as` Keyword](../caspian.md#the-as-keyword);
+[caspian.md § The `as` Keyword](../index.md#the-as-keyword);
 this doc focuses on the loop-specific use.
 
 ---
@@ -67,7 +67,7 @@ end
 
 No `do` keyword between the condition and the body — control
 structures own their body directly. See
-[caspian.md § When `do` is Required](../caspian.md#when-do-is-required)
+[caspian.md § When `do` is Required](../index.md#when-do-is-required)
 for the rule.
 
 <a id="each"></a>
@@ -183,7 +183,7 @@ This placement is the general rule: `as` modifies the **block**, not the
 receiver. In the loop case, the caller (the loop machinery) hands you a
 rich loop object; in a plain method call, the caller hands you a thin
 closure-style handle. Same syntax, different richness — see
-[caspian.md § The `as` Keyword](../caspian.md#the-as-keyword) for the
+[caspian.md § The `as` Keyword](../index.md#the-as-keyword) for the
 unified rule.
 
 <a id="loop-object-methods"></a>

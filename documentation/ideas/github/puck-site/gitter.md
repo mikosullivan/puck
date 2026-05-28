@@ -19,7 +19,7 @@ The broader public-service ambition — `gitter.puck.uno` rendering any public G
 
 GitHub's own browser is fine but generic. Docs that follow conventions — heavy markdown, nested directory trees, vibecode-style metadata, Caspian source — deserve a viewer tuned for those conventions. [Orlando](../../../misc/orlando.md) already does this for puck.uno; Gitter is the production Caspian-native replacement for Orlando's role on the site, plus the seed of a public service later.
 
-It's also the delivery vehicle for Puck tooling that can't live inside github.com (see [github.md](../github.md)): vibecode-aware rendering, UNS link resolution, Caspian syntax highlighting, and — post-V1 — normalized diffs and in-place code formatting.
+It's also the delivery vehicle for Puck tooling that can't live inside github.com (see [github.md](../index.md)): vibecode-aware rendering, UNS link resolution, Caspian syntax highlighting, and — post-V1 — normalized diffs and in-place code formatting.
 
 ## Relationship to Orlando
 
@@ -89,7 +89,7 @@ The viewer can toggle normalization off per view to see the raw diff as a sanity
 
 ### Per-block code formatting
 
-When rendering markdown that contains fenced code blocks, each block in a language Gitter has a formatter for gets an inline "format" toggle. Clicking it reformats that block per the viewer's [style.json](../../../ecoverse/formatting/formatting.md).
+When rendering markdown that contains fenced code blocks, each block in a language Gitter has a formatter for gets an inline "format" toggle. Clicking it reformats that block per the viewer's [style.json](../../../ecoverse/formatting/index.md).
 
 - **Off by default.** Author-faithful display is the baseline.
 - **Per-language sticky.** The preference is scoped per language: turning on the toggle on a JSON block flips formatting on for every JSON block on every page (and stays on across sessions until flipped off). Caspian and Python and the rest each have their own independent toggle state.
@@ -104,7 +104,7 @@ Gitter offers per-block formatting for nearly every major language. The implemen
 - **Native (parse-and-rebuild)** — languages we own the formatter for. Caspian uses the canonical Caspian→CJS transpiler followed by re-rendering (see [issue #56](https://github.com/mikosullivan/puck/issues/56)). JSON uses direct parse-and-emit. We write and maintain these implementations.
 - **Off-the-shelf wrapping** — everything else. Gitter wraps mature community formatters (Prettier for JS / TS / HTML / CSS / Markdown, Black for Python, gofmt for Go, rustfmt for Rust, etc.) and feeds them the relevant settings from the viewer's `style.json` as far as each formatter supports them. We don't write our own parsers for these languages — we just integrate.
 
-The format button appears for any language Gitter knows how to format, native or wrapped. The rare languages with no community formatter (obscure DSLs, ad-hoc scripts) fall back to syntax-highlight-only; languages Gitter can't even highlight render as plain text per the [parse-fail rule](../../../ecoverse/formatting/formatting.md#parse-fail-behavior).
+The format button appears for any language Gitter knows how to format, native or wrapped. The rare languages with no community formatter (obscure DSLs, ad-hoc scripts) fall back to syntax-highlight-only; languages Gitter can't even highlight render as plain text per the [parse-fail rule](../../../ecoverse/formatting/index.md#parse-fail-behavior).
 
 ### `gitpage` as a Puck object class
 

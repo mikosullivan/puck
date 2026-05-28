@@ -5,7 +5,7 @@
 	"doc": "site-frameworks-bootstrap",
 	"role": "pros-and-cons report on Bootstrap as the primary client-side framework for the puck.uno site",
 	"status": "report written, decision pending",
-	"parent": "frameworks.md"
+	"parent": "index.md"
 }}
 ~~~
 

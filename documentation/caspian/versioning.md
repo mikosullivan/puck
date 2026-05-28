@@ -162,7 +162,7 @@ This is the information a security responder or audit log needs to investigate.
 
 For a lookup `%puck['foo.com/bar']` under an active timespan `[L, U]`:
 
-1. The puck walks its getters (per [puck.md](../puck/puck.md) — Lookup
+1. The puck walks its getters (per [puck.md](../puck/index.md) — Lookup
    Mechanism), each consulting its faucets (cache first, then remote
    source typically). Each getter reports the **latest version of
    `foo.com/bar` within `[L, U]`** that it has.

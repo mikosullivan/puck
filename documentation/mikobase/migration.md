@@ -65,10 +65,10 @@ See [class-definition.md](class-definition.md).
 
 | File | Status |
 |---|---|
-| [worldlets/worldlets.md](worldlets/worldlets.md) | Migrated — records section, validation rules, minimal example, complete example |
-| [AI2AI/AI2AI.md](AI2AI/AI2AI.md) | Migrated — records example |
+| [worldlets/index.md](worldlets/index.md) | Migrated — records section, validation rules, minimal example, complete example |
+| [AI2AI/index.md](AI2AI/index.md) | Migrated — records example |
 | [q0.md](q0.md) | No change needed — `create` action keeps its single-`class` API shorthand; engine wraps in a platter automatically |
-| [mikobase.md](mikobase.md) | No change needed — its `{class: ...}` references were field-type annotations, not record-shape |
+| [mikobase.md](index.md) | No change needed — its `{class: ...}` references were field-type annotations, not record-shape |
 | [class-definition.md](class-definition.md) | No change needed — already migrated earlier |
 | [requirements.md](requirements.md) | No change needed — already migrated earlier |
 | [sqlite-schema.md](sqlite-schema.md), [sqlite.sql](sqlite.sql) | No change needed — the `class` column was dropped earlier in favor of a `classes` JSON column |

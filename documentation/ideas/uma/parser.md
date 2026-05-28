@@ -15,7 +15,7 @@ tree it can manipulate. Goal: avoid bundling a C HTML parser
 (gumbo or similar) at the cost of accepting "well-formed-ish"
 HTML rather than the full HTML5 quirky-recovery spec.
 
-See [uma.md](uma.md) for the broader Uma builder / DOM helper
+See [uma.md](index.md) for the broader Uma builder / DOM helper
 this parser feeds.
 
 ---

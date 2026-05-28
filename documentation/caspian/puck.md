@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "caspian-puck",
-	"role": "spec for the Caspian-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote function; the protocol itself is documented language-agnostic in puck/puck.md",
+	"role": "spec for the Caspian-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote function; the protocol itself is documented language-agnostic in puck/index.md",
 	"key_concepts": ["%puck_system_method", "puck_bracket_lookup_shorthand",
 		"%puck.call_remote_invocation", "remote_function_sugar",
 		"puck_scoping_via_%chain"],
@@ -11,7 +11,7 @@
 }}
 ~~~
 
-This doc covers how Caspian code talks to the [Puck protocol](../puck/puck.md).
+This doc covers how Caspian code talks to the [Puck protocol](../puck/index.md).
 The protocol itself is language-agnostic; this doc is about the Caspian
 syntax and system methods that wrap it.
 
@@ -29,7 +29,7 @@ syntax and system methods that wrap it.
 
 `%puck` is a Caspian system method that returns a **Puck client
 object** — the resolver for UNS lookups. See
-[puck/puck.md](../puck/puck.md) for what Puck is and how it works;
+[puck/index.md](../puck/index.md) for what Puck is and how it works;
 this section covers the Caspian sugar around it.
 
 `%puck[UNS]` is shorthand for the puck's `lookup` method. The
@@ -83,7 +83,7 @@ Three arguments:
 call — the same chain the calling function is running under.
 
 For the protocol-level remote-invocation model (request shape, response
-shape, error catalog), see [puck/puck.md](../puck/puck.md).
+shape, error catalog), see [puck/index.md](../puck/index.md).
 
 <a id="return-and-error-handling-in-caspian"></a>
 ### Return and error handling in Caspian
@@ -104,7 +104,7 @@ end
 
 If the remote method itself raises, that exception propagates to the
 caller as if thrown locally, with the remote stack trace preserved (per
-[caspian-runtime.md § Exceptions and Warnings](lucy/lucy.md#exceptions-and-warnings)).
+[caspian-runtime.md § Exceptions and Warnings](lucy/index.md#exceptions-and-warnings)).
 
 ---
 

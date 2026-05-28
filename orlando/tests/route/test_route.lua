@@ -55,22 +55,20 @@ runner.test("markdown: .html suffix is stripped", function()
     assert_.equal(r.path, "documentation/overview.md")
 end)
 
-runner.test("redirect: /documentation/caspian/caspian collapses to /documentation/caspian/", function()
+runner.test("legacy /documentation/caspian/caspian path is 404 (caspian.md inside caspian/ no longer exists)", function()
     local r = route.resolve("/documentation/caspian/caspian")
-    assert_.equal(r.kind, "redirect")
-    assert_.equal(r.location, "/documentation/caspian/")
+    assert_.equal(r.kind, "not_found")
 end)
 
-runner.test("redirect: .html variant also collapses", function()
+runner.test("legacy .html variant is 404", function()
     local r = route.resolve("/documentation/caspian/caspian.html")
-    assert_.equal(r.kind, "redirect")
-    assert_.equal(r.location, "/documentation/caspian/")
+    assert_.equal(r.kind, "not_found")
 end)
 
-runner.test("dir_index: /documentation/caspian/ serves documentation/caspian/caspian.md", function()
+runner.test("dir_index: /documentation/caspian/ serves documentation/caspian/index.md", function()
     local r = route.resolve("/documentation/caspian/")
     assert_.equal(r.kind, "markdown")
-    assert_.equal(r.path, "documentation/caspian/caspian.md")
+    assert_.equal(r.path, "documentation/caspian/index.md")
 end)
 
 runner.test("dir_index: /documentation/caspian (no slash) 301s to /documentation/caspian/", function()
@@ -88,20 +86,27 @@ end)
 runner.test("dir_index: /documentation/caspian/utils/ serves utils.md", function()
     local r = route.resolve("/documentation/caspian/utils/")
     assert_.equal(r.kind, "markdown")
-    assert_.equal(r.path, "documentation/caspian/utils/utils.md")
+    assert_.equal(r.path, "documentation/caspian/utils/index.md")
 end)
 
 runner.test("dir_index: deeply nested /documentation/caspian/packages/jasmine/ serves jasmine.md", function()
     local r = route.resolve("/documentation/caspian/packages/jasmine/")
     assert_.equal(r.kind, "markdown")
-    assert_.equal(r.path, "documentation/caspian/packages/jasmine/jasmine.md")
+    assert_.equal(r.path, "documentation/caspian/packages/jasmine/index.md")
 end)
 
-runner.test("dir_index: directory without same-named index is 404", function()
-    -- /documentation/caspian/examples/ has no examples.md (it only holds
-    -- .casp files served as static assets).
+runner.test("dir_listing: directory without index.md returns a directory listing", function()
+    -- /documentation/caspian/examples/ has no index.md (it only holds
+    -- .casp files served as static assets); Orlando renders a listing.
     local r = route.resolve("/documentation/caspian/examples/")
-    assert_.equal(r.kind, "not_found")
+    assert_.equal(r.kind, "dir_listing")
+    assert_.equal(r.path, "documentation/caspian/examples")
+end)
+
+runner.test("dir_listing: no-slash form 301s to trailing-slash", function()
+    local r = route.resolve("/documentation/caspian/examples")
+    assert_.equal(r.kind, "redirect")
+    assert_.equal(r.location, "/documentation/caspian/examples/")
 end)
 
 runner.test("static: /static/* resolves under orlando/static/", function()

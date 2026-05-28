@@ -8,14 +8,14 @@
 		"virtual_getters_and_setters_via_name_and_name_equals_dispatch",
 		"loop_dsl_with_control_and_structural_bwcs", "class_def_is_a_dsl",
 		"cheat_clause_when_dsl_is_impractical"],
-	"related": ["lucy.md § DSL Receivers", "caspian.md § Classes",
+	"related": ["lucy.md § DSL Receivers", "index.md § Classes",
 		"syntax/loops.md"]
 }}
 ~~~
 
 Caspian commits to using its own DSL machinery for as much of the language surface as is practical. Things that **look** like keywords — `accessor`, `field`, `return`, `break`, `before`, `after`, `pass`, `commit`, etc. — are mostly bare-word commands (bwcs) resolved through a DSL, not entries in the parser's keyword list. The parser handles only what genuinely requires structural parsing.
 
-The mechanism that backs this is documented in [lucy.md § DSL Receivers](lucy/lucy.md#dsl-receivers). This file is about **how** we use it across the language.
+The mechanism that backs this is documented in [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers). This file is about **how** we use it across the language.
 
 ## Philosophy
 
@@ -67,7 +67,7 @@ Canonical members:
 - `catch` / `heed` → `%exception.catch`
 - `exit` → `%process.exit`
 
-Specific scopes can override. A Bryton test runner can rebind `return` to "add to test report"; a transaction block can rebind `raise` to "rollback and rethrow." The overrides apply only within the directly yielded block (per [lucy.md § DSL Receivers](lucy/lucy.md#dsl-receivers)).
+Specific scopes can override. A Bryton test runner can rebind `return` to "add to test report"; a transaction block can rebind `raise` to "rollback and rethrow." The overrides apply only within the directly yielded block (per [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers)).
 
 ### Tier 4: Pure DSL
 
@@ -77,7 +77,7 @@ Words that only have meaning inside a specific scope, with no default binding ou
 
 A DSL is configured per-yield on the function's dispatcher and travels with the dispatcher into the yielded block. It exists for the lifetime of the yield and goes away when the block returns. This matches the actual scope of a DSL binding — DSLs only apply when a function yields, so the dispatcher (which only exists during a yield) is their natural home.
 
-Underlying machinery: [lucy.md § DSL Receivers](lucy/lucy.md#dsl-receivers).
+Underlying machinery: [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers).
 
 ### Basic shape
 
@@ -223,7 +223,7 @@ class 'foo.com/character'
 end
 ```
 
-Each of `inherits`, `field`, `accessor` is a bwc resolved through the class-definer's DSL. See [caspian.md § Classes](caspian.md#classes) for the class-DSL command set in detail.
+Each of `inherits`, `field`, `accessor` is a bwc resolved through the class-definer's DSL. See [caspian.md § Classes](index.md#classes) for the class-DSL command set in detail.
 
 ## DSLs should be documented
 
@@ -246,5 +246,5 @@ When we cheat, we say so — in the doc for the construct and in this file's ope
 - **Loop-control scope.** Should `break` / `next` be part of the **loop's** DSL (loop-local, registered by each loop type) or part of the **ambient scope's** DSL inherited by anything that runs in a loop context (loop-aware via `%loop`)? The first is more consistent with the per-loop model; the second avoids each loop having to redeclare the obvious controls.
 - **`self`.** Identity-critical (tier 2, reserved) or DSL-overridable (tier 3)? Probably reserved given its role in method dispatch, but worth being explicit.
 - **DSL documentation shape.** `.doc` property, separate `.md` file, introspection method, all of the above? Pick a convention so DSLs are uniformly discoverable.
-- **DSL-stacking semantics.** When a loop body opens another loop, the inner loop's DSL takes priority over the outer's for name collisions. Per [lucy.md § DSL Receivers](lucy/lucy.md#dsl-receivers), DSL settings don't propagate down the call stack; the dispatch chain at any point is "innermost DSL → ... → ambient core DSL → scope variables." Worth a worked example with intentional collision.
+- **DSL-stacking semantics.** When a loop body opens another loop, the inner loop's DSL takes priority over the outer's for name collisions. Per [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers), DSL settings don't propagate down the call stack; the dispatch chain at any point is "innermost DSL → ... → ambient core DSL → scope variables." Worth a worked example with intentional collision.
 - **Parser-refactor schedule for V0.01 cheats.** The class-body keyword shortcut in `parser.lua` needs a refactor pass; when does that land — V0.02, V0.1, or later?

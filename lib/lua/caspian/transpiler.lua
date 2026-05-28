@@ -170,14 +170,17 @@ transpile_expr = function(node)
         return { array = elems }
 
     elseif k == "hash" then
-        local obj = json.new_hash()
+        -- Canonical hash-literal shape: {"hash": [[k, expr], ...]} (array of pairs).
+        -- The pair-array form makes insertion order explicit in the structure,
+        -- not dependent on JSON object key-order guarantees.
+        local pairs_arr = {}
         for _, p in ipairs(node.pairs) do
             if p.key.kind ~= "string" then
                 error("hash key must be a string literal, got " .. p.key.kind)
             end
-            json.hash_set(obj, p.key.value, transpile_expr(p.value))
+            pairs_arr[#pairs_arr + 1] = { p.key.value, transpile_expr(p.value) }
         end
-        return { hash = obj }
+        return { hash = pairs_arr }
 
     elseif k == "func_expr" then
         return {

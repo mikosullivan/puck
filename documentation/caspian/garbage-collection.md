@@ -71,7 +71,7 @@ out of reachability.
 
 `on_close` is a regular function on the class with its `on_call`
 property set to `:all` — that's what makes it multicast (see
-[lucy.md § `on_call` property](lucy/lucy.md#on-call-property)).
+[lucy.md § `on_call` property](lucy/index.md#on-call-property)).
 The engine fires it automatically during collection; user code
 calling `$foo.on_close` directly is possible but unusual — the
 `on_*` name is convention signaling "this is for the engine to

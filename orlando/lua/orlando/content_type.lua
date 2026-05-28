@@ -40,6 +40,8 @@ local BY_EXT = {
     sh       = "text/plain; charset=utf-8",
     lua      = "text/plain; charset=utf-8",
     caspian  = "text/plain; charset=utf-8",
+    casp     = "text/plain; charset=utf-8",   -- Caspian source file
+    caspj    = "text/plain; charset=utf-8",   -- canonical CaspianJ file
     sql      = "text/plain; charset=utf-8",
     toml     = "text/plain; charset=utf-8",
     conf     = "text/plain; charset=utf-8",

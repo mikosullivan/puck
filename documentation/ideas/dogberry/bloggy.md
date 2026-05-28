@@ -133,8 +133,8 @@ A blog often has an "About" page, a "Contact" page, etc. that aren't posts. Opti
 
 ### Bloggy.uno or under dogberry.uno?
 
-Same question as [Cobweb](../cobweb/cobweb.md): `bloggy.uno` as its own domain, or `bloggy.dogberry.uno` / a `/bloggy/` subpath? Decide once the brand pattern is settled.
+Same question as [Cobweb](../cobweb/index.md): `bloggy.uno` as its own domain, or `bloggy.dogberry.uno` / a `/bloggy/` subpath? Decide once the brand pattern is settled.
 
 ### Post-image conventions
 
-Posts often have a hero image, inline images, social-share preview images. Should Bloggy define conventions (e.g., `image:` in frontmatter sets the hero; auto-thumbnail via [Cobweb](../cobweb/cobweb.md)), or leave this entirely to the template?
+Posts often have a hero image, inline images, social-share preview images. Should Bloggy define conventions (e.g., `image:` in frontmatter sets the hero; auto-thumbnail via [Cobweb](../cobweb/index.md)), or leave this entirely to the template?

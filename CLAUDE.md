@@ -23,7 +23,7 @@ The Puck ecoverse: a designed-from-scratch suite of interconnected tools (Caspia
 
 The directory is named `mikobase` for historical reasons; the umbrella name is **Puck**. Read [README.md](README.md) and [documentation/overview.md](documentation/overview.md) before doing substantive design work.
 
-Current development target is **V0.01 "hello-world"** — see [documentation/development/development.md](documentation/development/development.md) for the walking-skeleton roadmap and the canonical statement of what is in/out of scope. The development plan uses a **soft feature lock**: do not expand V0.01 scope without explicit unlock.
+Current development target is **V0.01 "hello-world"** — see [documentation/development/index.md](documentation/development/index.md) for the walking-skeleton roadmap and the canonical statement of what is in/out of scope. The development plan uses a **soft feature lock**: do not expand V0.01 scope without explicit unlock.
 
 ## Repo layout (non-obvious bits)
 
@@ -46,7 +46,7 @@ lua5.4 tests/caspian/run.lua
 ```
 Run from the repo root — the runner sets `package.path` to resolve `require("caspian")` against `lib/lua/caspian/` and test modules against `tests/caspian/`. Exits 0 on all pass, 1 on any failure. Requires Lua 5.4.
 
-**Use `lua5.4` explicitly, not bare `lua`.** On systems with multiple Lua versions, `lua` may resolve to an older version; `lua5.4` is unambiguous. See [aslan.md § Lessons learned](documentation/development/v1/aslan.md#lessons-learned) for context.
+**Use `lua5.4` explicitly, not bare `lua`.** On systems with multiple Lua versions, `lua` may resolve to an older version; `lua5.4` is unambiguous. See [aslan.md § Lessons learned](documentation/development/v1/caspian/aslan.md#lessons-learned) for context.
 
 **Always run the full test suite before moving to a new milestone.** No "I'll just check this one file" — run everything. Regressions in unrelated areas are how walking-skeleton development falls apart. The full suite is fast (under a second for current scope); there's no cost reason to skip it.
 
@@ -94,7 +94,7 @@ These are project-wide, not personal preferences — follow them in any file you
 
 Miko's personal code-formatting preferences live at [documentation/ecoverse/formatting/miko.json](documentation/ecoverse/formatting/miko.json) — the canonical source of truth. Consult it when generating or editing code in this repo: it covers indent, line rules, and per-language overrides.
 
-The format spec the file follows is at [documentation/ecoverse/formatting/formatting.md](documentation/ecoverse/formatting/formatting.md). Per that spec's philosophy, these are personal preferences and not project policy, but for code written for Miko in this repo, miko.json is the working default.
+The format spec the file follows is at [documentation/ecoverse/formatting/index.md](documentation/ecoverse/formatting/index.md). Per that spec's philosophy, these are personal preferences and not project policy, but for code written for Miko in this repo, miko.json is the working default.
 
 ## Design principles to honor when proposing changes
 

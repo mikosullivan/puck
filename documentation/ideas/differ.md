@@ -13,7 +13,7 @@ Brainstorm for a Caspian-aware diff service.
 
 ## Why
 
-Caspian's formatter is explicitly personal, not project policy ([formatting.md](../ecoverse/formatting/formatting.md#philosophy)). That makes ad-hoc collaboration work — but two contributors editing the same file can easily produce a diff that's 80% style noise. Differ normalizes both sides to the *viewer's* `style.json` before diffing, so the result reflects what actually changed.
+Caspian's formatter is explicitly personal, not project policy ([formatting.md](../ecoverse/formatting/index.md#philosophy)). That makes ad-hoc collaboration work — but two contributors editing the same file can easily produce a diff that's 80% style noise. Differ normalizes both sides to the *viewer's* `style.json` before diffing, so the result reflects what actually changed.
 
 It's the "run the formatter before complaining about formatting" social contract, implemented as a viewing surface instead of an editing one.
 

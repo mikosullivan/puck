@@ -45,7 +45,7 @@ The instance is still a string. It's just *also* a `foo.uno/upper`.
 The class chain holds both, and method dispatch walks the chain.
 
 **Dispatch order** (per
-[lucy.md § The Class Stack](../caspian/lucy/lucy.md#the-class-stack)):
+[lucy.md § The Class Stack](../caspian/lucy/index.md#the-class-stack)):
 the shadow class is consulted first, then the class stack is walked
 from top to bottom. The class an object was created with sits at
 the bottom (first pushed). Subsequent `.classes.add` calls push to
@@ -107,7 +107,7 @@ the class is purely a tag the engine reads.
 - **Class chain order is settled.** Push goes to the top of the
   stack (under shadow); dispatch walks top-to-bottom; later
   additions shadow earlier ones. See
-  [lucy.md § The Class Stack](../caspian/lucy/lucy.md#the-class-stack).
+  [lucy.md § The Class Stack](../caspian/lucy/index.md#the-class-stack).
 - **Method conflicts between multiple added classes follow the same
   rule.** If two added classes both define `to_string`, the more
   recently added one wins because it sits higher in the stack.
@@ -527,14 +527,14 @@ keyword level.
 
 Settled changes that propagate:
 
-- [lucy.md § Two-Property Objects](../caspian/lucy/lucy.md) —
+- [lucy.md § Two-Property Objects](../caspian/lucy/index.md) —
   needs updating to describe the platter-record shape. "Every
   object has classes (a list of platters) and a bucket (shared
   hash)."
-- [lucy.md § %bucket](../caspian/lucy/lucy.md#bucket) — the `uns`
+- [lucy.md § %bucket](../caspian/lucy/index.md#bucket) — the `uns`
   bucket-key convention can be retired in favor of per-platter
   buckets.
-- [skeletor.md](../caspian/skeletor/skeletor.md) — snapshot/revive
+- [skeletor.md](../caspian/skeletor/index.md) — snapshot/revive
   shape needs to handle the new structure: each platter record
   serializes with its class UNS and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become
@@ -661,7 +661,7 @@ end
 Property assignment goes immediately after the function
 definition by convention — the two-line pair carries the
 visibility a keyword would have. See
-[lucy.md § `on_call` property](../caspian/lucy/lucy.md#on-call-property)
+[lucy.md § `on_call` property](../caspian/lucy/index.md#on-call-property)
 for the full design (mutability, caching consequences, future
 properties in the same family).
 

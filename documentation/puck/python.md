@@ -16,8 +16,8 @@
 ~~~
 
 This doc sketches the general shape of a Python implementation of the
-[Puck protocol](puck.md). **Status: design sketch — no implementation
-yet.** The protocol itself is specced in [puck.md](puck.md); this doc
+[Puck protocol](index.md). **Status: design sketch — no implementation
+yet.** The protocol itself is specced in [puck.md](index.md); this doc
 is about how a Python package would wrap it idiomatically.
 
 The goal: a Python developer can `pip install puck`, point at a Puck
@@ -192,7 +192,7 @@ A remote method's return value comes back as:
 | **Reference to a Puck object** | wrapper instance that you can call methods on |
 
 The Puck-object case is the interesting one. When a method returns
-`puck.uno/congressional_district` (as in the [puck.md example](puck.md#remote-returns-can-be-other-puck-objects)),
+`puck.uno/congressional_district` (as in the [puck.md example](index.md#remote-returns-can-be-other-puck-objects)),
 the Python wrapper transparently constructs a Python class instance
 representing the remote `CongressionalDistrict`. You don't have to do another
 `lookup` — the reference is enough.

@@ -25,13 +25,14 @@
   "value_shape":  "{ type=\"puck.uno/<class>\", owning_role=role_object, payload=any_lua_value }",
   "frame_shape":  "{ action=string, role=role_object, chain={log={},misc={}}, locals={}, ... }",
   "depends_on":   ["caspian.lexer", "caspian.parser", "caspian.transpiler"],
-  "docs":         ["documentation/development/v1/aslan.md", "documentation/development/v1/bree.md", "documentation/caspian/bootstrap.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
+  "docs":         ["documentation/development/v1/caspian/aslan.md", "documentation/development/v1/caspian/bree.md", "documentation/development/v1/caspian/corin.md", "documentation/development/v1/caspian/digory.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/index.md", "documentation/caspian/roles.md"]
 }
 ]]
 
 local lexer      = require("caspian.lexer")
 local parser     = require("caspian.parser")
 local transpiler = require("caspian.transpiler")
+local json       = require("caspian.json")
 
 local M = {}
 
@@ -80,16 +81,78 @@ function M.bootstrap()
         call_stack = {},
     }
 
+    -- to_json walks the materialized value tree, producing a JSON string.
+    -- Primitives (string/number/bool/null) have json-encodable payloads
+    -- directly. Hash payloads contain nested value tables, so we recurse
+    -- and reassemble — preserving insertion order via json.hash_keys.
+    local function value_to_json(value)
+        if value.type == "puck.uno/hash" then
+            local out = {}
+            local keys = json.hash_keys(value.payload)
+            for _, k in ipairs(keys) do
+                out[#out + 1] = json.encode(k, false) .. ":" .. value_to_json(value.payload[k])
+            end
+            return "{" .. table.concat(out, ",") .. "}"
+        end
+        return json.encode(value.payload, false)
+    end
+
+    local function to_json_method(receiver)
+        return {
+            type        = "puck.uno/string",
+            owning_role = top_frame().role,
+            payload     = value_to_json(receiver),
+        }
+    end
+
     -- Engine-private: class registry is NOT in state. Keys are UNS-prefixed.
     M.classes = {
         ["puck.uno/string"] = {
             name        = "puck.uno/string",
             owning_role = M.state.roles.stdlib,
             methods     = {
-                to_string = function(receiver)
-                    return receiver
-                end,
+                to_string = function(receiver) return receiver end,
+                to_json   = to_json_method,
             },
+        },
+
+        ["puck.uno/number"] = {
+            name        = "puck.uno/number",
+            owning_role = M.state.roles.stdlib,
+            methods     = { to_json = to_json_method },
+        },
+
+        ["puck.uno/null"] = {
+            name        = "puck.uno/null",
+            owning_role = M.state.roles.stdlib,
+            methods     = { to_json = to_json_method },
+        },
+
+        ["puck.uno/true"] = {
+            name        = "puck.uno/true",
+            owning_role = M.state.roles.stdlib,
+            methods     = { to_json = to_json_method },
+        },
+
+        ["puck.uno/false"] = {
+            name        = "puck.uno/false",
+            owning_role = M.state.roles.stdlib,
+            methods     = { to_json = to_json_method },
+        },
+
+        ["puck.uno/hash"] = {
+            name        = "puck.uno/hash",
+            owning_role = M.state.roles.stdlib,
+            methods     = { to_json = to_json_method },
+            -- Hash dispatches every other method through method_missing,
+            -- which reads the bucket. See Digory.
+            method_missing = function(receiver, name)
+                local v = receiver.payload[name]
+                if v == nil then
+                    error("puck.uno/hash: no such key '" .. tostring(name) .. "'")
+                end
+                return v
+            end,
         },
     }
 
@@ -129,16 +192,31 @@ function M.materialize(expr)
         error("engine.materialize: expected an expression table, got " .. type(expr))
     end
 
+    -- JSON null is a sentinel table, so it passes `expr.value ~= nil`.
+    -- Catch it FIRST so it doesn't fall into the generic type-dispatch
+    -- (which would see lua_type == "table" and treat it like a hash).
+    if expr.value == json.null then
+        return {
+            type        = "puck.uno/null",
+            owning_role = top_frame().role,
+            payload     = json.null,
+        }
+    end
+
     if expr.value ~= nil then
         local lua_type = type(expr.value)
         local ksj_type
 
         if lua_type == "string" then
             ksj_type = "puck.uno/string"
+        elseif lua_type == "number" then
+            ksj_type = "puck.uno/number"
+        elseif lua_type == "boolean" then
+            ksj_type = expr.value and "puck.uno/true" or "puck.uno/false"
         end
 
         if not ksj_type then
-            error("engine.materialize: unsupported literal type in Aslan: " .. lua_type)
+            error("engine.materialize: unsupported literal type: " .. lua_type)
         end
 
         return {
@@ -148,7 +226,28 @@ function M.materialize(expr)
         }
     end
 
-    error("engine.materialize: unsupported expression form in Aslan: "
+    -- Hash literal: canonical CaspianJ shape is {"hash": [[k, expr], ...]}.
+    -- Payload is a json.new_hash so insertion order is preserved.
+    if expr.hash ~= nil then
+        if type(expr.hash) ~= "table" then
+            error("engine.materialize: hash expression must have an array-of-pairs payload")
+        end
+        local payload = json.new_hash()
+        for _, pair in ipairs(expr.hash) do
+            local key = pair[1]
+            if type(key) ~= "string" then
+                error("engine.materialize: hash key must be a string, got " .. type(key))
+            end
+            json.hash_set(payload, key, M.materialize(pair[2]))
+        end
+        return {
+            type        = "puck.uno/hash",
+            owning_role = top_frame().role,
+            payload     = payload,
+        }
+    end
+
+    error("engine.materialize: unsupported expression form: "
         .. (next(expr) or "<empty>"))
 end
 
@@ -168,13 +267,19 @@ function M.lookup_method(value, method_name)
     end
 
     local method_fn = class.methods[method_name]
+    if method_fn then return method_fn end
 
-    if not method_fn then
-        error("engine.lookup_method: method '" .. tostring(method_name)
-            .. "' not found on class " .. class.name)
+    -- method_missing fallback: class can declare a catch-all handler that
+    -- receives (receiver, method_name). Wrap it so the dispatcher's
+    -- `method_fn(receiver)` call still works uniformly.
+    if class.method_missing then
+        return function(receiver)
+            return class.method_missing(receiver, method_name)
+        end
     end
 
-    return method_fn
+    error("engine.lookup_method: method '" .. tostring(method_name)
+        .. "' not found on class " .. class.name)
 end
 
 --[[

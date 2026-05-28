@@ -120,7 +120,7 @@ user-controlled data isn't required. The current consumers:
   [references.md § Object IDs](../skeletor/references.md#object-ids).
 - **srcs registry keys** — each source file (local or UNS-loaded)
   registered in `state.srcs` gets a key from this counter. See
-  [skeletor.md § Source-location tagging](../skeletor/skeletor.md#source-location-tagging).
+  [skeletor.md § Source-location tagging](../skeletor/index.md#source-location-tagging).
 
 Two strings drawn from the global counter are never equal,
 regardless of what they identify — so an object ID can never
@@ -180,7 +180,7 @@ who'd be responsible for any consequences of resetting it.
 
 If user code needs to share a sequence with restricted access (give
 a callee a `.next`/`.peek`-only view, for example), the
-[jail mechanism](../lucy/lucy.md#jail) applies as it does to any
+[jail mechanism](../lucy/index.md#jail) applies as it does to any
 Caspian object. The jail can be constructed inline starting from
 the instantiation line:
 

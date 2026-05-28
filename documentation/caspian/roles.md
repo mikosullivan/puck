@@ -214,7 +214,7 @@ $jail = $foo.object.jail(:safe_method, :harmless_method)
 
 `$foo` retains its full surface for the caller; `$jail` exposes only the
 listed methods. The general "Jail (Object Firewall)" mechanism in
-[caspian/caspian-runtime.md](lucy/lucy.md) covers this;
+[caspian/caspian-runtime.md](lucy/index.md) covers this;
 the directory jail rules below are one specialization. The same pattern applies
 to any object the developer wants to restrict before handing it across a
 role boundary.
@@ -480,7 +480,7 @@ through it inherits that role**.
 - **Network faucets.** Engine-granted, distinct role, responses pulled
   through are owned by the faucet's role. HTTP is the worked example so
   far; other protocols follow the same shape.
-- **Puck.** See [puck.md](../puck/puck.md) for the full puck model;
+- **Puck.** See [puck.md](../puck/index.md) for the full puck model;
   internally a puck holds getters, which hold faucets, with per-getter
   roles.
 
@@ -732,7 +732,7 @@ model.
 <a id="related-documents"></a>
 ## Related Documents
 
-- [puck.md](../puck/puck.md) — the puck object model, which builds on role
+- [puck.md](../puck/index.md) — the puck object model, which builds on role
   concepts (per-getter roles, version windows, etc.).
 - [ideas/catchable-alarms.md](../ideas/catchable-alarms.md) — preserved
   alternate design where alarms could be caught at role boundaries.

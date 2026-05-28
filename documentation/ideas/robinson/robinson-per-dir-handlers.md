@@ -60,7 +60,7 @@ simply skipped — no requirement that every directory have one.
 <a id="non-public-by-construction"></a>
 ### Non-public by construction
 
-`robinson.casp` matches the [reserved `robinson.*` prefix rule](robinson.md#reserved-filename-prefix-robinson)
+`robinson.casp` matches the [reserved `robinson.*` prefix rule](index.md#reserved-filename-prefix-robinson)
 that already blocks request-boundary access. These files exist on
 disk to be loaded by Robinson, never to be served as URLs.
 
