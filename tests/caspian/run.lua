@@ -104,6 +104,16 @@ require("edmund.test_integration")
 require("edmund.test_regression")
 require("edmund.test_null_distinctness")
 
+-- Frank: CLI launcher + stderr + argv
+-- Phase 0
+require("frank.test_launcher_mechanics")
+-- Phase 1
+require("frank.test_exit_zero")
+require("frank.test_exit_nonzero")
+require("frank.test_shebang")
+require("frank.test_argv")
+require("frank.test_stderr_routing")
+
 local runner = require("support.runner")
 local ok = runner.report()
 os.exit(ok and 0 or 1)

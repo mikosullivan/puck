@@ -6,10 +6,10 @@
 "position_in_roadmap":
 "after_edmund_caspian_with_json_serialization; before_glenstorm_bryton",
 "goal":
-"introduce_caspian_as_os_level_command_for_running_caspian_files_with_explicit_permission_model",
+"introduce_caspian_as_os_level_command_for_running_caspian_files_with_argv_and_stderr",
 "hard_prerequisite_for": "glenstorm_bryton",
-"permission_posture":
-"default_restrictive; opt_in_via_flags_deno_shape",
+"scope_narrowed_2026_05_28":
+"permission_flag_machinery_split_into_per_capability_slices; engine_does_not_yet_have_filesystem_network_env_or_puck_to_gate; permission_flags_section_kept_as_future_direction",
 "aligns_with":
 ["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}}
 ~~~
@@ -18,28 +18,39 @@ Hard prerequisite for [Glenstorm](glenstorm.md) (Bryton) — Bryton
 subprocess-invokes test files (per the
 [Bryton spec](../../caspian/packages/bryton/index.md#tests-are-runnable-scripts), every
 test file is "an ordinary executable"). This slice introduces
-`caspian` as an OS-level command and pins down the permission model
-for Caspian code launched at the CLI.
+`caspian` as an OS-level command, adds stderr as a peer of Corin's
+stdout, and wires `%argv` into the running program.
+
+**Permission-flag enforcement is NOT in Frank.** The engine has no
+filesystem, network, env-var, or Puck capabilities to gate today.
+Each will land in its own slice along with the corresponding
+`--allow-*` flag. Frank ships the launcher and the language pieces
+the launcher needs; the
+[Permissions section](#permissions-default-restrictive-opt-in-via-flags)
+below is preserved as **future direction**, not as Frank's work.
 
 <a id="what-the-slice-introduces"></a>
 ### What the slice introduces
 
 ~~~json
 {"vibecode": {"introduces": ["caspian_command_line_launcher",
-"shebang_support", "argument_passing_into_caspian",
-"stderr_sink_and_role",
+"shebang_support", "argv_via_engine_state_argv_and_percent_argv",
+"stderr_sink_and_role_and_engine_err_property",
+"eprint_bwc_writing_to_engine_err",
 "routing_convention_engine_errors_to_stderr_program_output_to_stdout",
-"exit_codes_zero_on_clean_completion_nonzero_on_alarm_or_uncaught",
-"permission_flag_machinery"],
+"exit_codes_zero_on_clean_completion_nonzero_on_uncaught"],
+"not_in_frank":
+["permission_flag_enforcement_for_fs_net_env_puck",
+"clock_role", "randomizer_role", "utils_role", "stdin_role"],
 "note_on_stdout":
-"stdout_sink_and_puts_bwc_already_shipped_in_corin_caspian_with_stdout; frank_cli_adds_stderr_as_a_peer_sink_plus_the_routing_convention",
+"stdout_sink_and_puts_bwc_already_shipped_in_corin; frank_adds_stderr_as_a_peer_sink_plus_the_routing_convention",
 "launcher_responsibilities":
 ["take_a_caspian_file_path_as_first_argument",
-"set_up_engine_with_minimum_roles",
-"wire_up_faucets_for_any_granted_flags",
-"invoke_engine_run_on_the_file",
-"emit_program_output_to_stdout_and_stderr_appropriately",
-"exit_with_appropriate_code"]}}
+"read_the_file_and_parse_caspian_to_a_caspianj_tree",
+"install_engine_caspianj_engine_std_engine_err_and_engine_state_argv",
+"call_engine_run_inside_pcall",
+"forward_program_puts_output_to_stdout_and_uncaught_errors_to_stderr",
+"exit_zero_on_clean_completion_nonzero_on_pcall_failure"]}}
 ~~~
 
 - A `caspian` command-line launcher — a small script taking a
@@ -48,25 +59,30 @@ for Caspian code launched at the CLI.
 - Shebang support — `.casp` files starting with
   `#!/usr/bin/env caspian` are directly runnable via `chmod +x` and
   `./file.casp`.
-- Argument passing from OS argv into the running Caspian program
-  (surfaced via `%argv`; exact shape settled in this slice).
+- Argument passing from OS argv into the running Caspian program.
+  Frank adds an `argv` field on the Skeletor state hash and a
+  `{sys: "argv"}` materialize branch so `%argv` resolves to the
+  program's argument list.
 - **stderr sink** — engine-introduced peer of the stdout sink that
-  shipped in Corin. Has its own role (`stderr`); writes go to the
-  process's `io.stderr` by default; test injection via
-  `env.stderr` mirrors `env.stdout`.
+  shipped in Corin. Adds a `stderr` role on `engine.state.roles`,
+  an `eprint` (or similarly named) bwc that writes to it, and an
+  `engine.err` property on the engine module (mirroring `engine.std`).
+  If unset when `eprint` fires, the handler raises — no ambient
+  default, same posture as `engine.std`.
 - **Routing convention** — engine errors and diagnostics go to
-  stderr; the program's intentional output goes to stdout. This is
-  the first slice that needs the distinction (Corin only had stdout,
-  Digory/Edmund had no engine-error-vs-program-output ambiguity).
-- Exit codes — 0 on clean completion, non-zero on uncaught exception
-  or alarm.
-- The permission-flag machinery described below.
+  stderr; the program's intentional output goes to stdout. The CLI
+  launcher installs `engine.std = io.stdout` and
+  `engine.err = io.stderr`, then `pcall`s `engine.run()` and
+  routes any caught Lua error to stderr.
+- Exit codes — 0 on clean completion (the launcher's `pcall` returned
+  true); non-zero on any caught error (the `pcall` returned false).
 
 <a id="permissions-default-restrictive-opt-in-via-flags"></a>
-### Permissions: default restrictive, opt-in via flags
+### Permissions: default restrictive, opt-in via flags (future direction, not Frank)
 
 ~~~json
-{"vibecode": {"permission_model": "default_restrictive_opt_in_via_flags",
+{"vibecode": {"status": "future_direction_not_in_frank",
+"permission_model": "default_restrictive_opt_in_via_flags",
 "defaults_always_on": ["user_role", "clock_role_plus_clock_object",
 "randomizer_role_plus_random_source",
 "utils_role_plus_percent_utils_namespace",
@@ -75,14 +91,24 @@ for Caspian code launched at the CLI.
 "cli_args_role_plus_argv"], "off_by_default_grant_via_flag":
 ["filesystem_dirjails", "network_faucets", "env_vars", "puck",
 "all_at_once_convenience"], "rationale_links":
-["feedback_no_dangerous_defaults", "roles_md_role_based_security"]}}
+["feedback_no_dangerous_defaults", "roles_md_role_based_security"],
+"why_not_in_frank":
+"engine_has_no_filesystem_network_env_or_puck_capability_to_gate_today; each_capability_lands_in_its_own_slice_with_its_corresponding_allow_flag; frank_settles_the_launcher_and_the_routing_only"}}
 ~~~
 
+> **This section is future direction, not Frank work.** Frank ships
+> the launcher, stderr, and argv. The permission-flag matrix arrives
+> incrementally — when filesystem, network, env, or Puck capabilities
+> land in their own slices, each brings the corresponding `--allow-*`
+> flag with it. Frank's CLI launcher accepts unknown flags it doesn't
+> understand without error, so this future work can be added without
+> revisiting Frank.
+
 Following the role-based security model in [roles.md](../../caspian/roles.md) and the
-no-dangerous-defaults discipline, the CLI uses a **default-restrictive**
-posture: a `.casp` program invoked via the CLI gets only the minimum
-roles and faucets, with everything else opt-in via flags. This mirrors
-Deno's local-script model.
+no-dangerous-defaults discipline, the CLI will eventually use a
+**default-restrictive** posture: a `.casp` program invoked via the CLI
+gets only the minimum roles and faucets, with everything else opt-in
+via flags. This mirrors Deno's local-script model.
 
 <a id="always-on-every-cli-invocation"></a>
 #### Always on (every CLI invocation)
@@ -209,43 +235,46 @@ homebrew formula, etc.) is a V1+ deployment concern, not Frank work.
 ### Bryton interaction
 
 ~~~json
-{"vibecode": {"bryton_invocation": "caspian_dash_dash_allow_all_per_test",
-"rationale": "test_files_typically_need_broad_access; per_test_narrowing_is_later_bryton_feature_out_of_scope_for_glenstorm"}}
+{"vibecode": {"bryton_invocation": "caspian_path_to_test_file_at_glenstorm_then_allow_all_once_flags_exist",
+"rationale": "frank_does_not_yet_have_permission_flags; bryton_just_invokes_caspian_with_the_file_path; the_allow_all_form_arrives_when_permission_flags_do"}}
 ~~~
 
-Bryton subprocess-invokes test files using `caspian --allow-all` by
-default. Test files typically need broad access (filesystem to read
-fixtures, network to hit a service-under-test, etc.). Per-test
-permission narrowing is a later Bryton feature (configurable via a
-future `bryton.json` setting; out of scope for Glenstorm).
+At Glenstorm, Bryton subprocess-invokes test files as
+`caspian <test_file>` — just the launcher and the path. There are no
+permission flags to pass yet because no capability-gating exists
+post-Frank. Once filesystem/network/env/puck slices land along with
+their `--allow-*` flags, Bryton's invocation grows to
+`caspian --allow-all <test_file>` (test files typically need broad
+access; per-test narrowing is later Bryton work).
 
 <a id="open-questions"></a>
 ### Open questions
 
 ~~~json
 {"vibecode": {"open_questions_frank_cli":
-["exact_flag_syntax_long_only_vs_short_forms_equals_vs_separate_args",
-"default_for_puck_role_off_seems_right_but_puck_is_central",
-"determinism_flag_for_clock_and_randomizer_seed_for_test_reproducibility_v2_plus",
-"cross_platform_shebang_behavior_linux_macos_wsl",
-"whether_engine_reading_the_dot_caspian_source_file_itself_should_require_a_permission_flag_or_be_pre_permission_engine_plumbing"]}}
+["bash_launcher_vs_pure_lua_launcher",
+"cross_platform_shebang_behavior_linux_macos_wsl"],
+"deferred_to_later_slices":
+["flag_syntax_when_permission_flags_arrive",
+"determinism_flag_for_clock_and_randomizer",
+"default_for_puck_role"]}}
 ~~~
 
-- **Exact flag syntax.** Long-only or short forms? `--allow-fs=./`
-  versus `--allow-fs ./`? Settled in this slice.
-- **Default for the `puck` role.** Off-by-default seems right, but
-  `puck` is so central to the platform that always-on might be more
-  first-contact-friendly. Deferred — re-examine when the puck client
-  lands.
-- **Determinism flag for `clock`/`randomizer`** (e.g., `--seed=N`) for
-  test reproducibility. V2+.
+- **Bash launcher vs pure-Lua launcher.** The launcher could be a
+  small bash script (`#!/usr/bin/env bash`) that `exec`s lua, or a
+  pure-Lua script (`#!/usr/bin/env lua`) that uses `arg[0]` to
+  self-locate. Either works; settled during implementation.
 - **Cross-platform shebang behavior** (Linux / macOS / WSL).
   Mostly-portable on the three Unix-flavored cases; Windows native is
   V2+.
-- **Engine reading the `.casp` source file itself.** Current
-  proposal: pre-permission engine plumbing (the engine has to read the
-  script to run anything). If this becomes contentious, an explicit
-  `--source=PATH` form could surface it.
+
+Deferred to whichever slice introduces them:
+
+- **Flag syntax** (`--allow-fs=PATH` vs `--allow-fs PATH`, long vs
+  short forms) — settles when the first permission flag lands.
+- **Determinism flag for `clock`/`randomizer`** (e.g. `--seed=N`) —
+  settles with the clock/randomizer slice.
+- **Default for the `puck` role** — settles with the Puck client slice.
 
 ---
 
@@ -266,10 +295,10 @@ What Frank adds to `engine.state`, and what it leaves outside:
 | New piece | In the Skeletor hash? | Why |
 |---|---|---|
 | `argv` (program's view of CLI args) | **Yes** — `engine.state.argv` | Durable program state; reachable from Caspian as `%argv` for the program's lifetime |
-| Granted permission set (which `--allow-*` flags were given) | Open question, see below | Either bootstrap metadata or execution state — same observable behavior in Frank, matters post-V1.0 snapshot/revive |
-| `stderr` sink function | No — `env.stderr` (host-supplied) | Same rationale as `stdout` in Corin — sinks are engine-supplied infrastructure |
-| `stderr` role object | No — `engine.roles.stderr` | Bootstrap-time engine metadata, like every other role |
-| Exit code | No — returned from `engine.run` to the launcher | Caspian programs don't see their own exit code; host-side concern |
+| `stderr` sink function | No — `engine.err` (host-installed property on the engine module) | Same rationale as `engine.std` in Corin — sinks are host-installed capabilities, not program state |
+| `stderr` role object | Yes — `engine.state.roles.stderr` | Same place as `stdout` and `stdlib`; `state.roles` lives in Skeletor |
+| `eprint` bwc entry | No — `engine.bwcs.eprint` | Engine-private metadata, alongside `engine.classes` and `engine.bwcs.puts` |
+| Exit code | Not engine state at all — the launcher derives it from whether its `pcall(engine.run)` returned cleanly | Caspian programs don't see their own exit code; host-side concern |
 
 <a id="skeletor-impact-snapshots"></a>
 ### Snapshots during a CLI run
@@ -339,28 +368,6 @@ happen; `argv` doesn't move. Each frame carries its own `role` and
 `chain` (per [skeletor.md](../../caspian/skeletor/index.md) — chain wipes at
 boundaries by virtue of each frame having its own fresh chain).
 
-<a id="skeletor-impact-open-permissions"></a>
-### Open question: where does the granted permission set live?
-
-The set of `--allow-*` flags the program was launched with has to be
-recorded somewhere — the runtime needs to consult it on every
-attempted privileged operation. Two interpretations:
-
-- **In the hash** (`engine.state.permissions` or similar): treat it
-  as program-visible state, durable across the program's lifetime.
-  Future Caspian code could in principle introspect (`%engine.permissions`?)
-  what it was granted.
-- **Outside the hash** (engine-module-level): treat it as bootstrap
-  metadata, immutable, parallel to `engine.roles` and `engine.classes`
-  (already settled as outside the hash).
-
-The two interpretations have **identical observable behavior in
-[Frank](frank.md)**. The question becomes load-bearing only when
-snapshot/revive lands post-V1.0: should a revived snapshot retain the permission
-grants from the original invocation, or pick them up from the
-reviving host's environment? Defer the call until snapshot/revive is
-on the table.
-
 ---
 
 <a id="testing"></a>
@@ -368,25 +375,25 @@ on the table.
 
 ~~~json
 {"vibecode": {"section": "testing", "test_directory":
-"tests/caspian_cli/", "fixture_directory":
-"tests/caspian_cli/fixtures/",
+"tests/caspian/frank/", "fixture_directory":
+"tests/caspian/fixtures/",
 "framework":
 "support_runner_and_assert; tests_invoke_caspian_via_io_popen_and_capture_stdout_stderr_exit_code",
 "phase_0_tests": ["TF.0.1", "TF.0.2"],
-"phase_1_tests": ["TF.1", "TF.2", "TF.3", "TF.4", "TF.5", "TF.6"],
-"phase_2_tests": ["TF.7", "TF.8", "TF.9", "TF.10",
-"TF.11", "TF.12", "TF.13", "TF.14"],
-"load_bearing_tests":
-["TF.7_through_TF.10_default_denial_proves_restrictive_posture",
-"TF.5_stderr_routing_proves_diagnostic_vs_program_output_split"]}}
+"phase_1_tests": ["TF.1", "TF.2", "TF.3", "TF.4", "TF.5"],
+"deferred_to_per_capability_slices":
+["default_denial_tests_for_fs_net_env_puck",
+"allow_flag_grant_tests_for_each_capability"],
+"load_bearing_test":
+"TF.5_stderr_routing_proves_engine_error_vs_program_output_split"}}
 ~~~
 
-Tests for Frank sit under `tests/caspian_cli/`. Each test
+Tests for Frank sit under `tests/caspian/frank/` (parallel to
+`tests/caspian/aslan/`, `bree/`, `corin/`, etc.). Each test
 subprocess-invokes `bin/caspian` via `io.popen` (or equivalent) and
 asserts on captured stdout, stderr, and exit code. The load-bearing
-assertions are TF.7–TF.10 (default denial proves the restrictive
-posture actually denies) and TF.5 (stderr routing proves the
-engine-error vs program-output split actually happens).
+assertion is TF.5 — stderr routing proves the engine-error vs
+program-output split actually happens.
 
 <a id="frank-phase-0-launcher-mechanics"></a>
 ### Phase 0: launcher mechanics
@@ -401,32 +408,18 @@ engine-error vs program-output split actually happens).
 
 | ID | Level | Verifies | How |
 |---|---|---|---|
-| TF.1 | integration | Successful run exits 0 | `caspian fixtures/exit_zero.casp` → exit 0 |
-| TF.2 | integration | Uncaught alarm/exception exits non-zero | `caspian fixtures/raise.casp` → non-zero exit; message on stderr |
+| TF.1 | integration | Successful run exits 0 | `caspian fixtures/exit_zero.casp` (just `puts 'ok'`) → exit 0 |
+| TF.2 | integration | Uncaught error exits non-zero | `caspian fixtures/raise.casp` (e.g. calls `puts` with `engine.std` unset isn't possible because the launcher installs it; instead trigger a method-missing failure on a known type) → non-zero exit; error text on stderr |
 | TF.3 | integration | Shebang execution | `chmod +x fixtures/hello_shebang.casp; ./fixtures/hello_shebang.casp` runs and exits 0 (shebang line is `#!/usr/bin/env caspian`) |
-| TF.4 | integration | argv passing | `caspian fixtures/echo_argv.casp foo bar baz` → stdout contains `foo`, `bar`, `baz` in order |
-| TF.5 | integration | stderr routing | `caspian fixtures/mixed_io.casp` (writes via `puts` AND raises) → program's `puts` output on stdout, engine error on stderr; streams do not interleave |
-| TF.6 | integration | Defaults present without any flags | `caspian fixtures/exercise_defaults.casp` (uses clock, randomizer, `%utils`, stdin, stdout, stderr, argv) runs and exits 0 |
-
-<a id="frank-phase-2-permission-flag-matrix"></a>
-### Phase 2: permission flag matrix
-
-| ID | Level | Verifies | How |
-|---|---|---|---|
-| TF.7 | integration | Default denial — filesystem | `caspian fixtures/read_file.casp` (no flags) → non-zero exit, permission-denied diagnostic on stderr |
-| TF.8 | integration | Default denial — network | `caspian fixtures/http_get.casp` (no flags) → non-zero exit, network-denied diagnostic |
-| TF.9 | integration | Default denial — env vars | `caspian fixtures/read_env.casp` (no flags) → non-zero exit |
-| TF.10 | integration | Default denial — puck | `caspian fixtures/puck_get.casp` (no flags) → non-zero exit |
-| TF.11 | integration | `--allow-fs=PATH` | `caspian --allow-fs=./allowed fixtures/read_file.casp` reads files under `./allowed`; same fixture against `./forbidden` still denied |
-| TF.12 | integration | `--allow-fs-read=PATH` is read-only | `--allow-fs-read=./allowed` permits reads, denies writes |
-| TF.13 | integration | `--allow-net=HOST` is host-scoped | `--allow-net=api.example.com:443` permits that host; other hosts still denied |
-| TF.14 | integration | `--allow-all` opens everything | `caspian --allow-all fixtures/full_exercise.casp` (touches fs, net, env, puck) exits 0 |
+| TF.4 | integration | argv passing | `caspian fixtures/echo_argv.casp foo bar baz` → stdout contains `foo`, `bar`, `baz` in order (via `%argv`) |
+| TF.5 | integration | stderr routing | `caspian fixtures/mixed_io.casp` (writes via `puts` AND raises an error after) → program's `puts` output appears on stdout, engine error on stderr; streams do not interleave |
 
 <a id="frank-test-layout"></a>
 ### Test layout
 
 | Path | Contents |
 |---|---|
-| `tests/caspian_cli/fixtures/` | Tiny `.casp` programs each exercising one capability (read_file, http_get, read_env, puck_get, raise, echo_argv, mixed_io, exercise_defaults, full_exercise) |
-| `tests/caspian_cli/` | The `support/runner`-based Lua tests that subprocess-invoke `bin/caspian` and assert on stdout / stderr / exit code |
+| `tests/caspian/fixtures/` | Tiny `.casp` programs each exercising one Frank concern (`exit_zero.casp`, `raise.casp`, `hello_shebang.casp`, `echo_argv.casp`, `mixed_io.casp`) |
+| `tests/caspian/frank/` | The `support/runner`-based Lua tests that subprocess-invoke `bin/caspian` and assert on stdout / stderr / exit code |
 | `tests/caspian/run.lua` | Extended to require the Frank test modules |
+| `bin/caspian` | The launcher script itself |

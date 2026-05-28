@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# caspian — CLI launcher for the Caspian engine.
+#
+# Self-locates relative to the repo root, sets package.path to find the
+# engine, and hands off to lib/lua/caspian/cli.lua with the same argv.
+#
+# Add this directory to your $PATH to invoke `caspian foo.casp` from
+# anywhere. No system install; multiple checkouts coexist via $PATH order.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+
+exec lua5.4 \
+    -e "package.path='$REPO_ROOT/lib/lua/?.lua;'..package.path" \
+    "$REPO_ROOT/lib/lua/caspian/cli.lua" "$@"

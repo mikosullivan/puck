@@ -1,0 +1,2 @@
+puts 'program-output-line'
+{not_a_hash: 'just a marker'}.missing_key

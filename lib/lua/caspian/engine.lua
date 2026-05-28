@@ -77,8 +77,13 @@ function M.bootstrap()
             user   = { name = "user"   },
             stdlib = { name = "stdlib" },
             stdout = { name = "stdout" },
+            stderr = { name = "stderr" },
         },
         call_stack = {},
+        -- argv: program's view of the OS argv after the script path.
+        -- Host (Frank's CLI launcher) installs engine.argv before calling
+        -- engine.run(); bootstrap copies it here. Empty when unset.
+        argv = M.argv or {},
     }
 
     -- to_json walks the materialized value tree, producing a JSON string.
@@ -168,6 +173,16 @@ function M.bootstrap()
                 sink(tostring(value.payload) .. "\n")
             end,
         },
+        eprint = {
+            owning_role = M.state.roles.stderr,
+            fn = function(value)
+                local sink = M.err
+                if sink == nil then
+                    error("eprint: engine.err is not set — host must install a stderr sink (see bootstrap.md § stdout and stderr)")
+                end
+                sink(tostring(value.payload) .. "\n")
+            end,
+        },
     }
 
     -- Top-level frame, with the canonical chain shape (log + misc pre-allocated).
@@ -224,6 +239,21 @@ function M.materialize(expr)
             owning_role = top_frame().role,
             payload     = expr.value,
         }
+    end
+
+    -- Sys reference: {"sys": "<name>"} — resolves engine-supplied values.
+    -- Frank scope: %argv only. Later slices add %now, %utils, etc.
+    -- %argv materializes as a space-joined string for now (arrays arrive
+    -- in a later slice; when they do, %argv graduates to puck.uno/array).
+    if expr.sys ~= nil then
+        if expr.sys == "argv" then
+            return {
+                type        = "puck.uno/string",
+                owning_role = top_frame().role,
+                payload     = table.concat(M.state.argv or {}, " "),
+            }
+        end
+        error("engine.materialize: unsupported %sys reference: " .. tostring(expr.sys))
     end
 
     -- Hash literal: canonical CaspianJ shape is {"hash": [[k, expr], ...]}.
