@@ -2,7 +2,7 @@
 {
   "file":     "tests/caspian/bree/test_aslan_regression.lua",
   "test_id":  "TB.6",
-  "verifies": "After the engine.run path→tree refactor, the Aslan pipeline (file-read + json.parse + engine.run(tree)) still returns the same value. Independent regression check at the Bree boundary: even if all Aslan tests under tests/caspian/aslan/ were deleted, this file would catch a regression on the Aslan execution path.",
+  "verifies": "After the engine API refactor, the Aslan pipeline (io.open + json.parse + stage on engine.caspianj + engine.run()) still returns the same value. Independent regression check at the Bree boundary.",
   "level":    "regression"
 }
 ]]
@@ -18,8 +18,8 @@ runner.test("aslan pipeline (io.open + json.parse + engine.run) returns payload 
     local source = f:read("*a")
     f:close()
 
-    local tree   = json.parse(source)
-    local result = engine.run(tree)
+    engine.caspianj = json.parse(source)
+    local result    = engine.run()
 
     assert_.not_nil(result, "engine.run returned nil")
     assert_.equal(result.type,    "puck.uno/string")
@@ -31,7 +31,8 @@ runner.test("after aslan-style run, call_stack is back to one top_level frame wi
     local source = f:read("*a")
     f:close()
 
-    engine.run(json.parse(source))
+    engine.caspianj = json.parse(source)
+    engine.run()
 
     local cs = engine.state.call_stack
     assert_.equal(#cs, 1, "expected exactly one frame")

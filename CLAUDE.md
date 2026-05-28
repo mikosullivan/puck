@@ -59,20 +59,23 @@ Run from the repo root — the runner sets `package.path` to resolve `require("c
 The development plan distinguishes two test tiers and they have different homes — keep them separate:
 
 - **Tier 1 — Lua tests** for the engine and any other Lua-implemented infrastructure (including the Bryton runner itself, once written). Permanent. Lives next to the implementation in `tests/caspian/`.
-- **Tier 2 — Bryton tests** for Caspian-level language behavior. `.casp` files emit Xeme JSON; a Bryton runner walks a directory and aggregates. Arrives at V0.1. Until then, Caspian-level behavior is tested via Lua-host harnesses that call `engine.run("X.casp")` and assert on the return value.
+- **Tier 2 — Bryton tests** for Caspian-level language behavior. `.casp` files emit Xeme JSON; a Bryton runner walks a directory and aggregates. Arrives at V0.1. Until then, Caspian-level behavior is tested via Lua-host harnesses that stage the parsed tree on `engine.caspianj` and call `engine.run()`, then assert on the return value.
 
 Engine tests never migrate to Bryton.
 
 ## Engine architecture (Lua reference)
 
-Single public entry point: [lib/lua/caspian/init.lua](lib/lua/caspian/init.lua), which composes the pipeline:
+Two modules the host touches:
+
+- **[lib/lua/caspian/engine.lua](lib/lua/caspian/engine.lua)** — the executor. Host configures via properties (`engine.caspianj`, `engine.std`, `engine.root`) then calls `engine.run()` with no args. Also hosts `engine.parse_caspian(source)` for the source-to-tree pipeline.
+- **[lib/lua/caspian/init.lua](lib/lua/caspian/init.lua)** — lower-level entry points: `caspian.tokenize`, `caspian.parse`, `caspian.dump`, `caspian.null`. Useful for tooling that needs just tokens or just an AST.
 
 ```
-Caspian source  →  lexer  →  parser  →  transpiler  →  CaspianJ  →  interpreter
-                                                                       (or json.encode)
+Caspian source  →  lexer  →  parser  →  transpiler  →  CaspianJ  →  engine
+                              (engine.parse_caspian)                 (engine.run)
 ```
 
-Modules under [lib/lua/caspian/](lib/lua/caspian/): `lexer.lua`, `parser.lua`, `transpiler.lua`, `interpreter.lua`, `json.lua`. CaspianJ is the canonical runtime format — the interpreter consumes CaspianJ, never Caspian text. V0.01 hand-writes CaspianJ fixtures and bypasses the source-text path entirely.
+Modules under [lib/lua/caspian/](lib/lua/caspian/): `engine.lua`, `lexer.lua`, `parser.lua`, `transpiler.lua`, `json.lua`. (`interpreter.lua` is dead code from the pre-Aslan pipeline; pending removal.) CaspianJ is the canonical runtime format — the engine consumes CaspianJ, never Caspian text. V0.01 hand-writes CaspianJ fixtures and bypasses the source-text path entirely.
 
 Use `caspian.null` (re-exported as `json.null`) for JSON null in CaspianJ tables; Lua `nil` cannot round-trip.
 

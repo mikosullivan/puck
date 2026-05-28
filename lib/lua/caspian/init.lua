@@ -1,32 +1,31 @@
 --[[
 {
   "module": "caspian",
-  "role": "Public API — single entry point for the Caspian toolchain",
+  "role": "Public API — lower-level pipeline entry points (lexer, parser) and JSON sentinel. The full Caspian-source-to-CaspianJ pipeline lives on the engine module as engine.parse_caspian, not here.",
   "pipeline": [
     "Caspian source (.casp file or string)",
     "lexer  →  token[]",
     "parser →  AST",
-    "transpiler → CaspianJ (Lua table)",
-    "json.encode → JSON string"
+    "transpiler → CaspianJ (Lua table)  -- via caspian.engine.parse_caspian"
   ],
   "exports": {
     "tokenize":  "string → token[]           lex only; useful for syntax highlighting and tooling",
     "parse":     "string → AST               lex + parse; AST nodes are tables with a 'kind' field",
-    "transpile": "string → table             full pipeline to CaspianJ as a Lua table (array of statements)",
-    "to_json":   "(string, pretty?) → string full pipeline to JSON string; pretty=true for indented output",
     "dump":      "(AST, indent?) → string    debug pretty-printer for AST nodes",
     "null":      "sentinel                   JSON null value (distinct from Lua nil; use in CaspianJ output)"
   },
-  "depends_on": ["caspian.lexer", "caspian.parser", "caspian.transpiler", "caspian.json"],
+  "see_also": {
+    "caspian.engine.parse_caspian": "full pipeline to CaspianJ (Lua table)",
+    "caspian.engine.run":           "execute a tree staged on engine.caspianj"
+  },
+  "depends_on": ["caspian.lexer", "caspian.parser", "caspian.json"],
   "docs": ["documentation/caspian/caspian.md", "documentation/caspian/caspianj.md"],
   "tests": "tests/caspian/run.lua"
 }
 ]]
-local lexer       = require("caspian.lexer")
-local parser      = require("caspian.parser")
-local transpiler  = require("caspian.transpiler")
-local json        = require("caspian.json")
-local interpreter = require("caspian.interpreter")
+local lexer  = require("caspian.lexer")
+local parser = require("caspian.parser")
+local json   = require("caspian.json")
 
 local M = {}
 
@@ -42,25 +41,6 @@ end
 function M.parse(source)
     local tokens = lexer.tokenize(source)
     return parser.parse(tokens)
-end
-
---[[ { "in": {"source": "string"}, "out": "CaspianJ table  [stmt,...]", "note": "full pipeline; statements are arrays for calls, tagged objects for expressions" } ]]
-function M.transpile(source)
-    local ast = M.parse(source)
-    return transpiler.transpile(ast)
-end
-
---[[ { "in": {"source": "string", "pretty": "bool?"}, "out": "string  (JSON)", "note": "pretty=true for indented output; omit or false for compact" } ]]
-function M.to_json(source, pretty)
-    local caspj = M.transpile(source)
-    return json.encode(caspj, pretty)
-end
-
---[[ { "in": {"source": "string", "env": "table? (stdout override etc.)"}, "out": "nil", "note": "full pipeline: transpile then execute; env.stdout overrides the default print function" } ]]
-function M.run(source, env)
-    local caspj = M.transpile(source)
-    local interp = interpreter.new(env)
-    interp:exec(caspj)
 end
 
 --[[ { "in": {"node": "AST node or any table", "indent": "number? (default 0)"}, "out": "string", "note": "debug pretty-printer; works on any table, not just AST nodes" } ]]

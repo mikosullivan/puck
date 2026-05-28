@@ -8,12 +8,12 @@
 ]]
 local runner  = require("support.runner")
 local assert_ = require("support.assert")
-local caspian = require("caspian")
+local engine  = require("caspian.engine")
 
 runner.suite("bree / TB.0.3 transpiler_baseline")
 
 runner.test("transpiler emits canonical CaspianJ for ('hello').to_string", function()
-    local tree = caspian.transpile("('hello').to_string")
+    local tree = engine.parse_caspian("('hello').to_string")
     assert_.not_nil(tree, "transpile returned nil")
     assert_.equal(#tree, 1, "expected 1 top-level statement")
 

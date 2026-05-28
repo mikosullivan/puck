@@ -8,7 +8,6 @@
 ]]
 local runner  = require("support.runner")
 local assert_ = require("support.assert")
-local caspian = require("caspian")
 local engine  = require("caspian.engine")
 
 runner.suite("bree / TB.5 call_stack_role")
@@ -18,8 +17,8 @@ runner.test("top call_stack frame's role is 'user' after Bree pipeline returns",
     local source = f:read("*a")
     f:close()
 
-    local tree = caspian.transpile(source)
-    engine.run(tree)
+    engine.caspianj = engine.parse_caspian(source)
+    engine.run()
 
     local cs = engine.state.call_stack
     assert_.equal(#cs, 1, "expected exactly one frame (the top_level frame)")

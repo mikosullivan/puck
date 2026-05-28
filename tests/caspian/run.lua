@@ -64,6 +64,20 @@ require("bree.test_call_stack_role")
 require("bree.test_aslan_regression")
 require("bree.test_end_marker")
 
+-- Corin: puts-hello from Caspian source, observed on a host-installed stdout sink
+-- Phase 0
+require("corin.test_source_baseline")
+require("corin.test_std_property_slot")
+-- Phase 1
+require("corin.test_transpiler_canonical")
+require("corin.test_bootstrap_registry")
+require("corin.test_dispatch_bwc")
+require("corin.test_engine_std_writes")
+require("corin.test_role_transition")
+require("corin.test_integration")
+require("corin.test_regression")
+require("corin.test_puts_no_sink")
+
 local runner = require("support.runner")
 local ok = runner.report()
 os.exit(ok and 0 or 1)

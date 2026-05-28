@@ -9,6 +9,8 @@
 local runner = require("support.runner")
 local assert = require("support.assert")
 local ks     = require("caspian")
+local engine = require("caspian.engine")
+local json   = require("caspian.json")
 
 runner.suite("transpiler / example files")
 
@@ -39,9 +41,9 @@ for _, name in ipairs(examples) do
         if not src then
             error("could not read " .. path .. ": " .. tostring(err))
         end
-        local ok, result = pcall(ks.transpile, src)
+        local ok, result = pcall(engine.parse_caspian, src)
         if not ok then
-            error("transpile failed: " .. tostring(result))
+            error("parse_caspian failed: " .. tostring(result))
         end
         assert.equal(type(result), "table")
         -- Every .casp file has at least one statement.
@@ -49,17 +51,17 @@ for _, name in ipairs(examples) do
     end)
 end
 
-runner.test("to_json round-trips without error", function()
+runner.test("json-encoded parse_caspian round-trips without error", function()
     local src = "$x = 42\n$y = $x + 1\nputs($y)"
-    local ok, out = pcall(ks.to_json, src, false)
-    if not ok then error("to_json failed: " .. tostring(out)) end
+    local ok, out = pcall(function() return json.encode(engine.parse_caspian(src), false) end)
+    if not ok then error("parse_caspian + json.encode failed: " .. tostring(out)) end
     assert.equal(type(out), "string")
     assert.equal(#out > 0, true)
 end)
 
-runner.test("to_json pretty round-trips without error", function()
+runner.test("json-encoded parse_caspian pretty round-trips without error", function()
     local src = "if ($x == 1)\n$y = 2\nend"
-    local ok, out = pcall(ks.to_json, src, true)
-    if not ok then error("to_json pretty failed: " .. tostring(out)) end
+    local ok, out = pcall(function() return json.encode(engine.parse_caspian(src), true) end)
+    if not ok then error("parse_caspian + json.encode pretty failed: " .. tostring(out)) end
     assert.equal(type(out), "string")
 end)

@@ -119,6 +119,23 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 - **Literal expressions**: `{"value": <json>}` for primitives (class inferred from JSON type) or `{"value": <json>, "class": "uns/name"}` for non-primitives (class's materializer parses). See [caspianj.md § Literals](caspian/caspianj.md#literals).
 - **Program shape**: array of statements. `[[stmt1], [stmt2], ...]`. Outer array is always there even for a single statement.
 
+## Engine API (Lua reference)
+
+- **The host configures the engine via property assignment, then calls `engine.run()`.** No positional args to `run`; everything comes from staged properties. Matches [bootstrap.md](ideas/bootstrap.md)'s Ruby host-API spirit. Settled 2026-05-27 after a one-day detour through `engine.run(tree)`.
+- **`engine.caspianj`** — stage the CaspianJ tree (Lua table) here before calling `run()`. Persists across runs until reassigned.
+- **`engine.std`** — (Corin and later) stdout sink function the `puts` bwc writes to. No default; if unset, `puts` raises. Per [bootstrap.md § stdout and stderr](ideas/bootstrap.md#stdout-and-stderr) — stdout is a capability like any other, not ambient.
+- **`engine.root`** — (later) dirjail for filesystem access.
+- **`engine.parse_caspian(source)`** — canonical home for the Caspian-source-to-tree pipeline (lex → parse → transpile). Pure function, doesn't touch engine state. `caspian.transpile` was removed when this was added (one obvious location, one obvious name).
+- **`caspian.tokenize` and `caspian.parse` stay** at the lower abstraction level — useful for tooling that needs just tokens or just an AST.
+- **Host pipeline shape** for running a `.casp` file:
+  ```lua
+  local f = assert(io.open(path, "r"))
+  local source = f:read("*a"); f:close()
+  engine.caspianj = engine.parse_caspian(source)
+  local result    = engine.run()
+  ```
+  Substitute `caspian.json.parse(source)` for `engine.parse_caspian(source)` to run a `.caspj` file.
+
 ## Aslan scope (what walking-skeleton looks like)
 
 - **Fixture**: `[[{"value": "hello"}, "to_string"]]`. Hand-written CaspianJ, no transpiler involved.

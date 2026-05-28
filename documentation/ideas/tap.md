@@ -3,16 +3,29 @@
 ~~~json
 {"vibecode": {
 	"doc": "tap",
-	"role": "speculative note exploring a Ruby-style tap method on Caspian objects for inline side effects in chains; open question is whether it lives on every object or on the .object meta-helper",
+	"role": "Ruby-style tap method on Caspian objects for inline side effects in chains; placement settled on .object.tap with the block receiving the underlying value (not the helper) and the helper returning the underlying value so chains survive",
 	"key_concepts": ["tap_method", "ruby_style_chaining", "side_effect_in_chain",
-		"object_meta_helper_placement"],
-	"status": "brainstorm"
+		"object_meta_helper_placement", "helper_returns_underlying_value"],
+	"status": "brainstorm — placement settled 2026-05-27; not in V1 core"
 }}
 ~~~
 
-Speculative. Filed for future consideration. Ruby's `tap`
-pattern — receive the value in a block, run side-effecting
-logic on it, return the value unchanged.
+Ruby's `tap` pattern: receive a value in a block, run side-effecting
+logic on it, return the value unchanged so the chain continues.
+
+In Caspian, `tap` lives on the `.object` meta-helper, not on the value
+directly. The block receives the underlying value, and `.object.tap`
+returns the underlying value (not the helper) so chains survive:
+
+```caspian
+$foo.object.tap do($same_as_foo)
+    log($same_as_foo)
+end.do_more     # continues on $foo
+```
+
+The main method namespace stays clean, and chain ergonomics are
+preserved. Cost: one extra `.object.` in the syntax compared to
+Ruby's bare `.tap`.
 
 <a id="use-case"></a>
 ## Use case
@@ -20,8 +33,8 @@ logic on it, return the value unchanged.
 Brief use of a value without breaking a chain or assigning to
 a throwaway variable:
 
-```
-do_something.tap do($x)
+```caspian
+do_something.object.tap do($x)
     log($x)
 end.do_more
 ```
@@ -29,39 +42,42 @@ end.do_more
 Returns the value `do_something` produced; the `log` call is a
 side-effect inserted into the chain.
 
-<a id="open-where-does-it-live"></a>
-## Open: where does it live?
+<a id="placement"></a>
+## Placement: `.object.tap`
 
-Two reasonable readings:
+Two readings were considered:
 
-- **On the value directly** (`$foo.tap`). Receiver in, receiver
-  out, matches Ruby semantics. Chains naturally:
-  ```
-  do_something.tap do($x); log($x); end.do_more
-  ```
+- **On the value directly** (`$foo.tap`). Matches Ruby exactly but adds
+  `tap` to every object's main method namespace, where it competes with
+  domain methods on every class.
+- **On the `.object` meta-helper** (`$foo.object.tap`). Keeps the main
+  method namespace clean — `.object` is where meta-operations live.
 
-- **On `.object` (the meta-helper)** (`$foo.object.tap`).
-  Discipline choice — keeps the regular method namespace clean.
-  But chaining loses the original value (the chain continues
-  from `.object`, not from `$foo`), which weakens the main
-  reason for tap.
+The objection raised against `.object.tap` was that "the chain continues
+from `.object`, not from `$foo`" — but that's only true if the helper's
+methods return the helper. They don't have to. **`.object.tap` returns
+the underlying value**, not the helper. Chains survive.
 
-Recommendation (not committed): put `tap` directly on every
-object (since every Caspian object inherits a root that can
-carry it). Receiver in, receiver out. Matches Ruby exactly and
-preserves chain ergonomics.
+So the placement is `.object.tap`. Main namespace stays clean, chain
+ergonomics preserved, cost is one extra `.object.` in the syntax.
 
-<a id="open-what-does-the-block-receive"></a>
-## Open: what does the block receive?
+<a id="block-receives"></a>
+## What the block receives
 
-- The receiver itself — natural and useful.
+The block receives the **underlying value** — the same value the chain
+will continue on:
 
-(If `tap` lives on `.object` instead, the block could receive
-either the original value or the object helper — another reason
-the on-the-value placement is simpler.)
+```caspian
+$foo.object.tap do($same_as_foo)
+    log($same_as_foo)
+end
+```
+
+Not the `.object` helper. The helper exists to host the `tap` method;
+inside the block, you want the actual value.
 
 <a id="status"></a>
 ## Status
 
-Not in v1 core. Trivial to add when wanted. Filed here so the
-discussion isn't lost.
+Not in V1 core. Placement and block semantics settled 2026-05-27.
+Trivial to add when wanted; filed here so the discussion isn't lost.

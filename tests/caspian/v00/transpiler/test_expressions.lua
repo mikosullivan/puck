@@ -7,10 +7,11 @@
 local runner = require("support.runner")
 local assert = require("support.assert")
 local ks     = require("caspian")
+local engine = require("caspian.engine")
 
 --[[ { "in": "src: string", "out": "CaspianJ node  (first statement)", "note": "transpile helper; returns ks.transpile(src)[1]" } ]]
 local function tx(src)
-    local stmts = ks.transpile(src)
+    local stmts = engine.parse_caspian(src)
     return stmts[1]
 end
 
@@ -211,7 +212,7 @@ end)
 runner.test("anonymous function expression", function()
     local n = tx("$f = function($x)\nend")
     -- The outer statement is setvar
-    local stmts = ks.transpile("$f = function($x)\nend")
+    local stmts = engine.parse_caspian("$f = function($x)\nend")
     local s = stmts[1]
     assert.equal(s[1], "scope")
     assert.equal(s[2], "setvar")

@@ -1,15 +1,21 @@
 --[[
 {
   "module":  "caspian.engine",
-  "role":    "Canonical-CaspianJ executor. Bootstraps engine state, dispatches each statement in a CaspianJ tree, returns the last value to the host. Reads no files and parses no JSON — the caller composes the pipeline (Aslan path: io.open + json.parse; Bree path: io.open + caspian.transpile).",
-  "scope":   "Aslan + Bree: a single string literal materialized and a single method (to_string) dispatched. No I/O, no other classes, no other methods.",
+  "role":    "Canonical-CaspianJ executor. The host configures the engine via property assignment (engine.caspianj = tree, engine.std = sink, engine.root = jail), then calls engine.run() to execute. No arguments to run; everything comes from staged properties. Matches bootstrap.md's host capability model.",
+  "scope":   "Aslan + Bree: a single string literal materialized and a single method (to_string) dispatched. No I/O, no other classes, no other methods. Corin will add bwc dispatch + engine.std stdout sink.",
   "exports": {
-    "run":           "(tree) -> value      entry point; bootstraps fresh state, dispatches each statement in the pre-parsed CaspianJ tree, returns the last value",
-    "bootstrap":     "() -> nil            initializes engine.state (roles + call_stack) and engine.classes; fully resets every call",
-    "materialize":   "(expr) -> value      turns a CaspianJ expression into a value table",
-    "lookup_method": "(value, name) -> fn  finds a method on the value's class",
+    "parse_caspian": "(source) -> tree         lex + parse + transpile Caspian source to a CaspianJ Lua table",
+    "run":           "() -> value              entry point; reads engine.caspianj, bootstraps fresh state, dispatches each statement, returns the last value",
+    "bootstrap":     "() -> nil                initializes engine.state (roles + call_stack) and engine.classes; fully resets every call",
+    "materialize":   "(expr) -> value          turns a CaspianJ expression into a value table",
+    "lookup_method": "(value, name) -> fn      finds a method on the value's class",
     "transition":    "(frame_meta, fn) -> result   pushes a frame, runs fn, pops, returns fn's result",
-    "dispatch":      "(statement) -> value handles one [receiver, method, args?] statement; pushes a method_call frame unconditionally"
+    "dispatch":      "(statement) -> value     handles one [receiver, method, args?] statement; pushes a method_call frame unconditionally"
+  },
+  "properties": {
+    "caspianj":     "CaspianJ tree to execute. Host stages it before calling run(). Persists across runs until reassigned.",
+    "std":          "(future, Corin) stdout sink function. Host injects before run(); puts bwc writes to it.",
+    "root":         "(future) dirjail for filesystem access. Host injects before run()."
   },
   "state": {
     "engine.state.roles":      "role registry; lives IN skeletor (program-visible)",
@@ -18,12 +24,30 @@
   },
   "value_shape":  "{ type=\"puck.uno/<class>\", owning_role=role_object, payload=any_lua_value }",
   "frame_shape":  "{ action=string, role=role_object, chain={log={},misc={}}, locals={}, ... }",
-  "depends_on":   [],
-  "docs":         ["documentation/development/v1/aslan.md", "documentation/development/v1/bree.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
+  "depends_on":   ["caspian.lexer", "caspian.parser", "caspian.transpiler"],
+  "docs":         ["documentation/development/v1/aslan.md", "documentation/development/v1/bree.md", "documentation/caspian/bootstrap.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/skeletor.md", "documentation/caspian/roles.md"]
 }
 ]]
 
+local lexer      = require("caspian.lexer")
+local parser     = require("caspian.parser")
+local transpiler = require("caspian.transpiler")
+
 local M = {}
+
+--[[
+{
+  "fn":   "parse_caspian",
+  "in":   "source: Caspian source string",
+  "out":  "CaspianJ tree (Lua table; array of statements)",
+  "note": "Pure function: lex → parse → transpile. Does not touch engine state. Canonical home for the Caspian-source-to-tree pipeline; previously caspian.transpile, moved here so the host only needs to touch one module."
+}
+]]
+function M.parse_caspian(source)
+    local tokens = lexer.tokenize(source)
+    local ast    = parser.parse(tokens)
+    return transpiler.transpile(ast)
+end
 
 --[[
 {
@@ -42,15 +66,16 @@ end
   "fn":   "bootstrap",
   "in":   "(none)",
   "out":  "nil",
-  "note": "fully resets engine.state and engine.classes; safe to call repeatedly. After: state has user+stdlib roles and one top_level frame; classes has puck.uno/string."
+  "note": "fully resets engine.state and engine.classes; safe to call repeatedly. After: state has user+stdlib roles and one top_level frame; classes has puck.uno/string. Called internally by run(); host does not normally call this directly."
 }
 ]]
 function M.bootstrap()
     -- Skeletor: roles registry lives inside state.
     M.state = {
         roles = {
-            user   = { name = "user" },
+            user   = { name = "user"   },
             stdlib = { name = "stdlib" },
+            stdout = { name = "stdout" },
         },
         call_stack = {},
     }
@@ -65,6 +90,20 @@ function M.bootstrap()
                     return receiver
                 end,
             },
+        },
+    }
+
+    -- Engine-private: bwc registry. Each entry carries handler + owning role.
+    M.bwcs = {
+        puts = {
+            owning_role = M.state.roles.stdout,
+            fn = function(value)
+                local sink = M.std
+                if sink == nil then
+                    error("puts: engine.std is not set — host must install a stdout sink (see bootstrap.md § stdout and stderr)")
+                end
+                sink(tostring(value.payload) .. "\n")
+            end,
         },
     }
 
@@ -150,8 +189,9 @@ function M.transition(frame_meta, fn)
     local frame = {
         action        = frame_meta.action,
         role          = frame_meta.role,
-        receiver_type = frame_meta.receiver_type,
-        method        = frame_meta.method,
+        receiver_type = frame_meta.receiver_type,  -- method_call only
+        method        = frame_meta.method,         -- method_call only
+        bwc           = frame_meta.bwc,            -- bwc_call only
         chain         = { log = {}, misc = {} },
         locals        = {},
     }
@@ -164,9 +204,9 @@ end
 --[[
 {
   "fn":  "dispatch",
-  "in":  "statement: [receiver_expr, method_name, args?]  (Aslan: no args)",
-  "out": "the method's return value (a value table)",
-  "note": "pushes a method_call frame unconditionally (same-role and cross-role both push); the new frame's chain is fresh per skeletor.md's per-frame-chain model. Args at statement[3+] are deferred to Bree."
+  "in":  "statement: a CaspianJ statement. Two shapes today: method-call [receiver, method, args?] and bwc-call [{bwc:name}, arg1?, ...].",
+  "out": "the call's return value (a value table for method calls; bwc handler return for bwc calls, typically nil)",
+  "note": "Pushes a frame unconditionally. method_call frames carry receiver_type+method; bwc_call frames carry bwc instead. The new frame's chain is fresh per skeletor.md's per-frame-chain model."
 }
 ]]
 function M.dispatch(statement)
@@ -174,6 +214,31 @@ function M.dispatch(statement)
         error("engine.dispatch: expected a statement table")
     end
 
+    -- Bwc-call shape: [{bwc:name}, arg1?, arg2?, ...]
+    local head = statement[1]
+    if type(head) == "table" and head.bwc then
+        local bwc_name = head.bwc
+        local entry    = M.bwcs and M.bwcs[bwc_name]
+        if not entry then
+            error("engine.dispatch: no bwc registered for name '" .. tostring(bwc_name) .. "'")
+        end
+
+        -- Materialize the first arg (Corin scope: single positional arg).
+        local arg = nil
+        if statement[2] ~= nil then
+            arg = M.materialize(statement[2])
+        end
+
+        return M.transition({
+            action = "bwc_call",
+            role   = entry.owning_role,
+            bwc    = bwc_name,
+        }, function()
+            return entry.fn(arg)
+        end)
+    end
+
+    -- Method-call shape: [receiver, method, args?]
     local receiver    = M.materialize(statement[1])
     local method_name = statement[2]
     local method_fn   = M.lookup_method(receiver, method_name)
@@ -192,14 +257,15 @@ end
 --[[
 {
   "fn":  "run",
-  "in":  "tree: pre-parsed CaspianJ tree (Lua table; array of statements)",
+  "in":  "(none) — reads engine.caspianj for the tree to execute",
   "out": "value table of the last statement's result, or nil if the program is empty",
-  "note": "Calls bootstrap (fresh state), then dispatches each statement, returns the last. File reading and JSON parsing are the caller's job. Host extracts .payload from the returned value."
+  "note": "No arguments. The host stages the tree on engine.caspianj (and capabilities on engine.std, engine.root, etc.) before calling run(). Calls bootstrap (fresh state), then dispatches each statement, returns the last."
 }
 ]]
-function M.run(tree)
+function M.run()
+    local tree = M.caspianj
     if type(tree) ~= "table" then
-        error("engine.run: expected a CaspianJ tree (Lua table), got " .. type(tree))
+        error("engine.run: engine.caspianj must be set to a CaspianJ tree (Lua table) before calling run; got " .. type(tree))
     end
 
     M.bootstrap()

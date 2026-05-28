@@ -8,7 +8,7 @@
 ]]
 local runner  = require("support.runner")
 local assert_ = require("support.assert")
-local caspian = require("caspian")
+local engine  = require("caspian.engine")
 local json    = require("caspian.json")
 
 runner.suite("bree / TB.2 transpiler_canonical")
@@ -20,9 +20,9 @@ local function read_file(path)
     return s
 end
 
-runner.test("transpile('hello'.to_string) deep-equals Aslan hand-written canonical tree", function()
+runner.test("parse_caspian('hello'.to_string) deep-equals Aslan hand-written canonical tree", function()
     local source = read_file("tests/caspian/fixtures/hello_world.casp")
-    local got    = caspian.transpile(source)
+    local got    = engine.parse_caspian(source)
 
     local aslan_json = read_file("tests/caspian/fixtures/hello_world.caspj")
     local expected   = json.parse(aslan_json)

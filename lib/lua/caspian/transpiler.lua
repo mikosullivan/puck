@@ -218,7 +218,25 @@ transpile_expr = function(node)
 
     elseif k == "call" then
         -- Generic call: callee is any expression (bare-word calls, etc.)
-        return make_call(transpile_expr(node.callee), "&",
+        local callee_ksj = transpile_expr(node.callee)
+
+        -- Bwc-call canonical shape: [{bwc:name}, arg1, arg2, ...] (no method slot,
+        -- no {args} wrapper). Detected when the callee transpiles to a bwc receiver
+        -- AND there are no kwargs and no block (Corin scope: single positional args).
+        if callee_ksj.bwc
+            and (not node.kwargs or #node.kwargs == 0)
+            and not node.block
+        then
+            local stmt = { callee_ksj }
+            if node.args then
+                for _, arg in ipairs(node.args) do
+                    stmt[#stmt + 1] = transpile_expr(arg)
+                end
+            end
+            return stmt
+        end
+
+        return make_call(callee_ksj, "&",
                          node.args, node.kwargs, nil)
 
     elseif k == "index" then

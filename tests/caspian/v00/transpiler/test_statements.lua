@@ -7,10 +7,12 @@
 local runner = require("support.runner")
 local assert = require("support.assert")
 local ks     = require("caspian")
+local engine = require("caspian.engine")
+local json   = require("caspian.json")
 
 --[[ { "in": "src: string", "out": "CaspianJ table  (all statements)", "note": "transpile helper; returns ks.transpile(src)" } ]]
 local function tx(src)
-    return ks.transpile(src)
+    return engine.parse_caspian(src)
 end
 
 --[[ { "in": "src: string", "out": "CaspianJ node  (first statement)", "note": "transpile helper; returns tx(src)[1]" } ]]
@@ -259,8 +261,8 @@ end)
 
 -- JSON serialisation sanity check ----------------------------------------
 
-runner.test("to_json produces valid JSON string", function()
-    local out = ks.to_json("$x = 42")
+runner.test("json-encoded parse_caspian output produces valid JSON string", function()
+    local out = json.encode(engine.parse_caspian("$x = 42"))
     assert.not_nil(out)
     -- Spot-check: contains the string
     assert.equal(out:find('"setvar"') ~= nil, true)
