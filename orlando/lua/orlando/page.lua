@@ -721,6 +721,11 @@ local function add_head(html_tag, title)
             s:attr("defer", "")
             s:text("")
         end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/copy-code.js")
+            s:attr("defer", "")
+            s:text("")
+        end)
     end)
 end
 

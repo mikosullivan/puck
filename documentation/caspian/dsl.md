@@ -138,9 +138,11 @@ $items.each do($item)
     if $item.empty?
         next            # bwc → %loop.next
     end
+
     if found($item)
         break           # bwc → %loop.break
     end
+
     puts $item.name
 end
 ```

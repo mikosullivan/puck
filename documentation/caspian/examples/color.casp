@@ -1,0 +1,144 @@
+class 'puck.uno/color'
+	field :red,   class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :green, class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :blue,  class: :number, min: 0, max: 255, integer_only: true, required: true
+	field :alpha, class: :number, min: 0, max: 255, integer_only: true, required: true, default: 255
+	
+	%bucket['named'] = {
+		red:           '#ff0000',
+		green:         '#008000',
+		blue:          '#0000ff',
+		black:         '#000000',
+		white:         '#ffffff',
+		orange:        '#ffa500',
+		purple:        '#800080',
+		rebeccapurple: '#663399',
+		coral:         '#ff7f50',
+		teal:          '#008080'
+		# ... about 100 more, omitted for brevity
+	}
+	
+	function &new($input)
+		if %bucket['named'].has_key?($input)
+			return (&from_hex(%bucket['named'][$input]))
+		elseif $input.match('^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$')
+			return (&from_hex($input))
+		else
+			raise 'puck.uno/color/error/format', message: 'not a recognized color: ' + $input
+		end
+	end
+	
+	function &from_hex($hex)
+		@red   = &parse_byte($hex.slice(1, 3))
+		@green = &parse_byte($hex.slice(3, 5))
+		@blue  = &parse_byte($hex.slice(5, 7))
+		
+		if $hex.length == 9
+			@alpha = &parse_byte($hex.slice(7, 9))
+		else
+			@alpha = 255
+		end
+	end
+	
+	function &hex()
+		$body = '#' + &to_hex_byte(@red) + &to_hex_byte(@green) + &to_hex_byte(@blue)
+		
+		if @alpha != 255
+			return ($body + &to_hex_byte(@alpha))
+		end
+		
+		return ($body)
+	end
+	
+	function &name()
+		$h = .hex
+		
+		%bucket['named'].each do($n, $named_hex)
+			if $named_hex == $h
+				return ($n)
+			end
+		end
+		
+		return (null)
+	end
+	
+	function &red?()
+		return (.hex == %bucket['named'][:red])
+	end
+	
+	function &orange?()
+		return (.hex == %bucket['named'][:orange])
+	end
+	
+	function &rebeccapurple?()
+		return (.hex == %bucket['named'][:rebeccapurple])
+	end
+	
+	# ... ~107 more, all the same shape — would be defined programmatically
+	# from %bucket['named'] at class load.
+	
+	
+	function &to_arr()
+		return ([@red, @green, @blue, @alpha])
+	end
+	
+	function &to_hash()
+		return ({
+			red:   @red,
+			green: @green,
+			blue:  @blue,
+			alpha: @alpha,
+			hex:   .hex,
+			name:  .name
+		})
+	end
+	
+	function &distance($other)
+		$dr = @red   - $other.red
+		$dg = @green - $other.green
+		$db = @blue  - $other.blue
+		return (($dr * $dr + $dg * $dg + $db * $db).sqrt)
+	end
+	
+	function &spectrum_to($other, steps:)
+		$result = []
+		$i = 0
+		
+		while $i < $steps
+			$t = ($i / ($steps - 1))
+			$result << %['puck.uno/color'].new(&interpolate_hex($other, $t))
+			$i = $i + 1
+		end
+		
+		return ($result)
+	end
+end
+
+function class 'puck.uno/color'.&random(*selectors)
+	$attempts = 0
+	
+	while $attempts < 10000
+		$candidate = %['puck.uno/color'].new(&random_hex)
+		
+		if &all_satisfied($candidate, selectors)
+			return ($candidate)
+		end
+		
+		$attempts = $attempts + 1
+	end
+	
+	# Fell through — fall back to deterministic search across the bounding box
+	# of the inside-scope selectors, then random-pick from matches.
+	# If no matches, raise.
+	raise 'puck.uno/color/no_match'
+end
+
+function &all_satisfied($candidate, $selectors)
+	$selectors.each do($s)
+		if not $s.scoped?($candidate)
+			return (false)
+		end
+	end
+	
+	return (true)
+end

@@ -1,695 +1,498 @@
-# Worldlet Format
+# Worldlets
 
 ~~~json
 {"vibecode": {
 	"doc": "worldlet",
-	"role": "spec for the worldlet JSON file format — the portable serialization of a small mikobase used for sharing, shipping, and exchanging databases that fit comfortably as a single JSON document. Covers the top-level structure, every section (meta / format / properties / classes / records / files), import rules, and complete worked examples.",
-	"audience": ["humans designing worldlet producers and consumers",
-		"AI agents reading or emitting worldlet JSON directly"],
-	"size_scope": "small_mikobases_only; a_separate_export_format_for_large_mikobases_is_planned_but_not_yet_designed",
-	"key_concepts": ["non_temporal_default_no_history_block",
-		"records_keyed_by_uuid", "classes_section_for_schema",
-		"files_with_file_chunks_subsection_for_binary",
-		"import_overwrites_on_uuid_match",
-		"validation_errors_abort_atomically",
-		"app_owns_conflict_policy_not_the_primitive"],
-	"see_also": {
-		"AI2AI.md": "temporal worldlet shape used by AI2AI sessions",
-		"mikobase.md": "full mikobase model, temporal vs non-temporal mode"
-	},
-	"example_universe": "Star Trek"
+	"role": "ground-up redesign of the worldlet format; the object-description system at the heart of this spec is the universal way the entire Puck ecoverse serializes objects to JSON, not just a Mikobase format",
+	"status": "active_design; nothing_below_is_settled; previous_version_preserved_at_history.md",
+	"audience": "Miko and Claude collaborating on the design",
+	"previous_version": "history.md",
+	"scope": "ecoverse_wide; applies_to_puck_protocol_messages_caspianj_class_literals_mikobase_records_anywhere_objects_ship_as_json"
 }}
 ~~~
 
-A worldlet looks like this — three records, no classes, no history,
-no files:
+This file is being designed from the ground up. The previous specification is preserved at [history.md](history.md) for reference, but should be treated as historical — do not cite it as authority during this redesign.
+
+The scope is bigger than the file name suggests. The object-description system at the heart of the worldlet format — how a hash carries class identity so it can be rehydrated into a live object — is the universal way the entire Puck ecoverse will serialize objects to JSON. That includes Puck protocol messages, CaspianJ class literals, Mikobase records, anywhere else an object crosses a JSON boundary. Worldlets are the place this format gets pinned down; the rest of the ecoverse inherits it.
+
+## Minimal worldlet
+
+~~~json
+{"vibecode": {
+	"section": "minimal_worldlet",
+	"role": "shows the smallest valid worldlet; only the format declaration is required today",
+	"format_key_shape": "name_slash_version_string"
+}}
+~~~
+
+The smallest possible worldlet is the format declaration alone:
 
 ```json
 {
-    "format": "worldlet",
-    "format_version": "1.0",
-    "records": {
-        "1a000000-0000-0000-0000-000000000001": {
-            "bucket": {"name": "Picard, Jean-Luc", "rank": "Captain"}
-        },
-        "1a000000-0000-0000-0000-000000000002": {
-            "bucket": {"name": "Riker, William", "rank": "Commander"}
-        },
-        "1a000000-0000-0000-0000-000000000003": {
-            "bucket": {"name": "Data", "rank": "Lieutenant Commander"}
-        }
-    }
+    "format": "worldlet/1.0"
 }
 ```
 
-That's the whole format at its smallest. Everything below is optional
-detail layered on top.
+`format` is a single string of the shape `"<name>/<version>"`. The name identifies the document as a worldlet; the version is the spec version this document conforms to.
 
-<a id="overview"></a>
-## Overview
+Nothing else is required to be a valid worldlet today.
 
-~~~json
-{"vibecode": {
-	"section": "overview",
-	"what_a_worldlet_is": "a complete non_temporal_mikobase serialized as one JSON object",
-	"contains": ["classes_definitions", "records_with_buckets",
-		"optional_files_and_file_chunks", "optional_meta_and_properties"],
-	"size_scope": "small_mikobases_only; large_mikobases_will_use_a_different_export_format_tbd",
-	"primary_use_cases": ["snapshot_for_sharing",
-		"scenario_or_scratch_space", "ai2ai_exchange_format_subset"],
-	"import_target": "non_temporal_mikobase_only; importing_into_temporal_raises",
-	"history_handling": "no_version_history_in_non_temporal_shape; see_AI2AI_md_for_temporal_shape"
-}}
-~~~
-
-A worldlet is a complete mikobase — classes, records, and files — packaged as a single
-JSON object. It is the standard format for sharing and distributing **small** mikobases.
-A separate export format for large mikobases is planned but not yet designed; if a
-mikobase is too big to ship comfortably as one JSON document, this is not the format
-to reach for.
-
-**This document describes the non-temporal worldlet shape** — each record
-is stored as a single object with its current bucket; there is no version
-history. Non-temporal is the worldlet default and matches most use cases
-(snapshots of conversations, scenarios, scratch space). Temporal worldlets
-exist for cases that need to preserve history; see
-[AI2AI.md](../AI2AI.md) for that shape and
-[mikobase.md](../index.md#temporal-vs-non-temporal-mode) for the full
-mode rules.
-
-A worldlet is imported into a running mikobase. The importer creates the classes, inserts
-the records, and stores any file attachments. PKs are preserved exactly as exported, so
-references between records remain valid after import. A non-temporal worldlet imports
-into a non-temporal mikobase; importing into a temporal mikobase raises an exception.
-
----
-
-<a id="top-level-structure"></a>
-## Top-Level Structure
-
-~~~json
-{"vibecode": {
-	"section": "top_level_structure",
-	"required_keys": ["format", "format_version"],
-	"optional_keys": ["meta", "properties", "classes", "records",
-		"files", "file_chunks"],
-	"key_order": "not_significant; order shown is conventional for human readability",
-	"shape": "single_top_level_json_object"
-}}
-~~~
-
-```json
-{
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "meta":           { ... },
-    "properties":     { ... },
-    "classes":        { ... },
-    "records":        { ... },
-    "files":          { ... },
-    "file_chunks":    { ... }
-}
-```
-
-A worldlet plays two roles: a **serialized export** of an engine-backed
-mikobase (SQLite in v1) and the **live storage** of the
-`puck.uno/mikobase/worldlet` engine. See
-[mikobase.md § Worldlets: Mikobase on a microscale](../index.md#worldlets-mikobase-on-a-microscale)
-for the broader picture and the engine/format distinction.
-
-A worldlet's required keys depend on its `temporal` flag (see
-[mikobase.md § Temporal vs Non-temporal Mode](../index.md#temporal-vs-non-temporal-mode)):
-
-- **Non-temporal worldlets** (the default — `temporal` key absent or
-  `false`): `records` is required and carries each record's current
-  bucket directly; `history` is not part of the format.
-- **Temporal worldlets** (`"temporal": true` at the top level):
-  `history` is required; `records` is optional (the engine infers
-  identity stubs from history if absent).
-
-All other top-level keys default to empty structures if absent.
-
-This document describes the **non-temporal** worldlet shape — records carry
-their current bucket directly. For the temporal shape with per-version history
-entries, see
-[AI2AI.md](../AI2AI.md).
-
----
-
-<a id="meta"></a>
-## `meta`
-
-~~~json
-{"vibecode": {
-	"section": "meta",
-	"fields": ["name", "author", "version"],
-	"purpose": "descriptive_metadata_about_the_worldlet"
-}}
-~~~
-
-Descriptive information about the worldlet.
-
-```json
-"meta": {
-    "name":        "Starfleet Personnel",
-    "author":      "starfleet.com",
-    "version":     "1.0.0",
-    "description": "Personnel records for Starfleet officers and ships.",
-    "created_at":  "2364-01-01T00:00:00.000Z"
-}
-```
-
-| Field         | Required | Description |
-|---------------|----------|-------------|
-| `name`        | no       | Human-readable name |
-| `author`      | no       | UNS domain of the publisher |
-| `version`     | no       | Semver string |
-| `description` | no       | Free-text description of the worldlet's contents |
-| `created_at`  | no       | ISO 8601 timestamp of when the worldlet was exported |
-
----
-
-<a id="format-and-format_version"></a>
-## `format` and `format_version`
-
-~~~json
-{"vibecode": {
-	"section": "format_and_format_version",
-	"fields": ["format", "format_version"],
-	"purpose": "format_identity_and_versioning"
-}}
-~~~
-
-Two optional top-level strings that identify the document type and spec version.
-
-```json
-"format": "worldlet",
-"format_version": "1.0"
-```
-
-| Field            | Required | Description |
-|------------------|----------|-------------|
-| `format`         | no       | Fixed string `"worldlet"`. Identifies this as a worldlet document. |
-| `format_version` | no       | Semver string. Current version is `"1.0"`. |
-
-Both are optional for backwards compatibility but should be included in all new worldlets.
-
-**Engine behaviour on import:**
-
-- Unknown `format_version` — warn and attempt import.
-- Unknown `format` string — refuse import.
-- Both absent — attempt import without warning.
-
----
-
-<a id="properties"></a>
-## `properties`
-
-~~~json
-{"vibecode": {
-	"section": "properties",
-	"fields": ["temporal"],
-	"purpose": "database_level_metadata_readable_by_any_client_or_agent"
-}}
-~~~
-
-Database-level properties that describe the mikobase itself. Any client or agent
-connecting to or importing the worldlet should read these before interacting with
-the data.
-
-```json
-"properties": {
-    "temporal": false
-}
-```
-
-| Field      | Type    | Default | Description |
-|------------|---------|---------|-------------|
-| `temporal` | boolean | `false` | Whether the importer should save records into version history instead of writing them directly to current state. Worldlets are non-temporal by default; setting `true` instructs the importer to store each record as a history entry |
-
-`temporal` tells the importer how to land each record. The default `false`
-matches the worldlet format's non-temporal shape (each record carries its
-current bucket directly, no history block). Set `true` when the worldlet
-was exported from a temporal mikobase and the receiving mikobase should
-preserve that history rather than collapse it into current state.
-
-A small amount of forgiveness for mode mismatches is TBD — exact rules to
-be filled in once the temporal/non-temporal import paths are settled. See
-[mikobase.md](../index.md#temporal-vs-non-temporal-mode) for the full
-mode rules.
-
----
-
-<a id="classes"></a>
-## `classes`
-
-~~~json
-{"vibecode": {
-	"section": "classes",
-	"format": "dict_keyed_by_uns_class_name",
-	"methods_as": "fields_with_class_function_and_caspian_key",
-	"see": "class-definition.md"
-}}
-~~~
-
-The schema, using the standard class definition format. Each key is a UNS class name; each
-value is the class definition. All classes defined here are record classes.
-
-Methods are defined as fields with `"class": "function"` and a `"caspian"` key containing
-Caspian source. Multiline strings use literal newlines; leading indentation is stripped by
-the importer.
-
-```json
-"classes": {
-    "starfleet.com/person": {
-        "fields": {
-            "name":      {"class": "string", "required": true, "collapse": true},
-            "birthdate": {"class": "string"},
-            "species":   {"class": "string", "default": "Human"},
-
-            "greet": {
-                "class": "function",
-                "caspian": "
-                    function &greet
-                        'Hello, I am ' + @name
-                    end
-                "
-            }
-        }
-    },
-
-    "starfleet.com/officer": {
-        "inherits": "starfleet.com/person",
-        "fields": {
-            "rank":   {"class": "string",  "required": true},
-            "serial": {"class": "string",  "required": true, "unique": true},
-            "active": {"class": "boolean", "default": true},
-            "photo":  {"class": "puck.uno/dbfile"},
-
-            "summary": {
-                "class": "function",
-                "caspian": "
-                    function &summary
-                        @rank + ' ' + @name + ' (' + @serial + ')'
-                    end
-                "
-            },
-
-            "promote": {
-                "class": "function",
-                "caspian": "
-                    function &promote(new_rank:)
-                        @rank = new_rank
-                        self
-                    end
-                "
-            }
-        }
-    },
-
-    "starfleet.com/ship": {
-        "fields": {
-            "name":       {"class": "string", "required": true, "unique": true},
-            "registry":   {"class": "string", "required": true, "unique": true},
-            "ship_class": {"class": "string"}
-        },
-        "join": ["name", "registry"]
-    }
-}
-```
-
-See [class-definition.md](../class-definition.md) for the full class definition format.
-
----
-
-<a id="records"></a>
-## `records`
+## Records
 
 ~~~json
 {"vibecode": {
 	"section": "records",
-	"format": "dict_keyed_by_uuid",
-	"fields": ["classes", "created_at", "bucket"],
-	"shape": "platter_model_classes_hash_keyed_by_platter_id"
+	"role": "introduces the records top-level key; records are a dict keyed by arbitrary strings; values can be any JSON type but hashes always represent objects",
+	"key_shape": "any_unique_string; format_does_not_dictate_generation_scheme",
+	"value_shape": "any_json_value; hashes_always_represent_objects_per_their_shape",
+	"required": false
 }}
 ~~~
 
-A dict of records, keyed by record UUID. Each entry carries the record's
-classes (its platter stack), creation timestamp, and current bucket. The
-non-temporal worldlet shape documented here has no separate history block
-and no per-version entries; for the temporal shape with per-version
-history, see [AI2AI.md](../AI2AI.md).
-
-```json
-"records": {
-    "e1b2c3d4-0001-0001-0001-000000000001": {
-        "classes": {
-            "p1a2b3c4-0001-0001-0001-000000000001": {
-                "class":  "starfleet.com/officer",
-                "bucket": {}
-            }
-        },
-        "created_at": "2364-01-01T00:00:00.000Z",
-        "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
-    }
-}
-```
-
-| Field        | Required | Description |
-|--------------|----------|-------------|
-| `classes`    | yes      | Platter stack: a hash keyed by platter ID, each value `{class, bucket}` per the [platter model](../../ideas/base-class-use.md). Every record has at least one platter. |
-| `created_at` | no       | ISO 8601 timestamp with millisecond precision; record-level metadata, not bucket data. |
-| `bucket`     | yes      | The record's user-facing field values (those declared by its class definitions). Free-form, no reserved keys. |
-
-**Where do values live?** For a regular record with a single class platter,
-the class's declared field values (e.g., `name`, `rank`, `serial` for an
-officer) live in the **top-level `bucket`**. Per-platter buckets are for
-class-internal state (mix-ins, cross-cutting concerns) — usually empty
-for ordinary records. Class-definition records are a special case where
-the platter's bucket holds the definition itself; see
-[class-definition.md](../class-definition.md).
-
----
-
-<a id="files"></a>
-## `files`
-
-~~~json
-{"vibecode": {
-	"section": "files",
-	"format": "dict_keyed_by_file_uuid",
-	"fields": ["sha256", "created_at", "mime.type", "mime.encoding"]
-}}
-~~~
-
-A dict of file records, keyed by file UUID. Describes each attached file — its integrity
-hash, timestamp, and MIME type.
-
-```json
-"files": {
-    "d1e2f3a4-0001-0001-0001-000000000001": {
-        "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "created_at": "2364-01-01T00:00:00.000Z",
-        "mime": {
-            "type":     "image/png",
-            "encoding": "base64"
-        }
-    }
-}
-```
-
-| Field        | Description |
-|--------------|-------------|
-| `sha256`     | SHA-256 hash of the complete file content, for integrity verification |
-| `created_at` | ISO 8601 timestamp |
-| `mime.type`  | MIME type of the file |
-| `mime.encoding` | Encoding used for chunk data (e.g. `"base64"`) |
-
-<a id="file_chunks"></a>
-### `file_chunks`
-
-A dict of file chunks, keyed by chunk UUID. A file's binary content is split across one
-or more chunks. Chunks are assembled in `index` order to reconstruct the file.
-
-```json
-"file_chunks": {
-    "c1d2e3f4-0001-0001-0001-000000000001": {
-        "file":  "d1e2f3a4-0001-0001-0001-000000000001",
-        "index": 0,
-        "last":  true,
-        "data":  "base64encodeddata..."
-    }
-}
-```
-
-| Field   | Description |
-|---------|-------------|
-| `file`  | UUID of the parent file record |
-| `index` | Zero-based chunk position |
-| `last`  | `true` on the final chunk — positive confirmation that the file was saved completely. A file with no chunk where `last` is `true` is incomplete. |
-| `data`  | Chunk content, encoded per the file's `mime.encoding` |
-
----
-
-<a id="import-rules"></a>
-## Import Rules
-
-~~~json
-{"vibecode": {
-	"section": "import_rules",
-	"covers": ["uuid_constraints", "conflict_policy",
-		"reference_encoding", "class_field", "validation",
-		"atomicity"],
-	"conflict_policy_summary": "incoming_record_with_existing_uuid_overwrites; stricter_policies_are_application_concerns",
-	"atomicity_summary": "validation_errors_abort_entire_import; no_partial_writes",
-	"validation_summary": "every_record_has_class_and_bucket; class_must_be_known_to_importer; created_at_iso_8601_millisecond_precision"
-}}
-~~~
-
-<a id="uuid-constraints"></a>
-### UUID constraints
-
-Keys in `records`, `files`, and `file_chunks` are conventionally UUID v4
-strings, but Mikobase requires only **uniqueness** — not a specific
-format and not cryptographic soundness. UUIDs are used for collision
-avoidance, not security. Any unique string is accepted today; the policy
-may tighten later. See
-[mikobase.md § Record identity](../index.md#record-identity).
-
-Caspian code generating record IDs should use
-[`%utils.random.uuid`](../../caspian/utils/index.md#utilsrandomuuid), which
-returns a cryptographically secure UUID v4 sourced from the OS CSPRNG via libsodium.
-
-<a id="conflict-policy"></a>
-### Conflict policy
-
-A worldlet is a non-temporal mikobase serialized to JSON. Importing
-records is just writing them — when an incoming record has the same
-UUID as one already in the target, the incoming record overwrites
-the existing one. The same rule applies to `files` and
-`file_chunks` entries.
-
-Whether overwrites are *desirable* is an application concern, not
-something the worldlet primitive should decide. Apps that want
-stricter behavior (skip-on-conflict, abort-on-conflict, prompt for
-review, etc.) can wrap import in their own check before calling.
-
-<a id="reference-encoding"></a>
-### Reference encoding
-
-Reference fields in `bucket` are plain UUID strings. The class definition declares the
-field type — a field with class `puck.uno/reference` or `puck.uno/dbfile` tells the
-engine the value is a reference. No special wrapper syntax is used in the bucket itself.
-
-<a id="the-class-field"></a>
-### The `class` field inside platter records
-
-In all Puck-compliant platter records, the `class` field identifies the
-class for that platter. This applies to Q0 queries, record entries' class
-definitions, and any other Puck-level objects.
-
-Bucket objects (top-level or platter-internal) are not Puck-compliant.
-The `class` key has no special meaning inside a bucket and may be used
-freely as an application field.
-
-<a id="validation"></a>
-### Validation
-
-The importer validates the following before writing anything:
-
-- All record entries have a `classes` hash and a `bucket`.
-- Every record's `classes` hash contains at least one platter entry.
-- All `class` values inside platter records are either built-in classes,
-  defined in this worldlet's `classes` section, or already present in
-  the target mikobase.
-- All `file` values in `file_chunks` reference a UUID present in `files`.
-- The target mikobase is non-temporal.
-
-<a id="atomicity"></a>
-### Atomicity
-
-Import is all-or-nothing. If any validation error or conflict error occurs, nothing is
-written to the target mikobase. Partial imports do not happen.
-
----
-
-<a id="minimal-valid-example"></a>
-## Minimal Valid Example
-
-~~~json
-{"vibecode": {
-	"section": "minimal_valid_example",
-	"shows": "smallest_complete_worldlet_that_imports_without_error",
-	"omits": ["meta", "properties", "classes", "files", "file_chunks"],
-	"defaults_relied_on": {
-		"record_classes": "single platter of class puck.uno/record (built_in) when classes is omitted",
-		"classes_section": "not_needed_when_only_built_in_classes_used"
-	}
-}}
-~~~
-
-The smallest possible worldlet — one record, no schema, no files:
+Records go under a top-level `records` key. The key is a dict; each entry's key is the record's ID and the value is the record itself.
 
 ```json
 {
-    "format": "worldlet",
-    "format_version": "1.0",
+    "format": "worldlet/1.0",
+
     "records": {
-        "e1b2c3d4-0001-0001-0001-000000000001": {
-            "bucket": {"note": "hello"}
+        "1": "a",
+        "2": true
+    }
+}
+```
+
+Two notable shifts from the previous spec:
+
+- **Keys are arbitrary strings.** The worldlet format does not decide how you generate record keys — UUIDs, sequencer integers, short random strings, anything unique works. The example above uses `"1"` and `"2"` because they are short and readable; that does not make them sequencer IDs.
+- **Allowed value shapes.** A record value can be any JSON value. Every value is an object: scalars and arrays carry implicit class identity (no declaration needed); hashes need a way to declare their class, and that class is determined by the hash's shape — see [Object records](#object-records), [Compact form](#compact-form), and [Bare hashes](#bare-hashes).
+
+`records` itself remains optional; a worldlet with no records is still valid.
+
+## Object records
+
+~~~json
+{"vibecode": {
+	"section": "object_records",
+	"role": "introduces the universal object shape — a hash that declares its class so it can be rehydrated into a live object on the other side; this is the wrapping that makes a hash a valid record value",
+	"object_shape": "classes_array_of_uns_strings_plus_bucket_hash",
+	"scope_note": "the object shape is ecoverse_wide; this section happens to be the place it gets pinned down"
+}}
+~~~
+
+Every record value is already an object. Scalars and arrays have implicit class identity and don't need any declaration — they go in as bare JSON. Hashes need a way to declare their class so the importer knows how to rehydrate them; this section covers the explicit hash form. The shape:
+
+```json
+{
+    "classes": ["puck.uno/color"],
+    "bucket": {"hex": "#aabbcc"}
+}
+```
+
+Two fields:
+
+- **`classes`** — an ordered array of UNS class names.
+- **`bucket`** — a hash holding the object's data. (Per the bucket invariants in the cheat sheet: always a hash, never a scalar/array/null.)
+
+A color record inside a worldlet:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "classes": ["puck.uno/color"],
+            "bucket": {"hex": "#aabbcc"}
         }
     }
 }
 ```
 
-The `classes` field on the record is omitted; the importer applies the
-default — a single platter of class `puck.uno/record`, with an
-engine-generated platter ID. The top-level worldlet `classes` section is
-also omitted because `puck.uno/record` is a built-in class so no schema
-is needed.
+This is the "additional structure" the [Records](#records) section deferred. A bare hash isn't a valid record value because it has no class identity; wrapping it as `{classes, bucket}` gives it the identity needed to round-trip as a live object.
 
----
+The `{classes, bucket}` shape is the universal object-description format for the entire Puck ecoverse, not just worldlet records — it shows up anywhere an object ships as JSON.
 
-<a id="complete-example"></a>
-## Complete Example
+## Compact form
+
+~~~json
+{"vibecode": {
+	"section": "compact_form",
+	"role": "shorthand for single-class objects whose data can ride on a single value field; trades the classes/bucket wrapping for class/value when the class knows how to interpret a bare value",
+	"availability": "opt_in_per_class; class must explicitly define how to interpret value; classes without that definition can only be used in long form",
+	"limitations": "single_class_only; multi-class objects must use the long form"
+}}
+~~~
+
+For small values, the long form gets noisy:
+
+```json
+{
+    "classes": ["puck.uno/color"],
+    "bucket": {"hex": "#aabbcc"}
+}
+```
+
+A compact form trims it to a single class name and a bare value:
+
+```json
+{
+    "class": "puck.uno/color",
+    "value": "#aabbcc"
+}
+```
+
+In a worldlet:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "class": "puck.uno/color",
+            "value": "#aabbcc"
+        }
+    }
+}
+```
+
+Two differences from the long form:
+
+- **`class`** (singular) instead of `classes` (array) — the compact form supports only one class. Multi-class objects must use the long form.
+- **`value`** instead of `bucket` — `value` can hold any JSON type, though convention is to keep it short (typically a string). Compact form is opt-in: a class must explicitly define how to interpret `value`. Classes that don't define that handling can only be used in long form. For classes that do support it, the implementation is usually trivial. If your data wants more structure than a short scalar, reach for the long form regardless.
+
+## Whole-hash form
+
+~~~json
+{"vibecode": {
+	"section": "whole_hash_form",
+	"role": "third shorthand for single-class objects; the class receives the entire record hash as its content, with class as the only reserved marker; the natural fit for class definitions themselves",
+	"availability": "opt_in_per_class; class must explicitly accept the whole-hash form",
+	"limitations": "single_class_only; multi-class objects must use the long form"
+}}
+~~~
+
+A class can also opt to receive the **entire record hash** as its content, with `class` as the only reserved marker. Everything else in the hash becomes the class's data; no `value` key, no `bucket` wrapping.
+
+The natural fit is class definitions themselves — a class definition has multiple top-level fields (`name`, `inherits`, `fields`, `methods`, etc.) and would read poorly forced into a single `value`. The minimum class definition:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "class": "puck.uno/class"
+        }
+    }
+}
+```
+
+That's a record of class `puck.uno/class` (the meta-class for class definitions) with no further content — an empty class definition. A richer class definition would carry additional sibling fields alongside `class`, all interpreted by `puck.uno/class` itself.
+
+Like the [compact form](#compact-form), the whole-hash form is opt-in: a class must explicitly accept it. Classes that don't can only be used in long form (or compact form, if they support that instead).
+
+The [bare hashes](#bare-hashes) pattern is a special case of this shape — omit `class` entirely and the default class (`puck.uno/hash`) takes over, also via whole-hash interpretation.
+
+## Class definitions
+
+~~~json
+{"vibecode": {
+	"section": "class_definitions",
+	"role": "shows what a class definition looks like in the worldlet format; a class definition is a whole-hash record of class puck.uno/class with name and fields as sibling top-level keys",
+	"meta_class": "puck.uno/class",
+	"name_field": "carries_the_class_UNS_independent_of_the_record_storage_key",
+	"field_conventions": "see_class-definition.md_for_per-field_settings_pending_rework_with_new_spec"
+}}
+~~~
+
+A class definition is a whole-hash record of class `puck.uno/class`. The class's own UNS lives in a `name` sibling field — distinct from the record's storage key.
+
+Standalone form:
+
+```json
+{
+    "class":    "puck.uno/class",
+    "name":     "foo.com/bar",
+    "inherits": ["blah.com/bear"],
+
+    "fields": {
+        "name": {
+            "class":    "hash",
+            "of":       "string",
+            "default":  {"collapse": true},
+            "required": true,
+
+            "fields": {
+                "surname": {"required": true},
+                "middle":  {},
+                "given":   {}
+            }
+        },
+
+        "dob": {"class": "timestamp"}
+    }
+}
+```
+
+Same definition inside a worldlet record:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "abc": {
+            "class":    "puck.uno/class",
+            "name":     "foo.com/bar",
+            "inherits": ["blah.com/bear"],
+
+            "fields": {
+                "name": {
+                    "class":    "hash",
+                    "of":       "string",
+                    "default":  {"collapse": true},
+                    "required": true,
+
+                    "fields": {
+                        "surname": {"required": true},
+                        "middle":  {},
+                        "given":   {}
+                    }
+                },
+
+                "dob": {"class": "timestamp"}
+            }
+        }
+    }
+}
+```
+
+**`inherits` is internally an array of UNS class names.** Both forms are accepted as input:
+
+```json
+"inherits": "blah.com/bear"
+```
+
+```json
+"inherits": ["blah.com/bear"]
+```
+
+The string form is shorthand for a one-element array — same semantics, less noise when there's only one parent. The previous spec only accepted the string form; the new spec keeps it working while adding the array form, which enables multiple parents at the schema level.
+
+Mechanics of multi-parent resolution (order, conflicts) are pending — only the shape has been pinned down so far.
+
+The record key (`"abc"` above) is just the storage handle; the class's identity as referenced by other records is the `name` field (`"foo.com/bar"`). This is a meaningful shift from the previous spec, where the class's UNS came from the dict key of an enclosing `classes` object. In the new design, class definitions are ordinary records with arbitrary storage keys; the `name` field carries the semantic identity.
+
+Class-level **multi-field unique constraints** go in a `uniques` array. Each entry is itself an array of field names whose combined values must be unique across all records of the class:
+
+```json
+"uniques": [
+    ["person", "episode"]
+]
+```
+
+The shape is an array of arrays so a class can declare multiple independent constraints: `[["a", "b"], ["c", "d"]]` means "(a, b) is unique" AND "(c, d) is unique" — two separate rules.
+
+Field-definition shape (`class`, `required`, `default`, `of`, nested `fields` for hashes, etc.) follows the conventions in [class-definition.md § Fields](../class-definition.md#fields), pending rework of that doc with the new spec.
+
+## Bare hashes
+
+~~~json
+{"vibecode": {
+	"section": "bare_hashes",
+	"role": "explains that a hash with no class declaration defaults to an instance of puck.uno/hash; documents the three equivalent forms of an empty hash record and the preferred form for record values",
+	"default_class": "puck.uno/hash",
+	"preferred_form_for_records": "bucket-only ({\"bucket\": {}}); bare {} is valid but discouraged"
+}}
+~~~
+
+The simplest way to make a hash object is the empty hash itself:
+
+```json
+{}
+```
+
+This is equivalent to:
+
+```json
+{"bucket": {}}
+```
+
+Which is equivalent to the fully explicit form:
+
+```json
+{"classes": ["puck.uno/hash"], "bucket": {}}
+```
+
+All three are empty instances of `puck.uno/hash` — the default class for any hash that doesn't declare its own.
+
+**Preferred form for record values: `{"bucket": {}}`.** Bare `{}` is valid but discouraged — a lone empty hash sitting next to other records reads ambiguously. The `bucket` key makes the record's intent explicit without much extra noise.
+
+Discouraged:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "class": "puck.uno/color",
+            "value": "#aabbcc"
+        },
+
+        "b": {}
+    }
+}
+```
+
+Preferred:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "class": "puck.uno/color",
+            "value": "#aabbcc"
+        },
+
+        "b": {"bucket": {}}
+    }
+}
+```
+
+## Temporal mode
+
+~~~json
+{"vibecode": {
+	"section": "temporal_mode",
+	"role": "describes the temporal worldlet shape; records carry only identity stubs and per-version state lives under a top-level history dict; this is the same worldlet format as the non-temporal shape, distinguished by the presence of history",
+	"discrimination": "structural; presence of history at top level signals temporal",
+	"history_entry_shape": "flat_hash_combining_object_form_compact_or_long_with_metadata_identity_and_timestamp"
+}}
+~~~
+
+A worldlet can be in **non-temporal** mode (the default) or **temporal** mode. The same `format: "worldlet/1.0"` covers both — the shape differs in whether per-version history is carried separately from current state.
+
+The non-temporal form already shown above carries each record's current state directly under `records`:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {"class": "puck.uno/color", "value": "#aabbcc"}
+    }
+}
+```
+
+The temporal form pulls state out of `records` and into a separate top-level `history` dict. Each entry under `records` becomes an identity stub; the real content lives in history entries that reference the identity:
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {}
+    },
+
+    "history": {
+        "123": {
+            "identity":  "a",
+            "timestamp": "2026-05-28T07:30:00Z",
+            "class":     "puck.uno/color",
+            "value":     "#aabbcc"
+        }
+    }
+}
+```
+
+What changes:
+
+- **`records` entries become identity stubs.** Each entry just declares that the record exists; the current state is reconstructed from history.
+- **A top-level `history` dict appears.** Keyed by history-entry IDs (arbitrary strings, same rule as record keys); each entry combines object form with version metadata.
+- **A history entry is a flat hash** carrying both an object (in compact form above — `class` + `value`) and two metadata fields: `identity` referencing the record key in `records`, and `timestamp` for when this version was written.
+
+Timestamps are **ISO 8601 strings with an explicit UTC offset** — e.g. `"2026-05-28T07:30:00Z"` or `"2026-05-28T03:30:00-04:00"`. The `Z` form (zero offset) is preferred for wire format because it avoids the per-host local-zone interpretation that bare `2026-05-28T07:30:00` would invite. The full per-component rules live with the `puck.uno/time` class spec — see [time.md](../../caspian/time.md). UTC offsets only; named IANA zones (`America/New_York`, etc.) are out of scope per the time-class spec.
+
+## A complete example
 
 ~~~json
 {"vibecode": {
 	"section": "complete_example",
-	"shows": "every_top_level_section_with_realistic_starfleet_data",
-	"includes": ["meta", "properties", "classes_with_one_class",
-		"records_with_one_record", "files_with_one_file",
-		"file_chunks_with_one_chunk"],
-	"purpose": "reference_template_for_implementers_writing_producers_or_consumers"
+	"role": "ties together the spec pieces in one self-contained worldlet so a reader can see how the forms combine in practice",
+	"covers": ["class_definition_using_whole_hash_form", "name_as_sibling", "inherits_as_array",
+		"fields_with_nested_hash", "long_form_instance", "compact_form", "bare_hash_preferred",
+		"scalar_record", "worldlet_level_vibecode"],
+	"does_not_cover": ["temporal_mode", "multi_class_records", "string_form_of_inherits"]
 }}
 ~~~
 
+The worldlet below ties together the pieces of the spec in one self-contained example. It defines a `starfleet.com/officer` class (whole-hash form, inherits as array, fields with a nested-hash field), then carries an instance of that class in long form, a compact-form color, a bare hash in the preferred `{"bucket": {}}` form, and a plain scalar. It also demonstrates that the worldlet's top-level hash can carry its own `vibecode`.
+
 ```json
 {
-    "format": "worldlet",
-    "format_version": "1.0",
+    "format": "worldlet/1.0",
 
-    "meta": {
-        "name":        "Starfleet Personnel",
-        "author":      "starfleet.com",
-        "version":     "1.0.0",
-        "description": "Personnel records for Starfleet officers and ships.",
-        "created_at":  "2364-01-01T00:00:00.000Z"
-    },
-
-    "properties": {
-        "temporal": false
-    },
-
-    "classes": {
-        "starfleet.com/person": {
-            "fields": {
-                "name":      {"class": "string", "required": true, "collapse": true},
-                "birthdate": {"class": "string"},
-                "species":   {"class": "string", "default": "Human"},
-
-                "greet": {
-                    "class": "function",
-                    "caspian": "
-                        function &greet
-                            'Hello, I am ' + @name
-                        end
-                    "
-                }
-            }
-        },
-
-        "starfleet.com/officer": {
-            "inherits": "starfleet.com/person",
-            "fields": {
-                "rank":   {"class": "string",  "required": true},
-                "serial": {"class": "string",  "required": true, "unique": true},
-                "active": {"class": "boolean", "default": true},
-                "photo":  {"class": "puck.uno/dbfile"},
-
-                "summary": {
-                    "class": "function",
-                    "caspian": "
-                        function &summary
-                            @rank + ' ' + @name + ' (' + @serial + ')'
-                        end
-                    "
-                },
-
-                "promote": {
-                    "class": "function",
-                    "caspian": "
-                        function &promote(new_rank:)
-                            @rank = new_rank
-                            self
-                        end
-                    "
-                }
-            }
-        },
-
-        "starfleet.com/ship": {
-            "fields": {
-                "name":       {"class": "string", "required": true, "unique": true},
-                "registry":   {"class": "string", "required": true, "unique": true},
-                "ship_class": {"class": "string"}
-            },
-            "join": ["name", "registry"]
-        }
+    "vibecode": {
+        "purpose": "demonstrates a class definition, an instance of that class, a compact-form object, a bare hash, and a scalar — all in one worldlet",
+        "example_universe": "Star Trek"
     },
 
     "records": {
-        "e1b2c3d4-0001-0001-0001-000000000001": {
-            "classes": {
-                "p1a2b3c4-0001-0001-0001-000000000001": {"class": "starfleet.com/officer", "bucket": {}}
-            },
-            "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
-        },
 
-        "e1b2c3d4-0002-0002-0002-000000000002": {
-            "classes": {
-                "p1a2b3c4-0002-0002-0002-000000000002": {"class": "starfleet.com/officer", "bucket": {}}
-            },
-            "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Riker, William", "rank": "Captain", "serial": "SC-231-427"}
-        },
+        "r2k4p": {
+            "class":    "puck.uno/class",
+            "name":     "starfleet.com/officer",
+            "inherits": ["starfleet.com/person"],
 
-        "e1b2c3d4-0003-0003-0003-000000000003": {
-            "classes": {
-                "p1a2b3c4-0003-0003-0003-000000000003": {"class": "starfleet.com/ship", "bucket": {}}
-            },
-            "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "USS Enterprise", "registry": "NCC-1701-D", "ship_class": "Galaxy"}
-        },
+            "fields": {
+                "name": {
+                    "class":    "hash",
+                    "of":       "string",
+                    "default":  {"collapse": true},
+                    "required": true,
 
-        "e1b2c3d4-0004-0004-0004-000000000004": {
-            "classes": {
-                "p1a2b3c4-0004-0004-0004-000000000004": {"class": "starfleet.com/officer", "bucket": {}}
-            },
-            "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Data", "rank": "Lieutenant Commander", "serial": "SA-789-012", "photo": "d1e2f3a4-0001-0001-0001-000000000001"}
-        }
-    },
+                    "fields": {
+                        "surname": {"required": true},
+                        "given":   {"required": true},
+                        "middle":  {}
+                    }
+                },
 
-    "files": {
-        "d1e2f3a4-0001-0001-0001-000000000001": {
-            "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "created_at": "2364-01-01T00:00:00.000Z",
-            "mime": {
-                "type":     "image/png",
-                "encoding": "base64"
+                "rank":   {"class": "string",  "required": true},
+                "serial": {"class": "string",  "required": true, "unique": true},
+                "active": {"class": "boolean", "default":  true},
+                "dob":    {"class": "timestamp"}
             }
-        }
-    },
+        },
 
-    "file_chunks": {
-        "c1d2e3f4-0001-0001-0001-000000000001": {
-            "file":  "d1e2f3a4-0001-0001-0001-000000000001",
-            "index": 0,
-            "last":  true,
-            "data":  "base64encodeddata..."
-        }
+        "m9x3w": {
+            "classes": ["starfleet.com/officer"],
+
+            "bucket": {
+                "name": {
+                    "surname": "Picard",
+                    "given":   "Jean-Luc"
+                },
+                "rank":   "Captain",
+                "serial": "SP-937-215"
+            }
+        },
+
+        "h6n8c": {
+            "class": "puck.uno/color",
+            "value": "#cc0000"
+        },
+
+        "t5j1z": {"bucket": {}},
+
+        "v4b7e": "Make it so."
     }
 }
 ```
+
+The record keys are deliberately opaque — they carry no semantic load. A reader looking for "the officer class" or "the Picard record" has to look at the values, not the keys. That's the worldlet format's design: keys are storage handles only.

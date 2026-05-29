@@ -1,0 +1,166 @@
+{
+    "format": "worldlet/1.0",
+
+    "records": {
+        "a": {
+            "class":       "puck.uno/class",
+            "name":        "starfleet.com/person",
+            "description": "A person.",
+
+			"fields": {
+                "name": {
+                    "class":       "hash",
+                    "of":          "string",
+                    "required":    true,
+                    "default":     {"collapse": true},
+                    "description": "Surname + given + optional middle name.",
+                    "fields": {
+                        "surname": {"required": true},
+                        "given":   {},
+                        "middle":  {}
+                    }
+                },
+                
+				"dob": {
+					"class": "timestamp"
+				}
+			}
+		},
+		
+		"b": {
+            "class":       "puck.uno/class",
+            "name":        "starfleet.com/officer",
+            "inherits":    ["starfleet.com/person"],
+            "description": "A commissioned Starfleet officer.",
+
+            "fields": {
+                "rank":   {"class": "string",  "required": true},
+                "serial": {"class": "string",  "required": true, "unique": true},
+                "active": {"class": "boolean", "default":  true}
+            },
+
+            "methods": {
+                "salute": {
+                    "description": "Render a verbal salute from this officer toward someone of a given rank.",
+
+                    "params": {
+                        "name":      {"class": "string",  "required": true, "description": "Name of the person being saluted."},
+                        "rank":      {"class": "string",  "required": true, "description": "Rank of the person being saluted."},
+                        "attention": {"class": "boolean", "default":  false, "description": "Call attention before the salute."},
+                        "style":     {"class": "string",  "one_of":   ["formal", "casual"], "default": "formal"},
+                        "props":     {"splat": true, "description": "Any extra context the renderer may use."}
+                    },
+
+                    "returns": {"class": "string", "description": "The rendered salute line."},
+
+                    "body": "puts $rank + ' ' + $name + ', sir!'"
+                }
+            }
+        },
+
+        "c": {
+            "class":       "puck.uno/class",
+            "name":        "starfleet.com/starship",
+            "description": "A Starfleet starship.",
+
+            "fields": {
+                "registry":       {"class": "string",    "required": true, "unique": true, "description": "Hull registry (e.g. NCC-1701)."},
+                "name":           {"class": "string",    "required": true, "description": "Display name (Enterprise, Defiant)."},
+                "classification": {"class": "string",    "required": true, "description": "Spaceframe class (Constitution, Galaxy, Sovereign)."},
+                "launched":       {"class": "timestamp", "description": "Commissioning date."},
+                "active":         {"class": "boolean",   "default": true, "description": "Currently in service."}
+            },
+
+            "methods": {
+                "hail": {
+                    "description": "Open a channel to the target.",
+
+                    "params": {
+                        "target":   {"class": "string", "required": true, "description": "Target UNS (ship, station, or planet)."},
+                        "priority": {"class": "string", "one_of": ["routine", "priority", "emergency"], "default": "routine"},
+                        "subject":  {"class": "string", "description": "Optional subject line for the hail."}
+                    },
+
+                    "returns": {"class": "boolean", "description": "True iff the channel opened."},
+
+                    "body": [
+                        [{"bwc": "puts"}, [{"value": "Hailing "}, "+", {"var": "target"}]]
+                    ]
+                }
+            }
+        },
+
+        "d": {
+            "class":       "puck.uno/class",
+            "name":        "federation.com/planet",
+            "description": "A planet recognized by the Federation cartographic registry.",
+
+            "fields": {
+                "name":              {"class": "string",  "required": true, "description": "Common name (Earth, Vulcan, Risa)."},
+                "designation":       {"class": "string",  "required": true, "unique": true, "description": "Astronomical designation (Sol III, 40 Eridani A II)."},
+                "system":            {"class": "string",  "required": true, "description": "Parent star system."},
+                "classification":    {"class": "string",  "one_of": ["M", "L", "K", "Y", "D", "J", "T"], "description": "Habitability class."},
+                "federation_member": {"class": "boolean", "default": false, "description": "Member of the United Federation of Planets."}
+            },
+
+            "methods": {
+                "describe": {
+                    "description": "Return a one-line summary of the planet.",
+                    "params":      {},
+                    "returns":     {"class": "string"},
+
+                    "body": [
+                        [{"bwc": "puts"}, [
+                            {"ivar": "name"}, "+",
+                            [{"value": " ("}, "+", [{"ivar": "designation"}, "+", {"value": ")"}]]
+                        ]]
+                    ]
+                }
+            }
+        },
+
+        "e": {
+            "class":       "puck.uno/class",
+            "name":        "starfleet.com/voyage",
+            "description": "A discrete deployment of a Starfleet ship.",
+
+            "fields": {
+                "ship":          {"class": "string",    "required": true, "description": "Registry of the ship on this voyage."},
+                "voyage_number": {"class": "number",    "required": true, "description": "Sequential number within the ship's history."},
+                "start_date":    {"class": "timestamp", "required": true},
+                "end_date":      {"class": "timestamp", "description": "Absent while the voyage is still under way."},
+                "mission_type":  {"class": "string",    "one_of": ["exploration", "diplomatic", "patrol", "rescue", "combat"], "default": "exploration"}
+            },
+
+            "uniques": [
+                ["ship", "voyage_number"]
+            ]
+        },
+
+        "f": {
+            "class": "puck.uno/class",
+            "name": "starfleet.com/assignment",
+
+			"unqiues":[
+				["person", "starship"]
+			],
+
+            "fields": {
+                "person": {
+                    "class": "puck.uno/reference",
+                    "target": "starfleet.com/person",
+                    "required": true
+                },
+                "starship": {
+                    "class": "puck.uno/reference",
+                    "target": "starfleet.com/starship",
+                    "required": true
+                },
+                "status": {
+                    "class": "string",
+                    "required": true
+                }
+            }
+        }
+    }
+}

@@ -765,3 +765,47 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .vibecode-code .vi { color: #f8f8f2 } /* Name.Variable.Instance */
 .vibecode-code .vm { color: #f8f8f2 } /* Name.Variable.Magic */
 .vibecode-code .il { color: #ae81ff } /* Literal.Number.Integer.Long */
+
+/* ─── Copy-code button ─────────────────────────────────────────────── */
+/* Set up by copy-code.js: wraps a <pre> in a positioning container and
+   places an <a.copy> button in the upper-right corner. */
+
+.code-with-copy {
+    position: relative;
+}
+
+.code-with-copy a.copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: #6b7280;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    opacity: 0.55;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.code-with-copy:hover a.copy {
+    opacity: 1;
+}
+
+.code-with-copy a.copy:hover,
+.code-with-copy a.copy:focus {
+    color: #111827;
+    border-color: #9ca3af;
+    outline: none;
+}
+
+.code-with-copy a.copy.copied {
+    color: #047857;
+    border-color: #6ee7b7;
+    background: #ecfdf5;
+}

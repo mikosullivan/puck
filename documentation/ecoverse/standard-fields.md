@@ -113,7 +113,9 @@ method:
 %vibecode <<EOF
 {"purpose":"..."}
 EOF
+```
 
+---
 
 <a id="pass-through"></a>
 ## Pass-Through

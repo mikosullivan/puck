@@ -22,7 +22,7 @@ location wins**; this log is just a finder.
 | Decision | Canonical reference |
 |---|---|
 | V1 development happens in named slices, not numbered versions. Numbers were removed from titles and identifiers. | [v1.md](v1.md) |
-| Slices are alphabetical real English words. New slices between existing ones need a word that sorts between adjacent codenames. | [project_version_codenames memory](../../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/project_version_codenames.md) |
+| Slices are alphabetical real English words. New slices between existing ones need a word that sorts between adjacent codenames. | [project_version_codenames memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/project_version_codenames.md) |
 | Current sequence: Ashley → Aslan → Bree → Corin → Digory → Edmund → Frank → Gabbo → Glenstorm. | [v1.md § Slice progression](v1.md#slice-progression) |
 | Nothing ships until V1.0. Intermediate slices are development checkpoints with their own definitions of done. | [v1.md](v1.md) |
 | Each slice ends runnable. Walking-skeleton development, end-to-end thin band per slice. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
@@ -72,7 +72,7 @@ location wins**; this log is just a finder.
 | Pure Lua is the baseline. C extensions only when the cost is worth it. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
 | V1 accepts two C extensions: **libsodium-minimal** (Ed25519 signing + secure random) and **LPeg** (alternation + parsing toolkit). | [details/lua-dependencies.md](details/lua-dependencies.md) |
 | libsodium-minimal is the build variant (`--enable-minimal`) — ~200 KB, not the full ~700 KB. | [details/lua-dependencies.md § libsodium](details/lua-dependencies.md#libsodium) |
-| Avoid the word "crypto" in docs — name the specific primitive (Ed25519 signing, secure random, SHA-256) unless genuinely needed. | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_avoid_crypto_word.md) |
+| Avoid the word "crypto" in docs — name the specific primitive (Ed25519 signing, secure random, SHA-256) unless genuinely needed. | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/feedback_avoid_crypto_word.md) |
 | Install footprint target: under 1 MB; fits a 1.44 MB floppy with room to spare. Floppy is a soft commitment that drives dep decisions. | [installation.md § Download budget](../../ideas/installation/index.md#download-budget) |
 | Total install ≈ 850 KB: Lua 250, libsodium-minimal 200, Caspian files 340, LPeg 50, luasodium 10. | [installation.md § Download budget](../../ideas/installation/index.md#download-budget) |
 | The `caspj/` on-disk cache (next to source) skips lexer/parser/transpiler on subsequent runs. Lands in Gabbo slice. | [caspj-cache.md](../../ideas/caspj-cache.md), [gabbo.md](gabbo.md) |
@@ -101,7 +101,7 @@ location wins**; this log is just a finder.
 
 | Decision | Canonical reference |
 |---|---|
-| Directory trees use 3-char single-dash indent (`├─ `, `└─ `, `│  `). | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_tree_format.md) |
+| Directory trees use 3-char single-dash indent (`├─ `, `└─ `, `│  `). | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/feedback_tree_format.md) |
 | Test IDs use codename-letter prefixes: TA (Aslan), TB (Bree), TC, TD, TE, TF, TGa (Gabbo), TGl (Glenstorm). | Slice files (each slice's Testing section) |
 | Headings drop version numbers. Codename-only. | Slice files |
 | Skeletor JSON snapshots in slice docs render with a purple border (Orlando page.lua). | [orlando/lua/orlando/page.lua](../../../orlando/lua/orlando/page.lua) (`mark_skeletor_blocks`) |
@@ -116,7 +116,7 @@ location wins**; this log is just a finder.
 
 | Decision | Canonical reference |
 |---|---|
-| Quick-add endpoint is IP-gated to the same allow-list as Edit (2026-05-26, after the "katana" spam batch). | [project_quick_add_open memory](../../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/project_quick_add_open.md) |
+| Quick-add endpoint is IP-gated to the same allow-list as Edit (2026-05-26, after the "katana" spam batch). | [project_quick_add_open memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/project_quick_add_open.md) |
 | Edit feature gated by `~/.orlando/config.json` `edit.allowed_ips` (IP allow-list, checked at page render + API). | [orlando/lua/orlando/config.lua](../../../orlando/lua/orlando/config.lua) |
 | `tests/caspian/` reorganized: existing pipeline tests under `v00/`; Aslan tests under `v001/`. Renames to `ashley/`/`aslan/` deferred to each slice's first edit. | [ashley.md § What's in tests/caspian/](ashley.md#existing-tests) |
 

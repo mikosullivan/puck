@@ -17,11 +17,12 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 
 ## Object model
 
-- **Object shape**: `{classes, bucket}`. `classes` is a hash keyed by platter ID; each platter is `{class, bucket, sticky?, active?}`. See [base-class-use.md § Per-platter buckets](ideas/base-class-use.md#per-platter-buckets).
-- **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys, anywhere. Top-level bucket and each platter bucket follow the same rules. See [base-class-use.md § Bucket policy](ideas/base-class-use.md#bucket-policy).
-- **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton, not platter model. The platter model arrives in a later slice. See [aslan.md](development/v1/caspian/aslan.md), [decisions.md § Engine and runtime](development/v1/caspian/decisions.md#engine-and-runtime).
-- **Pinned vs mutable regions**: pinned platters at the top, fixed position, engine-managed; mutable region below, where `.classes.add` inserts. See [base-class-use.md § Pinned and mutable regions](ideas/base-class-use.md#pinned-and-mutable-regions).
-- **Method resolution**: walk platter stack top-to-bottom × each platter's class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast. See [base-class-use.md § Method resolution](ideas/base-class-use.md#method-resolution).
+- **Everything is an object.** Scalars and arrays are objects with implicit class identity (no declaration required). Hashes need to declare their class explicitly. There is no "raw data" category that sits outside the object model.
+- **Object shape**: `{classes, bucket}`. `classes` is an ordered array of UNS class names (`["foo.com/blah", "bar.com/blah"]`); `bucket` is a hash with the object's data. Settled 2026-05-28; supersedes the earlier per-platter-bucket model.
+- **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys, anywhere. See [base-class-use.md § Bucket policy](ideas/base-class-use.md#bucket-policy) — note that doc still describes the older platter model and is pending update.
+- **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton scaffolding. The full object shape arrives in a later slice. See [aslan.md](development/v1/caspian/aslan.md).
+- **Method resolution**: walk the `classes` array top-to-bottom × each class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast.
+- **Pinned regions, sticky/active flags, per-platter buckets**: previously documented under the platter model; gone in the new shape unless reintroduced. Pending decision.
 
 ## IDs
 
@@ -149,8 +150,8 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## Phrasing pet peeves
 
-- **Don't call scenarios "edge cases."** The framing is often inaccurate and dismissive — the "edges" are precisely where bugs and attack vectors hide. If a scenario is worth mentioning, it's worth taking seriously, not flicking away with the "edge" label. Use specific descriptions instead: "the case where X happens during Y," "the failure mode when Z is absent," etc. See [feedback_no_edge_case_dismissal](../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_no_edge_case_dismissal.md).
-- **Don't use "honest" / "honestly" as filler.** It implies other statements aren't. See [feedback_no_honest_filler](../../../home/miko/.claude/projects/-home-miko-projects-kiera-working/memory/feedback_no_honest_filler.md).
+- **Don't call scenarios "edge cases."** The framing is often inaccurate and dismissive — the "edges" are precisely where bugs and attack vectors hide. If a scenario is worth mentioning, it's worth taking seriously, not flicking away with the "edge" label. Use specific descriptions instead: "the case where X happens during Y," "the failure mode when Z is absent," etc. See [~/CLAUDE.md](../../../../../CLAUDE.md).
+- **Don't use "honest" / "honestly" as filler.** It implies other statements aren't. See [~/CLAUDE.md](../../../../../CLAUDE.md).
 
 ## Conventions specific to this project
 

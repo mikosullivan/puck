@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Cross-project AI preferences
 
-User-level AI collaboration preferences live in [~/CLAUDE.md](../../../CLAUDE.md) — communication style, workflow cadence, writing conventions, and engineering principles that travel with Miko across every project. Claude Code reads that file automatically. This project's CLAUDE.md (the one you're reading) only covers things specific to this codebase.
+User-level AI collaboration preferences live in [~/CLAUDE.md](../../../../CLAUDE.md) — communication style, workflow cadence, writing conventions, and engineering principles that travel with Miko across every project. Claude Code reads that file automatically. This project's CLAUDE.md (the one you're reading) only covers things specific to this codebase.
 
 ## Cheat sheet — read it
 
