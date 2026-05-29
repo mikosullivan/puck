@@ -1,9 +1,12 @@
 # Class definitions
 
+> **Worldlet-envelope examples below are stale.** Class definitions now live as records inside `records` (whole-hash form, `class: "puck.uno/class"` plus sibling `name`, `inherits`, `fields`, `methods`, `uniques`), not under a dict-keyed `classes` section of the worldlet envelope. See [worldlets/index.md § Class definitions](../../mikobase/worldlets/index.md#class-definitions) and [worldlets/worldlet.json](../../mikobase/worldlets/worldlet.json) for the current form. The Caspian DSL side of each section below is still current; only the JSON envelope shape has changed.
+
 ~~~json
 {"vibecode": {
 	"doc": "class_definitions",
 	"role": "canonical reference for how a class is declared on each of the surfaces in the ecoverse — Caspian DSL, CaspianJ (the engine's runtime format), and Mikobase JSON; every JSON example is shown inside the context of an entire worldlet, since a class definition's natural home is the classes section of a worldlet",
+	"status": "JSON envelope shape is stale; see banner at top of file. Caspian DSL forms still current.",
 	"audience": "Caspian users and engine implementers (primary), Miko (secondary as a settled-decisions index)",
 	"format": "construct_by_construct_side_by_side; each section shows the Caspian DSL form and the worldlet JSON; open questions surfaced inline rather than buried",
 	"key_concepts": ["caspian_class_dsl", "caspianj_class_form", "mikobase_class_schema",

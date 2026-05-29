@@ -31,6 +31,40 @@ local READER_OPTIONS = {
 local LOGO_URL = "/static/logo.svg"
 
 ------------------------------------------------------------
+-- Pre-render: expand <!-- file: PATH --> markers into fenced
+-- code blocks containing the named file's contents. PATH is
+-- relative to the markdown file's directory; language is
+-- inferred from extension (json, casp/caspj -> caspian, lua).
+-- Unknown extensions get a tagless fence (still renders as a
+-- <pre>). Invisible on GitHub (HTML comment); expanded here.
+------------------------------------------------------------
+
+local EXT_TO_LANG = {
+    json  = "json",
+    casp  = "caspian",
+    caspj = "caspian",
+    lua   = "lua",
+}
+
+local function process_file_includes(md, md_path)
+    local md_dir = md_path:match("^(.+)/[^/]+$") or "."
+    return (md:gsub("<!%-%- file: (%S+) %-%->", function(rel_path)
+        local full = md_dir .. "/" .. rel_path
+        local f, err = io.open(full, "r")
+        if not f then
+            return "<!-- file: " .. rel_path
+                .. " (NOT FOUND: " .. (err or "unknown") .. ") -->"
+        end
+        local content = f:read("*a")
+        f:close()
+        content = content:gsub("\n+$", "")
+        local ext  = rel_path:match("%.([^.]+)$")
+        local lang = (ext and EXT_TO_LANG[ext]) or ""
+        return "```" .. lang .. "\n" .. content .. "\n```"
+    end))
+end
+
+------------------------------------------------------------
 -- Step 1: markdown -> HTML body
 ------------------------------------------------------------
 
@@ -853,6 +887,8 @@ function M.render_request(ctx)
     end
     local md = f:read("*a")
     f:close()
+
+    md = process_file_includes(md, ctx.md_path)
 
     local body = M.render(md)
     body = inject_hero_logo(body)

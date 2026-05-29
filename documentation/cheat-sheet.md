@@ -18,11 +18,13 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 ## Object model
 
 - **Everything is an object.** Scalars and arrays are objects with implicit class identity (no declaration required). Hashes need to declare their class explicitly. There is no "raw data" category that sits outside the object model.
-- **Object shape**: `{classes, bucket}`. `classes` is an ordered array of UNS class names (`["foo.com/blah", "bar.com/blah"]`); `bucket` is a hash with the object's data. Settled 2026-05-28; supersedes the earlier per-platter-bucket model.
+- **Wire/storage shape**: `{class, bucket}`. `class` is a single UNS string — one of the reserved pass-through fields in [standard-fields.md](ecoverse/standard-fields.md). `bucket` is a hash with the object's data. Used in worldlets, Mikobase records, Puck protocol messages, anywhere an object ships as JSON. Canonical by-example source: [worldlet.json](mikobase/worldlets/worldlet.json). Spec: [worldlets/index.md](mikobase/worldlets/index.md). Settled 2026-05-29; supersedes the briefly-settled `classes`-array wire form.
+- **Runtime class stack**: at runtime an object has a `classes` array — the dispatch chain. Starts with the wire `class`, grows via `.classes.add`. Distinct concept from the wire `class` field; serialization writes only `class`.
 - **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys, anywhere. See [base-class-use.md § Bucket policy](ideas/base-class-use.md#bucket-policy) — note that doc still describes the older platter model and is pending update.
 - **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton scaffolding. The full object shape arrives in a later slice. See [aslan.md](development/v1/caspian/aslan.md).
-- **Method resolution**: walk the `classes` array top-to-bottom × each class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast.
+- **Method resolution**: walk the runtime `classes` stack top-to-bottom × each class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast.
 - **Pinned regions, sticky/active flags, per-platter buckets**: previously documented under the platter model; gone in the new shape unless reintroduced. Pending decision.
+- **File attachments**: top-level `files` and `file_chunks` dicts in the worldlet, parallel to `records`. Every file requires `sha256` and `mime`; binary content is chunked and reassembled in `index` order; exactly one chunk per file carries `last: true`. Records point at files via a `puck.uno/dbfile`-classed bucket field holding the file's key as a bare string. Spec: [worldlets/index.md § Files](mikobase/worldlets/index.md#files).
 
 ## IDs
 

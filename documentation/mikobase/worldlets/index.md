@@ -27,6 +27,8 @@ The scope is bigger than the file name suggests. The object-description system a
 
 The smallest possible worldlet is the format declaration alone:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
     "format": "worldlet/1.0"
@@ -50,6 +52,8 @@ Nothing else is required to be a valid worldlet today.
 ~~~
 
 Records go under a top-level `records` key. The key is a dict; each entry's key is the record's ID and the value is the record itself.
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -75,26 +79,32 @@ Two notable shifts from the previous spec:
 {"vibecode": {
 	"section": "object_records",
 	"role": "introduces the universal object shape — a hash that declares its class so it can be rehydrated into a live object on the other side; this is the wrapping that makes a hash a valid record value",
-	"object_shape": "classes_array_of_uns_strings_plus_bucket_hash",
-	"scope_note": "the object shape is ecoverse_wide; this section happens to be the place it gets pinned down"
+	"object_shape": "class_uns_string_plus_bucket_hash",
+	"wire_singular_vs_runtime_array": "class (singular) is the wire/storage form per standard-fields.md; classes (plural) is the runtime class stack, distinct concept",
+	"scope_note": "the object shape is ecoverse_wide; this section happens to be the place it gets pinned down",
+	"reference_example": "worldlet.json in this directory is the by-example source of truth"
 }}
 ~~~
 
 Every record value is already an object. Scalars and arrays have implicit class identity and don't need any declaration — they go in as bare JSON. Hashes need a way to declare their class so the importer knows how to rehydrate them; this section covers the explicit hash form. The shape:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "classes": ["puck.uno/color"],
+    "class":  "puck.uno/color",
     "bucket": {"hex": "#aabbcc"}
 }
 ```
 
 Two fields:
 
-- **`classes`** — an ordered array of UNS class names.
+- **`class`** — a single UNS class name. `class` is one of the reserved pass-through fields defined in [standard-fields.md](../../ecoverse/standard-fields.md); it's the canonical way an object declares its identity anywhere in the ecoverse.
 - **`bucket`** — a hash holding the object's data. (Per the bucket invariants in the cheat sheet: always a hash, never a scalar/array/null.)
 
 A color record inside a worldlet:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -102,38 +112,45 @@ A color record inside a worldlet:
 
     "records": {
         "a": {
-            "classes": ["puck.uno/color"],
+            "class":  "puck.uno/color",
             "bucket": {"hex": "#aabbcc"}
         }
     }
 }
 ```
 
-This is the "additional structure" the [Records](#records) section deferred. A bare hash isn't a valid record value because it has no class identity; wrapping it as `{classes, bucket}` gives it the identity needed to round-trip as a live object.
+This is the "additional structure" the [Records](#records) section deferred. A bare hash isn't a valid record value because it has no class identity; wrapping it as `{class, bucket}` gives it the identity needed to round-trip as a live object.
 
-The `{classes, bucket}` shape is the universal object-description format for the entire Puck ecoverse, not just worldlet records — it shows up anywhere an object ships as JSON.
+The `{class, bucket}` shape is the universal object-description format for the entire Puck ecoverse, not just worldlet records — it shows up anywhere an object ships as JSON.
+
+**`class` (singular, wire) is not the same thing as `classes` (plural, runtime).** On the wire, an object declares exactly one class via `class`. At runtime, the engine maintains a class stack — referred to as the object's `classes` — that starts with the wire `class` and can grow via `.classes.add` (see [base-class-use.md](../../ideas/base-class-use.md)). Dispatch walks the runtime `classes` stack; serialization writes only `class`.
+
+The fuller reference example for this section is [worldlet.json](worldlet.json) in this directory — a complete worldlet covering class definitions and instances across several classes.
 
 ## Compact form
 
 ~~~json
 {"vibecode": {
 	"section": "compact_form",
-	"role": "shorthand for single-class objects whose data can ride on a single value field; trades the classes/bucket wrapping for class/value when the class knows how to interpret a bare value",
-	"availability": "opt_in_per_class; class must explicitly define how to interpret value; classes without that definition can only be used in long form",
-	"limitations": "single_class_only; multi-class objects must use the long form"
+	"role": "shorthand for objects whose data can ride on a single value field; trades the bucket wrapping for a bare value when the class knows how to interpret it",
+	"availability": "opt_in_per_class; class must explicitly define how to interpret value; classes without that definition can only be used in long form"
 }}
 ~~~
 
 For small values, the long form gets noisy:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "classes": ["puck.uno/color"],
+    "class":  "puck.uno/color",
     "bucket": {"hex": "#aabbcc"}
 }
 ```
 
-A compact form trims it to a single class name and a bare value:
+A compact form trims it to a bare value:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -143,6 +160,8 @@ A compact form trims it to a single class name and a bare value:
 ```
 
 In a worldlet:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -157,25 +176,23 @@ In a worldlet:
 }
 ```
 
-Two differences from the long form:
-
-- **`class`** (singular) instead of `classes` (array) — the compact form supports only one class. Multi-class objects must use the long form.
-- **`value`** instead of `bucket` — `value` can hold any JSON type, though convention is to keep it short (typically a string). Compact form is opt-in: a class must explicitly define how to interpret `value`. Classes that don't define that handling can only be used in long form. For classes that do support it, the implementation is usually trivial. If your data wants more structure than a short scalar, reach for the long form regardless.
+The difference from the long form is **`value`** instead of `bucket`. `value` can hold any JSON type, though convention is to keep it short (typically a string). Compact form is opt-in: a class must explicitly define how to interpret `value`. Classes that don't define that handling can only be used in long form. For classes that do support it, the implementation is usually trivial. If your data wants more structure than a short scalar, reach for the long form regardless.
 
 ## Whole-hash form
 
 ~~~json
 {"vibecode": {
 	"section": "whole_hash_form",
-	"role": "third shorthand for single-class objects; the class receives the entire record hash as its content, with class as the only reserved marker; the natural fit for class definitions themselves",
-	"availability": "opt_in_per_class; class must explicitly accept the whole-hash form",
-	"limitations": "single_class_only; multi-class objects must use the long form"
+	"role": "third object form; the class receives the entire record hash as its content, with class as the only reserved marker; the natural fit for class definitions themselves",
+	"availability": "opt_in_per_class; class must explicitly accept the whole-hash form"
 }}
 ~~~
 
 A class can also opt to receive the **entire record hash** as its content, with `class` as the only reserved marker. Everything else in the hash becomes the class's data; no `value` key, no `bucket` wrapping.
 
 The natural fit is class definitions themselves — a class definition has multiple top-level fields (`name`, `inherits`, `fields`, `methods`, etc.) and would read poorly forced into a single `value`. The minimum class definition:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -192,6 +209,8 @@ The natural fit is class definitions themselves — a class definition has multi
 That's a record of class `puck.uno/class` (the meta-class for class definitions) with no further content — an empty class definition. A richer class definition would carry additional sibling fields alongside `class`, all interpreted by `puck.uno/class` itself.
 
 Like the [compact form](#compact-form), the whole-hash form is opt-in: a class must explicitly accept it. Classes that don't can only be used in long form (or compact form, if they support that instead).
+
+[worldlet.json](worldlet.json) uses whole-hash form for every class definition (records a–f): `class: "puck.uno/class"` plus sibling `name`, `inherits`, `fields`, `methods`, and `uniques` fields.
 
 The [bare hashes](#bare-hashes) pattern is a special case of this shape — omit `class` entirely and the default class (`puck.uno/hash`) takes over, also via whole-hash interpretation.
 
@@ -210,6 +229,8 @@ The [bare hashes](#bare-hashes) pattern is a special case of this shape — omit
 A class definition is a whole-hash record of class `puck.uno/class`. The class's own UNS lives in a `name` sibling field — distinct from the record's storage key.
 
 Standalone form:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -237,6 +258,8 @@ Standalone form:
 ```
 
 Same definition inside a worldlet record:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -271,9 +294,13 @@ Same definition inside a worldlet record:
 
 **`inherits` is internally an array of UNS class names.** Both forms are accepted as input:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 "inherits": "blah.com/bear"
 ```
+
+<a class="copy" href="#">copy</a>
 
 ```json
 "inherits": ["blah.com/bear"]
@@ -286,6 +313,8 @@ Mechanics of multi-parent resolution (order, conflicts) are pending — only the
 The record key (`"abc"` above) is just the storage handle; the class's identity as referenced by other records is the `name` field (`"foo.com/bar"`). This is a meaningful shift from the previous spec, where the class's UNS came from the dict key of an enclosing `classes` object. In the new design, class definitions are ordinary records with arbitrary storage keys; the `name` field carries the semantic identity.
 
 Class-level **multi-field unique constraints** go in a `uniques` array. Each entry is itself an array of field names whose combined values must be unique across all records of the class:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 "uniques": [
@@ -310,11 +339,15 @@ Field-definition shape (`class`, `required`, `default`, `of`, nested `fields` fo
 
 The simplest way to make a hash object is the empty hash itself:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {}
 ```
 
 This is equivalent to:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {"bucket": {}}
@@ -322,8 +355,10 @@ This is equivalent to:
 
 Which is equivalent to the fully explicit form:
 
+<a class="copy" href="#">copy</a>
+
 ```json
-{"classes": ["puck.uno/hash"], "bucket": {}}
+{"class": "puck.uno/hash", "bucket": {}}
 ```
 
 All three are empty instances of `puck.uno/hash` — the default class for any hash that doesn't declare its own.
@@ -331,6 +366,8 @@ All three are empty instances of `puck.uno/hash` — the default class for any h
 **Preferred form for record values: `{"bucket": {}}`.** Bare `{}` is valid but discouraged — a lone empty hash sitting next to other records reads ambiguously. The `bucket` key makes the record's intent explicit without much extra noise.
 
 Discouraged:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -349,6 +386,8 @@ Discouraged:
 
 Preferred:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
     "format": "worldlet/1.0",
@@ -363,6 +402,138 @@ Preferred:
     }
 }
 ```
+
+## Files
+
+~~~json
+{"vibecode": {
+	"section": "files",
+	"role": "top-level files dict carrying binary file metadata; binary content lives in the file_chunks sibling",
+	"required_fields": ["sha256", "mime"],
+	"optional_fields": ["created_at"],
+	"key_shape": "any_unique_string; convention_is_uuid_v4",
+	"records_reference_files_via": "puck.uno/dbfile_field_class_holding_the_file_key_as_a_bare_string"
+}}
+~~~
+
+Worldlets can carry attached binary files in a top-level `files` dict, parallel to `records`. Each file's binary content is split across one or more chunks in a sibling `file_chunks` dict; the metadata (identity, integrity hash, MIME info) lives in `files`.
+
+<a class="copy" href="#">copy</a>
+
+```json
+{
+    "format": "worldlet/1.0",
+
+    "files": {
+        "d1e2f3a4-0001-0001-0001-000000000001": {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime":   {"type": "image/png", "encoding": "base64"}
+        }
+    },
+
+    "file_chunks": {
+        "c1d2e3f4-0001-0001-0001-000000000001": {
+            "file":  "d1e2f3a4-0001-0001-0001-000000000001",
+            "index": 0,
+            "last":  true,
+            "data":  "iVBORw0KGgo..."
+        }
+    }
+}
+```
+
+Two required fields on every file record:
+
+- **`sha256`** — SHA-256 hex digest of the assembled file content. Integrity check: decoding the chunks per the file's `mime.encoding` and concatenating in `index` order must produce content whose SHA-256 matches this string. A file record without `sha256` is rejected by the importer.
+- **`mime`** — a hash with `type` (the MIME type, e.g. `"image/png"`, `"text/plain; charset=utf-8"`) and `encoding` (how chunk `data` is encoded for transport — typically `"base64"` for binary content). A file record without `mime` is rejected by the importer.
+
+An optional `created_at` field can carry an ISO 8601 timestamp for the file's origin time:
+
+<a class="copy" href="#">copy</a>
+
+```json
+"files": {
+    "d1e2f3a4-0001-0001-0001-000000000001": {
+        "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "created_at": "2364-01-01T00:00:00Z",
+        "mime":       {"type": "image/png", "encoding": "base64"}
+    }
+}
+```
+
+`files` keys follow the same any-unique-string rule as record keys (UUID v4 conventional but not required — see [Conflict policy](#conflict-policy) in the historical spec for the rationale, pending reformulation).
+
+### File chunks
+
+~~~json
+{"vibecode": {
+	"section": "file_chunks",
+	"role": "top-level file_chunks dict holding the binary content of files in pieces; reassembled in index order to reconstruct each file",
+	"key_shape": "any_unique_string; convention_is_uuid_v4",
+	"completeness_marker": "exactly_one_chunk_per_file_carries_last_true",
+	"encoding": "per_parent_files_mime_encoding"
+}}
+~~~
+
+Each entry in `file_chunks` carries one slice of one file's binary content:
+
+- **`file`** — the key of the parent record in the `files` dict.
+- **`index`** — zero-based chunk position. Chunks reassemble in ascending `index` order.
+- **`last`** — `true` on exactly one chunk per file: the final piece. Its presence is positive confirmation the file finished writing. A file whose chunks include no `last: true` entry is incomplete and the importer rejects it.
+- **`data`** — chunk content, encoded per the parent file's `mime.encoding`.
+
+Empty files are represented by a single chunk with `data: ""` and `last: true`.
+
+### Records that reference files
+
+~~~json
+{"vibecode": {
+	"section": "records_that_reference_files",
+	"role": "shows how a record bucket points at an attached file by storing the file's key as a bare string under a puck.uno/dbfile field",
+	"reference_form": "bare_key_string_no_wrapper",
+	"field_class": "puck.uno/dbfile"
+}}
+~~~
+
+A record references a file by storing the file's key (the parent dict key in `files`) in a bucket field. Two equivalent forms are accepted.
+
+**Schema-declared (bare key string).** The field's declared class is `puck.uno/dbfile`; the value is just the file's key:
+
+<a class="copy" href="#">copy</a>
+
+```json
+{
+    "class": "starfleet.com/officer",
+    "bucket": {
+        "name":   {"surname": "Data"},
+        "rank":   "Lieutenant Commander",
+        "serial": "SC-499-235",
+        "photo":  "d1e2f3a4-0001-0001-0001-000000000001"
+    }
+}
+```
+
+The `puck.uno/dbfile` field class on `photo` is what tells the engine the value is a file reference rather than an opaque string. See [class-definition.md § File Fields](../class-definition.md#file-fields) for the field-class constraint catalog (the doc's worldlet envelope is stale; the field constraints are not).
+
+**Inline-typed (compact-form object).** The value carries its own class identity via the universal `{class, value}` compact form:
+
+<a class="copy" href="#">copy</a>
+
+```json
+{
+    "class": "starfleet.com/officer",
+    "bucket": {
+        "name":   {"surname": "Data"},
+        "rank":   "Lieutenant Commander",
+        "serial": "SC-499-235",
+        "photo":  {"class": "puck.uno/reference/file", "value": "d1e2f3a4-0001-0001-0001-000000000001"}
+    }
+}
+```
+
+The field doesn't need a pre-declared file-reference class — the value identifies itself as a `puck.uno/reference/file`. This form is useful when the surrounding schema is loose or absent, or when a bucket field can hold values of multiple classes and each value declares its own type.
+
+Both forms resolve to the same file. The schema-declared form is terser when the field is always a file reference; the inline-typed form travels with its own type when schema declaration isn't available.
 
 ## Temporal mode
 
@@ -379,6 +550,8 @@ A worldlet can be in **non-temporal** mode (the default) or **temporal** mode. T
 
 The non-temporal form already shown above carries each record's current state directly under `records`:
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
     "format": "worldlet/1.0",
@@ -390,6 +563,8 @@ The non-temporal form already shown above carries each record's current state di
 ```
 
 The temporal form pulls state out of `records` and into a separate top-level `history` dict. Each entry under `records` becomes an identity stub; the real content lives in history entries that reference the identity:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
@@ -423,22 +598,30 @@ Timestamps are **ISO 8601 strings with an explicit UTC offset** — e.g. `"2026-
 ~~~json
 {"vibecode": {
 	"section": "complete_example",
-	"role": "ties together the spec pieces in one self-contained worldlet so a reader can see how the forms combine in practice",
+	"role": "small inline example covering all four forms; for a broader reference example with multiple classes and instances point at worldlet.json in this directory",
 	"covers": ["class_definition_using_whole_hash_form", "name_as_sibling", "inherits_as_array",
-		"fields_with_nested_hash", "long_form_instance", "compact_form", "bare_hash_preferred",
-		"scalar_record", "worldlet_level_vibecode"],
-	"does_not_cover": ["temporal_mode", "multi_class_records", "string_form_of_inherits"]
+		"long_form_instance_with_class_singular", "compact_form", "bare_hash_preferred",
+		"scalar_record", "worldlet_level_vibecode", "puck_uno_dbfile_field",
+		"file_with_base64_encoding", "file_with_utf8_encoding", "unreferenced_file",
+		"file_reference_via_bare_string_schema_declared",
+		"file_reference_via_inline_compact_form_puck_uno_reference_file"],
+	"does_not_cover": ["temporal_mode", "multiple_classes", "methods", "uniques", "multi_chunk_files"],
+	"broader_reference": "worldlet.json in this directory carries class definitions for several classes (person, officer, starship, planet, voyage, assignment) and instances of each"
 }}
 ~~~
 
-The worldlet below ties together the pieces of the spec in one self-contained example. It defines a `starfleet.com/officer` class (whole-hash form, inherits as array, fields with a nested-hash field), then carries an instance of that class in long form, a compact-form color, a bare hash in the preferred `{"bucket": {}}` form, and a plain scalar. It also demonstrates that the worldlet's top-level hash can carry its own `vibecode`.
+The worldlet below is a small self-contained example. It defines a `starfleet.com/officer` class (whole-hash form, with a nested-hash field and a `puck.uno/dbfile` photo field), then carries an instance of that class in long form (referencing one of the attached files two different ways), a compact-form color, a bare hash in the preferred `{"bucket": {}}` form, and a plain scalar. Two files sit in the top-level `files` and `file_chunks` dicts: a PNG photo with base64-encoded chunk data (referenced from the officer record) and a captain's log entry with utf-8-encoded chunk data (no record references it).
+
+Picard's record points at his photo two ways. `photo` is the schema-declared form — a bare key string in a field whose class is `puck.uno/dbfile`. `picture` is the inline-typed form — a `{class, value}` compact-form object that carries its class identity in the value itself, no field-class declaration needed. Both forms resolve to the same file; pick whichever fits the surrounding schema better.
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
     "format": "worldlet/1.0",
 
     "vibecode": {
-        "purpose": "demonstrates a class definition, an instance of that class, a compact-form object, a bare hash, and a scalar — all in one worldlet",
+        "purpose": "demonstrates a class definition, an instance of that class, a compact-form object, a bare hash, a scalar, and attached files — all in one worldlet",
         "example_universe": "Star Trek"
     },
 
@@ -466,20 +649,27 @@ The worldlet below ties together the pieces of the spec in one self-contained ex
                 "rank":   {"class": "string",  "required": true},
                 "serial": {"class": "string",  "required": true, "unique": true},
                 "active": {"class": "boolean", "default":  true},
-                "dob":    {"class": "timestamp"}
+                "dob":    {"class": "timestamp"},
+                "photo":  {"class": "puck.uno/dbfile"}
             }
         },
 
         "m9x3w": {
-            "classes": ["starfleet.com/officer"],
+            "class": "starfleet.com/officer",
 
             "bucket": {
                 "name": {
                     "surname": "Picard",
                     "given":   "Jean-Luc"
                 },
-                "rank":   "Captain",
-                "serial": "SP-937-215"
+                "rank":    "Captain",
+                "serial":  "SP-937-215",
+                "photo":   "f1a2b3c4-0001-0001-0001-000000000001",
+
+                "picture": {
+                    "class": "puck.uno/reference/file",
+                    "value": "f1a2b3c4-0001-0001-0001-000000000001"
+                }
             }
         },
 
@@ -491,8 +681,43 @@ The worldlet below ties together the pieces of the spec in one self-contained ex
         "t5j1z": {"bucket": {}},
 
         "v4b7e": "Make it so."
+    },
+
+    "files": {
+        "f1a2b3c4-0001-0001-0001-000000000001": {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime":   {"type": "image/png", "encoding": "base64"}
+        },
+
+        "f1a2b3c4-0002-0002-0002-000000000002": {
+            "sha256":     "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "created_at": "2364-01-04T11:00:00Z",
+            "mime":       {"type": "text/plain", "encoding": "utf-8"}
+        }
+    },
+
+    "file_chunks": {
+        "c1d2e3f4-0001-0001-0001-000000000001": {
+            "file":  "f1a2b3c4-0001-0001-0001-000000000001",
+            "index": 0,
+            "last":  true,
+            "data":  "iVBORw0KGgoAAAANSUhEUgAAA..."
+        },
+
+        "c1d2e3f4-0002-0002-0002-000000000002": {
+            "file":  "f1a2b3c4-0002-0002-0002-000000000002",
+            "index": 0,
+            "last":  true,
+            "data":  "Stardate 41174.3. The Enterprise is en route to Deneb IV..."
+        }
     }
 }
 ```
 
 The record keys are deliberately opaque — they carry no semantic load. A reader looking for "the officer class" or "the Picard record" has to look at the values, not the keys. That's the worldlet format's design: keys are storage handles only.
+
+For a broader reference example with multiple classes and multiple instances of each, see [worldlet.json](worldlet.json) in this directory — it is the by-example source of truth for how mikobases and classes are defined. Its current contents:
+
+<a class="copy" href="#">copy</a>
+
+<!-- file: worldlet.json -->

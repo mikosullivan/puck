@@ -59,12 +59,16 @@
             var pre = findTargetPre(link);
             if (!pre) return;
 
-            /* Wrap the <pre> in a positioning container, move the link in. */
+            /* Wrap the <pre> in a positioning container, move the link in.
+               Link is appended first so DOM order matches the source order
+               (the markdown writes the link before the code fence). CSS
+               positions the link absolutely in the upper-right, so visual
+               placement is independent of DOM order. */
             var wrap = document.createElement('div');
             wrap.className = 'code-with-copy';
             pre.parentNode.insertBefore(wrap, pre);
-            wrap.appendChild(pre);
             wrap.appendChild(link);
+            wrap.appendChild(pre);
 
             /* Replace link contents with the icon; strip href so it stops
                navigating; mark up as a button for accessibility. */

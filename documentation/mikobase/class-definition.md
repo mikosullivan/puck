@@ -1,5 +1,7 @@
 # Class Definition Format
 
+> **Stale.** This doc predates the worldlet-format redesign and the rename of `puck.uno/record/class` to `puck.uno/class`. It still describes the older per-platter shape and the dict-keyed `classes` envelope. For current ground truth see [worldlets/index.md](worldlets/index.md) (the spec) and [worldlets/worldlet.json](worldlets/worldlet.json) (the by-example reference). The field-by-field constraint catalog below (string, number, hash, reference, unique, join, etc.) is still useful as a constraint reference but should be read alongside the new wire format. Full rework pending; see the cheat-sheet's Object model entry.
+
 <a id="overview"></a>
 ## Overview
 
@@ -7,6 +9,7 @@
 {"vibecode": {
 	"section": "overview",
 	"role": "explains how class definitions are stored in the mikobase",
+	"status": "stale; see banner at top of file",
 	"key_concepts": ["records_history", "classes_field", "platter", "puck.uno/record/class"]
 }}
 ~~~

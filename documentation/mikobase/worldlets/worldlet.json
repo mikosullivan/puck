@@ -1,0 +1,609 @@
+{
+    "comment": "Reference-by-example worldlet for the Puck object format. Each record below demonstrates a different feature; the comment on each says what to notice. Read top to bottom: class definitions (a-f), instance records (g-v), attached files (5), file chunks (5).",
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "comment": "Class definition in whole-hash form: class='puck.uno/class' plus sibling name/description/fields keys, no bucket. The 'name' field is a nested hash showing how 'of' sets the default sub-field class, 'default' applies sub-field-wide settings, and 'fields' overrides per sub-field. Only 'surname' is required.",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/person",
+            "description": "A person.",
+            "fields": {
+                "name": {
+                    "class": "hash",
+                    "of": "string",
+                    "required": true,
+                    "default": {
+                        "collapse": true
+                    },
+                    "description": "Surname + given + optional middle name.",
+                    "fields": {
+                        "surname": {
+                            "required": true
+                        },
+                        "given": {},
+                        "middle": {}
+                    }
+                },
+                "dob": {
+                    "class": "timestamp"
+                }
+            }
+        },
+        "b": {
+            "comment": "Single-parent inheritance via 'inherits' (one-element array; the bare string form is also accepted). The 'methods' block carries function definitions. Notice 'params' is a hash, not an array: each key is a param name, each value a hash of options (class, required, default, one_of, splat, description). The 'photo' field is class='puck.uno/dbfile' \u2014 see g-j and the files dict for how it resolves. salute's body is a Caspian source string; tea_earl_grey_hot shows multi-line Caspian via embedded \\n.",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/officer",
+            "inherits": [
+                "starfleet.com/person"
+            ],
+            "description": "A commissioned Starfleet officer.",
+            "fields": {
+                "rank": {
+                    "class": "string",
+                    "required": true
+                },
+                "serial": {
+                    "class": "string",
+                    "required": true,
+                    "unique": true
+                },
+                "active": {
+                    "class": "boolean",
+                    "default": true
+                }
+            },
+            "methods": {
+                "salute": {
+                    "description": "Render a verbal salute from this officer toward someone of a given rank.",
+                    "params": {
+                        "name": {
+                            "class": "string",
+                            "required": true,
+                            "description": "Name of the person being saluted."
+                        },
+                        "rank": {
+                            "class": "string",
+                            "required": true,
+                            "description": "Rank of the person being saluted."
+                        },
+                        "attention": {
+                            "class": "boolean",
+                            "default": false,
+                            "description": "Call attention before the salute."
+                        },
+                        "style": {
+                            "class": "string",
+                            "one_of": [
+                                "formal",
+                                "casual"
+                            ],
+                            "default": "formal"
+                        },
+                        "props": {
+                            "splat": true,
+                            "description": "Any extra context the renderer may use."
+                        }
+                    },
+                    "returns": {
+                        "class": "string",
+                        "description": "The rendered salute line."
+                    },
+                    "body": "puts $rank + ' ' + $name + ', sir!'"
+                },
+                "tea_earl_grey_hot": {
+                    "description": "Picard's preferred way to interface with a replicator.",
+                    "params": {
+                        "variety": {
+                            "class": "string",
+                            "required": true,
+                            "description": "What kind of tea to order."
+                        },
+                        "temperature": {
+                            "class": "string",
+                            "required": true,
+                            "description": "Serving temperature (typically 'hot')."
+                        }
+                    },
+                    "returns": {
+                        "class": "string",
+                        "description": "Beverage description, or null if the replicator refuses."
+                    },
+                    "body": "if ($variety == 'coffee')\n    puts 'Replicator: That order requires Captain Janeway.'\n    return (null)\nend\n\nputs 'Tea. ' + $variety + '. ' + $temperature + '.'\nputs '*replicator hums in satisfaction*'\nreturn ('A steaming cup of ' + $variety + ' appears.')"
+                }
+            }
+        },
+        "c": {
+            "comment": "Field-level uniqueness: 'unique': true on 'registry'. The 'hail' method demonstrates the alternative method-body form: a CaspJ tree (nested arrays of bwc dispatch) instead of a Caspian source string. Both body forms are valid.",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/starship",
+            "description": "A Starfleet starship.",
+            "fields": {
+                "registry": {
+                    "class": "string",
+                    "required": true,
+                    "unique": true,
+                    "description": "Hull registry (e.g. NCC-1701)."
+                },
+                "name": {
+                    "class": "string",
+                    "required": true,
+                    "description": "Display name (Enterprise, Defiant)."
+                },
+                "classification": {
+                    "class": "string",
+                    "required": true,
+                    "description": "Spaceframe class (Constitution, Galaxy, Sovereign)."
+                },
+                "launched": {
+                    "class": "timestamp",
+                    "description": "Commissioning date."
+                },
+                "active": {
+                    "class": "boolean",
+                    "default": true,
+                    "description": "Currently in service."
+                }
+            },
+            "methods": {
+                "hail": {
+                    "description": "Open a channel to the target.",
+                    "params": {
+                        "target": {
+                            "class": "string",
+                            "required": true,
+                            "description": "Target UNS (ship, station, or planet)."
+                        },
+                        "priority": {
+                            "class": "string",
+                            "one_of": [
+                                "routine",
+                                "priority",
+                                "emergency"
+                            ],
+                            "default": "routine"
+                        },
+                        "subject": {
+                            "class": "string",
+                            "description": "Optional subject line for the hail."
+                        }
+                    },
+                    "returns": {
+                        "class": "boolean",
+                        "description": "True iff the channel opened."
+                    },
+                    "body": [
+                        [
+                            {
+                                "bwc": "puts"
+                            },
+                            [
+                                {
+                                    "value": "Hailing "
+                                },
+                                "+",
+                                {
+                                    "var": "target"
+                                }
+                            ]
+                        ]
+                    ]
+                }
+            }
+        },
+        "d": {
+            "comment": "'one_of' constraint on 'classification' \u2014 an enum of habitability classes. The 'describe' method body uses 'ivar' references: {ivar: 'name'} reads the instance variable @name.",
+            "class": "puck.uno/class",
+            "name": "federation.com/planet",
+            "description": "A planet recognized by the Federation cartographic registry.",
+            "fields": {
+                "name": {
+                    "class": "string",
+                    "required": true,
+                    "description": "Common name (Earth, Vulcan, Risa)."
+                },
+                "designation": {
+                    "class": "string",
+                    "required": true,
+                    "unique": true,
+                    "description": "Astronomical designation (Sol III, 40 Eridani A II)."
+                },
+                "system": {
+                    "class": "string",
+                    "required": true,
+                    "description": "Parent star system."
+                },
+                "classification": {
+                    "class": "string",
+                    "one_of": [
+                        "M",
+                        "L",
+                        "K",
+                        "Y",
+                        "D",
+                        "J",
+                        "T"
+                    ],
+                    "description": "Habitability class."
+                },
+                "federation_member": {
+                    "class": "boolean",
+                    "default": false,
+                    "description": "Member of the United Federation of Planets."
+                }
+            },
+            "methods": {
+                "describe": {
+                    "description": "Return a one-line summary of the planet.",
+                    "params": {},
+                    "returns": {
+                        "class": "string"
+                    },
+                    "body": [
+                        [
+                            {
+                                "bwc": "puts"
+                            },
+                            [
+                                {
+                                    "ivar": "name"
+                                },
+                                "+",
+                                [
+                                    {
+                                        "value": " ("
+                                    },
+                                    "+",
+                                    [
+                                        {
+                                            "ivar": "designation"
+                                        },
+                                        "+",
+                                        {
+                                            "value": ")"
+                                        }
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                }
+            }
+        },
+        "e": {
+            "comment": "Class-level multi-field unique constraint via 'uniques'. Each inner array names a tuple whose combined values must be unique across all records of the class. Here (ship, voyage_number) \u2014 a ship can have many voyages, but never two with the same voyage_number. See instances q and r for the example.",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/voyage",
+            "description": "A discrete deployment of a Starfleet ship.",
+            "fields": {
+                "ship": {
+                    "class": "string",
+                    "required": true,
+                    "description": "Registry of the ship on this voyage."
+                },
+                "voyage_number": {
+                    "class": "number",
+                    "required": true,
+                    "description": "Sequential number within the ship's history."
+                },
+                "start_date": {
+                    "class": "timestamp",
+                    "required": true
+                },
+                "end_date": {
+                    "class": "timestamp",
+                    "description": "Absent while the voyage is still under way."
+                },
+                "mission_type": {
+                    "class": "string",
+                    "one_of": [
+                        "exploration",
+                        "diplomatic",
+                        "patrol",
+                        "rescue",
+                        "combat"
+                    ],
+                    "default": "exploration"
+                }
+            },
+            "uniques": [
+                [
+                    "ship",
+                    "voyage_number"
+                ]
+            ]
+        },
+        "f": {
+            "comment": "Reference fields: class='puck.uno/reference' with 'target' set to the UNS of the class being pointed at \u2014 typed pointers between record kinds. Also: the deliberately-preserved 'unqiues' typo (Miko's canonical spelling).",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/assignment",
+            "unqiues": [
+                [
+                    "person",
+                    "starship"
+                ]
+            ],
+            "fields": {
+                "person": {
+                    "class": "puck.uno/reference",
+                    "target": "starfleet.com/person",
+                    "required": true
+                },
+                "starship": {
+                    "class": "puck.uno/reference",
+                    "target": "starfleet.com/starship",
+                    "required": true
+                },
+                "status": {
+                    "class": "string",
+                    "required": true
+                }
+            }
+        },
+        "g": {
+            "comment": "Instance record in long form: 'class' (singular UNS string) plus 'bucket' (the data). Demonstrates BOTH file-reference shapes side by side: 'photo' uses the schema-declared bare-string form (officer declares photo as puck.uno/dbfile; value is just the file's key); 'picture' uses the inline-typed compact form where the value itself carries class via {class, value}.",
+            "class": "starfleet.com/officer",
+            "bucket": {
+                "name": {
+                    "surname": "Picard",
+                    "given": "Jean-Luc"
+                },
+                "dob": "2305-07-13T00:00:00Z",
+                "rank": "Captain",
+                "serial": "SP-937-215",
+                "active": true,
+                "photo": {
+	                "comment": "This example shows how you can indicate the class of a bucket without polluting its namespace.",
+                    "uuid-a": true,
+                    "value": "f1a2b3c4-0001-0001-0001-000000000001"
+                }
+            },
+            "custom_classes": {
+				"uuid-a": "puck.uno/reference/file"
+            }
+        },
+        "h": {
+            "comment": "Same long form. Includes the optional 'middle' sub-field of the name hash.",
+            "class": "starfleet.com/officer",
+            "bucket": {
+                "name": {
+                    "surname": "Riker",
+                    "given": "William",
+                    "middle": "Thomas"
+                },
+                "dob": "2335-08-19T00:00:00Z",
+                "rank": "Commander",
+                "serial": "SC-231-427",
+                "active": true,
+                "photo": "f1a2b3c4-0002-0002-0002-000000000002"
+            }
+        },
+        "i": {
+            "comment": "Same long form, but only 'surname' is provided; given and middle are absent because they aren't required on the person class.",
+            "class": "starfleet.com/officer",
+            "bucket": {
+                "name": {
+                    "surname": "Data"
+                },
+                "dob": "2338-02-02T00:00:00Z",
+                "rank": "Lieutenant Commander",
+                "serial": "SC-499-235",
+                "active": true,
+                "photo": "f1a2b3c4-0003-0003-0003-000000000003"
+            }
+        },
+        "j": {
+            "comment": "Standard long-form officer instance.",
+            "class": "starfleet.com/officer",
+            "bucket": {
+                "name": {
+                    "surname": "Janeway",
+                    "given": "Kathryn"
+                },
+                "dob": "2335-05-20T00:00:00Z",
+                "rank": "Captain",
+                "serial": "SC-957-398",
+                "active": true,
+                "photo": "f1a2b3c4-0004-0004-0004-000000000004"
+            }
+        },
+        "k": {
+            "comment": "Starship instance in long form.",
+            "class": "starfleet.com/starship",
+            "bucket": {
+                "registry": "NCC-1701-D",
+                "name": "Enterprise",
+                "classification": "Galaxy",
+                "launched": "2363-10-04T00:00:00Z",
+                "active": true
+            }
+        },
+        "l": {
+            "comment": "Another starship \u2014 no notable structural variation from k.",
+            "class": "starfleet.com/starship",
+            "bucket": {
+                "registry": "NX-74205",
+                "name": "Defiant",
+                "classification": "Defiant",
+                "launched": "2370-01-01T00:00:00Z",
+                "active": true
+            }
+        },
+        "m": {
+            "comment": "This is how records besides classes and scalar should be formatted",
+            "class": "starfleet.com/starship",
+            "bucket": {
+                "registry": "NCC-74656",
+                "name": "Voyager",
+                "classification": "Intrepid",
+                "launched": "2371-01-01T00:00:00Z",
+                "active": true
+            }
+        },
+        "n": {
+            "comment": "Planet instance. 'classification' value is one of the strings declared in the planet class's one_of list.",
+            "class": "federation.com/planet",
+            "bucket": {
+                "name": "Earth",
+                "designation": "Sol III",
+                "system": "Sol",
+                "classification": "M",
+                "federation_member": true
+            }
+        },
+        "o": {
+            "comment": "Another planet; same one_of constraint applies.",
+            "class": "federation.com/planet",
+            "bucket": {
+                "name": "Vulcan",
+                "designation": "40 Eridani A II",
+                "system": "40 Eridani A",
+                "classification": "M",
+                "federation_member": true
+            }
+        },
+        "p": {
+            "comment": "Another planet.",
+            "class": "federation.com/planet",
+            "bucket": {
+                "name": "Risa",
+                "designation": "Epsilon Ceti B II",
+                "system": "Epsilon Ceti B",
+                "classification": "M",
+                "federation_member": true
+            }
+        },
+        "q": {
+            "comment": "Voyage instance \u2014 pairs with r to demonstrate the multi-field unique constraint. Here (ship='NCC-1701-D', voyage_number=1).",
+            "class": "starfleet.com/voyage",
+            "bucket": {
+                "ship": "NCC-1701-D",
+                "voyage_number": 1,
+                "start_date": "2364-10-04T00:00:00Z",
+                "mission_type": "exploration"
+            }
+        },
+        "r": {
+            "comment": "Second voyage record with voyage_number=1 again. Allowed because it pairs with a different ship \u2014 the uniqueness is on the tuple, not on voyage_number alone.",
+            "class": "starfleet.com/voyage",
+            "bucket": {
+                "ship": "NCC-74656",
+                "voyage_number": 1,
+                "start_date": "2371-01-01T00:00:00Z",
+                "mission_type": "exploration"
+            }
+        },
+        "s": {
+            "comment": "Assignment instance. 'person' and 'starship' fields are puck.uno/reference values whose strings point at other records in this worldlet by their storage key (here 'g' = Picard, 'k' = Enterprise-D).",
+            "class": "starfleet.com/assignment",
+            "bucket": {
+                "person": "g",
+                "starship": "k",
+                "status": "commanding officer"
+            }
+        },
+        "t": {
+            "comment": "Another assignment \u2014 same shape.",
+            "class": "starfleet.com/assignment",
+            "bucket": {
+                "person": "h",
+                "starship": "k",
+                "status": "first officer"
+            }
+        },
+        "u": {
+            "comment": "Another assignment.",
+            "class": "starfleet.com/assignment",
+            "bucket": {
+                "person": "i",
+                "starship": "k",
+                "status": "operations officer"
+            }
+        },
+        "v": {
+            "comment": "Final assignment. Note the targets are 'j' and 'm' \u2014 Janeway commanding Voyager.",
+            "class": "starfleet.com/assignment",
+            "bucket": {
+                "person": "j",
+                "starship": "m",
+                "status": "commanding officer"
+            }
+        }
+    },
+    "files": {
+        "f1a2b3c4-0001-0001-0001-000000000001": {
+            "comment": "files dict entry. Required fields: 'sha256' (SHA-256 hex digest of the assembled content, for integrity) and 'mime' (a hash with 'type' and 'encoding'). PNG image with base64-encoded chunks.",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime": {
+                "type": "image/png",
+                "encoding": "base64"
+            }
+        },
+        "f1a2b3c4-0002-0002-0002-000000000002": {
+            "comment": "Another PNG file; same shape.",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime": {
+                "type": "image/png",
+                "encoding": "base64"
+            }
+        },
+        "f1a2b3c4-0003-0003-0003-000000000003": {
+            "comment": "Another PNG file; same shape.",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime": {
+                "type": "image/png",
+                "encoding": "base64"
+            }
+        },
+        "f1a2b3c4-0004-0004-0004-000000000004": {
+            "comment": "Another PNG file; same shape.",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "mime": {
+                "type": "image/png",
+                "encoding": "base64"
+            }
+        },
+        "f1a2b3c4-0005-0005-0005-000000000005": {
+            "comment": "Two variations from the photo files above: optional 'created_at' timestamp, and mime.encoding='utf-8' (chunk data holds raw text directly, not base64). Also: this file is standalone \u2014 no record references it. Files don't have to be attached to records.",
+            "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "created_at": "2364-01-04T11:00:00Z",
+            "mime": {
+                "type": "text/plain",
+                "encoding": "utf-8"
+            }
+        }
+    },
+    "file_chunks": {
+        "c1d2e3f4-0001-0001-0001-000000000001": {
+            "comment": "file_chunks dict entry. 'file' is the parent file's key; 'index' is the 0-based chunk position (chunks reassemble in ascending index order); 'last': true marks the final chunk (exactly one per file \u2014 positive confirmation the file finished writing); 'data' carries the chunk content encoded per the parent file's mime.encoding (base64 here).",
+            "file": "f1a2b3c4-0001-0001-0001-000000000001",
+            "index": 0,
+            "last": true,
+            "data": "iVBORw0KGgoAAAANSUhEUgAAA..."
+        },
+        "c1d2e3f4-0002-0002-0002-000000000002": {
+            "file": "f1a2b3c4-0002-0002-0002-000000000002",
+            "index": 0,
+            "last": true,
+            "data": "iVBORw0KGgoAAAANSUhEUgAAB..."
+        },
+        "c1d2e3f4-0003-0003-0003-000000000003": {
+            "file": "f1a2b3c4-0003-0003-0003-000000000003",
+            "index": 0,
+            "last": true,
+            "data": "iVBORw0KGgoAAAANSUhEUgAAC..."
+        },
+        "c1d2e3f4-0004-0004-0004-000000000004": {
+            "file": "f1a2b3c4-0004-0004-0004-000000000004",
+            "index": 0,
+            "last": true,
+            "data": "iVBORw0KGgoAAAANSUhEUgAAD..."
+        },
+        "c1d2e3f4-0005-0005-0005-000000000005": {
+            "comment": "Same chunk shape, but 'data' is raw utf-8 text instead of base64, per the parent file's mime.encoding='utf-8'. Single-chunk file \u2014 index 0, last true.",
+            "file": "f1a2b3c4-0005-0005-0005-000000000005",
+            "index": 0,
+            "last": true,
+            "data": "Stardate 41174.3. The Enterprise is en route to Deneb IV..."
+        }
+    }
+}
