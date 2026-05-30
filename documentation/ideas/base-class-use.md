@@ -1,10 +1,12 @@
 # Base class use
 
+> **Stale.** Flagged in [issue 364](https://github.com/mikosullivan/puck/issues/364). The concepts here are about 90% right and the doc is useful as historical context, but the platter model is being redesigned from scratch rather than patched. Treat specific details here — per-platter bucket shape, hash-keyed-by-UUID layout, pinned/mutable region split, sticky/active flags, marker-class examples — as **previously proposed, not current spec**. Other docs that lean on this one (Trivet's per-platter storage, garbage collection's `on_close` multicast across platters, Mikobase requirements, lucy.md's object model) inherit the same caveat where they cite this doc's mechanisms.
+
 ~~~json
 {"vibecode": {
 	"doc": "base_class_use",
 	"role": "exploring per-instance class chains as a primary mechanism for adding behavior to objects in Caspian — instead of subclassing, augment plain values with classes at runtime; also proposes per-platter private storage by enriching the classes array entries",
-	"status": "brainstorm",
+	"status": "stale; see banner at top of file and issue 364. Concepts ~90% right; redesign-from-scratch is the path forward.",
 	"key_concepts": ["per_instance_class_chain", "tag_classes", "marker_classes",
 		"capability_stamps", "behavior_addition_at_runtime",
 		"alternative_to_subclassing", "sticky_vs_removable",

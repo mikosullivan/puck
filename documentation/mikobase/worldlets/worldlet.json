@@ -53,7 +53,52 @@
                 }
             },
             "methods": {
-                "salute": {
+                "beverage": {
+					"nested": {
+						"tea_earl_grey_hot": {
+							"description": "Picard's preferred way to interface with a replicator.",
+							"params": {
+								"variety": {
+									"class": "string",
+									"required": true,
+									"description": "What kind of tea to order."
+								},
+								"temperature": {
+									"class": "string",
+									"required": true,
+									"description": "Serving temperature (typically 'hot')."
+								}
+							},
+							"returns": {
+								"class": "string",
+								"description": "Beverage description, or null if the replicator refuses."
+							},
+							"body": "if ($variety == 'coffee')\n    puts 'Replicator: That order requires Captain Janeway.'\n    return (null)\nend\n\nputs 'Tea. ' + $variety + '. ' + $temperature + '.'\nputs '*replicator hums in satisfaction*'\nreturn ('A steaming cup of ' + $variety + ' appears.')"
+						},
+						"coffee_black": {
+							"description": "Janeway's preferred way to interface with a replicator. Strictly black; rejects modifiers.",
+							"params": {
+								"style": {
+									"class": "string",
+									"required": true,
+									"description": "Coffee style. Janeway accepts only 'black'."
+								},
+								"temperature": {
+									"class": "string",
+									"default": "hot",
+									"description": "Serving temperature. Defaults to 'hot' because Janeway."
+								}
+							},
+							"returns": {
+								"class": "string",
+								"description": "Beverage description, or null if the replicator refuses."
+							},
+							"body": "if ($style != 'black')\n    puts 'Replicator: The captain takes it black.'\n    return (null)\nend\n\nputs 'Coffee. ' + $style + '. ' + $temperature + '.'\nputs '*Janeway sighs contentedly*'\nreturn ('A steaming cup of coffee appears.')"
+						}
+					}
+				},
+				
+				"salute": {
                     "description": "Render a verbal salute from this officer toward someone of a given rank.",
                     "params": {
                         "name": {
@@ -89,26 +134,6 @@
                         "description": "The rendered salute line."
                     },
                     "body": "puts $rank + ' ' + $name + ', sir!'"
-                },
-                "tea_earl_grey_hot": {
-                    "description": "Picard's preferred way to interface with a replicator.",
-                    "params": {
-                        "variety": {
-                            "class": "string",
-                            "required": true,
-                            "description": "What kind of tea to order."
-                        },
-                        "temperature": {
-                            "class": "string",
-                            "required": true,
-                            "description": "Serving temperature (typically 'hot')."
-                        }
-                    },
-                    "returns": {
-                        "class": "string",
-                        "description": "Beverage description, or null if the replicator refuses."
-                    },
-                    "body": "if ($variety == 'coffee')\n    puts 'Replicator: That order requires Captain Janeway.'\n    return (null)\nend\n\nputs 'Tea. ' + $variety + '. ' + $temperature + '.'\nputs '*replicator hums in satisfaction*'\nreturn ('A steaming cup of ' + $variety + ' appears.')"
                 }
             }
         },
