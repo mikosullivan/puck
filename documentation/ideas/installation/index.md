@@ -49,6 +49,6 @@ Comfortably under 1 MB. **Fits on a 1.44 MB floppy with ~600 KB to
 spare** — a deliberate budget that drives every dependency decision.
 Each existing C extension and each new one proposed has to earn its
 weight against the floppy commitment. See
-[v1.md § Cross-cutting principles](../../development/v1/index.md#cross-cutting-principles)
+[v1.md § Cross-cutting principles](../../requirements/development/v1/index.md#cross-cutting-principles)
 for the broader "C extensions only when the cost is worth it"
 discipline.

@@ -13,7 +13,7 @@
 **Status:** brainstorm. Vibing on the idea. Not committed; not
 specced; just thinking out loud.
 
-The seed: [mikobase](../../mikobase/index.md) is a structured data store.
+The seed: [mikobase](../../requirements/mikobase/index.md) is a structured data store.
 Filesystems are also structured data stores, of a particular
 shape. **What if mikobase could *be* a filesystem** — exposing a
 directory-tree interface backed by mikobase data?
@@ -24,9 +24,9 @@ directory-tree interface backed by mikobase data?
 ## Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
-  object is expected ([Sammy static serving](../../caspian/packages/touchstone/sammy.md#static-file-serving),
-  [Jasmine directory stores](../../caspian/packages/jasmine/index.md#stores),
-  [%utils.tempdir directory jails](../../caspian/utils/index.md), etc.) without those
+  object is expected ([Sammy static serving](../../requirements/caspian/packages/touchstone/sammy.md#static-file-serving),
+  [Jasmine directory stores](../../requirements/caspian/packages/jasmine/index.md#stores),
+  [%utils.tempdir directory jails](../../requirements/caspian/utils/index.md), etc.) without those
   consumers knowing anything about mikobase.
 - "Storage-agnostic" gets real teeth: a developer can swap a real
   filesystem for a mikobase-backed one and the rest of the code

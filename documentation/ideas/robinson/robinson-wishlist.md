@@ -244,7 +244,7 @@ The hash representation is a convenience for developers: handlers are referred
 to by nickname (`$server.handlers['csrf']`, `$server.handlers['sammy']`)
 rather than by position. The keys are purely labels — Robinson doesn't
 interpret them or enforce any pattern. Because Puck hashes are order-sensitive
-(see [hashes.md](../caspian/built-in-classes/hashes.md)), the handlers still
+(see [hashes.md](../../requirements/caspian/built-in-classes/hashes.md)), the handlers still
 have a well-defined processing order; the hash just gives each one a memorable
 identifier.
 
@@ -514,7 +514,7 @@ Open:
 ### JSON URL Parameters
 
 Robinson will natively support the
-[ecoverse JSON URL convention](../puck/json-urls.md): machine-generated
+[ecoverse JSON URL convention](../../requirements/puck/json-urls.md): machine-generated
 URLs that pass parameters as a JSON object in the query string
 (`?{"map":true}`) rather than as conventional `?key=value` pairs.
 
@@ -531,7 +531,7 @@ Handlers see one parameter hash; the URL form is transparent to them.
 
 Specific rules for mixing (parser order, precedence on key
 collisions, cache-key canonicalization, edge cases) are TBD —
-captured in [json-urls.md](../puck/json-urls.md) as a topic to revisit
+captured in [json-urls.md](../../requirements/puck/json-urls.md) as a topic to revisit
 when the JSON-URL convention is fully spec'd.
 
 <a id="closure-interface-and-response-objects"></a>
@@ -707,7 +707,7 @@ in the tree. Giving it a global name would defeat the point of filesystem-
 tree routing.
 
 Invocation uses the Caspian runtime's general
-[file-invocation model](../caspian/modules.md#invoking-a-file): a file is
+[file-invocation model](../../requirements/caspian/modules.md#invoking-a-file): a file is
 invoked like a function call, runs in its own scope, returns the value of
 its last expression. Robinson doesn't need a special invoker — it just
 uses the standard invocation and expects the value to be a
@@ -719,7 +719,7 @@ a function, captures the return value). "Load" is a different word for a
 different operation (slurping bytes into memory) and isn't used here.
 
 For the invocation to succeed, the site root jail must have
-[execute permission](../caspian/built-in-classes/filesystem.md#jail-permissions) enabled.
+[execute permission](../../requirements/caspian/built-in-classes/filesystem.md#jail-permissions) enabled.
 Execute is off by default on jails (no dangerous defaults), so a Robinson
 site root is configured at injection time with `read + execute` (plus
 `write` if the site needs to author files at runtime — usually not).
@@ -732,7 +732,7 @@ served as-is, with content type inferred from extension.
 
 URLs map to files inside the site's root directory using **jail-based
 lookup**. The site root is exposed to Robinson as a
-[jail](../caspian/built-in-classes/filesystem.md) — a directory-scoped handle that
+[jail](../../requirements/caspian/built-in-classes/filesystem.md) — a directory-scoped handle that
 permits access only to the site root and everything underneath it. The
 underlying real filesystem path is never exposed to handler code.
 
@@ -744,7 +744,7 @@ Resolution flow:
    `/foo/bar` and `/foo/bar/` are different requests, not the same URL
    with sloppy formatting.
 2. **Hand the path to the site jail** via
-   [`$jail.use_path`](../caspian/built-in-classes/filesystem.md#authorizing-untrusted-paths).
+   [`$jail.use_path`](../../requirements/caspian/built-in-classes/filesystem.md#authorizing-untrusted-paths).
    This is required (untrusted strings can't be used for FS ops
    directly) and normalizes the path automatically. Robinson does not
    pre-normalize.
@@ -838,7 +838,7 @@ Open:
   Normalize or pass through?
 - **Specific filesystem-path normalization rules.** Lives in
   `use_path`, not Robinson. Worth pinning the canonical list in
-  [filesystem.md](../caspian/built-in-classes/filesystem.md) when the runtime gets
+  [filesystem.md](../../requirements/caspian/built-in-classes/filesystem.md) when the runtime gets
   spec'd in detail. URL decoding is upstream (HTTP layer, when
   `$request.path` is built), not part of `use_path`.
 
@@ -1221,10 +1221,10 @@ etc.). This is the natural shape of a docs site, a personal wiki, a
 knowledge base, or any other content-first project where authors
 don't want to write a single line of code to ship pages.
 
-**Origin.** Orlando ([documentation/misc/orlando.md](../misc/orlando.md))
+**Origin.** Orlando ([documentation/misc/orlando.md](../../misc/orlando.md))
 is a Lua practice project that grew into a working implementation of
 exactly this pattern serving the puck.uno docs. Its lessons doc
-([documentation/misc/orlando/lessons.md](../misc/orlando/lessons.md))
+([documentation/misc/orlando/lessons.md](../../misc/orlando/lessons.md))
 captures the design decisions piece by piece. Robinson should absorb
 those decisions, not re-derive them.
 

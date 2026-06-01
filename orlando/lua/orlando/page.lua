@@ -37,6 +37,11 @@ local LOGO_URL = "/static/logo.svg"
 -- inferred from extension (json, casp/caspj -> caspian, lua).
 -- Unknown extensions get a tagless fence (still renders as a
 -- <pre>). Invisible on GitHub (HTML comment); expanded here.
+--
+-- The directive must be ALONE ON ITS OWN LINE — only optional
+-- whitespace around it. This is what makes it safe to mention
+-- the literal `<!-- file: ... -->` syntax inside prose backticks
+-- (as documentation) without that mention being expanded too.
 ------------------------------------------------------------
 
 local EXT_TO_LANG = {
@@ -46,22 +51,41 @@ local EXT_TO_LANG = {
     lua   = "lua",
 }
 
+local function expand_include(md_dir, rel_path)
+    local full = md_dir .. "/" .. rel_path
+    local f, err = io.open(full, "r")
+    if not f then
+        return "<!-- file: " .. rel_path
+            .. " (NOT FOUND: " .. (err or "unknown") .. ") -->"
+    end
+    local content = f:read("*a")
+    f:close()
+    content = content:gsub("\n+$", "")
+    local ext  = rel_path:match("%.([^.]+)$")
+    local lang = (ext and EXT_TO_LANG[ext]) or ""
+    return "```" .. lang .. "\n" .. content .. "\n```"
+end
+
 local function process_file_includes(md, md_path)
     local md_dir = md_path:match("^(.+)/[^/]+$") or "."
-    return (md:gsub("<!%-%- file: (%S+) %-%->", function(rel_path)
-        local full = md_dir .. "/" .. rel_path
-        local f, err = io.open(full, "r")
-        if not f then
-            return "<!-- file: " .. rel_path
-                .. " (NOT FOUND: " .. (err or "unknown") .. ") -->"
+
+    -- Walk the markdown one line at a time. Replace lines that are
+    -- ONLY a "<!-- file: PATH -->" directive (with optional
+    -- surrounding whitespace) with the expanded fenced block.
+    -- Lines that merely contain the directive somewhere within them
+    -- — for example, inside backticks in a prose paragraph — are
+    -- left alone.
+    local DIRECTIVE_LINE = "^%s*<!%-%- file: (%S+) %-%->%s*$"
+    local out = {}
+    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
+        local rel_path = line:match(DIRECTIVE_LINE)
+        if rel_path then
+            out[#out + 1] = expand_include(md_dir, rel_path)
+        else
+            out[#out + 1] = line
         end
-        local content = f:read("*a")
-        f:close()
-        content = content:gsub("\n+$", "")
-        local ext  = rel_path:match("%.([^.]+)$")
-        local lang = (ext and EXT_TO_LANG[ext]) or ""
-        return "```" .. lang .. "\n" .. content .. "\n```"
-    end))
+    end
+    return table.concat(out, "\n")
 end
 
 ------------------------------------------------------------

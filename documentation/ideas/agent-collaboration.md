@@ -78,7 +78,7 @@ The human receives a link to the final state as the report.
 ### Standard Classes
 
 A standard class library ships with Puck for exactly this purpose. See
-[AI2AI.md](../mikobase/AI2AI.md). Using them is optional but encouraged — a common
+[AI2AI.md](../requirements/mikobase/AI2AI/index.md). Using them is optional but encouraged — a common
 vocabulary makes output readable by any AI or human without prior coordination.
 
 ---

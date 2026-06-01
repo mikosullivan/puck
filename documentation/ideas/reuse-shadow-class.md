@@ -13,7 +13,7 @@
 Speculative metaprogramming idea. Filed for exploration, not as a
 proposed feature.
 
-See [caspian-runtime.md § Object Model](../caspian/lucy/index.md#object-model)
+See [caspian-runtime.md § Object Model](../requirements/caspian/lucy/index.md#object-model)
 for the established shadow-class concept this idea builds on.
 
 ---

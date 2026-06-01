@@ -47,7 +47,7 @@ The instance is still a string. It's just *also* a `foo.uno/upper`.
 The class chain holds both, and method dispatch walks the chain.
 
 **Dispatch order** (per
-[lucy.md § The Class Stack](../caspian/lucy/index.md#the-class-stack)):
+[lucy.md § The Class Stack](../requirements/caspian/lucy/index.md#the-class-stack)):
 the shadow class is consulted first, then the class stack is walked
 from top to bottom. The class an object was created with sits at
 the bottom (first pushed). Subsequent `.classes.add` calls push to
@@ -109,7 +109,7 @@ the class is purely a tag the engine reads.
 - **Class chain order is settled.** Push goes to the top of the
   stack (under shadow); dispatch walks top-to-bottom; later
   additions shadow earlier ones. See
-  [lucy.md § The Class Stack](../caspian/lucy/index.md#the-class-stack).
+  [lucy.md § The Class Stack](../requirements/caspian/lucy/index.md#the-class-stack).
 - **Method conflicts between multiple added classes follow the same
   rule.** If two added classes both define `to_string`, the more
   recently added one wins because it sits higher in the stack.
@@ -190,7 +190,7 @@ at the top because it's a pinned platter at the top, not because
 of a separate rule. The same is true for the `puck.uno/truthiness`
 platter when present — it's a pinned platter in the pinned region,
 participating in normal dispatch order. See
-[object.md § Mechanism](../caspian/built-in-classes/object.md#bool-mechanism)
+[object.md § Mechanism](../requirements/caspian/built-in-classes/object.md#bool-mechanism)
 for how the truthiness platter encodes null / false / true via a
 single class with a bucket-carried `truthy` field.
 
@@ -339,7 +339,7 @@ record (the class reference plus its own private bucket):
 libsodium. Object IDs use the engine's global sequencer
 (integer-strings), but platter IDs cannot — they appear as **keys
 inside user buckets** (via the per-platter-marker mechanism in
-[nulls.md § Serialization](../caspian/built-in-classes/nulls.md#serialization))
+[nulls.md § Serialization](../requirements/caspian/built-in-classes/nulls.md#serialization))
 where they need to be collision-safe against arbitrary user-chosen
 field names. An integer-string `"7"` could collide with a user
 bucket key; a UUID's 128-bit address space can't, in practice.
@@ -529,14 +529,14 @@ keyword level.
 
 Settled changes that propagate:
 
-- [lucy.md § Two-Property Objects](../caspian/lucy/index.md) —
+- [lucy.md § Two-Property Objects](../requirements/caspian/lucy/index.md) —
   needs updating to describe the platter-record shape. "Every
   object has classes (a list of platters) and a bucket (shared
   hash)."
-- [lucy.md § %bucket](../caspian/lucy/index.md#bucket) — the `uns`
+- [lucy.md § %bucket](../requirements/caspian/lucy/index.md#bucket) — the `uns`
   bucket-key convention can be retired in favor of per-platter
   buckets.
-- [skeletor.md](../caspian/skeletor/index.md) — snapshot/revive
+- [skeletor.md](../requirements/caspian/skeletor/index.md) — snapshot/revive
   shape needs to handle the new structure: each platter record
   serializes with its class UNS and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become
@@ -663,14 +663,14 @@ end
 Property assignment goes immediately after the function
 definition by convention — the two-line pair carries the
 visibility a keyword would have. See
-[lucy.md § `on_call` property](../caspian/lucy/index.md#on-call-property)
+[lucy.md § `on_call` property](../requirements/caspian/lucy/index.md#on-call-property)
 for the full design (mutability, caching consequences, future
 properties in the same family).
 
 `on_close` is the canonical multicast case — every platter that
 defines `on_close` gets to clean up its own state, not just the
 top one. See
-[garbage-collection.md § Multicast across platters](../caspian/garbage-collection.md#on-close-multicast).
+[garbage-collection.md § Multicast across platters](../requirements/caspian/garbage-collection.md#on-close-multicast).
 The same model covers `after_set` / `after_delete` on hashes and
 any future class-body lifecycle hook — see
 [#343](https://github.com/mikosullivan/puck/issues/343).

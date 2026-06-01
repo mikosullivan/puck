@@ -150,7 +150,7 @@ saving meaningful effort.
 
 - **The role model is a perfect sandbox fit.** Caspian already has a
   role-based capability system designed for "run untrusted code with
-  a restricted surface" (see [roles.md](../caspian/roles.md)).
+  a restricted surface" (see [roles.md](../../requirements/caspian/roles.md)).
   Browser-embedded Caspian is exactly that use case. Just don't grant
   filesystem/network/eval roles; the browser also isolates the JS/WASM
   layer. Two layers of defense.

@@ -598,126 +598,18 @@ Timestamps are **ISO 8601 strings with an explicit UTC offset** — e.g. `"2026-
 ~~~json
 {"vibecode": {
 	"section": "complete_example",
-	"role": "small inline example covering all four forms; for a broader reference example with multiple classes and instances point at worldlet.json in this directory",
-	"covers": ["class_definition_using_whole_hash_form", "name_as_sibling", "inherits_as_array",
-		"long_form_instance_with_class_singular", "compact_form", "bare_hash_preferred",
-		"scalar_record", "worldlet_level_vibecode", "puck_uno_dbfile_field",
-		"file_with_base64_encoding", "file_with_utf8_encoding", "unreferenced_file",
-		"file_reference_via_bare_string_schema_declared",
-		"file_reference_via_inline_compact_form_puck_uno_reference_file"],
-	"does_not_cover": ["temporal_mode", "multiple_classes", "methods", "uniques", "multi_chunk_files"],
-	"broader_reference": "worldlet.json in this directory carries class definitions for several classes (person, officer, starship, planet, voyage, assignment) and instances of each"
+	"role": "the complete example IS [worldlet.json](worldlet.json) in this directory; the markdown source uses an Orlando file-include directive to pull the file's contents into the rendered page on demand, so the example shown stays in lockstep with the canonical source",
+	"include_mechanism": "<!-- file: PATH --> directive — Orlando reads PATH (relative to this markdown file's directory) and inlines its contents as a fenced code block; see orlando/lua/orlando/page.lua process_file_includes",
+	"canonical_source": "worldlet.json in this directory; covers class definitions for person/officer/starship/planet/voyage/assignment, instances of each, attached files, nested methods, references between records"
 }}
 ~~~
 
-The worldlet below is a small self-contained example. It defines a `starfleet.com/officer` class (whole-hash form, with a nested-hash field and a `puck.uno/dbfile` photo field), then carries an instance of that class in long form (referencing one of the attached files two different ways), a compact-form color, a bare hash in the preferred `{"bucket": {}}` form, and a plain scalar. Two files sit in the top-level `files` and `file_chunks` dicts: a PNG photo with base64-encoded chunk data (referenced from the officer record) and a captain's log entry with utf-8-encoded chunk data (no record references it).
+The complete example is [worldlet.json](worldlet.json) in this directory — the reference-by-example for the entire format. It carries six class definitions (person, officer, starship, planet, voyage, assignment), sixteen instances across those classes, two attached files with chunks, an inline-object photo field on Picard, nested methods on officer, and a class-level multi-field unique constraint on voyage.
 
-Picard's record points at his photo two ways. `photo` is the schema-declared form — a bare key string in a field whose class is `puck.uno/dbfile`. `picture` is the inline-typed form — a `{class, value}` compact-form object that carries its class identity in the value itself, no field-class declaration needed. Both forms resolve to the same file; pick whichever fits the surrounding schema better.
-
-<a class="copy" href="#">copy</a>
-
-```json
-{
-    "format": "worldlet/1.0",
-
-    "vibecode": {
-        "purpose": "demonstrates a class definition, an instance of that class, a compact-form object, a bare hash, a scalar, and attached files — all in one worldlet",
-        "example_universe": "Star Trek"
-    },
-
-    "records": {
-
-        "r2k4p": {
-            "class":    "puck.uno/class",
-            "name":     "starfleet.com/officer",
-            "inherits": ["starfleet.com/person"],
-
-            "fields": {
-                "name": {
-                    "class":    "hash",
-                    "of":       "string",
-                    "default":  {"collapse": true},
-                    "required": true,
-
-                    "fields": {
-                        "surname": {"required": true},
-                        "given":   {"required": true},
-                        "middle":  {}
-                    }
-                },
-
-                "rank":   {"class": "string",  "required": true},
-                "serial": {"class": "string",  "required": true, "unique": true},
-                "active": {"class": "boolean", "default":  true},
-                "dob":    {"class": "timestamp"},
-                "photo":  {"class": "puck.uno/dbfile"}
-            }
-        },
-
-        "m9x3w": {
-            "class": "starfleet.com/officer",
-
-            "bucket": {
-                "name": {
-                    "surname": "Picard",
-                    "given":   "Jean-Luc"
-                },
-                "rank":    "Captain",
-                "serial":  "SP-937-215",
-                "photo":   "f1a2b3c4-0001-0001-0001-000000000001",
-
-                "picture": {
-                    "class": "puck.uno/reference/file",
-                    "value": "f1a2b3c4-0001-0001-0001-000000000001"
-                }
-            }
-        },
-
-        "h6n8c": {
-            "class": "puck.uno/color",
-            "value": "#cc0000"
-        },
-
-        "t5j1z": {"bucket": {}},
-
-        "v4b7e": "Make it so."
-    },
-
-    "files": {
-        "f1a2b3c4-0001-0001-0001-000000000001": {
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "mime":   {"type": "image/png", "encoding": "base64"}
-        },
-
-        "f1a2b3c4-0002-0002-0002-000000000002": {
-            "sha256":     "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
-            "created_at": "2364-01-04T11:00:00Z",
-            "mime":       {"type": "text/plain", "encoding": "utf-8"}
-        }
-    },
-
-    "file_chunks": {
-        "c1d2e3f4-0001-0001-0001-000000000001": {
-            "file":  "f1a2b3c4-0001-0001-0001-000000000001",
-            "index": 0,
-            "last":  true,
-            "data":  "iVBORw0KGgoAAAANSUhEUgAAA..."
-        },
-
-        "c1d2e3f4-0002-0002-0002-000000000002": {
-            "file":  "f1a2b3c4-0002-0002-0002-000000000002",
-            "index": 0,
-            "last":  true,
-            "data":  "Stardate 41174.3. The Enterprise is en route to Deneb IV..."
-        }
-    }
-}
-```
-
-The record keys are deliberately opaque — they carry no semantic load. A reader looking for "the officer class" or "the Picard record" has to look at the values, not the keys. That's the worldlet format's design: keys are storage handles only.
-
-For a broader reference example with multiple classes and multiple instances of each, see [worldlet.json](worldlet.json) in this directory — it is the by-example source of truth for how mikobases and classes are defined. Its current contents:
+Rather than duplicate the file in the spec (and risk it drifting out of sync), this section uses Orlando's file-include directive (`<!-- file: worldlet.json -->`) to pull the file in on demand and render it as a JSON code block. What you see below is the file's current contents.
 
 <a class="copy" href="#">copy</a>
 
 <!-- file: worldlet.json -->
+
+The record keys are deliberately opaque — they carry no semantic load. A reader looking for "the officer class" or "the Picard record" has to look at the values, not the keys. That's the worldlet format's design: keys are storage handles only.

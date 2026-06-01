@@ -29,7 +29,7 @@ remotely**. There is very little Caspian in the class definition; all
 methods are remote calls. The class on the client side is essentially a
 stub that exposes the method surface and dispatches each call to the
 puck.uno server via `%puck.call` (see
-[puck.md](../puck/index.md) — `remote function`).
+[puck.md](../requirements/puck/index.md) — `remote function`).
 
 The actual geolocation logic — databases, caches, algorithms — lives on
 the puck.uno servers. Clients hold the class for its method names and
@@ -52,7 +52,7 @@ A geo instance carries three coordinate fields:
 <a id="remote-call-semantics"></a>
 ### Remote call semantics
 
-Standard Puck remote-call mechanics apply (see [puck.md](../puck/index.md)):
+Standard Puck remote-call mechanics apply (see [puck.md](../requirements/puck/index.md)):
 
 - The client retrieves the class definition from UNS (or cache) and
   instantiates locally. The instance lives in client memory with its
@@ -929,7 +929,7 @@ anything that references remote resources at render time), the
 **ecoverse-wide CSP policy** applies: alongside the HTML snippet,
 the service provides the information needed to construct a
 `Content-Security-Policy` header that permits the embed. See
-[csp.md](../caspian/packages/touchstone/csp.md) for the full policy.
+[csp.md](../requirements/caspian/packages/touchstone/csp.md) for the full policy.
 
 Consumers can use that info or not — but it's always provided.
 
@@ -972,7 +972,7 @@ developers don't have to handle attribution separately.
 
 **CSP info.** When this URL is provided as part of a larger HTML
 snippet (e.g., an embed code), the corresponding CSP info bundle
-(see [csp.md](../caspian/packages/touchstone/csp.md)) accompanies it. For the bare image URL alone,
+(see [csp.md](../requirements/caspian/packages/touchstone/csp.md)) accompanies it. For the bare image URL alone,
 adding `img-src https://puck.uno` to a site's CSP is what's needed
 to allow the embed.
 
@@ -1267,7 +1267,7 @@ library is configured to fetch tiles from) to its
 `Content-Security-Policy`. Plus any `connect-src` directives the
 script needs for runtime API calls.
 
-Per the [ecoverse CSP policy](../caspian/packages/touchstone/csp.md), `$map.html` makes the CSP
+Per the [ecoverse CSP policy](../requirements/caspian/packages/touchstone/csp.md), `$map.html` makes the CSP
 info available alongside the HTML — exact bundling format TBD.
 
 <a id="privacy-and-osm-stewardship"></a>

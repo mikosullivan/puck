@@ -18,7 +18,7 @@ turn source into the JSON tree the dispatcher actually executes.
 Caching that JSON tree on disk skips three pipeline stages on every
 subsequent run.
 
-Notable beneficiary: [Bryton](caspian/packages/bryton/index.md)
+Notable beneficiary: [Bryton](../requirements/caspian/packages/bryton/index.md)
 subprocess-invokes every test file independently, so a 50-file test
 suite re-parses 50 times today. With the cache in place, only the
 files that actually changed get re-parsed.
@@ -179,7 +179,7 @@ gets written as usual — the next run picks it up.
 ## Bryton interaction
 
 This is where the cache pays for itself most. Bryton (V0.1
-[Glenstorm](../development/v1/caspian/glenstorm.md)) subprocess-invokes
+[Glenstorm](../requirements/development/v1/caspian/glenstorm.md)) subprocess-invokes
 every test file, so a 50-file test suite that runs in 2 seconds
 today might spend ~600 ms re-parsing source on every invocation.
 With cached `.caspj` next to each `tests/foo.casp`, the parse cost

@@ -6,9 +6,9 @@
 	"role": "design notes on nested methods — methods grouped under a namespace path on a class. Replaces the older helper-as-sub-object model with namespaces-as-pure-organization. The .object namespace is the canonical example: it holds the universal-introspection methods so user classes don't inherit them into their top-level namespace.",
 	"status": "active_design",
 	"audience": "Miko and Claude collaborating on the design",
-	"related": ["caspian/lucy/index.md (helpers — the older model this replaces)",
-		"caspian/object.md (object structure)",
-		"mikobase/worldlets/worldlet.json (records.b shows a 'beverage.nested.tea_earl_grey_hot' shape)"]
+	"related": ["requirements/caspian/lucy/index.md (helpers — the older model this replaces)",
+		"requirements/ecoverse/objects/index.md (object structure)",
+		"requirements/mikobase/worldlets/worldlet.json (records.b shows a 'beverage.nested.tea_earl_grey_hot' shape)"]
 }}
 ~~~
 
@@ -16,7 +16,7 @@
 
 A nested method is a method declared under a namespace path on its class. Calling `$foo.bar.gup()` dispatches `gup` from the `bar` namespace on `$foo`'s class. The namespace is **organizational only** — no sub-object is created, `self` inside `gup` is `$foo`, and `gup` has the same access to `$foo`'s bucket and other methods that a top-level method would.
 
-This replaces the older helper-as-sub-object model documented in [caspian/lucy/index.md § Helpers](../caspian/lucy/index.md#helpers). Under that model, `$foo.bar` returned a separate object holding a backreference to `$foo`, and helper methods could only reach back into the parent through that backreference's public surface. The new model collapses that: `$foo.bar` is no longer an object, it's a name prefix.
+This replaces the older helper-as-sub-object model documented in [caspian/lucy/index.md § Helpers](../requirements/caspian/lucy/index.md#helpers). Under that model, `$foo.bar` returned a separate object holding a backreference to `$foo`, and helper methods could only reach back into the parent through that backreference's public surface. The new model collapses that: `$foo.bar` is no longer an object, it's a name prefix.
 
 ## Why namespaces exist
 
@@ -93,13 +93,13 @@ The class's `methods` block is a nested hash. The `"nested"` key on a hash value
 - A hash with `"params"` / `"body"` / etc. is a method definition.
 - A hash with `"nested"` is a namespace; its `"nested"` value is itself a methods-block hash (recursive — namespaces can contain namespaces).
 
-This is the shape already showing up in [worldlets/worldlet.json](../mikobase/worldlets/worldlet.json) on the officer class.
+This is the shape already showing up in [worldlets/worldlet.json](../requirements/mikobase/worldlets/worldlet.json) on the officer class.
 
 ## Dispatch mechanism
 
 For a call like `$foo.bar.gup(args)`:
 
-1. Walk `$foo`'s class stack (top-down, per the [method dispatch rule](../caspian/object.md#method-dispatch)) looking for a class that has the path `bar.gup` defined.
+1. Walk `$foo`'s class stack (top-down, per the [method dispatch rule](../requirements/ecoverse/objects/method-resolution.md#method-dispatch)) looking for a class that has the path `bar.gup` defined.
 2. Within each class, traverse `methods.bar.nested.gup`. If found, that's the method.
 3. If a class has `bar` declared but it's a method (not a namespace), the path doesn't match — keep walking the class stack.
 4. First class with a matching path wins. If the walk completes without a match, raise method-not-found.
@@ -113,11 +113,11 @@ The visited-set / inheritance-chain walking inside each platter applies as usual
 {"vibecode": {
 	"section": "worked_example",
 	"role": "concrete reference — the officer class in worldlet.json uses both a namespaced method group (beverage) and a top-level method (salute); spells out the call shapes that result and what the example does not yet exercise",
-	"source": "documentation/mikobase/worldlets/worldlet.json record b"
+	"source": "documentation/requirements/mikobase/worldlets/worldlet.json record b"
 }}
 ~~~
 
-The `starfleet.com/officer` class definition in [worldlets/worldlet.json](../mikobase/worldlets/worldlet.json) (record `b`) shows the shape in practice. Its `methods` block, simplified for readability:
+The `starfleet.com/officer` class definition in [worldlets/worldlet.json](../requirements/mikobase/worldlets/worldlet.json) (record `b`) shows the shape in practice. Its `methods` block, simplified for readability:
 
 ~~~json
 "methods": {

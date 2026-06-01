@@ -12,7 +12,7 @@
 
 **Status:** early-stage idea, deferred. Seed-planted in a discussion
 about Jasmine's
-[`no_writers_ok`](../../caspian/packages/jasmine/index.md#constructing-a-jasmine-log) escape
+[`no_writers_ok`](../../requirements/caspian/packages/jasmine/index.md#constructing-a-jasmine-log) escape
 hatch — the first filed instance of a "Don't worry nanny" feature.
 
 **Current direction (2026-05-13):** invent opt-out flags ad-hoc

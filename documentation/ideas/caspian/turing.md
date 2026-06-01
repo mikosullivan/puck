@@ -45,7 +45,7 @@ Almost every general-purpose programming language has all three. Caspian is no e
 }}
 ~~~
 
-Caspian has `if`/`elsif`/`else`, documented in [caspianj.md § If / elsif / else](../../caspian/caspianj.md#if-elsif-else). The same construct works as a statement and as an expression that returns a value. That is all that branching needs to satisfy this requirement.
+Caspian has `if`/`elsif`/`else`, documented in [caspianj.md § If / elsif / else](../../requirements/caspian/caspianj.md#if-elsif-else). The same construct works as a statement and as an expression that returns a value. That is all that branching needs to satisfy this requirement.
 
 Beyond `if`, the language also has `catch` and `heed` for exception-and-warning flow control. Those are not required for Turing completeness, but they exist and they branch.
 
@@ -63,9 +63,9 @@ Beyond `if`, the language also has `catch` and `heed` for exception-and-warning 
 
 Two ways in: loops and recursion. Caspian has both.
 
-- **`while`.** A condition-driven loop, documented in [caspianj.md § While](../../caspian/caspianj.md#while). The condition is re-evaluated each iteration; the loop runs until it goes falsy. The number of iterations is not bounded by the language.
+- **`while`.** A condition-driven loop, documented in [caspianj.md § While](../../requirements/caspian/caspianj.md#while). The condition is re-evaluated each iteration; the loop runs until it goes falsy. The number of iterations is not bounded by the language.
 - **`each`.** Collection iteration documented in [caspianj.md] and used throughout the standard examples. Less general than `while` (it has to terminate when the collection runs out) but useful and present.
-- **Recursion.** Functions and methods can call themselves or each other. The dispatch model in [skeletor.md](../../caspian/skeletor/index.md) imposes no fixed recursion depth — every call pushes a frame onto `engine.state.call_stack`, and the stack grows until something terminates the program (an exception, a `%timeout`, or running out of host process memory). That is exactly the unboundedness the requirement asks for.
+- **Recursion.** Functions and methods can call themselves or each other. The dispatch model in [skeletor.md](../../requirements/caspian/skeletor/index.md) imposes no fixed recursion depth — every call pushes a frame onto `engine.state.call_stack`, and the stack grows until something terminates the program (an exception, a `%timeout`, or running out of host process memory). That is exactly the unboundedness the requirement asks for.
 
 `while` alone is enough; recursion is enough independently. Caspian has both, so this requirement is satisfied twice over.
 
@@ -80,7 +80,7 @@ Two ways in: loops and recursion. Caspian has both.
 }}
 ~~~
 
-Caspian's hash class — [`puck.uno/hash`](../../caspian/built-in-classes/index.md) — accepts any string key and any value, and is unbounded in the number of keys. That alone is enough: a single hash is sufficient state to implement a Turing machine's tape.
+Caspian's hash class — [`puck.uno/hash`](../../requirements/caspian/built-in-classes/index.md) — accepts any string key and any value, and is unbounded in the number of keys. That alone is enough: a single hash is sufficient state to implement a Turing machine's tape.
 
 In addition, the language has:
 
@@ -102,7 +102,7 @@ A more idiomatic Caspian program for the same demonstration would use recursion 
 The bar for Turing completeness is low; calling a language "Turing complete" is a starting line, not a finishing line. Caspian has plenty above that line. None of these affect the Turing-complete result, but they affect what's *easy* to express:
 
 - **Closures.** First-class anonymous functions that capture lexical scope. Lets functional patterns work without contortion.
-- **Methods and classes.** Open dispatch, single inheritance for now, multi-inheritance schema-permitted but resolution-order-pending (see [the class spec](../../ecoverse/class/index.md)).
+- **Methods and classes.** Open dispatch, single inheritance for now, multi-inheritance schema-permitted but resolution-order-pending (see [the class-definitions spec](../../requirements/mikobase/worldlets/index.md#class-definitions)).
 - **Exceptions and warnings.** Non-local control flow with `catch` (interrupts) and `heed` (accumulates).
 - **Instance-level shadow classes.** Per-object method overrides without disturbing the class.
 - **Rich primitives.** Strings, numbers, booleans, null, hashes, arrays — all with method surfaces.
@@ -150,7 +150,7 @@ A few things are worth being explicit about, since they sometimes confuse the co
 
 ### Engine timeouts
 
-Per [bootstrap.md § Timeouts](../../caspian/bootstrap.md#timeouts), the engine enforces a wall-clock budget set by the host. A program that would otherwise run forever is killed by the timeout. This is a real constraint on what programs *complete* — but it does not make the language non-Turing-complete. Turing completeness is a property of what the language can *express*, not what the host chooses to allow to run.
+Per [bootstrap.md § Timeouts](../bootstrap.md#timeouts), the engine enforces a wall-clock budget set by the host. A program that would otherwise run forever is killed by the timeout. This is a real constraint on what programs *complete* — but it does not make the language non-Turing-complete. Turing completeness is a property of what the language can *express*, not what the host chooses to allow to run.
 
 ### Capability-restricted roles can be deliberately below
 

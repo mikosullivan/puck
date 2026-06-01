@@ -74,8 +74,8 @@ which fetches from lune on demand, runs the code, and responds.
 
 This is the canonical use case for the engine's "run untrusted code with
 a restricted surface" capability that the role model has been building
-toward (see [roles.md](../caspian/roles.md) and the V0.0X CLI permission
-model in [development/index.md](../development/index.md)).
+toward (see [roles.md](../requirements/caspian/roles.md) and the V0.0X CLI permission
+model in [development/index.md](../requirements/development/index.md)).
 Each fetched script runs with whatever capability set the shasta operator
 grants it; the operator gets to decide what shasta exposes to lune's
 code.
