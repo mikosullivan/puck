@@ -713,7 +713,7 @@ modification.
   Mechanically these are identical (see
   [Call-Site Splat Expansion](#call-site-splat-expansion));
   stylistically the splat form is easier to scan and audit. The
-  partial nanny benefit: a typo in a declared param name (e.g.,
+  partial [nanny benefit](https://puck.uno/documentation/overview#no-nanny-code): a typo in a declared param name (e.g.,
   `ranck:` for `rank:`) still silently absorbs into `**opts`, but it
   happens in one centralized hash-construction line rather than
   scattered through the call site, so it's easier to spot during

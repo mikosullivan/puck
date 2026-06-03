@@ -161,7 +161,7 @@ even when all its children pass:
 This resolves to `false` (the group stays failed) because a
 parent is allowed to be **less** successful than its children.
 It's bad form — a group's success should usually come from its
-children — but the format allows it. No nanny code for that; the
+children — but the format allows it. [No nanny code](https://puck.uno/documentation/overview#no-nanny-code) for that; the
 validator doesn't warn.
 
 <a id="mixed-nodes-general-case"></a>

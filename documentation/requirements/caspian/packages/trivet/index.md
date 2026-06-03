@@ -347,7 +347,7 @@ exception unwinds the caller's stack. The exception carries
 enough detail (the attempted parent, the attempted child) for a
 `catch` block to build a useful error message.
 
-This is non-negotiable: it's not a "nanny" feature with a
+This is non-negotiable: it's not a ["nanny"](https://puck.uno/documentation/overview#no-nanny-code) feature with a
 silenceable warning. Cycles are categorically wrong in a tree;
 the operation always fails.
 

@@ -187,7 +187,7 @@ This is intentional. The puck-derivation rule constrains how an
 code that already holds raw faucets from building a separate puck
 around them.
 
-The framework's stance: **the nanny stays out of this.** Don't pass
+The framework's stance: **[the nanny](https://puck.uno/documentation/overview#no-nanny-code) stays out of this.** Don't pass
 a network faucet (or any other faucet) to code you don't trust to
 use it however it wants. The authority is in the faucet, not in the
 puck. If you want a callee to be unable to make HTTPS calls, don't

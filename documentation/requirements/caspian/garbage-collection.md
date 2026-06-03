@@ -231,7 +231,7 @@ explicitly outside of `on_close`. The runtime doesn't try to second-guess
 which file descriptors are "really" non-blocking; it just enforces the
 cap.
 
-This matches the "no nanny code" instinct: developers can write the obvious
+This matches the ["no nanny code"](https://puck.uno/documentation/overview#no-nanny-code) instinct: developers can write the obvious
 thing (`@socket.close`) without the runtime intervening, and the cap catches
 misuse without a special-case rule for every possible syscall.
 

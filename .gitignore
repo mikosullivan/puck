@@ -10,20 +10,22 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+# Anchored to repo root — these are Python-distribution conventions and should
+# not catch doc paths like documentation/.../downloads/ or documentation/.../build/.
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/.eggs/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
+/share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg

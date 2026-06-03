@@ -85,7 +85,7 @@ when it's created stays for the object's lifetime. The bool value can
 - Even if the program would consider the object "transformed into
   something else," the engine still answers with the original bool.
 
-This is engine-enforced, by the nanny.
+This is engine-enforced, by [the nanny](https://puck.uno/documentation/overview#no-nanny-code).
 
 ```
 $x = null

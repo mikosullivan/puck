@@ -323,7 +323,7 @@ $log = %puck['puck.uno/jasmine'].new(no_writers_ok: true)
 $log.no_writers_ok = true
 ```
 
-This is an example of a **"Don't worry nanny" feature**: the
+This is an example of a **"Don't worry [nanny](https://puck.uno/documentation/overview#no-nanny-code)" feature**: the
 framework's default behavior is to warn about a likely mistake, but
 the developer can flip a flag to indicate "I know, this is
 intentional, hush." Part of Mikobase's no-nanny-code philosophy —

@@ -139,7 +139,7 @@ When the field's declared `class` AND a custom_classes marker BOTH apply to the 
 
 Reasoning: a field's declared class is a requirement, not a suggestion. Once a developer declared the field as class X, the system enforces that on every write. Existing records that predate the class change (or that were imported under a now-stale schema) still load — with a warning — so the data isn't lost, but no new conflict can enter the database.
 
-This split keeps backward compatibility for already-stored records (no silent data loss) while enforcing the schema strictly going forward. Aligns with the "no nanny code" principle for already-stored data (it loads, the developer chose to keep it) and "the slob" principle for visibility (warnings are issued, not silent).
+This split keeps backward compatibility for already-stored records (no silent data loss) while enforcing the schema strictly going forward. Aligns with the ["no nanny code"](https://puck.uno/documentation/overview#no-nanny-code) principle for already-stored data (it loads, the developer chose to keep it) and "the slob" principle for visibility (warnings are issued, not silent).
 
 ### Scoping of custom_classes
 

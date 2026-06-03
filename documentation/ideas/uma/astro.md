@@ -44,7 +44,7 @@ At any level, at most one of `then` / `then-child` / `then-next`
 appears (one combinator per level).
 
 If more appear, there is no set precedence for which one to use.
-Nanny should flag a warning on that.
+[Nanny](https://puck.uno/documentation/overview#no-nanny-code) should flag a warning on that.
 
 ---
 

@@ -2603,7 +2603,7 @@ boundary inside the same function.
 `%stdout` and `%stderr` **do** live in `%chain`. The system methods `%stdout` / `%stderr`
 read from chain; the engine places them at bootstrap, always as a real handle —
 either pointing at a real destination (terminal, capture buffer, etc.) or as a
-dev/null handle that discards writes (with a nanny warning, silenceable via
+dev/null handle that discards writes (with a [nanny warning](https://puck.uno/documentation/overview#no-nanny-code), silenceable via
 `no_writers_ok`). They are **never null**, so writes can be sprinkled in without
 guards. This is also why `%stdout.capture do ... end` works without special primitives —
 it creates an inherited chain scope where `%stdout` is the capture buffer, runs the

@@ -174,7 +174,7 @@ Tempting (free time-to-market) but a trap. Once docs, tutorials, and the VS Code
 
 This is the most interesting hybrid. Prettier's intermediate representation — a tree of layout combinators (`group`, `indent`, `line`, `softline`, `fill`) descended from Wadler's "A prettier printer" — is a genuinely good design and is the actual technical contribution of the Prettier project, separable from its option-freezing politics. We can implement the same combinator IR in Lua, on top of the existing CJS pipeline. We get Prettier's layout-engine power without the runtime, without the philosophy clash, without the plugin contract, and with full freedom on options.
 
-This is the path that fits Puck's principles: implementation in our own languages, no nanny code on options, full per-viewer freedom, lossless round-trip through CJS, and a small surface area we can evolve. It costs more than "just use Prettier," but it costs less than people assume — Wadler-style pretty-printers are a few hundred lines of clean code, and we already have the parser.
+This is the path that fits Puck's principles: implementation in our own languages, [no nanny code](https://puck.uno/documentation/overview#no-nanny-code) on options, full per-viewer freedom, lossless round-trip through CJS, and a small surface area we can evolve. It costs more than "just use Prettier," but it costs less than people assume — Wadler-style pretty-printers are a few hundred lines of clean code, and we already have the parser.
 
 ## Recommendation, expanded
 

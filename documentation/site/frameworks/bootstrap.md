@@ -104,7 +104,7 @@ Orlando is Lua, Gitter is Caspian. There is no Node, no webpack, no bundler in t
 
 ### Bootstrap's "no nanny" status is mixed
 
-Bootstrap is opinionated in the *design* sense (it picks a look) but mostly hands-off in the *behavior* sense (you can override anything with utility classes or your own CSS). It is not actively paternalistic in the project's "no nanny code" sense, but the *gravity* of its defaults — the path of least resistance leads to a Bootstrap-shaped site — is its own subtle version of constraint. Worth noting; not disqualifying.
+Bootstrap is opinionated in the *design* sense (it picks a look) but mostly hands-off in the *behavior* sense (you can override anything with utility classes or your own CSS). It is not actively paternalistic in the project's ["no nanny code"](https://puck.uno/documentation/overview#no-nanny-code) sense, but the *gravity* of its defaults — the path of least resistance leads to a Bootstrap-shaped site — is its own subtle version of constraint. Worth noting; not disqualifying.
 
 ## Notable alternatives
 

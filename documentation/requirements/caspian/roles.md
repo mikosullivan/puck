@@ -267,7 +267,7 @@ the directory jail rules below are one specialization. The same pattern applies
 to any object the developer wants to restrict before handing it across a
 role boundary.
 
-This is consistent with the framework's "no nanny code" principle. The
+This is consistent with the framework's ["no nanny code"](https://puck.uno/documentation/overview#no-nanny-code) principle. The
 runtime won't second-guess what you pass to another role; that choice is
 yours, and the consequences are yours. The framework's job is to make
 the narrowing easy.

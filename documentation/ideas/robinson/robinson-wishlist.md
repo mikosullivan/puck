@@ -369,7 +369,7 @@ So three layers of opt-in to reach the lowest-isolation / highest-performance
 mode: engine grants `%forks`, developer sets `enable_forking = true`,
 developer sets `recycle_workers = true`. Each layer defaults to "no." This is
 "secure by default, opt out for performance," consistent with the overall
-Puck no-nanny-code principle: safe defaults with explicit, greppable
+Puck [no-nanny-code principle](https://puck.uno/documentation/overview#no-nanny-code): safe defaults with explicit, greppable
 overrides.
 
 Open:

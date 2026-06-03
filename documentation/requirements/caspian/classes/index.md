@@ -1,21 +1,24 @@
 # Class definitions
 
-> **Worldlet-envelope examples below are stale.** Class definitions now live as records inside `records` (whole-hash form, `class: "puck.uno/class"` plus sibling `name`, `inherits`, `fields`, `methods`, `uniques`), not under a dict-keyed `classes` section of the worldlet envelope. See [worldlets/index.md § Class definitions](../../ecoverse/worldlets/index.md#class-definitions) and [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) for the current form. The Caspian DSL side of each section below is still current; only the JSON envelope shape has changed.
-
 ~~~json
 {"vibecode": {
 	"doc": "class_definitions",
 	"role": "canonical reference for how a class is declared on each of the surfaces in the ecoverse — Caspian DSL, CaspianJ (the engine's runtime format), and Mikobase JSON; every JSON example is shown inside the context of an entire worldlet, since a class definition's natural home is the classes section of a worldlet",
-	"status": "JSON envelope shape is stale; see banner at top of file. Caspian DSL forms still current.",
 	"audience": "Caspian users and engine implementers (primary), Miko (secondary as a settled-decisions index)",
 	"format": "construct_by_construct_side_by_side; each section shows the Caspian DSL form and the worldlet JSON; open questions surfaced inline rather than buried",
-	"key_concepts": ["caspian_class_dsl", "caspianj_class_form", "mikobase_class_schema",
-		"worldlet_envelope", "shared_class_definition_structure"],
+	"key_concepts": ["caspian_class_dsl_does_not_carry_uns",
+		"uns_is_the_storage_location_not_an_intrinsic_class_property",
+		"things_live_where_you_store_them",
+		"caspianj_class_form", "mikobase_class_schema",
+		"worldlet_envelope", "shared_class_definition_structure",
+		"one_uns_one_class_for_published_artifacts"],
 	"related": ["caspian/index.md#classes", "caspian/caspianj.md",
 		"mikobase/class-definition.md", "ecoverse/worldlets/index.md",
 		"ecoverse/standard-fields.md"]
 }}
 ~~~
+
+> **Classes don't declare their own UNS.** The Caspian DSL form is just `class ... end` — no UNS string in the declaration. A class is an object; UNS is the **address where you store it** for external discoverability, not a property the class itself carries. When a class is serialized into a worldlet record at a particular storage location, the `name` field on that record records the UNS — which is metadata about where the record lives, not about the class.
 
 This doc shows how a class definition looks on each of the surfaces in the ecoverse. The goal is a single place where any Caspian DSL construct can be matched to its CaspianJ / Mikobase JSON equivalent.
 
@@ -51,20 +54,18 @@ A worldlet wrapping one class:
 Notes:
 
 - Records live under a top-level `records` hash, keyed by arbitrary string. UUIDs are conventional; short letters like `"a"` work in worked examples.
-- The class's name (UNS) is the `name` field at the record's top level. The record's storage key (`"a"` above) is unrelated to the class's name — opaque from the outside.
+- The `name` field on the record is the **UNS this class is published at** — the storage address. The class object itself doesn't carry a UNS; the field is a property of the record (where the class is stored), not the class (what it is). The record's storage key (`"a"` above) is unrelated to that UNS — opaque from the outside.
 - Other class-definition properties — `description`, `inherits`, `fields`, `methods`, `uniques` — sit alongside `name` and `class` at the record top level. This is the **whole-hash form**: the class's content lives at the top level rather than under a `bucket` key.
 - Whole-hash form is a class-level opt-in. Built-in classes like `puck.uno/class` use it because their content reads better flat. Most user classes do NOT opt in; their instances ride the regular `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
 
 A full worldlet may also carry `files`, `file_chunks`, etc. — see [worldlets/index.md](../../ecoverse/worldlets/index.md) for the complete spec.
-
-(The construct examples below have not been fully ported — see the stale-doc banner at the top of this page. The Caspian DSL forms throughout are still current; only the JSON envelope shape has changed.)
 
 ## A class at a glance
 
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'starfleet.com/officer'
+class
 	inherits 'starfleet.com/person'
 	field 'name',      class: :string, required: true, get: true, set: true
 	field 'nickname',  class: :string, get: true, set: true
@@ -125,7 +126,7 @@ What follows is the construct-by-construct catalog. Each section shows the Caspi
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	...
 end
 ~~~
@@ -144,14 +145,18 @@ end
 }
 ```
 
-The class name is a UNS string, stored on the record's top-level `name` field (alongside `class: "puck.uno/class"`). The record's own key in `records` (here `"a"`) is an arbitrary short identifier, not the class name. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
+The Caspian DSL declaration is just `class ... end`. The class is an object; it doesn't carry its own UNS. **The UNS is the address where you put the class** — for external lookup via `%puck['foo.com/character']`, for fetching from a remote source, for naming an entry in a worldlet record.
+
+In the JSON form, the `name` field on the class-definition record is the UNS this class is published at. That's a property of the **record** (where the class lives), not of the class itself. The record's own key in `records` (here `"a"`) is an arbitrary short identifier, separate from both the class's content and its publication UNS. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
+
+The "things live where you store them" principle applies fully: a class declared as `$gup = class ... end` lives at `$gup`. A class published to a fetch-able URL lives at that URL — and the UNS for `%puck` lookup is that URL. A class returned from a method lives wherever the caller stores it. UNS is one specific storage location, not an intrinsic identity.
 
 ### Inheritance
 
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	inherits 'foo.com/person'
 end
 ~~~
@@ -178,7 +183,7 @@ Single parent. Inheritance is always explicit; no path-implied inheritance.
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'puck.uno/mikobase'
+class
 	abstract true
 end
 ~~~
@@ -205,7 +210,7 @@ Direct instantiation raises. Subclasses can be instantiated normally.
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	field :name,      class: :string, required: true, collapse: true
 	field :age,       class: :number, min: 0, integer_only: true
 	field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
@@ -246,7 +251,7 @@ For the common, type-specific, reference, and array/hash settings, see [worldlet
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/show'
+class
 	field :slug,    class: :string, required: true, unique: true, min_length: 1
 	field :rating,  class: :number, gte: 0, lte: 10, integer_only: true
 	field :tags,    class: :array,  of: :string, min_elements: 1
@@ -279,7 +284,7 @@ end
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
 	field :stop,      class: 'puck.uno/reference',
 	                  allowed_classes: ['foo.com/moon', 'foo.com/station']
@@ -313,7 +318,7 @@ end
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/officer'
+class
 	field :serial, class: :string, required: true, unique: true
 end
 ~~~
@@ -367,7 +372,7 @@ The shared JSON form is a class-level `uniques` array on the class definition. T
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/appearance'
+class
 	field :person,  class: 'puck.uno/reference', allowed_class: 'foo.com/person'
 	field :episode, class: 'puck.uno/reference', allowed_class: 'foo.com/episode'
 
@@ -403,7 +408,7 @@ Methods live in a `methods` namespace, sibling to `fields` — not inside `field
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	function &greet(name:)
 		'Hello, ' + $name
 	end
@@ -457,7 +462,7 @@ The following Caspian DSL constructs do not have a settled worldlet / shared JSO
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	accessor @nickname              # private, no external access
 	accessor @nickname, :get        # creates a getter
 	accessor @nickname, :get, :set  # creates both getter and setter
@@ -473,7 +478,7 @@ No worldlet JSON shape exists today. A natural fit would be a separate `accessor
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
-class 'foo.com/character'
+class
 	helper :stats
 		function &average()
 			...
@@ -493,7 +498,16 @@ Caspian documents two hook systems for different events:
 
 Neither is declared inside a class definition today — both are registered dynamically by external code. There is no worldlet JSON shape because there is no in-class declaration to serialize. Whether hooks should be declarable in-class is itself the open question; see [Open questions](#open-questions).
 
-## Anonymous classes
+## Classes without a UNS
+
+Every Caspian class is "anonymous" in source — the declaration is `class ... end`, with no UNS embedded. A class only gets a UNS by being **stored at one**: published to a fetch-able URL, written into a worldlet record's `name` field, or otherwise placed at a discoverable address.
+
+Common cases for classes that never get a UNS:
+
+- **Local-only classes.** Defined inside a program for its own use, never published. Stored at a variable: `$gup = class ... end`. Reachable through that variable; nowhere else.
+- **Nested classes built by another class.** An outer class may construct inner classes for its own use (helpers, factories, generated subclasses). The outer class holds the references; the inner classes live within it. No UNS needed because external code interacts with them through the outer class's API.
+- **Classes returned from methods.** A method that constructs and returns a class hands the caller a reference; the caller stores it wherever it likes.
+- **Identity-by-location.** Some systems use a non-UNS location as the discoverability address — e.g., Robinson page files identified by their path in the directory tree. The class is still anonymous in source; the path is what makes it findable.
 
 <a class="copy" href="#">copy</a>
 
@@ -507,9 +521,7 @@ class
 end
 ~~~
 
-Anonymous classes (no UNS) exist in Caspian for cases where identity comes from location rather than from a UNS — e.g., Robinson page files identified by their path in the directory tree.
-
-In the worldlet JSON form, anonymous classes have no natural home: the dict-key-as-name convention means there is nowhere to put a class without a name. If anonymous classes need to round-trip through a worldlet, the shape needs a decision — see [Open questions](#open-questions).
+When a class without a UNS needs to ride along inside a worldlet record (for transport or storage), the worldlet still needs to identify the record somehow. The `name` field can be absent or null on the class-definition record — the receiver knows it as "the class living at the storage location implied by where this worldlet was fetched from" or as the value of whatever reference holds it post-load. See [Open questions](#open-questions) for the remaining shape decision.
 
 ## Open questions
 
@@ -543,9 +555,11 @@ The worldlet JSON has `"uniques": [["a", "b"]]` for non-join multi-field uniquen
 
 `on_close` and `before_save` / `after_save` are external-only today. Whether they should also be declarable in-class — and if so, what the shape looks like — needs a call.
 
-### Anonymous classes in a worldlet
+### Classes without a UNS in a worldlet
 
-If anonymous classes need to serialize, where do they live? A synthesized key under `records`, or a separate channel? Per the new model, every record needs a key in the worldlet's top-level `records` dict — anonymous classes would need a key-generation rule.
+Since the DSL no longer carries a UNS, **every class is anonymous in source**. The UNS only appears when the class is being placed at a publication address (and that UNS becomes the record's `name` field). For a class-definition record that isn't being published — e.g., a transient class carried in a worldlet for transport — the `name` field can be omitted or null. The record's storage key (`"a"`, `"b"`, ...) is still required as the in-worldlet identifier; the lack of a `name` is what marks the class as not-published-anywhere.
+
+Whether to keep `name` as optional/nullable (current direction) or to require it always (with some convention for "not for publication") is a small decision worth pinning down once the first round of un-published-class worldlets is in use.
 
 ## See also
 
