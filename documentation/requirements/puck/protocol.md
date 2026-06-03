@@ -256,8 +256,8 @@ Starfleet database.
         "registry": {"class": "string", "required": true}
     },
     "methods": {
-        "name":             {"returns": {"class": "string"}},
-        "captain":          {"returns": {"class": "starfleet.com/officer"}},
+        "name": {"returns": {"class": "string"}},
+        "captain": {"returns": {"class": "starfleet.com/officer"}},
         "current_location": {"returns": {"class": "puck.uno/geo"}}
     }
 }

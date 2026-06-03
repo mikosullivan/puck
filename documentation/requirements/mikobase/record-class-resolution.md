@@ -66,11 +66,11 @@ The hash carries a UUID-named marker key; a sibling `custom_classes` dict on the
 
 ```json
 {
-    "class":  "starfleet.com/officer",
+    "class": "starfleet.com/officer",
     "bucket": {
         "photo": {
             "<uuid>": true,
-            "value":  "f1a2b3c4-..."
+            "value": "f1a2b3c4-..."
         }
     },
     "custom_classes": {
@@ -123,7 +123,7 @@ So a class can declare a field with no class at all — just constraints — and
 // record bucket:
 "photo": {
     "<uuid>": true,
-    "url":    "https://photo.bar/picard"
+    "url": "https://photo.bar/picard"
 }
 // + record-level "custom_classes": {"<uuid>": "puck.uno/url"}
 ```

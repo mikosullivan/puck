@@ -54,8 +54,8 @@ UUIDs.
       "src": ["a", 4],
       "locals": {
         "shared": "1",
-        "alias":  "5",
-        "count":  "6"
+        "alias": "5",
+        "count": "6"
       }
     }
   ],
@@ -68,49 +68,49 @@ UUIDs.
   "objects": {
     "1": {
       "bucket": {},
-      "stack":  {
-        "shadow":   {},
+      "stack": {
+        "shadow": {},
         "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "shared", "frame": 0}}
       }
     },
     "2": {
       "bucket": {"name": "3"},
-      "stack":  {
+      "stack": {
         "shadow": {},
-        "hash":   {"class": "puck.uno/hash"}
+        "hash": {"class": "puck.uno/hash"}
       }
     },
     "3": {
       "bucket": {},
-      "stack":  {
-        "shadow":  {},
+      "stack": {
+        "shadow": {},
         "element": {"class": "puck.uno/hash_element", "sticky": true, "bucket": {"parent": "2", "key": "name"}}
       }
     },
     "4": {
       "bucket": {"value": "Picard"},
-      "stack":  {
+      "stack": {
         "shadow": {},
         "string": {"class": "puck.uno/string"}
       }
     },
     "5": {
       "bucket": {},
-      "stack":  {
-        "shadow":   {},
+      "stack": {
+        "shadow": {},
         "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "alias", "frame": 0}}
       }
     },
     "6": {
       "bucket": {},
-      "stack":  {
-        "shadow":   {},
+      "stack": {
+        "shadow": {},
         "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "count", "frame": 0}}
       }
     },
     "7": {
       "bucket": {"value": 1},
-      "stack":  {
+      "stack": {
         "shadow": {},
         "number": {"class": "puck.uno/number"}
       }

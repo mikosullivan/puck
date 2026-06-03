@@ -23,7 +23,7 @@ The full template:
     "stack": {
         "shadow": {
             "sticky": true,
-            "class":  {}
+            "class": {}
         }
     }
 }
@@ -113,9 +113,9 @@ Serialized form:
 {
     "bucket": {},
     "stack": {
-        "shadow":      {},
+        "shadow": {},
         "trivet_node": {
-            "class":  "puck.uno/trivet/node",
+            "class": "puck.uno/trivet/node",
             "bucket": {"parent": ..., "children": ..., "id": "food"}
         }
     }
@@ -145,12 +145,12 @@ A platter can carry its own `vibecode` block — an AI-readable hash of hints, c
     "stack": {
         "shadow": {},
         "ai_generated": {
-            "class":    "foo.com/something",
+            "class": "foo.com/something",
             "vibecode": {
                 "generated_by": "weather-advisor agent",
-                "source":       "synthesized from NWS forecast 2026-06-02T18:30:45Z",
-                "confidence":   0.85,
-                "notes":        "free-form notes the generator wanted to leave"
+                "source": "synthesized from NWS forecast 2026-06-02T18:30:45Z",
+                "confidence": 0.85,
+                "notes": "free-form notes the generator wanted to leave"
             }
         }
     }
@@ -192,7 +192,7 @@ For example, both shadow and `foo` are sticky and adjacent here, so `foo` is stu
     "bucket": {},
     "stack": {
         "shadow": {"sticky": true, "class": {}},
-        "foo":    {"sticky": true, "class": {}}
+        "foo": {"sticky": true, "class": {}}
     }
 }
 ```

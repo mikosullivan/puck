@@ -311,6 +311,39 @@ parser must handle this disambiguation.
 
 ---
 
+<a id="contributing-roles"></a>
+## Contributing roles
+
+Every string carries a **`roles` array** — the set of every role whose code participated in producing the string's content. The array is union-tracked across operations: when two strings combine, the result's `roles` is the union of both inputs' roles.
+
+```
+$foo = 'bar'            # roles: ['user']
+$gup = $foo + $blah     # $blah came from bob → $gup.roles is ['user', 'bob']
+```
+
+A string created from a literal in role X's code has `roles: ['X']`. A string returned from a built-in operation (`upcase`, `strip`, slicing, etc.) inherits the input's `roles`. A string built by concatenation, interpolation, formatting, or `replace` inherits the union of every contributing input's `roles`.
+
+This is **not the same as the string's owner** ([per the role model](../roles.md#ownership-rules)). Owner is a single value; `roles` is the set of every role that's touched the content. A string can be owned by `user` (the role that holds the reference) while carrying `roles: ['user', 'bob']` because some of its content was built from a string bob's code produced.
+
+<a id="why-the-roles-array"></a>
+### Why the roles array exists
+
+Certain **secure operations gate on the `roles` array** and refuse to proceed when an untrusted role appears in the list. Typical gates:
+
+- Executing a string as SQL — refuse if any role outside the trusted set has contributed.
+- Evaluating a string as Caspian code (when [`eval` is permitted at all](../../../downloads/service/index.md#puck-blockchain)) — refuse if untrusted roles appear.
+- Writing a string to a privileged filesystem path — same.
+- Spawning a subprocess with a string as the command — same.
+
+Each gate documents which roles it considers safe; the runtime cross-checks the string's `roles` against that set before performing the operation. Mismatch raises rather than silently sanitizing — explicit refusal is the contract.
+
+<a id="distinct-from-string-provenance"></a>
+### Distinct from full string provenance
+
+The `roles` array is a **minimal contributor tag** — a set of role names, nothing more. It does not record *which* operations combined the strings or *which* source produced each input. A richer "full construction history" idea is sketched at [ideas/security/string-provenance.md](../../../ideas/security/string-provenance.md); that's a possible future opt-in for higher-security scenarios. The `roles` array is the always-on minimum.
+
+---
+
 <a id="open-questions"></a>
 ## Open Questions
 

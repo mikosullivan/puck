@@ -72,8 +72,8 @@ each contributing a class. This matches the universal Puck object shape (see
 {
     "bucket": {...},
     "stack": {
-        "shadow":      {},
-        "character":   {"class": "foo.com/character"},
+        "shadow": {},
+        "character": {"class": "foo.com/character"},
         "trivet_node": {"class": "puck.uno/trivet/node",
                         "bucket": {"parent": "...", "children": "...", "id": "..."}}
     }
@@ -282,7 +282,7 @@ Each record dict yielded by a `select` resultset has the following fields:
     "pk": "92677339-df86-4f68-9397-999e40cf2c40",
     "bucket": {...},
     "stack": {
-        "shadow":    {},
+        "shadow": {},
         "character": {"class": "foo.com/character"}
     },
     "updated_at": "2026-04-21T14:32:00.123"

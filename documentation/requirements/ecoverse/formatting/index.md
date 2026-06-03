@@ -72,12 +72,12 @@ Three top-level groups: **`indent`**, **`lines`**, **`languages`**. Universal se
 
   "languages": {
     "caspian": {
-      "class_body_packing":    "tight",
-      "empty_param_parens":    true,
-      "bareword_call_parens":  "omit",
-      "hash_spacing":          "tight",
-      "return_parens":         true,
-      "vibecode_placement":    "top_of_section"
+      "class_body_packing": "tight",
+      "empty_param_parens": true,
+      "bareword_call_parens": "omit",
+      "hash_spacing": "tight",
+      "return_parens": true,
+      "vibecode_placement": "top_of_section"
     },
     "json": {
       "indent": {
@@ -419,12 +419,12 @@ Canonical source: **[miko.json](miko.json)** (the actual file the tooling reads)
 
   "languages": {
     "caspian": {
-      "class_body_packing":    "tight",
-      "empty_param_parens":    true,
-      "bareword_call_parens":  "omit",
-      "hash_spacing":          "tight",
-      "return_parens":         true,
-      "vibecode_placement":    "top_of_section"
+      "class_body_packing": "tight",
+      "empty_param_parens": true,
+      "bareword_call_parens": "omit",
+      "hash_spacing": "tight",
+      "return_parens": true,
+      "vibecode_placement": "top_of_section"
     }
   }
 }

@@ -848,8 +848,8 @@ handlers.
 ```
 {
     "default-src": ["'none'"],
-    "script-src":  ["'self'", "cdn.example.com"],
-    "img-src":     ["'self'", "data:"]
+    "script-src": ["'self'", "cdn.example.com"],
+    "img-src": ["'self'", "data:"]
 }
 ```
 

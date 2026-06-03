@@ -23,12 +23,12 @@
 
 	"languages": {
 		"caspian": {
-			"class_body_packing":   "tight",
-			"empty_param_parens":   true,
+			"class_body_packing": "tight",
+			"empty_param_parens": true,
 			"bareword_call_parens": "omit",
-			"hash_spacing":         "tight",
-			"return_parens":        true,
-			"vibecode_placement":   "top_of_section"
+			"hash_spacing": "tight",
+			"return_parens": true,
+			"vibecode_placement": "top_of_section"
 		},
 		"css": {
 			"single_declaration_rules": "inline",

@@ -248,7 +248,7 @@ The shape of a `null` (illustrative):
 ```json
 {
     "classes": {
-        "<shadow-id>":     {"class": "puck.uno/class/shadow",  "bucket": {}},
+        "<shadow-id>": {"class": "puck.uno/class/shadow",  "bucket": {}},
         "<truthiness-id>": {"class": "puck.uno/truthiness",    "bucket": {"truthy": null}}
     },
     "bucket": {}
@@ -260,7 +260,7 @@ The shape of a `false`:
 ```json
 {
     "classes": {
-        "<shadow-id>":     {"class": "puck.uno/class/shadow",  "bucket": {}},
+        "<shadow-id>": {"class": "puck.uno/class/shadow",  "bucket": {}},
         "<truthiness-id>": {"class": "puck.uno/truthiness",    "bucket": {"truthy": false}}
     },
     "bucket": {}

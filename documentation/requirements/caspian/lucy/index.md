@@ -1889,7 +1889,7 @@ empty), and the object's own class platter below it. A bare `color` instance:
     "bucket": {"r": 255, "g": 0, "b": 0},
     "stack": {
         "shadow": {},
-        "color":  {"class": "puck.uno/color"}
+        "color": {"class": "puck.uno/color"}
     }
 }
 ```
@@ -1933,7 +1933,7 @@ be talked out of being null or false later.
 {
     "bucket": {},
     "stack": {
-        "shadow":     {},
+        "shadow": {},
         "null_class": {"sticky": true, "class": "puck.uno/null"}
     }
 }

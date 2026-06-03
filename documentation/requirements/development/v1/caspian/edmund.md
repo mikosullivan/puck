@@ -138,18 +138,18 @@ A snapshot mid-`.to_json` call:
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":          "method_call",
-      "role":          "stdlib",
+      "action": "method_call",
+      "role": "stdlib",
       "receiver_type": "puck.uno/hash",
-      "method":        "to_json",
-      "chain":         {"log": {}, "misc": {}},
-      "locals":        {}
+      "method": "to_json",
+      "chain": {"log": {}, "misc": {}},
+      "locals": {}
     }
   ]
 }

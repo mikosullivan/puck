@@ -223,11 +223,11 @@ Registrations are runtime state — they have to survive between mutations, pers
 ```json
 "registrations": {
   "r1": {
-    "source":   "<reference-id of the source object>",
-    "event":    "after_change",
+    "source": "<reference-id of the source object>",
+    "event": "after_change",
     "listener": "<reference-id of the listener>",
-    "handler":  "<closure object id>",
-    "role":     "<the role the handler runs in — captured at registration time>"
+    "handler": "<closure object id>",
+    "role": "<the role the handler runs in — captured at registration time>"
   }
 }
 ```

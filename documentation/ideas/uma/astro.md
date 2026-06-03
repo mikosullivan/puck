@@ -59,7 +59,7 @@ Each entry in `atts` describes an attribute constraint:
     "src": "something",          # attribute must equal "something"
     "data-foo": {"starts_with": "abc"},      # prefix match
     "data-bar": {"contains": "x"},           # substring match
-    "lang":    {"hyphen_prefix": "en"}       # hyphen-prefix (e.g., en, en-US)
+    "lang": {"hyphen_prefix": "en"}       # hyphen-prefix (e.g., en, en-US)
 }
 ```
 

@@ -137,7 +137,7 @@ systems. That is expected and acceptable; it is what `misc` is for.
     "foo": "bar",
     "misc": {
         "internal_tracking_id": "abc-123",
-        "legacy_system_ref":    "old-format-id"
+        "legacy_system_ref": "old-format-id"
     }
 }
 ```

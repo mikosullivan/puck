@@ -42,7 +42,7 @@ A worldlet wrapping one class:
     "records": {
         "a": {
             "class": "puck.uno/class",
-            "name":  "foo.com/character"
+            "name": "foo.com/character"
         }
     }
 }
@@ -89,14 +89,14 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":    "puck.uno/class",
-            "name":     "starfleet.com/officer",
+            "class": "puck.uno/class",
+            "name": "starfleet.com/officer",
             "inherits": "starfleet.com/person",
             "fields": {
-                "name":     {"class": "string", "required": true,                   "get": true, "set": true},
+                "name": {"class": "string", "required": true,                   "get": true, "set": true},
                 "nickname": {"class": "string",                                     "get": true, "set": true},
-                "rank":     {"class": "string", "required": true,                   "get": true, "set": true},
-                "serial":   {"class": "string", "required": true, "unique": true,   "get": true, "set": true},
+                "rank": {"class": "string", "required": true,                   "get": true, "set": true},
+                "serial": {"class": "string", "required": true, "unique": true,   "get": true, "set": true},
                 "starship": {"class": "puck.uno/reference", "allowed": "starfleet.com/ship", "get": true, "set": true}
             },
             "methods": {
@@ -138,7 +138,7 @@ end
     "records": {
         "a": {
             "class": "puck.uno/class",
-            "name":  "foo.com/character"
+            "name": "foo.com/character"
         }
     }
 }
@@ -163,8 +163,8 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":    "puck.uno/class",
-            "name":     "foo.com/character",
+            "class": "puck.uno/class",
+            "name": "foo.com/character",
             "inherits": "foo.com/person"
         }
     }
@@ -190,8 +190,8 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":    "puck.uno/class",
-            "name":     "puck.uno/mikobase",
+            "class": "puck.uno/class",
+            "name": "puck.uno/mikobase",
             "abstract": true
         }
     }
@@ -219,11 +219,11 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":  "puck.uno/class",
-            "name":   "foo.com/character",
+            "class": "puck.uno/class",
+            "name": "foo.com/character",
             "fields": {
-                "name":      {"class": "string", "required": true, "collapse": true},
-                "age":       {"class": "number", "min": 0, "integer_only": true},
+                "name": {"class": "string", "required": true, "collapse": true},
+                "age": {"class": "number", "min": 0, "integer_only": true},
                 "homeworld": {"class": "puck.uno/reference", "allowed_class": "foo.com/planet"}
             }
         }
@@ -261,12 +261,12 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":  "puck.uno/class",
-            "name":   "foo.com/show",
+            "class": "puck.uno/class",
+            "name": "foo.com/show",
             "fields": {
-                "slug":   {"class": "string", "required": true, "unique": true, "min_length": 1},
+                "slug": {"class": "string", "required": true, "unique": true, "min_length": 1},
                 "rating": {"class": "number", "gte": 0, "lte": 10, "integer_only": true},
-                "tags":   {"class": "array",  "of": "string", "min_elements": 1},
+                "tags": {"class": "array",  "of": "string", "min_elements": 1},
                 "avatar": {"class": "puck.uno/dbfile", "required": true}
             }
         }
@@ -293,12 +293,12 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":  "puck.uno/class",
-            "name":   "foo.com/character",
+            "class": "puck.uno/class",
+            "name": "foo.com/character",
             "fields": {
                 "homeworld": {"class": "puck.uno/reference",
                               "allowed_class": "foo.com/planet"},
-                "stop":      {"class": "puck.uno/reference",
+                "stop": {"class": "puck.uno/reference",
                               "allowed_classes": ["foo.com/moon", "foo.com/station"]}
             }
         }
@@ -325,8 +325,8 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":  "puck.uno/class",
-            "name":   "foo.com/officer",
+            "class": "puck.uno/class",
+            "name": "foo.com/officer",
             "fields": {
                 "serial": {"class": "string", "required": true, "unique": true}
             }
@@ -346,10 +346,10 @@ Null values are excluded from the uniqueness check — two records may both have
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":   "puck.uno/class",
-            "name":    "borg.com/appearance",
-            "fields":  {
-                "person":  {"class": "puck.uno/reference", "required": true},
+            "class": "puck.uno/class",
+            "name": "borg.com/appearance",
+            "fields": {
+                "person": {"class": "puck.uno/reference", "required": true},
                 "episode": {"class": "puck.uno/reference", "required": true}
             },
             "uniques": [
@@ -382,13 +382,13 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":  "puck.uno/class",
-            "name":   "foo.com/appearance",
+            "class": "puck.uno/class",
+            "name": "foo.com/appearance",
             "fields": {
-                "person":  {"class": "puck.uno/reference", "allowed_class": "foo.com/person"},
+                "person": {"class": "puck.uno/reference", "allowed_class": "foo.com/person"},
                 "episode": {"class": "puck.uno/reference", "allowed_class": "foo.com/episode"}
             },
-            "join":   ["person", "episode"]
+            "join": ["person", "episode"]
         }
     }
 }
@@ -420,15 +420,15 @@ end
     "format": "worldlet/1.0",
     "records": {
         "a": {
-            "class":   "puck.uno/class",
-            "name":    "foo.com/character",
+            "class": "puck.uno/class",
+            "name": "foo.com/character",
             "methods": {
                 "greet": {
                     "body": "'Hello, ' + $name"
                 },
                 "save": {
                     "remote": true,
-                    "body":   "some CaspJ code"
+                    "body": "some CaspJ code"
                 }
             }
         }

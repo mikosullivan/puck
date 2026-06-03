@@ -559,21 +559,21 @@ shape; class-definition records use whole-hash form, but these are instances):
         "agent_response": null,
         "user_status": {
             "bucket": {"flavor": "declined_to_answer"},
-            "stack":  {
-                "shadow":     {},
+            "stack": {
+                "shadow": {},
                 "null_class": {"sticky": true, "class": "puck.uno/null"}
             }
         },
         "device_reading": {
             "bucket": {"flavor": "puck.uno/null/timeout"},
-            "stack":  {
-                "shadow":     {},
+            "stack": {
+                "shadow": {},
                 "null_class": {"sticky": true, "class": "puck.uno/null"}
             }
         }
     },
     "stack": {
-        "shadow":      {},
+        "shadow": {},
         "measurement": {"class": "foo.com/measurement"}
     }
 }

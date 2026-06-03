@@ -140,11 +140,11 @@ so they'd be tolerated, not stripped.)
   },
   "call_stack": [
     {
-      "comment":        "Frame 0: the program's outermost frame. names and count were assigned at lines 6-7. count now reads 1, not 0 — the assignment on line 11 walked the lexical chain from the if-block, found count here, and updated it in place.",
-      "action":         "top_level",
-      "role":           "user",
+      "comment": "Frame 0: the program's outermost frame. names and count were assigned at lines 6-7. count now reads 1, not 0 — the assignment on line 11 walked the lexical chain from the if-block, found count here, and updated it in place.",
+      "action": "top_level",
+      "role": "user",
       "lexical_parent": null,
-      "src":             ["a", 9],
+      "src": ["a", 9],
       "locals": {
         "names": {"array": [
           {"value": "Aslan", "src": ["a", 6]},
@@ -154,40 +154,40 @@ so they'd be tolerated, not stripped.)
       }
     },
     {
-      "comment":        "Frame 1: built-in array.each called by user code on line 9. Cross-role into stdlib; new frame's chain is fresh. lexical_parent is null because built-in code has no Caspian-level enclosing scope; src is null because stdlib internals have no source line.",
-      "action":         "method_call",
-      "role":           "stdlib",
-      "receiver_type":  "array",
-      "method":         "each",
-      "iterator":       {"position": 0, "of": 2},
+      "comment": "Frame 1: built-in array.each called by user code on line 9. Cross-role into stdlib; new frame's chain is fresh. lexical_parent is null because built-in code has no Caspian-level enclosing scope; src is null because stdlib internals have no source line.",
+      "action": "method_call",
+      "role": "stdlib",
+      "receiver_type": "array",
+      "method": "each",
+      "iterator": {"position": 0, "of": 2},
       "lexical_parent": null,
-      "src":             null,
-      "locals":         {}
+      "src": null,
+      "locals": {}
     },
     {
-      "comment":        "Frame 2: the do/end block at lines 9-15. Called back by array.each (which is why it's above the stdlib frame on the call stack), but lexical_parent jumps to frame 0 because the block was DEFINED at top level in user code. name = 'Aslan' for this iteration — value carries src ['a', 6] because it was born as a string literal on line 6.",
-      "action":         "block",
-      "role":           "user",
+      "comment": "Frame 2: the do/end block at lines 9-15. Called back by array.each (which is why it's above the stdlib frame on the call stack), but lexical_parent jumps to frame 0 because the block was DEFINED at top level in user code. name = 'Aslan' for this iteration — value carries src ['a', 6] because it was born as a string literal on line 6.",
+      "action": "block",
+      "role": "user",
       "lexical_parent": 0,
-      "src":             ["a", 10],
-      "locals":         {"name": {"value": "Aslan", "src": ["a", 6]}}
+      "src": ["a", 10],
+      "locals": {"name": {"value": "Aslan", "src": ["a", 6]}}
     },
     {
-      "comment":        "Frame 3: the if's lexical scope, pushed because the test on line 10 was true. lexical_parent is the enclosing do-block (frame 2). title is local to this if and disappears when the engine reaches `end` on line 14. Notice count is NOT here — its assignment on line 11 modified frame 0, not this frame, because that's where count was defined.",
-      "action":         "if_block",
-      "role":           "user",
+      "comment": "Frame 3: the if's lexical scope, pushed because the test on line 10 was true. lexical_parent is the enclosing do-block (frame 2). title is local to this if and disappears when the engine reaches `end` on line 14. Notice count is NOT here — its assignment on line 11 modified frame 0, not this frame, because that's where count was defined.",
+      "action": "if_block",
+      "role": "user",
       "lexical_parent": 2,
-      "src":             ["a", 13],
-      "locals":         {"title": {"value": "Lord ", "src": ["a", 12]}}
+      "src": ["a", 13],
+      "locals": {"title": {"value": "Lord ", "src": ["a", 12]}}
     },
     {
-      "comment":        "Frame 4: the greet call. greet was DEFINED at top level (line 1), so lexical_parent jumps PAST frames 1, 2, 3 back to frame 0. who carries src ['a', 6] (its value was the same string literal that became name on line 6 — bindings move, the value's birth line doesn't). msg was computed on line 2 by the + operator, so its src is ['a', 2].",
-      "action":         "function_call",
-      "role":           "user",
-      "function":       "greet",
+      "comment": "Frame 4: the greet call. greet was DEFINED at top level (line 1), so lexical_parent jumps PAST frames 1, 2, 3 back to frame 0. who carries src ['a', 6] (its value was the same string literal that became name on line 6 — bindings move, the value's birth line doesn't). msg was computed on line 2 by the + operator, so its src is ['a', 2].",
+      "action": "function_call",
+      "role": "user",
+      "function": "greet",
       "lexical_parent": 0,
-      "src":             ["a", 3],
-      "locals":   {
+      "src": ["a", 3],
+      "locals": {
         "who": {"value": "Aslan",        "src": ["a", 6]},
         "msg": {"value": "hello, Aslan", "src": ["a", 2]}
       }
@@ -580,9 +580,9 @@ After execution:
 
 ```json
 "locals": {
-  "first":  {"value": "Aslan", "src": ["a", 6]},
+  "first": {"value": "Aslan", "src": ["a", 6]},
   "second": {"value": "Aslan", "src": ["a", 6]},
-  "third":  {"value": "Aslan", "src": ["a", 6]}
+  "third": {"value": "Aslan", "src": ["a", 6]}
 }
 ```
 
@@ -605,8 +605,8 @@ Result:
 
 ```json
 "locals": {
-  "a":   {"value": 2, "src": ["a", 10]},
-  "b":   {"value": 3, "src": ["a", 11]},
+  "a": {"value": 2, "src": ["a", 10]},
+  "b": {"value": 3, "src": ["a", 11]},
   "sum": {"value": 5, "src": ["a", 12]}
 }
 ```
@@ -650,7 +650,7 @@ The chain entry:
 
 ```json
 "chain": {
-  "log":  {},
+  "log": {},
   "misc": {
     "user_id": {"value": "u42", "src": ["a", 50]}
   }
@@ -739,16 +739,16 @@ about to dispatch `puts`, not into it yet. Eight call-stack frames.
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   {"name": "user"},
-      "src":     "line 19",
+      "action": "top_level",
+      "role": {"name": "user"},
+      "src": "line 19",
       "locals": {
         "tree": {"hash": {
-          "name":     {"value": "root"},
+          "name": {"value": "root"},
           "children": {"array": [{"hash": {
-            "name":     {"value": "mid"},
+            "name": {"value": "mid"},
             "children": {"array": [{"hash": {
-              "name":     {"value": "leaf"},
+              "name": {"value": "leaf"},
               "children": {"array": []}
             }}]}
           }}]}
@@ -756,62 +756,62 @@ about to dispatch `puts`, not into it yet. Eight call-stack frames.
       }
     },
     {
-      "action":     "function_call",
-      "role":     {"name": "user"},
+      "action": "function_call",
+      "role": {"name": "user"},
       "function": "print_tree",
-      "src":       "line 3",
-      "locals":   {
-        "node":  "<ref to top-frame tree>",
+      "src": "line 3",
+      "locals": {
+        "node": "<ref to top-frame tree>",
         "depth": {"value": 0}
       }
     },
     {
-      "action":          "method_call",
-      "role":          {"name": "stdlib"},
+      "action": "method_call",
+      "role": {"name": "stdlib"},
       "receiver_type": "array",
-      "method":        "each",
-      "iterator":      {"position": 0, "of": 1},
-      "src":            "internal",
-      "locals":        {}
+      "method": "each",
+      "iterator": {"position": 0, "of": 1},
+      "src": "internal",
+      "locals": {}
     },
     {
-      "action":   "block",
-      "role":   {"name": "user"},
-      "src":     "line 4",
+      "action": "block",
+      "role": {"name": "user"},
+      "src": "line 4",
       "locals": {"child": "<ref to mid node>"}
     },
     {
-      "action":     "function_call",
-      "role":     {"name": "user"},
+      "action": "function_call",
+      "role": {"name": "user"},
       "function": "print_tree",
-      "src":       "line 3",
-      "locals":   {
-        "node":  "<ref to mid node>",
+      "src": "line 3",
+      "locals": {
+        "node": "<ref to mid node>",
         "depth": {"value": 1}
       }
     },
     {
-      "action":          "method_call",
-      "role":          {"name": "stdlib"},
+      "action": "method_call",
+      "role": {"name": "stdlib"},
       "receiver_type": "array",
-      "method":        "each",
-      "iterator":      {"position": 0, "of": 1},
-      "src":            "internal",
-      "locals":        {}
+      "method": "each",
+      "iterator": {"position": 0, "of": 1},
+      "src": "internal",
+      "locals": {}
     },
     {
-      "action":   "block",
-      "role":   {"name": "user"},
-      "src":     "line 4",
+      "action": "block",
+      "role": {"name": "user"},
+      "src": "line 4",
       "locals": {"child": "<ref to leaf node>"}
     },
     {
-      "action":     "function_call",
-      "role":     {"name": "user"},
+      "action": "function_call",
+      "role": {"name": "user"},
       "function": "print_tree",
-      "src":       "line 2",
-      "locals":   {
-        "node":  "<ref to leaf node>",
+      "src": "line 2",
+      "locals": {
+        "node": "<ref to leaf node>",
         "depth": {"value": 2}
       }
     }

@@ -326,9 +326,9 @@ The record shape:
 
 ```json
 {
-  "class":   "myapp.com/connection",
+  "class": "myapp.com/connection",
   "message": "socket close failed: broken pipe",
-  "src":     ["a", 9]
+  "src": ["a", 9]
 }
 ```
 

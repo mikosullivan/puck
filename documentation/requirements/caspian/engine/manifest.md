@@ -3,9 +3,9 @@
 ~~~json
 {"vibecode": {
 	"doc": "engine_manifest",
-	"role": "spec for the %engine.manifest method, which returns a hash describing the current process (os, engine, Caspian); the same JSON shape can also serve as an author-written constraints file declaring acceptable ranges",
-	"key_concepts": ["report_of_actuals", "three_layers_os_engine_caspian",
-		"libs_with_per_entry_metadata", "shape_doubles_as_constraints_file_with_range_fields"]
+	"role": "spec for the %engine.manifest method, which returns a hash describing the current process (process metadata, os, engine, Caspian and loaded libs)",
+	"key_concepts": ["report_of_actuals", "four_sections_process_os_engine_caspian",
+		"libs_with_per_entry_metadata", "coverage_subsection_when_coverage_is_on"]
 }}
 ~~~
 
@@ -32,36 +32,37 @@ This is `%engine.manifest os: true` — the call with the `os` option enabled, s
 {
     "process": {
         "runtime": "some timestamp",
-        "cycles":  3938238
+        "cycles": 3938238
     },
 
     "os": {
-        "name":         "Linux",
+        "name": "Linux",
         "distribution": "Redhat",
-        "version":      "33.54.6"
+        "version": "33.54.6"
     },
 
     "engine": {
-        "name":    "Lua",
+        "name": "Lua",
         "version": "3.302.29",
 
         "libs": {
-            "lua-lib": {}
+            "lua-lib": {},
+            "libsodium": {"version": "1.0.20"}
         }
     },
 
     "caspian": {
         "version": "3.2.1",
-        "source":  "https://caspian.uno/3.2.1",
+        "source": "https://caspian.uno/3.2.1",
 
         "libs": {
             "foo.bar/gup": [
                 {
-                    "version":   "2.3.45",
+                    "version": "2.3.45",
                     "timestamp": "2023-08-12",
-                    "file":      "...",
-                    "line":      343,
-                    "source":    "https://sdjf.ff/adf"
+                    "file": "...",
+                    "line": 343,
+                    "source": "https://sdjf.ff/adf"
                 }
             ]
         }
@@ -184,33 +185,6 @@ Known options:
 
 More options will be added as additional opt-in fields land. Each gets a row here with the security or expense reason that justifies keeping it off by default.
 
-## Dual use: same shape as a constraints file
+## See also
 
-The JSON shape `%engine.manifest` returns can also be **authored by hand** and checked into a project as a constraints file — a declaration of what versions and capabilities the code expects to run on. The two uses share one format:
-
-- **Runtime report** (what `%engine.manifest` emits): single concrete values for every field. One OS version, one engine version, one Caspian version, etc. This is *what's actually happening* in this process, observed.
-- **Constraints file** (author-written): same field structure, plus optional **range** fields that express "anything in this set is acceptable" alongside (or in place of) a single concrete value. This is *what would also be acceptable*, declared.
-
-For example, where the runtime report shows just a concrete version, a constraints file might carry both `version` (the preferred value) and a sibling `range` field describing the acceptable set:
-
-```json
-"engine": {
-    "name":    "Lua",
-    "version": "3.302.29",
-    "range":   { ... }
-}
-```
-
-### The engine never emits ranges
-
-`%engine.manifest` reports *actuals* — what *is*, not what *would also be acceptable*. The engine doesn't know what range a particular author considers acceptable; that's a property of the program, not of the running process. So range fields appear only in author-written constraints files. The engine's output is always a strict subset of what the format permits.
-
-### One format, two roles, no discriminator
-
-The two uses share one format deliberately. The same shape means a single schema to learn, a single parser/validator, and a clean comparison story: checking "does this process satisfy these constraints?" is just walking the fields, comparing concrete values from the runtime report against the constraints' ranges and concrete values.
-
-There's no top-level `mode` flag distinguishing report from constraints. A reader knows which they're looking at by where the JSON came from — `%engine.manifest` output is actuals, a manifest file checked into a project is constraints. The implicit signal of `range`-style fields appearing (or not) reinforces the distinction. If that ambiguity ever becomes a problem in practice, a discriminator can be added; for now it's not pulling weight.
-
-### What's in `range`
-
-The exact shape of a `range` field — single bound, lower/upper, set-of-allowed-values, semver expression, something else — is **TBD**. The mechanism gets pinned down as the constraints-file use settles. The principle is fixed: a `range` field is a sibling of the concrete value it constrains, and `%engine.manifest` never produces one.
+- [Manifest as a constraints file](https://puck.uno/documentation/ideas/caspian/manifest-constraints) — idea (deferred from V1.0): using the same JSON shape, authored by hand, as a project-checked-in declaration of acceptable versions/capabilities. Open lifecycle questions (where it lives, who reads it, when it's checked, what happens on mismatch) kept it out of V1.0.

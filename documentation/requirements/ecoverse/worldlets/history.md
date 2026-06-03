@@ -100,14 +100,14 @@ into a non-temporal mikobase; importing into a temporal mikobase raises an excep
 
 ```json
 {
-    "format":         "worldlet",
+    "format": "worldlet",
     "format_version": "1.0",
-    "meta":           { ... },
-    "properties":     { ... },
-    "classes":        { ... },
-    "records":        { ... },
-    "files":          { ... },
-    "file_chunks":    { ... }
+    "meta": { ... },
+    "properties": { ... },
+    "classes": { ... },
+    "records": { ... },
+    "files": { ... },
+    "file_chunks": { ... }
 }
 ```
 
@@ -151,11 +151,11 @@ Descriptive information about the worldlet.
 
 ```json
 "meta": {
-    "name":        "Starfleet Personnel",
-    "author":      "starfleet.com",
-    "version":     "1.0.0",
+    "name": "Starfleet Personnel",
+    "author": "starfleet.com",
+    "version": "1.0.0",
     "description": "Personnel records for Starfleet officers and ships.",
-    "created_at":  "2364-01-01T00:00:00.000Z"
+    "created_at": "2364-01-01T00:00:00.000Z"
 }
 ```
 
@@ -263,9 +263,9 @@ the importer.
 "classes": {
     "starfleet.com/person": {
         "fields": {
-            "name":      {"class": "string", "required": true, "collapse": true},
+            "name": {"class": "string", "required": true, "collapse": true},
             "birthdate": {"class": "string"},
-            "species":   {"class": "string", "default": "Human"},
+            "species": {"class": "string", "default": "Human"},
 
             "greet": {
                 "class": "function",
@@ -281,10 +281,10 @@ the importer.
     "starfleet.com/officer": {
         "inherits": "starfleet.com/person",
         "fields": {
-            "rank":   {"class": "string",  "required": true},
+            "rank": {"class": "string",  "required": true},
             "serial": {"class": "string",  "required": true, "unique": true},
             "active": {"class": "boolean", "default": true},
-            "photo":  {"class": "puck.uno/dbfile"},
+            "photo": {"class": "puck.uno/dbfile"},
 
             "summary": {
                 "class": "function",
@@ -309,8 +309,8 @@ the importer.
 
     "starfleet.com/ship": {
         "fields": {
-            "name":       {"class": "string", "required": true, "unique": true},
-            "registry":   {"class": "string", "required": true, "unique": true},
+            "name": {"class": "string", "required": true, "unique": true},
+            "registry": {"class": "string", "required": true, "unique": true},
             "ship_class": {"class": "string"}
         },
         "join": ["name", "registry"]
@@ -345,12 +345,12 @@ history, see [Puckai.md](../puckai.md).
     "e1b2c3d4-0001-0001-0001-000000000001": {
         "classes": {
             "p1a2b3c4-0001-0001-0001-000000000001": {
-                "class":  "starfleet.com/officer",
+                "class": "starfleet.com/officer",
                 "bucket": {}
             }
         },
         "created_at": "2364-01-01T00:00:00.000Z",
-        "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
+        "bucket": {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
     }
 }
 ```
@@ -388,10 +388,10 @@ hash, timestamp, and MIME type.
 ```json
 "files": {
     "d1e2f3a4-0001-0001-0001-000000000001": {
-        "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "created_at": "2364-01-01T00:00:00.000Z",
         "mime": {
-            "type":     "image/png",
+            "type": "image/png",
             "encoding": "base64"
         }
     }
@@ -414,10 +414,10 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 ```json
 "file_chunks": {
     "c1d2e3f4-0001-0001-0001-000000000001": {
-        "file":  "d1e2f3a4-0001-0001-0001-000000000001",
+        "file": "d1e2f3a4-0001-0001-0001-000000000001",
         "index": 0,
-        "last":  true,
-        "data":  "base64encodeddata..."
+        "last": true,
+        "data": "base64encodeddata..."
     }
 }
 ```
@@ -570,11 +570,11 @@ is needed.
     "format_version": "1.0",
 
     "meta": {
-        "name":        "Starfleet Personnel",
-        "author":      "starfleet.com",
-        "version":     "1.0.0",
+        "name": "Starfleet Personnel",
+        "author": "starfleet.com",
+        "version": "1.0.0",
         "description": "Personnel records for Starfleet officers and ships.",
-        "created_at":  "2364-01-01T00:00:00.000Z"
+        "created_at": "2364-01-01T00:00:00.000Z"
     },
 
     "properties": {
@@ -584,9 +584,9 @@ is needed.
     "classes": {
         "starfleet.com/person": {
             "fields": {
-                "name":      {"class": "string", "required": true, "collapse": true},
+                "name": {"class": "string", "required": true, "collapse": true},
                 "birthdate": {"class": "string"},
-                "species":   {"class": "string", "default": "Human"},
+                "species": {"class": "string", "default": "Human"},
 
                 "greet": {
                     "class": "function",
@@ -602,10 +602,10 @@ is needed.
         "starfleet.com/officer": {
             "inherits": "starfleet.com/person",
             "fields": {
-                "rank":   {"class": "string",  "required": true},
+                "rank": {"class": "string",  "required": true},
                 "serial": {"class": "string",  "required": true, "unique": true},
                 "active": {"class": "boolean", "default": true},
-                "photo":  {"class": "puck.uno/dbfile"},
+                "photo": {"class": "puck.uno/dbfile"},
 
                 "summary": {
                     "class": "function",
@@ -630,8 +630,8 @@ is needed.
 
         "starfleet.com/ship": {
             "fields": {
-                "name":       {"class": "string", "required": true, "unique": true},
-                "registry":   {"class": "string", "required": true, "unique": true},
+                "name": {"class": "string", "required": true, "unique": true},
+                "registry": {"class": "string", "required": true, "unique": true},
                 "ship_class": {"class": "string"}
             },
             "join": ["name", "registry"]
@@ -644,7 +644,7 @@ is needed.
                 "p1a2b3c4-0001-0001-0001-000000000001": {"class": "starfleet.com/officer", "bucket": {}}
             },
             "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
+            "bucket": {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
         },
 
         "e1b2c3d4-0002-0002-0002-000000000002": {
@@ -652,7 +652,7 @@ is needed.
                 "p1a2b3c4-0002-0002-0002-000000000002": {"class": "starfleet.com/officer", "bucket": {}}
             },
             "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Riker, William", "rank": "Captain", "serial": "SC-231-427"}
+            "bucket": {"name": "Riker, William", "rank": "Captain", "serial": "SC-231-427"}
         },
 
         "e1b2c3d4-0003-0003-0003-000000000003": {
@@ -660,7 +660,7 @@ is needed.
                 "p1a2b3c4-0003-0003-0003-000000000003": {"class": "starfleet.com/ship", "bucket": {}}
             },
             "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "USS Enterprise", "registry": "NCC-1701-D", "ship_class": "Galaxy"}
+            "bucket": {"name": "USS Enterprise", "registry": "NCC-1701-D", "ship_class": "Galaxy"}
         },
 
         "e1b2c3d4-0004-0004-0004-000000000004": {
@@ -668,16 +668,16 @@ is needed.
                 "p1a2b3c4-0004-0004-0004-000000000004": {"class": "starfleet.com/officer", "bucket": {}}
             },
             "created_at": "2364-01-01T00:00:00.000Z",
-            "bucket":     {"name": "Data", "rank": "Lieutenant Commander", "serial": "SA-789-012", "photo": "d1e2f3a4-0001-0001-0001-000000000001"}
+            "bucket": {"name": "Data", "rank": "Lieutenant Commander", "serial": "SA-789-012", "photo": "d1e2f3a4-0001-0001-0001-000000000001"}
         }
     },
 
     "files": {
         "d1e2f3a4-0001-0001-0001-000000000001": {
-            "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "created_at": "2364-01-01T00:00:00.000Z",
             "mime": {
-                "type":     "image/png",
+                "type": "image/png",
                 "encoding": "base64"
             }
         }
@@ -685,10 +685,10 @@ is needed.
 
     "file_chunks": {
         "c1d2e3f4-0001-0001-0001-000000000001": {
-            "file":  "d1e2f3a4-0001-0001-0001-000000000001",
+            "file": "d1e2f3a4-0001-0001-0001-000000000001",
             "index": 0,
-            "last":  true,
-            "data":  "base64encodeddata..."
+            "last": true,
+            "data": "base64encodeddata..."
         }
     }
 }

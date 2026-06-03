@@ -92,7 +92,7 @@ Every record value is already an object. Scalars and arrays have implicit class 
 
 ```json
 {
-    "class":  "puck.uno/color",
+    "class": "puck.uno/color",
     "bucket": {"hex": "#aabbcc"}
 }
 ```
@@ -112,7 +112,7 @@ A color record inside a worldlet:
 
     "records": {
         "a": {
-            "class":  "puck.uno/color",
+            "class": "puck.uno/color",
             "bucket": {"hex": "#aabbcc"}
         }
     }
@@ -143,7 +143,7 @@ For small values, the long form gets noisy:
 
 ```json
 {
-    "class":  "puck.uno/color",
+    "class": "puck.uno/color",
     "bucket": {"hex": "#aabbcc"}
 }
 ```
@@ -234,21 +234,21 @@ Standalone form:
 
 ```json
 {
-    "class":    "puck.uno/class",
-    "name":     "foo.com/bar",
+    "class": "puck.uno/class",
+    "name": "foo.com/bar",
     "inherits": ["blah.com/bear"],
 
     "fields": {
         "name": {
-            "class":    "hash",
-            "of":       "string",
-            "default":  {"collapse": true},
+            "class": "hash",
+            "of": "string",
+            "default": {"collapse": true},
             "required": true,
 
             "fields": {
                 "surname": {"required": true},
-                "middle":  {},
-                "given":   {}
+                "middle": {},
+                "given": {}
             }
         },
 
@@ -267,21 +267,21 @@ Same definition inside a worldlet record:
 
     "records": {
         "abc": {
-            "class":    "puck.uno/class",
-            "name":     "foo.com/bar",
+            "class": "puck.uno/class",
+            "name": "foo.com/bar",
             "inherits": ["blah.com/bear"],
 
             "fields": {
                 "name": {
-                    "class":    "hash",
-                    "of":       "string",
-                    "default":  {"collapse": true},
+                    "class": "hash",
+                    "of": "string",
+                    "default": {"collapse": true},
                     "required": true,
 
                     "fields": {
                         "surname": {"required": true},
-                        "middle":  {},
-                        "given":   {}
+                        "middle": {},
+                        "given": {}
                     }
                 },
 
@@ -427,16 +427,16 @@ Worldlets can carry attached binary files in a top-level `files` dict, parallel 
     "files": {
         "d1e2f3a4-0001-0001-0001-000000000001": {
             "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "mime":   {"type": "image/png", "encoding": "base64"}
+            "mime": {"type": "image/png", "encoding": "base64"}
         }
     },
 
     "file_chunks": {
         "c1d2e3f4-0001-0001-0001-000000000001": {
-            "file":  "d1e2f3a4-0001-0001-0001-000000000001",
+            "file": "d1e2f3a4-0001-0001-0001-000000000001",
             "index": 0,
-            "last":  true,
-            "data":  "iVBORw0KGgo..."
+            "last": true,
+            "data": "iVBORw0KGgo..."
         }
     }
 }
@@ -454,9 +454,9 @@ An optional `created_at` field can carry an ISO 8601 timestamp for the file's or
 ```json
 "files": {
     "d1e2f3a4-0001-0001-0001-000000000001": {
-        "sha256":     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "created_at": "2364-01-01T00:00:00Z",
-        "mime":       {"type": "image/png", "encoding": "base64"}
+        "mime": {"type": "image/png", "encoding": "base64"}
     }
 }
 ```
@@ -505,10 +505,10 @@ A record references a file by storing the file's key (the parent dict key in `fi
 {
     "class": "starfleet.com/officer",
     "bucket": {
-        "name":   {"surname": "Data"},
-        "rank":   "Lieutenant Commander",
+        "name": {"surname": "Data"},
+        "rank": "Lieutenant Commander",
         "serial": "SC-499-235",
-        "photo":  "d1e2f3a4-0001-0001-0001-000000000001"
+        "photo": "d1e2f3a4-0001-0001-0001-000000000001"
     }
 }
 ```
@@ -523,10 +523,10 @@ The `puck.uno/dbfile` field class on `photo` is what tells the engine the value 
 {
     "class": "starfleet.com/officer",
     "bucket": {
-        "name":   {"surname": "Data"},
-        "rank":   "Lieutenant Commander",
+        "name": {"surname": "Data"},
+        "rank": "Lieutenant Commander",
         "serial": "SC-499-235",
-        "photo":  {"class": "puck.uno/reference/file", "value": "d1e2f3a4-0001-0001-0001-000000000001"}
+        "photo": {"class": "puck.uno/reference/file", "value": "d1e2f3a4-0001-0001-0001-000000000001"}
     }
 }
 ```
@@ -576,10 +576,10 @@ The temporal form pulls state out of `records` and into a separate top-level `hi
 
     "history": {
         "123": {
-            "identity":  "a",
+            "identity": "a",
             "timestamp": "2026-05-28T07:30:00Z",
-            "class":     "puck.uno/color",
-            "value":     "#aabbcc"
+            "class": "puck.uno/color",
+            "value": "#aabbcc"
         }
     }
 }

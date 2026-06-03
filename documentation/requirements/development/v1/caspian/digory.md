@@ -93,18 +93,18 @@ A snapshot mid-fixture, during the `.name` method call on
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":          "method_call",
-      "role":          "stdlib",
+      "action": "method_call",
+      "role": "stdlib",
       "receiver_type": "puck.uno/hash",
-      "method":        "name",
-      "chain":         {"log": {}, "misc": {}},
-      "locals":        {}
+      "method": "name",
+      "chain": {"log": {}, "misc": {}},
+      "locals": {}
     }
   ]
 }

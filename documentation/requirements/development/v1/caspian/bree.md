@@ -523,9 +523,9 @@ locals, not in `engine.state`.
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -538,18 +538,18 @@ locals, not in `engine.state`.
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":          "method_call",
-      "role":          "stdlib",
+      "action": "method_call",
+      "role": "stdlib",
       "receiver_type": "string",
-      "method":        "to_string",
-      "chain":         {"log": {}, "misc": {}},
-      "locals":        {}
+      "method": "to_string",
+      "chain": {"log": {}, "misc": {}},
+      "locals": {}
     }
   ]
 }
@@ -561,9 +561,9 @@ locals, not in `engine.state`.
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]

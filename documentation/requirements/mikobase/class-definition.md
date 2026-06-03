@@ -13,11 +13,11 @@ A class definition lives in a Mikobase record. Records of class `puck.uno/class`
 
 ```json
 {
-    "class":    "puck.uno/class",
-    "name":     "foo.com/character",
+    "class": "puck.uno/class",
+    "name": "foo.com/character",
     "inherits": "foo.com/being",
-    "fields":   { ... },
-    "methods":  { ... }
+    "fields": { ... },
+    "methods": { ... }
 }
 ```
 

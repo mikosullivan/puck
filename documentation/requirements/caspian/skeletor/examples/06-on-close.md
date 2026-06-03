@@ -40,7 +40,7 @@ user-code reference) has been nilled.
     "a": {"file": "/home/miko/conn.casp"}
   },
   "roles": {
-    "user":   {"sees": ["stdout", "stderr"]},
+    "user": {"sees": ["stdout", "stderr"]},
     "stdlib": {},
     "engine": {}
   },
@@ -74,8 +74,8 @@ user-code reference) has been nilled.
             },
             "src": ["a", 7]
           },
-          "args":  null,
-          "opts":  null,
+          "args": null,
+          "opts": null,
           "block": null,
           "super": null
         }, "src": ["a", 2]}

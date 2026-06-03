@@ -255,7 +255,7 @@ Caspian equivalent: `{name: 'Picard', rank: 'Captain'}`
 
 ```json
 {"function": {"params": ["a", "b"], "body": [stmt, ...]}}
-{"closure":  {"params": ["a", "b"], "body": [stmt, ...]}}
+{"closure": {"params": ["a", "b"], "body": [stmt, ...]}}
 ```
 
 A `function` does not capture the outer scope. A `closure` does.
@@ -398,9 +398,9 @@ Caspian equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
     "comment": "branches evaluated top to bottom; first matching 'when' wins",
     "branches": [
         {"when": [{"var": "rank"}, "==", {"value": "Captain"}],
-         "then":  [[{"bwc": "puts"}, {"value": "Aye, captain"}]]},
+         "then": [[{"bwc": "puts"}, {"value": "Aye, captain"}]]},
         {"when": [{"var": "rank"}, "==", {"value": "Commander"}],
-         "then":  [[{"bwc": "puts"}, {"value": "Aye, commander"}]]}
+         "then": [[{"bwc": "puts"}, {"value": "Aye, commander"}]]}
     ],
     "else": [[{"bwc": "puts"}, {"value": "Aye"}]]
 }]
@@ -506,7 +506,7 @@ in the args object:
 [{"var": "items"}, "each", {
     "block": {
         "params": ["item"],
-        "body":   [[{"bwc": "puts"}, {"var": "item"}]]
+        "body": [[{"bwc": "puts"}, {"var": "item"}]]
     }
 }]
 ```
@@ -562,7 +562,7 @@ A closure is identical but uses `"closure"` instead of `"function"`:
 [{"var": "greeter"}, "=", {
     "closure": {
         "params": ["name"],
-        "body":   [[{"bwc": "puts"}, [{"var": "prefix"}, "+", {"var": "name"}]]]
+        "body": [[{"bwc": "puts"}, [{"var": "prefix"}, "+", {"var": "name"}]]]
     }
 }]
 ```
@@ -619,7 +619,7 @@ Return with no value:
 ```json
 [{"var": "exception"}, "=", [{"bwc": "catch"}, {
     "class": {"value": "borg.com/exception/assimilation"},
-    "body":  [[{"var": "foo"}, "call"]]
+    "body": [[{"var": "foo"}, "call"]]
 }]]
 ```
 

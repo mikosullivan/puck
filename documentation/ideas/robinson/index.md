@@ -259,7 +259,7 @@ Lives in each site's directory. Per-site configuration.
         "url_prefix": "/r-admin/",
         "users": {
             "stuart": "<encrypted password>",
-            "miko":   "<encrypted password>"
+            "miko": "<encrypted password>"
         }
     }
 }
@@ -776,7 +776,7 @@ one:
         "url_prefix": "/r-admin/",
         "users": {
             "stuart": "<encrypted password>",
-            "miko":   "<encrypted password>"
+            "miko": "<encrypted password>"
         }
     }
 }

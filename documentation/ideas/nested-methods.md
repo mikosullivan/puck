@@ -78,13 +78,13 @@ The class's `methods` block is a nested hash. The `"nested"` key on a hash value
 "methods": {
     "send": {
         "description": "...",
-        "params":      {...},
-        "body":        "..."
+        "params": {...},
+        "body": "..."
     },
     "beverage": {
         "nested": {
             "tea_earl_grey_hot": {"description": "...", "params": {...}, "body": "..."},
-            "coffee_black":      {"description": "...", "params": {...}, "body": "..."}
+            "coffee_black": {"description": "...", "params": {...}, "body": "..."}
         }
     }
 }
@@ -125,18 +125,18 @@ The `starfleet.com/officer` class definition in [worldlets/worldlet.json](../req
         "nested": {
             "tea_earl_grey_hot": {
                 "params": {"variety": {...}, "temperature": {...}},
-                "body":   "..."
+                "body": "..."
             },
             "coffee_black": {
                 "params": {"style": {...}, "temperature": {...}},
-                "body":   "..."
+                "body": "..."
             }
         }
     },
 
     "salute": {
         "params": {"name": {...}, "rank": {...}, "attention": {...}, "style": {...}, "props": {...}},
-        "body":   "..."
+        "body": "..."
     }
 }
 ~~~

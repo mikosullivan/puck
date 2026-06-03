@@ -394,9 +394,9 @@ capabilities, not program state.
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -410,16 +410,16 @@ transition TC.5 verifies):**
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":   "bwc_call",
-      "role":   "stdout",
-      "bwc":    "puts",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "bwc_call",
+      "role": "stdout",
+      "bwc": "puts",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -432,9 +432,9 @@ transition TC.5 verifies):**
 {
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]

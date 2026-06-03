@@ -94,10 +94,10 @@ Full spec: [bootstrap/](bootstrap/). The current design is deliberately minimal 
 ```json
 "records": {
     "e1b2c3d4-0001-0001-0001-000000000001": {
-        "class":      "puck.uno/ai/puckai/proposal",
-        "agent":      "...",
-        "subject":    "...",
-        "body":       "...",
+        "class": "puck.uno/ai/puckai/proposal",
+        "agent": "...",
+        "subject": "...",
+        "body": "...",
         "created_at": "2026-05-19T12:00:00.000Z"
     }
 }
@@ -143,10 +143,10 @@ A worldlet's top-level `vibecode` block can carry **agent guidance** — instruc
 ```json
 "vibecode": {
     "agent_guidance": {
-        "tone":         "factual, minimal hedging",
+        "tone": "factual, minimal hedging",
         "on_ambiguity": "post a puck.uno/ai/puckai/frame record stating your interpretation before deciding",
         "recruits": {
-            "allow":    ["https://example.com/agent-a", "https://example.com/agent-b"]
+            "allow": ["https://example.com/agent-a", "https://example.com/agent-b"]
         }
     }
 }
@@ -192,6 +192,18 @@ If both `allow` (as an array) and `suggest` are present, **`suggest` is redundan
 The whole `recruits` hash is optional. Absent means: the agent is free to recruit anyone it judges appropriate, and the caller has no specific candidates in mind. The framework doesn't pre-empt the agent's judgment about whether bringing in another agent makes sense — the agent often knows better than the caller — but callers who want to constrain or steer that judgment have these knobs.
 
 Useful when the caller wants accountability or cost control (allowlist scopes the audit trail to a pre-approved set), or when the caller has domain knowledge about which specialists are worth consulting (suggestions surface those candidates without forcing).
+
+---
+
+<a id="skills"></a>
+## Skills
+
+A worldlet can carry **AI skill definitions** — bundles of instructions that tell the receiving agent how to handle particular kinds of tasks. The shape:
+
+- **All skill definitions live in the worldlet's top-level vibecode** under a `skills` key, keyed by skill id. Each entry's value is either a URL pointing at a published standalone skill vibecode document, or the full skill content embedded inline. Both forms can coexist.
+- **Issues reference skills by id** in an optional `skills` array on the issue's vibecode. The reference is **advisory only** — it tells the agent which skills the caller thinks are most relevant for that issue; the agent's own judgment governs what it actually applies.
+
+Full design, examples, and open questions: [ideas/puckai/skills](https://puck.uno/documentation/ideas/puckai/skills).
 
 ---
 
@@ -349,14 +361,14 @@ end
 ```json
 "records": {
     "e": {
-        "class":              "puck.uno/ai/puckai/decision",
-        "session":            "a",
-        "issue":              "c",
-        "body":               null,
+        "class": "puck.uno/ai/puckai/decision",
+        "session": "a",
+        "issue": "c",
+        "body": null,
         "no_decision_reason": "Insufficient evidence to choose between approve and reject. Both NWS sources gave incomplete forecasts.",
-        "based_on":           "h",
-        "agreed_by":          ["b"],
-        "confidence":         0.0
+        "based_on": "h",
+        "agreed_by": ["b"],
+        "confidence": 0.0
     }
 }
 ```
@@ -370,12 +382,12 @@ end
 ```json
 "records": {
     "e": {
-        "class":      "puck.uno/ai/puckai/decision",
-        "session":    "a",
-        "issue":      "c",
-        "body":       true,
-        "based_on":   "h",
-        "agreed_by":  ["b"],
+        "class": "puck.uno/ai/puckai/decision",
+        "session": "a",
+        "issue": "c",
+        "body": true,
+        "based_on": "h",
+        "agreed_by": ["b"],
         "confidence": 0.85
     }
 }

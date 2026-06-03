@@ -310,12 +310,12 @@ statement dispatches:**
 
 ```json
 {
-  "argv":       ["foo", "bar", "baz"],
+  "argv": ["foo", "bar", "baz"],
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -327,19 +327,19 @@ stderr (cross-role transition into the new `stderr` role):**
 
 ```json
 {
-  "argv":       ["foo", "bar", "baz"],
+  "argv": ["foo", "bar", "baz"],
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":   "bwc_call",
-      "role":   "stderr",
-      "bwc":    "eprint",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "bwc_call",
+      "role": "stderr",
+      "bwc": "eprint",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -350,12 +350,12 @@ stderr (cross-role transition into the new `stderr` role):**
 
 ```json
 {
-  "argv":       ["foo", "bar", "baz"],
+  "argv": ["foo", "bar", "baz"],
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]

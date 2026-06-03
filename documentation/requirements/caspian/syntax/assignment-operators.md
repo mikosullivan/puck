@@ -64,8 +64,8 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 	"flag": "is_assignment: true",
 	"effect": "interpreter_passes_receiver_as_extra_param",
 	"signatures": {
-		"=":   "evaluate($right, $receiver)",
-		"+=":  "evaluate($left, $right, $receiver)",
+		"=": "evaluate($right, $receiver)",
+		"+=": "evaluate($left, $right, $receiver)",
 		"||=": "evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver)"
 	}
 }}

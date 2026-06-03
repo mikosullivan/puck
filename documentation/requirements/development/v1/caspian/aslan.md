@@ -1330,14 +1330,14 @@ holds two top-level fields — `roles` (the role registry) and
 ```json
 {
   "roles": {
-    "user":   {"name": "user"},
+    "user": {"name": "user"},
     "stdlib": {"name": "stdlib"}
   },
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]
@@ -1350,23 +1350,23 @@ transition TA.8 verifies):**
 ```json
 {
   "roles": {
-    "user":   {"name": "user"},
+    "user": {"name": "user"},
     "stdlib": {"name": "stdlib"}
   },
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     },
     {
-      "action":          "method_call",
-      "role":          "stdlib",
+      "action": "method_call",
+      "role": "stdlib",
       "receiver_type": "puck.uno/string",
-      "method":        "to_string",
-      "chain":         {"log": {}, "misc": {}},
-      "locals":        {}
+      "method": "to_string",
+      "chain": {"log": {}, "misc": {}},
+      "locals": {}
     }
   ]
 }
@@ -1377,14 +1377,14 @@ transition TA.8 verifies):**
 ```json
 {
   "roles": {
-    "user":   {"name": "user"},
+    "user": {"name": "user"},
     "stdlib": {"name": "stdlib"}
   },
   "call_stack": [
     {
-      "action":   "top_level",
-      "role":   "user",
-      "chain":  {"log": {}, "misc": {}},
+      "action": "top_level",
+      "role": "user",
+      "chain": {"log": {}, "misc": {}},
       "locals": {}
     }
   ]

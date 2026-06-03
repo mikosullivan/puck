@@ -50,9 +50,9 @@ A rule has three required fields:
 {
     "rules": [
         {
-            "on":        "select",
+            "on": "select",
             "direction": "outgoing",
-            "allow":     {"class": "borg.com/person"}
+            "allow": {"class": "borg.com/person"}
         }
     ]
 }
@@ -153,9 +153,9 @@ The validator checks:
 {
     "rules": [
         {
-            "on":        "select",
+            "on": "select",
             "direction": "outgoing",
-            "allow":     {"class": "borg.com/person"}
+            "allow": {"class": "borg.com/person"}
         }
     ]
 }
@@ -170,14 +170,14 @@ Only `borg.com/person` records are returned. No writes are restricted by this ru
 {
     "rules": [
         {
-            "on":        "select",
+            "on": "select",
             "direction": "outgoing",
-            "allow":     {"class": "borg.com/person"}
+            "allow": {"class": "borg.com/person"}
         },
         {
-            "on":        ["create", "update", "delete"],
+            "on": ["create", "update", "delete"],
             "direction": "incoming",
-            "allow":     {"class": "borg.com/person", "callback": "borg.com/callbacks/is-owner"}
+            "allow": {"class": "borg.com/person", "callback": "borg.com/callbacks/is-owner"}
         }
     ]
 }

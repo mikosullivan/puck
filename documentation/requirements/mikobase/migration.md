@@ -21,9 +21,9 @@ shape described in
 
 ```json
 "e1b2c3d4-...": {
-    "class":      "starfleet.com/officer",
+    "class": "starfleet.com/officer",
     "created_at": "2364-01-01T00:00:00.000Z",
-    "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
+    "bucket": {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
 }
 ```
 
@@ -35,12 +35,12 @@ The record had one `class` field naming a single UNS class.
 "e1b2c3d4-...": {
     "classes": {
         "p1a2b3c4-...": {
-            "class":  "starfleet.com/officer",
+            "class": "starfleet.com/officer",
             "bucket": {}
         }
     },
     "created_at": "2364-01-01T00:00:00.000Z",
-    "bucket":     {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
+    "bucket": {"name": "Picard, Jean-Luc", "rank": "Captain", "serial": "SP-937-215"}
 }
 ```
 

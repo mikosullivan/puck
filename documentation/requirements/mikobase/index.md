@@ -172,8 +172,8 @@ For collection fields, **`items` declares the element (or value) type**:
 
 ```json
 "participants": {"class": "array", "items": "puck.uno/ai/agent"}
-"tags":         {"class": "array", "items": "string"}
-"by_name":      {"class": "hash",  "items": "foo.com/person"}
+"tags": {"class": "array", "items": "string"}
+"by_name": {"class": "hash",  "items": "foo.com/person"}
 ```
 
 A consumer reading these can validate `participants` element-by-element as agent UUIDs, `tags` as plain strings, and the values of `by_name` as person references — without needing to scrape the surrounding prose.
@@ -287,11 +287,11 @@ Content-Type: application/json
 {
     "history": {
         "f1a2b3c4-0001-0001-0001-000000000001": {
-            "record":     "e1b2c3d4-0001-0001-0001-000000000001",
+            "record": "e1b2c3d4-0001-0001-0001-000000000001",
             "updated_at": "2026-05-03T12:00:00.000Z",
-            "bucket":     {"value": 42.7},
+            "bucket": {"value": 42.7},
             "stack": {
-                "shadow":  {},
+                "shadow": {},
                 "reading": {"class": "foo.com/reading"}
             }
         }
@@ -318,7 +318,7 @@ The response reports what happened to each entry:
 ```json
 {
     "accepted": ["f1a2b3c4-0001-0001-0001-000000000001"],
-    "skipped":  [],
+    "skipped": [],
     "rejected": []
 }
 ```

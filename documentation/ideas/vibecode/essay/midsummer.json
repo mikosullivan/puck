@@ -1,0 +1,432 @@
+{
+  "work": {
+    "title": "A Midsummer Night's Dream",
+    "author": "william_shakespeare",
+    "genre": "comedy",
+    "written": {"earliest": 1594, "latest": 1596},
+    "setting": ["athens", "fairyland_forest"],
+    "subplots": [
+      "theseus_hippolyta_wedding",
+      "four_athenian_lovers_conflict",
+      "mechanicals_rehearse_play_for_wedding",
+      "fairy_domestic_intrigue"
+    ],
+    "fairies_manipulate_humans": true,
+    "popularity": "one_of_shakespeares_most_popular_and_performed"
+  },
+
+  "characters": {
+    "athenians": {
+      "theseus": {"role": "duke_of_athens"},
+      "hippolyta": {"role": "queen_of_amazons", "fiancee_of": "theseus"},
+      "hermia": {"loves": "lysander", "father": "egeus"},
+      "helena": {"loves": "demetrius", "best_friend_of": "hermia"},
+      "lysander": {"loves": "hermia"},
+      "demetrius": {"suitor_to": "hermia", "previously_with": "helena"},
+      "egeus": {"father_of": "hermia", "demands": "hermia_marry_demetrius"},
+      "philostrate": {"role": "master_of_revels", "serves": "theseus"}
+    },
+    "mechanicals": {
+      "peter_quince": {"trade": "carpenter", "role": "director", "speaks": "prologue"},
+      "nick_bottom": {"trade": "weaver", "plays": "pyramus"},
+      "francis_flute": {"trade": "bellows_mender", "plays": "thisbe"},
+      "snug": {"trade": "joiner", "plays": "lion"},
+      "tom_snout": {"trade": "tinker", "plays": "wall"},
+      "robin_starveling": {"trade": "tailor", "plays": "moonshine"}
+    },
+    "fairies": {
+      "oberon": {"role": "king_of_fairies"},
+      "titania": {"role": "queen_of_fairies", "estranged_from": "oberon"},
+      "puck": {"alias": "robin_goodfellow", "role": "knavish_sprite", "serves": "oberon"},
+      "titania_servants": ["a_fairy", "peasblossom", "cobweb", "moth", "mustardseed"],
+      "indian_changeling": {"ward_of": "titania", "unseen": true}
+    }
+  },
+
+  "plot": {
+    "frame": "wedding_of_theseus_and_hippolyta",
+    "primary_setting": "woodland_realm_of_fairyland_under_moonlight",
+    "act_1": {
+      "scene_1": {
+        "location": "athens",
+        "events": [
+          {"setup": {"wedding_days_away": 4, "theseus_mood": "impatient", "hippolyta_mood": "time_will_pass_like_dream"}},
+          {"conflict": {"egeus_demands": "hermia_marry_demetrius", "hermia_wants": "lysander", "ancient_law": "marry_fathers_choice_or_die"}},
+          {"theseus_offers_alternative": {"option": "lifelong_chastity_as_nun_of_diana", "accepted": false}},
+          {"secret_plan": {"hermia_lysander_escape_to": "lysanders_aunts_house_via_forest"}},
+          {"helena_reveals_plan_to": "demetrius", "motive": "reclaim_his_love"},
+          {"demetrius_pursues": "hermia_lysander_into_forest"}
+        ]
+      },
+      "scene_2": {
+        "location": "athens",
+        "events": [
+          {"mechanicals_plan_performance": {"work": "most_lamentable_comedy_and_cruel_death_of_pyramus_and_thisbe", "occasion": "duke_queen_wedding"}},
+          {"casting": {"director": "quince", "bottom_wants_all_roles": ["pyramus", "thisbe", "lion"], "assigned": {"bottom": "pyramus_only"}}},
+          {"bottom_quirk": "would_rather_play_tyrant_recites_ercles"},
+          {"lion_concern": {"snug": "slow_of_study", "quince_assures": "lion_is_nothing_but_roaring"}},
+          {"next_meeting_at": "dukes_oak"}
+        ]
+      }
+    },
+    "act_2": {
+      "scene_1": {
+        "location": "forest_outside_athens",
+        "events": [
+          {"oberon_titania_arrive_for": "theseus_hippolyta_wedding"},
+          {"fairy_dispute": {
+            "subject": "indian_changeling_custody",
+            "titania_refuses_because": "childs_mother_was_titanias_worshipper"
+          }},
+          {"oberons_scheme": {
+            "agent": "puck",
+            "potion_source": "flower_love_in_idleness",
+            "flower_lore": "white_until_struck_by_cupids_arrow_then_purple",
+            "effect": "first_living_thing_seen_on_waking_becomes_beloved",
+            "target": "titania",
+            "intended_beloved": "animal_of_forest",
+            "goal": "shame_titania_into_surrendering_changeling"
+          }},
+          {"helena_demetrius_pass_through": {"helena": "pursues_promising_more_love_than_hermia", "demetrius": "rebuffs_with_cruel_insults"}},
+          {"oberon_orders_puck_to_anoint": "young_athenian_man"}
+        ]
+      },
+      "scene_2": {
+        "location": "forest",
+        "events": [
+          "titania_sleeps_lulled_by_fairies",
+          {"oberon_anoints": "titanias_eyes"},
+          "lysander_hermia_enter_lost",
+          {"hermia_rejects_lysanders_advance": "sleep_together", "outcome": "separate_corners"},
+          {"puck_mistake": {"intended": "demetrius", "actual": "lysander", "cause": "had_not_seen_either_before"}},
+          {"helena_finds_lysander": "wakes_him_checking_if_dead"},
+          {"lysander_charmed_loves": "helena"},
+          "helena_thinks_mocked_runs_away",
+          {"lysander_pursues": "helena"},
+          {"hermia_wakes_from_dream": "snake_ate_her_heart", "then": "finds_lysander_gone_and_searches"}
+        ]
+      }
+    },
+    "act_3": {
+      "scene_1": {
+        "location": "forest_near_titanias_bower",
+        "events": [
+          {"mechanicals_rehearse_at": "titanias_bower_area"},
+          {"puck_transforms_bottoms_head_into": "donkey", "wordplay": "bottom_=_jackass"},
+          {"other_mechanicals_flee_claiming": "haunted"},
+          {"bottom_sings_alone": "to_keep_company"},
+          {"titania_wakes_loves": "bottom_with_donkey_head"},
+          "titania_lavishes_fairy_attention_on_bottom",
+          "oberon_takes_changeling_while_titania_distracted"
+        ]
+      },
+      "scene_2": {
+        "location": "forest",
+        "events": [
+          {"oberon_condemns_pucks_mistake_orders": "fetch_helena_charm_demetrius"},
+          {"demetrius_charmed_loves": "helena"},
+          {"both_men_now_love": "helena", "helena_believes": "both_mock_her"},
+          {"hermia_confronts_lysander": "why_did_you_leave"},
+          "lysander_denies_ever_loving_hermia",
+          {"women_quarrel": {"helena_charges": "hermia_joined_mockery", "hermia_charges": "helena_stole_true_love"}},
+          {"oberon_puck_decide": "resolve_overnight_so_all_forget_as_dream"},
+          "puck_separates_men_by_mimicking_voices",
+          "all_four_sleep_in_glade",
+          {"puck_applies_antidote_to_lysander_restoring_love_for": "hermia"},
+          "on_waking_lovers_assume_dream"
+        ]
+      }
+    },
+    "act_4": {
+      "scene_1": {
+        "location": "forest",
+        "events": [
+          "oberon_releases_titania",
+          {"oberon_orders_puck_to_remove_donkey_head_from": "bottom"},
+          "fairies_disappear",
+          "theseus_hippolyta_arrive_on_early_morning_hunt_find_sleeping_lovers",
+          {"theseus_overrules_egeus_arranges": "group_wedding", "reason": "demetrius_no_longer_loves_hermia"},
+          "lovers_walk_back_to_athens_calling_it_dream",
+          "bottom_wakes_alone_calls_it_dream_past_wit_of_man",
+          {"bottom_plans": "have_quince_write_ballad_called_bottoms_dream_to_sing_after_thisbe_dies"}
+        ]
+      },
+      "scene_2": {
+        "location": "quinces_house",
+        "events": [
+          "mechanicals_worry_bottom_missing_only_man_for_pyramus",
+          "bottom_returns_actors_prepare_to_perform"
+        ]
+      }
+    },
+    "act_5": {
+      "scene_1": {
+        "location": "athens_court",
+        "events": [
+          "mechanicals_perform_pyramus_and_thisbe",
+          "court_laughs_at_bad_acting_as_if_intended_comedy",
+          "all_retire_to_bed",
+          "fairies_enter_bless_house_with_good_fortune",
+          "puck_closes_suggesting_audience_experience_may_be_dream"
+        ]
+      }
+    }
+  },
+
+  "sources": {
+    "dating_basis": ["topical_references", "allusion_to_spenser_epithalamion"],
+    "estimated_date": "1595_to_early_1596",
+    "possible_commission_theories": [
+      {"theory": "aristocratic_wedding", "candidates": ["thomas_berkeley_x_elizabeth_carey", "william_stanley_6th_earl_of_derby_x_elizabeth_de_vere"]},
+      {"theory": "queens_feast_day_of_st_john", "evidence": "none"}
+    ],
+    "performance_venues": ["the_theatre", "the_globe"],
+    "literary_inspirations": [
+      "ovids_metamorphoses",
+      "chaucers_knights_tale",
+      {"aristophanes_the_birds": "shared_athens_countryside_setting_animal_headed_male_wakes_female_two_stanza_bird_songs"},
+      {"der_busant_middle_high_german_poem": "four_lovers_woodland_trial_riff_per_john_twyning"}
+    ],
+    "shakespeare_phase": "early_middle_lyric_focus",
+    "concurrent_works": {"recently_completed": "romeo_and_juliet", "in_contemplation": "merchant_of_venice"},
+    "scholar_dorothea_kehler_dating": "1594_to_1596"
+  },
+
+  "date_and_text": {
+    "registered": {"register": "stationers_company", "date": "1600-10-08", "by": "thomas_fisher"},
+    "first_quarto": {"year": 1600, "by": "thomas_fisher"},
+    "second_quarto": {"year": 1619, "by": "william_jaggard", "as_part_of": "false_folio"},
+    "first_folio": 1623,
+    "q1_title_page": "sundry_times_publickely_acted_prior_to_1600",
+    "first_firm_mention": {"source": "meres_palladis_tamia", "year": 1598, "per_arden_editor": "sukanta_chaudhuri_2017"},
+    "internal_dating_clues": [
+      {"oberons_compliment_to_queen_elizabeth": "2.1.155-164"},
+      {"titanias_flooded_fields_and_failed_crops": "2.1.84-121", "real_world_match": "england_1594_1598"}
+    ],
+    "first_known_court_performance": {"venue": "hampton_court", "date": "1604-01-01", "context": "prelude_to_masque_of_indian_and_china_knights"}
+  },
+
+  "themes": {
+    "lovers_bliss": {
+      "ancient_root": "adonia_solstice_festival_mourning_adonis",
+      "myth_source": "ovid_metamorphoses",
+      "myth_summary": "aphrodite_persephone_dispute_zeus_splits_year_adonis_dies_gored_by_boar",
+      "shakespeare_related_work": {"title": "venus_and_adonis", "published": 1593, "context": "london_theatres_closed_by_plague"},
+      "play_instances": ["theseus_hippolyta", "mistaken_lovers", "titania_x_bottom", "acting_troupe"]
+    },
+    "carnivalesque": {
+      "framing": ["carnival", "bacchanalia", "saturnalia"],
+      "advocates": ["david_wiles_university_of_london", "harold_bloom_yale"],
+      "wiles_1993": "play_for_carey_berkeley_wedding_date_aligned_with_venus_new_moon_conjunction_for_heir_conception"
+    },
+    "love_dark_side": {
+      "critic": "david_bevington",
+      "fairy_mockery": "potion_makes_titania_love_ass",
+      "puck_role": "comic_relief_confounding_lovers",
+      "ending_juxtaposition": "happy_couples_watch_unfortunate_pyramus_thisbe"
+    },
+    "time_problem": {
+      "internal_contradictions": [
+        {"theseus": "four_happy_days_bring_another_moon"},
+        {"lysander_implies": "moonlight_in_forest_night"},
+        {"quince": "rehearse_in_moonlight"}
+      ],
+      "possible_resolutions": [
+        "moon_sets_partway_through_night",
+        "theseus_means_four_days_until_next_month",
+        "liminal_dark_of_moon_period_for_magic",
+        "play_intertwines_midsummer_eve_with_may_day"
+      ]
+    },
+    "loss_of_individual_identity": {
+      "hunt_baylor": "blurring_of_fantasy_and_reality_creates_pleasing_narcotic_dreaminess",
+      "central_conflict_driver": "oberon_titania_brawl_from_lack_of_mutual_recognition",
+      "puck_mistake_due_to": "same_failure_to_distinguish",
+      "kiernan_marxist": "identities_blended_not_lost_for_practical_ties",
+      "marshall_aesthetics": "mechanicals_occupations_all_join_or_mend_actor_is_to_double_and_divide_oneself"
+    },
+    "ambiguous_sexuality": {
+      "critic": "douglas_e_green",
+      "essay": "preposterous_pleasures_queer_theories_and_a_midsummer_nights_dream",
+      "stance": "explores_homoerotic_significations_not_a_gay_play",
+      "shakespeare_not_radical_but": "play_is_topsy_turvy_temporary_holiday_negotiating_civilizations_discontents",
+      "first_hint": "oberons_obsession_with_titanias_changeling_ward"
+    },
+    "gender_roles": {
+      "dominant_element": "male_dominance",
+      "marriage_meaning": {"women": "ultimate_social_achievement", "men": "still_free_to_pursue_other_achievements"},
+      "montrose_imperial_votaress": "festive_conclusion_brings_feminine_pride_under_lords_husbands_control",
+      "consummation_transfer": "power_over_woman_passes_father_to_husband",
+      "flower_juice_symbolism": "menstrual_blood_and_virgin_blood",
+      "tennenhouse_power_on_display": {
+        "diagnosis": "authority_gone_archaic",
+        "carnival_effect": "breaks_male_power",
+        "theseus_voice_split": "patriarch_vs_monarch",
+        "elizabeth_i_parallel": "two_bodies_natural_and_politic"
+      }
+    }
+  },
+
+  "critical_history": [
+    {"year": 1662, "critic": "samuel_pepys", "view": "most_insipid_ridiculous_play_ever_saw", "concession": "good_dancing_handsome_women"},
+    {"year": 1677, "critic": "john_dryden", "work": "authors_apology_for_heroique_poetry", "view": "defended_fantasy_plays_poets_may_depict_what_does_not_exist"},
+    {"period": "early_1700s", "critic": "charles_gildon", "view": "recommended_for_reflections_descriptions_similes_shakespeare_read_ovid_virgil_in_latin"},
+    {"period": "1770s", "critic": "william_duff", "view": "praised_supernatural_depiction_and_fairy_poetry"},
+    {"period": "1770s", "critic": "francis_gentleman", "view": "praised_poetry_and_originality_disliked_puerile_plot_and_forced_connections"},
+    {"period": "late_1700s", "critic": "edmond_malone", "view": "flaw_lower_class_overshadows_aristocrats_suggests_immature_work", "kehler_note": "argument_derives_from_classism_of_era"},
+    {"year": 1808, "critic": "august_wilhelm_schlegel", "view": "unity_in_multiple_plots_donkey_head_reflects_bottoms_nature_pyramus_thisbe_burlesque_of_athenian_lovers"},
+    {"year": 1817, "critic": "william_hazlitt", "view": "better_as_text_than_staged_kehler_notes_reflects_quality_of_available_productions"},
+    {"period": "1811-1812", "critic": "samuel_taylor_coleridge", "views": ["entire_play_should_be_seen_as_dream", "helena_guilty_of_ungrateful_treachery", "earliest_to_introduce_gender_issues", "kehler_dismisses_helena_view_as_misogyny"]},
+    {"year": 1837, "critic": "william_maginn", "views": ["theseus_voice_of_shakespeare", "bottom_lucky_man_unfazed_by_fairy_queen", "oberon_not_to_blame_for_titanias_chagrin"]},
+    {"year": 1839, "critic": "hermann_ulrici", "view": "play_reflects_platonism_human_life_is_dream"},
+    {"period": "1840s", "critic": "james_halliwell_phillipps", "view": "many_inconsistencies_but_most_beautiful_poetic_drama_ever_written"},
+    {"year": 1849, "critic": "charles_knight", "view": "shakespeares_maturity_bottom_best_drawn_character_best_appreciated_as_text"},
+    {"year": 1849, "critic": "georg_gottfried_gervinus", "views": ["denied_dream_reading", "play_is_ethical_construct_allegory_of_sensual_love_errors", "fairies_personified_dream_gods", "fairyland_in_indies_not_attica_orientalist", "denies_titania_oberon_loyalty", "mechanicals_homely_creatures_not_real_artists", "only_theseus_praised", "best_read_not_staged"]},
+    {"year": 1863, "critic": "charles_cowden_clarke", "view": "appreciative_of_mechanicals_bottom_conceited_but_good_natured"},
+    {"year": 1872, "critic": "henry_n_hudson", "view": "play_should_be_viewed_as_dream"},
+    {"year": 1881, "critic": "edward_dowden", "view": "theseus_central_heroic_man_of_action"},
+    {"year": 1885, "critic": "henry_austin_clapp", "view": "internal_time_inconsistency_adds_to_unrealistic_quality"},
+    {"year": 1895, "critic": "horace_howard_furness", "view": "time_inconsistency_does_not_detract"},
+    {"year": 1887, "critic": "denton_jacques_snider", "view": "dialectic_understanding_vs_imagination_three_phases_real_fairy_art_titania_solely_to_blame_for_strife"},
+    {"period": "1895_1896", "critic": "georg_brandes", "view": "anticipates_psychological_reading_oberons_magic_typifies_erotic_imagination_shakespeare_looks_inward"},
+    {"year": 1896, "critic": "frederick_s_boas", "view": "essentially_english_elizabethan_theseus_as_tudor_noble_helena_plot_device"},
+    {"year": 1961, "critic": "elizabeth_sewell", "view": "shakespeare_aligns_with_bottom_and_artisans_not_aristocrats"},
+    {"year": 1961, "critic": "frank_kermode", "view": "themes_fantasy_blind_love_divine_love_sources_macrobius_apuleius_bruno_paul_first_corinthians"},
+    {"year": 1964, "critic": "r_w_dent", "view": "love_inexplicable_offspring_of_imagination_not_reason_exemplary_love_avoids_dotage_theseus_not_rational"},
+    {"year": 1964, "critic": "jan_kott", "view": "violence_and_unrepressed_animalistic_sexuality_lovers_verbally_brutal_changeling_is_oberons_sexual_toy", "reception": "controversial"},
+    {"year": 1967, "critic": "john_a_allen", "view": "bottom_symbol_of_animalistic_humanity_redeemed_by_titanias_maternal_tenderness"},
+    {"year": 1968, "critic": "stephen_fender", "view": "fairies_terrifying_power_control_events_layered_complexity_no_singular_answer"},
+    {"year": 1969, "critic": "michael_taylor", "view": "less_pleasant_aspects_painful_love_pettiness_of_people"},
+    {"year": 1970, "critic": "r_a_zimbardo", "view": "moon_phases_permanence_in_mutability_discordia_concors_hippolyta_must_submit_to_theseus", "kehler_note": "took_female_subordination_for_granted_contra_1960s_critique"},
+    {"year": 1971, "critic": "james_l_calderwood", "view": "oberon_interior_dramatist_specializing_in_illusion_responsible_for_happy_ending"},
+    {"year": 1971, "critic": "andrew_d_weiner", "view": "theme_is_unity_uniformity_via_platonism_christianity"},
+    {"year": 1971, "critic": "hugh_m_richmond", "view": "love_is_self_destructive_sadomasochistic_passion_bottom_exception_due_to_egotism"},
+    {"year": 1971, "critic": "neil_taylor", "view": "double_time_scheme_minimum_four_nights_also_timeless"},
+    {"year": 1972, "critic": "ralph_berry", "view": "epistemology_lovers_call_illusion_real_actors_call_reality_illusion_reconciliation_vindicates_imagination"},
+    {"year": 1972, "critic": "thomas_mcfarland", "view": "dominated_by_happiness_audience_never_feels_fear"},
+    {"year": 1972, "critic": "alex_aronson", "view": "psychology_theseus_conscious_puck_unconscious_donkey_and_trees_as_fertility_symbols"},
+    {"year": 1973, "critic": "melvin_goldstein", "view": "lovers_must_pass_through_madness_to_discover_authentic_sexual_selves"},
+    {"year": 1974, "critic": "marjorie_garber", "view": "metamorphosis_is_subject_and_structural_model_dreams_take_priority_over_reason"},
+    {"year": 1974, "critic": "alexander_leggatt", "view": "grimmer_elements_present_four_groups_interact_fairies_most_sophisticated"},
+    {"year": 1975, "critic": "ronald_f_miller", "view": "study_in_epistemology_of_imagination_fairies_mysterious_aura"},
+    {"year": 1975, "critic": "david_bevington", "view": "refutes_kott_on_oberon_sexuality_main_theme_sexual_desire_vs_rational_restraint"},
+    {"year": 1977, "critic": "anne_paolucci", "view": "play_lasts_five_days"},
+    {"year": 1979, "critic": "m_e_lamb", "view": "borrows_from_theseus_labyrinth_myth_woods_as_labyrinth_bottom_as_comical_minotaur_artisans_as_daedalus"},
+    {"year": 1979, "critic": "harold_f_brooks", "view": "main_theme_desire_culminating_in_marriage"},
+    {"year": 1979, "critic": "norman_n_holland", "view": "psychoanalytic_hermia_dream_uncovers_sexual_development_defense_mechanism"},
+    {"year": 1980, "critic": "florence_falk", "view": "cultural_anthropology_play_is_rite_of_passage_woods_as_communitas"},
+    {"year": 1980, "critic": "r_chris_hassel_jr", "view": "christian_reading_lovers_and_bottom_learn_humility_and_faith"},
+    {"year": 1981, "critic": "mordecai_marcus", "view": "eros_thanatos_love_requires_risk_of_death"},
+    {"year": 1987, "critic": "jan_lawson_hinely", "view": "therapeutic_value_patriarchy_transformed_into_loving_equality_titania_x_donkey_bottom_metaphor_for_basic_trust"},
+    {"year": 1988, "critic": "allen_dunn", "view": "exploration_of_fears_and_desires_structured_as_series_of_sexual_clashes"},
+    {"year": 1991, "critic": "barbara_freedman", "view": "play_justifies_absolute_monarchy_makes_hegemonic_order_visible"}
+  ],
+
+  "performance_history": [
+    {"period": "1642-1660", "event": "puritan_interregnum_theatres_closed_bottom_subplot_performed_as_droll"},
+    {"year": 1660, "event": "theatres_reopen_play_acted_in_adapted_form"},
+    {"date": "1662-09-29", "event": "pepys_sees_calls_insipid"},
+    {"note": "play_never_performed_in_entirety_until_1840s"},
+    {"year": 1692, "event": "henry_purcell_musical_masque_the_fairy_queen", "venue": "dorset_garden_theatre"},
+    {"year": 1716, "event": "richard_leveridge_italian_opera_burlesque_of_pyramus_thisbe", "venue": "lincolns_inn_fields"},
+    {"year": 1745, "event": "john_frederick_lampe_elaborates_leveridges_version"},
+    {"year": 1723, "event": "charles_johnson_uses_pyramus_thisbe_in_finale_of_love_in_a_forest_as_you_like_it_adaptation"},
+    {"year": 1755, "event": "david_garrick_extracts_bottom_and_companions_acts_rest_as_the_fairies"},
+    {"year": 1816, "event": "frederic_reynolds_operatic_version"},
+    {"year": 1840, "event": "madame_vestris_at_covent_garden_returns_play_to_stage_full_text_plus_music_and_ballet_plays_oberon", "follow_up": "oberon_and_puck_played_by_women_for_70_years"},
+    {"era": "victorian", "style": "spectacle_cast_of_100_detailed_sets_gossamer_winged_ballerina_fairies_mendelssohn_overture_used_throughout"},
+    {"year": 1895, "event": "augustin_daly_production_london_21_performances"},
+    {"year": 1905, "event": "oscar_asche_at_adelphi_theatre_london_himself_as_bottom_beatrice_ferrar_as_puck"},
+    {"year": 1911, "event": "herbert_beerbohm_tree_mechanical_birds_simulated_stream_battery_lit_fairies_live_rabbits"},
+    {"period": "1905-1934", "event": "max_reinhardt_stages_13_times_introduces_revolving_set"},
+    {"year": 1934, "event": "reinhardt_hollywood_bowl_outdoor_replaces_shell_with_imported_forest_trestle_torchlit_wedding_procession", "cast": ["james_cagney", "olivia_de_havilland", "mickey_rooney", "victor_jory", "butterfly_mcqueen"]},
+    {"year": 1914, "event": "harley_granville_barker_simpler_staging_smaller_cast_elizabethan_folk_music_robotic_insectoid_fairies_based_on_cambodian_idols"},
+    {"year": 1970, "event": "peter_brook_rsc_blank_white_box_circus_trapeze_introduces_doubling_theseus_oberon_hippolyta_titania", "cast": ["patrick_stewart", "ben_kingsley", "john_kane_puck", "frances_de_la_tour_helena"]},
+    {"venues_new_york": ["theatre_for_a_new_audience_public_theater", "delacorte_central_park"]},
+    {"year": 1978, "event": "riverside_shakespeare_company_outdoor", "cast": {"puck": "eric_hoffmann", "titania": "karen_hurley", "oberon": "eric_conger"}, "director": "gloria_skurski"},
+    {"year": 2015, "event": "maryland_shakespeare_players_queer_production_same_sex_lovers_drag_queen_mechanicals"},
+    {"program": "shakespeare_in_the_arb", "venue": "university_of_michigan_nichols_arboretum", "since": 2001, "midsummer_productions": 3, "venue_acres": 123},
+    {"year": 2016, "event": "emma_rices_first_globe_production_contemporary_reworking_gender_switched_bollywood_influences"}
+  ],
+
+  "adaptations": {
+    "plays": [
+      {"title": "absurda_comica_oder_herr_peter_squentz", "author": "andreas_gryphius", "written": "1648-1650", "published": 1657, "based_on": "pyramus_thisbe_subplot"},
+      {"title": "shakespeare_in_hollywood", "author": "ken_ludwig", "year": 2003, "setting": "production_of_1935_film", "oberon_and_puck_cast_as_themselves": true}
+    ],
+    "literary": [
+      {"author": "karl_marx", "work": "das_kapital_volume_1", "use": "quotes_the_play"},
+      {"event": "translated_to_esperanto", "by": "louise_briggs", "year": 1920},
+      {"author": "w_stanley_moss", "work": "ill_met_by_moonlight", "year": 1950, "kind": "nonfiction_wwii_kreipe_kidnap", "title_source": "play_quote", "film_adaptation_year": 1957},
+      {"author": "botho_strauss", "work": "the_park", "year": 1983, "kind": "play_based_on_characters_and_motifs"},
+      {"author": "neil_gaiman", "series": "the_sandman", "issue_title": "a_midsummer_nights_dream", "year": 1990, "premise": "shakespeare_performs_for_real_oberon_and_titania", "indian_boy_played_by": "shakespeares_son_hamnet", "award": {"name": "world_fantasy_award_best_short_fiction", "year": 1991, "note": "first_and_only_comic_winner"}},
+      {"author": "terry_pratchett", "work": "lords_and_ladies", "year": 1992, "kind": "parody"},
+      {"author": "bernard_cornwell", "work": "fools_and_mortals", "year": 2017, "premise": "creation_and_first_performance_seen_by_richard_shakespeare"}
+    ],
+    "music": [
+      {"work": "the_fairy_queen", "composer": "henry_purcell", "year": 1692, "kind": "opera"},
+      {"composer": "felix_mendelssohn", "overture": {"composed": 1826, "premiered": 1827}, "incidental_music": {"commissioned": 1842, "premiered": 1843, "for": "potsdam_production"}, "famous_piece": "wedding_march"},
+      {"composer": "carl_orff", "period": "1917-1939", "title": "ein_sommernachtstraum", "premiere": 1939, "context": "nazi_call_after_banning_mendelssohn_for_jewish_origin", "reworked": 1964},
+      {"work": "puck", "composer": "marcel_delannoy", "year": 1949, "kind": "three_act_opera_strasbourg"},
+      {"work": "over_hill_over_dale", "composer": "ralph_vaughan_williams", "year": 1951, "from": "act_2", "part_of": "three_shakespeare_songs", "ensemble": "a_cappella_satb_choir"},
+      {"work": "a_midsummer_nights_dream_opera", "composer": "benjamin_britten", "librettists": ["britten", "peter_pears"], "premiere": "1960-06-11_aldeburgh"},
+      {"work": "babes_in_the_wood", "year": 1964, "kind": "broadway_musical_adaptation"},
+      {"composer": "steve_hackett_genesis", "year": 1997, "kind": "classical_adaptation"},
+      {"composer": "hans_werner_henze", "work": "eighth_symphony", "year": 1993, "inspired_by_play": true},
+      {"company": "moonwork", "year": 1999, "creators": ["mason_pettit", "gregory_sherman", "gregory_wolfe"], "feature": "rock_opera_pyramus_thisbe_by_rusty_magee_rest_by_andrew_sherman"},
+      {"work": "the_donkey_show", "year": 1999, "kind": "disco_era_off_broadway"},
+      {"work": "a_midsummer_nights_dream_opera_a_cappella", "year": 2011, "producers": ["opera_memphis", "playhouse_on_the_square", "deltacappella", "riva"], "composer": "michael_ching"},
+      {"work": "be_more_chill", "year": 2015, "feature": "play_within_called_a_midsummer_nightmare_about_zombies"}
+    ],
+    "ballets": [
+      {"choreographer": "marius_petipa", "company": "imperial_ballet_st_petersburg", "premiere": "1876-07-14", "score": "mendelssohn_plus_minkus_additions"},
+      {"choreographer": "george_balanchine", "premiere": "1962-01-17", "company": "new_york_city_ballet", "note": "balanchines_first_original_full_length_ballet", "opens_lincoln_center_season": 1964, "film_version": 1966},
+      {"choreographer": "frederick_ashton", "work": "the_dream", "year": 1964, "length": "short", "score": "mendelssohn_arranged_by_lanchbery", "company": "royal_ballet"},
+      {"choreographer": "john_neumeier", "work": "ein_sommernachtstraum", "year": 1977, "company": "hamburg_state_opera", "score_split": {"aristocrats": "mendelssohn", "fairies": "ligeti", "mechanicals": "barrel_organ"}},
+      {"composer": "elvis_costello", "work": "il_sogno", "release_year": 2004, "label": "deutsche_grammophon"}
+    ],
+    "films": [
+      {"year": 1925, "title": "wood_love", "director": "hans_neumann", "country": "germany", "kind": "silent"},
+      {"year": 1935, "directors": ["max_reinhardt", "william_dieterle"], "cast": {"bottom": "james_cagney", "puck": "mickey_rooney", "hermia": "olivia_de_havilland", "flute": "joe_e_brown", "lysander": "dick_powell", "titania": "anita_louise", "oberon": "victor_jory"}, "note": "warner_brothers_first_shakespeare_since_1929_taming_of_shrew"},
+      {"year": 1947, "kind": "tv_film", "director": "i_orr_ewing", "cast": {"helena": "iris_baker", "demetrius": "peter_bell", "titania": "vivienne_bennett", "oberon": "john_byron", "lysander": "andrew_faulds", "hermia": "patricia_hicks", "puck": "mary_honer", "theseus": "desmond_llewelyn", "bottom": "hugh_manning", "quince": "peter_sallis", "hippolyta": "angela_shafto"}},
+      {"year": 1959, "title": "sen_noci_svatojanske", "director": "jiri_trnka", "kind": "stop_motion_puppet_czech", "english_narrator": "richard_burton"},
+      {"year": 1968, "director": "peter_hall", "company": "royal_shakespeare_company", "cast": {"bottom": "paul_rogers", "puck": "ian_holm", "helena": "diana_rigg", "hermia": "helen_mirren", "oberon": "ian_richardson", "titania": "judi_dench", "quince": "sebastian_shaw"}},
+      {"year": 1969, "director": "jean_christophe_averty", "cast": {"oberon": "jean_claude_drouot", "helena": "claude_jade", "hermia": "christine_delaroche", "hippolyta": "marie_versini", "flute": "michel_modo", "quinze": "guy_grosso"}},
+      {"year": 1982, "title": "a_midsummer_nights_sex_comedy", "writer_director": "woody_allen", "loosely_based_on": "bergman_smiles_of_a_summer_night"},
+      {"year": 1983, "title": "bottoms_dream", "director": "john_canemaker", "kind": "animated_short_from_bottoms_pov"},
+      {"title": "dead_poets_society", "feature": "neil_perry_cast_as_puck"},
+      {"year": 1996, "director": "adrian_noble", "cast": {"bottom": "desmond_barrit", "puck": "finbar_lynch", "oberon_theseus": "alex_jennings", "titania_hippolyta": "lindsay_duncan"}, "design": "floating_lightbulbs_giant_umbrella_for_titanias_bower"},
+      {"year": 1996, "title": "the_apartment_lappartement", "country": "france", "director": "gilles_mimouni"},
+      {"year": 1999, "director": "michael_hoffman", "cast": {"bottom": "kevin_kline", "oberon": "rupert_everett", "titania": "michelle_pfeiffer", "puck": "stanley_tucci", "hippolyta": "sophie_marceau", "demetrius": "christian_bale", "lysander": "dominic_west", "hermia": "anna_friel", "helena": "calista_flockhart"}, "setting": "monte_athena_tuscany"},
+      {"year": 1999, "writer_director": "james_kerwin", "cast": {"demetrius": "travis_schuldt"}, "setting": "techno_clubs_and_ancient_symbols"},
+      {"year": 2001, "title": "get_over_it", "director": "tommy_o_haver", "stars": ["kirsten_dunst", "ben_foster", "shane_west", "martin_short", "colin_hanks", "mila_kunis", "sisqo"], "premise": "students_prepare_school_production"},
+      {"year": 2002, "title": "the_childrens_midsummer_nights_dream", "director": "christine_edzard", "production": "sands_films_rotherhithe", "cast_size": 350, "cast_age_range": "8-11"},
+      {"year": 2002, "title": "a_midsummer_nights_rave", "director": "gil_cates_jr", "setting": "modern_rave_puck_is_drug_dealer_love_in_idleness_replaced_with_ecstasy"},
+      {"year": 2008, "title": "were_the_world_mine", "feature": "lgbtq_high_school_production_uses_love_potion"},
+      {"year": 2012, "title": "10ml_love", "director": "sharat_katariya", "setting": "modern_india"},
+      {"year": 2018, "country": "us", "kind": "independent", "setting": "modern_los_angeles"},
+      {"year": 2019, "country": "uk_shot_in_austria", "director": "sacha_bennett", "setting": "alternative_near_future", "cast": {"oberon": "robert_lindsay", "titania": "juliet_aubrey", "bottom": "lee_boardman", "lysander": "harry_jarvis", "helena": "tamzin_merchant", "hermia": "holly_earl", "demetrius": "tyger_drew_honey", "hippolyta": "florence_kasumba"}}
+    ],
+    "tv": [
+      {"date": "1964-04-28", "context": "around_the_beatles_british_tv_special", "performed": "pyramus_and_thisbe_act_5", "cast": {"pyramus": "paul_mccartney", "thisbe": "john_lennon", "moonshine": "george_harrison", "lion": "ringo_starr"}, "broadcasts": [{"network": "itv_uk", "date": "1964-05-06"}, {"network": "abc_us", "date": "1964-11-15"}]},
+      {"year": 1981, "production": "bbc_television_shakespeare", "producer": "jonathan_miller", "director": "elijah_moshinsky", "cast": {"titania": "helen_mirren", "oberon": "peter_mcenery", "puck": "phil_daniels", "lysander": "robert_lindsay", "quince": "geoffrey_palmer", "bottom": "brian_glover"}},
+      {"year": 1999, "kind": "animated_short", "studio": "walt_disney_television_animation", "series": "mickey_mouse_works", "featured_in": "house_of_mouse_house_of_scrooge_s3e34_2002", "cast": {"lysander": "mickey_mouse", "hermia": "minnie_mouse", "demetrius": "donald_duck", "helena": "daisy_duck", "theseus": "ludwig_von_drake", "egeus": "scrooge_mcduck", "puck": "goofy"}},
+      {"year": 2005, "series": "shakespeare_re_told_bbc", "writer": "peter_bowker", "cast": {"bottom": "johnny_vegas", "puck": "dean_lennox_kelly", "theo_conflation_theseus_egeus": "bill_paterson", "polly_hippolyta": "imelda_staunton", "oberon": "lennie_james", "titania": "sharon_small", "hermia": "zoe_tapper", "helena": "michelle_bonnard"}},
+      {"year": 2006, "series": "the_suite_life_of_zack_and_cody_s2e22", "title": "a_midsummers_nightmare", "premise": "school_play"},
+      {"year": 2016, "network": "bbc_one", "length_minutes": 90, "writer": "russell_t_davies", "director": "david_kerr", "cast": {"bottom": "matt_lucas", "titania": "maxine_peake", "oberon": "nonso_anozie", "hermia": "prisca_bakare", "puck": "hiran_abeysekera"}}
+    ],
+    "role_playing_games": [
+      {"setting": "forgotten_realms_dungeons_and_dragons", "archfeys": ["oberon", "titania"]}
+    ],
+    "video_games": [
+      {"year": 2026, "title": "titanium_court", "kind": "strategy", "feature": "court_steward_named_puck_more_references_emerge_with_play"}
+    ],
+    "astronomy": [
+      {"year": 1787, "event": "william_herschel_discovers_two_moons_of_uranus"},
+      {"year": 1852, "event": "john_herschel_names_two_moons", "names": ["oberon", "titania"]},
+      {"year": 1985, "event": "voyager_2_discovers_uranian_moon", "name": "puck"}
+    ]
+  },
+
+  "see_also": ["brag_folklore", "puca", "pyramus_and_thisbe", "summer_solstice"]
+}

@@ -106,7 +106,7 @@ A Puck request is a JSON object with the following fields:
 
 ```json
 {
-    "class":  "puck.uno/request",
+    "class": "puck.uno/request",
     "method": "puck.uno/color/hex",
 
     "object": {
@@ -374,7 +374,7 @@ A function is a JSON object with a `params` block and either a `calculate` expre
 ```json
 {
     "params": {
-        "given":  {"class": "string"},
+        "given": {"class": "string"},
         "family": {"class": "string"}
     },
     "calculate": {
@@ -421,8 +421,8 @@ A method invocation is a first-class object of class `puck.uno/call`:
 {
     "class": "puck.uno/call",
     "receiver": "expression evaluating to an object",
-    "method":   "method name",
-    "params":   {"foo": "bar"}
+    "method": "method name",
+    "params": {"foo": "bar"}
 }
 ```
 
@@ -505,9 +505,9 @@ up through the expression chain.
             ]
         },
 
-        "red":   {"path": ["decimal", {"start": 1, "end": 3}]},
+        "red": {"path": ["decimal", {"start": 1, "end": 3}]},
         "green": {"path": ["decimal", {"start": 3, "end": 5}]},
-        "blue":  {"path": ["decimal", {"start": 5, "end": 7}]},
+        "blue": {"path": ["decimal", {"start": 5, "end": 7}]},
 
         "rgb": {"return": [{"path": "red"}, {"path": "green"}, {"path": "blue"}]}
     }
@@ -731,7 +731,7 @@ resultset yields a new dict instead of the standard record dict.
     "class": "foo.com/person",
     "return": {
         "full_name": {"concat": [{"field": ["name", "given"]}, " ", {"field": ["name", "family"]}]},
-        "age":       {"years": {"duration": [{"field": "birth_date"}, {"now": true}]}}
+        "age": {"years": {"duration": [{"field": "birth_date"}, {"now": true}]}}
     }
 }
 ```
@@ -747,7 +747,7 @@ added via `{"record": "pk"}` etc.
     "action": "select",
     "class": "foo.com/person",
     "return": {
-        "pk":   {"record": "pk"},
+        "pk": {"record": "pk"},
         "name": {"concat": [{"field": ["name", "given"]}, " ", {"field": ["name", "family"]}]}
     }
 }
