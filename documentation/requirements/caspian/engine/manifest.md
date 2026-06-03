@@ -1,15 +1,21 @@
 # `%engine.manifest`
 
+*A debug/introspection tool. Returns a summary of the running Caspian process — what's underneath, what's loaded, how long it's been running.*
+
 ~~~json
 {"vibecode": {
 	"doc": "engine_manifest",
-	"role": "spec for the %engine.manifest method, which returns a hash describing the current process (process metadata, os, engine, Caspian and loaded libs)",
-	"key_concepts": ["report_of_actuals", "four_sections_process_os_engine_caspian",
-		"libs_with_per_entry_metadata", "coverage_subsection_when_coverage_is_on"]
+	"role": "spec for the %engine.manifest method, a debug and introspection tool that returns a summary hash describing the current process (process metadata, os, engine, Caspian and loaded libs)",
+	"purpose": "debug_and_introspection_only",
+	"key_concepts": ["debug_tool_not_enforcement_layer", "report_of_actuals_no_constraints",
+		"four_sections_process_os_engine_caspian", "libs_with_per_entry_metadata",
+		"coverage_subsection_when_coverage_is_on"]
 }}
 ~~~
 
-`%engine.manifest` returns a hash describing the process this Caspian script is running in: the operating system underneath, the engine implementation, and the Caspian language version plus loaded libraries.
+`%engine.manifest` is a **debug tool**. It returns a hash describing the running process — the operating system underneath, the engine implementation, the Caspian language version, and the loaded libraries — so a developer (or tooling on a developer's behalf) can answer "what's happening in this process right now?"
+
+It is a *reporter*. It does not enforce anything, does not check anything against expectations, and has no opinion about whether the running process is correctly configured. Authoring expectations and checking compliance is a separate concern — see [Manifest as a constraints file](https://puck.uno/documentation/ideas/caspian/manifest-constraints) (deferred from V1.0).
 
 ## Structure
 
@@ -31,8 +37,12 @@ This is `%engine.manifest os: true` — the call with the `os` option enabled, s
 ```json
 {
     "process": {
-        "runtime": "some timestamp",
-        "cycles": 3938238
+        "steps": 3938238,
+        "time": {
+            "start": "2026-06-03T14:22:08.413Z",
+            "stop": "2026-06-03T14:25:47.901Z",
+            "run": "PT3M39.488S"
+        }
     },
 
     "os": {
@@ -62,7 +72,8 @@ This is `%engine.manifest os: true` — the call with the `os` option enabled, s
                     "timestamp": "2023-08-12",
                     "file": "...",
                     "line": 343,
-                    "source": "https://sdjf.ff/adf"
+                    "source": "https://sdjf.ff/adf",
+                    "ranges": [{"ts_min": "2023-01-01"}, {"semver": "^2.3"}]
                 }
             ]
         }
@@ -76,12 +87,15 @@ This is `%engine.manifest os: true` — the call with the `os` option enabled, s
 
 Information about the running process itself.
 
-- `runtime` — how long the process has been running. Format TBD (ISO 8601 duration, seconds, or formatted string).
-- `cycles` — total Caspian-level steps executed in this process so far, using the same step unit as [`#cycles`](../utils/cycles.md) blocks (one count per `eval` or `exec_stmt` call). Deterministic and engine-independent.
+- `time` — hash grouping the three time-related values:
+  - `start` — wall-clock timestamp captured at process start. Format TBD (ISO 8601 instant most likely).
+  - `stop` — wall-clock timestamp captured at the moment this manifest was generated. For a snapshot taken mid-run, this is "now"; for a manifest emitted at process exit (post-mortem), this is the actual end time. Same format as `start`.
+  - `run` — duration between `start` and `stop`, pre-computed for convenience. Format TBD (ISO 8601 duration, seconds, or formatted string). Redundant with the two timestamps but saves consumers from doing date math when they just want to glance at how long things took.
+- `steps` — total Caspian-level steps executed in this process so far, using the same step unit as [`%utils.steps`](../utils/steps.md) (one count per `eval` or `exec_stmt` call). Deterministic and engine-independent.
 
-**Origin.** At process start, the engine records a wall-clock timestamp and initializes a cycle counter to `0`. `runtime` is computed as the delta between the `%engine.manifest` call and that recorded start timestamp; `cycles` is whatever the counter has accumulated since startup. Both are zero or near-zero immediately after the process begins.
+**Origin.** At process start, the engine records a wall-clock timestamp (which becomes `time.start`) and initializes a step counter to `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. The three time values and the step count are stable for a given call — they reflect the moment of the manifest call, not whatever has happened in between accessing the returned hash and reading its fields.
 
-**Both values are advisory.** They report how the process *is* going, not how it has to. The natural use case is **calibration for timeouts**: run the program, observe `runtime` and/or `cycles`, then set a timeout comfortably above the observed value. `cycles` is the more stable number for that purpose because it's deterministic — the same program and inputs produce the same cycle count regardless of host machine. `runtime` adds the wall-clock dimension but inherits whatever variability the machine introduced (system load, CPU speed, etc.), so it's better as a sanity check than a sole bound.
+**Both values are advisory.** They report how the process *is* going, not how it has to. The natural use case is **calibration for timeouts**: run the program, observe `runtime` and/or `steps`, then set a timeout comfortably above the observed value. `steps` is the more stable number for that purpose because it's deterministic — the same program and inputs produce the same step count regardless of host machine. `runtime` adds the wall-clock dimension but inherits whatever variability the machine introduced (system load, CPU speed, etc.), so it's better as a sanity check than a sole bound.
 
 ### os
 
@@ -107,6 +121,35 @@ Information about the running process itself.
   - `file` — file path the lib was loaded from. (TBD: load-site path vs library source path.)
   - `line` — line associated with the load. (TBD: line in load site vs source.)
   - `source` — the URL the lib was fetched from.
+  - `ranges` — range expressions that selected this version. Empty `[]` = all contributing calls were unconstrained. Debug-only today; designed for the deferred [constraints files](https://puck.uno/documentation/ideas/caspian/manifest-constraints) feature.
+
+~~~json
+{"vibecode": {
+	"field": "caspian.libs[].ranges",
+	"type": "array_of_range_expressions",
+	"appended_per_load_call": "each_puck_call_resolving_to_this_version_pushes_its_range_constraint",
+	"entry_shape": "whatever_call_site_range_syntax_produces",
+	"engine_role": "records_does_not_interpret",
+	"primary_use_today": "debug_why_was_this_version_selected",
+	"design_intent": "enables_deferred_constraints_files_feature_by_letting_tooling_derive_constraints_from_recorded_manifest",
+	"deferred_until_then": "field_is_debug_only",
+	"constraints_files_idea": "https://puck.uno/documentation/ideas/caspian/manifest-constraints"
+}}
+~~~
+
+Load records are **process-level state**, not object-level — once loaded, entries persist for the life of the process regardless of scope/GC of whatever triggered them.
+
+~~~json
+{"vibecode": {
+	"property": "load_records_are_process_level_state",
+	"persistence": "lifetime_of_process",
+	"decoupled_from": ["triggering_call_site_scope", "triggering_object_lifetime", "gc_of_either"],
+	"survives": ["call_site_return", "local_var_scope_exit", "triggering_object_gc"],
+	"records_retained": ["timestamp", "file_and_line_provenance", "accumulated_ranges"],
+	"enables": "after_the_fact_debugging_of_what_was_loaded_when_from_where_under_which_constraints",
+	"storage": "engine_maintains_load_records_registry_manifest_reads_from_it"
+}}
+~~~
 
 <a id="coverage"></a>
 ### coverage

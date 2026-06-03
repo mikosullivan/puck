@@ -71,13 +71,15 @@ each role on its own terms.
 ---
 
 <a id="the-role-system-method"></a>
-## The `%role` System Method
+## The `%role` System Surface
 
 ~~~json
 {"vibecode": {
-    "section": "role_system_method",
-    "method": "%role",
-    "returns": "current_role"
+    "section": "role_system_surface",
+    "surface": "%role",
+    "dual_form": "value_and_namespace",
+    "bare_form_returns": "current_role",
+    "namespace_methods": ["delegate_to"]
 }}
 ~~~
 
@@ -88,6 +90,52 @@ aware.
 ```
 $current = %role    # the role currently in effect
 ```
+
+`%role` also serves as a namespace for role-system operations. Same dual
+shape as `%puck` (both a callable lookup and a namespace).
+
+### `%role.delegate_to`
+
+~~~json
+{"vibecode": {
+    "method": "%role.delegate_to",
+    "form": "%role.delegate_to(<role>) do ... end",
+    "lifetime": "block_scoped",
+    "from_role": "implicit_current_role",
+    "to_role": "explicit_argument",
+    "grant": "full_every_permission_the_current_role_has",
+    "selective_or_subset_delegation": "out_of_v1_0_scope",
+    "motivating_use_case": "agent_yield_as_self_style_block"
+}}
+~~~
+
+Block-scoped permission delegation. Inside the block, the named role is
+granted the **current** role's permissions. When the block exits, the grant
+lifts. The "from" role is implicit (the current role); the "to" role is the
+single positional argument — wrapped in parens to disambiguate from the block.
+
+```
+%role.delegate_to($agent.object.role) do
+    # inside this block, the agent's role can do anything
+    # the current role can do
+end
+```
+
+The grant is **full** — every permission the current role has is extended to
+the named role for the duration of the block. Selective delegation (granting
+only some permissions), subset delegation, and hierarchical delegation are
+out of V1.0 scope; they can be revisited if a forcing function appears.
+
+The named role retains its own identity throughout. Only its permissions are
+temporarily extended — auditing and ownership chains continue to attribute
+actions to the named role, with the elevation visible in source as the
+enclosing `delegate_to` block.
+
+Primary V1.0 use case: [`$agent.yield`](https://puck.uno/documentation/ideas/agent-yield).
+The agent's connection runs under a fresh sandboxed role by default;
+`%role.delegate_to` lets the caller explicitly extend their own role's
+permissions to the agent's role for a region where the developer wants the
+agent operating with their authority.
 
 ---
 

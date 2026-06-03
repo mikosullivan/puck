@@ -61,7 +61,7 @@ For most Caspian programs, the only constraints worth expressing are **Caspian +
 
 Minority cases (host-FFI consumers, engine-specific extensions, OS-dependent code) would also use `os` and/or `engine` sections. The shared shape leaves room for these without forcing them on programs that don't need them.
 
-`process` (runtime, cycles) is never a deployment constraint — it's observation, not requirement. Constraints files wouldn't carry it.
+`process` (runtime, steps) is never a deployment constraint — it's observation, not requirement. Constraints files wouldn't carry it.
 
 ## When to revisit
 
