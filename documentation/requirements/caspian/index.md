@@ -1280,3 +1280,48 @@ Then just write some code that transpilers your grammar to CaspianJ.
 
 I don't have any plans to develop alternate grammars, but the options is
 there if the community wants to develop it.
+
+---
+
+<a id="cache-conflicts-and-gaps"></a>
+## Cache: conflicts and gaps
+
+~~~json
+{"vibecode": {
+	"section": "cache_conflicts_and_gaps",
+	"role": "report on cache-related conflicts and gaps; trimmed 2026-06-02 after the official cache spec landed at downloads/caching/index.md; resolved items struck for traceability, still-open items live below",
+	"current_spec": "caspian/downloads/caching/index.md"
+}}
+~~~
+
+The official cache spec landed at [caspian/downloads/caching/](downloads/caching/) on 2026-06-02 (relocated into `downloads/` since caching is one way of downloading a library). Many items in earlier drafts of this report are now resolved; they're listed struck for traceability. Items still open are listed live below.
+
+### Resolved by [downloads/caching/index.md](downloads/caching/index.md)
+
+- ~~**Two mechanisms share the name "cache"**~~ — resolved per [#441](https://github.com/mikosullivan/puck/issues/441): one library cache, CaspianJ cache is a substructure inside it.
+- ~~**Library cache organization is essentially unspecified**~~ — the spec now defines flat root + integer-named subdirs + `versions/<timestamp>/` per version + `meta.json`/`source.casp`/`source.caspj`.
+- ~~**Cache-only security posture depends on undocumented populate-the-cache mechanics**~~ — the populate format is now fully spec'd.
+- ~~**Overview's claim has no underlying spec**~~ — [`overview.md`](../../overview.md) can now point at the caching spec.
+- ~~**`caspj-cache.md` was promoted while labeled "brainstorm"**~~ — file deleted; relevant content absorbed into [downloads/caching/index.md](downloads/caching/index.md).
+- ~~**The two caches share no vocabulary, format, or validity model**~~ — there's one cache; no longer a comparison.
+- ~~**Cross-cache interactions are undefined**~~ — single cache; not applicable.
+- ~~**CaspianJ-cache design scope mismatch**~~ — the user-source-caching scope is dropped; the new spec is library-cache-only.
+- ~~**`downloads/cache/` is an empty directory** / competing `downloads/cache/` vs. `caching/` structures~~ — resolved by relocating caching into `downloads/caching/`; the empty `downloads/cache/` dir has been removed.
+
+### Still open
+
+#### "Engine library cache policy" is referenced but never defined
+
+[`engine/require.md`](engine/require.md) says cache priming via `%engine.require` "is governed by the engine's library cache policy" and notes "some libraries opt out via their own metadata." The new [downloads/caching/index.md](downloads/caching/index.md) doesn't define this policy either — what knobs it exposes, where it's configured, what the per-library opt-out metadata looks like.
+
+#### Gabbo development slice premise mismatched with the new cache spec
+
+[`gabbo.md`](../development/v1/caspian/gabbo.md) and [`decisions.md`](../development/v1/caspian/decisions.md) are built around the **superseded** caspj-cache design — user-source files cached at `caspj/` next-to-source, fallback to `~/.cache/caspian/<hash>.caspj`, validity = engine_version + transpiler_version + source mtime + source SHA-256. The new caching spec covers **library cache only** — no user-source caching, no next-to-source `caspj/` directory, no mtime/SHA-256 validity stamping. Gabbo's premise needs either re-grounding against a separate user-source caching spec (which doesn't exist) or rescoping to align with library caching.
+
+#### `decisions.md` records superseded cache design as settled
+
+Specifically, the two rows in [decisions.md](../development/v1/caspian/decisions.md) at lines 78–79 still describe the next-to-source `caspj/` scheme and the engine_version + transpiler_version + source mtime + source SHA-256 validity stamps as settled decisions. After the consolidation, those decisions are no longer reflected in any current spec. They need to be either rewritten against the new spec or recorded as superseded.
+
+### Open items the new spec itself flags
+
+The official spec carries its own list of in-scope open items at [downloads/caching/index.md § Open items](downloads/caching/index.md#open-items): engine-version invalidation for locally generated `source.caspj`, concurrent write semantics, eviction policy, multi-file libraries. Those are tracked there; not duplicated here.

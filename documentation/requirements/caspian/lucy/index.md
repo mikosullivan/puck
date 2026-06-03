@@ -736,7 +736,7 @@ Engines may add fields (column, file path, role at-time-of-call, etc.) as
 needed; consumers should treat unknown fields as additive and not reject
 the trace because of them. Serialization for Jasmine flattens each frame
 to the same hash; serialization for the wire format used by
-[versioning.md](../versioning.md) follows the same shape (with field
+[versioning](../versioning/) follows the same shape (with field
 trimming as the doc describes).
 
 <a id="raising-standard-flags"></a>
@@ -1616,7 +1616,7 @@ for method dispatch) is just a longer chain.
 | `$foo` | current lexical scope, then enclosing scope, then enclosing's enclosing, etc. up to the function's top |
 | `@foo` | the current instance's bucket |
 | `%foo` | the engine's sys-method table |
-| `puck.uno/foo` via `%puck[...]` | the current puck's getter table (single namespace) |
+| `puck.uno/foo` via `%puck[...]` | the current puck's fetcher table (single namespace) |
 | `%chain.foo` | the current frame's `%chain` entries |
 | `$obj.foo` (method dispatch) | `obj`'s class's methods, then the class hierarchy walked outward |
 | bucket key access | a single bucket (no chain) |
@@ -1775,27 +1775,46 @@ event's class metadata, not from which `%chain.X` method was called.
 ~~~json
 {"vibecode": {
 	"section": "object_model",
-	"two_properties": ["classes", "bucket"],
-	"classes": "class_stack_array_resolved_top_down",
-	"bucket": "%bucket hash shared by all classes in stack",
-	"object_classes_order": "ordered array of classes, top of stack first; class an object is created with is first pushed (bottom); subsequent classes.add pushes go to the top; later additions shadow earlier ones",
-	"shadow_class": "implicit_always_first_in_resolution_not_in_object_classes",
+	"canonical_spec": "see ../../ecoverse/objects/ for the full structural model; this section summarizes the parts a Caspian programmer touches",
+	"two_fields": ["bucket", "stack"],
+	"bucket": "shared data hash for the object",
+	"stack": "ordered hash of platters; each platter contributes a class to the object's identity",
+	"shadow_platter": "first platter by convention, named 'shadow'; sticky-by-default; holds singleton/instance methods",
+	"sticky_propagation": "stuck position chains downward through contiguous sticky platters from the top",
+	"single_class_default": "most objects have just the shadow platter plus their class platter; multi-platter stacks are the result of explicit .classes.add",
 	"object_helper": "reserved_built_in_cannot_be_overridden",
 	"explicit_dispatch": "$class.object.call_with($foo, 'method', args)"
 }}
 ~~~
 
-<a id="two-property-objects"></a>
-### Two-Property Objects
+<a id="two-field-objects"></a>
+### Two-field objects
 
-Every object has exactly two fundamental properties:
+Every object has exactly two structural fields:
 
-- **classes** — the class stack, an array of classes whose methods the object inherits
 - **bucket** — a single shared hash where all the object's data lives
+- **stack** — an ordered hash of **platters**; each platter contributes a class to the object's identity
 
 Everything else — methods, accessors, helpers — is behavior layered on top of these two
-primitives. This maps directly to how mikobase records work: class + bucket. The mental
-model is consistent across the language and the object store.
+primitives. This maps directly to how Mikobase records work and how Puck wire objects
+look: the same `{bucket, stack}` shape applies in the language, the store, and the
+protocol. The full structural spec — including the four recognized platter fields
+(`class`, `sticky`, `warning`, `bucket`), the per-platter bucket used by mix-ins, and
+the rules around stickiness — lives at [requirements/ecoverse/objects/](../../ecoverse/objects/).
+
+The simplest object — empty bucket, no class beyond the shadow:
+
+```json
+{
+    "bucket": {},
+    "stack": {
+        "shadow": {}
+    }
+}
+```
+
+A typical object created from a named class has two platters: the shadow on top and the
+class platter beneath it.
 
 <a id="bucket"></a>
 ### `%bucket`
@@ -1815,8 +1834,9 @@ getters/setters that read and write from `%bucket`.
 @foo = 'bar'             # same as %bucket['foo'] = 'bar'
 ```
 
-All classes in the stack share the same `%bucket` hash. Key collision between classes
-is the developer's responsibility.
+All platters in the stack share the same `%bucket` hash. Key collision between classes
+is the developer's responsibility — unless a class needs its own private storage, in
+which case it uses a **per-platter bucket** (`%platter`) instead.
 
 Serialization is straightforward — `%bucket` is the object's data, so exporting it
 exports the object's state.
@@ -1826,254 +1846,124 @@ names, JSON-shaped data) does not apply to object buckets. Buckets are internal
 storage with their own conventions; class designers pick whatever keys make sense
 for their state.
 
-**The `uns` bucket-key convention.** A Puck-wide convention reserves the bucket
-key `uns` for a sub-hash organized by UNS strings. When a bucket has an `uns`
-key, the value is understood as a hash of "things keyed by UNS" — each entry's
-key is a class UNS and its value is whatever state that UNS-keyed entity wants
-to store.
+<a id="platter-bucket"></a>
+### `%platter`
+
+Mix-in classes — classes added to many different host objects as supplementary
+platters — can't safely store state on the shared bucket, since their key names
+would collide with whatever each host is already using. Each platter can carry
+its own private bucket for state that belongs to that platter's class, and the
+in-method accessor `%platter` reads and writes it:
 
 ```
-%bucket = {
-    foo: 'bar',           # host class's own state
-    baz: 42,
-    uns: {
-        'puck.uno/trivet/node': {parent: ..., children: ..., id: ...},
-        'puck.uno/uma/text':    {...},
+%platter['parent']   = $other_node
+%platter['children'] = $children_array
+%platter['id']       = 'food'
+```
+
+Trivet (a tree-node mix-in) is the canonical example. Inside Trivet's methods,
+`%platter` resolves to Trivet's own platter bucket regardless of what host class
+the object started as. `%bucket` continues to be the shared bucket; `@foo`
+remains shorthand for `%bucket['foo']`. There is no `@`-style shorthand for the
+platter bucket — `%platter[...]` is always explicit.
+
+Most platters don't have a per-platter bucket; the field is just absent. The
+mechanism is there when the class needs it. See
+[requirements/ecoverse/objects/structure.md § bucket](../../ecoverse/objects/structure.md#bucket)
+for the structural spec.
+
+<a id="the-stack"></a>
+### The stack
+
+Method calls are resolved by walking the stack top to bottom. The first platter
+whose class defines the method wins. The shadow platter — first by convention,
+named `"shadow"` — is at the top and dispatch starts there because it's at the
+top. There is no special "shadow always first" rule baked into dispatch; the
+shadow is simply the first platter in the stack.
+
+For most objects the stack is short: a shadow on top with `class: {}` (default,
+empty), and the object's own class platter below it. A bare `color` instance:
+
+```json
+{
+    "bucket": {"r": 255, "g": 0, "b": 0},
+    "stack": {
+        "shadow": {},
+        "color":  {"class": "puck.uno/color"}
     }
 }
 ```
 
-The primary use case is **classes that get added to arbitrary host objects as
-mix-ins** — Trivet's node class is the canonical example. The mix-in stores its
-state under `uns.<its-UNS>` rather than at the top level of the bucket, so it
-doesn't collide with whatever the host class is already using.
+Adding more platters via `.classes.add` extends the stack downward; later
+additions sit lower in the stack and are reached after earlier ones during
+dispatch. (The shadow stays on top — see stickiness below for why.)
 
-Host classes that don't use mix-ins can ignore the convention entirely. Classes
-that *are* mix-ins should namespace their state into the `uns` slot; host
-classes leave `uns` alone.
+Marker classes (like `puck.uno/class/redact`) sit somewhere in the stack but
+have no methods to find — dispatch walks past them to whatever class defines
+the called method. Behavior-adding classes (a `foo.uno/upper` that overrides
+`to_string`) intercept dispatch because their methods are encountered first.
 
-This is a convention, not enforcement. The runtime treats the bucket as a flat
-hash; `uns` is just a reserved key by community agreement.
+<a id="stickiness"></a>
+#### Stickiness
 
-<a id="the-class-stack"></a>
-### The Class Stack
+A platter can carry `sticky: true`, which means it can't be removed, and if
+it's at the top of the stack it can't be moved. `sticky` is engine-only and
+one-way: only the engine sets it, and once set it can't be cleared.
 
-Method calls are resolved by walking the class stack top to bottom. The
-first class in the stack that defines the method wins. There is no special
-"shadow class always first" rule; the shadow class is just a pinned platter
-at the top, and dispatch starts there because it's at the top.
+**Stickiness propagates downward.** A sticky platter directly under a stuck
+platter is itself stuck — the position-lock chains through every contiguous
+sticky platter starting from the top. The first non-sticky platter ends the
+chain; platters below it can still move.
 
-The stack has two regions:
+The shadow platter is sticky by default, which is why it stays pinned at the
+top. The full structural spec — including the propagation rule and engine-only
+constraint — lives at
+[requirements/ecoverse/objects/structure.md § Stickiness](../../ecoverse/objects/structure.md#stickiness).
 
-1. **Pinned region** at the top — contiguous platters that the engine added
-   and locked in place. The shadow class is always the topmost pinned
-   platter. For nulls, falses, and other primitives, additional pinned
-   platters live just below the shadow (truthiness markers like
-   `puck.uno/class/bool_null`). Platters in the pinned region cannot be
-   moved, removed, or replaced.
-2. **Mutable region** below — where user-added platters live.
-   `.classes.add` inserts at the top of this region (which means
-   immediately below the pinned region). Later additions sit higher in
-   the mutable region; **later additions shadow earlier ones** for any
-   method they both define.
+<a id="null-and-false-platters"></a>
+#### Null and false instances
 
-**Platter records carry an `active` field.** Default is `true`;
-the field is omitted when true. `.classes.remove(<id>)` doesn't
-delete the platter — it sets `active: false`. The platter stays in
-the hash with its bucket intact, but is skipped during method
-dispatch. Reactivation via `.classes.set_active(<id>, true)`
-flips it back. See
-[base-class-use.md § Active and inactive platters](../../ideas/base-class-use.md#active-field).
+When the engine creates a `null` or `false` value, it adds a sticky platter
+directly under the shadow carrying the class `puck.uno/null` or
+`puck.uno/false`. Because that platter is sticky and adjacent to the (also
+sticky) shadow, the propagation rule pins it at position 1 — the value can't
+be talked out of being null or false later.
 
-See [base-class-use.md § Pinned and mutable regions](../../ideas/base-class-use.md#pinned-and-mutable-regions)
-for the full model including sticky platters and absorption rules.
-
-Marker classes (like `puck.uno/class/redact`) sit somewhere in the stack
-but have no methods to find — dispatch walks past them to whatever class
-defines the called method. Behavior-adding classes (a `foo.uno/upper` that
-overrides `to_string`) DO intercept dispatch because their methods are
-encountered first.
-
-To add methods to an object's shadow class, use `object.define`:
-
-```
-$foo.object.define do
-    function &bar
-        ...
-    end
-end
+```json
+{
+    "bucket": {},
+    "stack": {
+        "shadow":     {},
+        "null_class": {"sticky": true, "class": "puck.uno/null"}
+    }
+}
 ```
 
-`object.define` is shorthand for `$foo.object.shadow.define`. The shadow
-class is a unique, fresh class the engine creates for each object at
-instantiation — adding methods to it adds methods to that one object only.
-Both forms open the shadow class as a definition context for the block.
-Inside a class body, `self` refers to the class object itself, so
-class-level methods are defined the same way:
+A truthy value has no such platter under shadow. Truthiness is determined by
+asking, at the bottom of the dispatch walk, whether the object's stack carries
+a `puck.uno/null` or `puck.uno/false` platter — there is no separate
+truthiness-marker class. The full mechanism is in
+[caspian/built-in-classes/object.md § Mechanism](../built-in-classes/object.md#mechanism)
+and the design discussion is in [caspian/truthy.md](../truthy.md).
 
-```
-class 'color'
-    self.object.define do
-        function &blue
-            return color.new(hex: '#0000ff')
-        end
-    end
-end
-```
+<a id="defining-on-the-shadow"></a>
+#### Defining methods on the shadow
 
-`null`, `true`, and `false` are special: their entire class stacks are
-fully locked. You cannot `.classes.add` to them, `.classes.remove` from
-them, or define methods on their shadow classes. The whole object is
-sealed — pinned region, shadow, bucket, everything. The reason is
-load-bearing: if any program could mutate `true` or `null`, every
-truthiness check everywhere becomes unreliable.
+`$foo.object.method(name) do(params) … end` defines a method on this one object — it lives on the shadow, so other instances are unaffected. See [object.md § `method`](../built-in-classes/object.md#method) for the catalog entry.
+
+`null`, `true`, and `false` are fully locked — their stacks, shadows, and buckets are all sealed. The reason is load-bearing: if any program could mutate `true` or `null`, every truthiness check everywhere becomes unreliable.
 
 <a id="the-object-helper"></a>
-### The `object` Helper
+### The `object` helper
 
-Every object has a reserved helper called `object` that cannot be overridden. It exposes
-meta information about the object:
+Every object has a reserved helper called `object` that cannot be overridden. It's the home for engine-controlled introspection and lifecycle methods — truthiness predicates, stack inspection, identity equality, freezing, jail creation, borrow, explicit dispatch. The full catalog lives in [built-in-classes/object.md](../built-in-classes/object.md). Highlights touching the stack:
 
-```
-$foo.object.classes      # the full class stack top to bottom, including the
-                         # shadow platter at position 0 and any other pinned
-                         # platters (e.g. truthiness markers) above the
-                         # mutable region
-
-$foo.object.isa? 'puck.uno/color'    # true if 'puck.uno/color' is in the class stack
-                                       # (the object's class or any superclass)
-```
-
-The `isa?` predicate walks the object's class stack and returns true if the given UNS
-matches any class in the stack. Use it to check class membership without caring about
-the exact resolution path:
-
-```
-if $foo.object.isa? 'puck.uno/error'
-    # $foo is an error of some kind
-end
-```
-
-The trailing `?` is the Caspian convention for predicate methods (boolean-returning).
-
-More meta information will be added as needed.
-
-<a id="explicit-class-dispatch"></a>
-### Explicit Class Dispatch
-
-To call a method from a specific class in the stack, use `object.call_with`. The class
-must be present in the object's class stack:
-
-```
-$class = $foo.object.classes.find(...)
-$class.object.call_with($foo, 'greet', name: 'Jean-Luc')
-```
-
-This is a rare use case — normal method resolution handles the common case.
-
-<a id="borrow"></a>
-### Borrowing a class
-
-Sometimes you want to apply a class's methods to an object **without
-permanently adding that class to the object's stack**. `borrow` is
-sugar for "push the class temporarily, run a block, pop the class."
-
-```
-$foo.object.borrow('bar.gup/whatever') do
-    $foo.borrowed_method
-    $foo.another_borrowed_method(arg)
-end
-```
-
-`borrow(class_uns) do ... end`:
-
-- Pushes `class_uns` onto `$foo`'s class stack (top of mutable region).
-- Runs the block. Inside the block, calling methods on `$foo`
-  dispatches through its now-augmented stack — methods defined by
-  the borrowed class are reachable, alongside everything else
-  `$foo` already had.
-- When the block returns (or raises), pops the class off the stack.
-  Exception-safe — the borrow is removed even if the block raises.
-- The block's return value is the result of the borrow expression.
-
-**The block is required.** There is no bare-call form. The block is
-always how you use the borrowed class. Inside the block, `self` is
-unchanged — it's whatever `self` was in the outer scope. The borrow
-modifies `$foo`'s stack, not the calling context. Method calls go
-through `$foo.method()` explicitly.
-
-```
-$result = $foo.object.borrow('bar.gup/serializer') do
-    $foo.to_xml(indent: 2)
-end
-```
-
-**The borrowed platter is always non-sticky.** Borrow is transient
-by definition — if the platter were sticky, it couldn't be popped at
-block end. Borrow takes no sticky flag; there's no syntactic way to
-request one.
-
-Classes that require stickiness as part of their semantics (e.g.,
-`puck.uno/class/redact`, whose security guarantee depends on never
-being removable) cannot be borrowed. The engine inspects the class's
-definition before pushing; if the class declares itself
-sticky-required, the borrow raises before the block runs. Better to
-fail explicitly than to silently weaken the class's intent.
-
-**Borrow actually removes its platter** at block end, not just
-deactivates it. The general "`.classes.remove` deactivates rather
-than deletes" rule applies to user-facing removals where the
-engine can't know whether the platter's bucket data is still
-needed. Borrow is different: the engine created the platter just
-now, it carries no user-allocated data (no `%platter` access is
-permitted during borrow), and at block end it's safe to delete
-outright. No accumulating inactive borrow platters in the
-`classes` hash.
-
-**This is local borrow, not remote.** It's an in-process call; the
-borrowed class works directly on `$foo` (no clone). For remote
-dispatch — sending a serialized clone of an object to another process
-and getting a result back — use the Puck mechanism (`%puck[...]`)
-directly. The two have meaningfully different semantics: borrow shares
-memory and can mutate; Puck sends a clone and the original is
-untouched.
-
-**What the borrowed class sees.** Same as any platter — `$foo`'s
-shared bucket (via `%bucket` / `@field`), the other classes in the
-stack (via normal dispatch), `self` as `$foo`. It does NOT get its
-own platter bucket (`%platter`) because no platter was allocated for
-it; it's transient. If it tries to access `%platter`, the engine
-raises.
-
-**Role transitions** apply normally. If the borrowed class is owned
-by a different role from `$foo`, dispatch into its methods transitions
-roles the same way any cross-role method call would (fresh chain,
-permission boundary, etc.).
-
-**Use cases:**
-
-- **Pluggable interpretations** — interpret the same data via
-  different specialized classes without committing the object to
-  any one of them.
-- **Visitor pattern** — pass an object to a visitor class that
-  walks or transforms it.
-- **Adapter dispatch** — apply protocol-specific behavior (a
-  serializer, a formatter, a validator) to objects that don't carry
-  the protocol class in their stack.
-
-**Nested borrows compose.** Each borrow pushes onto the stack; each
-block end pops its own. Nested borrows are stacked accordingly:
-
-```
-$foo.object.borrow('class_a') do
-    $foo.object.borrow('class_b') do
-        # both class_a and class_b are in $foo's stack here;
-        # class_b dispatches first (added later, top of mutable region)
-    end
-    # only class_a in $foo's stack now
-end
-# back to $foo's original stack
-```
+- [`.object.classes`](../built-in-classes/object.md#classes) — array of the classes in the stack; `.add` pushes a new class.
+- [`.object.stack`](../built-in-classes/object.md#stack) — the full stack hash with per-platter metadata (`sticky`, per-platter `bucket`, etc.).
+- [`.object.isa?(uns)`](../built-in-classes/object.md#isa) — class-membership predicate; walks the stack including each platter's inheritance chain.
+- [`.object.method(name) do(params) … end`](../built-in-classes/object.md#method) — define a method on this one object (lives on the shadow).
+- [`.object.call_with(receiver, method, args…)`](../built-in-classes/object.md#call-with) — explicit dispatch to a specific class's implementation, bypassing the normal walk.
+- [`.object.borrow(uns) do … end`](../built-in-classes/object.md#borrow) — push a non-sticky platter for the duration of the block, then pop it. Useful for pluggable interpretations, visitor patterns, and adapter dispatch.
 
 ---
 
@@ -2140,7 +2030,7 @@ to keep user classes from inheriting a noisy cloud of base-class methods**.
 
 Every Caspian object ultimately derives from `puck.uno/object`, which provides
 a substantial set of universal operations: tri-value truthiness (`bool`,
-`truthy?`, `null?`, `defined?`), identity equality, role introspection
+`null?`, `defined?`), identity equality, role introspection
 (`role`, `chain` access), classes-stack inspection, the close-handler
 mechanism, and more. If those methods lived directly on every object, then a
 user defining a trivial class with one method:
@@ -2166,7 +2056,7 @@ on the object directly:
 $foo.object              # the universal helper for $foo
 $foo.object.role         # current role of $foo's frame
 $foo.object.bool         # tri-value truthiness
-$foo.object.classes      # the platter stack
+$foo.object.classes      # array of classes in the stack
 $foo.object.on_close ... # close-handler introspection
 ```
 
@@ -2798,51 +2688,9 @@ end
 <a id="engine"></a>
 ### `%engine`
 
-`%engine` is a method that returns the engine object — the gateway through which the
-running script accesses resources provided by the host (capabilities, configuration,
-injected objects). Standard slots like `%stdout` and `%clock` cover the well-known
-universal capabilities; `%engine[name]` is the catch-all for host-provided
-application-specific data:
+`%engine` returns the engine object — the gateway through which the running script reaches host-provided resources (capabilities, configuration, injected objects). **Only the `user` role can call `%engine` at all** — any other role invoking `%engine` raises immediately, by a dedicated check in the engine object itself. The bootstrap pattern is: user code pulls resources from `%engine` and passes them down to libraries explicitly as parameters.
 
-```
-$db   = %engine['db']
-$docs = %engine['docs']
-$request = %engine['request']    # in an HTTP handler context
-```
-
-The shape of `%engine`'s key set is host-defined.
-
-<a id="engine-user-only"></a>
-#### `%engine` is user-only — deliberate special case
-
-**Only the `user` role can call methods on the engine object.** This is enforced
-by a **dedicated check in the engine object itself**, not derived from any general
-role-based access control system. Any role other than `user` reaching the engine
-object — by writing `%engine` in source, or by being passed a reference to it,
-or via any other path — raises.
-
-This is **deliberately a special case**. The engine object is too critical a
-security boundary to ride on whatever general role-access mechanism Caspian
-eventually grows. The dedicated check is defense in depth: even if a future
-general system has bugs or gaps, the engine object's hard-coded user-only rule
-keeps holding.
-
-The general language rule otherwise stands — *if you can see an object you can
-call its methods*. The engine object is the one named exception.
-
-**What this looks like in practice:**
-
-- User code freely writes `%engine[...]` and gets the data. Normal.
-- Loaded libraries (running in their own roles) cannot reach `%engine`. Even if
-  user passes the engine reference as a parameter, the library's call into it
-  raises because the calling role isn't `user`.
-- Closures defined in user scope that captured `%engine` work when called
-  *from* user code. If somehow invoked from a non-user role, the engine object's
-  check still fires.
-
-The bootstrap pattern: user code calls methods on `%engine` directly to pull
-out the resources it needs, then passes those resources down to libraries
-explicitly as parameters. Libraries never reach back to `%engine` themselves.
+Full spec: [engine/](../engine/).
 
 <a id="function-and-closure-opacity"></a>
 ### Function and closure opacity
@@ -2994,134 +2842,16 @@ syntax is designed.
 <a id="jail"></a>
 ## Jail
 
-~~~json
-{"vibecode": {
-	"section": "jail",
-	"concept": "capability_restricting_proxy_wraps_object_exposes_only_allowed_methods",
-	"creation": "$foo.object.jail(:method1, :method2)",
-	"storage": "prisoner and allowed in %bucket",
-	"security_model": "object_capability",
-	"callable_jail": "when prisoner is function jail with :call is callable"
-}}
-~~~
-
-A jail is a capability-restricting proxy object. It wraps another object and exposes only
-a specified list of allowed methods. Calls to allowed methods are forwarded transparently
-to the underlying object. Calls to any other method fail.
-
-The underlying object is unaware that it is being called through a jail. However, a method
-that explicitly inspects the call stack can see it.
-
-Jail fits naturally with the object-capability security model: pass a jail instead of the
-full object when the recipient only needs a subset of its capabilities.
-
-<a id="internal-structure"></a>
-### Internal structure
-
-A jail stores the wrapped object in `%bucket`:
-
-```
-@prisoner   # the wrapped object
-@allowed    # array of permitted method names
-```
-
-External code cannot reach `@prisoner` directly through the jail — that is the point.
-
-<a id="creating-a-jail"></a>
-### Creating a jail
-
-```
-$jail = $foo.object.jail(:greet, :save)
-
-$jail.greet(name: 'Jean-Luc')   # forwarded to @prisoner
-$jail.destroy                   # fails
-```
-
-When `@prisoner` is a function, the jail is callable:
-
-```
-$bar = $foo.object.jail(:call)
-&bar   # forwards to @prisoner
-```
+A jail is a capability-restricting proxy that wraps an object and exposes only a specified list of allowed methods. Pass a jail instead of the full object when the recipient only needs a subset of its capabilities — the object-capability pattern. Created via [`$foo.object.jail(:method1, :method2)`](../built-in-classes/object.md#jail); see object.md for the full catalog entry.
 
 ---
 
 <a id="freezing"></a>
 ## Freezing
 
-~~~json
-{"vibecode": {
-	"section": "freezing",
-	"axes": ["classes", "bucket"],
-	"operations": ["$foo.object.freeze", "$foo.object.classes.freeze",
-		"$foo.object.bucket.freeze"],
-	"permanent": "without_block_no_unfreeze",
-	"temporary": "with_block_releases_when_block_exits",
-	"classes_freeze_prevents": "class_stack_modification_object_define_blocked",
-	"bucket_freeze_prevents": "%bucket_writes",
-	"object_bucket_returns": "jail_wrapping_%bucket_with_only_freeze_permitted"
-}}
-~~~
+Freezing locks an object against modification, split into two independent axes — the class stack and the bucket — rather than conflating them into a single freeze. Three operations live on `.object`: [`freeze`](../built-in-classes/object.md#freeze) (both axes), [`classes.freeze`](../built-in-classes/object.md#freeze) (stack only), and [`bucket.freeze`](../built-in-classes/object.md#freeze) (bucket only). Without a block the freeze is permanent (there is no `unfreeze`); with a block it holds for the block's duration and releases on exit.
 
-Freezing locks an object against modification. Caspian breaks this into two independent
-axes — the class stack and bucket — rather than conflating them into a single freeze.
-
-<a id="the-three-freeze-operations"></a>
-### The three freeze operations
-
-```
-$foo.object.freeze          # freeze both classes and bucket
-$foo.object.classes.freeze  # freeze the class stack only
-$foo.object.bucket.freeze  # freeze %bucket only
-```
-
-Any of these can be called by whoever holds a reference to the object — freezing is not
-restricted to the object itself.
-
-<a id="permanent-vs-temporary"></a>
-### Permanent vs. temporary
-
-Without a block, a freeze is permanent. There is no `unfreeze` method. Once frozen, that
-axis stays frozen for the lifetime of the object.
-
-With a block, the freeze is temporary — it holds for the duration of the block and releases
-when the block exits:
-
-```
-$foo.object.freeze do
-    # both classes and bucket are frozen here
-end
-
-$foo.object.classes.freeze do
-    # class stack is frozen here
-end
-
-$foo.object.bucket.freeze do
-    # %bucket is frozen here
-end
-```
-
-<a id="what-each-freeze-prevents"></a>
-### What each freeze prevents
-
-**Classes freeze** — the class stack cannot be modified. No classes can be added or
-removed, and `object.define` is blocked. The methods the object has
-at freeze time are the methods it will always have.
-
-**Bucket freeze** — `%bucket` becomes read-only. Any attempt to write to `@foo` or
-otherwise modify the bucket hash raises an error.
-
-<a id="fooobjectbucket"></a>
-### `$foo.object.bucket`
-
-`$foo.object.bucket` returns a jail wrapping `%bucket` with only `:freeze` permitted.
-It gives external code the ability to freeze the object's bucket without exposing
-the data itself:
-
-```
-$foo.object.bucket.freeze       # fine — one permitted operation
-$foo.object.bucket['key']       # fails — not in the allowed method list
-```
+The [`bucket` helper](../built-in-classes/object.md#bucket-helper) returns a jail wrapping `%bucket` with only `:freeze` permitted, so external code can freeze the bucket without seeing its contents.
 
 ---
 

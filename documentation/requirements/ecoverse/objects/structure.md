@@ -53,11 +53,11 @@ There are no namespace rules inside `bucket` — no reserved keys, no reserved k
 }}
 ~~~
 
-`stack` is a hash. Each entry is called a **platter** — the key is the platter's identifier (an arbitrary string), and the value is itself a hash holding that platter's own fields (`class`, `sticky`, and whatever else the platter needs to carry).
+`stack` is a hash. Each entry is called a **platter** — the key is the platter's identifier (an arbitrary string), and the value is itself a hash holding that platter's own fields (`class`, `sticky`, `warning`, `bucket`, `vibecode`, and whatever else the platter needs to carry).
 
 A platter carries meta data about the object. The order of the platters is significant in method resolution. The hash keys for the platters themselves are arbitrary. By custom we call the first one `"shadow"`.
 
-Three keys are currently defined on a platter: `class`, `sticky`, and `warning`. A platter hash can also carry additional fields a specific class uses for its own purposes; the three below are the ones the engine itself recognizes.
+Five keys are currently defined on a platter: `class`, `sticky`, `warning`, `bucket`, and `vibecode`. A platter hash can also carry additional fields a specific class uses for its own purposes; the five below are the ones the engine itself recognizes.
 
 ### class
 
@@ -89,6 +89,39 @@ Letting warnings ride on the object itself means they travel with the data: a va
 
 The contents of the `warning` field are themselves an object — typically of a class under `puck.uno/warning/...` — describing the condition.
 
+### bucket
+
+A platter can have its own private bucket — a hash for state that belongs to this platter's class, separate from the object's shared `bucket` at the top level.
+
+The shared object bucket holds data that's "what this object is." The platter bucket holds data that's "what this class needs to remember about its participation in this object." For most platters the distinction doesn't matter — the platter is just contributing methods to a host object, and any data lives on the shared bucket. For **mix-in classes** the distinction matters a lot: a mix-in added to many different host classes can't safely store state on the host's bucket because key names would collide with whatever the host is doing. Its own platter bucket gives it a private namespace.
+
+Trivet (a tree-node mix-in that can be attached to almost any object) is the canonical example. Inside Trivet's methods, code stores tree-state in the platter bucket via `%platter`:
+
+~~~caspian
+%platter['parent']   = $other_node
+%platter['children'] = $children_array
+%platter['id']       = 'food'
+~~~
+
+`%platter` is the in-method accessor for the currently-dispatching platter's bucket; `%bucket` continues to be the in-method accessor for the object's shared top-level bucket. `@foo` remains shorthand for `%bucket['foo']` (the shared bucket); there is no `@`-style shorthand for the platter bucket — `%platter[...]` is always explicit. Method dispatch tracks "which platter am I running under" automatically, so `%platter` resolves without ambiguity.
+
+The same invariants apply as the object-level bucket: when present, it must be a hash (never a scalar, array, or null); empty `{}` is fine; no reserved keys inside. Most platters do NOT have a per-platter bucket — the field is absent. Only mix-in-style classes and other platter-local-state cases need it.
+
+Serialized form:
+
+~~~json
+{
+    "bucket": {},
+    "stack": {
+        "shadow":      {},
+        "trivet_node": {
+            "class":  "puck.uno/trivet/node",
+            "bucket": {"parent": ..., "children": ..., "id": "food"}
+        }
+    }
+}
+~~~
+
 The shadow platter's `sticky: true` and `class: {}` are defaults; an empty shadow expands to the full form. Subsequent examples in this doc will show shadow empty unless the explicit form matters:
 
 <a class="copy" href="#">copy</a>
@@ -101,6 +134,36 @@ The shadow platter's `sticky: true` and `class: {}` are defaults; an empty shado
     }
 }
 ```
+
+### vibecode
+
+A platter can carry its own `vibecode` block — an AI-readable hash of hints, context, or annotations about the platter. Use cases: an AI that generated the object recording what it was doing, why this platter is here, what assumptions it made, where it pulled data from. Anything an AI (or human auditing the trail later) might want to know about this platter that isn't load-bearing data.
+
+```json
+{
+    "bucket": {},
+    "stack": {
+        "shadow": {},
+        "ai_generated": {
+            "class":    "foo.com/something",
+            "vibecode": {
+                "generated_by": "weather-advisor agent",
+                "source":       "synthesized from NWS forecast 2026-06-02T18:30:45Z",
+                "confidence":   0.85,
+                "notes":        "free-form notes the generator wanted to leave"
+            }
+        }
+    }
+}
+```
+
+**Any platter can carry it.** A `vibecode` field on an existing platter (one already there for its class) is fine — the AI-info just rides alongside the platter's normal role.
+
+**A standalone vibecode-only platter is also fine.** Add a platter whose only purpose is to carry vibecode — useful when the generating AI wants to attach metadata without affecting the object's class identity. Such a platter typically has `class: {}` (or absent), `vibecode: {...}`, and nothing else. Its presence in the stack contributes nothing to method dispatch (an empty class has no methods); it's pure annotation.
+
+The contents of `vibecode` are free-form. The engine doesn't enforce a schema. Conventions for what to put in are situation-specific — see [worldlets/index.md](../worldlets/) and [puckai/bootstrap/](../puckai/bootstrap/) for examples of how vibecode is used in those contexts.
+
+This is the same `vibecode` convention used at the top of markdown documents, at the top of worldlet JSON files, and on individual records: a structured AI-readable annotation that travels with whatever it sits on.
 
 ## Stickiness
 

@@ -76,9 +76,10 @@ load-bearing assertion.
   uniqueness comes for free: each `materialize` call allocates a fresh
   value table, so two materializations of `null` are distinct objects
   even though their payloads are the same singleton sentinel. The
-  platter-model features the cheat sheet specifies for null/true/false
-  (sticky `puck.uno/truthiness` platter, `engine_only` enforcement) are
-  out of scope for Edmund — they arrive with the platter model.
+  full platter-model treatment for null/true/false (a sticky platter
+  directly under shadow carrying `puck.uno/null` or `puck.uno/false`,
+  engine-only stickiness enforcement) is out of scope for Edmund — it
+  arrives with the platter model.
 
 - **JSON null handling.** The `caspian.json.null` sentinel survives
   round-trip through `caspian.json.parse` / `caspian.json.encode`. The

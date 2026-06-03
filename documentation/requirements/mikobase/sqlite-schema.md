@@ -37,8 +37,8 @@ end;
 {"vibecode": {
 	"section": "records_history_table",
 	"role": "defines the append-only version history table with class name uniqueness trigger",
-	"key_concepts": ["records_history", "instance_pk", "active", "bucket", "classes",
-		"platter_stack", "immutable_rows", "unique_class_name_trigger"]
+	"key_concepts": ["records_history", "instance_pk", "active", "bucket", "stack",
+		"platter_stack", "whole_hash_for_class_definitions", "immutable_rows", "unique_class_name_trigger"]
 }}
 ~~~
 
@@ -56,14 +56,23 @@ create table records_history (
 	updated_at text not null default (strftime('%Y-%m-%dT%H:%M:%f', 'now')),
 	active     integer not null default 1 check(active in (0, 1)),
 	bucket     text check(active = 0 or (bucket is not null and json_type(bucket) = 'object')),
-	classes    text check(active = 0 or (classes is not null and json_type(classes) = 'object')),
+	stack      text check(active = 0 or (stack is not null and json_type(stack) = 'object')),
+	whole_hash integer not null default 0 check(whole_hash in (0, 1)),
+	body       text check(whole_hash = 0 or (body is not null and json_type(body) = 'object')),
 	unique(record_pk, updated_at)
 );
 
--- The `classes` column holds the platter stack as a JSON object keyed by
--- per-platter UUID; each value is a hash {class, bucket}. Per-platter
--- buckets live inside this structure, not in the row's top-level `bucket`
--- column.
+-- An instance record uses the `bucket` and `stack` columns: `bucket` is the
+-- object's data hash; `stack` is the ordered hash of platters (each platter
+-- being {class, sticky?, warning?, bucket?}). The shadow platter is named
+-- "shadow" by convention and is sticky by default.
+--
+-- A class-definition record (an instance of puck.uno/class) uses the
+-- whole-hash form instead: the row sets whole_hash = 1 and stores the
+-- definition object (containing class='puck.uno/class' plus the definition's
+-- name/inherits/fields/methods properties) in `body`. The `bucket` and
+-- `stack` columns are null for whole-hash rows. See the worldlets reference
+-- for both shapes.
 
 create trigger records_history_no_update
 before update on records_history
@@ -72,32 +81,25 @@ begin
 end;
 
 -- Enforce unique class names among active class-definition records.
--- A class-definition record has a platter of class 'puck.uno/record/class'
--- in its `classes` hash; its name lives in that platter's bucket under `name`.
+-- A class-definition record stores its definition in `body` with
+-- whole_hash = 1 and body.class = 'puck.uno/class'; the class's name
+-- is body.name.
 create trigger records_history_unique_class_name
 before insert on records_history
-when new.active = 1 and new.classes is not null
+when new.active = 1
+	and new.whole_hash = 1
+	and json_extract(new.body, '$.class') = 'puck.uno/class'
 begin
 	select raise(fail, 'duplicate class name')
-	where
-		exists (
-			select 1
-			from json_each(new.classes) np
-			where json_extract(np.value, '$.class') = 'puck.uno/record/class'
-		)
-		and exists (
-			select 1
-			from current_records cr, json_each(cr.classes) op
-			where
-				cr.record_pk != new.record_pk
-				and json_extract(op.value, '$.class') = 'puck.uno/record/class'
-				and json_extract(op.value, '$.bucket.name') = (
-					select json_extract(np.value, '$.bucket.name')
-					from json_each(new.classes) np
-					where json_extract(np.value, '$.class') = 'puck.uno/record/class'
-					limit 1
-				)
-		);
+	where exists (
+		select 1
+		from current_records cr
+		where
+			cr.record_pk != new.record_pk
+			and cr.whole_hash = 1
+			and json_extract(cr.body, '$.class') = 'puck.uno/class'
+			and json_extract(cr.body, '$.name') = json_extract(new.body, '$.name')
+	);
 end;
 ```
 
@@ -132,7 +134,9 @@ select
 	updated_at,
 	active,
 	bucket,
-	classes
+	stack,
+	whole_hash,
+	body
 from ranked
 where row_num = 1
 and active = 1;
@@ -223,8 +227,9 @@ end;
 - A record whose latest `records_history` row has `active = 0` is considered deleted and excluded from normal queries.
 - Historical reads use an `updated_at` cutoff timestamp to find the latest row at or before that point in time.
 - `unique(record_pk, updated_at)` prevents timestamp collisions within a record's history.
-- The `class` column stores the UNS class name directly. There is no foreign key to `records` — the engine validates class existence at write time.
-- Built-in classes (`puck.uno/record`, `puck.uno/record/class`, etc.) are recognized by the engine and do not need stored records.
+- An instance record's class identity lives in the `stack` column (a JSON object of platters); class names inside it are UNS strings. There is no foreign key to `records` — the engine validates class existence at write time.
+- A class-definition record uses the whole-hash form (`whole_hash = 1`, definition object in `body`) rather than `bucket`+`stack`. Its `body.class` is `puck.uno/class` and `body.name` is the UNS being defined.
+- Built-in classes (`puck.uno/record`, `puck.uno/class`, `puck.uno/reference`, `puck.uno/dbfile`, etc.) are recognized by the engine and do not need stored records.
 - Empty files are represented by a single `file_chunks` row with `content = ''` and `last = 1`.
 - Class name uniqueness is enforced by the `records_history_unique_class_name` trigger via `current_records`.
 - The `current_records` view uses `instance_pk desc` as a tie-breaker when two rows share the same `updated_at`.

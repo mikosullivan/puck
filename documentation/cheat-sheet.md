@@ -18,13 +18,14 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 ## Object model
 
 - **Everything is an object.** Scalars and arrays are objects with implicit class identity (no declaration required). Hashes need to declare their class explicitly. There is no "raw data" category that sits outside the object model.
-- **Wire/storage shape**: `{class, bucket}`. `class` is a single UNS string — one of the reserved pass-through fields in [standard-fields.md](ecoverse/standard-fields.md). `bucket` is a hash with the object's data. Used in worldlets, Mikobase records, Puck protocol messages, anywhere an object ships as JSON. Canonical by-example source: [worldlet.json](mikobase/worldlets/worldlet.json). Spec: [worldlets/index.md](mikobase/worldlets/index.md). Settled 2026-05-29; supersedes the briefly-settled `classes`-array wire form.
-- **Runtime class stack**: at runtime an object has a `classes` array — the dispatch chain. Starts with the wire `class`, grows via `.classes.add`. Distinct concept from the wire `class` field; serialization writes only `class`.
-- **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys, anywhere. See [base-class-use.md § Bucket policy](ideas/base-class-use.md#bucket-policy) — note that doc still describes the older platter model and is pending update.
+- **Wire/storage shape**: `{bucket, stack}`. `bucket` is a hash with the object's data; `stack` is an ordered hash of **platters** that holds the object's class identity. Each platter is `{class, sticky?, warning?, bucket?}`. By convention the first platter is named `"shadow"` and holds singleton methods. Used in worldlets, Mikobase records, Puck protocol messages — anywhere an object ships as JSON. Canonical by-example: [worldlet.json](ecoverse/worldlets/worldlet.json). Spec: [ecoverse/objects/](ecoverse/objects/) and [worldlets/index.md](ecoverse/worldlets/index.md).
+- **Class-definition records use whole-hash form** — `class: "puck.uno/class"` at the record top level alongside sibling `name`/`inherits`/`fields`/`methods`, NOT wrapped in `{bucket, stack}`. Instance records use `{bucket, stack}`. See [worldlet.json](ecoverse/worldlets/worldlet.json) for both shapes.
+- **Bucket invariants**: always a hash, never a scalar/array/null; no reserved keys.
+- **Per-platter bucket** (`%platter`): a private hash on a platter, separate from the object's shared bucket. Used by mix-in classes (Trivet is canonical) to avoid colliding with host-class bucket keys. Most platters don't have one; the field is absent. Inside a method, `%bucket` is the shared object bucket; `%platter` is the dispatching platter's own bucket. See [ecoverse/objects/structure.md § bucket](ecoverse/objects/structure.md#bucket).
+- **Stickiness**: a platter can carry `sticky: true`. Sticky means can't be removed; if at the top, can't be moved. Engine-only and one-way (only the engine sets it, can't be cleared). Stickiness propagates downward through contiguous sticky platters from the top. The shadow is sticky by default. See [ecoverse/objects/structure.md § Stickiness](ecoverse/objects/structure.md#stickiness).
 - **Aslan exception**: Aslan deliberately uses the simpler `{type, owning_role, payload}` shape — walking-skeleton scaffolding. The full object shape arrives in a later slice. See [aslan.md](development/v1/caspian/aslan.md).
-- **Method resolution**: walk the runtime `classes` stack top-to-bottom × each class's inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast.
-- **Pinned regions, sticky/active flags, per-platter buckets**: previously documented under the platter model; gone in the new shape unless reintroduced. Pending decision.
-- **File attachments**: top-level `files` and `file_chunks` dicts in the worldlet, parallel to `records`. Every file requires `sha256` and `mime`; binary content is chunked and reassembled in `index` order; exactly one chunk per file carries `last: true`. Records point at files via a `puck.uno/dbfile`-classed bucket field holding the file's key as a bare string. Spec: [worldlets/index.md § Files](mikobase/worldlets/index.md#files).
+- **Method resolution**: walk the `stack` top-to-bottom × each platter's class inheritance chain, with a per-dispatch visited set. First match wins for unicast; all matches fire for multicast. See [ecoverse/objects/method-resolution.md](ecoverse/objects/method-resolution.md).
+- **File attachments**: top-level `files` and `file_chunks` dicts in the worldlet, parallel to `records`. Every file requires `sha256` and `mime`; binary content is chunked and reassembled in `index` order; exactly one chunk per file carries `last: true`. Records point at files via a `puck.uno/dbfile`-classed bucket field holding the file's key as a bare string. Spec: [worldlets/index.md § Files](ecoverse/worldlets/index.md#files).
 
 ## IDs
 
@@ -56,14 +57,14 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## Truthiness
 
-- **Single platter class**: `puck.uno/truthiness`, with `bucket: {truthy: null | false | true | absent}`. Absent platter = truthy (default). See [object.md § Mechanism](caspian/built-in-classes/object.md#bool-mechanism).
+- **No separate truthiness class.** A null or false instance carries a sticky platter directly under the shadow with `class: "puck.uno/null"` or `class: "puck.uno/false"`. Truthy values have no such platter under shadow. See [truthy.md](caspian/truthy.md) and [object.md § Mechanism](caspian/built-in-classes/object.md#mechanism).
 - **Only null and false are non-truthy**. Empty string `""`, zero `0`, empty array `[]`, empty hash `{}` are all truthy. Ruby-style.
-- **Locked at instantiation**: truthiness can never change after the object is created. The truthiness platter is pinned, engine_only, and its bucket is immutable.
+- **Determined at instantiation, locked for the object's lifetime.** The engine traces the class's truthy/non-truthy status when the object is created and pins the result via the sticky platter — propagation rules keep it adjacent to shadow. Classes can change dynamically, so the trace runs on every instantiation. Optimization strategies (caching the trace, e.g.) are parked post-V1.0.
 
 ## Three primitives
 
-- **null, false, true are instances** of `puck.uno/null`, `puck.uno/false`, `puck.uno/true`. Each carries a sticky pinned `puck.uno/truthiness` platter with the corresponding `truthy` value.
-- **All four classes are `engine_only`**: `puck.uno/truthiness`, `puck.uno/null`, `puck.uno/false`, `puck.uno/true`. User code can't push any of them onto another object's stack via `.classes.add` — the engine is the only entity that creates them. See [object.md § Identity](caspian/built-in-classes/object.md#identity), [nulls.md § `puck.uno/null` is `engine_only`](caspian/built-in-classes/nulls.md#engine-only-class).
+- **null, false, true are instances** of `puck.uno/null`, `puck.uno/false`, `puck.uno/true`. null and false additionally carry a sticky `puck.uno/null` or `puck.uno/false` platter directly under their shadow — this is the signal that they're non-truthy.
+- **All three classes are `engine_only`**: `puck.uno/null`, `puck.uno/false`, `puck.uno/true`. User code can't push them onto another object's stack via `.classes.add` — the engine is the only entity that creates them. See [object.md § Identity](caspian/built-in-classes/object.md#identity), [nulls.md § `puck.uno/null` is `engine_only`](caspian/built-in-classes/nulls.md#engine-only-class).
 - **null is per-call**: every `null` invocation produces a fresh instance. Two distinct nulls compare `==` by value (both null), but their `.object == .object` is false (distinct instances). See [nulls.md § Equality](caspian/built-in-classes/nulls.md#equality).
 
 ## References and uspace
@@ -98,7 +99,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 ## Jails
 
 - **"Jail" is a concept, not a specific class.** A jail is any object that contains another object and exposes only a selected list of its methods. The pattern shows up often in Caspian.
-- **`puck.uno/jail` is the convenience class** for building one quickly via `$foo.object.jail(:method1, :method2)`. Useful when you don't want to write a custom wrapper. See [lucy.md § Jail](caspian/lucy/index.md#jail).
+- **`puck.uno/jail` is the convenience class** for building one quickly via `$foo.object.jail(:method1, :method2)`. Useful when you don't want to write a custom wrapper. See [object.md § `jail`](caspian/built-in-classes/object.md#jail).
 - **Directory jails** are a different specialization — a directory object that won't tell you where it lives on disk. Same conceptual pattern (restrict what's exposed), different concrete class. See [filesystem.md](caspian/built-in-classes/filesystem.md).
 - **Inline construction idiom**: `%['puck.uno/sequence'].new.object.jail('next', 'peek')` — instantiate-and-wrap on one line, raw object never gets a name.
 

@@ -67,53 +67,53 @@ UUIDs.
   },
   "objects": {
     "1": {
-      "classes": {
-        "a01-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a01-variable": {"class": "puck.uno/variable",    "bucket": {"name": "shared", "frame": 0}, "sticky": true}
-      },
-      "bucket": {}
+      "bucket": {},
+      "stack":  {
+        "shadow":   {},
+        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "shared", "frame": 0}}
+      }
     },
     "2": {
-      "classes": {
-        "a02-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a02-hash":   {"class": "puck.uno/hash",        "bucket": {}}
-      },
-      "bucket": {"name": "3"}
+      "bucket": {"name": "3"},
+      "stack":  {
+        "shadow": {},
+        "hash":   {"class": "puck.uno/hash"}
+      }
     },
     "3": {
-      "classes": {
-        "a03-shadow":  {"class": "puck.uno/class/shadow",  "bucket": {}},
-        "a03-element": {"class": "puck.uno/hash_element", "bucket": {"parent": "2", "key": "name"}, "sticky": true}
-      },
-      "bucket": {}
+      "bucket": {},
+      "stack":  {
+        "shadow":  {},
+        "element": {"class": "puck.uno/hash_element", "sticky": true, "bucket": {"parent": "2", "key": "name"}}
+      }
     },
     "4": {
-      "classes": {
-        "a04-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a04-string": {"class": "puck.uno/string",      "bucket": {}}
-      },
-      "bucket": {"value": "Picard"}
+      "bucket": {"value": "Picard"},
+      "stack":  {
+        "shadow": {},
+        "string": {"class": "puck.uno/string"}
+      }
     },
     "5": {
-      "classes": {
-        "a05-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a05-variable": {"class": "puck.uno/variable",    "bucket": {"name": "alias",  "frame": 0}, "sticky": true}
-      },
-      "bucket": {}
+      "bucket": {},
+      "stack":  {
+        "shadow":   {},
+        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "alias", "frame": 0}}
+      }
     },
     "6": {
-      "classes": {
-        "a06-shadow":   {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a06-variable": {"class": "puck.uno/variable",    "bucket": {"name": "count",  "frame": 0}, "sticky": true}
-      },
-      "bucket": {}
+      "bucket": {},
+      "stack":  {
+        "shadow":   {},
+        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "count", "frame": 0}}
+      }
     },
     "7": {
-      "classes": {
-        "a07-shadow": {"class": "puck.uno/class/shadow", "bucket": {}},
-        "a07-number": {"class": "puck.uno/number",      "bucket": {}}
-      },
-      "bucket": {"value": 1}
+      "bucket": {"value": 1},
+      "stack":  {
+        "shadow": {},
+        "number": {"class": "puck.uno/number"}
+      }
     }
   },
   "pending_exceptions": [],
@@ -125,16 +125,18 @@ ID legend, to read the `objects` hash above:
 
 | ID | What it is | Where to look |
 |---|---|---|
-| `"1"` | variable `$shared` (`puck.uno/variable`) | classes `a01-variable`'s bucket carries name + frame |
+| `"1"` | variable `$shared` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
 | `"2"` | the hash `{name: 'Picard'}` (`puck.uno/hash`) | top-level bucket maps key → hash_element ID |
-| `"3"` | hash element for key `'name'` (`puck.uno/hash_element`) | classes `a03-element`'s bucket carries parent + key |
+| `"3"` | hash element for key `'name'` (`puck.uno/hash_element`) | the `element` platter's bucket carries parent + key |
 | `"4"` | the string `'Picard'` (`puck.uno/string`) | top-level bucket carries the value |
-| `"5"` | variable `$alias` (`puck.uno/variable`) | classes `a05-variable`'s bucket carries name + frame |
-| `"6"` | variable `$count` (`puck.uno/variable`) | classes `a06-variable`'s bucket carries name + frame |
+| `"5"` | variable `$alias` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
+| `"6"` | variable `$count` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
 | `"7"` | the number `1` (`puck.uno/number`) | top-level bucket carries the value |
 
-Object IDs are sequential from the global sequencer; platter IDs are
-UUIDs (shown abbreviated above).
+Object IDs are sequential from the global sequencer. Platter keys
+inside an object's `stack` are arbitrary short strings — `shadow` by
+convention, plus whatever identifies the other platter (`variable`,
+`hash`, etc.).
 
 The frame's `locals` doesn't store the bound objects directly — each
 entry is a **reference object ID** (`"1"`, `"5"`, `"6"`); resolve it
@@ -145,7 +147,7 @@ hash; it points at `"4"`, the `"Picard"` string object.
 
 **The two top-level hashes work together.** `references` holds bare
 pointers (id → id); `objects` holds the actual object records (id →
-{classes, bucket}). Resolve a name like `$shared` by reading the
+`{bucket, stack}`). Resolve a name like `$shared` by reading the
 frame's local (`"1"`) → look up its target in `references` (`"2"`) →
 look up the target's structure in `objects` (the hash record). Every
 piece of state the program can see is reachable through these two

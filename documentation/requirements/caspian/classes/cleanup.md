@@ -35,7 +35,7 @@ Class identity uses UNS strings on both sides — `class 'foo.com/character'` in
 
 The `inherits` keyword for single-parent inheritance is identical: Caspian uses `inherits 'parent.uns/x'` as a statement inside the class body; Mikobase uses `"inherits": "parent.uns/x"` as a field on the class definition object. Same word, same semantics.
 
-Field-constraint vocabulary is identical down to keyword names: `class`, `required`, `default`, `unique`, `min`, `max`, `integer_only`, `collapse`. A Caspian `field :name, class: :string, required: true, collapse: true` and a Mikobase `"name": {"class": "string", "required": true, "collapse": true}` are the same declaration in two surface forms.
+Field-constraint vocabulary is identical down to keyword names: `class`, `required`, `default`, `unique`, `min`, `max`, `integer_only`, `collapse`. A Caspian `field :name, class: :string, required: true, collapse: true` and a worldlet record entry `"name": {"class": "string", "required": true, "collapse": true}` (sitting inside that class's `fields` namespace) are the same declaration in two surface forms.
 
 The six reserved pass-through fields (`vibecode`, `comment`, `misc`, `corporate`, plus `class` and `bucket`) are defined at the ecoverse level and apply to both sides identically — see [standard-fields.md](../../ecoverse/standard-fields.md).
 
@@ -43,15 +43,13 @@ The six reserved pass-through fields (`vibecode`, `comment`, `misc`, `corporate`
 
 ### Syntax form: DSL block vs JSON dict
 
-Caspian uses an executable DSL inside `class 'foo.com/x' ... end` blocks. Mikobase uses a declarative JSON object: `{"classes": {"foo.com/x": {...}}}`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and accessors, which only one surface supports).
+Caspian uses an executable DSL inside `class 'foo.com/x' ... end` blocks. The worldlet/Mikobase form is a declarative JSON record: each class definition is its own entry in the worldlet's top-level `records` dict, using the whole-hash form — `class: "puck.uno/class"` plus sibling `name`/`inherits`/`fields`/`methods`/etc. — see [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and accessors, which only one surface supports).
 
 The question worth pinning down: is Mikobase's JSON form intended to be a serialization of what Caspian's DSL produces, or are they two independent surfaces? If the first, the field set must be a strict subset on the JSON side. If the second, drift is intentional and we should stop framing it as drift.
 
 ### Methods inside class definitions
 
-Caspian permits `function &name` and `remote function &name` inside the class body. Mikobase's JSON schema has no method slot at all. A Caspian-declared class with methods cannot be losslessly serialized into the Mikobase schema.
-
-This is the largest single drift. It is the natural consequence of "DSL is executable, JSON is data" but has not been called out as a deliberate split anywhere in the docs. Either Mikobase needs a method-storage convention (likely a `methods` dict pointing at Caspian source or CaspianJ trees), or the Caspian DSL needs an explicit "methods do not round-trip through Mikobase" caveat.
+**Resolved.** Both surfaces now express methods. Caspian permits `function &name` and `remote function &name` inside the class body. Class records in worldlets carry a `methods` namespace at the record top level, sibling to `fields` — keyed by method name, with each entry holding the method body (typically a Caspian source string under `body`) and optional flags like `remote: true`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for canonical examples. Methods round-trip cleanly between the two surfaces.
 
 ### Accessor and helper concepts
 
@@ -64,9 +62,7 @@ Mikobase has no analogue for either. All Mikobase state is schema-bound by defin
 
 ### Instance state access: `@` sigil vs bucket field
 
-Caspian programs access instance state with the `@foo` sigil (shorthand for `%bucket['foo']`). Mikobase records expose state through a `bucket` JSON field on the record. Both refer to "the bucket," but the same word is doing two different jobs: Caspian's `@`/`%bucket` is a language sigil for live instance state; Mikobase's `"bucket"` is a JSON field name on a stored record.
-
-This is not strictly a contradiction, but the shared term "bucket" with two different surface treatments is exactly the kind of thing that confuses readers. Worth either renaming one side or adding a short cross-reference note on each.
+Caspian programs access instance state with the `@foo` sigil (shorthand for `%bucket['foo']`). Worldlet/Mikobase records expose the same state through a top-level `bucket` JSON field on the record. Both refer to "the bucket" and they're the same bucket — the language sigil and the JSON field name are two surfaces on one concept. The canonical `{bucket, stack}` shape (see [ecoverse/objects/](../../ecoverse/objects/)) makes this explicit: the bucket is the object's data, accessible through `%bucket` in code and through the `bucket` field in JSON.
 
 ### Lifecycle hooks
 
@@ -84,11 +80,9 @@ Caspian: `join :a, :b` as a statement inside the class body. Mikobase: `"join": 
 
 Either Caspian needs a `unique :a, :b` companion statement, or Mikobase's `uniques` is a Mikobase-only feature that the docs should call out as such.
 
-### Multi-class composition (the class stack)
+### Multi-class composition (the stack)
 
-[class-definition.md § Inheritance](../../mikobase/class-definition.md) describes a runtime class stack on Mikobase records — a record can carry multiple classes layered on top of each other, distinct from schema-level `inherits`. The Caspian side documents the platter model (see [cheat-sheet.md § Object model](../../cheat-sheet.md#object-model)), which is the same idea under a different name and at a different layer.
-
-Two terms ("class stack" / "platter stack") naming what looks like the same concept is a drift even if the underlying mechanism is shared. One name should win.
+**Resolved.** Both surfaces now describe the same concept under the same name. An object's `stack` is an ordered hash of **platters**, each contributing a class to the object's identity. The canonical spec is [ecoverse/objects/](../../ecoverse/objects/); the same shape applies to Caspian's runtime objects, Mikobase records, and Puck wire objects. The old separate "class stack" and "platter stack" framings have collapsed into one model.
 
 ## Open questions
 

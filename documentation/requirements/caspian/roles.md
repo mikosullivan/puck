@@ -481,7 +481,7 @@ through it inherits that role**.
   through are owned by the faucet's role. HTTP is the worked example so
   far; other protocols follow the same shape.
 - **Puck.** See [puck.md](../puck/index.md) for the full puck model;
-  internally a puck holds getters, which hold faucets, with per-getter
+  internally a puck holds fetchers, which hold faucets, with per-fetcher
   roles.
 
 ---
@@ -733,7 +733,7 @@ model.
 ## Related Documents
 
 - [puck.md](../puck/index.md) — the puck object model, which builds on role
-  concepts (per-getter roles, version windows, etc.).
+  concepts (per-fetcher roles, version windows, etc.).
 - [ideas/catchable-alarms.md](../ideas/catchable-alarms.md) — preserved
   alternate design where alarms could be caught at role boundaries.
 - [ideas/string-provenance.md](../ideas/security/string-provenance.md) — deferred

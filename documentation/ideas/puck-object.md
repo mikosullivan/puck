@@ -7,7 +7,7 @@
 	"key_concepts": ["puck_object_vs_system_method", "chain_scoped_puck",
 		"historical_record"],
 	"status": "folded_into_canonical",
-	"note": "version-window-on-puck design has since moved off the puck to %chain.version_timespan; see versioning.md"
+	"note": "version-window-on-puck design has since moved off the puck to %puck.era; see versioning.md"
 }}
 ~~~
 
@@ -21,8 +21,8 @@
 >
 > **Update — the version window has since moved off the puck object.**
 > The current design puts the cutoff on `%chain` via a block-scoped
-> `%chain.version_timespan(upper:, lower:) do ... end` form (see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning.md#the-cutoff-in-chain)).
+> `%puck.era(upper:, lower:) do ... end` form (see
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain)).
 > The "Version Window" and "restrict do ... end" sections below are
 > preserved as the earlier design.
 
@@ -66,7 +66,7 @@ This is why `%puck` does not always return the same object.
 that's shorthand for whatever puck `%puck` returns at the moment —
 usually the engine-provided one. The model supports any number, and
 code that constructs alternate pucks for specific purposes
-(different cutoffs, different getter sets, different policies) can
+(different cutoffs, different fetcher sets, different policies) can
 do so.
 
 Different pucks can have different search paths, different
@@ -78,9 +78,9 @@ block.
 <a id="restrict-do-end"></a>
 ### `restrict do ... end`
 
-> **Superseded.** Replaced by `%chain.version_timespan(upper:, lower:)
+> **Superseded.** Replaced by `%puck.era(upper:, lower:)
 > do ... end` — see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning.md#the-cutoff-in-chain).
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
 > The block-scoped narrowing pattern survives; the verb and the
 > property location moved from the puck object to `%chain`.
 
@@ -118,10 +118,10 @@ Same shape as the other scoped-block primitives in the framework
 
 > **Superseded.** The version window no longer lives on the puck
 > object. Current design puts the cutoff on `%chain` as a
-> block-scoped `%chain.version_timespan(upper:, lower:) do ... end`
+> block-scoped `%puck.era(upper:, lower:) do ... end`
 > form — see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning.md#the-cutoff-in-chain).
-> The technical observations about lookup mechanics (multi-getter
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
+> The technical observations about lookup mechanics (multi-fetcher
 > walking under bounds, tie-breaking, etc.) still apply; only the
 > property location and verbs have changed.
 
@@ -209,23 +209,23 @@ Lookup semantics:
 - If no version exists in the allowed span, lookup behaves as if
   the UNS isn't there (returns null-flavored `not_found`).
 
-<a id="implication-for-getter-walking"></a>
-### Implication for getter walking
+<a id="implication-for-fetcher-walking"></a>
+### Implication for fetcher walking
 
 The version window changes the lookup mechanic. **The puck may need
-to consult all its getters to find the latest version within bounds**,
-rather than short-circuiting on first hit. Each getter reports its
+to consult all its fetchers to find the latest version within bounds**,
+rather than short-circuiting on first hit. Each fetcher reports its
 latest-within-window for the UNS; the puck returns the latest of
 those responses.
 
 This is materially different from "first hit wins" — a later-in-order
-getter that holds a newer version overrides an earlier getter that
-holds an older one. Order of getters in the puck matters less for
+fetcher that holds a newer version overrides an earlier fetcher that
+holds an older one. Order of fetchers in the puck matters less for
 priority; the window decides what's returned.
 
-**Tie-breaking** when two getters return versions with the same
+**Tie-breaking** when two fetchers return versions with the same
 timestamp: pick the first. Same UNS at the same timestamp means
-the same object — if two getters returned different content at
+the same object — if two fetchers returned different content at
 the same timestamp, something is broken (corruption,
 misconfiguration), but the normal case is that they agree, so
 order-based first-wins is fine.
@@ -235,19 +235,19 @@ order-based first-wins is fine.
 <a id="what-a-puck-does"></a>
 ## What a Puck Does
 
-A puck **holds one or more getters**, each representing a logical
+A puck **holds one or more fetchers**, each representing a logical
 source for objects (e.g., the `foo.com/*` namespace, a corporate
 internal registry, a local-only namespace, etc.). The puck is the
-lookup orchestrator; the getters are the per-source units.
+lookup orchestrator; the fetchers are the per-source units.
 
-Each getter may internally use one or more **faucets** to do the
+Each fetcher may internally use one or more **faucets** to do the
 actual fetching:
 
-- A typical remote-namespace getter has a **download faucet** (HTTPS
+- A typical remote-namespace fetcher has a **download faucet** (HTTPS
   to the source) plus a **cache faucet** (local cache directory).
   First-time lookups go through download (and populate the cache);
   subsequent lookups hit the cache.
-- A getter that talks to a local resource (an internal network
+- A fetcher that talks to a local resource (an internal network
   service, a database, a local file tree) might have just one
   faucet.
 
@@ -258,10 +258,10 @@ A puck exposes a **lookup method** as its public API. (Working name
 TBD — likely `.lookup($uns)` or similar; the actual name will be
 settled when the class is spec'd in detail.)
 
-**Base implementation:** the puck walks its getters, asking each
+**Base implementation:** the puck walks its fetchers, asking each
 one for the latest version of the UNS that falls within the puck's
 [lower, upper] window. The puck then returns the latest result
-across all getters' responses. If no getter has any version of the
+across all fetchers' responses. If no fetcher has any version of the
 UNS within the window, lookup returns a null with the flavor
 `puck.uno/null/flavor/not_found` (per the HTTP-style null-flavor
 scheme in [nulls.md](../requirements/caspian/built-in-classes/nulls.md)). Callers
@@ -269,7 +269,7 @@ can inspect `flavor.code` to tell the difference between "lookup
 didn't match" and "the registered value is intentionally null."
 
 (See the **Version Window** section above for window semantics. Note
-that the puck may consult all getters rather than short-circuiting
+that the puck may consult all fetchers rather than short-circuiting
 on first hit — finding the latest requires checking each.)
 
 <a id="the-explicit-null-rule-for-sources"></a>
@@ -279,7 +279,7 @@ If a puck faucet reaches a UNS where the registered value is
 intentionally null, **the source must mark that null as
 `puck.uno/null/flavor/explicit`** (code 200). Otherwise the puck
 treats an unflavored null as "lookup didn't find this UNS" and
-falls through to the next getter.
+falls through to the next fetcher.
 
 In other words: at the puck-lookup layer, **unflavored null means
 "no result"**, and `explicit` is how a source positively affirms
@@ -296,36 +296,36 @@ intentionally simple. Engines or developers needing UNS-prefix
 matching, regex routing, dispatch tables, or fallback policies can
 subclass puck and override the lookup method.
 
-<a id="roles-per-getter-not-per-faucet"></a>
-### Roles: per-getter, not per-faucet
+<a id="roles-per-fetcher-not-per-faucet"></a>
+### Roles: per-fetcher, not per-faucet
 
-**Each getter has its own role.** Objects served through a getter
-get that getter's role. Different getters in the same puck produce
+**Each fetcher has its own role.** Objects served through a fetcher
+get that fetcher's role. Different fetchers in the same puck produce
 differently-tagged objects, because they're genuinely different
 logical sources.
 
-**Faucets inside a getter share the getter's role.** This is the key
+**Faucets inside a fetcher share the fetcher's role.** This is the key
 property that resolves the download-vs-cache problem. Caspian caches
 remote objects on demand — first-time fetches go through download,
 subsequent fetches through cache. Both are faucets inside the same
-getter, both produce objects with the getter's role. The same UNS
+fetcher, both produce objects with the fetcher's role. The same UNS
 hands back identically-tagged objects regardless of cache state.
 
 ```
 Puck
-├─ Getter for foo.com/*       (role: foo-com-getter)
+├─ Getter for foo.com/*       (role: foo-com-fetcher)
 │  ├─ HTTPS download faucet
 │  └─ Cache faucet
-├─ Getter for bar.com/*       (role: bar-com-getter)
+├─ Getter for bar.com/*       (role: bar-com-fetcher)
 │  ├─ HTTPS download faucet
 │  └─ Cache faucet
-└─ Getter for internal/*      (role: internal-getter)
+└─ Getter for internal/*      (role: internal-fetcher)
    └─ Internal-network faucet
 ```
 
-The engine sets up the puck with its getters. Each getter gets its
+The engine sets up the puck with its fetchers. Each fetcher gets its
 own role assigned by the engine at creation time. Objects flow
-through getters and inherit the getter's role; cache state never
+through fetchers and inherit the fetcher's role; cache state never
 affects role assignment.
 
 ---
@@ -367,8 +367,8 @@ time). The runtime trusts the cache implicitly — "I put this here, so
 it came from where I downloaded it from." Simple, matches how
 npm/pip/gem/Cargo work.
 
-**Objects pulled from the cache get the getter's role** (per the
-per-getter rule). Cache hits and cache misses within the same getter
+**Objects pulled from the cache get the fetcher's role** (per the
+per-fetcher rule). Cache hits and cache misses within the same fetcher
 produce identically-tagged objects.
 
 **Limitation:** the cache is a single trust anchor. An attacker with
@@ -435,12 +435,13 @@ the result and the checks.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
   [roles.md](../requirements/caspian/roles.md).)
-- **Where the version cutoff lives.** Resolved twice: first onto the
-  puck object (see "Version Window" section above), then off it again
-  onto `%chain` as a block-scoped `version_timespan` — see
-  [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning.md#the-cutoff-in-chain).
-- **Granularity of puck-source roles** — one role per **getter**
-  inside the puck. Faucets *inside* a getter (download + cache)
-  share the getter's role to keep cache state from changing the
+- **Where the version cutoff lives.** Resolved three times: first onto
+  the puck object (see "Version Window" section above), then off it
+  onto `%chain` as a block-scoped `version_timespan`, then back onto
+  `%puck` as `%puck.era` — see
+  [caspian/versioning § Setting the cutoff with %puck.era](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
+- **Granularity of puck-source roles** — one role per **fetcher**
+  inside the puck. Faucets *inside* a fetcher (download + cache)
+  share the fetcher's role to keep cache state from changing the
   tag. Aligns with the broader granularity question in
   [roles.md](../requirements/caspian/roles.md).

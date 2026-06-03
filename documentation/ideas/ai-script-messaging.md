@@ -6,7 +6,7 @@
     "started": "2026-05-17",
     "subsystem": "ai_script_messaging",
     "purpose": "ais_authoring_ksj_directly_and_sending_executable_messages_to_other_ais",
-    "related_docs": ["mikobase/AI2AI.md",
+    "related_docs": ["mikobase/puckai.md",
                       "caspian/roles.md",
                       "caspian/blockchain.md",
                       "caspian/caspianj.md"],
@@ -88,7 +88,7 @@ the recipient's sandbox with the recipient's role choices.
 <a id="relationship-to-existing-pieces"></a>
 ## Relationship to existing pieces
 
-- **[AI2AI.md](../requirements/mikobase/AI2AI/index.md)** —
+- **[Puckai conversation](../requirements/ecoverse/puckai/conversation/)** —
   already defines the temporal-worldlet format for AI conversations.
   That's the conversation *log* angle. Script-messages are a peer
   concept: not a log, but an exchange of executable artifacts.
@@ -119,12 +119,12 @@ the recipient's sandbox with the recipient's role choices.
   recipient figures out from context what to grant?
 - **Reply mechanism.** Does the recipient send a result back? A
   separate script? A worldlet? Or does the conversation happen
-  through the existing AI2AI mikobase?
+  through the existing Puckai mikobase?
 - **Convention on CaspianJ-vs-source authoring**: should the spec be
   updated to say "for AI-to-AI exchange, CaspianJ is the canonical
   authored form" or leave it as a convention each pair of agents
   adopts?
-- **Relationship to** [AI2AI.md](../requirements/mikobase/AI2AI/index.md) — should this be
+- **Relationship to** [Puckai conversation](../requirements/ecoverse/puckai/conversation/) — should this be
   the same format with a flag, a peer format, or completely
   separate?
 

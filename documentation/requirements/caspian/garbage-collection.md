@@ -86,9 +86,15 @@ runs the `on_close` handlers immediately.
 ### Multicast across platters
 
 `on_close` is **multicast dispatch**, in contrast to normal method
-calls which are unicast (first match wins). When an object collects,
-the engine walks every platter in its class stack and fires *every*
-`on_close` handler it finds — not just the first one.
+calls which are unicast (first match wins). For a typical object
+(shadow plus one primary class platter), the multicast walk is short
+— it finds the one `on_close` defined on the primary class and runs
+it. The reason `on_close` is multicast at all is the less common case:
+objects that have picked up additional platters via `.classes.add`
+(mix-ins like Trivet, marker classes like `puck.uno/class/redact`,
+warning-carrying platters, etc.). Each of those platters may also
+define `on_close`, and all of them need to run on collection — not
+just the topmost match.
 
 The walk:
 
@@ -96,7 +102,7 @@ The walk:
    original class last).
 2. For each platter, walk its class's `inherits` chain with a
    visited set (same dedup discipline as normal dispatch — see
-   [base-class-use.md § Method resolution](../ideas/base-class-use.md#method-resolution)).
+   [ecoverse/objects/method-resolution.md](../ecoverse/objects/method-resolution.md)).
 3. For each distinct class encountered, if the class defines
    `on_close`, invoke it.
 
@@ -117,8 +123,12 @@ designer; if that turns out to be too generous in aggregate, a
 total cap can be layered on later.
 
 ```caspian
-$foo.object.classes   # has platters for myapp.com/connection,
-                      # logging.uno/audit, and the base class
+# Typical object: shadow + one primary class — one on_close fires.
+$bar.object.classes   # [shadow, myapp.com/connection]
+
+# Less common: an object with extra platters from .classes.add — all
+# defined on_close handlers fire in top-to-bottom order.
+$foo.object.classes   # [shadow, myapp.com/connection, logging.uno/audit]
 
 # When $foo collects:
 #   1. connection's on_close fires first (top of stack) → 2ms budget

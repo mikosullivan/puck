@@ -45,7 +45,7 @@ focused:
      databases. Same SQLite backend as file-backed; only the
      storage target differs. Q0 queries are just SQL in both cases.
   3. **Worldlet** — in memory native Mikobase. Built for very
-     short-lived workloads. See [AI2AI](AI2AI/index.md) for an example.
+     short-lived workloads. See [Puckai conversation](../ecoverse/puckai/conversation/) for an example.
 
   Mikobase supports multiple engines as pluggable backends;
   these three are what ships in v1. Other backends (Postgres,
@@ -126,7 +126,7 @@ they connect to the mikobase and interact with whatever is already there.
 | `puck.uno/mikobase` | Abstract base class (`abstract true`); full Q0 interface, locking, transactions |
 | `puck.uno/mikobase/memory` | SQLite in-memory database (`:memory:`) |
 | `puck.uno/mikobase/sqlite` | SQLite file-backed database |
-| `puck.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (AI2AI conversations, scratch sessions) where import/export cost would dominate |
+| `puck.uno/mikobase/worldlet` | Worldlet-backed engine — operates directly on the worldlet JSON structure; no SQLite import/export step; built for very short-lived workloads (Puckai conversations, scratch sessions) where import/export cost would dominate |
 | `puck.uno/mikobase/http` | HTTP server that exposes a mikobase over the network |
 
 The two SQLite implementations run on the same backend — the only difference is
@@ -290,8 +290,9 @@ Content-Type: application/json
             "record":     "e1b2c3d4-0001-0001-0001-000000000001",
             "updated_at": "2026-05-03T12:00:00.000Z",
             "bucket":     {"value": 42.7},
-            "classes": {
-                "<platter-uuid>": {"class": "foo.com/reading", "bucket": {}}
+            "stack": {
+                "shadow":  {},
+                "reading": {"class": "foo.com/reading"}
             }
         }
     }
@@ -788,7 +789,7 @@ Worldlets are deterministic and portable across machines.
 The recipient gets the object structure, the data, and the behavior in one
 file. No setup required.
 
-**AI conversation captures** — see [AI2AI.md](AI2AI/index.md).
+**AI conversation captures** — see [Puckai conversation](../ecoverse/puckai/conversation/).
 
 **Portable computation** — send a worldlet to a remote system, run its
 logic there, and get a result back. The computation travels with its data.

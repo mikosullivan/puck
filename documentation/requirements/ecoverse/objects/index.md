@@ -9,7 +9,7 @@
 }}
 ~~~
 
-Every value in the Puck ecoverse — every record in Mikobase, every value handled by Caspian, every payload in a Puck protocol message — follows one universal object structure. This directory defines that structure.
+Every value in the Puck ecoverse follows one universal object structure. This directory defines that structure.
 
 The shape is intentionally minimal: two fields, one for data and one for identity. The `bucket` holds whatever the object actually contains (the hex value of a color, the name of an officer, the bytes of a session token). The `stack` carries the object's class identity and any other meta-information the engine needs — class membership, sticky position markers, lifecycle handlers, anything that travels with the value rather than its data.
 

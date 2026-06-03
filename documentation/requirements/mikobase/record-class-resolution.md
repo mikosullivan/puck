@@ -6,7 +6,7 @@
 	"role": "specifies how the class of every value inside a record's bucket is determined; covers the coexisting mechanisms (default hash, schema-declared field class, reserved inline class key, custom_classes UUID marker) and the precedence rules when more than one signal is present",
 	"status": "active_design; mechanisms_settled_individually; resolution_rules_when_they_overlap_pending",
 	"audience": "Miko and Claude collaborating on the design",
-	"related": ["mikobase/worldlets/index.md", "ecoverse/standard-fields.md",
+	"related": ["ecoverse/worldlets/index.md", "ecoverse/standard-fields.md",
 		"mikobase/class-definition.md"]
 }}
 ~~~

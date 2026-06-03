@@ -1,6 +1,6 @@
 # Class definitions
 
-> **Worldlet-envelope examples below are stale.** Class definitions now live as records inside `records` (whole-hash form, `class: "puck.uno/class"` plus sibling `name`, `inherits`, `fields`, `methods`, `uniques`), not under a dict-keyed `classes` section of the worldlet envelope. See [worldlets/index.md § Class definitions](../../mikobase/worldlets/index.md#class-definitions) and [worldlets/worldlet.json](../../mikobase/worldlets/worldlet.json) for the current form. The Caspian DSL side of each section below is still current; only the JSON envelope shape has changed.
+> **Worldlet-envelope examples below are stale.** Class definitions now live as records inside `records` (whole-hash form, `class: "puck.uno/class"` plus sibling `name`, `inherits`, `fields`, `methods`, `uniques`), not under a dict-keyed `classes` section of the worldlet envelope. See [worldlets/index.md § Class definitions](../../ecoverse/worldlets/index.md#class-definitions) and [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) for the current form. The Caspian DSL side of each section below is still current; only the JSON envelope shape has changed.
 
 ~~~json
 {"vibecode": {
@@ -12,78 +12,99 @@
 	"key_concepts": ["caspian_class_dsl", "caspianj_class_form", "mikobase_class_schema",
 		"worldlet_envelope", "shared_class_definition_structure"],
 	"related": ["caspian/index.md#classes", "caspian/caspianj.md",
-		"mikobase/class-definition.md", "mikobase/worldlets/index.md",
+		"mikobase/class-definition.md", "ecoverse/worldlets/index.md",
 		"ecoverse/standard-fields.md"]
 }}
 ~~~
 
 This doc shows how a class definition looks on each of the surfaces in the ecoverse. The goal is a single place where any Caspian DSL construct can be matched to its CaspianJ / Mikobase JSON equivalent.
 
-## Three surfaces, one structure
+## Two surfaces, one structure
 
-A class definition has three valid surface forms:
+A class definition has two valid surface forms:
 
 - **Caspian DSL** — what a human writes in a `.casp` file
-- **CaspianJ** — the JSON tree the engine consumes after transpilation
-- **Mikobase JSON** — the schema stored in a Mikobase record's `bucket`
+- **JSON** — the shared representation used both by the engine (CaspianJ, after transpilation) and stored in a Mikobase record's bucket. CaspianJ and the Mikobase JSON form are **identical** — one canonical shape that both consume; nothing distinguishes them other than where they happen to live at the moment.
 
-The CaspianJ form for a class definition is identical to the Mikobase JSON form. There is one canonical structure; the DSL is one surface, the shared JSON is the other. Anything one surface expresses, the other must too.
+The DSL is one surface, the JSON is the other. Anything one expresses, the other must too.
 
 ## The worldlet envelope
 
-A class definition's natural home in JSON is the `classes` section of a **worldlet** — the portable serialization of a small mikobase. Every JSON example in this document is shown inside a worldlet envelope so the context is always explicit.
+A class definition's natural home in JSON is as a **record inside a worldlet** — see [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical example. Class definitions use the **whole-hash form** that `puck.uno/class` opts into: `class: "puck.uno/class"` at the record's top level alongside the definition's properties (`name`, `inherits`, `fields`, `methods`, etc.), rather than wrapping them in a `bucket`.
 
-The minimal worldlet wrapping one class:
+A worldlet wrapping one class:
+
+<a class="copy" href="#">copy</a>
 
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {<class-definition>}
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class": "puck.uno/class",
+            "name":  "foo.com/character"
+        }
     }
 }
 ```
 
-`format` and `format_version` are conventional but optional. `classes` is a dict keyed by UNS class name; the value is the class definition. A full worldlet may also carry `meta`, `properties`, `records`, `files`, and `file_chunks` — see [worldlets/index.md](../../mikobase/worldlets/index.md) for the complete spec. The examples below show only the parts of the worldlet that are relevant to the construct being introduced.
+Notes:
+
+- Records live under a top-level `records` hash, keyed by arbitrary string. UUIDs are conventional; short letters like `"a"` work in worked examples.
+- The class's name (UNS) is the `name` field at the record's top level. The record's storage key (`"a"` above) is unrelated to the class's name — opaque from the outside.
+- Other class-definition properties — `description`, `inherits`, `fields`, `methods`, `uniques` — sit alongside `name` and `class` at the record top level. This is the **whole-hash form**: the class's content lives at the top level rather than under a `bucket` key.
+- Whole-hash form is a class-level opt-in. Built-in classes like `puck.uno/class` use it because their content reads better flat. Most user classes do NOT opt in; their instances ride the regular `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
+
+A full worldlet may also carry `files`, `file_chunks`, etc. — see [worldlets/index.md](../../ecoverse/worldlets/index.md) for the complete spec.
+
+(The construct examples below have not been fully ported — see the stale-doc banner at the top of this page. The Caspian DSL forms throughout are still current; only the JSON envelope shape has changed.)
 
 ## A class at a glance
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'starfleet.com/officer'
 	inherits 'starfleet.com/person'
+	field 'name',      class: :string, required: true, get: true, set: true
+	field 'nickname',  class: :string, get: true, set: true
+	field 'rank',      class: :string, required: true, get: true, set: true
+	field 'serial',    class: :string, required: true, unique: true, get: true, set: true
+	field 'starship',  class: 'puck.uno/reference', allowed: 'starfleet.com/ship', get: true, set: true
 
-	field :name,     class: :string, required: true
-	field :rank,     class: :string, required: true
-	field :serial,   class: :string, required: true, unique: true
-	field :starship, class: 'puck.uno/reference', allowed_class: 'starfleet.com/ship'
-
-	accessor :nickname
-
-	function &greet(name:)
-		'Hello, ' + $name
+	method &greet($casual:{required:false})
+		puts 'Hello, ' + if $casual and @nickname
+			@nickname
+		else
+			#bucket['name']
+		end
 	end
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "starfleet.com/officer": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":    "puck.uno/class",
+            "name":     "starfleet.com/officer",
             "inherits": "starfleet.com/person",
             "fields": {
-                "name":     {"class": "string", "required": true},
-                "rank":     {"class": "string", "required": true},
-                "serial":   {"class": "string", "required": true, "unique": true},
-                "starship": {"class": "puck.uno/reference", "allowed_class": "starfleet.com/ship"}
+                "name":     {"class": "string", "required": true,                   "get": true, "set": true},
+                "nickname": {"class": "string",                                     "get": true, "set": true},
+                "rank":     {"class": "string", "required": true,                   "get": true, "set": true},
+                "serial":   {"class": "string", "required": true, "unique": true,   "get": true, "set": true},
+                "starship": {"class": "puck.uno/reference", "allowed": "starfleet.com/ship", "get": true, "set": true}
             },
-
             "methods": {
                 "greet": {
-                    "class":   "function",
-                    "caspian": "some CaspJ code"
+                    "params": {
+                        "casual": {}
+                    },
+                    "body": "puts 'Hello, ' + (if $casual and @nickname; @nickname; else; #bucket['name']; end)"
                 }
             }
         }
@@ -91,7 +112,9 @@ end
 }
 ```
 
-The shared JSON above does not include `accessor :nickname` — accessors are off-schema instance state and do not yet have a settled JSON form. See [Open questions](#open-questions) below.
+The record uses the **whole-hash form** that `puck.uno/class` (the metaclass for class definitions) opts into: rather than wrapping the definition's properties in a `bucket`, they sit at the record's top level alongside `class`. It's a shorthand specifically for class-definition records — instance records of normal classes use the explicit `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
+
+Field-by-field: `class` declares the field's type (string, a UNS reference, etc.); `required`, `unique`, `allowed` are constraints; `get` and `set` declare auto-generated accessor methods. Method-level: `params` is a hash of param names to option-hashes (empty options hash here just means "all defaults"); `body` carries the Caspian source string (or, for some classes, a CaspJ tree — both forms are valid).
 
 ## Constructs
 
@@ -99,25 +122,33 @@ What follows is the construct-by-construct catalog. Each section shows the Caspi
 
 ### Class identity
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'foo.com/character'
 	...
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {<class-definition>}
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class": "puck.uno/class",
+            "name":  "foo.com/character"
+        }
     }
 }
 ```
 
-The class name is a UNS string. In the worldlet JSON, the name comes from the dict key in `classes` — never from a `name` field inside the class definition. If a `name` field is present, it is ignored. See [class-definition.md § Class Name](../../mikobase/class-definition.md#class-name).
+The class name is a UNS string, stored on the record's top-level `name` field (alongside `class: "puck.uno/class"`). The record's own key in `records` (here `"a"`) is an arbitrary short identifier, not the class name. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
 
 ### Inheritance
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'foo.com/character'
@@ -125,12 +156,15 @@ class 'foo.com/character'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":    "puck.uno/class",
+            "name":     "foo.com/character",
             "inherits": "foo.com/person"
         }
     }
@@ -141,18 +175,23 @@ Single parent. Inheritance is always explicit; no path-implied inheritance.
 
 ### Abstract
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'puck.uno/mikobase'
 	abstract true
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "puck.uno/mikobase": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":    "puck.uno/class",
+            "name":     "puck.uno/mikobase",
             "abstract": true
         }
     }
@@ -163,6 +202,8 @@ Direct instantiation raises. Subclasses can be instantiated normally.
 
 ### Fields
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'foo.com/character'
 	field :name,      class: :string, required: true, collapse: true
@@ -171,12 +212,15 @@ class 'foo.com/character'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":  "puck.uno/class",
+            "name":   "foo.com/character",
             "fields": {
                 "name":      {"class": "string", "required": true, "collapse": true},
                 "age":       {"class": "number", "min": 0, "integer_only": true},
@@ -187,17 +231,19 @@ end
 }
 ```
 
-Built-in type names are bare strings — `:string` and `'string'` are equivalent in the DSL. UNS names use the quoted form. Field-name conventions and the full constraint catalog: [class-definition.md § Fields](../../mikobase/class-definition.md#fields) and the type-specific settings tables that follow it.
+Built-in type names are bare strings — `:string` and `'string'` are equivalent in the DSL. UNS names use the quoted form. For the field-shape conventions and per-type constraint settings, see [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) — records `a`-`f` show fields with their constraints in use. A consolidated constraint catalog hasn't been written yet for the new spec; until it lands, the by-example reference is the source.
 
 ### Inline vs named field types
 
 Inline field-type definitions (constraints written directly in the field declaration) are only valid for the basic types (`string`, `number`, `boolean`, `url`, `timestamp`, `hash`, `array`). UNS-named custom classes are referenced by name only — their structure lives in a separate class definition elsewhere in the worldlet.
 
-The exception is `hash`, which can carry inline `fields`, an `of` element-type, and `default` field settings. Full rules: [class-definition.md § Inline vs. Named Field Types](../../mikobase/class-definition.md#inline-vs-named-field-types).
+The exception is `hash`, which can carry inline `fields`, an `of` element-type, and `default` field settings. See [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) record `a` for the canonical hash-with-fields example.
 
 ### Field settings
 
-The full enumeration of common, type-specific, reference, and array/hash settings lives in [class-definition.md § Common Field Settings](../../mikobase/class-definition.md#common-field-settings) and the sections that follow. The Caspian DSL accepts the same keys as keyword arguments to `field`:
+For the common, type-specific, reference, and array/hash settings, see [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. The Caspian DSL accepts the same keys as keyword arguments to `field`:
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'foo.com/show'
@@ -208,12 +254,15 @@ class 'foo.com/show'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/show": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":  "puck.uno/class",
+            "name":   "foo.com/show",
             "fields": {
                 "slug":   {"class": "string", "required": true, "unique": true, "min_length": 1},
                 "rating": {"class": "number", "gte": 0, "lte": 10, "integer_only": true},
@@ -227,6 +276,8 @@ end
 
 ### Reference fields
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'foo.com/character'
 	field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
@@ -235,12 +286,15 @@ class 'foo.com/character'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":  "puck.uno/class",
+            "name":   "foo.com/character",
             "fields": {
                 "homeworld": {"class": "puck.uno/reference",
                               "allowed_class": "foo.com/planet"},
@@ -256,18 +310,23 @@ end
 
 ### Single-field unique constraints
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'foo.com/officer'
 	field :serial, class: :string, required: true, unique: true
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/officer": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":  "puck.uno/class",
+            "name":   "foo.com/officer",
             "fields": {
                 "serial": {"class": "string", "required": true, "unique": true}
             }
@@ -280,13 +339,16 @@ Null values are excluded from the uniqueness check — two records may both have
 
 ### Multi-field unique constraints
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "borg.com/appearance": {
-            "fields": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":   "puck.uno/class",
+            "name":    "borg.com/appearance",
+            "fields":  {
                 "person":  {"class": "puck.uno/reference", "required": true},
                 "episode": {"class": "puck.uno/reference", "required": true}
             },
@@ -298,9 +360,11 @@ Null values are excluded from the uniqueness check — two records may both have
 }
 ```
 
-The shared JSON form is a class-level `uniques` array — see [class-definition.md § Unique Constraints](../../mikobase/class-definition.md#unique-constraints). The Caspian DSL has no construct for multi-field unique today; see [Open questions](#open-questions) below.
+The shared JSON form is a class-level `uniques` array on the class definition. The Caspian DSL has no construct for multi-field unique today; see [Open questions](#open-questions) below.
 
 ### Joins
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'foo.com/appearance'
@@ -311,27 +375,32 @@ class 'foo.com/appearance'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/appearance": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":  "puck.uno/class",
+            "name":   "foo.com/appearance",
             "fields": {
                 "person":  {"class": "puck.uno/reference", "allowed_class": "foo.com/person"},
                 "episode": {"class": "puck.uno/reference", "allowed_class": "foo.com/episode"}
             },
-            "join": ["person", "episode"]
+            "join":   ["person", "episode"]
         }
     }
 }
 ```
 
-`join` is a class-level shorthand for "required + unique-in-combination + immutable" on each listed field. See [class-definition.md § Joins](../../mikobase/class-definition.md#joins).
+`join` is a class-level shorthand for "required + unique-in-combination + immutable" on each listed field.
 
 ### Methods
 
 Methods live in a `methods` namespace, sibling to `fields` — not inside `fields`. Each entry is keyed by method name and carries the method's class (`"function"`) and body.
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'foo.com/character'
@@ -344,21 +413,22 @@ class 'foo.com/character'
 end
 ~~~
 
+<a class="copy" href="#">copy</a>
+
 ```json
 {
-    "format":         "worldlet",
-    "format_version": "1.0",
-    "classes": {
-        "foo.com/character": {
+    "format": "worldlet/1.0",
+    "records": {
+        "a": {
+            "class":   "puck.uno/class",
+            "name":    "foo.com/character",
             "methods": {
                 "greet": {
-                    "class":   "function",
-                    "caspian": "some CaspJ code"
+                    "body": "'Hello, ' + $name"
                 },
                 "save": {
-                    "class":   "function",
-                    "remote":  true,
-                    "caspian": "some CaspJ code"
+                    "remote": true,
+                    "body":   "some CaspJ code"
                 }
             }
         }
@@ -366,12 +436,9 @@ end
 }
 ```
 
-**Conflict to resolve.** The current [worldlets/index.md spec](../../mikobase/worldlets/index.md#classes) stores methods inside `fields` with `"class": "function"`, not in a separate `methods` namespace. That doc has drifted from the intent and needs updating to match this shape. Until it is updated, do not generate worldlets from the worldlet doc's example — it will produce invalid output.
+Methods live in a `methods` namespace at the class-record's top level, sibling to `fields`. Each entry is keyed by method name; the body lives under `body`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for the canonical method-shape examples (including the nested-method namespace and `params` blocks).
 
-**Two further details still to pin down:**
-
-- The `remote function` body keeps the same `"class": "function"` and adds `"remote": true` as a sibling flag, as sketched above. This has not been explicitly confirmed.
-- The body key is named `"caspian"`, but the value's intended content is CaspJ JSON — see [Open questions](#open-questions).
+The `remote function` body adds `remote: true` as a sibling flag on the method entry.
 
 ### Reserved pass-through fields
 
@@ -387,6 +454,8 @@ The following Caspian DSL constructs do not have a settled worldlet / shared JSO
 
 `accessor` declares `%bucket`-backed instance state that lives on the object but is *not* part of the persisted schema. See [caspian/index.md § accessor](../index.md#accessor).
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class 'foo.com/character'
 	accessor @nickname              # private, no external access
@@ -400,6 +469,8 @@ No worldlet JSON shape exists today. A natural fit would be a separate `accessor
 ### Helpers
 
 `helper` creates a lazily-initialized helper object namespaced off the parent. See [caspian/index.md § Helpers](../index.md#helpers).
+
+<a class="copy" href="#">copy</a>
 
 ~~~caspian
 class 'foo.com/character'
@@ -424,6 +495,8 @@ Neither is declared inside a class definition today — both are registered dyna
 
 ## Anonymous classes
 
+<a class="copy" href="#">copy</a>
+
 ~~~caspian
 class
 	inherits 'puck.uno/robinson/page'
@@ -444,7 +517,7 @@ These are the decisions that need to be made before the shared JSON form is full
 
 ### Reconciling the worldlet doc with the methods namespace
 
-[worldlets/index.md § classes](../../mikobase/worldlets/index.md#classes) currently shows methods stored *inside* `fields` with `"class": "function"`. That shape is wrong — methods belong in a separate `methods` namespace, sibling to `fields`. The worldlet doc needs to be updated to match, and its example classes (`starfleet.com/person`, `starfleet.com/officer`) need their methods moved out of `fields`.
+[worldlets/index.md § classes](../../ecoverse/worldlets/index.md#classes) currently shows methods stored *inside* `fields` with `"class": "function"`. That shape is wrong — methods belong in a separate `methods` namespace, sibling to `fields`. The worldlet doc needs to be updated to match, and its example classes (`starfleet.com/person`, `starfleet.com/officer`) need their methods moved out of `fields`.
 
 ### Body key naming: `"caspian"` vs `"caspj"`
 
@@ -472,18 +545,12 @@ The worldlet JSON has `"uniques": [["a", "b"]]` for non-join multi-field uniquen
 
 ### Anonymous classes in a worldlet
 
-If anonymous classes need to serialize, where do they live in the worldlet's `classes` dict? Synthesized UUID key? A separate `anonymous_classes` array?
+If anonymous classes need to serialize, where do they live? A synthesized key under `records`, or a separate channel? Per the new model, every record needs a key in the worldlet's top-level `records` dict — anonymous classes would need a key-generation rule.
 
-### "Class stack" vs "platter stack" — pick a name
+## See also
 
-Three docs now use two terms for the same mechanism:
-
-- [class-definition.md § Inheritance](../../mikobase/class-definition.md#inheritance) — "class stack"
-- [worldlets/index.md § records](../../mikobase/worldlets/index.md#records) — "platter stack"
-- [cheat-sheet.md § Object model](../../cheat-sheet.md#object-model) — "platter stack"
-
-Two-to-one in favor of "platter stack" if that breaks the tie, but the call hasn't been made. One name should win and the other should be a redirect or be removed.
+- [implements?](implements.md) — class-level structural API conformance check (`$class.implements?($other_class)`). Runtime, structural, no separate interface concept. V1.0 in scope.
 
 ## What this doc is not
 
-Not the field-constraint reference — that lives in [class-definition.md](../../mikobase/class-definition.md). Not the DSL grammar reference — that lives in [caspian/index.md § Classes](../index.md#classes). Not the worldlet spec — that lives in [worldlets/index.md](../../mikobase/worldlets/index.md). This file is the bridge that shows how a single class definition looks across all of them.
+Not the field-constraint reference — that lives in [class-definition.md](../../mikobase/class-definition.md). Not the DSL grammar reference — that lives in [caspian/index.md § Classes](../index.md#classes). Not the worldlet spec — that lives in [worldlets/index.md](../../ecoverse/worldlets/index.md). This file is the bridge that shows how a single class definition looks across all of them.

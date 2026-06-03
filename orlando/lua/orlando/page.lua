@@ -787,25 +787,39 @@ local function add_head(html_tag, title)
     end)
 end
 
--- True if documentation/<rel>/<lastpart>.md exists — i.e., the dir has a
--- same-named index file we can link the breadcrumb segment to.
+-- True if documentation/<rel> is a directory that Orlando can serve at
+-- /documentation/<rel>/ — covers any of three ways a dir is navigable:
+--   1. index.md (the standard dir-index convention)
+--   2. same-named index file (legacy <rel>/<lastpart>.md convention)
+--   3. auto-generated directory listing (route.lua's fallback for dirs
+--      without an index file)
+-- Any actual directory hits one of these, so a plain dir-existence check
+-- is enough to decide the breadcrumb segment can be a link.
 local function has_dir_index(rel)
     if rel == "" then return false end
-    local last = rel:match("([^/]+)$")
-    if not last then return false end
-    local f = io.open("documentation/" .. rel .. "/" .. last .. ".md", "rb")
+    local f = io.open("documentation/" .. rel, "rb")
     if not f then return false end
     local _, err = f:read(1)
     f:close()
-    return err == nil
+    -- On Linux, opening a directory succeeds but reading one byte errors —
+    -- err ~= nil means it's a directory, err == nil means it's a regular file.
+    return err ~= nil
 end
 
 -- Map an fs md_path to the canonical URL Orlando serves it at.
--- README.md is served at /documentation/ (the docs entry); everything
--- else lives under /documentation/<path>.
+-- README.md is served at /documentation/ (the docs entry).
+-- <dir>/index.md (the dir-index convention) serves at /documentation/<dir>/.
+-- <dir>/<dir>.md (legacy same-named convention) serves at /documentation/<dir>/.
+-- Everything else serves at /documentation/<rel> (no trailing slash).
 local function md_path_to_url(md_path)
     if md_path == "README.md" then return "/documentation/" end
     local rel = md_path:gsub("^documentation/", ""):gsub("%.md$", "")
+    -- index.md convention.
+    local parent_idx = rel:match("^(.*)/index$")
+    if parent_idx then
+        return "/documentation/" .. parent_idx .. "/"
+    end
+    -- Same-named convention.
     local parent, name = rel:match("^(.*)/([^/]+)$")
     if parent and name then
         local parent_last = parent:match("([^/]+)$") or parent

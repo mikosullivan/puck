@@ -111,9 +111,9 @@ otherwise have to relearn.
   (`%utils.markdown` or similar) so non-web Caspian code — CLI
   tools, AI assistants, content pipelines — has it without
   pulling in HTTP machinery.
-- **AI2AI** records often contain markdown in body fields
+- **Puckai** records often contain markdown in body fields
   (proposals, reports, evidence). A shared parser means consumers
-  of AI2AI session data have a consistent rendering story.
+  of Puckai session data have a consistent rendering story.
 - **Mikobase worldlet authoring** — the same applies if a worldlet
   carries human-readable notes that need rendering at display time.
 
@@ -168,7 +168,7 @@ single entry.
   mount table — useful for any CLI tool that serves files from
   multiple roots, including non-HTTP cases like static-site
   generators or asset bundlers.
-- **AI2AI** agents that serve worldlets over HTTP will likely
+- **Puckai** agents that serve worldlets over HTTP will likely
   hit the same need (worldlet files in one tree, supporting
   attachments in another).
 
@@ -289,7 +289,7 @@ content without writing code, this is the natural pattern.
   the design decisions are the valuable part.
 - **Caspian's own toolchain** could use the same shape for
   rendered documentation, runnable examples with embedded
-  output, AI2AI session viewers, etc. Anywhere there's a tree
+  output, Puckai session viewers, etc. Anywhere there's a tree
   of source content that should be browsable.
 - **Mikobase** worldlet documentation, if worldlets carry
   prose, fits the same pattern.

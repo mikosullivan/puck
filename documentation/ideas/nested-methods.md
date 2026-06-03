@@ -8,7 +8,7 @@
 	"audience": "Miko and Claude collaborating on the design",
 	"related": ["requirements/caspian/lucy/index.md (helpers — the older model this replaces)",
 		"requirements/ecoverse/objects/index.md (object structure)",
-		"requirements/mikobase/worldlets/worldlet.json (records.b shows a 'beverage.nested.tea_earl_grey_hot' shape)"]
+		"requirements/ecoverse/worldlets/worldlet.json (records.b shows a 'beverage.nested.tea_earl_grey_hot' shape)"]
 }}
 ~~~
 
@@ -93,7 +93,7 @@ The class's `methods` block is a nested hash. The `"nested"` key on a hash value
 - A hash with `"params"` / `"body"` / etc. is a method definition.
 - A hash with `"nested"` is a namespace; its `"nested"` value is itself a methods-block hash (recursive — namespaces can contain namespaces).
 
-This is the shape already showing up in [worldlets/worldlet.json](../requirements/mikobase/worldlets/worldlet.json) on the officer class.
+This is the shape already showing up in [worldlets/worldlet.json](../requirements/ecoverse/worldlets/worldlet.json) on the officer class.
 
 ## Dispatch mechanism
 
@@ -113,11 +113,11 @@ The visited-set / inheritance-chain walking inside each platter applies as usual
 {"vibecode": {
 	"section": "worked_example",
 	"role": "concrete reference — the officer class in worldlet.json uses both a namespaced method group (beverage) and a top-level method (salute); spells out the call shapes that result and what the example does not yet exercise",
-	"source": "documentation/requirements/mikobase/worldlets/worldlet.json record b"
+	"source": "documentation/requirements/ecoverse/worldlets/worldlet.json record b"
 }}
 ~~~
 
-The `starfleet.com/officer` class definition in [worldlets/worldlet.json](../requirements/mikobase/worldlets/worldlet.json) (record `b`) shows the shape in practice. Its `methods` block, simplified for readability:
+The `starfleet.com/officer` class definition in [worldlets/worldlet.json](../requirements/ecoverse/worldlets/worldlet.json) (record `b`) shows the shape in practice. Its `methods` block, simplified for readability:
 
 ~~~json
 "methods": {

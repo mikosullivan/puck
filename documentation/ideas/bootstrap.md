@@ -72,7 +72,7 @@ parameters.
 **Only the `user` role can call methods on the engine object** — a deliberate
 special case enforced by a dedicated check in the engine object itself. Loaded
 libraries (running in their own roles) cannot reach `%engine`, even if passed a
-reference to it. See [lucy.md § `%engine`](../requirements/caspian/lucy/index.md#engine).
+reference to it. See [engine/](../requirements/caspian/engine/).
 
 ---
 

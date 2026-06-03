@@ -180,7 +180,7 @@ who'd be responsible for any consequences of resetting it.
 
 If user code needs to share a sequence with restricted access (give
 a callee a `.next`/`.peek`-only view, for example), the
-[jail mechanism](../lucy/index.md#jail) applies as it does to any
+[jail mechanism](object.md#jail) applies as it does to any
 Caspian object. The jail can be constructed inline starting from
 the instantiation line:
 

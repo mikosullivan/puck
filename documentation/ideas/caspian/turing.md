@@ -102,7 +102,7 @@ A more idiomatic Caspian program for the same demonstration would use recursion 
 The bar for Turing completeness is low; calling a language "Turing complete" is a starting line, not a finishing line. Caspian has plenty above that line. None of these affect the Turing-complete result, but they affect what's *easy* to express:
 
 - **Closures.** First-class anonymous functions that capture lexical scope. Lets functional patterns work without contortion.
-- **Methods and classes.** Open dispatch, single inheritance for now, multi-inheritance schema-permitted but resolution-order-pending (see [the class-definitions spec](../../requirements/mikobase/worldlets/index.md#class-definitions)).
+- **Methods and classes.** Open dispatch, single inheritance for now, multi-inheritance schema-permitted but resolution-order-pending (see [the class-definitions spec](../../requirements/ecoverse/worldlets/index.md#class-definitions)).
 - **Exceptions and warnings.** Non-local control flow with `catch` (interrupts) and `heed` (accumulates).
 - **Instance-level shadow classes.** Per-object method overrides without disturbing the class.
 - **Rich primitives.** Strings, numbers, booleans, null, hashes, arrays — all with method surfaces.

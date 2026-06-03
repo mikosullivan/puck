@@ -224,27 +224,30 @@ the file format and the storage layer only.
 <a id="logger-failure-cascade"></a>
 ## Logger failure cascade
 
+**Failure to log never stops the process.** A logging system that
+crashes the program when it can't record is worse than one that
+quietly drops the entry — and quietly dropping the entry is also
+unacceptable. Jasmine takes the middle path: the process keeps
+running, and the failure **raises a warning** through Caspian's
+warning system. That's what warnings are for.
+
 If Jasmine itself fails to record (downstream service down, disk
 full, store rejected the entry, etc.), the original event is
-**not silently swallowed**. Jasmine falls back to stderr with a
-`[JASMINE FAILED]` marker followed by the original event in
-plain form:
+**not silently swallowed**. Jasmine raises a warning whose payload
+carries both the failure reason and the original event that
+couldn't be recorded, so whatever is observing warnings has
+everything it needs to recover the entry.
 
-```
-[JASMINE FAILED: <reason>] <original event as JSON>
-```
-
-The fallback is intentionally crude — stderr is the last resort
-when everything else has failed, and a working log should be
-restored as quickly as possible. But the event is preserved
-somewhere a human can see it. Operators monitoring stderr will
-notice the marker and know to look.
+Jasmine does not write to stderr or any other destination
+directly. **The warning system decides where warnings go** —
+stderr, a log of its own, a separate channel, dropped if no
+observer is configured, whatever the operator has wired up. That
+routing is not Jasmine's concern.
 
 This prevents the classic "the bug that broke logging was the
-bug we needed the logs to find" scenario. The cascade also
-applies recursively: if writing to stderr itself fails (rare),
-the failure is silently absorbed — at that point the host
-environment is too broken for Jasmine to help.
+bug we needed the logs to find" scenario. **The process keeps
+running** through every layer of this cascade — Jasmine never
+raises the failure as an exception to the calling code.
 
 
 ---

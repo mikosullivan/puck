@@ -66,7 +66,7 @@ See [class-definition.md](class-definition.md).
 | File | Status |
 |---|---|
 | [worldlets/index.md](worldlets/index.md) | Migrated — records section, validation rules, minimal example, complete example |
-| [AI2AI/index.md](AI2AI/index.md) | Migrated — records example |
+| [Puckai conversation](../ecoverse/puckai/conversation/) | Migrated — records example |
 | [q0.md](q0.md) | No change needed — `create` action keeps its single-`class` API shorthand; engine wraps in a platter automatically |
 | [mikobase.md](index.md) | No change needed — its `{class: ...}` references were field-type annotations, not record-shape |
 | [class-definition.md](class-definition.md) | No change needed — already migrated earlier |
@@ -75,10 +75,10 @@ See [class-definition.md](class-definition.md).
 
 ## What was NOT migrated
 
-The AI2AI example JSON files under
-[AI2AI/examples/](AI2AI/examples/) still use the pre-migration single-class shape.
+The Puckai example JSON files under
+[puckai/conversation/examples/](../ecoverse/puckai/conversation/examples/) still use the pre-migration single-class shape.
 These are example data files, not spec — they can be regenerated or
-hand-migrated when AI2AI is next actively exercised.
+hand-migrated when Puckai is next actively exercised.
 
 Field-type annotations like `{"class": "string"}` inside class
 definitions describe field TYPES and are unrelated to the record-shape

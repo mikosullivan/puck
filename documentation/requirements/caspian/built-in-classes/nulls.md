@@ -123,9 +123,8 @@ created as**, regardless of what user code does to it afterward.
 
 The mechanism is a read-only property on the universal object helper: every
 value has `.object.bool` set at creation, and user code cannot change it. The
-derived predicates (`truthy?`, `null?`, `defined?`) read from `bool` and are
-likewise engine-enforced. See [object.md](object.md) for the full set of four
-methods.
+derived predicates (`null?`, `defined?`) read from `bool` and are likewise
+engine-enforced. See [object.md](object.md) for the full method set.
 
 User code may:
 
@@ -545,44 +544,51 @@ The serialization rule:
 - **Unflavored null** (where `flavor == null`) serializes as the native null of
   the target format (`null` in JSON, `NULL` in SQL, etc.). Cheap, indistinguishable
   from a "plain" null.
-- **Flavored null** serializes as a **typed hash** carrying an ID marker key
-  whose value identifies it as an instance of `puck.uno/null` via the
-  enclosing object's own `classes` hash. The bucket's key namespace stays
-  fully open to user data — no reserved key like `"class"` is needed inside
-  the bucket itself.
+- **Flavored null** serializes as an **inline object** with its own
+  `{bucket, stack}` — the bucket holds the flavor, the stack carries
+  the `puck.uno/null` platter (sticky, under shadow). The nesting is
+  the structural cue that says "this isn't a plain null, it's a null
+  object with state."
 
-Example (Mikobase record — Mikobase uses UUIDs as its concrete ID format
-for cross-process uniqueness; the in-process Caspian engine uses
-integer-strings instead, but the structural pattern is the same):
+Example (Mikobase record — instances use the canonical `{bucket, stack}`
+shape; class-definition records use whole-hash form, but these are instances):
 
-```
-classes:
-    {
-        "<id-host>":   {"class": "foo.com/measurement", "bucket": {}},
-        "<id-null-1>": {"class": "puck.uno/null",       "bucket": {}},
-        "<id-null-2>": {"class": "puck.uno/null",       "bucket": {}}
-    }
-
-bucket:
-    {
+```json
+{
+    "bucket": {
         "agent_response": null,
-        "user_status":   {"<id-null-1>": true, "flavor": "declined_to_answer"},
-        "device_reading": {"<id-null-2>": true, "flavor": "puck.uno/null/timeout"}
+        "user_status": {
+            "bucket": {"flavor": "declined_to_answer"},
+            "stack":  {
+                "shadow":     {},
+                "null_class": {"sticky": true, "class": "puck.uno/null"}
+            }
+        },
+        "device_reading": {
+            "bucket": {"flavor": "puck.uno/null/timeout"},
+            "stack":  {
+                "shadow":     {},
+                "null_class": {"sticky": true, "class": "puck.uno/null"}
+            }
+        }
+    },
+    "stack": {
+        "shadow":      {},
+        "measurement": {"class": "foo.com/measurement"}
     }
+}
 ```
 
-A typed object in the bucket is recognized by an ID key (set to `true`)
-that matches one of the keys in the record's own `classes` hash. The
-remaining keys in the hash are the object's fields — for nulls, just
-`flavor`. On read, the engine sees the ID marker, looks up the matching
-platter in `classes`, and reconstructs an instance of that class with the
-captured fields. Anything expecting a null still sees a null (per the
+A nested object in the bucket carries its own `{bucket, stack}` and is
+recognized by that shape. On read, the engine sees the inline platter
+stack and reconstructs an instance of the named class with the captured
+bucket fields. Anything expecting a null still sees a null (per the
 equality rules above).
 
 This pattern is how all nested typed objects round-trip — flavored nulls,
-inline class instances, anything that needs class identity. The within-
-object lookup keeps the bucket's namespace open without requiring a
-sidecar table.
+inline class instances, anything that needs class identity. The nested
+`{bucket, stack}` keeps the host bucket's namespace open without
+requiring sidecar tables or ID-marker conventions.
 
 (Whether inline nested class instances persist as a pattern in Mikobase
 at all, vs always using `puck.uno/reference` to separate records, is an

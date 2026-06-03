@@ -647,9 +647,7 @@ file in a directory tree corresponds to a page at the matching URL path —
 the layout *is* the routing. Old CGI vibes, but with a much wider toolbox
 for customizing the request and response than CGI ever offered.
 
-(Origin story in [ramblings.md](ramblings.md). Short version: Robinson is
-the name of a Ruby library still running unotate.com, named after the
-author's old high school.)
+(Robinson is the name of a Ruby library still running unotate.com, named after the author's old high school.)
 
 <a id="terminology-installation-means-two-different-things"></a>
 #### Terminology: "Installation" Means Two Different Things

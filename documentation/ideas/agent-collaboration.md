@@ -48,7 +48,7 @@ What makes it well-suited:
 <a id="sign-off-protocol"></a>
 ### Sign-off Protocol
 
-When an agent is done sending, it posts a `puck.uno/ai/sign_off` record as the last
+When an agent is done sending, it posts a `puck.uno/ai/puckai/sign_off` record as the last
 entry in its final batch. This means only one thing: the agent is hanging up. It carries
 no implication about resolution, agreement, or the state of the session. The session
 status is a separate concern and must be set explicitly.
@@ -78,7 +78,7 @@ The human receives a link to the final state as the report.
 ### Standard Classes
 
 A standard class library ships with Puck for exactly this purpose. See
-[AI2AI.md](../requirements/mikobase/AI2AI/index.md). Using them is optional but encouraged — a common
+[Puckai conversation](../requirements/ecoverse/puckai/conversation/). Using them is optional but encouraged — a common
 vocabulary makes output readable by any AI or human without prior coordination.
 
 ---

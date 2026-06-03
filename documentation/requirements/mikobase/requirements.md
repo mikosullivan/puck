@@ -64,35 +64,44 @@ Class names use UNS. See [UNS](../ecoverse/uns.md).
 <a id="classes"></a>
 ### Classes
 
-A record's class identity lives in a **`classes`** field: a hash keyed by
-per-platter UUID, where each value is a platter record `{class, bucket}`.
-This matches the universal Caspian object shape (see
-[base-class-use.md](../ideas/base-class-use.md)).
+A record's class identity lives in its **`stack`** — an ordered hash of platters,
+each contributing a class. This matches the universal Puck object shape (see
+[ecoverse/objects/](../ecoverse/objects/) for the structural spec).
 
 ```json
-"classes": {
-    "<uuid-1>": {"class": "foo.com/character", "bucket": {...}},
-    "<uuid-2>": {"class": "puck.uno/trivet/node", "bucket": {parent: ..., children: ..., id: ...}}
+{
+    "bucket": {...},
+    "stack": {
+        "shadow":      {},
+        "character":   {"class": "foo.com/character"},
+        "trivet_node": {"class": "puck.uno/trivet/node",
+                        "bucket": {"parent": "...", "children": "...", "id": "..."}}
+    }
 }
 ```
 
 Rules:
 
-- Every record has at least one platter. The default platter's class is `puck.uno/record`.
-- Each platter has its own private bucket — its state lives there, not in the record's
-  shared `bucket` field. This is the formal per-platter storage that replaces the
-  earlier `uns.<UNS>` bucket convention.
+- Every record's stack has at least a shadow platter (sticky by default). Records
+  typically also have a primary-class platter; additional platters arrive when
+  mix-ins, marker classes, or warnings get added.
+- Each platter can optionally carry its own private bucket via the `bucket` field —
+  state that belongs to that platter's class, separate from the record's shared
+  top-level `bucket`. Mix-in classes (Trivet is canonical) use the per-platter
+  bucket to avoid colliding with the host's bucket keys.
 - Class names are UNS strings.
-- Classes are themselves stored as records — a class definition is a record whose
-  `classes` contains a platter of class `puck.uno/record/class`. The class's defining
-  properties live in that platter's bucket.
-- **Inheritance** (class-definition-level) is still explicit via the `inherits` field
-  on a class-definition platter. Inheritance describes how class definitions relate;
-  it's orthogonal to the per-instance platter stack.
-- A record can be queried by any class in its platter stack (see
+- Classes are themselves stored as records, using the **whole-hash form** that
+  `puck.uno/class` opts into: at the record's top level, `class: "puck.uno/class"`
+  plus sibling `name`/`inherits`/`fields`/`methods` properties. See
+  [worldlet.json](../ecoverse/worldlets/worldlet.json) records `a`-`f` for the
+  canonical examples.
+- **Inheritance** (class-definition-level) is still explicit via the `inherits`
+  field on a class-definition record. Inheritance describes how class definitions
+  relate; it's orthogonal to the per-instance platter stack.
+- A record can be queried by any class in its stack (see
   [query semantics](#querying-by-class) — `engine.by_class('foo.com/character')`
-  returns records that include that class in their platter stack, regardless of
-  what other platters they carry).
+  returns records that include that class in their stack, regardless of what
+  other platters they carry).
 
 <a id="bucket"></a>
 ### `bucket`
@@ -111,13 +120,10 @@ Rules:
 ### Nested class instances in buckets
 
 When a nested class instance is embedded inline in a bucket (e.g., an inline
-sub-record without its own `record_pk`), the engine uses a **UUID marker key**
-to identify it: a random UUID key appears inside the nested hash. The lookup
-resolves against the parent record's own `classes` hash — within-object scope.
-
-This mechanism replaces the older `custom_classes` sidecar, which was a
-per-record UUID→class map. With the lookup now in the record's own `classes`
-hash, the sidecar field is no longer needed.
+sub-record without its own `record_pk`), it carries its own `{bucket, stack}`
+shape directly in place. The nested shape is the structural cue that says
+"this isn't plain data, it's a class instance with state." No sidecar tables
+or UUID markers are needed — the nested object is fully self-describing.
 
 (Whether inline nested class instances persist as a Mikobase concept at all,
 versus a references-only model using `puck.uno/reference`, is an open design
@@ -129,7 +135,7 @@ question — see [#341](https://github.com/mikosullivan/puck/issues/341).)
 The following classes are seeded as database records on initialization:
 
 - `puck.uno/record` — base class for all records (the default platter for any new record)
-- `puck.uno/record/class` — class for class definitions
+- `puck.uno/class` — class for class definitions (records of this class use the whole-hash form)
 - `puck.uno/reference` — reference to another record by `record_pk`
 - `puck.uno/dbfile` — file attachment
 
@@ -274,11 +280,12 @@ Each record dict yielded by a `select` resultset has the following fields:
 ```python
 {
     "pk": "92677339-df86-4f68-9397-999e40cf2c40",
-    "classes": {
-        "<platter-uuid-1>": {"class": "foo.com/character", "bucket": {...}}
+    "bucket": {...},
+    "stack": {
+        "shadow":    {},
+        "character": {"class": "foo.com/character"}
     },
-    "updated_at": "2026-04-21T14:32:00.123",
-    "bucket": {...}
+    "updated_at": "2026-04-21T14:32:00.123"
 }
 ```
 
@@ -308,9 +315,9 @@ implementation — only the engine is being developed at this stage.*
 
 The engine returns raw dicts. The client will wrap them into Python objects.
 
-- A class in the record's `classes` field is used to look up the corresponding Python class.
+- A class in the record's `stack` is used to look up the corresponding Python class.
   Multi-platter records may match more than one registered Python class; the client decides
-  which platter to use as the primary (typically the first platter, or by configured priority).
+  which platter to use as the primary (typically the first non-shadow platter, or by configured priority).
 - Python classes declare their Mikobase class id via a class-level attribute.
 - Python classes are registered with the client using the `@mikobase.record` decorator,
   which handles both registration and field introspection.

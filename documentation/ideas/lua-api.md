@@ -161,7 +161,7 @@ boundary; sodium runs in its own context; on return, the caller's
 context is restored.
 
 `%engine` is user-role-only by a dedicated check in the engine object
-itself; see [lucy.md § `%engine`](../requirements/caspian/lucy/index.md#engine). Its
+itself; see [engine/](../requirements/caspian/engine/). Its
 children are normal objects. Capability is enforced at each method
 call by the role transition, not by the namespace.
 
@@ -200,7 +200,7 @@ soon as user code runs.
 
 `%engine` is user-role-only — a deliberate special-case check in
 the engine object refuses calls from any role other than `user`.
-See [lucy.md § `%engine`](../requirements/caspian/lucy/index.md#engine). Its
+See [engine/](../requirements/caspian/engine/). Its
 children (`%engine.sodium` etc.) are normal objects; capability is
 enforced at each method call by the role transition, not by the
 namespace structure.

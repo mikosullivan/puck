@@ -7,14 +7,14 @@
 "after_frank_frank_caspian_cli; before_glenstorm_glenstorm_bryton",
 "goal":
 "add_persistent_caspj_cache_so_the_engine_skips_lexer_parser_transpiler_on_subsequent_runs_of_unchanged_source",
-"design_doc": "../../ideas/caspj-cache.md",
+"design_doc": "../../../caspian/downloads/caching/index.md",
 "primary_beneficiary": "glenstorm_glenstorm_bryton_which_subprocess_invokes_every_test_file_independently",
 "aligns_with": ["feedback_no_dangerous_defaults",
 "caspianj_is_runtime_caspian_text_is_for_humans"]}}
 ~~~
 
 Gabbo adds the on-disk CaspianJ cache designed in
-[caspj-cache.md](../../ideas/caspj-cache.md). After a `.casp` file
+[caching/index.md](../../../caspian/downloads/caching/index.md). After a `.casp` file
 runs once, the transpiler's JSON output is written to a `caspj/`
 subdir next to the source. Subsequent runs read the cache directly
 and skip lexer + parser + transpiler entirely, paying only the

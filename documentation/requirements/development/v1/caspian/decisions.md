@@ -49,6 +49,7 @@ location wins**; this log is just a finder.
 | Skeletor's Aslan state hash holds a single `call_stack` field with one `top_level` frame carrying role + chain. No top-level `current_role` or `chain` — those are derived from the top frame. Later slices grow the hash without changing shape. | [aslan.md § Data structures](aslan.md#data-structures-lua-tables), [skeletor.md](../../caspian/skeletor/index.md) |
 | Lua's table-reference semantics is V0.01's reference model. No custom object-id scheme. | [aslan.md § Notes on the sketch](aslan.md#notes-on-the-sketch) |
 | Garbage collection lives in its own doc. Deterministic, root-trace, with strict `on_close` rules. | [garbage-collection.md](../../caspian/garbage-collection.md) |
+| `$class.implements?($other_class)` ships in V1.0 — class-level structural API conformance check, runtime, no separate interface concept. Cheap (no new data structures; reads existing class metadata). Subset form via `methods: [...]` kwarg; malformed subset raises. | [classes/implements.md](../../caspian/classes/implements.md) |
 
 ---
 
@@ -75,8 +76,8 @@ location wins**; this log is just a finder.
 | Avoid the word "crypto" in docs — name the specific primitive (Ed25519 signing, secure random, SHA-256) unless genuinely needed. | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/feedback_avoid_crypto_word.md) |
 | Install footprint target: under 1 MB; fits a 1.44 MB floppy with room to spare. Floppy is a soft commitment that drives dep decisions. | [installation.md § Download budget](../../ideas/installation/index.md#download-budget) |
 | Total install ≈ 850 KB: Lua 250, libsodium-minimal 200, Caspian files 340, LPeg 50, luasodium 10. | [installation.md § Download budget](../../ideas/installation/index.md#download-budget) |
-| The `caspj/` on-disk cache (next to source) skips lexer/parser/transpiler on subsequent runs. Lands in Gabbo slice. | [caspj-cache.md](../../ideas/caspj-cache.md), [gabbo.md](gabbo.md) |
-| Cache validity: engine version + transpiler version + source mtime + source SHA-256. Atomic temp-then-rename writes. | [caspj-cache.md § Validity](../../ideas/caspj-cache.md#validity) |
+| The `caspj/` on-disk cache (next to source) skips lexer/parser/transpiler on subsequent runs. Lands in Gabbo slice. | [caching/index.md](../../../caspian/downloads/caching/index.md), [gabbo.md](gabbo.md) |
+| Cache validity: engine version + transpiler version + source mtime + source SHA-256. Atomic temp-then-rename writes. | [caching/index.md](../../../caspian/downloads/caching/index.md) |
 
 ---
 
