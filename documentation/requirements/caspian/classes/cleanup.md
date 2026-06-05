@@ -6,7 +6,7 @@
 	"role": "audits how the class-definition specs in Caspian and Mikobase have drifted out of consistency; catalogs where they agree, where they diverge, and surfaces the open questions that need a decision before either side hardens further",
 	"audience": "Miko (primary), Claude (secondary as a settled-decisions index once decisions are made)",
 	"format": "agreements_then_divergences_then_open_questions; each divergence cites both sides",
-	"explicitly_out_of_scope": ["mikobase_vs_skeletor_architecture"],
+	"explicitly_out_of_scope": ["mikobase_vs_drinian_architecture"],
 	"key_concepts": ["caspian_class_dsl", "mikobase_class_schema", "field_declaration",
 		"accessor_helper", "instance_state_access", "lifecycle_hooks"]
 }}
@@ -18,7 +18,7 @@ This file audits how class-definition specs have drifted between Caspian (the la
 
 In scope: user-facing class-definition surface on each side — how a class is declared, what fields/methods/hooks it can carry, what vocabulary each side uses.
 
-Out of scope: the Mikobase-vs-Skeletor architectural question (engine-private vs program-visible state). The Mikobase-vs-Skeletor split is a separate decision that almost certainly will not happen; this audit assumes both Caspian and Mikobase coexist and asks only whether they agree on how a *user* declares a class.
+Out of scope: the Mikobase-vs-Drinian architectural question (engine-private vs program-visible state). The Mikobase-vs-Drinian split is a separate decision that almost certainly will not happen; this audit assumes both Caspian and Mikobase coexist and asks only whether they agree on how a *user* declares a class.
 
 The canonical docs consulted:
 

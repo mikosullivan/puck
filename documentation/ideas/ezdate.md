@@ -476,11 +476,11 @@ Should the time class be extensible (via a `calendar` parameter) or
 Gregorian-only with separate classes for other systems? Defer until a real
 use case appears.
 
-<a id="open-relationship-with-skeletor"></a>
-### Relationship with Skeletor
+<a id="open-relationship-with-drinian"></a>
+### Relationship with Drinian
 
 Time objects are small, immutable, and pure data — perfectly serializable.
 They'd live in the runtime hash with zero special handling.
-[Skeletor](skeletor.md) doesn't need any time-class-specific machinery; the
+[Drinian](drinian.md) doesn't need any time-class-specific machinery; the
 class just has to round-trip via its standard JSON serialization (probably
 ISO 8601 + zone).

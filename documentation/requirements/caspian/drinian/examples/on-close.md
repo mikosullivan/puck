@@ -2,7 +2,7 @@
 
 ~~~json
 {"vibecode": {"example": "inside_on_close",
-	"shows": "skeletor_during_a_gc_invoked_on_close_handler_running_against_an_object_whose_last_reference_was_just_dropped",
+	"shows": "drinian_during_a_gc_invoked_on_close_handler_running_against_an_object_whose_last_reference_was_just_dropped",
 	"shape": "on_close_handler_is_a_call_stack_frame_pushed_by_the_engine_not_by_user_code; runs_with_strict_rules_per_garbage_collection_md",
 	"design_note": "action_on_close_is_a_new_frame_action; engine_enforces_2ms_cap_no_io_no_allocation_no_resurrection_when_this_action_is_active"}}
 ~~~
@@ -35,7 +35,7 @@ user-code reference) has been nilled.
 
 ```json
 {
-  "comment": "Skeletor mid-on_close. The handler frame at the top was pushed by the engine (not by user code) when GC determined the connection instance was unreachable from any root. The handler runs in the dying object's class's role (here, user), with strict rules enforced.",
+  "comment": "Drinian mid-on_close. The handler frame at the top was pushed by the engine (not by user code) when GC determined the connection instance was unreachable from any root. The handler runs in the dying object's class's role (here, user), with strict rules enforced.",
   "srcs": {
     "a": {"file": "/home/miko/conn.casp"}
   },
@@ -136,8 +136,8 @@ What to notice:
   handler can't use stdout (no I/O), so visibility is irrelevant
   in practice during the handler's lifetime.
 - **The class definition itself isn't in the snapshot.** Class
-  registries are engine-private state, not part of Skeletor — see
-  [skeletor.md § Classes are NOT in Skeletor](../index.md#classes-not-in-skeletor).
+  registries are engine-private state, not part of Drinian — see
+  [drinian.md § Classes are NOT in Drinian](../index.md#classes-not-in-drinian).
   `myapp.com/connection` was defined on lines 1-5; the dispatcher
   knows about it because the engine's registry knows about it, and
   knows where to find the `on_close` handler when an instance
@@ -149,7 +149,7 @@ What to notice:
 Open question:
 
 - **Object representation more generally** — how user-defined
-  instances are stored in Skeletor (inline in locals, in a separate
+  instances are stored in Drinian (inline in locals, in a separate
   object heap, with reference identity) is not yet fully spec'd.
   This example uses inline-with-`instance` shape as a placeholder.
   Whatever the answer, the on_close frame's `call.receiver` will

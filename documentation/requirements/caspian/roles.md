@@ -160,7 +160,7 @@ agent operating with their authority.
     "lifetime_tied_to": "frame_existence_on_the_stack",
     "cleanup_mechanism": "automatic_via_stack_unwinding",
     "no_separate_lift_handler_needed": true,
-    "properties_falling_out": ["alarm_safe", "nests_naturally", "skeletor_reflects_truth_no_separate_state"]
+    "properties_falling_out": ["alarm_safe", "nests_naturally", "drinian_reflects_truth_no_separate_state"]
 }}
 ~~~
 
@@ -172,11 +172,11 @@ This design ties the delegation's lifetime exactly to the block's scope by reusi
 
 - **Alarm-safe.** An alarm that unwinds the stack also unwinds delegations. There is no "make sure to lift the delegation" handler that could be forgotten, skipped, or short-circuited.
 - **Nesting works naturally.** Nested `delegate_to` blocks become stacked frames. Permission resolution walks the stack in order; outer delegations are established first, inner ones layer on top, and unwinding undoes them in reverse.
-- **Truth is the stack.** There's no separate "currently active delegations" registry that could drift from reality. The stack IS the registry. Skeletor snapshots show delegations as fields on frames; what's in the snapshot is what's active.
+- **Truth is the stack.** There's no separate "currently active delegations" registry that could drift from reality. The stack IS the registry. Drinian snapshots show delegations as fields on frames; what's in the snapshot is what's active.
 
 A role-level convenience view ("what delegations are currently extending this role's permissions?") can be derived by walking the stack and unioning the active grants — but it's derived, not stored. The frame stack is the source of truth.
 
-See [`skeletor/` § role delegations](https://puck.uno/documentation/requirements/caspian/skeletor/#role-delegations) for the Skeletor representation.
+See [`drinian/` § role delegations](https://puck.uno/documentation/requirements/caspian/drinian/#role-delegations) for the Drinian representation.
 
 ---
 

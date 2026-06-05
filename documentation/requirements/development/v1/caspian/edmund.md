@@ -122,8 +122,8 @@ Edmund is selected. Expected shape:
 
 ---
 
-<a id="skeletor-impact"></a>
-## Skeletor impact
+<a id="drinian-impact"></a>
+## Drinian impact
 
 Edmund adds `to_json` methods to existing classes but introduces no
 new persistent state. The hash being serialized is a working value
@@ -156,7 +156,7 @@ A snapshot mid-`.to_json` call:
 ```
 
 — same hash shape Aslan established, same shape that has held through
-Bree / Corin / Digory. **The first slice where the Skeletor hash
+Bree / Corin / Digory. **The first slice where the Drinian hash
 grows new top-level fields is [Frank](frank.md)**, when `argv` joins
 it as program state visible via `%argv`.
 

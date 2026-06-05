@@ -30,7 +30,7 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 {"vibecode": {
 	"v1_in": ["caspian", "caspian_cli", "mikobase", "touchstone", "sammy",
 		"trivet", "uma", "bryton", "jasmine", "puck_identity",
-		"deployment", "skeletor"],
+		"deployment", "drinian"],
 	"v1_companion_projects": ["caspian_vscode_extension_separate_repo"],
 	"v1_out": ["robinson"],
 	"v1_blockchain_role": "external_service; caspian_client_is_thin_http",
@@ -42,7 +42,7 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 
 | Component | Role in V1 | Plan |
 |---|---|---|
-| **Caspian** + CLI + Skeletor | engine, command-line launcher, in-memory runtime state | [caspian/index.md](caspian/index.md) |
+| **Caspian** + CLI + Drinian | engine, command-line launcher, in-memory runtime state | [caspian/index.md](caspian/index.md) |
 | **Mikobase** | live object store | TBD |
 | **Touchstone** | shared utility base layer | TBD |
 | **Sammy** | HTTP path: explicit handlers | TBD |
@@ -88,7 +88,7 @@ talks to via a thin HTTP client.
 
 These apply across every V1 strand. Strand-specific principles live in
 each strand's plan (e.g., Caspian's CaspianJ-runtime / roles-from-Aslan
-/ Skeletor-from-Aslan / C-extension policy live in
+/ Drinian-from-Aslan / C-extension policy live in
 [caspian/index.md § Cross-cutting principles](caspian/index.md#cross-cutting-principles)).
 
 - **Vibecode blocks are canonical.** Surrounding prose is derivative.

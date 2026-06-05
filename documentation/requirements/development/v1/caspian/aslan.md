@@ -166,13 +166,13 @@ Top-level shape:
 What happens between `engine.run(path)` being called and the result
 coming back:
 
-1. **Create the role registry inside Skeletor.** A small map of
+1. **Create the role registry inside Drinian.** A small map of
    role-name → role-object at `engine.state.roles`. Aslan needs two
    roles: `user` (what the program runs as) and `stdlib` (owns the
    built-in string class). Role objects in Aslan are barely more
    than identity tags — they have a name and nothing else.
    Cross-role trust, role-introspection, role nicknames are all
-   later. Roles live in Skeletor because they're program-visible
+   later. Roles live in Drinian because they're program-visible
    execution state.
 
 2. **Create the built-in string class in the engine-private
@@ -181,8 +181,8 @@ coming back:
    with one method, `to_string`, whose implementation is "return
    the receiver." The class is tagged with the `stdlib` role as
    its owner; the method-object inherits that owner. The class
-   registry is **not** in Skeletor (see
-   [skeletor.md § Classes are NOT in Skeletor](../../caspian/skeletor/index.md#classes-not-in-skeletor))
+   registry is **not** in Drinian (see
+   [drinian.md § Classes are NOT in Drinian](../../caspian/drinian/index.md#classes-not-in-drinian))
    — it's dispatcher implementation detail, not program-visible
    state. Registry keys use UNS-prefixed class names.
 
@@ -340,19 +340,19 @@ doesn't, the shapes below are the proposal.
 ~~~json
 {"vibecode": {"data_structures": {"role_object":
 "{name = string}", "role_registry":
-"engine.state.roles = {[name] = role_object, ...}; lives_inside_skeletor",
+"engine.state.roles = {[name] = role_object, ...}; lives_inside_drinian",
 "value":
 "{type = string, owning_role = role_object, payload = any_lua_value}",
 "class_object":
 "{name = string, owning_role = role_object, methods = {[name] = lua_function}}",
 "class_registry":
-"engine.classes = {[name] = class_object, ...}; engine_private_NOT_in_skeletor",
-"skeletor_state_hash":
-"engine.state = {roles = {...}, call_stack = {frame_1, ...}}; aslan_state_holds_roles_and_call_stack_only; each_frame_carries_action_role_chain_locals_src; aslan_top_frame_is_top_level_with_user_role_empty_chain; grows_in_later_slices_per_skeletor_md",
-"skeletor_doc": "../../caspian/skeletor/index.md"}}}
+"engine.classes = {[name] = class_object, ...}; engine_private_NOT_in_drinian",
+"drinian_state_hash":
+"engine.state = {roles = {...}, call_stack = {frame_1, ...}}; aslan_state_holds_roles_and_call_stack_only; each_frame_carries_action_role_chain_locals_src; aslan_top_frame_is_top_level_with_user_role_empty_chain; grows_in_later_slices_per_drinian_md",
+"drinian_doc": "../../caspian/drinian/index.md"}}}
 ~~~
 
-**Skeletor from day one.** Per [skeletor.md](../../caspian/skeletor/index.md),
+**Drinian from day one.** Per [drinian.md](../../caspian/drinian/index.md),
 all of Caspian's execution state lives in a single hash —
 `engine.state` in this implementation. Aslan's state hash is tiny —
 two fields, `roles` (the role registry) and `call_stack` (one
@@ -364,13 +364,13 @@ top-level fields. Later slices grow the hash's contents (deeper
 stacks, iterator state, pending exceptions, program-wide fields
 like `argv`) without changing the shape.
 
-**Roles live in Skeletor; classes do not.** This is a deliberate
+**Roles live in Drinian; classes do not.** This is a deliberate
 asymmetry: roles are program-visible execution state (frames carry
 role references, `%role` reads them, programs can inspect the
 registry), while classes are dispatcher implementation detail
-(see [skeletor.md § Classes are NOT in Skeletor](../../caspian/skeletor/index.md#classes-not-in-skeletor)).
+(see [drinian.md § Classes are NOT in Drinian](../../caspian/drinian/index.md#classes-not-in-drinian)).
 So Aslan ships `engine.state.roles` (the role registry as a
-Skeletor field) and `engine.classes` (the class registry as
+Drinian field) and `engine.classes` (the class registry as
 engine-private state alongside, but not in, the hash).
 
 Every internal object is a plain Lua table — no metatables in Aslan.
@@ -385,8 +385,8 @@ reference, not the contents).
   Later slices will add trust webs, role-introspection state, etc.
 
 - **Role registry.** A flat table mapping role-name to role-object,
-  **living inside Skeletor at `engine.state.roles`** (a top-level
-  Skeletor field, not engine-private state):
+  **living inside Drinian at `engine.state.roles`** (a top-level
+  Drinian field, not engine-private state):
   ```lua
   engine.state.roles = {
       user   = { name = "user" },
@@ -428,7 +428,7 @@ reference, not the contents).
   -- Access: engine.classes["puck.uno/string"]
   ```
 
-- **Execution state (Skeletor hash).** One table that holds all
+- **Execution state (Drinian hash).** One table that holds all
   durable execution state. For Aslan, just a `call_stack` array
   starting with one `top_level` frame:
   ```lua
@@ -447,13 +447,13 @@ reference, not the contents).
   `locals`, and (in later slices) `src`, `iterator`, etc. The "current
   role" and "current chain" are just the top frame's `role` and
   `chain` — no separate top-level fields. This is the
-  [Skeletor](../../caspian/skeletor/index.md) hash. Every method call
+  [Drinian](../../caspian/drinian/index.md) hash. Every method call
   pushes a frame on entry and pops on return — regardless of role.
   Role is one field on the frame, not the trigger for frame creation.
   Lua's own call stack runs alongside the explicit frame stack (the
   dispatcher function nests, and so does the explicit stack). Working
   state (intermediate expression results, args being marshaled) stays
-  outside the hash, per skeletor.md.
+  outside the hash, per drinian.md.
 
 <a id="key-procedures"></a>
 ### Key procedures
@@ -521,7 +521,7 @@ function engine.run(path)
 end
 
 function engine.bootstrap()
-    -- Skeletor first: roles registry lives inside the state hash.
+    -- Drinian first: roles registry lives inside the state hash.
     engine.state = {
         roles = {
             user   = { name = "user" },
@@ -565,7 +565,7 @@ function engine.dispatch(statement)
     local class = engine.classes[receiver.type]
 
     -- Every method call pushes a method_call frame, regardless of role.
-    -- Per skeletor.md, frames are per-call (role is one field on the frame,
+    -- Per drinian.md, frames are per-call (role is one field on the frame,
     -- not the trigger for whether to create it). Same-role calls push and
     -- pop just like cross-role calls; the only role-dependent behavior is
     -- chain isolation, which is automatic via the fresh chain on every
@@ -616,7 +616,7 @@ end
 function engine.transition(frame_meta, fn)
     -- Push a new frame. Every frame gets its own fresh chain regardless
     -- of role — same-role and cross-role transitions both isolate chain
-    -- per skeletor.md's per-frame-chain model.
+    -- per drinian.md's per-frame-chain model.
     local frame = {
         action        = frame_meta.action,
         role          = frame_meta.role,
@@ -1317,10 +1317,10 @@ The slice loop ends when TA.7 (engine.run returns a value with payload
 `"hello"`) passes. TA.8 (role transition observed during dispatch)
 closes Aslan.
 
-<a id="step-8-skeletor-snapshots"></a>
-#### Skeletor snapshots during the run
+<a id="step-8-drinian-snapshots"></a>
+#### Drinian snapshots during the run
 
-The [Skeletor state hash](#data-structures-lua-tables) (`engine.state`)
+The [Drinian state hash](#data-structures-lua-tables) (`engine.state`)
 at three moments during the `"hello".to_string` run. Aslan's hash
 holds two top-level fields — `roles` (the role registry) and
 `call_stack` — and later slices grow the contents:
@@ -1392,9 +1392,9 @@ transition TA.8 verifies):**
 ```
 
 The `roles` registry and `call_stack` are the only two top-level
-Skeletor fields in Aslan. **The string class is not in any of these
+Drinian fields in Aslan. **The string class is not in any of these
 snapshots** — it lives in the engine's private class registry
-(`engine.classes`), not in Skeletor. The dispatcher resolves
+(`engine.classes`), not in Drinian. The dispatcher resolves
 `receiver_type: "puck.uno/string"` against the engine's registry;
 the snapshot just shows the name being resolved.
 
@@ -1407,7 +1407,7 @@ chain is an empty placeholder for Aslan — no chain operations
 exercised. Working state (the receiver value being materialized, the
 method function being called, the return value being passed back to
 the harness) lives in Lua locals during dispatch, **not** in
-`engine.state`, per [skeletor.md's working-state carve-out](../../caspian/skeletor/index.md#v1-0-scope).
+`engine.state`, per [drinian.md's working-state carve-out](../../caspian/drinian/index.md#v1-0-scope).
 
 When Aslan passes, Bree (hello-world in Caspian source, via the
 transpiler) is selected from the roadmap and planned in the same

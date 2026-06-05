@@ -57,7 +57,7 @@ Settled cross-slice design decisions are logged in
 	"section": "cross_cutting_principles",
 	"principles": ["caspianj_is_runtime_caspian_text_is_for_humans",
 		"roles_baked_in_from_aslan_not_bolted_on",
-		"skeletor_state_hash_baked_in_from_aslan_not_bolted_on",
+		"drinian_state_hash_baked_in_from_aslan_not_bolted_on",
 		"c_extensions_only_when_cost_is_worth_it; v1_accepts_libsodium_minimal_and_lpeg"]
 }}
 ~~~
@@ -73,9 +73,9 @@ principles below are specific to the Caspian engine build.
 - **Roles are baked in from Aslan.** Not a bolt-on. See
   [roles.md § Implementation growth path](../../../caspian/roles.md#implementation-growth-path)
   for the per-slice plan.
-- **The Skeletor state hash is baked in from Aslan.** All execution
+- **The Drinian state hash is baked in from Aslan.** All execution
   state lives in `engine.state` from the first slice — see
-  [skeletor.md](../../../caspian/skeletor/index.md). Aslan's state hash
+  [drinian.md](../../../caspian/drinian/index.md). Aslan's state hash
   holds a single `call_stack` field with one `top_level` frame carrying
   the program's starting role and an empty chain; later slices grow
   the hash (deeper stacks, iterator state, pending exceptions,
@@ -115,9 +115,9 @@ Per-slice detail of how each tier applies lives in the slice pages.
 <a id="scope"></a>
 ## Scope notes
 
-**Skeletor** ships in narrow form: the runtime state hash is in memory
+**Drinian** ships in narrow form: the runtime state hash is in memory
 only, no export API, no snapshot/revive in V1.0. See
-[skeletor.md § V1.0 scope](../../../caspian/skeletor/index.md#v1-0-scope).
+[drinian.md § V1.0 scope](../../../caspian/drinian/index.md#v1-0-scope).
 
 The Caspian engine's V1 surface is whatever the Ashley → Glenstorm
 slice sequence produces — no more. Anything beyond that is later work.

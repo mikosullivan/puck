@@ -96,7 +96,7 @@ something different. They were not migrated.
 ## Why this happened
 
 The platter model unified how Caspian objects, Mikobase records, and
-class definitions structure their classification. Skeletor's
+class definitions structure their classification. Drinian's
 `objects` hash and Mikobase's `records` hash converged on the same
 `{classes, bucket}` shape (see
 [#160](https://github.com/mikosullivan/puck/issues/160)). Mikobase's

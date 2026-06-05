@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "references",
-	"role": "the foundational data structure inside Skeletor that maps reference objects to the objects they point at; the table the engine scans to determine reachability for deterministic garbage collection",
+	"role": "the foundational data structure inside Drinian that maps reference objects to the objects they point at; the table the engine scans to determine reachability for deterministic garbage collection",
 	"status": "design — refs hash + reference class hierarchy + uspace as class-level property",
 	"key_concepts": ["refs_hash", "reference_class_hierarchy",
 		"variable_and_hash_element_subclasses", "uspace_is_a_class_property",
@@ -11,7 +11,7 @@
 }}
 ~~~
 
-The `references` hash is the structural foundation that makes Skeletor's
+The `references` hash is the structural foundation that makes Drinian's
 **deterministic garbage collection** work without reference counting. Every
 "thing that can hold an object reference" is an entry in this hash, mapping
 its own ID to the object it points at. When a reference is removed, the
@@ -25,7 +25,7 @@ This is the mechanism behind the "root trace at the mutation point" model in
 <a id="shape"></a>
 ## Shape
 
-The `references` hash is a top-level field in the Skeletor hash. Keys are
+The `references` hash is a top-level field in the Drinian hash. Keys are
 reference IDs; values are object IDs:
 
 ```json
@@ -85,12 +85,12 @@ Properties:
 - **No namespace prefix, no sigil.** IDs are bare strings. Context
   disambiguates: an ID appears as a key or value in `references`,
   as a value in a frame's `locals`, etc. Plain values in those
-  positions are always wrapped in the standard skeletor value
+  positions are always wrapped in the standard drinian value
   shape (`{"value": ..., "src": [...]}`), so a bare string in a
   reference-typed slot is unambiguously an ID.
 
 The counter is cheap (one string-increment per allocation), the IDs
-are short (1-4 characters for typical programs), and Skeletor
+are short (1-4 characters for typical programs), and Drinian
 snapshots stay readable — `references: {"2": "4", "3": "4"}` is
 far more inspectable than UUID equivalents.
 
@@ -286,8 +286,8 @@ refcounting benefit.
 <a id="snapshot-serialization"></a>
 ## Snapshot serialization
 
-When the engine snapshots Skeletor (post-V1.0 feature; see
-[skeletor.md § V1.0 scope](index.md#v1-0-scope)), the
+When the engine snapshots Drinian (post-V1.0 feature; see
+[drinian.md § V1.0 scope](index.md#v1-0-scope)), the
 `references` hash serializes verbatim — just IDs on both sides,
 trivially representable in JSON.
 
@@ -318,7 +318,7 @@ outputs are the **content**.
 <a id="related-docs"></a>
 ## Related docs
 
-- [skeletor.md](index.md) — the overall Skeletor state hash, of
+- [drinian.md](index.md) — the overall Drinian state hash, of
   which `references` is a part.
 - [garbage-collection.md](../garbage-collection.md) — the GC model
   the `references` hash makes tractable.

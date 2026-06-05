@@ -323,8 +323,8 @@ the Caspian-source path to converge on the same `engine.run()` call
 by substituting `engine.parse_caspian(source)` for
 `caspian.json.parse(source)`.
 
-<a id="bree-step-04-skeletor-snapshot"></a>
-#### Skeletor snapshot during the hand-built-tree run
+<a id="bree-step-04-drinian-snapshot"></a>
+#### Drinian snapshot during the hand-built-tree run
 
 This is the first place in Bree where the engine actually runs, so
 it's also the first place [`engine.state`](aslan.md#data-structures-lua-tables)
@@ -442,7 +442,7 @@ For each gap from Step 1, add only what Bree needs:
 - **Engine refactor.** `engine.run` changes from taking a path to
   taking a pre-parsed tree. Aslan's tests get a small update to
   do the file-read + json.parse separately and pass the tree to
-  `engine.run`. **The Skeletor hash is unchanged by this refactor** —
+  `engine.run`. **The Drinian hash is unchanged by this refactor** —
   same dispatch loop, same transitions, just the tree arrives via
   the caller composing the pipeline rather than the executor doing
   it all.
@@ -505,15 +505,15 @@ problem. Loop back to Step 2 for that layer.
 When Bree passes, the next slice from the roadmap is selected and
 planned in the same shape.
 
-<a id="bree-step-3-skeletor-snapshots"></a>
-#### Skeletor snapshots during the run
+<a id="bree-step-3-drinian-snapshots"></a>
+#### Drinian snapshots during the run
 
 Bree runs the same semantic program as Aslan (just from source
 instead of hand-written CaspianJ), so the
-[Skeletor state hash](aslan.md#data-structures-lua-tables) goes
+[Drinian state hash](aslan.md#data-structures-lua-tables) goes
 through the same three moments — bootstrap → mid-`to_string` →
 return — and contains the same two fields. The transpiler step
-happens **before** dispatch and leaves no Skeletor footprint;
+happens **before** dispatch and leaves no Drinian footprint;
 intermediate AST nodes and the produced canonical tree live in Lua
 locals, not in `engine.state`.
 
@@ -570,7 +570,7 @@ locals, not in `engine.state`.
 }
 ```
 
-Bree doesn't grow the Skeletor hash — the new source-side machinery
+Bree doesn't grow the Drinian hash — the new source-side machinery
 (lexer, parser, transpiler, plus the `engine.run()` property-based
 refactor) all operates on working state outside the hash. The state hash next
 changes shape in [Corin](corin.md), when the `stdout` role

@@ -30,7 +30,7 @@ location wins**; this log is just a finder.
 | Tests drive the roadmap. What's missing in the next test is what gets built next. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
 | Soft feature lock — anything not specced as V1 is deferred. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
 | Roles are baked in from Aslan, not bolted on. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
-| Skeletor state hash is baked in from Aslan, not bolted on. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
+| Drinian state hash is baked in from Aslan, not bolted on. | [v1.md § Cross-cutting principles](v1.md#cross-cutting-principles) |
 | Ashley is the baseline-inventory slice. Documents existing code; no new code. | [ashley.md](ashley.md) |
 
 ---
@@ -46,7 +46,7 @@ location wins**; this log is just a finder.
 | Kwargs are a single hash at index 3. Distinguish from a single positional hash literal by expression-marker key (`value`, `var`, `hash`, etc.). | [caspianj.md § Core Principle](../../caspian/caspianj.md#core-principle) |
 | Assignment (`=`) is a regular method dispatch. No special form. `{"var": "foo"}` in receiver position materializes to an lvalue handle. | [caspianj.md § Assignment](../../caspian/caspianj.md#assignment) |
 | The existing `interpreter.lua` consumes a pre-spec format and is retired incrementally as later slices realign each AST node. | [ashley.md § Format gap](ashley.md#format-gap) |
-| Skeletor's Aslan state hash holds a single `call_stack` field with one `top_level` frame carrying role + chain. No top-level `current_role` or `chain` — those are derived from the top frame. Later slices grow the hash without changing shape. | [aslan.md § Data structures](aslan.md#data-structures-lua-tables), [skeletor.md](../../caspian/skeletor/index.md) |
+| Drinian's Aslan state hash holds a single `call_stack` field with one `top_level` frame carrying role + chain. No top-level `current_role` or `chain` — those are derived from the top frame. Later slices grow the hash without changing shape. | [aslan.md § Data structures](aslan.md#data-structures-lua-tables), [drinian.md](../../caspian/drinian/index.md) |
 | Lua's table-reference semantics is V0.01's reference model. No custom object-id scheme. | [aslan.md § Notes on the sketch](aslan.md#notes-on-the-sketch) |
 | Garbage collection lives in its own doc. Deterministic, root-trace, with strict `on_close` rules. | [garbage-collection.md](../../caspian/garbage-collection.md) |
 | `$class.implements?($other_class)` ships in V1.0 — class-level structural API conformance check, runtime, no separate interface concept. Cheap (no new data structures; reads existing class metadata). Subset form via `methods: [...]` kwarg; malformed subset raises. | [classes/implements.md](../../caspian/classes/implements.md) |
@@ -105,7 +105,7 @@ location wins**; this log is just a finder.
 | Directory trees use 3-char single-dash indent (`├─ `, `└─ `, `│  `). | [feedback memory](../../../../home/miko/.claude/projects/-home-miko-projects-puck-ecoverse-working/memory/feedback_tree_format.md) |
 | Test IDs use codename-letter prefixes: TA (Aslan), TB (Bree), TC, TD, TE, TF, TGa (Gabbo), TGl (Glenstorm). | Slice files (each slice's Testing section) |
 | Headings drop version numbers. Codename-only. | Slice files |
-| Skeletor JSON snapshots in slice docs render with a purple border (Orlando page.lua). | [orlando/lua/orlando/page.lua](../../../orlando/lua/orlando/page.lua) (`mark_skeletor_blocks`) |
+| Drinian JSON snapshots in slice docs render with a purple border (Orlando page.lua). | [orlando/lua/orlando/page.lua](../../../orlando/lua/orlando/page.lua) (`mark_drinian_blocks`) |
 | TOC sits directly under the H1, before vibecode. | [orlando/lua/orlando/page.lua](../../../orlando/lua/orlando/page.lua) (`insert_auto_toc`) |
 | Search results show the doc's intro prose (post-H1, post-vibecode, pre-first-H2). | [orlando/lua/orlando/search.lua](../../../orlando/lua/orlando/search.lua) |
 | Search ranking: 10 pts filename match, 5 pts title match, 1 pt per body hit. | [orlando/lua/orlando/search.lua](../../../orlando/lua/orlando/search.lua) |

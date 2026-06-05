@@ -2,12 +2,12 @@
 
 ~~~json
 {"vibecode": {"example": "role_delegation_mid_execution",
-	"shows": "skeletor_hash_at_a_moment_when_user_role_is_delegating_to_agent_role_inside_a_role_delegate_to_block_and_the_agent_returned_function_is_running_and_has_called_into_stdlib",
+	"shows": "drinian_hash_at_a_moment_when_user_role_is_delegating_to_agent_role_inside_a_role_delegate_to_block_and_the_agent_returned_function_is_running_and_has_called_into_stdlib",
 	"shape": "frame_scoped_delegations_field_on_the_delegate_to_frame_role_transitions_user_to_agent_to_stdlib_across_call_stack",
 	"key_point": "delegations_live_on_the_stack_frame_that_established_them_not_on_the_roles_registry"}}
 ~~~
 
-Skeletor mid-execution at a moment when **user is delegating to agent**. The program entered a `%role.delegate_to($agent.object.role) do ... end` block, called `$agent.yield(...)`, the engine received the agent-authored function back, and is now invoking that function — which has itself made a string-method call on the connection-string passed in as a kwarg.
+Drinian mid-execution at a moment when **user is delegating to agent**. The program entered a `%role.delegate_to($agent.object.role) do ... end` block, called `$agent.yield(...)`, the engine received the agent-authored function back, and is now invoking that function — which has itself made a string-method call on the connection-string passed in as a kwarg.
 
 The Caspian source:
 
@@ -20,7 +20,7 @@ $result = %role.delegate_to($agent.object.role) do
 end
 ~~~
 
-We're paused inside the agent's returned function, partway through a `$db.split(';')` call (the agent parsing the connection string). The Skeletor hash:
+We're paused inside the agent's returned function, partway through a `$db.split(';')` call (the agent parsing the connection string). The Drinian hash:
 
 ```json
 {
@@ -120,5 +120,5 @@ If the same program had nested `delegate_to` blocks, additional `delegations`-be
 ## See also
 
 - [Roles spec § `%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to) — the language construct that creates these frames.
-- [Skeletor § Role delegations](https://puck.uno/documentation/requirements/caspian/skeletor/#role-delegations) — the conceptual explanation this example illustrates.
+- [Drinian § Role delegations](https://puck.uno/documentation/requirements/caspian/drinian/#role-delegations) — the conceptual explanation this example illustrates.
 - [Agent-yield idea](https://puck.uno/documentation/ideas/agent-yield) — the primary V1.0 use case for `%role.delegate_to`, which this example is a concrete walkthrough of.

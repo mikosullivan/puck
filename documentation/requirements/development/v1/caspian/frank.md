@@ -60,7 +60,7 @@ below is preserved as **future direction**, not as Frank's work.
   `#!/usr/bin/env caspian` are directly runnable via `chmod +x` and
   `./file.casp`.
 - Argument passing from OS argv into the running Caspian program.
-  Frank adds an `argv` field on the Skeletor state hash and a
+  Frank adds an `argv` field on the Drinian state hash and a
   `{sys: "argv"}` materialize branch so `%argv` resolves to the
   program's argument list.
 - **stderr sink** — engine-introduced peer of the stdout sink that
@@ -278,29 +278,29 @@ Deferred to whichever slice introduces them:
 
 ---
 
-<a id="skeletor-impact"></a>
-## Skeletor impact
+<a id="drinian-impact"></a>
+## Drinian impact
 
 **Frank is the first slice where the
-[Skeletor state hash](aslan.md#data-structures-lua-tables) grows
+[Drinian state hash](aslan.md#data-structures-lua-tables) grows
 beyond the single `call_stack` field.** The CLI launcher hands `argv`
 into the program as durable, program-wide state — visible across
 every frame for the program's lifetime — which means it belongs as
-a top-level Skeletor field, not in any single frame's locals. From
+a top-level Drinian field, not in any single frame's locals. From
 Frank onward, every snapshot has at least one more top-level field
 than the Aslan–Edmund shape.
 
 What Frank adds to `engine.state`, and what it leaves outside:
 
-| New piece | In the Skeletor hash? | Why |
+| New piece | In the Drinian hash? | Why |
 |---|---|---|
 | `argv` (program's view of CLI args) | **Yes** — `engine.state.argv` | Durable program state; reachable from Caspian as `%argv` for the program's lifetime |
 | `stderr` sink function | No — `engine.err` (host-installed property on the engine module) | Same rationale as `engine.std` in Corin — sinks are host-installed capabilities, not program state |
-| `stderr` role object | Yes — `engine.state.roles.stderr` | Same place as `stdout` and `stdlib`; `state.roles` lives in Skeletor |
+| `stderr` role object | Yes — `engine.state.roles.stderr` | Same place as `stdout` and `stdlib`; `state.roles` lives in Drinian |
 | `eprint` bwc entry | No — `engine.bwcs.eprint` | Engine-private metadata, alongside `engine.classes` and `engine.bwcs.puts` |
 | Exit code | Not engine state at all — the launcher derives it from whether its `pcall(engine.run)` returned cleanly | Caspian programs don't see their own exit code; host-side concern |
 
-<a id="skeletor-impact-snapshots"></a>
+<a id="drinian-impact-snapshots"></a>
 ### Snapshots during a CLI run
 
 Invocation: `caspian fixtures/echo_argv.casp foo bar baz`.
@@ -362,10 +362,10 @@ stderr (cross-role transition into the new `stderr` role):**
 }
 ```
 
-`argv` is a top-level Skeletor field — program-wide state, the same
+`argv` is a top-level Drinian field — program-wide state, the same
 across every frame. The frame stack pushes/pops as transitions
 happen; `argv` doesn't move. Each frame carries its own `role` and
-`chain` (per [skeletor.md](../../caspian/skeletor/index.md) — chain wipes at
+`chain` (per [drinian.md](../../caspian/drinian/index.md) — chain wipes at
 boundaries by virtue of each frame having its own fresh chain).
 
 ---

@@ -2,13 +2,13 @@
 
 ~~~json
 {"vibecode": {"example": "bootstrap_state",
-	"shows": "minimum_skeletor_immediately_after_engine_bootstrap_before_any_dispatch",
+	"shows": "minimum_drinian_immediately_after_engine_bootstrap_before_any_dispatch",
 	"shape": "single_top_level_frame_two_roles_no_srcs_no_exceptions",
 	"slice_context": "what_aslan_ships"}}
 ~~~
 
-The state of Skeletor at the moment `engine.bootstrap()` completes and
-before any statement dispatches. This is the **minimum** Skeletor —
+The state of Drinian at the moment `engine.bootstrap()` completes and
+before any statement dispatches. This is the **minimum** Drinian —
 what an Aslan-era engine produces just before running its first
 fixture.
 
@@ -24,7 +24,7 @@ There's no in-source pause line for this state — bootstrap finishes
 from Caspian source either, so no `srcs` entries exist; every value
 later born from this fixture will be born without a `src` tag.
 
-The Skeletor hash:
+The Drinian hash:
 
 ```json
 {
@@ -82,7 +82,7 @@ What to notice:
   execution context; `stdlib` for built-in class methods and the
   user-facing I/O surfaces; `puck` for library resolution (owns the
   fetcher chain accessed through the `%puck` system surface). Roles
-  live in Skeletor as `state.roles`.
+  live in Drinian as `state.roles`.
 - **Each role has a `bucket`.** A role's bucket is its private store
   of role-owned resources — conceptually the same shape as an
   object's bucket (the `%bucket` instance-variable store from
@@ -102,9 +102,9 @@ What to notice:
   because user code reaches I/O through stdlib's surface. There's
   only one stdin object, one stdout object, one stderr object — the
   matching refs make that explicit.
-- **No `classes` field in Skeletor.** Built-in classes (string, etc.)
+- **No `classes` field in Drinian.** Built-in classes (string, etc.)
   are loaded into engine-private state during bootstrap — see
-  [skeletor.md § Classes are NOT in Skeletor](../index.md#classes-not-in-skeletor).
+  [drinian.md § Classes are NOT in Drinian](../index.md#classes-not-in-drinian).
   The string class exists and is dispatched against, but it lives in
   the engine's private class registry, not in the snapshot.
 - **Empty `locals` and empty `chain`.** No bindings yet, no chain

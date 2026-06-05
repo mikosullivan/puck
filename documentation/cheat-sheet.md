@@ -3,7 +3,7 @@
 ~~~json
 {"vibecode": {
 	"doc": "cheat_sheet",
-	"role": "compact reference to settled design decisions that span many docs; consult before making design claims about object model, IDs, dispatch, equality, skeletor fields, or engine-only classes; when this disagrees with a canonical doc, the canonical doc wins",
+	"role": "compact reference to settled design decisions that span many docs; consult before making design claims about object model, IDs, dispatch, equality, drinian fields, or engine-only classes; when this disagrees with a canonical doc, the canonical doc wins",
 	"audience": "Claude (primary), Miko (secondary as a settled-decisions index)",
 	"format": "topic_groups_with_one_line_facts_plus_links_to_canonical_locations",
 	"maintenance": "append_when_new_decisions_land; update_when_existing_decisions_change",
@@ -31,7 +31,7 @@ When facts here disagree with the canonical doc linked from the entry, the canon
 
 **Two ID formats**, split by where the ID will appear:
 
-- **Integer-strings from the global sequencer** — for IDs that **don't** appear in user buckets. Used by: object IDs, srcs registry keys. Format: `"1"`, `"2"`, ..., `"100"`, ... in encounter order. Stable within a program's lifetime, not across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/skeletor/references.md#object-ids).
+- **Integer-strings from the global sequencer** — for IDs that **don't** appear in user buckets. Used by: object IDs, srcs registry keys. Format: `"1"`, `"2"`, ..., `"100"`, ... in encounter order. Stable within a program's lifetime, not across runs. See [sequence.md § Engine use](caspian/built-in-classes/sequence.md#engine-use), [references.md § Object IDs](caspian/drinian/references.md#object-ids).
 - **UUIDs (from libsodium)** — for IDs that **do** appear in user buckets and need to be collision-safe with arbitrary user-chosen keys. Used by: platter IDs, Mikobase record UUIDs. See [base-class-use.md § Proposed shape](ideas/base-class-use.md#proposed-shape).
 
 The split exists because the per-platter-marker mechanism in [nulls.md § Serialization](caspian/built-in-classes/nulls.md#serialization) places platter IDs as keys inside user buckets, where integer-strings would collide with user-chosen field names. Object IDs never appear in user buckets (only in `references`, `objects` keys, frame locals), so they can use the cheaper sequencer.
@@ -47,13 +47,13 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 **Deferred optimizations:**
 - `%utils.sequence.compact(threshold)` — V1.1+, see [#345](https://github.com/mikosullivan/puck/issues/345).
 
-## Skeletor fields
+## Drinian fields
 
-- **In skeletor**: `roles` (the role registry), `call_stack`, `references` (the ref-id → object-id hash), `objects` (the object record store), `srcs` (source-path interning), `pending_exceptions`, `gc_errors`.
-- **NOT in skeletor**: classes. Class registry is engine-private — alongside the inverse index, dispatch caches, etc. See [skeletor.md § Classes are NOT in Skeletor](caspian/skeletor/index.md#classes-not-in-skeletor).
+- **In drinian**: `roles` (the role registry), `call_stack`, `references` (the ref-id → object-id hash), `objects` (the object record store), `srcs` (source-path interning), `pending_exceptions`, `gc_errors`.
+- **NOT in drinian**: classes. Class registry is engine-private — alongside the inverse index, dispatch caches, etc. See [drinian.md § Classes are NOT in Drinian](caspian/drinian/index.md#classes-not-in-drinian).
 - **Aslan ships**: only `state.roles` + `state.call_stack`. Everything else fills in over later slices. See [aslan.md § Data structures](development/v1/caspian/aslan.md#data-structures-lua-tables).
-- **`current_role` / `current_chain` are NOT top-level fields** — they're the top-of-stack frame's `role` and `chain`. See [skeletor.md § Worked example](caspian/skeletor/index.md#worked-example).
-- **Working state stays OUT of skeletor** — intermediate expression results, args being marshaled, etc. live in Lua locals during dispatch. See [skeletor.md § V1.0 scope](caspian/skeletor/index.md#v1-0-scope).
+- **`current_role` / `current_chain` are NOT top-level fields** — they're the top-of-stack frame's `role` and `chain`. See [drinian.md § Worked example](caspian/drinian/index.md#worked-example).
+- **Working state stays OUT of drinian** — intermediate expression results, args being marshaled, etc. live in Lua locals during dispatch. See [drinian.md § V1.0 scope](caspian/drinian/index.md#v1-0-scope).
 
 ## Truthiness
 
@@ -69,14 +69,14 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## References and uspace
 
-- **Reference class hierarchy**: `puck.uno/reference` base; subclasses `puck.uno/variable` (uspace: true) and `puck.uno/hash_element` (uspace: false). See [references.md § Reference classes](caspian/skeletor/references.md#reference-classes).
-- **`uspace` is a class-level property**, not per-instance. GC roots = the subset of references whose class declares `uspace: true`. See [references.md § Uspace: a class-level property](caspian/skeletor/references.md#uspace-class-property).
-- **`references` hash**: `{ref_id: object_id}` — the bare pointer storage. Single source of truth for what each reference points at. See [references.md § Shape](caspian/skeletor/references.md#shape).
-- **Inverse index is engine-private**: maintained via `after_set` / `after_delete` hooks on the references hash. Not exposed to user code in V1. See [the references example](caspian/skeletor/examples/references.md#inverse-index-engine-internal).
+- **Reference class hierarchy**: `puck.uno/reference` base; subclasses `puck.uno/variable` (uspace: true) and `puck.uno/hash_element` (uspace: false). See [references.md § Reference classes](caspian/drinian/references.md#reference-classes).
+- **`uspace` is a class-level property**, not per-instance. GC roots = the subset of references whose class declares `uspace: true`. See [references.md § Uspace: a class-level property](caspian/drinian/references.md#uspace-class-property).
+- **`references` hash**: `{ref_id: object_id}` — the bare pointer storage. Single source of truth for what each reference points at. See [references.md § Shape](caspian/drinian/references.md#shape).
+- **Inverse index is engine-private**: maintained via `after_set` / `after_delete` hooks on the references hash. Not exposed to user code in V1. See [the references example](caspian/drinian/examples/references.md#inverse-index-engine-internal).
 
 ## Dispatch
 
-- **Every method call pushes a `method_call` frame**, regardless of role. Same-role and cross-role calls both push. Role is one field on the frame, not the trigger for frame creation. See [skeletor.md § Worked example](caspian/skeletor/index.md#worked-example).
+- **Every method call pushes a `method_call` frame**, regardless of role. Same-role and cross-role calls both push. Role is one field on the frame, not the trigger for frame creation. See [drinian.md § Worked example](caspian/drinian/index.md#worked-example).
 - **Default is unicast**: first match wins, walk stops. Used by all normal method calls.
 - **Multicast for lifecycle hooks**: every match fires, in walk order. Used by `on_close` and (when they land) `after_set`, `after_delete`, etc.
 - **Dispatch kind is a function property**: `$foo.on_call = :first` (default) or `:all` (multicast). Convention is to put the property assignment on the line after the function definition. See [lucy.md § `on_call` property](caspian/lucy/index.md#on-call-property), [base-class-use.md § Unicast vs multicast](ideas/base-class-use.md#unicast-vs-multicast).
@@ -91,7 +91,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 ## Roles
 
-- **Roles live in Skeletor** at `state.roles`. Program-visible execution state. See [aslan.md § Data structures](development/v1/caspian/aslan.md#data-structures-lua-tables).
+- **Roles live in Drinian** at `state.roles`. Program-visible execution state. See [aslan.md § Data structures](development/v1/caspian/aslan.md#data-structures-lua-tables).
 - **Role on the object, not per-platter**: when an object has multiple platters, the owning role is on the object itself; the role that owns the object owns the whole stack.
 - **Chain is per-frame**, regardless of role. Every frame gets a fresh `{log: {}, misc: {}}` on push — two reserved sub-fields pre-allocated even when empty. See [jasmine/caspian.md](caspian/packages/jasmine/caspian.md), [nulls.md § Use cases](caspian/built-in-classes/nulls.md#use-cases).
 - **"Chain wipe at the role boundary" is a special case of per-frame chain isolation** — same-role and cross-role calls both push a fresh chain.
@@ -144,7 +144,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 
 - **Fixture**: `[[{"value": "hello"}, "to_string"]]`. Hand-written CaspianJ, no transpiler involved.
 - **Returns `"hello"`** to the Lua test harness. No I/O, no stdout.
-- **Engine has**: `state.roles` (user + stdlib) + `state.call_stack` (one top_level frame). That's all that's in skeletor.
+- **Engine has**: `state.roles` (user + stdlib) + `state.call_stack` (one top_level frame). That's all that's in drinian.
 - **Engine-private**: `engine.classes` (just the `puck.uno/string` class with `to_string` returning self). Registry keyed by UNS-prefixed name.
 - **Method dispatch**: every method call pushes a `method_call` frame (regardless of role). For Aslan's fixture, dispatch is cross-role `user → stdlib → user`. TA.8 verifies the role transition is observed.
 - **Chain shape**: every frame's chain is `{ log = {}, misc = {} }` — two reserved sub-fields pre-allocated, even when empty.

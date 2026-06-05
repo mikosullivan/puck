@@ -309,23 +309,23 @@ argument (a second bwc, two arguments, kwargs, escapes inside the
 string, etc.) is later work. `engine.run` keeps its no-args signature
 from Bree.
 
-<a id="corin-step-2-skeletor-impact"></a>
-#### Skeletor impact
+<a id="corin-step-2-drinian-impact"></a>
+#### Drinian impact
 
 Corin adds a new role (`stdout`), a new registry (`engine.bwcs`),
 and a new sink property (`engine.std`) — but the shape of the
-[Skeletor state hash](aslan.md#data-structures-lua-tables) doesn't
+[Drinian state hash](aslan.md#data-structures-lua-tables) doesn't
 change. Where each piece lives:
 
-| New thing | Where it lives | In the Skeletor hash? |
+| New thing | Where it lives | In the Drinian hash? |
 |---|---|---|
-| `stdout` role object | `engine.state.roles.stdout` | Yes — `state.roles` lives IN skeletor (per Aslan) |
+| `stdout` role object | `engine.state.roles.stdout` | Yes — `state.roles` lives IN drinian (per Aslan) |
 | `engine.bwcs.puts` entry | `engine.bwcs` | No — bwc registry is engine-private metadata, alongside `engine.classes` |
 | Capture sink function | `engine.std` (host-supplied property) | No — sinks are host-installed capabilities on the engine module, not program state |
 | Cross-role transition to `stdout` | A `bwc_call` frame with `role == engine.state.roles.stdout` and `bwc == "puts"` pushed on `engine.state.call_stack` while the `puts` handler runs | **Yes** — this is the one execution-state effect Corin has |
 
 So `engine.state.roles` grows (gains `stdout`), but the top-level
-Skeletor shape stays the same. Mid-call, the top frame's `role` gets
+Drinian shape stays the same. Mid-call, the top frame's `role` gets
 a new possible value: alongside `user` and `stdlib`, Corin dispatch
 can push a frame with `stdout`. Step 3's snapshots show that
 transition in action.
@@ -378,10 +378,10 @@ back to Step 2 for that layer.
 When Corin passes, Digory is selected from the roadmap and planned at
 the same detail level as Bree and Corin.
 
-<a id="corin-step-3-skeletor-snapshots"></a>
-#### Skeletor snapshots during the run
+<a id="corin-step-3-drinian-snapshots"></a>
+#### Drinian snapshots during the run
 
-Corin doesn't change the top-level Skeletor hash shape, but it does
+Corin doesn't change the top-level Drinian hash shape, but it does
 grow `state.roles` (gaining `stdout`) and a `puts` dispatch pushes a
 frame carrying that role mid-call. The stdout sink itself lives on
 `engine.std` (the host-installed capability property on the engine
@@ -441,7 +441,7 @@ transition TC.5 verifies):**
 }
 ```
 
-Side effects visible outside the Skeletor hash during the `puts`
+Side effects visible outside the Drinian hash during the `puts`
 call: the capture buffer behind `engine.std` accumulates the string
 `"hello\n"`. That buffer is the host's, not the engine's — Caspian
 code has no reference to it from inside the program.

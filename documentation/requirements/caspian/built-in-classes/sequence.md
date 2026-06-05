@@ -117,10 +117,10 @@ user-controlled data isn't required. The current consumers:
 
 - **Object IDs** — every allocated object draws an ID from this
   counter. See
-  [references.md § Object IDs](../skeletor/references.md#object-ids).
+  [references.md § Object IDs](../drinian/references.md#object-ids).
 - **srcs registry keys** — each source file (local or UNS-loaded)
   registered in `state.srcs` gets a key from this counter. See
-  [skeletor.md § Source-location tagging](../skeletor/index.md#source-location-tagging).
+  [drinian.md § Source-location tagging](../drinian/index.md#source-location-tagging).
 
 Two strings drawn from the global counter are never equal,
 regardless of what they identify — so an object ID can never
@@ -160,10 +160,10 @@ But the engine's own object-ID hot path does **not** go through
 the class. The conceptual purity loss ("engine dogfoods its own
 class") is repaid in raw allocator throughput.
 
-**The global counter lives outside Skeletor** — it's engine-private
+**The global counter lives outside Drinian** — it's engine-private
 state, not part of the user-observable execution hash. Programs
 can't read it, can't reset it, can't see its current value. Putting
-it in Skeletor would imply it's program-observable state, which it
+it in Drinian would imply it's program-observable state, which it
 isn't. The counter exists in whatever internal scratch space the
 engine maintains for its own bookkeeping (alongside the inverse
 index, dispatch caches, etc.), separate from the user-visible
@@ -335,5 +335,5 @@ alternate-engine conversation becomes concrete.
 <a id="related-docs"></a>
 ## Related docs
 
-- [references.md § Object IDs](../skeletor/references.md#object-ids) —
+- [references.md § Object IDs](../drinian/references.md#object-ids) —
   the primary consumer of the global sequence counter.

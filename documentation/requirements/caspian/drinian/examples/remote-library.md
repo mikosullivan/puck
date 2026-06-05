@@ -2,7 +2,7 @@
 
 ~~~json
 {"vibecode": {"example": "loaded_remote_library",
-	"shows": "skeletor_after_runtime_loading_a_puck_library_and_calling_a_method_on_it; demonstrates_trust_barrier_via_cross_role_chain_wipe",
+	"shows": "drinian_after_runtime_loading_a_puck_library_and_calling_a_method_on_it; demonstrates_trust_barrier_via_cross_role_chain_wipe",
 	"shape": "srcs_mixes_file_and_uns_entries; roles_includes_loaded_library; chain_isolation_at_role_boundary",
 	"key_idea": "loaded_library_is_structurally_identical_to_any_other_role_introducing_thing"}}
 ~~~
@@ -93,8 +93,8 @@ What to notice:
   globally unique identifier with no collision risk between loaded
   libraries.
 - **The library's class is not visible in the snapshot.** Class
-  registries are engine-private state, not part of Skeletor — see
-  [skeletor.md § Classes are NOT in Skeletor](../../skeletor/index.md#classes-not-in-skeletor).
+  registries are engine-private state, not part of Drinian — see
+  [drinian.md § Classes are NOT in Drinian](../../drinian/index.md#classes-not-in-drinian).
   `Renderer` was registered when `%puck['markdown.uno/render']` ran
   at top level on line 1; the dispatcher knows about it because the
   engine's class registry knows about it, not because the snapshot

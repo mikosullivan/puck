@@ -214,11 +214,11 @@ Rationale: preserves Caspian's structural containment. Cross-role propagation wo
 
 The transition-only firing rule keeps the per-mutation cost low even for hot loops on heavily-listened objects.
 
-### Fitting into Skeletor
+### Fitting into Drinian
 
-Registrations are runtime state — they have to survive between mutations, persist through snapshot/revive (eventually), and be reachable for GC tracing. The natural home is **inside the [Skeletor](../../requirements/caspian/skeletor/) hash**, as a top-level field alongside `call_stack`, `references`, `roles`, etc.
+Registrations are runtime state — they have to survive between mutations, persist through snapshot/revive (eventually), and be reachable for GC tracing. The natural home is **inside the [Drinian](../../requirements/caspian/drinian/) hash**, as a top-level field alongside `call_stack`, `references`, `roles`, etc.
 
-**Shape**: a `registrations` hash at the Skeletor top level, keyed by registration ID:
+**Shape**: a `registrations` hash at the Drinian top level, keyed by registration ID:
 
 ```json
 "registrations": {
@@ -243,11 +243,11 @@ The handle returned from `$listener.object.register(...)` is a small user-space 
 - **The listener is referenced weakly by the registration.** If the listener is otherwise unreferenced, the registration silently goes inert (the engine cleans it up next sweep). This prevents registration-pins-listener cycles.
 - **The handler closure** holds its captured scope by normal reference. If the handler captures the source explicitly, that pin lives in the closure, not in the registration entry — same model as any other captured reference.
 
-**Snapshot / revive (post-V1.0)**: registrations live in Skeletor, so when Skeletor serializes they serialize too. Blocks already need to serialize for snapshot/revive to work end-to-end (per [skeletor.md § Future: snapshot-and-revive](../../requirements/caspian/skeletor/index.md#future-snapshot-and-revive-post-v1-0)); handlers come along for free. On revive, the `registrations` table comes back intact and the `by_source` index is rebuilt from it.
+**Snapshot / revive (post-V1.0)**: registrations live in Drinian, so when Drinian serializes they serialize too. Blocks already need to serialize for snapshot/revive to work end-to-end (per [drinian.md § Future: snapshot-and-revive](../../requirements/caspian/drinian/index.md#future-snapshot-and-revive-post-v1-0)); handlers come along for free. On revive, the `registrations` table comes back intact and the `by_source` index is rebuilt from it.
 
-**No new structural commitment for V1.0**: since this feature is post-V1.0 anyway, the Skeletor hash doesn't need to grow yet. When this feature lands, adding a top-level `registrations` field follows the same incremental-growth pattern Skeletor already uses ([per the Aslan-to-future arc](../../requirements/caspian/skeletor/index.md#v1-0-scope)).
+**No new structural commitment for V1.0**: since this feature is post-V1.0 anyway, the Drinian hash doesn't need to grow yet. When this feature lands, adding a top-level `registrations` field follows the same incremental-growth pattern Drinian already uses ([per the Aslan-to-future arc](../../requirements/caspian/drinian/index.md#v1-0-scope)).
 
-**A Mikobase counterpart is also needed.** The Skeletor `registrations` hash covers live in-process state. Mikobase records — persistent, possibly cross-process — will need their own way to attach registrations so that mutations to a stored record can fire handlers. Separate design exercise; mentioned here so the parallel concern doesn't get forgotten when this feature is eventually pursued.
+**A Mikobase counterpart is also needed.** The Drinian `registrations` hash covers live in-process state. Mikobase records — persistent, possibly cross-process — will need their own way to attach registrations so that mutations to a stored record can fire handlers. Separate design exercise; mentioned here so the parallel concern doesn't get forgotten when this feature is eventually pursued.
 
 ### Implementation order, if this ever gets built
 

@@ -536,7 +536,7 @@ Settled changes that propagate:
 - [lucy.md § %bucket](../requirements/caspian/lucy/index.md#bucket) — the `uns`
   bucket-key convention can be retired in favor of per-platter
   buckets.
-- [skeletor.md](../requirements/caspian/skeletor/index.md) — snapshot/revive
+- [drinian.md](../requirements/caspian/drinian/index.md) — snapshot/revive
   shape needs to handle the new structure: each platter record
   serializes with its class UNS and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become

@@ -45,7 +45,7 @@ frames are the canonical example; system-surface references
 engine-internal references don't, so they're not roots in their
 own right — they're reachable only through the chain of objects
 that some uspace root points at. The `references` hash inside
-Skeletor (see [references.md](skeletor/references.md)) maps every
+Drinian (see [references.md](drinian/references.md)) maps every
 reference object to the object it points at, making the trace
 tractable without reference counting. This is what makes
 deterministic GC work: every reference is in one hash, every root
@@ -332,11 +332,11 @@ The record shape:
 }
 ```
 
-`state.gc_errors` is a top-level Skeletor field — an array that starts empty
+`state.gc_errors` is a top-level Drinian field — an array that starts empty
 and accumulates one record per on_close failure for the program's lifetime.
 Why a list in state rather than a write to a diagnostic stream:
 
-- It lives in Skeletor, consistent with the principle that all observable
+- It lives in Drinian, consistent with the principle that all observable
   engine state is in the hash.
 - It's inspectable from any snapshot — a debugger seeing a long `gc_errors`
   list immediately sees something's wrong.

@@ -1,8 +1,8 @@
-# Skeletor
+# Drinian
 
 ~~~json
 {"vibecode": {
-	"doc": "skeletor",
+	"doc": "drinian",
 	"role": "Caspian's runtime state organization: all execution state lives in a single hash; eventually that hash can be serialized for snapshot-and-revive, enabling transparent process pause/resume across remote calls",
 	"status": "V1.0 objective — narrow scope; broader capabilities deferred",
 	"v1_0_scope": "in-memory state hash only; no export API; no snapshot/revive; no HTTP promise()",
@@ -12,18 +12,18 @@
 }}
 ~~~
 
-**Skeletor** is the code name for Caspian's process-state organization: all execution
+**Drinian** is the code name for Caspian's process-state organization: all execution
 state lives in a single hash, and the interpreter accesses runtime state only through
 that hash's interface. The longer-term goal is to serialize that hash for
 snapshot-and-revive — letting a Caspian process pause across a remote call, release the
 host process during the wait, and revive transparently when the response arrives. The
 foundation (the hash) ships in V1.0; the snapshot/revive machinery is deferred.
 
-**Skeletor is also the foundation for deterministic GC.** The trace
+**Drinian is also the foundation for deterministic GC.** The trace
 that determines what's reachable starts from the **uspace roots** —
 reference objects whose class declares `uspace: true` (variables in
 live frames are the canonical example). The `references` hash inside
-Skeletor (see [references.md](references.md)) maps every reference
+Drinian (see [references.md](references.md)) maps every reference
 object to the object it points at; the engine walks from the uspace
 roots through this hash to determine reachability without reference
 counting. See [garbage-collection.md](../garbage-collection.md#how-it-works)
@@ -40,7 +40,7 @@ for the GC side of this dependency.
 }}
 ~~~
 
-V1.0 of Skeletor ships **only the in-memory hash** and the structural commitment that
+V1.0 of Drinian ships **only the in-memory hash** and the structural commitment that
 the interpreter goes through it for all execution state:
 
 - The runtime creates a plain in-memory hash on startup (Lua-table-backed in Lucy).
@@ -69,17 +69,17 @@ overhaul. V1.0 ships the foundation; V1.x lands the export and the features that
 depend on it.
 
 <a id="worked-example"></a>
-## Worked example: Skeletor mid-execution
+## Worked example: Drinian mid-execution
 
 ~~~json
 {"vibecode": {"section": "worked_example",
-	"purpose": "illustrate_v1_0_skeletor_hash_with_a_realistic_nested_execution_moment_so_callers_can_see_what_the_data_structure_looks_like_beyond_the_minimal_aslan_snapshot",
+	"purpose": "illustrate_v1_0_drinian_hash_with_a_realistic_nested_execution_moment_so_callers_can_see_what_the_data_structure_looks_like_beyond_the_minimal_aslan_snapshot",
 	"shape_committed": false,
 	"note": "field_names_and_frame_kinds_in_this_example_are_speculative_and_will_settle_as_each_slice_grows_the_hash"}}
 ~~~
 
 The [Aslan slice](../../development/v1/caspian/aslan.md) ships the minimum
-Skeletor footprint — a single-field hash, `call_stack`, holding one
+Drinian footprint — a single-field hash, `call_stack`, holding one
 `top_level` frame whose `role` and `chain` are the program's
 starting role and an empty chain. Later slices grow the hash
 (deeper stacks, iterator state, pending exceptions, etc.) without
@@ -122,15 +122,15 @@ succeeded (`$name == 'Aslan'`), `$count` has been incremented to 1,
 `$who = 'Aslan'`. The local variable `$msg` inside `greet` has been
 computed but not yet returned. We freeze the state right there.
 
-The Skeletor hash at that moment. The `comment` fields throughout
-are explanatory annotations for this walkthrough — real Skeletor
+The Drinian hash at that moment. The `comment` fields throughout
+are explanatory annotations for this walkthrough — real Drinian
 snapshots won't carry them. (Though `comment` is a reserved
 pass-through field per [standard-fields.md](../../ecoverse/standard-fields.md),
 so they'd be tolerated, not stripped.)
 
 ~~~json
 {
-  "comment": "Skeletor mid-execution, paused inside greet on the first iteration. Note count's value: it was set to 0 at line 7 and incremented to 1 from inside the if (line 11) — the updated value lives in frame 0's locals, not in the if-block's, because that's where count was defined. See Source-location tagging below for the file/src scheme.",
+  "comment": "Drinian mid-execution, paused inside greet on the first iteration. Note count's value: it was set to 0 at line 7 and incremented to 1 from inside the if (line 11) — the updated value lives in frame 0's locals, not in the if-block's, because that's where count was defined. See Source-location tagging below for the file/src scheme.",
   "srcs": {
     "a": {"file": "/path/to/greetings.casp"}
   },
@@ -292,7 +292,7 @@ Things to notice:
   environment can't live on the call stack — that scope has
   unwound. Handled in most languages by giving each closure a
   captured-environment object that outlives the call stack. For
-  Skeletor that'd be a sibling field like
+  Drinian that'd be a sibling field like
   `captured_envs: [{locals, lexical_parent}, ...]`, with
   `lexical_parent` on a function_call frame pointing either into
   `call_stack` (still-live defining scope) or into `captured_envs`
@@ -337,7 +337,7 @@ Things to notice:
   this is process-wide engine state. See
   [garbage-collection.md § Errors during on_close](../garbage-collection.md#on-close-errors).
 
-This is what V1.0 Skeletor is **shaped like** — not what it ships in
+This is what V1.0 Drinian is **shaped like** — not what it ships in
 Aslan. Aslan's hash is the bottom slice of this (the `roles` registry
 populated with `user` + `stdlib`, and a `call_stack` with one
 `top_level` frame); subsequent slices fill in the other fields as
@@ -376,7 +376,7 @@ end
 
 At line 4, the program enters a `delegate_to` block extending the user role's permissions to the agent's role. Inside the block, `$agent.yield` round-trips to the remote agent; the agent returns a Caspian function (whose first param is the agent itself, per the [agent-yield protocol](https://puck.uno/documentation/ideas/agent-yield)); the engine invokes that function in the agent's role. The agent's function is now running and is itself making a method call on the dirjail object that was passed in as `db`.
 
-Capturing Skeletor mid-execution at the moment of the agent's `db.find()` call:
+Capturing Drinian mid-execution at the moment of the agent's `db.find()` call:
 
 ```json
 {
@@ -450,13 +450,13 @@ A few things to notice in this snapshot:
 
 If the same program had nested `delegate_to` blocks, additional `delegations`-bearing frames would stack up in the same way; permission resolution walks the stack and applies each in order; unwinding undoes each in reverse.
 
-<a id="classes-not-in-skeletor"></a>
-### Classes are NOT in Skeletor
+<a id="classes-not-in-drinian"></a>
+### Classes are NOT in Drinian
 
 ~~~json
-{"vibecode": {"section": "classes_not_in_skeletor",
-	"purpose": "establish_that_class_registries_are_engine_private_state_not_part_of_the_observable_skeletor_hash",
-	"contrast_with": "roles_which_DO_live_in_skeletor_as_state_roles",
+{"vibecode": {"section": "classes_not_in_drinian",
+	"purpose": "establish_that_class_registries_are_engine_private_state_not_part_of_the_observable_drinian_hash",
+	"contrast_with": "roles_which_DO_live_in_drinian_as_state_roles",
 	"rationale": "classes_are_implementation_detail_of_the_dispatcher_not_program_visible_execution_state"}}
 ~~~
 
@@ -465,18 +465,18 @@ etc.) plus any runtime-registered classes (user-defined via
 `Class.new`, library-defined when a library loads) — live as
 **engine-private state**, alongside the inverse index, dispatch
 caches, and the object-ID counter. They are **not** top-level fields
-in Skeletor.
+in Drinian.
 
 This is a deliberate asymmetry with **roles, which DO live in
-Skeletor** (`state.roles`). Roles are program-visible execution state
+Drinian** (`state.roles`). Roles are program-visible execution state
 — a running program can inspect `%role`, frames carry role
 references, the role registry is part of "what the program is doing
 right now." Classes, by contrast, are dispatcher implementation
 detail. Programs don't need to inspect the class registry through
-Skeletor to function; the dispatcher reaches into engine-private
+Drinian to function; the dispatcher reaches into engine-private
 state to resolve method calls.
 
-Class references that appear *in* Skeletor (e.g., `receiver_type:
+Class references that appear *in* Drinian (e.g., `receiver_type:
 "string"` on a `method_call` frame, or `class_ref: "..."` on a
 value) are name strings. The dispatcher resolves names against the
 engine-private registry at dispatch time. Class lookup follows
@@ -489,13 +489,13 @@ registry's contents don't show up in snapshots.
 
 ~~~json
 {"vibecode": {"section": "source_location_tagging",
-	"purpose": "preserve_caspian_source_file_and_line_through_to_skeletor_so_inspectors_debuggers_and_error_reports_can_point_users_back_to_the_code",
+	"purpose": "preserve_caspian_source_file_and_line_through_to_drinian_so_inspectors_debuggers_and_error_reports_can_point_users_back_to_the_code",
 	"mechanism": "top_level_file_registry_plus_src_tuple_on_values_and_pc_on_frames",
 	"data_source": "transpiler_already_emits_line_on_every_caspianj_node_per_caspianj_md_line_annotations",
 	"cost": "negligible_one_int_per_value_plus_tiny_top_level_registry"}}
 ~~~
 
-Every value in Skeletor — locals, chain entries, frame `src` — can
+Every value in Drinian — locals, chain entries, frame `src` — can
 carry a back-pointer to where it came from in source. The
 infrastructure: a top-level `srcs` registry interning paths to
 short keys, plus a 2-element `src` tuple `[src_key, line]` on
@@ -549,7 +549,7 @@ per value: tens of bytes vs. the kilobytes you'd pay without
 interning. The transpiler already populates `line` on every
 CaspianJ node (per
 [caspianj.md § line annotations](../caspianj.md#line-annotations)),
-so propagation through Skeletor is "copy the line during
+so propagation through Drinian is "copy the line during
 materialization" — one helper, applied everywhere a value is born.
 
 **Semantics of `src` on a value:**
@@ -814,7 +814,7 @@ produce human-readable paths.
 The previous example tops out at four frames. Real programs go much
 deeper — recursion, nested method calls, helper functions calling
 helper functions. This example walks a three-level tree to show what
-a meaningfully deeper Skeletor looks like.
+a meaningfully deeper Drinian looks like.
 
 ~~~caspian
 function &print_tree($node, $depth)
@@ -960,7 +960,7 @@ What the deeper stack illustrates that the shorter one didn't:
   *its* `.each`. src alone doesn't distinguish them — the frame's
   surrounding state does.
 
-Production Skeletor will need a richer src representation (likely
+Production Drinian will need a richer src representation (likely
 adding a `statement_index` or `sub_position` alongside the
 existing `[src_key, line]` to disambiguate paused-mid-expression
 cases). V1.0 doesn't tackle
@@ -1212,7 +1212,7 @@ end
 
 ~~~json
 {"vibecode": {"section": "remote_library_and_trust_barrier",
-	"purpose": "show_how_a_runtime_loaded_remote_library_appears_in_skeletor_and_demonstrate_that_cross_role_chain_isolation_handles_the_trust_barrier_with_no_special_machinery",
+	"purpose": "show_how_a_runtime_loaded_remote_library_appears_in_drinian_and_demonstrate_that_cross_role_chain_isolation_handles_the_trust_barrier_with_no_special_machinery",
 	"shape_committed": false,
 	"key_idea": "loaded_library_gets_its_own_role_and_files_entries; cross_role_chain_wipe_does_the_trust_isolation_work_for_free"}}
 ~~~
@@ -1305,8 +1305,8 @@ Things to notice:
   gives a globally unique identifier with no risk of collision
   with other loaded libraries.
 - **The library's class is not visible in the snapshot.** Class
-  registries are engine-private state, not part of Skeletor (see
-  [Classes are NOT in Skeletor](#classes-not-in-skeletor)).
+  registries are engine-private state, not part of Drinian (see
+  [Classes are NOT in Drinian](#classes-not-in-drinian)).
   `Renderer` was registered when `%puck['markdown.uno/render']`
   executed on line 1; the dispatcher knows about it because the
   engine's registry knows about it, not because it appears in any
@@ -1324,7 +1324,7 @@ Things to notice:
   wiped at the role boundary, exactly the same mechanism that
   wipes the chain for any cross-role call (stdlib, stdout, etc.).
   Trust isolation is the role boundary's normal behavior, not a
-  special "remote library" feature. Skeletor needs no new field
+  special "remote library" feature. Drinian needs no new field
   for this.
 - **`lexical_parent: null` on the library's frame.** The
   library's `to_html` was defined in the library's own top-level
@@ -1350,7 +1350,7 @@ The takeaway: loading a remote library is **structurally
 identical** to anything else that introduces a role — adding an
 entry to `roles`, a possible entry to `srcs`, and pushing frames
 that reference it. The chain wipe at role boundaries does all
-the trust isolation work. Skeletor's job is just to make the
+the trust isolation work. Drinian's job is just to make the
 role and file boundaries visible.
 
 ---
@@ -1358,7 +1358,7 @@ role and file boundaries visible.
 <a id="future-snapshot-and-revive"></a>
 ## Future: snapshot-and-revive (post-V1.0)
 
-The original Skeletor vision — transparent snapshot-and-revive across blocking remote
+The original Drinian vision — transparent snapshot-and-revive across blocking remote
 calls — depends on adding an export API to the V1.0 hash. The sections below describe
 that target shape. None of it ships in V1.0; it's recorded here so the V1.0 work is
 done with the post-V1.0 capability in mind.
@@ -1614,19 +1614,19 @@ under-the-hood — just expires the correlation ID after a deadline.
 <a id="future-snapshot-replay-debugging"></a>
 ### Snapshot-as-debugging-tool
 
-The snapshot infrastructure built for Skeletor is the same infrastructure
-needed for time-travel debugging. Once Skeletor exists, "save the snapshot
+The snapshot infrastructure built for Drinian is the same infrastructure
+needed for time-travel debugging. Once Drinian exists, "save the snapshot
 on uncaught error, let the developer revive locally" is a small layer on top.
 
 <a id="future-debugger-plugin-interface"></a>
 ### Debugger / inspector plugin interface
 
 Caspian (or third-party "People" libraries) could expose hook points into
-Skeletor at well-defined moments — pre-dispatch, post-dispatch, frame push,
+Drinian at well-defined moments — pre-dispatch, post-dispatch, frame push,
 frame pop, exception raise, on_close, etc. — letting an external library
 participate in the debugging story without being baked into the engine.
 
-A plugin sees the Skeletor hash at each hook, can read state, attach
+A plugin sees the Drinian hash at each hook, can read state, attach
 metadata (via the reserved `comment`/`misc` pass-through fields), and
 emit its own diagnostic output. Examples that fall out naturally:
 
@@ -1637,7 +1637,7 @@ emit its own diagnostic output. Examples that fall out naturally:
   gaps for dynamically-generated code by observing creation sites
 - A test-coverage instrumenter
 
-This is well after V1.0 — needs Skeletor to be stable, needs the hook
+This is well after V1.0 — needs Drinian to be stable, needs the hook
 interface to be designed (which hooks, what they can do, security model
 for what plugins can read or modify, what isolation looks like). Noted
 here so the V1.0 design doesn't preclude it.

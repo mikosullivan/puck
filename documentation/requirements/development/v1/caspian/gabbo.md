@@ -225,11 +225,11 @@ Gabbo automatically — every subprocess Bryton spawns benefits.
 
 ---
 
-<a id="skeletor-impact"></a>
-## Skeletor impact
+<a id="drinian-impact"></a>
+## Drinian impact
 
 **Gabbo does not change the
-[Skeletor state hash](aslan.md#data-structures-lua-tables) shape
+[Drinian state hash](aslan.md#data-structures-lua-tables) shape
 or contents.** Cache load and cache write happen in engine
 plumbing, not in the runtime state the program sees. Whether the
 tree arrived from a fresh parse or from a cache file, dispatch

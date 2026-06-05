@@ -4,7 +4,7 @@
 {"vibecode": {"example": "deep_recursion_tree_walk",
 	"shows": "recursive_function_paused_at_innermost_call_with_repeated_method_each_frames_and_independent_iterator_state",
 	"shape": "eight_frame_call_stack_with_repeated_function_call_frames_at_different_depths",
-	"slice_context": "demonstrates_skeletor_at_real_stack_depth"}}
+	"slice_context": "demonstrates_drinian_at_real_stack_depth"}}
 ~~~
 
 A recursive `print_tree` function paused at the innermost level of a

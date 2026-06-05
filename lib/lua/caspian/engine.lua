@@ -18,14 +18,14 @@
     "root":         "(future) dirjail for filesystem access. Host injects before run()."
   },
   "state": {
-    "engine.state.roles":      "role registry; lives IN skeletor (program-visible)",
+    "engine.state.roles":      "role registry; lives IN drinian (program-visible)",
     "engine.state.call_stack": "the call stack; one top_level frame after bootstrap",
-    "engine.classes":          "class registry; engine-private, NOT in skeletor; keyed by UNS-prefixed class name (e.g. \"puck.uno/string\")"
+    "engine.classes":          "class registry; engine-private, NOT in drinian; keyed by UNS-prefixed class name (e.g. \"puck.uno/string\")"
   },
   "value_shape":  "{ type=\"puck.uno/<class>\", owning_role=role_object, payload=any_lua_value }",
   "frame_shape":  "{ action=string, role=role_object, chain={log={},misc={}}, locals={}, ... }",
   "depends_on":   ["caspian.lexer", "caspian.parser", "caspian.transpiler"],
-  "docs":         ["documentation/development/v1/caspian/aslan.md", "documentation/development/v1/caspian/bree.md", "documentation/development/v1/caspian/corin.md", "documentation/development/v1/caspian/digory.md", "documentation/caspian/caspianj.md", "documentation/caspian/skeletor/index.md", "documentation/caspian/roles.md"]
+  "docs":         ["documentation/development/v1/caspian/aslan.md", "documentation/development/v1/caspian/bree.md", "documentation/development/v1/caspian/corin.md", "documentation/development/v1/caspian/digory.md", "documentation/caspian/caspianj.md", "documentation/caspian/drinian/index.md", "documentation/caspian/roles.md"]
 }
 ]]
 
@@ -71,7 +71,7 @@ end
 }
 ]]
 function M.bootstrap()
-    -- Skeletor: roles registry lives inside state.
+    -- Drinian: roles registry lives inside state.
     M.state = {
         roles = {
             user   = { name = "user"   },
@@ -341,7 +341,7 @@ end
   "fn":  "dispatch",
   "in":  "statement: a CaspianJ statement. Two shapes today: method-call [receiver, method, args?] and bwc-call [{bwc:name}, arg1?, ...].",
   "out": "the call's return value (a value table for method calls; bwc handler return for bwc calls, typically nil)",
-  "note": "Pushes a frame unconditionally. method_call frames carry receiver_type+method; bwc_call frames carry bwc instead. The new frame's chain is fresh per skeletor.md's per-frame-chain model."
+  "note": "Pushes a frame unconditionally. method_call frames carry receiver_type+method; bwc_call frames carry bwc instead. The new frame's chain is fresh per drinian.md's per-frame-chain model."
 }
 ]]
 function M.dispatch(statement)

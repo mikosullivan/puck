@@ -13,7 +13,7 @@ role alternation, `lexical_parent` divergence at the function call,
 outer-scope variable mutation from inside an inner scope, and the
 canonical `references` + `objects` representation that backs Caspian's
 deterministic garbage collection (see
-[references.md](https://puck.uno/documentation/requirements/caspian/skeletor/references)
+[references.md](https://puck.uno/documentation/requirements/caspian/drinian/references)
 and [garbage-collection.md](https://puck.uno/documentation/requirements/caspian/garbage-collection)).
 
 Caspian source:
@@ -319,7 +319,7 @@ What to notice:
   birth.
 - **Uspace roots are the variable objects.** `puck.uno/variable`
   declares `uspace: true` (per
-  [references.md § Uspace](https://puck.uno/documentation/requirements/caspian/skeletor/references#uspace-class-property)),
+  [references.md § Uspace](https://puck.uno/documentation/requirements/caspian/drinian/references#uspace-class-property)),
   so objects `"1"`–`"6"` ground the program's reachability graph.
   `puck.uno/hash_element` declares `uspace: false`, so `"7"` and `"8"`
   aren't roots in their own right — they're reachable only because the
@@ -329,7 +329,7 @@ What to notice:
   user code created them. Cross-role allocations (e.g., a stdlib
   method returning a new object) would carry the allocating role.
 - **`sequence` is `29`.** The global object-ID counter (see
-  [references.md § Object IDs](https://puck.uno/documentation/requirements/caspian/skeletor/references#object-ids))
+  [references.md § Object IDs](https://puck.uno/documentation/requirements/caspian/drinian/references#object-ids))
   exposed at the top level so snapshots can resume allocation from
   the right place. A bare integer starting at `0` at boot and
   incremented for each object AND each non-shadow platter allocated.
@@ -337,5 +337,5 @@ What to notice:
   non-shadow platters (IDs `"15"`–`"28"`); the next allocation will
   take ID `"29"`.
 - **Roles' buckets are empty here.** Elided for focus; see
-  [bootstrap.md](https://puck.uno/documentation/requirements/caspian/skeletor/examples/bootstrap)
+  [bootstrap.md](https://puck.uno/documentation/requirements/caspian/drinian/examples/bootstrap)
   for the standard registry with engine/puck roles and stdin/stdout/stderr.

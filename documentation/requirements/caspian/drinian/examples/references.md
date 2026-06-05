@@ -2,7 +2,7 @@
 
 ~~~json
 {"vibecode": {"example": "references_hash",
-	"shows": "skeletor_state_with_populated_references_hash_demonstrating_variable_and_hash_element_reference_objects_pointing_at_user_data",
+	"shows": "drinian_state_with_populated_references_hash_demonstrating_variable_and_hash_element_reference_objects_pointing_at_user_data",
 	"shape": "three_variables_one_hash_object_one_shared_reference_and_one_inner_hash_element",
 	"slice_context": "post_v1_0_demonstrates_the_refs_table_foundation_for_deterministic_gc"}}
 ~~~

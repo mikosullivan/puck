@@ -73,14 +73,14 @@ Digory is selected. Expected shape:
 
 ---
 
-<a id="skeletor-impact"></a>
-## Skeletor impact
+<a id="drinian-impact"></a>
+## Drinian impact
 
 Digory introduces the hash data structure, but the
-[Skeletor state hash](aslan.md#data-structures-lua-tables) shape
+[Drinian state hash](aslan.md#data-structures-lua-tables) shape
 doesn't change. Hash literals and their materialized values are
 working state per
-[skeletor.md's working-state carve-out](../../caspian/skeletor/index.md#v1-0-scope) —
+[drinian.md's working-state carve-out](../../caspian/drinian/index.md#v1-0-scope) —
 they live in Lua locals during evaluation, not in `engine.state`.
 The hash class itself joins `engine.classes` (bootstrap metadata,
 outside the state hash) and gets its own owning role in
