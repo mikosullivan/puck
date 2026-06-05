@@ -1,4 +1,4 @@
-# Example 04: Exception at the top of the stack
+# Exception at the top of the stack
 
 ~~~json
 {"vibecode": {"example": "exception_at_top_of_stack",

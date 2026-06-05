@@ -112,7 +112,7 @@ shape as `%puck` (both a callable lookup and a namespace).
 Block-scoped permission delegation. Inside the block, the named role is
 granted the **current** role's permissions. When the block exits, the grant
 lifts. The "from" role is implicit (the current role); the "to" role is the
-single positional argument — wrapped in parens to disambiguate from the block.
+single positional argument.
 
 ```
 %role.delegate_to($agent.object.role) do
@@ -131,11 +131,52 @@ temporarily extended — auditing and ownership chains continue to attribute
 actions to the named role, with the elevation visible in source as the
 enclosing `delegate_to` block.
 
+**Object ownership is unaffected by delegation.** Objects the named role
+creates during the delegation are owned by that named role — the same way
+any object is owned by whoever created it. If such an object survives past
+the `delegate_to` block (held by a reference outside the block, stored in
+a long-lived structure, etc.), it remains owned by the named role and is
+subject to **the same cross-role security rules as anything else** going
+forward. The temporary elevation that allowed the object to be constructed
+does not persist with the object; accessing or invoking methods on it post-
+block crosses into the named role's normal permissions. An object that
+could only be created under elevation may end up stranded — present but
+unusable — outside the block. That's the intended outcome from a security
+perspective: delegation grants scope-bounded capability, not persistent
+capability that leaks through the objects produced.
+
 Primary V1.0 use case: [`$agent.yield`](https://puck.uno/documentation/ideas/agent-yield).
 The agent's connection runs under a fresh sandboxed role by default;
 `%role.delegate_to` lets the caller explicitly extend their own role's
 permissions to the agent's role for a region where the developer wants the
 agent operating with their authority.
+
+#### Frame-scoped delegations (the canonical mechanism)
+
+~~~json
+{"vibecode": {
+    "subsection": "frame_scoped_delegations",
+    "where_the_delegation_lives": "on_the_stack_frame_the_delegate_to_block_creates",
+    "lifetime_tied_to": "frame_existence_on_the_stack",
+    "cleanup_mechanism": "automatic_via_stack_unwinding",
+    "no_separate_lift_handler_needed": true,
+    "properties_falling_out": ["alarm_safe", "nests_naturally", "skeletor_reflects_truth_no_separate_state"]
+}}
+~~~
+
+Delegations live on **stack frames**, not on roles. Entering a `%role.delegate_to(X) do ... end` block pushes a new frame whose `delegations` record indicates "this frame grants the current role's permissions to X." When a permission check fires, the engine walks up the stack looking **only for delegations whose target role matches the role the checking code is running as.** Match → the elevation applies. No match → the role's normal permissions apply. When the frame is popped — by normal block exit, alarm propagation, or any other unwinding — the delegation goes with it. No separate "lift the delegation" cleanup logic exists, because none is needed.
+
+A useful consequence of "look for delegations targeting the current role": role transitions are clean. If execution crosses from agent into stdlib (e.g., calling a string method), the stack walk from stdlib finds no delegation targeting stdlib — Frame 1's grant points at agent, not at stdlib — so stdlib uses its own permissions. If execution then crosses back from stdlib into an agent-owned method, the stack walk finds Frame 1's grant to agent again, and the elevation applies. The mechanism is symmetric per role, not per call-chain branch.
+
+This design ties the delegation's lifetime exactly to the block's scope by reusing the call stack as the bookkeeping mechanism. Three properties fall out:
+
+- **Alarm-safe.** An alarm that unwinds the stack also unwinds delegations. There is no "make sure to lift the delegation" handler that could be forgotten, skipped, or short-circuited.
+- **Nesting works naturally.** Nested `delegate_to` blocks become stacked frames. Permission resolution walks the stack in order; outer delegations are established first, inner ones layer on top, and unwinding undoes them in reverse.
+- **Truth is the stack.** There's no separate "currently active delegations" registry that could drift from reality. The stack IS the registry. Skeletor snapshots show delegations as fields on frames; what's in the snapshot is what's active.
+
+A role-level convenience view ("what delegations are currently extending this role's permissions?") can be derived by walking the stack and unioning the active grants — but it's derived, not stored. The frame stack is the source of truth.
+
+See [`skeletor/` § role delegations](https://puck.uno/documentation/requirements/caspian/skeletor/#role-delegations) for the Skeletor representation.
 
 ---
 

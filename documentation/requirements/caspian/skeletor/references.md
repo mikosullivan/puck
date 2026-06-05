@@ -126,10 +126,15 @@ Two subclasses, both V1.0:
 | `puck.uno/variable` | A named slot in a scope frame |
 | `puck.uno/hash_element` | A key inside a hash |
 
-`puck.uno/variable` carries the lexical name and the scope frame
-in its bucket. Assignment to a variable (`$foo = $bar`) rebinds the
-variable's entry in the `references` hash to point at the new
-target.
+`puck.uno/variable` is a bare reference object — its bucket is
+empty. The lexical name lives in the enclosing scope as the key in
+the frame's `locals` hash; the frame's identity is implicit (the
+variable only exists because some frame's `locals` references it,
+and that's the frame it belongs to). The variable's only state is
+its identity (its object ID) and its target (the entry in
+`references` keyed by that ID). Assignment to a variable
+(`$foo = $bar`) rebinds the variable's entry in the `references`
+hash to point at the new target.
 
 `puck.uno/hash_element` carries the parent hash and the key.
 `hash[key] = obj` rebinds the hash element's entry to point at the

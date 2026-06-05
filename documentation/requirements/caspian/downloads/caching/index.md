@@ -160,21 +160,50 @@ The runtime retrieval routine handles both transparently.
 <a id="signature-verification"></a>
 ## Signature verification
 
-When [`%puck.blockchain`](../service/index.md#puck-blockchain) is set on the process, every cache hit goes through a signature check.
+Signatures are checked at **two specific moments**, not on every load:
 
-**Capture at write time.** When a library is first fetched (any source — the blockchain.puck.uno mirror, the publisher's HTTPS endpoint, anywhere) and written to the cache, the engine queries the configured blockchain for that artifact's signature and stores it in `meta.json.signature`. This adds one extra HTTP request per cache miss when blockchain verification is active.
+1. **Before committing new bytes to the cache** (first-time fetch).
+2. **On explicit audit** — a separate method that rechecks the whole cache plus the engine's built-in libraries.
 
-**Verify at read time, locally.** Cache reads check `meta.json.signature` against the configured chain's baked-in public key. No network call on a cache hit — the verification is purely local, microsecond-scale, deterministic, works offline. The signature was captured against a known chain; verifying it against that chain's public key needs no further communication.
+Cache hits in normal operation **don't re-verify**. Once bytes pass verification on the way into the cache, the cache is trusted for subsequent reads. Re-verifying every `%puck[uns]` lookup against the chain's pubkey would be wasteful — the bytes can't change once committed (atomic rename), and a manual audit is the right tool for picking up any drift.
 
-**On verification failure** (signature missing, signature for a different key, signature corrupt, etc.):
+### Capture at write time
+
+When a library is first fetched (any source — the blockchain.puck.uno service, the publisher's HTTPS endpoint, anywhere) and written to the cache, the engine queries the configured [`%puck.blockchain`](../service/index.md#puck-blockchain) for that artifact's signature and stores it in `meta.json.signature`. This adds one extra HTTP request per cache miss when blockchain verification is active.
+
+### Verify before committing to cache
+
+The signature is portable — once the engine has it, it applies to bytes from any source. The flow when fetching new bytes:
+
+- **If the cache is writable.** Write the downloaded class to a temp directory (the cache may supply a temp space inside itself, e.g. `<cache-root>/tmp/`), verify the signature against the on-disk bytes, then atomically rename into the cache's final location. Bytes that fail verification get deleted from temp; nothing untrusted ever lands in the cache's main tree.
+- **If there's no writable cache** (read-only mount, no cache configured, or anything else preventing disk writes). Slurp the whole artifact as an in-memory string, verify the hash against the in-memory bytes, and use them directly if valid. Nothing persists.
+
+Either way, verification happens **before** the bytes are used or committed. The temp-then-rename pattern doubles as the concurrency-safety mechanism for cache writes (see [Open items](#open-items)).
+
+### Audit
+
+The `%engine.verify_all_signatures` method walks every cache entry and rechecks its signature. The audit covers both the on-disk cache AND the engine's built-in libraries.
+
+For each entry, the audit:
+
+1. Recomputes the artifact hash from the on-disk bytes.
+2. Compares to the stored `signature` in `meta.json`.
+3. Verifies the signature against the configured chain's public key.
+4. Reports any failure; the operator decides what to do (delete-and-refetch, quarantine, etc.).
+
+The audit is **explicit** — operators run it when they want it (after a security event, periodically as a maintenance step, when rebuilding trust in a long-lived cache). It is NOT invoked on every load. The engine doesn't auto-audit on startup; running on-load verification would defeat the cache's whole performance purpose.
+
+### On verification failure during fetch
+
+If the signature check fails during a first-time fetch (signature missing from chain, fetched bytes don't match the signed hash, signature corrupt, etc.):
 
 1. **Raise a warning** through Caspian's [warning system](../../packages/jasmine/index.md#logger-failure-cascade) — operators see the integrity event.
-2. **If the cache is writable**, delete the bad entry. The next lookup re-fetches; the new download captures a fresh signature and stores it.
-3. **If the cache is read-only**, bypass the entry without deletion. The lookup falls through to the next fetcher in the search path, where the re-fetch (and re-capture) happens in memory.
+2. **Don't commit to cache.** Delete the temp-dir bytes; the cache stays clean.
+3. **The lookup falls through** to the next fetcher in [`%puck.sources`](../#sources-documented-here). If no fetcher can provide bytes that verify, the lookup fails and the application sees the alarm.
 
-**Cached-without-signature entries.** A cache entry written before `%puck.blockchain` was enabled — or written by a process that didn't have it enabled — has no `signature` field. With verification active, those entries are treated the same as verification failures (warn, delete-if-writable, re-fetch). The first run with verification enabled effectively rebuilds any pre-existing cache contents with their signatures.
+### Cached-without-signature entries
 
-**Verification scope is universal.** This applies to every library load, including ones the application has already used in the current process — the verification fires at the cache-access boundary, not at first-use boundary. Once `%puck.blockchain` is set, nothing the engine loads bypasses the check.
+A cache entry written before `%puck.blockchain` was enabled — or written by a process that didn't have it enabled — has no `signature` field. This is a separate condition from a failed verification; the entry isn't *wrong*, it's just *unverified*. The audit method flags these so operators can decide whether to re-fetch them with verification active.
 
 ---
 

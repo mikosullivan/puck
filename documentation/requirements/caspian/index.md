@@ -1062,6 +1062,8 @@ The distinction:
 - `return` — exits the calling function (propagates through closures)
 - `%call.return` — exits the current call only (closure or function)
 
+The `%call` object itself is **owned by the caller's role**, not by the role that owns the function being called. That matches its semantic role: `%call` represents the call as the caller initiated it; `%call.return` hands a value back to the caller and exits the callee. From inside the function, reading `%call` is a cross-role access into the caller's role — what the function sees is the caller's view of the call, not the function-owner's.
+
 ---
 
 <a id="safe-navigation"></a>

@@ -1,4 +1,4 @@
-# Example 06: Inside an object's on_close handler
+# Inside an object's on_close handler
 
 ~~~json
 {"vibecode": {"example": "inside_on_close",

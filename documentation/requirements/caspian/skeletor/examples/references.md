@@ -1,4 +1,4 @@
-# Example 07: References hash
+# References hash
 
 ~~~json
 {"vibecode": {"example": "references_hash",
@@ -23,19 +23,12 @@ $count = 1
 ~~~
 
 Paused at the comment line. Three variables bound, one hash with one
-element, and `$alias` aliasing `$shared`. **Two ID formats** appear
-in the snapshot:
-
-- **Object IDs**: integer-strings from the global sequencer — `"1"`,
-  `"2"`, etc. See
-  [references.md § Object IDs](../references.md#object-ids).
-- **Platter IDs**: UUIDs (because they appear inside user buckets and
-  need collision safety against user-chosen field names). See
-  [base-class-use.md § Proposed shape](../../../ideas/base-class-use.md#proposed-shape).
-
-For readability, the example below uses short hex-shaped placeholders
-like `"a01..."` for platter IDs; real snapshots have full 36-char
-UUIDs.
+element, and `$alias` aliasing `$shared`. Every object AND every
+non-shadow platter draws an ID from the same global sequence (see
+[references.md § Object IDs](../references.md#object-ids)) — objects
+`"1"`–`"7"` plus platters `"8"`–`"14"`, with `sequence: 15` recording
+the next allocation. Shadow platters keep the literal key `"shadow"`
+by convention; every other platter's key is its sequence ID.
 
 ```json
 {
@@ -59,6 +52,7 @@ UUIDs.
       }
     }
   ],
+  "sequence": 15,
   "references": {
     "1": "2",
     "5": "2",
@@ -69,50 +63,50 @@ UUIDs.
     "1": {
       "bucket": {},
       "stack": {
-        "shadow": {},
-        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "shared", "frame": 0}}
+        "shadow": {"sticky": true},
+        "8": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "2": {
       "bucket": {"name": "3"},
       "stack": {
-        "shadow": {},
-        "hash": {"class": "puck.uno/hash"}
+        "shadow": {"sticky": true},
+        "9": {"class": "puck.uno/hash"}
       }
     },
     "3": {
       "bucket": {},
       "stack": {
-        "shadow": {},
-        "element": {"class": "puck.uno/hash_element", "sticky": true, "bucket": {"parent": "2", "key": "name"}}
+        "shadow": {"sticky": true},
+        "10": {"class": "puck.uno/hash_element", "bucket": {"parent": "2", "key": "name"}}
       }
     },
     "4": {
       "bucket": {"value": "Picard"},
       "stack": {
-        "shadow": {},
-        "string": {"class": "puck.uno/string"}
+        "shadow": {"sticky": true},
+        "11": {"class": "puck.uno/string"}
       }
     },
     "5": {
       "bucket": {},
       "stack": {
-        "shadow": {},
-        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "alias", "frame": 0}}
+        "shadow": {"sticky": true},
+        "12": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "6": {
       "bucket": {},
       "stack": {
-        "shadow": {},
-        "variable": {"class": "puck.uno/variable", "sticky": true, "bucket": {"name": "count", "frame": 0}}
+        "shadow": {"sticky": true},
+        "13": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "7": {
       "bucket": {"value": 1},
       "stack": {
-        "shadow": {},
-        "number": {"class": "puck.uno/number"}
+        "shadow": {"sticky": true},
+        "14": {"class": "puck.uno/number"}
       }
     }
   },
@@ -125,18 +119,18 @@ ID legend, to read the `objects` hash above:
 
 | ID | What it is | Where to look |
 |---|---|---|
-| `"1"` | variable `$shared` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
+| `"1"` | variable `$shared` (`puck.uno/variable`) | named via frame 0's `locals` key |
 | `"2"` | the hash `{name: 'Picard'}` (`puck.uno/hash`) | top-level bucket maps key → hash_element ID |
 | `"3"` | hash element for key `'name'` (`puck.uno/hash_element`) | the `element` platter's bucket carries parent + key |
 | `"4"` | the string `'Picard'` (`puck.uno/string`) | top-level bucket carries the value |
-| `"5"` | variable `$alias` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
-| `"6"` | variable `$count` (`puck.uno/variable`) | the `variable` platter's bucket carries name + frame |
+| `"5"` | variable `$alias` (`puck.uno/variable`) | named via frame 0's `locals` key |
+| `"6"` | variable `$count` (`puck.uno/variable`) | named via frame 0's `locals` key |
 | `"7"` | the number `1` (`puck.uno/number`) | top-level bucket carries the value |
 
-Object IDs are sequential from the global sequencer. Platter keys
-inside an object's `stack` are arbitrary short strings — `shadow` by
-convention, plus whatever identifies the other platter (`variable`,
-`hash`, etc.).
+Both object IDs and non-shadow platter keys are sequential from the
+same global sequencer. Within an object's `stack`, `shadow` is the
+literal key for the shadow platter; every other platter's key is its
+sequence ID.
 
 The frame's `locals` doesn't store the bound objects directly — each
 entry is a **reference object ID** (`"1"`, `"5"`, `"6"`); resolve it
@@ -152,15 +146,6 @@ frame's local (`"1"`) → look up its target in `references` (`"2"`) →
 look up the target's structure in `objects` (the hash record). Every
 piece of state the program can see is reachable through these two
 hashes plus the call stack.
-
-**Why two ID formats.** Object IDs only appear in engine-controlled
-positions (frame locals, `references` keys/values, `objects` keys),
-where collisions with user data aren't possible. Platter IDs appear
-as **keys inside user buckets** (via the per-platter-marker
-mechanism in [nulls.md § Serialization](../../built-in-classes/nulls.md#serialization)),
-where they need collision safety against arbitrary user-chosen
-field names. Integer-strings could collide; UUIDs can't, in
-practice.
 
 Things to notice:
 

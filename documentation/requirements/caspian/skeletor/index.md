@@ -343,6 +343,113 @@ populated with `user` + `stdlib`, and a `call_stack` with one
 `top_level` frame); subsequent slices fill in the other fields as
 the engine grows to need them.
 
+<a id="role-delegations"></a>
+### Role delegations
+
+~~~json
+{"vibecode": {"section": "role_delegations",
+	"where_delegations_live": "on_the_frame_that_established_them",
+	"not_on": "the_roles_registry",
+	"lifetime_tied_to": "frame_existence_on_stack",
+	"reflects_truth": "what_is_in_the_snapshot_is_what_is_active",
+	"derived_view": "role_level_active_delegations_can_be_computed_by_unioning_on_stack_grants"}}
+~~~
+
+When user code enters a `%role.delegate_to(X) do ... end` block (see [roles spec § Frame-scoped delegations](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to)), the engine pushes a frame whose `delegations` field records which role is being granted permissions in this block's scope. The delegation lives on the frame; when the frame is popped (normal exit, alarm unwind, anything else), the delegation goes with it.
+
+Permission resolution walks the stack looking for delegations whose **target role matches the role the checking code is running as**. So a frame running AS the agent role finds an `{"agent": {}}` grant on a parent frame and uses the elevation; a frame running AS stdlib looks for delegations targeting stdlib, finds none, and uses stdlib's normal permissions. Role transitions don't "consume" the delegation — they just take execution into a role the delegation doesn't target, and re-entering the targeted role re-engages the elevation by the same mechanism.
+
+A role-level convenience view ("what delegations are currently extending the agent role's permissions?") is **derivable** by walking the call stack and unioning all active grants for that role. It is not stored as separate state — the canonical record is the stack itself.
+
+#### Full example: user delegating to agent, mid-execution
+
+Consider this Caspian program:
+
+~~~caspian
+$db = %dirjail['./data'].new()
+$agent = %puck['agents.example.com/claude'].new()
+
+$result = %role.delegate_to($agent.role) do
+    $agent.yield(db: $db, prompt: 'find recent users')
+end
+~~~
+
+At line 4, the program enters a `delegate_to` block extending the user role's permissions to the agent's role. Inside the block, `$agent.yield` round-trips to the remote agent; the agent returns a Caspian function (whose first param is the agent itself, per the [agent-yield protocol](https://puck.uno/documentation/ideas/agent-yield)); the engine invokes that function in the agent's role. The agent's function is now running and is itself making a method call on the dirjail object that was passed in as `db`.
+
+Capturing Skeletor mid-execution at the moment of the agent's `db.find()` call:
+
+```json
+{
+    "roles": {
+        "user": {},
+        "stdlib": {},
+        "agent": {}
+    },
+
+    "call_stack": [
+        {
+            "comment": "Frame 0: the program's outermost frame. $db and $agent were constructed on lines 1-2. We're past line 4 — execution is inside the delegate_to block at this point, so the parent frame's src points at the line that initiated the block.",
+            "action": "top_level",
+            "role": "user",
+            "src": ["a", 4],
+            "locals": {
+                "db": {"ref": "obj_42"},
+                "agent": {"ref": "obj_43"}
+            }
+        },
+        {
+            "comment": "Frame 1: the delegate_to block. The delegations field records that this frame grants the agent role the user role's permissions for the block's lifetime. When this frame pops (block exit, alarm, anything), the grant goes with it — no separate cleanup step.",
+            "action": "delegate_to",
+            "role": "user",
+            "delegations": {"agent": {}},
+            "src": ["a", 4],
+            "locals": {}
+        },
+        {
+            "comment": "Frame 2: the $agent.yield(...) call. The engine has already round-tripped to the agent over ACP, received the agent-authored function, and is now invoking it. Action is method_call from user's perspective; the actual function-invocation frame is Frame 3.",
+            "action": "method_call",
+            "receiver_type": "agent",
+            "method": "yield",
+            "role": "user",
+            "src": ["a", 5],
+            "locals": {}
+        },
+        {
+            "comment": "Frame 3: the agent-authored function the engine is invoking. Cross-role into agent. Per the agent-yield protocol the function's first param is the agent object itself, followed by the kwargs the caller supplied (db, prompt). The agent's role has user's permissions because Frame 1's delegation is on the stack above this frame.",
+            "action": "function_invocation",
+            "role": "agent",
+            "src": null,
+            "locals": {
+                "agent": {"ref": "obj_43"},
+                "db": {"ref": "obj_42"},
+                "prompt": {"value": "find recent users", "src": ["a", 5]}
+            }
+        },
+        {
+            "comment": "Frame 4: the agent's function called db.find('user:recent'). Cross-role into stdlib (or wherever the dirjail role lives in this engine; stdlib stands in for that here). Note that even though Frame 1 delegated user's permissions to agent, this call is now executing as stdlib — delegations follow the FRAME of the delegation, not the chain of frames that descended from it. agent's elevated permissions don't transfer onto stdlib just because stdlib was called from within the delegated scope.",
+            "action": "method_call",
+            "receiver_type": "dirjail",
+            "method": "find",
+            "role": "stdlib",
+            "src": null,
+            "locals": {
+                "query": {"value": "user:recent"}
+            }
+        }
+    ]
+}
+```
+
+A few things to notice in this snapshot:
+
+- **The `delegations` field sits on Frame 1.** That's the frame that established the delegation. Nothing outside that frame has any record of the grant; nothing inside the engine has to "remember" to lift it. When Frame 1 unwinds, the grant is gone.
+- **Frame 3's role is `agent`, not `user`.** Identity is preserved per the roles spec — actions taken inside the agent's function are attributed to the agent, even though the agent has user's permissions for now. Auditing and ownership chains see the agent doing things; the elevation is visible in source as the enclosing `delegate_to` block (Frame 1).
+- **Frame 4's role is `stdlib`, not `agent`.** This is the subtle security-relevant point: delegation extends the **named** role's permissions, not the call-chain's. When the agent's function called `db.find()`, the call crossed into `stdlib` (the role that owns dirjail methods), and `stdlib` has its own permissions — it does NOT inherit anything from the active delegation. Frame 1's grant applies to permission checks made AS the agent role; once execution crosses into `stdlib`, the agent's elevation isn't relevant.
+- **Stack-walking resolves permissions, not lookup tables.** When the engine needs to decide whether some agent-role operation is permitted, it walks the stack and finds Frame 1's delegation. Permission resolution and the call chain are the same data structure.
+- **If an alarm raised inside Frame 4**, it would unwind up through Frame 3, then Frame 2, then Frame 1. As Frame 1 pops, the delegation is gone. Frame 0 catches it (or it propagates out), and at no point does any "lift delegation" handler need to fire — the stack unwinding IS the lifting.
+
+If the same program had nested `delegate_to` blocks, additional `delegations`-bearing frames would stack up in the same way; permission resolution walks the stack and applies each in order; unwinding undoes each in reverse.
+
 <a id="classes-not-in-skeletor"></a>
 ### Classes are NOT in Skeletor
 

@@ -1,4 +1,4 @@
-# Example 03: Deep recursion through a tree walk
+# Deep recursion through a tree walk
 
 ~~~json
 {"vibecode": {"example": "deep_recursion_tree_walk",

@@ -34,11 +34,11 @@ The line above asks "agent, take over here — when you're done, give me back a 
 	"transport": "acp",
 	"connection_kind": "session_persists_until_outer_function_returns",
 	"caller_blocks_during_session": true,
-	"role_default": "fresh_role_created_for_connection",
+	"role_default": "agents_own_role_set_up_per_agent_no_yield_specific_sandbox_concept",
 	"role_optional": "callers_permissions_extended_to_agents_role_via_role_delegate_to_block",
 	"initial_handshake_payload": "worldlet_describing_process_state_contents_tbd",
 	"caller_passes": "keyword_args_at_the_yield_site",
-	"agent_returns": "caspian_function_in_caspj_with_matching_signature",
+	"agent_returns": "caspian_function_in_caspj_first_param_is_agent_object_remaining_params_match_caller_kwargs",
 	"recursion": "function_can_yield_back_for_more_code_within_same_session",
 	"key_design_move": "function_as_payload_not_command_vocabulary"
 }}
@@ -48,33 +48,43 @@ Under the hood, `$agent.yield` opens an [ACP](https://puck.uno/documentation/req
 
 ### Connection setup and role
 
-When yield is called, a fresh Caspian role is created for the connection. The agent's code will execute in that role; the role's envelope is the agent's ceiling.
+The agent object is owned by its own role — the same way every object in Caspian has an owning role. When yield is called, the function the agent returns runs in that role: the agent's role.
 
-That's the default. The opt-in for wider access uses [`%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to) — covered in [Delegating to the agent's role](#delegating-to-the-agents-role) below.
+This isn't a yield-specific "sandboxed default" the protocol invents. It's just the standard Caspian role model. The agent's role's envelope (what it can read, what it can call, what capabilities it has) is set up by whoever configured the agent, the same way any role is configured. Different agents have different roles with different envelopes. The yield protocol just runs the agent's returned function as the agent's role, like any other cross-role call in Caspian.
+
+The opt-in for wider access uses [`%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to) — covered in [Delegating to the agent's role](#delegating-to-the-agents-role) below.
 
 ### Initial handshake
 
-The client opens the connection by sending a worldlet describing the current process — enough context for the agent to write code that makes sense in this scope. The exact contents are TBD. Could include some or all of [Skeletor](https://puck.uno/documentation/requirements/caspian/skeletor/). The privacy/utility tradeoff (thin description = safer to ship; thick = more useful agent) will need a design pass.
+The client opens the connection by sending a worldlet containing the **skills** the agent needs to operate in this context — skills can be embedded inline or linked by URL, following the existing [Puckai skills design](https://puck.uno/documentation/ideas/puckai/skills/). Two categories of skill are typically present:
+
+- **Protocol skills** — how the agent should respond, the function-as-payload model, how recursive callbacks work. Everything the agent needs to participate in the agent-yield protocol correctly. Usually linked (the agent can cache them across yield sites).
+- **Task skills** — knowledge specific to what this yield is asking. The developer chooses what to attach based on the task at hand.
+
+The worldlet ships skills, not raw process state. The agent doesn't automatically see locals, the call stack, or surrounding source — the developer explicitly passes data via keyword params (covered below) and grants relevant context via the attached skills. The privacy/utility tradeoff lives in the developer's hands at each call site, not in an engine-wide default.
 
 The caller also passes **keyword params** at the yield site, and those params flow to the agent's function:
 
 ```
-$result = $agent.yield db: 'whatever', dir: $dirjail
+$result = $agent.yield(db: 'whatever', dir: $dirjail)
 ```
 
 The developer at the yield site already knows roughly what the agent is being asked to do, and picks params accordingly. The caller is the contract author for what flows in — no magic capture of the surrounding scope.
 
 ### The agent's response
 
-The agent replies with a Caspian function in [CaspJ](https://puck.uno/documentation/requirements/caspian/caspianj) form, whose parameter signature matches the kwargs the caller supplied. For the call above:
+The agent replies with a Caspian function in [CaspJ](https://puck.uno/documentation/requirements/caspian/caspianj) form, whose parameter signature is **the agent itself as the first param, followed by the kwargs the caller supplied**. For the call above (`$agent.yield(db: $db, dir: $dirjail)`):
 
 ```
-function db:, dir: do
-    # agent-authored body
+function agent:, db:, dir: do
+    # agent-authored body — $agent is the agent object;
+    # $agent.send(...) and $agent.yield(...) work for callbacks
 end
 ```
 
-The engine invokes that function in the connection's role, binding the caller-supplied values to the named params. Standard Caspian function-call semantics.
+The engine invokes that function in the agent's role, binding the agent object to `agent` and the caller-supplied values to their named params. Standard Caspian function-call semantics.
+
+The agent-as-first-param convention is **protocol-internal**: this function is a private contract between agent and engine, never seen by user code, so the engine can rely on the fixed shape without worrying about name collisions with developer kwargs. The agent knows to emit this shape; the engine knows to bind itself to the first slot.
 
 ### Why function-as-payload
 
@@ -89,6 +99,8 @@ The agent's function can itself yield back to the agent — for more code, for a
 When the outer function returns, the session closes. Its return value becomes the value of the original `$agent.yield` call in the caller's program, and execution continues on the next statement.
 
 If the agent's function raises, the error propagates back through `$agent.yield` to the caller — same as any other Caspian call.
+
+The same model covers protocol-level failures — network unreachable, timeout, rate-limited, agent refuses to produce a function, invalid CaspJ in the response, runtime cap exceeded. Anything that prevents the yield from completing normally raises an alarm. The caller catches it if they want to handle a specific failure mode.
 
 ## Delegating to the agent's role
 
@@ -143,8 +155,9 @@ $strategy = $agent.yield err: $err
 The agent receives those kwargs (names and values) in the initial handshake along with the worldlet, then replies with a Caspian function whose parameter signature matches:
 
 ```
-function err: do
+function agent:, err: do
     # body the agent writes — examines err, returns some value
+    # $agent is available for callbacks if the body needs to .send or re-yield
 end
 ```
 
@@ -216,13 +229,13 @@ This is one of the strongest forcing functions for getting agent-yield's design 
 
 - **What is `$agent`?** Implicit globally-available object? Explicit, configured at engine startup (`%engine.agent = ...`)? Created on demand from a UNS? Multiple agents named per program?
 - **Trust envelope.** An agent yielded into the live process can in principle do anything the process can do — read state, write state, call out, mutate the codebase. Some Puckai-style `recruits` allowlist probably has to apply. What's the minimum-friction default that's still safe?
-- **What does the agent see?** Local scope only? Full call stack (Skeletor-style)? Source of the surrounding routine? Source of the whole program? More access = more useful agent, more risk.
+- **What does the agent see?** ~~Resolved~~: the agent sees the kwargs explicitly passed at the yield site plus the skills attached to the handshake worldlet. Raw process state (locals, call stack, surrounding source) is not automatic — it has to be explicitly handed in. See [Initial handshake](#initial-handshake).
 - **How does the agent act?** Does it execute Caspian code via the engine? Construct a CaspianJ tree and have the engine eval it? Modify the program text on disk? Some combination?
-- **Determinism story.** A program containing `$agent.yield` is non-deterministic by definition — the agent's response can vary run to run. How does that interact with the deterministic-step-count framing (`%utils.steps`, `%engine.manifest`'s `process.steps`)? Probably: agent yields don't count toward steps, or count as exactly one. Needs a call.
-- **Testability.** Code paths through `$agent.yield` are hard to unit-test. Some mock-agent harness probably has to exist for tests, where the "agent" is a deterministic stub returning a fixed value. The yield call site itself stays the same.
-- **Failure modes.** What if the agent fails (network out, rate-limited, refuses)? Raise? Return a sentinel? Use a fallback supplied at the call site? Probably the last — `$agent.yield(fallback: ...)`.
-- **Relationship to `$agent` as a recurring object.** Is one yield independent of the next, or does `$agent` accumulate a conversation history across yields within a program run? If it has history, that's a session — and sessions are what Puckai models. The two might collapse.
-- **Sandbox boundary.** If the agent is implemented as a remote LLM, the engine has to ship enough context for the agent to be useful (locals, surrounding source, etc.). Privacy story: what's safe to ship? The same question as Puckai's `recruits` allowlist but for context rather than recruits.
+- **Determinism story.** ~~Resolved~~: no special case. The step counter just counts — the yield itself is one step (one eval/exec_stmt call), and the agent's returned function adds steps as it runs in the caller's process, exactly like any other Caspian code. The deterministic-step-count property degrades to 'code without yield is deterministic'; code with yield isn't, which is the obvious reality and not a property to defend. AI operations are non-deterministic by nature.
+- **Testability.** Code paths through `$agent.yield` are hard to unit-test. Agents-are-objects makes the basic shape clear (swap a real agent for a stub), but the mock-system conventions aren't designed — we expect them to emerge as we write tests for AI-using features. Placeholder thinking captured in [ideas/ai-testing.md](https://puck.uno/documentation/ideas/ai-testing).
+- **Failure modes.** ~~Resolved~~: any failure raises an alarm — function-raises, network unreachable, timeout, rate-limited, refusal, invalid CaspJ, runtime cap exceeded. Same model across all cases. See [Termination](#termination).
+- **Relationship to `$agent` as a recurring object.** ~~Resolved~~: state accumulates in the natural Caspian places, not in a new "session" concept the yield protocol invents. The agent service keeps whatever internal memory it wants (LLM conversation history, etc.); the caller's process holds whatever the agent's previous-yield function wrote into it (variables, mikobase records, files). Within a single yield, the ACP session is live for the duration. No special yield-protocol session mechanism is needed.
+- **Sandbox boundary.** ~~Resolved~~: the engine ships only the handshake worldlet (skills + kwargs the developer chose). Nothing else flows out by default. The privacy question collapses into "what skills and kwargs did the developer attach?" — under the developer's direct control at each call site.
 
 ## See also
 

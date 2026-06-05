@@ -29,7 +29,7 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 | `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
 | `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
 | `%puck` | Returns the current puck object (scoped via `%chain`). The puck resolves UNS addresses through its configured fetchers. `%puck['foo.com/bar']` is a shorthand for the puck's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no puck is in the chain. See [puck.md](../puck.md) for the full puck-object model. |
-| `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. |
+| `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. **Owned by the caller's role, not the function's owner** — `%call.return` hands control back to whoever made the call. |
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |
 | `%self` | The current object instance. `self` (bare word) is shorthand. |
 | `%scope` | The current lexical scope. Holds variables and is used for bare word command (bwc) resolution. `$foo` is shorthand for `%scope['foo']`. |

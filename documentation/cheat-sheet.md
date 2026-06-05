@@ -72,7 +72,7 @@ The split exists because the per-platter-marker mechanism in [nulls.md § Serial
 - **Reference class hierarchy**: `puck.uno/reference` base; subclasses `puck.uno/variable` (uspace: true) and `puck.uno/hash_element` (uspace: false). See [references.md § Reference classes](caspian/skeletor/references.md#reference-classes).
 - **`uspace` is a class-level property**, not per-instance. GC roots = the subset of references whose class declares `uspace: true`. See [references.md § Uspace: a class-level property](caspian/skeletor/references.md#uspace-class-property).
 - **`references` hash**: `{ref_id: object_id}` — the bare pointer storage. Single source of truth for what each reference points at. See [references.md § Shape](caspian/skeletor/references.md#shape).
-- **Inverse index is engine-private**: maintained via `after_set` / `after_delete` hooks on the references hash. Not exposed to user code in V1. See [example 07](caspian/skeletor/examples/07-references.md#inverse-index-engine-internal).
+- **Inverse index is engine-private**: maintained via `after_set` / `after_delete` hooks on the references hash. Not exposed to user code in V1. See [the references example](caspian/skeletor/examples/references.md#inverse-index-engine-internal).
 
 ## Dispatch
 

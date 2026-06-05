@@ -58,36 +58,26 @@ Values:
 
 ### `%puck.sources` — the fetcher array
 
-`%puck.sources` is the ordered array of [fetchers](../#sources-documented-here) in the search path. Direct assignment replaces the array; methods narrow or extend it.
+`%puck.sources` is the ordered array of [fetchers](https://puck.uno/documentation/requirements/caspian/downloads/#sources-documented-here) the engine has made available to user code. **By default it's locked** — user code reads it but can't assign, append, clear, narrow, reorder, or otherwise modify it. The engine's array is the array.
+
+In **CLI mode** the array is unlocked, and the user can do anything they want to it — replace it, narrow it, add fetchers the engine didn't supply. Anything goes.
 
 ```
-%puck.sources = ['blockchain.puck.uno', <local-cache>, <direct-fetcher>]    # explicit composition
+%puck.sources    # always readable: shows what fetchers are available
+
+# in CLI mode only:
+%puck.sources = ['blockchain.puck.uno', <local-cache>, <direct-fetcher>]    # replace
 ```
 
-A useful block-scoped narrowing:
+### Engine-supplied fetchers
 
-```
-%puck.sources.clear do
-    # inside this block, %puck has no fetchers — any %puck[uns] lookup that isn't already
-    # an in-scope live object raises. Useful for tests that need to verify the code
-    # only uses pre-loaded objects.
-end
-```
+The engine passes user code a list of fetchers via `%puck.sources`. **By default it doesn't pass any** — a Caspian process with no engine-supplied fetchers can barely do more than bootstrap (run its own code, but not `%puck`-load anything external).
 
-After the block exits, the previous sources array is restored. Same "narrows-never-expands" rule as elsewhere — block scoping can only restrict what the engine envelope already permits.
+In the common case, one of the engine-supplied fetchers is an **HTTP client** that fetches a resource at a URL and runs signature verification if `%puck.blockchain` is set. Other fetchers (mirrors, local caches, specialized per-host fetchers like the [GitHub fetcher](https://puck.uno/documentation/requirements/caspian/downloads/github/)) may also be in the list.
 
-### Engine envelope
+The engine controls what's in the array; user code uses it as-is (except in CLI mode, see above).
 
-Both `%puck.blockchain` and `%puck.sources` are subject to an **engine-level envelope** set at process bootstrap. User code can only narrow within the envelope; broadening attempts raise. This is the same policy pattern used by versioning narrowing and Puckai `recruits.allow`.
-
-<a id="engine-envelope-location"></a>
-**Open question — where the engine-level envelope lives.** The envelope mechanism is needed but its location is open. Three candidates:
-
-- A new [`%engine`](../../engine/) slot like `%engine.puck_blockchain` / `%engine.puck_sources` (read-only from user code; the user-code setters validate against it). Mirrors the `%engine.lua` / `%engine.coverage` style.
-- A separate engine-policy namespace.
-- Configured strictly outside the language at process launch (env var, engine config file, kernel-style cmdline). User code reads but cannot write.
-
-Each has tradeoffs around discoverability, role-boundary behavior, and how an attempted broadening is communicated back. To be decided.
+**Open: cache-location config.** A fetcher that downloads bytes still needs to know where (or whether) to cache the result. The mechanism for telling a fetcher its cache location isn't pinned down yet — could be a property the engine sets on the fetcher when supplying it, could be a per-fetcher kwarg the user code passes when invoking, could be a process-level setting fetchers consult. To be settled when V1.0 implementation lands.
 
 ### Why opt-in matters in practice
 
@@ -136,6 +126,6 @@ A consumer that bypasses blockchain.puck.uno and fetches an artifact directly ca
 <a id="see-also"></a>
 ## See also
 
-- [Blockchain](blockchain/) — the registry blockchain.puck.uno checks against; the canonical record of who signed what.
-- [Caspian versioning](../../versioning/) — how a program selects which version of a library to look up. blockchain.puck.uno enters the picture only after the version is selected.
-- [Downloads (parent)](../) — the broader fetch/cache layer beneath `%puck`.
+- [Blockchain implementation](https://puck.uno/documentation/requirements/caspian/downloads/blockchain/blockchain-implementation/) — the chain itself; canonical record of who signed what, plus the reference engine that serves it.
+- [Caspian versioning](https://puck.uno/documentation/requirements/caspian/versioning/) — how a program selects which version of a library to look up. blockchain.puck.uno enters the picture only after the version is selected.
+- [Downloads (parent)](https://puck.uno/documentation/requirements/caspian/downloads/) — the broader fetch/cache layer beneath `%puck`.

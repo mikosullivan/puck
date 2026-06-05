@@ -560,21 +560,21 @@ shape; class-definition records use whole-hash form, but these are instances):
         "user_status": {
             "bucket": {"flavor": "declined_to_answer"},
             "stack": {
-                "shadow": {},
-                "null_class": {"sticky": true, "class": "puck.uno/null"}
+                "shadow": {"sticky": true},
+                "2": {"sticky": true, "class": "puck.uno/null"}
             }
         },
         "device_reading": {
             "bucket": {"flavor": "puck.uno/null/timeout"},
             "stack": {
-                "shadow": {},
-                "null_class": {"sticky": true, "class": "puck.uno/null"}
+                "shadow": {"sticky": true},
+                "2": {"sticky": true, "class": "puck.uno/null"}
             }
         }
     },
     "stack": {
-        "shadow": {},
-        "measurement": {"class": "foo.com/measurement"}
+        "shadow": {"sticky": true},
+        "3": {"class": "foo.com/measurement"}
     }
 }
 ```

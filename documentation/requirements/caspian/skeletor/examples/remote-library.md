@@ -1,4 +1,4 @@
-# Example 05: Loaded remote library
+# Loaded remote library
 
 ~~~json
 {"vibecode": {"example": "loaded_remote_library",

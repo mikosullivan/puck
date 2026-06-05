@@ -1808,7 +1808,7 @@ The simplest object — empty bucket, no class beyond the shadow:
 {
     "bucket": {},
     "stack": {
-        "shadow": {}
+        "shadow": {"sticky": true}
     }
 }
 ```
@@ -1888,8 +1888,8 @@ empty), and the object's own class platter below it. A bare `color` instance:
 {
     "bucket": {"r": 255, "g": 0, "b": 0},
     "stack": {
-        "shadow": {},
-        "color": {"class": "puck.uno/color"}
+        "shadow": {"sticky": true},
+        "2": {"class": "puck.uno/color"}
     }
 }
 ```
@@ -1915,9 +1915,13 @@ platter is itself stuck — the position-lock chains through every contiguous
 sticky platter starting from the top. The first non-sticky platter ends the
 chain; platters below it can still move.
 
-The shadow platter is sticky by default, which is why it stays pinned at the
-top. The full structural spec — including the propagation rule and engine-only
-constraint — lives at
+The shadow platter is always sticky — carries `sticky: true` in every
+representation — which is why it stays pinned at the top. Stickiness on
+the platter for the class an object was instantiated with is NOT
+automatic; a regular platter is non-sticky unless the engine
+specifically marks it (as it does for `puck.uno/null` and `puck.uno/false`
+below). The full structural spec — including the propagation rule and
+engine-only constraint — lives at
 [requirements/ecoverse/objects/structure.md § Stickiness](../../ecoverse/objects/structure.md#stickiness).
 
 <a id="null-and-false-platters"></a>
@@ -1933,8 +1937,8 @@ be talked out of being null or false later.
 {
     "bucket": {},
     "stack": {
-        "shadow": {},
-        "null_class": {"sticky": true, "class": "puck.uno/null"}
+        "shadow": {"sticky": true},
+        "2": {"sticky": true, "class": "puck.uno/null"}
     }
 }
 ```
