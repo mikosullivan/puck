@@ -5,6 +5,7 @@
   "endpoints": {
     "POST /api/quick-add-issue":  "Form-encoded { title, body } -> shells out to `gh issue create` against mikosullivan/puck and returns a confirmation page with the issue URL.",
     "POST /api/close-issue":      "Form-encoded { number } -> shells out to `gh issue close` and returns JSON ok/error.",
+    "POST /api/comment-issue":    "Form-encoded { number, body } -> shells out to `gh issue comment` and returns JSON ok/error. Gated by edit.allowed_ips; non-allow-listed IPs get 403.",
     "GET  /api/section-markdown": "?path=<md_path>&anchor=<id> -> raw markdown for the section (or whole file if anchor omitted). Used to pre-populate the Edit form's textarea.",
     "POST /api/edit-suggestion":  "Form-encoded { path, anchor?, markdown } -> writes the edited section back to the file in place. Gated by edit.allowed_ips; non-allow-listed IPs get 403. No git commit; maintainer manages version control themselves."
   },
@@ -168,6 +169,51 @@ local function json_response(status, ok, payload)
         body = body,
         content_type = "application/json; charset=utf-8",
     }
+end
+
+-- Post a comment to a GitHub issue via `gh issue comment`.
+-- Returns ok, output_or_error.
+local function comment_issue(number, body)
+    local cmd = "gh issue comment " .. tostring(number)
+        .. " --repo " .. GH_REPO
+        .. " --body " .. sh_quote(body)
+        .. " 2>&1; echo \"ORLANDO_EXIT:$?\""
+    local handle, popen_err = io.popen(cmd, "r")
+    if not handle then return false, "io.popen failed: " .. tostring(popen_err) end
+    local out = handle:read("*a") or ""
+    handle:close()
+    local exit = out:match("ORLANDO_EXIT:(%d+)%s*$")
+    out = out:gsub("ORLANDO_EXIT:%d+%s*$", "")
+    if exit == "0" then return true, out end
+    return false, out
+end
+
+-- POST /api/comment-issue   { number, body }
+-- Gated by edit.allowed_ips — same allow-list as /api/edit-suggestion.
+-- The UI button is hidden in issues_page.lua for non-allow-listed IPs;
+-- this 403 is defense in depth.
+local function handle_comment_issue(req)
+    if not config.ip_can_edit(req.client_ip) then
+        return json_response("403 Forbidden", false, "edit features are restricted to allow-listed IPs")
+    end
+    if req.method ~= "POST" then
+        return json_response("405 Method Not Allowed", false, "POST required")
+    end
+    local form = parse_form(req.body)
+    local number = tonumber(form.number)
+    if not number then
+        return json_response("400 Bad Request", false, "missing or invalid 'number'")
+    end
+    local body = form.body or ""
+    if body == "" then
+        return json_response("400 Bad Request", false, "missing 'body'")
+    end
+    local ok, result = comment_issue(number, body)
+    if ok then
+        issues_fetcher.invalidate()
+        return json_response("200 OK", true)
+    end
+    return json_response("502 Bad Gateway", false, result)
 end
 
 local function handle_close_issue(req)
@@ -399,6 +445,10 @@ function M.dispatch(req)
 
     if req.path == "/api/close-issue" then
         return handle_close_issue(req)
+    end
+
+    if req.path == "/api/comment-issue" then
+        return handle_comment_issue(req)
     end
 
     if req.path == "/api/edit-suggestion" then

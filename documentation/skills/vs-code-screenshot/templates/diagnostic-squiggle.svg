@@ -1,0 +1,20 @@
+<!--
+	Reusable diagnostic squiggle (under-line wavy decoration showing a syntax/semantic error).
+	Drop as an overlay positioned under the bad token.
+	- Red squiggle: error severity (fill="#f48771")
+	- Yellow squiggle: warning severity (fill="#cca700")
+	- Blue squiggle: info severity (fill="#3794ff")
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 30" font-family="system-ui, sans-serif">
+	<!-- Wavy underline path; change the length by repeating "q 4 -3 8 0 t 8 0" or trimming. -->
+	<path d="M 0 14 q 4 -3 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0"
+		fill="none" stroke="#f48771" stroke-width="1.5"/>
+
+	<!-- Optional: small message badge (replace MSG, position to taste) -->
+	<g transform="translate(0, 18)">
+		<rect width="200" height="12" fill="#252526" stroke="#454545" stroke-width="0.5" rx="2"/>
+		<text x="6" y="9" font-size="9" fill="#f48771">
+			<tspan font-family="ui-monospace, monospace">MSG: unexpected token</tspan>
+		</text>
+	</g>
+</svg>

@@ -16,6 +16,8 @@ construct so each topic gets its own page.
 - **[Class definition](../index.md#classes)** — `class` /
   `inherits` / `field` / `accessor` / `helper`. (The JSON form is
   spec'd in [mikobase/class-definition.md](../../mikobase/class-definition.md).)
+- **[Exceptions](exceptions.md)** — `raise` and `catch`; multiple
+  in-flight exceptions; cross-role catch semantics.
 - **[Loops](loops.md)** — `while`, `do`, `as`, loop-object methods.
 - **[Operators](operators.md)** — arithmetic, comparison, logical,
   pipes.

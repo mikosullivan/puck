@@ -1,0 +1,38 @@
+<!--
+	Reusable hover-tooltip overlay. Drop this into a window-frame.svg as a <g transform="translate(X, Y)">
+	at the position above/below the hovered token. ~400×180 by default; resize freely.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 180" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+	<defs>
+		<filter id="tooltip-shadow" x="-10%" y="-10%" width="120%" height="120%">
+			<feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.45"/>
+		</filter>
+		<style>
+			.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+		</style>
+	</defs>
+
+	<g filter="url(#tooltip-shadow)">
+		<rect width="400" height="180" fill="#252526" stroke="#454545" stroke-width="1" rx="4"/>
+
+		<!-- Header: token + kind. Replace TOKEN and KIND. -->
+		<text x="14" y="26" class="mono" font-size="13">
+			<tspan fill="#c586c0">TOKEN</tspan><tspan fill="#888888"> — KIND</tspan>
+		</text>
+		<line x1="14" y1="38" x2="386" y2="38" stroke="#3c3c3c" stroke-width="1"/>
+
+		<!-- Description (3–5 lines, wrap at ~50 chars). -->
+		<text x="14" y="58" fill="#d4d4d4" font-size="12">First line of the description.</text>
+		<text x="14" y="76" fill="#d4d4d4" font-size="12">Second line.</text>
+		<text x="14" y="94" fill="#d4d4d4" font-size="12">Third line if needed.</text>
+
+		<!-- Type/signature line (optional). -->
+		<text x="14" y="122" class="mono" font-size="11" fill="#888888">→ return.type</text>
+
+		<!-- Footer doc link. -->
+		<line x1="14" y1="138" x2="386" y2="138" stroke="#3c3c3c" stroke-width="1"/>
+		<text x="14" y="160" font-size="11">
+			<tspan fill="#3794ff">📖 puck.uno/documentation/path/to/canonical/doc</tspan>
+		</text>
+	</g>
+</svg>

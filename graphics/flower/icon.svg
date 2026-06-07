@@ -1,0 +1,39 @@
+<!--
+	Puck flower icon — simplified vector pansy for use as:
+	- VS Code marketplace icon (renders at 128×128)
+	- VS Code file-explorer icon for .casp files (renders at ~16×16)
+	- Any other Puck brand surface needing the flower mark at small sizes
+
+	Drawn as a stylized love-in-idleness (Viola tricolor) — Oberon's flower
+	in A Midsummer Night's Dream, which Puck the fairy fetches.
+
+	Designed at 64×64; scales cleanly via viewBox.
+	Transparent background — caller adds context if needed (rounded
+	rectangle wrapper for marketplace, transparent for file-tree).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<!-- Upper-left petal (deep maroon) -->
+	<ellipse cx="22" cy="18" rx="14" ry="17" fill="#7a2c2c" transform="rotate(-22 22 18)"/>
+	<!-- Upper-right petal (deep maroon) -->
+	<ellipse cx="42" cy="18" rx="14" ry="17" fill="#7a2c2c" transform="rotate(22 42 18)"/>
+
+	<!-- Left side petal (lavender) -->
+	<ellipse cx="14" cy="34" rx="15" ry="12" fill="#b8b0c2" transform="rotate(-12 14 34)"/>
+	<!-- Right side petal (lavender) -->
+	<ellipse cx="50" cy="34" rx="15" ry="12" fill="#b8b0c2" transform="rotate(12 50 34)"/>
+
+	<!-- Bottom petal (yellow, the showpiece) -->
+	<ellipse cx="32" cy="46" rx="18" ry="13" fill="#e8c855"/>
+
+	<!-- Dark veining on bottom petal — signature pansy detail. Subtle so it
+	     doesn't dominate at small sizes. -->
+	<g stroke="#5a3c1c" stroke-width="1" fill="none" opacity="0.55" stroke-linecap="round">
+		<path d="M 32 38 L 32 53"/>
+		<path d="M 25 47 L 39 47"/>
+		<path d="M 27 43 L 37 51"/>
+		<path d="M 37 43 L 27 51"/>
+	</g>
+
+	<!-- Yellow throat (where petals meet) -->
+	<circle cx="32" cy="28" r="5" fill="#f5d878"/>
+</svg>

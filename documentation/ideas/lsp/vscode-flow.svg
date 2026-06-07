@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+	<defs>
+		<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" fill="#d4d4d4"/>
+		</marker>
+		<marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+			<path d="M0,0 L10,5 L0,10 z" fill="#7a8a9a"/>
+		</marker>
+		<filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+			<feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.35"/>
+		</filter>
+		<style>
+			.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+			.title { font-weight: 600; font-size: 17px; fill: #ffffff; }
+			.sub { font-size: 12px; fill: #8a9aaa; }
+			.body { font-size: 14px; fill: #d4d4d4; }
+			.proto { font-size: 15px; font-weight: 600; fill: #ffffff; }
+			.protosub { font-size: 12px; fill: #8a9aaa; }
+			.caption { font-size: 13px; fill: #aab4bf; }
+			.thickarrow { stroke: #d4d4d4; stroke-width: 2; fill: none; }
+			.thinarrow { stroke: #7a8a9a; stroke-width: 1; fill: none; stroke-dasharray: 4 3; }
+		</style>
+	</defs>
+
+	<!-- ===== Background ===== -->
+	<rect width="880" height="420" rx="10" fill="#1e1e1e"/>
+
+	<!-- ===== VS Code box (left) ===== -->
+	<rect x="40" y="50" width="360" height="240" rx="10" fill="#252526" stroke="#3c3c3c" stroke-width="1.5" filter="url(#shadow)"/>
+
+	<!-- VS Code icon (top-left of box) -->
+	<g transform="translate(60, 70)">
+		<!-- Stylized VS Code chevron mark, simplified -->
+		<polygon points="28,4 12,18 28,32 32,30 18,18 32,6" fill="#007acc"/>
+		<polygon points="32,6 32,30 28,32 12,18 28,4 32,6" fill="#0098ff" opacity="0.6"/>
+	</g>
+	<text x="110" y="92" class="title">VS Code</text>
+	<text x="110" y="108" class="sub">editor process</text>
+
+	<!-- Inner: Caspian extension -->
+	<rect x="60" y="130" width="320" height="140" rx="6" fill="#1e1e1e" stroke="#454545" stroke-width="1"/>
+	<text x="220" y="156" text-anchor="middle" class="title" font-size="15">Caspian extension</text>
+	<text x="220" y="174" text-anchor="middle" class="sub">thin client; lives in caspian-vscode repo</text>
+	<text x="76" y="202" class="body">• TextMate grammar (highlighting)</text>
+	<text x="76" y="224" class="body">• LSP client (subprocess wiring)</text>
+	<text x="76" y="246" class="body">• Renders squiggles, popups, outline</text>
+
+	<!-- ===== caspian lsp box (right) ===== -->
+	<rect x="480" y="50" width="360" height="240" rx="10" fill="#252526" stroke="#3c3c3c" stroke-width="1.5" filter="url(#shadow)"/>
+
+	<!-- Puck flower icon (simplified pansy / love-in-idleness) -->
+	<g transform="translate(500, 70)">
+		<!-- Upper-left petal (maroon) -->
+		<ellipse cx="11" cy="11" rx="9" ry="11" fill="#7a2c2c" transform="rotate(-25 11 11)"/>
+		<!-- Upper-right petal (maroon) -->
+		<ellipse cx="25" cy="11" rx="9" ry="11" fill="#7a2c2c" transform="rotate(25 25 11)"/>
+		<!-- Left side petal (lavender) -->
+		<ellipse cx="6" cy="22" rx="10" ry="8" fill="#b8b0c2" transform="rotate(-15 6 22)"/>
+		<!-- Right side petal (lavender) -->
+		<ellipse cx="30" cy="22" rx="10" ry="8" fill="#b8b0c2" transform="rotate(15 30 22)"/>
+		<!-- Bottom petal (yellow with dark veining) -->
+		<ellipse cx="18" cy="30" rx="12" ry="8" fill="#e8c855"/>
+		<path d="M 18 25 L 18 35 M 14 32 L 22 32 M 16 30 L 20 34 M 20 30 L 16 34" stroke="#5a3c1c" stroke-width="0.8" fill="none" opacity="0.6"/>
+		<!-- Yellow center -->
+		<circle cx="18" cy="18" r="3" fill="#f5d878"/>
+	</g>
+	<text x="550" y="92" class="title">caspian lsp</text>
+	<text x="550" y="108" class="sub">subprocess — written in Caspian itself</text>
+
+	<!-- Inner: capabilities -->
+	<rect x="500" y="130" width="320" height="140" rx="6" fill="#1e1e1e" stroke="#454545" stroke-width="1"/>
+	<text x="516" y="156" class="body">• reads .casp source from disk</text>
+	<text x="516" y="178" class="body">• parses with Caspian engine's own</text>
+	<text x="528" y="194" class="body">  lexer / parser / transpiler stack</text>
+	<text x="516" y="216" class="body">• answers LSP requests:</text>
+	<text x="532" y="234" class="body">– diagnostics, hover, completion,</text>
+	<text x="532" y="252" class="body">  go-to-definition, formatting</text>
+
+	<!-- ===== JSON-RPC arrow between them ===== -->
+	<line x1="400" y1="170" x2="480" y2="170" class="thickarrow" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+	<text x="440" y="158" text-anchor="middle" class="proto">JSON-RPC</text>
+	<text x="440" y="188" text-anchor="middle" class="protosub">over stdio</text>
+
+	<!-- ===== .casp file at bottom ===== -->
+	<rect x="370" y="330" width="140" height="50" rx="6" fill="#2a2820" stroke="#8a7a30" stroke-width="1.5"/>
+	<text x="440" y="354" text-anchor="middle" class="title" fill="#e8d878">.casp file</text>
+	<text x="440" y="372" text-anchor="middle" class="sub" fill="#b0a050">on disk</text>
+
+	<!-- Arrows from boxes down to file -->
+	<line x1="220" y1="290" x2="370" y2="335" class="thinarrow" marker-end="url(#arrow-thin)"/>
+	<text x="240" y="320" class="sub">user edits</text>
+
+	<line x1="660" y1="290" x2="510" y2="335" class="thinarrow" marker-end="url(#arrow-thin)"/>
+	<text x="600" y="320" class="sub">parses</text>
+
+	<!-- ===== Caption ===== -->
+	<text x="440" y="402" text-anchor="middle" class="caption">VS Code launches <tspan class="mono">caspian lsp</tspan> when a .casp file opens; they exchange JSON-RPC messages over stdio. Same model works for any LSP-aware editor.</text>
+</svg>

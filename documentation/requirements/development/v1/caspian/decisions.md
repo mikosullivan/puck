@@ -93,7 +93,8 @@ location wins**; this log is just a finder.
 | Interactive install: examples copied to `~/caspian/` by default (Y). Non-interactive: no copy. | [non-interactive.md](../../ideas/installation/non-interactive.md) |
 | The installer itself is a Caspian program (`install.casp`) bootstrapped from a tiny POSIX wrapper. First-contact dogfooding. | [linux.md § Under the hood](../../ideas/installation/linux.md#under-the-hood) |
 | Caspian always bundles its own Lua — never shares with system Lua, even if versions match. ABI guarantee. | [linux-with-existing-lua.md](../../ideas/installation/linux-with-existing-lua.md) |
-| VSCode extension is a thin shell — syntax highlighting + a Format Document command that shells out to `caspian fmt`. No LSP, no in-extension parser. Lives in its own repo. | [caspian-vscode](https://github.com/mikosullivan/caspian-vscode) |
+| VSCode extension (codename Molly) is a thin client — syntax highlighting, static hover for keywords/sigils, language config, custom file icon. No LSP, no in-extension parser, zero Caspian-install dependency. Snippets and `caspian fmt` shell-out deferred to post-V1 Ideas. Spec lives in this repo; implementation in caspian-vscode. | [vscode-extension](../../../caspian/vscode-extension/) |
+| LSP (Language Server Protocol) deferred to post-V1. Spec and build plan parked at [documentation/ideas/lsp/](../../../../ideas/lsp/) and [documentation/ideas/lsp-build/](../../../../ideas/lsp-build/). Reason: V1 LSP would require a local Caspian install for every editor user, which conflicts with the "first contact" goal and Miko's remote-development workflow. | [ideas/lsp/](../../../../ideas/lsp/) |
 
 ---
 

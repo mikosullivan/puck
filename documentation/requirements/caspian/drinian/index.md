@@ -75,8 +75,11 @@ depend on it.
 {"vibecode": {"section": "worked_example",
 	"purpose": "illustrate_v1_0_drinian_hash_with_a_realistic_nested_execution_moment_so_callers_can_see_what_the_data_structure_looks_like_beyond_the_minimal_aslan_snapshot",
 	"shape_committed": false,
-	"note": "field_names_and_frame_kinds_in_this_example_are_speculative_and_will_settle_as_each_slice_grows_the_hash"}}
+	"note": "field_names_and_frame_kinds_in_this_example_are_speculative_and_will_settle_as_each_slice_grows_the_hash",
+	"shorthand_disclosure": "examples_in_this_doc_use_a_simplified_inline_value_form_for_readability_canonical_full_form_with_references_and_objects_tables_per_object_role_field_etc_lives_in_examples_mid_execution_md"}}
 ~~~
+
+**Note on representation.** The JSON snippets in this doc use a **simplified inline-value shorthand** for readability — locals carry their values directly as `{"value": "Aslan", "src": ["a", 6]}` rather than as references into separate `references` and `objects` tables. The full canonical form (with per-object `role` field, sequence-keyed platters in an `objects` table, `references` mapping ref-IDs to target-IDs, top-level `sequence` counter, etc.) lives in [examples/mid-execution.md](examples/mid-execution.md). Treat that example as authoritative for representation; this doc focuses on the structural concepts and uses lighter snippets to keep the prose moving.
 
 The [Aslan slice](../../development/v1/caspian/aslan.md) ships the minimum
 Drinian footprint — a single-field hash, `call_stack`, holding one
@@ -193,7 +196,6 @@ so they'd be tolerated, not stripped.)
       }
     }
   ],
-  "pending_exceptions": [],
   "gc_errors": []
 }
 ~~~
@@ -316,16 +318,17 @@ Things to notice:
   No special "iterator object" type, no opaque handle. (Compare to
   Python generators, which hide iteration state inside an opaque
   frame.)
-- **`pending_exceptions` is an empty array unless one or more exceptions are
-  unwinding.** A stack: index 0 is the original raise; the last
-  element is the currently-active exception. Each push happens on
-  raise, each pop happens on resolve (catch or top-level escape).
-  Stacked rather than single-slot because an `on_close` hook can
-  itself throw while a prior exception is unwinding — the new one
-  pushes onto the stack rather than silently replacing the old. See
-  [Exceptions and the captured stack](#exceptions-and-captured-stack)
-  below for the per-exception shape and why each entry carries its
-  own `captured_stack`.
+- **In-flight exceptions live as elements of `call_stack`, not in a
+  separate field.** When a `throw` fires, the engine appends an
+  element with `action: "exception"` to the top of `call_stack`. As
+  the exception unwinds, frames pop from beneath it; the exception
+  itself sits at the top throughout. When it's caught (or escapes
+  the program), the exception element pops too. No separate
+  `pending_exceptions` top-level field — the call_stack array
+  uniformly holds frames AND in-flight exceptions, distinguished by
+  the `action` value. See [Exceptions and the captured stack](#exceptions-and-captured-stack)
+  below for the per-exception shape, the optional `captured_stack`
+  field, and how nested exceptions stack.
 - **`gc_errors` is an engine-maintained list of on_close failures.**
   Stays empty when no GC handler has raised. When one does, the
   runtime catches the error (so one bad handler doesn't break GC
@@ -449,6 +452,40 @@ A few things to notice in this snapshot:
 - **If an alarm raised inside Frame 4**, it would unwind up through Frame 3, then Frame 2, then Frame 1. As Frame 1 pops, the delegation is gone. Frame 0 catches it (or it propagates out), and at no point does any "lift delegation" handler need to fire — the stack unwinding IS the lifting.
 
 If the same program had nested `delegate_to` blocks, additional `delegations`-bearing frames would stack up in the same way; permission resolution walks the stack and applies each in order; unwinding undoes each in reverse.
+
+<a id="object-ownership"></a>
+### Object ownership
+
+~~~json
+{"vibecode": {"section": "object_ownership_in_drinian",
+	"field": "role",
+	"location": "top_level_field_on_every_object_record_in_state_objects",
+	"value": "string_name_of_the_owning_role_eg_user_stdlib_agent_engine_puck",
+	"rule_for_assignment": "see_roles_md_section_how_objects_get_their_owning_role",
+	"key_distinction": "object_role_in_objects_table_vs_frame_role_in_call_stack_answer_different_questions"}}
+~~~
+
+Every entry in `state.objects` carries a top-level `role` field naming the role that owns the object. The value is one of the strings in `state.roles` — `"user"`, `"stdlib"`, `"agent"`, `"engine"`, `"puck"`, or whatever roles the program has.
+
+```json
+"objects": {
+    "10": {
+        "role": "user",
+        "src": ["a", 6],
+        "bucket": {"value": "Aslan"},
+        "stack": {
+            "shadow": {"sticky": true},
+            "24": {"class": "puck.uno/string"}
+        }
+    }
+}
+```
+
+The `role` field's value is determined at object creation per [roles.md § How Objects Get Their Owning Role](../roles#how-objects-get-their-owning-role) — short version: an object's role is the role of the code that *conceptually* creates it (the expression-evaluator), not necessarily the runtime frame doing the underlying work. A string produced by user code's `'a' + 'b'` is `role: "user"` even though the `+` method internally runs in a stdlib frame.
+
+**Frame role and object role answer different questions.** A frame's `role` (in `call_stack` entries) tells you whose code is executing in that frame right now. An object's `role` (in `objects` entries) tells you who owns the value. They coincide in most cases — a user-frame's locals usually hold user-owned values — but they're independent fields tracking independent things. In particular, stdlib frames routinely create values that user code conceptually owns (returned across the role boundary on the way out of the call).
+
+Once set at allocation, the field is immutable — values can move between roles (be passed into a different-role function, returned to a different-role caller) but the ownership recorded in `state.objects` follows the value, not the value's current location.
 
 <a id="classes-not-in-drinian"></a>
 ### Classes are NOT in Drinian
@@ -922,8 +959,7 @@ about to dispatch `puts`, not into it yet. Eight call-stack frames.
         "depth": {"value": 2}
       }
     }
-  ],
-  "pending_exceptions": []
+  ]
 }
 ~~~
 
@@ -972,34 +1008,21 @@ statements, which is all a single-process in-memory hash needs.
 
 ~~~json
 {"vibecode": {"section": "exceptions_and_captured_stack",
-	"purpose": "describe_how_pending_exception_preserves_the_call_stack_state_at_raise_time_via_reference_capture_so_uncaught_exception_reports_show_where_the_program_actually_was_not_the_residue_after_unwinding",
-	"shape_committed": false,
+	"purpose": "describe_how_in_flight_exceptions_live_as_call_stack_elements_and_how_captured_stack_preserves_raise_time_context_via_reference_capture_for_uncaught_exception_reports",
+	"shape_committed": true,
+	"model": "exception_is_a_call_stack_element_with_action_exception; no_separate_pending_exceptions_field",
 	"key_idea": "capture_by_reference_not_deep_copy; popped_frames_stop_mutating_so_references_are_stable_point_in_time_snapshots"}}
 ~~~
 
-`pending_exceptions` is a **stack** of exception records — index
-0 is the original raise, the last element is the currently-active
-one. Push on raise, pop on resolve (catch or top-level escape).
-A stack rather than a single slot because an `on_close` hook can
-itself throw while a prior exception is unwinding: the new
-exception pushes onto the stack rather than silently replacing
-the one already in flight. Most of the time the stack has 0 or 1
-entries; exception-during-handling deepens it.
+An in-flight exception lives as an **element of `call_stack` itself**, with `action: "exception"`. It sits at the top of the array while the exception is unwinding; it pops when the exception is caught (or escapes the program). There is no separate `pending_exceptions` top-level field — `call_stack` uniformly holds frames AND in-flight exceptions, distinguished by the `action` value. See [the canonical worked example](examples/exception.md) for the full structural shape.
 
-When an exception is raised, the engine unwinds the call stack
-looking for a handler. By the time the exception reaches a
-debugger, an uncaught-error handler, or the host, the frames
-between the raise point and the catch point (or the top, for
-uncaught) have been popped. Without intervention, what you'd see
-in `pending_exceptions[top]` is just "an exception happened" —
-the context where it actually happened is gone.
+When the engine reaches the exception element during normal "what should I do next" inspection, it knows: an exception is unwinding. The frames below the exception (in array index order) are the frames the exception is unwinding through. As unwinding proceeds, frames pop from beneath the exception one at a time, each one checked for a matching catch handler.
 
-So at raise time, the engine snapshots the call stack into the
-new exception's `captured_stack` field. Each exception on the
-stack carries its own `captured_stack`. **Capture is by reference,
-not by deep copy** — see
-[Capture-by-reference](#capture-by-reference) below for the cost
-analysis.
+Caspian's exception model is single-flight from the user's perspective per [syntax/exceptions.md](../syntax/exceptions.md) — the call_stack has at most one `action: "exception"` element at a time in user-visible programs. The rare exception-during-exception case (an `on_close` hook itself raising while a prior exception unwinds) is handled at the engine level: per [garbage-collection.md § Engine wraps the handler](../garbage-collection.md#on-close-catch-anything), every `on_close` invocation runs inside an engine-level try/catch that prevents on_close-raised exceptions from escaping into the user's exception stream.
+
+**The captured_stack problem.** When an exception is raised, the engine unwinds looking for a handler. By the time the exception reaches a debugger, an uncaught-error handler, or the host, the frames between the raise point and the catch point (or the top, for uncaught) have been popped. Without intervention, all you'd see by the time the program exits is the exception element on a near-empty call_stack — the context where it actually happened is gone.
+
+So at raise time, the engine snapshots the frames below the exception into the exception's `captured_stack` field. **Capture is by reference, not by deep copy** — see [Capture-by-reference](#capture-by-reference) below for the cost analysis.
 
 Consider this Caspian program, with the second iteration raising:
 
@@ -1019,9 +1042,7 @@ $names.each($name) do
 end
 ~~~
 
-First iteration prints `hello, Aslan`. Second iteration calls
-`&greet('')`, the `if` test succeeds, `throw` fires on line 3. No
-`try` catches it; unwinding proceeds all the way up.
+First iteration prints `hello, Aslan`. Second iteration calls `&greet('')`, the `if` test succeeds, `throw` fires on line 3. No `try` catches it; unwinding proceeds all the way up.
 
 **Snapshot at the moment `throw` fires** (before any unwinding):
 
@@ -1029,98 +1050,53 @@ First iteration prints `hello, Aslan`. Second iteration calls
 {
   "roles": {"user": {}, "stdlib": {}},
   "call_stack": [
-    {"action": "top_level",     "role": "user",   "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"},          "chain": "<...>"},
-    {"action": "method_call",   "role": "stdlib", "lexical_parent": null, "src": "internal", "method": "each", "iterator": {"position": 1, "of": 2}, "locals": {}, "chain": "<...>"},
-    {"action": "block",         "role": "user",   "lexical_parent": 0,    "src": "line 12", "locals": {"name": {"value": ""}},     "chain": "<...>"},
-    {"action": "function_call", "role": "user",   "lexical_parent": 0,    "src": "line 3",  "function": "greet", "locals": {"who": {"value": ""}}, "chain": "<...>"},
-    {"action": "if_block",      "role": "user",   "lexical_parent": 3,    "src": "line 3",  "locals": {},                          "chain": "<...>"}
-  ],
-  "pending_exceptions": [{
-    "class": "puck.uno/error/runtime",
-    "message": "name cannot be empty",
-    "captured_stack": "<five references — one per frame above, in order>"
-  }]
+    {"action": "top_level",     "role": "user",   "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"}},
+    {"action": "method_call",   "role": "stdlib", "lexical_parent": null, "src": "internal", "method": "each", "iterator": {"position": 1, "of": 2}, "locals": {}},
+    {"action": "block",         "role": "user",   "lexical_parent": 0,    "src": "line 12", "locals": {"name": {"value": ""}}},
+    {"action": "function_call", "role": "user",   "lexical_parent": 0,    "src": "line 3",  "function": "greet", "locals": {"who": {"value": ""}}},
+    {"action": "if_block",      "role": "user",   "lexical_parent": 3,    "src": "line 3",  "locals": {}},
+    {
+      "action": "exception",
+      "class": "puck.uno/error/runtime",
+      "message": "name cannot be empty",
+      "src": "line 3",
+      "captured_stack": "<five references — one per frame below, in order>"
+    }
+  ]
 }
 ~~~
 
-The `captured_stack` and the live `call_stack` point at the same
-five frame tables. No copy yet — just five pointers.
+The exception element is the last entry in `call_stack`. Its `captured_stack` field holds five references — one per frame below it. The references and the live `call_stack` point at the same five frame tables. No copy yet; just five pointers.
 
-**Snapshot after full unwinding** (uncaught; engine is about to
-hand the exception to the host):
+**Snapshot after full unwinding** (uncaught; engine is about to hand the exception to the host):
 
 ~~~json
 {
   "roles": {"user": {}, "stdlib": {}},
   "call_stack": [
-    {"action": "top_level", "role": "user", "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"}, "chain": "<...>"}
-  ],
-  "pending_exceptions": [{
-    "class": "puck.uno/error/runtime",
-    "message": "name cannot be empty",
-    "captured_stack": [
-      {"action": "top_level", "role": "user", "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"}, "chain": "<...>"},
-      {"action": "method_call", "role": "stdlib", "lexical_parent": null, "src": "internal", "method": "each", "iterator": {"position": 1, "of": 2}, "locals": {}, "chain": "<...>"},
-      {"action": "block", "role": "user", "lexical_parent": 0, "src": "line 12", "locals": {"name": {"value": ""}}, "chain": "<...>"},
-      {"action": "function_call", "role": "user", "lexical_parent": 0, "src": "line 3", "function": "greet", "locals": {"who": {"value": ""}}, "chain": "<...>"},
-      {"action": "if_block", "role": "user", "lexical_parent": 3, "src": "line 3", "locals": {}, "chain": "<...>"}
-    ]
-  }]
+    {"action": "top_level", "role": "user", "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"}},
+    {
+      "action": "exception",
+      "class": "puck.uno/error/runtime",
+      "message": "name cannot be empty",
+      "src": "line 3",
+      "captured_stack": [
+        {"action": "top_level", "role": "user", "lexical_parent": null, "src": "line 11", "locals": {"names": "<...>"}},
+        {"action": "method_call", "role": "stdlib", "lexical_parent": null, "src": "internal", "method": "each", "iterator": {"position": 1, "of": 2}, "locals": {}},
+        {"action": "block", "role": "user", "lexical_parent": 0, "src": "line 12", "locals": {"name": {"value": ""}}},
+        {"action": "function_call", "role": "user", "lexical_parent": 0, "src": "line 3", "function": "greet", "locals": {"who": {"value": ""}}},
+        {"action": "if_block", "role": "user", "lexical_parent": 3, "src": "line 3", "locals": {}}
+      ]
+    }
+  ]
 }
 ~~~
 
-The live `call_stack` is short (the method_call, block,
-function_call, and if_block frames have all been popped). The
-`captured_stack` still holds all five — the popped frame tables
-weren't destroyed, just removed from `call_stack`. The exception's
-references kept them alive.
+The live `call_stack` is short (only the top_level frame and the exception element remain — the method_call, block, function_call, and if_block frames have all been popped during unwinding). The `captured_stack` inside the exception still holds all five original frames — the popped frame tables weren't destroyed, just removed from `call_stack`. The exception's references kept them alive.
 
-An uncaught-exception report formatted from `captured_stack` shows
-the program at line 3 inside `greet`, called via the do-block,
-called via `array.each`, called from line 11. That's the actually-
-useful debugging output. A report formatted from the live
-`call_stack` would just say "at line 11" — technically true and
-completely useless.
+An uncaught-exception report formatted from `captured_stack` shows the program at line 3 inside `greet`, called via the do-block, called via `array.each`, called from line 11. That's the actually-useful debugging output. A report formatted from the live `call_stack` would just say "at line 11" — technically true and completely useless.
 
-**Exception during unwinding.** When an `on_close` hook on a
-frame being popped *itself* throws, the new exception pushes
-onto `pending_exceptions` rather than replacing the original.
-The stack grows; the engine still has both records to work with.
-Inspecting the snapshot mid-double-unwind:
-
-```json
-"pending_exceptions": [
-  {
-    "class": "puck.uno/error/runtime",
-    "message": "name cannot be empty",
-    "captured_stack": ["<5 frames from the original raise>"]
-  },
-  {
-    "class": "puck.uno/error/io",
-    "message": "tempfile cleanup failed: permission denied",
-    "captured_stack": ["<3 frames from the on_close hook's raise>"]
-  }
-]
-```
-
-Index 0 is the original raise that triggered unwinding. Index 1
-is the new exception thrown by an `on_close` hook during that
-unwinding. A formatted report would render something like:
-
-```
-Uncaught: puck.uno/error/io: tempfile cleanup failed: permission denied
-  ...stack from index 1's captured_stack...
-During handling of: puck.uno/error/runtime: name cannot be empty
-  ...stack from index 0's captured_stack...
-```
-
-When the engine resolves an exception (catch handler runs and
-completes, or one bubbles out the top), `pending_exceptions.pop()`
-removes the top-of-stack record. If exceptions are resolved in
-LIFO order (the normal case), the stack shrinks to empty
-naturally. If a catch handler resolves an exception that wasn't
-at the top — exotic but possible — the engine pops it from the
-middle of the array rather than the end.
+**Catch resolution.** When a catch handler matches and runs to completion, the engine pops the exception element from `call_stack`. Execution resumes inside the catching frame's handler body. The `captured_stack` references continue to keep the popped frames alive until the exception record itself becomes unreachable — useful if user code stashed the caught exception in a variable for later inspection.
 
 <a id="capture-by-reference"></a>
 ### Capture-by-reference: the cost model
@@ -1279,8 +1255,7 @@ output string.
         ], "src": ["b", 41]}
       }
     }
-  ],
-  "pending_exceptions": []
+  ]
 }
 ```
 

@@ -12,6 +12,7 @@ __pycache__/
 # Distribution / packaging
 # Anchored to repo root — these are Python-distribution conventions and should
 # not catch doc paths like documentation/.../downloads/ or documentation/.../build/.
+# /lib/ removed because this repo uses /lib/ as the home for the Caspian engine.
 .Python
 /build/
 /develop-eggs/
@@ -19,7 +20,6 @@ __pycache__/
 /downloads/
 /eggs/
 /.eggs/
-/lib/
 /lib64/
 /parts/
 /sdist/

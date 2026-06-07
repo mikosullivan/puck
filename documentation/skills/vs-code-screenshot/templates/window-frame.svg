@@ -1,0 +1,79 @@
+<!--
+	Reusable empty VS Code window frame (dark theme).
+	Drop your editor content into the area marked "EDITOR CONTENT ZONE"
+	(coordinates: x 224, y 86, width 656, height 312 with default 880x420 canvas).
+	The sidebar at x=44–224 holds file explorer content; replace the placeholder lines.
+
+	Sizing reference:
+	- Code text: font-size 17, line height 28, first line baseline at y=120
+	- Gutter text: x=240, same line baselines as code
+	- Code x-origin: 270 (no indent), 310 (4-space indent)
+	- Indented lines use explicit x= attribute — DO NOT use leading whitespace in tspan
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+	<defs>
+		<style>
+			.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+		</style>
+	</defs>
+
+	<!-- Window background -->
+	<rect width="880" height="420" rx="10" fill="#1e1e1e"/>
+
+	<!-- Title bar -->
+	<rect x="0" y="0" width="880" height="30" fill="#3c3c3c"/>
+	<rect x="0" y="20" width="880" height="10" fill="#3c3c3c"/>
+	<circle cx="18" cy="15" r="6" fill="#ff5f57"/>
+	<circle cx="38" cy="15" r="6" fill="#febc2e"/>
+	<circle cx="58" cy="15" r="6" fill="#28c840"/>
+	<text x="440" y="19" text-anchor="middle" fill="#cccccc" font-size="13">FILE.casp — myproject — Visual Studio Code</text>
+
+	<!-- Activity bar -->
+	<rect x="0" y="30" width="44" height="368" fill="#333333"/>
+	<rect x="0" y="46" width="2" height="28" fill="#ffffff"/>
+	<rect x="13" y="50" width="20" height="18" fill="none" stroke="#ffffff" stroke-width="1.4" rx="1"/>
+	<line x1="17" y1="56" x2="29" y2="56" stroke="#ffffff" stroke-width="1.4"/>
+	<line x1="17" y1="60" x2="29" y2="60" stroke="#ffffff" stroke-width="1.4"/>
+	<line x1="17" y1="64" x2="26" y2="64" stroke="#ffffff" stroke-width="1.4"/>
+	<circle cx="22" cy="96" r="7" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<line x1="27" y1="101" x2="32" y2="106" stroke="#858585" stroke-width="1.6"/>
+	<circle cx="18" cy="142" r="3" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<circle cx="30" cy="156" r="3" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<circle cx="18" cy="170" r="3" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<line x1="18" y1="145" x2="18" y2="167" stroke="#858585" stroke-width="1.4"/>
+	<path d="M20,151 Q30,151 30,153" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<polygon points="15,196 15,216 31,206" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<rect x="14" y="246" width="8" height="8" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<rect x="26" y="246" width="8" height="8" fill="none" stroke="#858585" stroke-width="1.4"/>
+	<rect x="14" y="258" width="8" height="8" fill="none" stroke="#858585" stroke-width="1.4"/>
+
+	<!-- Sidebar (file explorer placeholder — replace contents) -->
+	<rect x="44" y="30" width="180" height="368" fill="#252526"/>
+	<text x="58" y="52" fill="#bbbbbb" font-size="12" font-weight="700" letter-spacing="0.6">EXPLORER</text>
+	<text x="58" y="80" fill="#cccccc" font-size="13">▾ MYPROJECT</text>
+	<text x="74" y="104" fill="#cccccc" font-size="13">▾ src</text>
+	<rect x="44" y="112" width="180" height="24" fill="#37373d"/>
+	<rect x="44" y="112" width="2" height="24" fill="#0078d4"/>
+	<text x="92" y="129" fill="#ffffff" font-size="13">FILE.casp</text>
+
+	<!-- Editor tab bar -->
+	<rect x="224" y="30" width="656" height="34" fill="#2d2d2d"/>
+	<rect x="224" y="30" width="180" height="34" fill="#1e1e1e"/>
+	<rect x="224" y="30" width="180" height="2" fill="#0078d4"/>
+	<text x="246" y="51" fill="#ffffff" font-size="13">FILE.casp</text>
+	<text x="384" y="53" fill="#aaaaaa" font-size="16">×</text>
+	<rect x="224" y="64" width="656" height="22" fill="#1e1e1e"/>
+	<text x="240" y="79" fill="#888888" font-size="12">src ▸ FILE.casp</text>
+
+	<!-- EDITOR CONTENT ZONE (224, 86, 656w, 312h) — fill with code lines here -->
+	<rect x="224" y="86" width="656" height="312" fill="#1e1e1e"/>
+
+	<!-- Status bar -->
+	<rect x="0" y="398" width="880" height="22" fill="#007acc"/>
+	<text x="12" y="413" fill="#ffffff" font-size="12">⎇ master</text>
+	<text x="92" y="413" fill="#ffffff" font-size="12">✓ 0   ⚠ 0</text>
+	<text x="164" y="413" fill="#ffffff" font-size="12">caspian lsp ready</text>
+	<text x="666" y="413" fill="#ffffff" font-size="12">Ln 1, Col 1</text>
+	<text x="758" y="413" fill="#ffffff" font-size="12">UTF-8</text>
+	<text x="808" y="413" fill="#ffffff" font-size="12">Caspian</text>
+</svg>

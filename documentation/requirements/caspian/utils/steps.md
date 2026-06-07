@@ -194,7 +194,7 @@ The count is **monotonic** — it only goes up over the life of a counter. It's 
 
 Steps are a **Caspian language-level concept**, not a Lua concept. The unit is defined at the language layer: one call to `eval` or `exec_stmt` is one step. Any compliant engine — the Lua reference implementation today, hypothetical future implementations in other host languages tomorrow — must produce identical step counts for the same Caspian program with the same input.
 
-This is what makes steps useful for cross-engine comparison: if engine A and engine B produce different step counts for the same program, one of them is non-compliant. The numbers are a portable currency.
+This is what makes steps useful for cross-engine comparison: if engine A and engine B produce different step counts for the same program, one of them is non-compliant. Step counts are portable: the same number means the same amount of work on every engine.
 
 The Lua reference implementation happens to be the first place steps are implemented; see the [Implementation Note](#implementation-note) section above for the specific Lua-side mechanism. That's an implementation detail. The language-level semantics — what counts as a step, when it's incremented, what stays stable — are spec-level and bind every engine equally.
 

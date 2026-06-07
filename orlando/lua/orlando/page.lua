@@ -19,6 +19,7 @@ local nav               = require("orlando.nav")
 local json_highlight    = require("orlando.json_highlight")
 local caspian_highlight = require("orlando.caspian_highlight")
 local issues_fetcher    = require("orlando.issues")
+local issue_panel       = require("orlando.issue_panel")
 local config            = require("orlando.config")
 
 local M = {}
@@ -470,36 +471,22 @@ local function render_issue_comments(comments)
 end
 
 -- Render the per-section open-issues panel (used under each H2-H6 heading
--- that has issues whose title ends with `(#<anchor>)`). Same look as the
--- page-top panel, but the section-context is implied so the "§ Section"
--- chip on each item is omitted. Returns "" when the section has no issues.
-local function render_section_issues_panel(md_path, anchor)
+-- that has issues whose title ends with `(#<anchor>)`). Section context is
+-- implied so the "§ Section" chip on each item is omitted. Returns "" when
+-- the section has no issues. Uses the shared orlando.issue_panel renderer
+-- so /issues and the doc-page panels share one format.
+local function render_section_issues_panel(md_path, anchor, client_ip)
     local issues = issues_fetcher.fetch_section(md_path, anchor)
     if not issues or #issues == 0 then return "" end
-    local parts = {}
-    parts[#parts + 1] = '<details class="issues-panel section-issues-panel">'
-    parts[#parts + 1] = '<summary>Open issues (' .. tostring(#issues) .. ')</summary>'
-    parts[#parts + 1] = '<ul class="issues-list">'
-    for _, issue in ipairs(issues) do
-        local body_html = ""
-        if issue.body and issue.body ~= "" then
-            body_html = M.render(issue.body)
-        end
-        parts[#parts + 1] = '<li class="issue-item">'
-            .. '<div class="issue-head">'
-            ..   '<a href="' .. html_escape(issue.url or "#") .. '" '
-            ..     'class="issue-number" target="_blank" rel="noopener">#'
-            ..     tostring(issue.number) .. '</a>'
-            ..   ' <button type="button" class="issue-close" '
-            ..     'data-issue-number="' .. tostring(issue.number) .. '">'
-            ..     'Close</button>'
-            .. '</div>'
-            .. '<div class="issue-body">' .. body_html .. '</div>'
-            .. render_issue_comments(issue.comments)
-            .. '</li>'
-    end
-    parts[#parts + 1] = '</ul>'
-    parts[#parts + 1] = '</details>'
+    local can_edit = client_ip ~= nil and config.ip_can_edit(client_ip)
+    local parts = {
+        '<details class="issues-panel section-issues-panel">',
+        '<summary>Open issues (', tostring(#issues), ')</summary>',
+        '<div class="issues-list">',
+        issue_panel.render_list(issues, { can_edit = can_edit }),
+        '</div>',
+        '</details>',
+    }
     return table.concat(parts)
 end
 
@@ -544,9 +531,14 @@ local function inject_issue_links(body_html, md_path, client_ip)
     end, 1)
 
     -- Each H2 through H6: same treatment, plus a per-section issues panel
-    -- if the section has issues filed against it.
+    -- if the section has issues filed against it. Skip h2s that are issue-
+    -- panel titles (rendered by orlando.issue_panel) — those aren't
+    -- document section headings and shouldn't get chip injection.
     body_html = body_html:gsub("(<(h[2-6])([^>]*)>)(.-)(</%2>)",
         function(open, _, attrs, inner, close)
+            if attrs:find('issue%-panel%-title', 1, false) then
+                return open .. inner .. close
+            end
             local id      = attrs:match('id="([^"]+)"')
             local text    = clean_heading_text(inner)
             local slug    = id or slugify(text)
@@ -568,7 +560,7 @@ local function inject_issue_links(body_html, md_path, client_ip)
                     .. edit_block(md_path, text, id, edit_id)
             end
 
-            tail = tail .. render_section_issues_panel(md_path, id)
+            tail = tail .. render_section_issues_panel(md_path, id, client_ip)
             return tail
         end)
 
@@ -649,49 +641,29 @@ end
 -- or just below the H1 if the page has no vibecode.
 ------------------------------------------------------------
 
-local function render_issues_panel(issues)
+local function render_issues_panel(issues, client_ip)
     if not issues or #issues == 0 then return "" end
-    local parts = {}
-    parts[#parts + 1] = '<details class="issues-panel">'
-    parts[#parts + 1] = '<summary>Open issues (' .. tostring(#issues) .. ')</summary>'
-    parts[#parts + 1] = '<ul class="issues-list">'
-    for _, issue in ipairs(issues) do
-        local section = ""
-        -- Title format is "File: <path>" or "File: <path> § Section (#anchor)"
-        local sect = (issue.title or ""):match("§%s*(.-)%s*%(")
-        if not sect then sect = (issue.title or ""):match("§%s*(.+)$") end
-        if sect then
-            section = ' <span class="issue-section">§ ' .. html_escape(sect) .. '</span>'
-        end
-        local body_html = ""
-        if issue.body and issue.body ~= "" then
-            body_html = M.render(issue.body)
-        end
-        parts[#parts + 1] = '<li class="issue-item">'
-            .. '<div class="issue-head">'
-            ..   '<a href="' .. html_escape(issue.url or "#") .. '" '
-            ..     'class="issue-number" target="_blank" rel="noopener">#'
-            ..     tostring(issue.number) .. '</a>'
-            ..   ' <button type="button" class="issue-close" '
-            ..     'data-issue-number="' .. tostring(issue.number) .. '">'
-            ..     'Close</button>'
-            ..   section
-            .. '</div>'
-            .. '<div class="issue-body">' .. body_html .. '</div>'
-            .. render_issue_comments(issue.comments)
-            .. '</li>'
-    end
-    parts[#parts + 1] = '</ul>'
-    parts[#parts + 1] = '</details>'
+    local can_edit = client_ip ~= nil and config.ip_can_edit(client_ip)
+    local parts = {
+        '<details class="issues-panel">',
+        '<summary>Open issues (', tostring(#issues), ')</summary>',
+        '<div class="issues-list">',
+        issue_panel.render_list(issues, {
+            can_edit          = can_edit,
+            show_section_chip = true,
+        }),
+        '</div>',
+        '</details>',
+    }
     return table.concat(parts)
 end
 
 -- Inject the panel just below the first vibecode <details> (the page-level
 -- vibecode block). If no vibecode is present, insert just after the first
 -- </h1>. If neither exists, prepend to the body.
-local function inject_issues_panel(body_html, md_path)
+local function inject_issues_panel(body_html, md_path, client_ip)
     local issues = issues_fetcher.fetch(md_path)
-    local panel = render_issues_panel(issues)
+    local panel = render_issues_panel(issues, client_ip)
     if panel == "" then return body_html end
 
     -- The vibecode wrapper is '<details class="vibecode">...</details>'.
@@ -781,6 +753,11 @@ local function add_head(html_tag, title)
         end)
         h:tag("script", function(s)
             s:attr("src",   "/client-assets/copy-code.js")
+            s:attr("defer", "")
+            s:text("")
+        end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/issue-copy.js")
             s:attr("defer", "")
             s:text("")
         end)
@@ -894,6 +871,14 @@ local function add_random_link(nav_tag)
     end)
 end
 
+local function add_issues_link(nav_tag)
+    nav_tag:tag("a", function(a)
+        a:attr("class", "sidebar-issues")
+        a:attr("href",  "/issues")
+        a:text("Open issues")
+    end)
+end
+
 local function add_sidebar(nav_tag, current_md_path, search_query)
     nav_tag:tag("h1", function(h1)
         h1:tag("a", function(a)
@@ -911,6 +896,7 @@ local function add_sidebar(nav_tag, current_md_path, search_query)
 
     add_search_form(nav_tag, search_query)
     add_random_link(nav_tag)
+    add_issues_link(nav_tag)
     nav_tag:raw(nav.build(current_md_path))
 end
 
@@ -935,7 +921,7 @@ function M.render_request(ctx)
     body = mark_external_links(body)
     body = highlight_json_blocks(body)
     body = highlight_caspian_blocks(body)
-    body = inject_issues_panel(body, ctx.md_path)
+    body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)
     body = transform_toc(body)
     body = mark_skeletor_blocks(body)
     body = inject_issue_links(body, ctx.md_path, ctx.client_ip)

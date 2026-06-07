@@ -255,8 +255,8 @@ messages, and the things parser-engine.md flagged as
 boundary." A conservative path is to port the lexer first, keep the
 hand-rolled parser, see how error messages survive the boundary,
 and only port the parser if the result is genuinely better. This
-matches the cheat-sheet preference for not bolting on additions
-ahead of evidence.
+matches the project preference for not bolting on additions ahead
+of evidence.
 
 **Verdict for LPeg.** Already adopted; commit to it as the canonical
 engine-internal parser engine; port the JSON parser and any new
@@ -504,11 +504,6 @@ If the recommendation is accepted, these existing docs need edits:
   `caspian_parser`, and `caspian_json_parser` as users. Add the
   CSS-selector parser as a planned user; add a note that LPeg is
   the engine-internal parser engine going forward.
-- [documentation/cheat-sheet.md](../../cheat-sheet.md) — add a
-  short entry under whichever section covers framework
-  dependencies: "engine-internal parsing → LPeg; external-language
-  parsing → Tree-sitter (dev-time, Sammy onward); tag-based markup
-  → Uma's schema model."
 - [documentation/ideas/uma/index.md](../../ideas/uma/index.md) —
   no semantic change, but worth a one-sentence note clarifying that
   Uma's schema approach is intentionally not a grammar and is not

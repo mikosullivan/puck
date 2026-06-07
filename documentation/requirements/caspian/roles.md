@@ -230,10 +230,11 @@ reference syntax is TBD.
 ~~~json
 {"vibecode": {
     "section": "role_transitions",
-    "rule": "functions_always_run_as_their_owner",
+    "rule": "functions_and_closures_always_run_as_their_defining_role",
     "transition_is_implicit_on_call": true,
     "elevation_via_trickery_is_impossible": true,
-    "chain_wiped_at_boundary": true
+    "chain_wiped_at_boundary": true,
+    "closure_invocation_does_not_escalate_invoker": true
 }}
 ~~~
 
@@ -250,6 +251,27 @@ This means a less-trusted role cannot "elevate" itself by trickery. The
 only way for code to be running as role B is to be executing inside a
 B-owned function-object. Calling into B's code doesn't make the *caller*
 B; only the called function runs as B.
+
+**Closures follow the same rule, with "owner" meaning "defining role."**
+A closure runs as the role of the code that defined it, regardless of
+who invokes it. A closure defined in user code always runs as user, even
+when an agent (or any other role) invokes it. The closure's captured
+variables are accessible as same-role reads from inside the body, since
+the body is running as the defining role.
+
+This is the security-critical property: **passing a closure to a
+different-role caller does NOT grant that caller the closure's
+authority**. If user code passes `$my_closure` to `$agent.yield(...)`
+and the agent invokes it, the closure's body still runs as user. The
+agent cannot use the closure to do things user wouldn't authorize. The
+authority follows the closure's definition site, not its invocation
+site.
+
+Closures don't have class ownership (unlike functions, which are bound
+to a class), so "owner" for a closure is determined by lexical scope —
+the role of the code in which the closure literal was evaluated. Same
+as the [object-ownership rule](#how-objects-get-their-owning-role):
+the conceptual creator of the value is the relevant role.
 
 **`%chain` is wiped at role boundaries.** When code in role A calls into
 role B, B starts with a clean `%chain` — A's chain entries are not
@@ -428,8 +450,9 @@ revisitation.
 {"vibecode": {
     "section": "object_ownership_assignment",
     "external_objects": "owned_by_faucets_role",
-    "internal_objects": "owned_by_creating_role",
-    "engine_builtins": "owned_by_engine_assigned_role"
+    "internal_objects": "owned_by_role_of_code_that_conceptually_creates_the_object_not_necessarily_the_runtime_frame_doing_the_allocation",
+    "engine_builtins": "owned_by_engine_assigned_role",
+    "key_distinction": "frame_role_is_who_is_executing_right_now; object_role_is_who_conceptually_owns_the_value; they_are_different_questions"
 }}
 ~~~
 
@@ -439,13 +462,33 @@ Three rules:
   role. The system assigns the role when introducing the object into the
   runtime.
 - **Internally-created objects** (functions, classes, instances, hashes,
-  anything made by running code): owned by the role of the code that
-  created them — i.e., the role currently executing at the moment of
-  creation. A function defined inside role A's code is owned by A. An
-  instance from `$class.new(...)` called from A is owned by A.
+  anything made by running code): owned by **the role of the code that
+  conceptually creates the object** — the role evaluating the expression
+  that produces the value. This is the role from the program's perspective,
+  not the role of any internal frame the engine routes through to do the
+  work. A string produced by user code's `'a' + 'b'` is user-owned, even
+  though the string-concatenation method lives on stdlib's string class
+  and runs in a stdlib frame internally; the conceptual creator is user
+  code. A function defined inside role A's code is owned by A.
+  `$class.new(...)` called from A produces an A-owned instance.
 - **Engine-supplied built-ins** (stdlib, `%puck`-resolved capabilities,
   etc.): assigned roles by the engine at startup, before any user code
   runs.
+
+**Stdlib's internal scratch state is stdlib-owned.** When stdlib
+allocates a buffer, intermediate hash, or any temporary purely for its
+own implementation use — never returning it to user code — that state
+belongs to stdlib. The "conceptual creator" rule above only matters for
+values that flow across the boundary; internal stdlib bookkeeping is
+correctly stdlib's.
+
+**Frame role and object role are different questions.** A frame's `role`
+in Drinian's `call_stack` tells you whose code is executing in that
+frame right now (stdlib's `+` method runs in a frame with
+`role: "stdlib"`). An object's `role` in Drinian's `objects` table tells
+you who owns the value (the string `+` produced is `role: "user"`
+because user-code's expression conceptually created it). These coincide
+in most cases but they're answering different questions.
 
 The engine itself has a role, but it stays under the hood — developers
 don't reference it directly. Bootstrap layer, mostly invisible.

@@ -235,6 +235,32 @@ Leading whitespace is stripped to the least-indented line. If a developer mixes 
 spaces then that's sloppy and I won't take the blame for it. Ugly results will be their
 own fault and they deserve it.
 
+<a id="heredoc-type-hints"></a>
+##### Type hints
+
+Any heredoc opener may carry an **optional type hint** in parentheses immediately after the delimiter:
+
+```
+$json_blob = <<EOF('json')
+    {"foo": {}}
+EOF
+
+$markdown = <<"DOC"('markdown')
+    # Heading
+    interpolated: $author
+DOC
+
+$raw = <<'YML'('yaml')
+    key: value
+YML
+```
+
+The type hint is a **tooling-only metadata marker**. The Caspian engine silently ignores it — the string at runtime is exactly the heredoc body, with no attached type. Tools that read source code (the VS Code extension's syntax highlighter, the future LSP, doc generators) use the hint to drive behaviors like embedded syntax highlighting and per-type validation.
+
+Recognized type tags follow common short names: `json`, `yaml`, `markdown`, `html`, `css`, `xml`, `sql`, `regex`, `caspian`. Tools may extend this set; unknown tags fall through to plain-text treatment.
+
+One implicit special case: `%vibecode` always carries JSON content by convention, so tools should treat `%vibecode <<EOF` (no type tag) as if it were `<<EOF('json')`. The tag isn't required because the surface guarantees the type.
+
 ---
 
 <a id="booleans-and-null"></a>

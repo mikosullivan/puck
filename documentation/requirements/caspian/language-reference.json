@@ -1,0 +1,146 @@
+{
+	"vibecode": {
+		"doc": "caspian_language_reference",
+		"role": "canonical source-of-truth data file mapping every Caspian keyword and system surface (% sigil) to its description and canonical docs URL. Consumed by the VS Code extension's static-hover feature, the future LSP's hover capability, and any other Puck tooling that needs short authoritative descriptions of language constructs.",
+		"status": "starter seed — covers the most common constructs; expand as the language surface grows or as gaps are noticed",
+		"key_concepts": ["single_source_of_truth_for_inline_hover_descriptions",
+			"hand_curated_for_now_machine_extracted_later",
+			"consumers_copy_or_sync_this_file",
+			"every_entry_has_canonical_puck_uno_docs_link"],
+		"consumers": ["caspian-vscode (Molly) static hover", "future caspian lsp hover"],
+		"maintenance": "edit this file when language constructs change; downstream consumers re-sync"
+	},
+
+	"_comment": "Two top-level buckets — keywords and system_surfaces. Each entry's key is the literal token (e.g., 'function', '%role'). Each value has: description (2-4 lines max, plain prose, no markdown), optionally a signature line (return type or invocation form for system surfaces), and docs (canonical puck.uno URL).",
+
+	"keywords": {
+		"function": {
+			"description": "Declares a function. Functions are first-class objects bound to a name (function &greet) or assigned to a variable. Does NOT capture surrounding scope — use 'closure' for that.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/functions"
+		},
+		"closure": {
+			"description": "Declares a closure — like a function, but captures the surrounding lexical scope at the point of definition. Use for callbacks that need to see outer variables.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/functions"
+		},
+		"class": {
+			"description": "Declares a class. Class bodies hold method definitions and lifecycle hooks (on_create, on_close, etc.). Instances are created with .new().",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"if": {
+			"description": "Conditional block. Use 'elsif' for additional branches and 'else' for the fallthrough; close with 'end'.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"elsif": {
+			"description": "Additional branch in an if-chain. Equivalent to 'elseif' (both keywords accepted; transpile to the same CaspianJ).",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"else": {
+			"description": "Fallthrough branch in an if-chain. Runs when no preceding 'if' or 'elsif' condition matched.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"end": {
+			"description": "Closes a block (if/for/while/do/function/closure/class). Matches the most recent unclosed opener.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"for": {
+			"description": "Iterating loop. Typical form: 'for $item in $collection ... end'.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"while": {
+			"description": "Condition loop. Repeats the body while the condition is truthy. Form: 'while $cond ... end'.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"do": {
+			"description": "Opens a block passed to a method (e.g., $arr.each($item) do ... end) or a freestanding scope. Closes with 'end'.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"return": {
+			"description": "Exits the current FUNCTION (propagates through closures). Prefer implicit last-value return for normal cases; reserve 'return' for early exit.",
+			"docs": "https://puck.uno/documentation/requirements/caspian#return-and-emit"
+		},
+		"yield": {
+			"description": "Pass control back to the caller from inside a block. Translates to %call.yield.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"true": {
+			"description": "Boolean true. A sticky-platter instance of puck.uno/true; identity-preserving.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
+		},
+		"false": {
+			"description": "Boolean false. A sticky-platter instance of puck.uno/false; truthy lookup short-circuits here.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
+		},
+		"null": {
+			"description": "The null value. A sticky-platter instance of puck.uno/null; supports flavor metadata (puck.uno/null/timeout, etc.) when callers need to distinguish reasons.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/built-in-classes/nulls"
+		},
+		"and": {
+			"description": "Logical AND. Short-circuits — returns the first falsy operand or the last operand if all truthy.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
+		},
+		"or": {
+			"description": "Logical OR. Short-circuits — returns the first truthy operand or the last operand if all falsy.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
+		},
+		"not": {
+			"description": "Logical negation. Returns true if the operand is falsy, false otherwise.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
+		},
+		"in": {
+			"description": "Membership test or for-loop binding. In for-loop context: 'for $x in $collection'.",
+			"docs": "https://puck.uno/documentation/requirements/caspian"
+		},
+		"on_close": {
+			"description": "Class-body lifecycle hook. Fires when an instance becomes unreachable; deterministic GC calls it before collecting the object. Strict 2 ms cap; multicast across platters.",
+			"docs": "https://puck.uno/documentation/requirements/caspian/garbage-collection#on-close"
+		}
+	},
+
+	"system_surfaces": {
+		"%role": {
+			"description": "Returns the role the current code is running under. Also serves as a namespace for role-system operations like %role.delegate_to.",
+			"signature": "→ puck.uno/role",
+			"docs": "https://puck.uno/documentation/requirements/caspian/roles"
+		},
+		"%call": {
+			"description": "The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. Owned by the caller's role, not the function's owner.",
+			"signature": "→ puck.uno/call",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%puck": {
+			"description": "Library resolution. %puck['foo.bar/baz'] looks up a Caspian library by URL or UNS; %[uns] is the short form.",
+			"signature": "→ puck.uno/puck",
+			"docs": "https://puck.uno/documentation/requirements/caspian/puck"
+		},
+		"%bucket": {
+			"description": "The current object's private data hash — where @foo is shorthand for %bucket['foo']. Instance variables live here.",
+			"signature": "→ puck.uno/hash",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%chain": {
+			"description": "Frame-scoped ambient context — a small hash carried alongside each call frame for cross-cutting concerns (logging tags, request IDs, etc.) without threading them through every parameter list.",
+			"signature": "→ puck.uno/hash",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%engine": {
+			"description": "Top-level-only gateway to host resources (filesystem, network, env, etc.). Non-capturable: cannot be assigned to a variable or passed to user functions.",
+			"signature": "→ puck.uno/engine",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%tmp": {
+			"description": "Engine-managed temporary directory for this program's lifetime. Auto-cleaned on engine exit.",
+			"signature": "→ puck.uno/dir",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%forks": {
+			"description": "Fork management — Caspian's opt-in concurrency primitive. Caspian is single-threaded by default; %forks is how programs request parallel execution.",
+			"signature": "→ puck.uno/forks",
+			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
+		},
+		"%utils": {
+			"description": "Utility namespace — %utils.steps (deterministic step counter), %utils.random, %utils.uuid, etc. Pure functions; no side effects beyond those documented per surface.",
+			"signature": "→ puck.uno/utils",
+			"docs": "https://puck.uno/documentation/requirements/caspian/utils/"
+		}
+	}
+}

@@ -127,14 +127,16 @@ body.home .content h1 .hero-logo {
 	border-color: #0969da;
 	box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
 }
-.sidebar-random {
+.sidebar-random,
+.sidebar-issues {
 	display: block;
 	margin: 0 0 12px;
 	font-size: 12px;
 	color: #57606a;
 	text-decoration: none;
 }
-.sidebar-random:hover {color: #0969da}
+.sidebar-random:hover,
+.sidebar-issues:hover {color: #0969da}
 .search-form {
 	margin: 0 0 16px;
 	display: flex;
@@ -809,3 +811,192 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
     border-color: #6ee7b7;
     background: #ecfdf5;
 }
+
+/* ===== /issues page (orlando.issues_page) ===== */
+
+.issues-page {max-width: 920px; margin: 0 auto; padding: 0 8px}
+.issues-summary {color: #57606a; font-size: 14px; margin: 8px 0 20px}
+
+/* Each issue is a card. */
+.issue-panel {
+    background: #ffffff;
+    border: 1px solid #d8dee4;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 0 0 14px;
+    box-shadow: 0 1px 2px rgba(27, 31, 36, 0.04);
+}
+.issue-panel:hover {
+    border-color: #0969da;
+    box-shadow: 0 1px 4px rgba(9, 105, 218, 0.12);
+}
+
+/* Header row: number badge + title. */
+.issue-panel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.issue-num-badge {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0969da;
+    background: #ddf4ff;
+    padding: 2px 8px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    flex-shrink: 0;
+    cursor: pointer;
+    line-height: inherit;
+}
+.issue-num-badge:hover {
+    background: #0969da;
+    color: #ffffff;
+}
+.issue-num-badge.copied {
+    background: #1f883d;
+    color: #ffffff;
+}
+.issue-num-badge.copy-failed {
+    background: #cf222e;
+    color: #ffffff;
+}
+.issue-panel-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #1f2328;
+    margin: 0;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+}
+
+/* Doc-path chip (only when the issue title starts with "File: <path>"). */
+.issue-panel-doc {font-size: 12px; margin: 4px 0 8px; color: #57606a}
+/* Section chip on the top-of-page panel (issue's heading) */
+.issue-panel-section {font-size: 12px; margin: 4px 0 8px; color: #57606a; font-style: italic}
+.issue-doc-chip {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #57606a;
+    background: #f6f8fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-decoration: none;
+    border: 1px solid #eaeef2;
+}
+.issue-doc-chip:hover {color: #0969da; border-color: #0969da}
+
+/* Body preview. */
+.issue-panel-body {
+    font-size: 13.5px;
+    color: #393f46;
+    line-height: 1.5;
+    margin: 8px 0;
+}
+
+/* Footer row: comment count (left) + GitHub link (right). */
+.issue-panel-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #8b949e;
+}
+.issue-panel-github {color: #57606a; text-decoration: none; margin-left: auto}
+.issue-panel-github:hover {color: #0969da}
+
+/* Close button on /issues panels (IP-gated; only rendered for allowed IPs).
+   Sits to the left of the GitHub link in the footer. Subdued by default,
+   red on hover to signal "destructive action." */
+.issue-panel-close {
+    font-size: 12px;
+    padding: 2px 10px;
+    border: 1px solid #d8dee4;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #57606a;
+    cursor: pointer;
+    margin-left: auto;
+}
+.issue-panel-close:hover {
+    background: #cf222e;
+    color: #ffffff;
+    border-color: #cf222e;
+}
+.issue-panel-close:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+/* When the close button is present, GitHub link gets a small left margin
+   instead of margin-left: auto (the close button already takes that). */
+.issue-panel-close + .issue-panel-github {margin-left: 10px}
+
+/* Comment-add form on /issues (allowed IPs only). */
+.issue-comment-add {
+    margin-top: 12px;
+    border-top: 1px dashed #eaeef2;
+    padding-top: 10px;
+}
+.issue-comment-add summary {
+    font-size: 12px;
+    color: #57606a;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+.issue-comment-add summary::-webkit-details-marker {display: none}
+.issue-comment-add summary:hover {color: #0969da}
+.issue-comment-add[open] summary {color: #1f2328; font-weight: 500}
+.issue-comment-form {margin-top: 8px}
+.issue-comment-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid #d8dee4;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 60px;
+}
+.issue-comment-form textarea:focus {
+    outline: none;
+    border-color: #0969da;
+    box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+}
+.issue-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+.issue-comment-form button[type=submit] {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 4px;
+    background: #f6f8fa;
+    color: #1f2328;
+    cursor: pointer;
+}
+.issue-comment-form button[type=submit]:hover {
+    background: #0969da;
+    color: #ffffff;
+    border-color: #0969da;
+}
+.issue-comment-form button[type=submit]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.issue-comment-status {
+    font-size: 12px;
+    color: #57606a;
+}
+.issue-comment-status.ok {color: #1f883d}
+.issue-comment-status.err {color: #cf222e}

@@ -40,7 +40,7 @@ Behind the scenes:
 
 1. A small POSIX shell wrapper (~50 lines) detects platform and
    architecture (`uname -s`, `uname -m`).
-2. Downloads the matching pre-built Caspian bundle (~850 KB — under
+2. Downloads the matching pre-built Caspian bundle (~770 KB — under
    1 MB, fits comfortably on a 1.44 MB floppy with room to spare) to
    a temp directory.
 3. Verifies a SHA-256 checksum.
@@ -125,11 +125,11 @@ user can `ls` and explore.
    # export PATH="$HOME/caspian/bin:$PATH"
 ```
 
-Footprint added inside `~/`: roughly **850 KB** for `~/caspian/`,
+Footprint added inside `~/`: roughly **770 KB** for `~/caspian/`,
 which includes the examples (~50 KB). No separate examples-copy
 step is needed — the whole tree is the user's, so they can edit
 example files in place. The entire install fits on a 1.44 MB floppy
-with ~600 KB to spare.
+with ~670 KB to spare.
 
 Rough breakdown:
 
@@ -138,12 +138,11 @@ Rough breakdown:
 | Lua 5.4 interpreter (stripped, static) | ~250 KB |
 | libsodium-minimal | ~200 KB |
 | Caspian engine + stdlib (Lua source) | ~200 KB |
-| caspian lsp (Caspian source) | ~80 KB |
 | LPeg | ~50 KB |
 | Bundled examples | ~50 KB |
 | luasodium binding | ~10 KB |
 | Launcher + install.casp | ~10 KB |
-| **Total** | **~850 KB** |
+| **Total** | **~770 KB** |
 
 To uninstall later: `rm -rf ~/caspian` and remove the PATH line
 from `~/.bashrc`.
@@ -217,7 +216,7 @@ already, so no shell rc edits are needed.
    └─ install.casp           # the installer itself, preserved
 ```
 
-Footprint added system-wide: roughly **850 KB** under
+Footprint added system-wide: roughly **770 KB** under
 `/usr/local/lib/caspian/` plus a thin launcher at
 `/usr/local/bin/caspian`. Same as the per-user branch — fits
 comfortably on a 1.44 MB floppy. No files written to any user's home

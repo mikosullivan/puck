@@ -1,0 +1,49 @@
+<!--
+	Reusable completion popup (the IntelliSense-style suggestion list).
+	Drop as an overlay positioned just below the current cursor line.
+	Each row: icon glyph + symbol name + (optional) type hint right-aligned.
+	Default size ~340×180; resize and add/remove rows freely.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 180" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+	<defs>
+		<filter id="popup-shadow" x="-10%" y="-10%" width="120%" height="120%">
+			<feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.45"/>
+		</filter>
+		<style>
+			.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+		</style>
+	</defs>
+
+	<g filter="url(#popup-shadow)">
+		<rect width="340" height="180" fill="#252526" stroke="#454545" stroke-width="1" rx="3"/>
+
+		<!-- Row 1: selected -->
+		<rect x="1" y="1" width="338" height="26" fill="#094771"/>
+		<text x="14" y="19" class="mono" font-size="12" fill="#75beff">ƒ</text>
+		<text x="34" y="19" class="mono" font-size="12" fill="#ffffff">first_method</text>
+		<text x="326" y="19" text-anchor="end" class="mono" font-size="11" fill="#999999">() → string</text>
+
+		<!-- Row 2 -->
+		<text x="14" y="45" class="mono" font-size="12" fill="#75beff">ƒ</text>
+		<text x="34" y="45" class="mono" font-size="12" fill="#d4d4d4">second_method</text>
+		<text x="326" y="45" text-anchor="end" class="mono" font-size="11" fill="#777777">() → number</text>
+
+		<!-- Row 3 -->
+		<text x="14" y="71" class="mono" font-size="12" fill="#dcdcaa">$</text>
+		<text x="34" y="71" class="mono" font-size="12" fill="#d4d4d4">third_var</text>
+		<text x="326" y="71" text-anchor="end" class="mono" font-size="11" fill="#777777">: hash</text>
+
+		<!-- Row 4 -->
+		<text x="14" y="97" class="mono" font-size="12" fill="#c586c0">⌘</text>
+		<text x="34" y="97" class="mono" font-size="12" fill="#d4d4d4">fourth_keyword</text>
+		<text x="326" y="97" text-anchor="end" class="mono" font-size="11" fill="#777777">keyword</text>
+
+		<!-- Divider before docs preview (optional; remove if no preview) -->
+		<line x1="1" y1="114" x2="339" y2="114" stroke="#3c3c3c" stroke-width="1"/>
+
+		<!-- Docs preview for selected item -->
+		<text x="14" y="134" font-size="11" fill="#cccccc">Returns the first element of the receiver.</text>
+		<text x="14" y="150" font-size="11" fill="#cccccc">Throws if the receiver is empty.</text>
+		<text x="14" y="170" font-size="10" fill="#3794ff">📖 puck.uno/documentation/path/to/doc</text>
+	</g>
+</svg>

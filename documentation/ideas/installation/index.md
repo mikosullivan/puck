@@ -42,10 +42,10 @@ one `curl`.
 | libsodium-minimal (C library) | libsodium.org, compiled with `--enable-minimal` | ~200 KB |
 | LPeg (C extension) | Roberto Ierusalimschy / luarocks | ~50 KB |
 | luasodium (Lua binding for libsodium) | luarocks | ~10 KB |
-| Caspian files (engine, stdlib, launcher, `caspian lsp`, examples, `install.casp`) | This project | ~340 KB |
-| **Total bundle** | | **~850 KB** |
+| Caspian files (engine, stdlib, launcher, examples, `install.casp`) | This project | ~260 KB |
+| **Total bundle** | | **~770 KB** |
 
-Comfortably under 1 MB. **Fits on a 1.44 MB floppy with ~600 KB to
+Comfortably under 1 MB. **Fits on a 1.44 MB floppy with ~670 KB to
 spare** — a deliberate budget that drives every dependency decision.
 Each existing C extension and each new one proposed has to earn its
 weight against the floppy commitment. See

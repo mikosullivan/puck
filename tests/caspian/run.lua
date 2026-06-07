@@ -113,6 +113,7 @@ require("frank.test_exit_nonzero")
 require("frank.test_shebang")
 require("frank.test_argv")
 require("frank.test_stderr_routing")
+require("frank.test_admin_flags")
 
 local runner = require("support.runner")
 local ok = runner.report()

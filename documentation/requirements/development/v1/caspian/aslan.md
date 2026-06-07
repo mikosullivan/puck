@@ -400,8 +400,7 @@ reference, not the contents).
   { type = "puck.uno/string", owning_role = engine.state.roles.user, payload = "hello" }
   ```
   The `type` field holds the **UNS-prefixed class name** — every class
-  identifier in Caspian uses its UNS, per the broader convention
-  (see [cheat-sheet.md § Conventions](../../cheat-sheet.md)). The
+  identifier in Caspian uses its UNS, per the broader convention. The
   `owning_role` field is a *reference* to one of the role objects in
   `engine.state.roles` — same Lua table, shared. Once set, it's never
   reassigned (immutable per [roles.md](../../caspian/roles.md)).

@@ -15,12 +15,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 User-level AI collaboration preferences live in [~/CLAUDE.md](../../../../CLAUDE.md) — communication style, workflow cadence, writing conventions, and engineering principles that travel with Miko across every project. Claude Code reads that file automatically. This project's CLAUDE.md (the one you're reading) only covers things specific to this codebase.
 
-## Cheat sheet — read it
-
-[documentation/cheat-sheet.md](documentation/cheat-sheet.md) is a compact reference to settled design decisions that span many docs. Read it at the start of every conversation, and re-read the relevant section before making claims about object model, IDs, dispatch, equality, Skeletor fields, or engine-only classes. When a question lands and you're not sure of the current state, check the cheat sheet first.
-
-It's a finder, not the spec — each entry points to the canonical doc where the full context lives. When this cheat sheet disagrees with a canonical doc, the canonical doc wins and the cheat sheet needs updating.
-
 ## What this repo is
 
 The Puck ecoverse: a designed-from-scratch suite of interconnected tools (Caspian language, Mikobase object store, Puck remote-object protocol, etc.). The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and code under [code/](code/) is a walking skeleton.

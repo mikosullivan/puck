@@ -139,6 +139,8 @@ Information about the running process itself.
 
 Load records are **process-level state**, not object-level — once loaded, entries persist for the life of the process regardless of scope/GC of whatever triggered them.
 
+**Post-V1: dependency tree.** The `libs` section today is a flat hash — every loaded library appears, but the manifest doesn't say which library pulled which in. A post-V1 feature will add **dependency tracking**: for each entry, record which other entries triggered its load (the parent libraries) so callers can reconstruct the dependency tree from the manifest. Useful for supply-chain investigation, version-conflict diagnosis, and "why is this library here?" questions. Deferred from V1 because the cheap implementation depends on per-library role identity that the engine's role tracking hasn't matured into yet. Non-breaking when it lands — likely a per-entry `pulled_in_by` field or a sibling `lib_deps` hash. See [#539](https://github.com/mikosullivan/puck/issues/539) for the design sketch.
+
 ~~~json
 {"vibecode": {
 	"property": "load_records_are_process_level_state",
@@ -190,7 +192,7 @@ end
 Within the block, coverage tracks what's actually running. When the block exits, the captured data is what subsequent `%engine.manifest` calls report. The block form scopes tracking to a specific region of execution — useful when you want to know what some particular operation touched, without the noise of the rest of the program. The retention threshold (gaps only by default) applies to the block-captured data the same way.
 
 <a id="cover-band-format"></a>
-**Format: cover-band shape.** The data is organized as a two-level hash, modeled on the [cover-band](/home/miko/projects/oberon/cover-band) Ruby library:
+**Format: cover-band shape.** The data is organized as a two-level hash, modeled on the cover-band Ruby library:
 
 ```
 {

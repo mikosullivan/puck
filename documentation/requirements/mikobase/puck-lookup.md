@@ -1,25 +1,26 @@
-# `%puck[uns]` — the puck-lookup shortform
+# `%puck[url]` — puck lookup
 
-*The Caspian shortform for fetching a remote object by its UNS, including per-call version constraints.*
+*Fetching a remote object by URL, with per-call version constraints.*
 
 ~~~json
 {"vibecode": {
-	"doc": "puck_lookup_shortform",
-	"role": "spec for the %puck[uns] shortform — how user code fetches a remote object identified by its UNS, and how per-call kwargs narrow which version is selected for this one call",
-	"audience": "Caspian programmers using remote objects via UNS",
-	"key_concepts": ["puck_lookup_shortform", "per_call_version_narrowing",
+	"doc": "puck_lookup",
+	"role": "spec for the %puck[url] syntax — how user code fetches a remote object by URL (with bare 'foo.bar/path' as shorthand for 'https://foo.bar/path'), and how per-call kwargs narrow which version is selected for this one call",
+	"audience": "Caspian programmers using remote objects",
+	"key_concepts": ["puck_lookup", "url_as_primary_address",
+		"bare_form_is_url_protocol_shorthand", "per_call_version_narrowing",
 		"flat_kwargs_for_call_site", "intersects_with_era_and_library_config"]
 }}
 ~~~
 
-`%puck['foo.bar/gup']` fetches the remote object identified by the UNS `foo.bar/gup`. The result is the resolved object — usually a class you then instantiate, or a value you read or call directly. Version selection follows whatever constraints are in scope.
+`%puck['foo.bar/gup']` fetches the remote object at the URL `foo.bar/gup`. The bare form (`foo.bar/gup`) is shorthand for `https://foo.bar/gup` — the protocol is elided for readability. The result is the resolved object — usually a class you then instantiate, or a value you read or call directly. Version selection follows whatever constraints are in scope.
 
 ```
 $Gup = %puck['foo.bar/gup']
 $instance = $Gup.new(...)
 ```
 
-This is the **canonical call site** for resolving any UNS-addressed library. Most Caspian programs do nothing else — global constraint surfaces fill in version selection, and the call site just asks for the library.
+This is the **canonical call site** for resolving any URL-addressed library. Most Caspian programs do nothing else — global constraint surfaces fill in version selection, and the call site just asks for the library by URL.
 
 <a id="per-call-narrowing"></a>
 ## Per-call version narrowing

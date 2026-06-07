@@ -32,7 +32,7 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 		"trivet", "uma", "bryton", "jasmine", "puck_identity",
 		"deployment", "drinian"],
 	"v1_companion_projects": ["caspian_vscode_extension_separate_repo"],
-	"v1_out": ["robinson"],
+	"v1_out": ["robinson", "caspian_lsp"],
 	"v1_blockchain_role": "external_service; caspian_client_is_thin_http",
 	"v1_http_path": "sammy_explicit_handlers",
 	"v1_authn": "signed_request",
@@ -59,10 +59,17 @@ These ship alongside Puck V1 but live in their own GitHub repositories:
 
 | Project | Role | Repo |
 |---|---|---|
-| **Caspian VSCode extension** (codename Reepicheep / reep) | syntax highlighting + format-document command for `.casp` files in VSCode | [caspian-vscode](https://github.com/mikosullivan/caspian-vscode) |
+| **Caspian VSCode extension** (codename Molly) | syntax highlighting + static hover + language config + custom file icon; no LSP, no Caspian-install dependency | spec: [caspian/vscode-extension/](../../caspian/vscode-extension/) · repo: [caspian-vscode](https://github.com/mikosullivan/caspian-vscode) |
 
 **Robinson** (the filesystem-tree page-server) is **not** bundled with
 V1; it lands on its own timeline as a Puck-resolved library.
+
+**Caspian LSP** is also deferred to post-V1. Requiring a local Caspian
+install for editor tooling conflicts with the first-contact goal and
+with remote-development workflows. The VSCode extension ships
+syntax-highlighting only for V1; rich LSP features wait until the
+install story is robust enough. Spec and build plan are parked at
+[ideas/lsp/](../../ideas/lsp/) and [ideas/lsp-build/](../../ideas/lsp-build/).
 
 The HTTP path is Sammy-style explicit handlers (built on Touchstone).
 Authentication is signed-request based; authorization is whatever each

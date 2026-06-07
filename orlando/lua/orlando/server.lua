@@ -15,6 +15,7 @@ local route        = require("orlando.route")
 local api          = require("orlando.api")
 local search       = require("orlando.search")
 local random       = require("orlando.random")
+local issues_page  = require("orlando.issues_page")
 
 local M = {}
 
@@ -125,6 +126,13 @@ local function respond(client, request_line)
     if path == "/random" then
         local resp = random.handle(path)
         client:send(build_response(resp.status, resp.body, resp.content_type, resp.headers))
+        return
+    end
+
+    -- /issues lists every open GitHub issue in the repo.
+    if path == "/issues" then
+        local resp = issues_page.handle({path = path, client_ip = client_ip})
+        client:send(build_response(resp.status, resp.body, resp.content_type))
         return
     end
 

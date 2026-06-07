@@ -159,6 +159,15 @@ function M.fetch_section(md_path, anchor)
 end
 
 --[[ {
+    "in":  {},
+    "out": "list of all open issues, same shape as M.fetch returns. Used by /issues to render the full list — bypasses the per-doc filter.",
+    "note": "Same cache as M.fetch; one shared in-memory copy of the gh result."
+} ]]
+function M.fetch_all()
+    return all_open_issues()
+end
+
+--[[ {
     "out": "nothing",
     "note": "Drop the cached issue list so the next call refetches. Used after writes (close, reopen, comment) so the panel reflects the change."
 } ]]
