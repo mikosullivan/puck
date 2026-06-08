@@ -211,6 +211,6 @@ Closed: [#565](https://github.com/mikosullivan/puck/issues/565) async model (set
 
 - [Permission flags / `--allow-net`](../../development/v1/caspian/frank.md#permission-flags) — how network is granted at launch.
 - [`%engine.config`](../engine/config.md) — how a script declares it needs network access.
-- [`%puck` lookup](../../mikobase/puck-lookup.md) — library-resolution path; reaches network through the fetcher chain, separately from `%net`.
+- [`%puck` lookup](../puck-lookup.md) — library-resolution path; reaches network through the fetcher chain, separately from `%net`.
 - [Disabling remote downloads](../engine/require.md#disabling-remote-downloads) — the `%puck`-fetcher closed-world shortcut; doesn't affect `%net`.
 - Issue [#555](https://github.com/mikosullivan/puck/issues/555) — broader design conversation about the network surface.

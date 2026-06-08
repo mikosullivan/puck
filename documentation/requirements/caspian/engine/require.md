@@ -52,7 +52,7 @@ require 'foo.com/bar'
 2. **Adds the library to [`%engine.manifest`](manifest.md).** The library appears under `caspian.libs` keyed by its URL, with the standard per-entry fields (`version`, `timestamp`, etc.). Makes the program's declared dependencies discoverable from manifest output.
 3. **Records any version constraints** the call supplied. Constraints apply to every use of the library — direct uses and transitive uses by libraries the program depends on. See [Version constraints](#version-constraints) below.
 
-**`require` is not how libraries get used.** Access to remote objects is always via the [puck-lookup form](../../mikobase/puck-lookup.md):
+**`require` is not how libraries get used.** Access to remote objects is always via the [puck-lookup form](../puck-lookup.md):
 
 ```
 $result = %['foo.com/bar'].some_method(...)
@@ -100,7 +100,7 @@ The exception's message names the URL, the active constraint, and the offending 
 
 **Nested-library handling.** When a library this program depends on has its own `require` statements, those operate within the parent's constraints. A nested library can NARROW the constraint (further restrict the version it'll accept), but it cannot relax it — its requirements intersect with the parent's, not replace them. If the intersection is empty, the nested library can't load and the engine raises.
 
-**Constraint resolution order.** Per-program `require` constraints intersect with broader scoping mechanisms — [`%puck.era`](../versioning/timestamp.md) (tree-wide timestamp pinning) and the [per-call kwargs on the puck-lookup form](../../mikobase/puck-lookup.md#per-call-narrowing). The most restrictive wins for any given lookup. If the union of constraints produces an empty range, resolution raises `puck.uno/error/require/version_constraint`.
+**Constraint resolution order.** Per-program `require` constraints intersect with broader scoping mechanisms — [`%puck.era`](../versioning/timestamp.md) (tree-wide timestamp pinning) and the [per-call kwargs on the puck-lookup form](../puck-lookup.md#per-call-narrowing). The most restrictive wins for any given lookup. If the union of constraints produces an empty range, resolution raises `puck.uno/error/require/version_constraint`.
 
 <a id="disabling-remote-downloads"></a>
 ## Disabling remote downloads
@@ -169,7 +169,7 @@ The cache-policy mechanism itself lives elsewhere (libraries are cached, not ins
 
 - [`%engine`](index.md) — the parent surface and the role/security rules.
 - [`%engine.manifest`](manifest.md) — where required libraries become visible. The `caspian.libs` section is the relevant slice.
-- [Puck-lookup form `%[url]`](../../mikobase/puck-lookup.md) — the actual way library functionality gets used; also supports per-call version-narrowing kwargs.
+- [Puck-lookup form `%[url]`](../puck-lookup.md) — the actual way library functionality gets used; also supports per-call version-narrowing kwargs.
 - [`%puck.timestamp`, `%puck.timestamp_min`, `%puck.timestamp_max`](../versioning/timestamp.md) — program-wide timestamp pinning. The simpler lever; covers most reproducibility cases without needing per-library `require` constraints. Composes with `require`'s per-library constraints.
 - [CLI `--update-cache` / `--clear-cache`](../cli.md#flag-form) — admin actions on the cache that affect what's available when `require` runs.
 - [Disabling remote downloads](#disabling-remote-downloads) — the engine-level setting (syntax TBD) that flips the default from "fetch on demand" to "cache-only" for closed-world execution.

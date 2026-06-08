@@ -16,7 +16,7 @@
 }}
 ~~~
 
-`%puck.era` constrains library lookups to artifacts within a specified timestamp range. Where [per-UNS timestamp narrowing](#per-uns-timestamp) (also on this page) narrows one specific library by date, and the [per-call kwargs](../../mikobase/puck-lookup.md#per-call-narrowing) narrow one call, an **era** narrows the whole library tree.
+`%puck.era` constrains library lookups to artifacts within a specified timestamp range. Where [per-UNS timestamp narrowing](#per-uns-timestamp) (also on this page) narrows one specific library by date, and the [per-call kwargs](../puck-lookup.md#per-call-narrowing) narrow one call, an **era** narrows the whole library tree.
 
 This page covers the era surface plus the surrounding date-pinning model: why date-based versioning is the primary axis, how the resolver picks a version given an active range, what happens when no candidate fits, and how the blockchain anchors dates when it's in play.
 
@@ -170,7 +170,7 @@ When a library lookup returns nothing dated within the active `[L, U]` timespan,
 
 In each case, the integrity of the deployment is in question. The exception is therefore treated with the same severity as any other security exception, not as ordinary control flow.
 
-The same alarm fires when [per-UNS timestamp narrowing](#per-uns-timestamp) or [per-UNS semver constraints](semver.md) intersect with the era to produce an empty candidate set, and when [per-call kwargs](../../mikobase/puck-lookup.md#per-call-narrowing) rule out every candidate the broader surfaces would have allowed. The integrity argument applies identically in those cases.
+The same alarm fires when [per-UNS timestamp narrowing](#per-uns-timestamp) or [per-UNS semver constraints](semver.md) intersect with the era to produce an empty candidate set, and when [per-call kwargs](../puck-lookup.md#per-call-narrowing) rule out every candidate the broader surfaces would have allowed. The integrity argument applies identically in those cases.
 
 <a id="forensic-payload"></a>
 ### Forensic payload
@@ -222,7 +222,7 @@ The date-pinning model itself does not require a [blockchain](../downloads/servi
 | `%puck.era` (this page) | timestamp | Puck-wide, block-scoped or handle | `%puck.era(min:, max:) do ... end` / `%puck.era` handle |
 | [Per-UNS timestamp](#per-uns-timestamp) (this page) | timestamp | One UNS, live-global | `%puck.config(uns).timestamp = ...` |
 | [Per-UNS semver](semver.md) | semver | One UNS, live-global | `%puck.config(uns).semver = ...` |
-| [Per-call kwargs](../../mikobase/puck-lookup.md#per-call-narrowing) | both | One call | `%puck['uns', ts_min: '...', semver_min: '...']` |
+| [Per-call kwargs](../puck-lookup.md#per-call-narrowing) | both | One call | `%puck['uns', ts_min: '...', semver_min: '...']` |
 
 At lookup time the resolver checks every active constraint. If their intersection is empty for a given UNS, the lookup raises [`puck.uno/error/out_of_range`](#out-of-range-alarm). Each narrowing surface can only constrain further; none can expand what an outer surface already permits.
 
@@ -235,7 +235,7 @@ Bounds use the same operator system everywhere — `.cmp` per bound with `>=`/`>
 
 - [Versioning index](index.md) — slim hub with cross-references.
 - [Semver](semver.md) — per-UNS semver narrowing, and the canonical reference for the bound-operator system (`.min` / `.max` / `.cmp`) reused on this page.
-- [Puck-lookup per-call narrowing](../../mikobase/puck-lookup.md#per-call-narrowing) — `ts_min` / `ts_max` kwargs on the lookup itself; the most local of the three constraint surfaces.
+- [Puck-lookup per-call narrowing](../puck-lookup.md#per-call-narrowing) — `ts_min` / `ts_max` kwargs on the lookup itself; the most local of the three constraint surfaces.
 - [Blockchain registry](../downloads/service/blockchain/) — where `effective_date` and `posted` are defined.
 
 ---

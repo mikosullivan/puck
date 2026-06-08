@@ -15,7 +15,7 @@
 }}
 ~~~
 
-`%puck.config(uns).semver` constrains one specific library's version selection by [semver](../downloads/service/blockchain/index.md#authority-blocks-1). It composes with the timestamp surfaces ([`%puck.era`](timestamp.md), [per-UNS timestamp narrowing](timestamp.md#per-uns-timestamp), [per-call kwargs](../../mikobase/puck-lookup.md#per-call-narrowing)) by intersection: all active constraints must be satisfied at lookup time.
+`%puck.config(uns).semver` constrains one specific library's version selection by [semver](../downloads/service/blockchain/index.md#authority-blocks-1). It composes with the timestamp surfaces ([`%puck.era`](timestamp.md), [per-UNS timestamp narrowing](timestamp.md#per-uns-timestamp), [per-call kwargs](../puck-lookup.md#per-call-narrowing)) by intersection: all active constraints must be satisfied at lookup time.
 
 ```
 $config = %puck.config('foo.bar/gup')
@@ -124,7 +124,7 @@ Semver narrowing **intersects** with whatever timestamp narrowing is active. The
 | `%puck.config(uns).semver` (this page) | One UNS, live-global |
 | [`%puck.era`](timestamp.md) | Block-scoped or handle, every lookup |
 | [`%puck.config(uns).timestamp`](timestamp.md#per-uns-timestamp) | One UNS, live-global |
-| [Per-call kwargs](../../mikobase/puck-lookup.md#per-call-narrowing) | One call |
+| [Per-call kwargs](../puck-lookup.md#per-call-narrowing) | One call |
 
 If the intersection is empty for a given UNS — no published version satisfies every active constraint — the lookup raises [`puck.uno/error/out_of_range`](timestamp.md#out-of-range-alarm), the same alarm timestamp narrowing raises on its own. The forensic payload identifies which constraint(s) ruled out which candidates.
 
@@ -139,7 +139,7 @@ If the intersection is empty for a given UNS — no published version satisfies 
 
 - [Versioning index](index.md) — slim hub with cross-references.
 - [Timestamp versioning](timestamp.md) — `%puck.era` (global), per-UNS timestamp narrowing, date-pinning rationale, out-of-range alarm, resolution rules.
-- [Puck-lookup shortform `%[uns]`](../../mikobase/puck-lookup.md) — the actual call site where these constraints take effect, plus the flat-kwarg per-call narrowing surface.
+- [Puck-lookup shortform `%[uns]`](../puck-lookup.md) — the actual call site where these constraints take effect, plus the flat-kwarg per-call narrowing surface.
 - [Blockchain registry](../downloads/service/blockchain/) — where the on-chain `semver`, `effective_date`, and `posted` fields are defined.
 
 ---

@@ -35,7 +35,7 @@ When you want to constrain version selection for **one specific call** — witho
 %puck['foo.bar/gup', semver_min: '1.3', ts_max: '2023-08-12']       # both axes
 ```
 
-This is the **most local** of the constraint surfaces — it narrows exactly one call, and goes away the moment that call returns. The broader surfaces — [`%puck.era`](../caspian/versioning/timestamp.md) (global timestamp), [`%puck.config(uns).timestamp`](../caspian/versioning/timestamp.md#per-uns-timestamp) (per-UNS timestamp), and [`%puck.config(uns).semver`](../caspian/versioning/semver.md) (per-UNS semver) — apply more broadly (block-scoped or live-global respectively). All intersect at lookup time; per-call kwargs narrow further within whatever the broader surfaces already permit.
+This is the **most local** of the constraint surfaces — it narrows exactly one call, and goes away the moment that call returns. The broader surfaces — [`%puck.era`](versioning/timestamp.md) (global timestamp), [`%puck.config(uns).timestamp`](versioning/timestamp.md#per-uns-timestamp) (per-UNS timestamp), and [`%puck.config(uns).semver`](versioning/semver.md) (per-UNS semver) — apply more broadly (block-scoped or live-global respectively). All intersect at lookup time; per-call kwargs narrow further within whatever the broader surfaces already permit.
 
 ### Recognised kwargs
 
@@ -68,9 +68,9 @@ All constraint surfaces intersect at lookup time:
 | Surface | Axis | Scope | Where documented |
 |---|---|---|---|
 | Per-call kwargs (this page) | both | One call | This page |
-| [`%puck.config(uns).semver`](../caspian/versioning/semver.md) | semver | One UNS, live-global | versioning/semver.md |
-| [`%puck.config(uns).timestamp`](../caspian/versioning/timestamp.md#per-uns-timestamp) | timestamp | One UNS, live-global | versioning/timestamp.md |
-| [`%puck.era`](../caspian/versioning/timestamp.md) | timestamp | Block-scoped or handle, all UNS | versioning/timestamp.md |
+| [`%puck.config(uns).semver`](versioning/semver.md) | semver | One UNS, live-global | versioning/semver.md |
+| [`%puck.config(uns).timestamp`](versioning/timestamp.md#per-uns-timestamp) | timestamp | One UNS, live-global | versioning/timestamp.md |
+| [`%puck.era`](versioning/timestamp.md) | timestamp | Block-scoped or handle, all UNS | versioning/timestamp.md |
 
 A lookup succeeds if there exists a candidate satisfying every active constraint from every surface. If the intersection is empty for a given UNS, the lookup raises `puck.uno/error/out_of_range`.
 
@@ -78,8 +78,8 @@ Per-call kwargs **never expand** what the broader surfaces permit — they can o
 
 ## See also
 
-- [Versioning index](../caspian/versioning/index.md) — overview of the date-pinning model and all constraint surfaces.
-- [`%puck.era`](../caspian/versioning/timestamp.md) — block-scoped or handle-based global timestamp narrowing.
-- [`%puck.config(uns).semver`](../caspian/versioning/semver.md) — live-global per-UNS semver narrowing; canonical reference for the `.min` / `.max` / `.cmp` bound-operator system.
-- [`%puck.config(uns).timestamp`](../caspian/versioning/timestamp.md#per-uns-timestamp) — live-global per-UNS timestamp narrowing.
-- [Blockchain registry](../caspian/downloads/service/blockchain/) — defines `posted`, `effective_date`, and `semver` on each published artifact.
+- [Versioning index](versioning/index.md) — overview of the date-pinning model and all constraint surfaces.
+- [`%puck.era`](versioning/timestamp.md) — block-scoped or handle-based global timestamp narrowing.
+- [`%puck.config(uns).semver`](versioning/semver.md) — live-global per-UNS semver narrowing; canonical reference for the `.min` / `.max` / `.cmp` bound-operator system.
+- [`%puck.config(uns).timestamp`](versioning/timestamp.md#per-uns-timestamp) — live-global per-UNS timestamp narrowing.
+- [Blockchain registry](downloads/blockchain/) — defines `posted`, `effective_date`, and `semver` on each published artifact.

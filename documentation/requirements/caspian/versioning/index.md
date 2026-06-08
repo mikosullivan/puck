@@ -20,7 +20,7 @@ Semantic versions (`1.2.45`, `2.0.0`, etc.) are also selectable: they live on ev
 <a id="quick-example"></a>
 ## A quick example
 
-The most direct way to constrain a library version is at the **call site itself**, passing kwargs to the [puck-lookup shortform](../../mikobase/puck-lookup.md#per-call-narrowing):
+The most direct way to constrain a library version is at the **call site itself**, passing kwargs to the [puck-lookup shortform](../puck-lookup.md#per-call-narrowing):
 
 ```caspian
 $gup = %puck['foo.bar/gup', ts_max: '2023-08-12']                   # only versions on or before that date
@@ -39,7 +39,7 @@ This is the most local form — narrows exactly one call. For broader narrowing,
 | Page | Covers |
 |---|---|
 | [Timestamp versioning](timestamp.md) | The `%puck.era` global surface (block form, era handle, `confine`), per-UNS timestamp narrowing via `%puck.config(uns).timestamp`, the date-pinning rationale, the resolution rules, the out-of-range alarm, the relationship to the blockchain, what this model replaces. The canonical reference for date-based versioning. |
-| [Puck-lookup shortform](../../mikobase/puck-lookup.md) | The `%puck[uns]` call site itself, including the flat-kwarg per-call narrowing (`ts_min`, `ts_max`, `semver_min`, `semver_max`). |
+| [Puck-lookup shortform](../puck-lookup.md) | The `%puck[uns]` call site itself, including the flat-kwarg per-call narrowing (`ts_min`, `ts_max`, `semver_min`, `semver_max`). |
 | [Semver](semver.md) | The per-UNS semver constraint surface (`%puck.config(uns).semver`). Also the canonical home for the bound-operator system (`.min`, `.max`, `.cmp`) that timestamp narrowing reuses. |
 
 The three pages are peer surfaces; each defines its own scope (one call, one UNS, every lookup in a block) but they share the same underlying model. All surfaces intersect at lookup time, and out-of-range failure fires the same alarm in every case.

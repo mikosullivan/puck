@@ -34,7 +34,7 @@ The primary client class for HTTP requests. Use it directly for configured, reus
 $client = %puck['https://puck.uno/http/client'].new()
 ```
 
-Per [%puck lookup form](../../mikobase/puck-lookup.md). For a configured client, pass options at creation time:
+Per [%puck lookup form](../puck-lookup.md). For a configured client, pass options at creation time:
 
 ```
 $client = %puck['https://puck.uno/http/client'].new(
@@ -213,4 +213,4 @@ Both require network access (granted via `--allow-net`); the fetcher chain for `
 
 - [Network index](index.md) — top-level `%net` surface, I/O model, exception classes, permission model.
 - [Raw sockets](sockets.md) — the foundation HTTP is built on.
-- [`%puck` lookup](../../mikobase/puck-lookup.md) — library-resolution path; reaches network through the fetcher chain.
+- [`%puck` lookup](../puck-lookup.md) — library-resolution path; reaches network through the fetcher chain.
