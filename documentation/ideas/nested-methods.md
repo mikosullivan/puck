@@ -1,6 +1,6 @@
 # Nested methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "nested_methods",
 	"role": "design notes on nested methods — methods grouped under a namespace path on a class. Replaces the older helper-as-sub-object model with namespaces-as-pure-organization. The .object namespace is the canonical example: it holds the universal-introspection methods so user classes don't inherit them into their top-level namespace.",
@@ -20,7 +20,7 @@ This replaces the older helper-as-sub-object model documented in [caspian/lucy/i
 
 ## Why namespaces exist
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why_namespaces_exist",
 	"role": "preserves the original motivation for the mechanism: keep base-class universal methods out of the way so user classes get a clean top-level namespace for their own methods"
@@ -32,7 +32,7 @@ The original purpose of helpers — and now of namespaces — is **to keep the u
 Every Caspian object derives from `puck.uno/object`, which provides a substantial set of universal operations: tri-value truthiness (`bool`, `truthy?`, `null?`, `defined?`), identity, role introspection, classes-stack inspection, the close-handler mechanism, and more. If those methods sat directly on every object, a trivial user class with one defined method:
 
 ~~~caspian
-class 'myapp.com/connection'
+class
     function &send($msg)
         ...
     end
@@ -109,7 +109,7 @@ The visited-set / inheritance-chain walking inside each platter applies as usual
 
 ## Worked example
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "worked_example",
 	"role": "concrete reference — the officer class in worldlet.json uses both a namespaced method group (beverage) and a top-level method (salute); spells out the call shapes that result and what the example does not yet exercise",

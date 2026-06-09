@@ -1,6 +1,6 @@
 # Passwords
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "passwords",
 	"role": "spec for how Caspian handles passwords: a Password class backed by a sodium_malloc'd vault, accessed through narrow gateway operations from inside bounded protected-mode windows; HTTP-arriving passwords flow into the vault via a Touchstone pre-pass before any user-reachable string ever exists",
@@ -31,7 +31,7 @@ Other algorithms (bcrypt, scrypt, etc.) plug in as additional internal handlers 
 
 ## Part 1: Storing secrets with libsodium and protected mode
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"part": "1",
 	"role": "explains how Caspian keeps raw secret bytes out of reach: a libsodium-backed vault for storage, sodium_malloc plus Linux memory-protection mechanics for the buffer-level protection, and the protected-mode discipline that brackets the few code paths permitted to handle raw bytes"
@@ -192,7 +192,7 @@ What still beats sodium_malloc:
 
 ### Protected mode
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "protected_mode",
 	"role": "the concrete state of the engine holding a sodium_malloc'd buffer of raw secret bytes; defined by the lifetime of that buffer; bracketed by specific entry and exit operations on it"
@@ -257,7 +257,7 @@ Outside any protected-mode window, no engine code reads raw secret bytes directl
 
 ## Part 2: Touchstone walkthrough — handling a login request
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"part": "2",
 	"role": "concrete walkthrough showing the vault, sodium_malloc, and protected mode working together to handle an HTTP login request; from raw socket bytes to a user-code Password object with the plaintext never touching a user-reachable value"

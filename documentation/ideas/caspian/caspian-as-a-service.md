@@ -1,6 +1,6 @@
 # Caspian as a Service (server-side execution)
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
@@ -25,7 +25,7 @@ server returns results.**
 <a id="why"></a>
 ## Why
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "motivation",
     "use_cases": ["heavier_playground_than_browser_can_handle",
@@ -62,7 +62,7 @@ Use cases where server-side execution beats client-side:
 <a id="relationship-to-dogberry-distinct-service"></a>
 ## Relationship to Dogberry — distinct service
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "vs_dogberry",
     "decided_2026-05-17": true,
@@ -143,7 +143,7 @@ Service" as a placeholder, not a final name.
 <a id="playground-capability-menu"></a>
 ## Playground capability menu
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "playground_capability_menu",
     "purpose": "tier_options_for_what_resources_submitted_scripts_can_use_to_make_the_playground_interesting_to_play_with",
@@ -161,7 +161,7 @@ endpoint (or per user, or per tier).
 
 The most Caspian-flavored capability. Server hosts mikobases loaded
 with interesting data; scripts query them via Q0 with read-only access.
-Exposed as `%puck['puck.uno/play/<name>']`.
+Exposed as `%puck['https://puck.uno/play/<name>']`.
 
 Candidate datasets:
 
@@ -181,7 +181,7 @@ Read-only, server-cached; cheap per request, real-feeling data.
 Things that need API keys the user shouldn't have to bring. Server
 holds the keys; script gets a wrapped client. Rate-limited per session.
 
-- **LLM access** — `%puck['puck.uno/play/llm'].complete(...)`.
+- **LLM access** — `%puck['https://puck.uno/play/llm'].complete(...)`.
 - **Image generation.**
 - **Weather, geocoding, currency conversion, translation, Wikipedia
   search.**

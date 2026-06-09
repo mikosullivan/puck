@@ -1,14 +1,14 @@
 # Network
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "network",
-	"role": "spec for Caspian's network surface — general-purpose network access at the level of Python/Perl/Ruby. Two-layer model: raw sockets (TCP, UDP, TLS wrapping) plus per-protocol clients (HTTP, SMTP, etc.) built on the socket layer. This index doc covers the top-level %net surface, I/O model, exception classes, and permission model. Per-protocol classes live in sibling files: sockets.md, dns.md, http.md, smtp.md.",
+	"role": "spec for Caspian's network surface — general-purpose network access at the level of Python/Perl/Ruby. Two-layer model: raw sockets (TCP, UDP, TLS wrapping) plus per-protocol clients (HTTP, etc.) built on the socket layer. This index doc covers the top-level %net surface, I/O model, exception classes, and permission model. Per-protocol classes live in sibling files: sockets.md, http/.",
 	"scope": "general_purpose_network_access; two_layer_model_sockets_plus_protocol_clients",
-	"reference_protocols_v1": ["raw_sockets_tcp_udp_ssl", "dns_resolution", "http_client", "smtp_send", "tcp_listen"],
-	"reference_protocols_post_v1": ["imap", "pop3", "ftp", "websocket", "sse"],
+	"reference_protocols_v1": ["raw_sockets_tcp_udp_ssl", "http_client", "tcp_listen"],
+	"reference_protocols_post_v1": ["explicit_dns_resolver", "smtp_send", "imap", "pop3", "ftp", "websocket", "sse"],
 	"engine_implementation": "Lua reference engine wraps LuaSocket and standard Lua libraries; other host engines do equivalent wrappings",
-	"per_protocol_files": ["sockets.md", "dns.md", "http.md", "smtp.md"],
+	"per_protocol_files": ["sockets.md", "http/"],
 	"audience": "Caspian programmers using outbound or inbound network access; engine implementers wiring the network faucet",
 	"key_concepts": ["default_deny_via_launcher_grants",
 		"top_level_percent_net_surface",
@@ -24,7 +24,7 @@
 The surface is **two layers**:
 
 - **Low-level: raw sockets** — TCP, UDP, TLS wrapping. The building block. Used directly when you need a custom protocol; used indirectly (via protocol-specific classes) for everything else.
-- **High-level: per-protocol clients** — HTTP, SMTP, etc. Built on top of the socket layer. Provides the convenient API for the common case.
+- **High-level: per-protocol clients** — HTTP and friends. Built on top of the socket layer. Provides the convenient API for the common case.
 
 For permission grants themselves (the CLI flags and the role they create), see [Frank's permission table](../../development/v1/caspian/frank.md#permission-flags) and the [cli.md flag form](../cli.md#flag-form). For how a script declares it needs network access, see [`%engine.config`](../engine/config.md). This doc covers what happens AFTER the grant is in place — how user code uses it.
 
@@ -36,9 +36,9 @@ For permission grants themselves (the CLI flags and the role they create), see [
 Protocol-specific classes live in sibling files. This index doc covers only the cross-cutting concerns ([surface](#surface), [I/O model](#io-model), [exceptions](#exceptions), [permissions](#permissions)).
 
 - **[sockets.md](sockets.md)** — raw TCP, UDP, SSL/TLS wrapping, TCP listener. The foundational layer.
-- **[dns.md](dns.md)** — DNS resolution (`%net.resolve`, `%net.reverse_resolve`).
-- **[http.md](http.md)** — HTTP client and response (`puck.uno/http/client`, `puck.uno/http/response`); the most-used surface.
-- **[smtp.md](smtp.md)** — SMTP-send client (`puck.uno/smtp/client`); receiving email (IMAP/POP3) is post-V1.
+- **[http/](http/)** — HTTP client (`puck.uno/http/client`) and HTTP server (Touchstone + Sammy); the most-used surface.
+
+Post-V1 — explicit DNS resolver ([ideas/caspian/dns.md](../../../ideas/caspian/dns.md)) and email send/receive ([ideas/caspian/email/](../../../ideas/caspian/email/)). Basic name resolution still happens implicitly in V1 when sockets / HTTP client connect by hostname; the OS resolves under the hood.
 
 ---
 
@@ -56,7 +56,7 @@ A script that's been granted network access reaches network through the **`%net`
 `%net` returns the network surface object. It exposes:
 
 - **Convenience methods** for the common cases (`%net.fetch`, `%net.tcp`, `%net.udp`, `%net.resolve`).
-- **Class instantiation** is also fine — `%puck['puck.uno/http/client'].new(...)`, `%puck['puck.uno/socket/tcp'].new(...)`. The convenience methods are sugar; classes are the underlying primitives.
+- **Class instantiation** is also fine — `%puck['https://puck.uno/http/client'].new(...)`, `%puck['https://puck.uno/socket/tcp'].new(...)`. The convenience methods are sugar; classes are the underlying primitives.
 
 `%net` is **engine-granted** — `null` if the script wasn't given any network grant. Guard usage with `if %net`:
 
@@ -101,10 +101,10 @@ The general principle: user is the only role that gets network for free; everyth
 | `.udp(host?, port?)` | udp_socket | [sockets.md](sockets.md#udp) |
 | `.tcp_listen(host, port, opts?)` | tcp_listener | [sockets.md](sockets.md#tcp-listener) |
 | `.udp_listen(host, port)` | udp_socket | [sockets.md](sockets.md#udp) |
-| `.resolve(host, type?)` | array of strings | [dns.md](dns.md) |
-| `.reverse_resolve(ip)` | string | [dns.md](dns.md) |
 
-Each is sugar over the underlying class — `%net.tcp(host, port)` is exactly `%puck['puck.uno/socket/tcp'].new(host: host, port: port)`. Use whichever form reads better.
+(Explicit DNS resolution — `%net.resolve` / `%net.reverse_resolve` — is post-V1; see [ideas/caspian/dns.md](../../../ideas/caspian/dns.md). V1 sockets/HTTP accept hostnames; the OS resolves implicitly.)
+
+Each is sugar over the underlying class — `%net.tcp(host, port)` is exactly `%puck['https://puck.uno/socket/tcp'].new(host: host, port: port)`. Use whichever form reads better.
 
 ---
 
@@ -138,7 +138,7 @@ Raised by network operations across all protocols:
 | `puck.uno/error/network/protocol` | Server returned malformed protocol response (bad HTTP, etc.) |
 | `puck.uno/error/network/socket` | Generic socket-layer error (covers EINTR-style cases not in the more specific classes) |
 
-Protocol-level errors (HTTP 4xx/5xx, SMTP non-2xx, etc.) are NOT exceptions — they're returned as the response object with `.ok? == false` (or the protocol-specific equivalent). The exception classes above are for transport-level failures only.
+Protocol-level errors (HTTP 4xx/5xx, etc.) are NOT exceptions — they're returned as the response object with `.ok? == false` (or the protocol-specific equivalent). The exception classes above are for transport-level failures only.
 
 ---
 
@@ -154,7 +154,7 @@ Network access is gated by launcher flags per [Frank's permission table](../../d
 - `--allow-net` (bare) — connect to any host on any port
 - `--standard` — includes broad outbound (`--allow-net` equivalent for the bundle)
 
-Enforced at connect time (raw sockets) or request time (HTTP, SMTP). User code asks for a host/port; engine checks; out-of-list raises `host_not_allowed` or `port_not_allowed`.
+Enforced at connect time (raw sockets) or request time (HTTP). User code asks for a host/port; engine checks; out-of-list raises `host_not_allowed` or `port_not_allowed`.
 
 ### Listening (accepting inbound)
 
@@ -167,9 +167,9 @@ Listening is a **separate grant** from connecting. A script with broad `--allow-
 
 Rationale: outbound network access exposes the script to the network; inbound listening exposes the SCRIPT to attackers. Different risk profile, different grant.
 
-### DNS resolution
+### DNS resolution (post-V1)
 
-DNS is available whenever any `--allow-net` grant has been given. A future `--no-dns` flag could disable it entirely. DNS doesn't check the allowlist on each lookup (the lookup itself doesn't contact the named host); only actual connections do. See [dns.md](dns.md) for the details.
+Explicit DNS resolver methods (`%net.resolve` / `%net.reverse_resolve`) are post-V1 — see [ideas/caspian/dns.md](../../../ideas/caspian/dns.md). Implicit name resolution (when sockets and HTTP client connect by hostname) is always available in V1 via the OS resolver; no separate permission flag.
 
 ### Allowlist semantics
 
@@ -201,7 +201,7 @@ Per-question design questions tracked in GitHub:
 - [#576](https://github.com/mikosullivan/puck/issues/576) — Lua/LuaSocket integration plan
 - [#577](https://github.com/mikosullivan/puck/issues/577) — listen-grant flag syntax
 - [#578](https://github.com/mikosullivan/puck/issues/578) — post-V1 protocol enumeration (IMAP, POP3, FTP, WebSocket, SSE)
-- [#579](https://github.com/mikosullivan/puck/issues/579) — SMTP-direct vs provider-API as V1.0 primary
+- [#579](https://github.com/mikosullivan/puck/issues/579) — SMTP-direct vs provider-API (now post-V1; see [ideas/caspian/email/](../../../ideas/caspian/email/))
 
 Closed: [#565](https://github.com/mikosullivan/puck/issues/565) async model (settled: sync blocking), [#566](https://github.com/mikosullivan/puck/issues/566) TCP/UDP scope (settled: in V1.0), [#573](https://github.com/mikosullivan/puck/issues/573) JSON body encoding (settled: explicit kwargs).
 
@@ -211,6 +211,6 @@ Closed: [#565](https://github.com/mikosullivan/puck/issues/565) async model (set
 
 - [Permission flags / `--allow-net`](../../development/v1/caspian/frank.md#permission-flags) — how network is granted at launch.
 - [`%engine.config`](../engine/config.md) — how a script declares it needs network access.
-- [`%puck` lookup](../puck-lookup.md) — library-resolution path; reaches network through the fetcher chain, separately from `%net`.
+- [`%puck` lookup](../puck/lookup.md) — library-resolution path; reaches network through the fetcher chain, separately from `%net`.
 - [Disabling remote downloads](../engine/require.md#disabling-remote-downloads) — the `%puck`-fetcher closed-world shortcut; doesn't affect `%net`.
 - Issue [#555](https://github.com/mikosullivan/puck/issues/555) — broader design conversation about the network surface.

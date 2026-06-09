@@ -10,15 +10,15 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 <a id="reference"></a>
 ## Reference
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "reference",
 	"prefix": "%",
 	"availability": "always_available_without_import",
 	"user_defined": false,
-	"methods": ["%chain", "%engine", "%forks", "%tmp", "%puck", "%call", "%bucket",
-		"%self", "%scope", "%process", "%now",
-		"%documentation", "%vibecode", "%role", "%utils", "%stdout", "%stderr", "%sys"]
+	"methods": ["%chain", "%engine", "%puck", "%call", "%bucket",
+		"%self", "%process",
+		"%documentation", "%vibecode", "%role", "%utils", "%stdout", "%stderr"]
 }}
 ~~~
 
@@ -26,39 +26,33 @@ User code cannot define new `%`-prefixed methods. The full list is fixed by the 
 |--------|-------------|
 | `%chain` | Ambient context — carries request-scoped values (user, request ID, locale, etc.) down the call stack. Isolation is at **function boundaries only**: a write to `%chain` inside a block (`if`, loop, bare block) persists after the block ends. The callee gets its own chain inherited from the caller; writes in the callee do not propagate back up. Use `%chain.scope do...end` for explicit block-level isolation. **Wiped at role boundaries** (see [roles.md](../roles.md)). Use `%chain.isolate do...end` for a voluntary inline wipe plus fresh ephemeral role. Engine-installed methods on `%chain` include flag-raising (`%chain.warn`, `%chain.throw`, `%chain.error`, `%chain.exit`, `%chain.abort` — see [caspian-runtime.md § Exceptions](../lucy/index.md#exceptions-and-warnings)) and logging (`%chain.log` — see [jasmine.md](../packages/jasmine/index.md)). |
 | `%engine` | Returns the engine object — the gateway to host-injected resources (standard slots like `%stdout` plus arbitrary host-defined entries via `%engine['name']`). **Only the `user` role can call `%engine` at all** — any other role invoking it raises, by a dedicated check in the engine object itself rather than via the general role-access mechanism. See [engine/](../engine/) for the full spec. |
-| `%forks` | Engine-granted fork manager. Returns `null` if the engine did not grant fork permission. If granted, returns the fork manager object used to spawn and coordinate forked processes. Guard all fork code with `if %forks`. See the forking documentation for the full API. |
-| `%tmp` | Engine-granted temporary directory. Returns `null` if the engine did not grant tmp permission. If granted, returns a directory object for the engine-provided temp path. Typically used by forked server processes to create Unix domain socket files. |
-| `%puck` | Returns the current puck object (scoped via `%chain`). The puck resolves URLs through its configured fetchers. The bare form (`foo.com/bar`) is shorthand for `https://foo.com/bar`. `%puck['foo.com/bar']` is a shorthand for the puck's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no puck is in the chain. See [puck.md](../puck.md) for the full puck-object model. |
+| `%puck` | Returns the current puck object (scoped via `%chain`). The puck resolves URLs through its configured fetchers. The bare form (`foo.com/bar`) is shorthand for `https://foo.com/bar`. `%puck['https://foo.com/bar']` is a shorthand for the puck's lookup method, and `%['foo.com/bar']` is a further shorthand for that (see Shorthands below). Returns plain null if no puck is in the chain. See [puck.md](../puck.md) for the full puck-object model. |
 | `%call` | The current call object — function or closure. Provides access to dispatcher, blocks, return, and call metadata. **Owned by the caller's role, not the function's owner** — `%call.return` hands control back to whoever made the call. |
 | `%bucket` | The current object's private data hash. `@foo` is shorthand for `%bucket['foo']`. Instance variables live here. |
 | `%self` | The current object instance. `self` (bare word) is shorthand. |
-| `%scope` | The current lexical scope. Holds variables and is used for bare word command (bwc) resolution. `$foo` is shorthand for `%scope['foo']`. |
 | `%process` | Process control. `%process.exit` is graceful (unwinds stack); `%process.abort` raises a `puck.uno/abort` immediately (no unwind, engine terminates). Under the role model, abort behavior is governed by the alarm rules in [roles.md](../roles.md). |
-| `%now` | Returns the current timestamp object. The returned timestamp is owned by the engine's `clock` role. |
-| `%documentation` | Saves a documentation block as a statement in the CaspianJ command array. Takes a MIME type (`text/plain`, `text/markdown`, `text/vibecode`, etc.) and a heredoc or string. Shorthand type names: `text`, `markdown`, `vibecode`. All documentation rules (storage, `side` field, attachment TBD) apply regardless of type. |
-| `%vibecode` | Shorthand for `%documentation 'vibecode' <<EOF...`, which is shorthand for `%documentation 'text/vibecode' <<EOF...`. Saves an AI-readable JSON documentation block. An optional `side` field indicates attachment intent: `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. **Consumer effect of `side` is TBD** — the field is recorded in CaspianJ for future use; no current consumer reads it. Reserved for tooling that wants to know which half of an assignment a vibecode block describes. |
+| `%documentation` | Saves a documentation block as a statement in the CaspianJ command array. Format: `%documentation <<EOF('text/markdown') ... EOF` — heredoc with the MIME type as a parenthetical argument. Common types: `text/plain`, `text/markdown`, `text/vibecode`. Shorthand type names: `text`, `markdown`, `vibecode`. **Pre-V1.0: not available to the running script** — the documentation block is recorded in CaspianJ at parse time but the script itself can't read it back at runtime, and the engine doesn't act on it. All documentation rules (storage, `side` field, attachment TBD) apply regardless of type. |
+| `%vibecode` | Shorthand for `%documentation <<EOF('vibecode') ... EOF`, which is shorthand for `%documentation <<EOF('text/vibecode') ... EOF`. Saves an AI-readable JSON documentation block. An optional `side` field indicates attachment intent: `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. **Consumer effect of `side` is TBD** — the field is recorded in CaspianJ for future use; no current consumer reads it. Reserved for tooling that wants to know which half of an assignment a vibecode block describes. |
 | `%role` | Returns the role currently in effect — the owning role of the function-object currently executing. See [roles.md](../roles.md) for the role model. |
-| `%utils` | Engine-granted convenience-utility capability. Provides common, low-sensitivity helpers (`%utils.now`, `%utils.rand.uuid`, `%utils.timer`, `%utils.timeout`, `%utils.json.parse`, etc.). Returns `null` if the engine did not grant it. Everything coming out of `%utils` is owned by the `utils` role. See `%utils.timer`, `%utils.timeout`, and `%utils.json` sections below. |
+| `%utils` | Engine-granted convenience-utility capability. Provides forks ([`%utils.forks`](../forking/)), event broadcasting ([`%utils.broadcast`/`%utils.register`](../events/)), networking constructors ([`%utils.network.uds.new`](../network/uds/)), temp-dir access ([`%utils.tmp`](../script-context.md#tmp) — each access returns a fresh dirjail; auto-deletes on out-of-scope), and common helpers (`%utils.now`, `%utils.rand.uuid`, `%utils.timer`, `%utils.timeout`, `%utils.json.parse`, etc.). Returns `null` if the engine did not grant it. Everything coming out of `%utils` is owned by the `utils` role. See `%utils.timer`, `%utils.timeout`, and `%utils.json` sections below. |
 | `%stdout` | Standard output handle. **Always present** — never null. The engine decides what it points at; if no destination was granted, it's a dev/null handle that accepts writes and discards them (with a [nanny warning](https://puck.uno/documentation/overview#no-nanny-code), silenceable via `no_writers_ok`). Capture and tee are methods on the handle — see the `%stdout` / `%stderr` section below. |
 | `%stderr` | Standard error handle. Same shape and rules as `%stdout`, for error output. |
-| `%sys` | Reserved for possible future use. Not part of early versions. |
 
 ---
 
 <a id="shorthands"></a>
 ## Shorthands
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "shorthands",
 	"mappings": {
-		"$foo": "%scope['foo']",
 		"@foo": "%bucket['foo']",
 		"self": "%self",
-		"%['foo.com/bar']": "%puck['foo.com/bar']",
-		"%vibecode <<EOF": "%documentation 'vibecode' <<EOF",
-		"%documentation 'text' <<EOF": "%documentation 'text/plain' <<EOF",
-		"%documentation 'markdown' <<EOF": "%documentation 'text/markdown' <<EOF"
+		"%['foo.com/bar']": "%puck['https://foo.com/bar']",
+		"%vibecode <<EOF": "%documentation <<EOF('vibecode')",
+		"%documentation <<EOF('text')": "%documentation <<EOF('text/plain')",
+		"%documentation <<EOF('markdown')": "%documentation <<EOF('text/markdown')"
 	}
 }}
 ~~~
@@ -68,13 +62,12 @@ written:
 
 | Shorthand | Expands to |
 |-----------|------------|
-| `$foo` | `%scope['foo']` |
 | `@foo` | `%bucket['foo']` |
 | `self` | `%self` |
-| `%['foo.com/bar']` | `%puck['foo.com/bar']` |
-| `%vibecode <<EOF...EOF` | `%documentation 'vibecode' <<EOF...EOF` → `%documentation 'text/vibecode' <<EOF...EOF` |
-| `%documentation 'text' <<EOF...EOF` | `%documentation 'text/plain' <<EOF...EOF` |
-| `%documentation 'markdown' <<EOF...EOF` | `%documentation 'text/markdown' <<EOF...EOF` |
+| `%['foo.com/bar']` | `%puck['https://foo.com/bar']` |
+| `%vibecode <<EOF...EOF` | `%documentation <<EOF('vibecode')...EOF` → `%documentation <<EOF('text/vibecode')...EOF` |
+| `%documentation <<EOF('text')...EOF` | `%documentation <<EOF('text/plain')...EOF` |
+| `%documentation <<EOF('markdown')...EOF` | `%documentation <<EOF('text/markdown')...EOF` |
 
 The `%[...]` form is sugar for `%puck[...]`. Puck lookup is by far
 the most-typed system call, and no other system method uses

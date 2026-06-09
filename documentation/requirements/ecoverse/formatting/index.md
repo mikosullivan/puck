@@ -1,6 +1,6 @@
 # Formatting
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "formatting",
 	"role": "canonical doc on how formatting works across the Puck ecoverse — philosophy, style.json structure, options, and the tools that consume it",
@@ -14,7 +14,7 @@ Formatting in the Puck ecoverse is a personal concern, not a project policy. Thi
 
 ## Philosophy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "philosophy",
 	"model": "personal_formatter_not_team_policy",
@@ -36,7 +36,7 @@ Let's keep bickering about tabs and spaces out of our community.
 
 ## The `style.json` file
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "style_file",
 	"location": "~/.config/caspian/style.json",
@@ -167,7 +167,7 @@ The Puck formatter also strips trailing empty lines from the end of the file reg
 
 #### `lines.blank_line_around_blocks`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"option": "lines.blank_line_around_blocks",
 	"type": "boolean",
@@ -244,7 +244,7 @@ These appear under `languages.casp` in `style.json`. (For the cross-language `bl
 
 ### `class_body_packing`
 
-`"tight"` packs class bodies like function bodies: no blank line between the `class 'foo'` opening and the first body member; no blank line between the last member's `end` and the class's closing `end`. The same rule applies uniformly — class bodies are not visually framed.
+`"tight"` packs class bodies like function bodies: no blank line between the `class` opening and the first body member; no blank line between the last member's `end` and the class's closing `end`. The same rule applies uniformly — class bodies are not visually framed.
 
 ### `empty_param_parens`
 
@@ -289,7 +289,7 @@ These appear under `languages.html` in `style.json`. HTML inherits the universal
 
 ### `blank_line_around_block_tags`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"option": "blank_line_around_block_tags",
 	"type": "boolean",
@@ -347,11 +347,11 @@ Plain prose paragraphs stay plain prose. Tight enumerations where the items aren
 ### Naming
 
 - **JSON field names use underscores** (`fail_fast`, `created_at`).
-- **File names use dashes** (`puck-html.md`, `class-definition.md`).
+- **File names use dashes** (`class-definition.md`, `remote-function.md`).
 
 ### UNS-lookup short form
 
-- **`%['puck.uno/foo']`** preferred over `%puck['puck.uno/foo']`. Long form only when specifically introducing `%puck` itself.
+- **`%['puck.uno/foo']`** preferred over `%puck['https://puck.uno/foo']`. Long form only when specifically introducing `%puck` itself.
 
 ## Tools that consume `style.json`
 

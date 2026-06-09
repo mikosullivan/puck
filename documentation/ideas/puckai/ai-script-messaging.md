@@ -1,6 +1,6 @@
 # AI-to-AI script messaging
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
@@ -22,7 +22,7 @@ Brainstorm in progress.
 <a id="why-this-is-interesting"></a>
 ## Why this is interesting
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "motivation",
     "angles": ["ais_authoring_ksj_more_naturally_than_source",

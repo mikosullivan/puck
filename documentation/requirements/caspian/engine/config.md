@@ -2,7 +2,7 @@
 
 > ⚠ **Tentative spec — review required before implementation.** The syntactic shape (`%engine.config` as a no-op-at-runtime method-call form), the schema inside the JSON heredoc, and the [extractor tool](#extractor-tool) are design proposals from this session. The construct's runtime semantics (silently ignored) and the position-at-top-of-script requirement are settled in principle; exact field names, schema validation, and tooling details are open.
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "engine_config",
 	"role": "spec for %engine.config — a script-level declarative construct that records what resources the script needs to run. Looks like a method call on %engine; at runtime, %engine silently ignores it. The value comes from static extraction: tools (host pre-flight, CI gates, sandboxing systems) can read the config without executing the script.",

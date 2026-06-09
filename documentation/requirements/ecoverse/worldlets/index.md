@@ -1,6 +1,6 @@
 # Worldlets
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "worldlet",
 	"role": "ground-up redesign of the worldlet format; the object-description system at the heart of this spec is the universal way the entire Puck ecoverse serializes objects to JSON, not just a Mikobase format",
@@ -17,7 +17,7 @@ The scope is bigger than the file name suggests. The object-description system a
 
 ## Minimal worldlet
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "minimal_worldlet",
 	"role": "shows the smallest valid worldlet; only the format declaration is required today",
@@ -41,7 +41,7 @@ Nothing else is required to be a valid worldlet today.
 
 ## Records
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "records",
 	"role": "introduces the records top-level key; records are a dict keyed by arbitrary strings; values can be any JSON type but hashes always represent objects",
@@ -75,7 +75,7 @@ Two notable shifts from the previous spec:
 
 ## Object records
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "object_records",
 	"role": "introduces the universal object shape — a hash that declares its class so it can be rehydrated into a live object on the other side; this is the wrapping that makes a hash a valid record value",
@@ -129,7 +129,7 @@ The fuller reference example for this section is [worldlet.json](worldlet.json) 
 
 ## Compact form
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "compact_form",
 	"role": "shorthand for objects whose data can ride on a single value field; trades the bucket wrapping for a bare value when the class knows how to interpret it",
@@ -180,7 +180,7 @@ The difference from the long form is **`value`** instead of `bucket`. `value` ca
 
 ## Whole-hash form
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "whole_hash_form",
 	"role": "third object form; the class receives the entire record hash as its content, with class as the only reserved marker; the natural fit for class definitions themselves",
@@ -216,7 +216,7 @@ The [bare hashes](#bare-hashes) pattern is a special case of this shape — omit
 
 ## Class definitions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "class_definitions",
 	"role": "shows what a class definition looks like in the worldlet format; a class definition is a whole-hash record of class puck.uno/class with name and fields as sibling top-level keys",
@@ -328,7 +328,7 @@ Field-definition shape (`class`, `required`, `default`, `of`, nested `fields` fo
 
 ## Bare hashes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "bare_hashes",
 	"role": "explains that a hash with no class declaration defaults to an instance of puck.uno/hash; documents the three equivalent forms of an empty hash record and the preferred form for record values",
@@ -405,7 +405,7 @@ Preferred:
 
 ## Files
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "files",
 	"role": "top-level files dict carrying binary file metadata; binary content lives in the file_chunks sibling",
@@ -465,7 +465,7 @@ An optional `created_at` field can carry an ISO 8601 timestamp for the file's or
 
 ### File chunks
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "file_chunks",
 	"role": "top-level file_chunks dict holding the binary content of files in pieces; reassembled in index order to reconstruct each file",
@@ -486,7 +486,7 @@ Empty files are represented by a single chunk with `data: ""` and `last: true`.
 
 ### Records that reference files
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "records_that_reference_files",
 	"role": "shows how a record bucket points at an attached file by storing the file's key as a bare string under a puck.uno/dbfile field",
@@ -537,7 +537,7 @@ Both forms resolve to the same file. The schema-declared form is terser when the
 
 ## Temporal mode
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "temporal_mode",
 	"role": "describes the temporal worldlet shape; records carry only identity stubs and per-version state lives under a top-level history dict; this is the same worldlet format as the non-temporal shape, distinguished by the presence of history",
@@ -595,7 +595,7 @@ Timestamps are **ISO 8601 strings with an explicit UTC offset** — e.g. `"2026-
 
 ## A complete example
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "complete_example",
 	"role": "the complete example IS [worldlet.json](worldlet.json) in this directory; the markdown source uses an Orlando file-include directive to pull the file's contents into the rendered page on demand, so the example shown stays in lockstep with the canonical source",

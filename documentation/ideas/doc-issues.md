@@ -1,6 +1,6 @@
 # Documentation Issues
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "doc-issues",
 	"role": "tracker for documentation cleanup findings from a 2026-05-13 sweep; lists fixes already applied and still-open items grouped by spec area",

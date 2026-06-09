@@ -1,6 +1,6 @@
 # Non-interactive install story
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "non_interactive_install_story",
 	"role": "narrative walkthrough — Caspian install in environments without a TTY: CI runners, Docker builds, cron, systemd, ssh -T",
@@ -233,7 +233,7 @@ non-interactive flow at the same time.
 <a id="open-questions"></a>
 ## Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions":
 ["whether_to_emit_machine_readable_json_output_when_non_interactive",
 "how_loud_or_quiet_default_non_interactive_output_should_be",

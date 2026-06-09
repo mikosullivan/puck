@@ -1,6 +1,6 @@
 # Literate Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "literate-caspian",
 	"status": "brainstorm — controversial direction: mix code and docs in one file tree, with per-file documentation living inline in .casp via %documentation",
@@ -16,7 +16,7 @@ Inverse pairing with [Excalibur](https://puck.uno/documentation/ideas/excalibur/
 
 ## How it works
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "how_it_works",
 	"role": "the basic mechanism: %documentation in Caspian source, dual-view rendering in the doc browser"
@@ -68,7 +68,7 @@ What goes inline vs what gets its own `.md` is left to emerge through use rather
 
 ## Tree organization
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "tree_organization",
 	"role": "how directories look once code and docs share them; the split between inline and standalone documentation is observational, not prescriptive"

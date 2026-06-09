@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"role": "introduces Caspian pattern matching using Lua patterns by default",
@@ -26,7 +26,7 @@ Caspian rather than reaching for a more powerful pattern language.
 <a id="pattern-engine"></a>
 ## Pattern Engine
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "pattern_engine",
 	"role": "documents the swappable central pattern engine object and available alternative engines",
@@ -114,7 +114,7 @@ available as the lightweight alternative — see [Available engines](#available-
 <a id="methods"></a>
 ## Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "methods",
 	"role": "documents match, match?, and chaining methods on strings",
@@ -165,7 +165,7 @@ $string.match('pattern', not:true)
 <a id="match-object"></a>
 ## Match Object
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "match_object",
 	"role": "documents all properties of the Match object returned by string.match",

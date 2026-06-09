@@ -2,7 +2,7 @@
 
 *A Lua web server for serving Markdown files*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "orlando",
 	"role": "design notes for a Lua HTTP server that serves the project's .md files as rendered HTML; ports the rendering logic from the Python build script; built as a Lua-practice project",

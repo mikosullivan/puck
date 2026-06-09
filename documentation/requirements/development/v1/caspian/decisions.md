@@ -1,6 +1,6 @@
 # V1 design decisions log
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "v1_design_decisions_log",
 	"role": "consolidated index of design decisions made during V1 planning; not a spec — pointers to where each decision is canonically documented",

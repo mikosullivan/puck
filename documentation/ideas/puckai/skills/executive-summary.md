@@ -2,7 +2,7 @@
 
 *How embedding skills inside a Puckai worldlet relates to MCP. For Stuart.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puckai_skills_executive_summary",
 	"role": "short comparative summary of how Puckai-embedded skills overlap with, augment, and partially replace MCP's prompt/tool surfaces; for a reader who already understands skills, MCP, and Puckai",

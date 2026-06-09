@@ -1,6 +1,6 @@
 # Caspian time class
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_time",
 	"role": "basic time / date class for Caspian — represents a single point in time with rich, addressable properties; immutable",
@@ -88,7 +88,7 @@ The basic time class covers all of these. **Time spans** (lengths of time —
 <a id="methods"></a>
 ## Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "methods",
 	"patterns": ["hierarchical_sub_objects: $date.month.X, $date.year.X, $date.day.X",
@@ -267,7 +267,7 @@ second, time-zone, etc.) will fill in as the design proceeds.
 <a id="time-spans"></a>
 ## Time spans
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "time_spans",
 	"role": "the time-span class — a length of time (e.g. '2 days, 3 hours, 18 seconds') separate from a point in time",

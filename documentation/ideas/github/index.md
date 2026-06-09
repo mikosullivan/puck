@@ -1,6 +1,6 @@
 # GitHub integration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "github-integration",
 	"status": "brainstorm — landing page for ideas about Puck/GitHub integration",

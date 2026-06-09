@@ -2,7 +2,7 @@
 
 *AI collaboration format*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai",
 	"self_sufficient": true,
@@ -43,7 +43,7 @@ All classes live under the `puck.uno/ai/puckai/` namespace. The classes establis
 <a id="worldlet-format"></a>
 ## Worldlet format
 
-~~~json
+~~~vibecode
 {"vibecode": {"concept":"worldlet","format":"single JSON object",
 "subset_of":"mikobase","mikobase_full_spec":"mikobase.md",
 "worldlet_full_spec":"worldlets/worldlet.md",
@@ -249,7 +249,7 @@ Identifies one AI agent. Full spec — fields, construction, communication metho
 The top-level container for a session — purely a container. The session record holds the participants and the overall lifecycle status; the actual questions to be resolved live in separate [issue](#issue) records. A single session can carry one issue or many.
 
 ```
-class 'puck.uno/ai/puckai/session'
+class
     accessor @agents     # hash of agent record key -> per-agent metadata
     accessor @admin      # optional: agent key with authority over session-container mutations
     accessor @human      # optional: identifier of the human owner, if there is one
@@ -283,7 +283,7 @@ Admin authority does **not** extend to content (frames, decisions, stances) — 
 A **single question to be resolved** within a session. A session carries one or more issues; each issue is settled independently with its own frame, decision, and (optionally) report.
 
 ```
-class 'puck.uno/ai/puckai/issue'
+class
     accessor @session          # reference to the session record
     accessor @agenda           # the question or assertion this issue exists to resolve
     accessor @expects          # shape of the expected decision body: "boolean", "string", "hash", "array", or an array literal for enumeration
@@ -338,7 +338,7 @@ When `expects` is absent, the agent picks the most natural shape for the questio
 A **short, bare statement of what was decided** for one issue — kept deliberately minimal so the decision reads cleanly on its own. One decision per issue. Reasoning, caveats, and narrative live in the associated [report](#report) (when one is requested); the decision record itself just says what was decided, and confidence in it.
 
 ```
-class 'puck.uno/ai/puckai/decision'
+class
     accessor @session             # reference to the session record
     accessor @issue               # reference to the issue this decision resolves
     accessor @body                # the decision itself (or null for "no decision reachable")
@@ -403,7 +403,7 @@ The decision is `true` with 0.85 confidence on issue `c`. A `false` body records
 A **human-readable writeup** of an issue's resolution — the executive summary, the narrative reasoning, open items, and next steps. **Opt-in:** a report is written only when [`issue.report: true`](#issue). Default is no report, because pure agent-to-agent traffic doesn't need narrative writeups — the bare decision is the deliverable. The report exists for whoever (typically a human) needs to read what happened later.
 
 ```
-class 'puck.uno/ai/puckai/report'
+class
     accessor @session       # reference to the session record
     accessor @issue         # reference to the issue this report covers
     accessor @summary       # executive summary — what the reader needs first
@@ -435,7 +435,7 @@ end
 The **agent's interpretation** of one issue's question. Natural-language input is often ambiguous; the frame is the agent's restatement of what it understood the question to mean, written before the decision is rendered. It makes the agent's reading explicit so anything auditing the session (a human, a downstream tool, another agent) can spot misinterpretations cleanly.
 
 ```
-class 'puck.uno/ai/puckai/frame'
+class
     accessor @agent          # primary key of the agent record that framed the question
     accessor @session       # reference to the session record
     accessor @issue         # reference to the issue being framed
@@ -458,7 +458,7 @@ Frames are agent-posted only — the caller doesn't pre-frame. The point is to c
 Records that an agent **consulted an external resource** while reaching a decision — a weather API, a search engine, a database, a documentation site, a tool, another service. Each act of reaching out to a remote resource gets its own consultation record in the session worldlet, so the audit trail captures what the agent actually consulted, not just the agent's prose summary of what it found.
 
 ```
-class 'puck.uno/ai/puckai/consultation'
+class
     accessor @agent        # primary key of the agent record that did the consultation
     accessor @session     # reference to the session record
     accessor @source      # URL or identifier of what was consulted
@@ -485,7 +485,7 @@ Posted by an agent as the last record in its final batch. Signals only that the 
 A sign-off does not imply resolution, agreement, success, or any particular outcome. It carries no semantic weight about the state of the session — only that this agent has nothing more to add right now. The session status is a separate concern entirely.
 
 ```
-class 'puck.uno/ai/puckai/sign_off'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @body          # optional closing remarks

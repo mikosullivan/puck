@@ -1,6 +1,6 @@
 # Unix domain sockets
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "network_uds",
 	"role": "spec for Caspian's Unix domain socket server — pathname-form UDS that runs a Sammy HTTP server under the hood. User code registers routes with HTTP-verb methods (.get, .post, etc.) and starts the server with .wait. User-role only by default. Filesystem path is exposed for cross-process coordination.",

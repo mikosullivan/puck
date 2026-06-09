@@ -1,6 +1,6 @@
 # Caspian packages
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "packages",
 	"role": "umbrella landing page for the Caspian standard packages — Bryton, Jasmine, Touchstone, Trivet. Each has its own spec under packages/<name>/; this page just collects them."

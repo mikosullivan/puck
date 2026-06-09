@@ -2,7 +2,7 @@
 
 *The public library-download service operated by Puck.uno. Opt-in.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "libs_puck_uno_service",
 	"role": "spec for blockchain.puck.uno — the public-API service that provides a common download mirror for Caspian libraries and verifies signatures against the Puck blockchain before serving. Opt-in: programs can use blockchain.puck.uno or fetch libraries directly from their original hosts.",

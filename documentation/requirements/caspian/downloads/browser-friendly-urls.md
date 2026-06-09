@@ -2,7 +2,7 @@
 
 *Classes should live at URLs that render as a web page when a human visits them in a browser — the same URL the developer would naturally bookmark or share. Specialized fetchers translate those URLs to whatever raw-bytes form the host actually serves.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "browser_friendly_urls",
 	"role": "general design principle: classes live at human-facing browser URLs (what people share and bookmark), and specialized per-host fetchers handle the translation to raw-bytes URLs",

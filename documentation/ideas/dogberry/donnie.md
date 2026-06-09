@@ -1,6 +1,6 @@
 # Donnie
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "donnie",
 	"status": "brainstorm — code name only; Donnie names the specific Dogberry service that pairs a remote source with Markie expansion",
@@ -16,7 +16,7 @@ The split exists so Dogberry can eventually host other services (raw HTML pass-t
 
 ## What Donnie includes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_donnie_includes",
 	"role": "the specific feature bundle that gets the Donnie name; everything else stays under plain Dogberry"
@@ -47,7 +47,7 @@ Same account system across all three. A customer signs up once and gets access t
 
 ## Site-aware features
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "site_aware_features",
 	"role": "the class of Markie-ish features that only make sense when the whole site is in view; Donnie has them because it sees the full source tree, standalone Markie does not"
@@ -104,7 +104,7 @@ Both probably supported, with one as the default. Default unsettled — see [Ope
 
 ## What stays under Dogberry
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "stays_under_dogberry",
 	"role": "the infrastructure layer Donnie depends on but doesn't own; lives in dogberry.md, not here"
@@ -115,7 +115,7 @@ Domain registration mechanics, DNS pointing, TLS issuance and renewal, the cache
 
 ## Naming and branding
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "naming",
 	"role": "Donnie is a code name; the customer-facing product is marketed as Dogberry",

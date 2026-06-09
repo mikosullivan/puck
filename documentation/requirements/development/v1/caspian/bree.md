@@ -1,6 +1,6 @@
 # Bree
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Bree", "delivers": "caspian-source-hello", "goal":
 "execute a caspian source program end_to_end through the transpiler and return a literal value to the test harness",
 "medium": "caspian_source_text", "fixture":
@@ -120,7 +120,7 @@ AST node types as later versions exercise them. Per
 <a id="definition-of-done-bree"></a>
 ### Definition of done
 
-~~~json
+~~~vibecode
 {"vibecode": {"scope_status": "drafted_2026-05-16; updated_2026-05-27_to_add_parser_extension_and_end_marker_criteria",
 "done_criteria":
 {"parser_accepts_literal_method_call":
@@ -208,7 +208,7 @@ as Aslan.
 <a id="bree-phase-0-source-side-workbench"></a>
 ## Phase 0: source-side workbench
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 0, "purpose":
 "characterize_existing_lexer_parser_transpiler_state_against_bree_fixture; refactor_engine_run_from_path_to_tree",
 "steps_count": 4, "acceptance":
@@ -231,7 +231,7 @@ single-responsibility split that Phase 1 builds on.
 <a id="step-01-confirm-the-lexer-tokenizes-the-fixture"></a>
 ### Step 0.1: Confirm the lexer tokenizes the fixture
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.1", "name": "lexer_check",
 "input": "'hello'.to_string",
 "expected_token_kinds_in_order":
@@ -249,7 +249,7 @@ individually; this step confirms the combination tokenizes cleanly.
 <a id="step-02-confirm-the-parser-produces-a-clean-ast"></a>
 ### Step 0.2: Confirm the parser produces a clean AST
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.2", "name": "parser_check",
 "input": "'hello'.to_string",
 "expected_program_shape":
@@ -266,7 +266,7 @@ literal node so Phase 1 step 1 can compare directly.
 <a id="step-03-observe-the-transpilers-current-output"></a>
 ### Step 0.3: Observe the transpiler's current output
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.3", "name": "transpiler_baseline",
 "input": "'hello'.to_string",
 "tool": "engine.parse_caspian (post-refactor; originally caspian.transpile)",
@@ -290,7 +290,7 @@ records the actual output for Step 3 verification.
 <a id="step-04-refactor-enginerun-to-property-based-api"></a>
 ### Step 0.4: Refactor engine.run to a property-based API
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.4", "name": "engine_run_property_based",
 "action":
 "refactor_engine_run_from_taking_a_path_to_a_property_based_api; host_stages_tree_on_engine_caspianj_then_calls_engine_run_with_no_args",
@@ -355,7 +355,7 @@ Bree phase 0 test coverage lives under [Testing](#testing) below.
 <a id="bree-phase-1-hello-world-from-caspian-source"></a>
 ## Phase 1: hello-world from Caspian source
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 1, "fixture_path":
 "tests/caspian/fixtures/hello_world.casp", "fixture_content":
 "'hello'.to_string", "runner_path":
@@ -382,7 +382,7 @@ Three steps. Same shape as Aslan Phase 1: inventory, fill gaps, verify.
 <a id="bree-step-1-inventory"></a>
 ### Step 1: Inventory
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 1, "name": "inventory", "actions":
 ["catalog_existing_lexer_parser_transpiler_against_bree_fixture",
 "document_ast_shape_for_method_call_on_string_literal",
@@ -408,7 +408,7 @@ for use in Step 3 verification.
 <a id="bree-step-2-fill-the-gaps"></a>
 ### Step 2: Fill the gaps
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "transpiler_path_for_hello_world_ast_only; not_full_realignment",
 "work_items":
@@ -468,7 +468,7 @@ slices exercise each AST node, not all at once.
 <a id="bree-step-3-verify"></a>
 ### Step 3: Verify
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_caspian_source_fixture",
 "compose_file_read_plus_caspian_transpile_plus_engine_run",
@@ -582,7 +582,7 @@ Bree phase 1 test coverage lives under [Testing](#testing) below.
 <a id="bree-open-questions"></a>
 ### Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions":
 ["whether_legacy_caspian_run_in_init_lua_should_be_renamed_or_deprecated_in_bree_or_later"]}}
 ~~~
@@ -597,7 +597,7 @@ Bree phase 1 test coverage lives under [Testing](#testing) below.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "test_directory": "tests/caspian/bree/",
 "fixture_path": "tests/caspian/fixtures/hello_world.casp",
@@ -619,7 +619,7 @@ left alone. TB.7 covers the `__END__` lexer extension.
 <a id="bree-phase-0-test-plan"></a>
 ### Phase 0 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_0_tests":
 [{"id": "TB.0.1", "verifies":
 "lexer_handles_bree_fixture_string", "tool":
@@ -649,7 +649,7 @@ Bree phase 1 begins.
 <a id="bree-phase-1-test-plan"></a>
 ### Phase 1 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_1_tests":
 [{"id": "TB.1", "verifies":
 "parser_accepts_literal_as_receiver; hello_to_string_parses_natively",
@@ -687,7 +687,7 @@ All seven pass = Bree done.
 <a id="bree-test-layout"></a>
 ### Test layout
 
-~~~json
+~~~vibecode
 {"vibecode": {"test_directory": "tests/caspian/bree/",
 "fixture_path": "tests/caspian/fixtures/hello_world.casp",
 "entry_point_change":

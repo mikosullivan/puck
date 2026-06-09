@@ -1,6 +1,6 @@
 # Inside an object's on_close handler
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "inside_on_close",
 	"shows": "drinian_during_a_gc_invoked_on_close_handler_running_against_an_object_whose_last_reference_was_just_dropped",
 	"shape": "on_close_handler_is_a_call_stack_frame_pushed_by_the_engine_not_by_user_code; runs_with_strict_rules_per_garbage_collection_md",
@@ -17,7 +17,7 @@ The snapshot is taken inside the handler.
 Caspian source:
 
 ~~~caspian
-class 'myapp.com/connection'
+class
     on_close do($call)
         @socket.close                            # CAPTURED HERE
     end

@@ -1,6 +1,6 @@
 # Dogberry
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "dogberry",
 	"status": "brainstorm — first concrete proposal for Dogberry's role; supersedes the prior 'undefined' placeholder",
@@ -18,7 +18,7 @@ A primary use case is **formatting sites hosted on GitHub** — keep your source
 
 ## GitHub as a source
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "github_source",
 	"role": "the specific shape of pointing Dogberry at a GitHub-hosted repo; the most common expected source today"
@@ -43,7 +43,7 @@ Point one domain at `main`, another at `staging`. Authoring shape stays standard
 
 ## How the request flow works
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "request_flow",
 	"role": "the path a single inbound HTTP request takes through Dogberry"
@@ -56,7 +56,7 @@ Cached responses skip the fetch and the Markie step entirely — the second visi
 
 ## Subdomain registration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "subdomain_registration",
 	"role": "the primary path by which a customer brings a site online — register a nickname, get a dogberry.uno subdomain, point at a source"
@@ -87,7 +87,7 @@ Beyond the source URL, a site's settings hold display name, default cache TTL, M
 
 ## Custom-domain registration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "custom_domain_registration",
 	"role": "the advanced/branded path — bring your own domain instead of using the dogberry.uno subdomain"
@@ -110,7 +110,7 @@ Optional: subpath routing — `myshop.com/blog/*` resolves from one source, `mys
 
 ## TLS
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "tls",
 	"role": "how Dogberry serves HTTPS — wildcard for subdomain sites, per-domain for custom domains"
@@ -131,7 +131,7 @@ For customers who need EV certs or a specific CA, an optional upload path. Defau
 
 ## Caching
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "caching",
 	"role": "the layer between Dogberry's source fetch and the visitor; the difference between a site that survives the source going down and one that doesn't"
@@ -156,7 +156,7 @@ The customer's source host (or CI) can POST to a Dogberry webhook to invalidate 
 
 ## Source fetch policy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "source_fetch",
 	"role": "how Dogberry talks to the customer's source host"
@@ -177,7 +177,7 @@ For private sources, the customer registers credentials (basic auth, bearer toke
 
 ## Image modifications
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "image_modifications",
 	"role": "query-string-driven image transformations on a customer's served images; Dogberry intercepts recognized params, delegates the transform to the puck.uno image service, caches by full URL"
@@ -206,7 +206,7 @@ Query-string interpretation applies only to paths with recognized image extensio
 
 ## Identity and accounts
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "identity",
 	"role": "the account layer that owns domain registrations, source bindings, and billing"
@@ -221,7 +221,7 @@ Domain ownership verification for custom domains lives in [Custom-domain registr
 
 ## Failure modes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "failure_modes",
 	"role": "the situations where something is broken and how Dogberry behaves"
@@ -254,7 +254,7 @@ Dogberry retries; surfaces the failure in the dashboard well before the cert exp
 
 ## API surfaces
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "api_surfaces",
 	"role": "the ways customers manage their Dogberry-hosted domains"
@@ -279,7 +279,7 @@ The cache-purge webhook lives here. Future surfaces: deployment-completed hooks,
 
 ## Relationship to Markie
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "markie_relationship",
 	"role": "the split of responsibilities between Dogberry and Markie"

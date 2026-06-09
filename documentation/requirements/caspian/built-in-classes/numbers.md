@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"type": "number",
@@ -36,7 +36,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 <a id="arithmetic"></a>
 ## Arithmetic
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "arithmetic",
 	"operators": ["+", "-", "*", "/", "%", "**"],
@@ -58,7 +58,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 <a id="comparison"></a>
 ## Comparison
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "comparison",
 	"operators": ["==", "!=", "<", "<=", ">", ">="],
@@ -80,7 +80,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "testing",
 	"methods": ["zero?", "positive?", "negative?", "integer?", "even?", "odd?",
@@ -107,7 +107,7 @@ Leading and trailing underscores are invalid. Double underscores are allowed.
 <a id="rounding"></a>
 ## Rounding
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "rounding",
 	"methods": ["round", "round_up", "round_down"],
@@ -174,7 +174,7 @@ $foo.round_down(multiple: 10) -> -10
 <a id="bitwise"></a>
 ## Bitwise
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "bitwise",
 	"method": "bitwise",
@@ -192,7 +192,7 @@ $foo.round_down(multiple: 10) -> -10
 <a id="math"></a>
 ## Math
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "math",
 	"methods": ["abs", "square_root", "√"],
@@ -212,7 +212,7 @@ $foo.round_down(multiple: 10) -> -10
 <a id="conversion"></a>
 ## Conversion
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "conversion",
 	"methods": ["to_string", "to_integer"],

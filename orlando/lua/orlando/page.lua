@@ -567,12 +567,17 @@ local function inject_issue_links(body_html, md_path, client_ip)
     return body_html
 end
 
--- Highlight every fenced ```json block in the rendered body.
--- Blocks whose content begins with `{"vibecode":` get wrapped in a
--- collapsible <details class="vibecode"> shell with the Monokai
--- (dark) theme inside; every other JSON block is highlighted in place
--- with the pygments default (light) theme. style.css supplies both
--- palettes.
+-- Wrap each fenced code block that carries a language hint with a
+-- labeled wrapper. Lunamark emits `<pre><code class="language-X">...</code></pre>`
+-- for ```X ... ``` fences; this pass surrounds that with
+-- `<div class="code-block"><div class="code-lang">X</div>...</div>`
+-- so style.css can render a colored bar above the block displaying X.
+-- Runs BEFORE the JSON/Caspian highlighters since those strip the
+-- `language-X` class — the wrapper survives intact and the highlighter
+-- output sits inside it.
+-- Skips vibecode JSON (content starting with `{"vibecode":`) since those
+-- get their own collapsible <details> treatment downstream and a blue
+-- "json" bar above the collapsed details would be redundant.
 local function decode_html_entities(s)
     return (s:gsub("&quot;", '"')
              :gsub("&lt;",   "<")
@@ -581,19 +586,53 @@ local function decode_html_entities(s)
              :gsub("&amp;",  "&"))
 end
 
-local function highlight_json_blocks(body_html)
+-- Vibecode blocks are explicitly geofenced with ~~~vibecode (or raw HTML
+-- <pre><code class="language-vibecode">). No content-based auto-detection.
+-- Skip the language-label wrap for them since they get the collapsible
+-- <details> wrap downstream.
+local function wrap_code_blocks_with_language_label(body_html)
     return (body_html:gsub(
-        '<pre><code class="language%-json">(.-)</code></pre>',
-        function(escaped_json)
+        '<pre><code class="language%-([%w_%-]+)">(.-)</code></pre>',
+        function(lang, content)
+            if lang == "vibecode" then return nil end
+            return '<div class="code-block">'
+                .. '<div class="code-lang">' .. lang .. '</div>'
+                .. '<pre><code class="language-' .. lang .. '">' .. content .. '</code></pre>'
+                .. '</div>'
+        end))
+end
+
+-- Highlight fenced ```json blocks and ~~~vibecode blocks.
+-- - language-vibecode → collapsible <details class="vibecode"> shell with
+--   the Monokai (dark) theme inside.
+-- - language-json → highlighted in place with the pygments default
+--   (light) theme.
+-- style.css supplies both palettes.
+
+local function highlight_json_blocks(body_html)
+    -- Pre-attribute matcher: anything between `<pre` and the closing `>`
+    -- that isn't itself a `>`. Lua's `.-` is lazy but doesn't respect
+    -- HTML boundaries — it would cross over intervening tags and match
+    -- the wrong code block.
+    -- Pass 1: vibecode blocks (explicitly geofenced).
+    body_html = body_html:gsub(
+        '<pre([^>]*)><code class="language%-vibecode">(.-)</code></pre>',
+        function(_pre_attrs, escaped_json)
             local json = decode_html_entities(escaped_json)
             local highlighted = json_highlight.highlight(json)
-            if escaped_json:match("^{&quot;vibecode&quot;") then
-                return '<details class="vibecode"><summary>vibecode</summary>'
-                    .. '<div class="vibecode-code"><pre>' .. highlighted
-                    .. '</pre></div></details>'
-            end
-            return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
-        end))
+            return '<details class="vibecode"><summary>vibecode</summary>'
+                .. '<div class="vibecode-code"><pre>' .. highlighted
+                .. '</pre></div></details>'
+        end)
+    -- Pass 2: plain JSON blocks — highlighted in place, never collapsed.
+    body_html = body_html:gsub(
+        '<pre([^>]*)><code class="language%-json">(.-)</code></pre>',
+        function(pre_attrs, escaped_json)
+            local json = decode_html_entities(escaped_json)
+            local highlighted = json_highlight.highlight(json)
+            return '<pre' .. pre_attrs .. ' class="highlight"><code>' .. highlighted .. '</code></pre>'
+        end)
+    return body_html
 end
 
 -- Mark JSON code blocks that sit under a Skeletor-snapshot subheading
@@ -919,6 +958,7 @@ function M.render_request(ctx)
     body = link_existing_hero_logo(body)
     body = rewrite_links(body)
     body = mark_external_links(body)
+    body = wrap_code_blocks_with_language_label(body)
     body = highlight_json_blocks(body)
     body = highlight_caspian_blocks(body)
     body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)

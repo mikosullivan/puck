@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"type": "Array",
@@ -27,7 +27,7 @@ between read as unflavored `null`.
 <a id="set-theory"></a>
 ## Set Theory
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "set_theory",
 	"unicode_methods": ["⊂", "⊆", "∪", "∩", "∅?"],
@@ -127,7 +127,7 @@ $a.empty?              -> false
 <a id="elements"></a>
 ## Elements
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "elements",
 	"method": "elements",
@@ -206,7 +206,7 @@ $els[1].value   # raises exception — element has been deleted
 <a id="searching-find"></a>
 ## Searching: `find`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "find",
 	"method": "find",
@@ -341,7 +341,7 @@ One method, one return shape, no nil-on-no-match special case.
 <a id="random"></a>
 ## `random`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "random",
 	"role": "spec for $array.random — uniform random selection of one or more elements from an array, with options for unique sampling and element-object wrappers; cryptographically secure via libsodium",
@@ -353,7 +353,7 @@ One method, one return shape, no nil-on-no-match special case.
 
 Picks one or more elements uniformly at random from the array. Uses
 the same cryptographically strong source as
-[`%utils.random`](../utils/index.md#utilsrandom) — libsodium's
+[`%utils.random`](../global-methods/utils/index.md#utilsrandom) — libsodium's
 unbiased range function, no modulo bias.
 
 ```

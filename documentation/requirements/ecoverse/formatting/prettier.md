@@ -1,6 +1,6 @@
 # Prettier as Puck's formatting basis
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "prettier-evaluation",
 	"role": "research report evaluating whether the Puck ecoverse should adopt Prettier (and its plugin ecosystem) as the basis for its formatting tools, instead of building its own",
@@ -13,7 +13,7 @@
 
 ## Recommendation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "recommendation",
 	"verdict": "do_not_adopt_as_core",
@@ -26,7 +26,7 @@ Do not adopt Prettier as the basis of Puck's formatting tools. Prettier's design
 
 ## Prettier's philosophy vs Puck's
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "philosophy_clash",
 	"prettier_goal": "end style debates by freezing the option set",
@@ -52,7 +52,7 @@ The conflict isn't resolvable by switching defaults or wrapping the API. Adoptin
 
 ## What Prettier gives us out of the box
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_we_get",
 	"strong_coverage": ["javascript", "typescript", "json", "css", "scss", "less", "html", "vue", "markdown_commonmark", "yaml", "graphql"],
@@ -72,7 +72,7 @@ The catch is that "pretty" here means **Prettier's** pretty, not the pretty Miko
 
 ## What we'd give up
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_we_give_up",
 	"hard_losses": ["blank_line_around_blocks", "empty_line_treatment_neighbors", "vibecode_placement", "css_single_declaration_inline", "hash_spacing_choice"],
@@ -102,7 +102,7 @@ Puck's [formatting doc](../../ecoverse/formatting/index.md#tools-that-consume-st
 
 ## The Caspian plugin problem
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "caspian_plugin_cost",
 	"required_exports": ["languages", "parsers", "printers", "options", "default_options"],
@@ -128,7 +128,7 @@ Either path costs real effort and adds a long-lived JavaScript codebase to a pro
 
 ## Per-viewer-style story
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "per_viewer_normalization",
 	"differ_requirement": "format each side using the viewer's style, per request",
@@ -148,7 +148,7 @@ Also: even if we drove Prettier per-viewer, the options it accepts are too narro
 
 ## Hybrid approaches
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "hybrid_options",
 	"option_a": "prettier_for_non_caspian_fences_only",
@@ -178,7 +178,7 @@ This is the path that fits Puck's principles: implementation in our own language
 
 ## Recommendation, expanded
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "recommendation_expanded",
 	"primary": "build_our_own_pretty_printer_for_caspian",
@@ -196,7 +196,7 @@ Do not adopt Prettier as the core of Puck's formatting tools, and do not invest 
 
 ## What would need to change if we adopted Prettier anyway
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "if_we_adopted_anyway",
 	"purpose": "documenting the cost so the trade-off is explicit",

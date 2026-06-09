@@ -2,7 +2,7 @@
 
 *The umbrella question — a worked walkthrough of a single-agent session.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai_single_agent_basic_example",
 	"role": "worked example showing a complete single-agent Puckai session — the basic case, with one agent answering a boolean assertion based on an external lookup. Companion to the single-agent spec at ../index.md.",

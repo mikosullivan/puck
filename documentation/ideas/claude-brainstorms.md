@@ -1,6 +1,6 @@
 # Ten Brainstorms (Claude)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "claude-brainstorms",
 	"role": "ten short, undiscussed-with-the-project new-direction seeds from Claude: time-travel debugger, Xeme viewer, and other 30-second-read ideas not yet specified",

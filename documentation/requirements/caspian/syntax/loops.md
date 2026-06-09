@@ -1,6 +1,6 @@
 # Loops
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "loops",
 	"role": "all_loop_constructs_in_caspian_in_one_place",
@@ -33,7 +33,7 @@ this doc focuses on the loop-specific use.
 <a id="main-structures"></a>
 ## Main structures
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "main_structures",
 	"forms": ["while", "each", "numeric_iteration_helpers"]
@@ -48,7 +48,7 @@ the loop you have.
 <a id="while"></a>
 ### `while`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "while",
 	"shape": "while_condition_body_end",
@@ -73,7 +73,7 @@ for the rule.
 <a id="each"></a>
 ### `.each`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "each",
 	"shape": "collection.each(loop_var) do ... end",
@@ -94,7 +94,7 @@ end
 <a id="numeric-iteration-helpers"></a>
 ### Numeric iteration helpers
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "numeric_helpers",
 	"methods": ["times", "upto", "downto"],
@@ -137,7 +137,7 @@ they behave the same as `.each` over the corresponding range and accept
 <a id="naming-a-loop-with-as"></a>
 ## Naming a loop with `as`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "naming_with_as",
 	"binds": "loop_object",
@@ -189,7 +189,7 @@ unified rule.
 <a id="loop-object-methods"></a>
 ### Loop object methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "loop_object_methods",
 	"control_methods": ["next", "return", "break"],
@@ -226,7 +226,7 @@ from the enclosing function.
 <a id="break"></a>
 ## `break`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "break_bwc",
 	"form": "bwc",
@@ -326,7 +326,7 @@ post-lock addition.
 <a id="structural-blocks"></a>
 ## Structural blocks
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "structural_blocks",
 	"blocks": ["before", "between", "after", "noloop"],
@@ -371,7 +371,7 @@ without an extra emptiness check around the loop.
 <a id="deliberately-out-of-scope"></a>
 ## Deliberately out of scope
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"not_in_caspian": ["for_in_form_iteration_is_each_only",
 		"redo_retry_no_iteration_restart_construct",

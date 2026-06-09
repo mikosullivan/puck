@@ -1,6 +1,6 @@
 # AI Agent Collaboration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "agent-collaboration",
 	"role": "design notes for AI-to-AI collaboration sessions using a shared live mikobase as the communication medium rather than a message-passing protocol",

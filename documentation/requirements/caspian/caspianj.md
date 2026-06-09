@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"format": "CaspianJ",
@@ -38,7 +38,7 @@ itself before the parser exists.
 <a id="core-principle"></a>
 ## Core Principle
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "core_principle",
 	"value_receiver_form": "[receiver, method, arg1?, arg2?, ...]",
@@ -98,7 +98,7 @@ rule — kwargs are all-or-nothing in a single call site).
 <a id="comments"></a>
 ## Comments
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "comments",
 	"form": "{\"comment\": \"...\"}",
@@ -122,7 +122,7 @@ It is ignored by the interpreter.
 <a id="expressions"></a>
 ## Expressions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "expressions",
 	"forms": {
@@ -146,7 +146,7 @@ Expressions are JSON objects that produce a value.
 <a id="literals"></a>
 ### Literals
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "literals",
 	"form": "{\"value\": <json>, \"class\"?: <uns>}",
@@ -265,7 +265,7 @@ A `function` does not capture the outer scope. A `closure` does.
 <a id="statements"></a>
 ## Statements
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "statements",
 	"forms": ["assignment", "method_calls", "function_calls", "bwc_calls", "operators"],
@@ -380,7 +380,7 @@ Caspian equivalents: `$foo == 'bar'`, `$x + 1`, `$a && $b`
 <a id="control-flow"></a>
 ## Control Flow
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "control_flow",
 	"constructs": ["if_elsif_else", "while"],
@@ -443,7 +443,7 @@ end
 <a id="break"></a>
 ### Break
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "break_bwc",
     "form": "[{\"bwc\": \"break\"}, level_expr?]",
@@ -490,7 +490,7 @@ about `break $named_loop` as a targeting alternative.
 <a id="blocks"></a>
 ## Blocks
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "blocks",
 	"form": "block key in args object",
@@ -523,7 +523,7 @@ end
 <a id="function-and-closure-definitions"></a>
 ## Function and Closure Definitions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "function_and_closure_definitions",
 	"function_form": "{\"function\": {\"params\": [...], \"body\": [...]}}",
@@ -579,7 +579,7 @@ end
 <a id="return"></a>
 ## Return
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "return",
 	"form": "[{\"bwc\": \"return\"}, expr]",
@@ -604,7 +604,7 @@ Return with no value:
 <a id="exception-handling"></a>
 ## Exception Handling
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "exception_handling",
 	"constructs": ["catch", "raise"],
@@ -644,7 +644,7 @@ Caspian equivalent: `raise 'borg.com/exception/assimilation'`
 <a id="system-methods"></a>
 ## System Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "system_methods",
 	"expression_form": "{\"sys\": \"name\"}",
@@ -673,7 +673,7 @@ Caspian equivalent: `%chain['user']`
 <a id="documentation-statements"></a>
 ## Documentation Statements
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "documentation_statements",
 	"types": ["%vibecode", "%documentation"],
@@ -688,7 +688,7 @@ Caspian equivalent: `%chain['user']`
 `%vibecode`, `%comment`, and other `%documentation` statements are saved as statement objects
 in the program array. They are no-ops at runtime.
 
-```json
+```vibecode
 {"vibecode": {"purpose": "assign the active officer collection"}}
 ```
 
@@ -701,7 +701,7 @@ in the program array. They are no-ops at runtime.
 <a id="source-position-annotations"></a>
 ## Source Position Annotations
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "source_position_annotations",
 	"purpose": "preserve_caspian_source_line_numbers_through_transpilation_to_caspianj",
@@ -768,7 +768,7 @@ position is genuinely unknown.
 <a id="known-gaps"></a>
 ## Known Gaps
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "known_gaps",
 	"gaps": ["hash_key_order", "class_definitions_not_yet_designed_in_ksj"],

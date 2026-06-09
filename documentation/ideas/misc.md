@@ -1,6 +1,6 @@
 # Ideas
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "misc-ideas",
 	"role": "catch-all working notes on cross-cutting design topics; current contents lead with mikobase/Caspian firewall design (settled vs unsettled rule structure)",

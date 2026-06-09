@@ -1,6 +1,6 @@
 # Ideas
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "ideas",
 	"role": "umbrella landing for the ideas/ directory; clarifies that everything inside is brainstorming and not canonical Puck specification"

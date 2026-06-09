@@ -1,6 +1,6 @@
 # References hash
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "references_hash",
 	"shows": "drinian_state_with_populated_references_hash_demonstrating_variable_and_hash_element_reference_objects_pointing_at_user_data",
 	"shape": "three_variables_one_hash_object_one_shared_reference_and_one_inner_hash_element",

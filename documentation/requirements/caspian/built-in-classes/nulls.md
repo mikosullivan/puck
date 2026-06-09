@@ -1,6 +1,6 @@
 # Null
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "nulls",
 	"role": "spec for Caspian's null model: bare-word null returns a fresh puck.uno/null instance per call; nulls carry an assignable flavor field; null/true/false are not user-overridable",
@@ -25,7 +25,7 @@ the finer points of null.
 <a id="construction"></a>
 ## Construction
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "construction",
 	"creation_method": "null",
@@ -50,7 +50,7 @@ A program that tries to redefine these names raises a runtime error.
 <a id="equality"></a>
 ## Equality
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "equality",
 	"value_equality": "all_nulls_equal_regardless_of_flavor",
@@ -107,7 +107,7 @@ end
 <a id="identity-guarantees"></a>
 ## Identity Guarantees
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "identity_guarantees",
 	"role": "states the engine-level guarantee that null/true/false instances always answer equality and predicate checks consistent with what they were created as; the mechanism is the read-only .object.bool property",
@@ -174,7 +174,7 @@ implementation.
 <a id="background-the-challenge"></a>
 ### Background: The Challenge
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "background_the_challenge",
 	"role": "explains why a single NULL is insufficient — distinguishing reasons for missing data is often the most important information at the point of consumption"
@@ -220,7 +220,7 @@ sentinel values, side-channel error codes, or out-of-band state tracking.
 <a id="background-how-hl7-handles-it"></a>
 ### Background: How HL7 Handles It
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "background_hl7",
 	"role": "documents the canonical example of null flavors in HL7 v3 and FHIR healthcare standards",
@@ -285,7 +285,7 @@ pays off.
 <a id="pucks-approach"></a>
 ### Puck's Approach
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "puck_approach",
 	"role": "summarizes the deliberately-simple Puck implementation: a single flavor field that accepts anything, with a small optional canonical vocabulary",
@@ -323,7 +323,7 @@ standards on top of the Puck primitive.
 <a id="the-flavor-field"></a>
 ### The `flavor` Field
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "flavor_field",
 	"field": "flavor",
@@ -346,7 +346,7 @@ The flavor field is mutable. Assigning a new flavor replaces the previous one.
 <a id="standard-flavors"></a>
 ### Standard Flavors
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "standard_flavors",
 	"namespace": "puck.uno/null/flavor",
@@ -462,7 +462,7 @@ is implied).
 <a id="flavor-propagation"></a>
 ### Flavor Propagation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "flavor_propagation",
 	"rule": "operations_that_consume_null_discard_its_flavor",
@@ -500,7 +500,7 @@ end
 <a id="use-cases"></a>
 ### Use Cases
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "use_cases",
 	"role": "shows where null flavors are most useful in the Puck ecoverse"
@@ -525,7 +525,7 @@ Null flavors carry information that single-NULL systems lose. Common application
 <a id="serialization"></a>
 ### Serialization
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "serialization",
 	"rule": "unflavored_null_serializes_as_native_null_flavored_null_serializes_as_typed_hash_via_id_marker",
@@ -602,7 +602,7 @@ survive serialization — the engine raises if asked to serialize one.
 <a id="relation-to-the-role-model"></a>
 ### Relation to the role model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "relation_to_role_model",
 	"role_and_flavor": "independent"

@@ -1,6 +1,6 @@
 # Reuse Shadow Class
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "reuse-shadow-class",
 	"role": "speculative metaprogramming idea: treat a customized object's per-instance shadow class as a prototype and instantiate further objects from it, layering shadows into a stack",

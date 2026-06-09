@@ -1,6 +1,6 @@
 # Astro — the canonical Uma selector format
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uma-astro",
 	"role": "in-progress spec for Astro, the canonical JSON tree-selector format Uma matches against; CSS selector strings are sugar that compiles to Astro and the matcher operates on the JSON form",

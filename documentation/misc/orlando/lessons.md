@@ -2,7 +2,7 @@
 
 *Thoughts and experiences from building Orlando, with an eye to what might transfer to Lucy or Caspian*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "orlando-lessons",
 	"role": "running log of design and implementation insights from Orlando (the Lua sandbox); each lesson notes what we learned and whether it might apply to Lucy (the Lua reference implementation of Caspian) or to Caspian itself",

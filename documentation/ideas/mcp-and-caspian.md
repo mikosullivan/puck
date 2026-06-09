@@ -1,6 +1,6 @@
 # MCP and Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "mcp_and_caspian",
 	"role": "report on how Caspian could use the Model Context Protocol (MCP). Explains what MCP is, surveys the three roles Caspian could play (MCP client for its own agents, MCP server exposing Caspian to external AI apps, and convergence with Caspian's own ACP). Recommends V1.x adoption as MCP client; V2+ consideration as MCP server.",

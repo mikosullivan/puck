@@ -1,6 +1,6 @@
 # Caspian V1 plan
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_v1_plan",
 	"role": "V1 plan for the Caspian engine: slice progression, Caspian-specific cross-cutting principles, scope, dependencies. Sits under the umbrella Puck-wide V1 plan at v1.md.",
@@ -52,7 +52,7 @@ Settled cross-slice design decisions are logged in
 <a id="cross-cutting-principles"></a>
 ## Cross-cutting principles (Caspian-specific)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "cross_cutting_principles",
 	"principles": ["caspianj_is_runtime_caspian_text_is_for_humans",

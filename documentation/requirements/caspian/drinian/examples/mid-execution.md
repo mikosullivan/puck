@@ -1,6 +1,6 @@
 # Mid-execution with nested frames
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "mid_execution_nested_frames",
 	"shows": "function_call_inside_if_inside_do_block_inside_method_call_inside_top_level_with_full_references_and_objects_tables",
 	"shape": "five_frame_call_stack_with_cross_role_alternation_and_lexical_parent_divergence_and_canonical_reference_objects_representation",

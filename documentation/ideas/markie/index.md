@@ -1,6 +1,6 @@
 # Markie
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "markie",
 	"status": "brainstorm — early; feature list is exploratory, no commitments",
@@ -22,7 +22,7 @@ This doc describes Markie as the public-facing single-document service at `marki
 
 ## Core transpilation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "core_transpilation",
 	"role": "the fundamental DSL-to-HTML expansion mechanism"
@@ -43,7 +43,7 @@ Clients can register their own DSL tags and expansion templates with Markie, sco
 
 ## Component library
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "component_library",
 	"role": "the built-in vocabulary of named components Markie understands"
@@ -64,7 +64,7 @@ Query Markie for the list of components it knows about, their accepted attribute
 
 ## Syntax highlighting
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "syntax_highlighting",
 	"role": "server-side syntax highlighting of <pre> elements; emits styled HTML so the visitor needs no client-side highlighter"
@@ -111,7 +111,7 @@ Token class names are stable across languages and themes. The visible style come
 
 ## Markdown add-ons
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "markdown_addons",
 	"role": "Markie can accept markdown input alongside HTML, and extend standard CommonMark with add-on features the standard doesn't cover — most usefully via special fence types beyond the code-block-with-language convention"
@@ -134,7 +134,7 @@ Sketched here only. Detailed designs come when individual fence types are picked
 
 ## Remote content
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "remote_content",
 	"role": "fetch HTML fragments from elsewhere and splice them into the output server-side"
@@ -155,7 +155,7 @@ Embedded fetches are cached with sensible TTLs and respect upstream `Cache-Contr
 
 ## Composition
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "composition",
 	"role": "structural features for building larger documents from smaller pieces"
@@ -188,7 +188,7 @@ Earlier brainstorms on this section (expression languages, CSS-selector tags, `<
 
 ## Security
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "security",
 	"role": "the rules that make embedding remote content into your own DOM safe"
@@ -209,7 +209,7 @@ Bounded expansion size, bounded recursion depth, bounded embed-fetch count per r
 
 ## Developer ergonomics
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "developer_ergonomics",
 	"role": "features that make Markie pleasant to author against and debug"
@@ -230,7 +230,7 @@ A flag chooses between formatted (indented, commented) output for development an
 
 ## API surfaces
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "api_surfaces",
 	"role": "the ways to call Markie"

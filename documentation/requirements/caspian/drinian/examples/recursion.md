@@ -1,6 +1,6 @@
 # Deep recursion through a tree walk
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "deep_recursion_tree_walk",
 	"shows": "recursive_function_paused_at_innermost_call_with_repeated_method_each_frames_and_independent_iterator_state",
 	"shape": "eight_frame_call_stack_with_repeated_function_call_frames_at_different_depths",

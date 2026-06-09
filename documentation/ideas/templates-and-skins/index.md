@@ -1,6 +1,6 @@
 # Templates and skins
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "templates-and-skins",
 	"status": "brainstorm — cross-cutting design proposal; not a service",
@@ -14,7 +14,7 @@
 
 ## The unification
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "unification",
 	"role": "the core argument: templates and skins are mechanically identical; the only real difference is who picks the base"
@@ -29,7 +29,7 @@ Both are slot-and-fill. A skin IS a template. The Orlando-look skin from [Gitter
 
 ## Mechanism stays one thing; policy differs
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "mechanism_vs_policy",
 	"role": "the engine doesn't care who chose the base; the consuming services apply different selection policies on top"
@@ -50,7 +50,7 @@ Both policies sit on the same template engine. The engine accepts (base, content
 
 ## One engine, many consumers
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "consumers",
 	"role": "concretely, what each existing service stops reinventing once a shared template engine exists"
@@ -75,7 +75,7 @@ The `<target>` / `<content>` cascade IS the engine's primitive — slots and fil
 
 ## The wrinkle: viewer-chosen skins assume content-agnostic templates
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "content_agnostic_skins",
 	"role": "the one design constraint that doesn't fall out automatically — skins that work for the viewer must render any content cleanly"
@@ -90,7 +90,7 @@ This is a constraint on the skin-catalog policy layer, not on the engine itself.
 
 ## Theming as an orthogonal axis
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "theming",
 	"role": "colors and typography are separate from layout structure; bundle them alongside templates or treat as its own axis"
@@ -105,7 +105,7 @@ Don't formalize a theme axis until it's needed — viewer-chosen skins with bund
 
 ## Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "open_questions",
 	"role": "the design forks that need answers before this can be implemented"

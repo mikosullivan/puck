@@ -1,6 +1,6 @@
 # Stort
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "stort",
 	"role": "vague idea for an SVG system for building interactive SVG applications",

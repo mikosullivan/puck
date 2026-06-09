@@ -2,7 +2,7 @@
 
 *A real cold-start run of the umbrella question through a subagent that had no prior context about Puckai.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai_single_agent_umbrella_cold_bootstrap",
 	"role": "captured record of an actual Puckai experimental run — the umbrella scenario from the basic example, but handed to a cold subagent (Claude Opus 4.7) with the full bootstrap merged into the worldlet vibecode and no other context. Documents what the protocol produces end-to-end with no human coaching.",

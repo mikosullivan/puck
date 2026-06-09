@@ -1,6 +1,6 @@
 # Edmund
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Edmund", "delivers": "caspian-with-json-serialization",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "digory_ships",
@@ -165,7 +165,7 @@ it as program state visible via `%argv`.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing", "test_directory":
 "tests/caspian/edmund/", "fixture_path":
 "tests/caspian/fixtures/picard_to_json.casp",

@@ -2,7 +2,7 @@
 
 *Helping cold-start receivers learn the Puckai format on the fly.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai_bootstrap",
 	"role": "spec for Puckai's bootstrap mechanism — a single authoritative vibecode hash that appears in two forms: wrapped (when embedded inline into a worldlet) and bare (when served standalone at a URL for cold agents to fetch). Same content; two contexts, two shapes.",
@@ -51,7 +51,7 @@ A cold agent reading the worldlet sees the `instructions` field (the most direct
 
 ### `bootstrap: true` — inline the full content
 
-On the sending agent, set [`$request.bootstrap = true`](../agent.md#request-bootstrap):
+On the sending agent, set [`$request.bootstrap = true`](../../caspian/packages/agent/#request-bootstrap):
 
 ```
 $request = $agent.request_init
@@ -113,4 +113,4 @@ The current bootstrap content, embedded inline. Same content as [bootstrap.json]
 - [Puckai shared spec](../) — the protocol the bootstrap instructions describe.
 - [bootstrap.json](bootstrap.json) — canonical source, wrapped form, intended for inline embedding into worldlets.
 - `https://puck.uno/ai/puckai/vibecode.json` — same content served bare, intended for standalone fetch by cold agents.
-- [`$request.bootstrap`](../agent.md#request-bootstrap) — the field that triggers inline embedding.
+- [`$request.bootstrap`](../../caspian/packages/agent/#request-bootstrap) — the field that triggers inline embedding.

@@ -1,6 +1,6 @@
 # Bryton Runner
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "bryton-runner",
 	"role": "spec for the Bryton runner: walks a test directory tree, executes tests, and assembles a Xeme result tree; covers per-directory bryton.json configuration and the files hash",

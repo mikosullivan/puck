@@ -1,6 +1,6 @@
 # Mikobase GraphQL support
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "mikobase-graphql",
 	"role": "forward-looking sketch of a GraphQL surface for mikobase: classes become GraphQL types, properties become fields, references become relationships; deferred well past v1",

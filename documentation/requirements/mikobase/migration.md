@@ -1,6 +1,6 @@
 # Mikobase record-shape migration log
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "mikobase_migration",
 	"role": "one-time log of the record-shape migration from single-class to multi-platter; informs future maintainers reading old example files that pre-date the change",

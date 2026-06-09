@@ -1,6 +1,6 @@
 # Caspian in the browser
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
@@ -19,7 +19,7 @@ Brainstorm in progress.
 <a id="why"></a>
 ## Why
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "motivation",
     "use_cases": ["online_sandbox_playground", "spec_docs_with_live_runnable_examples",
@@ -50,7 +50,7 @@ let people experience Caspian before buying into the whole system.
 <a id="architecture-three-independent-artifacts"></a>
 ## Architecture: three independent artifacts
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "architectural_decisions",
     "decided_2026-05-17": true,
@@ -139,7 +139,7 @@ saving meaningful effort.
 <a id="why-caspian-is-particularly-well-suited"></a>
 ## Why Caspian is particularly well-suited
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "good_fit",
     "factors": ["role_model_is_a_perfect_sandbox_fit",

@@ -1,6 +1,6 @@
 # `caspian` CLI
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_cli",
 	"role": "canonical reference for the caspian command-line interface — what arguments mean, the two-form invocation rule (file vs flag), the admin flags currently defined, conventions for confirmation prompts and destructive actions",

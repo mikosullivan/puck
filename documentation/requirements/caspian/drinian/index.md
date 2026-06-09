@@ -1,6 +1,6 @@
 # Drinian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "drinian",
 	"role": "Caspian's runtime state organization: all execution state lives in a single hash; eventually that hash can be serialized for snapshot-and-revive, enabling transparent process pause/resume across remote calls",
@@ -32,7 +32,7 @@ for the GC side of this dependency.
 <a id="v1-0-scope"></a>
 ## V1.0 scope
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "v1_0_scope",
 	"ships": "in-memory state hash + interpreter discipline",
@@ -71,7 +71,7 @@ depend on it.
 <a id="worked-example"></a>
 ## Worked example: Drinian mid-execution
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "worked_example",
 	"purpose": "illustrate_v1_0_drinian_hash_with_a_realistic_nested_execution_moment_so_callers_can_see_what_the_data_structure_looks_like_beyond_the_minimal_aslan_snapshot",
 	"shape_committed": false,
@@ -349,7 +349,7 @@ the engine grows to need them.
 <a id="role-delegations"></a>
 ### Role delegations
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "role_delegations",
 	"where_delegations_live": "on_the_frame_that_established_them",
 	"not_on": "the_roles_registry",
@@ -370,7 +370,7 @@ Consider this Caspian program:
 
 ~~~caspian
 $db = %dirjail['./data'].new()
-$agent = %puck['agents.example.com/claude'].new()
+$agent = %puck['https://agents.example.com/claude'].new()
 
 $result = %role.delegate_to($agent.role) do
     $agent.yield(db: $db, prompt: 'find recent users')
@@ -456,7 +456,7 @@ If the same program had nested `delegate_to` blocks, additional `delegations`-be
 <a id="object-ownership"></a>
 ### Object ownership
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "object_ownership_in_drinian",
 	"field": "role",
 	"location": "top_level_field_on_every_object_record_in_state_objects",
@@ -490,7 +490,7 @@ Once set at allocation, the field is immutable — values can move between roles
 <a id="classes-not-in-drinian"></a>
 ### Classes are NOT in Drinian
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "classes_not_in_drinian",
 	"purpose": "establish_that_class_registries_are_engine_private_state_not_part_of_the_observable_drinian_hash",
 	"contrast_with": "roles_which_DO_live_in_drinian_as_state_roles",
@@ -524,7 +524,7 @@ registry's contents don't show up in snapshots.
 <a id="source-location-tagging"></a>
 ### Source-location tagging
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "source_location_tagging",
 	"purpose": "preserve_caspian_source_file_and_line_through_to_drinian_so_inspectors_debuggers_and_error_reports_can_point_users_back_to_the_code",
 	"mechanism": "top_level_file_registry_plus_src_tuple_on_values_and_pc_on_frames",
@@ -842,7 +842,7 @@ produce human-readable paths.
 <a id="deeper-stack"></a>
 ### Deeper stack: recursive tree walk
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "deeper_stack",
 	"purpose": "second_worked_example_showing_substantially_more_call_stack_depth_via_recursion_through_a_three_level_tree; demonstrates_repeated_user_stdlib_alternation_and_recursive_function_frames_at_different_depths",
 	"shape_committed": false}}
@@ -1006,7 +1006,7 @@ statements, which is all a single-process in-memory hash needs.
 <a id="exceptions-and-captured-stack"></a>
 ### Exceptions and the captured stack
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "exceptions_and_captured_stack",
 	"purpose": "describe_how_in_flight_exceptions_live_as_call_stack_elements_and_how_captured_stack_preserves_raise_time_context_via_reference_capture_for_uncaught_exception_reports",
 	"shape_committed": true,
@@ -1101,7 +1101,7 @@ An uncaught-exception report formatted from `captured_stack` shows the program a
 <a id="capture-by-reference"></a>
 ### Capture-by-reference: the cost model
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "capture_by_reference_cost_model",
 	"why_cheap": ["pointer_per_frame_not_deep_copy",
 		"popped_frames_stop_mutating_so_references_are_stable",
@@ -1186,7 +1186,7 @@ end
 <a id="remote-library-and-trust-barrier"></a>
 ### Loaded remote library and the trust barrier
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "remote_library_and_trust_barrier",
 	"purpose": "show_how_a_runtime_loaded_remote_library_appears_in_drinian_and_demonstrate_that_cross_role_chain_isolation_handles_the_trust_barrier_with_no_special_machinery",
 	"shape_committed": false,
@@ -1198,7 +1198,7 @@ calls a method on it — and along the way puts something into
 `%chain.misc` that the library is NOT supposed to see:
 
 ~~~caspian
-$markdown = %puck['markdown.uno/render']
+$markdown = %puck['https://markdown.uno/render']
 %chain.misc.api_token = 'sk-secret-abc123'
 $html = $markdown.to_html('# Hello')
 puts $html
@@ -1282,7 +1282,7 @@ Things to notice:
 - **The library's class is not visible in the snapshot.** Class
   registries are engine-private state, not part of Drinian (see
   [Classes are NOT in Drinian](#classes-not-in-drinian)).
-  `Renderer` was registered when `%puck['markdown.uno/render']`
+  `Renderer` was registered when `%puck['https://markdown.uno/render']`
   executed on line 1; the dispatcher knows about it because the
   engine's registry knows about it, not because it appears in any
   frame. Dispatch resolves `class_ref: "Renderer"` (on `markdown`)
@@ -1350,7 +1350,7 @@ host picks it up next.
 <a id="post-v1-0-api"></a>
 ## Post-V1.0 API (deferred)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "post_v1_0_api",
 	"surface": "single method on a single class",
@@ -1383,7 +1383,7 @@ snapshot-slow) without changing program semantics.
 <a id="what-happens-under-the-hood"></a>
 ## What happens under the hood
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "under_the_hood",
 	"steps": ["assign_correlation_id", "snapshot_to_disk", "dispatch_request",
@@ -1418,7 +1418,7 @@ engine, not to user code — see
 <a id="engine-granted-permission"></a>
 ## Engine-granted permission
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "engine_permission",
 	"role": "the host engine must grant a Caspian program permission to make promise() calls",
@@ -1442,7 +1442,7 @@ The mechanism for granting and revoking this permission is TBD. See
 <a id="explicitly-out-of-scope"></a>
 ## Explicitly out of scope for V1
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "out_of_scope_v1",
 	"role": "scope-tightening — features that are plausible but not in V1",
@@ -1496,7 +1496,7 @@ sanitize itself before the snapshot is taken.
 Sketch of the future API (NOT shipping in V1):
 
 ```caspian
-class 'myapp.com/auth'
+class
     @username = nil
     @password = nil
 
@@ -1515,7 +1515,7 @@ need to re-acquire the password (re-prompt, re-fetch, etc.) to use it again.
 Possible sugar for the common "just null out these fields" case:
 
 ```caspian
-class 'myapp.com/auth'
+class
     redact_on_snapshot ['password', 'api_token']
 end
 ```
@@ -1523,7 +1523,7 @@ end
 Or a field-level annotation:
 
 ```caspian
-class 'myapp.com/auth'
+class
     @password = nil @redact
 end
 ```

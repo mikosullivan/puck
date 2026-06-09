@@ -1,6 +1,6 @@
 # Object hive
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "object_hive",
 	"role": "brainstorm — Caspian as a hive of living objects that interact with each other, rather than just a procedural language. Server-shaped by default; easy to listen on a socket and delegate received instructions to listeners. Single-threaded but feels asynchronous because objects react to triggers. Catalogs analogous systems for reference and proposes a blend (MOO + Erlang) as the closest match.",

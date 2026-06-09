@@ -1,6 +1,6 @@
 # Caspian built-in classes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "built-in-classes",
 	"role": "umbrella landing page for Caspian's built-in classes. Always available, no require needed."

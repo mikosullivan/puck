@@ -1,6 +1,6 @@
 # Matrix
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "matrix",
 	"role": "brainstorm starter — subject TBD; awaiting direction",

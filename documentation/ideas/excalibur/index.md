@@ -1,6 +1,6 @@
 # Excalibur
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "excalibur",
 	"status": "brainstorm — in-house literate-Caspian tool; code name reserved 2026-05-22",
@@ -16,7 +16,7 @@ In-house only — this is for Puck-team docs authoring, not a public puck.uno fe
 
 ## Why
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why",
 	"role": "the docs-quality problem Excalibur exists to solve"
@@ -29,7 +29,7 @@ Excalibur is that fix for Caspian examples in Puck docs.
 
 ## How it works
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "how_it_works",
 	"role": "the basic flow: doc references file, Excalibur renders source + runs it + captures output"
@@ -49,7 +49,7 @@ The doc author writes one reference; Excalibur produces both blocks.
 
 ## Authoring model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "authoring_model",
 	"role": "where .casp example files live and how docs reference them"
@@ -101,7 +101,7 @@ Source uses the standard `~~~caspian` Caspian-fence rendering. Output renders as
 
 ## Output capture
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "output_capture",
 	"role": "what Excalibur considers 'the output' and how it formats different kinds of result"
@@ -124,7 +124,7 @@ The Lucy version used to run the example is recorded in the output block (small 
 
 ## Integration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "integration",
 	"role": "how Excalibur fits into existing doc-rendering paths (Orlando, Markie, future Gitter)"
@@ -147,7 +147,7 @@ V0 is probably the markdown-preprocessor path — least coupling, easiest to run
 
 ## Failure modes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "failure_modes",
 	"role": "what happens when an example file is missing, won't compile, or crashes at runtime"
@@ -172,7 +172,7 @@ A frontmatter or first-line marker in the `.casp` file (`%expect error`) lets th
 
 ## Why in-house only
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why_in_house",
 	"role": "the reasoning behind keeping Excalibur internal rather than offering it on puck.uno"

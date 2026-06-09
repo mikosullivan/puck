@@ -1,6 +1,6 @@
 # JSON URL Parameters
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "overview",
     "scope": "ecoverse_wide",

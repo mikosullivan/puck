@@ -1,6 +1,6 @@
 # Private
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uma-history-private",
 	"role": "imported placeholder from the prior Ruby Uma project's history; currently empty",

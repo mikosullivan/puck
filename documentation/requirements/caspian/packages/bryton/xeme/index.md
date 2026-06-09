@@ -1,6 +1,6 @@
 # Xeme
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "xeme",
 	"role": "spec for Xeme, the JSON-shaped tree format for reporting structured results (test outcomes, Jasmine entries); covers the required success field, groups and leaves",

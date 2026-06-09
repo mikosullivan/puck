@@ -1,6 +1,6 @@
 # Differ
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "differ",
 	"status": "brainstorm — not part of any version target",

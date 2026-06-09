@@ -2,7 +2,7 @@
 
 *The block-info endpoint on blockchain.puck.uno. Returns the signed block for a given artifact URL as JSON.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "blockchain_api_endorsement",
 	"role": "spec for the GET endorsement-lookup endpoint on blockchain.puck.uno — returns the signed block as JSON for a given artifact URL; sibling of the fetch endpoint which returns the actual bytes",

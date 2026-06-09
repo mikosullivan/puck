@@ -2,7 +2,7 @@
 
 *The HTTPS API for blockchain.puck.uno. Two endpoints today: look up an endorsement (returns the signed block as JSON), or fetch an artifact (returns the actual bytes after hash verification).*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "blockchain_api_index",
 	"role": "hub doc for the blockchain.puck.uno HTTPS API — links to per-endpoint specs and declares contract guarantees for JSON-returning endpoints (the byte-oriented fetch endpoint follows standard HTTP conventions instead)",

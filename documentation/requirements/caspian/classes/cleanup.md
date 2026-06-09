@@ -1,6 +1,6 @@
 # Class definition drift: Caspian and Mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "class_definition_cleanup",
 	"role": "audits how the class-definition specs in Caspian and Mikobase have drifted out of consistency; catalogs where they agree, where they diverge, and surfaces the open questions that need a decision before either side hardens further",
@@ -31,7 +31,7 @@ The canonical docs consulted:
 
 ## Where the specs agree
 
-Class identity uses UNS strings on both sides — `class 'foo.com/character'` in Caspian, `"foo.com/character"` as the dict key in Mikobase. No drift.
+Class identity uses UNS strings on both sides — `class` in Caspian, `"foo.com/character"` as the dict key in Mikobase. No drift.
 
 The `inherits` keyword for single-parent inheritance is identical: Caspian uses `inherits 'parent.uns/x'` as a statement inside the class body; Mikobase uses `"inherits": "parent.uns/x"` as a field on the class definition object. Same word, same semantics.
 
@@ -43,7 +43,7 @@ The six reserved pass-through fields (`vibecode`, `comment`, `misc`, `corporate`
 
 ### Syntax form: DSL block vs JSON dict
 
-Caspian uses an executable DSL inside `class 'foo.com/x' ... end` blocks. The worldlet/Mikobase form is a declarative JSON record: each class definition is its own entry in the worldlet's top-level `records` dict, using the whole-hash form — `class: "puck.uno/class"` plus sibling `name`/`inherits`/`fields`/`methods`/etc. — see [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and accessors, which only one surface supports).
+Caspian uses an executable DSL inside `class ... end` blocks. The worldlet/Mikobase form is a declarative JSON record: each class definition is its own entry in the worldlet's top-level `records` dict, using the whole-hash form — `class: "puck.uno/class"` plus sibling `name`/`inherits`/`fields`/`methods`/etc. — see [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and accessors, which only one surface supports).
 
 The question worth pinning down: is Mikobase's JSON form intended to be a serialization of what Caspian's DSL produces, or are they two independent surfaces? If the first, the field set must be a strict subset on the JSON side. If the second, drift is intentional and we should stop framing it as drift.
 

@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"categories": ["method_operators", "binary_operators", "unary_operators",
@@ -24,7 +24,7 @@ Caspian has three categories of operators:
 <a id="method-operators"></a>
 ## Method Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "method_operators",
 	"examples": ["+", "-", "==", "[]"],
@@ -44,7 +44,7 @@ See the individual type docs for the operators each type supports.
 <a id="binary-operators"></a>
 ## Binary Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "binary_operators",
 	"registration": "scope.operators['name'] = 'uns_class'",
@@ -90,7 +90,7 @@ Every binary operator maps to an evaluator class. The class must implement an `e
 method that takes two lazy parameters — one for each operand:
 
 ```
-class 'caspian.uno/and'
+class
     function &evaluate($left: {lazy: true}, $right: {lazy: true}) do
         if (! $left.call)
             return false
@@ -143,7 +143,7 @@ The evaluator class follows the same contract as built-in operators — implemen
 <a id="unary-operators"></a>
 ## Unary Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "unary_operators",
 	"registration": "scope.unary_operators['name'] = 'uns_class'",
@@ -169,7 +169,7 @@ scope.unary_operators['!']   = 'caspian.uno/not'
 Evaluator classes take a single lazy parameter:
 
 ```
-class 'caspian.uno/not'
+class
     function &evaluate($operand: {lazy: true}) do
         return ! $operand.call
     end
@@ -181,7 +181,7 @@ end
 <a id="built-in-operators"></a>
 ## Built-in Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "built_in_operators",
 	"binary": {
@@ -222,7 +222,7 @@ end
 <a id="ternary-operator"></a>
 ## Ternary Operator
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "ternary_operator",
 	"operator": "?:",

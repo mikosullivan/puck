@@ -1,6 +1,6 @@
 # Corin
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Corin", "delivers": "caspian-with-stdout", "goal":
 "execute puts_hello_from_caspian_source_and_observe_the_string_arrive_on_stdout",
 "medium": "caspian_source_text", "fixture":
@@ -62,7 +62,7 @@ Corin realigns the bwc-call form `[{bwc: "puts"}, {value: "hello"}]`.
 <a id="definition-of-done-corin"></a>
 ### Definition of done
 
-~~~json
+~~~vibecode
 {"vibecode": {"scope_status": "drafted_2026-05-17; updated_2026-05-27_for_property_based_engine_api",
 "done_criteria":
 {"source_fixture_parses_and_transpiles_to_canonical_bwc_form":
@@ -107,7 +107,7 @@ That's the entirety of Corin. Soft feature lock applies.
 <a id="corin-phase-0-stdout-and-bwc-workbench"></a>
 ## Phase 0: stdout-and-bwc workbench
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 0, "purpose":
 "verify_existing_pipeline_state_for_bwc_dispatch_and_stdout_injection_before_writing_corin_code",
 "steps_count": 3, "acceptance":
@@ -126,7 +126,7 @@ The new questions are bwc-specific and stdout-injection-specific.
 <a id="corin-step-01-confirm-the-source-pipeline-handles-the-puts-fixture"></a>
 ### Step 0.1: Confirm the source pipeline handles the puts fixture
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.1", "name": "source_pipeline_baseline",
 "input": "puts 'hello'", "tools":
 ["caspian.tokenize", "caspian.parse", "caspian.transpile"],
@@ -144,7 +144,7 @@ is `[{bwc:'puts'}, {value:'hello'}]`. The diff drives Phase 1 step 2.
 <a id="corin-step-02-confirm-engine-std-property-slot"></a>
 ### Step 0.2: Confirm the engine has a property slot for stdout
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.2", "name": "std_property_slot_check",
 "action":
 "verify_that_setting_engine_std_to_a_function_before_running_a_bree_fixture_does_not_break_anything; bree_run_should_be_a_no_op_with_respect_to_engine_std",
@@ -168,7 +168,7 @@ load-bearing).
 <a id="corin-step-03-pre-canonical-legacy-bwc-handling-for-reference"></a>
 ### Step 0.3: Pre-canonical legacy bwc handling, for reference
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.3", "name": "legacy_bwc_reference",
 "action":
 "read_interpreter_lua_to_observe_how_puts_was_handled_in_the_pre_canonical_pipeline",
@@ -190,7 +190,7 @@ Corin phase 0 test coverage lives under [Testing](#testing) below.
 <a id="corin-phase-1-puts-hello-from-caspian-source"></a>
 ## Phase 1: puts-hello from Caspian source
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 1, "fixture_path":
 "tests/caspian/fixtures/puts_hello.casp", "fixture_content":
 "puts 'hello'", "runner_path": "tests/caspian/run.lua",
@@ -221,7 +221,7 @@ verify.
 <a id="corin-step-1-inventory"></a>
 ### Step 1: Inventory
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 1, "name": "inventory", "actions":
 ["read_existing_transpiler_to_see_how_bwc_calls_are_emitted_today",
 "read_existing_interpreter_lua_puts_handler_for_reference",
@@ -251,7 +251,7 @@ existing `interpreter.lua` for its `puts` handler (lines around the
 <a id="corin-step-2-fill-the-gaps"></a>
 ### Step 2: Fill the gaps
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 2, "name": "fill_gaps", "scope":
 "bwc_dispatch_and_engine_std_property_only; not_other_bwcs_not_multi_argument_handling",
 "work_items":
@@ -338,7 +338,7 @@ method-call-specific).
 <a id="corin-step-3-verify"></a>
 ### Step 3: Verify
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 3, "name": "verify", "actions":
 ["create_caspian_source_fixture",
 "build_capture_sink",
@@ -451,7 +451,7 @@ Corin phase 1 test coverage lives under [Testing](#testing) below.
 <a id="corin-open-questions"></a>
 ### Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions":
 ["sys_role_check_after_corin"],
 "resolved":
@@ -484,7 +484,7 @@ Corin phase 1 test coverage lives under [Testing](#testing) below.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "test_directory": "tests/caspian/corin/",
 "fixture_path": "tests/caspian/fixtures/puts_hello.casp",
@@ -506,7 +506,7 @@ machinery actually fires. TC.8 verifies the no-ambient-stdout property
 <a id="corin-phase-0-test-plan"></a>
 ### Phase 0 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_0_tests":
 [{"id": "TC.0.1", "verifies":
 "source_pipeline_completes_for_puts_hello_fixture_and_baseline_parse_caspian_output_captured",
@@ -527,7 +527,7 @@ before Corin phase 1 begins.
 <a id="corin-phase-1-test-plan"></a>
 ### Phase 1 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_1_tests":
 [{"id": "TC.1", "verifies":
 "engine_parse_caspian_emits_canonical_bwc_form_for_puts_hello_deep_equal_to_expected_target",
@@ -564,7 +564,7 @@ All eight pass = Corin done.
 <a id="corin-test-layout"></a>
 ### Test layout
 
-~~~json
+~~~vibecode
 {"vibecode": {"test_directory": "tests/caspian/corin/",
 "fixture_path": "tests/caspian/fixtures/puts_hello.casp",
 "entry_point_change":

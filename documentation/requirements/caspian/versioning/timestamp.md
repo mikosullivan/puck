@@ -2,7 +2,7 @@
 
 *The date-pinning model and the `%puck.era` surface that sets cutoffs in user code.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "timestamp_versioning",
 	"role": "canonical reference for Caspian's date-pinned versioning — the rationale (one date governs the whole library tree, reproducibility comes free), the %puck.era surface (block form, era handle, confine), the lookup resolution rules, the out-of-range alarm, the relationship to the blockchain, and what this model replaces",
@@ -16,9 +16,41 @@
 }}
 ~~~
 
-`%puck.era` constrains library lookups to artifacts within a specified timestamp range. Where [per-UNS timestamp narrowing](#per-uns-timestamp) (also on this page) narrows one specific library by date, and the [per-call kwargs](../puck-lookup.md#per-call-narrowing) narrow one call, an **era** narrows the whole library tree.
+`%puck.era` constrains library lookups to artifacts within a specified timestamp range. Where [per-URL timestamp narrowing](#per-url-timestamp) (also on this page) narrows one specific library by date, and the [per-call kwargs](../puck/lookup.md#per-call-narrowing) narrow one call, an **era** narrows the whole library tree.
 
 This page covers the era surface plus the surrounding date-pinning model: why date-based versioning is the primary axis, how the resolver picks a version given an active range, what happens when no candidate fits, and how the blockchain anchors dates when it's in play.
+
+---
+
+<a id="at-a-glance"></a>
+## At a glance
+
+The three common patterns for narrowing library version selection by date.
+
+**Block form — narrow every lookup inside a block:**
+
+```caspian
+%puck.era(min: '2023-08-12', max: '2023-09-01') do
+    $gup = %puck['https://foo.bar/gup']      # narrowed to the era
+end
+```
+
+**Per-call kwarg — narrow one specific lookup:**
+
+```caspian
+$gup = %puck['https://foo.bar/gup', ts_max: '2023-09-01']
+```
+
+**Per-URL timestamp — narrow one library, live-global:**
+
+```caspian
+%puck.config('foo.bar/gup').timestamp = '2023-08-12'
+$gup = %puck['https://foo.bar/gup']           # uses the configured timestamp
+```
+
+Surfaces intersect: per-call narrows within whatever the block form / per-URL config already established. The lookup picks the latest artifact whose `effective_date` falls within every active range. If no candidate fits, [`puck.uno/error/out_of_range`](#out-of-range) raises.
+
+Read on for the full model, the resolver semantics, and the relationship to the blockchain.
 
 ---
 
@@ -49,8 +81,8 @@ The simplest case: narrow every `%puck` lookup inside a block.
 
 ```
 %puck.era(min: '2023-08-12', max: '2023-09-01') do
-    $gup    = %puck['foo.bar/gup']      # narrowed to the era
-    $other  = %puck['baz.io/widget']    # also narrowed
+    $gup    = %puck['https://foo.bar/gup']      # narrowed to the era
+    $other  = %puck['https://baz.io/widget']    # also narrowed
 end
 ```
 
@@ -82,7 +114,7 @@ $era.max = '2023-09-01'
 $gup = $era['foo.bar/gup']              # lookup through the era — narrowed
 ```
 
-`$era` behaves like a [derived `%puck`](../../puck/index.md): you can call `$era[uns]` exactly like `%puck[uns]`, but every lookup carries the era's bounds.
+`$era` behaves like a [derived `%puck`](../../puck/index.md): you can call `$era[url]` exactly like `%puck[url]`, but every lookup carries the era's bounds.
 
 Like all the config surfaces in this directory, the era handle uses the [dual-path pattern](semver.md#two-paths): assign-the-whole-thing or tweak-a-property.
 
@@ -108,7 +140,7 @@ $era.min = '2023-08-12'
 $era.max = '2023-09-01'
 
 $era.confine do
-    $gup = %puck['foo.bar/gup']     # %puck behaves as $era inside this block
+    $gup = %puck['https://foo.bar/gup']     # %puck behaves as $era inside this block
     do_more_work()                  # any %puck lookup inside also narrowed
 end
 # After the block: %puck is back to whatever it was before.
@@ -118,10 +150,10 @@ end
 
 ---
 
-<a id="per-uns-timestamp"></a>
-## Per-UNS timestamp narrowing — `%puck.config(uns).timestamp`
+<a id="per-url-timestamp"></a>
+## Per-URL timestamp narrowing — `%puck.config(url).timestamp`
 
-Where `%puck.era` narrows every lookup, `%puck.config(uns).timestamp` narrows **just one specific library** by date. Useful when you want to pin one library to a specific window without affecting anything else — testing a deployment with one library held back, isolating a known-good revision of one specific dependency, etc.
+Where `%puck.era` narrows every lookup, `%puck.config(url).timestamp` narrows **just one specific library** by date. Useful when you want to pin one library to a specific window without affecting anything else — testing a deployment with one library held back, isolating a known-good revision of one specific dependency, etc.
 
 ```
 $config = %puck.config('foo.bar/gup')
@@ -131,9 +163,9 @@ $config.timestamp.max = '2023-09-01'                              # only upper b
 $config.timestamp.min.cmp = '>'                                   # strictly after
 ```
 
-The `%puck.config(uns)` handle is **live global state** for that UNS: setting a property takes effect immediately, two handles into the same UNS share state, and the `$config` variable is purely convenience. Full semantics of the handle live in [semver.md § The config object is a live handle, not a snapshot](semver.md#live-global-state) — same handle, same lifecycle, just configuring a different axis.
+The `%puck.config(url)` handle is **live global state** for that URL: setting a property takes effect immediately, two handles into the same URL share state, and the `$config` variable is purely convenience. Full semantics of the handle live in [semver.md § The config object is a live handle, not a snapshot](semver.md#live-global-state) — same handle, same lifecycle, just configuring a different axis.
 
-`.min` / `.max` autovivify; bound operators use the same `.cmp` system as everywhere else in the area. The **canonical reference for the bound-operator system** lives in [semver.md § Bound operators (`cmp`)](semver.md#bound-operators-cmp); the per-UNS timestamp axis reuses it without re-spec'ing it. Defaults are inclusive (`>=` for `.min`, `<=` for `.max`); the same validity rules per bound apply.
+`.min` / `.max` autovivify; bound operators use the same `.cmp` system as everywhere else in the area. The **canonical reference for the bound-operator system** lives in [semver.md § Bound operators (`cmp`)](semver.md#bound-operators-cmp); the per-URL timestamp axis reuses it without re-spec'ing it. Defaults are inclusive (`>=` for `.min`, `<=` for `.max`); the same validity rules per bound apply.
 
 A bare timestamp value (e.g. `'2023-08-12'`) is interpreted as a **pin** — `min = max = '2023-08-12'`, both inclusive. To express a window, use the range form (hash or property tweaks).
 
@@ -142,18 +174,18 @@ A bare timestamp value (e.g. `'2023-08-12'`) is interpreted as a **pin** — `mi
 <a id="resolution-rules"></a>
 ## Resolution rules
 
-For a lookup `%puck['foo.com/bar']` under an active timespan `[L, U]`:
+For a lookup `%puck['https://foo.com/bar']` under an active timespan `[L, U]`:
 
 1. The puck walks its fetchers (per [puck.md § Lookup Mechanism](../../puck/index.md)), each consulting its faucets (cache first, then remote source typically). Each fetcher reports the **latest version of `foo.com/bar` within `[L, U]`** that it has.
 2. The puck returns the latest result across all fetchers' responses. Finding the latest requires consulting all fetchers, not short-circuiting on first hit.
 3. In a future release, the puck will check the signature of the library against a key library. That feature is not in initial development.
 4. If no fetcher returns a match, the [out-of-range alarm](#out-of-range-alarm) is raised.
 
-Each `(UNS, version, date)` triple is its own cached artifact. Different programs running through the same engine under different cutoffs will each get the appropriate version for their cutoff; no program's lookup affects any other's.
+Each `(URL, version, date)` triple is its own cached artifact. Different programs running through the same engine under different cutoffs will each get the appropriate version for their cutoff; no program's lookup affects any other's.
 
 The "canonical date" of a library is whatever the provider has authoritatively recorded. For a [blockchain](../downloads/service/blockchain/)-backed provider, this is the `posted` timestamp on the chain (or the `effective_date`, if explicitly set; see [Relationship to the blockchain](#relationship-to-the-blockchain) below). For a plain HTTPS provider, this is whatever the provider asserts — the date is no stronger than the trust placed in the provider.
 
-The same machinery applies when other constraint surfaces are active: [`%puck.config(uns)`](semver.md) constraints intersect with the era; per-call kwargs intersect further. In all cases the resolver picks the latest candidate satisfying every active constraint.
+The same machinery applies when other constraint surfaces are active: [`%puck.config(url)`](semver.md) constraints intersect with the era; per-call kwargs intersect further. In all cases the resolver picks the latest candidate satisfying every active constraint.
 
 ---
 
@@ -170,16 +202,16 @@ When a library lookup returns nothing dated within the active `[L, U]` timespan,
 
 In each case, the integrity of the deployment is in question. The exception is therefore treated with the same severity as any other security exception, not as ordinary control flow.
 
-The same alarm fires when [per-UNS timestamp narrowing](#per-uns-timestamp) or [per-UNS semver constraints](semver.md) intersect with the era to produce an empty candidate set, and when [per-call kwargs](../puck-lookup.md#per-call-narrowing) rule out every candidate the broader surfaces would have allowed. The integrity argument applies identically in those cases.
+The same alarm fires when [per-URL timestamp narrowing](#per-url-timestamp) or [per-URL semver constraints](semver.md) intersect with the era to produce an empty candidate set, and when [per-call kwargs](../puck/lookup.md#per-call-narrowing) rule out every candidate the broader surfaces would have allowed. The integrity argument applies identically in those cases.
 
 <a id="forensic-payload"></a>
 ### Forensic payload
 
 The alarm carries a structured payload describing exactly what happened:
 
-- The UNS that was looked up.
-- The cutoff (and any per-UNS / per-call constraints) that were in effect.
-- The latest available date for that UNS (so the gap is visible).
+- The URL that was looked up.
+- The cutoff (and any per-URL / per-call constraints) that were in effect.
+- The latest available date for that URL (so the gap is visible).
 - The full call stack from the program entry point to the offending lookup.
 - The signer / authority that posted the closest available version (when known).
 
@@ -194,7 +226,7 @@ The model intentionally starts without:
 
 - **Manifest / package.json / Cargo.toml** — there is no per-program file declaring dependencies or version ranges. Dependencies are whatever the source code references via `%puck[...]`.
 - **Lockfile** — the cutoff timestamp is the lockfile.
-- **Semver constraint solver** — not present. Semver values are filterable (per call, per UNS), but resolution is still a flat query: pick the latest candidate whose date and semver satisfy whatever constraints are in scope. No SAT solver, no transitive semver propagation, no ranges-against-ranges intersection across the graph. Adding solver behaviour later is possible; the bar should be high.
+- **Semver constraint solver** — not present. Semver values are filterable (per call, per URL), but resolution is still a flat query: pick the latest candidate whose date and semver satisfy whatever constraints are in scope. No SAT solver, no transitive semver propagation, no ranges-against-ranges intersection across the graph. Adding solver behaviour later is possible; the bar should be high.
 - **Transitive version conflicts** — a library deep in the call stack cannot pin a different version than the rest of the tree, because every lookup uses the same active timespan.
 
 The design starts from a position of not needing these mechanisms. Adding any of them later is possible — but each one increases the burden on every script (versions to track, manifests to maintain, conflicts to resolve), so the bar for introducing them should be high.
@@ -220,11 +252,11 @@ The date-pinning model itself does not require a [blockchain](../downloads/servi
 | Surface | Axis | Scope | Set via |
 |---|---|---|---|
 | `%puck.era` (this page) | timestamp | Puck-wide, block-scoped or handle | `%puck.era(min:, max:) do ... end` / `%puck.era` handle |
-| [Per-UNS timestamp](#per-uns-timestamp) (this page) | timestamp | One UNS, live-global | `%puck.config(uns).timestamp = ...` |
-| [Per-UNS semver](semver.md) | semver | One UNS, live-global | `%puck.config(uns).semver = ...` |
-| [Per-call kwargs](../puck-lookup.md#per-call-narrowing) | both | One call | `%puck['uns', ts_min: '...', semver_min: '...']` |
+| [Per-URL timestamp](#per-url-timestamp) (this page) | timestamp | One URL, live-global | `%puck.config(url).timestamp = ...` |
+| [Per-URL semver](semver.md) | semver | One URL, live-global | `%puck.config(url).semver = ...` |
+| [Per-call kwargs](../puck/lookup.md#per-call-narrowing) | both | One call | `%puck['url', ts_min: '...', semver_min: '...']` |
 
-At lookup time the resolver checks every active constraint. If their intersection is empty for a given UNS, the lookup raises [`puck.uno/error/out_of_range`](#out-of-range-alarm). Each narrowing surface can only constrain further; none can expand what an outer surface already permits.
+At lookup time the resolver checks every active constraint. If their intersection is empty for a given URL, the lookup raises [`puck.uno/error/out_of_range`](#out-of-range-alarm). Each narrowing surface can only constrain further; none can expand what an outer surface already permits.
 
 Bounds use the same operator system everywhere — `.cmp` per bound with `>=`/`>` / `<=`/`<` validity rules (call-site kwargs always inclusive) — so intersecting them is purely a numeric exercise on the resolver side.
 
@@ -234,8 +266,8 @@ Bounds use the same operator system everywhere — `.cmp` per bound with `>=`/`>
 ## See also
 
 - [Versioning index](index.md) — slim hub with cross-references.
-- [Semver](semver.md) — per-UNS semver narrowing, and the canonical reference for the bound-operator system (`.min` / `.max` / `.cmp`) reused on this page.
-- [Puck-lookup per-call narrowing](../puck-lookup.md#per-call-narrowing) — `ts_min` / `ts_max` kwargs on the lookup itself; the most local of the three constraint surfaces.
+- [Semver](semver.md) — per-URL semver narrowing, and the canonical reference for the bound-operator system (`.min` / `.max` / `.cmp`) reused on this page.
+- [Puck-lookup per-call narrowing](../puck/lookup.md#per-call-narrowing) — `ts_min` / `ts_max` kwargs on the lookup itself; the most local of the three constraint surfaces.
 - [Blockchain registry](../downloads/service/blockchain/) — where `effective_date` and `posted` are defined.
 
 ---
@@ -243,6 +275,6 @@ Bounds use the same operator system everywhere — `.cmp` per bound with `>=`/`>
 <a id="open-questions"></a>
 ## Open questions
 
-- **Era + semver?**: this surface only narrows by timestamp. Is there a parallel `%puck`-wide *semver* narrowing surface, or is semver constraint strictly per-UNS? If global semver narrowing is wanted, `%puck.era` may not be the right name (it implies time only).
+- **Era + semver?**: this surface only narrows by timestamp. Is there a parallel `%puck`-wide *semver* narrowing surface, or is semver constraint strictly per-URL? If global semver narrowing is wanted, `%puck.era` may not be the right name (it implies time only).
 - **`confine` across role boundaries**: block-scoped eras don't cross role boundaries. Does `confine` follow the same rule, or behave differently because it installs the era as the active `%puck`?
 - **Era equality and reuse**: are two `%puck.era` calls with the same bounds the same era, or distinct handles? Affects whether eras can be cached, shared, compared.

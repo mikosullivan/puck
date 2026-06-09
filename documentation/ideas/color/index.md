@@ -1,6 +1,6 @@
 # Color (pure-Caspian color library)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "color",
 	"role": "brainstorm for puck.uno/color — a pure-Caspian color library built around the 'each color is a cell in a 256×256×256 cube' model; first consumer is the PNG handler, but any code that works with color uses it",

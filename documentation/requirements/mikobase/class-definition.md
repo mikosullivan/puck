@@ -1,6 +1,6 @@
 # Class definitions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "class_definition",
 	"role": "short summary of how classes are defined in Mikobase; full spec lives at ecoverse/worldlets/",

@@ -1,6 +1,6 @@
 # Idea: When Is a UNS Required?
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uns-required-when",
 	"role": "open-question doc: when is a UNS required, optional, forbidden, or recommended across mikobase storage, in-memory Caspian classes, Robinson page files, server classes, and built-ins; to be pinned in a future conversation",
@@ -18,7 +18,7 @@ Not yet specified. A topic to refine in a future conversation.
 Different subsystems treat UNS names differently:
 
 - **Mikobase storage** requires a class to have a UNS — that's how classes
-  are identified and looked up (`%puck['foo.com/character']`).
+  are identified and looked up (`%puck['https://foo.com/character']`).
 - **Caspian in-memory** does not require a UNS for a class.
   `$foo = class ... end` produces a valid anonymous class with no
   identity beyond the variable that holds it.
@@ -29,7 +29,7 @@ Different subsystems treat UNS names differently:
   (`puck.uno/sammy`, `puck.uno/robinson`), built-in classes
   (`puck.uno/exception/error`, `puck.uno/reference`), reference field types
   (`allowed_class: 'foo.com/planet'`), engine-resolved capabilities
-  (`%puck['puck.uno/mikobase/sqlite']`), etc.
+  (`%puck['https://puck.uno/mikobase/sqlite']`), etc.
 
 The framework currently has a working but uncodified intuition about which
 of these need a UNS and which don't. Worth pinning explicitly:

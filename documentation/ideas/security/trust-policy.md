@@ -1,6 +1,6 @@
 # Trust Policy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "trust-policy",
 	"role": "spec for the three-layer trust-policy model: host injects policy at boot, engine enforces it, Caspian consumes resources via %engine; covers CLI default behavior",

@@ -1,6 +1,6 @@
 # Location-Based Reminder App (idea)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "location-reminder-app",
 	"role": "consumer app concept that exercises puck.uno/geo with geofencing and brand-name business matching for location-tied errands; sketched to surface what geo features it would require",

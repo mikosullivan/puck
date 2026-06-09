@@ -1,6 +1,6 @@
 # Hexadecimal
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "hex",
 	"role": "brainstorm: should Puck have a Hexadecimal class — a Number subclass whose default string form is hex?",
@@ -25,7 +25,7 @@ The brainstorm that follows is preserved for that future revisit.
 ## The idea
 
 ```caspian
-$n = %puck['puck.uno/hex'].new(255)
+$n = %puck['https://puck.uno/hex'].new(255)
 $n.to_string    # 'ff'
 $n + 1          # 256 (arithmetic stays numeric)
 

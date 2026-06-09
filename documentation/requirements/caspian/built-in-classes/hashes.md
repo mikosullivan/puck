@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"type": "Hash",
@@ -21,7 +21,7 @@ typically symbols or strings.
 <a id="basic-methods"></a>
 ## Basic Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "basic_methods",
 	"methods": ["[]", "[]=", "has_key?", "keys", "values", "length",
@@ -141,7 +141,7 @@ middle leaves no gap.
 <a id="elements"></a>
 ## Elements
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "elements",
 	"method": "elements",

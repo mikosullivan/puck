@@ -3,7 +3,7 @@
 <a id="introduction"></a>
 ## Introduction
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_is_this",
 	"role": "introduces the Puck ecoverse organized around its three core packages",
@@ -30,7 +30,7 @@ report implementation status.
 <a id="design-principles"></a>
 ## Design principles
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "design_principles",
 	"role": "the design principles that span all three packages",
@@ -59,7 +59,7 @@ without giving them a way through, that's nanny code.
 <a id="puck"></a>
 ## Puck
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "puck_package",
 	"role": "describes the Puck protocol and its features: UNS, %puck lookup and call, version window, library resolution, blockchain",
@@ -85,7 +85,7 @@ See [puck.md](puck/index.md) for the full protocol spec.
   `puck.uno/touchstone/error/x` is not a subclass of
   `puck.uno/error/x` unless explicitly declared.
 - **`%puck[UNS]` lookup.** Caspian code retrieves objects by UNS:
-  `%puck['foo.com/character']`. The puck (the resolver object)
+  `%puck['https://foo.com/character']`. The puck (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
   null.
@@ -112,7 +112,7 @@ See [puck.md](puck/index.md) for the full protocol spec.
 <a id="caspian"></a>
 ## Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "caspian_package",
 	"role": "describes the Caspian language and its features: canonical runtime format, classes, functions, single-threaded with opt-in forking, role-based security, multi-syntax architecture preserved",
@@ -139,7 +139,7 @@ They do not have universal access to file systems or network
 connections. They can only use resources like that if you
 explicitly send them in as paramters. See [roles.md](caspian/roles.md).
 - **[Classes and inheritance](caspian/index.md#classes).**
-  `class 'UNS' ... end` defines a class with fields, properties,
+  `class ... end` defines a class with fields, properties,
   methods, and helpers. Bare/anonymous classes
   (`class\n    inherits ... end`) for cases where identity comes
   from location rather than UNS.
@@ -157,10 +157,10 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception. See
   [caspian-runtime.md](caspian/lucy/index.md).
-- **Built-in [HTTP middleware](caspian/packages/touchstone/) family.**
-  [Touchstone](caspian/packages/touchstone/index.md) provides the
+- **Built-in [HTTP middleware](requirements/caspian/network/http/server/touchstone/) family.**
+  [Touchstone](requirements/caspian/network/http/server/touchstone/index.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). [Sammy](caspian/packages/touchstone/sammy.md) is a built-in
+  CSP). [Sammy](requirements/caspian/network/http/server/sammy/index.md) is a built-in
   framework on Touchstone for route-style serving.
 
 ---
@@ -168,7 +168,7 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
 <a id="mikobase"></a>
 ## Mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "mikobase_package",
 	"role": "describes the Mikobase object store and its features: Q0 query language, class-based NoSQL, three v1 engines, worldlets as export format, live process model; temporal history is an opt-in mode",
@@ -220,7 +220,7 @@ See [mikobase.md](mikobase/index.md) for the full spec.
 <a id="implementation-status"></a>
 ## Implementation status
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "implementation_status",
 	"role": "tracks the development status of each Puck ecoverse component",

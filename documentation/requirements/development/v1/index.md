@@ -1,6 +1,6 @@
 # V1
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "v1_plan",
 	"role": "Puck-wide V1 plan: components in scope, cross-cutting principles, navigation pointer to per-component build plans. Caspian-specific slice progression lives in caspian/index.md; per-component plans land here as they get scoped.",
@@ -26,7 +26,7 @@ the Caspian engine in [caspian/index.md](caspian/index.md).
 <a id="components"></a>
 ## Components in V1
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"v1_in": ["caspian", "caspian_cli", "mikobase", "touchstone", "sammy",
 		"trivet", "uma", "bryton", "jasmine", "puck_identity",
@@ -81,7 +81,7 @@ talks to via a thin HTTP client.
 <a id="cross-cutting-principles"></a>
 ## Cross-cutting principles
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "cross_cutting_principles",
 	"scope": "puck_wide",

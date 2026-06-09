@@ -1,6 +1,6 @@
 # Q0 as an index
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_q0_as_index",
 	"role": "placeholder idea note: a Mikobase Q0 query can be saved as an index, unifying the database concepts of view (saved query) and index (optimized lookup) into a single object",

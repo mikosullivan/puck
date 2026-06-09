@@ -1,6 +1,6 @@
 # Marina
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "marina",
 	"role": "set-aside design exploration of Puck, Q0, and class definitions; preserved for possible revisit and incorporation into the final design",

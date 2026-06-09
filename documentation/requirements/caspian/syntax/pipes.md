@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"role": "introduces the Caspian pipe operator for chaining in execution order",
@@ -20,7 +20,7 @@ This provides a more readable and intuitive alternative to deeply nested express
 <a id="basic-pipe-operator"></a>
 ## Basic Pipe Operator
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "basic_pipe_operator",
 	"role": "defines the | operator: passes left result as first and only arg to right",
@@ -71,7 +71,7 @@ Same shape as Elixir's `|>`, F#'s `|>`, R's `%>%`.
 <a id="chaining-pipes"></a>
 ## Chaining Pipes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "chaining_pipes",
 	"role": "shows how multiple | operators desugar to nested function calls",
@@ -98,7 +98,7 @@ desugars to:
 <a id="example-method-calls"></a>
 ## Example: Method Calls
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "example_method_calls",
 	"role": "illustrates pipe chaining with method calls on objects",
@@ -127,7 +127,7 @@ This allows writing code in the same order as execution.
 <a id="design-principle"></a>
 ## Design Principle
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "design_principle",
 	"role": "states the core design rule: pipes express data flow in execution order",
@@ -144,7 +144,7 @@ Each stage receives exactly one input: the result of the previous stage.
 <a id="null-safe-pipe-operator"></a>
 ## Null-Safe Pipe Operator (`|&`)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "null_safe_pipe_operator",
 	"role": "documents the |& operator for null propagation through a pipe chain",
@@ -170,7 +170,7 @@ The pipe system introduces a similar concept.
 <a id="syntax-1"></a>
 ## Syntax
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "null_safe_syntax",
 	"role": "shows the |& operator syntax",
@@ -187,7 +187,7 @@ a |& b
 <a id="semantics-1"></a>
 ## Semantics
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "null_safe_semantics",
 	"role": "explains that |& enables null propagation mode for all subsequent pipe stages",
@@ -221,7 +221,7 @@ is equivalent to:
 <a id="execution-model"></a>
 ## Execution Model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "execution_model",
 	"role": "shows the desugared if-null-return expansion for null-safe pipe chains",
@@ -254,7 +254,7 @@ return &gup(y)
 <a id="design-rule"></a>
 ## Design Rule
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "null_safe_design_rule",
 	"role": "states the rule that |& once used propagates null through all subsequent stages",
@@ -270,7 +270,7 @@ This avoids repetition while keeping intent clear.
 <a id="summary"></a>
 ## Summary
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "summary",
 	"role": "quick reference table for pipe operator meanings",
@@ -288,7 +288,7 @@ This avoids repetition while keeping intent clear.
 <a id="future-considerations-optional"></a>
 ## Future Considerations (Optional)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "future_considerations",
 	"role": "lists intentionally deferred pipe features for possible future design",

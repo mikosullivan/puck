@@ -1,6 +1,6 @@
 # Puck (the Protocol)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puck",
 	"role": "language-agnostic remote object protocol — instantiate a remote class, hold a reference, call its methods, treat it like a local object",
@@ -22,7 +22,7 @@ object is in-process or across the network.
 
 Any language that can speak JSON over HTTP can be a Puck client.
 [Caspian](../caspian/index.md) ships first-class integration (see
-[caspian/puck.md](../caspian/puck.md)) and is the primary client today, but
+[caspian/puck/index.md](../caspian/puck/index.md)) and is the primary client today, but
 the protocol is not Caspian-specific.
 
 For the formal wire-protocol spec — class definitions, request and
@@ -38,17 +38,14 @@ response shapes, dynamic vs stored objects, versioning — see
 **inherently remote**: the data (weather feeds, census databases, map
 tiles) lives on the server side.
 
-The workflow is the standard one: **resolve the class by UNS,
+The workflow is the standard one: **resolve the class by URL,
 instantiate it, then use it.**
 
 ```python
 import puck
 
-# Resolve the class
-Geo = puck.lookup('puck.uno/geo')
-
-# Instantiate with a location — Starfleet HQ, San Francisco
-hq = Geo(lat=37.7980, lon=-122.4626)
+# Resolve and instantiate in one step — Starfleet HQ, San Francisco
+hq = puck.lookup('puck.uno/geo')(lat=37.7980, lon=-122.4626)
 
 # Call the class's manufactured methods
 hq.weather                  # current weather report at that location

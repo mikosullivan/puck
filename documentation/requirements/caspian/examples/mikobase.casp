@@ -22,7 +22,7 @@ EOF
 }
 EOF
 
-$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db')
+$mikobase = %puck['https://puck.uno/mikobase/sqlite'].new('/path/to/db')
 
 %vibecode <<EOF
 {
@@ -94,7 +94,7 @@ $mikobase.q0({
 }
 EOF
 
-$hot_hive = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
+$hot_hive = %puck['https://puck.uno/mikobase/sqlite'].new('/path/to/db', hot: true)
 
 %vibecode <<EOF
 {
@@ -140,7 +140,7 @@ end
 }
 EOF
 
-$server = %puck['puck.uno/mikobase/http'].new(
+$server = %puck['https://puck.uno/mikobase/http'].new(
     mikobase:   $mikobase,
     socket: '/var/run/myhive.sock',
     auth:   :peer
@@ -154,7 +154,7 @@ $server.start
 }
 EOF
 
-$remote = %puck['puck.uno/mikobase/http'].connect(
+$remote = %puck['https://puck.uno/mikobase/http'].connect(
     socket: '/var/run/myhive.sock',
     auth:   :peer,
     hot:    true

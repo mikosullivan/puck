@@ -1,6 +1,6 @@
 # Roles
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "overview",
     "role": "the official security model for Caspian: every object owned by a role, code runs as the owning role of the function-object executing it, security boundaries are cross-role calls, faucets are the only way to pull objects in, jails are the explicit narrowing mechanism",
@@ -46,7 +46,7 @@ own role, and cross-role interaction is the security-relevant event.
 <a id="core-concept"></a>
 ## Core Concept
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "core_concept",
     "key_properties": ["code_runs_under_exactly_one_role", "all_other_roles_untrusted_by_default",
@@ -73,7 +73,7 @@ each role on its own terms.
 <a id="the-role-system-method"></a>
 ## The `%role` System Surface
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "role_system_surface",
     "surface": "%role",
@@ -96,7 +96,7 @@ shape as `%puck` (both a callable lookup and a namespace).
 
 ### `%role.delegate_to`
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "method": "%role.delegate_to",
     "form": "%role.delegate_to(<role>) do ... end",
@@ -153,7 +153,7 @@ agent operating with their authority.
 
 #### Frame-scoped delegations (the canonical mechanism)
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "subsection": "frame_scoped_delegations",
     "where_the_delegation_lives": "on_the_stack_frame_the_delegate_to_block_creates",
@@ -183,7 +183,7 @@ See [`drinian/` § role delegations](https://puck.uno/documentation/requirements
 <a id="engine-startup-initial-roles"></a>
 ## Engine Startup: Initial Roles
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "engine_startup_roles",
     "minimum": ["user", "stdlib", "clock", "randomizer", "utils"],
@@ -227,7 +227,7 @@ reference syntax is TBD.
 <a id="role-transitions"></a>
 ## Role Transitions
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "role_transitions",
     "rule": "functions_and_closures_always_run_as_their_defining_role",
@@ -289,7 +289,7 @@ lifetime; A doesn't lose state because it called B.
 <a id="what-is-not-checked-at-a-boundary"></a>
 ## What Is NOT Checked at a Boundary
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "no_method_level_gating",
     "rule": "anything_with_object_access_can_call_any_method",
@@ -340,7 +340,7 @@ the narrowing easy.
 <a id="chainisolate-do-end"></a>
 ## `%chain.isolate do ... end`
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "chain_isolate",
     "method": "%chain.isolate",
@@ -395,7 +395,7 @@ another function.
 <a id="exceptions-and-alarms"></a>
 ## Exceptions and Alarms
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "exceptions_and_alarms",
     "regular_exceptions": "travel_up_stack_catchable_normal_unwinding",
@@ -446,7 +446,7 @@ revisitation.
 <a id="how-objects-get-their-owning-role"></a>
 ## How Objects Get Their Owning Role
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "object_ownership_assignment",
     "external_objects": "owned_by_faucets_role",
@@ -503,7 +503,7 @@ value; it doesn't change because the value's location changed.
 <a id="faucets"></a>
 ## Faucets
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "faucets",
     "definition": "any_resource_through_which_objects_enter_the_runtime",
@@ -538,7 +538,7 @@ values but doesn't *own* them.
 <a id="filesystem-directory-jails"></a>
 ### Filesystem: directory jails
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "directory_jails",
     "definition": "directory_object_that_hides_its_real_path",
@@ -621,7 +621,7 @@ through it inherits that role**.
 <a id="cross-role-trust"></a>
 ## Cross-Role Trust
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "cross_role_trust",
     "directed": true,
@@ -747,7 +747,7 @@ To explore in a future round.
 <a id="implementation-growth-path"></a>
 ## Implementation growth path
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "implementation_growth_path",
 	"role": "per-slice plan for layering the role system in, starting at V0.01 and growing through V1",
@@ -773,7 +773,7 @@ path. The primitives bake in from the first slice and grow outward.
 The minimum to support hello-world's single cross-role call
 (`user` → string-class role → `user`):
 
-~~~json
+~~~vibecode
 {"vibecode": {"v001_role_footprint":
 	{"registry_entries_min": ["user", "stdlib"],
 	"value_layer": "every_value_carries_owning_role_slot_immutable_after_creation",
@@ -802,7 +802,7 @@ The minimum to support hello-world's single cross-role call
 <a id="implementation-growth-by-slice"></a>
 ### Growth by slice
 
-~~~json
+~~~vibecode
 {"vibecode": {"growth_path": [
 	{"slice": "v0.01", "adds": "core_primitives_registry_owning_role_transition_role_chain_wipe"},
 	{"slice": "v0.02", "adds": "transpiler_role; ksj_emitted_tagged_with_caller_role"},

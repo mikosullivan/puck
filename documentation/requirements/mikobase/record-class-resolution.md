@@ -1,6 +1,6 @@
 # Record class resolution
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "record_class_resolution",
 	"role": "specifies how the class of every value inside a record's bucket is determined; covers the coexisting mechanisms (default hash, schema-declared field class, reserved inline class key, custom_classes UUID marker) and the precedence rules when more than one signal is present",

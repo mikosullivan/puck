@@ -2,7 +2,7 @@
 
 *Hand control of a running Caspian process over to an AI agent at an explicit point in the code. The agent inspects state, decides what to do, optionally acts, and returns control with a value.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_agent_yield",
 	"role": "design sketch for a Caspian construct that pauses execution at an explicit call site and hands the running process to an AI agent for one decision or action before resuming",
@@ -28,7 +28,7 @@ The line above asks "agent, take over here — when you're done, give me back a 
 
 ## Protocol
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "protocol",
 	"transport": "acp",
@@ -177,7 +177,7 @@ The agent's function can only see its declared parameters. That's the language's
 
 ## Security testing
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "security_testing_use_case",
 	"kind": "high_value_use_case",

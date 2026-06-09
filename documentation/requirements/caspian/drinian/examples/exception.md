@@ -1,6 +1,6 @@
 # Exception at the top of the stack
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "exception_at_top_of_stack",
 	"shows": "snapshot_taken_at_raise_time_with_exception_as_topmost_call_stack_element",
 	"shape": "five_frame_call_stack_with_exception_as_action_at_top",

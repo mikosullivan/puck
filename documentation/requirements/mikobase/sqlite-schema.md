@@ -3,7 +3,7 @@
 <a id="records"></a>
 ## `records`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "records_table",
 	"role": "defines the records identity table with immutable UUID pk and no-update trigger",
@@ -33,7 +33,7 @@ end;
 <a id="records_history"></a>
 ## `records_history`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "records_history_table",
 	"role": "defines the append-only version history table with class name uniqueness trigger",
@@ -106,7 +106,7 @@ end;
 <a id="views"></a>
 ## Views
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "views",
 	"role": "defines the current_records view that shows the latest active row per record",
@@ -145,7 +145,7 @@ and active = 1;
 <a id="files"></a>
 ## `files`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "files_table",
 	"role": "defines the files metadata table with sha256 deduplication and immutability",
@@ -178,7 +178,7 @@ end;
 <a id="file_chunks"></a>
 ## `file_chunks`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "file_chunks_table",
 	"role": "defines the file content storage table with chunk ordering and last-chunk marker",
@@ -211,7 +211,7 @@ end;
 <a id="notes"></a>
 ## Notes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "notes",
 	"role": "summary of schema-wide invariants: immutability, soft deletes, historical reads, class column",

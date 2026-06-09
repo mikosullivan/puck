@@ -2,7 +2,7 @@
 
 *The different ways libraries get pulled into a Caspian process.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "downloads_hub",
 	"role": "hub for the downloads area — the spec for how libraries are pulled into a running Caspian process. %puck is the library faucet; the subdirs here document the sources it pulls from.",

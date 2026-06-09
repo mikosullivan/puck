@@ -1,6 +1,6 @@
 # Puckai response logging via Jasmine
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_puckai_response_logging_jasmine",
 	"role": "placeholder idea note: Puckai's response-logging story (puck.uno/ai/agent's log destination, the worldlet's forward destination, etc.) will be made easy by hooking into Jasmine, the existing Caspian logging package",

@@ -1,6 +1,6 @@
 # Events
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "events",
 	"role": "spec for Caspian's event-broadcasting system — any object can listen for events broadcast by any other object. The source explicitly broadcasts via %utils.broadcast; listeners register either by naming a method on themselves (.object.listen_to with method-name string) or by passing a closure (%utils.register with do block). The engine routes broadcast → handler calls. Zero cost when no listeners are registered; synchronous single-threaded execution; registrations clean up automatically via GC for the method-name form, and via source-GC or explicit unregister for the closure form.",
@@ -195,7 +195,7 @@ When `$foo` broadcasts `'event_name'`, its own `method_name` fires (as one of th
 
 Payload args are passed by reference. A handler can mutate them, and subsequent handlers see the mutated values. This is intentional — handlers can deliberately communicate by chaining through the payload.
 
-If a broadcaster doesn't want its payload mutated, it should freeze the hash or [jail](../network/http.md#http-jail) the object before dispatching.
+If a broadcaster doesn't want its payload mutated, it should freeze the hash or [jail](../network/http/client/index.md#http-jail) the object before dispatching.
 
 ### Exceptions bubble normally
 
@@ -461,6 +461,6 @@ end
 
 ## See also
 
-- [`%utils`](../utils/) — the system-utility namespace `broadcast` and `register` live under.
+- [`%utils`](../global-methods/utils/) — the system-utility namespace `broadcast` and `register` live under.
 - [`.object` meta-namespace](../built-in-classes/object.md) — where `listen_to` and the introspection methods live.
 - [Roles](../roles.md) — handler-runs-in-its-own-role follows from normal method dispatch.

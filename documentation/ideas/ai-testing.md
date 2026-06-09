@@ -2,7 +2,7 @@
 
 *Placeholder. We haven't designed a mock-agent system; we expect one to emerge as we build AI-using features and run into the testability question in practice. This doc captures what's been noticed so far so the thinking accumulates as we go.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_ai_testing",
 	"role": "placeholder for emerging thoughts on how to test Caspian code that interacts with AI agents — primarily the mock-agent mechanism that any test framework will eventually need",

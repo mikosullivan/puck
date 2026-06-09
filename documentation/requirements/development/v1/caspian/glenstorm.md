@@ -1,6 +1,6 @@
 # Glenstorm
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Glenstorm", "delivers": "bryton", "goal":
 "first_usable_bryton_runner_executes_a_directory_of_test_files_and_aggregates_xeme_results",
 "directive": "keep_very_light_per_user_instruction_2026-05-15",
@@ -57,7 +57,7 @@ Xeme), layered on top of the engine.
 <a id="glenstorm-prerequisites"></a>
 ### Prerequisites
 
-~~~json
+~~~vibecode
 {"vibecode": {"glenstorm_prerequisites":
 ["aslan_engine_can_run_ksj_end_to_end",
 "bree_caspian_text_parser_and_transpiler_so_test_files_can_be_caspian_source",
@@ -93,7 +93,7 @@ Three phases, same three-step shape as Aslan:
 <a id="phase-0-lua-host-workbench-for-bryton"></a>
 #### Phase 0: Lua-host workbench for Bryton
 
-~~~json
+~~~vibecode
 {"vibecode": {"glenstorm_phase_0_purpose":
 "verify_lua_host_capabilities_bryton_needs_before_writing_bryton_code",
 "steps_count": 3, "acceptance":
@@ -115,7 +115,7 @@ Three phases, same three-step shape as Aslan:
 <a id="phase-1-runner-implementation"></a>
 #### Phase 1: runner implementation
 
-~~~json
+~~~vibecode
 {"vibecode": {"glenstorm_phase_1_steps":
 [{"step": 1, "name": "walk_directory_collect_test_files"},
 {"step": 2, "name": "run_one_file_as_subprocess_capture_stdout"},
@@ -155,7 +155,7 @@ Detailed test plan lives under [Testing](#testing) below (TGl.2.1–TGl.2.3).
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "phase_0_test_directory": "tests/bryton/glenstorm/sanity/",
 "phase_1_test_directory": "tests/bryton/glenstorm/unit/",
@@ -207,7 +207,7 @@ step's behavior.
 <a id="glenstorm-phase-2-test-plan"></a>
 ### Phase 2 acceptance test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"glenstorm_phase_2_tests":
 [{"id": "TGl.2.1", "verifies": "trivial_pass_case"},
 {"id": "TGl.2.2", "verifies": "trivial_fail_case_message_surfaces"},
@@ -233,7 +233,7 @@ When all three pass, Glenstorm Bryton ships.
 <a id="glenstorm-test-layout"></a>
 ### Test layout
 
-~~~json
+~~~vibecode
 {"vibecode": {"glenstorm_test_layout":
 {"runner_implementation_under":
 "code/bryton/lua/bryton/",

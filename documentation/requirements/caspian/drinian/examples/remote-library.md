@@ -1,6 +1,6 @@
 # Loaded remote library
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "loaded_remote_library",
 	"shows": "drinian_after_runtime_loading_a_puck_library_and_calling_a_method_on_it; demonstrates_trust_barrier_via_cross_role_chain_wipe",
 	"shape": "srcs_mixes_file_and_uns_entries; roles_includes_loaded_library; chain_isolation_at_role_boundary",
@@ -18,7 +18,7 @@ the loaded library — there's no user-source line to mark; the
 library is doing the work):
 
 ~~~caspian
-$markdown = %puck['markdown.uno/render']
+$markdown = %puck['https://markdown.uno/render']
 %chain.misc.api_token = 'sk-secret-abc123'
 $html = $markdown.to_html('# Hello')    # CAPTURED while inside to_html
 puts $html
@@ -95,7 +95,7 @@ What to notice:
 - **The library's class is not visible in the snapshot.** Class
   registries are engine-private state, not part of Drinian — see
   [drinian.md § Classes are NOT in Drinian](../../drinian/index.md#classes-not-in-drinian).
-  `Renderer` was registered when `%puck['markdown.uno/render']` ran
+  `Renderer` was registered when `%puck['https://markdown.uno/render']` ran
   at top level on line 1; the dispatcher knows about it because the
   engine's class registry knows about it, not because the snapshot
   shows it. Dispatch resolves `class_ref: "Renderer"` and

@@ -1,6 +1,6 @@
 # Development
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "development_overview",
 	"role": "navigation page for Puck development docs. Each major version has its own plan file in this directory; this page just lists them.",

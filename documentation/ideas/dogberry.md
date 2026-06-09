@@ -1,6 +1,6 @@
 # Dogberry
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "status": "active_brainstorm",
     "started": "2026-05-17",
@@ -20,7 +20,7 @@ shape; for now this file is a workspace.
 <a id="concept"></a>
 ## Concept
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "concept",
     "category": "transforming_proxy",

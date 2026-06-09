@@ -2,7 +2,7 @@
 
 *Attaching AI-skill definitions to a worldlet so the receiving agent can apply them when handling the session's issues.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_puckai_skills",
 	"role": "design note for attaching AI skills to Puckai worldlets — all skill definitions live in a single `skills` hash in the worldlet's top-level vibecode; issues reference those skills by id. Each definition is either a URL pointing at a standalone skill vibecode document or the full skill content inline.",

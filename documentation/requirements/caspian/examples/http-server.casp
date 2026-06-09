@@ -1,4 +1,4 @@
-$server = %puck['puck.uno/dogberry'].new()
+$server = %puck['https://puck.uno/dogberry'].new()
 $foo = 'bar'
 
 $server.get('/') do($request, $response)

@@ -1,6 +1,6 @@
 # Object Signing and the Blockchain Registry
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "blockchain",
 	"role": "design spec for Puck's object-signing and blockchain registry: how UNS-addressed objects prove provenance and integrity",

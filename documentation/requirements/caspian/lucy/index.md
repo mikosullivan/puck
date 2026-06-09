@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"language": "Caspian",
@@ -25,7 +25,7 @@ Caspian has been in development conceptually for approximately twenty years.
 <a id="host-language-why-lua"></a>
 ## Host Language: Why Lua
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "host_language_why_lua",
 	"choice": "lua",
@@ -75,7 +75,7 @@ gets us most of the way without it.
 <a id="philosophy"></a>
 ## Philosophy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "philosophy",
 	"core_principle": "everything_that_can_be_written_in_caspian_should_be",
@@ -142,7 +142,7 @@ The Lua implementation requires Lua plus three C libraries:
 - **libmicrohttpd** — embedded HTTP server powering `puck.uno/mikobase/http`;
   handles concurrent connections at the C level
 - **libsodium** — all cryptographic needs: `%utils.random.uuid` (CSPRNG-backed
-  UUIDs, see [utils.md](../utils/index.md#utilsrandomuuid)), Ed25519 signing for the
+  UUIDs, see [utils.md](../global-methods/utils/index.md#utilsrandomuuid)), Ed25519 signing for the
   Puck blockchain (see [blockchain.md](../blockchain/.md)). One audited
   security-focused library covers both, on every platform Lua runs on
 
@@ -161,7 +161,7 @@ explain the mistake clearly. A confusing error message is a bug.
 <a id="design-principles"></a>
 ## Design Principles
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "design_principles",
 	"principles": ["lightweight_and_embeddable", "no_threading_or_forking",
@@ -205,7 +205,7 @@ engine grants on request (off by default).
 ### Timeouts
 
 Caspian does not use threads, but untrusted code must not be allowed to run indefinitely.
-A function downloaded from a remote Puck object — `%puck['borg.com/riker']` — might
+A function downloaded from a remote Puck object — `%puck['https://borg.com/riker']` — might
 be an infinite loop or a cryptocurrency miner. The `%utils.timeout` method wraps a block with a
 hard time limit:
 
@@ -396,7 +396,7 @@ is the language; CaspianJ is the wire format.
 <a id="relationship-to-other-systems"></a>
 ## Relationship to Other Systems
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "relationship_to_other_systems",
 	"q0": "selects_and_filters_records_complementary_not_overlapping",
@@ -417,7 +417,7 @@ is the language; CaspianJ is the wire format.
 <a id="primitives"></a>
 ## Primitives
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "primitives",
 	"types": ["String", "Number", "Boolean", "Null", "Array", "Hash"],
@@ -496,7 +496,7 @@ classes. This behavior cannot be changed. But you can create instances directly:
 
 ```
 $my_null = %puck['null'].new
-$my_null = %puck['puck.uno/null'].new   # same thing
+$my_null = %puck['https://puck.uno/null'].new   # same thing
 ```
 
 **Truthiness is immutable.** Any instance of `puck.uno/null` or its subclasses is always
@@ -514,11 +514,11 @@ null flavors preserve it.
 In Caspian, you can subclass `puck.uno/null` to create domain-specific null types:
 
 ```
-class 'myapp.com/null/unknown'
+class
     inherits 'puck.uno/null'
 end
 
-class 'myapp.com/null/not_applicable'
+class
     inherits 'puck.uno/null'
 end
 ```
@@ -527,7 +527,7 @@ Instances of these classes are falsey in all conditionals, but carry type inform
 that code can inspect when needed:
 
 ```
-$val = %puck['myapp.com/null/unknown'].new
+$val = %puck['https://myapp.com/null/unknown'].new
 
 if($val)
     # never entered — $val is falsey
@@ -592,7 +592,7 @@ appearance is a parse error.
 <a id="variables"></a>
 ## Variables
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "variables",
 	"sigil": "$",
@@ -615,7 +615,7 @@ around other use cases in the future.
 <a id="exceptions-and-warnings"></a>
 ## Exceptions and Warnings
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "exceptions_and_warnings",
 	"shared_shape": ["class", "id", "bucket"],
@@ -1088,7 +1088,7 @@ familiarity argument carried the day.
 <a id="structured-non-local-control-flow"></a>
 ## Structured Non-Local Control Flow
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "structured_non_local_control_flow",
 	"principle": "every_named_non_local_exit_is_a_typed_exception_unwinding_until_a_registered_handler_matches",
@@ -1264,7 +1264,7 @@ with it.
 <a id="cross-role-boundaries-open"></a>
 ### Cross-role boundaries — open
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "cross_role_boundaries",
 	"status": "open_question_to_settle_when_role_boundary_semantics_solidify",
@@ -1301,7 +1301,7 @@ place (the unwinder's boundary check) once it's made.
 <a id="what-this-buys-the-implementation"></a>
 ### What this buys the implementation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"implementation_payoff": ["single_Control_type",
 		"single_throw_function", "single_stack_walking_unwinder",
@@ -1336,7 +1336,7 @@ absorbs control then becomes a thin layer over the same primitive.
 <a id="conditional-constructs-share-one-primitive"></a>
 ## Conditional Constructs Share One Primitive
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "conditional_constructs_share_one_primitive",
 	"principle": "if_and_while_share_one_condition_body_primitive_at_runtime; they_differ_only_in_orchestration",
@@ -1422,7 +1422,7 @@ it reports done.
 <a id="what-this-buys-the-implementation-1"></a>
 ### What this buys the implementation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"sharing_payoff": ["one_condition_evaluation_path",
 		"one_body_execution_path",
@@ -1489,7 +1489,7 @@ mechanism but not the **condition-evaluation** mechanism.
 <a id="block-parameter-binding"></a>
 ## Block Parameter Binding
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "block_parameter_binding",
 	"principle": "every_construct_that_takes_a_block_with_parameters_binds_names_to_values_via_one_shared_primitive",
@@ -1572,7 +1572,7 @@ that the runtime creates before invoking the block.
 <a id="unified-name-resolution"></a>
 ## Unified Name Resolution
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "unified_name_resolution",
 	"principle": "every_named_reference_resolves_through_one_lookup_primitive_parameterized_by_namespace_chain",
@@ -1652,7 +1652,7 @@ for method dispatch) is just a longer chain.
 <a id="typed-structured-events"></a>
 ## Typed Structured Events
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "typed_structured_events",
 	"principle": "exceptions_warnings_change_signals_and_log_entries_share_one_shape_and_one_emission_primitive_differing_only_in_runtime_behavior",
@@ -1739,7 +1739,7 @@ event's class metadata, not from which `%chain.X` method was called.
 <a id="open-2"></a>
 ### Open
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"events_open": [
 		"unifying_terminology_event_vs_signal_vs_flag",
@@ -1772,7 +1772,7 @@ event's class metadata, not from which `%chain.X` method was called.
 <a id="object-model"></a>
 ## Object Model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "object_model",
 	"canonical_spec": "see ../../ecoverse/objects/ for the full structural model; this section summarizes the parts a Caspian programmer touches",
@@ -1974,7 +1974,7 @@ Every object has a reserved helper called `object` that cannot be overridden. It
 <a id="helpers"></a>
 ## Helpers
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "helpers",
 	"base_class": "puck.uno/helper",
@@ -2040,7 +2040,7 @@ mechanism, and more. If those methods lived directly on every object, then a
 user defining a trivial class with one method:
 
 ```caspian
-class 'myapp.com/connection'
+class
     function &send($msg)
         ...
     end
@@ -2077,7 +2077,7 @@ their own concerns.
 User code uses the same pattern. A `myapp.com/connection` class might declare:
 
 ```caspian
-class 'myapp.com/connection'
+class
     function &send($msg) ... end
 
     helper transport
@@ -2160,13 +2160,13 @@ keeping them out of the main method namespace.
 <a id="classes"></a>
 ## Classes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "classes",
 	"identity": "from_reference_held_not_declared_name",
 	"no_global_registry": true,
 	"puck_namespace": "%puck[UNS] to access registered objects",
-	"definition": "$myclass = class...end or %puck['puck.uno/object'].subclass do...end",
+	"definition": "$myclass = class...end or %puck['https://puck.uno/object'].subclass do...end",
 	"subclassing": "$new_class = $my_class.subclass do...end",
 	"accessors": "declared with accessor @foo :get :set default:",
 	"abstract": "abstract true prevents direct instantiation",
@@ -2187,8 +2187,8 @@ reference held to it, not from a declared name. To use a class, you need a refer
 but is not limited to classes.
 
 ```
-%puck['puck.uno/mikobase/memory'].new
-%puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
+%puck['https://puck.uno/mikobase/memory'].new
+%puck['https://puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
 ```
 
 In the first version, `%puck` only resolves a predefined set of built-in objects. When
@@ -2217,7 +2217,7 @@ end
 For developers who need explicit access to the root class:
 
 ```
-$myclass = %puck['puck.uno/object'].subclass do
+$myclass = %puck['https://puck.uno/object'].subclass do
 end
 ```
 
@@ -2334,7 +2334,7 @@ end
 <a id="functions"></a>
 ## Functions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "functions",
 	"first_class": true,
@@ -2360,7 +2360,7 @@ See `caspian.md` for function definition and call syntax.
 <a id="on-call-property"></a>
 ### `on_call`: dispatch identity as a function property
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "on_call_property",
 	"role": "function objects carry an on_call property that selects unicast (:first, the default) or multicast (:all) dispatch behavior; data not syntax — same dispatch walk, different stopping rule",
@@ -2483,7 +2483,7 @@ If you want named blocks, pass functions as named parameters instead.
 ### Bare Word Commands
 
 A bare word command (bwc) is an unqualified word used as a method call. When the
-interpreter encounters a bwc, it looks in `%scope` to find the correct association.
+interpreter encounters a bwc, it looks in the current lexical scope to find the correct association.
 
 This section documents the underlying dispatcher mechanism. For Caspian's language-wide
 commitment to using DSLs (the four-tier model, function-property convention, loop and
@@ -2529,7 +2529,7 @@ yielded block — any nested function calls or blocks inside that block run with
 <a id="scoping"></a>
 ## Scoping
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "scoping",
 	"scope_per_block": true,
@@ -2551,7 +2551,7 @@ is no special closure type — any function becomes a closure when passed a scop
 <a id="system-methods"></a>
 ## System Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "system_methods",
 	"prefix": "%",
@@ -2592,7 +2592,7 @@ call stack.
 
 `%chain` does **not** isolate at block boundaries. A write to `%chain['foo']` inside an
 `if`, loop, or bare block persists after the block ends — chain flows freely through
-blocks within the same function. This is unlike `%scope`, where every block creates a new
+blocks within the same function. This is unlike the lexical scope of `$foo` variables, where every block creates a new
 inherited scope.
 
 Isolation happens at **function call boundaries**. When a function is called, it gets its
@@ -2862,7 +2862,7 @@ The [`bucket` helper](../built-in-classes/object.md#bucket-helper) returns a jai
 <a id="change-signals"></a>
 ## Change Signals
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "change_signals",
 	"trigger": "hash_key_assigned_new_object",

@@ -1,6 +1,6 @@
 # Structure
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "object_structure_fields",
 	"role": "spec for the bucket and stack fields on every object, plus the stickiness rules that govern stack mutability; part of the universal object structure spec (see index.md)",
@@ -33,7 +33,7 @@ In practice either field may be absent — for example, when importing from a pl
 
 ## Bucket
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "bucket",
 	"role": "describes the bucket field — a hash that holds the object's data; accepts anything storable in a JSON hash"
@@ -46,7 +46,7 @@ There are no namespace rules inside `bucket` — no reserved keys, no reserved k
 
 ## Stack
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "stack",
 	"role": "describes the stack field — a hash of platters that holds the object's class identity and other meta-information"
@@ -167,7 +167,7 @@ This is the same `vibecode` convention used at the top of markdown documents, at
 
 ## Stickiness
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "stickiness",
 	"role": "defines the sticky flag on a platter, the engine-only / one-way rule, and the downward-propagation rule that turns adjacent sticky platters into stuck positions"

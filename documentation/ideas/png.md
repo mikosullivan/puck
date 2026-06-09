@@ -1,6 +1,6 @@
 # PNG handler (pure Caspian)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "png",
 	"role": "brainstorm for a pure-Caspian PNG encoder/decoder, intended to ship as a Puck service at puck.uno; foundation for downstream image work including QR codes",

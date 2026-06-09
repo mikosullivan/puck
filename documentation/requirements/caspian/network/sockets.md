@@ -1,6 +1,6 @@
 # Raw sockets
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "network_sockets",
 	"role": "spec for Caspian's raw socket classes — the foundational layer of the network surface. Covers TCP, UDP, SSL/TLS wrapping, and the TCP listener. Used directly for custom protocols; used indirectly (by HTTP, SMTP, etc.) for everything else.",
@@ -15,7 +15,7 @@
 }}
 ~~~
 
-The foundational layer of Caspian's network surface. Most scripts won't use these directly — they'll use the [HTTP](http.md) / [SMTP](smtp.md) / other protocol classes built on top — but the raw layer is fully available without ceremony.
+The foundational layer of Caspian's network surface. Most scripts won't use these directly — they'll use the [HTTP](http/) or other protocol classes built on top — but the raw layer is fully available without ceremony.
 
 See [the network index](index.md) for the top-level `%net` surface, the permission model, and the cross-cutting exception classes.
 
@@ -31,7 +31,7 @@ A TCP connection — outbound or inbound.
 ```
 $sock = %net.tcp('host.com', 5000)
 # or equivalent:
-$sock = %puck['puck.uno/socket/tcp'].new(host: 'host.com', port: 5000, timeout: 30)
+$sock = %puck['https://puck.uno/socket/tcp'].new(host: 'host.com', port: 5000, timeout: 30)
 ```
 
 Opens a connection synchronously. Raises if the host isn't allowlisted, the connection is refused, DNS fails, or the connection times out.
@@ -119,7 +119,7 @@ A TLS-wrapped TCP socket. Either constructed from an existing TCP socket via `.s
 **Construction (direct):**
 
 ```
-$sock = %puck['puck.uno/socket/ssl'].new(host: 'host.com', port: 443)
+$sock = %puck['https://puck.uno/socket/ssl'].new(host: 'host.com', port: 443)
 ```
 
 **Construction (upgrade existing TCP):**
@@ -186,6 +186,5 @@ Listening requires the listen grant — see [permissions](index.md#permissions).
 ## See also
 
 - [Network index](index.md) — top-level `%net` surface, I/O model, exception classes, permission model.
-- [HTTP](http.md) — high-level HTTP client built on `puck.uno/socket/tcp` + `puck.uno/socket/ssl`.
-- [SMTP](smtp.md) — high-level email-send client; uses TCP + STARTTLS.
-- [DNS resolution](dns.md) — name resolution alongside socket use.
+- [HTTP](http/) — high-level HTTP client built on `puck.uno/socket/tcp` + `puck.uno/socket/ssl`.
+- [DNS resolution (post-V1)](../../../ideas/caspian/dns.md) — explicit `%net.resolve` / `%net.reverse_resolve` is post-V1; sockets accept hostnames in V1 and the OS resolves implicitly.

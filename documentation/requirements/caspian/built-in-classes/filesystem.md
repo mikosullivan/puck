@@ -1,6 +1,6 @@
 # Filesystem Access in Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "filesystem",
 	"role": "spec for Caspian filesystem access via directory jails — host-injected directory-scoped handles that hide the real path. The directory jail is the FUNDAMENTAL UNIT of filesystem access in Caspian: nothing outside a granted jail is reachable. Covers jails themselves, files, directories, copy/move/delete, and sub-jails.",
@@ -25,7 +25,7 @@ exists in Caspian without a directory jail. See
 <a id="file-objects"></a>
 ## File Objects
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "file_objects",
 	"operations": ["append", "copy", "delete", "execute", "exists?", "jail",
@@ -246,7 +246,7 @@ Requires write permission; raises if `.writable` has been ratcheted off.
 <a id="directory-objects"></a>
 ## Directory Objects
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "directory_objects",
 	"operations": ["children", "create", "delete", "dirs", "exists?",
@@ -363,7 +363,7 @@ $text = $jail.dir('docs').dir('narnia')['caspian.txt'].read
 <a id="the-directory-jail"></a>
 ## The Directory Jail
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "the_directory_jail",
 	"concept": "directory_scoped_handle_injected_by_host",
@@ -402,7 +402,7 @@ $jail['readme.txt'].read
 <a id="jail-permissions"></a>
 ### Permissions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "jail_permissions",
 	"permissions": ["read", "write", "execute", "lock"],
@@ -457,7 +457,7 @@ decision by the host, never something that quietly happens.
 <a id="deriving-restricted-jails"></a>
 ### Deriving Restricted Jails
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "deriving_restricted_jails",
 	"method": ".jail(perms)",
@@ -529,7 +529,7 @@ something to other code that should only see a restricted view.
 <a id="scoped-permission-restriction"></a>
 ## Scoped permission restriction
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "scoped_permission_restriction",
 	"method": ".readonly",
@@ -586,7 +586,7 @@ subsets.
 <a id="authorizing-untrusted-paths"></a>
 ## Path strings from other roles
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "path_strings_from_other_roles",
 	"method": "$dir.use_path",
@@ -683,7 +683,7 @@ from external faucets do.
 <a id="iteration"></a>
 ## Iteration
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "iteration",
 	"iterables": ["children", "files", "dirs"],
@@ -710,7 +710,7 @@ end
 <a id="notes"></a>
 ## Notes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "notes",
 	"path_restriction": "relative_to_jail_root_only",

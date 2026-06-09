@@ -1,6 +1,6 @@
 # Crypto Mining as a Payment System
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "crypto-mining-payments",
 	"role": "speculative app concept: use Caspian's sandbox, trust policy, and blockchain integration as a platform for opt-in compute-time donations as payment for services",

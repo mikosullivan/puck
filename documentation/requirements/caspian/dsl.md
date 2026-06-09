@@ -1,6 +1,6 @@
 # DSLs
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "dsl",
 	"role": "canonical doc on Caspian's DSL architecture — first-class commitment to using the language's own DSL machinery wherever practical",
@@ -14,6 +14,30 @@
 ~~~
 
 Caspian commits to using its own DSL machinery for as much of the language surface as is practical. Things that **look** like keywords — `accessor`, `field`, `return`, `break`, `before`, `after`, `pass`, `commit`, etc. — are mostly bare-word commands (bwcs) resolved through a DSL, not entries in the parser's keyword list. The parser handles only what genuinely requires structural parsing.
+
+## At a glance — implementing a DSL
+
+The smallest end-to-end example. A function defines a DSL on its dispatcher and yields; the caller passes a do-block that uses the DSL bwcs.
+
+```caspian
+# Define the function
+$logger = function()
+    $dispatcher = %call.dispatcher
+    $dispatcher.dsl['info']  = $log_handler    # bwc 'info' → $log_handler.info(...)
+    $dispatcher.dsl['warn']  = $log_handler    # bwc 'warn' → $log_handler.warn(...)
+    $dispatcher.dsl['error'] = $log_handler    # bwc 'error' → $log_handler.error(...)
+    $dispatcher.yield
+end
+
+# Call it with a do-block; inside, info/warn/error are bare-word commands
+&logger do
+    info 'starting up'
+    warn 'queue is filling'
+    error 'fatal'
+end
+```
+
+The DSL exists only for the duration of the yield. Outside the block, `info`/`warn`/`error` aren't bound to anything.
 
 The mechanism that backs this is documented in [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers). This file is about **how** we use it across the language.
 
@@ -61,11 +85,13 @@ Canonical members:
 
 - `return` → `%call.return`
 - `yield` → `%call.yield`
-- `break` → `%loop.break`
-- `next` / `continue` → `%loop.next`
+- `break` → `$loop.break` (where `$loop` is the loop's manager variable, registered as a DSL bwc by the enclosing loop)
+- `next` / `continue` → `$loop.next` (same)
 - `raise` → `%exception.raise`
 - `catch` / `heed` → `%exception.catch`
 - `exit` → `%process.exit`
+
+`break` and `next` are loop-scoped — they're registered by the loop (`each`, `while`, etc.) on the dispatcher's DSL before yielding to the block. The code inside the block may or may not get the `$loop` variable explicitly as a do-block parameter; even when it doesn't, the bwcs `break` / `next` route to it. Outside any loop, these have no binding and raise.
 
 Specific scopes can override. A Bryton test runner can rebind `return` to "add to test report"; a transaction block can rebind `raise` to "rollback and rethrow." The overrides apply only within the directly yielded block (per [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers)).
 
@@ -92,7 +118,16 @@ $myfunc = function()
 end
 ```
 
-When the block runs, bare-word `foo` resolves to `$bar.foo`; `gup` resolves to `$baz.gup`. The resolution order (reserved bwcs → DSL entries → scope variables) is documented in lucy.md.
+Calling the function with a do-block uses the DSL bwcs inside the block:
+
+```caspian
+&myfunc do
+    foo            # resolves to $bar.foo
+    gup            # resolves to $baz.gup
+end
+```
+
+When the block runs, bare-word `foo` resolves to `$bar.foo`; `gup` resolves to `$baz.gup`. The resolution order (reserved bwcs → DSL entries → scope variables) is documented in [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers).
 
 ### Virtual getters and setters
 
@@ -119,9 +154,30 @@ end
 
 This unlocks configuration-style blocks, builder blocks, and scope-like blocks where the block's apparent "local variables" are actually method calls on a backing object. The `name=` convention is the natural assignment-dispatch pattern — it's already how property setters work on regular objects, so the dispatcher just reuses the same name-to-receiver mechanism for the bwc layer.
 
+### No-DSL block accept — just `yield`
+
+When a function just wants to accept a block without configuring any DSL, the long-form ceremony isn't needed. Bare `yield` (the Tier 3 bwc for `%call.yield`) works directly:
+
+```caspian
+$f = function()
+    yield
+end
+```
+
+Equivalent to:
+
+```caspian
+$f = function()
+    $dispatcher = %call.dispatcher
+    $dispatcher.yield
+end
+```
+
+The dispatcher form is for when you need to configure the DSL before yielding. If you don't, bare `yield` is the right shape.
+
 ### Sugar to come later
 
-Long-form dispatcher setup is fine for the general case, but for common patterns (basic block yield with no special DSL, a single-receiver DSL, etc.) a more compact form is worth designing. TBD; not blocking.
+Long-form dispatcher setup is fine for the general case, but for some common patterns (single-receiver DSL, inline DSL declaration, etc.) a more compact form is worth designing. TBD; not blocking.
 
 ## Loop DSLs
 
@@ -136,11 +192,11 @@ A loop is fundamentally a function that takes a block. Before yielding, it confi
 ```caspian
 $items.each do($item)
     if $item.empty?
-        next            # bwc → %loop.next
+        next            # bwc → $loop.next
     end
 
     if found($item)
-        break           # bwc → %loop.break
+        break           # bwc → $loop.break
     end
 
     puts $item.name
@@ -211,7 +267,7 @@ end
 The class definition block is the canonical tier-4 DSL. Words like `accessor`, `field`, `helper`, `inherits`, `join`, `abstract` are bwcs the class-definer's DSL provides — not parser keywords.
 
 ```
-class 'foo.com/character'
+class
     inherits 'foo.com/person'
 
     field :name, class: :string, required: true
@@ -245,7 +301,7 @@ When we cheat, we say so — in the doc for the construct and in this file's ope
 
 ## Open questions
 
-- **Loop-control scope.** Should `break` / `next` be part of the **loop's** DSL (loop-local, registered by each loop type) or part of the **ambient scope's** DSL inherited by anything that runs in a loop context (loop-aware via `%loop`)? The first is more consistent with the per-loop model; the second avoids each loop having to redeclare the obvious controls.
+- **Loop-control scope.** Settled: `break` / `next` are loop-local — each loop type registers them on the dispatcher's DSL before yielding, pointing at the `$loop` manager variable. There's no ambient `%loop`. Open follow-up: should there be a shared helper / mixin that loop authors can include so they don't repeat the boilerplate of registering `break` and `next` themselves?
 - **`self`.** Identity-critical (tier 2, reserved) or DSL-overridable (tier 3)? Probably reserved given its role in method dispatch, but worth being explicit.
 - **DSL documentation shape.** `.doc` property, separate `.md` file, introspection method, all of the above? Pick a convention so DSLs are uniformly discoverable.
 - **DSL-stacking semantics.** When a loop body opens another loop, the inner loop's DSL takes priority over the outer's for name collisions. Per [lucy.md § DSL Receivers](lucy/index.md#dsl-receivers), DSL settings don't propagate down the call stack; the dispatch chain at any point is "innermost DSL → ... → ambient core DSL → scope variables." Worth a worked example with intentional collision.

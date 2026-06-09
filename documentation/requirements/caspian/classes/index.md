@@ -1,6 +1,6 @@
 # Class definitions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "class_definitions",
 	"role": "canonical reference for how a class is declared on each of the surfaces in the ecoverse — Caspian DSL, CaspianJ (the engine's runtime format), and Mikobase JSON; every JSON example is shown inside the context of an entire worldlet, since a class definition's natural home is the classes section of a worldlet",
@@ -145,7 +145,7 @@ end
 }
 ```
 
-The Caspian DSL declaration is just `class ... end`. The class is an object; it doesn't carry its own UNS. **The UNS is the address where you put the class** — for external lookup via `%puck['foo.com/character']`, for fetching from a remote source, for naming an entry in a worldlet record.
+The Caspian DSL declaration is just `class ... end`. The class is an object; it doesn't carry its own UNS. **The UNS is the address where you put the class** — for external lookup via `%puck['https://foo.com/character']`, for fetching from a remote source, for naming an entry in a worldlet record.
 
 In the JSON form, the `name` field on the class-definition record is the UNS this class is published at. That's a property of the **record** (where the class lives), not of the class itself. The record's own key in `records` (here `"a"`) is an arbitrary short identifier, separate from both the class's content and its publication UNS. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
 

@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"role": "introduces the mikobase as a live object store with Q0, class definitions, history, and locking",
@@ -56,7 +56,7 @@ focused:
 <a id="single-process-vs-cross-fork-use"></a>
 ## Single-process vs. cross-fork use
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "single_process_vs_cross_fork",
 	"role": "distinguishes local mikobase use from fork-shared mikobase use; both are Caspian features (cross-fork requires the opt-in forking feature)",
@@ -73,7 +73,7 @@ Sharing a mikobase between forked processes uses the opt-in **forking** feature 
 <a id="the-maintaining-process"></a>
 ## The Maintaining Process
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "maintaining_process",
 	"role": "explains that a mikobase always requires a live process; not a passive file",
@@ -96,7 +96,7 @@ connecting to a live process, not reading from a file.
 <a id="object-ownership"></a>
 ## Object Ownership
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "object_ownership",
 	"role": "states that the mikobase owns objects; processes connect and interact, not pass objects directly",
@@ -112,7 +112,7 @@ they connect to the mikobase and interact with whatever is already there.
 <a id="class-hierarchy"></a>
 ## Class Hierarchy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "class_hierarchy",
 	"role": "lists all mikobase implementation classes and their relationships",
@@ -142,7 +142,7 @@ Caspian code interacts only with the `puck.uno/mikobase` interface and is unawar
 <a id="field-declarations"></a>
 ## Field declarations
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "field_declarations",
 	"role": "spec for the JSON shape that declares a single field on a class — the field-level constraint vocabulary",
@@ -185,7 +185,7 @@ For fields whose `class` is already a UNS class name (e.g., `"class": "foo.com/w
 <a id="http-mikobase"></a>
 ## HTTP Mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "http_mikobase",
 	"role": "documents the HTTP transport wrapper including Unix sockets, TCP, and authentication options",
@@ -209,8 +209,8 @@ file path instead of a port number, bypass the network stack entirely, and acces
 controlled by filesystem permissions — faster and more secure than TCP for local use.
 
 ```
-$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/path/to/db')
-$server = %puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
+$mikobase = %puck['https://puck.uno/mikobase/sqlite'].new('/path/to/db')
+$server = %puck['https://puck.uno/mikobase/http'].new(mikobase: $mikobase, socket: '/var/run/myhive.sock', auth: :peer)
 $server.start
 ```
 
@@ -220,7 +220,7 @@ $server.start
 Port-based listening is supported when the mikobase needs to be reachable over a network:
 
 ```
-$server = %puck['puck.uno/mikobase/http'].new(mikobase: $mikobase, port: 8080, auth: :token, token: 'mysecrettoken')
+$server = %puck['https://puck.uno/mikobase/http'].new(mikobase: $mikobase, port: 8080, auth: :token, token: 'mysecrettoken')
 $server.start
 ```
 
@@ -237,7 +237,7 @@ process's identity (UID, GID, PID). No shared secrets, no setup. Only available 
 Unix domain sockets.
 
 ```
-$server = %puck['puck.uno/mikobase/http'].new(
+$server = %puck['https://puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :peer
@@ -248,7 +248,7 @@ $server = %puck['puck.uno/mikobase/http'].new(
 handshake. Works for both Unix sockets and TCP.
 
 ```
-$server = %puck['puck.uno/mikobase/http'].new(
+$server = %puck['https://puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :token,
@@ -260,7 +260,7 @@ $server = %puck['puck.uno/mikobase/http'].new(
 Use only in controlled environments.
 
 ```
-$server = %puck['puck.uno/mikobase/http'].new(
+$server = %puck['https://puck.uno/mikobase/http'].new(
     mikobase: $mikobase,
     socket: '/var/run/myhive.sock',
     auth: :open
@@ -352,7 +352,7 @@ permissions are not part of v1.
 <a id="hot-and-cold-connections"></a>
 ## Hot and Cold Connections
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "hot_and_cold_connections",
 	"role": "defines hot vs cold connection modes and per-query overrides",
@@ -370,7 +370,7 @@ A cold connection returns local copies of records. You fetch a record, work with
 locally, and save it back explicitly:
 
 ```
-$mikobase = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
+$mikobase = %puck['https://mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
 
 $record = $mikobase.q0(...)
 $record['foo'] = 'bar'
@@ -387,7 +387,7 @@ A hot connection returns live objects. Every read and write is a round trip to t
 with locking applied automatically. There is no local copy and no explicit save:
 
 ```
-$mikobase = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
+$mikobase = %puck['https://mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
 
 $mikobase['clients'].shift   # atomic read-and-remove, one round trip
 $mikobase['results'] << $result   # atomic write, one round trip
@@ -402,8 +402,8 @@ needs to be atomic and consistent across concurrent readers and writers.
 The same `hot:` parameter applies to local mikobases:
 
 ```
-$mikobase = %puck['mikobase/memory'].new(hot: true)
-$mikobase = %puck['mikobase/sqlite'].new('/path/to/db', hot: true)
+$mikobase = %puck['https://mikobase/memory'].new(hot: true)
+$mikobase = %puck['https://mikobase/sqlite'].new('/path/to/db', hot: true)
 ```
 
 On a local mikobase, hot means every field access hits SQLite directly. Cold means load the
@@ -415,8 +415,8 @@ record into memory, work with it locally, save explicitly.
 Two connections to the same mikobase can have different modes:
 
 ```
-$hot  = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
-$cold = %puck['mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
+$hot  = %puck['https://mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer, hot: true)
+$cold = %puck['https://mikobase/http'].connect(socket: '/var/run/myhive.sock', auth: :peer)
 ```
 
 This is valid — for example, one hot connection for fork coordination and one cold
@@ -441,7 +441,7 @@ $record = $mikobase.q0({...}, hot: false)
 <a id="locking"></a>
 ## Locking
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "locking",
 	"role": "describes automatic shared/exclusive locking model for reads and writes",
@@ -463,7 +463,7 @@ automatically. There is no explicit lock/unlock API in normal usage.
 <a id="transactions"></a>
 ## Transactions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "transactions",
 	"role": "documents the nested transaction model with commit, rollback, and auto-rollback on exit",
@@ -484,7 +484,7 @@ Mikobases support transactions using the following model:
 <a id="bucket-in-the-mikobase"></a>
 ## `%bucket` in the Mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "bucket_in_mikobase",
 	"role": "explains how %bucket can be backed by a mikobase for transparent fork coordination",
@@ -497,7 +497,7 @@ any fork that connects to it. The fork's `@foo` reads and writes go directly to 
 object in the mikobase — child forks don't need to reference the mikobase explicitly at all.
 
 ```
-$mikobase = %puck['puck.uno/mikobase/memory'].new
+$mikobase = %puck['https://puck.uno/mikobase/memory'].new
 $mikobase.include_private = true
 
 %forks.run(mikobase:$mikobase) do($mikobase)
@@ -512,7 +512,7 @@ end
 <a id="record-change-signals"></a>
 ## Record Change Signals
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "record_change_signals",
 	"role": "documents the listener system for before_save and after_save signals on records",
@@ -595,7 +595,7 @@ A future addition could provide a structured layer on top of `:before_save` sign
 <a id="temporal-vs-non-temporal-mode"></a>
 ## Temporal vs Non-temporal Mode
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "temporal_mode",
 	"role": "specifies the per-database mode flag that controls whether records keep version history; opt-in feature for workloads that need audit history",
@@ -665,7 +665,7 @@ for the database it was set on.
 <a id="worldlets-mikobase-on-a-microscale"></a>
 ## Worldlets: Mikobase on a microscale
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "worldlets",
 	"role": "small-scale mikobases packaged as a single JSON file; covers format, dual role (export + native engine storage), contents, capabilities, lifecycle, use cases, and temporal-flag interaction",

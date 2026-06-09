@@ -1,6 +1,6 @@
 # Shared mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uds_shared_mikobase",
 	"role": "spec for sharing a Mikobase across forked workers via UDS — the bigger sibling of $uds.share for hashes. Engine spawns an in-memory Mikobase server plus N forked workers; each worker gets a $db wrapper that proxies the full Mikobase interface to the server. Same wrapper-and-server pattern as shared-hash, just with the richer Mikobase surface.",

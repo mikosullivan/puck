@@ -1,6 +1,6 @@
 # Method resolution
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "object_method_resolution",
 	"role": "spec for how a method call on an object resolves down its stack; part of the universal object structure spec (see index.md)",
@@ -13,7 +13,7 @@ Calling a method on an object walks its stack looking for a class that defines t
 
 ## A color object
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "color_object_example",
 	"role": "concrete example used by the method-dispatch walkthrough — a color object with its hex value in the bucket and one non-shadow platter carrying class identity"
@@ -36,7 +36,7 @@ A color object:
 
 ## Method dispatch
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "method_dispatch",
 	"role": "describes how a method call resolves down the stack: top to bottom through platters that have a class, first match wins, method-not-found raises"

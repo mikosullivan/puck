@@ -1,6 +1,6 @@
 # Jasmine
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "jasmine",
 	"role": "spec for the Jasmine file format and storage layer — entries, required and conventional fields, the directory store, reaping, concurrency, purge. The Caspian API for writing entries lives in a separate doc.",
@@ -288,7 +288,7 @@ The constructor takes keyword arguments that configure which
 store(s) the log uses. Each keyword names the kind of store:
 
 ```
-$log = %puck['puck.uno/jasmine'].new(dir: '/path/to/directory')
+$log = %puck['https://puck.uno/jasmine'].new(dir: '/path/to/directory')
 ```
 
 The example above produces **a single log object with one store** —
@@ -318,7 +318,7 @@ dropped, but the framework trusts the developer made that choice
 deliberately:
 
 ```
-$log = %puck['puck.uno/jasmine'].new(no_writers_ok: true)
+$log = %puck['https://puck.uno/jasmine'].new(no_writers_ok: true)
 # or
 $log.no_writers_ok = true
 ```

@@ -1,6 +1,6 @@
 # Lua-side API
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "lua_api",
 	"role": "design notes for how the Caspian engine loads Lua-backed primitives — V1 commits to engine-internal bindings only (libsodium, LPeg, JSON); third-party / user-installable bindings are speculative future work captured here for shape consistency, not V1 deliverables",
@@ -37,7 +37,7 @@ The decisions log for V1 design overall lives at
 <a id="v1-pattern"></a>
 ## V1 pattern: engine-internal bindings via `%engine`
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "v1_pattern", "v1_committed": true,
 	"loaded": "at_engine_bootstrap_from_lib_lua_caspian_stdlib",
 	"exposed_at": "%engine.<binding_name>",
@@ -266,7 +266,7 @@ For bindings that wrap Lua userdata (handles), the Caspian wrapper
 class declares an `on_close` that releases the underlying handle:
 
 ```caspian
-class 'puck.uno/engine/lpeg/pattern'
+class
     on_close do($call)
         %engine.lpeg.release_pattern(@handle)
     end
@@ -310,7 +310,7 @@ no I/O. A future `fs` binding would.
 <a id="speculative-extensibility"></a>
 ## Speculative: third-party / user-installable bindings (NOT V1)
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "speculative_extensibility", "v1_committed": false,
 	"defer_to": "v2_or_later",
 	"recorded_here": "because_v1_pattern_should_be_designed_so_this_works_as_an_addition_not_a_rewrite"}}
@@ -347,7 +347,7 @@ Sketched `.casp`:
  "capabilities_required": []}
 HEREDOC
 
-class 'puck.uno/binding/foo'
+class
     extern &greet($name:)
     extern &count($items:)
 end

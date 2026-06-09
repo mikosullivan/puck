@@ -1,6 +1,6 @@
 # Core Lua dependencies
 
-~~~json
+~~~vibecode
 {"vibecode": {"doc": "lua_dependencies",
 "role": "running list of non-stdlib Lua libraries (and their C-level deps)
 the Puck project relies on; one entry per dep with what uses it and why",
@@ -20,7 +20,7 @@ component requires each. Add new entries as they come up.
 <a id="libsodium"></a>
 ## libsodium
 
-~~~json
+~~~vibecode
 {"vibecode": {"dep": "libsodium", "build": "minimal (--enable-minimal)",
 "kind": "c_library_with_lua_binding",
 "used_by": ["caspian.utils.random", "signed_request_auth"],
@@ -40,7 +40,7 @@ without losing `randombytes_buf` or Ed25519 sign/verify.
 
 **What uses it.**
 
-- [`%utils.random`](../../../caspian/utils/index.md) — secure random
+- [`%utils.random`](../../../caspian/global-methods/utils/index.md) — secure random
   bytes and UUIDs (`randombytes_buf`).
 - Signed-request auth (per [V1 scope](../index.md#v1-scope)) — Ed25519
   client-side signing.
@@ -58,7 +58,7 @@ second signing/random dep needed.
 <a id="lpeg"></a>
 ## LPeg
 
-~~~json
+~~~vibecode
 {"vibecode": {"dep": "lpeg", "kind": "c_library_with_lua_binding",
 "used_by": ["caspian_regex_engine_alternation", "caspian_parser",
 "caspian_json_parser"],
@@ -94,7 +94,7 @@ and we already accept C extensions for libsodium.
 <a id="luasocket"></a>
 ## luasocket
 
-~~~json
+~~~vibecode
 {"vibecode": {"dep": "luasocket", "kind": "c_library_with_lua_binding",
 "used_by": ["orlando"], "provides": ["tcp_sockets", "udp_sockets"],
 "home": "https://lunarmodules.github.io/luasocket/",
@@ -113,7 +113,7 @@ luasocket.
 <a id="lunamark"></a>
 ## lunamark
 
-~~~json
+~~~vibecode
 {"vibecode": {"dep": "lunamark", "kind": "pure_lua",
 "used_by": ["orlando"], "provides": ["markdown_parser"],
 "home": "https://github.com/jgm/lunamark",

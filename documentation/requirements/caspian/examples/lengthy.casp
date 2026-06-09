@@ -30,7 +30,7 @@ EOF
 }
 EOF
 
-class 'starfleet.com/person'
+class
     field :name,      class: :string, required: true, collapse: true
     field :birthdate, class: :string
     field :species,   class: :string, default: 'Human'
@@ -60,7 +60,7 @@ end
 }
 EOF
 
-class 'starfleet.com/officer'
+class
     inherits 'starfleet.com/person'
 
     field :rank,     class: :string,  required: true
@@ -142,7 +142,7 @@ end
 }
 EOF
 
-class 'starfleet.com/ship'
+class
     field :name,       class: :string, required: true, unique: true
     field :registry,   class: :string, required: true, unique: true
     field :ship_class, class: :string
@@ -159,7 +159,7 @@ end
 }
 EOF
 
-$mikobase = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
+$mikobase = %puck['https://puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db')
 
 %vibecode <<EOF
 {
@@ -406,7 +406,7 @@ end
 }
 EOF
 
-class 'starfleet.com/null/classified'
+class
     inherits 'puck.uno/null'
 end
 
@@ -417,7 +417,7 @@ end
 }
 EOF
 
-$classified = %puck['starfleet.com/null/classified'].new
+$classified = %puck['https://starfleet.com/null/classified'].new
 
 if ($classified)
     puts('never reached — classified is falsey')
@@ -432,7 +432,7 @@ end
 }
 EOF
 
-$hot = %puck['puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
+$hot = %puck['https://puck.uno/mikobase/sqlite'].new('/var/starfleet/personnel.db', hot: true)
 
 $picard = $hot.q0({
     vibecode: {

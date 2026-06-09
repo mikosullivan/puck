@@ -1,6 +1,6 @@
 # puck.uno/random — random data services
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_puck_random",
 	"role": "placeholder idea note: a family of puck.uno/random services for producing random values of various kinds. Captured to revisit later; not designed yet.",

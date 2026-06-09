@@ -1,6 +1,6 @@
 # Ashley
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Ashley",
 "delivers": "inventory of the existing engine code as the starting baseline for V1 development",
 "position_in_roadmap":
@@ -257,7 +257,7 @@ No new engine code. No new tests. Ashley is a baseline document.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "new_tests_in_this_slice": 0,
 "baseline_action":

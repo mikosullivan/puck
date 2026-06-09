@@ -1,6 +1,6 @@
 # Is Caspian Turing complete?
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "turing-completeness",
 	"role": "report on whether the Caspian language (as specified) is Turing complete; walks through each requirement and points at the spec features that satisfy it; notes the gap between the language spec and the current walking-skeleton engine",
@@ -15,7 +15,7 @@ Short answer: **yes, the Caspian language as designed is Turing complete.** Long
 
 ## What "Turing complete" means here
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "definition",
 	"working_definition": "able_to_simulate_an_arbitrary_turing_machine; equivalently_able_to_express_any_partial_recursive_function",
@@ -37,7 +37,7 @@ Almost every general-purpose programming language has all three. Caspian is no e
 
 ### Conditional branching
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "branching",
 	"feature": "if_elsif_else",
@@ -51,7 +51,7 @@ Beyond `if`, the language also has `catch` and `heed` for exception-and-warning 
 
 ### Unbounded iteration and recursion
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "iteration_and_recursion",
 	"loop_construct": "while",
@@ -71,7 +71,7 @@ Two ways in: loops and recursion. Caspian has both.
 
 ### Unbounded state
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "state",
 	"primary_carrier": "hashes_with_arbitrary_string_keys_and_value_types",
@@ -111,7 +111,7 @@ These do not move the Turing-complete needle, but they shape what programs read 
 
 ## Where the current engine sits
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "implementation_gap",
 	"engine_slices_so_far": ["Aslan", "Bree", "Corin", "Digory", "Edmund"],
@@ -137,7 +137,7 @@ This gap closes when the slice that introduces `if/elsif/else` and `while` (or r
 
 ## Caveats worth naming
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "caveats",
 	"items": ["engine_timeouts_constrain_actual_halting_behavior",

@@ -1,6 +1,6 @@
 # `%engine.lua` as the dynamic load surface for Lua libraries
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_engine_lua_as_load_surface",
 	"role": "placeholder idea note: future evolution of %engine.lua from a read-only introspection slot into the official, permission-gated surface for dynamically loading Lua libraries from Caspian user code",

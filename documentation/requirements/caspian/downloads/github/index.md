@@ -2,7 +2,7 @@
 
 *A specialized fetcher in `%puck.sources` that recognizes GitHub URLs and handles the GitHub-specific shape (web URL → raw URL translation). Most publishers will host classes on GitHub; this fetcher makes that work without ceremony.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "github_fetcher",
 	"role": "spec sketch for a specialized fetcher that handles GitHub-hosted classes — recognizes github.com and raw.githubusercontent.com URLs, translates web URLs to raw URLs, fetches the bytes",

@@ -1,6 +1,6 @@
 # Truthy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "truthy",
 	"role": "spec for Caspian's truthiness model — which values are truthy, which aren't, and how the engine enforces the rule",

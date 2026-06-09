@@ -2,7 +2,7 @@
 
 > **Deferred to post-V1** (decided 2026-06-05). The LSP requires a local Caspian install for every editor user, which conflicts with the first-contact goal and with remote-development workflows. The VSCode extension ships syntax-highlighting only for V1; rich LSP features wait until the install story is robust enough. This spec is preserved here for when the work resumes. The build plan is at [ideas/lsp-build/](../lsp-build/).
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_lsp",
 	"role": "spec for the Caspian Language Server — what it provides, how editors invoke it, what's in V1 vs later, written in Caspian itself and bundled with the install",

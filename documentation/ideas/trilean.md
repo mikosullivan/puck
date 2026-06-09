@@ -20,7 +20,7 @@ class is **opt-in**: code that wants three-valued logic explicitly calls into it
 <a id="status"></a>
 ## Status
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "status",
 	"priority": "low",
@@ -39,7 +39,7 @@ the language runtime. Implementation will live at `code/caspian/stdlib/trilean.c
 <a id="the-model"></a>
 ## The Model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "the_model",
 	"name": "Kleene three-valued logic",
@@ -86,7 +86,7 @@ strong Kleene logic, K3, or SQL three-valued logic).
 <a id="operators"></a>
 ## Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "operators",
 	"role": "documents the full set of three-valued operators with their truth tables"
@@ -220,7 +220,7 @@ null?" use `$x.object.null?`, never `eq(x, null)`.
 <a id="lazy-second-argument"></a>
 ## Lazy Second Argument
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "lazy_second_argument",
 	"role": "documents the do-block form of binary trilean operators that defers evaluation of the second argument when the first short-circuits the result",
@@ -335,7 +335,7 @@ set.
 <a id="usage"></a>
 ## Usage
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "usage",
 	"role": "shows typical Caspian code calling into the trilean class"
@@ -374,7 +374,7 @@ about three-valued logic at all.
 <a id="why-pure-caspian"></a>
 ## Why Pure Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why_pure_caspian",
 	"role": "explains the choice to implement trilean in stdlib Caspian rather than the runtime"

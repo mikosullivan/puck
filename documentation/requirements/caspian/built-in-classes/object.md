@@ -8,7 +8,7 @@ introspection that doesn't belong to any one class but applies uniformly to all.
 <a id="methods"></a>
 ## Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "methods",
 	"role": "documents the engine-controlled surface of the universal .object helper: bool plus three derived predicates, plus identity equality via ==",
@@ -35,7 +35,7 @@ regardless of what classes, fields, or methods user code attaches to the object.
 <a id="bool"></a>
 ### `bool`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "bool",
 	"returns": "tri_value",
@@ -143,7 +143,7 @@ Programs and debuggers see consistent results either way.
 <a id="null"></a>
 ### `null?`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "null",
 	"returns": "strict_boolean",
@@ -174,7 +174,7 @@ Returns the opposite of [`null?`](#null) — strict `true` if `bool` is `true` o
 <a id="object-methods"></a>
 ## `.object` methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "object_methods",
 	"role": "catalogs the .object methods that inspect or manipulate the platter stack, dispatch to specific classes, lock the object against modification, or expose a capability-restricted proxy",
@@ -267,7 +267,7 @@ The first argument is the method name (a string). The block's parameters are the
 Inside a class body, `self` refers to the class object itself, so class-level methods are defined the same way:
 
 ```
-class 'color'
+class
     self.object.method('blue') do
         return color.new(hex: '#0000ff')
     end
@@ -424,7 +424,7 @@ The exact record shape may grow over time (timestamps, frame info, etc.); for no
 <a id="identity"></a>
 ## Identity
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "identity",
 	"role": "reference-equality semantics on .object",
@@ -501,7 +501,7 @@ engine-enforced**. No user class can change what counts as "the same object."
 <a id="identity-guarantees"></a>
 ## Identity Guarantees
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "identity_guarantees",
 	"role": "states that all four .object methods are read-only and engine-controlled; user code cannot override them"
@@ -526,7 +526,7 @@ overrides.
 <a id="why-object"></a>
 ## Why `.object`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why_dot_object",
 	"role": "explains the design choice to namespace these methods under .object rather than directly on every value"

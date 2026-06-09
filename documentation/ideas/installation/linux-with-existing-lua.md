@@ -1,6 +1,6 @@
 # Linux system-wide install over an existing Lua
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "linux_system_wide_install_with_existing_lua",
 	"role": "narrative walkthrough — Linux user picks system-wide install on a machine that already has Lua installed; covers detection, coexistence, and final file layout showing both the pre-existing Lua and Caspian's bundled Lua side by side",
@@ -201,7 +201,7 @@ user's), and `which caspian` returns nothing — clean removal.
 <a id="open-questions"></a>
 ## Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions":
 ["whether_to_announce_existing_lua_detection_in_the_default_install_or_only_when_versions_differ",
 "how_to_handle_existing_caspian_install_at_the_target_prefix",

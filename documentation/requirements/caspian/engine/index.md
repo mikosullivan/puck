@@ -1,6 +1,6 @@
 # `%engine`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "engine",
 	"role": "spec for the %engine system method: the user-role-only gateway through which scripts reach host-provided resources",

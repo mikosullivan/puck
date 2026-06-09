@@ -3,7 +3,7 @@
 <a id="status"></a>
 ## Status
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "status",
 	"design_status": "provisional",
@@ -19,7 +19,7 @@ problem. Further experience with the language may refine or replace it.
 <a id="the-problem"></a>
 ## The Problem
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "the_problem",
 	"problem": "functions_cannot_call_each_other_at_same_scope_level",
@@ -48,7 +48,7 @@ call.
 <a id="the-approach"></a>
 ## The Approach
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "the_approach",
 	"concept": "module_is_object_functions_become_methods",
@@ -84,7 +84,7 @@ The mutual-call problem dissolves. It was always just a method call on `self`.
 <a id="implicit-top-level-module"></a>
 ## Implicit Top-Level Module
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "implicit_top_level_module",
 	"concept": "every_program_wrapped_in_implicit_top_level_module",
@@ -116,7 +116,7 @@ It just has no `#module ... end` written by the programmer. All the same rules a
 <a id="invoking-a-file"></a>
 ## Invoking a File
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "invoking_a_file",
     "model": "file_invoked_like_a_function_call",
@@ -140,7 +140,7 @@ operations, and the documentation uses them precisely.
 
 ```
 # my-page.casp — the file's return value is the class
-class < %puck['puck.uno/dogberry/page']
+class < %puck['https://puck.uno/dogberry/page']
     function &process($request)
         response.new(200, {content_type: 'text/html'}, '...')
     end
@@ -169,7 +169,7 @@ relative-vs-absolute paths) is TBD.
 <a id="syntax"></a>
 ## Syntax
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "syntax",
 	"sigil": "#module",
@@ -194,7 +194,7 @@ A `#module` block creates and immediately instantiates an anonymous object. The 
 its definition body, following the same structure as a class body. Fields, helpers,
 properties, and other class machinery are all available inside a module.
 
-The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and variables
+The `#` sigil distinguishes modules from class definitions (`class`) and variables
 (`$name`).
 
 ---
@@ -202,7 +202,7 @@ The `#` sigil distinguishes modules from class definitions (`class 'UNS'`) and v
 <a id="what-foo-means-inside-a-module"></a>
 ## What `&foo` Means Inside a Module
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_ampfoo_means_inside_a_module",
 	"resolution": ["1_look_up_foo_as_method_on_self", "2_call_if_found",
@@ -231,7 +231,7 @@ don't see outer variables, but they can call sibling methods through `self`.
 <a id="nesting"></a>
 ## Nesting
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "nesting",
 	"behavior": "inner_module_is_own_object_with_own_self",
@@ -263,7 +263,7 @@ To call across module boundaries, pass a reference explicitly as a parameter.
 <a id="relationship-to-classes"></a>
 ## Relationship to Classes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "relationship_to_classes",
 	"module_is": "sugar_for_anonymous_class_defined_and_instantiated_in_one_step",
@@ -286,7 +286,7 @@ end
 
 # ...is roughly:
 
-class '<anonymous>'
+class
     function &foo
     end
 end
@@ -294,7 +294,7 @@ end
 $anon = %puck['<anonymous>'].new
 ```
 
-Formal classes (`class 'UNS' ... end`) are for objects that need:
+Formal classes (`class ... end`) are for objects that need:
 - A UNS name and a place in the Puckverse
 - A schema (fields, types, validation)
 - Multiple instances
@@ -308,7 +308,7 @@ single-instance, anonymous, and have no schema requirements.
 <a id="why-not-just-use-a-class"></a>
 ## Why Not Just Use a Class?
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "why_not_just_use_a_class",
 	"answer": "module_is_lighter_syntax_signals_lighter_intent",

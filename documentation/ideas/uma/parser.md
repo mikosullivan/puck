@@ -1,6 +1,6 @@
 # Uma HTML Parser
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uma-parser",
 	"role": "in-progress spec for Uma's pure-Caspian HTML parser; accepts well-formed-ish HTML to avoid bundling a C parser, rejects malformed input rather than attempting browser-style recovery",

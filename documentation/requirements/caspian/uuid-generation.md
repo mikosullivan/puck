@@ -1,6 +1,6 @@
 # UUID generation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uuid_generation",
 	"role": "engine-level implementation guidance for making per-call UUID minting as fast as possible without caching or PRNG state",

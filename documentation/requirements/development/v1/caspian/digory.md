@@ -1,6 +1,6 @@
 # Digory
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Digory", "delivers": "caspian-with-hashes",
 "plan_detail_level": "enriched_roadmap_entry_not_full_phase_plan",
 "will_be_detailed_after": "corin_ships",
@@ -126,7 +126,7 @@ hash's handler returns the bucket value for that key.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing", "test_directory":
 "tests/caspian/digory/", "fixture_path":
 "tests/caspian/fixtures/picard_hash.casp",

@@ -2,7 +2,7 @@
 
 *Official spec for Caspian's on-disk library cache.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caching_spec",
 	"role": "canonical spec for Caspian's on-disk library cache — flat root with integer-named subdirs, per-library versions/<timestamp>/ subdirs each holding meta.json plus source.casp and/or source.caspj, single source file per library for V1.0",

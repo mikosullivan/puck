@@ -67,10 +67,10 @@ end
 }
 EOF
 
-$null_class  = %puck['puck.uno/null']
-$true_class  = %puck['puck.uno/true']
-$false_class = %puck['puck.uno/false']
-$hive_class  = %puck['puck.uno/mikobase/memory']
+$null_class  = %puck['https://puck.uno/null']
+$true_class  = %puck['https://puck.uno/true']
+$false_class = %puck['https://puck.uno/false']
+$hive_class  = %puck['https://puck.uno/mikobase/memory']
 
 %vibecode <<EOF
 {
@@ -79,7 +79,7 @@ $hive_class  = %puck['puck.uno/mikobase/memory']
 }
 EOF
 
-$my_null = %puck['puck.uno/null'].new
+$my_null = %puck['https://puck.uno/null'].new
 
 %vibecode <<EOF
 {
@@ -89,7 +89,7 @@ $my_null = %puck['puck.uno/null'].new
 }
 EOF
 
-class 'myapp.com/null/unknown'
+class
     inherits 'puck.uno/null'
 end
 
@@ -100,7 +100,7 @@ end
 }
 EOF
 
-$unknown = %puck['myapp.com/null/unknown'].new
+$unknown = %puck['https://myapp.com/null/unknown'].new
 
 if ($unknown)
     puts('never reached')

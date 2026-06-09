@@ -1,4 +1,4 @@
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "presentation-misc",
 	"role": "scratch one-liner notes collected for use in Puck presentations or talks",

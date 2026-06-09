@@ -1,6 +1,6 @@
 # Exceptions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "exceptions",
 	"role": "canonical_user_facing_spec_for_caspian_exception_handling_constructs_raise_and_catch",
@@ -25,7 +25,7 @@ Exceptions are a general control-flow mechanism in Caspian, not just an error ch
 <a id="raise"></a>
 ## `raise`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "raise",
 	"role": "construct_that_throws_an_exception_appending_an_exception_element_to_call_stack",
@@ -52,7 +52,7 @@ After the append, the engine begins **unwinding**: frames below the exception ar
 <a id="catch"></a>
 ## `catch`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "catch",
 	"role": "construct_that_handles_an_exception_whose_class_matches_the_argument",
@@ -111,7 +111,7 @@ To catch every possible exception regardless of class, use the universal root: `
 <a id="multiple-in-flight-exceptions"></a>
 ## Multiple in-flight exceptions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "multiple_in_flight_exceptions",
 	"role": "design_for_the_case_when_a_handler_or_unwind_step_raises_while_another_exception_is_already_unwinding",
@@ -162,7 +162,7 @@ In all of these, the stacked-exceptions model handles things uniformly: both exc
 <a id="cross-role-catch"></a>
 ## Cross-role catch
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "cross_role_catch",
 	"role": "how_catch_interacts_with_role_boundaries_when_an_exception_crosses_a_cross_role_call",

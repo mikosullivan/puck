@@ -1,6 +1,6 @@
 # Inter-process communication
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "forking_ipc",
 	"role": "spec for how Caspian processes communicate with each other. The answer: no dedicated IPC primitives. Caspian's IPC is the shared-resource pattern — a UDS-backed server holds the shared state; workers forked from the parent each get a wrapper proxying their operations to the server. Two flavors: shared-hash (lightweight, JSON-shaped state) and shared-mikobase (full database semantics). Both build entirely on the UDS + forking + auth toolbox.",

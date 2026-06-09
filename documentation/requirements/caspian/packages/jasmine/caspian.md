@@ -1,6 +1,6 @@
 # Jasmine in Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "jasmine-in-caspian",
 	"role": "Caspian-side API for writing entries to Jasmine logs. The whole API is %chain.log[key] = value, written from inside any function; the function call is the entry boundary. Companion to jasmine.md, which spec's the file format and storage layer.",

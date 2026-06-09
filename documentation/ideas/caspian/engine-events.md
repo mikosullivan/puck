@@ -1,6 +1,6 @@
 # Engine events — script waits for engine to broadcast
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "engine_events",
 	"role": "brainstorm — letting the engine itself broadcast events into running Caspian code, with the script explicitly yielding control via %engine.wait or %engine.wait_loop. Cooperative model (script knows where it could be paused), not preemptive (no surprise interrupts mid-statement). Not for V1.",

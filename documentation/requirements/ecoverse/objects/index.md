@@ -1,6 +1,6 @@
 # Objects
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "objects",
 	"role": "introduction to the universal object structure spec used across Mikobase, Caspian, Puck, and the rest of the ecoverse; orients the reader and points at the sub-pages that hold the details. Per issue #379, this is THE canonical reference once stable.",

@@ -1,6 +1,6 @@
 # Changelog
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uma-history-changelog",
 	"role": "historical changelog from the prior Ruby Uma project, imported under ideas/uma/history/ for reference while the Caspian Uma spec is being developed",

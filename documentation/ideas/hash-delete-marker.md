@@ -1,6 +1,6 @@
 # Hash delete marker
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "hash-delete-marker",
 	"role": "speculative design for a true-delete marker in Caspian hashes so cascading-config systems like meta-hash can express remove-this-key-from-the-cascade rather than just shadow-with-null",

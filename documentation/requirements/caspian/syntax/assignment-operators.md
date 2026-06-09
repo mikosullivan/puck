@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"operators": ["=", "+=", "-=", "*=", "/=", "%=", "**=", "||=", "&&=", "++", "--"],
@@ -25,7 +25,7 @@ to pass a **receiver object** as an extra parameter.
 <a id="the-receiver-object"></a>
 ## The Receiver Object
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "receiver_object",
 	"role": "encapsulates_write_back_to_assignment_target",
@@ -58,7 +58,7 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 <a id="operator-classes"></a>
 ## Operator Classes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "operator_classes",
 	"flag": "is_assignment: true",
@@ -79,7 +79,7 @@ passes the receiver as the final parameter. Classes that need the current value 
 ### `=`
 
 ```
-class 'caspian.uno/assign'
+class
     is_assignment true
 
     function &evaluate($right, $receiver) do
@@ -92,7 +92,7 @@ end
 ### `+=`
 
 ```
-class 'caspian.uno/assign_add'
+class
     is_assignment true
 
     function &evaluate($left, $right, $receiver) do
@@ -105,7 +105,7 @@ end
 ### `||=`
 
 ```
-class 'caspian.uno/assign_or'
+class
     is_assignment true
 
     function &evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver) do
@@ -120,7 +120,7 @@ end
 ### `&&=`
 
 ```
-class 'caspian.uno/assign_and'
+class
     is_assignment true
 
     function &evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver) do
@@ -136,7 +136,7 @@ end
 <a id="built-in-assignment-operators"></a>
 ## Built-in Assignment Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "built_in_assignment_operators",
 	"registered_in": "scope.operators",
@@ -161,7 +161,7 @@ end
 <a id="increment-and-decrement"></a>
 ## Increment and Decrement
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "increment_decrement",
 	"operators": ["++", "--"],

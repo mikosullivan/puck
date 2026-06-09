@@ -2,7 +2,7 @@
 
 *A Caspian client for the [Agent Communication Protocol](https://agentcommunicationprotocol.dev) — REST/HTTP agent-to-agent interop.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "acp_client",
 	"role": "spec for puck.uno/ai/acp/client — a Caspian package that lets user code call out to agents speaking the ACP (Agent Communication Protocol) REST/HTTP standard. V1.0 covers call-and-response only; stateful sessions, multimodal input, async dispatch, streaming, and discovery are deferred.",
@@ -35,7 +35,7 @@ The first cut covers only the simplest agent-call pattern:
 
 - **Stateful sessions** — a session handle that carries server-side state across multiple calls. Useful, but real spec work for session identifier threading, lifecycle, expiration.
 - **Multimodal input** — text + images + audio + video + custom binary. ACP supports it generically; encoding surface is non-trivial.
-- **Async dispatch** — leverages the `$request.promise` pattern from the [Puckai agent design](https://puck.uno/documentation/requirements/ecoverse/puckai/agent#request-promise); waits for Caspian's broader async machinery to firm up.
+- **Async dispatch** — leverages the `$request.promise` pattern from the [Puckai agent design](https://puck.uno/documentation/requirements/caspian/packages/agent/#request-promise); waits for Caspian's broader async machinery to firm up.
 - **Streaming** — needs Caspian's iteration model to compose cleanly with HTTP streaming (SSE or chunked). Skipped until the async story lands.
 - **Agent metadata / discovery** — ACP supports embedded discovery; the client could expose `.metadata` or `.capabilities`. Not in V1.0.
 
@@ -48,7 +48,7 @@ The first cut covers only the simplest agent-call pattern:
 ### Constructor
 
 ```
-$client = %puck['puck.uno/ai/acp/client'].new(url: 'https://example.com/acp-agent')
+$client = %puck['https://puck.uno/ai/acp/client'].new(url: 'https://example.com/acp-agent')
 ```
 
 The `url:` kwarg is the ACP endpoint to talk to. Other constructor kwargs (auth headers, defaults, timeouts) TBD per the ACP spec.
@@ -159,7 +159,7 @@ If the remote agent doesn't speak Puckai (the response isn't a parseable Puckai 
 <a id="implementation"></a>
 ## Implementation notes
 
-- **HTTP layer**: uses `%engine.http` for outbound requests. ACP is REST-based, so requests are standard JSON-over-HTTP POSTs to endpoints documented in the [ACP OpenAPI spec](https://agentcommunicationprotocol.dev).
+- **HTTP layer**: uses `%net.http_client` for outbound requests. ACP is REST-based, so requests are standard JSON-over-HTTP POSTs to endpoints documented in the [ACP OpenAPI spec](https://agentcommunicationprotocol.dev).
 - **Authentication**: ACP leaves auth open. Client should support bearer tokens, API keys, and basic auth at minimum, likely via a `headers:` kwarg on constructor and `.send`. Specific shape TBD.
 - **Response parsing**: maps ACP's response JSON onto a Caspian object. `.output` is the canonical field for the V1.0 text-only case; richer accessor patterns land with multimodal support.
 
@@ -180,5 +180,5 @@ ACP's authoritative spec lives at [agentcommunicationprotocol.dev](https://agent
 ## See also
 
 - [Puckai](https://puck.uno/documentation/requirements/ecoverse/puckai/) — Puck's own structured-conversation format. Adjacent space; different abstraction level. Independent of ACP.
-- [`puck.uno/ai/agent`](https://puck.uno/documentation/requirements/ecoverse/puckai/agent) — the established Caspian pattern for outbound agent calls; the ACP client shape borrows the `.new(url:) + .send(...)` surface from it.
-- [`%engine.http`](https://puck.uno/documentation/requirements/caspian/engine/) — the HTTP layer ACP rides on.
+- [`puck.uno/ai/agent`](https://puck.uno/documentation/requirements/caspian/packages/agent/) — the established Caspian pattern for outbound agent calls; the ACP client shape borrows the `.new(url:) + .send(...)` surface from it.
+- [`%net.http_client`](https://puck.uno/documentation/requirements/caspian/network/http/client/) — the HTTP layer ACP rides on.

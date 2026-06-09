@@ -2,7 +2,7 @@
 
 *A `function` in Caspian is a closed unit of code — it can only see its own parameters. Outer scope is invisible. The `closure` form captures outer scope; `function` deliberately does not.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_functions",
 	"role": "spec for the Caspian function form's scoping rule — functions are closed and can only see their declared parameters; closures (a separate form) capture outer scope",

@@ -2,7 +2,7 @@
 
 *Deferred from V1.0. Idea: the JSON shape that `%engine.manifest` emits could also be authored by hand and checked into a project as a constraints file — a declaration of what versions and capabilities the code expects to run on.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_manifest_constraints",
 	"role": "design sketch for using the %engine.manifest JSON shape as an author-written constraints file; deferred from V1.0 because the lifecycle/loading/enforcement model wasn't worth pinning down for the initial slice",

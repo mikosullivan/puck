@@ -1,6 +1,6 @@
 # Rideshare Driver App (worked example)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "rideshare-driver-app",
 	"role": "worked-example spec for a driver-side PWA built on puck.uno/geo; doubles as the end-to-end validation case for whether geo covers a real rideshare driver use case",

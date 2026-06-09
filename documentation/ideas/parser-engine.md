@@ -1,6 +1,6 @@
 # Common parser engine
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "parser-engine",
 	"role": "forward-direction note: v1 keeps parsers hand-rolled and small; if the count grows to ~4-5 distinct parsers, revisit options like bundling LPeg or building a shared engine",

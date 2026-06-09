@@ -2,7 +2,7 @@
 
 *The download endpoint on blockchain.puck.uno. Returns the actual bytes of a published artifact, after verifying them against the signed block.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "blockchain_api_fetch",
 	"role": "spec for the GET download endpoint on blockchain.puck.uno that returns artifact bytes (the actual file content) after server-side hash verification against the signed block",

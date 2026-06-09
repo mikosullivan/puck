@@ -2,7 +2,7 @@
 
 *A debug/introspection tool. Returns a summary of the running Caspian process — what's underneath, what's loaded, how long it's been running.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "engine_manifest",
 	"role": "spec for the %engine.manifest method, a debug and introspection tool that returns a summary hash describing the current process (process metadata, os, engine, Caspian and loaded libs)",
@@ -91,7 +91,7 @@ Information about the running process itself.
   - `start` — wall-clock timestamp captured at process start. Format TBD (ISO 8601 instant most likely).
   - `stop` — wall-clock timestamp captured at the moment this manifest was generated. For a snapshot taken mid-run, this is "now"; for a manifest emitted at process exit (post-mortem), this is the actual end time. Same format as `start`.
   - `run` — duration between `start` and `stop`, pre-computed for convenience. Format TBD (ISO 8601 duration, seconds, or formatted string). Redundant with the two timestamps but saves consumers from doing date math when they just want to glance at how long things took.
-- `steps` — total Caspian-level steps executed in this process so far, using the same step unit as [`%utils.steps`](../utils/steps.md) (one count per `eval` or `exec_stmt` call). Deterministic and engine-independent.
+- `steps` — total Caspian-level steps executed in this process so far, using the same step unit as [`%utils.steps`](../global-methods/utils/steps.md) (one count per `eval` or `exec_stmt` call). Deterministic and engine-independent.
 
 **Origin.** At process start, the engine records a wall-clock timestamp (which becomes `time.start`) and initializes a step counter to `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. The three time values and the step count are stable for a given call — they reflect the moment of the manifest call, not whatever has happened in between accessing the returned hash and reading its fields.
 
@@ -123,7 +123,7 @@ Information about the running process itself.
   - `source` — the URL the lib was fetched from.
   - `ranges` — range expressions that selected this version. Empty `[]` = all contributing calls were unconstrained. Debug-only today; designed for the deferred [constraints files](https://puck.uno/documentation/ideas/caspian/manifest-constraints) feature.
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"field": "caspian.libs[].ranges",
 	"type": "array_of_range_expressions",
@@ -141,7 +141,7 @@ Load records are **process-level state**, not object-level — once loaded, entr
 
 **Post-V1: dependency tree.** The `libs` section today is a flat hash — every loaded library appears, but the manifest doesn't say which library pulled which in. A post-V1 feature will add **dependency tracking**: for each entry, record which other entries triggered its load (the parent libraries) so callers can reconstruct the dependency tree from the manifest. Useful for supply-chain investigation, version-conflict diagnosis, and "why is this library here?" questions. Deferred from V1 because the cheap implementation depends on per-library role identity that the engine's role tracking hasn't matured into yet. Non-breaking when it lands — likely a per-entry `pulled_in_by` field or a sibling `lib_deps` hash. See [#539](https://github.com/mikosullivan/puck/issues/539) for the design sketch.
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"property": "load_records_are_process_level_state",
 	"persistence": "lifetime_of_process",

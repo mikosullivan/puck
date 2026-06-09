@@ -1,6 +1,6 @@
 # Building Apps on Mikobase
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "building-apps",
 	"role": "developer guidance for apps that talk to remote mikobases over HTTP: treat outbound deltas as a retryable queue; mikobase POST endpoint is idempotent so retries are safe",

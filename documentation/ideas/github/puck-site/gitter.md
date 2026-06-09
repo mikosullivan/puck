@@ -1,6 +1,6 @@
 # Gitter
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "github-gitter",
 	"status": "V1.0 feature — initial scope is internal use only (renders puck.uno's docs from the mikosullivan/puck repo). Public multi-repo product is post-V1.",

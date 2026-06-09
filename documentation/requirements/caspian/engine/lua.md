@@ -1,6 +1,6 @@
 # `%engine.lua`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "engine_lua",
 	"role": "spec for the %engine.lua slot — the host-specific introspection slot present when the running engine is the Lua reference implementation; primarily enumerates the loaded Lua files with their names and versions",

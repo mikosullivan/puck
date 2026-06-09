@@ -1,6 +1,6 @@
 # Parser and tokenizer systems for Puck
 
-~~~json
+~~~vibecode
 {"vibecode": {"doc": "parsers",
 "role": "research report revisiting the deferred decision in
 parser-engine.md: should Puck adopt a common parser/tokenizer system
@@ -44,7 +44,7 @@ embedded engine, Tree-sitter is the external-language asset pool.
 <a id="the-state-today"></a>
 ## The state today
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "state_today",
 "role": "snapshot of what Puck parses today and the
 parser-engine.md trigger condition"}}
@@ -90,7 +90,7 @@ report is partly about whether to lean into it.
 <a id="whats-in-scope-for-puck"></a>
 ## What's in scope for Puck
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "scope",
 "role": "constraints that narrow the option space before any
 tool comparison: Lua runtime, deployment story, self-hosting"}}
@@ -135,7 +135,7 @@ those constraints.
 <a id="tree-sitter"></a>
 ## Tree-sitter
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "tree_sitter",
 "role": "evaluate Tree-sitter against Puck constraints; verdict
 is external-language-asset-pool only, not engine-internal",
@@ -192,7 +192,7 @@ external-language tooling. Don't use it for engine-internal parsing.
 <a id="lpeg"></a>
 ## LPeg
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "lpeg",
 "role": "evaluate LPeg as the canonical engine-internal parser
 toolkit; already in V1 dependency list",
@@ -266,7 +266,7 @@ port after that gives us a real read on the boundary behaviour.
 <a id="antlr"></a>
 ## ANTLR
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "antlr",
 "role": "evaluate ANTLR4; not a fit because no Lua target and the
 runtime model is wrong for Puck"}}
@@ -295,7 +295,7 @@ completeness; do not pursue.
 <a id="pest"></a>
 ## Pest
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "pest",
 "role": "evaluate Pest; Rust-only, so same disqualification path
 as ANTLR"}}
@@ -319,7 +319,7 @@ instead of inline Lua tables.
 <a id="chevrotain"></a>
 ## Chevrotain
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "chevrotain",
 "role": "evaluate Chevrotain; JavaScript-only, mentioned for
 completeness only"}}
@@ -338,7 +338,7 @@ considered.
 <a id="lemon"></a>
 ## Lemon
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "lemon",
 "role": "evaluate Lemon; very small, C-only, used by SQLite, but
 the LR/LALR model and C target rule it out"}}
@@ -363,7 +363,7 @@ admirable tool. Same disqualifier path as ANTLR.
 <a id="marpa"></a>
 ## Marpa
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "marpa",
 "role": "evaluate Marpa; powerful Earley algorithm, Perl-first,
 out of scope"}}
@@ -392,7 +392,7 @@ in PEG terms exceeds the cost of importing Marpa.
 <a id="the-hybrid-model"></a>
 ## The hybrid model
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "hybrid_model",
 "role": "the proposed split: LPeg for engine-internal parsing,
 Tree-sitter for external-language dev-time tooling, Uma's
@@ -443,7 +443,7 @@ listed here so we know what shape we are aiming at.
 <a id="recommendation"></a>
 ## Recommendation
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "recommendation",
 "role": "concrete action items and ordering; minimal and
 reversible"}}
@@ -485,7 +485,7 @@ stands.
 <a id="docs-to-update-if-this-lands"></a>
 ## Docs to update if this lands
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "doc_updates",
 "role": "concrete list of existing docs that would need edits if
 the recommendation is accepted; lets the human reviewer scope the

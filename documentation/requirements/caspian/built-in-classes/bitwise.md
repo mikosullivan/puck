@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"concept": "bitwise_operations_via_dedicated_wrapper_object",
@@ -19,7 +19,7 @@ explicit at the call site.
 <a id="access"></a>
 ## Access
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "access",
 	"method": "bitwise",
@@ -52,7 +52,7 @@ $n.bitwise.or(456)
 <a id="methods"></a>
 ## Methods
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "methods",
 	"methods": ["or", "and", "xor", "not", "shift_left", "shift_right",

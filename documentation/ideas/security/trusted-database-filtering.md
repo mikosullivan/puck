@@ -1,6 +1,6 @@
 # Idea: Trusted-Database Input Filtering
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "trusted-database-filtering",
 	"role": "speculative engine feature to close the laundering attack vector where untrusted data written into a trusted database emerges as trusted on read; per-column policies under role model",

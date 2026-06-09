@@ -1,6 +1,6 @@
 # Bindings
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "bindings",
 	"role": "spec for the binding mechanism that lets Caspian classes reach Lua-backed functionality (HTTP, filesystem, SQLite, signing, parsing) without breaching the Caspian/Lua security floor",

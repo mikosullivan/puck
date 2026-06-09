@@ -1,6 +1,6 @@
 # References
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "references",
 	"role": "the foundational data structure inside Drinian that maps reference objects to the objects they point at; the table the engine scans to determine reachability for deterministic garbage collection",

@@ -1,6 +1,6 @@
 # Fiona
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "fiona",
 	"role": "historical notes on Fiona, a DBMS Miko once designed around strict object immutability and relationship-as-record modeling; not in use in mikobase but its ideas may inform future design",

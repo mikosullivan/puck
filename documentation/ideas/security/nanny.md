@@ -1,6 +1,6 @@
 # The Nanny (idea)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "nanny",
 	"role": "deferred design space for a unified nanny helper that manages quietable warnings and supports escalation to exceptions; current direction is per-feature ad-hoc opt-out flags until use cases converge",

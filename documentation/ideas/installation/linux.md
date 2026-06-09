@@ -1,6 +1,6 @@
 # Linux install story (interactive shell)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "linux_install_story_interactive",
 	"role": "narrative walkthrough — Linux user at a Bash prompt with a TTY; one curl command, an interactive Caspian-written installer asks a few friendly questions, hello-world runs",
@@ -304,7 +304,7 @@ tree can be moved as a unit without re-linking anything.
 <a id="open-questions"></a>
 ## Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions":
 ["whether_dir_already_exists_warning_and_recovery",
 "xdg_layout_as_an_opt_in_for_users_who_prefer_it",

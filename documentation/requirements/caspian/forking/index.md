@@ -1,11 +1,11 @@
 # Forking
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "forking",
 	"role": "spec for Caspian's forking feature — how user code spawns OS-level child processes, how the engine prevents zombie processes by default, the three spawn forms (tracked single, tracked pool, detached), the callback signature for the forked block, and the manager-handle pattern for inspecting and controlling spawned children.",
 	"status": "committed for V1.0 — three spawn forms, closure semantics, $fork callback, auto-close-at-script-end, disabling-auto-close via %engine.auto_close_forks all settled. Open points (manager-handle details, IPC, role/resource inheritance, crash behavior, grace period) settle during implementation rather than block design. Required by UDS, shared-hash, and the broader server-with-workers pattern.",
-	"supersedes": "all prior fork mentions in syntax/system-methods.md, cli.md, frank.md, packages/touchstone/sammy.md, packages/bryton/runner.md, packages/jasmine/index.md, built-in-classes/filesystem.md, and incidental references elsewhere",
+	"supersedes": "all prior fork mentions in syntax/system-methods.md, cli.md, frank.md, network/http/server/sammy/index.md, packages/bryton/runner.md, packages/jasmine/index.md, built-in-classes/filesystem.md, and incidental references elsewhere",
 	"key_concepts": ["all_forking_lives_under_percent_utils",
 		"three_spawn_forms_single_multiple_detach",
 		"engine_auto_closes_tracked_forks_at_script_end",

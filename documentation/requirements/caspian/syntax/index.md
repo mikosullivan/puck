@@ -1,6 +1,6 @@
 # Caspian syntax
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "syntax",
 	"role": "umbrella landing page for Caspian syntax topics. Per-construct references that complement the language spec in caspian.md."

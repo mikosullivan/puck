@@ -1,6 +1,6 @@
 # Shared hash
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uds_shared_hash",
 	"role": "spec for the shared hash returned by $uds.share — a wrapper object that implements the hash interface but isn't itself a hash. Reads and writes translate to UDS calls against the server-held authoritative state. Nested access works at any depth via chained sub-wrappers. Regular hashes assigned INTO a shared hash get adopted into the shared structure. After the share block ends, the wrapper collapses to a regular hash holding the final state.",
@@ -83,7 +83,7 @@ $hash['tags']     = ['a', 'b']            # array of primitives — OK
 $hash['user']     = {name: 'Alice'}       # nested hash of primitives — OK
 
 $hash['handler']  = do(...) ... end       # closure — RAISES
-$hash['my_obj']   = %puck['foo/bar'].new  # class instance — RAISES
+$hash['my_obj']   = %puck['https://foo/bar'].new  # class instance — RAISES
 $hash['socket']   = $sock                 # live engine object — RAISES
 ~~~
 

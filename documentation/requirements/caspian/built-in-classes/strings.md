@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"type": "string",
@@ -25,7 +25,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="operators"></a>
 ## Operators
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "operators",
 	"operators": ["+", "*", "[]"],
@@ -48,7 +48,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "testing",
 	"returns": "Boolean",
@@ -73,7 +73,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="case"></a>
 ## Case
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "case",
 	"methods": ["upper_case", "lower_case"],
@@ -91,7 +91,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="whitespace"></a>
 ## Whitespace
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "whitespace",
 	"methods": ["left_strip", "right_strip", "collapse", "chomp"],
@@ -113,7 +113,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="prefix-and-suffix"></a>
 ## Prefix and Suffix
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "prefix_and_suffix",
 	"methods": ["delete_prefix", "delete_suffix"],
@@ -132,7 +132,7 @@ All strings in Caspian are normalized to UTF-8.
 <a id="search-and-replace"></a>
 ## Search and Replace
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "search_and_replace",
 	"methods": ["match", "replace"],
@@ -173,7 +173,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 <a id="formatting"></a>
 ## Formatting
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "formatting",
 	"methods": ["left_justify", "right_justify"],
@@ -192,7 +192,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 <a id="splitting"></a>
 ## Splitting
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "splitting",
 	"methods": ["lines"],
@@ -210,7 +210,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 <a id="size"></a>
 ## Size
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "size",
 	"methods": ["length", "size"],
@@ -229,7 +229,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 <a id="conversion"></a>
 ## Conversion
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "conversion",
 	"methods": ["to_number", "hex", "reverse"],
@@ -252,7 +252,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 <a id="end-anchored-slicing"></a>
 ## End-Anchored Slicing
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "end_anchored_slicing",
 	"concept": "end_object_wraps_string_for_right_indexed_access",

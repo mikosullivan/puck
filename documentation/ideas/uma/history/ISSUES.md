@@ -1,6 +1,6 @@
 # Issues
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uma-history-issues",
 	"role": "historical issue list from the prior Ruby Uma project: open items about canon.json tag coverage, root/head structure, attribute semantics, and content-model constraints",

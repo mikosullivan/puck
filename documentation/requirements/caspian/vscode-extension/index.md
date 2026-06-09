@@ -1,6 +1,6 @@
 # Caspian VS Code extension
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "vscode_extension_requirements",
 	"role": "requirements for the Caspian VS Code extension — scope of what ships in V1, what's explicitly deferred, what's optional. Implementation lives in the caspian-vscode repo; this doc is the canonical 'what we want it to do'.",
@@ -169,7 +169,7 @@ A library of code-template snippets the user expands by typing a trigger word an
 
 - `function` → `function &name($args)\n    ...\nend`
 - `closure` → `closure() do($args)\n    ...\nend`
-- `class` → `class 'name'\n    ...\nend`
+- `class` → `class\n    ...\nend`
 - `if`, `ife` (if/else), `ifeif` (if/elsif/else) → matching block scaffolds
 - `for`, `while`, `loop` → loop scaffolds
 - `do` → `do ... end` block

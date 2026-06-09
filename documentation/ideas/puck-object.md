@@ -1,6 +1,6 @@
 # Puck Objects (brainstorm — folded into official doc)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puck-object",
 	"role": "historical brainstorm that worked out the puck-object-vs-%puck distinction; superseded by the canonical puck.md but kept as a record of how the design developed",
@@ -419,7 +419,7 @@ user code a puck that just trusts the cache. The Caspian code is the
 same; the puck differs.
 
 User code typically doesn't reason about which puck it got. It calls
-`%puck['some.com/uns']`, and whatever the engine set up determines
+`%puck['https://some.com/uns']`, and whatever the engine set up determines
 the result and the checks.
 
 ---

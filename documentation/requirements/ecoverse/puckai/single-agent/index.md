@@ -2,7 +2,7 @@
 
 *Single-agent Puckai mode*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai_single_agent",
 	"role": "spec for the single-agent mode of Puckai — one agent reads a session, addresses every issue in it, renders a decision per issue, and returns the worldlet. Builds on the shared spec at ../index.md.",

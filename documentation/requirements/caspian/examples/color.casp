@@ -1,4 +1,4 @@
-class 'puck.uno/color'
+class
 	field :red,   class: :number, min: 0, max: 255, integer_only: true, required: true
 	field :green, class: :number, min: 0, max: 255, integer_only: true, required: true
 	field :blue,  class: :number, min: 0, max: 255, integer_only: true, required: true

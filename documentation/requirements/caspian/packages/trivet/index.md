@@ -1,6 +1,6 @@
 # Trivet
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "trivet",
 	"role": "spec for puck.uno/trivet, a generic tree library for Caspian with node/child_set/document classes; ported from the Ruby Trivet gem and used wherever the framework deals with trees",
@@ -32,7 +32,7 @@ over directly; method naming follows Caspian conventions.
 <a id="examples"></a>
 ## Examples
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "examples",
 	"basis": "operates_on_the_food_spices_tree_from_construction",

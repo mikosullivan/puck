@@ -1,6 +1,6 @@
 # Color sphere
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "sphere",
 	"role": "brainstorm for puck.uno/color/sphere — a spherical region in the color cube; pairs with the color class to express 'colors near' and 'colors away from' constraints",

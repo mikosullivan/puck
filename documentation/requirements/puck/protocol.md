@@ -1,10 +1,9 @@
 # Puck — Protocol Specification
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puck-protocol",
-	"role": "formal spec for the JSON expression of Puck — building up piece by piece, starting with class definitions; the HTML expression is described separately in puck-html.md",
-	"status": "in_development_starting_with_class_definitions",
+	"role": "formal spec for the JSON expression of Puck — the message structures and behaviors a Puck server and client agree on when speaking JSON over HTTP",
 	"key_concepts": ["json_wire_format", "class_definition_json",
 		"shared_shape_with_caspian_and_mikobase",
 		"remote_methods_block", "method_params_and_returns",
@@ -25,12 +24,7 @@ agree on when speaking JSON over HTTP.
 The conceptual overview is in [puck.md](index.md); a Python client
 sketch is in [python.md](python.md); this doc is the formal spec.
 
-JSON is the primary wire format. Puck can also be expressed in HTML.
-The HTML expression is described separately in
-[puck-html.md](puck-html.md); JSON and HTML formats are convertible
-losslessly.
-
-**Status: in development.**
+JSON is the primary wire format.
 
 ---
 
@@ -60,28 +54,28 @@ object** — the actual ship data on the Starfleet server.
 
 A Puck class is defined in JSON, using the **same shape Caspian and
 Mikobase use** (see [class-definition.md](../mikobase/class-definition.md)
-for the full Mikobase/Caspian spec). Here's `puck.uno/geo` with two
+for the full Mikobase/Caspian spec). Here's `https://puck.uno/geo` with two
 fields and three remote methods:
 
 ```json
 {
-    "name": "puck.uno/geo",
+    "name": "https://puck.uno/geo",
     "fields": {
         "lat": {"class": "number", "required": true},
         "lon": {"class": "number", "required": true}
     },
     "methods": {
         "weather": {
-            "returns": {"class": "puck.uno/weather_report"}
+            "returns": {"class": "https://puck.uno/weather_report"}
         },
         "congressional_district": {
-            "returns": {"class": "puck.uno/congressional_district"}
+            "returns": {"class": "https://puck.uno/congressional_district"}
         },
         "map_image": {
             "params": {
                 "zoom": {"class": "number", "integer_only": true, "default": 14}
             },
-            "returns": {"class": "puck.uno/image"}
+            "returns": {"class": "https://puck.uno/image"}
         }
     }
 }
@@ -100,7 +94,7 @@ fields and three remote methods:
     There are no positional placeholders.
   - **`returns`** — the type of the value the method produces, also
     in field-definition shape. The `class` can be a primitive
-    (`string`, `number`, ...) or a UNS for a Puck class — in which
+    (`string`, `number`, ...) or a URL for a Puck class — in which
     case the call returns a reference to a remote object the client
     can call further methods on.
 
@@ -118,10 +112,10 @@ A method call is **typically a POST** to a URL that encodes the
 class and the method, with a body that carries the instance's
 `class` and `bucket` (the field-value hash):
 
-- **URL** — `https://{class-uns}/{method}`. The method name lives
+- **URL** — `https://{class-url}/{method}`. The method name lives
   in the URL, not the body.
 - **HTTP verb** — POST in most cases.
-- **Body** — JSON with `class` (the UNS of the instance's class)
+- **Body** — JSON with `class` (the URL of the instance's class)
   and `bucket` (the field-value hash), plus `params` if the method
   takes any named arguments.
 
@@ -136,7 +130,7 @@ with body:
 
 ```json
 {
-    "class": "puck.uno/geo",
+    "class": "https://puck.uno/geo",
     "bucket": {
         "lat": 37.7980,
         "lon": -122.4626
@@ -154,7 +148,7 @@ with body:
 
 ```json
 {
-    "class": "puck.uno/geo",
+    "class": "https://puck.uno/geo",
     "bucket": {
         "lat": 37.7980,
         "lon": -122.4626
@@ -193,7 +187,7 @@ stored CongressionalDistrict for that location:
 
 ```json
 {
-    "class": "puck.uno/congressional_district",
+    "class": "https://puck.uno/congressional_district",
     "bucket": {
         "code": "CA-11"
     }
@@ -203,7 +197,7 @@ stored CongressionalDistrict for that location:
 The client can use that returned object as the body of further
 calls. To know what methods the returned object exposes, the client
 should fetch the class definition from
-`https://puck.uno/congressional_district` — the class's UNS doubles
+`https://puck.uno/congressional_district` — the class's URL doubles
 as the URL where its JSON definition lives. To get the
 representative, the client then takes the returned object verbatim
 and POSTs it to the `representative` method's URL:
@@ -223,7 +217,7 @@ Field values that a particular method doesn't actually use are
 still sent; the protocol doesn't try to optimize that away.
 
 **In practice the cost is small.** Most Puck objects are tiny — a
-Geo is two numbers, a CongressionalDistrict reference is one UNS string, a
+Geo is two numbers, a CongressionalDistrict reference is one URL string, a
 Color is one hex code. The wire payload is mostly HTTP/JSON
 envelope; the object data itself rarely amounts to much.
 
@@ -251,14 +245,14 @@ Starfleet database.
 
 ```json
 {
-    "name": "starfleet.com/starship",
+    "name": "https://starfleet.com/starship",
     "fields": {
         "registry": {"class": "string", "required": true}
     },
     "methods": {
         "name": {"returns": {"class": "string"}},
-        "captain": {"returns": {"class": "starfleet.com/officer"}},
-        "current_location": {"returns": {"class": "puck.uno/geo"}}
+        "captain": {"returns": {"class": "https://starfleet.com/officer"}},
+        "current_location": {"returns": {"class": "https://puck.uno/geo"}}
     }
 }
 ```
@@ -276,7 +270,7 @@ with body:
 
 ```json
 {
-    "class": "starfleet.com/starship",
+    "class": "https://starfleet.com/starship",
     "bucket": {
         "registry": "NCC-1701-D"
     }
@@ -284,7 +278,7 @@ with body:
 ```
 
 The server resolves `NCC-1701-D` against its database, finds the
-Enterprise-D, and returns the captain as a `starfleet.com/officer`
+Enterprise-D, and returns the captain as a `https://starfleet.com/officer`
 reference — itself probably another PK-only object the client can
 make further calls on.
 
@@ -322,7 +316,7 @@ import puck
 
 # Fetches the class definition from https://puck.uno/geo
 # and returns a Python class wrapping it.
-Geo = puck.lookup('puck.uno/geo')
+Geo = puck.lookup('https://puck.uno/geo')
 
 # Instantiating produces a Python wrapper around the dynamic object
 # (class + bucket). No remote call yet — just an object in memory.
@@ -341,8 +335,8 @@ representative = hq.congressional_district.representative
 
 The Python wrapper does three things behind that surface:
 
-- **Class loading.** `puck.lookup(uns)` fetches the class definition
-  JSON from the class's UNS URL and constructs a Python class with
+- **Class loading.** `puck.lookup(url)` fetches the class definition
+  JSON from the class's URL and constructs a Python class with
   the declared methods (and the appropriate signatures).
 - **Wire dispatch.** Every method call becomes the POST shape from
   §3 — URL is `https://{class}/{method}`, body is `class` +
@@ -366,8 +360,8 @@ recommended paths:
 - **Simple APIs:** commit to keeping your API consistent for as
   long as you serve it.
 
-- **APIs that need to evolve:** use a `vN/` segment in the UNS.
-  `borg.uno/geo/v1`, `borg.uno/geo/v2`, etc.
+- **APIs that need to evolve:** use a `vN/` segment in the URL.
+  `https://borg.uno/geo/v1`, `https://borg.uno/geo/v2`, etc.
 
 These two conventions cover the common cases. If the community
 wants a more fine-grained approach then let's have that discussion.

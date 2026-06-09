@@ -1,6 +1,6 @@
 # Installation stories
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "installation_stories_index",
 	"role": "index page for installation walkthroughs — one narrative story per host environment, walking a user from a fresh prompt to a running hello-world program",

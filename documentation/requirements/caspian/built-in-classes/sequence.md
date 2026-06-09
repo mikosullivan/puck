@@ -1,6 +1,6 @@
 # Sequence
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "sequence",
 	"role": "built-in utility class that produces unique sequential string identifiers; engine uses one global instance to mint object IDs but the class is reusable for any application that needs monotonic ID generation",
@@ -24,7 +24,7 @@ as long as memory holds.
 <a id="construction"></a>
 ## Construction
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "construction",
 	"default_start": "\"1\"",
@@ -218,7 +218,7 @@ objects and don't coordinate.
 <a id="implementation"></a>
 ## Implementation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "implementation",
 	"internal_representation": "array_of_single_digit_strings_most_significant_first",

@@ -1,6 +1,6 @@
 # Frank
 
-~~~json
+~~~vibecode
 {"vibecode": {"slice": "frank_caspian_cli", "codename":
 "Frank", "delivers": "caspian_command_line_launcher",
 "position_in_roadmap":
@@ -32,7 +32,7 @@ below is preserved as **future direction**, not as Frank's work.
 <a id="what-the-slice-introduces"></a>
 ### What the slice introduces
 
-~~~json
+~~~vibecode
 {"vibecode": {"introduces": ["caspian_command_line_launcher",
 "shebang_support", "argv_via_engine_state_argv_and_percent_argv",
 "stderr_sink_and_role_and_engine_err_property",
@@ -80,7 +80,7 @@ below is preserved as **future direction**, not as Frank's work.
 <a id="permissions-default-restrictive-opt-in-via-flags"></a>
 ### Permissions: default restrictive, opt-in via flags (future direction, not Frank)
 
-~~~json
+~~~vibecode
 {"vibecode": {"status": "future_direction_not_in_frank",
 "permission_model": "default_restrictive_opt_in_via_flags",
 "defaults_always_on": ["user_role", "clock_role_plus_clock_object",
@@ -169,7 +169,7 @@ caspian --allow-all ./my_local_tool.casp
 <a id="installation"></a>
 ### Installation
 
-~~~json
+~~~vibecode
 {"vibecode": {"installation_model":
 "project_local_bin_plus_path; no_system_install",
 "launcher_path_in_repo": "bin/caspian",
@@ -234,7 +234,7 @@ homebrew formula, etc.) is a V1+ deployment concern, not Frank work.
 <a id="bryton-interaction"></a>
 ### Bryton interaction
 
-~~~json
+~~~vibecode
 {"vibecode": {"bryton_invocation": "caspian_path_to_test_file_at_glenstorm_then_allow_all_once_flags_exist",
 "rationale": "frank_does_not_yet_have_permission_flags; bryton_just_invokes_caspian_with_the_file_path; the_allow_all_form_arrives_when_permission_flags_do"}}
 ~~~
@@ -250,7 +250,7 @@ access; per-test narrowing is later Bryton work).
 <a id="open-questions"></a>
 ### Open questions
 
-~~~json
+~~~vibecode
 {"vibecode": {"open_questions_frank_cli":
 ["bash_launcher_vs_pure_lua_launcher",
 "cross_platform_shebang_behavior_linux_macos_wsl"],
@@ -373,7 +373,7 @@ boundaries by virtue of each frame having its own fresh chain).
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing", "test_directory":
 "tests/caspian/frank/", "fixture_directory":
 "tests/caspian/fixtures/",

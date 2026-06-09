@@ -2,7 +2,7 @@
 
 *Idea: let `⚠` be a method-name alias for `yield`, so `$block.⚠ $foo, $bar` is sugar for `$block.yield $foo, $bar`.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_warning_emoji_yield_alias",
 	"role": "speculative syntactic sugar — ⚠ as a method-name alias for yield, giving block.yield calls a more visually distinctive form",

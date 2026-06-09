@@ -3,7 +3,7 @@
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "overview",
     "concept": "every_parameter_is_an_object_with_a_metadata_hash",
@@ -33,7 +33,7 @@ the runtime binds them).
 <a id="basic-definition"></a>
 ## Basic Definition
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "basic_definition",
     "signature_form": "function($private1, $private2, ...)",
@@ -64,7 +64,7 @@ Each parameter has two names:
 <a id="inline-metadata-declaration"></a>
 ## Inline Metadata Declaration
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "inline_declaration",
     "syntax": "$param: {key: value, key: value}",
@@ -108,7 +108,7 @@ $foo.params['bar'].lazy = true
 <a id="known-metadata-properties"></a>
 ## Known Metadata Properties
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "known_metadata_properties",
     "properties": ["lazy", "classes", "optional", "default", "nullable", "public"]
@@ -129,7 +129,7 @@ $foo.params['bar'].lazy = true
 <a id="public-and-private-names"></a>
 ## Public and Private Names
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "public_private",
     "mapping": "public_to_private",
@@ -169,7 +169,7 @@ can only use public names.
 <a id="required-and-optional-parameters"></a>
 ## Required and Optional Parameters
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "optional_params",
     "default": "required",
@@ -227,7 +227,7 @@ Setting a `default` implicitly makes the parameter optional, so writing
 <a id="type-constraints"></a>
 ## Type Constraints
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "type_constraints",
     "property": "classes",
@@ -267,7 +267,7 @@ $foo.params['bar'].nullable = true
 <a id="lazy-parameters"></a>
 ## Lazy Parameters
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "lazy_params",
     "option": "lazy: true",
@@ -285,7 +285,7 @@ zero-argument block before the call. Inside the function, `.call`
 evaluates it:
 
 ```
-class 'puck.uno/ander'
+class
     function &evaluate($left:  {lazy: true},
                        $right: {lazy: true}) do
         if (! $left.call)
@@ -315,7 +315,7 @@ short-circuit evaluation with no special parser support.
 <a id="rest-positional-parameters-args"></a>
 ## Rest Positional Parameters: `*args`
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "rest_positional",
     "syntax": "*args",
@@ -344,7 +344,7 @@ If no extra positional arguments are passed, `$args` is an empty array.
 <a id="rest-named-parameters-opts"></a>
 ## Rest Named Parameters: `**opts`
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "rest_named",
     "syntax": "**opts",
@@ -377,7 +377,7 @@ are quietly absorbed into the hash.
 <a id="combined-rest-parameters"></a>
 ## Combined Rest Parameters
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "combined_rest",
     "supports": ["normal", "*args", "**opts"],
@@ -407,7 +407,7 @@ At most one `*args` and one `**opts` per signature.
 <a id="call-site-splat-expansion"></a>
 ## Call-Site Splat Expansion
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "call_site_splat",
     "forms": ["*array_for_positional", "**hash_for_named"],
@@ -441,7 +441,7 @@ $opts = {rank: 'Admiral', ship: 'Enterprise'}
 <a id="calling-functions"></a>
 ## Calling Functions
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "calling",
     "call_types": ["positional", "named", "mixed"],
@@ -475,7 +475,7 @@ formatter-enforced.
 <a id="positional-until-named-rule"></a>
 ## Positional-Until-Named Rule
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "positional_named_rule",
     "rule": "positional_until_named",
@@ -517,7 +517,7 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 <a id="invalid-calls"></a>
 ## Invalid Calls
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "invalid_calls",
     "error_types": ["positional_after_named", "duplicate_assignment",
@@ -541,7 +541,7 @@ Given `$foo = function($name, $rank: {optional: true}, $phrase)` (where
 <a id="argument-binding-algorithm"></a>
 ## Argument Binding Algorithm
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "binding_algorithm",
     "ordered_steps": ["bind_positional_left_to_right",
@@ -577,7 +577,7 @@ order:
 <a id="definition-errors"></a>
 ## Definition Errors
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "definition_errors",
     "types": ["duplicate_public_name", "public_private_collision",
@@ -608,7 +608,7 @@ $foo = function(**a, **b)
 <a id="programmatic-access"></a>
 ## Programmatic Access
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "programmatic_access",
     "api": "$foo.params['bar'].lazy = true",
@@ -638,7 +638,7 @@ frameworks, validators, and generated functions.
 <a id="freezing-functions"></a>
 ## Freezing Functions
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "freezing_functions",
     "concern": "functions_are_mutable_params_can_be_modified_by_anyone_with_reference",
@@ -671,7 +671,7 @@ modification.
 <a id="style-guidelines"></a>
 ## Style Guidelines
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "style",
     "guidelines": ["required_first_optional_last", "avoid_aliasing",
@@ -735,7 +735,7 @@ $foo = function($required1,
 <a id="summary"></a>
 ## Summary
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "summary",
     "core_rules": ["positional_until_named", "optional_propagates_forward",

@@ -2,7 +2,7 @@
 
 > **Deferred from V1** (decided 2026-06-05). Originally planned as part of V1; pulled because the LSP requires a local Caspian install for editor users, conflicting with first-contact goals and remote workflows. Preserved here as the build plan for when LSP work resumes. The spec it builds is at [ideas/lsp/](../lsp/).
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian_lsp_build_plan",
 	"role": "build plan for the Caspian Language Server — phase progression, prerequisites against the Caspian engine slices, test plan, scope. Originally a V1 plan; now post-V1.",

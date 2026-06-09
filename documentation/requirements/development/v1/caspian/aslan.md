@@ -1,6 +1,6 @@
 # Aslan
 
-~~~json
+~~~vibecode
 {"vibecode": {"codename": "Aslan", "delivers": "hello-world", "goal":
 "execute a minimal caspianj program end_to_end and return a literal value to the test harness",
 "medium": "caspianj_hand_written; not_caspian_source", "fixture":
@@ -35,7 +35,7 @@ built out fully.
 <a id="definition-of-done"></a>
 ### Definition of done
 
-~~~json
+~~~vibecode
 {"vibecode": {"scope_status": "confirmed_2026-05-15", "done_criteria":
 {"fixture_runs": "[[{\"value\": \"hello\"}, \"to_string\"]]_parses_and_executes",
 "runs_under_a_role":
@@ -67,7 +67,7 @@ scope without explicit unlock.
 
 ## Engine startup and invocation
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "engine_startup_and_invocation", "scope":
 "how_a_ksj_program_actually_runs_from_invocation_through_return",
 "applies_from": "aslan", "covers": ["host_vs_engine_distinction",
@@ -85,7 +85,7 @@ allowed objects into the outermost CaspianJ block**.
 <a id="host-vs-engine"></a>
 ### Host vs. engine
 
-~~~json
+~~~vibecode
 {"vibecode": {"host_vs_engine": {"engine":
 "the_library_that_runs_ksj; located_under_code_caspian_lua",
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
@@ -112,7 +112,7 @@ point; what differs is who triggers it and what they pass in.
 <a id="aslan-invocation-chain"></a>
 ### Invocation chain
 
-~~~json
+~~~vibecode
 {"vibecode": {"aslan_invocation_chain": [{"step": 1, "name":
 "command_line_invocation", "example":
 "lua5.4 tests/caspian/run.lua tests/caspian/fixtures/hello_world.caspj"},
@@ -144,7 +144,7 @@ Top-level shape:
 <a id="aslan-engine-bootstrap-sequence"></a>
 ### Engine bootstrap sequence
 
-~~~json
+~~~vibecode
 {"vibecode": {"aslan_bootstrap_sequence": [{"step": 1, "name":
 "create_role_registry", "creates": ["user", "stdlib"],
 "role_object_aslan":
@@ -210,7 +210,7 @@ coming back:
 <a id="program-model"></a>
 ### Program model
 
-~~~json
+~~~vibecode
 {"vibecode": {"program_model_aslan": {"shape":
 "top_level_array_of_statements", "entry_point":
 "the_outermost_array_itself_no_main_function",
@@ -230,7 +230,7 @@ program is just one statement.
 <a id="what-user-caspianj-can-see-in-aslan"></a>
 ### What user CaspianJ can see
 
-~~~json
+~~~vibecode
 {"vibecode": {"aslan_visibility": {"directly_referenceable_by_name":
 "nothing", "implicitly_available":
 ["string_class_via_literal_materialization",
@@ -260,7 +260,7 @@ created.
 <a id="how-later-slices-grow-the-lifecycle"></a>
 ### How later slices grow the lifecycle
 
-~~~json
+~~~vibecode
 {"vibecode": {"growth_path": {"bree": {"bootstrap_change":
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
@@ -316,7 +316,7 @@ code cannot escape. Flagged as an open item.
 <a id="lua-side-implementation-sketch"></a>
 ## Lua-side implementation sketch
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "lua_implementation_sketch", "status":
 "candidate_shape; to_be_reconciled_with_existing_code_during_inventory",
 "language": "lua_5_4_assumed", "style":
@@ -337,7 +337,7 @@ doesn't, the shapes below are the proposal.
 <a id="data-structures-lua-tables"></a>
 ### Data structures (Lua tables)
 
-~~~json
+~~~vibecode
 {"vibecode": {"data_structures": {"role_object":
 "{name = string}", "role_registry":
 "engine.state.roles = {[name] = role_object, ...}; lives_inside_drinian",
@@ -457,7 +457,7 @@ reference, not the contents).
 <a id="key-procedures"></a>
 ### Key procedures
 
-~~~json
+~~~vibecode
 {"vibecode": {"procedures": {"engine.run":
 "(path) -> last_statement_value; entry_point",
 "engine.bootstrap":
@@ -497,7 +497,7 @@ Five procedures cover Aslan:
 <a id="pseudo-code-skeleton"></a>
 ### Pseudo-code skeleton
 
-~~~json
+~~~vibecode
 {"vibecode": {"pseudo_code_status":
 "illustrative_target_shape; not_committed_until_reconciled_with_existing_engine"}}
 ~~~
@@ -636,7 +636,7 @@ return engine
 <a id="notes-on-the-sketch"></a>
 ### Notes on the sketch
 
-~~~json
+~~~vibecode
 {"vibecode": {"sketch_notes": ["plain_tables_only_no_metatables_aslan",
 "role_objects_shared_by_reference_across_owning_role_fields",
 "explicit_call_stack_array_in_engine_state_pushed_and_popped_per_transition",
@@ -680,7 +680,7 @@ A few specifics worth flagging:
 <a id="aslan-phase-0-lua-workbench"></a>
 ## Phase 0: Lua workbench
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 0, "purpose":
 "set_up_and_verify_lua_dev_environment_before_writing_any_engine_code",
 "explicitly_excludes": "executing_caspian_or_ksj; only_lua_level_sanity",
@@ -697,7 +697,7 @@ happens in Phase 0** — this is purely Lua-level sanity.
 <a id="step-01-confirm-lua-54"></a>
 ### Step 0.1: Confirm Lua 5.4
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.1", "name": "confirm_lua_5_4", "action":
 "run_lua5_4_dash_v_from_project_root",
 "expected_stdout_contains": "Lua_5_4",
@@ -718,7 +718,7 @@ version (5.1 or 5.3) even when 5.4 is installed. See the
 <a id="step-02-run-a-sanity-hello-in-pure-lua"></a>
 ### Step 0.2: Run a sanity hello in pure Lua
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.2", "name": "lua_hello",
 "fixture_path": "tests/sanity/lua_hello.lua", "fixture_content":
 "print(\"hello from lua\")\n", "run":
@@ -738,7 +738,7 @@ followed by a newline. Exit code 0.
 <a id="step-03-verify-packagepath-resolves-engine-modules"></a>
 ### Step 0.3: Verify package.path resolves engine modules
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.3", "name": "package_path_check", "action":
 "set_package_path_prefix_to_code_caspian_lua; require_a_known_engine_module_no_error",
 "expected": "require_call_returns_a_table_without_error"}}
@@ -777,7 +777,7 @@ end)
 <a id="step-04-verify-the-existing-test-framework"></a>
 ### Step 0.4: Verify the existing test framework
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.4", "name": "verify_existing_test_framework",
 "existing_runner_module": "tests/caspian/support/runner.lua",
 "existing_assert_module": "tests/caspian/support/assert.lua",
@@ -838,7 +838,7 @@ description in the summary, and exit 1.
 <a id="step-05-verify-jsonlua-loads-and-parses"></a>
 ### Step 0.5: Verify json.lua loads and parses
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.5", "name": "json_parse_sanity",
 "fixture_path": "tests/sanity/test_json_parse.lua",
 "requires_module": "caspian.json", "parses": "{\"a\": 1}",
@@ -873,7 +873,7 @@ result, etc.), this is where we discover it — and the
 <a id="step-06-verify-file-reading"></a>
 ### Step 0.6: Verify file reading
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": "0.6", "name": "file_read_sanity",
 "fixture_path": "tests/caspian/fixtures/_sanity_text.txt",
 "fixture_content": "ok\\n", "test_file":
@@ -912,7 +912,7 @@ Phase 0 test coverage lives under [Testing](#testing) below.
 <a id="aslan-phase-1-hello-world-in-caspianj"></a>
 ## Phase 1: hello-world in CaspianJ
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 1, "fixture_path":
 "tests/caspian/fixtures/hello_world.caspj", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
@@ -968,7 +968,7 @@ so the source→runtime pipeline is end-to-end canonical.
 <a id="step-1-run-the-existing-test-suite"></a>
 ### Step 1: Run the existing test suite
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 1, "name": "baseline_existing_suite", "action":
 "run_lua_tests_caspian_run_lua_from_project_root", "purpose":
 "snapshot_pass_fail_count_before_changing_anything",
@@ -1000,7 +1000,7 @@ problem and Phase 0 Step 0.3 is where you'll fix it.
 <a id="step-2-inventory-the-engine-source"></a>
 ### Step 2: Inventory the engine source
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 2, "name": "inventory", "actions":
 ["read_existing_json_lua", "read_existing_interpreter_lua",
 "note_state_of_json_parser", "note_state_of_ksj_executor",
@@ -1058,7 +1058,7 @@ realignment; this is what's needed to clear Aslan."
 <a id="step-3-write-the-aslan-fixture"></a>
 ### Step 3: Write the fixture
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 3, "name": "write_fixture", "fixture_path":
 "tests/caspian/fixtures/hello_world.caspj", "fixture_content":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "shape":
@@ -1091,7 +1091,7 @@ Expected output: the literal JSON string, and `1` line.
 <a id="step-4-first-sanity-test-parse-the-fixture"></a>
 ### Step 4: First sanity test — parse the fixture
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 4, "name": "fixture_parse_test", "test_file":
 "tests/caspian/aslan/test_fixture_parse.lua", "verifies":
 "caspian_json_parses_the_fixture_into_expected_nested_table_shape",
@@ -1149,7 +1149,7 @@ inventory should have told you which.
 <a id="step-5-wire-the-engine-entry-point"></a>
 ### Step 5: Wire the engine entry point
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 5, "name": "engine_entry_point", "creates_or_evolves":
 "lib/lua/caspian/init_lua_or_engine_lua", "exports":
 "engine_dot_run_path_returns_parsed_tree_for_now",
@@ -1212,7 +1212,7 @@ whatever was passing before.
 <a id="step-6-fill-the-gaps"></a>
 ### Step 6: Fill the gaps
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 6, "name": "fill_gaps", "scope":
 "only_what_aslan_needs; not_full_ksj_spec",
 "json_parser_forms": ["json_object", "json_array", "json_string",
@@ -1252,7 +1252,7 @@ this one's.
 <a id="step-7-implementation-slices-in-order"></a>
 ### Step 7: Implementation slices in order
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 7, "name": "implementation_slices", "order":
 ["bootstrap", "materialize", "lookup_method", "transition", "dispatch",
 "format_alignment_for_rest_of_interpreter"], "acceptance":
@@ -1294,7 +1294,7 @@ For each slice:
 <a id="step-8-verify-the-fixture-runs-end-to-end"></a>
 ### Step 8: Verify the fixture runs end-to-end
 
-~~~json
+~~~vibecode
 {"vibecode": {"step": 8, "name": "verify", "actions":
 ["run_engine_run_on_fixture", "capture_last_statement_return_value",
 "compare_to_expected_string_hello", "verify_role_transition_observed"],
@@ -1419,7 +1419,7 @@ Phase 1 test coverage lives under [Testing](#testing) below.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "test_framework":
 "project_existing_at_tests_caspian_support_runner_and_assert; do_not_invent_a_new_one",
@@ -1440,7 +1440,7 @@ entirely and every other test would still pass.
 <a id="phase-0-test-plan"></a>
 ### Phase 0 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_0_tests":
 [{"id": "TA.0.1", "verifies": "lua_5_4_installed", "tool":
 "command_line_lua_dash_v", "framework": "none"}, {"id": "TA.0.2",
@@ -1479,7 +1479,7 @@ All six must pass before Aslan phase 1 begins.
 <a id="phase-1-test-plan"></a>
 ### Phase 1 test plan
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase_1_tests":
 [{"id": "TA.1", "verifies":
 "json_parse_handles_the_ksj_fixture_structure", "level": "unit"},
@@ -1560,7 +1560,7 @@ All eight pass = Aslan done.
 <a id="test-layout"></a>
 ### Test layout
 
-~~~json
+~~~vibecode
 {"vibecode": {"directory_layout": {"tests/sanity/":
 "phase_0_workbench_sanity_tests_engine_independent",
 "tests/caspian/fixtures/":
@@ -1596,7 +1596,7 @@ above mirror what's there.
 <a id="lessons-learned"></a>
 ## Lessons learned
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "lessons_learned",
 	"role": "running log of what went well, what didn't, and what we'd do differently next time during Aslan's build; intended to inform Bree and later slices",
 	"populated": "iteratively as the build progresses",

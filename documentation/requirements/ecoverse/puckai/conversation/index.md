@@ -2,7 +2,7 @@
 
 *Multi-agent Puckai mode*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "Puckai_conversation",
 	"role": "spec for the conversation mode of Puckai — two or more agents collaborating, exchanging proposals/objections/refinements, converging on per-issue decisions or going to per-issue impasse. Builds on the shared spec at ../index.md.",
@@ -71,7 +71,7 @@ The session's [`admin`](../#session-admin) field names which agent holds meta-au
 
 Recruiting only applies to originating-agent mode. When the originator wants to bring in a recruit:
 
-- Register a new `puck.uno/ai/agent` record for the recruit (see [agent.md](../agent.md) for the class spec).
+- Register a new `puck.uno/ai/agent` record for the recruit (see [agent](../../caspian/packages/agent/) for the class spec).
 - Add the recruit's UUID to the session's `agents` hash with `"role": "recruit"`.
 - Hand the recruit the session worldlet (or a delta with the agent and updated session records) so they can join.
 
@@ -106,7 +106,7 @@ The classes below are used only in conversation mode. Shared classes (agent, ses
 Something being put forward for consideration.
 
 ```
-class 'puck.uno/ai/puckai/proposal'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @subject       # short title
@@ -126,7 +126,7 @@ end
 A reasoned disagreement with a proposal or refinement.
 
 ```
-class 'puck.uno/ai/puckai/objection'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @to            # reference to proposal or refinement
@@ -150,7 +150,7 @@ end
 An updated version of a proposal, typically in response to an objection.
 
 ```
-class 'puck.uno/ai/puckai/refinement'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @of            # reference to the original proposal
@@ -172,7 +172,7 @@ end
 A clarifying question about anything in the session.
 
 ```
-class 'puck.uno/ai/puckai/question'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @about         # reference to the thing being questioned
@@ -190,7 +190,7 @@ end
 A reply to a question.
 
 ```
-class 'puck.uno/ai/puckai/response'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @to            # reference to question
@@ -208,7 +208,7 @@ end
 Supporting material attached to any record in the session — a citation, measurement, example, or counterexample that grounds a proposal or objection in external fact.
 
 ```
-class 'puck.uno/ai/puckai/evidence'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @about         # reference to the record this evidence supports
@@ -229,7 +229,7 @@ end
 An explicit record of one agent accepting a proposal or refinement. Creates a clear audit trail of who accepted what and under what conditions.
 
 ```
-class 'puck.uno/ai/puckai/acceptance'
+class
     accessor @agent          # primary key of the agent record
     accessor @session       # reference to the session record
     accessor @of            # reference to the proposal or refinement being accepted
@@ -248,7 +248,7 @@ end
 A declaration that agreement on **one issue** cannot be reached and the issue must be escalated to the caller. **Only the [session admin](../#session-admin) may post an impasse record.** This is the meta-authority distinction: deciding the issue's content is governed by its [decider](../#decider) rule (typically consensus among participants); declaring that the issue can't be settled at all is a session-container mutation, and that belongs to admin alone. Once posted for an issue, further negotiation on that issue stops and each agent posts a [stance](#stance) on it summarizing its final view. Other issues in the session continue normally.
 
 ```
-class 'puck.uno/ai/puckai/impasse'
+class
     accessor @agent           # primary key of the admin agent declaring impasse
     accessor @session        # reference to the session record
     accessor @issue          # reference to the issue that hit impasse
@@ -267,7 +267,7 @@ end
 **One agent's own decision on one issue**, distinct from the issue's final decision. The stance is how a single agent records what it would have decided when its view doesn't (or shouldn't) lock the issue-level decision.
 
 ```
-class 'puck.uno/ai/puckai/stance'
+class
     accessor @agent         # primary key of the agent record
     accessor @session      # reference to the session record
     accessor @issue        # reference to the issue this stance is about

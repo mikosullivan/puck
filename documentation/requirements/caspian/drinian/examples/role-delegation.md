@@ -1,6 +1,6 @@
 # Role delegation mid-execution
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "role_delegation_mid_execution",
 	"shows": "drinian_hash_at_a_moment_when_user_role_is_delegating_to_agent_role_inside_a_role_delegate_to_block_and_the_agent_returned_function_is_running_and_has_called_into_stdlib",
 	"shape": "frame_scoped_delegations_field_on_the_delegate_to_frame_role_transitions_user_to_agent_to_stdlib_across_call_stack",

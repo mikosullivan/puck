@@ -1,6 +1,6 @@
 # Passkeys
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "passkeys",
 	"role": "implementation sketch for WebAuthn / FIDO2 passkeys in Caspian; assumes the reader knows the protocol and is asking what the class shape, engine primitives, and integration points look like",

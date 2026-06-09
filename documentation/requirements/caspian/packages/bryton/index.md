@@ -1,6 +1,6 @@
 # Bryton
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "bryton",
 	"role": "overview of Bryton, Puck's language-agnostic testing framework; introduces the runner, Xeme result format, and per-language helper libraries",

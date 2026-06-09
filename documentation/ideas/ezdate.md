@@ -1,6 +1,6 @@
 # EzDate: lessons for Caspian's time class
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "ezdate",
 	"role": "mining Miko's old Perl Date::EzDate module (CPAN, ~2001-2007) for design ideas applicable to Caspian's basic time class",

@@ -108,9 +108,9 @@
 			"docs": "https://puck.uno/documentation/requirements/caspian/syntax/system-methods"
 		},
 		"%puck": {
-			"description": "Library resolution. %puck['foo.bar/baz'] looks up a Caspian library by URL or UNS; %[uns] is the short form.",
+			"description": "Library resolution. %puck['https://foo.bar/baz'] looks up a Caspian library by URL or UNS; %[uns] is the short form.",
 			"signature": "→ puck.uno/puck",
-			"docs": "https://puck.uno/documentation/requirements/caspian/puck"
+			"docs": "https://puck.uno/documentation/requirements/caspian/puck/"
 		},
 		"%bucket": {
 			"description": "The current object's private data hash — where @foo is shorthand for %bucket['foo']. Instance variables live here.",
@@ -140,7 +140,7 @@
 		"%utils": {
 			"description": "Utility namespace — %utils.steps (deterministic step counter), %utils.random, %utils.uuid, etc. Pure functions; no side effects beyond those documented per surface.",
 			"signature": "→ puck.uno/utils",
-			"docs": "https://puck.uno/documentation/requirements/caspian/utils/"
+			"docs": "https://puck.uno/documentation/requirements/caspian/global-methods/utils/"
 		}
 	}
 }

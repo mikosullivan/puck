@@ -1,6 +1,6 @@
 # `tap` method
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "tap",
 	"role": "Ruby-style tap method on Caspian objects for inline side effects in chains; placement settled on .object.tap with the block receiving the underlying value (not the helper) and the helper returning the underlying value so chains survive",

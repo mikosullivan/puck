@@ -1,6 +1,6 @@
 # Cobweb
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "cobweb",
 	"status": "brainstorm — code name confirmed 2026-05-22 (Midsummer fairy, parallel to Puck and Peaseblossom)",
@@ -17,7 +17,7 @@ Cobweb pairs naturally with [Dogberry's image-modifications feature](https://puc
 
 ## Operations
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "operations",
 	"role": "the transformation vocabulary Cobweb understands; query-parameter form shown for each"
@@ -62,7 +62,7 @@ Multiple operations apply in URL order: `?width=400&rotate=90&format=webp` resiz
 
 ## API surfaces
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "api_surfaces",
 	"role": "the ways to call Cobweb"
@@ -83,7 +83,7 @@ Multiple operations apply in URL order: `?width=400&rotate=90&format=webp` resiz
 
 ## Caching
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "caching",
 	"role": "Cobweb's own response cache, separate from any caller-side cache"
@@ -100,7 +100,7 @@ For GET-from-URL requests, the cache entry's TTL is bounded by the source's `Cac
 
 ## Security
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "security",
 	"role": "the rules that keep Cobweb from being a free image-fetching proxy or a resource-exhaustion target"
@@ -125,7 +125,7 @@ Cobweb only decodes well-known image formats. Random binary payloads are rejecte
 
 ## Animated images
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "animated",
 	"role": "GIF / WebP / APNG handling; the design decision is whether to preserve animation or rasterize the first frame"

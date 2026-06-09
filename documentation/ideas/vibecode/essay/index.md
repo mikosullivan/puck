@@ -2,7 +2,7 @@
 
 *Preliminary single-run comparison of an AI agent consuming the same content as English prose vs as vibecode JSON. Quick directional check, not a rigorous experiment.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "vibecode_efficiency_preliminary",
 	"role": "captures a preliminary single-run measurement of token cost and wall-clock time for an AI agent consuming the same source content as English prose vs as structured vibecode JSON; flags caveats and outlines what a rigorous follow-up would require",

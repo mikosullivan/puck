@@ -1,6 +1,6 @@
 # Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian",
 	"language": "Caspian",
@@ -51,7 +51,7 @@ end
 <a id="formatting-standards-or-lack-thereof"></a>
 ## Formatting standards, or lack thereof
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "caspian",
 	"section": "community_formatting_standards",
@@ -76,7 +76,7 @@ That's it. Tabs-vs-spaces is a setting that each developer owns.
 <a id="security-model"></a>
 ## Security model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "security_model",
 	"role": "high-level overview of Caspian's role-based security model; defers full semantics to roles.md and the bindings/filesystem/system-methods docs",
@@ -126,7 +126,7 @@ cross-role exception handling, and what is and isn't checked at a boundary
 <a id="syntax"></a>
 ## Syntax
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "syntax",
 	"role": "umbrella for all of Caspian's source syntax: strings, variables, blocks, control flow, functions, classes, loops, and related conventions",
@@ -143,7 +143,7 @@ Most of what looks like a keyword in Caspian source is actually a bare-word comm
 <a id="strings"></a>
 ### Strings
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "strings",
 	"quote_styles": ["single_not_interpolated", "double_interpolated", "heredoc"],
@@ -266,7 +266,7 @@ One implicit special case: `%vibecode` always carries JSON content by convention
 <a id="booleans-and-null"></a>
 ### Booleans and null
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "booleans_and_null",
 	"role": "introduces Caspian's three primitive literals — true, false, null — and notes that null carries optional flavor metadata; defers detailed semantics to nulls.md",
@@ -296,7 +296,7 @@ for the flavor model.
 <a id="variables"></a>
 ### Variables
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "variables",
 	"sigil": "$",
@@ -333,7 +333,7 @@ community wants to.
 <a id="blocks"></a>
 ### Blocks
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "blocks",
 	"closed_with": "end",
@@ -402,7 +402,7 @@ puts $play     # 'Hamlet'
 <a id="multi-section-blocks"></a>
 #### Multi-section blocks
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "multi_section_blocks",
 	"principle": "multi_boundary_blocks_are_acceptable_when_each_boundary_marks_a_distinct_structural_phase_of_the_constructs_run; not_when_boundaries_mark_conditional_alternatives",
@@ -468,7 +468,7 @@ prefer a form where each path stands on its own.
 <a id="when-do-is-required"></a>
 #### When `do` is Required
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "do_keyword",
 	"required_for": "block_passed_as_argument_to_function_call",
@@ -505,7 +505,7 @@ function &foo(x)
     # body
 end
 
-class 'foo.com/widget'
+class
     # body
 end
 ```
@@ -543,7 +543,7 @@ Pick one form and stick with it. Do not write `while $foo do ... end` or
 <a id="statement-termination"></a>
 ### Statement Termination
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "statement_termination",
 	"implicit_terminator": "newline",
@@ -592,7 +592,7 @@ similar languages use.
 <a id="the-__end__-marker"></a>
 ### The `__END__` Marker
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "end_marker",
 	"role": "everything after a bare __END__ line is ignored by the parser",
@@ -625,7 +625,7 @@ Borrowed from Perl and Ruby.
 <a id="functions"></a>
 ### Functions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "functions",
 	"callables": ["function", "closure"],
@@ -741,7 +741,7 @@ for the full `%puck.call` design.
 <a id="classes"></a>
 ### Classes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "classes",
 	"definition_keyword": "class",
@@ -760,7 +760,7 @@ A class is defined with the `class` keyword and a UNS name. The block contains s
 declarations and method definitions:
 
 ```
-class 'foo.com/character'
+class
     inherits 'foo.com/person'
 
     field :name, class: :string, required: true, collapse: true
@@ -854,7 +854,7 @@ accessor @nickname, :get, :set  # creates both
 `abstract true` prevents direct instantiation. Subclasses may still be instantiated:
 
 ```
-class 'puck.uno/mikobase'
+class
     abstract true
 end
 ```
@@ -865,7 +865,7 @@ end
 `join` marks the listed fields as required, unique in combination, and immutable after write:
 
 ```
-class 'foo.com/appearance'
+class
     field :person,  class: 'puck.uno/reference', allowed_class: 'foo.com/person'
     field :episode, class: 'puck.uno/reference', allowed_class: 'foo.com/episode'
 
@@ -879,7 +879,7 @@ end
 `helper` creates a lazily initialized helper object namespaced off the parent:
 
 ```
-class 'foo.com/character'
+class
     helper :stats
         function &average()
         end
@@ -904,7 +904,7 @@ object via `as`, control methods, structural `before` / `between` /
 <a id="the-as-keyword"></a>
 ### The `as` Keyword
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "as_keyword",
 	"purpose": "bind_a_handle_to_the_block_invocation; api_surface_depends_on_caller",
@@ -1047,7 +1047,7 @@ It's the same shape as the engine's `%call` reference.
 <a id="return-and-emit"></a>
 ### Return and Emit
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "return_and_emit",
 	"return": "exits_current_function_propagates_through_closures",
@@ -1095,7 +1095,7 @@ The `%call` object itself is **owned by the caller's role**, not by the role tha
 <a id="safe-navigation"></a>
 ### Safe Navigation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "safe_navigation",
 	"operator": "&.",
@@ -1117,7 +1117,7 @@ $foo.bar&.gup.bear   # null if $foo.bar is null
 <a id="pipe-operator"></a>
 ### Pipe Operator
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "pipe_operator",
 	"operator": "|",
@@ -1180,7 +1180,7 @@ same. The `|&` switch applies to all remaining stages — you do not need to rep
 <a id="unicode-method-names"></a>
 ### Unicode Method Names
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "unicode_method_names",
 	"feature": "any_valid_unicode_identifier_allowed_as_method_name",
@@ -1207,7 +1207,7 @@ any valid Unicode identifier as a method name.
 <a id="method-naming-conventions"></a>
 ### Method Naming Conventions
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "method_naming_conventions",
 	"question_mark_suffix": "method returns truthy_or_falsey; truthy form is whatever's most useful",
@@ -1256,7 +1256,7 @@ A method may have both forms (`parse` strict + `parse?`
 tolerant). When both exist, they typically produce the same
 successful result; only their failure behavior differs.
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_is_not_yet_designed",
 	"status": "partial_spec",
@@ -1281,7 +1281,7 @@ in its own doc: **[garbage-collection.md](garbage-collection.md)**.
 <a id="transpilation"></a>
 ## Transpilation
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "transpilation",
 	"target": "CaspianJ",
@@ -1314,7 +1314,7 @@ there if the community wants to develop it.
 <a id="cache-conflicts-and-gaps"></a>
 ## Cache: conflicts and gaps
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "cache_conflicts_and_gaps",
 	"role": "report on cache-related conflicts and gaps; trimmed 2026-06-02 after the official cache spec landed at downloads/caching/index.md; resolved items struck for traceability, still-open items live below",

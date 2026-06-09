@@ -2,7 +2,7 @@
 
 *A mechanism for one role to grant — or pass through — some of its permissions to code running under a different role. Driven by the [`$agent.yield`](../agent-yield.md) need but kept general so the mechanism isn't agent-specific.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "idea_role_delegation",
 	"role": "design exploration for letting one Caspian role delegate or pass through permissions to code running in another role; scoped narrowly to support agent-yield without overdesigning the broader roles system",

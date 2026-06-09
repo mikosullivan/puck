@@ -1,6 +1,6 @@
 # Caspian
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "github-puck-caspian",
 	"status": "brainstorm — Caspian-specific tools the puck.uno site offers when viewing Caspian code",

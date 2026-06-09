@@ -1,6 +1,6 @@
 # Bloggy
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "bloggy",
 	"status": "brainstorm — Dogberry-based blogging service, parallel to Donnie",
@@ -16,7 +16,7 @@ Bloggy uses Dogberry's hosting infrastructure (domain registration, TLS, request
 
 ## What Bloggy includes
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "what_bloggy_includes",
 	"role": "the feature bundle specific to Bloggy; everything else is inherited from Dogberry/Markie/Cobweb"
@@ -65,7 +65,7 @@ Posts with `status: draft` are visible only via authenticated preview URLs. Post
 
 ## Authoring model
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "authoring_model",
 	"role": "how a blog author actually writes and publishes a post"
@@ -92,7 +92,7 @@ Frontmatter fields are standardized: `id`, `title`, `date`, `tags`, `categories`
 
 ## What stays under Dogberry
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "stays_under_dogberry",
 	"role": "infrastructure Bloggy depends on but doesn't own; lives in dogberry.md"

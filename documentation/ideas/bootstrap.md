@@ -1,6 +1,6 @@
 # Bootstrapping the Caspian Interpreter
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "bootstrap",
 	"role": "design notes for how a host language (Ruby as the worked example) integrates with and bootstraps the Caspian runtime through an embedded Lua VM; layered host/Lua/Caspian policy model",

@@ -2,7 +2,7 @@
 
 *How the Model Context Protocol fits — and doesn't fit — into the Puckai pipeline.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puckai_and_mcp",
 	"role": "comparative analysis of MCP's architectural shape against Puckai's; identifies which stages of the Puckai workflow MCP belongs in and which it doesn't",
@@ -108,7 +108,7 @@ The other two shapes — MCP-as-transport and Puckai-as-MCP-resource — should 
 ## Open questions
 
 - **Consultation-record schema for MCP traffic.** Does `kind` get new enum variants (`:mcp_tool`, `:mcp_resource`), or does existing usage (`:tool`, `:document`) carry MCP traffic with the MCP-ness encoded in `source`? Either is workable; settling it early avoids inconsistent audit trails.
-- **Authentication and capability surface for the MCP client.** Per-agent? Per-session? Configured at agent construction, or carried in the Puckai worldlet's `agent_guidance`? The agent record's [open questions](https://puck.uno/documentation/requirements/ecoverse/puckai/agent#open-questions) overlap here.
+- **Authentication and capability surface for the MCP client.** Per-agent? Per-session? Configured at agent construction, or carried in the Puckai worldlet's `agent_guidance`? The agent record's [open questions](https://puck.uno/documentation/requirements/caspian/packages/agent/#open-questions) overlap here.
 - **Sampling.** If a Puckai agent's MCP server uses sampling to ask the agent's host LLM for completions, does that count as a consultation that needs its own record? Likely yes — the agent is reaching outside its own reasoning — but the framing is fuzzier than a clear tool call. Worth thinking through before agents in the wild start producing inconsistent records for it.
 - **Whether `agent_guidance` should carry per-session MCP allowlists.** Mirrors the [`recruits`](https://puck.uno/documentation/requirements/ecoverse/puckai/#recruits) pattern — caller can restrict which MCP servers the agent is permitted to consult during this session. Useful for cost control and audit-trail scoping; not urgent for V1.
 
@@ -118,6 +118,6 @@ The other two shapes — MCP-as-transport and Puckai-as-MCP-resource — should 
 ## See also
 
 - [Puckai shared spec](https://puck.uno/documentation/requirements/ecoverse/puckai/) — the protocol this analysis is in service of.
-- [`puck.uno/ai/agent`](https://puck.uno/documentation/requirements/ecoverse/puckai/agent) — agent class; would gain MCP-client capability under the recommended first slice.
+- [`puck.uno/ai/agent`](https://puck.uno/documentation/requirements/caspian/packages/agent/) — agent class; would gain MCP-client capability under the recommended first slice.
 - [ACP client](https://puck.uno/documentation/requirements/caspian/packages/acp/) — the existing Caspian client for ACP transport. The shape an `mcp/client` package would mirror.
 - [Puckai bootstrap](https://puck.uno/documentation/requirements/ecoverse/puckai/bootstrap/) — orthogonal to MCP; mentioned here only because it's the other place "teach a receiver the format" comes up.

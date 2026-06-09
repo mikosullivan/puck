@@ -1,6 +1,6 @@
 # Idea: Annotation pattern as uniform API
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "annotation-pattern",
 	"role": "speculative note: formalize the %name(label) <<HEREDOC pattern (already used by %documentation) as a uniform mechanism for attaching labeled, format-tagged data blobs to scripts and classes; alternative to inventing a __DATA__ sub-language",

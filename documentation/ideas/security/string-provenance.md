@@ -1,6 +1,6 @@
 # Idea: String Provenance
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "string-provenance",
 	"role": "speculative high-security feature: every string carries its full construction history via base strings and query strings, so operations track full provenance back to original sources",

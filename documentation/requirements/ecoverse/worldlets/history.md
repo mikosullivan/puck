@@ -1,6 +1,6 @@
 # Worldlet Format
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "worldlet",
 	"role": "spec for the worldlet JSON file format — the portable serialization of a small mikobase used for sharing, shipping, and exchanging databases that fit comfortably as a single JSON document. Covers the top-level structure, every section (meta / format / properties / classes / records / files), import rules, and complete worked examples.",
@@ -48,7 +48,7 @@ detail layered on top.
 <a id="overview"></a>
 ## Overview
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "overview",
 	"what_a_worldlet_is": "a complete non_temporal_mikobase serialized as one JSON object",
@@ -87,7 +87,7 @@ into a non-temporal mikobase; importing into a temporal mikobase raises an excep
 <a id="top-level-structure"></a>
 ## Top-Level Structure
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "top_level_structure",
 	"required_keys": ["format", "format_version"],
@@ -139,7 +139,7 @@ entries, see
 <a id="meta"></a>
 ## `meta`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "meta",
 	"fields": ["name", "author", "version"],
@@ -172,7 +172,7 @@ Descriptive information about the worldlet.
 <a id="format-and-format_version"></a>
 ## `format` and `format_version`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "format_and_format_version",
 	"fields": ["format", "format_version"],
@@ -205,7 +205,7 @@ Both are optional for backwards compatibility but should be included in all new 
 <a id="properties"></a>
 ## `properties`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "properties",
 	"fields": ["temporal"],
@@ -243,7 +243,7 @@ mode rules.
 <a id="classes"></a>
 ## `classes`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "classes",
 	"format": "dict_keyed_by_uns_class_name",
@@ -325,7 +325,7 @@ See [class-definition.md](../class-definition.md) for the full class definition 
 <a id="records"></a>
 ## `records`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "records",
 	"format": "dict_keyed_by_uuid",
@@ -374,7 +374,7 @@ the platter's bucket holds the definition itself; see
 <a id="files"></a>
 ## `files`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "files",
 	"format": "dict_keyed_by_file_uuid",
@@ -434,7 +434,7 @@ or more chunks. Chunks are assembled in `index` order to reconstruct the file.
 <a id="import-rules"></a>
 ## Import Rules
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "import_rules",
 	"covers": ["uuid_constraints", "conflict_policy",
@@ -457,7 +457,7 @@ may tighten later. See
 [mikobase.md § Record identity](../index.md#record-identity).
 
 Caspian code generating record IDs should use
-[`%utils.random.uuid`](../../caspian/utils/index.md#utilsrandomuuid), which
+[`%utils.random.uuid`](../../caspian/global-methods/utils/index.md#utilsrandomuuid), which
 returns a cryptographically secure UUID v4 sourced from the OS CSPRNG via libsodium.
 
 <a id="conflict-policy"></a>
@@ -516,7 +516,7 @@ written to the target mikobase. Partial imports do not happen.
 <a id="minimal-valid-example"></a>
 ## Minimal Valid Example
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "minimal_valid_example",
 	"shows": "smallest_complete_worldlet_that_imports_without_error",
@@ -553,7 +553,7 @@ is needed.
 <a id="complete-example"></a>
 ## Complete Example
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "complete_example",
 	"shows": "every_top_level_section_with_realistic_starfleet_data",

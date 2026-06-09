@@ -1,6 +1,6 @@
 # Puck — Python client
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "puck-python",
 	"role": "design sketch for the general shape of a Python implementation of the Puck protocol; covers package layout, lookup, instantiation, method dispatch, return-value handling, errors, versioning, and open questions",

@@ -1,6 +1,6 @@
 # Idea: Auto-Format on Post
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "auto-format",
 	"role": "speculative note: platforms could auto-render Caspian code through the viewer's personal formatter so every reader sees code in their own style, treating formatting as a presentation layer",

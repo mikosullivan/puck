@@ -1,6 +1,6 @@
 # Gabbo
 
-~~~json
+~~~vibecode
 {"vibecode": {"slice": "gabbo_caspj_cache", "codename": "Gabbo",
 "delivers": "on_disk_caspj_cache_with_caspj_subdir_next_to_source",
 "position_in_roadmap":
@@ -34,7 +34,7 @@ after the data's kind. Hence `caspj/`.
 <a id="definition-of-done"></a>
 ### Definition of done
 
-~~~json
+~~~vibecode
 {"vibecode": {"scope_status": "drafted_2026-05-24", "done_criteria":
 {"caspj_subdir_creation":
 "first_transpile_creates_caspj_subdir_next_to_source_file",
@@ -81,7 +81,7 @@ That's the entirety of Gabbo. Soft feature lock applies.
 <a id="gabbo-phase-0-cache-mechanics-workbench"></a>
 ## Phase 0: cache mechanics workbench
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 0, "purpose":
 "verify_host_filesystem_capabilities_gabbo_depends_on_before_writing_cache_logic",
 "steps_count": 4, "acceptance":
@@ -128,7 +128,7 @@ When all four pass, Phase 1 can begin.
 <a id="gabbo-phase-1-cache-integration"></a>
 ## Phase 1: cache integration
 
-~~~json
+~~~vibecode
 {"vibecode": {"phase": 1, "acceptance":
 "engine_run_source_consults_cache_first_and_writes_cache_after_a_fresh_parse_with_all_validity_checks_in_place_and_atomic_writes",
 "required_work":
@@ -244,7 +244,7 @@ a change to the dispatcher or to what it manages.
 <a id="testing"></a>
 ## Testing
 
-~~~json
+~~~vibecode
 {"vibecode": {"section": "testing",
 "test_directory": "tests/caspian/gabbo/",
 "fixture_directory": "tests/caspian/fixtures/gabbo/",

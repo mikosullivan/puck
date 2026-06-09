@@ -1,6 +1,6 @@
 # UNS HTTP Headers (idea)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "uns-http-headers",
 	"role": "speculative idea for a single uns HTTP header carrying a JSON hash whose keys are UNS-namespaced; replaces the X- prefix custom-header pattern with one parse step and structured values",

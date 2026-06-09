@@ -1,6 +1,6 @@
 # Garbage Collection
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "garbage_collection",
 	"role": "spec for Caspian's deterministic garbage collection — root-trace model, on_close hook semantics, and the strict rules that keep cleanup fast and predictable",
@@ -57,7 +57,7 @@ out of reachability.
 <a id="fooobjectclose"></a>
 ## `on_close`
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"section": "on_close",
 	"role": "class-body BWC that registers a cleanup handler called by deterministic GC at scope exit; multicast across every platter in the object's class stack that defines it",
@@ -142,7 +142,7 @@ hook (`on_create`, `on_freeze`, `on_thaw`, etc.) when those land. See
 broader formalization.
 
 ```caspian
-class 'myapp.com/connection'
+class
     on_close do($call)
         @socket.close
     end

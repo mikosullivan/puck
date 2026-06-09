@@ -1,6 +1,6 @@
 # Mikobase Service (idea)
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "mikobase-service",
 	"role": "future-product concept for a public hosted mikobase service with a generous free tier as a Puck adoption lever; analogous to Heroku Postgres or PlanetScale but for mikobase",
@@ -97,7 +97,7 @@ or sign up for both products with a single account.
 
 Every Puck tutorial, demo, and example needs a place to put
 data. A free mikobase service is the obvious answer:
-"`%puck['logs.puck.uno/mikobase'].new(account: '...')` — done."
+"`%puck['https://logs.puck.uno/mikobase'].new(account: '...')` — done."
 No setup, no infra, just a working data store.
 
 <a id="with-other-future-products"></a>

@@ -1,6 +1,6 @@
 # Bootstrap state
 
-~~~json
+~~~vibecode
 {"vibecode": {"example": "bootstrap_state",
 	"shows": "minimum_drinian_immediately_after_engine_bootstrap_before_any_dispatch",
 	"shape": "single_top_level_frame_two_roles_no_srcs_no_exceptions",

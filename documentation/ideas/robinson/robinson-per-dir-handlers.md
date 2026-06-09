@@ -1,6 +1,6 @@
 # Robinson per-directory `robinson.casp` handlers
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "status": "paused_2026-05-17_returning_to_issues_walkthrough",
     "started": "2026-05-17",
@@ -26,7 +26,7 @@ Brainstorm paused. Resume points when picking this back up:
 <a id="concept"></a>
 ## Concept
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "concept",
     "what": "per_directory_handler_files_named_robinson_caspian",
@@ -69,7 +69,7 @@ disk to be loaded by Robinson, never to be served as URLs.
 <a id="file-shape"></a>
 ## File shape
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "file_shape",
     "form": "anonymous_class_same_form_as_page_files",
@@ -102,14 +102,14 @@ end
 
 The syntax depends on the same bare/anonymous `class` form that page
 files use, currently flagged in audit issue #26 (caspian.md only
-defines `class 'UNS' ... end`). One spec fix covers both.
+defines `class ... end`). One spec fix covers both.
 
 ---
 
 <a id="the-two-trip-pattern"></a>
 ## The two-trip pattern
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "two_trip_pattern",
     "methods_so_far": ["process_request", "process_response"],
@@ -143,7 +143,7 @@ across page files and dir handlers.
 <a id="framework-organization"></a>
 ## Framework organization
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "framework_organization",
     "design_goal": "avoid_the_ruby_dogberry_pain_of_optional_yields_interacting_with_optional_pass_through_methods_across_a_chain",
@@ -237,7 +237,7 @@ to detect — the chain just stops where it stops.
 <a id="composition-across-handlers"></a>
 ## Composition across handlers
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "composition_across_handlers",
     "shape": "nested_per_handler_each_handler_wraps_everything_below_it",
@@ -295,7 +295,7 @@ The shape:
 <a id="pass_through-the-wrapping-primitive"></a>
 ## `pass_through` — the wrapping primitive
 
-~~~json
+~~~vibecode
 {"vibecode": {
     "section": "pass_through",
     "shape": "context_manager_wraps_inner_chain_with_yield_in_the_middle",

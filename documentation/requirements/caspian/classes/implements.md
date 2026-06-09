@@ -2,7 +2,7 @@
 
 *Class-level structural API conformance check.*
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "implements_method",
 	"role": "spec for the class-level implements? method — checks whether one class structurally has every method another class declares, with matching parameter signatures. Runtime, structural, no separate interface concept. V1.0 in scope.",
