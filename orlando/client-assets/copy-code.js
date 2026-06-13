@@ -13,12 +13,22 @@
         + '<path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1zm3 4H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>'
         + '</svg>';
 
-    /* If a `<pre>` is preceded (immediately, ignoring whitespace text
-       nodes) by an `<a class="copy">` marker — either bare or wrapped in
-       a `<p>` by the markdown renderer — return that link. Otherwise
-       return null. The link is then reused as the copy button. */
+    /* If a `<pre>` is preceded by an `<a class="copy">` marker — either
+       bare or wrapped in a `<p>` by the markdown renderer — return that
+       link. The link is then reused as the copy button.
+
+       When the `<pre>` is itself inside a `.code-block` language-label
+       wrapper, the marker lives before the wrapper (the wrapper is the
+       pre's parent), so the search starts from the wrapper instead of
+       the pre. */
     function findExistingMarker(pre) {
-        var prev = pre.previousElementSibling;
+        var anchor = pre;
+        if (pre.parentNode
+            && pre.parentNode.classList
+            && pre.parentNode.classList.contains('code-block')) {
+            anchor = pre.parentNode;
+        }
+        var prev = anchor.previousElementSibling;
         if (!prev) return null;
         if (prev.tagName === 'A' && prev.classList.contains('copy')) {
             return prev;

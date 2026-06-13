@@ -54,8 +54,8 @@ class still has one platter.
 For ordinary records, **user-facing field values (those declared by the
 record's class definitions) live in the top-level `bucket`**. The
 platter's own `bucket` is for class-internal state (mix-in bookkeeping,
-cross-cutting markers, sticky state). For most simple records, the
-platter's bucket is empty.
+cross-cutting markers, anything the class needs to remember per-object).
+For most simple records, the platter's bucket is empty.
 
 Class-definition records are the exception: their `puck.uno/record/class`
 platter's bucket holds the definition itself (name, fields, inherits).

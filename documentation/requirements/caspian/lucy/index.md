@@ -1779,8 +1779,7 @@ event's class metadata, not from which `%chain.X` method was called.
 	"two_fields": ["bucket", "stack"],
 	"bucket": "shared data hash for the object",
 	"stack": "ordered hash of platters; each platter contributes a class to the object's identity",
-	"shadow_platter": "first platter by convention, named 'shadow'; sticky-by-default; holds singleton/instance methods",
-	"sticky_propagation": "stuck position chains downward through contiguous sticky platters from the top",
+	"shadow_platter": "first platter; the name 'shadow' is required at position 1 (rule, not convention); holds singleton/instance methods; implicitly present-and-empty when not written explicitly in the stack",
 	"single_class_default": "most objects have just the shadow platter plus their class platter; multi-platter stacks are the result of explicit .classes.add",
 	"object_helper": "reserved_built_in_cannot_be_overridden",
 	"explicit_dispatch": "$class.object.call_with($foo, 'method', args)"
@@ -1799,8 +1798,8 @@ Everything else — methods, accessors, helpers — is behavior layered on top o
 primitives. This maps directly to how Mikobase records work and how Puck wire objects
 look: the same `{bucket, stack}` shape applies in the language, the store, and the
 protocol. The full structural spec — including the four recognized platter fields
-(`class`, `sticky`, `warning`, `bucket`), the per-platter bucket used by mix-ins, and
-the rules around stickiness — lives at [requirements/ecoverse/objects/](../../ecoverse/objects/).
+(`class`, `warning`, `bucket`, `vibecode`), the per-platter bucket used by mix-ins, and
+the position-1-is-always-shadow rule — lives at [requirements/ecoverse/objects/](../../ecoverse/objects/).
 
 The simplest object — empty bucket, no class beyond the shadow:
 
@@ -1808,7 +1807,7 @@ The simplest object — empty bucket, no class beyond the shadow:
 {
     "bucket": {},
     "stack": {
-        "shadow": {"sticky": true}
+        "shadow": {}
     }
 }
 ```
@@ -1876,10 +1875,11 @@ for the structural spec.
 ### The stack
 
 Method calls are resolved by walking the stack top to bottom. The first platter
-whose class defines the method wins. The shadow platter — first by convention,
-named `"shadow"` — is at the top and dispatch starts there because it's at the
-top. There is no special "shadow always first" rule baked into dispatch; the
-shadow is simply the first platter in the stack.
+whose class defines the method wins. The shadow platter — required to be named
+`"shadow"` at position 1, implicitly present-and-empty when the explicit entry
+is absent — is at the top and dispatch starts there. There is no special "shadow
+always first" rule baked into dispatch; the shadow is simply the first platter
+in the stack.
 
 For most objects the stack is short: a shadow on top with `class: {}` (default,
 empty), and the object's own class platter below it. A bare `color` instance:
@@ -1888,7 +1888,7 @@ empty), and the object's own class platter below it. A bare `color` instance:
 {
     "bucket": {"r": 255, "g": 0, "b": 0},
     "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "2": {"class": "puck.uno/color"}
     }
 }
@@ -1896,49 +1896,31 @@ empty), and the object's own class platter below it. A bare `color` instance:
 
 Adding more platters via `.classes.add` extends the stack downward; later
 additions sit lower in the stack and are reached after earlier ones during
-dispatch. (The shadow stays on top — see stickiness below for why.)
+dispatch. The shadow stays on top because the rule says it does — see
+[ecoverse/objects/structure.md § Stack](../../ecoverse/objects/structure.md#stack)
+for the position-1-is-always-shadow rule and the implicit-empty-shadow
+convention.
 
 Marker classes (like `puck.uno/class/redact`) sit somewhere in the stack but
 have no methods to find — dispatch walks past them to whatever class defines
 the called method. Behavior-adding classes (a `foo.uno/upper` that overrides
 `to_string`) intercept dispatch because their methods are encountered first.
 
-<a id="stickiness"></a>
-#### Stickiness
-
-A platter can carry `sticky: true`, which means it can't be removed, and if
-it's at the top of the stack it can't be moved. `sticky` is engine-only and
-one-way: only the engine sets it, and once set it can't be cleared.
-
-**Stickiness propagates downward.** A sticky platter directly under a stuck
-platter is itself stuck — the position-lock chains through every contiguous
-sticky platter starting from the top. The first non-sticky platter ends the
-chain; platters below it can still move.
-
-The shadow platter is always sticky — carries `sticky: true` in every
-representation — which is why it stays pinned at the top. Stickiness on
-the platter for the class an object was instantiated with is NOT
-automatic; a regular platter is non-sticky unless the engine
-specifically marks it (as it does for `puck.uno/null` and `puck.uno/false`
-below). The full structural spec — including the propagation rule and
-engine-only constraint — lives at
-[requirements/ecoverse/objects/structure.md § Stickiness](../../ecoverse/objects/structure.md#stickiness).
-
 <a id="null-and-false-platters"></a>
 #### Null and false instances
 
-When the engine creates a `null` or `false` value, it adds a sticky platter
-directly under the shadow carrying the class `puck.uno/null` or
-`puck.uno/false`. Because that platter is sticky and adjacent to the (also
-sticky) shadow, the propagation rule pins it at position 1 — the value can't
-be talked out of being null or false later.
+When the engine creates a `null` or `false` value, it puts a platter directly
+under the shadow carrying the class `puck.uno/null` or `puck.uno/false`, then
+freezes the whole instance. Because the instance is frozen, the truthiness
+platter can't be added, removed, replaced, or moved — no mutation on the
+instance is permitted at all. The value can't be talked out of being null or
+false later.
 
 ```json
 {
     "bucket": {},
     "stack": {
-        "shadow": {"sticky": true},
-        "2": {"sticky": true, "class": "puck.uno/null"}
+        "2": {"class": "puck.uno/null"}
     }
 }
 ```
@@ -1963,11 +1945,11 @@ and the design discussion is in [caspian/truthy.md](../truthy.md).
 Every object has a reserved helper called `object` that cannot be overridden. It's the home for engine-controlled introspection and lifecycle methods — truthiness predicates, stack inspection, identity equality, freezing, jail creation, borrow, explicit dispatch. The full catalog lives in [built-in-classes/object.md](../built-in-classes/object.md). Highlights touching the stack:
 
 - [`.object.classes`](../built-in-classes/object.md#classes) — array of the classes in the stack; `.add` pushes a new class.
-- [`.object.stack`](../built-in-classes/object.md#stack) — the full stack hash with per-platter metadata (`sticky`, per-platter `bucket`, etc.).
+- [`.object.stack`](../built-in-classes/object.md#stack) — the full stack hash with per-platter metadata (per-platter `bucket`, `warning`, etc.).
 - [`.object.isa?(uns)`](../built-in-classes/object.md#isa) — class-membership predicate; walks the stack including each platter's inheritance chain.
 - [`.object.method(name) do(params) … end`](../built-in-classes/object.md#method) — define a method on this one object (lives on the shadow).
 - [`.object.call_with(receiver, method, args…)`](../built-in-classes/object.md#call-with) — explicit dispatch to a specific class's implementation, bypassing the normal walk.
-- [`.object.borrow(uns) do … end`](../built-in-classes/object.md#borrow) — push a non-sticky platter for the duration of the block, then pop it. Useful for pluggable interpretations, visitor patterns, and adapter dispatch.
+- [`.object.borrow(uns) do … end`](../built-in-classes/object.md#borrow) — push a transient platter for the duration of the block, then pop it. Useful for pluggable interpretations, visitor patterns, and adapter dispatch.
 
 ---
 

@@ -63,15 +63,15 @@
 			"docs": "https://puck.uno/documentation/requirements/caspian"
 		},
 		"true": {
-			"description": "Boolean true. A sticky-platter instance of puck.uno/true; identity-preserving.",
+			"description": "Boolean true. A frozen instance of puck.uno/true; identity-preserving.",
 			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
 		},
 		"false": {
-			"description": "Boolean false. A sticky-platter instance of puck.uno/false; truthy lookup short-circuits here.",
+			"description": "Boolean false. A frozen instance of puck.uno/false; truthy lookup short-circuits here.",
 			"docs": "https://puck.uno/documentation/requirements/caspian/truthy"
 		},
 		"null": {
-			"description": "The null value. A sticky-platter instance of puck.uno/null; supports flavor metadata (puck.uno/null/timeout, etc.) when callers need to distinguish reasons.",
+			"description": "The null value. A frozen instance of puck.uno/null; supports flavor metadata (puck.uno/null/timeout, etc.) when callers need to distinguish reasons.",
 			"docs": "https://puck.uno/documentation/requirements/caspian/built-in-classes/nulls"
 		},
 		"and": {

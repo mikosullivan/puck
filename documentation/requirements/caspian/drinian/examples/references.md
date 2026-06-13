@@ -28,7 +28,8 @@ non-shadow platter draws an ID from the same global sequence (see
 [references.md § Object IDs](../references.md#object-ids)) — objects
 `"1"`–`"7"` plus platters `"8"`–`"14"`, with `sequence: 15` recording
 the next allocation. Shadow platters keep the literal key `"shadow"`
-by convention; every other platter's key is its sequence ID.
+(the platter at position 1 is always named that); every other
+platter's key is its sequence ID.
 
 ```json
 {
@@ -63,49 +64,49 @@ by convention; every other platter's key is its sequence ID.
     "1": {
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "8": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "2": {
       "bucket": {"name": "3"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "9": {"class": "puck.uno/hash"}
       }
     },
     "3": {
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "10": {"class": "puck.uno/hash_element", "bucket": {"parent": "2", "key": "name"}}
       }
     },
     "4": {
       "bucket": {"value": "Picard"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "11": {"class": "puck.uno/string"}
       }
     },
     "5": {
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "12": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "6": {
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "13": {"class": "puck.uno/variable", "bucket": {}}
       }
     },
     "7": {
       "bucket": {"value": 1},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "14": {"class": "puck.uno/number"}
       }
     }

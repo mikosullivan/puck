@@ -5,7 +5,7 @@
 	"doc": "truthy",
 	"role": "spec for Caspian's truthiness model — which values are truthy, which aren't, and how the engine enforces the rule",
 	"status": "basic content; problem-mapping discussion pending",
-	"related": ["requirements/ecoverse/objects/structure.md (the stack, sticky platters)"]
+	"related": ["requirements/ecoverse/objects/structure.md (the stack, platters)"]
 }}
 ~~~
 
@@ -33,21 +33,21 @@ Caspian follows the Ruby model on this: emptiness and zero aren't the same thing
 Truthiness is set at object creation and never changes. The mechanism rides on the object's [stack](../ecoverse/objects/structure.md#stack):
 
 - A **truthy** value has no special truthiness marker in its stack. The shadow platter sits at the top; any other platters follow.
-- A **`null`** instance has a sticky platter directly under the shadow whose class is `puck.uno/null`.
-- A **`false`** instance has a sticky platter directly under the shadow whose class is `puck.uno/false`.
+- A **`null`** instance has a platter directly under the shadow whose class is `puck.uno/null`.
+- A **`false`** instance has a platter directly under the shadow whose class is `puck.uno/false`.
 
-That non-truthy platter is sticky, the shadow above it is sticky, and stickiness propagates downward — so the null-or-false platter is pinned at position 1, can't be moved, and can't be removed. Combined with `sticky` being [engine-only and one-way](../ecoverse/objects/structure.md#sticky), this means:
+The whole `null` or `false` instance is frozen at creation (see [object.md § Immutable primitives](built-in-classes/object.md#immutable-primitives)). Because the instance is frozen, the null-or-false platter can't be removed, replaced, or shuffled away — no platter on a frozen object can be touched at all. This means:
 
 - A value created as `null` stays `null` for its entire lifetime; same for `false`.
-- A truthy value can never be made non-truthy at runtime. There's no way for user code to add a sticky `puck.uno/null` or `puck.uno/false` platter to a value, because only the engine can mark a platter sticky.
+- A truthy value can never be made non-truthy at runtime. User code can't push a `puck.uno/null` or `puck.uno/false` platter onto a truthy value's stack: the engine refuses the mutation because it conflicts with the value's locked bool.
 
 Once a value is decided truthy-or-not at creation time, that decision is permanent.
 
 ## The official process
 
-The truthy-or-not decision is made at the moment of instantiation — when `$class.new(...)` runs. The engine dynamically traces the class's inheritance chain, checks for a `puck.uno/null` or `puck.uno/false` dependency, and sets the bool value permanently on the new object as a sticky platter under the shadow.
+The truthy-or-not decision is made at the moment of instantiation — when `$class.new(...)` runs. The engine dynamically traces the class's inheritance chain, checks for a `puck.uno/null` or `puck.uno/false` dependency, and sets the bool value permanently on the new object: if the chain implies non-truthy, the engine puts a `puck.uno/null` or `puck.uno/false` platter directly under the shadow and freezes the instance.
 
-**The trace is done on every instantiation. No assumptions.** Classes are mutable in Caspian: a class's inheritance, its methods, even its own ancestors can change between two `.new(...)` calls. The engine cannot assume yesterday's answer for class X is still correct today; it has to trace X's chain as it currently stands at the moment each new object is born. The newly-created object then locks in whatever the chain implied right then (sticky platter, engine-only, one-way) — and from that moment forward, that one object's truthiness is permanent regardless of how the class continues to evolve.
+**The trace is done on every instantiation. No assumptions.** Classes are mutable in Caspian: a class's inheritance, its methods, even its own ancestors can change between two `.new(...)` calls. The engine cannot assume yesterday's answer for class X is still correct today; it has to trace X's chain as it currently stands at the moment each new object is born. The newly-created object then locks in whatever the chain implied right then (the truthiness platter plus the instance freeze) — and from that moment forward, that one object's truthiness is permanent regardless of how the class continues to evolve.
 
 This is the spec. Every Caspian implementation must observably behave this way: the truthiness of a brand-new object reflects the class's inheritance at the moment of instantiation, not at some earlier or later moment.
 

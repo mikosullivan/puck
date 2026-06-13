@@ -65,7 +65,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "15": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -76,7 +76,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "16": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -87,7 +87,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "17": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -98,7 +98,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "18": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -109,7 +109,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "19": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -120,7 +120,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "20": {
           "class": "puck.uno/variable",
           "bucket": {}
@@ -131,7 +131,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "21": {
           "class": "puck.uno/hash_element",
           "bucket": {"parent": "9", "key": 0}
@@ -142,7 +142,7 @@ computed but before `return` fires.
       "role": "user",
       "bucket": {},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "22": {
           "class": "puck.uno/hash_element",
           "bucket": {"parent": "9", "key": 1}
@@ -154,7 +154,7 @@ computed but before `return` fires.
       "src": ["a", 6],
       "bucket": {"0": "7", "1": "8"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "23": {"class": "puck.uno/array"}
       }
     },
@@ -163,7 +163,7 @@ computed but before `return` fires.
       "src": ["a", 6],
       "bucket": {"value": "Aslan"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "24": {"class": "puck.uno/string"}
       }
     },
@@ -172,7 +172,7 @@ computed but before `return` fires.
       "src": ["a", 6],
       "bucket": {"value": "Bree"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "25": {"class": "puck.uno/string"}
       }
     },
@@ -181,7 +181,7 @@ computed but before `return` fires.
       "src": ["a", 11],
       "bucket": {"value": 1},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "26": {"class": "puck.uno/number"}
       }
     },
@@ -190,7 +190,7 @@ computed but before `return` fires.
       "src": ["a", 12],
       "bucket": {"value": "Lord "},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "27": {"class": "puck.uno/string"}
       }
     },
@@ -199,7 +199,7 @@ computed but before `return` fires.
       "src": ["a", 2],
       "bucket": {"value": "hello, Aslan"},
       "stack": {
-        "shadow": {"sticky": true},
+        "shadow": {},
         "28": {"class": "puck.uno/string"}
       }
     }

@@ -3,13 +3,13 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "object_structure_fields",
-	"role": "spec for the bucket and stack fields on every object, plus the stickiness rules that govern stack mutability; part of the universal object structure spec (see index.md)",
+	"role": "spec for the bucket and stack fields on every object, including the rule that the platter at position 1 is always named shadow; part of the universal object structure spec (see index.md)",
 	"status": "active_design en route to settled spec",
 	"audience": "Caspian implementers and security reviewers"
 }}
 ~~~
 
-Every object has two structural fields: `bucket` (the data) and `stack` (the class identity plus other meta-information). This page describes each, plus the stickiness rules that govern how the stack can change.
+Every object has two structural fields: `bucket` (the data) and `stack` (the class identity plus other meta-information). This page describes each, plus the rules that govern the stack — most importantly that the platter at position 1 is always named `shadow`.
 
 **The structure shown here is the serialized form** — what an object looks like as JSON, whether stored in a worldlet, written to a Mikobase record, or carried in a Puck protocol message. Caspian's in-memory representation has some differences (engine-internal references, cached dispatch tables, per-object identity slots, the actual sodium_malloc / vault pointers that back protected values, and so on). Those differences don't change the contract: the object round-trips to this JSON shape on every serialization boundary, and a JSON value in this shape rehydrates to a full Caspian object on every deserialization. Anywhere an object crosses a boundary, the shape below is what it looks like.
 
@@ -22,14 +22,13 @@ The full template:
     "bucket": {},
     "stack": {
         "shadow": {
-            "sticky": true,
             "class": {}
         }
     }
 }
 ```
 
-In practice either field may be absent — for example, when importing from a plain JSON hash that doesn't carry them. Absence is equivalent to the default empty form. The template above is the **full** structure; what actually ships in JSON can omit any field that's at its default.
+In practice either field may be absent — for example, when importing from a plain JSON hash that doesn't carry them. Absence is equivalent to the default empty form. The template above is the **full** structure; what actually ships in JSON can omit any field that's at its default — and as covered in the Stack section below, the shadow platter itself is implicit when absent, so a stack with no shadow entry is fine.
 
 ## Bucket
 
@@ -53,11 +52,40 @@ There are no namespace rules inside `bucket` — no reserved keys, no reserved k
 }}
 ~~~
 
-`stack` is a hash. Each entry is called a **platter** — the key is the platter's identifier (an arbitrary string), and the value is itself a hash holding that platter's own fields (`class`, `sticky`, `warning`, `bucket`, `vibecode`, and whatever else the platter needs to carry).
+`stack` is a hash. Each entry is called a **platter** — the key is the platter's identifier, and the value is itself a hash holding that platter's own fields (`class`, `warning`, `bucket`, `vibecode`, and whatever else the platter needs to carry).
 
-A platter carries meta data about the object. The order of the platters is significant in method resolution. The hash keys for the platters themselves are arbitrary. By custom we call the first one `"shadow"`.
+A platter carries meta data about the object. The order of the platters is significant in method resolution.
 
-Five keys are currently defined on a platter: `class`, `sticky`, `warning`, `bucket`, and `vibecode`. A platter hash can also carry additional fields a specific class uses for its own purposes; the five below are the ones the engine itself recognizes.
+**The first platter must be named `"shadow"`.** This is a hard rule: the key at position 1 in the `stack` hash is always `"shadow"`. The keys for the rest of the platters are arbitrary.
+
+**The shadow is implicit when absent.** A `stack` that does not contain a `"shadow"` entry is understood to have an empty shadow platter sitting at position 1, ahead of whatever other platters the hash carries. The two objects below are equivalent — same shadow, same `foo` platter, same dispatch order:
+
+<a class="copy" href="#">copy</a>
+
+```json
+{
+    "bucket": {},
+    "stack": {
+        "shadow": {},
+        "foo": {"class": "puck.uno/foo"}
+    }
+}
+```
+
+```json
+{
+    "bucket": {},
+    "stack": {
+        "foo": {"class": "puck.uno/foo"}
+    }
+}
+```
+
+Either form is legal — pick whichever reads better at the call site. Most objects don't need anything beyond the engine's empty-shadow default, so the second form is the common case; only objects that put something on the shadow (singleton methods, attached `vibecode`, etc.) need the explicit form. Examples elsewhere in the docs use whichever form makes the point at hand clearer.
+
+**The shadow is the only platter with a fixed position.** Every other platter can be added, removed, or reordered freely — there is no engine-level lock holding any non-shadow platter in place. The shadow stays at position 1 because the rule above says it does (the name is reserved for position 1; the runtime treats the slot as implicit when no explicit entry is present), not because the platter itself is somehow pinned. Stack mutation is otherwise unrestricted.
+
+Four keys are currently defined on a platter: `class`, `warning`, `bucket`, and `vibecode`. A platter hash can also carry additional fields a specific class uses for its own purposes; the four below are the ones the engine itself recognizes.
 
 ### class
 
@@ -72,14 +100,6 @@ In Caspian, `class` is a reference to an **actual class object** — a runtime i
 **The shadow platter doesn't hold an empty hash at runtime — it holds an actual class object** that serializes as `{}` until someone adds methods to it. Singleton methods added to the shadow (the canonical way to give one specific object behavior that no other object has) get added to that class object directly; the next time the platter serializes, the `{}` expands to a hash describing the methods.
 
 Method dispatch consults the class object regardless of how it serializes. A class with no methods contributes nothing for the walk to find, so dispatch moves on to the next platter — that's how unmatched calls end up at method-not-found rather than landing on a no-op.
-
-### sticky
-
-Boolean. When true, the platter cannot be removed from the stack. If it sits at the top of the stack, it cannot be moved.
-
-`sticky` is engine-only and one-way: only the engine can set it, and once set it can't be cleared.
-
-How sticky platters interact across the stack — the propagation rule that turns adjacent sticky platters into stuck positions — is spelled out in the [Stickiness](#stickiness) section below.
 
 ### warning
 
@@ -122,7 +142,7 @@ Serialized form:
 }
 ~~~
 
-The shadow platter's `sticky: true` and `class: {}` are defaults; an empty shadow expands to the full form. Subsequent examples in this doc will show shadow empty unless the explicit form matters:
+The shadow platter's `class: {}` is the default; an empty shadow expands to the full form. Subsequent examples in this doc will show shadow empty (or omitted entirely) unless the explicit form matters:
 
 <a class="copy" href="#">copy</a>
 
@@ -165,41 +185,3 @@ The contents of `vibecode` are free-form. The engine doesn't enforce a schema. C
 
 This is the same `vibecode` convention used at the top of markdown documents, at the top of worldlet JSON files, and on individual records: a structured AI-readable annotation that travels with whatever it sits on.
 
-## Stickiness
-
-~~~vibecode
-{"vibecode": {
-	"section": "stickiness",
-	"role": "defines the sticky flag on a platter, the engine-only / one-way rule, and the downward-propagation rule that turns adjacent sticky platters into stuck positions"
-}}
-~~~
-
-`sticky` on a platter means two things:
-
-- You can't remove it.
-- If it's at the top of the stack, you can't move it.
-
-`sticky` is engine-only and one-way: only the engine can set it on a platter, and once set it can't be cleared.
-
-**Stickiness propagates downward.** A sticky platter directly under a stuck platter is itself stuck — the position-lock chains through every contiguous sticky platter starting from the top. The first non-sticky platter ends the chain; platters below it can still move.
-
-For example, both shadow and `foo` are sticky and adjacent here, so `foo` is stuck at the second position under shadow:
-
-<a class="copy" href="#">copy</a>
-
-```json
-{
-    "bucket": {},
-    "stack": {
-        "shadow": {"sticky": true, "class": {}},
-        "foo": {"sticky": true, "class": {}}
-    }
-}
-```
-
-Platters not marked as sticky can be moved around or deleted.
-
-**Two initial use cases for stickiness.** The mechanism exists for these specifically; both are engine-driven:
-
-- **The shadow platter.** The shadow is sticky by default so it can't be moved away from the top of the stack or removed. Singleton methods added to an object live on the shadow's class, and the engine relies on the shadow being predictably at position 0 during dispatch.
-- **`null` and `false` instances.** When the engine creates a `null` or a `false`, it adds a sticky platter directly under the shadow that carries the null-or-false class identity. The stickiness keeps the value from being talked out of being null or false later — once a value is created as null, it stays null for its lifetime; same for `false`. Because the platter is sticky and adjacent to the (also-sticky) shadow, the propagation rule above pins it at position 1.

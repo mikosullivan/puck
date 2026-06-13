@@ -1,6 +1,6 @@
 # <img src="orlando/static/logo.svg" alt="Puck logo" class="hero-logo"> Puck
 
-~~~json
+~~~vibecode
 {"vibecode": {
 	"doc": "readme",
 	"role": "entry-point overview of the Puck ecoverse and its three core packages",
@@ -23,9 +23,9 @@ You can submit issues to GitHub with these links: [GitHub issue](https://github.
 
 ## The three packages
 
-- **[Puck (the object protocol)](documentation/puck/puck.md)** — UNS-addressed remote objects; one shape for working with objects across languages, processes, and machines.
-- **[Caspian](documentation/caspian/caspian.md)** — a lightweight, embeddable language.
-- **[Mikobase](documentation/mikobase/mikobase.md)** — a live, portable object store. Class-based, NoSQL; queries are JSON.
+- **[Puck (the object protocol)](https://puck.uno/documentation/requirements/puck/)** — URL-addressed remote objects; one shape for working with objects across languages, processes, and machines.
+- **[Caspian](https://puck.uno/documentation/requirements/caspian/)** — a lightweight, embeddable language.
+- **[Mikobase](https://puck.uno/documentation/requirements/mikobase/)** — a live, portable object store. Class-based, NoSQL; queries are JSON.
 
 ## Lightweight
 
@@ -46,4 +46,4 @@ Puck is guided by four core principles:
 
 ## Reading the docs
 
-Start with the **[project overview](documentation/overview.md)** for an end-to-end tour.
+Start with the **[project overview](https://puck.uno/documentation/overview)** for an end-to-end tour.

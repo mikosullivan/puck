@@ -82,9 +82,11 @@ each contributing a class. This matches the universal Puck object shape (see
 
 Rules:
 
-- Every record's stack has at least a shadow platter (sticky by default). Records
-  typically also have a primary-class platter; additional platters arrive when
-  mix-ins, marker classes, or warnings get added.
+- Every record has a shadow platter at position 1 — either written explicitly
+  or implicitly present-and-empty when no `"shadow"` key appears in the stack
+  hash. Records typically also have a primary-class platter; additional platters
+  arrive when mix-ins, marker classes, or warnings get added. Non-shadow
+  platters can be added, removed, or reordered freely.
 - Each platter can optionally carry its own private bucket via the `bucket` field —
   state that belongs to that platter's class, separate from the record's shared
   top-level `bucket`. Mix-in classes (Trivet is canonical) use the per-platter

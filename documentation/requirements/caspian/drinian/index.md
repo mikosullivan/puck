@@ -474,7 +474,7 @@ Every entry in `state.objects` carries a top-level `role` field naming the role 
         "src": ["a", 6],
         "bucket": {"value": "Aslan"},
         "stack": {
-            "shadow": {"sticky": true},
+            "shadow": {},
             "24": {"class": "puck.uno/string"}
         }
     }

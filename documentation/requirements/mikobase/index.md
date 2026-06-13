@@ -27,7 +27,7 @@ A small mikobase packaged as a single JSON file is called a
 ### Record identity
 
 Every record has a primary key. By convention that key is a **UUID v4**,
-but Mikobase is not fussy about it. Currently, Mikobase actually accepts
+but that is not a requirement. Currently, Mikobase actually accepts
 anything for primary key fields called "uuid". We'll revisit the subject
 of cryptographically strong UUIDs if the community wants to do so.
 

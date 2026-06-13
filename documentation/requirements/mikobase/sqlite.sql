@@ -46,8 +46,9 @@ create table records_history (
 
 -- An instance record uses the `bucket` and `stack` columns: `bucket` is the
 -- object's data hash; `stack` is the ordered hash of platters (each platter
--- being {class, sticky?, warning?, bucket?}). The shadow platter is named
--- "shadow" by convention and is sticky by default.
+-- being {class, warning?, bucket?}). The platter at position 1 must be named
+-- "shadow" — and when no "shadow" entry is present in the stack hash, an
+-- empty shadow is understood to sit at position 1.
 --
 -- A class-definition record (an instance of puck.uno/class) uses the
 -- whole-hash form instead: the row sets whole_hash = 1 and stores the

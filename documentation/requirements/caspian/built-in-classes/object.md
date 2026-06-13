@@ -42,7 +42,7 @@ regardless of what classes, fields, or methods user code attaches to the object.
 	"role": "underlying tri-value classification; the other three predicates are derived from this; locked at instantiation and engine-enforced",
 	"rule": "only_null_and_false_return_non_true; everything_else_is_true",
 	"locked": "bool_is_set_at_instantiation_and_cannot_change_for_the_object's_lifetime",
-	"mechanism": "sticky_platter_directly_under_the_shadow_carrying_class_puck_uno_null_or_puck_uno_false; absence_of_such_a_platter_means_true",
+	"mechanism": "platter_directly_under_the_shadow_carrying_class_puck_uno_null_or_puck_uno_false; absence_of_such_a_platter_means_true; the_whole_object_is_frozen_so_the_platter_can_never_be_added_removed_or_moved",
 	"implementation": "engine_caches_bool_at_instantiation_for_constant_time_read; safe_because_value_never_changes",
 	"see_also": "requirements/caspian/truthy.md for the broader model"
 }}
@@ -102,19 +102,19 @@ An object's bool value is determined by what sits **directly under the shadow** 
 | Stack under shadow | `.object.bool` returns |
 |---|---|
 | Nothing, or a platter whose class is anything other than null/false | `true` |
-| A sticky platter with class `puck.uno/null` | `null` |
-| A sticky platter with class `puck.uno/false` | `false` |
+| A platter with class `puck.uno/null` | `null` |
+| A platter with class `puck.uno/false` | `false` |
 
 ```
-null.object.stack       # shadow, then sticky platter with class puck.uno/null
-false.object.stack      # shadow, then sticky platter with class puck.uno/false
+null.object.stack       # shadow, then platter with class puck.uno/null
+false.object.stack      # shadow, then platter with class puck.uno/false
 "hello".object.stack    # shadow, optionally other platters — none of them null/false
 ```
 
-When the engine creates a `null` or `false` instance, it adds a sticky platter directly under the shadow carrying the appropriate class identity. The platter is sticky, the shadow above it is sticky, and stickiness propagates downward — so the non-truthy platter is pinned at position 1, cannot be moved, cannot be removed. Combined with [`sticky` being engine-only and one-way](../../ecoverse/objects/structure.md#sticky), this means:
+When the engine creates a `null` or `false` instance, it puts a platter directly under the shadow carrying the appropriate class identity. **The whole instance is then frozen** (see [Immutable primitives](#immutable-primitives) below): the platter that carries the null-or-false signal can't be removed, replaced, or shuffled away because no platter on a frozen instance can be touched at all. This means:
 
 - A value created as `null` stays `null` for its entire lifetime; same for `false`.
-- A truthy value can never be made non-truthy at runtime. User code can't push a sticky `puck.uno/null` or `puck.uno/false` platter onto a value's stack because only the engine can mark a platter sticky.
+- A truthy value can never be made non-truthy at runtime. User code can't push a `puck.uno/null` or `puck.uno/false` platter onto a truthy value's stack because doing so would conflict with the existing instance's bool, and even if some path got past that check, the truthy-instance freeze for those two classes prevents mutation in the first place.
 
 There is no separate `puck.uno/truthiness` class; the platter's own class IS the null-or-false signal. See [truthy.md](../truthy.md) for the broader truthiness model.
 
@@ -184,17 +184,17 @@ Returns the opposite of [`null?`](#null) — strict `true` if `bool` is `true` o
 }}
 ~~~
 
-These methods reach the platter stack, dispatch, and lifecycle controls through the `.object` namespace. The conceptual model — what `bucket`, `stack`, platters, and stickiness *are* — lives in [ecoverse/objects/](../../ecoverse/objects/) and [lucy/index.md § Object Model](../lucy/index.md#object-model); the entries below are the method catalog.
+These methods reach the platter stack, dispatch, and lifecycle controls through the `.object` namespace. The conceptual model — what `bucket`, `stack`, and platters *are* — lives in [ecoverse/objects/](../../ecoverse/objects/) and [lucy/index.md § Object Model](../lucy/index.md#object-model); the entries below are the method catalog.
 
 | Method | Returns | What it does |
 |---|---|---|
 | `classes` | array of just the classes in the stack | inspect class identity, or call `.add` to push a class |
-| `stack` | the stack hash (platters with their `class`/`sticky`/`bucket`/`warning` fields) | full structural access including per-platter metadata |
+| `stack` | the stack hash (platters with their `class`/`bucket`/`warning` fields) | full structural access including per-platter metadata |
 | `isa?(uns)` | strict boolean | whether the named class is anywhere in the stack |
 | `shadow` | the object's shadow class | direct handle to the per-instance class |
 | `method(name) do(params…) … end` | the receiver | define a method on this one object (lives on its shadow) |
 | `call_with(receiver, method, args…)` | whatever the method returns | dispatch the method on `receiver` using the receiver of `call_with` as the class providing the body |
-| `borrow(uns) do … end` | the block's value | push a non-sticky platter for the duration of the block, then pop it |
+| `borrow(uns) do … end` | the block's value | push a transient platter for the duration of the block, then pop it |
 | `jail(method_syms…)` | a new jail object | capability-restricting proxy exposing only the named methods |
 | `freeze [do … end]` | the receiver | lock both class stack and bucket; with a block, releases on block exit |
 | `classes.freeze [do … end]` | the receiver | lock the class stack only |
@@ -215,16 +215,16 @@ $foo.object.classes.add 'foo.bar.gup'
 
 `.add` pushes a class onto the stack as a new platter.
 
-For the full structural view including per-platter `sticky` / `bucket` / `warning` fields, use [`stack`](#stack) instead.
+For the full structural view including per-platter `bucket` / `warning` fields, use [`stack`](#stack) instead.
 
 <a id="stack"></a>
 ### `stack`
 
-Returns the stack hash itself — the ordered map of platter-key → platter, where each platter carries its `class`, `sticky`, `warning`, and per-platter `bucket` per [ecoverse/objects/structure.md](../../ecoverse/objects/structure.md):
+Returns the stack hash itself — the ordered map of platter-key → platter, where each platter carries its `class`, `warning`, and per-platter `bucket` per [ecoverse/objects/structure.md](../../ecoverse/objects/structure.md):
 
 ```
 $foo.object.stack         # the full stack hash
-null.object.stack         # shadow + sticky platter with class puck.uno/null
+null.object.stack         # shadow + platter with class puck.uno/null
 "hello".object.stack      # shadow, optionally other platters — none null/false
 ```
 
@@ -291,7 +291,7 @@ Rare. Normal method resolution handles the common case; `call_with` is for code 
 <a id="borrow"></a>
 ### `borrow`
 
-Pushes a class onto the receiver's stack as a non-sticky platter, runs the block, then pops the platter. Inside the block, methods on the receiver dispatch through its augmented stack — borrowed methods are reachable alongside everything else:
+Pushes a class onto the receiver's stack as a transient platter, runs the block, then pops the platter. Inside the block, methods on the receiver dispatch through its augmented stack — borrowed methods are reachable alongside everything else:
 
 ```
 $result = $foo.object.borrow('bar.gup/serializer') do
@@ -303,8 +303,7 @@ Rules:
 
 - **The block is required.** No bare-call form. Inside the block, `self` is unchanged — the borrow modifies the receiver's stack, not the calling context. Method calls go through `$foo.method()` explicitly.
 - **Exception-safe.** The platter is popped even if the block raises.
-- **The platter is always non-sticky.** Borrow is transient by definition; if the platter were sticky, it couldn't be popped at block end. Borrow takes no sticky flag.
-- **Classes that declare themselves sticky-required cannot be borrowed.** A class whose security guarantee depends on never being removable (e.g. `puck.uno/class/redact`) raises before the block runs. Better to fail explicitly than silently weaken the class's intent.
+- **The platter is always transient.** Borrow is scoped to the block — the platter exists only for the block's duration and is removed when the block exits, even if the block raises.
 - **At block end the engine deletes the platter outright** (it didn't hold user-allocated data; `%platter` access is not permitted inside a borrow). No accumulating inactive borrow platters in the stack.
 - **Local borrow, not remote.** The borrowed class works directly on the receiver, no clone. For send-a-clone-to-another-process semantics, use Puck (`%puck[...]`) instead.
 
@@ -316,8 +315,7 @@ Nested borrows compose. Each `borrow` pushes; each block end pops its own:
 $foo.object.borrow('class_a') do
     $foo.object.borrow('class_b') do
         # both class_a and class_b are in $foo's stack here;
-        # class_b dispatches first (pushed later, sits above class_a in
-        # the non-sticky portion of the stack)
+        # class_b dispatches first (pushed later, sits above class_a)
     end
     # only class_a in $foo's stack now
 end

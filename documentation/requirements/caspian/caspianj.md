@@ -200,7 +200,7 @@ it accepts is the contract.
 
 **Stack at instantiation.** A literal produces an instance with
 its initial platter stack — the shadow class plus the named class
-plus any platters the class declares (truthiness, sticky markers,
+plus any platters the class declares (truthiness, marker classes,
 etc.). The `class` field expresses the **instantiation class**, not
 a full platter stack. Programs that want more platters add them
 via `.classes.add` after materialization. Full-stack round-tripping
