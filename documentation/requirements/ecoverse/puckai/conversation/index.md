@@ -107,12 +107,12 @@ Something being put forward for consideration.
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @subject       # short title
-    accessor @body          # the proposal content
-    accessor @rationale     # why this is being proposed
-    accessor @status        # :open, :accepted, :rejected, :superseded
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :subject       # short title
+    field :body          # the proposal content
+    field :rationale     # why this is being proposed
+    field :status        # :open, :accepted, :rejected, :superseded
 end
 ```
 
@@ -127,12 +127,12 @@ A reasoned disagreement with a proposal or refinement.
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @to            # reference to proposal or refinement
-    accessor @body          # the objection
-    accessor @severity      # :blocking, :concern, :minor
-    accessor @status        # :open, :addressed, :withdrawn
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :to            # reference to proposal or refinement
+    field :body          # the objection
+    field :severity      # :blocking, :concern, :minor
+    field :status        # :open, :addressed, :withdrawn
 end
 ```
 
@@ -151,12 +151,12 @@ An updated version of a proposal, typically in response to an objection.
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @of            # reference to the original proposal
-    accessor @previous      # reference to the immediately preceding proposal or refinement
-    accessor @body          # the full revised proposal
-    accessor @changes       # summary of what changed and why
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :of            # reference to the original proposal
+    field :previous      # reference to the immediately preceding proposal or refinement
+    field :body          # the full revised proposal
+    field :changes       # summary of what changed and why
 end
 ```
 
@@ -173,10 +173,10 @@ A clarifying question about anything in the session.
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @about         # reference to the thing being questioned
-    accessor @body
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :about         # reference to the thing being questioned
+    field :body
 end
 ```
 
@@ -191,10 +191,10 @@ A reply to a question.
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @to            # reference to question
-    accessor @body
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :to            # reference to question
+    field :body
 end
 ```
 
@@ -209,13 +209,13 @@ Supporting material attached to any record in the session — a citation, measur
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @about         # reference to the record this evidence supports
-    accessor @kind          # :fact, :example, :counterexample, :citation, :measurement
-    accessor @source        # URL or description of the source
-    accessor @body          # the evidence content
-    accessor @confidence    # 0.0–1.0, agent's confidence in this evidence
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :about         # reference to the record this evidence supports
+    field :kind          # :fact, :example, :counterexample, :citation, :measurement
+    field :source        # URL or description of the source
+    field :body          # the evidence content
+    field :confidence    # 0.0–1.0, agent's confidence in this evidence
 end
 ```
 
@@ -230,11 +230,11 @@ An explicit record of one agent accepting a proposal or refinement. Creates a cl
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @of            # reference to the proposal or refinement being accepted
-    accessor @body          # optional remarks
-    accessor @conditions    # any conditions attached to the acceptance
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :of            # reference to the proposal or refinement being accepted
+    field :body          # optional remarks
+    field :conditions    # any conditions attached to the acceptance
 end
 ```
 
@@ -249,11 +249,11 @@ A declaration that agreement on **one issue** cannot be reached and the issue mu
 
 ```
 class
-    accessor @agent           # primary key of the admin agent declaring impasse
-    accessor @session        # reference to the session record
-    accessor @issue          # reference to the issue that hit impasse
-    accessor @body           # explanation of why agreement cannot be reached
-    accessor @sticking_point # the specific point of disagreement
+    field :agent           # primary key of the admin agent declaring impasse
+    field :session        # reference to the session record
+    field :issue          # reference to the issue that hit impasse
+    field :body           # explanation of why agreement cannot be reached
+    field :sticking_point # the specific point of disagreement
 end
 ```
 
@@ -268,12 +268,12 @@ end
 
 ```
 class
-    accessor @agent         # primary key of the agent record
-    accessor @session      # reference to the session record
-    accessor @issue        # reference to the issue this stance is about
-    accessor @body         # the agent's own decision on the issue
-    accessor @confidence   # optional: 0.0–1.0, agent's confidence in this stance
-    accessor @supports     # optional: reference to the proposal/refinement the agent endorses
+    field :agent         # primary key of the agent record
+    field :session      # reference to the session record
+    field :issue        # reference to the issue this stance is about
+    field :body         # the agent's own decision on the issue
+    field :confidence   # optional: 0.0–1.0, agent's confidence in this stance
+    field :supports     # optional: reference to the proposal/refinement the agent endorses
 end
 ```
 

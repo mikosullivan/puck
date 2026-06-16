@@ -1794,7 +1794,7 @@ Every object has exactly two structural fields:
 - **bucket** — a single shared hash where all the object's data lives
 - **stack** — an ordered hash of **platters**; each platter contributes a class to the object's identity
 
-Everything else — methods, accessors, helpers — is behavior layered on top of these two
+Everything else — methods, fields, helpers — is behavior layered on top of these two
 primitives. This maps directly to how Mikobase records work and how Puck wire objects
 look: the same `{bucket, stack}` shape applies in the language, the store, and the
 protocol. The full structural spec — including the four recognized platter fields
@@ -1826,8 +1826,10 @@ data lives here.
 %bucket['foo']          # 'bar'
 ```
 
-`@foo` is shorthand for `%bucket['foo']`. The `accessor` declaration in a class creates
-getters/setters that read and write from `%bucket`.
+`@foo` is shorthand for `%bucket['foo']` (when `foo` is a valid identifier). No prior
+declaration is required — `@foo = 'bar'` writes to the bucket whether or not the class
+declared `field :foo`. A `field` declaration with `:get` / `:set` flags creates getters
+and setters that read and write `%bucket['<name>']` (see [field :get / :set flags](#field-get-set-flags)).
 
 ```
 @foo = 'bar'             # same as %bucket['foo'] = 'bar'
@@ -2095,9 +2097,9 @@ A helper is an instance of `puck.uno/helper`. It provides a way to namespace met
 without polluting the main method namespace of an object.
 
 The base helper class defines a single field, `@reference`, which points back to the
-parent object, and an accessor that exposes it as `self.reference` from inside
-helper methods (declared as `accessor @reference :get` in the base class). So
-`@reference` is the bucket field; `self.reference` is the method-style reader
+parent object, and exposes it as `self.reference` from inside helper methods (declared
+as `field :reference, :get` in the base class — the `:get` flag generates the reader).
+So `@reference` is the bucket field; `self.reference` is the method-style reader
 of that field. Two surfaces, one piece of state.
 
 <a id="defining-a-helper"></a>
@@ -2150,7 +2152,7 @@ keeping them out of the main method namespace.
 	"puck_namespace": "%puck[UNS] to access registered objects",
 	"definition": "$myclass = class...end or %puck['https://puck.uno/object'].subclass do...end",
 	"subclassing": "$new_class = $my_class.subclass do...end",
-	"accessors": "declared with accessor @foo :get :set default:",
+	"field_get_set_flags": "declared with field :foo, :get, :set, default: ...",
 	"abstract": "abstract true prevents direct instantiation",
 	"initializer": "init method",
 	"methods": "function &name() inside class block"
@@ -2213,25 +2215,29 @@ end
 
 Subclassing is always a method call on the parent class object.
 
-<a id="accessors"></a>
-### Accessors
+<a id="field-get-set-flags"></a>
+### Field `:get` and `:set` flags
 
-Accessors are private instance variables declared with `accessor`. They are not
-accessible from outside the class unless `:get` / `:set` flags are declared.
+A field declared with no `:get` / `:set` flags is private to the class's own
+methods — accessible via `@foo` inside method bodies, not externally callable. The
+`:get` and `:set` flags auto-generate reader and writer methods that read from
+and write to `%bucket['<name>']`:
 
 ```
-accessor @foo                  # private, no external access
-accessor @bar, :get            # creates a getter: bar()
-accessor @gup, :set            # creates a setter: gup=()
-accessor @baz, :get, :set      # creates both
+field :foo                      # private, no external access
+field :bar, :get                # creates a getter: bar()
+field :gup, :set                # creates a setter: gup=()
+field :baz, :get, :set          # creates both
 ```
 
-Mechanically, the getter/setter read from and write to `%bucket['<name>']` —
-accessors are just typed sugar over bucket access.
+These flags compose with any other field options (`class:`, `required:`,
+`default:`, etc.). They're just typed sugar over the bucket-access the developer
+could write by hand.
 
 `:get` and `'get'` are equivalent — `:foo` is shorthand for `'foo'` throughout Caspian.
 
-A `default:` option is reserved for a future revision; not in v1.
+(Caspian previously had a separate `accessor` keyword for this. It has been
+removed and its functionality folded into `field`.)
 
 <a id="abstract-classes"></a>
 ### Abstract Classes
@@ -2274,10 +2280,10 @@ end
 
 ```
 $person = class
-    accessor @name, :get
-    accessor @birthdate, :get
-    accessor @email, :get, :set
-    accessor @active, default: false
+    field :name, :get
+    field :birthdate, :get
+    field :email, :get, :set
+    field :active, default: false
 
     function &init($name, $birthdate)
         @name = $name
@@ -2299,7 +2305,7 @@ $p.greet   # "Hello, I am Jean-Luc"
 
 ```
 $officer = $person.subclass do
-    accessor @rank, :get
+    field :rank, :get
 
     function &init($name, $birthdate, $rank)
         @rank = $rank

@@ -14,7 +14,7 @@ construct so each topic gets its own page.
 - **[Assignment operators](assignment-operators.md)** — `=`, `&=`,
   compound forms.
 - **[Class definition](../index.md#classes)** — `class` /
-  `inherits` / `field` / `accessor` / `helper`. (The JSON form is
+  `inherits` / `field` / `helper`. (The JSON form is
   spec'd in [mikobase/class-definition.md](../../mikobase/class-definition.md).)
 - **[Exceptions](exceptions.md)** — `raise` and `catch`; multiple
   in-flight exceptions; cross-role catch semantics.

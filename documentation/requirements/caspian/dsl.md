@@ -13,7 +13,7 @@
 }}
 ~~~
 
-Caspian commits to using its own DSL machinery for as much of the language surface as is practical. Things that **look** like keywords — `accessor`, `field`, `return`, `break`, `before`, `after`, `pass`, `commit`, etc. — are mostly bare-word commands (bwcs) resolved through a DSL, not entries in the parser's keyword list. The parser handles only what genuinely requires structural parsing.
+Caspian commits to using its own DSL machinery for as much of the language surface as is practical. Things that **look** like keywords — `field`, `return`, `break`, `before`, `after`, `pass`, `commit`, etc. — are mostly bare-word commands (bwcs) resolved through a DSL, not entries in the parser's keyword list. The parser handles only what genuinely requires structural parsing.
 
 ## At a glance — implementing a DSL
 
@@ -97,7 +97,7 @@ Specific scopes can override. A Bryton test runner can rebind `return` to "add t
 
 ### Tier 4: Pure DSL
 
-Words that only have meaning inside a specific scope, with no default binding outside it. The classic example is the class body: `accessor` / `field` / `helper` / `inherits` / `join` / `abstract` mean something inside a class definition block and nothing outside it.
+Words that only have meaning inside a specific scope, with no default binding outside it. The classic example is the class body: `field` / `helper` / `inherits` / `join` / `abstract` mean something inside a class definition block and nothing outside it.
 
 ## How DSLs work
 
@@ -264,7 +264,7 @@ end
 
 ## Class definition is a DSL
 
-The class definition block is the canonical tier-4 DSL. Words like `accessor`, `field`, `helper`, `inherits`, `join`, `abstract` are bwcs the class-definer's DSL provides — not parser keywords.
+The class definition block is the canonical tier-4 DSL. Words like `field`, `helper`, `inherits`, `join`, `abstract` are bwcs the class-definer's DSL provides — not parser keywords.
 
 ```
 class
@@ -272,8 +272,7 @@ class
 
     field :name, class: :string, required: true
     field :age,  class: :number, min: 0
-
-    accessor :nickname
+    field :nickname
 
     function &greet(name:)
         'Hello, ' + name
@@ -281,7 +280,7 @@ class
 end
 ```
 
-Each of `inherits`, `field`, `accessor` is a bwc resolved through the class-definer's DSL. See [caspian.md § Classes](index.md#classes) for the class-DSL command set in detail.
+Each of `inherits`, `field`, `helper` is a bwc resolved through the class-definer's DSL. See [caspian.md § Classes](index.md#classes) for the class-DSL command set in detail.
 
 ## DSLs should be documented
 
@@ -293,7 +292,7 @@ Parser shortcuts are allowed when DSL would be impractical, costly, or premature
 
 - **Operator precedence.** Infix operators like `+`, `-`, `*`, `==`, `&&` need precedence rules in the parser; the parser resolves them, even if the underlying operation routes through DSL-style methods at runtime.
 - **Logical word operators.** `and`, `or`, `not` have precedence and short-circuit semantics; parser-level for now, even if their dispatch could be DSL-resolvable underneath.
-- **V0.01 walking-skeleton expedience.** The V0.01 parser bakes class-body keywords (`accessor`, `field`, `helper`, `inherits`, `join`) into its keyword table rather than going through a DSL receiver. This is a deliberate shortcut to keep V0.01 small; the refactor to pure-DSL handling is tracked separately.
+- **V0.01 walking-skeleton expedience.** The V0.01 parser bakes class-body keywords (`field`, `helper`, `inherits`, `join`) into its keyword table rather than going through a DSL receiver. This is a deliberate shortcut to keep V0.01 small; the refactor to pure-DSL handling is tracked separately.
 
 A cheat is OK if (a) the alternative isn't worth the engineering cost yet, (b) the surface behavior is identical to what the DSL form would produce, or (c) the construct genuinely can't be expressed as a DSL (operator precedence is the strongest example).
 

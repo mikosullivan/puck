@@ -726,10 +726,10 @@ specific icon falls back to a sensible parent automatically.
 
 - **Top-level** — `generic.svg`, `unknown.svg`, `test.svg`.
 - **`group/`** — group types: `dir.svg`, `file.svg`,
-  `remote.svg`, `timer.svg`. Language-specific file icons under
-  `group/file/`: `caspian.svg`, `rb.svg`, `js.svg`, `py.svg`,
-  `java.svg`. (The `caspian.svg` icon is a placeholder — not the
-  official Caspian logo yet.)
+  `remote.svg`, `sub-process.svg`, `timer.svg`. Language-specific
+  file icons under `group/file/`: `caspian.svg`, `rb.svg`, `js.svg`,
+  `py.svg`, `java.svg`. (The `caspian.svg` icon is a placeholder —
+  not the official Caspian logo yet.)
 - **`group.svg`** — group catch-all.
 
 **Under `results/`** (verdict-state icons):

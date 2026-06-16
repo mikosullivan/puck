@@ -3,43 +3,43 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "events",
-	"role": "spec for Caspian's event-broadcasting system — any object can listen for events broadcast by any other object. The source explicitly broadcasts via %utils.broadcast; listeners register either by naming a method on themselves (.object.listen_to with method-name string) or by passing a closure (%utils.register with do block). The engine routes broadcast → handler calls. Zero cost when no listeners are registered; synchronous single-threaded execution; registrations clean up automatically via GC for the method-name form, and via source-GC or explicit unregister for the closure form.",
-	"status": "spec — major decisions settled; some open points remain (unregister API, custom exception class names, runtime-state location details)",
+	"role": "spec for Caspian's event-broadcasting system — any object can broadcast events; any object (or any anonymous closure) can register a handler for someone else's events. The source broadcasts via %self.object.broadcast. Handlers register via three forms: a method on a listener, a closure on a listener, or a closure directly on the broadcaster. All registrations live in a single engine-level event table; GC cleans up rows when participants go out of scope.",
+	"status": "spec — major decisions settled; some open points remain (unregister API, custom exception class names, class-level opt-in)",
 	"audience": "Caspian programmers using events; engine implementers wiring the broadcast path",
-	"key_concepts": ["explicit_source_broadcast_via_percent_utils_broadcast",
-		"two_registration_forms_method_name_and_closure",
-		"handler_signature_broadcaster_plus_event_name_plus_args",
-		"zero_cost_when_no_listeners_registered",
+	"key_concepts": ["explicit_source_broadcast_via_percent_self_object_broadcast",
+		"three_registration_forms_method_name_closure_on_listener_closure_on_broadcaster",
+		"single_engine_level_event_table",
+		"weak_references_to_participants_strong_references_to_anonymous_closures",
+		"row_lifetime_bounded_by_participants_alive",
+		"handler_signature_includes_source_event_name_and_payload_args",
 		"registration_order_for_handler_invocation",
 		"idempotent_registration_for_method_name_form",
 		"exceptions_bubble_normally_remaining_handlers_dont_fire",
 		"synchronous_nested_broadcast_no_special_cases",
-		"gc_cleans_up_registrations_on_both_ends_for_method_name_form",
+		"gc_cleans_up_rows_for_either_end_going_out_of_scope",
 		"introspection_supported"]
 }}
 ~~~
 
-Any Caspian object can listen for events broadcast by any other object. The source explicitly **broadcasts** via `%utils.broadcast`; listeners **register** either by naming a method on themselves (`.object.listen_to`) or by passing a closure (`%utils.register`). The engine routes broadcast → handler calls.
+Any Caspian object can listen for events broadcast by any other object. The source explicitly **broadcasts** via `%self.object.broadcast`; handlers register through one of three forms — a method on a listener, a closure tied to a listener, or a closure tied directly to the broadcaster. The engine routes broadcast → handler calls.
 
 Two things this design avoids by construction:
 
-- **No mutation-fired events.** The engine's mutation paths stay zero-overhead. Events only fire when source code explicitly calls `%utils.broadcast`.
-- **No listener-check tax on bystander objects.** A source with zero listeners pays one branch (a count check) per `broadcast` call, then returns. The system never walks "all listeners in the program."
+- **No mutation-fired events.** The engine's mutation paths stay zero-overhead. Events only fire when source code explicitly calls `%self.object.broadcast`.
+- **No bookkeeping on bystander objects.** Objects that nobody ever listens to and that never broadcast pay nothing for the event system. A broadcaster with no listeners pays one hash lookup per `broadcast` call that returns empty. The system never walks "all listeners in the program."
 
 ---
 
 <a id="broadcast"></a>
 ## Broadcast
 
-A source broadcasts by calling `%utils.broadcast` from inside one of its own methods:
+A source broadcasts by calling `%self.object.broadcast` from inside one of its own methods:
 
 ```
-%utils.broadcast 'event_name', arg1, arg2, ...
+%self.object.broadcast 'event_name', arg1, arg2, ...
 ```
 
-(`broadcast` is the name of the dispatch primitive in the `%utils` namespace; some earlier drafts used `dispatch`.)
-
-- The source is implicit — `%self` at the call site.
+- The source is `%self` — the object the call dispatches on.
 - The event name is a string. Any string is accepted; the engine doesn't validate that the source "declared" the event.
 - Trailing args are the payload. Any number of args (zero or more), of any type. The handler is expected to match the shape; mismatches surface at the handler call.
 - Returns: the integer **count of handlers that fired**.
@@ -47,7 +47,7 @@ A source broadcasts by calling `%utils.broadcast` from inside one of its own met
 Example — a socket broadcasting a new inbound connection:
 
 ```
-%utils.broadcast 'new_connection', {'received': 'something'}
+%self.object.broadcast 'new_connection', {'received': 'something'}
 ```
 
 If no one is listening for `'new_connection'` on this source, the call does nothing and returns `0`.
@@ -55,13 +55,13 @@ If no one is listening for `'new_connection'` on this source, the call does noth
 ---
 
 <a id="listen"></a>
-## Listen
+## Three ways to register a handler
 
-Two registration forms. Both produce the same kind of registration (same registry, same dispatch order, same exception handling); they differ only in how the handler is identified.
+A handler can be registered in three forms. All three put a row in [the event table](#the-event-table) and dispatch on broadcast the same way; they differ in **what holds the handler** and **whose lifetime governs the registration**.
 
-### Method-name form
+### Method-name form (on a listener)
 
-A listener registers by naming a method on itself:
+A listener registers by naming one of its own methods:
 
 ```
 $listener.object.listen_to $source, 'event_name', 'method_name'
@@ -74,155 +74,208 @@ $listener.object.listen_to $source, 'event_name', 'method_name'
 
 No validation at registration time. The source isn't checked to ever broadcast `'event_name'`; the listener's class isn't checked to have `'method_name'`. Registration is purely bookkeeping.
 
-Example — `$foo` listens for `'new_connection'` on `$socket`, dispatching to its `log` method:
+Example — `$logger` listens for `'new_connection'` on `$socket`, dispatching to its `write_to_log` method:
 
 ```
-$foo.object.listen_to $socket, 'new_connection', 'log'
+$logger.object.listen_to $socket, 'new_connection', 'write_to_log'
 ```
 
-### Closure form
+### Closure form (on a listener)
 
-A closure can be registered directly, with no listener object involved:
+A listener can pass a closure directly to `listen_to` instead of a method-name string:
 
 ```
-%utils.register $source, 'event_name' do(...closure_params...)
+$listener.object.listen_to($source, 'event_name') do(...closure_params...)
     # handler body
 end
 ```
 
-- `$source` — the object whose broadcasts trigger this handler.
-- `'event_name'` — the event name as a string.
-- The `do ... end` block is the handler — a closure capturing its surrounding lexical scope.
+The closure captures its lexical scope at the registration site. Use this when the handler doesn't justify a named method on the listener's class (an inline reaction, a quick observer, etc.).
 
-Example — register a closure that logs new connections on `$socket`:
+Example — register a closure on `$logger` that logs new connections on `$socket`:
 
 ```
-%utils.register $socket, 'new_connection' do($broadcaster, $event_name, $payload)
-    puts 'new connection on ' + $broadcaster.id
-    puts $payload.received
+$logger.object.listen_to($socket, 'new_connection') do($event_name, $payload)
+    puts 'new connection: ' + $payload.received
 end
 ```
 
-The closure runs in its **defining role** (per Caspian's closure-as-defining-role rule), so handler code runs with the same authority as the surrounding scope at registration time. This matches the method-name form's behavior (method runs in its class's role) — both forms place handler code in the role that wrote it, not the role that broadcast.
+### Closure form (on the broadcaster)
+
+A closure can be registered directly on the broadcaster, with no listener identity:
+
+```
+$source.object.on_broadcast('event_name') do(...closure_params...)
+    # handler body
+end
+```
+
+- `$source` — the broadcaster whose events trigger this closure.
+- `'event_name'` — the event name as a string.
+- The `do ... end` block is the handler closure.
+
+The closure is anchored to the broadcaster; when the broadcaster is collected the registration goes with it. Each `on_broadcast` call **adds** a new closure to the broadcaster's set for that event — never overrides a previous registration.
+
+Example — wire up a quick logger directly on the server:
+
+```
+$server.object.on_broadcast('got_request') do($event_name, $request)
+    %stdout.puts 'request: ' + $request.summary
+end
+```
+
+This form is useful when the developer holds a reference to the broadcaster, wants to attach a reaction, and has no separate listener object to bind it to. In spirit it's the same as a listener registering — just without the ceremony of inventing a listener.
 
 ### When to use each
 
-- **Method-name form** when the listener is a long-lived object with a well-defined response method. The method is inheritable, testable, named in the class definition. Lifetime tied to the listener (GC of the listener cleans up the registration).
-- **Closure form** when the handler is a quick inline reaction with no obvious owning object. Captures local variables without needing a wrapping class. Lifetime tied to the source (GC of the source cleans up the registration); see [Garbage collection](#garbage-collection) for the asymmetry.
+- **Method-name form** when the listener has a well-defined response method. The method is inheritable, testable, named in the class definition.
+- **Closure on a listener** when the handler should be captured inline but the developer wants the registration scoped to a particular listener's lifetime (cleanup when either end goes).
+- **Closure on the broadcaster** when there's no separate listener — the developer just wants a closure to react when this broadcaster fires this event. Cleanup is broadcaster-tied.
+
+All three forms register the same way underneath ([see the event table](#the-event-table)) and fire in registration order.
 
 ---
 
 <a id="handler-signature"></a>
 ## Handler signature
 
-When the broadcast fires, the system passes three categories of arguments to the handler:
+When the broadcast fires, the system invokes the handler with this signature:
+
+- **Method-name form** — the method is called as `$listener.method_name($source, $event_name, $args...)`. The source is the first arg because the method is a regular method on the listener's class and doesn't have lexical capture of the source.
+- **Closure form (either kind)** — the closure is called with `($event_name, $args...)`. The source isn't passed as a parameter because, in both closure forms, the closure body captures whatever it needs (either lexically, or — for `on_broadcast` — via the broadcaster's role context if needed).
+
+In all three cases, the trailing `$args...` are exactly what the broadcaster passed to `%self.object.broadcast` after the event name.
+
+Example — same signature shapes for the two registration styles:
 
 ```
-handler($broadcaster, 'event_name', arg1, arg2, ...)
-```
-
-- **First arg:** the broadcaster object.
-- **Second arg:** the event name string.
-- **Remaining args:** whatever the broadcaster passed after the event name in `%utils.broadcast`.
-
-Both registration forms use the same signature:
-
-- **Method-name form** — the handler is `$listener.method_name(...)`, invoked as a regular method dispatch. Runs in the role of the class that defined the method.
-- **Closure form** — the handler is the closure registered with `%utils.register`. Runs in the closure's defining role (per Caspian's closure-as-defining-role rule).
-
-Cross-role broadcasts work automatically: the broadcaster broadcasts in its own role, the handler runs in its own role, only the payload args cross the role boundary.
-
-Example handlers — method-name form and closure form, same signature:
-
-```
-class foo.com/foo
-    method log($broadcaster, $event_name, $payload)
-        # do something with the received payload
+class
+    method &write_to_log($server, $event_name, $request)
+        # method-name form: source is the first parameter
     end
 end
+```
 
-%utils.register $socket, 'new_connection' do($broadcaster, $event_name, $payload)
-    puts 'connection on ' + $broadcaster.id
+```
+$logger.object.listen_to($server, 'got_request') do($event_name, $request)
+    # closure-on-listener: source is captured lexically as $server
 end
 ```
 
-A closure can declare fewer params than the handler signature provides (per Caspian's normal closure-arity semantics) if it only cares about some of them — e.g., `do($payload)` for closures that don't need the broadcaster or event name.
+```
+$server.object.on_broadcast('got_request') do($event_name, $request)
+    # closure-on-broadcaster: source is reachable via $server too
+end
+```
+
+Cross-role broadcasts work automatically: the broadcaster broadcasts in its own role, the handler runs in its own role (the method's class role or the closure's defining role), only the payload args cross the role boundary.
+
+---
+
+<a id="the-event-table"></a>
+## The event table
+
+All registrations live in a single engine-level data structure called **the event table**. There is one event table per Caspian process; every register/unregister/broadcast goes through it.
+
+Each row carries:
+
+- **`source`** — the broadcaster.
+- **`listener`** — the registered listener (or absent for the `on_broadcast` form).
+- **`event_name`** — the event name string.
+- **`handler`** — either a method name (for the method-name form) or an actual closure object (for the two closure forms).
+
+The table holds **weak references to participants and strong references to anonymous closures.** Specifically:
+
+- The references to `source` and `listener` are weak: they don't extend the participants' lifetimes. The participants live wherever they normally live (variables, attributes, scopes, the engine's runtime); the table just records that they're connected.
+- For rows whose handler is an anonymous closure (closure form on a listener, or closure form on the broadcaster), the closure itself is stored in the row. The closure's home IS the row; its lifetime is the row's lifetime.
+
+**Broadcast lookup.** On `%self.object.broadcast 'event_name', args...`, the engine queries the event table for rows where `source == %self AND event_name == 'event_name'`, then invokes each row's handler in registration order. The hash-indexed lookup returns empty in O(1) for sources with no listeners, so the "zero listeners" fast path falls out of the data structure without needing a separate counter.
+
+**Row removal.** A row is removed when either of its participants is collected (a source going out of scope removes all its rows; a listener going out of scope removes all rows where it's the listener; for the `on_broadcast` form there's no listener, so only the source's lifetime applies). The engine implements this through whatever GC mechanism is appropriate to the host runtime — weak-reference notifications, finalizers, or sweeps — but the observable contract is just "row alive iff participants alive."
+
+Routine cleanup is silent: a participant going out of scope is the normal way to stop listening, and the engine doesn't warn about it.
 
 ---
 
 <a id="behavior"></a>
 ## Behavior
 
-### Zero cost when no listeners
-
-A source object carries a small counter — number of registrations currently pointing at it. `%utils.broadcast` checks the counter first; zero means return immediately. No registry walk, no global scan. The engine never asks "are there listeners anywhere in the program?" — it only asks "are there listeners on THIS source?"
-
-For the overwhelming majority of objects (which are never listened to by anyone), the cost of supporting events is one branch per `broadcast` call. The mutation hot path is unaffected entirely.
-
+<a id="registration-order"></a>
 ### Registration order
 
-When multiple listeners are registered for the same event on the same source, handlers fire in **the order they were registered**. First registered → first fired.
+When multiple handlers are registered for the same event on the same source, they fire in **the order they were registered**. First registered → first fired.
 
+<a id="idempotent-registration-method-name-form"></a>
 ### Idempotent registration (method-name form)
 
 Calling `listen_to` with the same `(listener, source, event_name, method_name)` tuple a second time is silently ignored. Registration is idempotent for the method-name form — no duplicates, no error, no warning.
 
-Closures don't have comparable identity in the same way, so the idempotency rule doesn't apply to the closure form: each call to `%utils.register` creates a distinct registration even if the closure body is identical. Registering "the same" closure twice produces two registrations that both fire on broadcast.
+Closures don't have comparable identity in the same way, so the idempotency rule doesn't apply to closure forms: each `listen_to` (closure variant) or `on_broadcast` call creates a distinct row, even if the closure body is identical. Registering "the same" closure twice produces two rows that both fire on broadcast.
 
-### Multiple methods on the same source / event
+<a id="multiple-methods-on-the-same-source-event"></a>
+### Multiple handlers on the same source / event
 
-Same listener + source + event_name with **different method names** creates separate registrations. Each registered method fires on broadcast:
+Same source + event_name with multiple registrations creates multiple rows. Each fires on broadcast:
 
 ```
 $foo.object.listen_to $socket, 'new_connection', 'log'
 $foo.object.listen_to $socket, 'new_connection', 'audit'
 # Both $foo.log and $foo.audit fire when $socket broadcasts 'new_connection'.
+
+$socket.object.on_broadcast('new_connection') do($event_name, $payload)
+    %stdout.puts 'metric: connection received'
+end
+# This closure also fires, in registration order with the others.
 ```
 
-The closure form has no method-name distinction; each `%utils.register` call is its own registration.
-
+<a id="self-listening"></a>
 ### Self-listening
 
-An object can listen to itself with the method-name form. No special case:
+An object can listen to itself. No special case — the broadcaster and listener happen to be the same object:
 
 ```
-$foo.object.listen_to $foo, 'event_name', 'method_name'
+$foo.object.listen_to $foo, 'my_event', 'my_handler'
 ```
 
-When `$foo` broadcasts `'event_name'`, its own `method_name` fires (as one of the handlers).
+The same applies to `on_broadcast` — registering a closure on the broadcaster for one of its own events is just the normal use case.
 
+<a id="payload-mutation"></a>
 ### Payload mutation
 
-Payload args are passed by reference. A handler can mutate them, and subsequent handlers see the mutated values. This is intentional — handlers can deliberately communicate by chaining through the payload.
+Handlers see live references to the payload args, not copies. A handler that mutates a payload object visibly affects subsequent handlers and the broadcaster's view of that object after broadcast returns. This is normal Caspian object-reference behavior; the event system doesn't copy or freeze payloads.
 
-If a broadcaster doesn't want its payload mutated, it should freeze the hash or [jail](../network/http/client/index.md#http-jail) the object before dispatching.
-
+<a id="exceptions-bubble-normally"></a>
 ### Exceptions bubble normally
 
-If a handler raises an exception, it bubbles up through `%utils.broadcast` the same way any exception bubbles through a method call. Remaining handlers don't fire — they're never reached because the exception unwinds the stack. The dispatching code can catch the exception with normal `catch`.
+If a handler raises an exception, it bubbles up through `%self.object.broadcast` the same way any exception bubbles through a method call. Remaining handlers don't fire — they're never reached because the exception unwinds the stack. The dispatching code can catch the exception with normal `catch`.
 
+<a id="synchronous-nested-broadcasts"></a>
 ### Synchronous nested broadcasts
 
-If a running handler calls `%utils.broadcast` (on the same source, on a different source — doesn't matter), the nested broadcast runs to completion before the outer handler continues. Single-threaded straight-through call chain. No reentry suppression, no queueing, no special cases.
+If a running handler calls `%self.object.broadcast` (on the same source, on a different source — doesn't matter), the nested broadcast runs to completion before the outer handler continues. Single-threaded straight-through call chain. No reentry suppression, no queueing, no special cases.
 
 The natural consequence: a handler that broadcasts back to its source can cause unbounded recursion. That's user responsibility — the engine doesn't intervene.
 
+<a id="garbage-collection"></a>
 ### Garbage collection
 
-- **When a source is collected**, all registrations on it (both method-name and closure forms) are cleaned up. No notification is sent — listeners just stop receiving events from a source that's gone.
-- **Method-name form: registrations don't keep listeners alive.** A listener referenced only by registrations is eligible for collection; when it's collected, the registrations pointing at it are cleaned up. No notification.
-- **Closure form: the closure is owned by the registration.** A closure registered via `%utils.register` is reachable through the registration table, so it stays alive as long as the source does. It doesn't have a separate "listener" identity to be collected independently. To remove a closure registration before the source goes away, an explicit unregister API is needed (see [open points](#open-points)).
+The contract is simple: **a row in the event table is alive only while its participants are alive.**
 
-All cleanups are silent. The invariant: registrations exist only while both ends are live, where "both ends" for the closure form collapses to just the source.
+- **Method-name form:** row removed when either `$listener` or `$source` is collected.
+- **Closure on a listener:** row removed when either `$listener` or `$source` is collected; the anonymous closure stored in the row dies with the row.
+- **Closure on the broadcaster (`on_broadcast`):** row removed when `$source` is collected; the anonymous closure stored in the row dies with the row.
 
+No notification is sent to surviving participants — they just stop being involved in broadcasts that no longer exist. All cleanups are silent, considered normal lifecycle behavior. The rows aren't extending anyone's lifetime; the participants live wherever the program's normal references live them, and routine GC handles the rest.
+
+<a id="introspection"></a>
 ### Introspection
 
 The system supports queries for debugging and inspection:
 
-- "What is `$foo` listening to?" — list of `(source, event_name, method_name)` tuples for method-name registrations where `$foo` is the listener. (Closures aren't owned by a listener object, so they don't appear in this query.)
-- "Who is listening to `$source`?" — list of all registrations on `$source`, including both method-name entries (with listener + method_name) and closure entries (probably with source-location info — the file:line where `%utils.register` was called).
+- "What is `$foo` listening to?" — list of rows where `$foo` is the listener (method-name form or closure-on-listener).
+- "Who is listening to `$source`?" — list of all rows where `$source` is the source, including method-name entries, closure-on-listener entries, and `on_broadcast` entries.
 
-The exact API surface for these queries is TBD; the capability is committed.
+Closure entries don't have a method-name handle, so they probably surface with source-location info (the file:line where they were registered) as their identifier. Exact API surface is TBD.
 
 ---
 
@@ -234,18 +287,17 @@ Two custom exception classes carry event-system-specific failures (final class n
 | Class (working name) | When raised |
 |---|---|
 | `puck.uno/error/trigger/missing_method` | A broadcast tries to call a method that doesn't exist on the listener. The registration succeeded earlier; the failure shows up at dispatch time. |
-| `puck.uno/error/trigger/source_gone` | A broadcast attempts to fire on a source whose registrations should have been cleaned up but weren't. Shouldn't happen in normal operation (registrations clean up with source GC); the class exists for engine bad-state recovery. |
+| `puck.uno/error/trigger/source_gone` | A broadcast attempts to fire on a source whose rows should have been cleaned up but weren't. Shouldn't happen in normal operation; the class exists for engine bad-state recovery. |
 
-Both classes inherit from the standard Caspian exception base, can be caught with `catch`, and carry context about which source, event, listener, and method name was involved.
+Both classes inherit from the standard Caspian exception base, can be caught with `catch`, and carry context about which source, event, listener, and handler was involved.
 
 ---
 
 <a id="open-points"></a>
 ## Open points
 
-- **Unregister API.** Currently no explicit method to stop listening before either end is collected. The method-name form handles cleanup via GC of the listener; **the closure form has no equivalent** (the closure has no listener identity, so it sticks around for the source's lifetime). An explicit unregister handle returned from `%utils.register` and `listen_to` is the obvious shape — TBD whether it's the only path or sits alongside GC-based cleanup.
+- **Unregister API.** Currently no explicit method to stop listening before either end is collected. The participant-GC story covers most cases, but long-lived broadcasters that accumulate closure registrations (via `on_broadcast` or the closure-on-listener form) have no in-program way to shed them. An unregister handle returned from `listen_to` / `on_broadcast` is the obvious shape — TBD whether it's the only path or sits alongside GC-based cleanup.
 - **Custom exception class names.** Working names use `puck.uno/error/trigger/*`; the eventual rename will happen alongside the broader URL-prefix decisions.
-- **Runtime state location.** Registrations are runtime state (per-source counter, full registration entries with handler reference + event_name + form-specific identity, the `by_source` lookup index). They live somewhere in the engine's runtime hash; specifics deferred to the implementation pass.
 - **Introspection API surface.** The capability is committed; the method names and return shapes are TBD. Closure entries need a meaningful identifier for the "who is listening?" query — source-location (file:line) is the obvious candidate.
 - **Class-level "I can be listened to" declaration.** Whether objects implicitly support events or have to opt in at the class level isn't yet settled. Implicit-on with engine-internal carve-outs is the simpler default; explicit class-level opt-in is more disciplined.
 
@@ -264,7 +316,7 @@ $server = class
 		@listener = %net.tcp_listen('0.0.0.0', $port)
 
 		@listener.wait do($content)
-			%utils.broadcast 'got-content', $content
+			%self.object.broadcast 'got-content', $content
 		end
 	end
 end
@@ -276,8 +328,8 @@ end
 $srv = $server.new()
 
 # Log content to stdout
-%utils.register($srv, 'got-content') do($broadcaster, $event_name, $content)
-	puts 'got: ' + $content
+$srv.object.on_broadcast('got-content') do($event_name, $content)
+	%stdout.puts 'got: ' + $content
 end
 
 $srv.run 6667
@@ -288,14 +340,14 @@ $srv.run 6667
 1. `$srv.run(6667)` opens a TCP listener and enters its `wait` loop.
 2. Content arrives over the network.
 3. The `wait` closure fires with the content.
-4. The closure calls `%utils.broadcast('got-content', $content)`. `$self` inside the closure is `$srv` (the closure was defined in `$srv.run`'s body), so the broadcast comes FROM the server.
+4. The closure calls `%self.object.broadcast('got-content', $content)`. `%self` inside the closure is `$srv` (the closure was defined in `$srv.run`'s body), so the broadcast comes FROM the server.
 5. The driver's registered closure handler fires and prints the content.
 6. Handler returns. Broadcast returns. Wait returns to waiting.
 
 ### Notes
 
-- **`@listener.wait do(...)` is a network-layer convenience, not part of the event system.** It's a method on the listener that takes a closure and blocks until content arrives. The actual event-system primitives (`%utils.broadcast` and `%utils.register`) are what the closure body uses to publish what it received.
-- **The broadcaster is implicit.** `%utils.broadcast` uses `$self` to identify the source. `$self` inside `&run` is the server instance, so broadcasts come FROM the server. The driver's registration on `$srv` matches.
+- **`@listener.wait do(...)` is a network-layer convenience, not part of the event system.** It's a method on the listener that takes a closure and blocks until content arrives. The actual event-system primitive (`%self.object.broadcast`) is what the closure body uses to publish what it received.
+- **The broadcaster is `%self` — explicit in the call.** `%self.object.broadcast` dispatches on `%self`, so the broadcaster is whatever `%self` resolves to at the call site. `%self` inside `&run` is the server instance, so broadcasts come FROM the server. The driver's `on_broadcast` registration on `$srv` matches.
 - **No per-connection object.** The simpler version doesn't model individual connections — the server just receives content and broadcasts it. A richer model with per-connection wrappers is below.
 
 ---
@@ -303,7 +355,7 @@ $srv.run 6667
 <a id="example-chat-server"></a>
 ## Example: chat server
 
-A small chat room — server, per-client wrappers, and a driver — that demonstrates layered broadcasting (sockets broadcast, clients broadcast, server broadcasts), both registration forms, and the cleanup pattern when clients disconnect.
+A small chat room — server, per-client wrappers, and a driver — that demonstrates layered broadcasting (sockets broadcast, clients broadcast, server broadcasts), all three registration forms, and the cleanup pattern when clients disconnect.
 
 ### The chat server
 
@@ -381,13 +433,13 @@ $chat_client = class
 		$line = $payload.bytes.trim
 		if $line != ''
 			# Broadcast 'message' so the room sees it
-			%utils.broadcast('message', {text: $line})
+			%self.object.broadcast('message', {text: $line})
 		end
 	end
 
 	function &on_socket_closed($broadcaster, $event_name, $payload)
 		# Bubble the closed event up so the server can clean up
-		%utils.broadcast('closed', {reason: $payload.reason})
+		%self.object.broadcast('closed', {reason: $payload.reason})
 	end
 
 	function &write($text)
@@ -404,7 +456,7 @@ The socket layer itself initiates the cascade. Inside the `tcp_listener.accept` 
 function &accept(opts: null)
 	$new_conn = .wait_for_kernel_accept
 	$remote   = $new_conn.remote_addr
-	%utils.broadcast('new_connection', {
+	%self.object.broadcast('new_connection', {
 		connection:  $new_conn,
 		remote_addr: $remote
 	})
@@ -416,7 +468,7 @@ Inside the connection socket's read loop:
 
 ~~~caspian
 function &on_kernel_data_arrival($bytes)
-	%utils.broadcast('data_received', {bytes: $bytes})
+	%self.object.broadcast('data_received', {bytes: $bytes})
 end
 ~~~
 
@@ -426,9 +478,9 @@ end
 $server = $chat_server.new(port: 6667, client_class: $chat_client)
 $server.start
 
-# Optional — quick anonymous metrics listener using the closure form
+# Optional — quick anonymous metrics directly on the server using on_broadcast
 $message_count = 0
-%utils.register($server, 'message_relayed') do($broadcaster, $event_name, $payload)
+$server.object.on_broadcast('message_relayed') do($event_name, $payload)
 	$message_count = $message_count + 1
 end
 
@@ -443,7 +495,7 @@ end
 1. Kernel delivers a byte buffer to `$client.@socket`.
 2. The socket broadcasts `'data_received'` with `{bytes: ...}`.
 3. The chat_client's `on_data` handler runs (in chat_client's role).
-4. `on_data` calls `%utils.broadcast 'message', {text: ...}` — `$self` is the chat_client, so the broadcast is FROM the client.
+4. `on_data` calls `%self.object.broadcast 'message', {text: ...}` — `%self` is the chat_client, so the broadcast is FROM the client.
 5. The server has registered for `'message'` on this client. Its `on_client_message` handler fires.
 6. `on_client_message` iterates `@clients` and writes the line to every other client's socket. Each `write` calls `@socket.send_all` — synchronous I/O completes before the next iteration.
 7. All writes done. Broadcast count returns. `on_data` returns. The socket's broadcast returns. The kernel-data-receive returns.
@@ -451,16 +503,15 @@ end
 ### Notes on the example
 
 - **Layered broadcasting.** Three layers (socket → client → server → other clients' sockets). Each layer translates raw events into higher-level semantics. The chat_client converts byte-level `data_received` into message-level `message`.
-- **`$self` IS the broadcaster.** When chat_client calls `%utils.broadcast 'message', {...}`, the engine uses `$self` (the chat_client instance) as the broadcaster. The server registered ON THAT specific client, so the dispatch finds the right handler.
-- **Cleanup via `closed` events.** Both the client and server use `closed` events to know when to drop a connection from their lists. No explicit unregister needed — when the socket is collected, its registrations clean up; when the client is collected (after the server removes it from `@clients`), its registrations on the socket clean up; the chain unwinds naturally.
+- **`%self` IS the broadcaster.** When chat_client calls `%self.object.broadcast 'message', {...}`, the engine uses `%self` (the chat_client instance) as the broadcaster. The server registered ON THAT specific client, so the dispatch finds the right handler.
+- **Cleanup via `closed` events.** Both the client and server use `closed` events to know when to drop a connection from their lists. No explicit unregister needed — when the socket is collected, its rows in the event table clean up; when the client is collected (after the server removes it from `@clients`), its rows clean up too; the chain unwinds naturally.
 - **Synchronous cascade has a scale risk.** The chat_client's `on_data` broadcasts `'message'` synchronously. That triggers the server's `on_client_message`, which writes to each other client's socket. If any of those writes are slow (slow network client), the entire pipeline blocks. Fine for a small chat room; pathological at scale. The answer at scale would be forking or per-client work queues, neither of which is part of the event system itself.
-- **Closure-form metrics in the driver.** The closure form is good for inline observers like a global counter — there's no obvious owning object and there's no value in making one just to hang a method on. Lifetime tied to the server: when the server goes away, the counter closure goes with it.
+- **`on_broadcast` for inline metrics.** The closure form on the broadcaster is good for inline observers like a global counter — no listener needed, no method to invent on a class. Lifetime tied to the server: when the server goes away, the counter closure goes with it.
 - **Loop-in-loop risk.** If the server's `on_client_message` happened to broadcast something the chat_client was listening for, and that broadcast triggered another `'message'` from the same client, you'd recurse. That's user responsibility; the engine doesn't intervene.
 
 ---
 
 ## See also
 
-- [`%utils`](../global-methods/utils/) — the system-utility namespace `broadcast` and `register` live under.
-- [`.object` meta-namespace](../built-in-classes/object.md) — where `listen_to` and the introspection methods live.
+- [`.object` meta-namespace](../built-in-classes/object.md) — where `broadcast`, `listen_to`, `on_broadcast`, and the introspection methods live.
 - [Roles](../roles.md) — handler-runs-in-its-own-role follows from normal method dispatch.

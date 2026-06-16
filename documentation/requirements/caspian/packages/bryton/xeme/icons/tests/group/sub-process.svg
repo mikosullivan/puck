@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="121mm"
+   height="121mm"
+   viewBox="0 0 121 121"
+   version="1.1"
+   id="svg14"
+   sodipodi:docname="sub-process.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs18" />
+  <sodipodi:namedview
+     id="namedview16"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="2.0641873"
+     inkscape:cx="184.09182"
+     inkscape:cy="171.25384"
+     inkscape:window-width="1600"
+     inkscape:window-height="824"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg14" />
+  <path
+     d="M 56 56 L 56 78 L 78 78"
+     fill="none"
+     stroke="#000002"
+     stroke-width="5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path6" />
+  <rect
+     x="65"
+     y="68"
+     width="42"
+     height="32"
+     rx="5"
+     ry="5"
+     fill="#66bb6a"
+     stroke="#000002"
+     stroke-width="4"
+     id="rect867" />
+  <rect
+     x="14"
+     y="14"
+     width="55"
+     height="42"
+     rx="6"
+     ry="6"
+     fill="#43a047"
+     stroke="#000002"
+     stroke-width="4"
+     id="rect301" />
+  <rect
+     x="14"
+     y="14"
+     width="55"
+     height="10"
+     rx="6"
+     ry="6"
+     fill="#2e7d32"
+     id="rect4" />
+  <!--
+    sub-process icon — a parent process box at the top-left with a
+    branching arrow leading to a smaller child process box at the
+    bottom-right. Green palette (no other group/ icon uses green).
+    Hand-drafted as a starting point; refine in Inkscape if needed.
+  -->
+  <!-- Parent process box -->
+  <rect
+     x="14"
+     y="14"
+     width="55"
+     height="42"
+     rx="6"
+     ry="6"
+     fill="#43a047"
+     stroke="#000002"
+     stroke-width="4"
+     id="rect2"
+     style="fill:none" />
+  <!-- Parent "title bar" stripe -->
+  <!-- Branching arrow from parent's bottom-right corner to child's top-left -->
+  <!-- Arrowhead pointing into the child -->
+  <rect
+     x="65"
+     y="68"
+     width="42"
+     height="8"
+     rx="5"
+     ry="5"
+     fill="#388e3c"
+     id="rect12" />
+  <!-- Child (sub-)process box, smaller, offset down and right -->
+  <rect
+     x="65"
+     y="68"
+     width="42"
+     height="32"
+     rx="5"
+     ry="5"
+     fill="#66bb6a"
+     stroke="#000002"
+     stroke-width="4"
+     id="rect10"
+     style="fill:none" />
+  <!-- Child "title bar" stripe -->
+</svg>

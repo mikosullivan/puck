@@ -115,7 +115,7 @@ end
 
 The record uses the **whole-hash form** that `puck.uno/class` (the metaclass for class definitions) opts into: rather than wrapping the definition's properties in a `bucket`, they sit at the record's top level alongside `class`. It's a shorthand specifically for class-definition records — instance records of normal classes use the explicit `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
 
-Field-by-field: `class` declares the field's type (string, a UNS reference, etc.); `required`, `unique`, `allowed` are constraints; `get` and `set` declare auto-generated accessor methods. Method-level: `params` is a hash of param names to option-hashes (empty options hash here just means "all defaults"); `body` carries the Caspian source string (or, for some classes, a CaspJ tree — both forms are valid).
+Field-by-field: `class` declares the field's type (string, a UNS reference, etc.); `required`, `unique`, `allowed` are constraints; `get` and `set` declare auto-generated getter/setter methods. Method-level: `params` is a hash of param names to option-hashes (empty options hash here just means "all defaults"); `body` carries the Caspian source string (or, for some classes, a CaspJ tree — both forms are valid).
 
 ## Constructs
 
@@ -455,21 +455,23 @@ These do not appear in class definitions on either surface — they are always p
 
 The following Caspian DSL constructs do not have a settled worldlet / shared JSON shape. They are shown in DSL form only. The gap is real and needs a decision.
 
-### Accessors
+### Field auto-getters and auto-setters
 
-`accessor` declares `%bucket`-backed instance state that lives on the object but is *not* part of the persisted schema. See [caspian/index.md § accessor](../index.md#accessor).
+`field` accepts `:get` and `:set` flags that auto-generate reader and writer methods. The Caspian DSL form has this surface; the worldlet/Mikobase JSON shape for the flags is not yet pinned down. See [caspian/index.md § field](../index.md#field).
 
 <a class="copy" href="#">copy</a>
 
 ~~~caspian
 class
-	accessor @nickname              # private, no external access
-	accessor @nickname, :get        # creates a getter
-	accessor @nickname, :get, :set  # creates both getter and setter
+	field :nickname                    # private, no external access
+	field :nickname, :get              # creates a getter
+	field :nickname, :get, :set        # creates both getter and setter
 end
 ~~~
 
-No worldlet JSON shape exists today. A natural fit would be a separate `accessors` namespace alongside `fields` and `methods` — keyed by accessor name, each entry carrying `:get` / `:set` flags. That is a proposal, not spec.
+(A previous `accessor` keyword filled this role; it has been removed and its functionality folded into `field`.)
+
+No worldlet JSON shape exists today for the `:get` / `:set` flags. A natural fit would be additional keys inside each field's entry in the `fields` hash (`get: true`, `set: true`) alongside the existing `class`, `required`, etc. That is a proposal, not spec.
 
 ### Helpers
 
@@ -539,9 +541,9 @@ The body key is named `"caspian"` (per worldlet doc) but the intended content is
 
 `remote function` is sketched above as `"remote": true` alongside `"class": "function"` in the methods entry. This has not been explicitly confirmed; needs a one-line sign-off.
 
-### Accessor JSON shape
+### Field `:get` / `:set` JSON shape
 
-Methods are fields with `"class": "function"`. Accessors might follow the same pattern with `"class": "accessor"` and getter/setter flags — but that has not been pinned down. Whatever shape lands, it should generalize cleanly from the methods pattern, not introduce a third convention.
+The Caspian DSL's `:get` / `:set` flags on `field` (which auto-generate getter and setter methods) don't have a pinned-down worldlet JSON shape. The natural fit is additional keys inside each field's entry in the `fields` hash (`get: true`, `set: true`) alongside `class`, `required`, etc. Not yet confirmed.
 
 ### Helpers JSON shape
 

@@ -250,11 +250,11 @@ The top-level container for a session — purely a container. The session record
 
 ```
 class
-    accessor @agents     # hash of agent record key -> per-agent metadata
-    accessor @admin      # optional: agent key with authority over session-container mutations
-    accessor @human      # optional: identifier of the human owner, if there is one
-    accessor @status     # "open", "resolved", "impasse", "withdrawn"
-    accessor @created_at
+    field :agents     # hash of agent record key -> per-agent metadata
+    field :admin      # optional: agent key with authority over session-container mutations
+    field :human      # optional: identifier of the human owner, if there is one
+    field :status     # "open", "resolved", "impasse", "withdrawn"
+    field :created_at
 end
 ```
 
@@ -284,14 +284,14 @@ A **single question to be resolved** within a session. A session carries one or 
 
 ```
 class
-    accessor @session          # reference to the session record
-    accessor @agenda           # the question or assertion this issue exists to resolve
-    accessor @expects          # shape of the expected decision body: "boolean", "string", "hash", "array", or an array literal for enumeration
-    accessor @confidence_floor # decimal 0.0–1.0, default 0.50 — cutoff for boolean decisions
-    accessor @decider          # optional hash naming how this issue is decided
-    accessor @report           # optional: true to request a written report (default false)
-    accessor @status           # "open", "resolved", "impasse", "withdrawn"
-    accessor @created_at
+    field :session          # reference to the session record
+    field :agenda           # the question or assertion this issue exists to resolve
+    field :expects          # shape of the expected decision body: "boolean", "string", "hash", "array", or an array literal for enumeration
+    field :confidence_floor # decimal 0.0–1.0, default 0.50 — cutoff for boolean decisions
+    field :decider          # optional hash naming how this issue is decided
+    field :report           # optional: true to request a written report (default false)
+    field :status           # "open", "resolved", "impasse", "withdrawn"
+    field :created_at
 end
 ```
 
@@ -339,13 +339,13 @@ A **short, bare statement of what was decided** for one issue — kept deliberat
 
 ```
 class
-    accessor @session             # reference to the session record
-    accessor @issue               # reference to the issue this decision resolves
-    accessor @body                # the decision itself (or null for "no decision reachable")
-    accessor @no_decision_reason  # optional: present only when body is null; explains why a decision couldn't be reached
-    accessor @based_on            # reference to the frame / proposal / refinement this decision rests on
-    accessor @agreed_by           # array of agent record primary keys (one agent in single-agent mode)
-    accessor @confidence          # decimal 0.0–1.0 — agent's confidence in this specific decision
+    field :session             # reference to the session record
+    field :issue               # reference to the issue this decision resolves
+    field :body                # the decision itself (or null for "no decision reachable")
+    field :no_decision_reason  # optional: present only when body is null; explains why a decision couldn't be reached
+    field :based_on            # reference to the frame / proposal / refinement this decision rests on
+    field :agreed_by           # array of agent record primary keys (one agent in single-agent mode)
+    field :confidence          # decimal 0.0–1.0 — agent's confidence in this specific decision
 end
 ```
 
@@ -404,15 +404,15 @@ A **human-readable writeup** of an issue's resolution — the executive summary,
 
 ```
 class
-    accessor @session       # reference to the session record
-    accessor @issue         # reference to the issue this report covers
-    accessor @summary       # executive summary — what the reader needs first
-    accessor @decision      # reference to the decision this report describes
-    accessor @open_items    # things not fully resolved, with context
-    accessor @next_steps    # recommended actions
-    accessor @markdown      # full human-readable narrative in Markdown
-    accessor @impasse       # (conversation mode only) reference to the impasse record, if the issue ended in impasse
-    accessor @stances       # (conversation mode only) array of stance records — one per agent, when the issue ended in impasse
+    field :session       # reference to the session record
+    field :issue         # reference to the issue this report covers
+    field :summary       # executive summary — what the reader needs first
+    field :decision      # reference to the decision this report describes
+    field :open_items    # things not fully resolved, with context
+    field :next_steps    # recommended actions
+    field :markdown      # full human-readable narrative in Markdown
+    field :impasse       # (conversation mode only) reference to the impasse record, if the issue ended in impasse
+    field :stances       # (conversation mode only) array of stance records — one per agent, when the issue ended in impasse
 end
 ```
 
@@ -436,11 +436,11 @@ The **agent's interpretation** of one issue's question. Natural-language input i
 
 ```
 class
-    accessor @agent          # primary key of the agent record that framed the question
-    accessor @session       # reference to the session record
-    accessor @issue         # reference to the issue being framed
-    accessor @body          # the framed question, in the agent's own words
-    accessor @created_at
+    field :agent          # primary key of the agent record that framed the question
+    field :session       # reference to the session record
+    field :issue         # reference to the issue being framed
+    field :body          # the framed question, in the agent's own words
+    field :created_at
 end
 ```
 
@@ -459,13 +459,13 @@ Records that an agent **consulted an external resource** while reaching a decisi
 
 ```
 class
-    accessor @agent        # primary key of the agent record that did the consultation
-    accessor @session     # reference to the session record
-    accessor @source      # URL or identifier of what was consulted
-    accessor @kind        # :api, :document, :search, :tool, :web — what kind of resource
-    accessor @query       # the input the agent sent (parameters, query, prompt)
-    accessor @response    # what came back, possibly summarized
-    accessor @timestamp   # when the consultation happened
+    field :agent        # primary key of the agent record that did the consultation
+    field :session     # reference to the session record
+    field :source      # URL or identifier of what was consulted
+    field :kind        # :api, :document, :search, :tool, :web — what kind of resource
+    field :query       # the input the agent sent (parameters, query, prompt)
+    field :response    # what came back, possibly summarized
+    field :timestamp   # when the consultation happened
 end
 ```
 
@@ -486,9 +486,9 @@ A sign-off does not imply resolution, agreement, success, or any particular outc
 
 ```
 class
-    accessor @agent          # primary key of the agent record
-    accessor @session       # reference to the session record
-    accessor @body          # optional closing remarks
+    field :agent          # primary key of the agent record
+    field :session       # reference to the session record
+    field :body          # optional closing remarks
 end
 ```
 

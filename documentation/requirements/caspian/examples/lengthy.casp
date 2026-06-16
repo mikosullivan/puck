@@ -26,7 +26,7 @@ EOF
     "birthdate": "optional string; no format enforced at this level",
     "species":   "optional string; defaults to Human"
   },
-  "accessor :nickname": "private instance variable with no automatic getter/setter — stored in %private but not exposed as a field"
+  "field :nickname": "instance variable with no automatic getter/setter — stored in %bucket but no schema metadata (no class:, required:, etc.)"
 }
 EOF
 
@@ -35,12 +35,12 @@ class
     field :birthdate, class: :string
     field :species,   class: :string, default: 'Human'
 
-    accessor :nickname
+    field :nickname
 
     %vibecode <<EOF
     {
       "returns": "greeting string using the officer's nickname",
-      "note":    "uses @nickname (shorthand for %private['nickname']) rather than @name — nickname is a separate property set independently"
+      "note":    "uses @nickname (shorthand for %bucket['nickname']) rather than @name — nickname is a separate property set independently"
     }
     EOF
 

@@ -748,7 +748,7 @@ for the full `%puck.call` design.
 	"class_name_format": "UNS",
 	"schema_declarations": ["inherits", "abstract", "field", "join"],
 	"field_types": ["built_in_string_names", "UNS_addresses"],
-	"accessor": "bucket_backed_instance_state_not_in_json_schema",
+	"field_get_set_flags": "auto_generated_getter_setter_methods",
 	"helper": "lazily_initialized_namespaced_sub_object"
 }}
 ~~~
@@ -765,8 +765,6 @@ class
 
     field :name, class: :string, required: true, collapse: true
     field :age,  class: :number, min: 0, integer_only: true
-
-    accessor :nickname
 
     function &greet(name:)
         'Hello, ' + name
@@ -836,17 +834,21 @@ field :homeworld, class: 'puck.uno/reference', allowed_class: 'foo.com/planet'
 Built-in type names are strings — `:string` and `'string'` are identical. UNS names use
 the quoted form by convention since they contain dots and slashes.
 
-<a id="accessor"></a>
-#### `accessor`
+**Field declarations are optional.** Under the simplified [`@` sigil rule](#artifact-centric-programming) (`@foo` is plain sugar for `%bucket['foo']`, no declaration required), a method body can read or write any bucket key via `@foo` whether or not the field was declared. `field` declarations are useful when the developer wants schema metadata (persistence, type constraints, defaults, validation) or auto-generated getter/setter methods — see below — but they are not required to enable `@foo` access.
 
-`accessor` declares `%bucket`-backed instance state with optional getter/setter — state that lives in the object, not in the mikobase schema. It does not appear in the JSON class definition. The first argument is the sigil-prefixed instance-variable name; subsequent arguments are flags (`:get`, `:set`). Mechanically, the flags create getter/setter methods that read from and write to `%bucket['<name>']`.
+**Auto-generated getters and setters.** `field` accepts `:get` and `:set` flags that produce reader and writer methods automatically:
 
 ```
-accessor @nickname              # private, no external access
-accessor @nickname, :get        # creates a getter: $obj.nickname
-accessor @nickname, :set        # creates a setter: $obj.nickname=()
-accessor @nickname, :get, :set  # creates both
+field :nickname                            # private — no auto methods
+field :nickname, :get                      # adds a getter: $obj.nickname
+field :nickname, :set                      # adds a setter: $obj.nickname=()
+field :nickname, :get, :set                # adds both
+field :nickname, class: :string, :get      # combined with other options
 ```
+
+The generated methods read from and write to `%bucket['nickname']` — equivalent to what the developer would write by hand. Without the flags, the field is private to the class's own methods (which can still access it via `@nickname`).
+
+(This is the role that was previously filled by a separate `accessor` keyword. `accessor` is gone; everything it did is now on `field`.)
 
 <a id="abstract-classes"></a>
 #### Abstract classes

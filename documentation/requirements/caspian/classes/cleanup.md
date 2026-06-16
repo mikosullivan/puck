@@ -8,7 +8,7 @@
 	"format": "agreements_then_divergences_then_open_questions; each divergence cites both sides",
 	"explicitly_out_of_scope": ["mikobase_vs_drinian_architecture"],
 	"key_concepts": ["caspian_class_dsl", "mikobase_class_schema", "field_declaration",
-		"accessor_helper", "instance_state_access", "lifecycle_hooks"]
+		"field_get_set_flags", "helper", "instance_state_access", "lifecycle_hooks"]
 }}
 ~~~
 
@@ -43,7 +43,7 @@ The six reserved pass-through fields (`vibecode`, `comment`, `misc`, `corporate`
 
 ### Syntax form: DSL block vs JSON dict
 
-Caspian uses an executable DSL inside `class ... end` blocks. The worldlet/Mikobase form is a declarative JSON record: each class definition is its own entry in the worldlet's top-level `records` dict, using the whole-hash form — `class: "puck.uno/class"` plus sibling `name`/`inherits`/`fields`/`methods`/etc. — see [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and accessors, which only one surface supports).
+Caspian uses an executable DSL inside `class ... end` blocks. The worldlet/Mikobase form is a declarative JSON record: each class definition is its own entry in the worldlet's top-level `records` dict, using the whole-hash form — `class: "puck.uno/class"` plus sibling `name`/`inherits`/`fields`/`methods`/etc. — see [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `a`-`f`. This is by design — the two sides serve different consumers — but the dual-surface arrangement has consequences elsewhere on this list (notably methods and the field `:get` / `:set` flags, which only one surface fully expresses).
 
 The question worth pinning down: is Mikobase's JSON form intended to be a serialization of what Caspian's DSL produces, or are they two independent surfaces? If the first, the field set must be a strict subset on the JSON side. If the second, drift is intentional and we should stop framing it as drift.
 
@@ -51,14 +51,14 @@ The question worth pinning down: is Mikobase's JSON form intended to be a serial
 
 **Resolved.** Both surfaces now express methods. Caspian permits `function &name` and `remote function &name` inside the class body. Class records in worldlets carry a `methods` namespace at the record top level, sibling to `fields` — keyed by method name, with each entry holding the method body (typically a Caspian source string under `body`) and optional flags like `remote: true`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for canonical examples. Methods round-trip cleanly between the two surfaces.
 
-### Accessor and helper concepts
+### Field `:get` / `:set` flags and the helper concept
 
-Caspian has two concepts with no Mikobase equivalent:
+Two surfaces where Caspian extends beyond what the Mikobase JSON shape currently expresses:
 
-- `accessor @foo` — declares `%bucket`-backed instance state that is *not* part of the schema. Used for non-persistent runtime state.
-- `helper :foo` — declares a lazily-initialized namespaced sub-object hanging off the instance.
+- `field :foo, :get, :set` — auto-generated getter/setter methods on `field`. The flags are real DSL surface; their JSON encoding (inside the field's entry in `fields`) isn't yet settled.
+- `helper :foo` — declares a lazily-initialized namespaced sub-object hanging off the instance. No JSON shape exists.
 
-Mikobase has no analogue for either. All Mikobase state is schema-bound by definition. This means a Caspian class that uses `accessor` is mixing schema fields (which serialize) with accessor state (which doesn't), and the docs never call out the distinction in those terms.
+Background note on `field`: under the simplified `@` sigil rule, `@foo = 'bar'` writes to `%bucket['foo']` in any method body whether or not a `field :foo` declaration exists. So a class can carry "runtime-only" state without declaring it — `field` is reserved for state the class wants to attach schema metadata to (persistence, type constraints, getter/setter generation). This eliminates what was previously a separate `accessor` keyword for non-persistent state.
 
 ### Instance state access: `@` sigil vs bucket field
 
@@ -90,7 +90,7 @@ These are the decisions the report can't make on its own. Each affects how the n
 
 ### Is the Mikobase JSON schema meant to be a serialization of the Caspian class DSL, or an independent surface?
 
-If serialization: drift on methods/accessors/helpers must be closed (Mikobase needs slots for them). If independent: drift must be documented as deliberate, and each side's docs should stop implying the other.
+If serialization: drift on methods, field `:get` / `:set` flags, and helpers must be closed (Mikobase needs slots for them). If independent: drift must be documented as deliberate, and each side's docs should stop implying the other.
 
 ### Should `bucket` be renamed on one side?
 
