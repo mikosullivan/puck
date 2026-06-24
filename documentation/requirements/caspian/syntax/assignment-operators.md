@@ -66,7 +66,7 @@ The operator calls `$receiver.set($new_value)` without caring what the target is
 	"signatures": {
 		"=": "evaluate($right, $receiver)",
 		"+=": "evaluate($left, $right, $receiver)",
-		"||=": "evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver)"
+		"||=": "evaluate($left, $right: {lazy:true}, $receiver)"
 	}
 }}
 ~~~
@@ -78,15 +78,31 @@ passes the receiver as the final parameter. Classes that need the current value 
 <a id="section-3-1"></a>
 ### `=`
 
+`=` is the baseline assignment operator: write the right-hand value into the target the receiver wraps. There is no `$left` parameter because `=` discards whatever the target previously held — nothing needs to be read before writing.
+
+`$receiver` arrives automatically because the class is marked `is_assignment true`. The receiver knows how to write to the target regardless of whether the target is a plain variable, an object property, or an array index ([see § The Receiver Object](#the-receiver-object)), so the body just delegates the write.
+
 ```
 class
     is_assignment true
 
-    function &evaluate($right, $receiver) do
+    method &evaluate($right, $receiver) do
         $receiver.set($right)
     end
 end
 ```
+
+This is the floor every compound operator builds on. `+=`, `||=`, and the rest differ only in what they compute before calling `$receiver.set` — typically reading the current value with `$receiver.get`, deriving a new value, and writing that back.
+
+The same operator handles every kind of target because the receiver hides the differences:
+
+| Source | What the operator sees | Effect |
+|--------|------------------------|--------|
+| `$foo = 1` | `$right = 1`, `$receiver` wraps the variable `$foo` | the variable now holds `1` |
+| `$obj.name = 'Hamlet'` | `$right = 'Hamlet'`, `$receiver` wraps `$obj` + property `name` | `$obj.name` is now `'Hamlet'` |
+| `$arr[0] = 99` | `$right = 99`, `$receiver` wraps `$arr` + index `0` | `$arr[0]` is now `99` |
+
+In all three cases the operator body is identical — `$receiver.set($right)` — because the receiver, not the operator, knows how to perform the write.
 
 <a id="section-3-2"></a>
 ### `+=`
@@ -95,7 +111,7 @@ end
 class
     is_assignment true
 
-    function &evaluate($left, $right, $receiver) do
+    method &evaluate($left, $right, $receiver) do
         $receiver.set($left + $right)
     end
 end
@@ -108,8 +124,8 @@ end
 class
     is_assignment true
 
-    function &evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver) do
-        if (! $left.call)
+    method &evaluate($left, $right: {lazy: true}, $receiver) do
+        if (! $left)
             $receiver.set($right.call)
         end
     end
@@ -123,8 +139,8 @@ end
 class
     is_assignment true
 
-    function &evaluate($left: {lazy:true}, $right: {lazy:true}, $receiver) do
-        if ($left.call)
+    method &evaluate($left, $right: {lazy: true}, $receiver) do
+        if ($left)
             $receiver.set($right.call)
         end
     end

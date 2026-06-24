@@ -18,7 +18,7 @@ The engine binds `%engine` as the user script's gateway to host resources. This 
 
 `%engine` is **user-role-only** and **top-level only** — only user code can reach `%engine`; nested libraries and other roles cannot. Capabilities flow down the chain by being passed as parameters, never by reaching back up to `%engine`. See [roles.md](roles.md).
 
-Out of scope here: sugar APIs like `%net`, `%utils`, `%chain` (those wrap engine slots and are documented in their own specs), classes reachable via `%puck['...']` lookup (those are looked up, not passed in), and context-specific bindings inside blocks (`$request`, `$fork`, `$hash`, etc. — each documented at its feature's home).
+Out of scope here: sugar APIs like `%net`, `%utils`, `%chain` (those wrap engine slots and are documented in their own specs), classes reachable via `%puck['...']` lookup (those are looked up, not passed in), and context-specific bindings inside blocks (`$request`, `$hash`, etc. — each documented at its feature's home).
 
 ---
 

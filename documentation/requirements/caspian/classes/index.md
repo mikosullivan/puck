@@ -6,19 +6,81 @@
 	"role": "canonical reference for how a class is declared on each of the surfaces in the ecoverse — Caspian DSL, CaspianJ (the engine's runtime format), and Mikobase JSON; every JSON example is shown inside the context of an entire worldlet, since a class definition's natural home is the classes section of a worldlet",
 	"audience": "Caspian users and engine implementers (primary), Miko (secondary as a settled-decisions index)",
 	"format": "construct_by_construct_side_by_side; each section shows the Caspian DSL form and the worldlet JSON; open questions surfaced inline rather than buried",
-	"key_concepts": ["caspian_class_dsl_does_not_carry_uns",
-		"uns_is_the_storage_location_not_an_intrinsic_class_property",
-		"things_live_where_you_store_them",
+	"key_concepts": ["things_live_where_you_store_them",
 		"caspianj_class_form", "mikobase_class_schema",
-		"worldlet_envelope", "shared_class_definition_structure",
-		"one_uns_one_class_for_published_artifacts"],
+		"worldlet_envelope", "shared_class_definition_structure"],
 	"related": ["caspian/index.md#classes", "caspian/caspianj.md",
 		"mikobase/class-definition.md", "ecoverse/worldlets/index.md",
 		"ecoverse/standard-fields.md"]
 }}
 ~~~
 
-> **Classes don't declare their own UNS.** The Caspian DSL form is just `class ... end` — no UNS string in the declaration. A class is an object; UNS is the **address where you store it** for external discoverability, not a property the class itself carries. When a class is serialized into a worldlet record at a particular storage location, the `name` field on that record records the UNS — which is metadata about where the record lives, not about the class.
+## A complete example
+
+~~~vibecode
+{"vibecode": {
+	"section": "complete_example",
+	"role": "minimal but feature-complete class definition shown up front so readers see the construct's shape before the per-surface breakdown",
+	"shows": ["class_inline_label", "field_with_type_and_required",
+		"field_with_default", "method_definition",
+		"instance_var_at_sigil", "kwarg_construction",
+		"engine_invoked_init", "engine_invoked_to_string",
+		"engine_invoked_on_close"]
+}}
+~~~
+
+A class with the everyday pieces — typed fields, a default value, regular methods, and a few engine-invoked methods (`init`, `to_string`, `on_close`) — bound to a variable so it can be instantiated:
+
+~~~caspian
+$character = class # character
+	field :name,      class: :string, required: true
+	field :rank,      class: :string, required: true
+	field :soliloquy, class: :string, default: ''
+
+	method &init(name:, rank:, soliloquy: '')
+		@name      = name
+		@rank      = rank
+		@soliloquy = soliloquy
+	end
+
+	method &greet
+		@rank + ' ' + @name
+	end
+
+	method &recite
+		puts @name + ': ' + @soliloquy
+	end
+
+	method &to_string
+		@rank + ' ' + @name
+	end
+
+	method &on_close($call)
+		puts @name + ' exits.'
+	end
+end
+~~~
+
+A few of those are **engine-invoked** — not called by your code, called by the engine at the right moment:
+
+- `init` — runs during `.new()` once the field arguments have been validated.
+- `to_string` — runs whenever the object needs a string representation (`puts $hamlet`, string concatenation, etc.). Default delegates down to `to_json` → `to_primitives`.
+- `on_close` — runs when the engine destroys the object (deterministic GC hook).
+
+Construction takes the field names as keyword arguments. Regular methods are called with dot notation; engine-invoked ones fire on their own triggers:
+
+~~~caspian
+$hamlet = $character.new(name: 'Hamlet', rank: 'Prince', soliloquy: 'To be or not to be')
+$hamlet.greet     # Prince Hamlet
+$hamlet.recite    # Hamlet: To be or not to be
+puts $hamlet      # Prince Hamlet            (to_string)
+# ... when $hamlet's last reference drops:
+                  # Hamlet exits.            (on_close)
+~~~
+
+The rest of this doc breaks down each piece — how it looks in the Caspian DSL, how it looks in CaspianJ / Mikobase JSON, and what is settled vs. still open.
+
+---
 
 This doc shows how a class definition looks on each of the surfaces in the ecoverse. The goal is a single place where any Caspian DSL construct can be matched to its CaspianJ / Mikobase JSON equivalent.
 
@@ -54,7 +116,7 @@ A worldlet wrapping one class:
 Notes:
 
 - Records live under a top-level `records` hash, keyed by arbitrary string. UUIDs are conventional; short letters like `"a"` work in worked examples.
-- The `name` field on the record is the **UNS this class is published at** — the storage address. The class object itself doesn't carry a UNS; the field is a property of the record (where the class is stored), not the class (what it is). The record's storage key (`"a"` above) is unrelated to that UNS — opaque from the outside.
+- The `name` field on the record is the **address this class is published at**. The class object itself doesn't carry that address; the field is a property of the record (where the class is stored), not the class (what it is). The record's storage key (`"a"` above) is unrelated to the publication address — opaque from the outside.
 - Other class-definition properties — `description`, `inherits`, `fields`, `methods`, `uniques` — sit alongside `name` and `class` at the record top level. This is the **whole-hash form**: the class's content lives at the top level rather than under a `bucket` key.
 - Whole-hash form is a class-level opt-in. Built-in classes like `puck.uno/class` use it because their content reads better flat. Most user classes do NOT opt in; their instances ride the regular `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
 
@@ -115,7 +177,7 @@ end
 
 The record uses the **whole-hash form** that `puck.uno/class` (the metaclass for class definitions) opts into: rather than wrapping the definition's properties in a `bucket`, they sit at the record's top level alongside `class`. It's a shorthand specifically for class-definition records — instance records of normal classes use the explicit `{bucket, stack}` shape from the [objects spec](../../ecoverse/objects/structure.md).
 
-Field-by-field: `class` declares the field's type (string, a UNS reference, etc.); `required`, `unique`, `allowed` are constraints; `get` and `set` declare auto-generated getter/setter methods. Method-level: `params` is a hash of param names to option-hashes (empty options hash here just means "all defaults"); `body` carries the Caspian source string (or, for some classes, a CaspJ tree — both forms are valid).
+Field-by-field: `class` declares the field's type (string, a named class reference, etc.); `required`, `unique`, `allowed` are constraints; `get` and `set` declare auto-generated getter/setter methods. Method-level: `params` is a hash of param names to option-hashes (empty options hash here just means "all defaults"); `body` carries the Caspian source string (or, for some classes, a CaspJ tree — both forms are valid).
 
 ## Constructs
 
@@ -145,11 +207,11 @@ end
 }
 ```
 
-The Caspian DSL declaration is just `class ... end`. The class is an object; it doesn't carry its own UNS. **The UNS is the address where you put the class** — for external lookup via `%puck['https://foo.com/character']`, for fetching from a remote source, for naming an entry in a worldlet record.
+The Caspian DSL declaration is just `class ... end`. The class is an object; it doesn't embed a publication address. The address is where you put the class — for external lookup via `%puck['https://foo.com/character']`, for fetching from a remote source, for naming an entry in a worldlet record.
 
-In the JSON form, the `name` field on the class-definition record is the UNS this class is published at. That's a property of the **record** (where the class lives), not of the class itself. The record's own key in `records` (here `"a"`) is an arbitrary short identifier, separate from both the class's content and its publication UNS. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
+In the JSON form, the `name` field on the class-definition record is the address this class is published at. That's a property of the **record** (where the class lives), not of the class itself. The record's own key in `records` (here `"a"`) is an arbitrary short identifier, separate from both the class's content and its publication address. See [worldlets/index.md](../../ecoverse/worldlets/index.md) for the worldlet envelope and [worldlet.json](../../ecoverse/worldlets/worldlet.json) for the canonical by-example reference.
 
-The "things live where you store them" principle applies fully: a class declared as `$gup = class ... end` lives at `$gup`. A class published to a fetch-able URL lives at that URL — and the UNS for `%puck` lookup is that URL. A class returned from a method lives wherever the caller stores it. UNS is one specific storage location, not an intrinsic identity.
+The "things live where you store them" principle applies fully: a class declared as `$gup = class ... end` lives at `$gup`. A class published to a fetch-able URL lives at that URL. A class returned from a method lives wherever the caller stores it. A publication address is one specific storage location, not an intrinsic identity.
 
 ### Inheritance
 
@@ -236,11 +298,11 @@ end
 }
 ```
 
-Built-in type names are bare strings — `:string` and `'string'` are equivalent in the DSL. UNS names use the quoted form. For the field-shape conventions and per-type constraint settings, see [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) — records `a`-`f` show fields with their constraints in use. A consolidated constraint catalog hasn't been written yet for the new spec; until it lands, the by-example reference is the source.
+Built-in type names are bare strings — `:string` and `'string'` are equivalent in the DSL. Named class references use the quoted form. For the field-shape conventions and per-type constraint settings, see [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) — records `a`-`f` show fields with their constraints in use. A consolidated constraint catalog hasn't been written yet for the new spec; until it lands, the by-example reference is the source.
 
 ### Inline vs named field types
 
-Inline field-type definitions (constraints written directly in the field declaration) are only valid for the basic types (`string`, `number`, `boolean`, `url`, `timestamp`, `hash`, `array`). UNS-named custom classes are referenced by name only — their structure lives in a separate class definition elsewhere in the worldlet.
+Inline field-type definitions (constraints written directly in the field declaration) are only valid for the basic types (`string`, `number`, `boolean`, `url`, `timestamp`, `hash`, `array`). Named custom classes are referenced by name only — their structure lives in a separate class definition elsewhere in the worldlet.
 
 The exception is `hash`, which can carry inline `fields`, an `of` element-type, and `default` field settings. See [worldlets/worldlet.json](../../ecoverse/worldlets/worldlet.json) record `a` for the canonical hash-with-fields example.
 
@@ -409,11 +471,11 @@ Methods live in a `methods` namespace, sibling to `fields` — not inside `field
 
 ~~~caspian
 class
-	function &greet(name:)
+	method &greet(name:)
 		'Hello, ' + $name
 	end
 
-	remote function &save(name:, rank:)
+	remote method &save(name:, rank:)
 	end
 end
 ~~~
@@ -443,7 +505,7 @@ end
 
 Methods live in a `methods` namespace at the class-record's top level, sibling to `fields`. Each entry is keyed by method name; the body lives under `body`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for the canonical method-shape examples (including the nested-method namespace and `params` blocks).
 
-The `remote function` body adds `remote: true` as a sibling flag on the method entry.
+The `remote method` body adds `remote: true` as a sibling flag on the method entry.
 
 ### Reserved pass-through fields
 
@@ -482,7 +544,7 @@ No worldlet JSON shape exists today for the `:get` / `:set` flags. A natural fit
 ~~~caspian
 class
 	helper :stats
-		function &average()
+		method &average()
 			...
 		end
 	end
@@ -500,31 +562,6 @@ Caspian documents two hook systems for different events:
 
 Neither is declared inside a class definition today — both are registered dynamically by external code. There is no worldlet JSON shape because there is no in-class declaration to serialize. Whether hooks should be declarable in-class is itself the open question; see [Open questions](#open-questions).
 
-## Classes without a UNS
-
-Every Caspian class is "anonymous" in source — the declaration is `class ... end`, with no UNS embedded. A class only gets a UNS by being **stored at one**: published to a fetch-able URL, written into a worldlet record's `name` field, or otherwise placed at a discoverable address.
-
-Common cases for classes that never get a UNS:
-
-- **Local-only classes.** Defined inside a program for its own use, never published. Stored at a variable: `$gup = class ... end`. Reachable through that variable; nowhere else.
-- **Nested classes built by another class.** An outer class may construct inner classes for its own use (helpers, factories, generated subclasses). The outer class holds the references; the inner classes live within it. No UNS needed because external code interacts with them through the outer class's API.
-- **Classes returned from methods.** A method that constructs and returns a class hands the caller a reference; the caller stores it wherever it likes.
-- **Identity-by-location.** Some systems use a non-UNS location as the discoverability address — e.g., Robinson page files identified by their path in the directory tree. The class is still anonymous in source; the path is what makes it findable.
-
-<a class="copy" href="#">copy</a>
-
-~~~caspian
-class
-	inherits 'puck.uno/robinson/page'
-
-	function &process($request)
-		...
-	end
-end
-~~~
-
-When a class without a UNS needs to ride along inside a worldlet record (for transport or storage), the worldlet still needs to identify the record somehow. The `name` field can be absent or null on the class-definition record — the receiver knows it as "the class living at the storage location implied by where this worldlet was fetched from" or as the value of whatever reference holds it post-load. See [Open questions](#open-questions) for the remaining shape decision.
-
 ## Open questions
 
 These are the decisions that need to be made before the shared JSON form is fully settled. Each blocks at least one construct above.
@@ -537,9 +574,9 @@ These are the decisions that need to be made before the shared JSON form is full
 
 The body key is named `"caspian"` (per worldlet doc) but the intended content is CaspianJ JSON — the engine's runtime format, not Caspian source text. Either the key name should change (`"caspj"` or `"body"`) to match the content, or the content should be Caspian source string (and the key name stays). Pick one — the current mismatch will confuse implementers.
 
-### Remote functions in the methods shape
+### Remote methods in the methods shape
 
-`remote function` is sketched above as `"remote": true` alongside `"class": "function"` in the methods entry. This has not been explicitly confirmed; needs a one-line sign-off.
+`remote method` is sketched above as `"remote": true` alongside `"class": "function"` in the methods entry. This has not been explicitly confirmed; needs a one-line sign-off.
 
 ### Field `:get` / `:set` JSON shape
 
@@ -556,12 +593,6 @@ The worldlet JSON has `"uniques": [["a", "b"]]` for non-join multi-field uniquen
 ### Hooks in-class
 
 `on_close` and `before_save` / `after_save` are external-only today. Whether they should also be declarable in-class — and if so, what the shape looks like — needs a call.
-
-### Classes without a UNS in a worldlet
-
-Since the DSL no longer carries a UNS, **every class is anonymous in source**. The UNS only appears when the class is being placed at a publication address (and that UNS becomes the record's `name` field). For a class-definition record that isn't being published — e.g., a transient class carried in a worldlet for transport — the `name` field can be omitted or null. The record's storage key (`"a"`, `"b"`, ...) is still required as the in-worldlet identifier; the lack of a `name` is what marks the class as not-published-anywhere.
-
-Whether to keep `name` as optional/nullable (current direction) or to require it always (with some convention for "not for publication") is a small decision worth pinning down once the first round of un-published-class worldlets is in use.
 
 ## See also
 

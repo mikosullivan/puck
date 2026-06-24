@@ -76,7 +76,7 @@ The body is structurally identical to a class definition body. Whatever is legal
 Concretely:
 
 - **Field declarations** (`field :name, class: ..., default: ..., required: ...`) work as in classes. Defaults are applied to the new object's bucket via the implicit `.new()` call. `required: true` with no default would error at construction since the implicit `.new()` is called without args (use a class with an explicit `.new(...)` if you need required-but-no-default fields).
-- **Methods** (`method &name(...) ... end`, `function &name(...) ... end`) are defined on the shadow class. Calling them on the bootstrap object dispatches normally.
+- **Methods** (`method &name(...) ... end`) are defined on the shadow class. Calling them on the bootstrap object dispatches normally.
 - **Inheritance** (`inherits: [...]`) is supported. The shadow class inherits from the listed classes; methods not defined locally fall back through the inheritance chain just as for any other class.
 - **Inline label.** Per the [class inline label convention](index.md), `bootstrap # short label` carries a brief readable label after the keyword. Useful since the bootstrap, like an anonymous class, has no name to identify it.
 

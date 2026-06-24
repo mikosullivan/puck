@@ -59,7 +59,7 @@ Xeme), layered on top of the engine.
 
 ~~~vibecode
 {"vibecode": {"glenstorm_prerequisites":
-["aslan_engine_can_run_ksj_end_to_end",
+["aslan_engine_can_run_caspj_end_to_end",
 "bree_caspian_text_parser_and_transpiler_so_test_files_can_be_caspian_source",
 "digory_hash_class_so_caspian_tests_can_construct_xemes",
 "corin_stdout_writing_so_caspian_tests_can_emit_xemes",

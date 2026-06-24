@@ -597,18 +597,24 @@ appearance is a parse error.
 	"section": "variables",
 	"sigil": "$",
 	"first_class": true,
-	"variable_object": "$$foo returns variable object not value",
-	"pass_by_reference": "intentionally_unsupported"
+	"variable_object": "$$foo returns variable object",
+	"variable_object_value_accessor": ".value (gettable and settable)",
+	"pass_by_reference": "supported_via_variable_object_value"
 }}
 ~~~
 
 Variables are prefixed with `$`. They are first-class objects.
 
-`$$foo` returns the variable object itself — distinct from `$foo`, which returns the value
-the variable holds. Variable objects can be passed around like any other object. However,
-the variable object deliberately does not expose its value. Pass-by-reference is an
-intentionally unsupported pattern; the variable object's interface will be designed
-around other use cases in the future.
+`$$foo` returns the variable object itself — distinct from `$foo`, which returns the value the variable holds. Variable objects can be passed around like any other object. The variable's value is read and written through `.value`:
+
+~~~caspian
+$foo = 1
+$$foo.value           # 1
+$$foo.value = 2
+$foo                  # 2
+~~~
+
+Pass-by-reference is supported through this handle: a callee that receives `$$foo` can read or replace the variable's value via `.value`.
 
 ---
 
@@ -2025,7 +2031,7 @@ user defining a trivial class with one method:
 
 ```caspian
 class
-    function &send($msg)
+    method &send($msg)
         ...
     end
 end
@@ -2062,7 +2068,7 @@ User code uses the same pattern. A `myapp.com/connection` class might declare:
 
 ```caspian
 class
-    function &send($msg) ... end
+    method &send($msg) ... end
 
     helper transport
         function &configure(...) ... end
@@ -2110,7 +2116,7 @@ The `helper` bwc inside a class definition creates a lazily initialized helper:
 ```
 $myclass = class
     helper foo
-        function &bar()
+        method &bar()
             return self.reference.gup
         end
     end
@@ -2124,7 +2130,7 @@ with `self` as the reference:
 
 ```
 $myclass = class
-    function &foo()
+    method &foo()
         return @foo ||= $helper_class.new(self)
     end
 end
@@ -2155,7 +2161,7 @@ keeping them out of the main method namespace.
 	"field_get_set_flags": "declared with field :foo, :get, :set, default: ...",
 	"abstract": "abstract true prevents direct instantiation",
 	"initializer": "init method",
-	"methods": "function &name() inside class block"
+	"methods": "method &name() inside class block"
 }}
 ~~~
 
@@ -2255,10 +2261,10 @@ end
 ### Initializer
 
 `init` is the method called when a new instance is created. It is defined using
-`function &init(...)` inside the class block:
+`method &init(...)` inside the class block:
 
 ```
-function &init($name, $birthdate)
+method &init($name, $birthdate)
     @name = $name
     @birthdate = $birthdate
 end
@@ -2267,10 +2273,10 @@ end
 <a id="methods"></a>
 ### Methods
 
-Methods are defined inside the class block using `function &name(...)`:
+Methods are defined inside the class block using `method &name(...)`:
 
 ```
-function &greet()
+method &greet()
     return "Hello, I am " + @name
 end
 ```
@@ -2285,13 +2291,13 @@ $person = class
     field :email, :get, :set
     field :active, default: false
 
-    function &init($name, $birthdate)
+    method &init($name, $birthdate)
         @name = $name
         @birthdate = $birthdate
         @email = null
     end
 
-    function &greet()
+    method &greet()
         return "Hello, I am " + @name
     end
 end
@@ -2307,11 +2313,11 @@ $p.greet   # "Hello, I am Jean-Luc"
 $officer = $person.subclass do
     field :rank, :get
 
-    function &init($name, $birthdate, $rank)
+    method &init($name, $birthdate, $rank)
         @rank = $rank
     end
 
-    function &greet()
+    method &greet()
         return @rank + " " + @name
     end
 end
@@ -2344,76 +2350,6 @@ There is no lambda syntax. In other languages, lambdas exist to create passable 
 objects. In Caspian, all functions are already objects.
 
 See `caspian.md` for function definition and call syntax.
-
-<a id="on-call-property"></a>
-### `on_call`: dispatch identity as a function property
-
-~~~vibecode
-{"vibecode": {
-	"section": "on_call_property",
-	"role": "function objects carry an on_call property that selects unicast (:first, the default) or multicast (:all) dispatch behavior; data not syntax — same dispatch walk, different stopping rule",
-	"values": [":first_default_unicast_first_match_wins", ":all_multicast_every_match_fires_in_walk_order"],
-	"mutability": "no_lock; metaprogrammer_can_flip_at_any_time; role_boundary_is_the_safety_story",
-	"caching": "engine_must_re_read_on_each_invocation_or_invalidate_on_write_cannot_be_cached_aggressively",
-	"convention": "property_assignment_immediately_after_function_definition_for_visibility"
-}}
-~~~
-
-Function objects carry an `on_call` property that selects how dispatch
-treats them when multiple matches exist on a platter stack walk.
-Default is `:first` (unicast — first match wins, stop). Setting it to
-`:all` makes it multicast (every match fires in walk order). Same
-dispatch walk; the property just changes the stopping rule.
-
-```caspian
-class
-    function &on_close($call)
-        @socket.close
-    end
-    $on_close.on_call = :all      # multicast lifecycle hook
-
-    function &to_string()
-        ...
-    end
-                                  # unicast (default), no annotation needed
-end
-```
-
-**Convention**: put the property assignment immediately after the
-function definition. The two-line pair tells a reader what kind of
-dispatch the function uses. No keyword needed — the visibility
-comes from formatting.
-
-**Lifecycle hooks declare `:all`.** `on_close`, `after_set`,
-`after_delete`, and any future class-body lifecycle hook is just a
-function with `on_call = :all`. The `on_*` / `after_*` naming is
-convention; the *behavior* is the property value.
-
-**No lock.** `on_call` can be flipped at any time during a program's
-run. The role boundary handles safety: other roles can't reach in and
-change your function objects, so metaprogrammers in their own role
-can fiddle freely. The engine consequence is that dispatch identity
-can't be cached aggressively on a function object — the engine re-reads
-`on_call` on each invocation, or invalidates a per-function cache on
-write. Cheap either way.
-
-**Generalizes to other dispatch metadata.** `on_call` is the first
-property in this family. Future ones can slot in without growing the
-language:
-
-```caspian
-$on_close.on_call = :all
-$on_close.priority = 10                  # ordering hint among multicast siblings
-$on_close.error_strategy = :collect      # what to do if one raises
-```
-
-Introspection is free — `$some_function.on_call` tells you the
-dispatch kind without any reflective API.
-
-See [base-class-use.md § Unicast vs multicast dispatch](../../ideas/base-class-use.md#unicast-vs-multicast)
-for the dispatch model `on_call` selects between, and
-[garbage-collection.md § Multicast across platters](../garbage-collection.md#on-close-multicast)
-for the `on_close` case.
 
 <a id="blocks-and-yielding"></a>
 ### Blocks and Yielding

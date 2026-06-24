@@ -5,7 +5,7 @@
 "execute puts_hello_from_caspian_source_and_observe_the_string_arrive_on_stdout",
 "medium": "caspian_source_text", "fixture":
 "puts 'hello'", "fixture_path":
-"tests/caspian/fixtures/puts_hello.casp", "expected_canonical_ksj":
+"tests/caspian/fixtures/puts_hello.casp", "expected_canonical_caspj":
 "[[{\"bwc\": \"puts\"}, {\"value\": \"hello\"}]]", "expected_stdout":
 "hello\\n", "observation":
 "host_sets_engine_std_to_capture_sink_then_stages_tree_and_calls_engine_run; capture_buffer_payload_match",
@@ -66,7 +66,7 @@ Corin realigns the bwc-call form `[{bwc: "puts"}, {value: "hello"}]`.
 {"vibecode": {"scope_status": "drafted_2026-05-17; updated_2026-05-27_for_property_based_engine_api",
 "done_criteria":
 {"source_fixture_parses_and_transpiles_to_canonical_bwc_form":
-"engine_parse_caspian_output_for_puts_hello_deep_equals_expected_canonical_ksj",
+"engine_parse_caspian_output_for_puts_hello_deep_equals_expected_canonical_caspj",
 "bwc_registry_has_puts_after_bootstrap":
 "engine_bootstrap_registers_puts_bwc_owned_by_stdout_role",
 "engine_dispatches_bwc_statements":

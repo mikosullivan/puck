@@ -240,10 +240,8 @@ inverse["4"] = {"3"}
 
 Maintained automatically by hash-mutation hooks on the `references`
 hash (`after_set`, `after_delete`). Every write to `references`
-fires the hooks; the hooks update the inverse index. The mechanism
-is the same `on_call = :all` multicast model that powers `on_close` —
-nothing bespoke. The hooks live in an engine-pushed platter on the
-`references` hash itself.
+fires the hooks; the hooks update the inverse index. The hooks
+live in an engine-pushed platter on the `references` hash itself.
 
 If a future Caspian version wants to expose
 `<obj>.object.referrers` (or similar) at the language level, the
@@ -258,6 +256,6 @@ change.
   reference class hierarchy, uspace classification, object ID scheme.
 - [garbage-collection.md](../../garbage-collection.md) — the GC model
   the `references` hash enables.
-- [base-class-use.md § Unicast vs multicast](../../../ideas/base-class-use.md#unicast-vs-multicast) —
-  the dispatch model that lets the engine attach hooks to the
-  `references` hash for inverse-index maintenance.
+- [ideas/multicast.md](../../../ideas/multicast.md) —
+  the considered-but-deferred multicast dispatch model; the engine
+  uses bespoke hooks here rather than the general mechanism in V1.

@@ -286,7 +286,7 @@ evaluates it:
 
 ```
 class
-    function &evaluate($left:  {lazy: true},
+    method &evaluate($left:  {lazy: true},
                        $right: {lazy: true}) do
         if (! $left.call)
             return false

@@ -805,7 +805,7 @@ The minimum to support hello-world's single cross-role call
 ~~~vibecode
 {"vibecode": {"growth_path": [
 	{"slice": "v0.01", "adds": "core_primitives_registry_owning_role_transition_role_chain_wipe"},
-	{"slice": "v0.02", "adds": "transpiler_role; ksj_emitted_tagged_with_caller_role"},
+	{"slice": "v0.02", "adds": "transpiler_role; caspj_emitted_tagged_with_caller_role"},
 	{"slice": "v0.03", "adds": "stdout_role; owns_stdout_sink_and_puts_bwc; first_cross_role_boundary_for_engine_supplied_io"},
 	{"slice": "v0.04", "adds": "no_new_role_primitives; built_in_hash_class_registered_under_existing_stdlib_role; same_pattern_as_v001_string_class"},
 	{"slice": "v0.05", "adds": "no_new_role_primitives; to_json_methods_register_on_existing_stdlib_class_methods"},

@@ -6,11 +6,11 @@
 "medium": "caspian_source_text", "fixture":
 "'hello'.to_string", "fixture_path":
 "tests/caspian/fixtures/hello_world.casp", "expected_return": "hello",
-"expected_canonical_ksj": "[[{\"value\": \"hello\"}, \"to_string\"]]",
+"expected_canonical_caspj": "[[{\"value\": \"hello\"}, \"to_string\"]]",
 "observation":
 "test_harness_composes_transpile_plus_engine_run_and_captures_last_statement_value; no_stdout_io",
 "covers": ["caspian_lexer", "caspian_parser",
-"transpiler_to_canonical_ksj", "source_to_runtime_pipeline_wiring"],
+"transpiler_to_canonical_caspj", "source_to_runtime_pipeline_wiring"],
 "reuses_from_aslan": ["bootstrap", "materialize", "lookup_method",
 "transition", "dispatch", "string_class_to_string"],
 "deferred_to_later": ["stdout_io", "sys_references",
@@ -129,7 +129,7 @@ AST node types as later versions exercise them. Per
 "lexer_extended_to_stop_tokenizing_at_a_bare_end_marker_line_per_caspian_md_spec",
 "source_fixture_parses":
 "tests_caspian_fixtures_hello_world_caspian_lexes_and_parses_without_error",
-"transpiler_emits_canonical_ksj":
+"transpiler_emits_canonical_caspj":
 "transpiler_output_for_the_fixture_deep_equals_the_aslan_hand_written_fixture",
 "executor_takes_tree_not_path":
 "engine_run_refactored_to_accept_a_pre_parsed_caspianj_tree; file_reading_and_json_parsing_move_to_caller",
@@ -360,7 +360,7 @@ Bree phase 0 test coverage lives under [Testing](#testing) below.
 "tests/caspian/fixtures/hello_world.casp", "fixture_content":
 "'hello'.to_string", "runner_path":
 "tests/caspian/run.lua", "acceptance":
-"fixture_parses_via_extended_parser_transpiles_to_canonical_ksj_and_engine_run_on_the_tree_returns_value_payload_hello",
+"fixture_parses_via_extended_parser_transpiles_to_canonical_caspj_and_engine_run_on_the_tree_returns_value_payload_hello",
 "required_work":
 ["parser_extension_for_literal_as_receiver_all_literal_kinds",
 "engine_run_refactored_to_take_a_tree_not_a_path",
@@ -654,7 +654,7 @@ Bree phase 1 begins.
 [{"id": "TB.1", "verifies":
 "parser_accepts_literal_as_receiver; hello_to_string_parses_natively",
 "level": "unit"}, {"id": "TB.2", "verifies":
-"transpiler_emits_canonical_ksj_for_bree_fixture_deep_equal_to_aslan_hand_written_tree",
+"transpiler_emits_canonical_caspj_for_bree_fixture_deep_equal_to_aslan_hand_written_tree",
 "level": "unit"}, {"id": "TB.3", "verifies":
 "engine_run_returns_payload_hello_for_aslan_canonical_tree_post_refactor",
 "level": "unit"}, {"id": "TB.4", "verifies":

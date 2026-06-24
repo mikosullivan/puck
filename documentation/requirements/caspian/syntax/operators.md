@@ -49,7 +49,7 @@ See the individual type docs for the operators each type supports.
 	"section": "binary_operators",
 	"registration": "scope.operators['name'] = 'uns_class'",
 	"resolution_order": "method_on_receiver_first_then_scope_operators",
-	"evaluator_contract": "evaluate method with two lazy params",
+	"evaluator_contract": "evaluate method with $left positional and $right lazy",
 	"precedence": "left_to_right_no_precedence_table_use_parens",
 	"short_circuit": "via_lazy_params_caller_controls_evaluation"
 }}
@@ -86,14 +86,13 @@ consequences.
 <a id="evaluator-classes"></a>
 ### Evaluator Classes
 
-Every binary operator maps to an evaluator class. The class must implement an `evaluate`
-method that takes two lazy parameters — one for each operand:
+Every binary operator maps to an evaluator class. The class must implement an `evaluate` method. `$left` is passed by value (always evaluated, since the operator always inspects it). `$right` is lazy — wrapped in a zero-argument block — so the operator can short-circuit and skip evaluating it when the result is already determined by `$left`:
 
 ```
 class
-    function &evaluate($left: {lazy: true}, $right: {lazy: true}) do
-        if (! $left.call)
-            return false
+    method &evaluate($left, $right: {lazy: true}) do
+        if (! $left)
+            return $left
         end
 
         return $right.call
@@ -101,17 +100,13 @@ class
 end
 ```
 
-Both operands are wrapped in zero-argument blocks before the call. The evaluator calls
-them selectively, enabling short-circuit evaluation — `$right.call` is never reached if
-`$left.call` returns false.
+`$right.call` is never reached if `$left` is falsy — that's the short-circuit.
 
 `$foo and $bar` desugars to:
 
 ```
 $evaluator = caspian.uno/and.new()
-$evaluator.evaluate() do
-    $foo
-end do
+$evaluator.evaluate($foo) do
     $bar
 end
 ```
@@ -135,8 +130,7 @@ Any developer can register a custom binary operator in the current scope:
 scope.operators['assimilates'] = 'borg.com/assimilates'
 ```
 
-The evaluator class follows the same contract as built-in operators — implement
-`evaluate` with two lazy parameters.
+The evaluator class follows the same contract as built-in operators — implement `evaluate` with `$left` positional and `$right` lazy.
 
 ---
 
@@ -147,7 +141,7 @@ The evaluator class follows the same contract as built-in operators — implemen
 {"vibecode": {
 	"section": "unary_operators",
 	"registration": "scope.unary_operators['name'] = 'uns_class'",
-	"evaluator_contract": "evaluate method with one lazy param",
+	"evaluator_contract": "evaluate method with $operand positional",
 	"built_in": ["not", "!"]
 }}
 ~~~
@@ -166,12 +160,12 @@ scope.unary_operators['not'] = 'caspian.uno/not'
 scope.unary_operators['!']   = 'caspian.uno/not'
 ```
 
-Evaluator classes take a single lazy parameter:
+Evaluator classes take a single positional parameter:
 
 ```
 class
-    function &evaluate($operand: {lazy: true}) do
-        return ! $operand.call
+    method &evaluate($operand) do
+        return ! $operand
     end
 end
 ```

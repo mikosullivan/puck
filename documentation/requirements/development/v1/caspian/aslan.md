@@ -6,7 +6,7 @@
 "medium": "caspianj_hand_written; not_caspian_source", "fixture":
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "expected_return": "hello",
 "observation": "test_harness_captures_last_statement_value; no_stdout_io",
-"covers": ["json_parser", "ksj_interpreter", "statement_dispatch",
+"covers": ["json_parser", "caspj_interpreter", "statement_dispatch",
 "literal_materialization_with_owning_role", "method_dispatch_with_role_transition",
 "string_class_minimum_with_to_string"], "deferred_to_later":
 ["caspian_text_parser", "transpiler", "stdout_io", "sys_references"]}}
@@ -69,10 +69,10 @@ scope without explicit unlock.
 
 ~~~vibecode
 {"vibecode": {"section": "engine_startup_and_invocation", "scope":
-"how_a_ksj_program_actually_runs_from_invocation_through_return",
+"how_a_caspj_program_actually_runs_from_invocation_through_return",
 "applies_from": "aslan", "covers": ["host_vs_engine_distinction",
 "invocation_chain", "bootstrap_sequence", "program_model",
-"what_user_ksj_can_see", "how_later_slices_extend"]}}
+"what_user_caspj_can_see", "how_later_slices_extend"]}}
 ~~~
 
 This section spells out the lifecycle of a CaspianJ run end-to-end: who
@@ -87,12 +87,12 @@ allowed objects into the outermost CaspianJ block**.
 
 ~~~vibecode
 {"vibecode": {"host_vs_engine": {"engine":
-"the_library_that_runs_ksj; located_under_code_caspian_lua",
+"the_library_that_runs_caspj; located_under_code_caspian_lua",
 "host": "anything_that_calls_into_the_engine; varies_by_slice",
 "aslan_host": "lua_test_runner_invoked_from_command_line",
 "later_hosts": ["standalone_cli_via_frank_caspian_cli_slice",
 "sammy_request_handler_corin_plus",
-"one_running_ksj_calling_another_via_function_dispatch"]}}}
+"one_running_caspj_calling_another_via_function_dispatch"]}}}
 ~~~
 
 The **engine** is the Lua library at `lib/lua/` that knows how
@@ -155,8 +155,8 @@ Top-level shape:
 "create_call_stack_with_top_level_frame", "frame":
 {"action": "top_level", "role": "user_role_ref",
 "chain": "empty_chain"}}, {"step":
-4, "name": "load_and_parse_ksj_file", "uses": "json_parser",
-"produces": "parsed_ksj_tree"}, {"step": 5, "name":
+4, "name": "load_and_parse_caspj_file", "uses": "json_parser",
+"produces": "parsed_caspj_tree"}, {"step": 5, "name":
 "execute_top_level_statements", "iterates":
 "each_statement_in_top_level_array_of_parsed_tree", "captures":
 "last_statement_return_value"}, {"step": 6, "name":
@@ -264,7 +264,7 @@ created.
 {"vibecode": {"growth_path": {"bree": {"bootstrap_change":
 "none; transpiler_runs_before_engine_invoked",
 "invocation_change":
-"runner_may_optionally_transpile_caspian_text_to_ksj_before_engine_run; engine_still_consumes_ksj"},
+"runner_may_optionally_transpile_caspian_text_to_caspj_before_engine_run; engine_still_consumes_caspj"},
 "first_http": {"new_host": "sammy_request_handler",
 "new_bootstrap_pieces":
 ["network_faucet_role; request_object_tagged_with_faucet_role"],
@@ -463,7 +463,7 @@ reference, not the contents).
 "engine.bootstrap":
 "() -> nil; populates_roles_classes_state_hash", "engine.dispatch":
 "(statement) -> value; handles_one_top_level_statement",
-"engine.materialize": "(expr) -> value; turns_ksj_expression_into_value",
+"engine.materialize": "(expr) -> value; turns_caspj_expression_into_value",
 "engine.transition":
 "(new_role, fn) -> result; save_restore_state_hash_around_fn_call",
 "engine.lookup_method": "(value, method_name) -> method_fn"}}}
@@ -582,15 +582,15 @@ end
 function engine.materialize(expr)
     if expr.value ~= nil then
         local lua_type = type(expr.value)
-        local ksj_type
+        local caspj_type
         -- JSON type → UNS-prefixed Caspian class. Aslan supports string only;
         -- later slices add integer, decimal, true/false, null, etc.
-        if lua_type == "string" then ksj_type = "puck.uno/string" end
-        if not ksj_type then
+        if lua_type == "string" then caspj_type = "puck.uno/string" end
+        if not caspj_type then
             error("unsupported literal type in Aslan: " .. lua_type)
         end
         return {
-            type         = ksj_type,
+            type         = caspj_type,
             owning_role  = top_frame().role,
             payload      = expr.value,
         }
@@ -683,7 +683,7 @@ A few specifics worth flagging:
 ~~~vibecode
 {"vibecode": {"phase": 0, "purpose":
 "set_up_and_verify_lua_dev_environment_before_writing_any_engine_code",
-"explicitly_excludes": "executing_caspian_or_ksj; only_lua_level_sanity",
+"explicitly_excludes": "executing_caspian_or_caspj; only_lua_level_sanity",
 "steps_count": 6, "acceptance":
 "all_six_workbench_steps_pass; no_engine_code_written", "tactic":
 "verify_the_workbench_before_building_in_it"}}
@@ -918,8 +918,8 @@ Phase 0 test coverage lives under [Testing](#testing) below.
 "[[{\"value\": \"hello\"}, \"to_string\"]]", "runner_path":
 "tests/caspian/run.lua", "acceptance":
 "fixture_runs_via_engine_and_harness_captures_return_value_hello",
-"required_ksj_forms": ["value_literal", "statement_call"], "required_runtime":
-["json_parser", "ksj_format_alignment_to_canonical_caspianj_spec",
+"required_caspj_forms": ["value_literal", "statement_call"], "required_runtime":
+["json_parser", "caspj_format_alignment_to_canonical_caspianj_spec",
 "statement_dispatcher_with_role_transition",
 "method_dispatch", "literal_materialization_with_owning_role_tag",
 "role_registry_with_user_and_stdlib", "role_system_method",
@@ -929,7 +929,7 @@ Phase 0 test coverage lives under [Testing](#testing) below.
 "tactic": "inventory_then_fill_gaps_and_align_format; spec_wins_over_existing_code",
 "canon": "caspianj_md_is_canonical; existing_transpiler_interpreter_format_is_pre_spec_and_gets_brought_into_line",
 "deferred_to_bree":
-["caspian_text_parser", "transpiler_emitting_canonical_ksj"],
+["caspian_text_parser", "transpiler_emitting_canonical_caspj"],
 "deferred_to_later":
 ["sys_references_including_stdout", "stdout_io",
 "any_method_beyond_to_string", "any_class_beyond_string"]}}
@@ -1003,7 +1003,7 @@ problem and Phase 0 Step 0.3 is where you'll fix it.
 ~~~vibecode
 {"vibecode": {"step": 2, "name": "inventory", "actions":
 ["read_existing_json_lua", "read_existing_interpreter_lua",
-"note_state_of_json_parser", "note_state_of_ksj_executor",
+"note_state_of_json_parser", "note_state_of_caspj_executor",
 "confirm_text_side_modules_exist_as_scaffolding_only",
 "identify_format_mismatches_against_canonical_caspianj_spec"],
 "output": "state_of_engine_doc; gap_list_for_aslan; format_mismatch_list"}}
@@ -1214,9 +1214,9 @@ whatever was passing before.
 
 ~~~vibecode
 {"vibecode": {"step": 6, "name": "fill_gaps", "scope":
-"only_what_aslan_needs; not_full_ksj_spec",
+"only_what_aslan_needs; not_full_caspj_spec",
 "json_parser_forms": ["json_object", "json_array", "json_string",
-"json_string_escapes_min"], "ksj_executor_forms":
+"json_string_escapes_min"], "caspj_executor_forms":
 ["top_level_statement_list", "statement_call_dispatch_with_role_transition",
 "value_literal_materialization_with_owning_role",
 "top_level_returns_last_statement_value"], "role_forms":
@@ -1482,7 +1482,7 @@ All six must pass before Aslan phase 1 begins.
 ~~~vibecode
 {"vibecode": {"phase_1_tests":
 [{"id": "TA.1", "verifies":
-"json_parse_handles_the_ksj_fixture_structure", "level": "unit"},
+"json_parse_handles_the_caspj_fixture_structure", "level": "unit"},
 {"id": "TA.2", "verifies":
 "engine_bootstrap_populates_roles_classes_state_hash", "level": "unit"},
 {"id": "TA.3", "verifies":
@@ -1564,7 +1564,7 @@ All eight pass = Aslan done.
 {"vibecode": {"directory_layout": {"tests/sanity/":
 "phase_0_workbench_sanity_tests_engine_independent",
 "tests/caspian/fixtures/":
-"ksj_and_text_fixtures_consumed_by_engine_or_tests",
+"caspj_and_text_fixtures_consumed_by_engine_or_tests",
 "tests/caspian/aslan/":
 "phase_1_unit_and_integration_tests_for_aslan",
 "tests/caspian/run.lua":

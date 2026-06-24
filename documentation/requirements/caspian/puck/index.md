@@ -3,9 +3,9 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "caspian-puck",
-	"role": "spec for the Caspian-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote function; the protocol itself is documented language-agnostic in puck/index.md",
+	"role": "spec for the Caspian-specific syntax and system methods that interact with the Puck protocol — %puck, %puck.call, remote method; the protocol itself is documented language-agnostic in puck/index.md",
 	"key_concepts": ["%puck_system_method", "puck_bracket_lookup_shorthand",
-		"%puck.call_remote_invocation", "remote_function_sugar",
+		"%puck.call_remote_invocation", "remote_method_sugar",
 		"puck_scoping_via_%chain"],
 	"running_example": "puck.uno/geo — still in design; see ideas/geolocation.md"
 }}
@@ -36,9 +36,9 @@ this section covers the Caspian sugar around it.
 lookup returns a **class**; call `.new(...)` to get an instance:
 
 ~~~caspian
-$here = %puck['https://puck.uno/geo'].new(lat: 40.7128, long: -74.0060)
-puts $here.city           # "New York"
-puts $here.country_code   # "US"
+$geo = %puck['https://puck.uno/geo'].new(lat: 40.7128, long: -74.0060)
+puts $geo.city           # "New York"
+puts $geo.country_code   # "US"
 ~~~
 
 Methods on the instance dispatch as if local — the remote call
@@ -64,13 +64,13 @@ may leave `%puck` null for that role. Per-role policy, not global.
 ## `%puck.call`
 
 `%puck.call` is the Caspian syntax for an explicit remote method call.
-Most code uses dot-call syntax (`$here.address`) — the explicit form
+Most code uses dot-call syntax (`$geo.address`) — the explicit form
 is for when the method name is dynamic, or when you want the
 remote-ness to be visible at the call site:
 
 ~~~caspian
-%puck.call($here, :address)
-%puck.call($here, :address, locale: 'en_GB')
+%puck.call($geo, :address)
+%puck.call($geo, :address, locale: 'en_GB')
 ~~~
 
 Three arguments:
@@ -93,8 +93,8 @@ The result of a remote call comes back as if it were local — the call site doe
 **Return values.** The remote method's result is marshaled back as a Puck object reference (for object returns) or a primitive (for strings, numbers, etc.). The calling code uses the value normally:
 
 ~~~caspian
-$here = %puck['https://puck.uno/geo'].new(lat: 40.7128, long: -74.0060)
-$city = $here.city               # remote method call returns a string
+$geo = %puck['https://puck.uno/geo'].new(lat: 40.7128, long: -74.0060)
+$city = $geo.city               # remote method call returns a string
 puts $city                        # use it like any local string
 ~~~
 
@@ -109,7 +109,7 @@ All three are ordinary Caspian exceptions. Catch with `catch` as usual:
 ~~~caspian
 # Catch a specific transport failure and fall back
 $weather = catch('puck.uno/error/transport')
-    $here.weather
+    $geo.weather
 end
 
 if $weather.object.isa 'puck.uno/error/transport'
@@ -124,7 +124,7 @@ end
 
 ~~~caspian
 $details = catch('puck.uno/error')
-    $here.details
+    $geo.details
 end
 
 if $details.object.isa 'puck.uno/error/transport'
@@ -159,7 +159,7 @@ Full exception model lives at [syntax/exceptions.md](../syntax/exceptions.md); c
 
 ---
 
-<a id="remote-function"></a>
-## `remote function`
+<a id="remote-method"></a>
+## `remote method`
 
-See [remote-function.md](remote-function.md) — Caspian sugar for a method that delegates to `%puck.call`. Used by remote-first classes (geo, etc.) where almost every method is a network round-trip.
+See [remote-method.md](remote-method.md) — Caspian sugar for a method that delegates to `%puck.call`. Used by remote-first classes (geo, etc.) where almost every method is a network round-trip.

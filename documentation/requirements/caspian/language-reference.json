@@ -91,7 +91,7 @@
 			"docs": "https://puck.uno/documentation/requirements/caspian"
 		},
 		"on_close": {
-			"description": "Class-body lifecycle hook. Fires when an instance becomes unreachable; deterministic GC calls it before collecting the object. Strict 2 ms cap; multicast across platters.",
+			"description": "Class-body lifecycle hook. Fires when an instance becomes unreachable; deterministic GC calls it before collecting the object. Strict 2 ms cap; V1 unicast (topmost match fires).",
 			"docs": "https://puck.uno/documentation/requirements/caspian/garbage-collection#on-close"
 		}
 	},

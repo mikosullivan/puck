@@ -435,7 +435,7 @@ $root_wrapper = $wrapper_class.new(
 )
 
 # Fork N tracked workers; each gets $root_wrapper as $hash via closure capture.
-%utils.forks.multiple($n) do($fork)
+%utils.forks.multiple($n) do
     $hash = $root_wrapper    # captured from outer scope
     # ... user's block runs here with $hash bound ...
 end

@@ -771,7 +771,7 @@ position is genuinely unknown.
 ~~~vibecode
 {"vibecode": {
 	"section": "known_gaps",
-	"gaps": ["hash_key_order", "class_definitions_not_yet_designed_in_ksj"],
+	"gaps": ["hash_key_order", "class_definitions_not_yet_designed_in_caspj"],
 	"hash_key_order": "significant_two_hashes_equal_only_if_same_keys_same_values_same_order"
 }}
 ~~~

@@ -39,7 +39,7 @@ VIBECODE: {"spec": "https://puck.uno/", "skills": ["https://puck.uno/ai/skills/p
 class
 	field 'designation', class: :string, required: true
 
-	function &greet()
+	method &greet()
 		'We are Borg.'
 	end
 end

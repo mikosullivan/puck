@@ -6,7 +6,7 @@
 	"language": "Caspian",
 	"runtime_format": "CaspianJ",
 	"influences": ["Ruby", "Perl"],
-	"conventions": ["share_as_caspian_not_ksj", "formatter_enforces_style"],
+	"conventions": ["share_as_caspian_not_caspj", "formatter_enforces_style"],
 	"example_universe": "Shakespeare"
 }}
 ~~~
@@ -300,8 +300,8 @@ for the flavor model.
 {"vibecode": {
 	"section": "variables",
 	"sigil": "$",
-	"variable_object": "$$foo returns variable object not value",
-	"notes": ["pass_by_reference_unsupported", "variable_object_does_not_expose_value"]
+	"variable_object": "$$foo returns variable object",
+	"variable_object_value_accessor": ".value (gettable and settable)"
 }}
 ~~~
 
@@ -322,11 +322,16 @@ $soliloquy = 'To be or not to be'
 puts $prince + ': ' + $soliloquy
 ~~~
 
-`$$foo` returns the variable object itself. Variable objects can be passed around like any
-other object, but deliberately do not expose their value. Pass-by-reference is an
-intentionally unsupported pattern. That decision could be reasonably viewed as
-[nanny code](../overview.md#no-nanny-code) so I'm open to revisiting it if the
-community wants to.
+`$$foo` returns the variable object itself — a first-class handle to the variable slot, distinct from `$foo` (the value it holds). Variable objects can be passed around like any other object. The variable's value is read and written through `.value`:
+
+~~~caspian
+$foo = 1
+$$foo.value           # 1
+$$foo.value = 2
+$foo                  # 2
+~~~
+
+This makes pass-by-reference a supported pattern: hand `$$foo` to a callee, and the callee can read or replace the variable's value through that handle.
 
 ---
 
@@ -716,19 +721,19 @@ The `&` sigil calls a function. All of the following are equivalent call forms:
 `$foo` refers to the function object. `&foo` runs it. This distinction is intentional —
 it makes passing functions as objects unambiguous.
 
-<a id="remote-functions"></a>
-#### Remote functions
+<a id="remote-methods"></a>
+#### Remote methods
 
-`remote function` declares a method that delegates to `%puck.call`. It is shorthand
+`remote method` declares a method that delegates to `%puck.call`. It is shorthand
 for an explicit remote dispatch — the two forms are equivalent:
 
 ```
 # shorthand
-remote function &save(name:)
+remote method &save(name:)
 end
 
 # equivalent explicit form
-function &save(name:)
+method &save(name:)
     %puck.call(self, :save, name: name)
 end
 ```
@@ -766,7 +771,7 @@ class
     field :name, class: :string, required: true, collapse: true
     field :age,  class: :number, min: 0, integer_only: true
 
-    function &greet(name:)
+    method &greet(name:)
         'Hello, ' + name
     end
 end
@@ -784,7 +789,7 @@ return, or the host that loaded the file):
 class
     inherits 'puck.uno/robinson/page'
 
-    function &process($request)
+    method &process($request)
         response.html(200, '<h1>Hello</h1>')
     end
 end
@@ -883,7 +888,7 @@ end
 ```
 class
     helper :stats
-        function &average()
+        method &average()
         end
     end
 end

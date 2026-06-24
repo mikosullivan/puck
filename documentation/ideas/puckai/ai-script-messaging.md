@@ -5,7 +5,7 @@
     "status": "active_brainstorm",
     "started": "2026-05-17",
     "subsystem": "ai_script_messaging",
-    "purpose": "ais_authoring_ksj_directly_and_sending_executable_messages_to_other_ais",
+    "purpose": "ais_authoring_caspj_directly_and_sending_executable_messages_to_other_ais",
     "related_docs": ["mikobase/puckai.md",
                       "caspian/roles.md",
                       "caspian/blockchain.md",
@@ -25,7 +25,7 @@ Brainstorm in progress.
 ~~~vibecode
 {"vibecode": {
     "section": "motivation",
-    "angles": ["ais_authoring_ksj_more_naturally_than_source",
+    "angles": ["ais_authoring_caspj_more_naturally_than_source",
                 "script_as_message_medium_distinct_from_shared_store",
                 "blockchain_provides_provenance",
                 "role_model_provides_capability_gating"]

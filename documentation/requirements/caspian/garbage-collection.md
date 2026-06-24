@@ -60,86 +60,32 @@ out of reachability.
 ~~~vibecode
 {"vibecode": {
 	"section": "on_close",
-	"role": "class-body BWC that registers a cleanup handler called by deterministic GC at scope exit; multicast across every platter in the object's class stack that defines it",
-	"namespace": "separate from the class's main method namespace — not callable from user code",
-	"called_as": "engine_invokes_each_matching_on_close_handler_top_of_stack_first",
-	"dispatch_kind": "multicast; contrast with normal method calls which are unicast (first match wins)",
-	"strictness": "hard 2ms cap PER HOOK enforced by raising puck.uno/error/gc_timeout which the engine catches per-hook, no resurrection, no allocation, no reliance on collection order; engine-wrapping catch around EACH invocation catches any exception (user-raised or engine-emitted) and routes to state.gc_errors; one platter's bad handler does not suppress the others; no_io is guidance backed by the cap, not a separate runtime check",
+	"role": "class-body BWC that registers a cleanup handler called by deterministic GC at scope exit",
+	"namespace": "regular class method — callable from user code but rarely a good idea; the on_* name is a convention signaling 'engine fires this', not enforced",
+	"called_as": "engine_invokes_the_topmost_matching_on_close_handler",
+	"dispatch_kind": "unicast for V1; multicast considered and deferred (see ideas/multicast.md)",
+	"strictness": "hard 2ms cap enforced by raising puck.uno/error/gc_timeout which the engine catches, no resurrection, no allocation, no reliance on collection order; engine-wrapping catch around the invocation catches any exception (user-raised or engine-emitted) and routes to state.gc_errors; no_io is guidance backed by the cap, not a separate runtime check",
 	"escape_hatch": "none in V1 — strict by design; revisit if the community has a concrete need for finer-grained control"
 }}
 ~~~
 
-`on_close` is a regular function on the class with its `on_call`
-property set to `:all` — that's what makes it multicast (see
-[lucy.md § `on_call` property](lucy/index.md#on-call-property)).
-The engine fires it automatically during collection; user code
-calling `$foo.on_close` directly is possible but unusual — the
-`on_*` name is convention signaling "this is for the engine to
-fire," not enforced. The runtime calls the matching handlers
-automatically the moment the object becomes unreachable. Per
+`on_close` is a regular method on the class. The engine fires it
+automatically during collection; user code calling `$foo.on_close`
+directly is possible but unusual — the `on_*` name is convention
+signaling "this is for the engine to fire," not enforced. The
+runtime invokes the handler the moment the object becomes
+unreachable. Per
 [deterministic garbage collection](#deterministic-garbage-collection),
 that moment is deterministic: the variable that held the last
 reference goes out of scope and the runtime traces, frees, and
-runs the `on_close` handlers immediately.
+runs the `on_close` handler immediately.
 
-<a id="on-close-multicast"></a>
-### Multicast across platters
-
-`on_close` is **multicast dispatch**, in contrast to normal method
-calls which are unicast (first match wins). For a typical object
-(shadow plus one primary class platter), the multicast walk is short
-— it finds the one `on_close` defined on the primary class and runs
-it. The reason `on_close` is multicast at all is the less common case:
-objects that have picked up additional platters via `.classes.add`
-(mix-ins like Trivet, marker classes like `puck.uno/class/redact`,
-warning-carrying platters, etc.). Each of those platters may also
-define `on_close`, and all of them need to run on collection — not
-just the topmost match.
-
-The walk:
-
-1. Iterate platters **top to bottom** (newest addition first,
-   original class last).
-2. For each platter, walk its class's `inherits` chain with a
-   visited set (same dedup discipline as normal dispatch — see
-   [ecoverse/objects/method-resolution.md](../ecoverse/objects/method-resolution.md)).
-3. For each distinct class encountered, if the class defines
-   `on_close`, invoke it.
-
-Top-first ordering mirrors typical destruction-reverses-construction:
-the most recently added platter cleans up first, which is most
-likely the one depending on earlier layers being intact.
-
-**Each hook is wrapped independently** in the engine's catch-anything
-(see [below](#on-close-catch-anything)). One platter's bad handler
-raising or timing out doesn't suppress the others — each runs
-inside its own protected frame, errors accumulate as separate
-entries in `state.gc_errors`, and the next handler still fires.
-
-**The 2 ms cap applies per hook**, not as a budget shared across an
-object's handlers. An object with three `on_close` handlers gets
-2 ms each. Per-hook keeps the budget predictable for each class
-designer; if that turns out to be too generous in aggregate, a
-total cap can be layered on later.
-
-```caspian
-# Typical object: shadow + one primary class — one on_close fires.
-$bar.object.classes   # [shadow, myapp.com/connection]
-
-# Less common: an object with extra platters from .classes.add — all
-# defined on_close handlers fire in top-to-bottom order.
-$foo.object.classes   # [shadow, myapp.com/connection, logging.uno/audit]
-
-# When $foo collects:
-#   1. connection's on_close fires first (top of stack) → 2ms budget
-#   2. then audit's on_close                            → 2ms budget
-#   3. then any inherited on_close found in the walk    → 2ms budget each
-```
-
-The same multicast model applies to any future class-body lifecycle
-hook (`on_create`, `on_freeze`, `on_thaw`, etc.) when those land. See
-[#343](https://github.com/mikosullivan/puck/issues/343) for the
-broader formalization.
+V1 dispatch is **unicast** — the topmost matching `on_close`
+fires, and inner classes' `on_close` handlers don't run unless
+the top handler explicitly delegates to them. A multicast variant
+that walks every platter was sketched and deferred; see
+[ideas/multicast.md](../../ideas/multicast.md) for the considered
+design and why it wasn't taken.
 
 ```caspian
 class
@@ -150,13 +96,11 @@ end
 ```
 
 `$call` is the same structured-call object passed to `method_missing` and other
-class-body call hooks. For `on_close`, `$call.receiver` is the dying object and
-`$call.platter` is the platter whose `on_close` is currently firing (so the handler
-knows which class it's running as, useful when a single object has multiple
-`on_close` hooks). The other fields (`args`, `opts`, `block`, `super`) are null —
-the GC isn't passing arguments.
+class-body call hooks. For `on_close`, `$call.receiver` is the dying object. The
+other fields (`args`, `opts`, `block`, `super`) are null — the GC isn't passing
+arguments.
 
-The handlers run synchronously in the calling function's stack — the function that drops
+The handler runs synchronously in the calling function's stack — the function that drops
 the last reference pays the cleanup cost as part of its own runtime. That makes the
 strict rules below essential: slow, allocating, or fragile handlers don't just break
 themselves; they break the calling code in non-obvious ways.

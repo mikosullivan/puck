@@ -165,7 +165,7 @@ end
 -- generates the navigation.
 ------------------------------------------------------------
 
-local MIN_HEADINGS_FOR_TOC = 3
+local MIN_HEADINGS_FOR_TOC = 2
 
 local function decode_entities(s)
     return (s:gsub("&amp;",  "&")

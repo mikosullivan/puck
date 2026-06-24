@@ -347,7 +347,7 @@ Plain prose paragraphs stay plain prose. Tight enumerations where the items aren
 ### Naming
 
 - **JSON field names use underscores** (`fail_fast`, `created_at`).
-- **File names use dashes** (`class-definition.md`, `remote-function.md`).
+- **File names use dashes** (`class-definition.md`, `remote-method.md`).
 
 ### UNS-lookup short form
 

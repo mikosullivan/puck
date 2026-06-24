@@ -179,7 +179,7 @@ $uds = %utils.network.uds.new()
 $uds.authenticate = true
 $client = $uds.client
 
-%utils.forks.multiple(20) do($fork)
+%utils.forks.multiple(20) do
     $client.get('/work')    # token attached automatically
 end
 
@@ -272,7 +272,7 @@ $uds = %utils.network.uds.new()
 $client = $uds.client
 
 # Fork 20 workers, each inheriting $client via closure capture
-%utils.forks.multiple(20) do($fork)
+%utils.forks.multiple(20) do
 	$response = $client.get('/work')
 	# do something with the response
 end

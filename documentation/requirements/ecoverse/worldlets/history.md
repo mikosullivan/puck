@@ -270,7 +270,7 @@ the importer.
             "greet": {
                 "class": "function",
                 "caspian": "
-                    function &greet
+                    method &greet
                         'Hello, I am ' + @name
                     end
                 "
@@ -289,7 +289,7 @@ the importer.
             "summary": {
                 "class": "function",
                 "caspian": "
-                    function &summary
+                    method &summary
                         @rank + ' ' + @name + ' (' + @serial + ')'
                     end
                 "
@@ -298,7 +298,7 @@ the importer.
             "promote": {
                 "class": "function",
                 "caspian": "
-                    function &promote(new_rank:)
+                    method &promote(new_rank:)
                         @rank = new_rank
                         self
                     end
@@ -591,7 +591,7 @@ is needed.
                 "greet": {
                     "class": "function",
                     "caspian": "
-                        function &greet
+                        method &greet
                             'Hello, I am ' + @name
                         end
                     "
@@ -610,7 +610,7 @@ is needed.
                 "summary": {
                     "class": "function",
                     "caspian": "
-                        function &summary
+                        method &summary
                             @rank + ' ' + @name + ' (' + @serial + ')'
                         end
                     "
@@ -619,7 +619,7 @@ is needed.
                 "promote": {
                     "class": "function",
                     "caspian": "
-                        function &promote(new_rank:)
+                        method &promote(new_rank:)
                             @rank = new_rank
                             self
                         end

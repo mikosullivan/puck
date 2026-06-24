@@ -372,12 +372,12 @@ NOT for password storage — see [ideas/caspian/passwords/](../../../../ideas/ca
 <a id="utilsforks"></a>
 ## `%utils.forks`
 
-Spawn forked child processes. Three forms: `%utils.forks.single()`, `%utils.forks.multiple(N)`, `%utils.detach()`. Each takes a `do($fork) ... end` block that runs in the child.
+Spawn forked child processes. Three forms: `%utils.forks.single()`, `%utils.forks.multiple(N)`, `%utils.detach()`. Each takes a `do ... end` block that runs in the child.
 
 Full spec at [forking/](../../forking/).
 
 ```caspian
-%utils.forks.multiple(20) do($fork)
+%utils.forks.multiple(20) do
     # this runs in each of 20 child processes
 end
 ```

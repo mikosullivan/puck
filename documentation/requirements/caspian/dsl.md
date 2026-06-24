@@ -274,7 +274,7 @@ class
     field :age,  class: :number, min: 0
     field :nickname
 
-    function &greet(name:)
+    method &greet(name:)
         'Hello, ' + name
     end
 end
