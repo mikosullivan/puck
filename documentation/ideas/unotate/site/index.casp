@@ -1,0 +1,42 @@
+# root file for the Unotate site
+
+%vibecode <<EOF
+{
+	"file":     "index.casp",
+	"role":     "root entry point for the mock Unotate site; constructs the Sammy server, registers a home-page route that shows the banner logo and a list of every play, and starts the accept loop",
+	"status":   "in progress — home page with banner + plays list implemented",
+	"data_source": "https://www.unotate.com/api/playwrights/ — pulled live on each request to /",
+	"uses":     ["puck.uno/sammy", "puck.uno/uma", "%net.fetch"]
+}
+EOF
+
+$server = %['puck.uno/sammy'].new()
+
+$server.get('/') do($request)
+	$playwrights = %net.fetch('https://www.unotate.com/api/playwrights/').json
+
+	$uma = %['puck.uno/uma'].new()
+	$uma.title = 'Unotate'
+
+	$uma.body.img do($img)
+		$img['src'] = 'https://static.unotate.com/graphics/logo/banner.png'
+		$img['alt'] = 'Unotate'
+	end
+
+	$uma.body.ul do($ul)
+		$playwrights.each do($pw_slug, $playwright)
+			$playwright.plays.each do($play_slug, $play)
+				$ul.li do($li)
+					$li.a do($a)
+						$a['href'] = '/plays/' + $play_slug + '/'
+						$a.text $play_slug
+					end
+				end
+			end
+		end
+	end
+
+	response.new 200, {'Content-Type': $uma.content_type}, $uma.to_html
+end
+
+$server.run()

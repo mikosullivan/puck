@@ -41,7 +41,7 @@ The spec attempted to put the dispatch-kind bit on each function object as a pro
 
 ~~~caspian
 class
-    method &on_close($call)
+    method on_close($call)
         @socket.close
     end
     $on_close.on_call = :all      # opt into multicast for this function

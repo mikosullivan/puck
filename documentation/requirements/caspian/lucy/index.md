@@ -1943,7 +1943,7 @@ and the design discussion is in [caspian/truthy.md](../truthy.md).
 <a id="defining-on-the-shadow"></a>
 #### Defining methods on the shadow
 
-`$foo.object.method(name) do(params) … end` defines a method on this one object — it lives on the shadow, so other instances are unaffected. See [object.md § `method`](../built-in-classes/object.md#method) for the catalog entry.
+`method $foo.name(params) ... end` defines a method on this one object — it lives on the shadow, so other instances are unaffected. See [object.md § `method`](../built-in-classes/object.md#method) for the catalog entry.
 
 `null`, `true`, and `false` are fully locked — their stacks, shadows, and buckets are all sealed. The reason is load-bearing: if any program could mutate `true` or `null`, every truthiness check everywhere becomes unreliable.
 
@@ -1955,7 +1955,7 @@ Every object has a reserved helper called `object` that cannot be overridden. It
 - [`.object.classes`](../built-in-classes/object.md#classes) — array of the classes in the stack; `.add` pushes a new class.
 - [`.object.stack`](../built-in-classes/object.md#stack) — the full stack hash with per-platter metadata (per-platter `bucket`, `warning`, etc.).
 - [`.object.isa?(uns)`](../built-in-classes/object.md#isa) — class-membership predicate; walks the stack including each platter's inheritance chain.
-- [`.object.method(name) do(params) … end`](../built-in-classes/object.md#method) — define a method on this one object (lives on the shadow).
+- [`method $foo.name(params) ... end`](../built-in-classes/object.md#method) — define a method on this one object (lives on the shadow).
 - [`.object.call_with(receiver, method, args…)`](../built-in-classes/object.md#call-with) — explicit dispatch to a specific class's implementation, bypassing the normal walk.
 - [`.object.borrow(uns) do … end`](../built-in-classes/object.md#borrow) — push a transient platter for the duration of the block, then pop it. Useful for pluggable interpretations, visitor patterns, and adapter dispatch.
 
@@ -2031,7 +2031,7 @@ user defining a trivial class with one method:
 
 ```caspian
 class
-    method &send($msg)
+    method send($msg)
         ...
     end
 end
@@ -2068,7 +2068,7 @@ User code uses the same pattern. A `myapp.com/connection` class might declare:
 
 ```caspian
 class
-    method &send($msg) ... end
+    method send($msg) ... end
 
     helper transport
         function &configure(...) ... end
@@ -2116,7 +2116,7 @@ The `helper` bwc inside a class definition creates a lazily initialized helper:
 ```
 $myclass = class
     helper foo
-        method &bar()
+        method bar()
             return self.reference.gup
         end
     end
@@ -2130,7 +2130,7 @@ with `self` as the reference:
 
 ```
 $myclass = class
-    method &foo()
+    method foo()
         return @foo ||= $helper_class.new(self)
     end
 end
@@ -2161,7 +2161,7 @@ keeping them out of the main method namespace.
 	"field_get_set_flags": "declared with field :foo, :get, :set, default: ...",
 	"abstract": "abstract true prevents direct instantiation",
 	"initializer": "init method",
-	"methods": "method &name() inside class block"
+	"methods": "method name() inside class block"
 }}
 ~~~
 
@@ -2261,10 +2261,10 @@ end
 ### Initializer
 
 `init` is the method called when a new instance is created. It is defined using
-`method &init(...)` inside the class block:
+`method init(...)` inside the class block:
 
 ```
-method &init($name, $birthdate)
+method init($name, $birthdate)
     @name = $name
     @birthdate = $birthdate
 end
@@ -2273,10 +2273,10 @@ end
 <a id="methods"></a>
 ### Methods
 
-Methods are defined inside the class block using `method &name(...)`:
+Methods are defined inside the class block using `method name(...)`:
 
 ```
-method &greet()
+method greet()
     return "Hello, I am " + @name
 end
 ```
@@ -2291,13 +2291,13 @@ $person = class
     field :email, :get, :set
     field :active, default: false
 
-    method &init($name, $birthdate)
+    method init($name, $birthdate)
         @name = $name
         @birthdate = $birthdate
         @email = null
     end
 
-    method &greet()
+    method greet()
         return "Hello, I am " + @name
     end
 end
@@ -2313,11 +2313,11 @@ $p.greet   # "Hello, I am Jean-Luc"
 $officer = $person.subclass do
     field :rank, :get
 
-    method &init($name, $birthdate, $rank)
+    method init($name, $birthdate, $rank)
         @rank = $rank
     end
 
-    method &greet()
+    method greet()
         return @rank + " " + @name
     end
 end

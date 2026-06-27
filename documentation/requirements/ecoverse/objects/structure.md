@@ -26,7 +26,7 @@ The minimum object — empty bucket, no platters:
 
 In practice either field may be absent — for example, when importing from a plain JSON hash that doesn't carry them. Absence is equivalent to the default empty form. The template above is the **full** structure; what actually ships in JSON can omit any field that's at its default.
 
-The simplest **useful** object — a color — looks like this:
+A small worked example — a color object — looks like this:
 
 <a class="copy" href="#">copy</a>
 
@@ -120,7 +120,7 @@ In Caspian, `class` is a reference to an **actual class object** — a runtime i
 
 A platter carrying `shadow: true` is the object's shadow — the home for singleton methods defined on this one specific object. **The shadow is optional.** A stack with no shadow platter is fully legal and is the common case; most objects never need singleton methods.
 
-**The shadow is lazy.** It comes into existence only when code defines a singleton method on the object — `$foo.object.method('name') do(params) … end`. At that moment, if no shadow platter exists, the engine creates one and inserts it at the top of the stack (position 0). Once it exists, it stays at the top: subsequent platter additions place themselves at position 1, below the shadow.
+**The shadow is lazy.** It comes into existence only when code defines a singleton method on the object — `method $foo.name(params) ... end`. At that moment, if no shadow platter exists, the engine creates one and inserts it at the top of the stack (position 0). Once it exists, it stays at the top: subsequent platter additions place themselves at position 1, below the shadow.
 
 The shadow's class is always an inline anonymous class (`class: {}`), populated with whatever singleton methods get attached to it. It is never a URL-referenced class.
 

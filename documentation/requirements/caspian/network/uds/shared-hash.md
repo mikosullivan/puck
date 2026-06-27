@@ -466,10 +466,10 @@ $wrapper_class = class
     field :pk
     field :sub_path    # for sub-wrappers; empty array for the root wrapper
 
-    method &[](key)
+    method []($key)
         # If value at this key is a hash/array, return a new wrapper
         # bound to its PK. If it's a scalar, materialize and return it.
-        $resp = @client.get('/pk/' + @pk + '/key/' + .path_segment(key))
+        $resp = @client.get('/pk/' + @pk + '/key/' + .path_segment($key))
         if $resp.header('X-PK')
             return $wrapper_class.new(client: @client, pk: $resp.header('X-PK'))
         else
@@ -477,16 +477,16 @@ $wrapper_class = class
         end
     end
 
-    method &[]=(key, value)
+    method []=($key, $value)
         # If value is a regular hash/array, the server will assign a fresh PK
         # and we should transform any local reference to be a wrapper too.
-        @client.put('/pk/' + @pk + '/key/' + .path_segment(key), body: value)
+        @client.put('/pk/' + @pk + '/key/' + .path_segment($key), body: $value)
     end
 
-    method &any?()       ; @client.get('/pk/' + @pk + '/any?').body          ; end
-    method &keys()       ; @client.get('/pk/' + @pk + '/keys').body          ; end
-    method &each($block) ; .keys.each do($k) ; $block.call($k, .[$k]) ; end  ; end
-    method &delete(key)  ; @client.delete('/pk/' + @pk + '/key/' + key)      ; end
+    method any?()       ; @client.get('/pk/' + @pk + '/any?').body          ; end
+    method keys()       ; @client.get('/pk/' + @pk + '/keys').body          ; end
+    method each($block) ; .keys.each do($k) ; $block.call($k, .[$k]) ; end  ; end
+    method delete(key)  ; @client.delete('/pk/' + @pk + '/key/' + key)      ; end
     # ... rest of the standard hash interface, each method translated to one HTTP call.
 end
 ~~~

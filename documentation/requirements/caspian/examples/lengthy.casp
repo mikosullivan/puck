@@ -44,7 +44,7 @@ class
     }
     EOF
 
-    method &greet
+    method greet
         'Hello, I am ' + @nickname
     end
 end
@@ -55,7 +55,7 @@ end
   "notable": {
     "helper :record":        "namespaces summary() away from the main method interface",
     "promote and transfer":  "return self to enable pipe chaining",
-    "remote method &save": "executes on the mikobase server, not locally"
+    "remote method save": "executes on the mikobase server, not locally"
   }
 }
 EOF
@@ -98,7 +98,7 @@ class
     }
     EOF
 
-    method &promote(new_rank:)
+    method promote(new_rank:)
         @rank = new_rank
         self
     end
@@ -112,7 +112,7 @@ class
     }
     EOF
 
-    method &transfer(ship:)
+    method transfer(ship:)
         @starship = ship
         self
     end
@@ -126,7 +126,7 @@ class
     }
     EOF
 
-    remote method &save(name:, rank:, serial:)
+    remote method save(name:, rank:, serial:)
     end
 end
 

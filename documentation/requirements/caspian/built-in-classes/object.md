@@ -252,29 +252,31 @@ The trailing `?` is the Caspian convention for predicate methods (boolean-return
 Returns the object's shadow class — a unique, fresh class the engine creates for each object at instantiation. Adding methods to it adds methods to that one object only. Usually accessed through `.object.method` (below); the direct handle is available when you need it explicitly.
 
 <a id="method"></a>
-### `method`
+### `method` (singleton method definition)
 
-Defines a method on this one object. The method lives on the object's shadow, so it doesn't affect any other object — even other instances of the same class.
+Defines a method on one specific object. The method lives on the object's shadow, so it doesn't affect any other object — even other instances of the same class.
 
 ```
-$foo.object.method('foo') do($bar, $gup)
-    ...
+method $foo.greet($name)
+    'Hello, ' + $name + ', from ' + @nickname
 end
 ```
 
-The first argument is the method name (a string). The block's parameters are the method's parameters. The block body is the method body — normal method context applies (`@field`, `%bucket`, `self` is `$foo`).
+The form is the same as a class-body `method name(...) ... end`, but with an explicit receiver before the method name. Inside the body, normal method context applies — `@field`, `%bucket`, `self` is `$foo`. No surrounding-scope capture; this is a real method definition, not a closure.
 
-Inside a class body, `self` refers to the class object itself, so class-level methods are defined the same way:
+Inside a class body, `self` refers to the class object itself, so a class-level singleton method is defined the same way:
 
 ```
 class
-    self.object.method('blue') do
+    method self.blue()
         return color.new(hex: '#0000ff')
     end
 end
 ```
 
-`null`, `true`, and `false` are fully locked — `.object.method` on any of them raises.
+`null`, `true`, and `false` are fully locked — singleton methods cannot be added to them.
+
+> A previous design passed the method body as a `do ... end` closure (`$foo.object.method(:name) do ... end`). That form was rejected because it required magical rebinding of `@` from "captured outer scope" to "the receiver's bucket" — methods and closures became indistinguishable, each weakened. See [ideas/caspian/method-as-closure](../../../ideas/caspian/method-as-closure.md) for the considered-and-deferred design.
 
 <a id="call-with"></a>
 ### `call_with`

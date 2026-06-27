@@ -4,7 +4,7 @@
 {"vibecode": {
 	"doc": "forking",
 	"role": "spec for Caspian's forking — how user code spawns OS-level child processes; the fork-point call returns to both processes, with the return value discriminating parent (manager object) from child (null)",
-	"status": "in progress — replacing the prior design (see old.md); examples added incrementally",
+	"status": "in progress — replaces an earlier design; examples added incrementally",
 	"key_concepts": ["fork_point_call_returns_to_both_processes",
 		"return_value_discriminates_parent_from_child",
 		"parent_gets_manager_object",
@@ -171,14 +171,14 @@ The harvest closure is optional. If unset, children are still reaped during `$mg
 
 The `$child` returned by [`%utils.forks.branch`](#single-fork), [`%utils.forks.detach`](#detaching), and every spawn through a [fork manager](#fork-manager) is the same kind of object: a per-child handle that the parent uses to inspect, wait on, signal, or terminate one specific child process. The harvest closure ([§ Harvest](#harvest)) receives this same object as `$child`.
 
-### Members
+### Methods
 
 | Member | Availability | Description |
 |--------|--------------|-------------|
 | `.active?` | always | `true` if the child process is still running. |
 | `.detach` | always | Promote a tracked child to detached. No-op if already detached. See [Detaching](#detaching). |
 | `.detached?` | always | `true` if the child is detached (not tracked by the engine). |
-| `.exists?` | always | `true` if the OS still has any record of the process (active or zombie). False once the process has been fully reaped and removed from the process table. Equivalent to `.active? \|\| .zombie?`. |
+| `.exists?` | always | `true` if the OS still has any record of the process (active or zombie). False once the process has been fully reaped and removed from the process table. |
 | `.kill(signal)` | always | Sends a signal to the child. See [Signal severity](#signal-severity). |
 | `.status` | after `.wait()` | The child's OS exit code. |
 | `.stderr` | after `.wait()` | Output the child wrote to its stderr, captured by the engine. |

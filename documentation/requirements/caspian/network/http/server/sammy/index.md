@@ -38,7 +38,7 @@ A complete Sammy server: instantiate, register handlers for the routes
 you care about, register a catch-all, then run. Below, four
 registrations and one accept loop:
 
-```
+```caspian
 $server = %['puck.uno/sammy'].new()
 
 $server.get('/') do($request)
@@ -117,7 +117,7 @@ A route pattern is a path string with two kinds of named captures:
 
 Captured values land in `$request.steps`, keyed by name.
 
-```
+```caspian
 # Single-segment placeholder
 $server.get('/users/{id}') do($request)
     # matches /users/42 only (not /users/42/posts)
@@ -202,7 +202,7 @@ heuristic.
 The developer orders their registrations deliberately:
 more-specific routes before more-general ones.
 
-```
+```caspian
 $server.get('/user/edit')   do($request) ... end    # literal
 $server.get('/user/{id}')   do($request) ... end    # placeholder
 
@@ -225,7 +225,7 @@ method. Useful for catch-alls, OPTIONS responders that handle
 preflight uniformly, and rare cases where one handler genuinely
 serves every method.
 
-```
+```caspian
 $server.all_methods('/healthz') do($request)
     response.new(200, {'Content-Type': 'text/plain'}, 'ok')
 end
@@ -242,7 +242,7 @@ the cases where one response really is right for every verb.)
 The per-method selectors and `all_methods` are sugar for a
 single primitive:
 
-```
+```caspian
 $server.path(pattern, methods: ['GET', 'POST']) do($request)
     # matches the pattern for the listed HTTP methods
 end
@@ -269,7 +269,7 @@ lowercase is fine. The sugar mappings:
 For uncommon method combinations (e.g., "POST and PUT but not
 GET"), reach for the primitive:
 
-```
+```caspian
 $server.path('/items/{id}', methods: ['POST', 'PUT']) do($request)
     # create or update on the same handler
 end
@@ -288,7 +288,7 @@ For REST-conscious deployments that want strict
 for method mismatches), `$server.reject` registers a path
 selector that explicitly responds 405:
 
-```
+```caspian
 $server.get('/users/{id}')    do($request) ... end
 $server.put('/users/{id}')    do($request) ... end
 $server.reject('/users/{id}', 'POST', 'DELETE', 'PATCH')
@@ -327,7 +327,7 @@ Sammy ships with a **built-in default handler** that responds
 to `OPTIONS /path` with `204 No Content` and an `Allow:` header
 listing the methods registered for that path:
 
-```
+```caspian
 $server.get('/users/{id}')    do($request) ... end
 $server.put('/users/{id}')    do($request) ... end
 $server.delete('/users/{id}') do($request) ... end
@@ -355,7 +355,7 @@ explicit handler instead of the default; the handler writes the
 three CORS headers and returns 204. Any other OPTIONS request still
 falls through to the default and gets an auto-populated Allow header.
 
-```
+```caspian
 $server.options('/api/users/{id}') do($request)
     $response.headers['Access-Control-Allow-Origin'] = 'https://example.com'
     $response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
@@ -367,7 +367,7 @@ end
 **Disabling auto-OPTIONS.** Skip registering the default handler
 at server construction:
 
-```
+```caspian
 $server = sammy.new(auto_options: false)
 ```
 
@@ -455,7 +455,7 @@ environment where there's nothing to read from disk.
 When you do want static files served, register a **directory
 object** with `$server.static`:
 
-```
+```caspian
 $server.static $dir
 ```
 

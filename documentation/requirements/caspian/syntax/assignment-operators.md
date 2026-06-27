@@ -86,7 +86,7 @@ passes the receiver as the final parameter. Classes that need the current value 
 class
     is_assignment true
 
-    method &evaluate($right, $receiver) do
+    method evaluate($right, $receiver) do
         $receiver.set($right)
     end
 end
@@ -111,7 +111,7 @@ In all three cases the operator body is identical â€” `$receiver.set($right)` â€
 class
     is_assignment true
 
-    method &evaluate($left, $right, $receiver) do
+    method evaluate($left, $right, $receiver) do
         $receiver.set($left + $right)
     end
 end
@@ -124,7 +124,7 @@ end
 class
     is_assignment true
 
-    method &evaluate($left, $right: {lazy: true}, $receiver) do
+    method evaluate($left, $right: {lazy: true}, $receiver) do
         if (! $left)
             $receiver.set($right.call)
         end
@@ -139,7 +139,7 @@ end
 class
     is_assignment true
 
-    method &evaluate($left, $right: {lazy: true}, $receiver) do
+    method evaluate($left, $right: {lazy: true}, $receiver) do
         if ($left)
             $receiver.set($right.call)
         end

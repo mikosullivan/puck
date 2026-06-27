@@ -22,21 +22,21 @@ class
     field :long
     field :alt
 
-    remote method &address
+    remote method address
     end
 
-    remote method &distance_to($other)
+    remote method distance_to($other)
     end
 
-    remote method &city
+    remote method city
     end
 end
 ~~~
 
-`remote method &address` is equivalent to:
+`remote method address` is equivalent to:
 
 ~~~caspian
-method &address
+method address
     %puck.call(self, :address)
 end
 ~~~

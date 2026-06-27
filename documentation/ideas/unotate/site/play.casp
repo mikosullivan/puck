@@ -1,0 +1,7 @@
+class
+	method init(@play_id)
+	end
+	
+	method get()
+	end
+end

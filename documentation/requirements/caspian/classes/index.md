@@ -37,25 +37,25 @@ $character = class # character
 	field :rank,      class: :string, required: true
 	field :soliloquy, class: :string, default: ''
 
-	method &init(name:, rank:, soliloquy: '')
+	method init(name:, rank:, soliloquy: '')
 		@name      = name
 		@rank      = rank
 		@soliloquy = soliloquy
 	end
 
-	method &greet
+	method greet
 		@rank + ' ' + @name
 	end
 
-	method &recite
+	method recite
 		puts @name + ': ' + @soliloquy
 	end
 
-	method &to_string
+	method to_string
 		@rank + ' ' + @name
 	end
 
-	method &on_close($call)
+	method on_close($call)
 		puts @name + ' exits.'
 	end
 end
@@ -135,7 +135,7 @@ class
 	field 'serial',    class: :string, required: true, unique: true, get: true, set: true
 	field 'starship',  class: 'puck.uno/reference', allowed: 'starfleet.com/ship', get: true, set: true
 
-	method &greet($casual:{required:false})
+	method greet($casual:{required:false})
 		puts 'Hello, ' + if $casual and @nickname
 			@nickname
 		else
@@ -471,11 +471,11 @@ Methods live in a `methods` namespace, sibling to `fields` — not inside `field
 
 ~~~caspian
 class
-	method &greet(name:)
+	method greet(name:)
 		'Hello, ' + $name
 	end
 
-	remote method &save(name:, rank:)
+	remote method save(name:, rank:)
 	end
 end
 ~~~
@@ -544,7 +544,7 @@ No worldlet JSON shape exists today for the `:get` / `:set` flags. A natural fit
 ~~~caspian
 class
 	helper :stats
-		method &average()
+		method average()
 			...
 		end
 	end

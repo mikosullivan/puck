@@ -49,7 +49,7 @@ The question worth pinning down: is Mikobase's JSON form intended to be a serial
 
 ### Methods inside class definitions
 
-**Resolved.** Both surfaces now express methods. Caspian permits `method &name` and `remote method &name` inside the class body. Class records in worldlets carry a `methods` namespace at the record top level, sibling to `fields` — keyed by method name, with each entry holding the method body (typically a Caspian source string under `body`) and optional flags like `remote: true`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for canonical examples. Methods round-trip cleanly between the two surfaces.
+**Resolved.** Both surfaces now express methods. Caspian permits `method name` and `remote method name` inside the class body. Class records in worldlets carry a `methods` namespace at the record top level, sibling to `fields` — keyed by method name, with each entry holding the method body (typically a Caspian source string under `body`) and optional flags like `remote: true`. See [worldlet.json](../../ecoverse/worldlets/worldlet.json) records `b` and `c` for canonical examples. Methods round-trip cleanly between the two surfaces.
 
 ### Field `:get` / `:set` flags and the helper concept
 

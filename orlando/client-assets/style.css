@@ -94,7 +94,8 @@ body.home .content h1 .hero-logo {
 	text-decoration: none;
 }
 .sidebar details summary a:hover {text-decoration: underline}
-.sidebar li.dir.current > details > summary > span {
+.sidebar li.dir.current > details > summary > span,
+.sidebar li.dir.current > span {
 	font-weight: 700;
 	color: #222;
 	background: yellow;

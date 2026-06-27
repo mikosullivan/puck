@@ -150,7 +150,7 @@ Example — same signature shapes for the two registration styles:
 
 ```
 class
-    method &write_to_log($server, $event_name, $request)
+    method write_to_log($server, $event_name, $request)
         # method-name form: source is the first parameter
     end
 end
@@ -312,7 +312,7 @@ A minimal server that opens a TCP listener, broadcasts whatever content arrives,
 
 ~~~caspian
 $server = class
-	method &run($port)
+	method run($port)
 		@listener = %net.tcp_listen('0.0.0.0', $port)
 
 		@listener.wait do($content)
@@ -366,19 +366,19 @@ $chat_server = class
 	field :port,         class: :number, integer_only: true, required: true
 	field :client_class, class: :class,                       required: true
 
-	method &new(port:, client_class:)
+	method new(port:, client_class:)
 		@port = $port
 		@client_class = $client_class
 		@clients = []
 	end
 
-	method &start()
+	method start()
 		@listener = %net.tcp_listen('0.0.0.0', @port)
 		# Listen for new connections on our socket
 		%self.object.listen_to(@listener, 'new_connection', 'on_new_connection')
 	end
 
-	method &on_new_connection($broadcaster, $event_name, $payload)
+	method on_new_connection($broadcaster, $event_name, $payload)
 		# Wrap the raw socket in a chat_client
 		$client = @client_class.new(
 			socket: $payload.connection,
@@ -396,7 +396,7 @@ $chat_server = class
 		$client.write('welcome, ' + $client.nick + "\n")
 	end
 
-	method &on_client_message($from_client, $event_name, $payload)
+	method on_client_message($from_client, $event_name, $payload)
 		# Rebroadcast to every other connected client
 		$line = $from_client.nick + ': ' + $payload.text + "\n"
 		@clients.each do($c)
@@ -406,7 +406,7 @@ $chat_server = class
 		end
 	end
 
-	method &on_client_closed($client, $event_name, $payload)
+	method on_client_closed($client, $event_name, $payload)
 		@clients.remove($client)
 	end
 end
@@ -420,7 +420,7 @@ Represents one connected user. Listens on its own socket for incoming data and t
 $chat_client = class
 	field :nick, class: :string, required: true
 
-	method &new(socket:, nick:)
+	method new(socket:, nick:)
 		@socket = $socket
 		@nick = $nick
 		# Listen on our own socket for incoming data
@@ -428,7 +428,7 @@ $chat_client = class
 		%self.object.listen_to(@socket, 'closed',        'on_socket_closed')
 	end
 
-	method &on_data($broadcaster, $event_name, $payload)
+	method on_data($broadcaster, $event_name, $payload)
 		# Each line received is a message
 		$line = $payload.bytes.trim
 		if $line != ''
@@ -437,12 +437,12 @@ $chat_client = class
 		end
 	end
 
-	method &on_socket_closed($broadcaster, $event_name, $payload)
+	method on_socket_closed($broadcaster, $event_name, $payload)
 		# Bubble the closed event up so the server can clean up
 		%self.object.broadcast('closed', {reason: $payload.reason})
 	end
 
-	method &write($text)
+	method write($text)
 		@socket.send_all($text)
 	end
 end

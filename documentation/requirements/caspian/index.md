@@ -729,11 +729,11 @@ for an explicit remote dispatch — the two forms are equivalent:
 
 ```
 # shorthand
-remote method &save(name:)
+remote method save(name:)
 end
 
 # equivalent explicit form
-method &save(name:)
+method save(name:)
     %puck.call(self, :save, name: name)
 end
 ```
@@ -771,7 +771,7 @@ class
     field :name, class: :string, required: true, collapse: true
     field :age,  class: :number, min: 0, integer_only: true
 
-    method &greet(name:)
+    method greet(name:)
         'Hello, ' + name
     end
 end
@@ -789,7 +789,7 @@ return, or the host that loaded the file):
 class
     inherits 'puck.uno/robinson/page'
 
-    method &process($request)
+    method process($request)
         response.html(200, '<h1>Hello</h1>')
     end
 end
@@ -888,7 +888,7 @@ end
 ```
 class
     helper :stats
-        method &average()
+        method average()
         end
     end
 end

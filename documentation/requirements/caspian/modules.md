@@ -141,7 +141,7 @@ operations, and the documentation uses them precisely.
 ```
 # my-page.casp — the file's return value is the class
 class < %puck['https://puck.uno/dogberry/page']
-    method &process($request)
+    method process($request)
         response.new(200, {content_type: 'text/html'}, '...')
     end
 end
@@ -287,7 +287,7 @@ end
 # ...is roughly:
 
 class
-    method &foo
+    method foo
     end
 end
 

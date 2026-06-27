@@ -90,7 +90,7 @@ Every binary operator maps to an evaluator class. The class must implement an `e
 
 ```
 class
-    method &evaluate($left, $right: {lazy: true}) do
+    method evaluate($left, $right: {lazy: true}) do
         if (! $left)
             return $left
         end
@@ -164,7 +164,7 @@ Evaluator classes take a single positional parameter:
 
 ```
 class
-    method &evaluate($operand) do
+    method evaluate($operand) do
         return ! $operand
     end
 end

@@ -42,28 +42,35 @@
         return null;
     }
 
-    /* Best-effort text-to-clipboard. Prefers the async clipboard API;
-       falls back to the deprecated execCommand path for older browsers. */
+    /* Best-effort text-to-clipboard. Tries the async clipboard API
+       first; falls back to the deprecated execCommand path both when
+       the API is missing AND when it rejects (Firefox over HTTP,
+       documents without focus, sandboxed iframes, etc. all trigger
+       rejection even though the API itself exists). Returns a Promise
+       that resolves to true/false; never rejects. */
     function copyText(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            return navigator.clipboard.writeText(text);
+            return navigator.clipboard.writeText(text)
+                .then(function () { return true; })
+                .catch(function () { return execCommandCopy(text); });
         }
-        return new Promise(function (resolve, reject) {
-            var ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.top = '-1000px';
-            document.body.appendChild(ta);
-            ta.select();
-            try {
-                document.execCommand('copy');
-                resolve();
-            } catch (err) {
-                reject(err);
-            } finally {
-                document.body.removeChild(ta);
-            }
-        });
+        return Promise.resolve(execCommandCopy(text));
+    }
+
+    function execCommandCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { /* ignore */ }
+        document.body.removeChild(ta);
+        return ok;
     }
 
     /* Wrap `<pre>` in a `.code-with-copy` div with the given link as the
@@ -87,11 +94,10 @@
             /* `<pre>` content is the code's text — use innerText so the
                browser strips highlight spans. */
             var text = pre.innerText;
-            copyText(text).then(function () {
-                link.classList.add('copied');
-                setTimeout(function () { link.classList.remove('copied'); }, 1200);
-            }).catch(function () {
-                /* Quiet failure: nothing for the user to act on. */
+            copyText(text).then(function (ok) {
+                var klass = ok ? 'copied' : 'copy-failed';
+                link.classList.add(klass);
+                setTimeout(function () { link.classList.remove(klass); }, 1200);
             });
         });
     }

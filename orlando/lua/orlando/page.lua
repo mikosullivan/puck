@@ -368,6 +368,38 @@ local function issue_link(md_path, section_text, section_id)
         .. 'target="_blank" rel="noopener">GitHub issue</a>'
 end
 
+-- Does the file exist in origin/master? Returns true/false. Probes with
+-- `git ls-tree`; a non-empty output means the file is in the remote tree.
+-- Used to decide whether to render a "GitHub page" link or a "not uploaded"
+-- badge at the top of each page.
+local function file_is_on_github(md_path)
+    if not md_path or md_path == "" then return false end
+    -- Reject anything that could break out of the path or inject shell.
+    -- Path is engine-side trusted (route.lua only emits doc-tree paths),
+    -- but defensive anyway.
+    if md_path:find("'", 1, true) or md_path:find("\n", 1, true) then
+        return false
+    end
+    local cmd = "git ls-tree origin/master -- '" .. md_path .. "' 2>/dev/null"
+    local handle = io.popen(cmd)
+    if not handle then return false end
+    local out = handle:read("*a")
+    handle:close()
+    return out ~= nil and out ~= ""
+end
+
+-- Render the GitHub-page chip: a link to the file on GitHub if it's been
+-- pushed, or a "not uploaded" badge otherwise.
+local function github_page_link(md_path)
+    if file_is_on_github(md_path) then
+        local href = GITHUB_REPO .. "/blob/master/" .. md_path
+        return '<a href="' .. href .. '" class="section-issue" '
+            .. 'target="_blank" rel="noopener">GitHub page</a>'
+    else
+        return '<span class="section-issue">not uploaded</span>'
+    end
+end
+
 -- HTML-escape suitable for attribute values AND textarea content.
 local function html_escape(s)
     return (s:gsub("&", "&amp;")
@@ -506,12 +538,13 @@ local function inject_issue_links(body_html, md_path, client_ip)
     -- See config.ip_can_edit and ~/.orlando/config.json.
     local privileged = config.ip_can_edit(client_ip)
 
-    -- Page H1: issue link, (Quick add if allowed), (Edit if allowed) —
-    -- then checkbox + form blocks after.
+    -- Page H1: github-page link, issue link, (Quick add if allowed),
+    -- (Edit if allowed) — then checkbox + form blocks after.
     body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
         local qa_id   = "qa-h1"
         local edit_id = "edit-h1"
-        local chips = issue_link(md_path)
+        local chips = github_page_link(md_path)
+            .. " " .. issue_link(md_path)
 
         if privileged then
             chips = chips

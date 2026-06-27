@@ -61,6 +61,75 @@ Each parameter has two names:
 
 ---
 
+<a id="bucket-binding-parameters"></a>
+## Bucket-binding parameters
+
+~~~vibecode
+{"vibecode": {
+    "section": "bucket_binding_parameters",
+    "form": "@param_name in the parameter list",
+    "expansion": "$param_name positional binding plus %bucket['param_name'] = $param_name; then the local binding is dropped",
+    "observable_effect": "the argument value lands in the bucket at the same key name; no $param_name local exists in the body",
+    "applicability": "only meaningful in methods (anywhere %bucket is in scope); raises in functions that have no %bucket"
+}}
+~~~
+
+A parameter declared with the `@` sigil writes its argument directly into the object's bucket under the same key name. The verbose form is purely mechanical:
+
+```
+class
+    method init($play_id)
+        %bucket['play_id'] = $play_id
+    end
+end
+```
+
+The shorthand:
+
+```
+class
+    method init(@play_id)
+    end
+end
+```
+
+Both define a method whose call sets `%bucket['play_id']` to the argument value. The `@` sigil at the parameter position means "write this parameter into the bucket at this key" — same `@` sigil that's used to read and write bucket entries inside the body, just doing the same job from a new position.
+
+**No local binding.** The `@` form sets the bucket entry and that is its entire effect. There is no `$play_id` local inside the body — if the body needs to read the value, it reads `@play_id` (i.e., `%bucket['play_id']`). Pick the verbose form (`$play_id` parameter with manual `@play_id = $play_id`) when the body needs both a local and a bucket write.
+
+**Applicability.** The shorthand is meaningful anywhere `%bucket` is in scope — inside any method on a class. Using `@param` in a function that has no `%bucket` (top-level functions, etc.) raises.
+
+**Composes with other parameter features.** Defaults, lazy parameters, keyword names, type constraints all apply the same way:
+
+```
+class
+    method init(@play_id, @rank: 'unknown', @config: {lazy: true})
+    end
+end
+```
+
+Equivalent to:
+
+```
+class
+    method init($play_id, $rank: 'unknown', $config: {lazy: true})
+        %bucket['play_id'] = $play_id
+        %bucket['rank']    = $rank
+        %bucket['config']  = $config
+    end
+end
+```
+
+**Reading the signature.** Mixing the two forms in one signature tells the reader at a glance which parameters become bucket state and which are local-use-only:
+
+```
+method init(@play_id, @rank, $log_level)
+    # @play_id and @rank go into the bucket; $log_level is a local for this method only
+end
+```
+
+---
+
 <a id="inline-metadata-declaration"></a>
 ## Inline Metadata Declaration
 
@@ -286,7 +355,7 @@ evaluates it:
 
 ```
 class
-    method &evaluate($left:  {lazy: true},
+    method evaluate($left:  {lazy: true},
                        $right: {lazy: true}) do
         if (! $left.call)
             return false

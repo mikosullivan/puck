@@ -123,10 +123,6 @@ the wrong thing: I/O the developer didn't realize was I/O (a logger flushing, an
 committing), a complex computation, or a syscall that blocks (`SO_LINGER` on a socket
 will).
 
-If your cleanup work doesn't fit in 2 ms, it doesn't belong in `on_close`. Do it
-explicitly on the object before scope exit; let `on_close` handle only the trivial
-OS-handle release.
-
 <a id="on-close-no-resurrection"></a>
 ### No resurrection
 
@@ -141,9 +137,9 @@ Java/.NET-style "object resurrected, finalizer skipped on second pass" machinery
 
 Creating new Caspian objects inside `on_close` is fine. Temporary buffers,
 formatted strings, intermediate hashes — whatever fits in the 2 ms cap is
-fair game. Objects allocated locally go out of scope when the handler
-returns; they collect normally afterward in their own cleanup pass (not
-nested inside the current one).
+fair game. Objects allocated locally collect when `on_close` returns and
+its locals go out of scope — the same rule that applies to locals in any
+function.
 
 What's NOT allowed is reaching out to acquire resources the handler
 didn't already have a connection to — opening a new file, connecting to
@@ -151,12 +147,6 @@ a database, starting a process. Those count as I/O (above) and are
 enforced by the 2 ms cap, not a separate allocation rule. If the
 allocation completes in bounded time without touching the outside world,
 it's fine.
-
-(An earlier version of this spec banned allocation outright as a
-guard against nested-GC recursion. That guard was overcautious —
-deterministic GC fires at reference removal, not allocation, so
-local allocations don't trigger nested collection. The cap is the
-real enforcement.)
 
 <a id="on-close-no-io"></a>
 ### No I/O (guidance, not a hard ban)
