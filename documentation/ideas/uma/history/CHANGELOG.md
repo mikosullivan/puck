@@ -9,7 +9,6 @@
 }}
 ~~~
 
-<a id="list-missing-html5-tags-in-canon"></a>
 ### List Missing HTML5 Tags In Canon
 - opened: 2026-04-02
 - level: medium

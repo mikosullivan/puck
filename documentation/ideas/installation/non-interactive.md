@@ -30,7 +30,6 @@ For the interactive shell-user story, see [linux.md](linux.md).
 
 ---
 
-<a id="how-detection-works"></a>
 ## How the installer detects non-interactive
 
 The shell wrapper that `curl | sh` invokes attempts to open
@@ -53,7 +52,6 @@ per significant step, no decorative chrome.
 
 ---
 
-<a id="defaults"></a>
 ## Defaults applied silently
 
 | Decision | Default | Override |
@@ -71,7 +69,6 @@ Every override is an environment variable, settable before the
 
 ---
 
-<a id="scenario-ci"></a>
 ## Scenario: GitHub Actions
 
 A workflow that needs Caspian available before a test step:
@@ -116,7 +113,6 @@ caspian-install: done
 
 ---
 
-<a id="scenario-docker"></a>
 ## Scenario: Docker image
 
 A `Dockerfile` that bakes Caspian into a base image:
@@ -152,7 +148,6 @@ without bloating the layer.
 
 ---
 
-<a id="scenario-provisioning"></a>
 ## Scenario: Cloud-init / Ansible / shell provisioning
 
 A provisioning script for a fresh VM:
@@ -183,7 +178,6 @@ What happens:
 
 ---
 
-<a id="error-handling"></a>
 ## Error handling in non-interactive mode
 
 When prompts can't help recover from a problem, the installer has to
@@ -203,7 +197,6 @@ hint for how to retry.
 
 ---
 
-<a id="design-symmetry"></a>
 ## One installer, two paths
 
 The interactive flow and the non-interactive flow share one
@@ -230,7 +223,6 @@ non-interactive flow at the same time.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 ~~~vibecode

@@ -12,7 +12,6 @@
 A simple naming scheme for identifying things in a globally
 unambiguous way.
 
-<a id="too-long-didnt-read"></a>
 ## Too Long, Didn't Read
 
 A UNS is just a URL without the protocol. It's a way to identify
@@ -42,7 +41,6 @@ Read on for more.
 
 ---
 
-<a id="introduction"></a>
 ## Introduction
 
 Software systems hit namespace collisions all the time — two
@@ -76,7 +74,6 @@ noise. That's the main motivation for UNS. The naming idea isn't
 new — domain-prefixed identifiers have been around for decades.
 UNS just cuts down the noise.
 
-<a id="pancake-simple"></a>
 ## Pancake simple
 
 The whole concept is barely an invention — it's a thin
@@ -85,10 +82,8 @@ names. The value is in **everyone agreeing on the same shape** so
 identifiers parse and compare consistently across tools and
 systems.
 
-<a id="specification"></a>
 ## Specification
 
-<a id="valid-characters"></a>
 ### Valid characters
 
 UNS is meant to travel across filesystems, URLs, shell commands,
@@ -115,14 +110,12 @@ character developers can use however suits their namespace. When
 a UNS is converted to a URL, the portion after `?` is preserved
 as the URL's query string.
 
-<a id="bare-domains-are-valid"></a>
 ### Bare domains are valid
 
 A UNS doesn't need a path. `puck.uno`, `example.org`, and
 `miko.dev` are all valid UNSes on their own. The path is optional;
 it just adds specificity below the domain.
 
-<a id="disallowed-patterns"></a>
 ### Disallowed patterns
 
 Even within the allowed character set, certain patterns aren't
@@ -136,7 +129,6 @@ valid:
 - Bare domain names without a dot — `localhost/foo` is not a
   valid UNS. The domain must contain at least one dot.
 
-<a id="validation-algorithm"></a>
 ### Validation algorithm
 
 To validate a candidate UNS:
@@ -163,7 +155,6 @@ DNS lookup. Developers can use UNSes built around domains they
 own privately, test domains, future domains, or anything else
 that looks structurally correct.
 
-<a id="case-sensitivity"></a>
 ### Case sensitivity
 
 **UNS is case-sensitive.** `puck.uno/Foo` and `puck.uno/foo`
@@ -176,7 +167,6 @@ doesn't change the technical rule — if you write a UNS with
 uppercase letters, that's the UNS, and only an exact match
 identifies the same thing.
 
-<a id="why-so-strict"></a>
 ### Why so strict
 
 UNS is used as the structure of the **caching directory** (and
@@ -184,17 +174,14 @@ similar filesystem-backed contexts). A UNS that survives
 validation can be turned directly into a path on disk without
 escaping or sanitization. The strictness is what makes that safe.
 
-<a id="norms"></a>
 ## Norms
 
-<a id="keep-unses-short"></a>
 ### Keep UNSes short
 
 UNSes are meant to be **human-readable**. Always prefer the
 shorter form when one is available. The norms below are mostly
 specific applications of this general principle.
 
-<a id="prefer-lowercase"></a>
 ### Prefer lowercase
 
 Uppercase letters are allowed but lowercase is preferred.
@@ -202,14 +189,12 @@ Uppercase letters are allowed but lowercase is preferred.
 mixing cases invites the "is `Foo` the same UNS as `foo`?"
 confusion.
 
-<a id="skip-www"></a>
 ### Skip `www.`
 
 Prefer `puck.uno` over `www.puck.uno`. The `www.` prefix is
 noise from a different era. UNS is about cutting noise, so leave
 it off.
 
-<a id="skip-trailing-slashes"></a>
 ### Skip trailing slashes
 
 `puck.uno/foo/` and `puck.uno/foo` are technically different
@@ -217,10 +202,8 @@ UNSes (UNS is byte-for-byte case-sensitive), but the trailing
 slash is usually just noise. Omit it unless you have a specific
 reason to keep it.
 
-<a id="use-in-puck"></a>
 ## Use in Puck
 
-<a id="parser-is-a-core-caspian-requirement"></a>
 ### Parser is a core Caspian requirement
 
 A UNS parser/validator is a **core requirement** of any Caspian
@@ -231,7 +214,6 @@ convenience — Puck leans on UNS heavily enough (caching, class
 lookup, identifier handling) that lacking one would break the
 runtime.
 
-<a id="uns-doubles-as-url"></a>
 ### UNS doubles as URL
 
 Puck often treats a UNS as **synonymous with a URL**. Many
@@ -255,7 +237,6 @@ nginx) will redirect to `https://puck.uno/foo/` — costing an
 extra round trip. Noted here so the friction is acknowledged;
 not considered a significant problem at present.
 
-<a id="first-contact-angle"></a>
 ## First-contact angle
 
 UNS is one of the lowest-friction ways someone might encounter

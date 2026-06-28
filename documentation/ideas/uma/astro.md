@@ -26,7 +26,6 @@ selectors compile to.
 
 ---
 
-<a id="structure"></a>
 ## Structure
 
 A selector is a hash with these reserved keys:
@@ -48,7 +47,6 @@ If more appear, there is no set precedence for which one to use.
 
 ---
 
-<a id="atts"></a>
 ## Atts
 
 Each entry in `atts` describes an attribute constraint:
@@ -75,7 +73,6 @@ Each entry in `atts` describes an attribute constraint:
 
 ---
 
-<a id="combinators"></a>
 ## Combinators
 
 Three combinator keys mirror the CSS subset Uma supports in v1:
@@ -94,7 +91,6 @@ defers to its combinator for the next level.
 
 ---
 
-<a id="result-selection"></a>
 ## Result selection
 
 By default, the result is the **innermost matched element** —
@@ -111,7 +107,6 @@ matches CSS's "rightmost selector is what you get" rule.
 
 → returns tables that are descendants of divs.
 
-<a id="return-marker"></a>
 ### Return marker
 
 `"return": true` at any level **overrides the default** — the
@@ -132,7 +127,6 @@ without giving up the descendant constraint.
 → returns divs that have a table descendant. (CSS equivalent:
 `div:has(table)`.)
 
-<a id="multiple-return-markers"></a>
 ### Multiple return markers
 
 If multiple levels carry `"return": true`, the **outermost wins**.
@@ -158,10 +152,8 @@ button.
 
 ---
 
-<a id="examples"></a>
 ## Examples
 
-<a id="basic"></a>
 ### Basic
 
 ```
@@ -178,7 +170,6 @@ button.
 {"tags": ["a"], "atts": {"href": {"starts_with": "https"}}}
 ```
 
-<a id="combinators-1"></a>
 ### Combinators
 
 ```
@@ -201,7 +192,6 @@ button.
 }
 ```
 
-<a id="chained"></a>
 ### Chained
 
 ```
@@ -217,7 +207,6 @@ button.
 }
 ```
 
-<a id="return-marker-1"></a>
 ### Return marker
 
 ```
@@ -241,7 +230,6 @@ button.
 
 ---
 
-<a id="mapping-table-css-astro"></a>
 ## Mapping table: CSS ↔ Astro
 
 | CSS | Astro |
@@ -265,7 +253,6 @@ machinery then operates on Astro.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Top-level OR via array?** A top-level selector list (CSS:

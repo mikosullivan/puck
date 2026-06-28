@@ -20,7 +20,6 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-<a id="why-its-interesting"></a>
 ## Why it's interesting
 
 - A mikobase-backed directory could plug into anywhere a directory
@@ -40,14 +39,12 @@ directory-tree interface backed by mikobase data?
 
 ---
 
-<a id="the-two-superpowers"></a>
 ## The two superpowers
 
 The dir/file/permissions surface is trivial — most filesystems
 have it. What makes a mikobase-backed filesystem genuinely
 different is two properties POSIX can't offer.
 
-<a id="transactions"></a>
 ### Transactions
 
 POSIX filesystems can't do multi-file atomic operations. You can't
@@ -61,7 +58,6 @@ needs all-or-nothing semantics is free:
 - **Atomic log + index updates.** A Jasmine entry plus any
   derived index can land together or not at all.
 
-<a id="time-travel-reads"></a>
 ### Time-travel reads
 
 "What was `/etc/config.json` on 2026-03-15 at 14:22?" is a
@@ -80,7 +76,6 @@ carry a timestamp parameter:
   reading /foo/bar." Timestamped reads replay against the exact
   state the operation saw.
 
-<a id="the-combination-is-more-than-the-sum"></a>
 ### The combination is more than the sum
 
 "Atomic deploys with instant rollback" is a real product
@@ -89,7 +84,6 @@ world they describe is still queryable." Filesystem-backed
 systems spend enormous engineering effort getting crude
 approximations of either; mikobase-as-filesystem inherits both.
 
-<a id="posix-access-via-ssh-and-sshfs"></a>
 ## POSIX access via SSH and SSHFS
 
 A clean way to handle POSIX-tool compatibility: **expose the
@@ -124,7 +118,6 @@ What this approach still doesn't handle perfectly:
 
 For the vast majority of POSIX use, SSH + SSHFS is plenty.
 
-<a id="in-memory-mode"></a>
 ## In-memory mode
 
 A mikobase doesn't have to be disk-backed. **An in-memory
@@ -165,7 +158,6 @@ unmount/reboot. An in-memory mikobase is process-owned and dies
 with the process. Different scope; better-targeted for the cases
 above.
 
-<a id="fso-and-the-path-forward"></a>
 ## FSO and the path forward
 
 By the time the broader **FSO (file system objects)** abstraction
@@ -175,7 +167,6 @@ mikobase-backed filesystem implementation should be a small
 additional step. Not committed yet; flagged as a likely outcome
 of the work that's already happening for other reasons.
 
-<a id="other-concerns"></a>
 ## Other concerns
 
 - **Performance overhead** of transactional storage compared to
@@ -183,7 +174,6 @@ of the work that's already happening for other reasons.
 - **Storage growth.** Time-travel implies keeping history.
   Bounded by retention policy; needs to be configurable.
 
-<a id="as-a-versioning-tool"></a>
 ## As a versioning tool
 
 Time-travel + a labeling layer makes mikobase-as-filesystem a
@@ -213,7 +203,6 @@ The killer combo: mikobase-as-filesystem + Sammy + Jasmine →
 every request log is reproducible against the exact filesystem
 state that served it."
 
-<a id="storage-shape-chunks-vs-deltas"></a>
 ## Storage shape: chunks vs deltas
 
 The current mikobase plan stores files in **chunks**. Great for
@@ -255,14 +244,12 @@ Fossil, Subversion). Trade-offs to design:
 
 The storage layer becomes **content-aware** rather than uniform.
 
-<a id="open-questions-things-to-vibe-on"></a>
 ## Open questions / things to vibe on
 
 (To be filled in.)
 
 ---
 
-<a id="out-of-scope-for-now"></a>
 ## Out of scope for now
 
 Brainstorm only. No commitments. The point is to capture the idea

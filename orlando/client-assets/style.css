@@ -14,11 +14,14 @@ body {
 	color: #222;
 	line-height: 1.55;
 }
+
 pre, code, textarea {tab-size: 4}
+
 .layout {
 	display: flex;
 	min-height: 100vh;
 }
+
 .sidebar {
 	width: 280px;
 	flex-shrink: 0;
@@ -31,6 +34,7 @@ pre, code, textarea {tab-size: 4}
 	top: 0;
 	font-size: 13px;
 }
+
 .sidebar h1 {
 	font-size: 14px;
 	margin: 0 0 12px;
@@ -128,14 +132,15 @@ body.home .content h1 .hero-logo {
 	border-color: #0969da;
 	box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
 }
-.sidebar-random,
-.sidebar-issues {
+
+.sidebar-random, .sidebar-issues {
 	display: block;
 	margin: 0 0 12px;
 	font-size: 12px;
 	color: #57606a;
 	text-decoration: none;
 }
+
 .sidebar-random:hover,
 .sidebar-issues:hover {color: #0969da}
 .search-form {
@@ -293,6 +298,7 @@ body.home .content h1 .hero-logo {
 	border-top-left-radius: 0 !important;
 	border-top-right-radius: 0 !important;
 }
+
 .content .section-issue {
 	font-size: 11px;
 	font-weight: normal;
@@ -307,6 +313,7 @@ body.home .content h1 .hero-logo {
 	white-space: nowrap;
 	cursor: pointer;
 }
+
 .content .section-issue:hover {
 	background: #eaeef2;
 	color: #0969da;
@@ -487,7 +494,10 @@ ul.toc, ul.toc ul {
 	padding-left: 0;
 }
 ul.toc ul {padding-left: 1.4em}
-ul.toc li {padding: 1px 0}
+ul.toc li {
+	padding: 1px 0 1px 1.5em;
+	text-indent: -1.5em;
+}
 ul.toc label.toc {
 	display: inline-block;
 	width: 1em;
@@ -1049,3 +1059,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 }
 .issue-comment-status.ok {color: #1f883d}
 .issue-comment-status.err {color: #cf222e}
+
+.consistency-issue {
+	border: 3px solid #3d07ff;
+	border-radius: 6px;
+	padding: 0 16px 8px;
+	margin: 16px 0;
+}
+
+.consistency-issue > h3:first-child {margin-top: 12px}

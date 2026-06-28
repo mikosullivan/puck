@@ -7,7 +7,6 @@ implementation's spec.
 
 ---
 
-<a id="purpose"></a>
 ## Purpose
 
 `puck.uno/uma` is an HTML document builder and DOM helper. It wraps a
@@ -22,7 +21,6 @@ convenience helpers on top.
 
 ---
 
-<a id="implementation-lean-on-lua"></a>
 ## Implementation: lean on Lua
 
 For HTML and XML, **prefer existing Lua libraries** rather than
@@ -45,7 +43,6 @@ forces it.
 
 ---
 
-<a id="core-object-model"></a>
 ## Core Object Model
 
 `%['puck.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
@@ -70,7 +67,6 @@ The instance exposes common document sections directly:
 
 ---
 
-<a id="builder-pattern"></a>
 ## Builder Pattern
 
 The core API. Each method call on an element creates a child of
@@ -91,7 +87,6 @@ end
 - `$el['attr'] = value` — set an attribute via hash-style access.
 - `$el.text 'content'` — set text content (HTML-escaped).
 
-<a id="aliases"></a>
 ### Aliases
 
 Some tag-name methods are aliases for `<input>` with specific
@@ -103,7 +98,6 @@ $body.checkbox    # <input type="checkbox">
 $body.hidden      # <input type="hidden">
 ```
 
-<a id="special-table-behavior"></a>
 ### Special table behavior
 
 Calling `.tr` on a `<table>` automatically ensures a `<tbody>`
@@ -119,7 +113,6 @@ end
 
 ---
 
-<a id="schema-enforcement"></a>
 ## Schema Enforcement
 
 Uma enforces the HTML schema defined in [html5.json](history/html5.json).
@@ -137,7 +130,6 @@ The schema lives in `html5.json` and is normalized at startup
 
 ---
 
-<a id="selectors-css-and-astro"></a>
 ## Selectors: CSS and Astro
 
 Uma element trees are searchable two ways:
@@ -163,7 +155,6 @@ $uma.body.find_last('input[type=submit]')           # last match (or null)
 The matching machinery always operates on Astro internally. CSS
 strings get compiled to Astro on the way in.
 
-<a id="supported-selectors-v1"></a>
 ### Supported selectors (v1)
 
 | Selector | Example | Matches |
@@ -184,7 +175,6 @@ strings get compiled to Astro on the way in.
 | Adjacent sibling | `h1 + p` | `<p>` immediately following an `<h1>` |
 | Selector list | `h1, h2, h3` | Any element matching any of the listed selectors |
 
-<a id="not-in-v1"></a>
 ### Not in v1
 
 | Selector | Reason |
@@ -195,7 +185,6 @@ strings get compiled to Astro on the way in.
 | `:hover`, `:focus`, `:checked`, etc. | Dynamic state — doesn't apply to a static DOM tree |
 | `::before`, `::after` | Rendering concerns, not DOM |
 
-<a id="match_css-the-fragment-predicate"></a>
 ### `match_css?` — the fragment predicate
 
 Every Uma element node has a `match_css?` method that tests a
@@ -230,7 +219,6 @@ Non-element nodes (text nodes, etc.) implement `match_css?` to
 return false — text doesn't have classes, IDs, or attributes, so
 no CSS selector matches it.
 
-<a id="implementation-layered"></a>
 ### Implementation: layered
 
 ```
@@ -260,7 +248,6 @@ real-time matching.
 
 ---
 
-<a id="helpers"></a>
 ## Helpers
 
 - **`$el.id`** / **`$el.id = '...'`** — convenience wrappers for
@@ -276,7 +263,6 @@ real-time matching.
 
 ---
 
-<a id="document-level-operations"></a>
 ## Document-Level Operations
 
 - **`$uma.title`** / **`$uma.title = 'New title'`** — read or
@@ -292,7 +278,6 @@ real-time matching.
 
 ---
 
-<a id="import"></a>
 ## Import
 
 `$uma.import($other_docs...)` imports content from source
@@ -306,7 +291,6 @@ then merge in fragment documents.
 
 ---
 
-<a id="json-rendering"></a>
 ## JSON Rendering
 
 Helpers that render JSON-like data into HTML tables and text
@@ -325,7 +309,6 @@ A bundled stylesheet is available:
 
 ---
 
-<a id="string-wrapping-utility"></a>
 ## String Wrapping Utility
 
 - **`%['puck.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
@@ -333,7 +316,6 @@ A bundled stylesheet is available:
 
 ---
 
-<a id="the-schema-html5json"></a>
 ## The schema: html5.json
 
 [html5.json](history/html5.json) is the normalized source of
@@ -358,7 +340,6 @@ truth for the tag model. The format:
 All schema entries reference the **WHATWG HTML Standard**
 (<https://html.spec.whatwg.org/>) as the source of truth.
 
-<a id="builder-behavior"></a>
 ### Builder behavior
 
 A builder loads `html5.json`, recursively resolves `include`s,
@@ -375,7 +356,6 @@ For each tag:
 The result is stored on each Uma instance and consulted at runtime
 for element creation and attribute validation.
 
-<a id="editing-html5json"></a>
 ### Editing html5.json
 
 - Empty hash values stay on one line as `{}` rather than
@@ -387,10 +367,8 @@ for element creation and attribute validation.
 
 ---
 
-<a id="power-user-features"></a>
 ## Power-user features
 
-<a id="set_tag_mod-deferred"></a>
 ### `set_tag_mod` (deferred)
 
 The Ruby version exposes `set_tag_mod(tag_name, mod)` to extend
@@ -403,7 +381,6 @@ case.
 
 ---
 
-<a id="errors"></a>
 ## Errors
 
 Uma raises flags from the `puck.uno/uma/error/` family:
@@ -416,7 +393,6 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-<a id="posture"></a>
 ## Posture
 
 - **Strict schema validation by default.** Catches authoring
@@ -429,7 +405,6 @@ All catchable via `catch()` with the appropriate class.
 
 ---
 
-<a id="to-be-specified"></a>
 ## To be specified
 
 (Open questions accumulate here as design discussion continues.)

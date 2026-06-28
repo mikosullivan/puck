@@ -26,7 +26,6 @@ markers contributed by the added class.
 Caspian already supports this mechanism; this doc is about
 formalizing it as a design pattern and exploring what it enables.
 
-<a id="the-pattern"></a>
 ## The pattern
 
 The canonical example:
@@ -58,7 +57,6 @@ the first in the stack.
 This is why the `foo.uno/upper` example works: adding it puts it
 above the original string class, so its `to_string` wins dispatch.
 
-<a id="canonical-example-marker-classes"></a>
 ## Canonical example: marker classes
 
 The simplest case is a class with **no methods**, just identity. The
@@ -82,7 +80,6 @@ the marker, and emits `null` instead of the password's contents.
 This is the cleanest possible use of per-instance class chains —
 the class is purely a tag the engine reads.
 
-<a id="what-this-pattern-enables"></a>
 ## What this pattern enables
 
 - **Tags / markers** — classes with no methods, just identity. Read
@@ -103,7 +100,6 @@ the class is purely a tag the engine reads.
   every variation, classes are mixed in à la carte. Closer to roles
   or traits than inheritance.
 
-<a id="trade-offs"></a>
 ## Trade-offs to resolve
 
 - **Class chain order is settled.** Push goes to the top of the
@@ -134,7 +130,6 @@ the class is purely a tag the engine reads.
   class membership is read directly off each object's `classes`
   field. No sibling concept needed.
 
-<a id="pinned-and-mutable-regions"></a>
 ## Pinned and mutable regions
 
 The class stack has two regions:
@@ -181,7 +176,6 @@ the mutable region but cannot be removed. If a sticky platter
 drifts upward and touches the bottom of the pinned region, it
 gets absorbed into the pinned region (locks at that position).
 
-<a id="dispatch-after-unification"></a>
 ### Dispatch after the unification
 
 Method resolution is now just "walk the stack top to bottom" —
@@ -199,7 +193,6 @@ single class with a bucket-carried `truthy` field.
 Programs that want to iterate only "user-relevant" platters can
 filter by sticky/class-uns/etc.
 
-<a id="engine-only"></a>
 ### `engine_only` class property
 
 A class can declare `engine_only: true` at the class level. The
@@ -225,7 +218,6 @@ There's no opt-out. The developer's "out" is to instantiate the
 object they actually want — not to mutate identity after the
 fact.
 
-<a id="three-immutable-primitives"></a>
 ### Three immutable primitives
 
 `null`, `true`, and `false` are special: their class stacks are
@@ -276,7 +268,6 @@ Both platters are pinned. `puck.uno/truthiness` is also `engine_only`
 on a previously-truthy object. The entire primitive is immutable —
 adding or removing anything raises.
 
-<a id="alternative-not-replacement"></a>
 ## Alternative, not replacement
 
 Subclassing still exists in Caspian. This pattern is a different
@@ -293,7 +284,6 @@ When to use which:
 
 The two coexist because they solve different problems.
 
-<a id="per-platter-buckets"></a>
 ## Per-platter private storage
 
 A class in the stack is a **platter** (mental metaphor: LP records
@@ -305,7 +295,6 @@ soft `uns.<UNS>` namespace convention.
 **Proposed change:** each platter gets its own private bucket,
 formalizing what the `uns.<UNS>` convention has been doing by hand.
 
-<a id="proposed-shape"></a>
 ### Proposed shape
 
 Today the object's universal shape is `{bucket, classes}`, where
@@ -366,7 +355,6 @@ keys, no new universal reserved key. What changes is the shape of
 the `classes` field: hash instead of array, entries are platter
 records keyed by ID.
 
-<a id="design-rationale"></a>
 ### Design rationale
 
 Two strong constraints shaped this:
@@ -388,7 +376,6 @@ unchanged (still `{bucket, classes}`), and the bucket-no-reserved-
 keys rule is preserved (it now applies recursively — both the
 top-level bucket and each platter's own bucket are free-form).
 
-<a id="bucket-policy"></a>
 ### Bucket policy
 
 **The `bucket` field has no requirements beyond being a hash.**
@@ -422,14 +409,12 @@ workaround. Per-platter buckets give every class its own
 designated space, so no class has to encroach on another's
 bucket via key conventions. The convention becomes obsolete.
 
-<a id="bucket-allocation"></a>
 ### Bucket allocation
 
 Open: whether each platter's `bucket` field is always allocated
 (uniform shape) or lazy (only appears once written). Lean:
 always present, for uniformity.
 
-<a id="accessing-buckets"></a>
 ### Accessing buckets from inside a class
 
 Shared object bucket (the default — what classes write to in the
@@ -470,7 +455,6 @@ executing. The engine knows which platter is active from method
 dispatch (same mechanism that tracks the active class for
 `call_with` and friends).
 
-<a id="what-this-resolves"></a>
 ### What this resolves
 
 - **Key collisions disappear.** Platter A and Platter B can both
@@ -491,7 +475,6 @@ dispatch (same mechanism that tracks the active class for
   along inside the platter record without further universal shape
   changes.
 
-<a id="class-vs-classes-resolution"></a>
 ### `class` vs `classes` — a long-standing tension resolved
 
 A side benefit of this structural change: the word `class` has
@@ -524,7 +507,6 @@ foo.bar/gup."
 unchanged. The tension was at the field-name level, not the
 keyword level.
 
-<a id="implications-for-other-docs"></a>
 ### Implications for other docs
 
 Settled changes that propagate:
@@ -546,7 +528,6 @@ Settled changes that propagate:
   class an object is an instance of" (still meaningful) or
   reference "the object's classes" (the full stack).
 
-<a id="active-field"></a>
 ## Active and inactive platters
 
 Each platter carries an optional `active` field. The default is `true`,
@@ -592,7 +573,6 @@ intact.
 **Snapshot/revive** carries inactive platters through. Roundtrip is
 exact.
 
-<a id="method-resolution"></a>
 ## Method resolution
 
 Method dispatch is **two-dimensional** — for any given method
@@ -613,7 +593,6 @@ The walk:
    inheritance chain, the method is unknown — raise
    `puck.uno/error/method_missing` (or similar).
 
-<a id="unicast-vs-multicast"></a>
 ### Unicast vs multicast dispatch
 
 The walk above is **unicast** — first match wins, stop. That's
@@ -634,7 +613,6 @@ The two share the walk; they differ only in stopping rule.
 Multicast isn't a special case grafted onto dispatch — it's a
 second mode of the same walk, with a different terminator.
 
-<a id="how-dispatch-kind-is-declared"></a>
 #### How dispatch kind is declared
 
 Dispatch kind is **a property of the function object**, not a
@@ -710,7 +688,6 @@ dispatches explicitly to the named class. Could optionally walk up
 that class's inheritance chain if the named class doesn't define
 the method — TBD as the API matures.
 
-<a id="open-design-questions"></a>
 ## Open design questions
 
 - **API surface for `classes.add`** — what does the method actually

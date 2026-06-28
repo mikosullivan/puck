@@ -19,7 +19,6 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-<a id="goals"></a>
 ## Goals
 
 - Build the **driver app first**, since Miko is the most reliable
@@ -34,7 +33,6 @@ app is a separate concern (different UI, mostly the same geo usage).
 
 ---
 
-<a id="what-puckunogeo-provides"></a>
 ## What puck.uno/geo Provides
 
 Everything map-related routes through `puck.uno/geo`:
@@ -57,7 +55,6 @@ maps. No Google Maps, no Mapbox, no separate provider keys.
 
 ---
 
-<a id="what-puckunogeo-does-not-provide"></a>
 ## What puck.uno/geo Does NOT Provide
 
 Everything ride-business-specific lives in the rideshare's **own
@@ -82,7 +79,6 @@ only with the driver-PWA side and its use of puck.uno/geo.
 
 ---
 
-<a id="tech-stack"></a>
 ## Tech Stack
 
 - **Frontend**: PWA. HTML/CSS/JS in a service-worker-enabled web
@@ -102,10 +98,8 @@ only with the driver-PWA side and its use of puck.uno/geo.
 
 ---
 
-<a id="major-screens"></a>
 ## Major Screens
 
-<a id="status-main-idle"></a>
 ### Status / Main (idle)
 
 The driver's home screen when not on a ride.
@@ -145,7 +139,6 @@ The driver's home screen when not on a ride.
 The map embed updates as the driver moves. The driver can pan/zoom
 inside the iframe if they want to look around.
 
-<a id="incoming-ride-request"></a>
 ### Incoming Ride Request
 
 A modal that appears (with push notification if backgrounded) when
@@ -164,7 +157,6 @@ the rideshare backend matches this driver with a pickup.
 If the driver accepts, the rideshare backend confirms and transitions
 the ride to "en route." The app moves to the "To Pickup" screen.
 
-<a id="to-pickup-en-route-to-rider"></a>
 ### To Pickup (en route to rider)
 
 Active navigation screen — the driver is driving to the pickup
@@ -190,7 +182,6 @@ ETA recalculates periodically (every minute, or on significant
 location change). Each recalc is a `$geo.eta_to(pickup_coords)`
 call from the driver's current location.
 
-<a id="arrived-at-pickup"></a>
 ### Arrived at Pickup
 
 Driver pulls up; app detects arrival (proximity to pickup coords).
@@ -203,7 +194,6 @@ Driver pulls up; app detects arrival (proximity to pickup coords).
 - **Start Trip** button — driver presses when the rider is in the
   car.
 
-<a id="in-trip-en-route-to-drop-off"></a>
 ### In Trip (en route to drop-off)
 
 Same shape as "To Pickup" but routed to the drop-off coords.
@@ -214,7 +204,6 @@ Same shape as "To Pickup" but routed to the drop-off coords.
 - **End Trip** button.
 - **Trip duration** running timer.
 
-<a id="end-trip"></a>
 ### End Trip
 
 Driver pulls up at drop-off; presses End Trip.
@@ -224,20 +213,17 @@ Driver pulls up at drop-off; presses End Trip.
 - Notes (optional).
 - Returns to Status / Main screen.
 
-<a id="earnings"></a>
 ### Earnings
 
 A separate screen showing recent rides, totals, payout status. Pure
 rideshare-backend data; no puck.uno/geo involvement.
 
-<a id="settings-profile"></a>
 ### Settings / Profile
 
 Vehicle info, documents, driver preferences. Rideshare-backend data.
 
 ---
 
-<a id="puckunogeo-usage-summary"></a>
 ## puck.uno/geo Usage Summary
 
 Cross-referenced from the screens above:
@@ -259,7 +245,6 @@ list needs to actually work well for v1 to ship.
 
 ---
 
-<a id="validation-does-puckunogeo-have-whats-needed"></a>
 ## Validation: Does puck.uno/geo Have What's Needed?
 
 Cross-checking the table above against the geo spec:
@@ -275,7 +260,6 @@ Cross-checking the table above against the geo spec:
 | `$map.navigation = true` | ✅ Spec'd — toggles navigation features in the rendered map |
 | `$map.voice = true` | ✅ Spec'd — toggles voice prompts during navigation |
 
-<a id="gap-surfaced"></a>
 ### Gap surfaced
 
 - **Programmatic destination control**. Setting `$map.navigation = true`
@@ -293,14 +277,12 @@ features.
 
 ---
 
-<a id="pwa-limitations-to-design-around"></a>
 ## PWA Limitations to Design Around
 
 PWAs are not native apps; some things that "just work" on iOS/Android
 require workarounds in a PWA. The driver app is particularly sensitive
 to a few of these:
 
-<a id="background-location"></a>
 ### Background location
 
 Native apps can track location in the background. PWAs cannot
@@ -317,7 +299,6 @@ means:
   driver location updates. New ride matching pauses; existing rides
   continue using last known position.
 
-<a id="push-notifications"></a>
 ### Push notifications
 
 Web Push API works on Android (Chrome, Firefox, Edge) and recently on
@@ -331,14 +312,12 @@ driver:
   with clear "you must install this to receive ride requests"
   messaging.
 
-<a id="wake-lock"></a>
 ### Wake lock
 
 Screen Wake Lock API keeps the screen from sleeping. Supported on
 Android Chrome and recent iOS Safari. Critical for the driver — a
 dimmed/locked screen mid-ride is a usability disaster.
 
-<a id="offline-behavior"></a>
 ### Offline behavior
 
 Spotty cell coverage is real (rural roads, parking garages, etc.).
@@ -351,7 +330,6 @@ The app needs:
 - **Queued state changes** ("ride ended" if pressed while offline)
   uploaded when connectivity returns.
 
-<a id="battery"></a>
 ### Battery
 
 Drivers run their phones 8–12+ hours a day. The app needs to be
@@ -364,7 +342,6 @@ battery-conscious:
 
 ---
 
-<a id="whats-out-of-scope-for-v1"></a>
 ## What's Out of Scope for v1
 
 To keep the v1 scope honest:
@@ -383,7 +360,6 @@ To keep the v1 scope honest:
 
 ---
 
-<a id="open-questions"></a>
 ## Open Questions
 
 - **Authentication mechanism.** PWAs don't have great native
@@ -409,7 +385,6 @@ To keep the v1 scope honest:
 
 ---
 
-<a id="why-this-validates-the-geo-service"></a>
 ## Why This Validates the Geo Service
 
 If this app ships and works well, that's strong evidence the

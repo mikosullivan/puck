@@ -15,7 +15,6 @@ to capture the idea in case it ties into Puck later.
 
 ---
 
-<a id="the-idea"></a>
 ## The Idea
 
 A single HTTP header named **`uns`** carries one JSON hash. Anyone
@@ -27,7 +26,6 @@ everything custom lives inside `uns`, namespaced by UNS.
 uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 ```
 
-<a id="why-its-interesting"></a>
 ## Why it's interesting
 
 - **Namespacing.** UNS identifiers eliminate header-name
@@ -41,7 +39,6 @@ uns: {"puck.uno/log/token": "tok_8f3a2b:<api-key>", "example.org/feature": "on"}
 - **Consistency with Puck's JSON-everywhere posture** (Caspian,
   mikobase records, JSON URL params, etc.).
 
-<a id="coexistence-and-long-term-vision"></a>
 ## Coexistence and long-term vision
 
 `uns` is just another HTTP header — it coexists with everything
@@ -53,7 +50,6 @@ keep working unchanged.
 header surface fades and `uns` becomes the only header. Not a
 plan, just the direction the idea points.
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Size limits.** Header size caps (typically 8–64 KB per
@@ -68,7 +64,6 @@ plan, just the direction the idea points.
   services can do this with each other freely; broader adoption
   needs a story.
 
-<a id="path-to-standardization"></a>
 ## Path to standardization
 
 The body that standardizes HTTP is the **IETF** (Internet
@@ -122,7 +117,6 @@ value, accumulate adopters. Approach IETF only once there's a
 real ecosystem behind it — empty proposals get politely ignored;
 proposals with demonstrated traction get serious consideration.
 
-<a id="status"></a>
 ## Status
 
 Captured for the record. Not on any roadmap.

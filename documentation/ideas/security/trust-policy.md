@@ -9,7 +9,6 @@
 }}
 ~~~
 
-<a id="overview"></a>
 ## Overview
 
 Caspian has no concept of where its trust configuration comes from. That is the host
@@ -24,7 +23,6 @@ config source → host program → engine → %engine → Caspian script
 
 ---
 
-<a id="the-three-layers"></a>
 ## The Three Layers
 
 **Caspian** — knows nothing about trust configuration. Accesses host-provided resources
@@ -41,7 +39,6 @@ sense for its context and passes it to the engine at startup. Two examples:
 
 ---
 
-<a id="cli-behavior"></a>
 ## CLI Behavior
 
 When a Caspian script is run from the command line, the CLI host applies this default:
@@ -56,7 +53,6 @@ permissions beyond the open default.
 
 ---
 
-<a id="non-cli-behavior"></a>
 ## Non-CLI Behavior
 
 In any context other than the CLI, there is no concept of a default config location. The
@@ -68,12 +64,10 @@ open-policy fallback would be a security hole.
 
 ---
 
-<a id="trust-policy-structure"></a>
 ## Trust Policy Structure
 
 A trust policy has two parts: a base mode and an optional domain list.
 
-<a id="base-mode"></a>
 ### Base mode
 
 | Mode | Behaviour |
@@ -81,7 +75,6 @@ A trust policy has two parts: a base mode and an optional domain list.
 | `open` | Any signed object from any domain is permitted at the default permission set |
 | `allow_list` | Only domains explicitly listed are permitted |
 
-<a id="domain-entries"></a>
 ### Domain entries
 
 Each domain entry specifies which permissions objects from that domain are granted:
@@ -108,7 +101,6 @@ override the default — either granting less, granting more, or denying entirel
 
 In `allow_list` mode, domains not listed are denied automatically.
 
-<a id="permissions"></a>
 ### Permissions
 
 | Permission | Description |
@@ -119,7 +111,6 @@ In `allow_list` mode, domains not listed are denied automatically.
 | `abort` | Abort exception propagates past the security boundary |
 | `mining` | May perform cryptocurrency mining. See note below. |
 
-<a id="cryptocurrency-mining"></a>
 ### Cryptocurrency Mining
 
 Any object that performs cryptocurrency mining must explicitly declare itself as such. The
@@ -136,7 +127,6 @@ built on this mechanism.
 
 ---
 
-<a id="capability-attenuation"></a>
 ## Capability Attenuation
 
 Permissions can be narrowed but never expanded. A script receiving an object from
@@ -148,7 +138,6 @@ sub-function. The ceiling is always set by the host.
 
 ---
 
-<a id="relationship-to-signing"></a>
 ## Relationship to Signing
 
 The trust policy only applies to signed objects. An unsigned object is rejected outright

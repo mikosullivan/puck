@@ -14,7 +14,6 @@
 }}
 ~~~
 
-<a id="overview"></a>
 ## Overview
 
 **Orlando** is an HTTP server, written in Lua, that serves the
@@ -48,7 +47,6 @@ those projects.
 
 ---
 
-<a id="why"></a>
 ## Why
 
 The primary purpose is **practice**. Writing a small HTTP server in a
@@ -67,7 +65,6 @@ change immediately — without running the full static-site build.
 
 ---
 
-<a id="not-puck"></a>
 ## Not Puck
 
 This is important enough to call out explicitly:
@@ -89,7 +86,6 @@ muddy what is and isn't part of the Puck stack.
 
 ---
 
-<a id="scope"></a>
 ## Scope
 
 What Orlando does:
@@ -120,7 +116,6 @@ What Orlando does **not** do (at least not in any first version):
 
 ---
 
-<a id="rendering-pipeline"></a>
 ## Rendering pipeline
 
 Orlando's rendering pipeline is a Lua port of the Python static-site
@@ -134,7 +129,7 @@ The pipeline applies these transforms in order to each `.md` request:
 1. **Markdown → HTML.** Parse the Markdown source. Needs:
    GFM-style tables, strikethrough, fenced code blocks (both
    `~~~lang` and ` ```lang `), inline HTML pass-through (so the
-   doc-convention `<a id="anchor"></a>` lines survive).
+   doc-convention `` lines survive).
 2. **Fence handling for vibecode.** A `~~~json` fence whose first
    non-whitespace content is `{"vibecode":` becomes a
    `<details class="vibecode"><summary>vibecode</summary><pre><code>…</code></pre></details>`
@@ -187,7 +182,6 @@ paths; those need a `documentation/` prefix stripped before the
 
 ---
 
-<a id="staging-plan"></a>
 ## Staging plan
 
 End-state goal: Orlando serves the same site the Python build script
@@ -195,7 +189,6 @@ currently publishes to puck.uno, looking the same in a browser. The
 work gets there in four stages, each shippable on its own. Pick up
 the next stage when the previous one is solid.
 
-<a id="stage-1-server-skeleton"></a>
 ### Stage 1 — Server skeleton
 
 Get the HTTP plumbing right end-to-end, before any rendering.
@@ -217,7 +210,6 @@ Get the HTTP plumbing right end-to-end, before any rendering.
 At the end of this stage, Orlando is a perfectly serviceable static
 file server. Markdown rendering comes next.
 
-<a id="stage-2-markdown-to-html"></a>
 ### Stage 2 — Markdown to HTML
 
 Plug in the rendering pipeline's core.
@@ -234,7 +226,6 @@ Plug in the rendering pipeline's core.
 At the end of this stage, browsing to `/overview` shows the
 overview document as basic HTML with no chrome.
 
-<a id="stage-3-site-chrome"></a>
 ### Stage 3 — Site chrome
 
 Make it look like puck.uno.
@@ -257,7 +248,6 @@ Make it look like puck.uno.
 At the end of this stage, Orlando is visually indistinguishable
 from the Python-built site for the common case.
 
-<a id="stage-4-pixel-parity"></a>
 ### Stage 4 — Pixel parity
 
 The remaining details that the static build does.
@@ -280,7 +270,6 @@ differences.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 These need to be settled before any code is written.

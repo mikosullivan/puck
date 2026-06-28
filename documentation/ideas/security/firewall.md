@@ -1,6 +1,5 @@
 # Firewall Rules
 
-<a id="overview"></a>
 ## Overview
 
 ~~~vibecode
@@ -24,7 +23,6 @@ Rules apply to entire records. There is no field-level filtering.
 
 ---
 
-<a id="two-types-of-rules"></a>
 ## Two Types of Rules
 
 **Static rules** — described in this document. A JSON structure that expresses conditions
@@ -35,7 +33,6 @@ Not yet designed.
 
 ---
 
-<a id="static-rule-structure"></a>
 ## Static Rule Structure
 
 A rule has three required fields:
@@ -58,7 +55,6 @@ A rule has three required fields:
 }
 ```
 
-<a id="on"></a>
 ### `on`
 
 Specifies which operations the rule covers. Accepts a single value or an array.
@@ -68,7 +64,6 @@ Valid values:
 - `"read"` — shorthand for `"select"`
 - `"write"` — shorthand for `["create", "update", "delete"]`
 
-<a id="direction"></a>
 ### `direction`
 
 Required. No default — omitting it is a validation error.
@@ -79,7 +74,6 @@ Required. No default — omitting it is a validation error.
 | `"outgoing"` | Applies to results going out from the engine |
 | `"both"`     | Applies in both directions |
 
-<a id="allow"></a>
 ### `allow`
 
 A Q0 filter defining which records are permitted. Uses the same syntax as a Q0 select
@@ -90,7 +84,6 @@ or the query fails with an error.
 
 ---
 
-<a id="default-behavior"></a>
 ## Default Behavior
 
 - If no rules cover an operation, everything passes — the engine is transparent for that
@@ -104,7 +97,6 @@ or the query fails with an error.
 
 ---
 
-<a id="class-level-pass-through-restriction"></a>
 ## Class-Level Pass-Through Restriction
 
 A class definition can declare:
@@ -131,7 +123,6 @@ is an error, not a policy decision.
 
 ---
 
-<a id="rule-validation"></a>
 ## Rule Validation
 
 Rules are validated before the engine processes anything — at startup, or whenever the
@@ -146,7 +137,6 @@ The validator checks:
 
 ---
 
-<a id="example-read-only-access-to-a-class"></a>
 ## Example: Read-Only Access to a Class
 
 ```json
@@ -163,7 +153,6 @@ The validator checks:
 
 Only `borg.com/person` records are returned. No writes are restricted by this rule.
 
-<a id="example-read-and-write-access-write-gated-by-callback"></a>
 ## Example: Read and Write Access, Write Gated by Callback
 
 ```json

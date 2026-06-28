@@ -17,7 +17,6 @@ Default Caspian operators (`&&`, `||`, `not`, `==`) keep their strict-Boolean
 semantics — null is treated as falsey, just like in most languages. The trilean
 class is **opt-in**: code that wants three-valued logic explicitly calls into it.
 
-<a id="status"></a>
 ## Status
 
 ~~~vibecode
@@ -36,7 +35,6 @@ the language runtime. Implementation will live at `code/caspian/stdlib/trilean.c
 
 ---
 
-<a id="the-model"></a>
 ## The Model
 
 ~~~vibecode
@@ -83,7 +81,6 @@ strong Kleene logic, K3, or SQL three-valued logic).
 
 ---
 
-<a id="operators"></a>
 ## Operators
 
 ~~~vibecode
@@ -96,7 +93,6 @@ strong Kleene logic, K3, or SQL three-valued logic).
 All operators are static methods on the `puck.uno/trilean` class, called as
 `%puck['trilean'].<op>(...)`.
 
-<a id="nota"></a>
 ### `not(a)`
 
 | `a` | result |
@@ -105,7 +101,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `false` | `true` |
 | `null` | `null` |
 
-<a id="anda-b"></a>
 ### `and(a, b)`
 
 | `a \ b` | `true` | `false` | `null` |
@@ -116,7 +111,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 
 `false` dominates AND. `null` poisons unless `false` is present.
 
-<a id="ora-b"></a>
 ### `or(a, b)`
 
 | `a \ b` | `true` | `false` | `null` |
@@ -127,7 +121,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 
 `true` dominates OR. `null` poisons unless `true` is present.
 
-<a id="nanda-b-notanda-b"></a>
 ### `nand(a, b)` = `not(and(a, b))`
 
 | `a \ b` | `true` | `false` | `null` |
@@ -136,7 +129,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `false` | `true` | `true` | `true` |
 | `null` | `null` | `true` | `null` |
 
-<a id="nora-b-notora-b"></a>
 ### `nor(a, b)` = `not(or(a, b))`
 
 | `a \ b` | `true` | `false` | `null` |
@@ -145,7 +137,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 | `false` | `false` | `true` | `null` |
 | `null` | `false` | `null` | `null` |
 
-<a id="xora-b-exclusive-or"></a>
 ### `xor(a, b)` (exclusive or)
 
 | `a \ b` | `true` | `false` | `null` |
@@ -157,7 +148,6 @@ All operators are static methods on the `puck.uno/trilean` class, called as
 `null` always poisons XOR — there is no operand value that "dominates" XOR, so the
 result always depends on the unknown.
 
-<a id="xnora-b-notxora-b-equivalence-iff"></a>
 ### `xnor(a, b)` = `not(xor(a, b))` (equivalence / iff)
 
 | `a \ b` | `true` | `false` | `null` |
@@ -168,7 +158,6 @@ result always depends on the unknown.
 
 True when both operands are the same boolean. Same null-poisoning rule as XOR.
 
-<a id="impliesa-b-material-conditional-if-a-then-b"></a>
 ### `implies(a, b)` (material conditional, "if a then b")
 
 Defined as `or(not(a), b)`.
@@ -183,7 +172,6 @@ Note that `false implies anything` is always `true` — that's the standard
 material-conditional rule (vacuous truth). When the antecedent is null, the
 result depends on whether the antecedent turns out to be true or false.
 
-<a id="prohibitsa-b-material-nonimplication-a-but-not-b"></a>
 ### `prohibits(a, b)` (material nonimplication, "a but not b")
 
 Defined as `and(a, not(b))`, equivalently `not(implies(a, b))`. The opposite of
@@ -200,7 +188,6 @@ Reads naturally as "a prohibits b" — `a` being true is incompatible with `b`
 being true. Useful for rule and constraint logic where you want to assert that
 some condition forbids another.
 
-<a id="eqa-b-alias-for-xnor"></a>
 ### `eq(a, b)` (alias for `xnor`)
 
 `eq` is a friendly alias for `xnor`. Both operators produce the same truth table
@@ -217,7 +204,6 @@ null?" use `$x.object.null?`, never `eq(x, null)`.
 
 ---
 
-<a id="lazy-second-argument"></a>
 ## Lazy Second Argument
 
 ~~~vibecode
@@ -289,7 +275,6 @@ chain frame, so `%chain` access and exception propagation behave normally.
 
 ---
 
-<a id="branching-on-a-trilean-result"></a>
 ## Branching on a Trilean Result
 
 A trilean operator always returns one of three strict values: `true`, `false`, or
@@ -332,7 +317,6 @@ set.
 
 ---
 
-<a id="usage"></a>
 ## Usage
 
 ~~~vibecode
@@ -371,7 +355,6 @@ about three-valued logic at all.
 
 ---
 
-<a id="why-pure-caspian"></a>
 ## Why Pure Caspian
 
 ~~~vibecode
@@ -396,7 +379,6 @@ The implementation lives at [code/caspian/stdlib/trilean.casp](https://github.co
 
 ---
 
-<a id="notes"></a>
 ## Notes
 
 - **Operators stay strict-boolean.** Default Caspian `&&`, `||`, `not`, `==`

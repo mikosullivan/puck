@@ -16,7 +16,6 @@ Marina is the codeword for a design exploration of Puck, Q0, and class definitio
 
 # Part 1: Puck
 
-<a id="overview"></a>
 ## Overview
 
 Puck is a remote object system designed to be simpler and more intuitive than systems like
@@ -37,7 +36,6 @@ between the two systems. A class definition bucket written for Mikobase is valid
 
 ---
 
-<a id="implicit-class-from-context"></a>
 ## Implicit Class from Context
 
 Every Puck object (hash/dict) has a `class` field, either explicit or implied by context.
@@ -50,7 +48,6 @@ defined. For now, implicit class rules are documented ad-hoc where they apply.
 
 ---
 
-<a id="getting-a-class"></a>
 ## Getting a Class
 
 `puck.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
@@ -67,7 +64,6 @@ clss = puck.get_class('puck.uno/color')    # equivalent
 clss = puck.get_class('puck.uno/color', cutoff='2026-09-21')  # with params
 ```
 
-<a id="creating-an-object"></a>
 ## Creating an Object
 
 `clss.new(**fields)` creates a new instance of the class with the given field values. The
@@ -90,7 +86,6 @@ This is equivalent to `puck[uns].new(**fields)`.
 
 ---
 
-<a id="method-calls"></a>
 ## Method Calls
 
 When a method is called on a Puck object, the **entire object** is serialized and sent to
@@ -99,7 +94,6 @@ the method's URL. A response is received and returned to the caller.
 The class definition specifies each method's required and optional parameters, and what to
 expect in the response.
 
-<a id="request-structure"></a>
 ## Request Structure
 
 A Puck request is a JSON object with the following fields:
@@ -138,7 +132,6 @@ The response structure is not yet defined.
 
 ---
 
-<a id="value-objects-and-stored-objects"></a>
 ## Value Objects and Stored Objects
 
 All Puck objects are the same type — they carry their field values with every method call.
@@ -165,7 +158,6 @@ character = puck.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40c
 
 ---
 
-<a id="puck-true"></a>
 ## `puck: true`
 
 A class definition with `"puck": true` signals that remote method calls may be made using
@@ -180,7 +172,6 @@ objects of that class.
 
 ---
 
-<a id="puckunoexception"></a>
 ## `puck.uno/exception`
 
 The base class for all exceptions in Puck. `puck.uno/error` is a subclass of
@@ -188,7 +179,6 @@ The base class for all exceptions in Puck. `puck.uno/error` is a subclass of
 
 ---
 
-<a id="puckunoerror"></a>
 ## `puck.uno/error`
 
 The base class for all errors. An error object is a first-class object with
@@ -206,7 +196,6 @@ Error objects propagate upward through expression chains without further evaluat
 
 ---
 
-<a id="puckunoquery"></a>
 ## `puck.uno/query`
 
 `puck.uno/query` is the base class for the Puck expression language. It defines a set of
@@ -215,19 +204,16 @@ general-purpose operators usable in any Puck context.
 `mikobase.com/q0` inherits `puck.uno/query` and extends it with Mikobase-specific
 operators for accessing record data.
 
-<a id="expression-format"></a>
 ### Expression Format
 
 An expression is either a **literal** (any JSON scalar or array) or an **operator object**
 (a single-key JSON object whose key names the operation).
 
-<a id="current-timestamp"></a>
 ### Current Timestamp
 
 `{"now": true}` returns the current timestamp at the moment the query is executed, frozen
 once at the start of execution.
 
-<a id="arithmetic"></a>
 ### Arithmetic
 
 | Operator | Description |
@@ -238,7 +224,6 @@ once at the start of execution.
 | `{"divide": [a, b]}` | Division — returns `null` on division by zero |
 | `{"mod": [a, b]}` | Modulo (remainder) |
 
-<a id="string"></a>
 ### String
 
 | Operator | Description |
@@ -249,7 +234,6 @@ once at the start of execution.
 | `{"trim": expr}` | Strip leading and trailing whitespace |
 | `{"length": expr}` | Character count |
 
-<a id="array-aggregation"></a>
 ### Array Aggregation
 
 | Operator | Description |
@@ -261,7 +245,6 @@ once at the start of execution.
 
 Non-numeric elements are ignored. Empty or all-non-numeric arrays return `null`.
 
-<a id="selection"></a>
 ### Selection
 
 | Operator | Description |
@@ -271,7 +254,6 @@ Non-numeric elements are ignored. Empty or all-non-numeric arrays return `null`.
 
 Returns `null` if no element meets the condition.
 
-<a id="date-and-time"></a>
 ### Date and Time
 
 Timestamps are ISO 8601 strings with millisecond precision.
@@ -300,7 +282,6 @@ Timestamp component extraction (return integers):
 | `{"minute": expr}` | Minute (0–59) |
 | `{"second": expr}` | Second (0–59) |
 
-<a id="comparison"></a>
 ### Comparison
 
 Take a two-element array. Return a boolean. Work for numbers, strings (lexicographic), and
@@ -315,7 +296,6 @@ timestamps (chronological). Comparing values of different types returns `null`.
 | `{"gte": [a, b]}` | `>=` | Greater than or equal |
 | `{"lte": [a, b]}` | `<=` | Less than or equal |
 
-<a id="boolean"></a>
 ### Boolean
 
 | Operator | Alias | Description |
@@ -324,7 +304,6 @@ timestamps (chronological). Comparing values of different types returns `null`.
 | `{"or": [...]}` | `\|\|` | True if any is truthy |
 | `{"not": expr}` | `!` | Logical negation |
 
-<a id="conditional"></a>
 ### Conditional
 
 `cond` — array of `[condition, value]` pairs evaluated in order. Optional trailing default.
@@ -347,7 +326,6 @@ timestamps (chronological). Comparing values of different types returns `null`.
 
 `else_expr` is optional; defaults to `null`.
 
-<a id="null-handling"></a>
 ### Null Handling
 
 - Any operator receiving a `null` input returns `null`, except `if` and `cond` where `null`
@@ -362,7 +340,6 @@ timestamps (chronological). Comparing values of different types returns `null`.
 This section documents a design for functions, methods, and method invocation developed
 as part of Marina.
 
-<a id="functions"></a>
 ## Functions
 
 Functions are anonymous — they have no name of their own. They can live anywhere you can
@@ -387,7 +364,6 @@ Parameters are referenced inside the body via `{"param": "name"}`.
 
 `puck.uno/function` is the base type for functions.
 
-<a id="methods"></a>
 ## Methods
 
 `puck.uno/method` is a subclass of `puck.uno/function`. A method automatically receives
@@ -412,7 +388,6 @@ definition declares additional explicit params for callers to supply.
 
 Inside a method body, `{"param": "this"}` refers to the object itself. `{"param": ["this", "field"]}` navigates into a field on it.
 
-<a id="puckunocall"></a>
 ## `puck.uno/call`
 
 A method invocation is a first-class object of class `puck.uno/call`:
@@ -431,7 +406,6 @@ calling a method on `this` — the implicit receiver in the current context.
 
 All params are named. There are no positional arguments.
 
-<a id="calls-method-chains"></a>
 ### `calls` — Method Chains
 
 `calls` is an array of `puck.uno/call` objects forming a pipeline. The receiver of each
@@ -450,7 +424,6 @@ step is implicitly the result of the previous step. Only the first step requires
 
 This is equivalent to nested calls where each call's receiver is the previous result.
 
-<a id="path-expr"></a>
 ## `{"path": expr}`
 
 `{"path": "field"}` accesses a field on `this`. `{"path": ["field"]}` is equivalent.
@@ -468,7 +441,6 @@ These two forms are equivalent:
 {"method": "decimal", "params": {"start": 1, "end": 3}}
 ```
 
-<a id="return-value"></a>
 ## `{"return": value}`
 
 `{"return": value}` creates a propagating signal — a special exception type — that bubbles
@@ -479,7 +451,6 @@ This is the mechanism for early exit from a `calls` chain or nested expression.
 "rgb": {"return": [{"path": "red"}, {"path": "green"}, {"path": "blue"}]}
 ```
 
-<a id="lazy-method-dispatch"></a>
 ## Lazy Method Dispatch
 
 Method calls are evaluated lazily at runtime (duck typing). The interpreter does not
@@ -487,7 +458,6 @@ require a compile-time definition of what methods exist on what types. If the re
 the named method, it is called. If not, the result is a `puck.uno/error` that propagates
 up through the expression chain.
 
-<a id="example-puckunocolor"></a>
 ## Example: `puck.uno/color`
 
 ```json
@@ -520,13 +490,11 @@ up through the expression chain.
 
 This is the expression language for `mikobase.com/q0`, which inherits `puck.uno/query`.
 
-<a id="mikobasecomq0-operators"></a>
 ## `mikobase.com/q0` Operators
 
 These operators are specific to the Mikobase record model and reference data from the
 current record being evaluated.
 
-<a id="bucket-fields"></a>
 ### Bucket Fields
 
 `{"field": "key"}` returns the value of a top-level field in the record's `bucket`.
@@ -540,7 +508,6 @@ current record being evaluated.
 
 If the field or path does not exist, the result is `null`.
 
-<a id="record-metadata"></a>
 ### Record Metadata
 
 `{"record": "..."}` returns metadata about the current record.
@@ -553,7 +520,6 @@ If the field or path does not exist, the result is `null`.
 
 ---
 
-<a id="calculated-fields-in-class-definitions"></a>
 ## Calculated Fields in Class Definitions
 
 A calculated field is declared in a class definition using `"calculate"` instead of
@@ -618,14 +584,12 @@ calculated field defined by a parent class.
 
 ---
 
-<a id="foreign-query-fields"></a>
 ## Foreign Query Fields
 
 A foreign query field returns all active records of another class that reference this
 record. It is declared using `"foreign"` and optionally `"field"`. The explicit class name
 `"class": "mikobase.com/lookup"` may also be included.
 
-<a id="explicit-field"></a>
 ### Explicit field
 
 ```json
@@ -635,7 +599,6 @@ record. It is declared using `"foreign"` and optionally `"field"`. The explicit 
 - `foreign` — the UNS class name to query
 - `field` — the field in the foreign class whose value must match this record's pk
 
-<a id="join-inference"></a>
 ### Join inference
 
 If the foreign class has a `join` clause, `field` may be omitted. The engine inspects the
@@ -648,7 +611,6 @@ join fields and finds the one whose `allowed_class` matches the class being defi
 `field` is required if the foreign class has no `join` clause or if more than one join
 field matches (ambiguous).
 
-<a id="general-rules"></a>
 ### General rules
 
 Foreign query fields are read-only, never stored, and lazily evaluated.
@@ -657,7 +619,6 @@ Foreign query fields are read-only, never stored, and lazily evaluated.
 
 # Part 4: Q0 Advanced Features
 
-<a id="placeholders"></a>
 ## Placeholders
 
 Placeholders allow query templates to be reused with minimal changes. They are defined at
@@ -691,14 +652,12 @@ Placeholders can themselves reference other placeholders:
 }
 ```
 
-<a id="scoping-and-inheritance"></a>
 ### Scoping and Inheritance
 
 Placeholders defined in an outer query are inherited by all nested `then` blocks. An inner
 `then` block may define its own `placeholders` that shadow inherited ones with the same
 name.
 
-<a id="placeholder-validation"></a>
 ### Placeholder Validation
 
 ```python
@@ -707,7 +666,6 @@ engine.validator.run_all(query)      # equivalent
 engine.validator.placeholders(query) # placeholder checks only
 ```
 
-<a id="rules"></a>
 ### Rules
 
 - Placeholders are resolved each time they are encountered during execution, not eagerly.
@@ -719,7 +677,6 @@ engine.validator.placeholders(query) # placeholder checks only
 
 ---
 
-<a id="return-clause-in-select"></a>
 ## `return` Clause in `select`
 
 `return` is an optional dict evaluated for each record in the resultset. When present, the

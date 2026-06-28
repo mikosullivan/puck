@@ -22,7 +22,6 @@ server returns results.**
 
 ---
 
-<a id="why"></a>
 ## Why
 
 ~~~vibecode
@@ -59,7 +58,6 @@ Use cases where server-side execution beats client-side:
 
 ---
 
-<a id="relationship-to-dogberry-distinct-service"></a>
 ## Relationship to Dogberry — distinct service
 
 ~~~vibecode
@@ -87,7 +85,6 @@ Service" as a placeholder, not a final name.
 
 ---
 
-<a id="what-the-architecture-already-gives-us"></a>
 ## What the architecture already gives us
 
 - **`engine.run_source(text, env)`** (planned for V0.02/V0.03) is the
@@ -111,7 +108,6 @@ Service" as a placeholder, not a final name.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Variant or distinct service.** See [Relationship to Dogberry](#relationship-to-dogberry-distinct-service)
@@ -140,7 +136,6 @@ Service" as a placeholder, not a final name.
 
 ---
 
-<a id="playground-capability-menu"></a>
 ## Playground capability menu
 
 ~~~vibecode
@@ -156,7 +151,6 @@ the submitted scripts get to do. Each capability is a role grant per
 [roles.md](../../requirements/caspian/roles.md); the server chooses what to grant per
 endpoint (or per user, or per tier).
 
-<a id="curated-datasets-read-only-mikobases"></a>
 ### Curated datasets (read-only mikobases)
 
 The most Caspian-flavored capability. Server hosts mikobases loaded
@@ -175,7 +169,6 @@ Candidate datasets:
 
 Read-only, server-cached; cheap per request, real-feeling data.
 
-<a id="external-apis-server-holds-the-credentials"></a>
 ### External APIs (server holds the credentials)
 
 Things that need API keys the user shouldn't have to bring. Server
@@ -189,7 +182,6 @@ holds the keys; script gets a wrapped client. Rate-limited per session.
 Each unlocks "things you couldn't easily call from the browser
 without auth/CORS hassles."
 
-<a id="persistent-state-across-sessions"></a>
 ### Persistent state across sessions
 
 Requires lightweight identity (cookie or token):
@@ -201,7 +193,6 @@ Requires lightweight identity (cookie or token):
 
 This is where playground becomes *project*.
 
-<a id="inter-script-coordination"></a>
 ### Inter-script coordination
 
 Caspian-flavored uniquely because the role model + mikobase +
@@ -214,7 +205,6 @@ capability system makes safe coordination easy:
 - **Tournament / arena mode** — submit a script that plays a game;
   the server pairs it against other users' scripts.
 
-<a id="output-options"></a>
 ### Output options
 
 What the script can *produce*:
@@ -227,7 +217,6 @@ What the script can *produce*:
 - **A worldlet** — generate a worldlet as downloadable. "Run this
   script to build a custom dataset; download the result."
 
-<a id="time-and-scheduling"></a>
 ### Time and scheduling
 
 - **Sleep / timer** with sensible caps.
@@ -235,14 +224,12 @@ What the script can *produce*:
   view the accumulated log. Cron-as-a-service. Genuinely interesting
   for "alert me when X" patterns.
 
-<a id="filesystem-carefully"></a>
 ### Filesystem (carefully)
 
 - **Per-user directory jail** — small filesystem rooted at user's account;
   quota'd; survives sessions.
 - **Read-only shared assets** — fonts, sample CSVs, etc.
 
-<a id="anti-resources-deliberately-not-offered"></a>
 ### Anti-resources (deliberately NOT offered)
 
 Worth being explicit about:
@@ -255,7 +242,6 @@ Worth being explicit about:
 The role model makes "didn't grant the role" the cleanest possible
 implementation of each negative.
 
-<a id="tiering"></a>
 ### Tiering
 
 Plausible tiers a service could offer:

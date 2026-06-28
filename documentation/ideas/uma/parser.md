@@ -20,7 +20,6 @@ this parser feeds.
 
 ---
 
-<a id="scope"></a>
 ## Scope
 
 **In scope:**
@@ -52,7 +51,6 @@ a bundled library instead.
 
 ---
 
-<a id="architecture"></a>
 ## Architecture
 
 Two layers, with **all tag knowledge supplied externally** via
@@ -97,7 +95,6 @@ schema knows nothing about parsing at all (it's just data).
 
 ---
 
-<a id="tokenizer"></a>
 ## Tokenizer
 
 Single linear pass over the input string. Splits on:
@@ -140,7 +137,6 @@ for `<!--`) might be worth it if it simplifies the tree-builder.
 
 ---
 
-<a id="tree-builder"></a>
 ## Tree builder
 
 State machine over the token stream. States:
@@ -176,7 +172,6 @@ On `</tagname>`:
 On reaching EOF with a non-empty stack: **malformed input; raise
 a flag** (unclosed tags).
 
-<a id="schema-driven-behavior"></a>
 ### Schema-driven behavior
 
 **All tag knowledge comes from the schema config.** The parser
@@ -210,7 +205,6 @@ job is "read schema, follow its rules," not "know HTML."
 
 ---
 
-<a id="output-the-element-tree"></a>
 ## Output: the element tree
 
 Each element node carries:
@@ -243,7 +237,6 @@ serializer's `tidy` step strip them.
 
 ---
 
-<a id="schemas-other-than-html5"></a>
 ## Schemas other than HTML5
 
 Because all tag knowledge lives in the schema config, the same
@@ -265,7 +258,6 @@ The parser engine doesn't care. Provide a schema that lists the
 tags, their voidness, their nesting rules, their opaque-content
 flags — and the parser produces a tree following those rules.
 
-<a id="a-dsl-for-defining-schemas-open"></a>
 ### A DSL for defining schemas (open)
 
 Writing schema configs by hand in JSON is tolerable but
@@ -303,7 +295,6 @@ needs to consume schemas, regardless of how they're written.
 
 ---
 
-<a id="error-handling"></a>
 ## Error handling
 
 Malformed input raises a flag rather than attempting recovery.
@@ -325,7 +316,6 @@ case.
 
 ---
 
-<a id="performance"></a>
 ## Performance
 
 Rough budget:
@@ -345,7 +335,6 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Tokenizer implementation language.** Pure Caspian? Lua-native
@@ -371,7 +360,6 @@ for parsing megabytes of scraped wild-world HTML.
 
 ---
 
-<a id="why-a-hand-rolled-parser-is-worth-it"></a>
 ## Why a hand-rolled parser is worth it
 
 If we bundle gumbo: ~150–200k of native code, well-tested,
@@ -392,7 +380,6 @@ adapter outside core.
 
 ---
 
-<a id="next-steps"></a>
 ## Next steps
 
 - Pin the token type set.

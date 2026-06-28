@@ -21,7 +21,6 @@ This document sketches a **cooperative** alternative: the script explicitly yiel
 
 ---
 
-<a id="wait"></a>
 ## `%engine.wait` — single-shot
 
 The script blocks until the engine broadcasts one event, then resumes.
@@ -39,7 +38,6 @@ Composable — the script controls the loop, can interleave other work, can deci
 
 ---
 
-<a id="wait-loop"></a>
 ## `%engine.wait_loop` — internal loop
 
 The script blocks indefinitely, firing the closure once per event as they arrive. Doesn't return on its own — control stays inside the loop.
@@ -55,7 +53,6 @@ Convenient for "this is my main loop" patterns where the script's whole job is r
 
 ---
 
-<a id="why-cooperative"></a>
 ## Why cooperative, not preemptive
 
 Interrupt-driven engine events would break Caspian's settled invariant that single-threaded synchronous code runs predictably. A signal arriving mid-`@x = @x + 1` could split that into "load @x → INTERRUPT → store @x", and a handler running during the interrupt could observe inconsistent state.
@@ -71,7 +68,6 @@ This matches well-trodden cooperative event-handling patterns in other languages
 
 ---
 
-<a id="relationship-to-the-event-system"></a>
 ## Relationship to the existing event system
 
 Caspian's [event-broadcasting system](../../requirements/caspian/events/) already lets any object broadcast and any object listen. The engine could just BE another broadcaster — `%utils.broadcast` calls fired from inside the engine's internals.
@@ -89,7 +85,6 @@ Whether to spec these as primitive constructs or as derived sugar over the regis
 
 ---
 
-<a id="open-points"></a>
 ## Open points
 
 - **What does the engine actually broadcast?** Candidates: timer ticks (`%engine.every(5)` schedules), signals (`'sigint'`, `'sigterm'`), GC events (`'before_collect'`, `'after_collect'`), resource warnings (memory pressure, fd exhaustion), engine-state changes, async I/O readiness.

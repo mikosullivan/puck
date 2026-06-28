@@ -17,7 +17,6 @@ strategic role and probably the same infrastructure.
 
 ---
 
-<a id="the-idea"></a>
 ## The Idea
 
 Customers get a hosted [[mikobase]] instance they can read from
@@ -30,7 +29,6 @@ production workloads.
 
 ---
 
-<a id="why-a-free-tier"></a>
 ## Why a Free Tier
 
 Same logic as the [logging service](logging-service.md#strategic-note):
@@ -52,10 +50,8 @@ for the rest of the ecoverse.
 
 ---
 
-<a id="shape-sketched-not-committed"></a>
 ## Shape (sketched, not committed)
 
-<a id="free-tier"></a>
 ### Free tier
 
 - One mikobase instance per account.
@@ -64,7 +60,6 @@ for the rest of the ecoverse.
 - Browser dashboard for inspecting data.
 - Public URL (with auth) so the customer's apps can connect.
 
-<a id="paid-tiers"></a>
 ### Paid tiers
 
 - Larger storage caps.
@@ -72,7 +67,6 @@ for the rest of the ecoverse.
 - Better SLA, backups, support.
 - Eventually: replication, read replicas, multi-region.
 
-<a id="enterprise"></a>
 ### Enterprise
 
 - Dedicated infra, custom limits, compliance audits, optional
@@ -80,10 +74,8 @@ for the rest of the ecoverse.
 
 ---
 
-<a id="synergies"></a>
 ## Synergies
 
-<a id="with-the-logging-service"></a>
 ### With the logging service
 
 The [logging service](logging-service.md) already runs per-customer
@@ -92,7 +84,6 @@ products.** A customer of the logging service could plausibly get
 direct mikobase access to their log data as part of their plan —
 or sign up for both products with a single account.
 
-<a id="with-puck-adoption"></a>
 ### With Puck adoption
 
 Every Puck tutorial, demo, and example needs a place to put
@@ -100,7 +91,6 @@ data. A free mikobase service is the obvious answer:
 "`%puck['https://logs.puck.uno/mikobase'].new(account: '...')` — done."
 No setup, no infra, just a working data store.
 
-<a id="with-other-future-products"></a>
 ### With other future products
 
 Any future Puck service that needs a customer-facing database
@@ -109,7 +99,6 @@ ride on the same infrastructure.
 
 ---
 
-<a id="open-questions"></a>
 ## Open Questions
 
 - **Endpoint shape.** What's the API URL pattern? Per-customer
@@ -127,7 +116,6 @@ ride on the same infrastructure.
 
 ---
 
-<a id="out-of-scope-for-now"></a>
 ## Out of Scope for Now
 
 Future product. Not a current commitment. Real planning when

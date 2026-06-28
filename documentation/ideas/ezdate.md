@@ -28,10 +28,8 @@ That model still holds up. Most of what's worth pulling forward orbits around it
 
 ---
 
-<a id="ideas-worth-carrying-forward"></a>
 ## Ideas worth carrying forward
 
-<a id="single-point-in-time-with-rich-properties"></a>
 ### Single point in time with rich properties
 
 The object IS one instant in time. Every property of that instant is reachable
@@ -49,7 +47,6 @@ $now.weekday_short # "Sat"
 $now.day_of_year  # 144
 ~~~
 
-<a id="assignable-properties-with-auto-recalculation"></a>
 ### Assignable properties with auto-recalculation
 
 This is the killer feature. Set any property and the rest of the time-point
@@ -72,7 +69,6 @@ mutate in-place (EzDate's choice) or return a new immutable time (Miko's
 [Fiona-inspired](fiona.md) "objects immutable, relationships mutable" preference).
 Worth deciding — see [open questions](#open-questions).
 
-<a id="multiple-epoch-granularities"></a>
 ### Multiple epoch granularities for arithmetic
 
 EzDate exposed `epoch_second`, `epoch_minute`, `epoch_hour`, and `epoch_day`.
@@ -88,7 +84,6 @@ $tomorrow_at_same_time = $d.epoch_day + 1
 Cleaner than dragging in a separate `Duration` type for the simple cases.
 Combine with a real `puck.uno/duration` class for the not-simple cases.
 
-<a id="format-strings-with-embedded-properties"></a>
 ### Format strings with embedded properties
 
 EzDate let you ask for any property combination as a single brace-delimited
@@ -111,7 +106,6 @@ $d.format('%Y-%m-%d %H:%M:%S')   # "2001-04-14 09:06:26"
 Worth supporting both — `%`-codes for interop with anything that already speaks
 strftime; brace-properties for Caspian-native usage.
 
-<a id="named-custom-formats"></a>
 ### Named custom formats
 
 Define a format once, use it everywhere:
@@ -127,7 +121,6 @@ Per-class registry of formats. Default format used when the object is
 stringified. EzDate let users redefine the default per-object too — useful for
 "this report uses ISO, this email uses 'Tuesday, June 4, 2024' style."
 
-<a id="smart-range-formatting"></a>
 ### Smart range formatting
 
 EzDate's `date_range_string()` produced concise spans by dropping repeated parts:
@@ -154,7 +147,6 @@ EzDate also had `day_lumps()` for collapsing an array of individual dates
 into contiguous runs ("Jan 3-6, 10, 15-17"). Same family of utility; worth
 having.
 
-<a id="forgiving-parsing"></a>
 ### Forgiving parsing
 
 EzDate accepted almost any reasonable string a human might type:
@@ -178,7 +170,6 @@ That posture (best-effort permissive parsing, treat un-handled formats as bugs
 to fix) is worth keeping. Combined with a strict ISO mode for when callers want
 no surprises.
 
-<a id="sensible-operator-overloading"></a>
 ### Sensible operator overloading
 
 EzDate overloaded comparison and arithmetic:
@@ -196,7 +187,6 @@ this clean to implement. The default granularity for `+`, `-`, `++`, `--` was
 the global comparison/arithmetic granularity via a package variable; Caspian
 should expose this per-class or per-instance instead of globally.
 
-<a id="next-month-with-boundary-handling"></a>
 ### `next_month()` with boundary handling
 
 Months aren't all the same length, so "epoch month" doesn't exist as a clean
@@ -210,12 +200,10 @@ Likely also wants:
 - `next_weekday(name)` — next occurrence of "Tuesday" from this date
 - `previous_weekday(name)` — symmetric
 
-<a id="clone-method"></a>
 ### `clone()` method
 
 Cheaper than constructing a new object and copying every property. Standard.
 
-<a id="yesterday-tomorrow-string-shortcuts"></a>
 ### `yesterday` / `tomorrow` / `now` string shortcuts
 
 EzDate accepted `"yesterday"` and `"tomorrow"` as construction strings. Cheap
@@ -224,17 +212,14 @@ and useful. Should extend: `"now"`, `"midnight"`, `"noon"`, maybe `"next monday"
 
 ---
 
-<a id="things-to-drop-or-adapt"></a>
 ## Things to drop or adapt
 
-<a id="drop-tied-hashes"></a>
 ### Drop: Perl tied-hash mechanism
 
 EzDate used Perl's `tie` interface so that `$mydate->{'weekday long'}` would
 trigger property access. Perl-specific machinery; Caspian has direct method
 dispatch and `method_missing`. Just use them.
 
-<a id="drop-global-config-variables"></a>
 ### Drop: global config variables
 
 EzDate had `$Date::EzDate::overload`, `$Date::EzDate::default_warning`, etc.
@@ -243,14 +228,12 @@ expose these as class methods or per-instance configuration. The `overload`
 question (which property gets compared by `<` `>` etc.) can be a per-class
 default with per-instance override.
 
-<a id="drop-space-insensitive-property-names"></a>
 ### Drop: case- and space-insensitive property names
 
 EzDate accepted `weekdaylong`, `WEEKDAYLONG`, `WeekDay Long`, even `Wee Kdaylong`
 as the same property. Cute but slows lookup and produces typo-tolerance bugs.
 Pick one name (`weekday_long`, snake_case per Puck convention) and use it.
 
-<a id="adapt-zero-hour-ampm-flag"></a>
 ### Adapt: pick one behavior for partial time assignments
 
 EzDate had `zero_hour_ampm(0|1)` as a toggle: setting `"4 pm"` either zeros
@@ -259,7 +242,6 @@ behaviors that affect parsing are confusing. Pick one default; document; move
 on. Probably "zero the unspecified components" matches what users mean when
 they type `"4 pm"`.
 
-<a id="adapt-set-warnings"></a>
 ### Adapt: `set_warnings(0|1|2)` → use `%chain.warn`
 
 EzDate had a per-instance warning level: silent / stderr / stderr+exit. Caspian
@@ -269,10 +251,8 @@ own warning mechanism. For "fatal," raise. For "noisy," warn. No knob.
 
 ---
 
-<a id="things-ezdate-did-not-solve"></a>
 ## Things EzDate didn't solve (should be in V1)
 
-<a id="time-zones"></a>
 ### Time zones
 
 EzDate's TODO list called this out as a known gap. Modern apps need time-zone
@@ -289,7 +269,6 @@ This is non-trivial — Olson zone database, DST transitions, leap seconds (or
 deliberate ignoring thereof). Caspian probably leans on the host's tz database
 (via Lua's `os.date` and the OS) rather than shipping its own.
 
-<a id="date-range-bce-through-far-future"></a>
 ### Date range: BCE through far future
 
 EzDate inherited Perl's `localtime` limitations (~1902 - ~2037). 64-bit epoch
@@ -303,7 +282,6 @@ representation natively. Edge cases:
 V1 minimum: ISO 8601 dates covering at least 0000-01-01 to 9999-12-31. Beyond
 that range is a research project.
 
-<a id="time-intervals-as-first-class"></a>
 ### Time intervals as first-class
 
 **Decided — landed in [time.md § Time spans](../requirements/caspian/time.md#time-spans).**
@@ -315,7 +293,6 @@ date libraries (Java's `Duration`, Python's `timedelta`, Go's
 Class name still TBD (`puck.uno/timespan` vs `puck.uno/duration` — see
 canonical doc).
 
-<a id="mutable-vs-immutable"></a>
 ### Mutable vs immutable
 
 EzDate was mutable: setting a property changed the object in place. That made
@@ -342,13 +319,11 @@ collects them at scope exit.
 
 ---
 
-<a id="sketch-of-caspian-time-class"></a>
 ## Sketch of Caspian time class
 
 Not a spec — just a shape to argue with. Name TBD: `puck.uno/time`,
 `puck.uno/instant`, `puck.uno/datetime` are all candidates.
 
-<a id="construction"></a>
 ### Construction
 
 ~~~caspian
@@ -359,7 +334,6 @@ $d   = %['puck.uno/time'].new(epoch_second: 1748000000)
 $d   = %['puck.uno/time'].new('yesterday')
 ~~~
 
-<a id="property-access"></a>
 ### Property access
 
 ~~~caspian
@@ -384,7 +358,6 @@ $d.epoch_day        # 20240
 $d.zone             # "America/New_York"
 ~~~
 
-<a id="modification"></a>
 ### Modification (immutable)
 
 ~~~caspian
@@ -395,7 +368,6 @@ $next_month_d  = $d.next_month
 $in_utc        = $d.in_zone('UTC')
 ~~~
 
-<a id="formatting"></a>
 ### Formatting
 
 ~~~caspian
@@ -409,7 +381,6 @@ $d.iso8601                                                   # built-in: "2026-0
 $d.format('miko')
 ~~~
 
-<a id="comparison-and-arithmetic"></a>
 ### Comparison and arithmetic
 
 ~~~caspian
@@ -420,7 +391,6 @@ $d.add(days: 1)        # named-argument form, cleaner for humans
 $diff = $b - $a        # returns puck.uno/duration
 ~~~
 
-<a id="range-utilities"></a>
 ### Range utilities
 
 ~~~caspian
@@ -431,10 +401,8 @@ $start.time_range_to($end)         # "10:00-11:00am"  (time_range_string)
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
-<a id="open-name"></a>
 ### Class name
 
 `puck.uno/time`, `puck.uno/instant`, `puck.uno/datetime`, `puck.uno/moment`,
@@ -442,12 +410,10 @@ $start.time_range_to($end)         # "10:00-11:00am"  (time_range_string)
 and emphasizes "single point"; `datetime` matches Python; `moment` evokes
 Moment.js; `timestamp` matches DB conventions.
 
-<a id="open-mutable-vs-immutable"></a>
 ### Mutable or immutable
 
 Recommended: immutable. EzDate was mutable. Decide.
 
-<a id="open-weekday-and-month-numbering-base"></a>
 ### Weekday and month numbering base
 
 EzDate: weekday 0-based (Sun=0), month 0-based (Jan=0). Modern conventions
@@ -455,20 +421,17 @@ mostly use 1-based (Mon=1, Jan=1). Caspian should pick one and stick. If
 both are useful, expose both (`month_number_1based` and `month_number_0based`)
 rather than a global toggle.
 
-<a id="open-default-zone"></a>
 ### Default time zone for naive parsing
 
 `new('2026-05-23 14:30')` — no zone in the string. Defaults to UTC? Local
 host time? Throw and require explicit zone? Most safety-conscious choice is
 **throw**; most convenient is **local**. UTC is the middle ground.
 
-<a id="open-leap-seconds"></a>
 ### Leap seconds
 
 Java ignores them, Python ignores them, Go ignores them. Caspian probably
 ignores them too — but should document it explicitly.
 
-<a id="open-calendar-systems"></a>
 ### Calendar systems beyond Gregorian
 
 Julian, Hebrew, Hijri, Persian, Buddhist, etc. Most apps don't need them.
@@ -476,7 +439,6 @@ Should the time class be extensible (via a `calendar` parameter) or
 Gregorian-only with separate classes for other systems? Defer until a real
 use case appears.
 
-<a id="open-relationship-with-drinian"></a>
 ### Relationship with Drinian
 
 Time objects are small, immutable, and pure data — perfectly serializable.

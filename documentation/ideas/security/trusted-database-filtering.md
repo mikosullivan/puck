@@ -12,7 +12,6 @@
 
 Not implemented. Worth recording so future decisions can build on it.
 
-<a id="the-idea"></a>
 ## The Idea
 
 Under the role model ([roles.md](../../requirements/caspian/roles.md)), a database faucet has its
@@ -29,7 +28,6 @@ goes into a trusted database** — blocking untrusted strings (and other
 untrusted values) from being written. A trusted database remains trusted
 because nothing untrusted ever lands in it.
 
-<a id="likely-shape"></a>
 ## Likely Shape
 
 - A trusted database connection refuses writes of untrusted values by
@@ -43,7 +41,6 @@ because nothing untrusted ever lands in it.
   return untrusted values, while reads of other columns return trusted
   values. The schema would carry per-column trust policy.
 
-<a id="relationship-to-database-firewalls"></a>
 ## Relationship to Database Firewalls
 
 The existing [firewall](firewall.md) rule mechanism — already part of
@@ -66,7 +63,6 @@ yet, just placeholders):
 
 Both are forward-looking ideas; neither is designed.
 
-<a id="why-its-deferred"></a>
 ## Why It's Deferred
 
 - Doesn't yet have a concrete use case driving it. The trust model works
@@ -76,7 +72,6 @@ Both are forward-looking ideas; neither is designed.
 - The laundering vector is real but theoretical for now — no existing
   Puck component marks a database as trusted.
 
-<a id="when-to-revisit"></a>
 ## When to Revisit
 
 - The first time we want to mark a database as trusted.

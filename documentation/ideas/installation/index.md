@@ -27,7 +27,6 @@ change, not the story.
 
 ---
 
-<a id="download-budget"></a>
 ## What the installer downloads
 
 Every install story pulls the same pre-built Caspian bundle. The

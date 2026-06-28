@@ -33,7 +33,6 @@ named after the author's old high school.
 
 ---
 
-<a id="status"></a>
 ## Status
 
 Spec in development. **Robinson is not in core and not required
@@ -46,7 +45,6 @@ in places supersedes.
 
 ---
 
-<a id="architecture"></a>
 ## Architecture
 
 A Robinson server lives in a directory. That directory contains
@@ -90,7 +88,6 @@ interchangeable**; in principle you can install Sammy
 path-selector Handlers alongside Robinson directory Handlers in
 the same server. Whether that's a feature or a footgun is TBD.
 
-<a id="directory-handlers"></a>
 ### Directory handlers
 
 A directory handler is a Touchstone Handler bound to one
@@ -107,7 +104,6 @@ via `site.json` (mechanism TBD).
 with no directory handlers can't serve content; Robinson refuses
 to start such a site with a clear error message.
 
-<a id="match-patterns"></a>
 ### Match patterns
 
 A directory handler resolves the request path to a file using
@@ -151,7 +147,6 @@ the literal path is a directory), the handler then looks for an
 index file inside that directory by priority (`index.casp`,
 `index.html`, ...). Priority list TBD.
 
-<a id="the-three-built-in-trees"></a>
 ### The three built-in trees
 
 - **`pages/`** — the developer's main content. URL `/foo` looks
@@ -172,7 +167,6 @@ mechanisms aren't special cases — they're just chain order.
 
 ---
 
-<a id="quick-example"></a>
 ## Quick example
 
 ```
@@ -187,7 +181,6 @@ and starts dispatching.
 
 ---
 
-<a id="whats-in-scope"></a>
 ## What's in scope
 
 Content-as-files HTTP serving with filesystem-tree-is-routing:
@@ -209,7 +202,6 @@ Content-as-files HTTP serving with filesystem-tree-is-routing:
 
 ---
 
-<a id="serverjson"></a>
 ## `server.json`
 
 Lives at the Robinson server's root directory. Lists every site
@@ -248,7 +240,6 @@ Open:
 
 ---
 
-<a id="sitejson"></a>
 ## `site.json`
 
 Lives in each site's directory. Per-site configuration.
@@ -274,13 +265,11 @@ expectation is that most sites need almost no config.
 
 ---
 
-<a id="pages-tree"></a>
 ## Pages tree
 
 The `pages/` directory under a site is the primary content
 tree. URL paths map to files within it.
 
-<a id="page-file-contract"></a>
 ### Page file contract
 
 A `.casp` file in the tree is a page file. Its last
@@ -316,7 +305,6 @@ Non-`.casp` files (HTML, CSS, JS, images, etc.) are served
 as-is, with content type inferred from extension (via
 [Touchstone's factory map](../../requirements/caspian/network/http/server/touchstone/index.md#content-type-factory-defaults)).
 
-<a id="path-resolution"></a>
 ### Path resolution
 
 URL → file via the directory handler's jail. The site root is a
@@ -331,7 +319,6 @@ section.
 Directory traversal is not Robinson's concern — the jail refuses
 anything outside root.
 
-<a id="reserved-filename-prefix-robinson"></a>
 ### Reserved filename prefix: `robinson.*`
 
 Any request whose path contains a segment starting with
@@ -346,7 +333,6 @@ Not overridable.
 
 ---
 
-<a id="factory-tree"></a>
 ## Factory tree
 
 Built-in content shipped with Robinson, sitting at the lowest
@@ -361,7 +347,6 @@ Both are just files in the factory tree; the higher-priority
 trees (developer's `pages/`, optional `admin/`) override by
 holding files at the same paths.
 
-<a id="empty-site-welcome-page"></a>
 ### Empty-site welcome page
 
 When a site's `pages/` tree is genuinely empty, requests fall
@@ -378,7 +363,6 @@ No site root path, no version, no request path. Anything more
 is potential info leakage on a misconfigured production
 deployment.
 
-<a id="factory-messages"></a>
 ### Factory messages
 
 Robinson ships one parameterized template per content type for
@@ -415,7 +399,6 @@ debugging, never to public clients. See
 
 ---
 
-<a id="concurrency"></a>
 ## Concurrency
 
 **Robinson is single-threaded. One request at a time.** Same
@@ -441,7 +424,6 @@ strategy is sufficient.
 
 ---
 
-<a id="targetcontent-cascade"></a>
 ## Target/content cascade
 
 **Status: hazy. Design captured below, but the rules need
@@ -458,7 +440,6 @@ content) and `<content>` (content destined for a target).
 This is HTML-as-templating without inventing a separate
 template syntax — just two extra tags on top of HTML5.
 
-<a id="why"></a>
 ### Why
 
 The classic shared-layout problem: every page on a site shares
@@ -468,7 +449,6 @@ nightmare) or invents a template engine (more inventory). The
 target/content cascade gives shared layout for free, using HTML
 shapes the developer already knows.
 
-<a id="the-cascade"></a>
 ### The cascade
 
 For a request to `/blog/posts/my-post`, layers are assembled
@@ -484,7 +464,6 @@ Each layer fits into the layer above. `robinson.html` files
 are real on disk but blocked from HTTP requests by the
 [reserved-prefix rule](#reserved-filename-prefix-robinson).
 
-<a id="factory-default"></a>
 ### Factory default
 
 ```
@@ -499,7 +478,6 @@ are real on disk but blocked from HTTP requests by the
 One unnamed `<target>` in the body. Every site starts with this
 as the outermost layer.
 
-<a id="target-and-content"></a>
 ### `<target>` and `<content>`
 
 Two custom tags (additions to the HTML5 schema for sites that
@@ -520,7 +498,6 @@ opt into them):
 The next-level layer's `<content>` (with no target attribute)
 fills the unnamed target above.
 
-<a id="default-targets-and-contents-unnamed"></a>
 ### Default targets and contents (unnamed)
 
 A `<target>` with no `id` is the **default target** of its
@@ -539,7 +516,6 @@ default target.
 </content>
 ```
 
-<a id="named-targets-and-contents"></a>
 ### Named targets and contents
 
 For multi-slot layouts, name the targets and pair contents by id:
@@ -558,7 +534,6 @@ For multi-slot layouts, name the targets and pair contents by id:
 </content>
 ```
 
-<a id="page-file-response-auto-content"></a>
 ### Page file response: auto-content
 
 The page file's response is plain HTML — no `<content>` wrapping
@@ -577,7 +552,6 @@ If the page wants to fill **named** targets, it returns
 explicit `<content>` tags. The implicit auto-content only fires
 when the response has no `<content>` tags of its own.
 
-<a id="replace-for-overrides"></a>
 ### `<replace>` for overrides
 
 Sometimes a layer needs to **remove** an inherited block, not
@@ -593,7 +567,6 @@ block from the upstream layer is gone — not just empty, but
 removed from the document. Useful for "this page has no
 sidebar."
 
-<a id="requestuma"></a>
 ### `$request.uma`
 
 When a handler accesses `$request.uma`, it gets the assembled
@@ -608,7 +581,6 @@ elements, add metadata) before serialization.
 > `$request.uma` interface depend on Uma being canonical before
 > Robinson can be implemented. Listed as a Robinson prerequisite.
 
-<a id="validation-warnings-on-assembly-issues"></a>
 ### Validation: warnings on assembly issues
 
 Cascade assembly catches a few common slipups:
@@ -622,7 +594,6 @@ Cascade assembly catches a few common slipups:
 
 All warnings flow through Jasmine via the entry-heed mechanism.
 
-<a id="final-sweep"></a>
 ### Final sweep
 
 Before serialization, Robinson scans the assembled document
@@ -635,7 +606,6 @@ for any **leftover `<content>` or `<target>` tags**:
 
 No `<content>` or `<target>` tags ever leak to the rendered HTML.
 
-<a id="caching"></a>
 ### Caching
 
 Each `robinson.html` is parsed to an Uma document at first use
@@ -647,7 +617,6 @@ Per-request work is just the target/content composition — walk
 the cached layer documents, run the content resolution, emit
 the final HTML. Fast in practice for typical cascade depths.
 
-<a id="what-still-needs-work"></a>
 ### What still needs work
 
 This design is captured for refinement. Specific gaps:
@@ -673,7 +642,6 @@ This design is captured for refinement. Specific gaps:
 
 ---
 
-<a id="css-handler"></a>
 ## CSS handler
 
 ~~~vibecode
@@ -686,7 +654,6 @@ This design is captured for refinement. Specific gaps:
 
 Robinson's `.css` handler serves stylesheets verbatim by default. When a request includes the `base` query parameter, the handler rewrites every selector to be a descendant of the named class.
 
-<a id="base-query-param"></a>
 ### `?base=X`
 
 Request `https://puck.uno/jqmin.css?base=foo` and the handler reads jqmin.css, prepends `.foo ` (with a space) to every selector, and serves the result.
@@ -705,10 +672,8 @@ Scoped:
 
 Use case: drop the same stylesheet into a page that already has its own `.custom-checkbox` (or any other collision-prone class) by scoping each include under a distinct ancestor class. Two copies of the same stylesheet under different bases coexist on one page without interfering.
 
-<a id="css-transformation-rules"></a>
 ### Transformation rules
 
-<a id="css-comma-lists"></a>
 #### Comma-separated selector lists
 
 Each piece in a comma list gets prefixed independently.
@@ -723,7 +688,6 @@ becomes
 .X .foo, .X .bar { ... }
 ```
 
-<a id="css-media-queries"></a>
 #### Media queries and conditional groups
 
 The `@media` (and `@supports`, `@container`) wrapper passes through unchanged; selectors inside get prefixed:
@@ -742,29 +706,24 @@ becomes
 }
 ```
 
-<a id="css-other-at-rules"></a>
 #### Non-selector at-rules
 
 `@keyframes`, `@font-face`, `@import`, `@charset`, `@page` pass through unmodified. They don't contain selectors in the conventional sense.
 
-<a id="css-body-rooted-selectors"></a>
 #### Body-rooted selectors
 
 Selectors starting with `body`, `html`, or `:root` become inert after prefixing — `.X body.stickies` can never match because `body` isn't a descendant of anything within itself. The handler emits the rewritten rule silently; the rule simply never applies. CSS authors using body-rooted rules can choose to serve those files unscoped.
 
-<a id="css-caching"></a>
 ### Caching
 
 Each `(file, base)` pair is a distinct URL, so browser and CDN caches handle the per-base variants automatically. No internal cache needed; the handler does its rewrite per request and lets the URL key the result.
 
-<a id="css-generalization"></a>
 ### Generalization
 
 The `?base=X` feature is a property of Robinson's CSS handler, not of any specific stylesheet. Any `.css` file served through Robinson takes the query parameter — jqmin.css, peaseblossom.css, future custom stylesheets, all get the same treatment without per-file configuration.
 
 ---
 
-<a id="admin-tree"></a>
 ## Admin tree
 
 **Opt-in.** A site has no admin tree unless `site.json` declares
@@ -786,7 +745,6 @@ When enabled, Robinson adds the admin tree to the site's chain
 between `pages/` and `factory/`. URLs under `url_prefix` are
 routed to it; anything else falls through to the next handler.
 
-<a id="url-prefix"></a>
 ### URL prefix
 
 Default `/r-admin/` (configurable). The `r-` prefix is a hint
@@ -795,7 +753,6 @@ Site authors who genuinely want their own `/admin/` URLs can do
 so without colliding by choosing a different prefix here, or by
 not enabling the admin tree at all.
 
-<a id="login-logout"></a>
 ### Login / logout
 
 Minimum admin pages shipped with Robinson:
@@ -811,7 +768,6 @@ later. Site authors who want to extend the admin tree do so by
 placing files at `pages/r-admin/...` (which override Robinson's
 defaults because `pages/` has higher priority than `admin/`).
 
-<a id="admin-cookie"></a>
 ### Admin cookie
 
 Admin authentication uses a separate cookie, distinct from the
@@ -820,7 +776,6 @@ similar). The admin cookie's lifecycle (created at login,
 cleared at logout) is independent of `$transaction.session`,
 which a site may use for its own per-user state.
 
-<a id="transactionadmin"></a>
 ### `$transaction.admin`
 
 Page code checks for admin presence via `$transaction.admin`:
@@ -840,7 +795,6 @@ Surface is narrow: *admins only*, not end-user accounts, not
 OAuth, not general user authentication. End-user auth is a
 separate concern outside the framework.
 
-<a id="per-site-admin-data"></a>
 ### Per-site admin data
 
 The admin tree needs somewhere to store its data (active admin
@@ -848,7 +802,6 @@ sessions, login attempts, etc.). The storage mechanism is **TBD**
 and will be configured per-site once the broader "per-site data
 storage" question is settled.
 
-<a id="open"></a>
 ### Open
 
 - Password hash algorithm — must not be a fast hash (bcrypt,
@@ -860,14 +813,12 @@ storage" question is settled.
 
 ---
 
-<a id="error-handling"></a>
 ## Error handling
 
 Server-side error visibility is one of the worst recurring pain
 points in web development. Robinson addresses it on multiple
 fronts.
 
-<a id="page-file-syntax-errors-admin-visible"></a>
 ### Page-file syntax errors (admin-visible)
 
 When a `.casp` page file has a syntax error, the developer
@@ -888,7 +839,6 @@ Robinson knows where it tried to invoke from; the Caspian
 runtime knows where parsing failed. Joining the two is
 straightforward.
 
-<a id="why-didnt-my-route-match-admin-visible-404"></a>
 ### "Why didn't my route match?" (admin-visible 404)
 
 Filesystem-routed servers have a unique frustration: developer
@@ -909,7 +859,6 @@ filesystem-routed servers, and Robinson is the only layer that
 can answer it cleanly. Same admin gating as the other admin-only
 disclosures — never visible to public clients.
 
-<a id="startup-config-errors-fail-loud"></a>
 ### Startup config errors (fail loud)
 
 `server.json` or `site.json` problems should fail at server
@@ -927,7 +876,6 @@ The startup error message includes the file path, line/column
 where possible, and a clear "what's wrong" message. The server
 refuses to start; the operator fixes the config and retries.
 
-<a id="handler-attribution-on-runtime-exceptions"></a>
 ### Handler attribution on runtime exceptions
 
 When an exception fires during request handling, the admin
@@ -939,7 +887,6 @@ debugging a chain of handlers means guessing which one threw.
 This is a Touchstone feature, not Robinson-specific — see
 [touchstone.md § Handler attribution](../../requirements/caspian/network/http/server/touchstone/index.md#handler-attribution-on-exceptions).
 
-<a id="cleanup-errors-dont-mask-the-original"></a>
 ### Cleanup errors don't mask the original
 
 If an `ensure` block raises during cleanup, the cleanup error
@@ -950,7 +897,6 @@ this happened" annotation.
 
 Also a Touchstone feature.
 
-<a id="logger-failure-cascade"></a>
 ### Logger failure cascade
 
 If Jasmine itself fails to log (downstream service down, disk
@@ -961,7 +907,6 @@ A Jasmine feature; see [jasmine.md](../../requirements/caspian/packages/jasmine/
 
 ---
 
-<a id="what-robinson-inherits-from-touchstone"></a>
 ## What Robinson inherits from Touchstone
 
 Everything in [Touchstone](../../requirements/caspian/network/http/server/touchstone/index.md). Notably:
@@ -981,7 +926,6 @@ machinery.
 
 ---
 
-<a id="convergence-with-sammy"></a>
 ## Convergence with Sammy
 
 The architectures converge cleanly because **everything is a
@@ -1008,7 +952,6 @@ Touchstone is in charge.
 
 ---
 
-<a id="whats-out-of-scope"></a>
 ## What's out of scope
 
 If your app is mostly ad-hoc routes rather than content-as-files,
@@ -1019,7 +962,6 @@ case surfaces.
 
 ---
 
-<a id="candidates-for-v1"></a>
 ## Candidates for v1
 
 Features worth considering if they prove light, otherwise
@@ -1034,7 +976,6 @@ deferred.
 
 ---
 
-<a id="open-issues"></a>
 ## Open issues
 
 Match patterns (large):

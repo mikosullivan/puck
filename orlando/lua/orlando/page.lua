@@ -90,6 +90,258 @@ local function process_file_includes(md, md_path)
 end
 
 ------------------------------------------------------------
+-- GitHub-issue directives.
+--
+-- Two directives, both expanded at render time against the live
+-- open-issue list (filtered to issues whose title references a
+-- file under documentation/<PATH_PREFIX>/ AND whose referenced
+-- file currently exists on disk):
+--
+--   <!-- github-issues-against: PATH_PREFIX -->
+--      Renders each matching issue verbatim: H3 heading
+--      "#NUM — short title" linked to GitHub, followed by the
+--      issue body as markdown. Used by consistency.md to display
+--      tracked problems without maintaining a static snapshot.
+--
+--   <!-- github-issues-summary: PATH_PREFIX -->
+--      Renders a one-line executive summary: "All clear" when no
+--      issues match, "Issues need attention" when at least one
+--      does.
+--
+-- Same line-alone rule as the `file:` directive — only directives
+-- on their own line expand.
+------------------------------------------------------------
+
+local function file_path_from_issue_title(title)
+    -- Issue titles filed via the per-section "GitHub issue" chip
+    -- start with "File: documentation/<rest>".
+    return title and title:match("^File:%s+(documentation/%S+%.md)")
+end
+
+local function file_exists_on_disk(path)
+    local f = io.open(path, "r")
+    if not f then return false end
+    f:close()
+    return true
+end
+
+local function matching_issues(prefix)
+    -- Normalize the prefix to a "documentation/<prefix>/" needle.
+    -- Strip a leading slash and ensure a trailing slash so the
+    -- match is exact at a directory boundary (avoids "requirements"
+    -- matching "requirements-old").
+    local needle = prefix:gsub("^/+", "")
+    if needle:sub(-1) ~= "/" then needle = needle .. "/" end
+    local doc_needle = "documentation/" .. needle
+
+    local issues = issues_fetcher.fetch_all()
+    local matching = {}
+    for _, issue in ipairs(issues or {}) do
+        local fpath = file_path_from_issue_title(issue.title)
+        if fpath
+            and fpath:sub(1, #doc_needle) == doc_needle
+            and file_exists_on_disk(fpath)
+        then
+            matching[#matching + 1] = issue
+        end
+    end
+    return matching
+end
+
+local function short_title(title)
+    -- Drop the boilerplate "File: documentation/" prefix from the
+    -- per-section chip title so the rendered heading focuses on
+    -- the path+section.
+    return (title:gsub("^File:%s+documentation/", ""))
+end
+
+-- Shift ATX headings in an issue body so the shallowest body heading
+-- becomes H4 (one level below the H3 the issue itself renders as).
+-- Skips lines inside fenced code blocks so `# comment` stays intact.
+local function shift_body_headings(body)
+    if not body or body == "" then return body end
+
+    local lines = {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        lines[#lines + 1] = line
+    end
+
+    local function walk(cb)
+        local in_fence = false
+        for i, line in ipairs(lines) do
+            if line:match("^```") or line:match("^~~~") then
+                in_fence = not in_fence
+            elseif not in_fence then
+                cb(i, line)
+            end
+        end
+    end
+
+    local min_level
+    walk(function(_, line)
+        local hashes = line:match("^(#+)%s")
+        if hashes and (not min_level or #hashes < min_level) then
+            min_level = #hashes
+        end
+    end)
+
+    if not min_level then return body end
+    local delta = math.max(0, 4 - min_level)
+    if delta == 0 then return body end
+
+    walk(function(i, line)
+        local hashes = line:match("^(#+)%s")
+        if hashes then
+            local new_n = math.min(6, #hashes + delta)
+            lines[i] = string.rep("#", new_n) .. line:sub(#hashes + 1)
+        end
+    end)
+
+    return table.concat(lines, "\n")
+end
+
+-- Tiny escape for issue-title text emitted into a raw HTML heading.
+local function esc_attr_text(s)
+    return (s:gsub("&", "&amp;")
+             :gsub("<", "&lt;")
+             :gsub(">", "&gt;")
+             :gsub('"', "&quot;"))
+end
+
+-- Issue bodies frequently contain literal tag-shaped text like
+-- "<h3> should be <h4>" without code-span backticks. Lunamark would
+-- render those as real H3/H4 tags. This escape walks the markdown
+-- and substitutes &lt; and &gt; for the dangerous cases — only
+-- outside fenced code blocks and inline code spans, so legitimate
+-- `<h3>` code spans render correctly.
+local function escape_loose_html_in_md(md)
+    local out_lines = {}
+    local in_fence = false
+    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
+        local fence = line:match("^```+") or line:match("^~~~+")
+        if fence then
+            in_fence = not in_fence
+            out_lines[#out_lines + 1] = line
+        elseif in_fence then
+            out_lines[#out_lines + 1] = line
+        else
+            -- Walk char by char, toggling in_code on each backtick run.
+            local buf = {}
+            local in_code = false
+            local i = 1
+            local n = #line
+            while i <= n do
+                local c = line:sub(i, i)
+                if c == "`" then
+                    in_code = not in_code
+                    buf[#buf + 1] = c
+                    i = i + 1
+                elseif (not in_code) and c == "<"
+                    and line:sub(i + 1, i + 1):match("[/%w]")
+                then
+                    buf[#buf + 1] = "&lt;"
+                    i = i + 1
+                else
+                    buf[#buf + 1] = c
+                    i = i + 1
+                end
+            end
+            out_lines[#out_lines + 1] = table.concat(buf)
+        end
+    end
+    -- We appended "\n" before splitting; drop the empty trailing element.
+    if out_lines[#out_lines] == "" then
+        table.remove(out_lines)
+    end
+    return table.concat(out_lines, "\n")
+end
+
+local function expand_github_issues(prefix)
+    local matching = matching_issues(prefix)
+    if #matching == 0 then
+        return "*No active issues.*"
+    end
+
+    local parts = {}
+    for _, issue in ipairs(matching) do
+        -- Heading is raw HTML so it can carry data-issue-number;
+        -- inject_issue_links keys off that attribute to add a Close
+        -- chip to the standard chip group.
+        local heading_html = string.format(
+            '<h3 id="issue-%d" data-issue-number="%d">'
+            .. '<a href="%s" target="_blank" rel="noopener noreferrer">#%d</a>'
+            .. ' — %s'
+            .. '</h3>',
+            issue.number, issue.number,
+            issue.url, issue.number,
+            esc_attr_text(short_title(issue.title))
+        )
+
+        -- Render body markdown to HTML right here (not through the
+        -- page's own lunamark pass): GitHub issue bodies can contain
+        -- literal "<h3>" / "<h4>" without backticks, which lunamark
+        -- would otherwise treat as real tags; we escape those first.
+        -- Body headings are demoted so the shallowest is H4 (one
+        -- below the issue's own H3 wrapper).
+        local body_md = issue.body or ""
+        local body_html
+        if body_md == "" then
+            body_html = "<p><em>(no description)</em></p>"
+        else
+            local prepped = escape_loose_html_in_md(shift_body_headings(body_md))
+            body_html = M.render(prepped)
+        end
+
+        -- Each issue is a single raw-HTML chunk emitted into the
+        -- markdown stream. The opening <div> starts a CommonMark
+        -- Type-6 HTML block (passed through verbatim); the blank
+        -- line after each contained block (h3, body paragraphs,
+        -- closing </div>) keeps subsequent blocks recognized as
+        -- HTML rather than parsed as markdown.
+        parts[#parts + 1] = '<div class="consistency-issue">'
+        parts[#parts + 1] = ""
+        parts[#parts + 1] = heading_html
+        parts[#parts + 1] = ""
+        parts[#parts + 1] = body_html
+        parts[#parts + 1] = ""
+        parts[#parts + 1] = '</div>'
+        parts[#parts + 1] = ""
+    end
+    return table.concat(parts, "\n")
+end
+
+local function expand_github_issues_summary(prefix)
+    local matching = matching_issues(prefix)
+    if #matching == 0 then
+        return "**All clear** — no open consistency problems against files in `" .. prefix .. "`."
+    end
+    local n = #matching
+    local noun = (n == 1) and "issue" or "issues"
+    return string.format(
+        "**Attention** — %d open %s below describe consistency problems against files in `%s`.",
+        n, noun, prefix
+    )
+end
+
+local function process_github_issues_directives(md)
+    local LIST_LINE    = "^%s*<!%-%- github%-issues%-against:%s*(%S+)%s*%-%->%s*$"
+    local SUMMARY_LINE = "^%s*<!%-%- github%-issues%-summary:%s*(%S+)%s*%-%->%s*$"
+    local out = {}
+    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
+        local list_prefix    = line:match(LIST_LINE)
+        local summary_prefix = line:match(SUMMARY_LINE)
+        if list_prefix then
+            out[#out + 1] = expand_github_issues(list_prefix)
+        elseif summary_prefix then
+            out[#out + 1] = expand_github_issues_summary(summary_prefix)
+        else
+            out[#out + 1] = line
+        end
+    end
+    return table.concat(out, "\n")
+end
+
+------------------------------------------------------------
 -- Step 1: markdown -> HTML body
 ------------------------------------------------------------
 
@@ -190,16 +442,6 @@ local function slugify(text)
     return t
 end
 
--- Move any `<p><a id="X"></a></p>` that immediately precedes a heading
--- onto the heading itself as `<hN id="X">`.
-local function promote_anchors(body_html)
-    return (body_html:gsub(
-        '<p>%s*<a id="([^"]+)"></a>%s*</p>%s*<(h[2-6])>',
-        function(id, tag)
-            return "<" .. tag .. ' id="' .. id .. '">'
-        end))
-end
-
 -- Add id="..." to any heading that doesn't have one yet, deriving the
 -- id from the heading's visible text.
 local function ensure_heading_ids(body_html)
@@ -216,14 +458,54 @@ local function ensure_heading_ids(body_html)
     end))
 end
 
--- Pull out {level, text, id} for every h2/h3 in the body, in order.
-local function extract_headings(body_html)
+-- Strip the most common inline markdown from raw heading text so the
+-- slug we compute matches what ensure_heading_ids will compute from the
+-- rendered HTML. Covers `code`, **bold**, *italic*, _x_, [text](url),
+-- and trailing ATX-close hashes.
+local function md_heading_text_to_plain(text)
+    text = text:gsub("%s+#+%s*$", "")               -- ATX close: `## Title ##`
+    text = text:gsub("!%[([^%]]*)%]%([^)]*%)", "%1") -- ![alt](url) -> alt
+    text = text:gsub("%[([^%]]*)%]%([^)]*%)", "%1")  -- [text](url) -> text
+    text = text:gsub("`+([^`]*)`+", "%1")           -- inline code
+    text = text:gsub("%*+([^%*]+)%*+", "%1")        -- **bold** / *italic*
+    text = text:gsub("_+([^_]+)_+", "%1")           -- _emphasis_
+    return text
+end
+
+-- Pull h2/h3 headings out of the ORIGINAL markdown source — before any
+-- directive expansion or file-include substitution. The TOC reflects
+-- what the author wrote, not what the renderer dynamically inserted
+-- (issue cards, included sections, etc.). Skips lines inside fenced
+-- code blocks so `## not really a heading` inside an example doesn't
+-- land in the TOC.
+local function extract_headings_from_md(md)
     local out = {}
-    for tag, attrs, inner in body_html:gmatch('<(h[23])([^>]*)>(.-)</%1>') do
-        local id = attrs:match('id="([^"]+)"')
-        local text = clean_heading_text(inner)
-        if id and text ~= "" then
-            out[#out + 1] = { level = tonumber(tag:sub(2)), text = text, id = id }
+    local seen = {}
+    local in_fence = false
+    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
+        if line:match("^```") or line:match("^~~~") then
+            in_fence = not in_fence
+        elseif not in_fence then
+            local hashes, raw = line:match("^(#+)%s+(.+)$")
+            if hashes then
+                local level = #hashes
+                if level == 2 or level == 3 then
+                    local plain = md_heading_text_to_plain(raw)
+                    plain = plain:gsub("^[%d%.]+%s+", "")  -- drop "1 " / "1.2 "
+                    plain = plain:gsub("^%s+", ""):gsub("%s+$", "")
+                    if plain ~= "" then
+                        local base = slugify(plain)
+                        local id = base
+                        local n = 1
+                        while seen[id] do
+                            id = base .. "-" .. n
+                            n = n + 1
+                        end
+                        seen[id] = true
+                        out[#out + 1] = { level = level, text = plain, id = id }
+                    end
+                end
+            end
         end
     end
     return out
@@ -321,17 +603,15 @@ local function insert_auto_toc(body_html, toc_html)
     return toc_html .. body_html
 end
 
-local function transform_toc(body_html)
+local function transform_toc(body_html, toc_headings)
     body_html = strip_manual_toc(body_html)
-    body_html = promote_anchors(body_html)
     body_html = ensure_heading_ids(body_html)
 
-    local headings = extract_headings(body_html)
-    if #headings < MIN_HEADINGS_FOR_TOC then
+    if not toc_headings or #toc_headings < MIN_HEADINGS_FOR_TOC then
         return body_html
     end
 
-    local toc_html = render_toc(headings_to_tree(headings))
+    local toc_html = render_toc(headings_to_tree(toc_headings))
     return insert_auto_toc(body_html, toc_html)
 end
 
@@ -572,6 +852,10 @@ local function inject_issue_links(body_html, md_path, client_ip)
             if attrs:find('issue%-panel%-title', 1, false) then
                 return open .. inner .. close
             end
+            -- An issue heading carries data-issue-number; it gets the
+            -- standard chip group plus a Close chip for that issue.
+            local issue_num = attrs:match('data%-issue%-number="(%d+)"')
+
             local id      = attrs:match('id="([^"]+)"')
             local text    = clean_heading_text(inner)
             local slug    = id or slugify(text)
@@ -583,6 +867,11 @@ local function inject_issue_links(body_html, md_path, client_ip)
                 chips = chips
                     .. " " .. quick_add_label(qa_id)
                     .. " " .. edit_label(edit_id)
+                if issue_num then
+                    chips = chips
+                        .. ' <button type="button" class="issue-close section-issue"'
+                        .. ' data-issue-number="' .. issue_num .. '">Close</button>'
+                end
             end
 
             local tail = open .. inner .. chip_group(chips) .. close
@@ -984,7 +1273,13 @@ function M.render_request(ctx)
     local md = f:read("*a")
     f:close()
 
+    -- TOC is built from the original markdown only — directive
+    -- expansions (issue cards, file includes) do not contribute
+    -- entries. Extract before any source transform runs.
+    local toc_headings = extract_headings_from_md(md)
+
     md = process_file_includes(md, ctx.md_path)
+    md = process_github_issues_directives(md)
 
     local body = M.render(md)
     body = inject_hero_logo(body)
@@ -995,7 +1290,7 @@ function M.render_request(ctx)
     body = highlight_json_blocks(body)
     body = highlight_caspian_blocks(body)
     body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)
-    body = transform_toc(body)
+    body = transform_toc(body, toc_headings)
     body = mark_skeletor_blocks(body)
     body = inject_issue_links(body, ctx.md_path, ctx.client_ip)
 
@@ -1107,6 +1402,12 @@ function M.render_dir_listing(ctx)
     return M.render_results_page({
         title     = ctx.title or url_path,
         body_html = body:render():gsub("^<div>", ""):gsub("</div>$", ""),
+        -- Pass the dir's fs path (with trailing slash) so the sidebar
+        -- can locate "where we are" and auto-expand the ancestor chain.
+        -- nav.on_path matches on `current_md_path` starting with
+        -- `fs_dir .. "/"`; a trailing-slash dir path satisfies that for
+        -- both ancestors and the dir itself.
+        current_md_path = fs_path .. "/",
     })
 end
 
@@ -1126,7 +1427,7 @@ function M.render_results_page(ctx)
 
             layout:tag("nav", function(n)
                 n:attr("class", "sidebar")
-                add_sidebar(n, nil, ctx.query)
+                add_sidebar(n, ctx.current_md_path, ctx.query)
             end)
 
             layout:tag("main", function(m)

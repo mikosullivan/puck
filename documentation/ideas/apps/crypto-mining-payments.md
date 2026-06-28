@@ -10,14 +10,12 @@
 }}
 ~~~
 
-<a id="status"></a>
 ## Status
 
 Future consideration. Not part of early versions.
 
 ---
 
-<a id="overview"></a>
 ## Overview
 
 Caspian's sandbox, trust policy, and blockchain integration make it a natural platform
@@ -30,7 +28,6 @@ it using a standard Caspian library.
 
 ---
 
-<a id="how-it-works"></a>
 ## How It Works
 
 1. A site offers something in exchange for compute time — a service, credits, a free
@@ -45,7 +42,6 @@ it using a standard Caspian library.
 
 ---
 
-<a id="why-caspian-is-a-good-fit"></a>
 ## Why Caspian Is a Good Fit
 
 - **Sandbox** — secure, time-limited execution. Mining runs in a controlled environment
@@ -63,7 +59,6 @@ it using a standard Caspian library.
 
 ---
 
-<a id="use-cases"></a>
 ## Use Cases
 
 - **puck.uno services** — pay for signed object publishing by donating compute time
@@ -77,7 +72,6 @@ it using a standard Caspian library.
 
 ---
 
-<a id="open-questions"></a>
 ## Open Questions
 
 - **What is actually mined?** Pure proof-of-work hashing is verifiable but wasteful.
@@ -94,7 +88,6 @@ it using a standard Caspian library.
 
 ---
 
-<a id="relationship-to-trust-policy"></a>
 ## Relationship to Trust Policy
 
 Mining sessions run under the standard trust policy. A mining object must declare itself

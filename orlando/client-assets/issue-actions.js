@@ -51,10 +51,15 @@
             // (.issue-panel). Same close button class everywhere; the parent
             // wrapper differs by page.
             var selector = '.issue-close[data-issue-number="' + number + '"]';
+            var anyRemoved = false;
             document.querySelectorAll(selector).forEach(function (b) {
                 var wrapper = b.closest(".issue-item") || b.closest(".issue-panel");
-                if (wrapper) wrapper.remove();
+                if (wrapper) { wrapper.remove(); anyRemoved = true; }
             });
+            // No wrapper to remove (e.g. consistency.md renders close buttons
+            // inline among markdown — there's no enclosing card). Reload so
+            // the now-closed issue stops appearing in the dynamic listing.
+            if (!anyRemoved) { window.location.reload(); return; }
             // For each per-doc panel that's now empty, drop the panel too and
             // update counts on panels that still have items.
             document.querySelectorAll(".issues-panel").forEach(function (panel) {

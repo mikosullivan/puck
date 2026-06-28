@@ -217,6 +217,9 @@ local function handle_comment_issue(req)
 end
 
 local function handle_close_issue(req)
+    if not config.ip_can_edit(req.client_ip) then
+        return json_response("403 Forbidden", false, "edit features are restricted to allow-listed IPs")
+    end
     if req.method ~= "POST" then
         return json_response("405 Method Not Allowed", false, "POST required")
     end

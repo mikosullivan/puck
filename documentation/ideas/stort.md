@@ -14,7 +14,6 @@ placeholder to capture the idea as it develops.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 (To be filled in as the idea takes shape.)

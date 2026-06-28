@@ -24,7 +24,6 @@ story is just the variant where existing-Lua-detection comes up.
 
 ---
 
-<a id="starting-state"></a>
 ## Starting state
 
 ```bash
@@ -39,7 +38,6 @@ version we can share even if we wanted to.
 
 ---
 
-<a id="kick-off"></a>
 ## Run the installer
 
 ```bash
@@ -52,7 +50,6 @@ checks.
 
 ---
 
-<a id="the-conversation"></a>
 ## The conversation
 
 ```
@@ -106,7 +103,6 @@ Welcome aboard.
 
 ---
 
-<a id="why-coexist"></a>
 ## Why Caspian bundles its own Lua
 
 Three reasons, none of them about distrust:
@@ -129,7 +125,6 @@ Three reasons, none of them about distrust:
 
 ---
 
-<a id="files-end-up"></a>
 ## Where files end up
 
 After install, both Luas live on the system side by side:
@@ -167,7 +162,6 @@ After install, both Luas live on the system side by side:
 
 ---
 
-<a id="if-the-versions-matched"></a>
 ## What if the existing Lua *was* version 5.4?
 
 Same outcome. Caspian still uses its own bundled copy. The reason
@@ -183,7 +177,6 @@ of disk.
 
 ---
 
-<a id="uninstall"></a>
 ## Uninstall
 
 The user's pre-existing Lua is independent of Caspian, so uninstalling
@@ -198,7 +191,6 @@ user's), and `which caspian` returns nothing — clean removal.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 ~~~vibecode

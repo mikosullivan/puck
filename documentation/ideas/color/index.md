@@ -127,7 +127,6 @@ in-between cells are evenly spaced along the line.
 
 ---
 
-<a id="random"></a>
 ## Random
 
 A class-level method returns a uniformly random cell from the cube:

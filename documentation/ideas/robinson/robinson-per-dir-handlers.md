@@ -23,7 +23,6 @@ Brainstorm paused. Resume points when picking this back up:
 
 ---
 
-<a id="concept"></a>
 ## Concept
 
 ~~~vibecode
@@ -41,7 +40,6 @@ A directory in a Robinson tree may contain a file named
 along the path from the site root to the resolved page file gets a chance
 to see the request.
 
-<a id="traversal"></a>
 ### Traversal
 
 For a request to `/blog/posts/my-post`, the chain along the path is:
@@ -57,7 +55,6 @@ runs in directory order from outer to inner.
 Files at intermediate directories without a `robinson.casp` are
 simply skipped — no requirement that every directory have one.
 
-<a id="non-public-by-construction"></a>
 ### Non-public by construction
 
 `robinson.casp` matches the [reserved `robinson.*` prefix rule](index.md#reserved-filename-prefix-robinson)
@@ -66,7 +63,6 @@ disk to be loaded by Robinson, never to be served as URLs.
 
 ---
 
-<a id="file-shape"></a>
 ## File shape
 
 ~~~vibecode
@@ -106,7 +102,6 @@ defines `class ... end`). One spec fix covers both.
 
 ---
 
-<a id="the-two-trip-pattern"></a>
 ## The two-trip pattern
 
 ~~~vibecode
@@ -140,7 +135,6 @@ across page files and dir handlers.
 
 ---
 
-<a id="framework-organization"></a>
 ## Framework organization
 
 ~~~vibecode
@@ -154,7 +148,6 @@ across page files and dir handlers.
 }}
 ~~~
 
-<a id="surface-syntax-next-callable-vs-yield"></a>
 ### Surface syntax: `$next` callable vs `yield`
 
 The Ruby version was painful because `yield` is opaque — the framework
@@ -191,7 +184,6 @@ of problems that made the Ruby version awful. **Not locked** — the
 original example earlier in this doc uses `yield $transaction`; both
 shapes are still on the table.
 
-<a id="framework-code-recursive-single-handler-step"></a>
 ### Framework code: recursive single-handler step
 
 One function, three method-presence checks, one recursive call:
@@ -234,7 +226,6 @@ to detect — the chain just stops where it stops.
 
 ---
 
-<a id="composition-across-handlers"></a>
 ## Composition across handlers
 
 ~~~vibecode
@@ -292,7 +283,6 @@ The shape:
 
 ---
 
-<a id="pass_through-the-wrapping-primitive"></a>
 ## `pass_through` — the wrapping primitive
 
 ~~~vibecode
@@ -336,7 +326,6 @@ This is the same shape as:
 - Lisp's `unwind-protect`
 - Express middleware's `(req, res, next) => { setup; next(); teardown; }`
 
-<a id="why-this-is-more-powerful-than-process_request-process_response"></a>
 ### Why this is more powerful than process_request + process_response
 
 | Concern | Two-method version | `pass_through` |
@@ -346,7 +335,6 @@ This is the same shape as:
 | `ensure` semantics | Need explicit error handling in `process_response` | Teardown after `yield` runs naturally via `ensure` |
 | Reads like the lifecycle | No | Yes |
 
-<a id="open-questions"></a>
 ### Open questions
 
 - ~~**Coexistence with `process_request` / `process_response`.**~~
@@ -372,7 +360,6 @@ This is the same shape as:
 
 ---
 
-<a id="open-questions-tracked-as-the-brainstorm-continues"></a>
 ## Open questions (tracked as the brainstorm continues)
 
 - **What does each `robinson.casp` return / do?** Inspect-only,

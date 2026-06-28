@@ -29,7 +29,6 @@ common kick-off.
 
 ---
 
-<a id="kick-off"></a>
 ## Run the installer
 
 ```bash
@@ -54,7 +53,6 @@ Caspian talking to the user.
 
 ---
 
-<a id="the-conversation-begins"></a>
 ## The conversation begins
 
 ```
@@ -70,7 +68,6 @@ Two branches follow.
 
 ---
 
-<a id="branch-a-per-user"></a>
 ## Branch A — Per-user install (the default)
 
 The user presses enter, accepting `[u]`. The conversation continues:
@@ -104,7 +101,6 @@ No `sudo` needed, nothing outside the user's home touched. The whole
 install lives at `~/caspian/` — a visible, user-owned directory the
 user can `ls` and explore.
 
-<a id="branch-a-files"></a>
 ### Where files end up (per-user)
 
 ```
@@ -149,7 +145,6 @@ from `~/.bashrc`.
 
 ---
 
-<a id="branch-b-system-wide"></a>
 ## Branch B — System-wide install
 
 The user types `s` at the first prompt. The conversation continues:
@@ -197,7 +192,6 @@ parameters, places the files, then drops privilege.
 The launcher at `/usr/local/bin/caspian` is on every user's PATH
 already, so no shell rc edits are needed.
 
-<a id="branch-b-files"></a>
 ### Where files end up (system-wide)
 
 ```
@@ -231,7 +225,6 @@ sudo rm -rf /usr/local/lib/caspian /usr/local/bin/caspian
 
 ---
 
-<a id="pick-up-the-new-path"></a>
 ## Pick up the new PATH (per-user only)
 
 For Branch A (per-user), one more step:
@@ -249,7 +242,6 @@ available immediately.
 
 ---
 
-<a id="hello-world"></a>
 ## Hello world
 
 Identical in both branches:
@@ -262,7 +254,6 @@ hello, world
 
 ---
 
-<a id="under-the-hood"></a>
 ## Under the hood
 
 The installer is a Caspian program (~100 lines). It uses:
@@ -301,7 +292,6 @@ tree can be moved as a unit without re-linking anything.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 ~~~vibecode

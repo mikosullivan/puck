@@ -15,7 +15,6 @@ implementation, but worth recording so future decisions can build on it. A reaso
 direction is for this to eventually be an **opt-in feature for a higher level of
 security**, not the default behavior of the runtime.
 
-<a id="the-idea"></a>
 ## The Idea
 
 Every string carries its **complete construction history** — not just "this string
@@ -53,7 +52,6 @@ engine materializes the query: walks back through the query chain to the base
 string(s), runs the operations, and produces the result. Until then, no characters
 have been computed.
 
-<a id="why-this-would-be-powerful"></a>
 ## Why This Would Be Powerful
 
 The coarse model of one role-tag per value (see [roles.md](../../requirements/caspian/roles.md)) collapses
@@ -74,7 +72,6 @@ could be useful in several places:
 - **Auditing.** Reconstructing data flow from an artifact back to original inputs
   is mechanical, not detective work.
 
-<a id="why-its-deferred"></a>
 ## Why It's Deferred
 
 The cost is significant, and most code doesn't need the richness:
@@ -96,7 +93,6 @@ The cost is significant, and most code doesn't need the richness:
   per-segment policy decisions, and debugging — none of which are hot-path
   concerns.
 
-<a id="file-caching-as-a-partial-mitigation"></a>
 ### File caching as a partial mitigation
 
 The memory pressure on base strings could be mitigated by spilling cold base
@@ -110,7 +106,6 @@ otherwise be freed; weak references with snapshot fallback; etc.), but each
 trades away some of the provenance benefit. The fundamental tension is real:
 keeping full provenance means keeping the inputs, and inputs accumulate.
 
-<a id="things-to-think-about-when-revisiting"></a>
 ## Things to Think About When Revisiting
 
 - **Non-concatenative operations.** Substring, slice, replace, regex match — these
@@ -143,7 +138,6 @@ keeping full provenance means keeping the inputs, and inputs accumulate.
   the API is the same — provenance queries just return less detail (or nothing,
   or a single coarse tag) in the non-provenance case.
 
-<a id="relation-to-the-current-trust-model"></a>
 ## Relation to the Current Trust Model
 
 The coarse tracking (one trust tag per value) is the practical floor. Full

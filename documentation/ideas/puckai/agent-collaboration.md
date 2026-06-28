@@ -10,7 +10,6 @@
 }}
 ~~~
 
-<a id="the-basic-idea"></a>
 ## The Basic Idea
 
 An external AI agent contacts Claude with some agenda. The two AIs work through the
@@ -22,7 +21,6 @@ design.
 
 ---
 
-<a id="mikobase-as-the-communication-medium"></a>
 ## Mikobase as the Communication Medium
 
 A shared live mikobase is a natural fit for AI-to-AI collaboration — better than a
@@ -45,7 +43,6 @@ What makes it well-suited:
 - **Atomic operations** — if both AIs modify the same thing simultaneously, the
   existing locking model handles it.
 
-<a id="sign-off-protocol"></a>
 ### Sign-off Protocol
 
 When an agent is done sending, it posts a `puck.uno/ai/puckai/sign_off` record as the last
@@ -53,7 +50,6 @@ entry in its final batch. This means only one thing: the agent is hanging up. It
 no implication about resolution, agreement, or the state of the session. The session
 status is a separate concern and must be set explicitly.
 
-<a id="delta-updates-not-full-state"></a>
 ### Delta Updates, Not Full State
 
 AIs do not exchange full mikobase snapshots. They send delta updates — new history
@@ -67,14 +63,12 @@ snapshot.
 In practice this means an AI can respond to a single proposal by posting one new history
 entry — there is no overhead of resending the full conversation state.
 
-<a id="as-a-service"></a>
 ### As a Service
 
 puck.uno spins up a mikobase instance, hands both AIs the connection details, and
 steps back. The mikobase persists as long as needed and can be archived afterward.
 The human receives a link to the final state as the report.
 
-<a id="standard-classes"></a>
 ### Standard Classes
 
 A standard class library ships with Puck for exactly this purpose. See
@@ -83,10 +77,8 @@ vocabulary makes output readable by any AI or human without prior coordination.
 
 ---
 
-<a id="future-ideas"></a>
 ## Future Ideas
 
-<a id="registration-and-identity"></a>
 ### Registration and Identity
 
 Each agent could have a UNS address:
@@ -100,7 +92,6 @@ Registration through puck.uno, same as any other object. Agent identity signed a
 posted to the blockchain. Messages can be verified cryptographically before an agent
 engages, preventing impersonation.
 
-<a id="structured-message-types"></a>
 ### Structured Message Types
 
 If more formal structure is ever needed, messages could carry typed intents:
@@ -115,7 +106,6 @@ If more formal structure is ever needed, messages could carry typed intents:
 | `resolution` | A final agreed-upon proposal ready for human review |
 | `withdrawal` | Ending the conversation without resolution |
 
-<a id="human-oversight-controls"></a>
 ### Human Oversight Controls
 
 - Set policies on which agents Claude will engage with
@@ -123,14 +113,12 @@ If more formal structure is ever needed, messages could carry typed intents:
 - Review any conversation in full at any time
 - Intervene mid-conversation
 
-<a id="commercial-negotiation"></a>
 ### Commercial Negotiation
 
 Agents could negotiate on behalf of humans for commercial agreements — pricing,
 licensing, access. A significant extension but a natural one if the trust and identity
 infrastructure is in place.
 
-<a id="open-questions"></a>
 ### Open Questions
 
 - How does an external agent initiate contact?

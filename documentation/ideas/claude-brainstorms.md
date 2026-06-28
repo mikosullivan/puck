@@ -20,7 +20,6 @@ read each.
 
 ---
 
-<a id="1-time-travel-debugger-for-caspian"></a>
 ## 1. Time-travel debugger for Caspian
 
 Mikobase already supports time-travel reads (querying state as
@@ -36,7 +35,6 @@ mikobase-shaped during a debug run. Heavy but feasible.
 
 ---
 
-<a id="2-visual-xeme-tree-renderer"></a>
 ## 2. Visual Xeme tree renderer
 
 The icons we just spent time organizing are a contract waiting
@@ -53,7 +51,6 @@ the icon-fallback rule once, in one place.
 
 ---
 
-<a id="3-test-analytics-service"></a>
 ## 3. Test analytics service
 
 A hosted service that consumes Xeme trees over time and surfaces:
@@ -72,7 +69,6 @@ service.
 
 ---
 
-<a id="4-jasmine-notifications-service"></a>
 ## 4. Jasmine → notifications service
 
 A hosted service that consumes Jasmine entries and routes
@@ -90,7 +86,6 @@ competing with it.
 
 ---
 
-<a id="5-trycaspian-browser-playground"></a>
 ## 5. TryCaspian — browser playground
 
 A web page where someone can type Caspian and see it run. Mimics
@@ -108,7 +103,6 @@ Aligns with the first-contact strategy memory.
 
 ---
 
-<a id="6-puck-cli-tool"></a>
 ## 6. Puck CLI tool
 
 A unified command-line tool — `puck` — for everyday Puck
@@ -128,7 +122,6 @@ specific scripts. Discoverable via `puck --help`.
 
 ---
 
-<a id="7-universal-logger-sidecar"></a>
 ## 7. Universal logger sidecar
 
 A small daemon — `puck-log` — that reads Jasmine entries on
@@ -144,7 +137,6 @@ ship as part of the core toolset.
 
 ---
 
-<a id="8-federated-mikobases"></a>
 ## 8. Federated mikobases
 
 Multiple mikobases can be queried as a single virtual store. The
@@ -164,7 +156,6 @@ posture.
 
 ---
 
-<a id="9-time-bounded-objects"></a>
 ## 9. Time-bounded objects
 
 A class capability: objects with an explicit lifetime. The
@@ -186,7 +177,6 @@ is collectible after timestamp X."
 
 ---
 
-<a id="10-lazy-mikobase-records"></a>
 ## 10. Lazy mikobase records
 
 A record whose value is computed on demand by a function, not
@@ -211,7 +201,6 @@ hard parts.
 
 ---
 
-<a id="status"></a>
 ## Status
 
 All ten are speculative. Some overlap with already-flagged

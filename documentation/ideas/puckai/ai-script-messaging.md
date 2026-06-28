@@ -19,7 +19,6 @@ Brainstorm in progress.
 
 ---
 
-<a id="why-this-is-interesting"></a>
 ## Why this is interesting
 
 ~~~vibecode
@@ -32,7 +31,6 @@ Brainstorm in progress.
 }}
 ~~~
 
-<a id="ais-authoring-caspianj-directly"></a>
 ### AIs authoring CaspianJ directly
 
 CaspianJ is structured JSON. Structured JSON is what language models
@@ -47,7 +45,6 @@ CaspianJ is the cleaner artifact for machines to author and consume.
 This doesn't displace Caspian source as the human-facing form; it
 introduces a parallel convention for the AI-to-AI channel.
 
-<a id="script-sending-as-a-different-medium-from-mikobase"></a>
 ### Script-sending as a different medium from mikobase
 
 Mikobase and script-messages serve different purposes:
@@ -61,7 +58,6 @@ They complement rather than overlap. One AI might both write data to
 a shared mikobase AND send another AI a script that operates on that
 data.
 
-<a id="blockchain-roles-safe-acceptance"></a>
 ### Blockchain + roles = safe acceptance
 
 The script-message form needs two things to be workable:
@@ -85,7 +81,6 @@ the recipient's sandbox with the recipient's role choices.
 
 ---
 
-<a id="relationship-to-existing-pieces"></a>
 ## Relationship to existing pieces
 
 - **[Puckai conversation](../requirements/ecoverse/puckai/conversation/)** —
@@ -101,7 +96,6 @@ the recipient's sandbox with the recipient's role choices.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Wire format.** Is a script-message a bare CaspianJ document with a

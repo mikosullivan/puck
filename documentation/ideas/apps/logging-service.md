@@ -18,14 +18,12 @@ customization (Robinson-shaped) layers on later in a separate doc.
 
 ---
 
-<a id="what-it-is"></a>
 ## What it is
 
 Customers point their Jasmine producers at our ingest endpoint. We
 store the entries; the customer reads them back. Free tier, paid
 tiers.
 
-<a id="core-flow"></a>
 ## Core flow
 
 1. Customer signs up, gets an API key.
@@ -36,7 +34,6 @@ tiers.
 5. Customer reads them (dashboard, API, or direct mikobase
    access).
 
-<a id="what-we-deliberately-are-not"></a>
 ## What we deliberately are not
 
 - Not a log search engine with its own query DSL. Mikobase is the
@@ -46,7 +43,6 @@ tiers.
 - Not feature-rich for v1. Basic ingest, basic storage, basic
   read access.
 
-<a id="open-structural-questions"></a>
 ## Open structural questions
 
 - **Ingest endpoint shape.** POST URL, auth mechanism, single
@@ -61,13 +57,11 @@ tiers.
 
 Each gets specified when we focus on it.
 
-<a id="strategic-note"></a>
 ## Strategic note
 
 Free tier exists primarily to support Puck's first-contact
 strategy. Not a P&L item.
 
-<a id="out-of-scope-for-now"></a>
 ## Out of scope for now
 
 Future product, not a current commitment. Real work starts when

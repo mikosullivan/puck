@@ -22,7 +22,6 @@ The LSP is written in Caspian itself (dogfooding pattern, same as `install.casp`
 
 ---
 
-<a id="prerequisites"></a>
 ## Prerequisites
 
 The LSP build doesn't start until the Caspian engine is at the right slice. From [the Caspian engine plan](https://puck.uno/documentation/requirements/development/v1/caspian/):
@@ -39,7 +38,6 @@ The LSP build doesn't start until the Caspian engine is at the right slice. From
 
 ---
 
-<a id="phase-progression"></a>
 ## Phase progression
 
 Phases are ordered by what they unlock. Each phase ends with the LSP running against a real editor (VSCode is the development driver) and providing the feature end-to-end. No phase ships in isolation; the LSP is one program that grows feature by feature.
@@ -57,7 +55,6 @@ Once Phase 5 is done, the LSP's V1 surface (per [lsp.md § What ships in V1](htt
 
 ---
 
-<a id="testing"></a>
 ## Testing
 
 Two tiers, same as the Caspian engine plan:
@@ -71,7 +68,6 @@ Two tiers, same as the Caspian engine plan:
 
 ---
 
-<a id="scope-notes"></a>
 ## Scope notes
 
 **The V1 LSP intentionally stays small.** Anything in [lsp.md § Future options](https://puck.uno/documentation/ideas/lsp#future-options) is post-V1 — including cross-file analysis, find-references, rename, workspace symbol search, signature help, code actions, inlay hints, semantic tokens. Don't expand scope without explicit unlock.
@@ -82,7 +78,6 @@ Two tiers, same as the Caspian engine plan:
 
 ---
 
-<a id="dependencies"></a>
 ## Dependencies
 
 The LSP is pure Caspian source — no new C extensions, no new Lua libraries beyond what Caspian itself ships. The LSP runs on the same Lua + LPeg + libsodium-minimal foundation as everything else in the Caspian bundle. See [lua-dependencies.md](https://puck.uno/documentation/requirements/development/v1/details/lua-dependencies) for the complete dependency list.

@@ -9,7 +9,6 @@
 }}
 ~~~
 
-<a id="outbound-post-queue"></a>
 ## Outbound POST Queue
 
 When an app writes to a remote mikobase over HTTP, it should treat outbound worldlet deltas

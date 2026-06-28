@@ -208,7 +208,6 @@ A message either survives a broker restart (persistent) or doesn't (ephemeral). 
 
 Persistent doesn't mean "saved forever" — it means "survives the broker restart." Messages still age out per retention policy.
 
-<a id="handling-client-crashes"></a>
 #### Handling client crashes
 
 A persistent broker can survive its own restart, but most production failures are actually client failures: a producer dies mid-publish, a consumer dies mid-processing. Persistence is most of the answer, but the rest depends on protocol semantics.

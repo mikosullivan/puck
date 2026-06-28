@@ -27,7 +27,6 @@ DNS resolution methods on `%net`. Forward lookup (`%net.resolve`) and reverse lo
 
 ---
 
-<a id="surface"></a>
 ## API
 
 ```
@@ -43,7 +42,6 @@ $name = %net.reverse_resolve('1.2.3.4')   # PTR record or null
 
 ---
 
-<a id="permission-interaction"></a>
 ## Permission interaction
 
 DNS resolution is itself a network operation but it's special — many use cases (logging, diagnostics, `--allow-net` allowlist checking itself) need DNS even when the script has no other network access.
@@ -54,7 +52,6 @@ DNS resolution is itself a network operation but it's special — many use cases
 
 ---
 
-<a id="exceptions"></a>
 ## Exceptions
 
 | Class | When |

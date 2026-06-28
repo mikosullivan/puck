@@ -14,7 +14,6 @@ Speculative — filed for future consideration. The canonical form
 is `$hash.delete($key)`; this idea is about whether a shorter
 syntax would carry its weight.
 
-<a id="candidates"></a>
 ## Candidates
 
 - **`$hash -= $foo`** — assignment-style. Scales to arrays
@@ -33,14 +32,12 @@ syntax would carry its weight.
   but a direct `$hash[$foo].delete` would need `[]` to return
   an Element rather than a value.
 
-<a id="recommendation-not-committed"></a>
 ## Recommendation (not committed)
 
 `$hash -= $foo` is the cleanest; the batch form falls out for
 free and the syntax has set-theory roots that scale to other
 collection types if wanted.
 
-<a id="status"></a>
 ## Status
 
 Not in v1. The standard `$hash.delete($key)` covers the use case;

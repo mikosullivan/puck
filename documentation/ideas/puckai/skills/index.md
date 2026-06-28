@@ -23,7 +23,6 @@ This is an idea note — the placement and shape below are a proposal, not yet p
 
 ---
 
-<a id="defining-skills"></a>
 ## Defining skills (top-level vibecode)
 
 The `skills` hash lives in the worldlet's top-level vibecode, alongside `instructions` and `agent_guidance`:
@@ -50,7 +49,6 @@ Both forms can coexist in the same `skills` hash.
 
 ---
 
-<a id="skill-content-shape"></a>
 ## Skill content shape
 
 A skill — whether served at a URL or embedded inline — is a vibecode document: structured outer fields with prose inner values. The outer structure gives the LLM clear attention anchors; the prose inside each field carries the nuance.
@@ -73,7 +71,6 @@ Skill documents published standalone at URLs follow the bare-hash pattern (no `v
 
 ---
 
-<a id="examples"></a>
 ## Examples
 
 ### One inline skill, applied session-wide
@@ -200,7 +197,6 @@ Published skills referenced by URL alongside ad-hoc skills defined inline.
 
 ---
 
-<a id="referencing-skills"></a>
 ## Referencing skills from issues
 
 An issue's vibecode can include a `skills` array — a list of skill ids referring to entries in the top-level `skills` hash:
@@ -229,7 +225,6 @@ Referencing a skill id that doesn't exist in the top-level `skills` hash is malf
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Skill conflicts when `when_to_use` overlaps.** If two applied skills both match the same issue, what happens? Both fire? First-match-wins? Need a rule.
@@ -240,7 +235,6 @@ Referencing a skill id that doesn't exist in the top-level `skills` hash is malf
 
 ---
 
-<a id="see-also"></a>
 ## See also
 
 - [Puckai spec](https://puck.uno/documentation/requirements/ecoverse/puckai/) — the worldlet format skills attach to.

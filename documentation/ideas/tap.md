@@ -27,7 +27,6 @@ The main method namespace stays clean, and chain ergonomics are
 preserved. Cost: one extra `.object.` in the syntax compared to
 Ruby's bare `.tap`.
 
-<a id="use-case"></a>
 ## Use case
 
 Brief use of a value without breaking a chain or assigning to
@@ -42,7 +41,6 @@ end.do_more
 Returns the value `do_something` produced; the `log` call is a
 side-effect inserted into the chain.
 
-<a id="placement"></a>
 ## Placement: `.object.tap`
 
 Two readings were considered:
@@ -61,7 +59,6 @@ the underlying value**, not the helper. Chains survive.
 So the placement is `.object.tap`. Main namespace stays clean, chain
 ergonomics preserved, cost is one extra `.object.` in the syntax.
 
-<a id="block-receives"></a>
 ## What the block receives
 
 The block receives the **underlying value** — the same value the chain
@@ -76,7 +73,6 @@ end
 Not the `.object` helper. The helper exists to host the `tap` method;
 inside the block, you want the actual value.
 
-<a id="status"></a>
 ## Status
 
 Not in V1 core. Placement and block semantics settled 2026-05-27.

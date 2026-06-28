@@ -30,7 +30,6 @@ This page documents:
 
 ---
 
-<a id="v1-pattern"></a>
 ## V1 pattern: engine-internal bindings via `%engine`
 
 ~~~vibecode
@@ -55,7 +54,6 @@ At engine bootstrap:
 For V1, "each stdlib module" is one of: `sodium`, `lpeg`, `json`. The
 loader walks a fixed list at startup. Nothing dynamic.
 
-<a id="libsodium-walkthrough"></a>
 ### Worked example: libsodium
 
 The libsodium binding lives at `lib/lua/caspian/stdlib/sodium.lua`:
@@ -161,7 +159,6 @@ itself; see [engine/](../requirements/caspian/engine/). Its
 children are normal objects. Capability is enforced at each method
 call by the role transition, not by the namespace.
 
-<a id="lpeg-and-json"></a>
 ### LPeg and JSON
 
 Same pattern. Two more modules under `lib/lua/caspian/stdlib/`:
@@ -178,7 +175,6 @@ goes through one of them.
 
 ---
 
-<a id="the-pattern"></a>
 ## The pattern (V1 committed)
 
 The same shape applies to every binding the engine loads. These are
@@ -186,7 +182,6 @@ the V1 commitments — they shape how `sodium.lua`, `lpeg.lua`, and
 `json.lua` are written, and they're what any future extensibility
 work has to fit into.
 
-<a id="engine-namespace"></a>
 ### `%engine` namespace
 
 Engine-loaded bindings expose themselves under `%engine.<name>`. The
@@ -201,7 +196,6 @@ children (`%engine.sodium` etc.) are normal objects; capability is
 enforced at each method call by the role transition, not by the
 namespace structure.
 
-<a id="role-assignment"></a>
 ### Role assignment
 
 Every binding module declares its `owning_role` in its module
@@ -214,7 +208,6 @@ Naming convention: the binding role is named after the binding (`sodium`,
 `lpeg`, `json`). They're distinguished from user roles by being
 registered roles, not user-defined.
 
-<a id="marshaling-rules"></a>
 ### Marshaling
 
 The `caspian.binding.marshal` module provides the conversion helpers
@@ -245,7 +238,6 @@ binding uses to index into a Lua-side table holding the actual
 userdata. Lua functions never cross at all — bindings expose specific
 methods, not callable Lua values.
 
-<a id="error-mapping"></a>
 ### Error mapping
 
 Every Lua-library call is wrapped in `pcall`. On error, the binding
@@ -255,7 +247,6 @@ binding declares its exception class in its module header.
 Raw Lua errors must never escape into Caspian. If a binding lets one
 through, that's a binding bug.
 
-<a id="lifetime-on-close"></a>
 ### Lifetime / `on_close`
 
 For bindings that wrap Lua userdata (handles), the Caspian wrapper
@@ -277,7 +268,6 @@ microseconds; not a real constraint.
 libsodium specifically has nothing to release (it's all pure
 bytes-in/bytes-out), so `puck.uno/engine/sodium` has no `on_close`.
 
-<a id="capability-enforcement"></a>
 ### Capability enforcement
 
 Bindings that touch external resources (filesystem, network, env vars,
@@ -303,7 +293,6 @@ no I/O. A future `fs` binding would.
 
 ---
 
-<a id="speculative-extensibility"></a>
 ## Speculative: third-party / user-installable bindings (NOT V1)
 
 ~~~vibecode
@@ -317,7 +306,6 @@ here so the V1 pattern (the `%engine.<name>` registration, the
 binding-module shape, the marshaling layer) is designed in a way that
 extensibility can be added later without restructuring the engine.
 
-<a id="binding-package-shape"></a>
 ### A binding as a package
 
 A third-party binding would be a Caspian package with two files:
@@ -372,7 +360,6 @@ end
 return M
 ```
 
-<a id="per-program-declarations"></a>
 ### Per-program dependency declarations
 
 Programs that need a non-core binding declare it in their vibecode:
@@ -398,7 +385,6 @@ If a binding can't be resolved, the engine refuses to start the
 program with a clear "missing binding" error. Not "runtime error 50
 lines in" — load-time refusal.
 
-<a id="resolution"></a>
 ### Distribution and resolution
 
 How non-core bindings reach the user's machine:
@@ -413,7 +399,6 @@ How non-core bindings reach the user's machine:
 
 All speculative. V1 ships only the engine-internal three.
 
-<a id="what-v1-locks-in"></a>
 ### What V1 locks in (so V2+ extension is additive)
 
 For extensibility to be "just a new loader, not a rewrite," V1 needs
@@ -441,7 +426,6 @@ the table.
 
 ---
 
-<a id="next-steps"></a>
 ## Next steps for V1
 
 1. **Pin the marshaling module shape** — function naming, signatures,

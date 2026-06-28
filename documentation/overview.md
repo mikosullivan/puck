@@ -1,6 +1,5 @@
 # Project Overview
 
-<a id="introduction"></a>
 ## Introduction
 
 ~~~vibecode
@@ -27,7 +26,6 @@ report implementation status.
 
 ---
 
-<a id="design-principles"></a>
 ## Design principles
 
 ~~~vibecode
@@ -39,7 +37,6 @@ report implementation status.
 }}
 ~~~
 
-<a id="no-nanny-code"></a>
 ### No nanny code
 
 Puck provides safe defaults but there are ways to override those
@@ -56,7 +53,6 @@ without giving them a way through, that's nanny code.
 
 ---
 
-<a id="puck"></a>
 ## Puck
 
 ~~~vibecode
@@ -75,7 +71,6 @@ objects regardless of where they physically live.
 
 See [puck.md](puck/index.md) for the full protocol spec.
 
-<a id="features"></a>
 ### Features
 
 - **UNS (Universal Namespace).** Every class and well-known object has
@@ -109,7 +104,6 @@ See [puck.md](puck/index.md) for the full protocol spec.
 
 ---
 
-<a id="caspian"></a>
 ## Caspian
 
 ~~~vibecode
@@ -130,7 +124,6 @@ else without external runtime dependencies beyond the engine itself.
 
 See [caspian.md](caspian/index.md) for the language reference.
 
-<a id="features-1"></a>
 ### Features
 
 - **Built for running untrusted code.** Functions only have
@@ -165,7 +158,6 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
 
 ---
 
-<a id="mikobase"></a>
 ## Mikobase
 
 ~~~vibecode
@@ -186,7 +178,6 @@ portable snapshots) are first-class.
 
 See [mikobase.md](mikobase/index.md) for the full spec.
 
-<a id="features-2"></a>
 ### Features
 
 - **Q0 JSON-based query language.** Every query is a JSON object:
@@ -217,7 +208,6 @@ See [mikobase.md](mikobase/index.md) for the full spec.
 
 ---
 
-<a id="implementation-status"></a>
 ## Implementation status
 
 ~~~vibecode

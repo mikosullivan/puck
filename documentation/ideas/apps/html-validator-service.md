@@ -16,7 +16,6 @@
 > tidying. Worth deciding whether this remains a separate service or folds into
 > Markie before either is built.
 
-<a id="purpose"></a>
 ## Purpose
 
 A Puck.uno-hosted service that validates and tidies HTML
@@ -30,7 +29,6 @@ documents. Two related operations:
   cleaned-up version that's well-formed and structurally
   valid. The HTML version of "format my code, please."
 
-<a id="where-it-fits"></a>
 ## Where it fits
 
 - **Uma** (especially the `puck.uno/uma/html5` subclass) is
@@ -44,7 +42,6 @@ documents. Two related operations:
   large documents, for CI pipelines that gate on validation,
   and for cleaning up ingested HTML from untrusted sources.
 
-<a id="why-a-service-rather-than-embedded"></a>
 ## Why a service rather than embedded
 
 - A full HTML5 validator is large (hundreds of K) and
@@ -55,7 +52,6 @@ documents. Two related operations:
 - Centralizes spec-version tracking — clients automatically
   get the current standard without per-app updates.
 
-<a id="possible-api-shape-sketch"></a>
 ## Possible API shape (sketch)
 
 ```
@@ -67,7 +63,6 @@ $result.tidied           # cleaned-up version (optional, configurable)
 
 Or as a Sammy-style HTTP endpoint with a JSON request/response.
 
-<a id="open"></a>
 ## Open
 
 - Hosting and access model — free tier, paid tier, on-premises?
@@ -78,7 +73,6 @@ Or as a Sammy-style HTTP endpoint with a JSON request/response.
 - Relationship to Bryton — could a `bryton-html-valid` xeme
   type wrap this for "did my page validate?" tests.
 
-<a id="status"></a>
 ## Status
 
 Filed for future. The Uma side ships first; the validator

@@ -16,7 +16,6 @@ inform future design decisions.
 
 ---
 
-<a id="overview"></a>
 ## Overview
 
 Fiona is a DBMS Miko once designed. Its defining property is **strict
@@ -42,7 +41,6 @@ Consequences of this property:
 
 ---
 
-<a id="structure"></a>
 ## Structure
 
 What other systems call "properties" of an object are defined in Fiona
@@ -55,7 +53,6 @@ Logically the system has **two tables**. (Under the hood there were
 about twenty, consolidated through views into the two-table
 presentation. For clarity we treat the system as having just the two.)
 
-<a id="table-1-hsa-hashes-scalars-arrays"></a>
 ### Table 1: `hsa` (hashes-scalars-arrays)
 
 Holds primitive JSON values — scalars (numbers, strings, booleans,
@@ -67,7 +64,6 @@ null), hashes, and arrays. Each row is one immutable primitive.
   new one — which is functionally the same as creating a different
   primitive.
 
-<a id="table-2-relationships"></a>
 ### Table 2: `relationships`
 
 Establishes relationships between hashes/arrays in `hsa` and the
@@ -93,14 +89,12 @@ them.
 
 ---
 
-<a id="why-its-not-used-in-mikobase"></a>
 ## Why It's Not Used in Mikobase
 
 (To be filled in.)
 
 ---
 
-<a id="ideas-worth-carrying-forward"></a>
 ## Ideas Worth Carrying Forward
 
 **The distinction between primitives and relationships stuck.** Miko

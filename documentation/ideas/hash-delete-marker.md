@@ -15,7 +15,6 @@ first instance) where a deeper layer needs to **truly remove**
 an inherited key, not just shadow it with null. JSON has no
 delete marker; Caspian hashes are ours and could.
 
-<a id="why-this-matters"></a>
 ## Why this matters
 
 In a meta-hash cascade, the current spec says:
@@ -35,10 +34,8 @@ need to remove certain keys from the inherited chain. A null
 value isn't quite right (caller can tell there was *something*
 called that key via `has_key?`); a delete marker is.
 
-<a id="two-candidate-designs"></a>
 ## Two candidate designs
 
-<a id="a-null-flavor"></a>
 ### A — Null flavor
 
 Add `puck.uno/null/flavor/deleted` to the existing
@@ -56,7 +53,6 @@ Cons:
 - Serialization: needs a JSON representation per the broader
   null-flavor serialization plan.
 
-<a id="b-dedicated-singleton-sentinel"></a>
 ### B — Dedicated singleton sentinel
 
 Define `puck.uno/hash/deleted` (or `%delete`) as its own
@@ -71,7 +67,6 @@ Cons:
 - New top-level concept; one more thing to learn.
 - Doesn't compose with anything else.
 
-<a id="edge-cases-either-design-has-to-answer"></a>
 ## Edge cases either design has to answer
 
 - **Iteration on a plain hash.** Does `$h.keys` include keys
@@ -87,14 +82,12 @@ Cons:
   Probably keyed off the null-flavor or sentinel registration
   rather than special-cased in the hash serializer.
 
-<a id="preference-not-committed"></a>
 ## Preference (not committed)
 
 A (null flavor) leans cleaner — leverages an existing pattern,
 adds nothing structurally new, fits the rest of the
 null-as-typed-thing model.
 
-<a id="status"></a>
 ## Status
 
 Not in v1. Filed for reconsideration when either meta-hash

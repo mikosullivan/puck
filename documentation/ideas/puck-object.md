@@ -35,7 +35,6 @@ material here may be folded into [puck.md](../requirements/puck/index.md).
 
 ---
 
-<a id="puck-object-vs-puck"></a>
 ## Puck Object vs. `%puck`
 
 A **puck** (lowercase, the object) is distinct from **`%puck`** (the
@@ -75,7 +74,6 @@ windows. The engine decides what to hand in at startup; scoped
 derivations (via `restrict do ... end`) can override that for a
 block.
 
-<a id="restrict-do-end"></a>
 ### `restrict do ... end`
 
 > **Superseded.** Replaced by `%puck.era(upper:, lower:)
@@ -113,7 +111,6 @@ is in effect again.
 Same shape as the other scoped-block primitives in the framework
 (`%chain.isolate do ... end`, `%chain.scope do ... end`, etc.).
 
-<a id="version-window"></a>
 ## Version Window
 
 > **Superseded.** The version window no longer lives on the puck
@@ -151,7 +148,6 @@ This turns the timespan from a configuration knob into a structural
 sandbox — if the engine confines user code to a specific window, the
 window can't be widened from within the runtime.
 
-<a id="deriving-a-narrower-puck"></a>
 ### Deriving a Narrower Puck
 
 A puck can produce a **derived puck with a narrower window**, but
@@ -174,7 +170,6 @@ subdirjail permissions ratchet, etc.). The deriver is producing a
 new puck, which they own; the new puck's window is bounded by
 what the parent allowed.
 
-<a id="what-the-narrowing-rule-does-not-prevent"></a>
 ### What the Narrowing Rule Does NOT Prevent
 
 **Code with access to a network faucet (or any other faucet) can
@@ -209,7 +204,6 @@ Lookup semantics:
 - If no version exists in the allowed span, lookup behaves as if
   the UNS isn't there (returns null-flavored `not_found`).
 
-<a id="implication-for-fetcher-walking"></a>
 ### Implication for fetcher walking
 
 The version window changes the lookup mechanic. **The puck may need
@@ -232,7 +226,6 @@ order-based first-wins is fine.
 
 ---
 
-<a id="what-a-puck-does"></a>
 ## What a Puck Does
 
 A puck **holds one or more fetchers**, each representing a logical
@@ -251,7 +244,6 @@ actual fetching:
   service, a database, a local file tree) might have just one
   faucet.
 
-<a id="lookup"></a>
 ### Lookup
 
 A puck exposes a **lookup method** as its public API. (Working name
@@ -272,7 +264,6 @@ didn't match" and "the registered value is intentionally null."
 that the puck may consult all fetchers rather than short-circuiting
 on first hit — finding the latest requires checking each.)
 
-<a id="the-explicit-null-rule-for-sources"></a>
 #### The `explicit`-null rule for sources
 
 If a puck faucet reaches a UNS where the registered value is
@@ -296,7 +287,6 @@ intentionally simple. Engines or developers needing UNS-prefix
 matching, regex routing, dispatch tables, or fallback policies can
 subclass puck and override the lookup method.
 
-<a id="roles-per-fetcher-not-per-faucet"></a>
 ### Roles: per-fetcher, not per-faucet
 
 **Each fetcher has its own role.** Objects served through a fetcher
@@ -330,7 +320,6 @@ affects role assignment.
 
 ---
 
-<a id="provenance-checking"></a>
 ## Provenance Checking
 
 Provenance is **per-faucet**, not per-puck. Each faucet has its own
@@ -347,7 +336,6 @@ is a separate concern handled by the role model and capability-
 passing mechanics; the faucet's job is just "is this really from
 where it says it's from?"
 
-<a id="case-1-actual-fetch-from-the-url"></a>
 ### Case 1: Actual fetch from the URL
 
 An **HTTPS faucet** that fetches from the URL claimed by the UNS.
@@ -355,7 +343,6 @@ TLS handles the certificate verification at the network layer; the
 response by construction came from the verified server. No
 additional check needed at this faucet's layer.
 
-<a id="case-2-cache"></a>
 ### Case 2: Cache
 
 A **cache faucet** that looks up the object in a local cache
@@ -375,7 +362,6 @@ produce identically-tagged objects.
 filesystem write access to the cache can plant malicious code that
 inherits cache-level authority. Case 3 addresses this.
 
-<a id="case-3-cache-plus-signature-verification"></a>
 ### Case 3: Cache plus signature verification
 
 A **cache faucet with a stricter provenance policy** — same source as
@@ -401,7 +387,6 @@ it on.
 
 ---
 
-<a id="the-engine-decides-the-policy"></a>
 ## The Engine Decides the Policy
 
 **The engine controls which puck `%puck` returns**, and that puck's
@@ -424,7 +409,6 @@ the result and the checks.
 
 ---
 
-<a id="open-questions"></a>
 ## Open Questions
 
 - **Does `%puck` always return the same puck object across calls?**

@@ -12,7 +12,6 @@
 }}
 ~~~
 
-<a id="overview"></a>
 ## Overview
 
 Orlando is the Lua sandbox (see
@@ -31,7 +30,6 @@ information doesn't evaporate. Each entry follows a small shape:
 
 ---
 
-<a id="a-tiny-tree-builder-is-useful"></a>
 ## A tiny tree-builder is useful
 
 **What we did.** While planning Orlando's HTML rendering pipeline,
@@ -76,7 +74,6 @@ worth waiting for in other components too.
 
 ---
 
-<a id="markdown-parsing-is-going-to-come-up-everywhere"></a>
 ## Markdown parsing is going to come up everywhere
 
 **What we did.** Orlando's whole purpose is rendering `.md` files
@@ -126,7 +123,6 @@ or `string → tree`).
 
 ---
 
-<a id="multiple-search-routes-are-needed-almost-immediately"></a>
 ## Multiple search routes are needed almost immediately
 
 **What we did.** Orlando started with a single document root
@@ -180,7 +176,6 @@ much faster than you'd expect.
 
 ---
 
-<a id="syntax-highlighting-needs-a-framework-level-story"></a>
 ## Syntax highlighting needs a framework-level story
 
 **What we did.** Orlando needed syntax highlighting for the JSON
@@ -236,7 +231,6 @@ should delegate to a real lexer.
 
 ---
 
-<a id="we-built-a-nice-markdown-tree-renderer"></a>
 ## We built a nice markdown-tree renderer
 
 **What we did.** Orlando started as a server skeleton, picked up a
@@ -303,7 +297,6 @@ already solved.
 
 ---
 
-<a id="dont-bake-host-language-quirks-into-the-builder"></a>
 ## Don't bake host-language quirks into the builder
 
 **What we did.** QuickBuilder was a clean XML-shape builder: any

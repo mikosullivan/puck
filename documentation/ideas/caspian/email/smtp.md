@@ -21,7 +21,6 @@ See [the network index](index.md) for the top-level `%net` surface, the permissi
 
 ---
 
-<a id="client"></a>
 ## `puck.uno/smtp/client`
 
 ```
@@ -79,7 +78,6 @@ $mail.send(
 
 ---
 
-<a id="receiving-email"></a>
 ## Receiving email — `puck.uno/imap/client`, `puck.uno/pop3/client`
 
 Stubs. Likely post-V1.0. Most scripts that need email need to SEND; receiving is a smaller use case and IMAP/POP3 are larger protocols. Tracked under the [post-V1 protocol enumeration issue](https://github.com/mikosullivan/puck/issues/578).

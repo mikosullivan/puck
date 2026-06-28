@@ -140,15 +140,28 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
             local files, has_index = pull_index_file(subtree.files, name)
             local sub_tree     = { files = files, subdirs = subtree.subdirs }
             local is_current_index = has_index and current_md_path == index_fs
+            -- The current page is this dir's own dir-listing when the
+            -- caller passed `<sub_fs>/` as current_md_path (see
+            -- render_dir_listing). This treats the dir entry as "current"
+            -- so the same highlight CSS used for index-page entries fires.
+            local is_current_dir_listing = current_md_path
+                and current_md_path == sub_fs .. "/"
+            local is_current = is_current_index or is_current_dir_listing
             local has_children = #files > 0 or next(subtree.subdirs) ~= nil
 
-            if has_index and not has_children then
-                -- Dir contains only its same-named index file: render as a
-                -- leaf (no <details> toggle to nothing).
-                local li_class = is_current_index and "dir current" or "dir"
+            -- Every directory entry is linked, regardless of whether it has
+            -- an index.md, children, or is empty. A dir without index.md
+            -- resolves to Orlando's directory listing; an empty dir resolves
+            -- to an "(empty directory)" listing; a dir with index.md serves
+            -- the index. Either way, clicking the link goes somewhere
+            -- meaningful.
+            local li_class = is_current and "dir current" or "dir"
+
+            if not has_children then
+                -- No children: render as a leaf with a link to the dir.
                 ul:tag("li", function(li)
                     li:attr("class", li_class)
-                    if is_current_index then
+                    if is_current then
                         li:tag("span", function(s) s:text(name .. "/") end)
                     else
                         li:tag("a", function(a)
@@ -157,26 +170,22 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
                         end)
                     end
                 end)
-            elseif not has_index and not has_children then
-                -- Truly empty dir (no index, no children): skip entirely.
             else
-                local li_class = is_current_index and "dir current" or "dir"
+                -- Has children: wrap in <details>; the summary is always a
+                -- link to the dir, whether or not the dir has its own
+                -- index.md.
                 ul:tag("li", function(li)
                     li:attr("class", li_class)
                     li:tag("details", function(d)
                         if expanded then d:attr("open", "") end
                         d:tag("summary", function(s)
-                            if has_index then
-                                if is_current_index then
-                                    s:tag("span", function(sp) sp:text(name .. "/") end)
-                                else
-                                    s:tag("a", function(a)
-                                        a:attr("href", sub_url .. "/")
-                                        a:text(name .. "/")
-                                    end)
-                                end
+                            if is_current then
+                                s:tag("span", function(sp) sp:text(name .. "/") end)
                             else
-                                s:text(name .. "/")
+                                s:tag("a", function(a)
+                                    a:attr("href", sub_url .. "/")
+                                    a:text(name .. "/")
+                                end)
                             end
                         end)
                         render_ul(d, sub_tree, sub_fs, sub_url, current_md_path)

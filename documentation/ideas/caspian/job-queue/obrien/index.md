@@ -193,8 +193,6 @@ Things O'Brien explicitly does NOT do in V1:
 
 ## What's NOT yet decided
 
-<a id="open-questions"></a>
-
 These are the design questions still in flight:
 
 - **Granularity of the verification-mode setting.** Per-job (caller picks at enqueue time), per-job-class (the class declares its mode), per-queue (all jobs in a queue use the same mode), or global (one O'Brien setting). Per-job-class feels natural but unclear yet which actually plays best in real use.

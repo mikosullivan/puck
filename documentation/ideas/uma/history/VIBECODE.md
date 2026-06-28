@@ -10,7 +10,6 @@
 }}
 ~~~
 
-<a id="purpose"></a>
 ## Purpose
 
 `uma` is a Ruby HTML document builder and DOM helper built on top of `Nokogiri::HTML5`.
@@ -19,7 +18,6 @@ The library wraps a parsed HTML5 document, adds convenience methods for creating
 
 This file should describe only the current implemented state of the project. Future plans, proposals, and open design questions belong in `documentation/ISSUES.md`.
 
-<a id="primary-files"></a>
 ## Primary Files
 
 - `lib/uma.rb` is the main public entry point.
@@ -30,7 +28,6 @@ This file should describe only the current implemented state of the project. Fut
 - `command-line/tests/` contains the project test tree.
 - `command-line/misc/canon/denormalize.rb` prints the fully built tag-definition model.
 
-<a id="core-object-model"></a>
 ## Core Object Model
 
 `Uma.new(html=nil, **opts)` creates an `Uma` wrapper around a `Nokogiri::HTML5::Document`.
@@ -43,7 +40,6 @@ The `Uma` instance delegates `header`, `main`, and `footer` to the wrapped docum
 
 The document keeps a back-reference to the owning `Uma` instance through `doc.uma`.
 
-<a id="public-behavior"></a>
 ## Public Behavior
 
 The main user-facing patterns in the current code are:
@@ -74,7 +70,6 @@ There is effectively a single real-world Uma user, so there is no meaningful rec
 `pretty()` prettifies the HTML before returning it.
 The key mental model for using Uma is that it helps build syntactically correct, secure HTML documents.
 
-<a id="element-extensions"></a>
 ## Element Extensions
 
 `Uma::Element` adds convenience methods on top of Nokogiri elements. These methods are the core of the builder-style API used throughout the tests.
@@ -96,7 +91,6 @@ Important behaviors:
 
 `Uma::Element` also defines a special table behavior: calling `tr` on a `table` ensures a `tbody` exists and inserts the row there.
 
-<a id="api-examples"></a>
 ## API Examples
 
 Create a default document and add content:
@@ -157,7 +151,6 @@ uma.body.show({'a' => 1, 'b' => [2, 3]})
 puts uma.pretty
 ```
 
-<a id="tag-definition-system"></a>
 ## Tag Definition System
 
 `lib/uma/canon.json` is the normalized source of truth for the tag model.
@@ -172,7 +165,6 @@ All tags automatically receive the attributes in `default`, so those attributes 
 
 Some tag definitions also use `cannot-nest`, which is a tag-level array describing descendant tags that must not appear anywhere inside that tag's subtree.
 
-<a id="builder-behavior"></a>
 ## Builder Behavior
 
 `Uma::Builder` loads `canon.json`, recursively resolves includes, deep-freezes the canonical data, and builds a final tag-definition hash.
@@ -187,7 +179,6 @@ When a tag is built:
 
 The final built tag definitions are stored on each `Uma` instance as `tag_defs`. Element creation and attribute validation consult those built definitions at runtime.
 
-<a id="canon-json-formatting"></a>
 ## Canon JSON Formatting
 
 When editing `lib/uma/canon.json`, keep empty hash values on one line as `{}` instead of expanding them across multiple lines.
@@ -200,7 +191,6 @@ In tag definitions, scalar values should appear at the top of the hash.
 
 When `lib/uma/canon.json` is edited manually or merged from multiple changes, recheck the file against the WHATWG HTML Standard so obsolete or non-spec entries are not reintroduced.
 
-<a id="external-html-reference"></a>
 ## External HTML Reference
 
 Use the WHATWG HTML Standard as the external source of truth for HTML 5.
@@ -213,7 +203,6 @@ Full index:
 
 When `canon.json` is updated to reflect HTML 5 behavior, validate those decisions against the WHATWG HTML Standard rather than against secondary summaries.
 
-<a id="tests-and-examples"></a>
 ## Tests And Examples
 
 The project test tree is `command-line/tests`.
@@ -235,7 +224,6 @@ Representative tests currently cover:
 
 Many tests use `Bryton` or `Minitestish` rather than stock Minitest.
 
-<a id="execution-workflow"></a>
 ## Execution Workflow
 
 The project is edited locally in the mounted working directory and executed remotely on `autolycus.idocs.com`.
@@ -250,7 +238,6 @@ For non-test scripts, SSH to `autolycus.idocs.com` and run them directly in the 
 
 To see the full built HTML tag-definition model from `canon.json`, run `command-line/misc/canon/denormalize.rb` remotely from the `command-line/misc` tree with the required environment.
 
-<a id="workflow-overview"></a>
 ## Workflow Overview
 
 - `AGENTS.md` should point here first.

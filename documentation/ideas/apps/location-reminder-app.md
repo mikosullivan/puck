@@ -16,7 +16,6 @@ doesn't.
 
 ---
 
-<a id="the-idea"></a>
 ## The Idea
 
 A personal location-monitoring app: the user maintains a list of
@@ -30,7 +29,6 @@ the milk, marks the errand done.
 
 ---
 
-<a id="what-it-would-use-from-puckunogeo"></a>
 ## What it would use from `puck.uno/geo`
 
 - **Continuous location monitoring** in the app (using the browser's
@@ -52,7 +50,6 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 
 ---
 
-<a id="why-its-a-useful-validation"></a>
 ## Why it's a useful validation
 
 - Different access pattern than the driver app — long-running
@@ -65,7 +62,6 @@ tag or `name=` matching. Worth adding when this app is fleshed out.
 
 ---
 
-<a id="out-of-scope-for-now"></a>
 ## Out of scope for now
 
 This is a future idea, not a current commitment. Filed so it isn't

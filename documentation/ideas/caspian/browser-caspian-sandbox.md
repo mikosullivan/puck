@@ -16,7 +16,6 @@ Brainstorm in progress.
 
 ---
 
-<a id="why"></a>
 ## Why
 
 ~~~vibecode
@@ -47,7 +46,6 @@ let people experience Caspian before buying into the whole system.
 
 ---
 
-<a id="architecture-three-independent-artifacts"></a>
 ## Architecture: three independent artifacts
 
 ~~~vibecode
@@ -67,7 +65,6 @@ Three distinct artifacts, each with its own job, all independently
 shippable. The browser sandbox uses one (the WASM engine); the other
 two are for adjacent purposes that compose freely with it.
 
-<a id="artifact-1-wasm-compiled-lua-engine-the-browser-sandbox"></a>
 ### Artifact 1: WASM-compiled Lua engine — the browser sandbox
 
 The canonical Lua reference engine compiled to WASM (Fengari, lua.vm.js,
@@ -83,7 +80,6 @@ the server.
 
 This is the **primary browser sandbox approach**.
 
-<a id="artifact-2-ts-caspianj-only-engine-community-and-portability"></a>
 ### Artifact 2: TS CaspianJ-only engine — community and portability
 
 A TypeScript engine that **consumes canonical CaspianJ** and
@@ -111,7 +107,6 @@ the Lua engine and this TS engine; both must return a value with
 `payload == "hello"`. Same fixture, same expected output. The Lua
 engine's existing tests (now 213/213) become the conformance suite.
 
-<a id="artifact-3-ts-source-parser-already-in-v2-extension-plans"></a>
 ### Artifact 3: TS source parser — already in V2 extension plans
 
 A TS-only Caspian parser, planned in
@@ -125,7 +120,6 @@ work. Source → CaspianJ.
   contexts where the WASM payload is too heavy or where pure-JS is
   required (some embedded JS environments don't support WASM).
 
-<a id="what-was-rejected"></a>
 ### What was rejected
 
 A **hybrid** (TS parser handing CaspianJ to a WASM-Lua engine) was on the
@@ -136,7 +130,6 @@ saving meaningful effort.
 
 ---
 
-<a id="why-caspian-is-particularly-well-suited"></a>
 ## Why Caspian is particularly well-suited
 
 ~~~vibecode
@@ -165,7 +158,6 @@ saving meaningful effort.
 
 ---
 
-<a id="open-questions"></a>
 ## Open questions
 
 - **Which architectural option?** Native TS reimplementation vs WASM
