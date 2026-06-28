@@ -962,7 +962,7 @@ prefix in the UNS. Their relationship to `puck.uno/exception` is by
 **declared inheritance**, not by UNS path. Catch behavior, subclass
 matching, and the abstract-vs-concrete distinction all follow declared
 inheritance — not UNS-prefix matching. (See
-[ecoverse/uns.md](../../ecoverse/uns.md) for the general rule that UNS
+[ideas/uns/](../../../ideas/uns/) for the general rule that UNS
 does not imply inheritance, with xemes as one of the few exceptions.)
 
 If an exception doesn't match any class given to `catch()`, it continues

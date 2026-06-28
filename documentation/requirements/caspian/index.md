@@ -1351,11 +1351,7 @@ The official cache spec landed at [caspian/downloads/caching/](downloads/caching
 
 #### Gabbo development slice premise mismatched with the new cache spec
 
-[`gabbo.md`](../development/v1/caspian/gabbo.md) and [`decisions.md`](../development/v1/caspian/decisions.md) are built around the **superseded** caspj-cache design — user-source files cached at `caspj/` next-to-source, fallback to `~/.cache/caspian/<hash>.caspj`, validity = engine_version + transpiler_version + source mtime + source SHA-256. The new caching spec covers **library cache only** — no user-source caching, no next-to-source `caspj/` directory, no mtime/SHA-256 validity stamping. Gabbo's premise needs either re-grounding against a separate user-source caching spec (which doesn't exist) or rescoping to align with library caching.
-
-#### `decisions.md` records superseded cache design as settled
-
-Specifically, the two rows in [decisions.md](../development/v1/caspian/decisions.md) at lines 78–79 still describe the next-to-source `caspj/` scheme and the engine_version + transpiler_version + source mtime + source SHA-256 validity stamps as settled decisions. After the consolidation, those decisions are no longer reflected in any current spec. They need to be either rewritten against the new spec or recorded as superseded.
+[`gabbo`](../development/v1/caspian/gabbo/) is built around the **superseded** caspj-cache design — user-source files cached at `caspj/` next-to-source, fallback to `~/.cache/caspian/<hash>.caspj`, validity = engine_version + transpiler_version + source mtime + source SHA-256. The new caching spec covers **library cache only** — no user-source caching, no next-to-source `caspj/` directory, no mtime/SHA-256 validity stamping. Gabbo's premise needs either re-grounding against a separate user-source caching spec (which doesn't exist) or rescoping to align with library caching.
 
 ### Open items the new spec itself flags
 

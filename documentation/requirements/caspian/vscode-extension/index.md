@@ -128,7 +128,7 @@ A full LSP (`caspian lsp` subprocess, real parsing, live diagnostics, go-to-defi
 - **First-contact strategy.** A new developer evaluating Caspian should get useful tooling immediately, not after installing a runtime.
 - **Remote development.** Many developers (including Miko) work via VS Code Remote-SSH against machines that may not have Caspian installed. Requiring local Caspian breaks that workflow.
 
-The LSP spec and build plan are preserved at [ideas/lsp/](https://puck.uno/documentation/ideas/lsp/) and [ideas/lsp-build/](https://puck.uno/documentation/ideas/lsp-build/) for when the work eventually resumes. See also [v1/caspian/decisions.md](https://puck.uno/documentation/requirements/development/v1/caspian/decisions) for the deferral record.
+The LSP spec and build plan are preserved at [ideas/lsp/](https://puck.uno/documentation/ideas/lsp/) and [ideas/lsp-build/](https://puck.uno/documentation/ideas/lsp-build/) for when the work eventually resumes.
 
 ---
 

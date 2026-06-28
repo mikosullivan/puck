@@ -150,7 +150,7 @@ A few things are worth being explicit about, since they sometimes confuse the co
 
 ### Engine timeouts
 
-Per [bootstrap.md § Timeouts](../bootstrap.md#timeouts), the engine enforces a wall-clock budget set by the host. A program that would otherwise run forever is killed by the timeout. This is a real constraint on what programs *complete* — but it does not make the language non-Turing-complete. Turing completeness is a property of what the language can *express*, not what the host chooses to allow to run.
+Per [bootstrap.md § Timeouts](../../requirements/caspian/bootstrap.md#timeouts), the engine enforces a wall-clock budget set by the host. A program that would otherwise run forever is killed by the timeout. This is a real constraint on what programs *complete* — but it does not make the language non-Turing-complete. Turing completeness is a property of what the language can *express*, not what the host chooses to allow to run.
 
 ### Capability-restricted roles can be deliberately below
 

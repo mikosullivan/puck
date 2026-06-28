@@ -36,7 +36,7 @@ is out of scope for now — only the engine is being developed at this stage.
 <a id="universal-namespace"></a>
 ## Universal Namespace
 
-Class names use UNS. See [UNS](../ecoverse/uns.md).
+Class names use UNS. See [UNS](../../ideas/uns/).
 
 ---
 

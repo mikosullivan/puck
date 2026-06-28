@@ -512,7 +512,7 @@ prefix.** Examples:
   entry tree.
 
 The format is parseable with the same conventions as
-[UNS](../../../../ecoverse/uns.md) (slash-separated segments, lowercase, etc.).
+[UNS](../../../../../ideas/uns/) (slash-separated segments, lowercase, etc.).
 Third-party Xeme producers can use their own UNS prefix:
 `"myorg.com/test/integration"`.
 

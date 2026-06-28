@@ -232,8 +232,9 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 ~~~vibecode
 {"vibecode": {
 	"section": "conversion",
-	"methods": ["to_number", "hex", "reverse"],
-	"notes": ["to_number_raises_if_invalid",
+	"methods": ["to_string", "to_number", "hex", "reverse"],
+	"notes": ["to_string_returns_self",
+		"to_number_raises_if_invalid",
 		"hex_parses_hexadecimal_integer",
 		"reverse_returns_characters_in_reverse_order"]
 }}
@@ -241,6 +242,7 @@ $foo.replace('Aslan', 'Susan')        -> 'Lucy Edmund Lucy'
 
 | Method | Returns | Description |
 |--------|---------|-------------|
+| `to_string` | String | Returns the string itself. Trivially conforms to the [`to_string` / `to_json` / `to_primitives` chain](../to-primitives.md#the-conversion-chain) the engine uses for serialization and any context that asks an object for its string form. |
 | `to_number` | Number | Parse as a number. Raises an exception if the string is not a valid number. |
 | `hex` | Number | Parse as a hexadecimal integer. `'ff'.hex` → 255. Raises an exception if the string is not valid hex. |
 | `reverse` | String | Characters in reverse order |

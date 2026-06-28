@@ -10,11 +10,10 @@ implementation's spec.
 <a id="purpose"></a>
 ## Purpose
 
-`puck.uno/uma` is an HTML document builder and DOM helper, ported
-from Ruby Uma. It wraps a parsed HTML5 document (via an underlying
-Lua HTML library), adds convenience methods for creating and
-editing elements, and enforces a project-defined HTML schema built
-from `html5.json`.
+`puck.uno/uma` is an HTML document builder and DOM helper. It wraps a
+parsed HTML5 document (via an underlying Lua HTML library), adds
+convenience methods for creating and editing elements, and enforces
+a project-defined HTML schema built from `html5.json`.
 
 **Uma is fundamentally an HTML builder.** For general DOM editing,
 the underlying Lua library already provides baseline editing

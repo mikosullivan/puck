@@ -3,10 +3,10 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "bootstrap",
-	"role": "design notes for how a host language (Ruby as the worked example) integrates with and bootstraps the Caspian runtime through an embedded Lua VM; layered host/Lua/Caspian policy model",
+	"role": "spec for how a host language (Ruby as the worked example) integrates with and bootstraps the Caspian runtime through an embedded Lua VM; layered host/Lua/Caspian policy model. The Bree, Corin, and other V1 slice docs reference this as the authoritative host-API surface.",
 	"key_concepts": ["host_layer", "embedded_lua_vm", "downward_visibility_only",
 		"ruby_api_sketch", "policy_enforcement"],
-	"status": "brainstorm"
+	"status": "active spec — promoted from ideas/ once V1 slice docs began citing it as authoritative"
 }}
 ~~~
 
@@ -30,29 +30,6 @@ Ruby owns the process and enforces policy. Lua runs the Caspian engine. Caspian 
 the program (which may include untrusted code). Each layer can only see downward — Caspian
 cannot reach into Lua internals, and Lua cannot reach into Ruby without an explicit
 callback.
-
----
-
-<a id="the-ruby-api"></a>
-## The Ruby API
-
-The host creates a runtime object, configures it, then runs code:
-
-```ruby
-engine = Caspian::Runtime.new
-engine.timeout_seconds = 5
-
-result = engine.run_string("puts 'hello'")
-```
-
-Configuration is set before execution. `run_string` (and equivalent `run_file`) take
-source and return a structured result:
-
-```ruby
-result.success?         # true/false
-result.value            # return value of the program
-result.elapsed_seconds  # wall time
-```
 
 ---
 

@@ -11,8 +11,7 @@
 	"speculative_sections": ["binding_packages_v2_plus",
 		"per_program_dependency_declaration",
 		"third_party_binding_distribution"],
-	"running_example": "libsodium",
-	"design_log": "../development/v1/caspian/decisions.md"
+	"running_example": "libsodium"
 }}
 ~~~
 
@@ -28,9 +27,6 @@ This page documents:
 3. Speculative future work — what extensibility would look like if and
    when it lands — captured here so the V1 pattern is designed in a way
    that doesn't have to be torn up later.
-
-The decisions log for V1 design overall lives at
-[development/v1/decisions.md](../requirements/development/v1/caspian/decisions.md).
 
 ---
 

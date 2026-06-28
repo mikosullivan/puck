@@ -44,9 +44,6 @@ Each per-slice page is self-contained: goal, definition of done, phase
 plans, test plan, prerequisites. A slice doesn't start until the prior
 one is done.
 
-Settled cross-slice design decisions are logged in
-[decisions.md](decisions.md).
-
 ---
 
 <a id="cross-cutting-principles"></a>

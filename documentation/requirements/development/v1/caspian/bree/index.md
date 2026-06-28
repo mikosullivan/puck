@@ -108,7 +108,7 @@ gap the first time a real `.casp` file uses the construct.
 
 The wider transpiler still emits pre-spec CaspianJ for other AST node
 types — `["scope", "setvar", name, value]` for assignment,
-`[bwc, "&", {"args": [...]}]` for BWC dispatch, `["command", "if", ...]`
+`[{bwc: name}, "&", {args: [...]}]` for BWC dispatch, `["command", "if", ...]`
 for if/elsif/else, etc. **Those are not Bree's problem.** Bree only
 needs the hello-world AST shape to produce canonical CaspianJ, and
 the transpiler already does that for the literal-method-call form.
@@ -162,7 +162,7 @@ Bree is done when all six are true:
    the host stages the tree on `engine.caspianj` and any capabilities on
    sibling properties (`engine.std`, `engine.root`, etc.), then calls
    `engine.run()`. No positional args, no env, no harness hooks. Matches the
-   Ruby host API model in [bootstrap.md](../../caspian/bootstrap.md). Bree
+   Ruby host API model in [bootstrap.md](../../../../caspian/bootstrap.md). Bree
    itself injects no capabilities — the hello-world program just returns a
    value. Capability wiring arrives in later slices ([Corin](corin.md) for
    stdout/puts, etc.).

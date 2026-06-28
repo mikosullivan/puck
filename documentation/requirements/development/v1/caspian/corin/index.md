@@ -45,7 +45,7 @@ Corin introduces three pieces the engine doesn't have yet:
    flow out), not a faucet (which would be input). Following
    [roles.md](../../caspian/roles.md), the bwc that writes to it has
    its own role (`stdout`). Per
-   [bootstrap.md § stdout and stderr](../../caspian/bootstrap.md#stdout-and-stderr)
+   [bootstrap.md § stdout and stderr](../../../../caspian/bootstrap.md#stdout-and-stderr)
    it is **not ambient** — there is no default. If `engine.std` is unset
    when `puts` dispatches, the handler raises. The CLI runner (later)
    wires `engine.std = function(s) io.write(s) end`; tests wire a capture
@@ -97,7 +97,7 @@ Corin is done when all five are true:
 5. **`puts` raises when `engine.std` is unset.** With `engine.std = nil`,
    `engine.run()` on the fixture raises a clear error. There is no
    silent default to `io.stdout`; stdout is a capability, not ambient
-   ([bootstrap.md § stdout and stderr](../../caspian/bootstrap.md#stdout-and-stderr)).
+   ([bootstrap.md § stdout and stderr](../../../../caspian/bootstrap.md#stdout-and-stderr)).
 
 That's the entirety of Corin. Soft feature lock applies.
 
@@ -292,7 +292,7 @@ For each gap from Step 1, add only what Corin needs:
   `engine.lua`'s module header as recognized. No default. If a `puts`
   dispatch fires while `engine.std == nil`, the handler raises with
   a clear message. Per
-  [bootstrap.md § stdout and stderr](../../caspian/bootstrap.md#stdout-and-stderr).
+  [bootstrap.md § stdout and stderr](../../../../caspian/bootstrap.md#stdout-and-stderr).
 - **`puts` handler.** Signature: takes one materialized value
   `{type, owning_role, payload}`. Reads `engine.std`; if nil, raises.
   Otherwise: `engine.std(tostring(value.payload) .. "\n")`. The
