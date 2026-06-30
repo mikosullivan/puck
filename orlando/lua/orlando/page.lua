@@ -100,7 +100,7 @@ end
 --   <!-- github-issues-against: PATH_PREFIX -->
 --      Renders each matching issue verbatim: H3 heading
 --      "#NUM — short title" linked to GitHub, followed by the
---      issue body as markdown. Used by consistency.md to display
+--      issue body as markdown. Used by audit.md to display
 --      tracked problems without maintaining a static snapshot.
 --
 --   <!-- github-issues-summary: PATH_PREFIX -->
@@ -148,168 +148,24 @@ local function matching_issues(prefix)
     return matching
 end
 
-local function short_title(title)
-    -- Drop the boilerplate "File: documentation/" prefix from the
-    -- per-section chip title so the rendered heading focuses on
-    -- the path+section.
-    return (title:gsub("^File:%s+documentation/", ""))
-end
+-- Issue-card helpers (shift_body_headings / escape_loose_html_in_md /
+-- esc_attr_text / short_title) used to live here. They moved into
+-- orlando.issue_panel along with the rest of the per-issue rendering
+-- so /issues, the per-doc panel, the per-section panel, and the
+-- github-issues-against directive all share one card format.
 
 -- Shift ATX headings in an issue body so the shallowest body heading
 -- becomes H4 (one level below the H3 the issue itself renders as).
 -- Skips lines inside fenced code blocks so `# comment` stays intact.
-local function shift_body_headings(body)
-    if not body or body == "" then return body end
-
-    local lines = {}
-    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
-        lines[#lines + 1] = line
-    end
-
-    local function walk(cb)
-        local in_fence = false
-        for i, line in ipairs(lines) do
-            if line:match("^```") or line:match("^~~~") then
-                in_fence = not in_fence
-            elseif not in_fence then
-                cb(i, line)
-            end
-        end
-    end
-
-    local min_level
-    walk(function(_, line)
-        local hashes = line:match("^(#+)%s")
-        if hashes and (not min_level or #hashes < min_level) then
-            min_level = #hashes
-        end
-    end)
-
-    if not min_level then return body end
-    local delta = math.max(0, 4 - min_level)
-    if delta == 0 then return body end
-
-    walk(function(i, line)
-        local hashes = line:match("^(#+)%s")
-        if hashes then
-            local new_n = math.min(6, #hashes + delta)
-            lines[i] = string.rep("#", new_n) .. line:sub(#hashes + 1)
-        end
-    end)
-
-    return table.concat(lines, "\n")
-end
-
--- Tiny escape for issue-title text emitted into a raw HTML heading.
-local function esc_attr_text(s)
-    return (s:gsub("&", "&amp;")
-             :gsub("<", "&lt;")
-             :gsub(">", "&gt;")
-             :gsub('"', "&quot;"))
-end
-
--- Issue bodies frequently contain literal tag-shaped text like
--- "<h3> should be <h4>" without code-span backticks. Lunamark would
--- render those as real H3/H4 tags. This escape walks the markdown
--- and substitutes &lt; and &gt; for the dangerous cases — only
--- outside fenced code blocks and inline code spans, so legitimate
--- `<h3>` code spans render correctly.
-local function escape_loose_html_in_md(md)
-    local out_lines = {}
-    local in_fence = false
-    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
-        local fence = line:match("^```+") or line:match("^~~~+")
-        if fence then
-            in_fence = not in_fence
-            out_lines[#out_lines + 1] = line
-        elseif in_fence then
-            out_lines[#out_lines + 1] = line
-        else
-            -- Walk char by char, toggling in_code on each backtick run.
-            local buf = {}
-            local in_code = false
-            local i = 1
-            local n = #line
-            while i <= n do
-                local c = line:sub(i, i)
-                if c == "`" then
-                    in_code = not in_code
-                    buf[#buf + 1] = c
-                    i = i + 1
-                elseif (not in_code) and c == "<"
-                    and line:sub(i + 1, i + 1):match("[/%w]")
-                then
-                    buf[#buf + 1] = "&lt;"
-                    i = i + 1
-                else
-                    buf[#buf + 1] = c
-                    i = i + 1
-                end
-            end
-            out_lines[#out_lines + 1] = table.concat(buf)
-        end
-    end
-    -- We appended "\n" before splitting; drop the empty trailing element.
-    if out_lines[#out_lines] == "" then
-        table.remove(out_lines)
-    end
-    return table.concat(out_lines, "\n")
-end
-
-local function expand_github_issues(prefix)
+local function expand_github_issues(prefix, can_edit)
     local matching = matching_issues(prefix)
     if #matching == 0 then
         return "*No active issues.*"
     end
-
-    local parts = {}
-    for _, issue in ipairs(matching) do
-        -- Heading is raw HTML so it can carry data-issue-number;
-        -- inject_issue_links keys off that attribute to add a Close
-        -- chip to the standard chip group.
-        local heading_html = string.format(
-            '<h3 id="issue-%d" data-issue-number="%d">'
-            .. '<a href="%s" target="_blank" rel="noopener noreferrer">#%d</a>'
-            .. ' — %s'
-            .. '</h3>',
-            issue.number, issue.number,
-            issue.url, issue.number,
-            esc_attr_text(short_title(issue.title))
-        )
-
-        -- Render body markdown to HTML right here (not through the
-        -- page's own lunamark pass): GitHub issue bodies can contain
-        -- literal "<h3>" / "<h4>" without backticks, which lunamark
-        -- would otherwise treat as real tags; we escape those first.
-        -- Body headings are demoted so the shallowest is H4 (one
-        -- below the issue's own H3 wrapper).
-        local body_md = issue.body or ""
-        local body_html
-        if body_md == "" then
-            body_html = "<p><em>(no description)</em></p>"
-        else
-            local prepped = escape_loose_html_in_md(shift_body_headings(body_md))
-            body_html = M.render(prepped)
-        end
-
-        -- Each issue is a single raw-HTML chunk emitted into the
-        -- markdown stream. The opening <div> starts a CommonMark
-        -- Type-6 HTML block (passed through verbatim); the blank
-        -- line after each contained block (h3, body paragraphs,
-        -- closing </div>) keeps subsequent blocks recognized as
-        -- HTML rather than parsed as markdown.
-        parts[#parts + 1] = '<div class="consistency-issue">'
-        parts[#parts + 1] = ""
-        parts[#parts + 1] = heading_html
-        parts[#parts + 1] = ""
-        parts[#parts + 1] = body_html
-        parts[#parts + 1] = ""
-        parts[#parts + 1] = '</div>'
-        parts[#parts + 1] = ""
-    end
-    return table.concat(parts, "\n")
+    -- One shared renderer for /issues, the per-doc panel, the
+    -- per-section panels, and this directive. See orlando.issue_panel.
+    return issue_panel.render_list(matching, { can_edit = can_edit })
 end
-
 local function expand_github_issues_summary(prefix)
     local matching = matching_issues(prefix)
     if #matching == 0 then
@@ -323,7 +179,7 @@ local function expand_github_issues_summary(prefix)
     )
 end
 
-local function process_github_issues_directives(md)
+local function process_github_issues_directives(md, can_edit)
     local LIST_LINE    = "^%s*<!%-%- github%-issues%-against:%s*(%S+)%s*%-%->%s*$"
     local SUMMARY_LINE = "^%s*<!%-%- github%-issues%-summary:%s*(%S+)%s*%-%->%s*$"
     local out = {}
@@ -331,7 +187,7 @@ local function process_github_issues_directives(md)
         local list_prefix    = line:match(LIST_LINE)
         local summary_prefix = line:match(SUMMARY_LINE)
         if list_prefix then
-            out[#out + 1] = expand_github_issues(list_prefix)
+            out[#out + 1] = expand_github_issues(list_prefix, can_edit)
         elseif summary_prefix then
             out[#out + 1] = expand_github_issues_summary(summary_prefix)
         else
@@ -472,12 +328,13 @@ local function md_heading_text_to_plain(text)
     return text
 end
 
--- Pull h2/h3 headings out of the ORIGINAL markdown source — before any
+-- Pull h2-h6 headings out of the ORIGINAL markdown source — before any
 -- directive expansion or file-include substitution. The TOC reflects
 -- what the author wrote, not what the renderer dynamically inserted
--- (issue cards, included sections, etc.). Skips lines inside fenced
--- code blocks so `## not really a heading` inside an example doesn't
--- land in the TOC.
+-- (issue cards, included sections, etc.); the same list also tells
+-- inject_issue_links which headings are eligible for the section chip
+-- group. Skips lines inside fenced code blocks so `## not really a
+-- heading` inside an example doesn't land in the result.
 local function extract_headings_from_md(md)
     local out = {}
     local seen = {}
@@ -489,7 +346,7 @@ local function extract_headings_from_md(md)
             local hashes, raw = line:match("^(#+)%s+(.+)$")
             if hashes then
                 local level = #hashes
-                if level == 2 or level == 3 then
+                if level >= 2 and level <= 6 then
                     local plain = md_heading_text_to_plain(raw)
                     plain = plain:gsub("^[%d%.]+%s+", "")  -- drop "1 " / "1.2 "
                     plain = plain:gsub("^%s+", ""):gsub("%s+$", "")
@@ -811,12 +668,13 @@ local function chip_group(chips)
     return ' <span class="nowrap">' .. chips .. '</span>'
 end
 
-local function inject_issue_links(body_html, md_path, client_ip)
+local function inject_issue_links(body_html, md_path, client_ip, original_heading_ids)
     -- Both Quick add and Edit are gated on the same IP allowlist —
     -- Quick add was previously open to anyone, but bulk-spam from
     -- public IPs (e.g., the 122 "katana" issues) prompted closing it.
     -- See config.ip_can_edit and ~/.orlando/config.json.
     local privileged = config.ip_can_edit(client_ip)
+    original_heading_ids = original_heading_ids or {}
 
     -- Page H1: github-page link, issue link, (Quick add if allowed),
     -- (Edit if allowed) — then checkbox + form blocks after.
@@ -843,35 +701,39 @@ local function inject_issue_links(body_html, md_path, client_ip)
         return tail
     end, 1)
 
-    -- Each H2 through H6: same treatment, plus a per-section issues panel
-    -- if the section has issues filed against it. Skip h2s that are issue-
-    -- panel titles (rendered by orlando.issue_panel) — those aren't
-    -- document section headings and shouldn't get chip injection.
+    -- Each H2 through H6 in the rendered body. The standard chip
+    -- group (file-issue, Quick add, Edit) is only injected when the
+    -- heading came from the original .md source — that is, its id
+    -- appears in original_heading_ids. Directive-generated headings
+    -- (issue cards from anywhere — audit.md, /issues, per-doc
+    -- panels, per-section panels — and their subsections) are not
+    -- document sections of THIS file. Issue-card H3s also self-render
+    -- their own chip group (copy badge + Comment + Close) inside the
+    -- card, so we skip them entirely here to avoid double-chips.
     body_html = body_html:gsub("(<(h[2-6])([^>]*)>)(.-)(</%2>)",
         function(open, _, attrs, inner, close)
             if attrs:find('issue%-panel%-title', 1, false) then
                 return open .. inner .. close
             end
-            -- An issue heading carries data-issue-number; it gets the
-            -- standard chip group plus a Close chip for that issue.
-            local issue_num = attrs:match('data%-issue%-number="(%d+)"')
+            if attrs:find('data%-issue%-number', 1, false) then
+                return open .. inner .. close
+            end
+            local id          = attrs:match('id="([^"]+)"')
+            local is_original = id and original_heading_ids[id]
+            if not is_original then
+                return open .. inner .. close
+            end
 
-            local id      = attrs:match('id="([^"]+)"')
             local text    = clean_heading_text(inner)
             local slug    = id or slugify(text)
             local qa_id   = "qa-" .. slug
             local edit_id = "edit-" .. slug
-            local chips = issue_link(md_path, text, id)
 
+            local chips = issue_link(md_path, text, id)
             if privileged then
                 chips = chips
                     .. " " .. quick_add_label(qa_id)
                     .. " " .. edit_label(edit_id)
-                if issue_num then
-                    chips = chips
-                        .. ' <button type="button" class="issue-close section-issue"'
-                        .. ' data-issue-number="' .. issue_num .. '">Close</button>'
-                end
             end
 
             local tail = open .. inner .. chip_group(chips) .. close
@@ -1087,6 +949,11 @@ local function add_head(html_tag, title)
         end)
         h:tag("title", function(t) t:text(title or "") end)
         h:tag("link", function(l)
+            l:attr("rel",  "icon")
+            l:attr("type", "image/x-icon")
+            l:attr("href", "/favicon.ico")
+        end)
+        h:tag("link", function(l)
             l:attr("rel",  "stylesheet")
             l:attr("href", "/client-assets/style.css")
         end)
@@ -1169,6 +1036,232 @@ local function md_path_to_url(md_path)
 end
 
 M.md_path_to_url = md_path_to_url
+
+------------------------------------------------------------
+-- Tree traversal: prev/next nav within a tree.
+--
+-- Walks a directory recursively to produce a flat ordered list of
+-- markdown pages following these rules:
+--   - A directory's own index.md (when it exists) comes first as
+--     that directory's entry.
+--   - Other children — files (excluding index.md) and subdirs — are
+--     merged into one list. Each child's "effective index" is the
+--     numeric value of its <!--index: N--> directive (for files) or
+--     the directive on its index.md (for subdirs).
+--   - Children with an effective index sort first, ascending; the
+--     remainder sort alphabetically by name.
+--   - Subdirs are recursively walked at their sort position.
+--
+-- inject_tree_nav drops a "← previous … next →" bar right after the
+-- page's <h1>. Endpoints render their unreachable side as a grayed
+-- span instead of a link.
+------------------------------------------------------------
+
+local function read_index_directive(md_path)
+    local f = io.open(md_path, "r")
+    if not f then return nil end
+    local chunk = f:read(800) or ""
+    f:close()
+    local val = chunk:match("<!%-%-%s*index:%s*([%d%.]+)%s*%-%->")
+    return val and tonumber(val) or nil
+end
+
+local function read_h1_text(md_path)
+    local f = io.open(md_path, "r")
+    if not f then return nil end
+    for line in f:lines() do
+        local title = line:match("^#%s+(.+)$")
+        if title then
+            f:close()
+            -- Strip basic inline markdown for clean display.
+            title = title:gsub("`", "")
+                         :gsub("%*+", "")
+                         :gsub("%s+$", "")
+            return title
+        end
+    end
+    f:close()
+    return nil
+end
+
+-- Derive a readable title from a path when the file has no H1 yet.
+-- index.md uses the directory's basename; other files use their own.
+-- Dashes and underscores become spaces; first letter is capitalized.
+local function title_from_path(md_path)
+    local base = md_path:match("([^/]+)$") or md_path
+    base = base:gsub("%.md$", "")
+    if base == "index" then
+        local dir = md_path:match("([^/]+)/[^/]+$") or base
+        base = dir
+    end
+    base = base:gsub("[-_]", " ")
+    return (base:gsub("^%l", string.upper))
+end
+
+local function list_md_children(dir)
+    local files, subdirs = {}, {}
+    local handle = io.popen('ls -1aF "' .. dir .. '" 2>/dev/null')
+    if not handle then return files, subdirs end
+    for entry in handle:lines() do
+        if entry ~= "./" and entry ~= "../" then
+            if entry:sub(-1) == "/" then
+                local name = entry:sub(1, -2)
+                if name:sub(1, 1) ~= "." then subdirs[#subdirs + 1] = name end
+            else
+                local name = (entry:gsub("[%*%@%|%=]$", ""))
+                if name:sub(1, 1) ~= "." and name:sub(-3) == ".md" then
+                    files[#files + 1] = name
+                end
+            end
+        end
+    end
+    handle:close()
+    return files, subdirs
+end
+
+local function walk_tree(root)
+    local out = {}
+
+    local function visit(dir)
+        local files, subdirs = list_md_children(dir)
+
+        -- index.md (if present) is this dir's entry and goes first.
+        local index_path
+        local other_files = {}
+        for _, f in ipairs(files) do
+            if f == "index.md" then
+                index_path = dir .. "/" .. f
+            else
+                other_files[#other_files + 1] = f
+            end
+        end
+        if index_path then out[#out + 1] = index_path end
+
+        -- Merge other files + subdirs into one ordered list.
+        local entries = {}
+        for _, f in ipairs(other_files) do
+            local p = dir .. "/" .. f
+            entries[#entries + 1] = {
+                name = f, kind = "file", path = p,
+                idx = read_index_directive(p),
+            }
+        end
+        for _, d in ipairs(subdirs) do
+            local p = dir .. "/" .. d
+            local sub_index = p .. "/index.md"
+            local idx
+            local probe = io.open(sub_index, "r")
+            if probe then
+                probe:close()
+                idx = read_index_directive(sub_index)
+            end
+            entries[#entries + 1] = {
+                name = d, kind = "dir", path = p, idx = idx,
+            }
+        end
+
+        table.sort(entries, function(a, b)
+            if a.idx and b.idx then
+                if a.idx ~= b.idx then return a.idx < b.idx end
+                return a.name < b.name
+            end
+            if a.idx and not b.idx then return true end
+            if not a.idx and b.idx then return false end
+            return a.name < b.name
+        end)
+
+        for _, e in ipairs(entries) do
+            if e.kind == "file" then
+                out[#out + 1] = e.path
+            else
+                visit(e.path)
+            end
+        end
+    end
+
+    visit(root)
+    return out
+end
+
+local TREE_NAV_ROOTS = {
+    "documentation/requirements",
+}
+
+local function tree_root_for(md_path)
+    for _, root in ipairs(TREE_NAV_ROOTS) do
+        if md_path == root .. ".md"
+            or md_path:sub(1, #root + 1) == root .. "/"
+        then
+            return root
+        end
+    end
+    return nil
+end
+
+local function tree_neighbors(md_path)
+    local root = tree_root_for(md_path)
+    if not root then return nil, nil end
+    local ordered = walk_tree(root)
+    for i, p in ipairs(ordered) do
+        if p == md_path then return ordered[i - 1], ordered[i + 1] end
+    end
+    return nil, nil
+end
+
+local function inject_tree_nav(body_html, md_path)
+    if not tree_root_for(md_path) then return body_html end
+    local prev, nxt = tree_neighbors(md_path)
+    -- Page not in any walked tree (shouldn't happen for in-scope paths).
+    if not prev and not nxt and not body_html:find("<h1", 1, true) then
+        return body_html
+    end
+
+    local function side(p, kind)
+        local active = p ~= nil
+        local arrow_glyph = (kind == "prev") and "⇦" or "⇨"
+        local arrow_html = '<span class="tree-nav-arrow">' .. arrow_glyph .. '</span>'
+        if active then
+            local title = read_h1_text(p) or title_from_path(p)
+            local url = md_path_to_url(p)
+            if kind == "prev" then
+                return string.format(
+                    '<a class="tree-nav-%s" href="%s">%s %s</a>',
+                    kind, html_escape(url), arrow_html, html_escape(title)
+                )
+            else
+                return string.format(
+                    '<a class="tree-nav-%s" href="%s">%s %s</a>',
+                    kind, html_escape(url), html_escape(title), arrow_html
+                )
+            end
+        else
+            local placeholder = (kind == "prev") and "prev" or "next"
+            if kind == "prev" then
+                return string.format(
+                    '<span class="tree-nav-%s tree-nav-disabled">%s %s</span>',
+                    kind, arrow_html, placeholder
+                )
+            else
+                return string.format(
+                    '<span class="tree-nav-%s tree-nav-disabled">%s %s</span>',
+                    kind, placeholder, arrow_html
+                )
+            end
+        end
+    end
+
+    local nav_html = '<nav class="tree-nav">'
+        .. side(prev, "prev")
+        .. '<span class="tree-nav-sep">|</span>'
+        .. side(nxt,  "next")
+        .. '</nav>'
+
+    -- Sits directly under the breadcrumb chrome and above the H1.
+    -- The breadcrumb itself is added by add_breadcrumb in the page
+    -- template (outside body_html), so prepending here lands the nav
+    -- in the right spot.
+    return nav_html .. body_html
+end
 
 -- Does a given URL path serve a markdown page? Used by the breadcrumb
 -- to decide whether each intermediate segment links somewhere.
@@ -1273,17 +1366,27 @@ function M.render_request(ctx)
     local md = f:read("*a")
     f:close()
 
-    -- TOC is built from the original markdown only — directive
-    -- expansions (issue cards, file includes) do not contribute
-    -- entries. Extract before any source transform runs.
-    local toc_headings = extract_headings_from_md(md)
+    -- Pull headings out of the original markdown source — before any
+    -- directive expansion or file-include substitution. Drives both
+    -- the TOC (h2/h3 only) and the section-chip eligibility check in
+    -- inject_issue_links (any id in the set).
+    local all_md_headings = extract_headings_from_md(md)
+    local toc_headings = {}
+    local original_heading_ids = {}
+    for _, h in ipairs(all_md_headings) do
+        original_heading_ids[h.id] = true
+        if h.level <= 3 then
+            toc_headings[#toc_headings + 1] = h
+        end
+    end
 
     md = process_file_includes(md, ctx.md_path)
-    md = process_github_issues_directives(md)
+    local request_can_edit = ctx.client_ip ~= nil and config.ip_can_edit(ctx.client_ip)
+    md = process_github_issues_directives(md, request_can_edit)
 
     local body = M.render(md)
-    body = inject_hero_logo(body)
-    body = link_existing_hero_logo(body)
+    -- (inject_hero_logo / link_existing_hero_logo were dropped — the
+    -- mushroom icon stays in the sidebar header; H1s render plain.)
     body = rewrite_links(body)
     body = mark_external_links(body)
     body = wrap_code_blocks_with_language_label(body)
@@ -1292,7 +1395,8 @@ function M.render_request(ctx)
     body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)
     body = transform_toc(body, toc_headings)
     body = mark_skeletor_blocks(body)
-    body = inject_issue_links(body, ctx.md_path, ctx.client_ip)
+    body = inject_issue_links(body, ctx.md_path, ctx.client_ip, original_heading_ids)
+    body = inject_tree_nav(body, ctx.md_path)
 
     local html = quick_builder.new("html")
     html:attr("lang", "en")

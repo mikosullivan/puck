@@ -1,26 +1,34 @@
-# Consistency report — requirements/
-<!--index: 01-->
+# Audit report
+<!--index: 1 -->
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_consistency_report",
+	"doc": "requirements_audit_report",
 	"role": "dynamic dashboard of consistency problems within the authoritative requirements/ tree. Every tracked problem is a GitHub issue against the file it pertains to; this page renders an executive summary and the full text of each issue at request time.",
 	"status": "dynamic — content reflects the live open-issue list at page-load time; no static problem list on this page",
 	"audience": "humans and AI tooling tracking what's actively broken or unresolved in the new requirements tree",
 	"audit_protocol": {
 		"note": "the page itself is a fixed shell — title, vibecode, summary directive, listing directive. Auditing does NOT edit this file. It audits requirements/, files/closes GitHub issues, and Orlando re-renders the page from the live issue list at next page-load.",
-		"trigger": "the AI runs an audit when Miko says 'audit consistency', 'update consistency', 'rewrite consistency.md', or equivalent",
+		"trigger": "the AI runs an audit when Miko says 'audit consistency', 'update consistency', 'rewrite audit.md', or equivalent",
 		"steps": ["cleanup: query open issues whose title references a documentation/requirements/ path and close any that no longer apply (file deleted, file moved, fix already landed)",
+			"resolutions: scan each open issue's comments for any starting with '**Resolve:**' — that is Miko's resolution for that issue (see resolve_comments rule below); apply the instructions and close the issue automatically without asking",
 			"discovery: walk every *.md under documentation/requirements/ and look for problems (see checks below)",
 			"verification: probe suspect links via the running Orlando at http://127.0.0.1:8181/... to confirm 404 status before filing",
 			"trivial broken links: if the audit finds a broken link AND the correct target is unambiguous (file moved to a known sibling, renamed concept with one new home, missing trailing slash, etc.), just fix the link inline — do NOT file an issue for the obvious one-step rewrite. This DOES NOT apply to outbound links — see the outbound-references rule below",
-			"filing: one verbose GitHub issue per problem that survives the trivial-fix filter (see filing rules below)"],
+			"filing: one verbose GitHub issue per problem that survives the trivial-fix filter (see filing rules below)",
+			"index normalization: for every directory under requirements/, find all `<!--index: N-->` directives in its direct children (and on each subdir's index.md). Sort them by current numeric value, then renumber to strict integers starting at 1 and going up in single steps (1, 2, 3, ...). Fix any non-integer values (e.g. `3.5` → integer slot) and any gaps. Apply auto, in-place, without filing an issue or asking — Miko sometimes uses fractional indexes deliberately to slot a new item between two existing ones; the audit is when those get re-flattened",
+			"cache: after filing or closing issues, restart Orlando (./orlando/lua/stop.sh && ./orlando/lua/start.sh) so the 10-minute issue cache is cleared and the audit dashboard reflects the change immediately. Same when issues are filed outside an audit run — restart whenever new issue activity should be visible right away"],
 		"checks": ["broken cross-references (links to files or anchors that 404)",
 			"stale vibecode role fields (mentions of paths that have moved or been renamed)",
 			"contradictions between docs claiming authority for the same concept",
 			"stale wording (old file names, renamed concepts, removed sections)",
 			"single-source-of-truth violations (two docs both defining the same concept rather than one defining and the other linking)",
 			"outbound references — see the outbound_links rule below for the full policy"],
+		"resolve_comments": {
+			"rule": "any comment on an open issue whose body starts with '**Resolve:**' is Miko's resolution for that issue. The AI applies the instructions and closes the issue automatically — no need to confirm first. Pause to ask only if the resolution text is ambiguous or requires a judgment call the AI cannot confidently make.",
+			"posted_via": "the Comment chip on each audit.md issue card, with the 'Mark as resolution' checkbox checked — the client prefixes the body with '**Resolve:** ' on submit",
+			"discovery": "during a normal audit; whenever Miko says 'search for my resolutions' / 'apply resolutions' / 'check resolves' / equivalent; or proactively whenever the AI is doing requirements/ work and notices a recently-commented issue"
+		},
 		"outbound_links": {
 			"rule": "with rare, deliberately-marked exceptions, nothing in requirements/ should link to anything outside requirements/. Authoritative spec is self-contained.",
 			"on_finding": "file an issue against the file that contains the outbound link. DO NOT auto-fix and DO NOT auto-mark as allowed — Miko decides per link whether to remove it, restructure, or mark it as an exception",
@@ -36,7 +44,7 @@
 			"one_issue_per_problem": true,
 			"title_format": "File: documentation/<full-path>.md § <Section Name>",
 			"title_constraint": "MUST start with 'File: documentation/' so the github-issues-against directive picks it up; the path after must exist on disk or the directive filters the issue out",
-			"body_tone": "verbose — the body is the full description rendered to readers on consistency.md, not a summary",
+			"body_tone": "verbose — the body is the full description rendered to readers on audit.md, not a summary",
 			"body_should_include": ["what's broken (the specific failure)",
 				"where (line numbers, link text, exact path)",
 				"correct fix (concrete replacement, not 'figure it out')",

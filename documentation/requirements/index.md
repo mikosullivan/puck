@@ -1,4 +1,4 @@
-# Requirements — the authoritative spec
+# Requirements
 
 ~~~vibecode
 {"vibecode": {
@@ -18,9 +18,9 @@ These docs are **authoritative** for the Caspian language, the Puck protocol, th
 
 ## What does NOT live here
 
-- **Brainstorm and pre-commitment material** — lives in [ideas/](../ideas/). Ideas may graduate into this tree once they're settled enough to commit.
+- **Brainstorm and pre-commitment material** — lives in [ideas/](../ideas/). Ideas may graduate into this tree once they're settled enough to commit. <!-- outbound-link-allowed -->
 - **Slice-by-slice development plans** — describe how to implement the spec, not the spec itself. Will land under `development/` here once the slice docs migrate from the old tree.
-- **Historical material from the prior tree** — sits at [requirements-old/](../requirements-old/). Not authoritative. Being migrated piece by piece.
+- **Historical material from the prior tree** — sits at [requirements-old/](../requirements-old/). Not authoritative. Being migrated piece by piece. <!-- outbound-link-allowed -->
 
 ## How this tree is being built
 
@@ -39,3 +39,18 @@ The reason for the rebuild only sticks if the discipline holds:
 - **Other docs link, never redefine.** Cross-references are URL/path links into the canonical doc, not paraphrases of it.
 - **Vibecode `role` fields name what each doc owns.** Reading the `role` line should answer "is this the canonical doc for X, or is it referencing X?"
 - **Multiple authoritative claims for the same concept are a bug.** When found, surface and fix.
+
+## Implementation notes
+
+Generally, requirements docs say **what** the system does, not **how** to build it. Implementation belongs in the slice-by-slice development plans, not here.
+
+The exception: some requirements, if implemented the obvious naïve way, are expensive enough that the cost would prohibitive. In those cases the requirement carries an **Implementation notes** section at the bottom of the doc that sketches an efficient approach — enough guidance that the implementer knows the feature is realistic and roughly how to get there.
+
+Rules for **Implementation notes** sections when they appear:
+
+- They live at the bottom of the doc, after the spec proper.
+- They sketch a known-workable approach, not a binding mandate. An implementer free to find a better way still can.
+- They are NOT a substitute for the development plan, which still owns the schedule and the slice-by-slice rollout.
+- They are NOT a place to dump random implementation thoughts. If the naïve implementation is fine, no Implementation notes section is needed.
+
+If you're authoring a new requirements doc and you find yourself wanting to add an Implementation notes section, ask first whether the requirement itself could be simplified to avoid the cost. If the cost is real and inherent, then the section earns its place.

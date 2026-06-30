@@ -1,11 +1,11 @@
 # Creating the engine
 
-<!--index: 01-->
+<!--index: 1 -->
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "under_the_hood_engine_creation",
-	"role": "canonical spec for what the Caspian 'engine' actually IS at the Lua level — how it comes into existence, how a host loads it, how the host installs properties on it, and what that looks like across different host scenarios (test harness, CLI runner, embedded inside Ruby/Python). Owns the Lua-mechanical view of engine creation and configuration; delegates the conceptual host-engine model to initialization.md and per-property semantics to the engine-slots doc.",
+	"role": "canonical spec for what the Caspian 'engine' actually IS at the Lua level — how it comes into existence, how a host loads it, and how the host installs properties on it. Owns the Lua-mechanical view of engine creation and configuration; delegates the conceptual host-engine model to initialization.md, per-property semantics to the engine-slots doc, and worked per-host scenarios to startup-scenarios.md.",
 	"status": "active spec — first authored fresh in the new requirements/ tree",
 	"audience": "anyone writing a host that loads Caspian (Lua scripts, CLI runners, Ruby/Python embeddings); AI tooling reasoning about engine startup at the Lua layer"
 }}
@@ -32,7 +32,6 @@ Real and plausible scenarios:
 
 - **A test runner.** A Lua script (e.g. `tests/caspian/run.lua`) that loads the engine, feeds it a fixture, asserts the result. The test script is the host.
 - **The `caspian` CLI.** A Lua script (`lib/lua/caspian/cli.lua`) invoked by `caspian myprogram.casp`. It reads the file, transpiles it, runs it, sends output to the terminal. The CLI script is the host.
-- **A REPL.** A Lua script that loops: read a line from the user → run it through the engine → print the result → repeat. The REPL loop is the host.
 - **An IDE plugin.** A VS Code extension (in Node.js, say) loads Caspian through a Lua binding to evaluate snippets for autocompletion or linting. The extension process is the host.
 - **A web app embedding Caspian.** A Ruby on Rails application that lets users write small Caspian expressions for some scripting feature. Each web request that needs to evaluate user-supplied Caspian becomes a host invocation. The Rails worker is the host.
 - **A serverless function.** An AWS Lambda that runs Caspian for an event handler. The Lambda invocation environment is the host.
@@ -83,6 +82,20 @@ After `require` returns, here's what the host has in its hands:
 
 There is no `new()` call. There is no constructor pattern. The module IS the engine.
 
+## Lua version
+
+Caspian commits to a **minimum** Lua version, not a specific one. Any Lua VM at or above the minimum should be able to load and run the engine module without modification.
+
+The minimum version isn't decided yet. It can't be: Caspian uses a subset of Lua's standard library and language features that will only be known once the entire engine is built. A feature added late in development could pull in a syntax form or library entry only available in 5.4 (or only available in 5.3+, etc.), shifting the floor.
+
+**The plan:**
+
+- For now, development runs on whatever Lua version the maintainer has handy — currently **Lua 5.4** (matched by the `lua5.4` shebang in worked examples and the test runner). That's a provisional target, not a commitment.
+- Once the engine is feature-complete, a compatibility test suite runs the full engine against each older Lua version (5.3, 5.2, 5.1, LuaJIT) and reports which features fail on each. The lowest version that passes the whole suite becomes the documented minimum.
+- Hosts shipping Caspian will be able to bundle whichever Lua VM they prefer, as long as it's at or above the documented minimum.
+
+Until that test suite runs, any specific version mentioned in docs or scripts (the `lua5.4` shebang, project CLAUDE.md convention, etc.) reflects the working development target, not a binding requirement.
+
 ## How the host populates it
 
 Because the engine is a Lua table, configuring it is just property assignment:
@@ -107,7 +120,7 @@ From the host's perspective, the engine's lifecycle has three phases:
 
 1. **Load.** `require('caspian.engine')` returns the engine table. Happens once per Lua process; subsequent `require` calls return the same cached table.
 2. **Configure.** Host assigns the properties it wants the engine to see. Order doesn't matter; the host can interleave configuration and other work freely until it's ready to run.
-3. **Run.** Host calls `engine.run()`. The engine reads its properties, initializes its runtime state inside `bootstrap()`, walks the program tree, and returns the last statement's value to the host.
+3. **Run.** Host calls `engine.run()`. The engine reads its properties, initializes its runtime state inside `bootstrap()`, walks the program tree, and returns to the host whatever the program last set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val) (or null if it was never called).
 
 After `engine.run()` returns, the host can:
 
@@ -118,75 +131,11 @@ The reset-on-every-run behavior means tests can call `engine.run()` repeatedly a
 
 ## Different host scenarios
 
-The same loading pattern works regardless of who's driving:
+The same loading pattern works regardless of who's driving — what changes between hosts is the surrounding language (Lua-native test harness, shell-launched CLI, embedded inside another host language) and the marshaling each does to get values into the engine module's properties.
 
-### Test harness (Lua-native)
+The contract stays constant across hosts: `engine.caspianj`, `engine.argv`, `engine.stdout`, etc., as Lua-table properties, plus the `engine.run()` method. Conform to that surface and you can bootstrap from anywhere with a Lua binding.
 
-A test file under `tests/caspian/` does the loading itself:
-
-~~~lua
-package.path = './lib/lua/?.lua;./lib/lua/?/init.lua;' .. package.path
-local engine = require('caspian.engine')
-
-engine.caspianj = {{{value = "hello"}, "to_string"}}
-local result = engine.run()
--- assert result.payload == "hello"
-~~~
-
-The "host" is the test runner. It loads the engine, stages a fixture, runs, asserts. Same module, same lifecycle, no special test-mode flag.
-
-### CLI runner
-
-The CLI runner at `lib/lua/caspian/cli.lua` is the host when the user types `caspian myprogram.casp`:
-
-~~~lua
-local engine = require('caspian.engine')
-
-local source = read_file(arg[1])
-engine.caspianj = engine.parse_caspian(source)
-engine.argv     = {table.unpack(arg, 2)}
-engine.stdout   = function(s) io.write(s) end
-
-engine.run()
-~~~
-
-Same pattern, plus a parse step (CLI starts from Caspian source, not pre-made CaspianJ) and OS-stream wiring.
-
-### Embedded inside another host language
-
-A Ruby host loads the Lua VM, then loads the engine inside it. From Ruby:
-
-~~~ruby
-lua = Lua::State.new
-lua.execute "engine = require('caspian.engine')"
-
-lua.execute "engine.caspianj = #{tree_as_lua_literal}"
-lua.set "engine_stdout_callback", -> (s) { $stdout.write(s) }
-lua.execute "engine.stdout = engine_stdout_callback"
-
-lua.execute "return engine.run()"
-~~~
-
-The marshaling between Ruby and Lua is the host's concern. The engine doesn't know which language is calling it; from inside, it just sees a Lua table with Lua functions and values. The host could equally well be Python (via lupa, etc.), Rust (via mlua), or any other language with a Lua binding.
-
-What stays constant across all hosts: the contract is `engine.caspianj`, `engine.argv`, `engine.stdout`, etc., as Lua-table properties, plus the `engine.run()` method. Conform to that surface and you can bootstrap.
-
-## Why there's only one engine per process today
-
-Because `require` caches its results, the engine module is effectively a singleton. Calling `require('caspian.engine')` from two different places in the same Lua process returns the same table. Reading `engine.caspianj` from one place sees what the other place wrote.
-
-This is fine for today's use cases (one host, one program, one engine). It would be a problem for a process that wanted to run two independent Caspian programs side by side — they'd share the engine module's state and step on each other.
-
-If multi-engine support becomes needed, the engine module would have to add a constructor:
-
-~~~lua
-local engine_a = caspian.engine.new()   -- hypothetical
-local engine_b = caspian.engine.new()
-engine_a.caspianj = ...
-engine_b.caspianj = ...
-~~~
-
-The reference impl doesn't have this. When it's needed, the module would refactor so the table-with-methods pattern stays, but each `new()` produces a fresh table with its own state.
+For end-to-end worked examples per host environment (CLI runner, Python embedding, JavaScript embedding), see [startup-scenarios](startup-scenarios).
 
 ## Why "no constructor" matters
 

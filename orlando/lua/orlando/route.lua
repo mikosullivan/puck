@@ -97,6 +97,12 @@ function M.resolve(url_path)
         return { kind = "static", path = INDEX_HTML_PATH }
     end
 
+    -- Browsers request /favicon.ico from the URL root by convention.
+    -- Serve it from orlando/static/ without the /static/ prefix.
+    if rel == "favicon.ico" then
+        return { kind = "static", path = "orlando/static/favicon.ico" }
+    end
+
     -- /documentation (bare, no slash) → canonical is with slash.
     if rel == "documentation" then
         if not had_trailing_slash then

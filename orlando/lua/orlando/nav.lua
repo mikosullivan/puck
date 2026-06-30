@@ -15,6 +15,19 @@ local M = {}
 
 local DOC_ROOT = "documentation"
 
+-- Read the first <!--index: N--> directive from a markdown file. Used
+-- to put indexed entries ahead of unindexed ones in the sidebar (and
+-- to apply per-entry numeric ordering among indexed peers). Mirrors
+-- the same convention used by the page-level tree-nav.
+local function read_index_directive(md_path)
+    local f = io.open(md_path, "r")
+    if not f then return nil end
+    local chunk = f:read(800) or ""
+    f:close()
+    local val = chunk:match("<!%-%-%s*index:%s*([%d%.]+)%s*%-%->")
+    return val and tonumber(val) or nil
+end
+
 -- List entries in a directory, sorted, separating files from subdirectories.
 local function list_dir(path)
     local files, dirs = {}, {}
@@ -84,16 +97,42 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
     -- an unclosed opening tag (QuickBuilder has XML semantics).
     if #tree.files == 0 and next(tree.subdirs) == nil then return end
 
-    -- Merge files and subdirs into one alphabetically sorted list so the
-    -- nav reads top-to-bottom in name order regardless of kind.
+    -- Merge files and subdirs into one ordered list. Each entry gets
+    -- an effective index — for files, the <!--index: N--> directive in
+    -- the file itself; for subdirs, the directive on their index.md (if
+    -- any). Indexed entries sort first by numeric value; unindexed
+    -- entries follow in alphabetical order. Matches the tree-nav rule.
+    -- index.md itself never appears as a sibling entry — pull_index_file
+    -- has already removed it; the directory it lives in carries its
+    -- ordering instead.
     local entries = {}
     for _, name in ipairs(tree.files) do
-        entries[#entries + 1] = { name = name, kind = "file" }
+        local fs_path = fs_prefix .. "/" .. name
+        local idx
+        if name:sub(-3) == ".md" then
+            idx = read_index_directive(fs_path)
+        end
+        entries[#entries + 1] = { name = name, kind = "file", idx = idx }
     end
     for name, _ in pairs(tree.subdirs) do
-        entries[#entries + 1] = { name = name, kind = "dir" }
+        local index_md = fs_prefix .. "/" .. name .. "/index.md"
+        local probe = io.open(index_md, "r")
+        local idx
+        if probe then
+            probe:close()
+            idx = read_index_directive(index_md)
+        end
+        entries[#entries + 1] = { name = name, kind = "dir", idx = idx }
     end
-    table.sort(entries, function(a, b) return a.name < b.name end)
+    table.sort(entries, function(a, b)
+        if a.idx and b.idx then
+            if a.idx ~= b.idx then return a.idx < b.idx end
+            return a.name < b.name
+        end
+        if a.idx and not b.idx then return true end
+        if not a.idx and b.idx then return false end
+        return a.name < b.name
+    end)
 
     parent:tag("ul", function(ul)
         for _, entry in ipairs(entries) do
@@ -179,6 +218,18 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
                     li:tag("details", function(d)
                         if expanded then d:attr("open", "") end
                         d:tag("summary", function(s)
+                            -- Marker rendered as a separate span so that
+                            -- clicking the arrow triggers the summary's
+                            -- native toggle (an ::before on the link
+                            -- would navigate instead of toggle).
+                            -- text('') forces an explicit </span> close;
+                            -- QuickBuilder otherwise emits <span/> which
+                            -- HTML5 parses as an unclosed opening tag,
+                            -- wrapping the link inside the marker.
+                            s:tag("span", function(m)
+                                m:attr("class", "marker")
+                                m:text("")
+                            end)
                             if is_current then
                                 s:tag("span", function(sp) sp:text(name .. "/") end)
                             else

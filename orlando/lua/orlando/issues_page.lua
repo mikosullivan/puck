@@ -32,6 +32,11 @@ local function render_body(all_issues, can_edit)
         ' — sorted by issue number, newest first',
         '</div>',
     }
+    if can_edit then
+        parts[#parts + 1] = '<div class="issues-toolbar">'
+            .. '<button type="button" class="issues-refresh">Refresh from GitHub</button>'
+            .. '</div>'
+    end
     if count == 0 then
         parts[#parts + 1] = '<p>No open issues. Either the repo is in great shape, or <code>gh</code> is unavailable.</p>'
     else

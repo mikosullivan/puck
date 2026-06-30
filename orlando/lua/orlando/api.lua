@@ -6,6 +6,7 @@
     "POST /api/quick-add-issue":  "Form-encoded { title, body } -> shells out to `gh issue create` against mikosullivan/puck and returns a confirmation page with the issue URL.",
     "POST /api/close-issue":      "Form-encoded { number } -> shells out to `gh issue close` and returns JSON ok/error.",
     "POST /api/comment-issue":    "Form-encoded { number, body } -> shells out to `gh issue comment` and returns JSON ok/error. Gated by edit.allowed_ips; non-allow-listed IPs get 403.",
+    "POST /api/refresh-issues":   "No body -> re-pull all open issues from gh and replace the local cache. Used when the cache has drifted (issues changed outside Orlando). Gated by edit.allowed_ips.",
     "GET  /api/section-markdown": "?path=<md_path>&anchor=<id> -> raw markdown for the section (or whole file if anchor omitted). Used to pre-populate the Edit form's textarea.",
     "POST /api/edit-suggestion":  "Form-encoded { path, anchor?, markdown } -> writes the edited section back to the file in place. Gated by edit.allowed_ips; non-allow-listed IPs get 403. No git commit; maintainer manages version control themselves."
   },
@@ -60,6 +61,29 @@ end
 
 local function html_escape(s)
     return (s:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"))
+end
+
+-- Extract the trailing issue number from a github issue URL like
+-- https://github.com/owner/repo/issues/847 -> 847.
+local function issue_number_from_url(url)
+    return tonumber((url or ""):match("/issues/(%d+)%s*$"))
+end
+
+-- The logged-in gh user, lazily fetched on first comment.
+local gh_user_cache = nil
+local function gh_user()
+    if gh_user_cache then return gh_user_cache end
+    local handle = io.popen("gh api user --jq .login 2>/dev/null", "r")
+    if not handle then return "" end
+    local out = (handle:read("*a") or ""):gsub("%s+$", "")
+    handle:close()
+    gh_user_cache = out
+    return out
+end
+
+-- ISO-8601 UTC, matching the createdAt format gh returns.
+local function iso_now()
+    return os.date("!%Y-%m-%dT%H:%M:%SZ")
 end
 
 -- Returns ok, issue_url_or_error_text.
@@ -120,7 +144,15 @@ local function handle_quick_add(req)
     end
     local ok, result = create_issue(title, body)
     if ok then
-        issues_fetcher.invalidate()
+        local number = issue_number_from_url(result)
+        if number then
+            issues_fetcher.add_issue({
+                number = number,
+                title  = title,
+                body   = body,
+                url    = result,
+            })
+        end
         local html = "<h1>Issue created</h1>"
             .. '<p><a href="' .. result .. '">' .. result .. '</a></p>'
             .. '<p><small>You can close this tab.</small></p>'
@@ -210,7 +242,11 @@ local function handle_comment_issue(req)
     end
     local ok, result = comment_issue(number, body)
     if ok then
-        issues_fetcher.invalidate()
+        issues_fetcher.add_comment(number, {
+            author     = gh_user(),
+            created_at = iso_now(),
+            body       = body,
+        })
         return json_response("200 OK", true)
     end
     return json_response("502 Bad Gateway", false, result)
@@ -230,7 +266,7 @@ local function handle_close_issue(req)
     end
     local ok, result = close_issue(number)
     if ok then
-        issues_fetcher.invalidate()
+        issues_fetcher.remove_issue(number)
         return json_response("200 OK", true)
     end
     return json_response("502 Bad Gateway", false, result)
@@ -437,6 +473,22 @@ local function handle_edit_suggestion(req)
     }
 end
 
+-- POST /api/refresh-issues
+-- Re-pull all open issues from gh and replace the local cache. Used
+-- when the cache has drifted because issues changed outside Orlando
+-- (manual gh commands, edits on github.com, etc.).
+local function handle_refresh_issues(req)
+    if not config.ip_can_edit(req.client_ip) then
+        return json_response("403 Forbidden", false, "edit features are restricted to allow-listed IPs")
+    end
+    if req.method ~= "POST" then
+        return json_response("405 Method Not Allowed", false, "POST required")
+    end
+    local ok = issues_fetcher.refresh_from_gh()
+    if ok then return json_response("200 OK", true) end
+    return json_response("502 Bad Gateway", false, "gh fetch failed")
+end
+
 --[[ {
     "in":  {"req": "{method=string, path=string, body=string?}"},
     "out": "{status=string, body=string, content_type=string} | nil (nil = not an /api/ path)"
@@ -452,6 +504,10 @@ function M.dispatch(req)
 
     if req.path == "/api/comment-issue" then
         return handle_comment_issue(req)
+    end
+
+    if req.path == "/api/refresh-issues" then
+        return handle_refresh_issues(req)
     end
 
     if req.path == "/api/edit-suggestion" then

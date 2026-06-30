@@ -1,6 +1,6 @@
 # Initialization
 
-<!--index: 03-->
+<!--index: 3 -->
 
 ~~~vibecode
 {"vibecode": {
@@ -62,7 +62,7 @@ The engine module surface (per the V1 spec):
 | `engine.stdout` | property — host sets this to a function the engine calls when the program writes to stdout |
 | `engine.stdin`, `engine.stderr` | parallel properties for input and diagnostic output |
 | `engine.parse_caspian(source)` | method — takes Caspian source text, returns the CaspianJ tree |
-| `engine.run()` | method — no arguments; executes the staged tree and returns the value of the last statement |
+| `engine.run()` | method — no arguments; executes the staged tree and returns whatever the program set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val), or null if it was never called |
 | `engine.bootstrap()` | internal — called by `engine.run()`; not normally called by the host directly |
 
 More properties and slots arrive as later slices add them. The current shape is set by the V1 development plan; the canonical inventory of engine properties (the user-visible `%engine.*` surface) will live in its own doc once the slice machinery for it migrates from `requirements-old/`.
@@ -94,11 +94,11 @@ The host calls `engine.run()` with no arguments. Everything `run()` needs has al
 1. Validates `engine.caspianj` is set (raises if not).
 2. Calls `engine.bootstrap()` to initialize runtime state (next section).
 3. Walks the tree's statements top to bottom; dispatches each.
-4. Returns the value of the last statement to the host.
+4. Returns to the host whatever the program set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val), or null if it was never called.
 
 ### 5. Read the result
 
-`engine.run()` returns the last statement's value. The host does whatever it wants with that — print it, return it from a test, ignore it, use it as the program's exit code.
+`engine.run()` returns the program's signaled return value (or null). The host does whatever it wants with that — print it, return it from a test, ignore it, use it as the program's exit code.
 
 ## What `bootstrap()` initializes
 

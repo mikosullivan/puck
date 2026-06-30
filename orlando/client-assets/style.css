@@ -75,7 +75,6 @@ body.home .content h1 .hero-logo {
 	color: #0969da;
 	text-decoration: none;
 }
-.sidebar li.file a:hover {text-decoration: underline}
 .sidebar li.file.current span {
 	font-weight: 700;
 	color: #222;
@@ -97,26 +96,80 @@ body.home .content h1 .hero-logo {
 	color: #0969da;
 	text-decoration: none;
 }
-.sidebar details summary a:hover {text-decoration: underline}
-.sidebar li.dir.current > details > summary > span,
+.sidebar li.dir.current > details > summary > span:not(.marker),
 .sidebar li.dir.current > span {
 	font-weight: 700;
 	color: #222;
 	background: yellow;
 }
-/* Spacer for entries that have no disclosure arrow (anything not
- * inside a <summary>). Covers files (link or current-page span),
- * empty-children dir nodes, and the bare-span form used when the
- * current page is a directory's own index. The phantom inline block
- * matches the disclosure-arrow width on <details> entries, so every
- * sidebar entry's name aligns at the same x regardless of shape. */
+
+/* === Unified entry marker (bullets and arrows) ===
+ *
+ * The browser's default disclosure marker on <summary> sits in a
+ * different mechanism than the ::before pseudo we use for leaf entries,
+ * so the two don't align. Suppress the default marker and render both
+ * bullets and arrows through the same ::before pattern. Same slot
+ * width, same alignment rules — they line up by construction. */
+
+/* Suppress the default <details> disclosure marker.
+ * `display: list-item` would normally show ::marker; the explicit
+ * `list-style: none` plus the WebKit pseudo covers all current
+ * browsers. */
+.sidebar details > summary {
+	list-style: none;
+}
+.sidebar details > summary::-webkit-details-marker {
+	display: none;
+}
+
+/* Marker dimensions — bullet for leaves, arrow for expandable, all
+ * rendered as SVG images so every marker is the exact same display
+ * size regardless of glyph or font.
+ *
+ * Leaf markers use ::before on the link/span (cheaper; non-interactive).
+ * Expandable markers use a real .marker span as the first child of
+ * <summary>, so clicks on the arrow toggle the details rather than
+ * navigating the link. */
 .sidebar li.file > a::before,
 .sidebar li.file.current > span::before,
 .sidebar li.dir:not(:has(details)) > a::before,
 .sidebar li.dir:not(:has(details)) > span::before {
 	content: "";
 	display: inline-block;
-	width: 1em;
+	width: 14px;
+	height: 14px;
+	margin-right: 4px;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	vertical-align: middle;
+}
+.sidebar details > summary > span.marker {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	margin-right: 4px;
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	vertical-align: middle;
+}
+
+/* Leaf entries get the bullet. */
+.sidebar li.file > a::before,
+.sidebar li.file.current > span::before,
+.sidebar li.dir:not(:has(details)) > a::before,
+.sidebar li.dir:not(:has(details)) > span::before {
+	background-image: url(/static/sidebar/bullet.svg);
+}
+
+/* Expandable entries get a right-pointing arrow when closed, a
+ * down-pointing arrow when open. */
+.sidebar details > summary > span.marker {
+	background-image: url(/static/sidebar/arrow-right.svg);
+}
+.sidebar details[open] > summary > span.marker {
+	background-image: url(/static/sidebar/arrow-down.svg);
 }
 .sidebar-search {margin: 0 0 12px}
 .sidebar-search input {
@@ -471,15 +524,12 @@ body.home .content h1 .hero-logo {
 .breadcrumb {
 	font-size: 13px;
 	color: #57606a;
-	margin-bottom: 8px;
-	padding-bottom: 6px;
-	border-bottom: 1px dashed #e1e4e8;
+	margin-bottom: 4px;
 }
 .breadcrumb a {
 	color: #0969da;
 	text-decoration: none;
 }
-.breadcrumb a:hover {text-decoration: underline}
 .breadcrumb .sep {
 	margin: 0 6px;
 	color: #8c959f;
@@ -488,7 +538,8 @@ body.home .content h1 .hero-logo {
 	color: #222;
 	font-weight: 500;
 }
-.content .breadcrumb + h1 {margin-top: 0}
+.content .breadcrumb + h1,
+.content .tree-nav + h1 {margin-top: 0}
 ul.toc, ul.toc ul {
 	list-style: none;
 	padding-left: 0;
@@ -605,7 +656,6 @@ ul.toc .show-nested:checked + label.toc::before {content: "\2296"}
 	text-decoration: none;
 	font-weight: 600;
 }
-.issue-number:hover {text-decoration: underline}
 .issue-section {color: #57606a}
 .issue-close {
 	margin-left: 6px;
@@ -874,7 +924,19 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 /* ===== /issues page (orlando.issues_page) ===== */
 
 .issues-page {max-width: 920px; margin: 0 auto; padding: 0 8px}
-.issues-summary {color: #57606a; font-size: 14px; margin: 8px 0 20px}
+.issues-summary {color: #57606a; font-size: 14px; margin: 8px 0 12px}
+.issues-toolbar {margin: 0 0 16px}
+.issues-refresh {
+	padding: 4px 12px;
+	font-size: 13px;
+	border: 1px solid #d0d7de;
+	background: #f6f8fa;
+	color: #24292f;
+	border-radius: 4px;
+	cursor: pointer;
+}
+.issues-refresh:hover {background: #eaeef2}
+.issues-refresh:disabled {opacity: 0.6; cursor: wait}
 
 /* Each issue is a card. */
 .issue-panel {
@@ -1060,11 +1122,49 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .issue-comment-status.ok {color: #1f883d}
 .issue-comment-status.err {color: #cf222e}
 
-.consistency-issue {
+.issue-card {
 	border: 3px solid #3d07ff;
 	border-radius: 6px;
 	padding: 0 16px 8px;
 	margin: 16px 0;
 }
 
-.consistency-issue > h3:first-child {margin-top: 12px}
+.issue-card > h3:first-child {margin-top: 12px}
+
+.issue-card-comment-form {margin: 12px 0 4px}
+.issue-card-comment-form[hidden] {display: none}
+.issue-resolve-label {
+	display: block;
+	margin: 6px 0;
+	font-size: 13px;
+	color: #57606a;
+	cursor: pointer;
+	user-select: none;
+}
+.issue-comment-cancel {
+	font-size: 12px;
+	padding: 4px 12px;
+	border: 1px solid #d8dee4;
+	border-radius: 4px;
+	background: #f6f8fa;
+	color: #1f2328;
+	cursor: pointer;
+}
+.issue-comment-cancel:hover {background: #eaeef2}
+
+.tree-nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 4px;
+	font-size: 13px;
+	color: #57606a;
+}
+.tree-nav-sep {color: #b0b5bb}
+.tree-nav-arrow {
+	font-size: 2em;
+	line-height: 1;
+	vertical-align: middle;
+}
+.tree-nav-prev, .tree-nav-next {text-decoration: none}
+.tree-nav-disabled {color: #b0b5bb; cursor: default}

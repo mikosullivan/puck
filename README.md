@@ -1,4 +1,4 @@
-# <img src="orlando/static/logo.svg" alt="Puck logo" class="hero-logo"> Puck
+# Puck
 
 ~~~vibecode
 {"vibecode": {
