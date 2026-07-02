@@ -13,14 +13,16 @@ Class definitions have no name in the language — they're objects assigned to v
 
 ~~~caspian
 $widget = class # widget
-    method &init($name, $rank)
-        @name = $name
-        @rank = $rank
-    end
+	method &init($name, $rank)
+		@name = $name
+		@rank = $rank
+		return null
+	end
 
-    method &greet()
-        &puts 'hi, ' + @name
-    end
+	method &greet()
+		&puts 'hi, ' + @name
+		return null
+	end
 end
 
 $w = $widget.new('picard', 'captain')

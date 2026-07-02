@@ -60,7 +60,7 @@ Each worker is a fresh OS fork that runs **exactly one job and exits**. No worke
 This is the opposite of Sidekiq / Celery / RQ, which pool long-lived workers. The trade-off is a higher per-job fork cost (OS fork is fast but not free) in exchange for:
 
 - **Fork = job, 1:1.** Easier to reason about. `ps` shows you exactly what's running. Killing a fork kills exactly one job. No "which job is this stuck worker on?" question.
-- **No worker pool to manage.** No graceful drain, no rolling restart, no worker-died-mid-loop edge cases. Each worker's lifecycle is exactly one job's lifecycle.
+- **No worker pool to manage.** No graceful drain, no rolling restart, no worker-died-mid-loop failure modes to handle. Each worker's lifecycle is exactly one job's lifecycle.
 - **State leakage between jobs is impossible.** Each fork starts fresh from the manager's state at spawn time. No "the worker's memory got polluted by the previous job" bug class.
 - **Per-job role isolation is natural.** Each fork can run in whatever restricted role suits its job; different jobs can have different role profiles without worker-pool gymnastics.
 

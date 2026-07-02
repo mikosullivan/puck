@@ -44,6 +44,14 @@ Concrete places this principle shapes the spec:
 - [object-access § The V1 rule: holding is access](https://puck.uno/documentation/requirements/caspian/roles/object-access#the-v1-rule-holding-is-access) — the runtime doesn't add a second layer of filtering on top of what the owner decided to hand across. Owners narrow by passing a jail; recipients aren't second-guessed by the engine.
 - [sinks § Sinks are just objects](https://puck.uno/documentation/requirements/caspian/pipes/sinks/#sinks-are-just-objects) — sinks don't role-check outbound values. If you hold a sink, you can call its methods; the security work is at the handoff.
 
+## Every situation is in scope
+
+There is no such thing as an "edge case" in Caspian. What people commonly label an edge case is just an unusual situation — the rules of the system still apply to it, and it needs to work correctly. Bugs and security problems live in exactly the situations that get dismissed with that label: an unauthenticated request with an odd header shape, a form submit fired twice in a row, a downloaded object fetched during a partial network partition. Each is precisely where the security model has to hold.
+
+**Every situation is in scope.** The spec describes behavior for the full input space, not just the common path. When an unusual case gets named, it's named because the rule specifically covers it — not because it's being carved out as a special exception the design gets to skip.
+
+If a section needs to describe an unusual situation, use language like "the case where X happens during Y" or "the failure mode when Z is absent." Never reach for "edge case" — the label itself signals that a situation has been noticed and then categorized as unimportant enough to skip, which is where bugs live.
+
 ## Objects, not libraries
 
 Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, dispatchers, anything that fits the Puck object protocol. Each download is one object identified by one URL.

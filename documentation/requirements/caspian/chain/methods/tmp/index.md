@@ -28,7 +28,7 @@ For lifetime tied to a specific block rather than the surrounding scope:
 
 ~~~caspian
 %chain.tmp do($dir)
-    $dir.write 'scratch.txt', 'some bytes'
+	$dir.write 'scratch.txt', 'some bytes'
 end
 # $dir is gone; the temp dir has been deleted
 ~~~

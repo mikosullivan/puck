@@ -14,14 +14,14 @@ Two values are falsy: **`null`** and **`false`**. Everything else is truthy — 
 
 ~~~caspian
 if ''
-    # runs — empty string is truthy
+	# runs — empty string is truthy
 end
 
 if null
-    # does not run
+	# does not run
 end
 
 if 0
-    # runs — zero is truthy
+	# runs — zero is truthy
 end
 ~~~

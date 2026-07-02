@@ -31,8 +31,8 @@ EOF
 
 %vibecode <<EOF
 {
-    "purpose": "Look up the current temperature at the given zip code",
-    "returns": "number (degrees Fahrenheit) or null on lookup failure"
+	"purpose": "Look up the current temperature at the given zip code",
+	"returns": "number (degrees Fahrenheit) or null on lookup failure"
 }
 EOF
 ~~~

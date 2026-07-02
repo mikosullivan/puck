@@ -149,9 +149,11 @@ With rare, deliberately-marked exceptions, nothing in `requirements/` should lin
 
 ## Miko's formatting preferences
 
-Miko's personal code-formatting preferences live at [miko.json](https://puck.uno/documentation/ecoverse/formatting/miko.json) — the canonical source of truth. Consult it when generating or editing code in this repo: it covers indent, line rules, and per-language overrides.
+Miko's personal code-formatting preferences live at [miko.json](https://puck.uno/documentation/ecoverse/formatting/miko.json) — the canonical source of truth for indent, line rules, and per-language overrides.
 
-The format spec the file follows is at [formatting/](https://puck.uno/documentation/ecoverse/formatting/). Per that spec's philosophy, these are personal preferences and not project policy, but for code written for Miko in this repo, miko.json is the working default.
+**Before any Edit or Write on a code file (Caspian samples in markdown, Lua source, JSON, CSS, HTML), invoke the `format` skill and run through its rules.** The skill lives at `.claude/skills/format/SKILL.md` and enumerates the rules Miko has articulated with wrong ↔ right examples and a quick-checklist. The invocation isn't optional — writing code without consulting the skill has been a repeated failure mode.
+
+The format spec that miko.json follows is at [formatting/](https://puck.uno/documentation/ecoverse/formatting/). Per that spec's philosophy, these are personal preferences and not project policy, but for code written for Miko in this repo, they are the working default.
 
 ## Design principles to honor when proposing changes
 

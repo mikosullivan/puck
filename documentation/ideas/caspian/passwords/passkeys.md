@@ -132,7 +132,7 @@ The CBOR decoder is the only genuinely new dependency. Options:
 - C-binding to an existing library (cn-cbor, tinycbor).
 - Pure-Caspian implementation. WebAuthn touches a small subset of CBOR; a focused implementation is feasible.
 
-The lean is a C-binding for performance and correctness (CBOR has subtle edge cases — duplicate keys, integer canonicalization, indefinite-length encodings — and existing libraries have already worked them out).
+The lean is a C-binding for performance and correctness (CBOR has subtle rules around duplicate keys, integer canonicalization, and indefinite-length encodings that existing libraries have already worked out).
 
 ## Open: packaging
 

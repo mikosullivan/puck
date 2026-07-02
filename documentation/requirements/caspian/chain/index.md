@@ -26,7 +26,8 @@ Every change to `%chain` — grants, revokes, hash assignments — is **scoped t
 
 ~~~caspian
 function &foo()
-    %chain['request_id'] = 'abc'   # foo's frame stores this
+	%chain['request_id'] = 'abc'   # foo's frame stores this
+	return null
 end
 
 # Caller frame:

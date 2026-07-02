@@ -191,8 +191,9 @@ should expose this per-class or per-instance instead of globally.
 
 Months aren't all the same length, so "epoch month" doesn't exist as a clean
 integer. EzDate had `next_month(N)`: same day-of-month, N months forward (or
-backward). With the obvious edge case: Jan 31 + 1 month → Feb 28 (or 29 in
-leap years), not "Mar 3" or an error.
+backward). The case where the source day doesn't exist in the target month has
+to snap: Jan 31 + 1 month → Feb 28 (or 29 in leap years), not "Mar 3" or an
+error.
 
 Likely also wants:
 

@@ -82,7 +82,7 @@ The primary mechanism: `$obj.object.role` on any object returns the role object 
 ~~~caspian
 $role = $some_object.object.role
 %chain.role.grant($role, :net) do
-    $some_object.do_thing()
+	$some_object.do_thing()
 end
 ~~~
 
@@ -96,7 +96,7 @@ The `user` role has broader access via `%engine.roles`, which returns every role
 
 ~~~caspian
 %engine.roles.each do ($role)
-    # iterate every role known to the engine
+	# iterate every role known to the engine
 end
 ~~~
 
@@ -125,7 +125,7 @@ $caller_role = $passed_in_object.object.role
 $my_role     = $my_own_object.object.role
 
 if $caller_role == $my_role
-    # caller is in the same role as me
+	# caller is in the same role as me
 end
 ~~~
 
@@ -137,7 +137,7 @@ Every role reference has a `.current?` method that returns true if the role it n
 
 ~~~caspian
 if $some_object.object.role.current?
-    # the calling frame is running in $role
+	# the calling frame is running in $role
 end
 ~~~
 
@@ -176,7 +176,7 @@ The primary mechanism for cross-role capability delegation is **`%chain.role.gra
 
 ~~~caspian
 %chain.role.grant($agent.role, :net, :stdout) do
-    $agent.handle_request()
+	$agent.handle_request()
 end
 ~~~
 
@@ -188,7 +188,7 @@ Delegate everything the granter has at that moment:
 
 ~~~caspian
 %chain.role.grant($agent.role, :*) do
-    $agent.act_as_me()
+	$agent.act_as_me()
 end
 ~~~
 
@@ -198,7 +198,7 @@ Inside the block, `$agent.role` has every capability the granting frame currentl
 
 ~~~caspian
 %chain.role.revoke($agent.role, :net) do
-    $agent.do_offline_work()
+	$agent.do_offline_work()
 end
 ~~~
 

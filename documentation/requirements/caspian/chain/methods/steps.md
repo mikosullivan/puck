@@ -16,7 +16,7 @@
 
 ~~~caspian
 $count = %chain.steps do
-    # ... work whose steps you want to count ...
+	# ... work whose steps you want to count ...
 end
 ~~~
 
@@ -76,13 +76,13 @@ When a call is active, the cost is one integer increment per step. The interpret
 
 ~~~caspian
 $outer_count = %chain.steps do
-    &foo
+	&foo
 
-    $inner_count = %chain.steps do
-        &bar
-    end
+	$inner_count = %chain.steps do
+		&bar
+	end
 
-    &gup
+	&gup
 end
 
 # $inner_count: steps for &bar only.

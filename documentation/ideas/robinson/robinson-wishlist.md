@@ -513,9 +513,9 @@ the URL was formed. Robinson's request layer:
 Handlers see one parameter hash; the URL form is transparent to them.
 
 Specific rules for mixing (parser order, precedence on key
-collisions, cache-key canonicalization, edge cases) are TBD —
-captured in [json-urls.md](../../requirements/puck/json-urls.md) as a topic to revisit
-when the JSON-URL convention is fully spec'd.
+collisions, cache-key canonicalization, and the unusual situations
+that go with them) are TBD — captured in [json-urls.md](../../requirements/puck/json-urls.md)
+as a topic to revisit when the JSON-URL convention is fully spec'd.
 
 ### Closure Interface and Response Objects
 

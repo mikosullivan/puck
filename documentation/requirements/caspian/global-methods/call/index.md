@@ -32,11 +32,11 @@ Exits the current call — function or closure — with a return value. Inside a
 
 ~~~caspian
 function &foo()
-    &bar do
-        %call.return 'gup'   # exits the closure; foo continues
-    end
+	&bar do
+		%call.return 'gup'   # exits the closure; foo continues
+	end
 
-    return 'bear'            # exits foo
+	return 'bear'            # exits foo
 end
 ~~~
 
@@ -55,12 +55,12 @@ Yields control back to the caller's first passed block. The block runs to comple
 
 ~~~caspian
 function &logger()
-    %call.yield 'starting'   # caller's block sees 'starting' as the do-block arg
-    ...
+	%call.yield 'starting'   # caller's block sees 'starting' as the do-block arg
+	...
 end
 
 &logger do ($msg)
-    # $msg = 'starting'
+	# $msg = 'starting'
 end
 ~~~
 
@@ -80,8 +80,8 @@ An array of all `do...end` blocks the caller passed, in order. Useful when a fun
 
 ~~~caspian
 function &branch()
-    $blocks = %call.blocks      # array of the passed blocks
-    ...
+	$blocks = %call.blocks      # array of the passed blocks
+	...
 end
 ~~~
 
@@ -93,8 +93,8 @@ The role of the calling frame. Available unconditionally inside any function or 
 
 ~~~caspian
 function &foo()
-    $caller = %call.role
-    ...
+	$caller = %call.role
+	...
 end
 ~~~
 
@@ -118,12 +118,13 @@ Methods can use `%call.role` to restrict access from inside the body, since Casp
 
 ~~~caspian
 class &widget
-    method &destroy()
-        if %call.role != %self.object.role
-            raise 'only the owner can destroy this widget'
-        end
-        ...
-    end
+	method &destroy()
+		if %call.role != %self.object.role
+			raise 'only the owner can destroy this widget'
+		end
+
+		...
+	end
 end
 ~~~
 

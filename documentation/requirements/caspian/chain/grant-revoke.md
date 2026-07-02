@@ -17,7 +17,7 @@ Three forms exist for ergonomic reasons; all use the same do/end-block shape.
 
 ~~~caspian
 %chain.net.grant do
-    $lib.do_thing()
+	$lib.do_thing()
 end
 ~~~
 
@@ -25,7 +25,7 @@ Grants one capability for the block. The capability is named by addressing it as
 
 ~~~caspian
 %chain.tmp.revoke do
-    $lib.do_thing_without_tmp()
+	$lib.do_thing_without_tmp()
 end
 ~~~
 
@@ -35,7 +35,7 @@ When several capabilities want to be granted for the same block, the per-capabil
 
 ~~~caspian
 %chain.grant(:net, :tmp, :stdout) do
-    $lib.do_thing()
+	$lib.do_thing()
 end
 ~~~
 
@@ -43,7 +43,7 @@ Names the capabilities as symbols. Equivalent in semantics to three nested per-c
 
 ~~~caspian
 %chain.revoke(:net, :tmp) do
-    ...
+	...
 end
 ~~~
 

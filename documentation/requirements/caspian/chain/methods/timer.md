@@ -13,7 +13,7 @@
 
 ~~~caspian
 $seconds = %chain.timer do
-    # ... work to measure ...
+	# ... work to measure ...
 end
 ~~~
 

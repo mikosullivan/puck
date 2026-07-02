@@ -13,15 +13,15 @@ Blocks use the `do ... end` shape. Most iteration goes through method calls that
 
 ~~~caspian
 $items.each do ($item)
-    &puts $item
+	&puts $item
 end
 
 5.times do ($i)
-    &puts $i
+	&puts $i
 end
 
 1.upto(10) do ($n)
-    &puts $n
+	&puts $n
 end
 ~~~
 
@@ -29,8 +29,8 @@ Naming a loop with `as $loop` binds a loop object that exposes state and control
 
 ~~~caspian
 $items.each do ($item) as $loop
-    if $loop.count > 5
-        $loop.break
-    end
+	if $loop.count > 5
+		$loop.break
+	end
 end
 ~~~

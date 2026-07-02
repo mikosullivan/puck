@@ -45,12 +45,13 @@ Inside any method, `%call` is the call object — an object representing the cur
 
 ~~~caspian
 class &widget
-    method &destroy()
-        if %call.role != %self.object.role
-            raise 'only the owner can destroy this widget'
-        end
-        ...
-    end
+	method &destroy()
+		if %call.role != %self.object.role
+			raise 'only the owner can destroy this widget'
+		end
+
+		...
+	end
 end
 ~~~
 
@@ -96,7 +97,7 @@ The creator-owns rule applies straight through `.new()`. Even though a class its
 ~~~caspian
 # faucet_1 defines and owns the class
 class &widget
-    ...
+	...
 end
 
 # In a user-role frame:
@@ -135,7 +136,7 @@ $bar = 'whatever'           # foo owns the string
 # gup gets $bar somehow, then:
 $myhash = {}                # gup owns the hash
 $myhash['bar'] = $bar       # the hash is still gup-owned;
-                            # the string at $myhash['bar'] is still foo-owned
+							# the string at $myhash['bar'] is still foo-owned
 
 $pulled = $myhash['bar']    # foo-owned — the string never changed hands
 ~~~
@@ -156,7 +157,7 @@ A blob on disk is just bytes; bytes don't carry role identity. When code reads t
 ~~~caspian
 # user code:
 $record = $database.load('users/123')   # user owns $record — even though some other
-                                        # role originally wrote it last year
+										# role originally wrote it last year
 ~~~
 
 Ownership is an in-memory runtime property, not a persisted one. The serialize/deserialize boundary is treated like any other expression that yields a new object.
@@ -208,7 +209,7 @@ Chain grants control **permission to call methods on `%chain`** — they don't s
 ~~~caspian
 # In a user frame:
 %chain.role.grant($widget.object.role, :net) do
-    $widget.remember_net()     # widget's method captures %chain.net into @net
+	$widget.remember_net()     # widget's method captures %chain.net into @net
 end
 # Grant block over — widget's role no longer has %chain.net.
 

@@ -370,8 +370,8 @@ Two reasons:
   to ordinary boolean operations and null checks — exactly the operations Caspian
   already has. Implementing in Caspian keeps the runtime smaller.
 - **It's a useful real-world test of the language.** A short pure-Caspian module
-  with a clear specification, plenty of edge cases (the truth tables), and
-  well-defined behavior makes a good fixture for runtime testing. If the trilean
+  with a clear specification, a large defined behavior surface (the truth tables),
+  and well-defined behavior makes a good fixture for runtime testing. If the trilean
   module passes its own truth-table tests, that's evidence the runtime handles
   conditional logic, function definition, and null-comparison correctly.
 

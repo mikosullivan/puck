@@ -5,7 +5,7 @@
 	"doc": "requirements_caspian_call_dsl",
 	"role": "plan for how Caspian supports DSLs (domain-specific languages) — the dispatcher mechanism on %call, the four-tier model of where bare-word commands come from, how Caspian's own constructs (class, instance, loops) are built as DSLs, and the open questions that need answers before this lands.",
 	"audience": "engine implementers building the dispatcher, language designers reading Caspian's own use of DSLs, programmers writing custom DSLs in their own code",
-	"status": "plan — the core mechanism (`%call.dispatcher.new`, dsl hash, yield) is settled; tier model is settled; specific edge cases and sugar forms are open"
+	"status": "plan — the core mechanism (`%call.dispatcher.new`, dsl hash, yield) is settled; tier model is settled; specific unusual-situation rules and sugar forms are open"
 }}
 ~~~
 
@@ -32,17 +32,17 @@ The minimal end-to-end shape:
 
 ~~~caspian
 $logger = function()
-    $dispatcher = %call.dispatcher.new
-    $dispatcher.dsl['info']  = $log_handler   # bwc 'info'  → $log_handler.info(...)
-    $dispatcher.dsl['warn']  = $log_handler
-    $dispatcher.dsl['error'] = $log_handler
-    $dispatcher.yield
+	$dispatcher = %call.dispatcher.new
+	$dispatcher.dsl['info']  = $log_handler   # bwc 'info'  → $log_handler.info(...)
+	$dispatcher.dsl['warn']  = $log_handler
+	$dispatcher.dsl['error'] = $log_handler
+	return $dispatcher.yield
 end
 
 &logger do
-    info 'starting up'
-    warn 'queue is filling'
-    error 'fatal'
+	info 'starting up'
+	warn 'queue is filling'
+	error 'fatal'
 end
 ~~~
 
@@ -105,14 +105,14 @@ The mechanism above isn't reserved for library authors — Caspian itself is bui
 
 ~~~caspian
 class # person
-    inherits 'foo.com/person'
+	inherits 'foo.com/person'
 
-    field :name, class: :string, required: true
-    field :age,  class: :number, min: 0
+	field :name, class: :string, required: true
+	field :age,  class: :number, min: 0
 
-    method &greet()
-        'Hello, ' + @name
-    end
+	method &greet()
+		return 'Hello, ' + @name
+	end
 end
 ~~~
 
@@ -131,12 +131,12 @@ Each of `inherits`, `field`, `method` is a bare-word command that the class-defi
 
 ~~~caspian
 $config = instance
-    field :host, class: 'string', default: 'localhost'
-    field :port, class: 'integer', default: 8080
+	field :host, class: 'string', default: 'localhost'
+	field :port, class: 'integer', default: 8080
 
-    method &dsn()
-        'tcp://' + @host + ':' + @port
-    end
+	method &dsn()
+		return 'tcp://' + @host + ':' + @port
+	end
 end
 ~~~
 
@@ -162,18 +162,18 @@ The dispatcher treats read and write dispatch as separate keys: `name` is one en
 
 ~~~caspian
 $foo = function()
-    $dispatcher = %call.dispatcher.new
+	$dispatcher = %call.dispatcher.new
 
-    $bear = some_object
-    $dispatcher.dsl['height']  = $bear   # virtual getter
-    $dispatcher.dsl['height='] = $bear   # virtual setter
+	$bear = some_object
+	$dispatcher.dsl['height']  = $bear   # virtual getter
+	$dispatcher.dsl['height='] = $bear   # virtual setter
 
-    $dispatcher.yield
+	return $dispatcher.yield
 end
 
 &foo do
-    puts height       # calls $bear.height
-    height = 400      # calls $bear.height=
+	puts height       # calls $bear.height
+	height = 400      # calls $bear.height=
 end
 ~~~
 

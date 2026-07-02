@@ -25,7 +25,7 @@ The two are independent; you can specify either alone, or both together.
 # Caller is accepting that if a hung ensure block prevents unwind from
 # completing, this call runs forever.
 %chain.timeout(unwind: 3) do
-    # work with cleanup that is trusted to finish quickly on unwind
+	# work with cleanup that is trusted to finish quickly on unwind
 end
 ~~~
 
@@ -33,7 +33,7 @@ end
 # Hard cutoff only — no cleanup, no ensure. For runaway/hung code you
 # can't trust to unwind cleanly.
 %chain.timeout(kill: 3) do
-    # work that might loop forever or block indefinitely
+	# work that might loop forever or block indefinitely
 end
 ~~~
 
@@ -41,8 +41,8 @@ end
 # Belt and suspenders: unwind first, then kill if unwind takes too long.
 # The common shape for real code.
 %chain.timeout(unwind: 3, kill: 5) do
-    # normal work; unwind will attempt clean cleanup, but a hung
-    # ensure block can't push past 5 seconds total.
+	# normal work; unwind will attempt clean cleanup, but a hung
+	# ensure block can't push past 5 seconds total.
 end
 ~~~
 
