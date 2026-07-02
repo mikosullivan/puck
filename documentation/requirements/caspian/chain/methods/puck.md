@@ -12,6 +12,8 @@
 
 `%puck` is the gateway between Caspian code and the Puck object system. An object is identified by a URL; `%puck` downloads the object and returns it. Each call returns a **fresh object** — two `%puck['url']` calls return two independent objects, even when the URL is the same.
 
+Caspian doesn't have a "library" concept as a technical primitive — `%puck` downloads objects (classes, instances, dispatchers, etc.). See [concepts § Objects, not libraries](https://puck.uno/documentation/requirements/caspian/concepts#objects-not-libraries) for the framing.
+
 ## Download, don't execute
 
 Downloading an object does not run any of its code. The object arrives ready to receive method calls; its methods only execute when called. If a method needs another object, that method calls `%puck['other-url']` from inside its own body — the dependency download happens at method-call time, not at the original download.
@@ -33,18 +35,20 @@ The bytes returned by a URL may be cached so a re-download doesn't hit the netwo
 
 ## The `as_self` option
 
-By default, a downloaded object lives in its own role (see [roles § Library role](../../roles/#library-role)). The `as_self: true` kwarg overrides this:
+By default, a downloaded object is owned by the **`%puck` faucet's role** — same as any other value pulled through a faucet, per the [faucet model](https://puck.uno/documentation/requirements/caspian/pipes/faucets/#every-faucet-has-its-own-role). Downloaded objects don't get their own per-object roles; they share the puck-faucet's role, distinct from the caller's role. That means when the caller invokes a method on the downloaded object, the method body runs as the puck-faucet's role (per [methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role)) and doesn't inherit the caller's `%engine` access or other capabilities.
+
+The `as_self: true` kwarg overrides the faucet-role default:
 
 ~~~caspian
-$obj = %puck['https://example.com/widget']                  # owned by its own role
+$obj = %puck['https://example.com/widget']                  # owned by the %puck faucet's role
 $obj = %puck['https://example.com/widget', as_self: true]   # owned by the caller's role
 ~~~
 
 With `as_self: true`:
 
-- The object is owned by the **caller's** role, not by its own.
+- The object is owned by the **caller's** role, not by the faucet's.
 - Code in the object's methods runs with the caller's authority — including `%engine` access if the caller is `user`. This is the explicit opt-in for "treat this object as part of my own identity."
-- `as_self` does NOT transitively apply. If a method on the object calls `%puck['other-url']` without specifying `as_self`, the further object gets its own role (not the original caller's). Per-call control.
+- `as_self` does NOT transitively apply. If a method on the object calls `%puck['other-url']` without specifying `as_self`, the further object gets the faucet role (not the original caller's). Per-call control.
 
 Use `as_self: true` when an object is trusted enough to act with the loader's authority — typically project-internal objects the loader wrote themselves, or objects the loader explicitly wants to fold into its own identity.
 

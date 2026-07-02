@@ -1,5 +1,5 @@
 # `%chain`
-<!--index: 6 -->
+<!--index: 8 -->
 
 ~~~vibecode
 {"vibecode": {
@@ -16,7 +16,7 @@
 
 1. **Gives every frame its own `%chain`.** Changes made to the chain (grants, revokes, hash assignments) propagate downward only. Descendants see the changes; the parent frame sees its chain exactly as it was before the call. When the subroutine returns, the changes go with it. This is the underpinning property — everything else on this list depends on it. See [Frame inheritance](#frame-inheritance) for the details.
 2. **Holds the global methods.** Everything under [`methods/`](methods/) — `%now`, `%chain.net`, `%chain.tmp`, etc. — is canonically `%chain.X`. The bare `%X` forms (for the surfaces that have them) resolve through the same chain entries.
-3. **Gates capability propagation.** When a frame calls into a different role (library, stdlib helper), the new frame's chain reflects what the calling frame has handed across. Grant and revoke happen on the capabilities themselves.
+3. **Gates capability propagation.** When a frame calls into a different role, the new frame's chain reflects what the calling frame has handed across. Grant and revoke happen on the capabilities themselves.
 4. **Carries ambient context.** Arbitrary values can be attached to a frame; descendants see them; a role boundary resets them.
 5. **Supports inspection.** Code can read who called it, how deep the stack is, what role is on each frame.
 
@@ -25,12 +25,18 @@
 Every change to `%chain` — grants, revokes, hash assignments — is **scoped to the current frame**. When that frame returns, the parent's view of `%chain` is exactly what it was before the call.
 
 ~~~caspian
-%chain.net.revoke
-$foo()           # inside $foo, %chain.net is gone
-                 # after $foo returns, %chain.net is back (if it was here before)
+function &foo()
+    %chain['request_id'] = 'abc'   # foo's frame stores this
+end
+
+# Caller frame:
+$foo()                             # foo runs and returns
+%chain['request_id']               # null — foo's assignment didn't propagate up
 ~~~
 
 This makes chain reasoning local: a frame can mess with its descendants' chain however it likes without affecting its caller. The dual is also true — anything a descendant does is invisible up the stack.
+
+(Grants and revokes work the same way but require a `do ... end` block — see [Grant and revoke](#grant-and-revoke) below. Hash assignments are the only form of chain mutation that doesn't need block scope, since the frame itself supplies the scope.)
 
 ## Two layers of grant
 
@@ -39,96 +45,51 @@ Every global method goes through two grant decisions before code can reach it:
 1. **The engine grants the surface at startup.** Nothing on this page is automatically present. The host (CLI launcher, embedded runtime, custom host) decides per-surface what to provision. If the engine didn't grant `%chain.net`, no amount of `%chain.X.grant` later can conjure it.
 
 2. **The chain grants the surface across role boundaries.** Once a surface is in the engine, the user's chain has it. Whether descendants see it depends on the **default-grant** annotation:
-   - **Default-granted across boundaries** (`%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`) — flows automatically to anything the user calls.
+   - **Default-granted across boundaries** (`%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps`) — flows automatically to anything the user calls.
    - **Default-deny** (everything else) — descendants get an empty slot until the user explicitly hands it down.
 
 See the catalog at [methods/](methods/) for which surface is which.
 
 ## Grant and revoke
 
-Every grant form **takes a do/end block** — and that block is the grant's entire lifetime. The grant is active inside the block and gone the moment execution leaves it. There is no persistent-grant form; no "remember to revoke" obligation.
+`%chain.X.grant` and `%chain.X.revoke` let a frame hand specific capabilities to (or withhold them from) the descendant frames it calls into. Both take a `do ... end` block; the grant or revoke is active inside the block and gone the moment execution leaves it. There is no persistent-grant form.
 
-Three forms exist for ergonomic reasons; all use the same do/end-block shape.
-
-### Per-capability form
-
-~~~caspian
-%chain.net.grant do
-    $lib.do_thing()
-end
-~~~
-
-Grants one capability for the block. The capability is named by addressing it as a slot on `%chain` and calling `.grant`. Revoke is symmetric:
-
-~~~caspian
-%chain.tmp.revoke do
-    $lib.do_thing_without_tmp()
-end
-~~~
-
-### Multi-capability form
-
-When several capabilities want to be granted for the same block, the per-capability form would nest; use the multi-capability form instead:
-
-~~~caspian
-%chain.grant(:net, :tmp, :stdout) do
-    $lib.do_thing()
-end
-~~~
-
-Names the capabilities as symbols. Equivalent in semantics to three nested per-capability grants, just without the visual nesting. Same applies to revoke:
-
-~~~caspian
-%chain.revoke(:net, :tmp) do
-    ...
-end
-~~~
-
-### Role-targeted form
-
-`%chain.role.grant($role, :caps...)` grants capabilities to roles, not frames.
-See the full spec in [roles § Granting capabilities to other roles](https://puck.uno/documentation/requirements/caspian/roles/#granting-capabilities-to-other-roles).
-
-### Rules
-
-- **The do/end block on the `.grant` call IS the lifetime.** Every grant form takes a do/end block (e.g., `%chain.net.grant do ... end`); the grant is active for the duration of that block and evaporates when the block exits — whether via normal completion, early return, or an unwound exception. There is no persistent-grant form. Inside the block, the grant applies to the current frame and to every descendant frame that stays in the same role; crossing a role boundary still resets per the "Grants don't chain across role boundaries" rule below.
-- **Idempotency.** Both `.grant` and `.revoke` are silent no-ops when the chain already reflects the requested state. Defensive code can call either without checking first.
-- **Can't grant what you don't have.** Calling `.grant` on a capability the current frame doesn't possess raises. Granting requires possession.
-- **A parent's revoke can't be undone by descendants.** Because granting requires possession and the descendant doesn't possess what was revoked, the revoke is enforceable, not just advisory.
-- **Grants don't chain across role boundaries.** A grant to role `A` doesn't follow `A` into a method call that crosses into role `B` — `B` starts the call with its own default-grant set, not whatever `A` was carrying. If `B` needs the capability too, the grant has to be regranted at that boundary (typically with a fresh `%chain.role.grant($b_role, :caps)` block inside `A`'s frame, or with the non-targeted forms granting across the wider scope). Default-granted capabilities are the only ones that automatically traverse role boundaries; everything else is per-boundary opt-in. See [Role boundaries reset everything](#role-boundaries-reset-everything) below for the full reset rule.
+Three forms exist — per-capability, multi-capability, and role-targeted — covered in the full spec at [`grant-revoke`](grant-revoke).
 
 ## Ambient hash slot
 
-`%chain` doubles as a hash for arbitrary ambient values:
+`%chain` doubles as a hash for arbitrary ambient values, **descending only into methods of the same role**. At a role boundary, the hash slot is emptied — values set by the caller are not visible to a callee running under a different role.
 
 ~~~caspian
 %chain['request_id'] = '550e8400-e29b-41d4-a716-446655440000'
 
 # later, deep in the call tree (same role):
 $id = %chain['request_id']
+
+# but inside a call into a different role:
+# %chain['request_id'] returns null — the slot was emptied at the boundary
 ~~~
 
 Rules:
 
-- **Per-frame inheritance.** Values set in a frame are visible to descendants; a descendant that sets the same key creates its own scoped value that disappears when the descendant returns.
-- **URL keys recommended.** Bare strings work, but two unrelated libraries both using `'request_id'` will collide. URL-style keys (`'puck.uno/request_id'`) match the broader Puck convention and avoid collision.
-- **Role boundaries reset.** Untrusted code (any non-user role the user calls into) starts with an empty hash slot. Values set in the calling frame are not visible across the boundary.
+- **Per-frame inheritance within a role.** Values set in a frame are visible to descendant frames running in the same role; a descendant that sets the same key creates its own scoped value that disappears when the descendant returns.
+- **Role boundaries empty the slot.** Any call that crosses into a different role starts the new frame with an empty hash slot. The caller's values do not carry across.
 
 For V1.0 we don't allow passing chain values across role boundaries. We can revisit that policy post-V1.0 once the threat model is clearer.
 
 ## Role boundaries reset everything
 
-Whenever a call crosses a role boundary (user → library, library → stdlib, stdlib → user-callback, anything where the role changes), the new frame's chain reflects:
+Whenever a call crosses a role boundary (anything where the role changes from caller to callee), the new frame's chain reflects:
 
 - **Default-granted capabilities only.** Default-deny capabilities are gone unless the caller used `.grant` to hand them across the boundary.
 - **No hash values** (for V1.0).
-- **No record of the caller's grants.** A library can't introspect what the user revoked or what was hidden from it.
+- **No record of the caller's grants.** The callee can't introspect what the user revoked or what was hidden from it.
 
-This includes the return-to-user case — when a library invokes a user-supplied closure, the closure runs as user with a clean chain. The user's pre-boundary context isn't restored; the closure has to receive what it needs explicitly (via arguments, via lexical capture).
+This includes the return-to-user case — when non-user code invokes a user-supplied closure, the closure runs as user with a clean chain. The user's pre-boundary context isn't restored; the closure has to receive what it needs explicitly (via arguments, via lexical capture).
 
 ## Inspection
 
-Reading the chain (does not modify). **None of these are granted by default** — call-stack visibility is information that doesn't cross a role boundary unless the calling frame explicitly hands it across. A library calling `%chain.parent` without an explicit grant gets nothing back.
+Reading the chain (does not modify). **None of these are granted by default** — call-stack visibility is information that doesn't cross a role boundary unless the calling frame explicitly hands it across. Non-user code calling `%chain.parent` without an explicit grant gets nothing back.
 
 | Method | Purpose |
 |---|---|
@@ -142,7 +103,7 @@ Useful for diagnostics, debugging, and any code that needs to behave differently
 
 ## Complete catalog
 
-Every method that lives on `%chain`. Capability surfaces are documented per-method under [`methods/`](methods/); inspection methods are documented in the section above.
+Every method that lives on `%chain`. Each method's surface is documented per-method under [`methods/`](methods/); inspection methods are documented in the section above.
 
 | Method | Shortcut | Default-granted | Kind | Description |
 |---|---|---|---|---|
@@ -155,14 +116,14 @@ Every method that lives on `%chain`. Capability surfaces are documented per-meth
 | [`%chain.net`](methods/net) | | no | capability | Networking — HTTP client, sockets, UDS. |
 | [`%chain.now`](methods/now) | `%now` | **yes** | capability | Current timestamp from the engine-controlled clock. |
 | `%chain.parent` | | no | inspection | The frame that called this one. Shortcut for `%chain.frames[-2]`. |
-| [`%chain.puck`](methods/puck) | `%puck` | **yes** | capability | Library lookup. `%[url]` is the further-shortened form. |
+| [`%chain.puck`](methods/puck) | `%puck` | **yes** | capability | Object download by URL. `%[url]` is the further-shortened form. |
 | [`%chain.random`](methods/random) | `%random` | **yes** | capability | Random-value primitives (UUID, number, string). |
 | `%chain.role` | | no | inspection | The role of the current frame. |
 | [`%chain.root`](methods/root) | | no | capability | The dirjail the engine granted at startup. |
 | [`%chain.stderr`](methods/stdout-and-stderr) | `%stderr` | no | capability | Diagnostic-output channel. |
 | [`%chain.stdin`](methods/stdin) | `%stdin` | no | capability | The program's input channel. |
 | [`%chain.stdout`](methods/stdout-and-stderr) | `%stdout` | no | capability | Primary output channel. |
-| [`%chain.steps`](methods/steps) | | TBD | capability | Count Caspian-level evaluation steps. Default-grant pending [#834](https://github.com/mikosullivan/puck/issues/834). |
+| [`%chain.steps`](methods/steps) | | **yes** | capability | Count Caspian-level evaluation steps. |
 | [`%chain.timeout`](methods/timeout) | | **yes** | capability | Limit a block's wall-clock duration. |
 | [`%chain.timer`](methods/timer) | | **yes** | capability | Measure elapsed time around a block. |
 | [`%chain.tmp`](methods/tmp) | | no | capability | Fresh temp dirjail per access. |

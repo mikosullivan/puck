@@ -9,6 +9,6 @@
 
 **Default-granted across role boundaries:** no.  
 
-`%chain.argv` is the array of command-line arguments the program was invoked with — the same value as [`%engine.argv`](../../engine/argv), but reachable from any role granted the capability. User code typically reads `%engine.argv` directly; libraries that need the args reach for `%chain.argv` after the user has granted them the capability.
+`%chain.argv` is the array of command-line arguments the program was invoked with — the same value as [`%engine.argv`](../../engine/argv), but reachable from any role granted the capability. User code typically reads `%engine.argv` directly; non-user code that needs the args reaches for `%chain.argv` after the user has granted it the capability.
 
 The shape is identical: an array of strings, first element is the first user-supplied argument, may be empty.

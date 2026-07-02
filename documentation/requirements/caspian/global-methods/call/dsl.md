@@ -231,7 +231,7 @@ Roughly the order this lands in the engine:
 
 - **DSL-stacking with collisions.** When a loop body opens another loop, the inner loop's DSL entries shadow the outer's for any name collision. Documented; worth a worked example with intentional collision so the semantics are concrete.
 
-- **Loop-helper extraction.** Loop authors currently re-register `break` and `next` themselves. A shared helper (mixin? trait? `loop_control` function?) so each loop type doesn't redo the same boilerplate would be ergonomically nice; needs design.
+- **Loop-helper extraction.** Loop authors currently re-register `break` and `next` themselves. A shared helper (a `loop_control` class or free-standing helper function) so each loop type doesn't redo the same boilerplate would be ergonomically nice; needs design.
 
 - **Parser-refactor schedule.** Which V0.01 parser shortcuts get refactored to pure-DSL handling, and when? Class-body bwcs are the prime candidate; the answer is V0.02 or later, but a target milestone helps.
 

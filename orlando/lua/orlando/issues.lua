@@ -12,7 +12,7 @@
     "refresh_from_gh": "() -> re-pull from gh, replace cache, persist; returns ok"
   },
   "storage": "~/.orlando/issues-cache.json — same parent dir as config.json. Atomic write via tmp file + rename.",
-  "implementation": "Each issue is {number, title, body, url, comments=[{author, created_at, body}, ...]}. Empty comments arrays use cjson.empty_array_mt so they round-trip as [] not {}. The gh fetch uses --jq to emit one tsv line per issue and one per comment, parsed in a single pass.",
+  "implementation": "Each issue is {number, title, body, url, comments=[{author, created_at, body}, ...], labels=[{name, color}, ...]}. Empty comments and labels arrays use cjson.empty_array_mt so they round-trip as [] not {}. The gh fetch uses --jq to emit one tsv line per issue, one per comment, and one per label, parsed in a single pass.",
   "first_run": "If the cache file is missing on first access, refresh_from_gh() runs automatically to seed. Empty seed (no issues / no gh) becomes an empty cache; subsequent fetches return []."
 }
 ]]
@@ -37,10 +37,11 @@ local cache = nil
 local function gh_command()
     local jq_filter = [[.[] | . as $i | (
         ["I", ($i.number|tostring), $i.title, $i.url, (($i.body // "") | gsub("\r"; ""))] | @tsv,
-        ($i.comments[]? | ["C", ($i.number|tostring), (.author.login // ""), .createdAt, ((.body // "") | gsub("\r"; ""))] | @tsv)
+        ($i.comments[]? | ["C", ($i.number|tostring), (.author.login // ""), .createdAt, ((.body // "") | gsub("\r"; ""))] | @tsv),
+        ($i.labels[]? | ["L", ($i.number|tostring), .name, (.color // "")] | @tsv)
     )]]
     return string.format(
-        "gh issue list --repo %s --state open --limit 200 --json number,title,body,url,comments --jq '%s' 2>/dev/null",
+        "gh issue list --repo %s --state open --limit 200 --json number,title,body,url,comments,labels --jq '%s' 2>/dev/null",
         REPO, jq_filter)
 end
 
@@ -80,6 +81,10 @@ local function fresh_comments_array()
     return setmetatable({}, cjson.empty_array_mt)
 end
 
+local function fresh_labels_array()
+    return setmetatable({}, cjson.empty_array_mt)
+end
+
 local function fetch_all_from_gh()
     local handle = io.popen(gh_command(), "r")
     if not handle then return nil end
@@ -99,6 +104,7 @@ local function fetch_all_from_gh()
                 url      = f[4] or "",
                 body     = unescape_body(f[5] or ""),
                 comments = fresh_comments_array(),
+                labels   = fresh_labels_array(),
             }
             issues[#issues + 1] = issue
             if issue.number then by_number[issue.number] = issue end
@@ -109,6 +115,14 @@ local function fetch_all_from_gh()
                     author     = f[3] or "",
                     created_at = f[4] or "",
                     body       = unescape_body(f[5] or ""),
+                }
+            end
+        elseif kind == "L" and #f >= 3 then
+            local parent = by_number[tonumber(f[2])]
+            if parent then
+                parent.labels[#parent.labels + 1] = {
+                    name  = f[3] or "",
+                    color = f[4] or "",
                 }
             end
         end
@@ -139,6 +153,12 @@ local function load_from_disk()
             issue.comments = fresh_comments_array()
         else
             setmetatable(issue.comments, cjson.empty_array_mt)
+        end
+
+        if type(issue.labels) ~= "table" then
+            issue.labels = fresh_labels_array()
+        else
+            setmetatable(issue.labels, cjson.empty_array_mt)
         end
     end
     return parsed
@@ -241,6 +261,7 @@ function M.add_issue(issue)
         body     = issue.body or "",
         url      = issue.url or "",
         comments = fresh_comments_array(),
+        labels   = fresh_labels_array(),
     }
     save_to_disk()
 end

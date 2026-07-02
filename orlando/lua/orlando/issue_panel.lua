@@ -33,6 +33,27 @@ local function short_title(title)
     return (title:gsub("^File:%s+documentation/", ""))
 end
 
+-- Render an issue's labels as a small chip strip. Returns "" when the
+-- issue has no labels. Colors come from the GitHub label metadata via
+-- a data-attribute so CSS can pick a foreground that reads on light
+-- and dark backgrounds; the label chip itself has a shared shape rule.
+local function render_labels(labels)
+    if type(labels) ~= "table" or #labels == 0 then return "" end
+    local parts = { '<span class="issue-labels">' }
+    for _, lbl in ipairs(labels) do
+        local name  = lbl.name  or ""
+        local color = lbl.color or ""
+        if name ~= "" then
+            parts[#parts + 1] = '<span class="issue-label"'
+                .. ' data-color="' .. esc_attr_text(color) .. '">'
+                .. esc_attr_text(name)
+                .. '</span>'
+        end
+    end
+    parts[#parts + 1] = '</span>'
+    return table.concat(parts)
+end
+
 -- Shift ATX headings so the shallowest body heading becomes H4 (one
 -- level below the issue's own H3). Skips fenced code blocks.
 local function shift_body_headings(body)
@@ -165,10 +186,12 @@ function M.render(issue, ctx)
         .. ' data-copy="%s" title="Click to copy">%s</button>'
         .. ' — %s'
         .. '%s'
+        .. '%s'
         .. '</h3>',
         n, n,
         esc_attr_text(label), esc_attr_text(label),
         esc_attr_text(short_title(issue.title or "(no title)")),
+        render_labels(issue.labels),
         chips
     )
 

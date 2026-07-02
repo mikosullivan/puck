@@ -8,6 +8,6 @@
 }}
 ~~~
 
-`%engine.stdin` is the program's input channel — the place a Caspian program reads bytes the host has piped in. Reading from it is the only way to consume program input; there is no library-facing pipe equivalent.
+`%engine.stdin` is the program's input channel — the place a Caspian program reads bytes the host has piped in. Reading from it is the only way to consume program input; there is no non-user-facing pipe equivalent.
 
-If a library needs input, the user is the one who reaches into `%engine.stdin` and hands the data across. That keeps the boundary clean: the user controls what input flows into the program and where it ends up.
+If non-user code needs input, the user is the one who reaches into `%engine.stdin` and hands the data across. That keeps the boundary clean: the user controls what input flows into the program and where it ends up.

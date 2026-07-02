@@ -12,10 +12,10 @@
 
 ## `%engine.stdout`
 
-The program's primary output channel. The same underlying channel is reachable via the global `%stdout`; the host may grant `%stdout` to non-user roles when it wants libraries to be able to write there. Whether a library can produce output is a host policy decision exposed through `%stdout` — but `%engine.stdout` itself is user-only (like every `%engine` slot), so the channel via this path stays unambiguously the user's.
+The program's primary output channel. The same underlying channel is reachable via the global `%stdout`; the host may grant `%stdout` to non-user roles when it wants non-user code to be able to write there. Whether non-user code can produce output is a host policy decision exposed through `%stdout` — but `%engine.stdout` itself is user-only (like every `%engine` slot), so the channel via this path stays unambiguously the user's.
 
 ## `%engine.stderr`
 
 The program's diagnostic-output channel. Distinct from `%engine.stdout` in semantics: stdout carries the program's intended output; stderr carries notices, warnings, error traces, and other side-channel diagnostics. Hosts route the two streams independently — under a CLI runner, stdout might be piped while stderr stays on the terminal.
 
-Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly. If the host wants libraries to write diagnostics it grants the global `%stderr` to them — but the `%engine`-prefixed access stays user-only.
+Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly. If the host wants non-user code to write diagnostics it grants the global `%stderr` to it — but the `%engine`-prefixed access stays user-only.

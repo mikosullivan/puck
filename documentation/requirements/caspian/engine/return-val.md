@@ -23,11 +23,11 @@ After the program completes, `engine.run()` returns the value `'hello'` to the h
 
 The assigned value must be JSON-serializable: strings, numbers, booleans, null, arrays of any of those, hashes of string keys to any of those. The constraint exists because hosts in different languages need to marshal the return value across a language boundary, and JSON is the lowest-common-denominator shape that every host can handle without custom converters.
 
-Assigning a non-serializable value raises (`puck.uno/error/engine/return-val/not-serializable` or similar — exact UNS TBD).
+Assigning a non-serializable value raises. The exception class's identity settles once the naming scheme for engine-emitted error classes is decided.
 
 ## User-only
 
-Like every `%engine` slot, `%engine.return_val` is reachable only from `user`-role code. Non-user code assigning to it raises by the blanket `%engine` gate. Libraries can't set the program's return value; only the user-written program can.
+Like every `%engine` slot, `%engine.return_val` is reachable only from `user`-role code. Non-user code assigning to it raises by the blanket `%engine` gate. Non-user code can't set the program's return value; only the user-written program can.
 
 ## Multiple assignments
 

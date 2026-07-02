@@ -226,7 +226,7 @@ lua.global.close();
 
 ### Setting the return value
 
-The only way a Caspian program signals an answer back to the host is by assigning to `%engine.return_val` — and **only `user`-role code can do that**. Like every other `%engine` slot, the assignment raises from any non-user role. Libraries can't set the program's return value; only the user-written program can. The assigned value must be JSON-serializable (strings, numbers, booleans, null, arrays, hashes of strings to any of those). The constraint exists because hosts in different languages need to marshal the return value across a language boundary, and JSON is the lowest-common-denominator shape every host can handle.
+The only way a Caspian program signals an answer back to the host is by assigning to `%engine.return_val` — and **only `user`-role code can do that**. Like every other `%engine` slot, the assignment raises from any non-user role. Non-user code can't set the program's return value; only the user-written program can. The assigned value must be JSON-serializable (strings, numbers, booleans, null, arrays, hashes of strings to any of those). The constraint exists because hosts in different languages need to marshal the return value across a language boundary, and JSON is the lowest-common-denominator shape every host can handle.
 
 ~~~caspian
 %engine.return_val = 'hello'

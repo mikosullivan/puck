@@ -1,4 +1,5 @@
 # `%chain` methods
+<!--index: 2 -->
 
 ~~~vibecode
 {"vibecode": {

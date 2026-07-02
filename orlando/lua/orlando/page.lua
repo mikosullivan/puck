@@ -1300,7 +1300,20 @@ local function add_breadcrumb(parent_qb, md_path)
     end)
 end
 
-local function add_search_form(nav_tag, prefill)
+-- The "current tree" prefix for a given source path.
+--   "foo/bar/baz.md" → "foo/bar/"
+--   "foo/bar/"       → "foo/bar/"   (already a dir)
+--   "README.md"      → ""            (no parent — whole site)
+--   nil / ""         → ""
+local function tree_of(md_path)
+    if not md_path or md_path == "" then return "" end
+    if md_path:sub(-1) == "/" then return md_path end
+    local dir = md_path:match("^(.-)/[^/]+$")
+    if not dir or dir == "" then return "" end
+    return dir .. "/"
+end
+
+local function add_search_form(nav_tag, prefill, current_tree, tree_active)
     nav_tag:tag("form", function(form)
         form:attr("class",  "sidebar-search")
         form:attr("action", "/search")
@@ -1314,6 +1327,20 @@ local function add_search_form(nav_tag, prefill)
                 i:attr("value", prefill)
             end
         end)
+
+        if current_tree and current_tree ~= "" then
+            form:tag("label", function(lab)
+                lab:attr("class", "sidebar-search-tree")
+                lab:tag("input", function(cb)
+                    cb:attr("type",  "checkbox")
+                    cb:attr("name",  "tree")
+                    cb:attr("value", current_tree)
+
+                    if tree_active then cb:attr("checked", "checked") end
+                end)
+                lab:tag("span", function(s) s:text("current tree") end)
+            end)
+        end
     end)
 end
 
@@ -1333,7 +1360,14 @@ local function add_issues_link(nav_tag)
     end)
 end
 
-local function add_sidebar(nav_tag, current_md_path, search_query)
+local function add_sidebar(nav_tag, current_md_path, search_query, current_tree, tree_active)
+    -- Derive tree from the current source path when the caller didn't
+    -- pass one (typical for doc-page render; search results pass the
+    -- URL's tree explicitly).
+    if current_tree == nil then
+        current_tree = tree_of(current_md_path)
+    end
+
     nav_tag:tag("h1", function(h1)
         h1:tag("a", function(a)
             a:attr("href", "/")
@@ -1348,7 +1382,7 @@ local function add_sidebar(nav_tag, current_md_path, search_query)
         end)
     end)
 
-    add_search_form(nav_tag, search_query)
+    add_search_form(nav_tag, search_query, current_tree, tree_active)
     add_random_link(nav_tag)
     add_issues_link(nav_tag)
     nav_tag:raw(nav.build(current_md_path))
@@ -1531,7 +1565,8 @@ function M.render_results_page(ctx)
 
             layout:tag("nav", function(n)
                 n:attr("class", "sidebar")
-                add_sidebar(n, ctx.current_md_path, ctx.query)
+                add_sidebar(n, ctx.current_md_path, ctx.query,
+                    ctx.current_tree, ctx.tree_active)
             end)
 
             layout:tag("main", function(m)

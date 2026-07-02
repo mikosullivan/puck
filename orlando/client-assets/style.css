@@ -185,6 +185,28 @@ body.home .content h1 .hero-logo {
 	border-color: #0969da;
 	box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
 }
+.sidebar-search-tree {
+	display: block;
+	margin-top: 4px;
+	font-size: 11px;
+	color: #57606a;
+	cursor: pointer;
+}
+.sidebar-search-tree input[type="checkbox"] {
+	width: auto;
+	margin-right: 4px;
+	vertical-align: middle;
+	padding: 0;
+	border: 1px solid #d0d7de;
+	box-shadow: none;
+}
+.search-form-tree {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+	color: #57606a;
+}
 
 .sidebar-random, .sidebar-issues {
 	display: block;
@@ -219,23 +241,54 @@ body.home .content h1 .hero-logo {
 .search-form button:hover {background: #eaeef2}
 .search-summary, .search-empty, .search-hint {color: #57606a}
 .search-results {
-	list-style: decimal;
-	padding-left: 24px;
+	list-style: none;
+	padding-left: 0;
+	margin-top: 16px;
 }
-.search-result {margin-bottom: 18px}
-.search-path {font-weight: 600}
+.search-result {
+	margin: 0 0 24px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #eef0f2;
+}
+.search-result:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+.search-title {
+	font-size: 16px;
+	font-weight: 600;
+	color: #0969da;
+	text-decoration: none;
+}
+.search-title:hover {text-decoration: underline}
+.search-title mark {
+	background: #fff3b8;
+	color: inherit;
+	padding: 0 2px;
+	border-radius: 2px;
+}
 .search-count {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 8px;
+	font-size: 11px;
+	font-weight: normal;
 	color: #57606a;
-	font-size: 0.85em;
-	margin-left: 6px;
+	background: #eaeef2;
+	border-radius: 10px;
+	vertical-align: 2px;
+}
+.search-path {
+	margin-top: 2px;
+	font-size: 12px;
+	color: #6e7781;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .search-preamble {
-	color: #57606a;
-	font-size: 0.9em;
-	margin: 4px 0 0;
-	padding-left: 10px;
-	border-left: 2px solid #eaecef;
-	line-height: 1.4;
+	margin: 8px 0 0;
+	font-size: 13px;
+	color: #24292f;
+	line-height: 1.5;
 }
 .search-preamble mark {
 	background: #fff3b8;
@@ -1130,6 +1183,42 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 }
 
 .issue-card > h3:first-child {margin-top: 12px}
+
+.issue-labels {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 0 6px;
+	vertical-align: middle;
+}
+.issue-label {
+	display: inline-block;
+	padding: 1px 8px;
+	font-size: 11px;
+	font-weight: 500;
+	color: #24292f;
+	background: #eaeef2;
+	border: 1px solid #d0d7de;
+	border-radius: 12px;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+/* Colors picked to roughly track the GitHub label palette while
+   staying readable at chip size. Add a rule when introducing a
+   new label color. */
+.issue-label[data-color="d73a4a"] {background: #ffe0e2; border-color: #d73a4a; color: #86181d}
+.issue-label[data-color="0075ca"] {background: #dbeaf7; border-color: #0075ca; color: #044289}
+.issue-label[data-color="cfd3d7"] {background: #eef0f2; border-color: #cfd3d7; color: #24292f}
+.issue-label[data-color="a2eeef"] {background: #d7f7f8; border-color: #55c9cc; color: #044289}
+.issue-label[data-color="7057ff"] {background: #e4dcff; border-color: #7057ff; color: #3f2fa8}
+.issue-label[data-color="008672"] {background: #cdf0e8; border-color: #008672; color: #005240}
+.issue-label[data-color="e4e669"] {background: #f6f6c0; border-color: #d4c72c; color: #6e5b00}
+.issue-label[data-color="d876e3"] {background: #f5d9f8; border-color: #d876e3; color: #6b1471}
+.issue-label[data-color="ffffff"] {background: #ffffff; border-color: #d0d7de; color: #57606a}
+.issue-label[data-color="5319e7"] {background: #dad0f9; border-color: #5319e7; color: #23076f}
+.issue-label[data-color="fef2c0"] {background: #fef2c0; border-color: #d4a72c; color: #6e5b00}
+.issue-label[data-color="0E8A16"] {background: #cff5d1; border-color: #0e8a16; color: #044c15}
+.issue-label[data-color="d4c5f9"] {background: #e5daff; border-color: #7057ff; color: #3f2fa8}
 
 .issue-card-comment-form {margin: 12px 0 4px}
 .issue-card-comment-form[hidden] {display: none}

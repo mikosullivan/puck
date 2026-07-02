@@ -12,4 +12,4 @@
 
 `%engine.dir` is a snapshot: changing the host process's working directory after the engine starts does not change what `%engine.dir` returns. If a program needs to know where the host now is, it asks the host explicitly; `%engine.dir` remembers where things started.
 
-Relative file paths handed to other engine slots (or to libraries that work with the filesystem) are typically resolved against `%engine.dir` unless a doc says otherwise.
+Relative file paths handed to other engine slots (or to non-user code that works with the filesystem) are typically resolved against `%engine.dir` unless a doc says otherwise.

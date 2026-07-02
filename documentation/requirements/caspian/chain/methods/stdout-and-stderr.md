@@ -12,4 +12,4 @@ The grant-mediated forms of [`%engine.stdout`](../../engine/stdout-and-stderr) a
 **Default-granted across role boundaries:** no.  
 **Shortcut globals:** `%stdout`, `%stderr`.
 
-Granting `%stderr` to non-user roles is more common than granting `%stdout` — diagnostic output from libraries is usually genuinely useful, whereas primary output should generally stay the user's voice.
+Granting `%stderr` to non-user roles is more common than granting `%stdout` — diagnostic output from non-user code is usually genuinely useful, whereas primary output should generally stay the user's voice.

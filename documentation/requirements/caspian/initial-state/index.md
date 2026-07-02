@@ -1,5 +1,5 @@
 # Initial state
-<!--index: 2 -->
+<!--index: 5 -->
 
 ~~~vibecode
 {"vibecode": {
@@ -35,7 +35,7 @@ At bootstrap, the engine walks every host-provisioned `%engine` slot and seeds t
 | `%engine.stderr` | `%chain.stderr` | Diagnostic output. |
 | `%engine.tmp` | `%chain.tmp` | Temp-dir capability. |
 | `%engine.now` | `%chain.now` | Engine-controlled clock. |
-| `%engine.puck` | `%chain.puck` | Library lookup. |
+| `%engine.puck` | `%chain.puck` | Object download by URL. |
 | `%engine.random` | `%chain.random` | Random-value primitives (libsodium → OS CSPRNG). |
 | `%engine.encryption` | `%chain.encryption` | Cryptographic primitives (host's crypto). |
 | `%engine.net` | `%chain.net` | Networking — HTTP, sockets, UDS. |
@@ -66,6 +66,7 @@ Whether each chain capability propagates across role boundaries by default is se
 - `%chain.encryption`
 - `%chain.timeout`
 - `%chain.timer`
+- `%chain.steps`
 
 Everything else is default-deny — present on the chain for `user`, but a role boundary resets visibility unless `user` explicitly grants it through.
 

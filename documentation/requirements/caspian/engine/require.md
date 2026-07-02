@@ -15,7 +15,7 @@ When called, `%engine.require` does two things:
 
 1. **Primes the library cache** (when caching is allowed for that URL). The engine resolves the URL and fetches the library now, instead of waiting for the first `%[url]` reference. Subsequent uses hit the cache.
 
-2. **Adds the library to [`%engine.manifest`](manifest).** The library appears under `caspian.libs` keyed by its URL, with the standard per-entry fields (`version`, `timestamp`, etc.). This makes the program's declared dependencies discoverable from manifest output — useful for audits, supply-chain tooling, and operations.
+2. **Adds the object to [`%engine.manifest`](manifest).** The object appears under `downloads` keyed by its URL, as an array of download entries with the standard per-entry fields (`version`, `fetched_at`, `bytes`, `sha256`, `via`) documented in [manifest § downloads](https://puck.uno/documentation/requirements/caspian/engine/manifest/#downloads). This makes the program's declared dependencies discoverable from manifest output — useful for audits, supply-chain tooling, and operations.
 
 Access to the loaded library still happens through `%[url]`, the same as if the program had never called `%engine.require`. The declarative form is purely about pre-fetch + manifest registration.
 

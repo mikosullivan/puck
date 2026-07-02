@@ -13,7 +13,7 @@
 
 ## `%chain.encryption.signing`
 
-Ed25519 signing and verification. Used by the blockchain integration for signed library endorsements and signed records.
+Ed25519 signing and verification. Used by the blockchain integration for signed object endorsements and signed records.
 
 | Method | Purpose |
 |---|---|

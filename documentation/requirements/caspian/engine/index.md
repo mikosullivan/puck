@@ -1,5 +1,5 @@
 # `%engine`
-<!--index: 1.5 -->
+<!--index: 3 -->
 
 ~~~vibecode
 {"vibecode": {
@@ -9,13 +9,13 @@
 }}
 ~~~
 
-`%engine` is the gateway between Caspian code and the host process that's running it. It's a top-level-only system method — non-capturable by runtime enforcement so that a library can't squirrel away a reference and use host resources behind the user's back.
+`%engine` is the gateway between Caspian code and the host process that's running it. It's a top-level-only system method — non-capturable by runtime enforcement so that non-user code can't squirrel away a reference and use host resources behind the user's back.
 
 ## Only `user` can call methods on `%engine`
 
-**Every slot on `%engine` is reachable only from code running under the `user` role.** A method call on `%engine` (or `%engine[...]`) from any other role — `stdlib`, `stdout`, `stderr`, anything a library or engine-internal helper switches into — is a runtime error. There is no per-slot opt-in for non-user access; the gate applies to the whole surface.
+**Every slot on `%engine` is reachable only from code running under the `user` role.** A method call on `%engine` (or `%engine[...]`) from any other role is a runtime error. There is no per-slot opt-in for non-user access; the gate applies to the whole surface.
 
-This is what makes `%engine` the program's gateway and not just a convenient namespace. Host resources flow through `user` code. If a library needs something `%engine` exposes — an HTTP client, a manifest entry, a coverage block — the user is the one who reaches into `%engine`, takes what's needed, and hands it across. The user is the actor; libraries are tools the user employs.
+This is what makes `%engine` the program's gateway and not just a convenient namespace. Host resources flow through `user` code. If non-user code needs something `%engine` exposes — an HTTP client, a manifest entry, a coverage block — the user is the one who reaches into `%engine`, takes what's needed, and hands it across. The user is the actor; everything else is a tool the user employs.
 
 ## Engine methods
 
@@ -37,9 +37,9 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%chain.net`](../chain/methods/net) |
 | `%engine.now` (TBD) | Engine-controlled clock. | [`%chain.now`](../chain/methods/now) |
 | [`%engine.platform`](platform) | Host platform information — OS, architecture, engine implementation. | — |
-| `%engine.puck` (TBD) | Library lookup. | [`%chain.puck`](../chain/methods/puck) |
+| `%engine.puck` (TBD) | Object download by URL. | [`%chain.puck`](../chain/methods/puck) |
 | `%engine.random` (TBD) | Random-value primitives (libsodium → OS CSPRNG). | [`%chain.random`](../chain/methods/random) |
-| [`%engine.require`](require) | Declarative library-dependency statement. | — |
+| [`%engine.require`](require) | Declarative dependency statement on a downloaded object. | — |
 | [`%engine.return_val`](return-val) | Settable slot holding the explicit return value the host receives from `engine.run()`. Omit and the host gets null. | — |
 | `%engine.root` (TBD) | Root dirjail — the filesystem entry point. | [`%chain.root`](../chain/methods/root) |
 | [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%chain.stderr`](../chain/methods/stdout-and-stderr) |

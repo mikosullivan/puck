@@ -21,4 +21,4 @@ Typical fields (more may be added as new portability concerns surface):
 | `engine` | Engine implementation — `lucy` for the Lua reference engine; other names for other implementations. |
 | `caspian_version` | The Caspian language version this engine implements. |
 
-Programs that want to branch on platform (`if %engine.platform.os == 'linux' then …`) read this hash. Libraries that want to declare host requirements do the same.
+Programs that want to branch on platform (`if %engine.platform.os == 'linux' then …`) read this hash. Downloaded objects that want to declare host requirements do the same.

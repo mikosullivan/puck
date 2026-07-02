@@ -1,11 +1,11 @@
 # Roles
-<!--index: 4 -->
+<!--index: 6 -->
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_roles",
-	"role": "spec for Caspian's role system — the identities code runs under. Owns the role catalog (currently just user and engine), the mechanism of role objects and switching, and the relationship between roles and capabilities. The rest of the catalog is deferred until the faucet model is spec'd.",
-	"status": "narrowed — only `user` and `engine` are settled; every other role candidate is deferred until faucets are spec'd, because the faucet decision will determine what other roles are needed and how engine-supplied data flows into user-program objects",
+	"role": "spec for Caspian's role system — the identities code runs under. Owns the role catalog (user, engine, plus one role per engine-provided faucet), the mechanism of role objects and switching, and the relationship between roles and capabilities.",
+	"status": "settled at the concept level — user + engine + one role per engine-provided faucet (per pipes/faucets); post-V1 candidates (stdlib distinction, forks role semantics, request/agent identity roles) remain deferred",
 	"audience": "engine implementers who will eventually have to enforce this; AI tooling reasoning about who can do what"
 }}
 ~~~
@@ -17,11 +17,11 @@ A **role** is the identity that owns currently-executing code. Every frame on th
 Four purposes, listed in order of how load-bearing each one is:
 
 1. **Capability gating.** A surface is reachable only from roles that have been granted the capability. The blanket gate on [`%engine`](../engine/) (user-only) is the strongest example; finer-grained gating on individual `%`-prefixed globals is more typical.
-2. **Provenance.** Code's identity travels with it. When something happens — output written, exception raised, library loaded — we can answer "who did that?" by reading the role.
+2. **Provenance.** Code's identity travels with it. When something happens — output written, exception raised, object downloaded — we can answer "who did that?" by reading the role.
 3. **Output attribution.** Bytes written to `%stdout` and `%stderr` are stamped with the producing role. Hosts can route or filter on that stamp.
 4. **Audit.** Logs, traces, and the `%engine.manifest` carry role information without code having to thread it through every call.
 
-The whole point of roles is to make these four purposes work with **no opt-in from the caller**. User code doesn't have to remember to identify itself to a library; the role is already attached to the frame.
+The whole point of roles is to make these four purposes work with **no opt-in from the caller**. User code doesn't have to remember to identify itself to non-user code; the role is already attached to the frame.
 
 ## The `user` role
 
@@ -33,9 +33,17 @@ The privilege is **not** a property of the user — it's a property of the role.
 
 Identifying the user role: it carries a stable name (`user`) the engine knows by string, not a generated ID. There's only ever one `user` role per engine.
 
+## Role names are convenience labels
+
+**Only `user` is a required name.** The name `user` is the one string identifier the runtime treats as significant — that role always exists, always has `%engine` access, and always runs the program's first statement. Everything else about role names is presentation, not spec.
+
+Every other role in the system has a name too, but those names exist for **readable diagnostics, logs, and documentation** — the runtime compares role references by identity (per [Comparing role references](#comparing-role-references)), not by matching strings. Some roles happen to get memorable names because they're referenced often — the engine role, the individual faucet roles (stdin, argv, net, etc.). Others may end up with generic labels like `faucet_1`, `faucet_2` if a concrete short name doesn't add clarity.
+
+In examples in this spec (see [object-access § Class instantiation is not an exception](object-access#class-instantiation-is-not-an-exception) and elsewhere), a placeholder like `faucet_1` stands in for "some non-user role" without implying the role has any particular category or catalog entry. The mechanics — creator-owns, holding-is-access, methods-run-as-object's-role — don't depend on the role's name.
+
 ## Core roles
 
-V1 commits to two roles. Every other candidate (`stdlib`, downloaded-object roles, `request`, `agent`, fork behavior, etc.) is deferred until the faucet model is spec'd, because the faucet decision will determine what other roles are needed and how engine-supplied data flows into user-program objects.
+V1 has two program-frame roles (`user`, `engine`) plus one role per engine-provided faucet. Other candidates (`stdlib` distinction, `request`, `agent`, fork behavior, etc.) remain deferred — see [Deferred until post-V1](#deferred-until-post-v1) at the bottom.
 
 ### `user`
 
@@ -46,6 +54,12 @@ Already covered above. The program's own code; the only role with `%engine` acce
 The engine itself, when it produces output not on behalf of user code. A panic trace, an internal diagnostic, a "you hit a TODO" message — bytes written by the engine itself rather than by any frame the user wrote. Hosts can choose to suppress engine-role bytes in production and surface them in development.
 
 `engine` is the only role that doesn't run user-program frames. It exists for attribution.
+
+### One role per engine-provided faucet
+
+Every engine-provided faucet has its own distinct role, and every value that comes through the faucet is owned by that role. The V1 catalog is the seven data-producing faucets: stdin, argv, env, filesystem (via `%chain.root` and `%chain.tmp` as separate faucets), network, downloads. The full model — how narrowing works, why role count stays bounded — is spec'd in [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/).
+
+These roles never run program frames — the code executing is always some `user`/`engine`/downloaded-object role. Faucet roles exist for **value provenance**: an audit or capability check asking "where did this string come from?" reads the value's role and gets a definitive source name.
 
 ## Objects also have roles
 
@@ -166,7 +180,7 @@ The primary mechanism for cross-role capability delegation is **`%chain.role.gra
 end
 ~~~
 
-Inside the block, frames running in `$agent.role` see `%chain.net` and `%stdout` as granted. Frames running in any other role (the user frame above, a library frame the agent calls into, anything) don't see those capabilities just because they're inside the block — only frames in the named target role do.
+Inside the block, frames running in `$agent.role` see `%chain.net` and `%stdout` as granted. Frames running in any other role (the user frame above, a non-user frame the agent calls into, anything) don't see those capabilities just because they're inside the block — only frames in the named target role do.
 
 ### Wildcard form
 
@@ -199,23 +213,20 @@ The named role loses access to the listed capabilities for the duration of the b
 - **`:*` snapshots at the call site.** The set of capabilities `:*` covers is whatever the granting frame has at the moment of the `%chain.role.grant` call. Adding capabilities to the granting frame inside the block does not retroactively expand the wildcard.
 - **Block-scoped only.** Same as every other grant form — no persistent grants.
 
-For the other (non-role-targeted) grant forms — per-capability, multi-capability, plain `.revoke` — see [chain § Grant and revoke](https://puck.uno/documentation/requirements/caspian/chain/#grant-and-revoke).
+For the other (non-role-targeted) grant forms — per-capability, multi-capability, plain `.revoke` — see [chain/grant-revoke](https://puck.uno/documentation/requirements/caspian/chain/grant-revoke).
 
 ## What's settled
 
 - The `user` role and its `%engine`-only privilege.
 - The `engine` role for engine-emitted attribution.
+- One role per engine-provided faucet, with the narrowing rules that come with it (see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/)).
 - The mechanism: role objects, `$obj.object.role`, `==` and `.current?`, the switch-at-frame-boundary rule.
 - Cross-role capability delegation goes through the role-targeted grant on `%chain` ([#830](https://github.com/mikosullivan/puck/issues/830)), not through any role-acquisition surface.
 
-## Deferred until the faucet spec lands
-
-Every other role-related decision waits on the faucet model:
+## Deferred until post-V1
 
 - Whether `stdlib` is a real role distinct from `user`.
-- Whether downloaded objects from `%puck['url']` get their own roles (and how those interact with `as_self`).
 - Whether forks behave with no-role-change semantics or with something more nuanced.
 - Whether `request`, `agent`, or other identity-bearing roles are baked in.
-- How engine-supplied inbound data (argv, env, network responses, filesystem reads, stdin) get role-stamped.
 
-These all collapse into "what's the faucet model?" — once that's committed to, the catalog can grow under the same framework rather than ad-hoc.
+Each of these is a separate design question, not blocked on any single other spec.

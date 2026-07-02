@@ -135,3 +135,56 @@ runner.test("handle: no query returns 200 with the landing form", function()
     assert_.equal(resp.status, "200 OK")
     assert_.not_nil(resp.body:find("Search", 1, true))
 end)
+
+-- Tree-scoped search: when a tree prefix is given, only files whose
+-- md_path starts with the prefix are considered.
+runner.test("tree filter scopes results to the prefix", function()
+    -- Use "documentation/requirements/" which should exist and yield
+    -- multiple matches for a common word.
+    local results = search.search("the", "documentation/requirements/")
+    assert_.is_true(#results > 0, "expected some matches under documentation/requirements/")
+
+    for _, r in ipairs(results) do
+        assert_.equal(r.md_path:sub(1, #"documentation/requirements/"),
+            "documentation/requirements/",
+            "result " .. r.md_path .. " outside tree")
+    end
+end)
+
+runner.test("tree filter with empty string returns full results", function()
+    local full    = search.search("Puck")
+    local scoped  = search.search("Puck", "")
+    assert_.equal(#full, #scoped)
+end)
+
+runner.test("tree filter with nil returns full results", function()
+    local full    = search.search("Puck")
+    local scoped  = search.search("Puck", nil)
+    assert_.equal(#full, #scoped)
+end)
+
+runner.test("tree filter that matches nothing returns empty list", function()
+    assert_.count(search.search("Puck", "no-such-directory/"), 0)
+end)
+
+runner.test("handle: parses &tree= parameter", function()
+    local resp = search.handle("/search?q=Puck&tree=documentation%2F")
+    assert_.equal(resp.status, "200 OK")
+    -- The results-page form should reflect the tree via a checked checkbox.
+    assert_.not_nil(resp.body:find('name="tree"', 1, true),
+        "expected results page to render the tree checkbox")
+    assert_.not_nil(resp.body:find('value="documentation/"', 1, true),
+        "expected checkbox value to reflect the URL-decoded tree")
+end)
+
+runner.test("render: tree checkbox absent when no tree in query", function()
+    local html = search.render("Puck")
+    -- No tree given → results-page form should not render the checkbox.
+    assert_.is_nil(html:find('name="tree"', 1, true))
+end)
+
+runner.test("render: tree checkbox present when tree is passed", function()
+    local html = search.render("Puck", "documentation/")
+    assert_.not_nil(html:find('name="tree"', 1, true))
+    assert_.not_nil(html:find('value="documentation/"', 1, true))
+end)

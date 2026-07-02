@@ -21,11 +21,41 @@
 | integer `N` | Lines with hit count ≤ `N`. Filters down to lines that ran rarely or not at all. |
 | `:all` | Every executable line, with its hit count. Full detail for hot-path analysis. |
 
-The retention setting controls **what's kept in the report**, not what's tracked — the engine instruments every loaded `.caspian` file (user code plus all libraries) regardless. The setting just decides which lines survive into the [`%engine.manifest`](manifest) `coverage` section.
+The retention setting controls **what's kept in the report**, not what's tracked — the engine instruments every loaded `.caspian` file (user code plus all downloaded objects) regardless. The setting just decides which lines survive into the [`%engine.manifest`](manifest) `coverage` section.
 
 ## Where the output goes
 
 Coverage data lives in the `coverage` section of [`%engine.manifest`](manifest). The section is absent entirely when coverage is off — opting into tracking via `%engine.coverage` is what makes the section appear; no separate manifest option is needed. Turning coverage off resets the recorded data; turning it back on starts fresh.
+
+## Manifest field inventory
+
+The `coverage` section is a hash keyed by file identifier (local path for user code; URL for downloaded objects). Each entry carries a `lines` hash mapping line number to hit count:
+
+~~~json
+"coverage": {
+	"src/main.casp": {
+		"lines": {
+			"12": 4,
+			"13": 4,
+			"27": 0
+		}
+	},
+	"https://example.com/widget": {
+		"lines": {
+			"3":  1,
+			"18": 0
+		}
+	}
+}
+~~~
+
+- Keys under `coverage` are the file's identity — a local path for source in the user's tree, a URL for anything downloaded via [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck).
+- Each entry has a single field, `lines` — a hash whose keys are line numbers (as strings, per JSON) and whose values are hit counts. Only executable lines appear; blank lines, comments, and non-executable syntax are omitted.
+- Which lines are retained in `lines` depends on the retention value passed to `%engine.coverage`:
+    - `true` — only lines with hit count `0`.
+    - integer `N` — lines with hit count ≤ `N`.
+    - `:all` — every executable line.
+- Files with zero retained lines are omitted from the section entirely.
 
 ## Post-V1
 

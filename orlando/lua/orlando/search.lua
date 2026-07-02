@@ -3,14 +3,15 @@
   "module": "orlando.search",
   "role": "Site-wide search across markdown sources. Case-insensitive plain substring match — no stemming, no tokenization. Ranks results by a small additive score (filename/title/body weights). Re-scans the filesystem on every request, in keeping with the Orlando no-caching design.",
   "exports": {
-    "search":         "query -> list of { md_path, url, count, score, preamble } sorted by score desc",
-    "render":         "query -> full HTML results page (uses page.render_results_page for site chrome)",
+    "search":         "query, tree? -> list of { md_path, url, count, score, preamble } sorted by score desc; tree scopes to files whose md_path starts with the prefix",
+    "render":         "query, tree? -> full HTML results page (uses page.render_results_page for site chrome)",
     "handle":         "request_path (incl. query string) -> { status, body, content_type } — server-facing entry",
     "list_md_files": "() -> sorted list of every markdown source path (README.md + documentation/**/*.md); shared with orlando.random"
   },
   "ranking": "score = 10*hit_in_filename + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path",
   "notes": ["always case-insensitive — query is folded to lowercase before scanning",
-    "preamble is the doc's intro prose (post-H1, post-vibecode, pre-first-H2); HTML-escaped on render with light markdown stripping; query hits in the preamble are wrapped in <mark>"]
+    "preamble is the doc's intro prose (post-H1, post-vibecode, pre-first-H2); HTML-escaped on render with light markdown stripping; query hits in the preamble are wrapped in <mark>",
+    "tree filter: when tree is non-empty, only files whose md_path starts with the tree prefix are considered (prefix should end with '/'; empty or nil = whole site)"]
 }
 ]]
 local page = require("orlando.page")
@@ -27,6 +28,26 @@ local SCORE_BODY_HIT = 1
 -- Extract the doc's H1 (first `# ...` line). Returns "" if none.
 local function title_of(text)
     return text:match("^#%s+([^\n]*)") or text:match("\n#%s+([^\n]*)") or ""
+end
+
+-- Wrap query hits in <mark>. Input is already HTML-escaped.
+local function highlight_query(escaped, query)
+    if not query or query == "" then return escaped end
+    local q_lower = query:lower()
+    local lower   = escaped:lower()
+    local out     = {}
+    local i       = 1
+
+    while true do
+        local s, e = lower:find(q_lower, i, true)
+        if not s then break end
+        out[#out + 1] = escaped:sub(i, s - 1)
+        out[#out + 1] = "<mark>" .. escaped:sub(s, e) .. "</mark>"
+        i = e + 1
+    end
+
+    out[#out + 1] = escaped:sub(i)
+    return table.concat(out)
 end
 
 -- Basename without the .md extension. Used for filename-match scoring.
@@ -101,9 +122,13 @@ local function preamble_of(text, query)
     text = text:gsub("^#%s+[^\n]*\n", "")
     text = text:gsub("^%s+", "")
 
-    -- Drop a leading vibecode fence if present (~~~json {...} ~~~).
-    text = text:gsub("^~~~json%s*\n.-\n~~~%s*\n", "")
-    text = text:gsub("^```json%s*\n.-\n```%s*\n", "")
+    -- Drop vibecode / json config fences wherever they appear in the
+    -- preamble — a doc's intro can put them before OR after a subtitle,
+    -- and either way they're config noise, not prose.
+    text = text:gsub("~~~vibecode%s*\n.-\n~~~%s*\n?", "")
+    text = text:gsub("```vibecode%s*\n.-\n```%s*\n?", "")
+    text = text:gsub("~~~json%s*\n.-\n~~~%s*\n?", "")
+    text = text:gsub("```json%s*\n.-\n```%s*\n?", "")
     text = text:gsub("^%s+", "")
 
     -- Light markdown / raw-HTML stripping for prose display.
@@ -122,23 +147,7 @@ local function preamble_of(text, query)
         truncated = true
     end
 
-    local escaped = html_escape(text)
-    if query and query ~= "" then
-        local q_lower = query:lower()
-        local out = {}
-        local lower = escaped:lower()
-        local i = 1
-        while true do
-            local s, e = lower:find(q_lower, i, true)
-            if not s then break end
-            out[#out + 1] = escaped:sub(i, s - 1)
-            out[#out + 1] = "<mark>" .. escaped:sub(s, e) .. "</mark>"
-            i = e + 1
-        end
-        out[#out + 1] = escaped:sub(i)
-        escaped = table.concat(out)
-    end
-
+    local escaped = highlight_query(html_escape(text), query)
     if truncated then escaped = escaped .. "…" end
     return escaped
 end
@@ -150,48 +159,52 @@ local function url_decode(s)
 end
 
 local function parse_query(qs)
+    local q, tree = "", ""
+
     for kv in (qs or ""):gmatch("[^&]+") do
         local k, v = kv:match("^([^=]+)=(.*)$")
-
-        if k == "q" and v then
-            return url_decode(v)
-        end
+        if k == "q"    and v then q    = url_decode(v) end
+        if k == "tree" and v then tree = url_decode(v) end
     end
 
-    return ""
+    return q, tree
 end
 
 --[[ {
-    "in":  {"query": "string"},
+    "in":  {"query": "string", "tree": "string? — prefix (e.g. 'documentation/foo/') to scope results to; empty/nil = whole site"},
     "out": "table — list of result rows, each { md_path, url, count, score, preamble }; sorted by score desc, ties broken alphabetically by md_path"
 } ]]
-function M.search(query)
+function M.search(query, tree)
     if not query or query == "" then return {} end
     local q_lower = query:lower()
     local results = {}
+    local scoped  = tree and tree ~= ""
 
     for _, path in ipairs(list_md_files()) do
-        local data = read_file(path)
+        if not scoped or path:sub(1, #tree) == tree then
+            local data = read_file(path)
 
-        if data then
-            local positions = find_all(data:lower(), q_lower)
-            local in_filename =
-                basename_no_ext(path):lower():find(q_lower, 1, true) ~= nil
-            local in_title =
-                title_of(data):lower():find(q_lower, 1, true) ~= nil
+            if data then
+                local positions = find_all(data:lower(), q_lower)
+                local in_filename =
+                    basename_no_ext(path):lower():find(q_lower, 1, true) ~= nil
+                local in_title =
+                    title_of(data):lower():find(q_lower, 1, true) ~= nil
 
-            if #positions > 0 or in_filename or in_title then
-                local score = #positions * SCORE_BODY_HIT
-                if in_filename then score = score + SCORE_FILENAME end
-                if in_title    then score = score + SCORE_TITLE    end
+                if #positions > 0 or in_filename or in_title then
+                    local score = #positions * SCORE_BODY_HIT
+                    if in_filename then score = score + SCORE_FILENAME end
+                    if in_title    then score = score + SCORE_TITLE    end
 
-                results[#results + 1] = {
-                    md_path  = path,
-                    url      = page.md_path_to_url(path),
-                    count    = #positions,
-                    score    = score,
-                    preamble = preamble_of(data, query),
-                }
+                    results[#results + 1] = {
+                        md_path  = path,
+                        url      = page.md_path_to_url(path),
+                        title    = title_of(data),
+                        count    = #positions,
+                        score    = score,
+                        preamble = preamble_of(data, query),
+                    }
+                end
             end
         end
     end
@@ -204,13 +217,23 @@ function M.search(query)
     return results
 end
 
-local function render_body(query, results)
+local function render_body(query, results, tree)
     local parts = { '<h1>Search</h1>' }
-    parts[#parts + 1] = '<form class="search-form" action="/search" method="get">'
-        .. '<input type="search" name="q" value="' .. html_escape(query)
-        .. '" placeholder="Search docs" autofocus>'
-        .. '<button type="submit">Search</button>'
-        .. '</form>'
+    local form_parts = {
+        '<form class="search-form" action="/search" method="get">',
+        '<input type="search" name="q" value="', html_escape(query),
+        '" placeholder="Search docs" autofocus>',
+    }
+
+    if tree and tree ~= "" then
+        form_parts[#form_parts + 1] =
+            '<label class="search-form-tree">'
+            .. '<input type="checkbox" name="tree" value="'
+            .. html_escape(tree) .. '" checked> current tree</label>'
+    end
+
+    form_parts[#form_parts + 1] = '<button type="submit">Search</button></form>'
+    parts[#parts + 1] = table.concat(form_parts)
 
     if query == "" then
         parts[#parts + 1] = '<p class="search-hint">Enter a query above. '
@@ -228,51 +251,67 @@ local function render_body(query, results)
         .. tostring(#results) .. ' file'
         .. (#results == 1 and '' or 's')
         .. ' matched <strong>' .. html_escape(query) .. '</strong>.</p>'
-    parts[#parts + 1] = '<ol class="search-results">'
+    parts[#parts + 1] = '<ul class="search-results">'
 
     for _, r in ipairs(results) do
+        local title = r.title
+        if title == nil or title == "" then
+            title = basename_no_ext(r.md_path)
+        end
+
+        local title_html = highlight_query(html_escape(title), query)
+        local count_html = ' <span class="search-count">'
+            .. tostring(r.count)
+            .. (r.count == 1 and ' match' or ' matches')
+            .. '</span>'
+
         parts[#parts + 1] = '<li class="search-result">'
-            .. '<a class="search-path" href="' .. r.url .. '">'
-            .. html_escape(r.md_path) .. '</a>'
-            .. ' <span class="search-count">' .. tostring(r.count)
-            .. ' match' .. (r.count == 1 and '' or 'es') .. '</span>'
+            .. '<a class="search-title" href="' .. r.url .. '">'
+            .. title_html .. '</a>'
+            .. count_html
+            .. '<div class="search-path">' .. html_escape(r.md_path) .. '</div>'
+
         if r.preamble and r.preamble ~= "" then
             parts[#parts + 1] = '<p class="search-preamble">'
                 .. r.preamble .. '</p>'
         end
+
         parts[#parts + 1] = '</li>'
     end
 
-    parts[#parts + 1] = '</ol>'
+    parts[#parts + 1] = '</ul>'
     return table.concat(parts)
 end
 
 --[[ {
-    "in":  {"query": "string"},
+    "in":  {"query": "string", "tree": "string? — prefix to scope results (empty/nil = whole site)"},
     "out": "string (full HTML page)"
 } ]]
-function M.render(query)
+function M.render(query, tree)
     query = query or ""
-    local results = M.search(query)
-    local body    = render_body(query, results)
+    tree  = tree or ""
+    local results = M.search(query, tree)
+    local body    = render_body(query, results, tree)
     local title   = query == "" and "Search" or ("Search: " .. query)
     return page.render_results_page({
-        title     = title,
-        body_html = body,
-        query     = query,
+        title        = title,
+        body_html    = body,
+        query        = query,
+        current_tree = tree,
+        tree_active  = tree ~= "",
     })
 end
 
 --[[ {
-    "in":  {"request_path": "string — the full path including ?q=..."},
+    "in":  {"request_path": "string — the full path including ?q=... and optional &tree=..."},
     "out": "{status, body, content_type}"
 } ]]
 function M.handle(request_path)
-    local qs = (request_path or ""):match("%?(.*)$") or ""
-    local q  = parse_query(qs)
+    local qs      = (request_path or ""):match("%?(.*)$") or ""
+    local q, tree = parse_query(qs)
     return {
         status       = "200 OK",
-        body         = M.render(q),
+        body         = M.render(q, tree),
         content_type = "text/html; charset=utf-8",
     }
 end
