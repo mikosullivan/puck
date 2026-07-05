@@ -333,6 +333,8 @@ body.home .content h1 .hero-logo {
 	padding: 0;
 	font-size: 0.85em;
 }
+.content pre code .class-object,
+.content pre code i.class-object {color: #555; font-style: italic}
 .content table {
 	border-collapse: collapse;
 	margin: 1em 0;

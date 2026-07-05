@@ -24,7 +24,7 @@ This page describes how DSLs work, the patterns library authors use, how Caspian
 
 ## The mechanism
 
-A function that wants to expose a DSL constructs a dispatcher explicitly with [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#calldispatchernew), configures its `dsl` hash with bare-word-name to receiver mappings, then yields. When the block uses a bare word, the engine looks it up in the dispatcher's DSL hash; if found, the call dispatches to that receiver.
+A function that wants to expose a DSL constructs a dispatcher explicitly with [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-dispatcher-new), configures its `dsl` hash with bare-word-name to receiver mappings, then yields. When the block uses a bare word, the engine looks it up in the dispatcher's DSL hash; if found, the call dispatches to that receiver.
 
 Dispatchers are not implicit. A function that just calls bare `yield` (the tier-3 bwc for `%call.yield`) hands control to the passed block without involving any dispatcher object. The dispatcher exists only when DSL setup is needed.
 
@@ -127,7 +127,7 @@ Each of `inherits`, `field`, `method` is a bare-word command that the class-defi
 
 ### `instance` is the same DSL body
 
-`instance` builds a single ad-hoc object using the **same body shape** as `class`. The DSL inside the body is identical: `field`, `method`, `inherits`, `helper`, etc. The only difference is the parser-baked outer wrapper (`instance ... end` vs `class ... end`) and what happens after the block returns — `class` finalizes a class; `instance` finalizes a single object backed by an anonymous shadow class.
+`instance` builds a single ad-hoc object using the **same body shape** as `class`. The DSL inside the body is identical: `field`, `method`, `inherits`, `helper`, etc. The only difference is the parser-baked outer wrapper (`instance ... end` vs `class ... end`) and what happens after the block returns — `class` finalizes a class; `instance` finalizes a single object backed by a per-instance shadow class.
 
 ~~~caspian
 $config = instance
@@ -209,7 +209,7 @@ When we cheat, we say so. The construct's own doc names the cheat; this spec's o
 
 Roughly the order this lands in the engine:
 
-1. **Dispatcher constructor on `%call`.** Already settled at the spec level (see [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#calldispatchernew)). The engine implements the `%call.dispatcher` class with a `.new(n)` constructor that returns a fresh dispatcher targeting passed block `n`, plus the `dsl` hash and `yield` method on each instance.
+1. **Dispatcher constructor on `%call`.** Already settled at the spec level (see [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-dispatcher-new)). The engine implements the `%call.dispatcher` class with a `.new(n)` constructor that returns a fresh dispatcher targeting passed block `n`, plus the `dsl` hash and `yield` method on each instance.
 
 2. **Resolution chain.** When a bare word is evaluated inside a block, the engine resolves it in order: reserved bwcs (tier 1, tier 2) → DSL entries from the innermost active dispatcher → scope variables. Get this right once; everything else rides on it.
 

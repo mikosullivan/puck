@@ -27,6 +27,7 @@ local M = {}
 local READER_OPTIONS = {
     fenced_code_blocks = true,
     pipe_tables        = true,
+    preserve_tabs      = true,
 }
 
 local LOGO_URL = "/static/logo.svg"

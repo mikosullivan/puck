@@ -3,12 +3,14 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "tap",
-	"role": "Ruby-style tap method on Caspian objects for inline side effects in chains; placement settled on .object.tap with the block receiving the underlying value (not the helper) and the helper returning the underlying value so chains survive",
+	"role": "record of the design work behind Ruby-style tap on Caspian objects — placement decision (.object.tap), block-receives-underlying-value rule, and helper-returns-underlying-value rule so chains survive. All decisions now live in the object-methods spec.",
 	"key_concepts": ["tap_method", "ruby_style_chaining", "side_effect_in_chain",
 		"object_meta_helper_placement", "helper_returns_underlying_value"],
-	"status": "brainstorm — placement settled 2026-05-27; not in V1 core"
+	"status": "resolved — included in V1; spec'd at built-in-classes/object/methods/#tap"
 }}
 ~~~
+
+**Included in V1.** All design decisions on this page are now spec'd at [built-in-classes/object/methods/ § `.tap`](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#tap). This brainstorm is kept as a design record; nothing here is still under consideration.
 
 Ruby's `tap` pattern: receive a value in a block, run side-effecting
 logic on it, return the value unchanged so the chain continues.
@@ -75,5 +77,5 @@ inside the block, you want the actual value.
 
 ## Status
 
-Not in V1 core. Placement and block semantics settled 2026-05-27.
-Trivial to add when wanted; filed here so the discussion isn't lost.
+**Included in V1.** Placement and block semantics settled 2026-05-27;
+folded into the [object-methods spec](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#tap) 2026-07-05.

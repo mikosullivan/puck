@@ -97,9 +97,19 @@ function M.highlight(json)
             parts[#parts + 1] = span("p", c)
             i = i + 1
         else
-            -- whitespace and anything else: emit as escaped text
-            parts[#parts + 1] = escape(c)
-            i = i + 1
+            -- Look ahead for a class-object placeholder — an unquoted identifier
+            -- matching `[a-z0-9-]+-class-object` (used in docs to stand in for
+            -- an embedded class object without inlining the full JSON of the
+            -- class). Rendered italic-gray via `.class-object` CSS.
+            local placeholder = json:match("^([%l%d][%l%d%-]*%-class%-object)", i)
+            if placeholder then
+                parts[#parts + 1] = '<i class="class-object">' .. placeholder .. '</i>'
+                i = i + #placeholder
+            else
+                -- whitespace and anything else: emit as escaped text
+                parts[#parts + 1] = escape(c)
+                i = i + 1
+            end
         end
     end
     return table.concat(parts)

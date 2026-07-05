@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_global_utils_argv",
-	"role": "spec for %chain.argv — global form of %engine.argv. Same array of command-line arguments, reachable from any role granted %"
+	"role": "spec for %chain.argv — global form of %engine.argv. Same array of command-line arguments, reachable from any role granted the capability."
 }}
 ~~~
 
