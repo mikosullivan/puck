@@ -1,15 +1,15 @@
-# Calling functions and methods
-<!--index: 10-->
+# Calling functions, closures, and methods
+<!--index: 3-->
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_syntax_calling_functions_and_methods",
-	"role": "spec for Caspian's call syntax — the `&name args` form for stored functions, receiver-first method calls, keyword arguments, and splat expansion. Full parameter mechanics live in a separate sub-page.",
+	"doc": "requirements_caspian_syntax_calling",
+	"role": "spec for Caspian's call syntax — the `&name args` form for stored functions and closures, receiver-first method calls (`$obj.method args`), keyword arguments, and splat expansion. Full parameter mechanics live in a separate sub-page.",
 	"audience": "developers writing Caspian; parser implementers"
 }}
 ~~~
 
-Call a stored function with `&name args` (parens optional if the return value is unused, required when it isn't):
+Call a stored function or closure with `&name args` (parens optional if the return value is unused, required when it isn't):
 
 ~~~caspian
 &greet 'alice'

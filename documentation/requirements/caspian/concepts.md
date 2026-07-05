@@ -52,6 +52,19 @@ There is no such thing as an "edge case" in Caspian. What people commonly label 
 
 If a section needs to describe an unusual situation, use language like "the case where X happens during Y" or "the failure mode when Z is absent." Never reach for "edge case" — the label itself signals that a situation has been noticed and then categorized as unimportant enough to skip, which is where bugs live.
 
+## Long descriptive names for rarely-used surfaces
+
+Method names, field names, chain-mediated permissions, and other surfaces balance two forces: **brevity for common use** (typing cost, visual noise in hot code) and **clarity for rare use** (a reader doesn't have to remember what a cryptic short name means in code they touch once a year).
+
+Caspian picks explicitly per surface:
+
+- **Frequent surfaces get short names.** `.push`, `.pop`, `.map`, `%bucket`, `%self`, `%stdout`. Every program touches these; brevity pays for itself in every file.
+- **Rare surfaces get long descriptive names.** `.absolute_negative`, `.repeated_permutation`, `%chain.allow_abort_escalation`. A reader encountering these once a year benefits from a name that explains itself in context — no doc lookup required.
+
+When in doubt about frequency, lean verbose. Renaming a long name to a short one later is a mechanical sweep; typing a confusing short name into rarely-touched code is a maintenance cost forever.
+
+The rule applies uniformly across the language: built-in methods, class methods, chain-mediated permissions, engine config keys, security-sensitive APIs, and any other surface where a reader might need to consult docs to know what a name means.
+
 ## Objects, not libraries
 
 Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, dispatchers, anything that fits the Puck object protocol. Each download is one object identified by one URL.

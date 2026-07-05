@@ -22,8 +22,7 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [Truthy and falsy](https://puck.uno/documentation/requirements/caspian/syntax/truthy-and-falsy) — only `null` and `false` are falsy.
 - [Control flow](https://puck.uno/documentation/requirements/caspian/syntax/control-flow) — `if`/`elsif`/`else`, `while`, `until`.
 - [Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration) — the `do ... end` shape; `.each`, `.times`, `.upto`; the `as $loop` binding.
-- [Functions and closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/) — the two free-standing callable forms and their scope rules; the `function &name` sugar. Methods are covered when classes are spec'd.
-- [Calling functions and methods](https://puck.uno/documentation/requirements/caspian/syntax/calling-functions-and-methods) — `&name args`, receiver-first method calls, keyword args, splats.
+- [Functions and closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/) — the two free-standing callable forms, their scope rules, the `function &name` sugar, and call-site syntax (`&name args`, receiver-first method calls, keyword args, splats). Methods are covered when classes are spec'd.
 - [Classes](https://puck.uno/documentation/requirements/caspian/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
 - [System-method sigils](https://puck.uno/documentation/requirements/caspian/syntax/system-method-sigils) — `%self`, `%call`, `%chain`, `%engine`, and the six bare-`%X` shortcuts.
 

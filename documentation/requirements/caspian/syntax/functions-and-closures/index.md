@@ -13,8 +13,9 @@ Caspian has two free-standing callable-definition forms, distinguished by whethe
 
 - **[Functions](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/functions)** — self-contained; see only their parameters. No access to the enclosing scope.
 - **[Closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/closures)** — capture the enclosing scope; can read (and write, when the scope is mutable) outer variables.
+- **[Calling functions, closures, and methods](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/calling)** — the call-site syntax: `&name args` for stored callables, receiver-first `$obj.method args` for methods, keyword arguments, and splat expansion.
 
-Both use the same call syntax and share the same return semantics — the last expression in the body is the return value; use `%call.return $value` for actual early exit.
+Both callable forms use the same call syntax and share the same return semantics.
 
 ## Methods
 
