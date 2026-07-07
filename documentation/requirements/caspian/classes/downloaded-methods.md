@@ -57,7 +57,7 @@ The load-bearing consequence within that guardrail: **applying a function as a m
 
 When a function is applied as a method via `$foo.$method`, it's treated as a method — the captured-scope behavior of a closure doesn't come along even if the function was defined in a closure-shaped context. What it has at runtime is `%self`, `%bucket`, `%call`, `%chain` — the standard method surface.
 
-If you specifically want closure-style captured scope, closures still exist and work as before ([syntax § closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/closures)). They're just a different construct from what this mechanism produces.
+If you specifically want closure-style captured scope, closures still exist and work as before (see [functions](https://puck.uno/documentation/requirements/caspian/functions/) for the callable surface). They're just a different construct from what this mechanism produces.
 
 ### Primitives too
 
@@ -87,7 +87,7 @@ Nothing in the mechanism requires the function to have been downloaded. A locall
 
 ~~~caspian
 function &greet($greeting)
-	&puts $greeting + ', ' + %self.name
+	puts $greeting + ', ' + %self.name
 end
 
 $widget.$greet('hi')      # applies &greet to $widget with %self = $widget
@@ -173,7 +173,7 @@ Without the ownership check, a faucet-role helper handed a user-owned object cou
 ~~~caspian
 # untrusted code, running as some faucet role
 function &peek()
-	&puts @internal_secret
+	puts @internal_secret
 end
 
 $user_object.$peek        # would leak @internal_secret to faucet code

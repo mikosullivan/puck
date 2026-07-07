@@ -31,7 +31,8 @@ A function body can see:
 
 - Its own declared parameters.
 - Variables it declares inside its own body with `$var = ...`.
-- System surfaces accessible by sigil (`%puck`, `%engine`, `%role`, etc. — these aren't scope captures, they're language primitives).
+- **`%chain`** — the ambient capability channel that carries every default-reachable global method (`%now`, `%stdout`, `%net`, ...) plus anything the caller placed on the chain before calling. This is the same `%chain` methods have; it's per-frame and always reachable inside any function, closure, or method body.
+- Other system surfaces accessible by sigil (`%engine`, `%puck`, etc. — these aren't scope captures, they're language primitives).
 - Module members, when the function is defined as a method on a module (see [modules.md](modules.md)).
 
 That's the whole list. A function cannot see:

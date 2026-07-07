@@ -281,7 +281,7 @@ Other conversions:
 
 ## Iteration
 
-Numeric iteration helpers — `.times`, `.upto`, `.downto` — live under [syntax § Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration).
+Numeric iteration helpers — `.times`, `.upto`, `.downto` — live under [loops § Numeric helpers](https://puck.uno/documentation/requirements/caspian/syntax/loops#numeric-helpers-times-upto-downto).
 
 ## Open questions
 

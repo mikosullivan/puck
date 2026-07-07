@@ -27,15 +27,33 @@ Canonical: [`chain/`](https://puck.uno/documentation/requirements/caspian/chain/
 
 ## `%documentation`
 
-Compile-time documentation annotation. Takes a heredoc argument tagged with a MIME type:
+Compile-time documentation annotation. Takes a heredoc argument, optionally tagged with a MIME type:
 
 ~~~caspian
+# No MIME type — defaults to plain text
+%documentation <<EOF
+This routine looks up the current temperature at the given zip code.
+EOF
+
+# Explicit MIME type
 %documentation('text/markdown') <<EOF
 This routine looks up the current temperature at the given zip code.
+
+Supports **zip+4** as well.
 EOF
 ~~~
 
-Content types: `text/plain`, `text/markdown`, `text/vibecode`. Shorthand type names — `text`, `markdown`, `vibecode` — expand to the corresponding `text/*` form.
+The MIME type is optional. When omitted, the content is treated as plain text and editors default to plain-text display. When present, it names the content's format: `text/plain`, `text/markdown`, `text/vibecode`. Shorthand type names — `text`, `markdown`, `vibecode` — expand to the corresponding `text/*` form.
+
+**The heredoc does not interpolate.** All three of these produce identical content — the body of the heredoc is treated as literal text regardless of which quoting form the terminator uses:
+
+~~~caspian
+%documentation <<EOF
+%documentation <<"EOF"
+%documentation <<'EOF'
+~~~
+
+Variables, expressions, and escape sequences inside the heredoc body appear as literal text. `%documentation` is compile-time metadata; there's nothing to interpolate against because the block isn't evaluated at runtime.
 
 **Always allowed.** No role or grant governs `%documentation`; any code in any frame may write one. **Produces no runtime artifact the program can observe** (pre-V1) — the block is recorded in CaspianJ at parse time, but the script itself can't read it back at runtime and the engine doesn't act on it. It exists for tooling (documentation generators, syntax highlighters, AI readers, etc.), not for the running program.
 
@@ -113,5 +131,15 @@ EOF
 ~~~
 
 An optional `side` field inside the JSON indicates attachment intent — `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. Consumer effect of `side` is TBD; the field is recorded in CaspianJ for future use but no current consumer reads it.
+
+**The heredoc does not interpolate** — same rule as `%documentation`. All three of these produce identical content:
+
+~~~caspian
+%vibecode <<EOF
+%vibecode <<"EOF"
+%vibecode <<'EOF'
+~~~
+
+The body is treated as literal text regardless of the terminator's quoting form; nothing is substituted.
 
 **Always allowed** and **produces no runtime artifact** — same rules as `%documentation`.

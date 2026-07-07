@@ -43,5 +43,5 @@ Each of the JSON-primitive pages is currently a stub — literal forms noted, me
 ## What lives elsewhere
 
 - [Syntax § Literals](https://puck.uno/documentation/requirements/caspian/syntax/literals) — the source-level literal forms that produce these classes.
-- [Syntax § Functions and closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/) — the syntax for defining callables; the runtime class surface belongs here once written.
+- [Functions](https://puck.uno/documentation/requirements/caspian/functions/) — the function surface (definition, call, first-class function values); the runtime class surface belongs here once written.
 - [Syntax § Classes](https://puck.uno/documentation/requirements/caspian/syntax/classes) — the syntax for defining a user class; the class class itself is a built-in.

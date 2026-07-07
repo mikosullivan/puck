@@ -20,7 +20,7 @@ $widget = class # widget
 	end
 
 	method &greet()
-		&puts 'hi, ' + @name
+		puts 'hi, ' + @name
 		return null
 	end
 end

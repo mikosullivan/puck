@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_built_in_object_methods",
-	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns the immutable truthy bit set at construction), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)` and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.shadow` accepts `ensure: true` to create the shadow if missing), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — each with permanent and block-scoped forms, denying writes to the named axis or both axes). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
-	"status": "stub — starter methods spec'd (truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, stack/shadow, freeze_bucket/freeze_stack/freeze); more to come",
+	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns the immutable truthy bit set at construction), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)` and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.shadow` accepts `ensure: true` to create the shadow if missing), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — each with permanent and block-scoped forms, denying writes to the named axis or both axes). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
+	"status": "stub — starter methods spec'd (truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, warn, stack/shadow, freeze_bucket/freeze_stack/freeze); more to come",
 	"audience": "developers writing Caspian; engine implementers"
 }}
 ~~~
@@ -23,6 +23,7 @@ Methods in the `object` namespace apply to any value in Caspian. They inherit th
 | `.jail($method_1, ...)` | Returns a separate helper object that forwards only the named methods to the receiver and blocks everything else. |
 | `.tap` | Yields the receiver to a block, runs the block for its side effect, then returns the receiver unchanged so the chain continues. |
 | `.classes` | Returns an array of the classes in the receiver's stack, freshly built per call and not mutable as an array; carries `.ensure($class)` (bare form permanent, block form temporary) and `.shadow` sub-methods that operate on the underlying stack. |
+| `.warn($message)` | Attaches a warning to the receiver as a new platter carrying the given message. Observational only — never raises, never propagates up the chain. Returns the receiver. |
 | `.stack` | Returns the receiver's stack array; restricted to user and the receiver's owning role; carries a `.shadow` sub-method that returns the shadow platter (with `ensure: true` to create). |
 | `.freeze_bucket` | Locks the receiver's bucket against writes; permanent, or scoped to a block if one is passed. |
 | `.freeze_stack` | Locks the receiver's stack against modification; permanent, or scoped to a block if one is passed. |
@@ -132,13 +133,13 @@ The block receives the **underlying value** — the same value the chain will co
 ~~~caspian
 $result = build_widget()
 	.object.tap do ($w)
-		&puts 'built: ' + $w.name
+		puts 'built: ' + $w.name
 	end
 	.render()
 
 # Equivalent to:
 $w = build_widget()
-&puts 'built: ' + $w.name
+puts 'built: ' + $w.name
 $result = $w.render()
 ~~~
 
@@ -232,13 +233,40 @@ $widget = Widget.new()
 $widget.object.classes.shadow      # null — no shadow yet
 
 method $widget.greet()
-	&puts 'hi'
+	puts 'hi'
 end
 
 $widget.object.classes.shadow      # the shadow class — implicitly created by the definition
 ~~~
 
 Whether a `.classes.add($class)` companion exists — one that always pushes a new platter regardless of existing membership — is still open. Every current use case is covered by `.ensure`; the always-push variant is deferred until a concrete need surfaces.
+
+### `.warn($message)`
+
+Attaches a warning to the receiver by pushing a new **warning-only platter** onto the stack. The platter carries `warning: <the created warning object>` — a Warning-class instance wrapping `$message`. The warning-platter form is spec'd in [object/structure § warning](../../structure/#warning).
+
+**Never raises.** `.warn` is purely observational — nothing about control flow changes. The receiver keeps running as it was; the warning just sits attached to it for whoever cares to inspect the stack later.
+
+**Never propagates up the chain.** The warning is local to the receiver. Callers, the current frame, the enclosing chain, and any handler up the stack are unaffected — no notification, no unwind, no propagation of any kind. If you want the caller to know something is off, use an explicit return value, an event, or a raised error; `.warn` is not that.
+
+Returns the receiver, so it chains cleanly:
+
+~~~caspian
+$parsed_date.object.warn('parsed leniently; source string was ambiguous')
+             .object.warn('century inferred from context')
+~~~
+
+Both warnings land as separate warning-only platters on `$parsed_date`. The stack after the two calls has two warning platters; neither affects dispatch (no `class` field) and both travel with the value as it's passed, stored, or serialized.
+
+Typical use cases:
+
+- A parser that accepted a value with a caveat: "century inferred," "trailing whitespace dropped," "encoding fell back to UTF-8."
+- A validator that noticed something suspicious but didn't want to reject: "this user record's timezone is unusual for their region."
+- An engine-internal signal about a stored value whose class disagrees with its declared schema at deserialization time.
+
+Any code — engine, library, or application — can call `.warn`. Inspecting warnings is done by walking the stack (via `.object.stack` if the caller has access) and reading the `warning` field of each warning-carrying platter; the concrete inspection API is spec'd elsewhere as it grows.
+
+**Access follows holding-is-access.** Any role holding the receiver can call `.warn`. Warnings don't grant privileges — they just add observational metadata — so no restriction is warranted. Untrusted code that annotates an object it holds is fine; the annotation travels with the object but doesn't do anything on its own.
 
 ### `.stack`
 

@@ -65,6 +65,22 @@ When in doubt about frequency, lean verbose. Renaming a long name to a short one
 
 The rule applies uniformly across the language: built-in methods, class methods, chain-mediated permissions, engine config keys, security-sensitive APIs, and any other surface where a reader might need to consult docs to know what a name means.
 
+## Classes are the only method-carrier
+
+Caspian has **only one mechanism for attaching methods to objects: classes**. There are no modules, no mixins, no traits, no singleton methods, no protocol conformances, no per-object method dictionaries — nothing besides classes.
+
+This is deliberately unlike languages such as Ruby (which has classes, modules, singleton methods, and refinements as four distinct method-carrier mechanisms), Python (classes and module-level functions), or JavaScript (classes, prototypes, and mixin patterns as separate strategies). Caspian collapses all of those into one concept.
+
+The class model is flexible enough to cover every case those languages use different mechanisms for:
+
+- **An object can carry any number of classes.** Its stack of platters holds them in dispatch order; each contributes methods.
+- **A class can inherit any number of classes.** Multiple inheritance is a normal class-definition feature, not an add-on.
+- **Each instance has a shadow class.** When code defines a method on a single specific instance, the method lives on that instance's shadow class — which is still a class. Nothing special about the mechanism; it's just a class that happens to have one instance.
+
+If a reader coming from another language reaches for "module" or "mixin" or "singleton method" to describe a Caspian construct, they're using the wrong vocabulary. Every method-carrier in Caspian is a class. Every method attachment is class-scoped. Every dispatch resolution walks classes. One mechanism, applied at every level.
+
+The upside is a smaller conceptual surface and a uniform way to reason about method resolution: you only ever ask "which classes does this object carry?" and "which classes do those classes inherit?" Never a different question depending on how the method got attached.
+
 ## Objects, not libraries
 
 Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, dispatchers, anything that fits the Puck object protocol. Each download is one object identified by one URL.

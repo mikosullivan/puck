@@ -133,7 +133,7 @@ Pick `.import!` when you want the shared object to change; pick `+=` when you wa
 | `.unshift($item)` | Inserts `$item` at the beginning of the array. Returns the array. Modifies in place. |
 | `.shift` | Removes and returns the first element. Returns `null` on an empty array. Modifies in place. |
 | `.shift($n)` | Removes the first `$n` elements and returns them as a new array. If `$n` is greater than `.length`, returns all remaining elements. Raises on negative `$n`. Modifies in place. |
-| `.each` | Takes a block called once per element with the element as its argument. Returns the array. Bind `as $loop` to get access to `$loop.index`, `$loop.count`, `$loop.break`, `$loop.next` — see [syntax § Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration). There is no separate `.each_with_index`; use `as $loop`. |
+| `.each` | Takes a block called once per element with the element as its argument. Returns the block's last-expression value from the last iteration; if `$loop.return $value` fires inside the block, returns `$value` instead — the "use `.each` as a search" pattern. Returns `null` if the array is empty (no iterations, no last expression). Bind `as $loop` to get access to `$loop.index`, `$loop.count`, `$loop.break`, `$loop.next`, and `$loop.return $value` — see [loops § Loop object methods](https://puck.uno/documentation/requirements/caspian/syntax/loops#loop-object-methods). There is no separate `.each_with_index`; use `as $loop`. |
 
 Note: `.push`, `.pop`, `.unshift`, and `.shift` don't follow the `!` naming convention because they don't have return-new-array counterparts — the names inherently signal mutation, and there's nothing to distinguish from. The `!` suffix marks the mutating side of a **pair**; when only one form exists, the suffix is redundant.
 
@@ -143,7 +143,7 @@ Note: `.push`, `.pop`, `.unshift`, and `.shift` don't follow the `!` naming conv
 |---|---|
 | `.length` | Number of elements as a [number](https://puck.uno/documentation/requirements/caspian/built-in-classes/number/). |
 | `.empty?` / `.∅?` | True if the array has no elements. `∅?` is a Unicode alias — `∅` is the empty-set symbol; both names call the same method. |
-| `.any?` / `.∃?` | True if the array has at least one element. Complement of `.empty?`. `∃?` is a Unicode alias — `∃` is the mathematical "there exists" quantifier; both names call the same method. No block form — for "does any element satisfy this predicate," use `.keep(block).any?` or `.find(block) != null`. |
+| `.any?` / `.∃?` | True if the array has at least one element. Complement of `.empty?`. `∃?` is a Unicode alias — `∃` is the mathematical "there exists" quantifier; both names call the same method. No block form — for "does any element satisfy this predicate," use `.keep(block).any?`. |
 | `.first` | The first element. Same as `$arr[0]`. Raises on an empty array. |
 | `.last` | The last element. Same as `$arr[-0]`. Raises on an empty array. |
 | `.includes?($x)` | True if any element equals `$x`. |
@@ -271,5 +271,5 @@ The [ideas/array-methods](https://puck.uno/documentation/ideas/array-methods) br
 ## Related
 
 - [Syntax § Literals](https://puck.uno/documentation/requirements/caspian/syntax/literals) — the source-level literal form.
-- [Syntax § Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration) — the `.each` block form.
+- [Loops](https://puck.uno/documentation/requirements/caspian/syntax/loops) — the `.each` block form, `as $loop`, and every other loop construct.
 - [Syntax § Variables and assignment](https://puck.uno/documentation/requirements/caspian/syntax/variables-and-assignment) — assignment to array indices.

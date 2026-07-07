@@ -35,5 +35,5 @@ TBD. Sub-page will list guaranteed methods (`[key]` fetch, `[key] = value` set, 
 ## Related
 
 - [Syntax § Literals](https://puck.uno/documentation/requirements/caspian/syntax/literals) — the source-level literal form.
-- [Syntax § Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration) — the `.each` block form.
+- [Loops](https://puck.uno/documentation/requirements/caspian/syntax/loops) — the `.each` block form, `as $loop`, and every other loop construct.
 - [Syntax § Variables and assignment](https://puck.uno/documentation/requirements/caspian/syntax/variables-and-assignment) — assignment to hash entries.

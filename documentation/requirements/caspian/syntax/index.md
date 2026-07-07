@@ -20,9 +20,9 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [Variables and assignment](https://puck.uno/documentation/requirements/caspian/syntax/variables-and-assignment) — `=`, compound operators, assignment targets, scope.
 - [Operators](https://puck.uno/documentation/requirements/caspian/syntax/operators) — arithmetic, comparison, logical, ternary. No precedence table.
 - [Truthy and falsy](https://puck.uno/documentation/requirements/caspian/syntax/truthy-and-falsy) — only `null` and `false` are falsy.
-- [Control flow](https://puck.uno/documentation/requirements/caspian/syntax/control-flow) — `if`/`elsif`/`else`, `while`, `until`.
-- [Blocks and iteration](https://puck.uno/documentation/requirements/caspian/syntax/blocks-and-iteration) — the `do ... end` shape; `.each`, `.times`, `.upto`; the `as $loop` binding.
-- [Functions and closures](https://puck.uno/documentation/requirements/caspian/syntax/functions-and-closures/) — the two free-standing callable forms, their scope rules, the `function &name` sugar, and call-site syntax (`&name args`, receiver-first method calls, keyword args, splats). Methods are covered when classes are spec'd.
+- [if and unless](https://puck.uno/documentation/requirements/caspian/syntax/if-unless) — `if`/`elsif`/`else`, `unless`, and the `as $conditional` chain-exit binding.
+- [Loops](https://puck.uno/documentation/requirements/caspian/syntax/loops) — `while`, `until`, `begin ... while` / `begin ... until`, `.each`, numeric helpers, `as $loop`, `break`/`break N`, structural blocks.
+- [Bare blocks](https://puck.uno/documentation/requirements/caspian/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`.
 - [Classes](https://puck.uno/documentation/requirements/caspian/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
 - [System-method sigils](https://puck.uno/documentation/requirements/caspian/syntax/system-method-sigils) — `%self`, `%call`, `%chain`, `%engine`, and the six bare-`%X` shortcuts.
 
