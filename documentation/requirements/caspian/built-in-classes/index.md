@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_built_in_classes",
-	"role": "cover page for the classes the engine guarantees at startup — the types that literals materialize into (string, number, boolean, null, array, hash) plus function/closure/class themselves. Sub-pages spec each class's surface; this page is the entry point.",
-	"status": "stub — cover page in place, per-class sub-pages to follow",
+	"role": "cover page for the classes the engine guarantees at startup — the six JSON-primitive types that literals materialize into (catalog owned by primitives/) plus the primitive-buckets model that spec's how they carry buckets and truthiness. Function/closure/method surfaces live at functions/; the meta-class lives at classes/definition/. Sub-pages own each class's surface; this page is the entry point.",
+	"status": "draft — all six JSON-primitive sub-pages authored; string, number, and array are substantially spec'd; boolean, null, and hash still have TBD method-surface sections; primitive-buckets and bucket-access utility pages also live here",
 	"audience": "developers writing Caspian; engine implementers building the built-in class surface; tooling authors"
 }}
 ~~~
@@ -16,32 +16,41 @@ Some classes are **built in** — the engine guarantees they exist at startup, a
 
 The built-in class catalog covers:
 
-- **Primitive classes** — the types every literal form produces: string, number, boolean, null, array, hash.
-- **Callable classes** — function, closure, and the class class itself.
+- **Primitive classes** — the types every literal form produces. See [primitives/](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) for the catalog.
 - **Guaranteed method surfaces** — the methods each built-in class exposes to Caspian code (arithmetic on number, `.length` and `.each` on array/hash, string comparison and slicing, etc.).
 - **Materialization rules** — how a literal in source becomes an instance of the corresponding class at runtime.
 
+Function, closure, and method classes are also built into the engine, but their surface lives on a separate hub — see [What lives elsewhere](#what-lives-elsewhere) below.
+
 ## JSON primitives
 
-The six classes every JSON document can contain, each with its own sub-page:
-
-- [string](https://puck.uno/documentation/requirements/caspian/built-in-classes/string) — sequence of Unicode characters.
-- [number](https://puck.uno/documentation/requirements/caspian/built-in-classes/number/) — integer or fractional value; one class for both.
-- [boolean](https://puck.uno/documentation/requirements/caspian/built-in-classes/boolean) — two-instance truth class (`true`, `false`).
-- [null](https://puck.uno/documentation/requirements/caspian/built-in-classes/null) — absence of a value; optional per-instance flavor.
-- [hash](https://puck.uno/documentation/requirements/caspian/built-in-classes/hash) — ordered key-value map.
-- [array](https://puck.uno/documentation/requirements/caspian/built-in-classes/array) — ordered sequence of arbitrary values.
-
-Each of the JSON-primitive pages is currently a stub — literal forms noted, method surfaces to follow.
+The six classes every JSON document can contain — string, number, boolean, null, array, hash — live under [primitives/](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/), which owns the catalog and links out to each per-class sub-page. The [primitive-buckets](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets) sub-page under `primitives/` owns the shared bucket / truthiness / no-interning model that unifies all six.
 
 ## What's not covered here yet
 
-- **Callable classes** — function, closure, and the class class itself. Sub-pages to come as their runtime surfaces get spec'd.
-- **Guaranteed method surfaces** — the concrete method catalog for each built-in class.
-- **Materialization rules** — how a literal in source becomes an instance of the corresponding class at runtime.
+- **Guaranteed method surfaces on boolean, null, and hash** — those three sub-pages are still stubs. `string`, `number`, and `array` have substantial method catalogs already; the remaining three fill in as they get spec'd.
 
 ## What lives elsewhere
 
-- [Syntax § Literals](https://puck.uno/documentation/requirements/caspian/syntax/literals) — the source-level literal forms that produce these classes.
-- [Functions](https://puck.uno/documentation/requirements/caspian/functions/) — the function surface (definition, call, first-class function values); the runtime class surface belongs here once written.
-- [Syntax § Classes](https://puck.uno/documentation/requirements/caspian/syntax/classes) — the syntax for defining a user class; the class class itself is a built-in.
+- **Source-level literal forms** — each per-class sub-page under [primitives/](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) owns its own literal spec.
+- [Functions](https://puck.uno/documentation/requirements/caspian/functions/) — the function surface, including the three function types, call semantics, parameter mechanics, and the method-object surface. The runtime class surface for these lives on that hub, not here.
+- [Classes § Definition](https://puck.uno/documentation/requirements/caspian/classes/definition/) — how user classes are defined. The meta-class (the class of classes) is built into the engine; its runtime surface is spec'd there.
+
+## Testing
+
+- **Engine guarantees each primitive class at startup** — String, Number, Boolean, Null, Array, and Hash are each resolvable in a fresh runtime with no user code loaded and no `%puck` calls made.
+- **Number literal materializes without `%puck`** — evaluating `42` in an engine with the network disabled produces a Number instance and does not attempt any `%puck` fetch.
+- **String literal materializes without `%puck`** — same test with `'hi'`.
+- **Boolean literals materialize without `%puck`** — same test with `true` and `false`.
+- **Null literal materializes without `%puck`** — same test with `null`.
+- **Array literal materializes without `%puck`** — same test with `[1, 2, 3]`.
+- **Hash literal materializes without `%puck`** — same test with `{a: 1}`.
+- **`42.object.isa?(Number)`** is `true`.
+- **`'hi'.object.isa?(String)`** is `true`.
+- **`true.object.isa?(Boolean)`** is `true`.
+- **`false.object.isa?(Boolean)`** is `true`.
+- **`null.object.isa?(Null)`** is `true`.
+- **`[1, 2, 3].object.isa?(Array)`** is `true`.
+- **`{a: 1}.object.isa?(Hash)`** is `true`.
+- **Object class is also guaranteed at startup** — `%['puck.uno/object']` returns a class value in a fresh runtime.
+- **Every value is an Object** — for each primitive literal above, `.object.isa?(Object)` is `true`.

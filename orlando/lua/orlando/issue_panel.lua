@@ -33,6 +33,41 @@ local function short_title(title)
     return (title:gsub("^File:%s+documentation/", ""))
 end
 
+-- Turn an issue title into a link URL for the file (and, if present,
+-- the section anchor) the issue is filed against. Issue titles filed
+-- via the per-section chip take the shape:
+--     "File: documentation/<path>.md § <Section> (#<anchor>)"
+-- The trailing "(#<anchor>)" is optional. The URL follows the site's
+-- markdown-to-URL rule: strip .md; a "foo/foo.md" same-name-index
+-- collapses to "foo/". Returns nil for issue titles that don't match.
+local function link_for_issue_title(title)
+    if not title then return nil end
+    local path = title:match("^File:%s+(documentation/%S+%.md)")
+    if not path then return nil end
+    local anchor = title:match("%(#([%w%-]+)%)%s*$")
+
+    -- Strip the leading "documentation/" for the URL. Orlando serves
+    -- doc pages under /documentation/, so the same prefix stays.
+    local url_path = path:gsub("%.md$", "")
+    -- Directory-index rule: both same-name-index ("foo/foo.md") and
+    -- the conventional "foo/index.md" collapse to the trailing-slash
+    -- form "foo/". Orlando 301-redirects the un-collapsed forms to
+    -- the trailing-slash URL, so producing the canonical form up front
+    -- avoids the extra hop.
+    local dir, name = url_path:match("^(.-/)([^/]+)$")
+    if dir and name then
+        local parent = dir:match("([^/]+)/$")
+        if name == "index" or (parent and parent == name) then
+            url_path = dir
+        end
+    end
+    local href = "/" .. url_path
+    if anchor and anchor ~= "" then
+        href = href .. "#" .. anchor
+    end
+    return href
+end
+
 -- Render an issue's labels as a small chip strip. Returns "" when the
 -- issue has no labels. Colors come from the GitHub label metadata via
 -- a data-attribute so CSS can pick a foreground that reads on light
@@ -180,6 +215,18 @@ function M.render(issue, ctx)
             .. '</span>'
     end
 
+    local title_text = short_title(issue.title or "(no title)")
+    local title_href = link_for_issue_title(issue.title)
+    local title_html
+    if title_href then
+        title_html = '<a class="issue-page-link" href="'
+            .. esc_attr_text(title_href) .. '"'
+            .. ' target="_blank" rel="noopener">'
+            .. esc_attr_text(title_text) .. '</a>'
+    else
+        title_html = esc_attr_text(title_text)
+    end
+
     local heading_html = string.format(
         '<h3 id="issue-%d" data-issue-number="%d">'
         .. '<button type="button" class="issue-num-badge"'
@@ -190,7 +237,7 @@ function M.render(issue, ctx)
         .. '</h3>',
         n, n,
         esc_attr_text(label), esc_attr_text(label),
-        esc_attr_text(short_title(issue.title or "(no title)")),
+        title_html,
         render_labels(issue.labels),
         chips
     )

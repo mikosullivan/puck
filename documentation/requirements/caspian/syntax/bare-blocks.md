@@ -119,6 +119,34 @@ Every construct inside a bare block (loops, conditionals, function calls, other 
 - **Early exit from a scope.** With `as $block`, the body can `$block.return $value` from inside a nested condition or loop without unwinding through the enclosing function.
 - **Grouping with a controller.** When a chunk of code needs its own exit path but doesn't fit as an `if`-chain or a loop, the bare block + controller is the general-purpose form.
 
+## Testing
+
+- **Empty bare block parses and returns null** — `begin; end` parses; evaluated value is `null`.
+- **Single-statement bare block returns that statement's value** — `begin; 42; end` returns `42`.
+- **Multi-statement bare block returns last expression** — `begin; 1; 2; 3; end` returns `3`.
+- **Bare block usable as expression on right of `=`** — `$foo = begin; $x = 10; $y = 20; $x + $y; end` sets `$foo` to `30`.
+- **Body ending in a valueless statement returns null** — a `begin` block whose last line is a bare `puts` (which returns `null`) evaluates to `null`.
+- **Locally-declared variable does not leak out** — `begin; $temp = 1; end; $temp` raises undeclared-variable in the outer scope.
+- **Enclosing variable is writable from inside** — `$outer = 5; begin; $outer = 10; end; $outer` returns `10`.
+- **Enclosing variable is readable from inside** — `$outer = 7; $inner = begin; $outer + 1; end; $inner` returns `8`.
+- **`as $block` binds a controller reachable in the body** — `begin as $block; $block.active?; end` (or equivalent state-reader call) does not raise.
+- **`$block.return $value` exits the block with that value** — `begin as $block; $block.return 'foo'; 'never'; end` returns `'foo'`.
+- **`$block.return` with no argument exits with null** — `begin as $block; $block.return; end` returns `null`.
+- **Statements after `$block.return` do not run** — a side effect on the line after `$block.return` never fires.
+- **Bare `return` inside a block returns from the enclosing function** — a bare `return 'fn'` inside a bare block causes the enclosing function to return `'fn'`, not just the block.
+- **Controller name is scoped to the block** — reading `$block` after the `end` raises undeclared-variable.
+- **Pre-declared controller survives block end** — `$block = null; begin as $block; end; $block` returns the controller object.
+- **`as $name` is optional** — a plain `begin ... end` with no `as` parses and works.
+- **`as` name must sit immediately after `begin`** — `begin` followed by a body line and then `as $block` on a later line is a parse error.
+- **Nested bare blocks each carry their own controller** — inner and outer `as $b` bindings each refer to their own block; inner `.return` exits only the inner block.
+- **Inner controller shadows outer with same name** — `begin as $b; begin as $b; $b.return 1; end; end` — inner `$b.return` exits only the inner block.
+- **Nested block: outer block continues after inner ends** — statements after the inner `end` still execute in the outer block.
+- **`begin ... end` with no trailing condition is a bare block, not a loop** — a `begin` closed by `end` (not by `while`/`until`) parses as bare-block.
+- **`begin ... while $cond` is a loop, not a bare block** — a `begin` closed by trailing `while $cond` parses as loop-at-least-once, not bare block.
+- **Trailing `while` inside a nested inner block does not terminate the outer `begin`** — a `while` at a deeper nesting level does not close the outer `begin` block.
+- **Bare block value composes with arithmetic** — `1 + begin; 2; end` returns `3`.
+- **Bare block value composes as function argument** — passing `begin; 5; end` as an argument passes `5`.
+
 ## Related
 
 - [Loops](https://puck.uno/documentation/requirements/caspian/syntax/loops) — the `begin ... while` and `begin ... until` loop forms, which reuse the `begin` keyword but close with a trailing condition.

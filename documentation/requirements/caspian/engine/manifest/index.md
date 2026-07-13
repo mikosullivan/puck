@@ -4,13 +4,15 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_engine_manifest",
-	"role": "spec for %engine.manifest — a hash describing the current process. Debug and introspection surface for answering 'what's happening in this process right now?'"
+	"role": "spec for %engine.manifest — a hash describing the current process. Serves two purposes: (1) debug and introspection surface for answering 'what's happening in this process right now?'; (2) engine-launch configuration file, the intended vehicle for project-level settings applied once at startup (parser registrations, faucet/sink setup, chain seeding, and other engine-level state) rather than repeated in every script."
 }}
 ~~~
 
 `%engine.manifest` returns a hash describing the running process: the operating system underneath, the engine implementation, the Caspian language version, the objects downloaded so far, timing data, and (when coverage is on) coverage results. It's a debug and introspection tool — a developer asking "what's happening in this process right now?" calls `%engine.manifest` to get the answer.
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
+
+**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%puck.parsers`](https://puck.uno/documentation/requirements/caspian/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
 
 ## Sections
 
@@ -157,3 +159,50 @@ A second purpose of the manifest, beyond runtime introspection, is to **declare 
 The same data structure expresses both purposes: the manifest a running script EXPOSES (introspection — what's actually here right now) and the shape a script would DECLARE up front (requirements — what it needs in order to be willing to run). Same field set, same nesting, same conventions. Specifying the structure once covers both sides.
 
 The mechanism for how a script declares its requirements (manifest header in the source file, `%engine.require`-style accumulation, a separate `manifest.casp` companion file, etc.) is still settling. The runtime-introspection side is what's spec'd today; the requirement-declaration side folds into the same structure as the design firms up.
+
+## Testing
+
+- **`%engine.manifest` returns a hash** — the top-level value is a hash object.
+- **Manifest has the six documented sections** — `process`, `os`, `engine`, `caspian`, `downloads`, `coverage` (last only when coverage is on).
+- **`coverage` section is absent when coverage is off** — the key is missing, not present-as-null.
+- **`coverage` section is present when `%engine.coverage` is set** — enabling coverage makes the section appear.
+- **Each call returns a fresh hash** — mutating one manifest hash and then calling `%engine.manifest` again returns unmutated data.
+- **Manifest is a snapshot, not a live view** — a returned hash does not update when program state changes afterward.
+- **`process.time.start` is set at process start** — the value doesn't change across manifest calls within one run.
+- **`process.time.stop` reflects the moment of the manifest call** — two calls at different times see two different `stop` values.
+- **`process.time.run` equals `stop` minus `start`** — a float in seconds.
+- **`process.steps` is an integer** — the step count.
+- **`process.steps` grows monotonically across manifest calls** — a later manifest has step count ≥ an earlier manifest in the same run.
+- **`os.kernel` is lowercase** — on Linux, `'linux'`, not `'Linux'`.
+- **`os.arch` is lowercase** — `'x86_64'`, not `'X86_64'`.
+- **`os.kernel` and `os.arch` are present on every platform** — regardless of host OS.
+- **On Linux, `os.distro` and `os.distro_version` may appear** — platform-specific extras.
+- **On Windows, `os.product` and `os.product_version` may appear** — platform-specific extras.
+- **Missing platform-specific fields are absent, not null** — code should test presence, not null.
+- **`engine.name` is `'lucy'` on the Lua reference engine** — the codename.
+- **`engine.version` is a string** — e.g., `'0.01'`.
+- **`engine.host_vm.name` is `'lua'` on the reference engine** — the host language name.
+- **`engine.host_vm.version` reports the actual Lua VM version** — e.g., `'5.4.6'`.
+- **`caspian.version` is the Caspian spec version** — separate from `engine.version`.
+- **`caspian` is a hash, not a bare string** — `%engine.manifest.caspian.version`, not `%engine.manifest.caspian`.
+- **`downloads` is a hash keyed by URL** — `.downloads['https://example.com/foo']` returns the entry list.
+- **Each `downloads` value is an array** — one entry per distinct fetch of that URL.
+- **Fetching the same URL twice appends a second array entry** — the URL's array grows.
+- **Each download entry has `sha256`** — always present.
+- **Each download entry has `bytes` as an integer** — payload size.
+- **Each download entry has `fetched_at` as an ISO 8601 string** — timestamp of the fetch.
+- **`via` is absent when the fetch came directly from the object URL** — omitted, not null.
+- **`via.url` names the intermediary endpoint when present** — e.g. a registry URL.
+- **`via.cache` is boolean** — `true` when the intermediary served from cache; `false` when it re-fetched.
+- **`version.semantic` present only for objects publishing a semver** — otherwise absent.
+- **`version.timestamp` present only when the version can be resolved by timestamp** — otherwise absent.
+- **When neither `version.semantic` nor `version.timestamp` resolves, `version` is omitted entirely** — not present-as-empty.
+- **`downloads` is an empty hash when nothing has been downloaded** — not null.
+- **`%engine.manifest` from a non-user role raises** — the blanket `%engine` gate.
+- **Returned manifest hash is read-only** — mutating a field raises.
+- **Reading `%engine.manifest` twice back-to-back returns different `process.time.stop`** — reflects distinct moments.
+- **Reading `%engine.manifest` twice returns identical `process.time.start`** — the start is set once.
+- **`downloads` reflects `%engine.require` calls** — a URL required at startup appears in `downloads` on first manifest read.
+- **`downloads` reflects `%[url]` first-use loads** — objects loaded via first-use appear once fetched.
+- **All values in the manifest are JSON-native** — usable directly for serialization.
+- **Coverage section shape depends on retention setting** — full spec in `%engine.coverage`.

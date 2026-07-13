@@ -65,4 +65,30 @@ Escape isn't possible: no method on `$bar_jail` reaches paths outside its root. 
 
 ## `%engine` counterpart
 
-[`%engine.dir`](../../engine/dir) is the user-only access to the program's working directory at startup. `%chain.root` is the broader filesystem surface that's reachable from other roles when granted.
+`%engine.root` is the user-only access to the root filesystem dirjail at engine startup — spec'd on [engine](../../engine/#one-slot-per-chain-surface). `%chain.root` is the broader filesystem surface that's reachable from other roles when granted.
+
+## Testing
+
+- **`%chain.root` is `null` without the grant** — without the filesystem-access grant (e.g., `--allow-fs`), `%chain.root` is `null`.
+- **Default-deny across role boundaries** — a non-user role does not see `%chain.root` until the capability is explicitly granted down the chain.
+- **`$root[path]` returns a file handle** — for a file within the jail, `$root['some/path.txt']` returns a file-object handle.
+- **`$root[path]` returns a nested dirjail for a directory** — for a subdirectory within the jail, indexing returns a dirjail-shaped object.
+- **`.write(path, bytes)` writes bytes** — writing then reading returns the same bytes.
+- **`.read(path)` reads bytes** — a file present in the jail is readable through the jail.
+- **`.read` on missing path raises** — reading a file that does not exist raises.
+- **`.each` iterates entries** — every entry directly under the jail is yielded.
+- **`.glob(pattern)` matches entries** — glob patterns behave per the filesystem-spec (e.g., `*.md`).
+- **Path traversal blocked** — `$root['../etc/passwd']` raises; does not escape the jail.
+- **Absolute path escape blocked** — an absolute path pointing outside the jail raises.
+- **Symlink escape blocked** — a symlink whose target is outside the jail is not followed.
+- **Unicode file names round-trip** — writing then reading a file whose name contains non-ASCII code points works.
+- **Empty file** — `.read` on an empty file returns empty bytes; `.write` of empty bytes creates an empty file.
+- **Nested dirjail rooted at subdir** — `%chain.root['foo'].dirjail` is a first-class dirjail whose root is `/foo` from its holder's perspective.
+- **Nested dirjail cannot reach parent** — `$bar_jail['../']` raises; the parent path is invisible.
+- **Deeper nesting** — a nested dirjail can itself be nested further; the same escape rules hold.
+- **`readonly: true` — writes raise** — every write method on a `readonly: true` nested dirjail raises.
+- **`readonly: true` persists across holders** — passing a readonly nested dirjail to code holding a different role does not make it writable.
+- **Values read through nested dirjail carry the original root's role** — bytes read via `$bar_jail` carry the role tag of `%chain.root`, not a new role belonging to the nested holder.
+- **Nested dirjail object owned by its creator** — the container's role is the creator's; distinct from the role of values read through it.
+- **`%chain.root` differs from `%engine.root`** — `%chain.root` is the broader surface reachable from other roles; `%engine.root` is the user-only surface at engine startup.
+- **Revoke clears the surface** — after `%chain.root` is revoked in a nested block, it is `null` inside that block and reverts on block exit.

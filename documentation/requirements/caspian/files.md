@@ -119,8 +119,27 @@ end
 
 Almost always the wrong shape for a class-serving file. Don't set `auto_run` on a class-serving instance — `auto_run` is meaningful for instances that exist to compute a single result; class-serving instances exist to hold classes and want the instance itself to be the file's value.
 
+## Testing
+
+- **Single-class file yields the class** — a file whose body is one `class ... end` fetched via `%puck` returns the class object; `.new(...)` on it produces an instance.
+- **Class name literal-label is preserved** — a `class # widget` file yields a class whose introspectable label is `widget`.
+- **Multi-class instance file yields the instance** — a file wrapping several `getter :name, class` expressions inside `instance ... end` fetched via `%puck` returns the instance.
+- **Named getter reaches its class** — after fetching the multi-class instance, `$colors.red` returns the `red` class object.
+- **Getter's class is instantiable** — `$colors.red.new(shade: 'crimson')` produces a valid instance.
+- **Instance-form file may carry helpers** — a helper method or config value declared alongside the getters is reachable on the returned instance.
+- **Instance-form file honors `init` hook** — an `init` hook inside the wrapping instance runs exactly once when the file is loaded, not on each getter access.
+- **Hash-form file yields a hash** — a file whose body is a hash literal of classes yields a hash; `$colors['red']` returns the red class.
+- **Hash-form file class is instantiable** — `$colors['red'].new(...)` produces a valid instance.
+- **`auto_run` on a class-serving instance replaces the file's value** — after adding `auto_run :compute_something` that returns `null`, `%puck[url]` yields `null`, not the instance.
+- **Fetching from `local:` produces the same value as HTTP** — a file at `local:/widget.casp` and the same file served over HTTP yield equivalent objects.
+- **Fetching from cache produces the same value** — a cached copy of a file yields a value equivalent to the origin fetch.
+- **Fetching an empty file raises** — a zero-byte `.casp` file raises per [non-caspian-mime-types § Empty-content handling](https://puck.uno/documentation/requirements/caspian/non-caspian-mime-types#empty-content-handling).
+- **File with syntax error raises during fetch** — a `.casp` file that fails to parse raises at fetch time, not on first use.
+- **File whose top-level is a plain value returns that value** — a file whose body is `42` yields the number `42`.
+- **UTF-8 identifiers survive fetch** — a file that defines a class name containing multi-byte UTF-8 characters remains reachable by its exact name.
+
 ## Related
 
 - [content-types](https://puck.uno/documentation/requirements/caspian/content-types) — how the file is transported over HTTP (the wire-level companion to this page's what-does-the-file-produce concern).
 - [classes/definition § getter shorthand](https://puck.uno/documentation/requirements/caspian/classes/definition#getter-shorthand) — the `getter :name, value` construct used by the multi-class pattern.
-- [instance](https://puck.uno/documentation/requirements-old/caspian/classes/instance) — the full spec for the `instance ... end` construct.
+- [instance](https://puck.uno/documentation/requirements/caspian/classes/instance) — the full spec for the `instance ... end` construct.

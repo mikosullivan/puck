@@ -62,3 +62,31 @@ After `.close`, the dirjail handle is unusable; subsequent operations raise.
 ## `%engine` counterpart
 
 `%engine.tmp` is the user-only access to the same capability.
+
+## Testing
+
+- **Direct access returns a dirjail** — `$dir = %chain.tmp` binds `$dir` to a dirjail handle.
+- **Write and read inside the jail** — `$dir.write 'scratch.txt', 'some bytes'` followed by `$dir.read 'scratch.txt'` returns `'some bytes'`.
+- **Fresh dirjail per access** — `$a = %chain.tmp; $b = %chain.tmp` yields two dirjails backed by distinct directories on disk (their paths differ).
+- **Independence between calls** — a file written into `$a` is not visible via `$b`.
+- **Path returned by handle** — the handle exposes an absolute path (via a `path` property or equivalent) that resolves under the OS temp directory.
+- **Directory exists during scope** — while `$dir` is live, a host-side check (`stat` on the path) shows the directory exists.
+- **Auto-delete on scope exit** — after the enclosing function returns and `$dir` goes out of scope, a host-side check on the path shows the directory no longer exists.
+- **Block form creates on entry** — `%chain.tmp do($dir); # observe path; end` — the path exists during the block body.
+- **Block form deletes on normal exit** — after a normal block exit, the path no longer exists.
+- **Block form deletes on early return** — a `return` from inside the block still triggers cleanup; the path no longer exists after.
+- **Block form deletes on raise** — a `raise` from inside the block still triggers cleanup; the path no longer exists after.
+- **Explicit `.close` deletes immediately** — after `$dir.close`, a host-side check shows the directory gone.
+- **Operations after `.close` raise** — `$dir.write 'x', 'y'` following `$dir.close` raises.
+- **Cannot escape the dirjail** — `$dir.write '../escape.txt', 'x'` raises or is contained inside the jail (no file created outside the jail root).
+- **Cannot read outside the dirjail** — `$dir.read '../../etc/passwd'` raises or resolves to a path inside the jail (not the real file).
+- **Disk-backed not in-memory** — the returned path exists on the real filesystem (e.g., under `/tmp` or the platform equivalent), verifiable from outside the engine.
+- **Default-denied across role boundaries** — a non-user role invoked without an explicit `%chain.tmp` grant sees it as absent / `null`.
+- **Explicit grant reaches non-user role** — after the user grants `%chain.tmp` to a non-user role, that role can allocate its own dirjails.
+- **Grant does not transit further without opt-in** — a non-user role holding `%chain.tmp` cannot pass it to a further-nested role without an explicit sub-grant.
+- **Revoke ends access** — after `%chain.tmp` is revoked, the next access raises capability-not-granted.
+- **Contents owned by the tmp faucet's role** — data written and re-read is owned by the tmp-faucet role attribution (verify via role introspection on the dirjail or its files).
+- **Two roles' tmp dirs are isolated** — role A's `%chain.tmp` dir is not readable via role B's dirjail, even at the host-filesystem level (the dirjail restricts access).
+- **`%engine.tmp` and `%chain.tmp` share the same capability** — verify the underlying implementation is one code path; a granted `%chain.tmp` does not conflict with the user's `%engine.tmp` access.
+- **Nested block forms don't collide** — two nested `%chain.tmp do($x); ... %chain.tmp do($y); ... end; end` blocks get two distinct dirjails; both clean up in the right order.
+- **Large-file write works** — writing a multi-megabyte file into a `%chain.tmp` dir succeeds (disk-backed, not memory-bound).

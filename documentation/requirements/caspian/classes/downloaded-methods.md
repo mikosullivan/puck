@@ -61,7 +61,7 @@ If you specifically want closure-style captured scope, closures still exist and 
 
 ### Primitives too
 
-Primitives — numbers, strings, booleans, null — have buckets just like any other object in Caspian. Null flavors, for example, live in the null's bucket. So all four primitive kinds accept ad-hoc method application the same way objects do:
+[Primitives](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) have buckets just like any other object in Caspian. Null flavors, for example, live in the null's bucket. So all primitives accept ad-hoc method application the same way objects do:
 
 ~~~caspian
 function &double()
@@ -79,7 +79,7 @@ $s = 'hello'
 $s.$reverse         # 'olleh'
 ~~~
 
-This enables genuinely useful patterns — extension methods on primitives, downloaded helpers that operate on strings or numbers, etc. See [puck#946](https://github.com/mikosullivan/puck/issues/946) for the deeper open question about how a string's own value lives in its bucket without turtles-all-the-way-down.
+This enables genuinely useful patterns — extension methods on primitives, downloaded helpers that operate on strings or numbers, etc. The primitive's own value doesn't live in the bucket; it sits in an engine-managed slot alongside the bucket, which is what lets `@field` reads and writes work on a primitive without infinite regress. See [primitive-buckets](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets) for the full model.
 
 ## The natural generalization: any function, not just downloaded
 
@@ -214,6 +214,32 @@ A "this class accepts ad-hoc method application from any role" flag would be an 
 ### No nanny code, still
 
 This rule is a **security guarantee**, not paternalism ([no nanny code](https://puck.uno/documentation/requirements/caspian/concepts#no-nanny-code)). It's not "we think you shouldn't peek at other roles' internals" — it's "the trust model the rest of the system depends on requires that untrusted code cannot inject arbitrary bodies into objects it doesn't own." User can always override by being user; other roles can always request specific capabilities via explicit method arguments.
+
+## Testing
+
+- **`$foo.$fn` binds `%self` to `$foo`** — `function &me() return %self end; $foo.$me` returns `$foo`.
+- **`$foo.$fn` reads `@field`** — `function &n() return @name end; $foo.$n` returns `$foo`'s bucket entry `name`.
+- **`$foo.$fn` writes `@field`** — `function &set() @name = 'x' end; $foo.$set; $foo.@name` is `'x'`.
+- **`$foo.$fn` accesses `%bucket`** — `function &b() return %bucket end; $foo.$b` returns the receiver's bucket hash.
+- **`$foo.$fn` with args** — `function &greet($g) return $g + ', ' + @name end; $foo.$greet('hi')` returns `'hi, ' + name`.
+- **`$foo.%['url']` downloads then applies** — same behavior as storing the download first and applying.
+- **Locally-defined function applied as method** — a function declared inline (not downloaded) can be applied via `$obj.$fn`.
+- **Class method as value applied to another class's instance** — `$m = &Widget.render; $gadget.$m` runs `.render` with `%self = $gadget`.
+- **Applied method runs as function's owning role** — a faucet-downloaded function applied as a method runs in the faucet's role.
+- **`%call.role` is the caller's role** — inside an applied method, `%call.role` reflects the caller, not the function's role.
+- **Objects created inside applied method owned by function's role** — `return {new: 1}` from a faucet-downloaded method produces a faucet-owned hash.
+- **Primitive receivers work** — `$n = 5; function &d() return %self * 2 end; $n.$d` returns `10`.
+- **String primitive receiver** — `$s = 'hi'; function &r() return %self.reverse end; $s.$r` returns `'ih'`.
+- **No closure semantics** — a bare function defined inside a closure but applied as a method has no captured scope; the `%self` surface replaces it.
+- **User can apply any function to any object** — user-role code calling `$obj.$fn` on a faucet-owned receiver succeeds.
+- **Non-user role owning receiver can apply** — a faucet-role frame calling `$owned.$fn` on an object it owns succeeds.
+- **Non-user role NOT owning receiver raises** — a faucet-role frame calling `$user_obj.$fn` on a user-owned receiver raises.
+- **Non-user cross-faucet raises** — faucet A calling `$fnB_owned.$fnA` on faucet B's object raises.
+- **Class-defined dispatch unaffected** — `$foo.class_method()` still runs regardless of ownership.
+- **Non-function value in method slot raises** — `$foo.$string` (where `$string` isn't a function) raises with standard dispatch error.
+- **Applied method has full `%bucket` read/write** — no jail, no public-interface restriction.
+- **Method borrowed from parent class body** — `$m = &Parent.helper` used as `$child.$m` runs with `%self = $child` and reads `@` on the child's bucket.
+- **Applied method dispatches sibling calls against receiver's class** — `%self.other()` inside the applied body resolves against the receiver's class, not the borrowed method's original class.
 
 ## Related
 

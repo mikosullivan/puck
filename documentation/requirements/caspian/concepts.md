@@ -86,3 +86,42 @@ The upside is a smaller conceptual surface and a uniform way to reason about met
 Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, dispatchers, anything that fits the Puck object protocol. Each download is one object identified by one URL.
 
 You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%puck` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/documentation/requirements/caspian/engine/manifest/#sections).
+
+## Strings are UTF-8
+
+Every string passed into Caspian is automatically re-encoded as UTF-8. Caspian source, string values in downloaded objects, the results of `%puck` fetches, arguments handed to the engine by a host — all of it lands as UTF-8 inside the runtime, and every string value the engine produces or serializes is UTF-8. Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.
+
+In practice the conversion is usually trivial:
+
+- **ASCII** is already valid UTF-8 — no work required.
+- **UTF-8** input passes through as-is.
+- **UTF-16** and other Unicode encodings are transcoded to UTF-8 at the boundary using the standard mappings.
+
+The exact conversion policy for other encodings — legacy single-byte charsets, non-Unicode double-byte encodings, byte sequences with no declared encoding, and any invalid or partially-valid input — will be filled in as the boundary handling is designed.
+
+## Testing
+
+- **`%engine` reachable from `user`** — a first-frame program running as `user` can call any host-provisioned `%engine` slot without raising.
+- **`%engine` raises for non-user roles** — code running under a role other than `user` that touches any `%engine` slot raises, regardless of what `%chain` has been granted.
+- **`%engine` is not capturable into a variable** — an attempt to alias `%engine` (e.g. assigning it to a local, boxing it in a hash, passing it to another role) raises before the alias is created.
+- **Role tag attaches at value creation** — a literal string, number, hash, array, and instance created in a `user` frame each carry the `user` role tag; the tag is readable immediately after construction.
+- **Role tag attaches to values from faucets** — bytes read from stdin, an env-var value, a filesystem read, and a network response each carry the introducing surface's role tag, not the caller's.
+- **Role tag survives storage and passing** — a value tagged `user` that is stored in a hash, passed to another frame, returned from a method, or put into an array retains its `user` tag on retrieval.
+- **Faucet provenance is queryable** — after `$s = ...` from a network faucet, an introspection call can identify that `$s` originated from that faucet's role.
+- **Method dispatch enters the object's role** — calling a method on a downloaded object under role `X` causes the method body to execute with `%role == X`, even when the caller is `user`.
+- **Callee's role does not receive caller's ambient authority** — a method that inspects its `%chain` sees only what the callee's role has been granted; capabilities the caller held that were not granted through are absent.
+- **Grants are per-block** — a `%chain` capability granted inside a block is visible to code called from within that block and is not visible after the block exits.
+- **Revoke inside a block clears the grant** — a revoke issued inside a block removes the capability before subsequent statements in the same block execute.
+- **Holding an object grants access to its methods** — a non-owner role that holds a reference to an object can call any of its methods; the engine does not filter dispatches.
+- **Jail wrapper narrows what the recipient sees** — an owner that passes a jail wrapper exposes only the methods the jail names; a call to any method not in the jail raises.
+- **No nanny opt-out is honored** — the named opt-out flag for a warn-by-default check disables the warning and does not raise, without any second layer of paternalistic filtering.
+- **Classes are the only method carrier** — attaching a method by any mechanism other than a class definition (module, mixin, per-instance dictionary, prototype patch) fails or has no equivalent syntax.
+- **Instance-level method lives on the shadow class** — a method defined on a specific instance is dispatched via that instance's shadow class and is not visible on other instances of the same underlying class.
+- **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the platter stack in declared order.
+- **One URL, one object via `%puck`** — two successive `%puck[url]` calls with the same URL and same fetcher chain state return the same object identity.
+- **`%engine.manifest.downloads` tracks each URL separately** — two `%puck` fetches of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
+- **ASCII input passes through unchanged** — a pure-ASCII input string arrives at Caspian byte-identical.
+- **UTF-8 input passes through unchanged** — a UTF-8-encoded string arrives at Caspian byte-identical.
+- **UTF-16 input is transcoded to UTF-8** — a UTF-16-encoded string arrives at Caspian as its UTF-8 equivalent.
+- **Every string value inside the runtime is UTF-8** — after any of the above inputs, `str.bytes` returns valid UTF-8 for every string reachable from user code.
+- **Serialized outputs are UTF-8** — a string emitted via `%stdout`, written to a file, or handed back to a sink is UTF-8 regardless of the input encoding.

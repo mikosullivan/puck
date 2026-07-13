@@ -60,6 +60,21 @@ Class authors who want a method surface at `$foo.X` still put it there. The `obj
 
 The methods in the `object` namespace live on their own page: [Object methods](methods/).
 
+## Testing
+
+- **Object is resolvable at startup** — `%['puck.uno/object']` returns a class value in a fresh runtime with no user code loaded.
+- **`%['puck.uno/object'].new()` returns an instance** — the returned value is an object; `.object.isa?(Object)` on it is `true`.
+- **Bare object has an empty bucket** — a fresh bare object's `%bucket` is an empty hash.
+- **Bare object has only Object in its class stack** — `%['puck.uno/object'].new().object.classes` returns an array containing just the Object class.
+- **Every value is an Object** — for each primitive literal (`42`, `'hi'`, `true`, `false`, `null`, `[]`, `{}`), `.object.isa?(Object)` is `true`.
+- **`object` namespace exists on every value without declaration** — a user-defined class that does not mention `object` still has `$instance.object.truthy?` etc. reachable on its instances.
+- **`object` namespace method binds `%self` to the receiver** — inside `object.truthy?` (and any other `object.` method), `%self` is the receiver, not a helper or proxy.
+- **`object.` dispatch is not a wrapper** — the receiver returned to a subsequent chain step is the original object; chaining `$foo.object.tap { }.some_method` calls `some_method` on `$foo` itself.
+- **Bare object can accept added classes** — after `$o = %['puck.uno/object'].new(); $o.object.classes.ensure(Some_class)`, `$o.object.isa?(Some_class)` is `true`.
+- **Bare object can accept singleton methods** — after defining `method $o.name() 'x' end` on a bare object, `$o.name` returns `'x'`.
+- **Bare object can accept direct bucket writes** — after `$o = %['puck.uno/object'].new(); $o.@key = 'value'`, `$o.@key` is `'value'`.
+- **Two `.new()` calls return distinct instances** — successive bare-object constructions have distinct identity; buckets are independent.
+
 ## Related
 
 - [Object methods](methods/) — the full method catalog for the `object` namespace.

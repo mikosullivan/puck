@@ -166,7 +166,42 @@ When a mapping resolves a URL to a local path but the file isn't there, the fetc
 
 A mapping ties a URL prefix to a single directory. That means the mechanism can't serve **different versions** of a file at a mapped URL — `%puck.maps['https://foo.bar/'] = '/home/miko/gup'` points at exactly one `whatever.casp` under `/home/miko/gup`, with no way to distinguish "the v1 build" from "the v2 build" at the same URL.
 
-Local versioning support — the ability to hold multiple versions of a file at a URL and hand back the right one on demand — needs the directory to be formatted as a **cache**, not a plain mapping target. Caches are a separate mechanism sitting elsewhere in `%puck`'s search path; the cache spec is not yet defined.
+Local versioning support — the ability to hold multiple versions of a file at a URL and hand back the right one on demand — needs the directory to be formatted as a [**cache**](https://puck.uno/documentation/requirements/caspian/cache-dir), not a plain mapping target. Caches are a separate mechanism sitting elsewhere in `%puck`'s search path.
+
+### Version-constrained fetches raise on mapped directories
+
+If a `%puck` fetch carries a **timestamp constraint** and resolves to a mapped directory, the engine raises. A mapped directory has no version information — every file inside represents "the current file at this location," with no timestamp — so the engine cannot honor a version constraint against it. Silently serving the mapped file could satisfy the fetch with content that doesn't match the requested version, which is exactly the kind of quiet mismatch that produces subtle bugs later.
+
+If a project needs both version constraints AND local overrides, the directory should be formatted as a [cache](https://puck.uno/documentation/requirements/caspian/cache-dir), which carries per-version subdirectories. If a more flexible resolution is warranted in the future — e.g., a per-mapping opt-in to serve untimestamped files under version-constrained fetches — the community can propose it.
+
+## Testing
+
+- **`local:/name.casp` resolves against `%puck.locals`** — with a directory in `%puck.locals` containing `widget.casp`, `%puck['local:/widget.casp']` returns the file's value.
+- **First matching directory wins** — with two `%puck.locals` entries each containing `widget.casp`, the fetch returns the earlier directory's copy.
+- **Miss on all entries raises** — a `local:/missing.casp` with no entry providing the file raises.
+- **Three-slash form is equivalent to one-slash form** — `%puck['local:///widget.casp']` and `%puck['local:/widget.casp']` resolve identically.
+- **Two-slash form is rejected** — `%puck['local://widget.casp']` raises as an unrecognized shape.
+- **Non-user role attempting `local:` fetch raises** — the same `%puck['local:/widget.casp']` call from a non-`user` role raises regardless of grants.
+- **Non-user role reading `%puck.locals` raises** — read attempts from a non-`user` role raise before any value is returned.
+- **Non-user role writing `%puck.locals` raises** — `%puck.locals << ...` from a non-`user` role raises without mutating the array.
+- **`--lib` flags land at the front of the initial array** — starting `caspian --lib ~/a --lib ~/b script.casp` produces initial `%puck.locals` beginning with `~/a`, then `~/b`.
+- **`--lib` flag order is preserved** — flags on the command line appear in the array in the order they were given.
+- **`CASPIANLIB` entries land after `--lib`** — with `--lib ~/a` and `CASPIANLIB=~/b:~/c`, the array order begins `~/a`, `~/b`, `~/c`.
+- **XDG defaults land at the tail** — the last three entries of the initial array are `~/.local/share/caspian/`, `/usr/local/share/caspian/`, `/usr/share/caspian/` when the XDG env vars are unset.
+- **`XDG_DATA_HOME` overrides the user data location** — with `XDG_DATA_HOME=/opt/x`, the user portion of the array is `/opt/x/caspian/`.
+- **`XDG_DATA_DIRS` replaces the system data locations wholesale** — with `XDG_DATA_DIRS=/opt/y`, the system portion is only `/opt/y/caspian/`; the defaults are not silently appended.
+- **User-first shadow rule holds** — a file at `~/.local/share/caspian/widget.casp` shadows one at `/usr/local/share/caspian/widget.casp` when both exist.
+- **Script-level mutation persists across frames** — a `%puck.locals << '/tmp/x'` in one script is visible to subsequent scripts loaded from within the same process.
+- **`%puck.maps` prefix match rewrites the fetch target** — after `%puck.maps['https://foo.bar/'] = '/home/miko/root'`, `%puck['https://foo.bar/x.casp']` resolves to `/home/miko/root/x.casp`.
+- **Sub-path after the prefix is appended** — with the mapping `https://foo.bar/gup/` → `/home/miko/gup`, `%puck['https://foo.bar/gup/sub/other.casp']` resolves to `/home/miko/gup/sub/other.casp`.
+- **First-registered mapping wins on overlap** — with `https://foo.bar/` registered before `https://foo.bar/gup/`, a fetch of `https://foo.bar/gup/whatever.casp` routes through the shorter prefix.
+- **Non-user role reading `%puck.maps` sees the mappings** — a fetch from a non-`user` role transparently uses whatever mappings were registered.
+- **Non-user role writing `%puck.maps` raises** — a non-`user` assignment to `%puck.maps` raises without mutating.
+- **Mapping miss falls through** — when a mapped directory does not contain the resolved file, the fetch continues to the next node in `%puck`'s search path and does not raise.
+- **Mapping persists across script frames** — a mapping added in one script is visible to fetches issued from a later script in the same process.
+- **`%puck.maps` is a plain hash** — `.has?`, iteration, assignment, and unset behave like any hash.
+- **Version-constrained fetch against a mapped directory raises** — a `%puck` fetch that carries a timestamp constraint and would resolve through `%puck.maps` raises.
+- **Version-constrained fetch against a cache directory succeeds** — same fetch through a cache-format directory resolves normally.
 
 ## Related
 

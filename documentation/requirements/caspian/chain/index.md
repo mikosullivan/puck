@@ -90,17 +90,7 @@ This includes the return-to-user case — when non-user code invokes a user-supp
 
 ## Inspection
 
-Reading the chain (does not modify). **None of these are granted by default** — call-stack visibility is information that doesn't cross a role boundary unless the calling frame explicitly hands it across. Non-user code calling `%chain.parent` without an explicit grant gets nothing back.
-
-| Method | Purpose |
-|---|---|
-| `%chain.role` | The role of the current frame. |
-| `%chain.frames` | The full sequence as an array, current-first. |
-| `%chain.parent` | The frame that called this one. Shortcut for `%chain.frames[-2]`. |
-
-For chain depth, use `%chain.frames.length`.
-
-Useful for diagnostics, debugging, and any code that needs to behave differently based on who called it (though gating behavior on call-stack inspection is usually a sign the role system should be used instead).
+`%chain` itself does not carry chain-frame inspection methods. **The current frame's role is available as [`%role`](https://puck.uno/documentation/requirements/caspian/roles/#role) — a top-level global, not a chain surface.** `%role` is always unconditionally available regardless of what the chain carries. Frame-walking accessors (a full frames array, a parent-frame shortcut) are not part of V1; see [ideas/chain-frames-parent](https://puck.uno/documentation/ideas/chain-frames-parent) <!-- outbound-link-allowed --> for the deferred sketch.
 
 ## Complete catalog
 
@@ -112,14 +102,11 @@ Every method that lives on `%chain`. Each method's surface is documented per-met
 | [`%chain.encryption`](methods/encryption) | | **yes** | capability | Ed25519 signing, SHA hashing, HMAC. |
 | [`%chain.env`](methods/env) | | no | capability | Read-only environment-variable accessor. |
 | [`%chain.forks`](methods/forks) | | no | capability | Spawn forked child processes. |
-| `%chain.frames` | | no | inspection | The full chain as an array, current-first. |
 | [`%chain.memory`](methods/memory) | | no | capability | Read-only process-memory introspection. |
 | [`%chain.net`](methods/net) | | no | capability | Networking — HTTP client, sockets, UDS. |
 | [`%chain.now`](methods/now) | `%now` | **yes** | capability | Current timestamp from the engine-controlled clock. |
-| `%chain.parent` | | no | inspection | The frame that called this one. Shortcut for `%chain.frames[-2]`. |
 | [`%chain.puck`](methods/puck) | `%puck` | **yes** | capability | Object download by URL. `%[url]` is the further-shortened form. |
 | [`%chain.random`](methods/random) | `%random` | **yes** | capability | Random-value primitives (UUID, number, string). |
-| `%chain.role` | | no | inspection | The role of the current frame. |
 | [`%chain.root`](methods/root) | | no | capability | The dirjail the engine granted at startup. |
 | [`%chain.stderr`](methods/stdout-and-stderr) | `%stderr` | no | capability | Diagnostic-output channel. |
 | [`%chain.stdin`](methods/stdin) | `%stdin` | no | capability | The program's input channel. |
@@ -185,3 +172,36 @@ Anywhere Caspian needs "inherits downward, never modifies parent, evaporates on 
 - Writes: O(1).
 
 The naïve "copy the parent's hash" approach is O(parent hash size) per frame push, plus the entire chain hash sits in memory per frame. For programs with non-trivial chain state and deep call stacks, that's prohibitive.
+
+## Testing
+
+- **Frame inheritance: descendant sees ancestor value** — a caller sets `%chain['id'] = 'x'` then invokes a same-role subroutine; the subroutine reads `'x'` via `%chain['id']`.
+- **Frame inheritance: descendant assignment invisible to caller** — a callee's `%chain['x'] = 'v'` does not appear in the caller's view after the callee returns.
+- **Frame inheritance: local shadow of ancestor value** — a descendant writing the same key creates a locally-scoped value that disappears on descendant return; the ancestor's value is unchanged.
+- **Frame inheritance: hash assignment needs no block** — unlike grant/revoke, `%chain['k'] = 'v'` mutates the current frame directly.
+- **Missing key returns null** — reading `%chain['nonexistent']` returns null, not raise.
+- **Global methods accessible via `%chain.X`** — `%chain.now`, `%chain.net`, `%chain.tmp`, and every catalog entry are addressable through the chain.
+- **Shortcut form equivalent to `%chain.X`** — for surfaces with a bare shortcut (`%now`, `%stdout`, `%puck`, `%random`, `%stderr`, `%stdin`), the shortcut and `%chain.X` return the same value.
+- **Engine-startup grant gates presence** — if the host does not install `%chain.net` at startup, calling `%chain.net` raises even inside a grant block; no chain-level operation conjures a withheld surface.
+- **Default-granted list** — `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps` cross role boundaries automatically.
+- **Default-deny list** — every other catalog entry (`%chain.net`, `%chain.tmp`, `%chain.stdout`, `%chain.stdin`, `%chain.stderr`, `%chain.argv`, `%chain.env`, `%chain.forks`, `%chain.memory`, `%chain.root`) is unreachable in a callee of a different role unless explicitly granted.
+- **Full catalog rows verified** — every method in the table exists, its shortcut is correct, its default-grant flag matches, and its `Kind` is `capability`.
+- **Same-role descent preserves hash slot** — a same-role subroutine sees the caller's ambient hash values.
+- **Role boundary empties hash slot** — a call into a different role starts the callee with an empty `%chain` hash; the caller's values are not carried.
+- **Role boundary drops default-deny capabilities** — a callee in a different role starts with only the default-granted surfaces available.
+- **Role boundary hides caller's grants** — the callee cannot introspect what the caller revoked or hid; only the callee's own view is visible.
+- **Return-to-user via closure gets a clean chain** — when non-user code invokes a user-supplied closure, the closure runs as `user` with default-granted only, no hash values, and no leaked grants; the user's pre-boundary context is NOT restored.
+- **`%role` reflects current frame** — `%role` returns the current frame's role regardless of chain state.
+- **`%role` always available** — even a frame that had every capability revoked can still read `%role`.
+- **`%role` is not a chain slot** — accessing `%chain.role` or `%chain['role']` does NOT return the current role; `%role` is a distinct top-level global.
+- **No frame-walking accessors in V1** — a parent-frame shortcut or full frames array is not part of V1.
+- **Chain-hash lookup bottom-up** — with `{foo: 'a'}` at the base and `{foo: 'b'}` at the top, `%chain['foo']` returns `'b'`.
+- **Empty frames cost near-zero memory** — a chain of 100 frames that write nothing does not allocate 100 populated hashes.
+- **Frame push adds empty hash** — entering a frame pushes an empty hash; no values seeded.
+- **Frame return pops the top hash** — after return, the caller's view is exactly what it was before the call.
+- **Write only writes to top frame** — `%chain['k'] = 'v'` inside a callee never mutates an ancestor's hash.
+- **Grant state uses the same stack** — a granted capability is resolved by the same bottom-up walk that resolves hash keys.
+- **Role-boundary sentinel hides ancestors** — crossing into a different role pushes a sentinel that stops the walk from reaching the caller's values.
+- **Sentinel pops on boundary-frame return** — when the boundary frame returns, the caller's chain view (grants included) is fully restored.
+- **Default-grant is the base of the stack** — the base frame reads engine-granted surfaces as if written into the bottom hash.
+- **`%chain` inspection surface is minimal** — only `%role` (elsewhere) and the hash-slot / grant / revoke methods; no chain-walking accessors ship in V1.

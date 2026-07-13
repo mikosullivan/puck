@@ -57,7 +57,7 @@ The engine itself, when it produces output not on behalf of user code. A panic t
 
 ### One role per engine-provided faucet
 
-Every engine-provided faucet has its own distinct role, and every value that comes through the faucet is owned by that role. The V1 catalog is the seven data-producing faucets: stdin, argv, env, filesystem (via `%chain.root` and `%chain.tmp` as separate faucets), network, downloads. The full model — how narrowing works, why role count stays bounded — is spec'd in [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/).
+Every engine-provided faucet has its own distinct role, and every value that comes through the faucet is owned by that role. For the enumeration of faucets, the model of how narrowing works, and why the role count stays bounded, see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/) — that page owns the catalog.
 
 These roles never run program frames — the code executing is always some `user`/`engine`/downloaded-object role. Faucet roles exist for **value provenance**: an audit or capability check asking "where did this string come from?" reads the value's role and gets a definitive source name.
 
@@ -75,13 +75,21 @@ When code needs to refer to a role — to compare identities, to use as a grant 
 
 A role object is NOT a string. It's an object with methods (`==`, `.current?`, etc.). The role's *name* is a string the object exposes (and you can read it for display), but the object itself is what you compare and pass around. Treating a role as a string — comparing by name, building from a name — bypasses the role system and isn't supported.
 
+### `%role`
+
+`%role` is the top-level global that returns the role reference for the **current frame**. It is **always unconditionally available** — no default-grant to check, no capability check to make, no chain state to inspect. Every frame, in every role, can read `%role` and get back a role object.
+
+`%role` is a language primitive; it does **not** live on `%chain`. Chain-scoped state (grants, ambient hash, capability slots) resets at role boundaries; `%role` doesn't — it's the accessor for whichever role the current frame is running under, and its value is set by the frame's identity, not by chain state.
+
+`%role.grant($target_role, :caps...) do ... end` and `%role.revoke($target_role, :caps...) do ... end` grant and revoke capabilities to a target role, riding the chain grant/revoke mechanism under the hood. See [Granting capabilities to other roles](#granting-capabilities-to-other-roles) below for the full grant/revoke semantics.
+
 ### Getting a role object from an object
 
 The primary mechanism: `$obj.object.role` on any object returns the role object that owns it.
 
 ~~~caspian
 $role = $some_object.object.role
-%chain.role.grant($role, :net) do
+%role.grant($role, :net) do
 	$some_object.do_thing()
 end
 ~~~
@@ -141,9 +149,9 @@ if $some_object.object.role.current?
 end
 ~~~
 
-This is convenience sugar — `$role == %chain.role` would compute the same answer (compare the reference to whichever role the chain reports for the current frame). `.current?` is the named form for the question "am I running as this role right now?" because that question comes up often enough to deserve its own method.
+This is convenience sugar — `$role == %role` would compute the same answer (compare the reference to whichever role the chain reports for the current frame). `.current?` is the named form for the question "am I running as this role right now?" because that question comes up often enough to deserve its own method.
 
-Trivial to implement: the engine already knows the current role (it's what `%chain.role` returns) and equality comparison is already defined. `.current?` is `==` against the current role under the hood.
+Trivial to implement: the engine already knows the current role (it's what `%role` returns) and equality comparison is already defined. `.current?` is `==` against the current role under the hood.
 
 ## Methods run as their object's role
 
@@ -172,10 +180,10 @@ The "nothing by default" rule is doing most of the security work. The role catal
 
 ## Granting capabilities to other roles
 
-The primary mechanism for cross-role capability delegation is **`%chain.role.grant`**: grant specific capabilities to a specific named role, so only that role's frames see them. The surface is on `%chain` (because grants ride the chain mechanism) but the policy belongs here — it's about cross-role identity, not chain-internal plumbing.
+The primary mechanism for cross-role capability delegation is **`%role.grant`**: grant specific capabilities to a specific named role, so only that role's frames see them. `%role` is the top-level accessor for the current frame's role; `.grant` on it delegates capabilities across a role boundary. The mechanism rides the chain grant/revoke plumbing under the hood, but the policy belongs here — it's about cross-role identity, not chain-internal plumbing.
 
 ~~~caspian
-%chain.role.grant($agent.role, :net, :stdout) do
+%role.grant($agent.role, :net, :stdout) do
 	$agent.handle_request()
 end
 ~~~
@@ -187,7 +195,7 @@ Inside the block, frames running in `$agent.role` see `%chain.net` and `%stdout`
 Delegate everything the granter has at that moment:
 
 ~~~caspian
-%chain.role.grant($agent.role, :*) do
+%role.grant($agent.role, :*) do
 	$agent.act_as_me()
 end
 ~~~
@@ -197,7 +205,7 @@ Inside the block, `$agent.role` has every capability the granting frame currentl
 ### Symmetric revoke
 
 ~~~caspian
-%chain.role.revoke($agent.role, :net) do
+%role.revoke($agent.role, :net) do
 	$agent.do_offline_work()
 end
 ~~~
@@ -210,7 +218,7 @@ The named role loses access to the listed capabilities for the duration of the b
 - **Idempotent.** Granting capabilities the target role already has, or revoking ones it doesn't, is a silent no-op.
 - **Composes with the non-targeted grant forms.** A role-targeted grant and a non-targeted `%chain.X.grant` can both be in effect for the same descendant frame; the descendant sees the union of capabilities granted by all applicable grants.
 - **Can't grant what you don't have.** The granting frame must possess each named capability; granting unavailable capabilities raises.
-- **`:*` snapshots at the call site.** The set of capabilities `:*` covers is whatever the granting frame has at the moment of the `%chain.role.grant` call. Adding capabilities to the granting frame inside the block does not retroactively expand the wildcard.
+- **`:*` snapshots at the call site.** The set of capabilities `:*` covers is whatever the granting frame has at the moment of the `%role.grant` call. Adding capabilities to the granting frame inside the block does not retroactively expand the wildcard.
 - **Block-scoped only.** Same as every other grant form — no persistent grants.
 
 For the other (non-role-targeted) grant forms — per-capability, multi-capability, plain `.revoke` — see [chain/grant-revoke](https://puck.uno/documentation/requirements/caspian/chain/grant-revoke).
@@ -230,3 +238,49 @@ For the other (non-role-targeted) grant forms — per-capability, multi-capabili
 - Whether `request`, `agent`, or other identity-bearing roles are baked in.
 
 Each of these is a separate design question, not blocked on any single other spec.
+
+## Testing
+
+- **`%role` returns the current frame's role reference** — inside the top-level program, `%role.name` is `'user'`.
+- **The `user` role always exists** — `%role.name == 'user'` at program start.
+- **`%role` is always available regardless of grants** — even a role with zero granted capabilities can read `%role`; no gate.
+- **`%role` is a role object, not a string** — `%role.class` is not the string class.
+- **`%role == 'user'` is false or raises** — comparison against a string doesn't match the role object.
+- **`%role.name` returns the role's name as a string** — for the user role, `'user'`.
+- **`user` is the only role that reaches `%engine`** — from a `user` frame, `%engine.argv` succeeds; from any non-user frame it raises.
+- **Non-user role attempting any `%engine` slot raises** — the gate is blanket, not per-slot.
+- **`engine` role does not run user program frames** — no user code runs under `engine`; the role exists for attribution.
+- **`$obj.object.role` returns the object's owning role** — reading it grants no permissions.
+- **Two role references to the same role compare equal via `==`** — `$s.object.role == $h.object.role` when both are user-owned.
+- **`==` on role references compares identity, not name strings** — the check is by role identity.
+- **`%role == %role` is true** — trivial identity.
+- **`.current?` on the current frame's role reference is true** — `%role.current?` is `true`.
+- **`.current?` on a non-current role reference is false** — points to a different role than the frame is running as.
+- **A string literal's `.object.role` matches the creating frame's role** — literals in user code are user-owned.
+- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.object.role != %role`.
+- **Faucet roles never run user program frames** — provenance only.
+- **`%engine.roles` enumerates every registered role** — returns a list of role references.
+- **`%engine.roles` from a non-user frame raises** — the blanket gate applies.
+- **A role reference from a faucet-owned value is a valid grant target** — `%role.grant($str.object.role, :net) do ... end` runs.
+- **Cross-role dispatch runs the method as the object's owner** — calling `$other_role_obj.method()` from a `user` frame runs the method body under the object's owner role.
+- **On method return, the calling frame's role is restored** — control returns to the caller with its original role.
+- **Roles are permanent identities** — a role object compares equal to itself across the entire process lifetime.
+- **User default grants: `%engine` plus everything the host provisioned** — a fresh `user` frame has full user-role access.
+- **Non-user role default grants: empty** — nothing without an explicit grant.
+- **`%role.grant($target, :cap) do ... end` grants scoped to the block** — inside the block, target frames see the capability.
+- **Grant does not apply to other roles** — a frame running as some third role inside the block does not see the granted capability.
+- **`%role.grant($target, :*) do ... end` grants everything the granter has** — target sees the union of granter's current capabilities.
+- **`%role.grant($target, :cap)` for a cap the granter doesn't have raises** — can't-grant-what-you-don't-have.
+- **`%role.grant` is idempotent** — granting a capability the target already has is a silent no-op.
+- **`%role.revoke($target, :cap) do ... end` removes the capability inside the block** — outside, original capabilities restored.
+- **`%role.revoke` for a capability the target doesn't have is a silent no-op** — not an error.
+- **`%role.grant`'s target lookup is by role identity** — if the target role never appears in the call tree, the grant sits unused; no error.
+- **`:*` snapshots at the call site** — adding capabilities inside the block does not retroactively expand the wildcard.
+- **`%role.grant` is block-scoped only** — after the block ends, target loses the grant.
+- **Role-targeted grants compose with `%chain.X.grant`** — a descendant sees the union of both grant paths.
+- **`%role` inside a downloaded object's method returns the object's owning role** — not `user`.
+- **A role reference obtained via `.object.role` and one via `%role` compare equal when they name the same role** — regardless of retrieval path.
+- **`%role.grant` and `%role.revoke` in the same block compose** — the target sees granted capabilities minus revoked ones.
+- **`%role.name` for a faucet role is a stable string identifier** — same value across reads.
+- **`%role` does not appear on `%chain`** — reading `%chain.role` raises or is undefined; `%role` is a language primitive.
+- **A role held in a variable and later used for grant/revoke behaves the same as inline access** — capture doesn't change semantics.

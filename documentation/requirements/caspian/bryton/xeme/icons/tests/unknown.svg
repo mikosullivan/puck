@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="120mm"
+   height="120mm"
+   viewBox="0 0 120 120.00003"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="unknown.svg"
+   inkscape:export-filename="use.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.4204826"
+     inkscape:cx="489.91326"
+     inkscape:cy="384.08248"
+     inkscape:window-width="1600"
+     inkscape:window-height="824"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs2">
+    <linearGradient
+       id="a-6">
+      <stop
+         offset="0"
+         stop-color="#0645ad"
+         id="stop998" />
+      <stop
+         offset="1"
+         stop-color="#398fea"
+         id="stop1000" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#a-6"
+       id="linearGradient17176"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.4607413,0,0,1.4572323,1366.3454,7901.0404)"
+       x1="117.05355"
+       y1="83.525589"
+       x2="116.83034"
+       y2="62.245369" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="icons"
+     style="display:inline"
+     transform="translate(-317.70546,-977.26045)">
+    <path
+       fill="url(#b)"
+       stroke="url(#c)"
+       stroke-linecap="round"
+       stroke-width="10.5667"
+       d="m 432.1587,1037.2604 a 54.453248,54.387804 0 1 1 -108.90646,0 54.453248,54.387804 0 1 1 108.90646,0 z"
+       id="path1007"
+       style="fill:url(#linearGradient17176);stroke:#000000;stroke-opacity:1;stroke-width:7.367;stroke-dasharray:none;paint-order:stroke fill markers" />
+    <path
+       fill="#ffffff"
+       stroke="#ffffff"
+       stroke-width="4.22666"
+       d="m 356.03156,1007.71 -0.39726,0.3963 1.5941,7.9604 3.58657,0.3963 c 19.06854,-22.9975 39.25378,-0.8453 20.37173,17.8522 -6.30664,6.2448 -7.92126,12.9495 -7.97013,21.0953 0,0.7298 2.75122,1.5923 3.58655,1.5923 0.83534,0 3.18812,-0.8633 3.18812,-1.5923 -1.05995,-7.0787 2.30967,-12.2501 6.37603,-16.3191 13.23194,-13.2401 19.32741,-26.7086 7.6587,-36.3552 -8.26056,-6.82901 -23.88889,-7.96304 -37.99411,4.9722 z m 20.61196,59.5634 c -3.28946,1.2969 -4.82193,3.0869 -5.9472,5.94 v 0.3306 c 0.95183,3.6314 2.39807,5.162 5.9472,5.9401 h 0.6611 c 3.11644,-0.7786 4.73543,-2.3952 5.94732,-5.9401 v -0.3306 c -1.12537,-3.1125 -2.74447,-4.816 -5.94732,-5.94 z"
+       font-family="'Linux Biolinum O'"
+       font-size="8.18743px"
+       font-weight="700"
+       letter-spacing="0.372156"
+       style="line-height:125%;-inkscape-font-specification:'Linux Biolinum O Bold'"
+       word-spacing="0"
+       id="path1009" />
+  </g>
+</svg>

@@ -27,7 +27,6 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 |---|---|---|
 | [`%engine.argv`](argv) | Command-line arguments. | [`%chain.argv`](../chain/methods/argv) |
 | `%engine.coverage` ([doc](coverage)) | Line-level coverage tracking. | — |
-| [`%engine.dir`](dir) | Working directory at startup. | [`%chain.root`](../chain/methods/root) |
 | `%engine.encryption` (TBD) | Cryptographic primitives. | [`%chain.encryption`](../chain/methods/encryption) |
 | `%engine.env` (TBD) | Environment-variable accessor. | [`%chain.env`](../chain/methods/env) |
 | `%engine.forks` (TBD) | Process forking. | [`%chain.forks`](../chain/methods/forks) |
@@ -40,7 +39,6 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | `%engine.puck` (TBD) | Object download by URL. | [`%chain.puck`](../chain/methods/puck) |
 | `%engine.random` (TBD) | Random-value primitives (libsodium → OS CSPRNG). | [`%chain.random`](../chain/methods/random) |
 | [`%engine.require`](require) | Declarative dependency statement on a downloaded object. | — |
-| [`%engine.return_val`](return-val) | Settable slot holding the explicit return value the host receives from `engine.run()`. Omit and the host gets null. | — |
 | `%engine.root` (TBD) | Root dirjail — the filesystem entry point. | [`%chain.root`](../chain/methods/root) |
 | [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%chain.stderr`](../chain/methods/stdout-and-stderr) |
 | [`%engine.stdin`](stdin) | Input channel. | [`%chain.stdin`](../chain/methods/stdin) |
@@ -52,3 +50,25 @@ Entries marked **TBD** have no canonical doc yet — currently described from th
 ## Custom resources via `%engine['name']`
 
 Beyond the standard slots, a host may expose application-specific resources by name. `%engine['name']` is the access pattern; the key set is whatever this particular host chose to provide. The bracket form is what's required to reach anything not in the standard slot list.
+
+## Testing
+
+- **`%engine` reachable from `user`** — the first program statement (running under `user`) can call any documented slot.
+- **`%engine` from a non-user role raises** — a method on a class owned by a non-user role calling `%engine.argv` raises the blanket `%engine` gate error.
+- **Every slot is gated identically** — `%engine.stdout`, `%engine.http`, `%engine.manifest`, `%engine.roles`, and every other slot all raise from non-user role frames.
+- **Bracket form is gated identically** — `%engine['argv']` from a non-user frame raises just as `%engine.argv` does.
+- **`%engine` is non-capturable** — attempting `$e = %engine` and calling `$e.argv` from a non-user frame raises. Capturing the reference does not bypass the gate.
+- **`%engine` is top-level-only** — a non-user role cannot receive a `%engine` reference through a constructor argument and later call methods on it; capture attempts at that layer raise.
+- **A captured slot value is still usable across frames under method-runs-as-owner** — `$net = %engine.http` handed to a non-user object still works when the non-user code calls `$net.get(url)`, because the method runs under the user role.
+- **Unknown standard slot raises a "no such slot" error** — `%engine.no_such_slot` raises a specific missing-slot error distinct from the blanket gate error.
+- **Custom slot reachable via bracket form** — a host that populates `%engine['myapp']` makes that slot reachable to `user` code via `%engine['myapp']`.
+- **Custom slot values subject to the same user-only gate** — `%engine['myapp']` from a non-user frame raises.
+- **Bracket form required for non-identifier keys** — a slot whose name contains a dot is reachable only via bracket form.
+- **Missing bracket-form key raises a "no such slot" error** — `%engine['undefined_key']` raises the missing-slot error.
+- **`%engine` is a distinct object from `%chain`** — `%engine.stdout` and `%chain.stdout` are separate references with their own gates.
+- **There is no per-slot opt-in surface** — attempting a hypothetical "grant slot X to role Y" mechanism raises or is not defined; the gate is on the whole `%engine`.
+- **User default grants include `%engine`** — a fresh program run has `%engine` reachable from the first statement with no explicit grant.
+- **Every standard slot has a `%chain` mirror or an explicit user-only marker** — the catalog table names either a chain counterpart or a dash.
+- **TBD slots in the catalog raise "TBD" or the missing-slot error** — implementation status is discoverable; user code doesn't hit a silent hang.
+- **`%engine` returns the same object identity across accesses** — `%engine == %engine` is true.
+- **Non-user role reading via bracket iteration raises** — attempting to enumerate `%engine` keys from a non-user role raises the blanket gate error.

@@ -48,7 +48,7 @@ Method objects add the following methods on top of the [shared function surface]
 | `.private` | Read the `private` boolean. When `true`, calls from outside the receiver's own class body raise — the method is only reachable from within its own class. Full semantics are spec'd in the classes section. |
 | `.private=` | Set the `private` boolean. `$m.private = true` marks the method as private; assigning `false` makes it callable from anywhere again. |
 
-Methods declared inside an `instance` body additionally carry an `auto_run` getter/setter pair — see [instance § auto_run](https://puck.uno/documentation/requirements-old/caspian/classes/instance#auto-run) for the property, its semantics, and the one-per-body rule.
+Methods declared inside an `instance` body additionally carry an `auto_run` getter/setter pair — see [instance § auto_run](https://puck.uno/documentation/requirements/caspian/classes/instance#auto-run) for the property, its semantics, and the one-per-body rule.
 
 ## return
 
@@ -96,7 +96,36 @@ end
 
 Inside the class body above, `rank` is declared on the class as a normal class method AND the method object is assigned to the local `$m`. Both effects happen from the single expression; the value captured at `$m` is the same object the class now has for `.rank`.
 
-Capturing the value lets code hand the method to constructs that expect one. The [`instance` doc's `auto_run` section](https://puck.uno/documentation/requirements-old/caspian/classes/instance#auto-run) is the current motivating example: `$m.auto_run = true` on a captured method value flips a boolean property that changes how `instance` construction finishes.
+Capturing the value lets code hand the method to constructs that expect one. The [`instance` doc's `auto_run` section](https://puck.uno/documentation/requirements/caspian/classes/instance#auto-run) is the current motivating example: `$m.auto_run = true` on a captured method value flips a boolean property that changes how `instance` construction finishes.
+
+## Testing
+
+- **`%self` is the receiver** — `method greet() return %self end` invoked as `$obj.greet` returns `$obj`.
+- **`@field` reads bucket entry** — after `.new(name: 'p')`, a method body reading `@name` returns `'p'`.
+- **`@field` writes bucket entry** — a method body assigning `@name = 'x'` mutates the receiver's bucket.
+- **`%bucket['field']` equivalent to `@field`** — `%bucket['name']` and `@name` produce and mutate the same slot.
+- **Sibling method call** — `%self.sibling()` inside a method body dispatches to the receiver's `.sibling` method.
+- **No captured outer scope** — a method defined inside another function's body does not see that function's locals.
+- **`%call.role` is the caller's role** — a method invoked cross-role reads `%call.role` as the caller's role, not the method's role.
+- **Method runs as its class's role** — a method's ambient role is the class's owning role, not the caller's.
+- **Class method inherited by instances** — after `class # foo; method greet(); end; end`, every instance responds to `.greet`.
+- **Singleton method attached to specific instance** — `method $picard.rank; return 'admiral'; end` makes `$picard.rank` work but sibling instances of the same class don't get it.
+- **`method` at top level raises** — a `method` declaration outside a class body and without a `$obj.name` target errors.
+- **`method` inside a bare function body raises** — `function() method foo() end end` errors.
+- **`method` inside a closure body raises** — `closure() method foo() end end` errors.
+- **`.private = true` blocks external call** — after `$m.private = true`, an outside caller invoking the method raises.
+- **`.private = false` restores external call** — after `$m.private = false`, the method is callable again.
+- **Private method callable from sibling** — a private method invoked via `%self.` from another method of the same class works.
+- **`method name(...) ... end` evaluates to the method object** — inside a class body, `$m = method foo() end` captures the method value while also declaring `foo` on the class.
+- **`.call` on a method object invokes it** — `$m.call` with `%self` bound to the receiver produces the same result as invoking through the receiver.
+- **`.params` on a method object** — same shape as bare functions; keyed by private name.
+- **Method chain on returned receiver** — `$obj.a().b()` runs `.a` then `.b` on `.a`'s return value.
+- **`return $value` exits the method** — `method foo() return 'x'; puts 'no' end` returns `'x'` without executing the `puts`.
+- **`%call.return $value` exits the method** — same effect as bare `return` when the immediate frame is the method.
+- **Ad-hoc application via `$obj.$fn`** — an externally-defined bare function applied as `$obj.$fn` runs with `%self = $obj`.
+- **Downloaded methods have full `%bucket` access** — an applied function reads `@field` directly on the receiver.
+- **Ad-hoc application by non-user role requires ownership** — see [downloaded-methods § receiver-ownership rule](https://puck.uno/documentation/requirements/caspian/classes/downloaded-methods#the-receiver-ownership-rule); the applied call raises when the current role neither owns the receiver nor is user.
+- **Instance-only `auto_run`** — methods declared inside `instance ... end` bodies carry `.auto_run`; methods declared inside `class ... end` bodies do not.
 
 ## Related
 

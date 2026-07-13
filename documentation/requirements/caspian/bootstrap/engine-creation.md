@@ -120,7 +120,7 @@ From the host's perspective, the engine's lifecycle has three phases:
 
 1. **Load.** `require('caspian.engine')` returns the engine table. Happens once per Lua process; subsequent `require` calls return the same cached table.
 2. **Configure.** Host assigns the properties it wants the engine to see. Order doesn't matter; the host can interleave configuration and other work freely until it's ready to run.
-3. **Run.** Host calls `engine.run()`. The engine reads its properties, initializes its runtime state inside `bootstrap()`, walks the program tree, and returns to the host whatever the program last set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val) (or null if it was never called).
+3. **Run.** Host calls `engine.run()`. The engine reads its properties, initializes its runtime state inside `bootstrap()`, and walks the program tree. V1 has no meaningful return value from `run()` — programs signal outward via stdout, stderr, or host-wired callbacks.
 
 After `engine.run()` returns, the host can:
 
@@ -196,6 +196,29 @@ For grounding, the reference implementation's full Lua module inventory:
 | `init.lua` | barrel module re-exporting lexer/parser/transpiler/etc. for `require('caspian')` convenience |
 
 A host typically only needs `caspian.engine` and (if it's parsing Caspian source rather than feeding pre-made CaspianJ) implicitly the lexer/parser/transpiler via `engine.parse_caspian()`. The other modules are internal plumbing.
+
+## Testing
+
+- **`require('caspian.engine')` returns a table** — the returned value is a Lua table exposing `run`, `parse_caspian`, `dispatch`, and `bootstrap`.
+- **Subsequent `require` calls return the same table** — `require('caspian.engine')` twice yields the same identity thanks to Lua's module cache.
+- **No constructor step** — the module is usable immediately after `require`; there is no `Engine.new()` and no two-phase construct-then-configure pattern.
+- **Property assignment is unceremonious** — `engine.stdout = fn` writes the value and reading `engine.stdout` returns it, with no event firing or validation at write time.
+- **Property write order is irrelevant** — assigning `engine.argv` before `engine.stdout` and vice versa produce identical runtime behavior.
+- **Missing property surfaces at read time, not write time** — writing an incorrect value to `engine.stdout` does not raise until the engine (or the program) actually reads it.
+- **`engine.caspianj` staging accepts a hand-written CaspianJ tree** — a host that skips `parse_caspian` and assigns a valid tree directly can call `engine.run()` successfully.
+- **`engine.parse_caspian(source)` returns a CaspianJ tree** — the returned value can be assigned to `engine.caspianj` and executed by `engine.run()`.
+- **`engine.run()` executes the staged tree** — `engine.caspianj = engine.parse_caspian("puts 'hi'")` then `engine.run()` invokes the host's `engine.stdout` with `"hi\n"`.
+- **`engine.run()` returns no value in V1** — the host receives nothing meaningful on successful completion; observable output flows through the wired `engine.stdout`/`engine.stderr` callbacks during the run itself.
+- **`engine.run()` can be called multiple times** — reconfiguring `engine.caspianj` and calling `engine.run()` again executes the new tree.
+- **State resets between runs** — a grant, hash slot, or role registered during one run is not visible during the next; roles registry and call stack are fresh.
+- **Reconfiguration between runs works** — reassigning `engine.stdout` between runs sends the second run's output to the new callback.
+- **Properties survive past `run()`** — after `engine.run()` returns, `engine.stdout` still holds the host-assigned value; the engine does not clear its own properties.
+- **Missing `engine.caspianj` raises on `run()`** — calling `engine.run()` with no tree staged raises before dispatching any statement.
+- **Host may capture state explicitly across runs** — the host can read a value from `engine.run()`'s return and feed it into the next run's fixture; the reset only clears runtime internals, not host-held values.
+- **Non-Lua host conforms via the same surface** — a Ruby/Python/JavaScript host that assigns `engine.caspianj`, `engine.argv`, and `engine.stdout` and calls `engine.run()` executes identically to a Lua host doing the same.
+- **`caspian.null` sentinel round-trips through CaspianJ tables** — Lua `nil` is silently discarded from Lua tables; a CaspianJ tree that means null uses `caspian.null` (also exported as `json.null`).
+- **Lua 5.4 development target** — the reference implementation loads and runs under `lua5.4`; no lower minimum is committed to yet.
+- **Reference impl inventory present** — `lib/lua/caspian/` contains `engine.lua`, `lexer.lua`, `parser.lua`, `transpiler.lua`, `json.lua`, `cli.lua`, and `init.lua` at minimum.
 
 ## Related
 

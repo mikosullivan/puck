@@ -80,7 +80,7 @@ Currently **TBD.** Two reasonable options:
 - **A namespace-view object bound to the instance.** `$widget.stats` returns a small object whose methods dispatch back to the widget's nested-namespace methods. This makes the namespace introspectable (`$widget.stats.methods` lists what's in it) and passable as a value.
 - **Only dotted-path calls are legal.** `$widget.stats` on its own raises; only `$widget.stats.something` is a legal expression.
 
-The first is more flexible and is what the [conversion protocol](https://puck.uno/documentation/ideas/conversion) design already needs — `$foo.to` needs to be an object whose methods you can enumerate. So the first is likely what lands; leaving formally open until the protocol lands.
+The first is more flexible and is what the [conversion protocol](https://puck.uno/documentation/ideas/conversion) <!-- outbound-link-allowed --> design already needs — `$foo.to` needs to be an object whose methods you can enumerate. So the first is likely what lands; leaving formally open until the protocol lands.
 
 ## Depth
 
@@ -88,7 +88,7 @@ Whether a `nested :name ... end` block can contain another `nested :name ... end
 
 ## Interaction with the conversion protocol
 
-The `.to` and `.from` conversion protocol described in [ideas/conversion](https://puck.uno/documentation/ideas/conversion) uses this exact mechanism. `.to.number` is a nested-method call: the class declares
+The `.to` and `.from` conversion protocol described in [ideas/conversion](https://puck.uno/documentation/ideas/conversion) <!-- outbound-link-allowed --> uses this exact mechanism. `.to.number` is a nested-method call: the class declares
 
 ~~~caspian
 class # string
@@ -135,3 +135,28 @@ Since each nested entry has the same shape as a top-level method, arbitrary dept
 - **Method-name conflicts.** A top-level method literally named `stats` alongside a nested block named `stats` — is that a class-load-time error, or does one shadow the other? Likely error; worth confirming.
 - **Inheritance.** Whether a subclass can add methods to a parent's nested namespace (`class inherits parent { nested :stats { method &new_one() ... end } end }`). The natural answer is yes — nested is naming, and subclasses can add sibling methods — but the dispatch precedence needs to be spelled out.
 - **The name registry.** Whether `nested` names sit in the same namespace as `field` names (so `field :stats` and `nested :stats` would conflict) or in separate namespaces. Probably separate — fields and methods are already in separate tables — but worth confirming.
+
+## Testing
+
+- **Nested method reachable via dotted path** — after `class nested :stats method average() return 0 end end end`, `$obj.stats.average` returns `0`.
+- **Nested method sees `%self` as parent instance** — `nested :s method me() return %self end end`, `$obj.s.me == $obj` is true.
+- **Nested method reads `@field`** — a nested method reading `@name` returns the parent instance's bucket entry `name`.
+- **Nested method writes `@field`** — `@name = 'x'` inside a nested method mutates the parent's bucket.
+- **Nested method reads `%bucket`** — the full bucket hash is reachable.
+- **Nested method calls sibling top-level method** — `%self.top()` inside a nested method dispatches to a top-level method on the parent's class.
+- **Nested method calls sibling nested method** — `%self.stats.other()` inside a nested method reaches another nested method in the same namespace.
+- **Nested method uses `%chain`** — `%chain` inside a nested method reads the caller's chain frame, same as any method.
+- **Nested method uses `%engine` in user role** — user-role code inside a nested method reaches `%engine`.
+- **Multiple methods per nested block** — `nested :stats method a() end; method b() end end` produces `$obj.stats.a` and `$obj.stats.b`.
+- **Multiple nested blocks per class** — `nested :stats end; nested :to end` produces `$obj.stats.*` and `$obj.to.*` independently.
+- **Empty `nested` block legal** — `nested :x end` with no methods produces a namespace with no members; behavior of `$obj.x` bare TBD per open question.
+- **Inheritance carries nested namespaces** — `class inherits Parent end` on a parent with `nested :stats` gives the child instances `.stats.*` too.
+- **Child adds to inherited nested namespace** — TBD per open question; behavior confirmed once resolved.
+- **Nested-only method not reachable at top level** — `$obj.average` (without `.stats.`) raises when `average` lives only inside `nested :stats`.
+- **Dotted path is a single method call** — `$obj.stats.average()` triggers one method invocation, not two dispatches with an intermediate side effect.
+- **CaspianJ shape** — the class record's `methods` table carries a `nested: {...}` entry for each `nested :name` block, with sub-method entries in the standard method shape.
+- **Method-name conflicts with top-level method** — a class defining both `method stats` and `nested :stats end` errors at class-load per the open question's likely resolution.
+- **Nested method's role** — the nested method runs as the class's role, same as any top-level method on the class.
+- **`.to.number` example** — a class with `nested :to method &number() ... end end` on a string primitive is invocable as `$s.to.number` and produces the parsed number.
+- **Cross-role nested call** — a nested method invoked from another role runs with `%call.role` as the caller's role.
+- **`%self.object` accessible from nested method** — the standard object surface is reachable through `%self.object.*` inside a nested method.

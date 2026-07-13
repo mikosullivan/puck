@@ -16,7 +16,6 @@ This section covers Caspian's surface syntax — what a programmer actually type
 
 - [Comments and whitespace](https://puck.uno/documentation/requirements/caspian/syntax/comments-and-whitespace) — line comments and lexical whitespace rules.
 - [Sigils](https://puck.uno/documentation/requirements/caspian/syntax/sigils) — `$`, `&`, `@`, `%` and what each names.
-- [Literals](https://puck.uno/documentation/requirements/caspian/syntax/literals) — numbers, strings, booleans, null, arrays, hashes.
 - [Variables and assignment](https://puck.uno/documentation/requirements/caspian/syntax/variables-and-assignment) — `=`, compound operators, assignment targets, scope.
 - [Operators](https://puck.uno/documentation/requirements/caspian/syntax/operators) — arithmetic, comparison, logical, ternary. No precedence table.
 - [Truthy and falsy](https://puck.uno/documentation/requirements/caspian/syntax/truthy-and-falsy) — only `null` and `false` are falsy.

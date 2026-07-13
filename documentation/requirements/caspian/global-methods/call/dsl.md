@@ -238,3 +238,34 @@ Roughly the order this lands in the engine:
 - **Reflection.** Can code inside a yielded block introspect its own dispatcher? List active DSL entries? This would enable runtime tooling (debugger views, documentation extractors) but adds a surface to design.
 
 - **Error messages on bwc resolution failure.** When a block uses a bwc that has no DSL binding and no scope variable, the engine raises. What does the error say? "Unknown bwc 'foo'"? "No DSL entry or variable named 'foo' in scope"? The diagnostic shape matters for debugging blocks that came from libraries.
+
+## Testing
+
+- **`%call.dispatcher.new` returns a dispatcher** — the return value has a `dsl` hash and a `yield` method.
+- **DSL entry routes bare word to receiver** — `$d.dsl['info'] = $recv; $d.yield` with a block calling `info 'x'` dispatches to `$recv.info('x')`.
+- **DSL entry with args** — `info 'a', 'b'` inside the yielded block calls the receiver with both args.
+- **Undefined bare word falls through to scope variable** — a block naming `foo` with no DSL entry and a scope variable `$foo` reads `$foo`.
+- **Undefined bare word with no scope variable raises** — a block naming `foo` with no DSL entry and no `$foo` raises.
+- **DSL entry shadows scope variable** — when both exist, the DSL entry wins for the block's duration.
+- **DSL entries don't propagate to nested calls** — a function called from inside the yielded block does not inherit the caller's DSL.
+- **DSL vanishes when block returns** — after `$d.yield` returns, the dispatcher's DSL is no longer active in any scope.
+- **`%call.dispatcher.new(1)` targets the second passed block** — the second block is what `.yield` runs.
+- **`%call.dispatcher.new()` defaults to block 0** — targets the first passed block.
+- **Yielding a dispatcher targeting a nonexistent block raises** — `%call.dispatcher.new(5).yield` when only 2 blocks were passed raises.
+- **Virtual getter/setter split** — `dsl['name']` and `dsl['name=']` route independently; block writing `name = 5` calls the setter.
+- **`return` bwc default binding** — a block using `return X` (with no override) invokes `%call.return X`.
+- **`yield` bwc default binding** — a block using `yield X` (with no override) invokes `%call.yield X`.
+- **`raise` bwc default binding** — a block using `raise X` triggers the raise primitive.
+- **Tier 3 bwc override** — a dispatcher setting `dsl['return'] = $recv` diverts `return` inside the block to `$recv.return`.
+- **`break` outside any loop raises** — `break` in a block with no enclosing loop has no binding and errors.
+- **`next` outside any loop raises** — same.
+- **Loop registers `break` and `next` on its dispatcher** — inside an `each ... end` block, `break` and `next` are bound.
+- **Tier 2 rebind blocked** — attempting to set `dsl['true'] = $x` (or evaluating a block that would rebind `true`/`false`/`null`) raises.
+- **Tier 1 rebind blocked** — attempting to route `if` or `class` through DSL raises.
+- **Nested DSL stacking** — inner block's DSL entry shadows outer's for the same name, restored on return.
+- **Class body uses class-DSL** — `class ... field :name, class: :string ... end` resolves `field` as a bwc in the class-builder DSL.
+- **`inherits` inside class body dispatches through DSL** — `inherits Person` calls the class-builder's `inherits` method.
+- **`instance` body uses the same DSL as `class`** — the same bwcs (`field`, `method`, `inherits`) resolve identically inside an `instance ... end` block.
+- **Loop `before` / `after` / `between` are bwcs** — inside a loop block, these names dispatch through the loop's DSL.
+- **Full method surface exposed by receiver** — `dsl['x'] = $r` makes every method on `$r` reachable from the block as a bwc.
+- **Multiple `.dispatcher.new` calls per function** — a function can construct one dispatcher per passed block and configure each independently.

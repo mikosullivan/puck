@@ -106,7 +106,7 @@ Putting the call object on the caller's side (rather than the function's side) i
 
 This connects to the broader role-and-ownership model. Three different roles can coexist in one method body:
 
-- The **running frame's role** — `%chain.role`. For methods, this is the class's role; for free-standing functions and closures, the defining role.
+- The **running frame's role** — `%role`. For methods, this is the class's role; for free-standing functions and closures, the defining role.
 - The **instance's role** — `%self.object.role`. Owned by whoever called `.new()`.
 - The **caller's role** — `%call.role`. Owned by whoever made this specific call.
 
@@ -140,3 +140,28 @@ The method body runs in the class's role; `%call.role` is the caller's role; the
 | `%call.yield args...` | block return value | Yield to the caller's first block, passing `args...`. |
 | `%call.dispatcher.new(n)` | dispatcher | Construct a new dispatcher targeting the nth passed block. Defaults to 0. Created only when DSL setup is needed; bare `yield` doesn't need one. |
 | `%call.blocks` | array of blocks | All blocks the caller passed, in order. |
+
+## Testing
+
+- **`%call` reachable inside function body** — `function() return %call end; %call` returns a call object; no grant needed.
+- **`%call` reachable inside closure body** — a closure body reading `%call` returns its own call object.
+- **`%call` reachable inside method body** — a method body reading `%call` returns its own call object.
+- **`%call.role` is the caller's role, not the function's role** — a method invoked cross-role reads `%call.role` as the caller.
+- **`%call.role` inside top-level user script** — returns the user role.
+- **`%call.return` exits function** — `function() %call.return 'x'; 'y' end` invoked returns `'x'`.
+- **`%call.return` inside closure exits closure only** — `function() &foo do %call.return 'x' end; return 'y' end` returns `'y'`; the closure body's `%call.return 'x'` did not propagate.
+- **Bare `return` inside closure exits enclosing function** — contrast to `%call.return`: bare `return` from a `do` block returns from the surrounding function.
+- **`%call.yield` invokes first passed block** — `%call.yield 'x'` runs `%call.blocks[0]` with `'x'` as its argument.
+- **`%call.yield` return value is the block's return value** — the receiver receives whatever the block returned.
+- **`%call.yield` with no blocks raises** — a call passing no blocks whose receiver runs `%call.yield` errors.
+- **`%call.blocks` is an array** — `.length`, `.push` (no — read-only?), indexed access all work as on any array read surface.
+- **`%call.blocks` in call-site order** — blocks appear in the order they were written at the call site.
+- **`%call.blocks[0]` is the first block** — a `do` block written first becomes index 0.
+- **`%call.blocks` empty when no blocks passed** — `%call.blocks.length` is 0.
+- **`%call.dispatcher.new` returns a fresh dispatcher** — two calls return two distinct dispatchers.
+- **`%call.dispatcher.new(n)` targets the nth block** — see [`dsl.md` tests](dsl#testing) for full dispatcher behavior.
+- **`%call` is not in `%chain`** — `%chain.entries` (or equivalent) does not include `%call`; `%call` is its own global.
+- **Each invocation has its own `%call`** — recursive calls see their own frame's `%call`, not the enclosing frame's.
+- **Passing a closure and reading `%call.blocks[0]`** — the receiver can inspect the block as a callable value.
+- **Self-gating example works** — a method comparing `%call.role != %self.object.role` and raising blocks a cross-role call from a non-owner.
+- **`%call.return` inside a bare block controller** — see [exceptions § ReturnException](https://puck.uno/documentation/requirements/caspian/exceptions/#returnexception) for the frame targeting.

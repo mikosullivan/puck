@@ -4,29 +4,44 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax_system_method_sigils",
-	"role": "spec for the %-prefixed system methods at the syntax level — the four standalone namespaces (%self, %call, %chain, %engine) and the six bare-%X shortcuts (%now, %puck, %random, %stdin, %stdout, %stderr). Per-method semantics live under global-methods/ and chain/methods/.",
+	"role": "spec for the syntax-level rules governing %-prefixed system methods — the % prefix, the always-available / not-user-definable rules, and the canonical-vs-bare shortcut structure. The catalog of which sigils exist and what each one does lives at global-methods/.",
 	"audience": "developers writing Caspian; parser/lexer implementers"
 }}
 ~~~
 
-System methods start with `%`. They are always available (subject to grants and role), and they cannot be user-defined. Four are canonical namespaces on their own:
+System methods start with `%`. They are always available (subject to grants and role), and they cannot be user-defined — the `%` prefix is reserved.
 
-- **`%self`** — the current instance inside a method. `self` bare is a shorthand.
-- **`%call`** — the current call object; owned by the caller. Used to inspect the caller and for early-exit (`%call.return`).
-- **`%chain`** — the call-frame chain; hosts grants, ambient values, and most globals in canonical form (`%chain.X`).
-- **`%engine`** — the host-resource gateway; reachable only from user-role code.
+Two syntactic shapes appear:
 
-Every global capability lives on `%chain` in canonical form. A small set has bare-`%X` shortcuts:
+- **Canonical namespace form** — `%X` or `%X.Y`. Standalone namespaces (`%self`, `%call`, `%chain`, `%engine`) and chain-mediated capabilities in their full `%chain.X` form.
+- **Bare-`%X` shortcut** — a short form for a small set of chain-mediated capabilities (`%now`, `%puck`, `%random`, `%stdin`, `%stdout`, `%stderr`). Each bare form resolves to its `%chain.X` canonical equivalent; the canonical form is the one `.grant`/`.revoke` operates on.
 
-| Bare form | Canonical | Purpose |
-|---|---|---|
-| `%now` | `%chain.now` | Current timestamp |
-| `%puck` | `%chain.puck` | Object download by URL (also `%[url]` short form) |
-| `%random` | `%chain.random` | Random-value primitives |
-| `%stdin` | `%chain.stdin` | Program input |
-| `%stdout` | `%chain.stdout` | Primary output |
-| `%stderr` | `%chain.stderr` | Diagnostic output |
+Other globals on `%chain` (`%chain.net`, `%chain.timer`, `%chain.timeout`, etc.) have no bare shortcut and are only reachable through the canonical form.
 
-Other globals (`%chain.net`, `%chain.timer`, `%chain.timeout`, etc.) are reached only through the canonical `%chain.X` form.
+For the catalog of every sigil, per-sigil semantics, and which bare shortcuts exist, see [global-methods](https://puck.uno/documentation/requirements/caspian/global-methods/). Chain-mediated methods have their canonical specs under [chain/methods/](https://puck.uno/documentation/requirements/caspian/chain/methods/).
 
-For per-method semantics see [global-methods](https://puck.uno/documentation/requirements/caspian/global-methods/) and [chain/methods/](https://puck.uno/documentation/requirements/caspian/chain/methods/).
+## Testing
+
+- **`%self` parses and resolves inside a method** — a method body reading `%self` returns the current instance.
+- **`%self` outside a method raises** — `%self` at top-level raises (no self in that scope).
+- **`%call` parses and resolves inside a method** — a method body reading `%call` returns the current call object.
+- **`%call` outside a method raises** — top-level `%call` raises.
+- **`%chain` parses and resolves anywhere** — top-level `%chain` returns the chain object.
+- **`%chain.X` resolves the named chain-mediated capability** — `%chain.now` returns the current time.
+- **`%engine` parses at the top level** — a top-level `%engine.X` call resolves (subject to role).
+- **`%engine` inside user-code role raises** — invoking `%engine` from a role that does not permit engine access raises.
+- **Bare `%now` shortcut resolves to `%chain.now`** — both yield the same value.
+- **Bare `%puck` shortcut resolves to `%chain.puck`** — both yield the same value.
+- **Bare `%random` shortcut resolves to `%chain.random`** — both yield the same value.
+- **Bare `%stdin` shortcut resolves to `%chain.stdin`** — both yield the same value.
+- **Bare `%stdout` shortcut resolves to `%chain.stdout`** — both yield the same value.
+- **Bare `%stderr` shortcut resolves to `%chain.stderr`** — both yield the same value.
+- **`%chain.net` has no bare shortcut** — `%net` as a standalone form raises (no such bare shortcut); `%chain.net` works.
+- **`%chain.timer` has no bare shortcut** — bare `%timer` raises; `%chain.timer` works.
+- **`%chain.timeout` has no bare shortcut** — bare `%timeout` raises; `%chain.timeout` works.
+- **`.grant` operates on canonical `%chain.X` form** — granting `%chain.now` also grants the bare `%now`.
+- **`.revoke` on `%chain.X` revokes the bare form** — after revoking `%chain.stdout`, both `%stdout` and `%chain.stdout` raise "not granted".
+- **User cannot define new `%X`** — attempting `%foo = 1` fails to parse.
+- **Unknown `%X` name raises** — `%bogus` raises (surface not defined), not returning `null`.
+- **`%X` on missing role raises with a "not granted" message** — the raise names the specific surface that was denied.
+- **`%X.Y` chain access parses** — `%chain.puck` and `%engine.something` both parse in the two-dot form.

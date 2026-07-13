@@ -55,3 +55,16 @@ Each guide should carry the minimum configuration snippet, a note on whether the
 - **Node.js / Express** — programmatic serving; the guide would show how to set the Content-Type in application code (this covers most application-server stacks by example).
 
 Which of the additional guides ship with V1 vs. later revisions is a scope decision, not a spec decision — the Content-Type strings themselves are stable regardless.
+
+## Testing
+
+- **`.casp` served as `text/x-caspian` parses as Caspian source** — a fetch of a `.casp` URL with the canonical Content-Type is handed to the Caspian source parser.
+- **`.caspj` served as `text/x-caspianj` parses as a CaspianJ tree** — a fetch of a `.caspj` URL with the canonical Content-Type is handed to the CaspianJ tree loader.
+- **Content-Type wins over URL extension** — a URL ending in `.casp` served with `text/x-caspianj` is treated as a CaspianJ tree; a URL ending in `.caspj` served with `text/x-caspian` is treated as source.
+- **Content-Type case is normalized** — a server sending `TEXT/X-CASPIAN` is accepted the same as `text/x-caspian`.
+- **Unknown Content-Type falls through to non-Caspian handling** — a response with a Content-Type not on Caspian's own list is routed through the parser registry (see [non-caspian-mime-types](https://puck.uno/documentation/requirements/caspian/non-caspian-mime-types)).
+- **Missing Content-Type raises** — a fetch that returns no Content-Type header at all raises; the engine does not sniff bytes.
+- **Charset parameter on `text/x-caspian` is tolerated** — `text/x-caspian; charset=utf-8` parses identically to `text/x-caspian` alone.
+- **Non-UTF-8 charset is transcoded** — a `text/x-caspian; charset=utf-16` response is decoded to UTF-8 before parsing (per [concepts § Strings are UTF-8](https://puck.uno/documentation/requirements/caspian/concepts#strings-are-utf-8)).
+- **Trailing whitespace in Content-Type header is ignored** — `text/x-caspian ` (trailing space) is accepted.
+- **Unrelated media types don't collide** — a `.casp` URL served accidentally as `text/plain` is treated as plain text and reaches the text parser, not the Caspian source parser.

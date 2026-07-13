@@ -78,3 +78,37 @@ The security work happens at the handoff (deciding whether to pass a sink object
 - **The security posture is simple.** Whether code can send data out is one question: does it hold a sink-descended object? If yes, it can. If no, it can't. No runtime gate inspects the payload.
 - **The narrowing pattern is uniform.** The same jail/wrapper toolkit that narrows inbound faucets narrows outbound sinks. Callers don't need a separate mental model per direction.
 - **The engine remains the only outbound gateway.** Programs can't fabricate outbound paths; every one is rooted in an engine-provided object. Sandboxing at the host level (which properties the host wires) determines what's possible in the first place.
+
+## Testing
+
+- **A sink is an ordinary object** — no special runtime primitive; `%stdout.class` names an ordinary class.
+- **Holding `%stdout` is authority to write to it** — a non-user frame holding a passed-in `%stdout` reference can call `.puts`.
+- **Method dispatch on a sink is not role-gated at call time** — the runtime doesn't inspect the caller's role during a `.puts` call.
+- **Every catalog sink descends from `%engine`** — `%stdout`, `%stderr`, `%chain.root`, `%chain.tmp`, `%chain.net`, `%chain.puck` all trace back.
+- **A program holding zero sink-descended handles has no outbound path** — an isolated frame with no sink can send nothing.
+- **Wrapping a sink produces a sink** — a user-defined class that internally calls `%stdout.puts` still qualifies; ancestry traces back to the engine.
+- **Narrowing a sink with a jail restricts methods** — `%stdout.object.jail(:puts)` blocks `.print`.
+- **A jailed sink reaching a non-exposed method raises** — the runtime prevents the call.
+- **`%chain.net` is both a faucet and a sink** — `fetch` reads inbound; request-body sending is outbound.
+- **`%chain.root` is both a faucet and a sink** — reads inbound; writes outbound.
+- **`%chain.tmp` is both a faucet and a sink** — reads inbound; writes outbound.
+- **`%chain.puck` is both a faucet and a sink** — `%puck[url]` inbound; `%puck.register(...)` outbound.
+- **No runtime role check on the value being written** — a foreign-owned string can be written through a user-held sink; no gate on the payload's role.
+- **A sink's method takes any value the method's contract accepts** — no sink-side role table.
+- **No default policy at the sink level** — sinks are objects; whether a role holds one depends on grant history, not on a sink-side default.
+- **Bytes written pass through the sink method** — the engine-provided implementation is what actually pushes to the stream.
+- **A jail-narrowed sink cannot be unwrapped by introspection** — the recipient sees only the exposed methods.
+- **A per-host net wrapper is a sink whose methods delegate to `%chain.net`** — same policy end-to-end.
+- **Passing a sink to a non-user role and having that role call it succeeds** — capability lives in holding; method-runs-as-owner applies.
+- **A multi-contributor string written through a disk sink raises** — see `roles/string-contributors`; the string-level guard fires, not the sink.
+- **No cross-role transfer via serialization** — writing a value through a filesystem sink produces bytes with no role tag; reads yield fresh objects.
+- **The engine methods that implement sink surfaces are the only actual outbound path** — user code without a sink-descended handle cannot invoke them, even by capture.
+- **Wrapping a sink and passing the wrapper is one way to hand over capability** — the wrapper carries the sink internally.
+- **A sink can be stored in a container** — capability lives in holding; a hash storing `%stdout` gives holders of the hash access.
+- **A jail on `%stderr` restricts methods** — same mechanism as `%stdout`.
+- **`.puts` and `.print` on `%stdout` are distinct methods** — a jail exposing only `.puts` blocks `.print`.
+- **A sink's methods return values (typically null or self)** — the return contract is a per-method decision, not a sink model decision.
+- **A sink held by a role narrowly-granted via `%role.grant` outlives the grant** — captured references persist per the object-access rules.
+- **Attempting to write through a sink whose backing resource is closed (broken pipe, closed file) raises** — the underlying I/O error surfaces.
+- **A user-defined class implementing sink-like methods without an engine ancestor is not a sink** — it cannot actually send data out; any nontrivial output method inside must transitively hit an engine method.
+- **Sinks are role-neutral in their identity** — `%stdout.object.role` may be `user` (or the engine role, depending on the mirror path), but that role does not gate calls on the sink from other roles.

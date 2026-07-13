@@ -5,7 +5,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "caspian_bootstrap",
-	"role": "canonical spec for how Caspian bootstraps — the sequence of steps from host process startup to the first user statement executing. Owns the host-engine boundary (what the host does vs. what the engine does), the property-based host API (`engine.caspianj`, `engine.run()`, etc.), and what runtime state is initialized before user code runs. Does NOT cover the lexer/parser/transpiler (separate docs), how dispatch works after a statement starts executing (separate doc), or the `instance` keyword (an unrelated 'bootstrap' word that builds one-off objects — see classes/instance, not migrated yet).",
+	"role": "canonical spec for how Caspian bootstraps — the sequence of steps from host process startup to the first user statement executing. Owns the host-engine boundary (what the host does vs. what the engine does), the property-based host API (`engine.caspianj`, `engine.run()`, etc.), and what runtime state is initialized before user code runs. Does NOT cover the lexer/parser/transpiler (separate docs), how dispatch works after a statement starts executing (separate doc), or the `instance` keyword (an unrelated 'bootstrap' word that builds one-off objects — see classes/instance).",
 	"status": "active spec — first authored fresh in the new requirements/ tree",
 	"audience": "host implementers (Lua, Ruby, anyone bootstrapping the engine); Caspian programmers who want to understand what state exists when their first line runs; AI tooling reasoning about engine startup"
 }}
@@ -62,7 +62,7 @@ The engine module surface (per the V1 spec):
 | `engine.stdout` | property — host sets this to a function the engine calls when the program writes to stdout |
 | `engine.stdin`, `engine.stderr` | parallel properties for input and diagnostic output |
 | `engine.parse_caspian(source)` | method — takes Caspian source text, returns the CaspianJ tree |
-| `engine.run()` | method — no arguments; executes the staged tree and returns whatever the program set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val), or null if it was never called |
+| `engine.run()` | method — no arguments; executes the staged tree. V1 has no return value; the host receives nothing from `run()`. |
 | `engine.bootstrap()` | internal — called by `engine.run()`; not normally called by the host directly |
 
 More properties and slots arrive as later slices add them. The current shape is set by the V1 development plan; the canonical inventory of engine properties (the user-visible `%engine.*` surface) will live in its own doc once the slice machinery for it migrates from `requirements-old/`.
@@ -94,20 +94,20 @@ The host calls `engine.run()` with no arguments. Everything `run()` needs has al
 1. Validates `engine.caspianj` is set (raises if not).
 2. Calls `engine.bootstrap()` to initialize runtime state (next section).
 3. Walks the tree's statements top to bottom; dispatches each.
-4. Returns to the host whatever the program set via [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val), or null if it was never called.
+4. Returns. Anything the program needs to signal outward has already flowed through the wired stdout / stderr callbacks during the run.
 
-### 5. Read the result
+### 5. Handle side effects
 
-`engine.run()` returns the program's signaled return value (or null). The host does whatever it wants with that — print it, return it from a test, ignore it, use it as the program's exit code.
+Any observable output the program produced flowed through the host's wired callbacks (`engine.stdout`, `engine.stderr`) during the run itself. The host does whatever it wants with what it captured — print it, assert on it, ignore it, or use its own exit-code policy based on whether `engine.run()` raised.
 
 ## What `bootstrap()` initializes
 
 When `engine.run()` calls `engine.bootstrap()`, the engine builds the runtime state the user program will see. This state lives on `engine.state` and includes:
 
-- **Roles registry.** Named roles the engine knows about. V1 commits to: `user` (the role the user program starts in), `engine` (engine-emitted attribution; doesn't run user-program frames), and one role per engine-provided faucet (stdin, argv, env, filesystem, network, downloads — see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/)). Post-V1 role candidates (a `stdlib` distinction, `request` / `agent` identity roles, fork behavior) are covered under [roles § Deferred until post-V1](https://puck.uno/documentation/requirements/caspian/roles/#deferred-until-post-v1). The registry is the source of truth for which roles exist.
+- **Roles registry.** Named roles the engine knows about. The `user` role is the one the first user-program frame runs under. Beyond that, see [roles](https://puck.uno/documentation/requirements/caspian/roles/) for the catalog and [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/) for the per-faucet role list. The registry is the source of truth for which roles exist.
 - **Call stack.** Starts empty. The first frame is pushed when dispatch starts on the first statement (under the `user` role).
 - **argv.** Copied from `engine.argv` if set; defaults to an empty array.
-- **Built-in classes.** A minimum set the engine guarantees: at least `puck.uno/string` (with `to_string`/`to_json` methods) so literal materialization can produce real string values. Additional built-in classes (numbers, booleans, hashes, arrays, etc.) arrive in later slices.
+- **Built-in classes.** The engine guarantees the primitive classes are available before the first user statement runs, so literal materialization and everyday operations produce real values from the outset — see [built-in-classes/primitives/](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) for the catalog. Individual methods that are still marked as deferred inside those pages (open questions, TBDs) can arrive later, but the class objects and their core surfaces are present at bootstrap.
 
 After `bootstrap()` returns, user code is about to execute its first statement. The state is fully initialized; nothing further happens between `bootstrap()` and the first dispatch.
 
@@ -152,6 +152,36 @@ The contract is the surface, not the syntax. Conform to the surface and you can 
 
 - **Lexer / parser / transpiler.** The pipeline from Caspian source text to CaspianJ tree is part of the engine's surface (via `engine.parse_caspian`) but how each stage works internally lives in its own docs (not yet migrated to the new tree).
 - **Dispatch.** Once `bootstrap()` finishes and the engine starts walking statements, what happens inside `dispatch()` (method lookup, role transition, materialization) is the dispatch doc's territory (not yet migrated).
-- **The `instance` keyword.** Different concept; covered in `classes/instance` (not yet migrated). Calling that "bootstrap" was historical.
+- **The `instance` keyword.** Different concept; covered in [`classes/instance`](https://puck.uno/documentation/requirements/caspian/classes/instance). Calling that "bootstrap" was historical.
 - **CLI wiring.** How a `caspian` command-line runner instantiates a host and invokes the engine is the CLI doc's territory (not yet migrated).
 - **Per-property semantics.** What each `engine.*` property does in detail (e.g., the contract for the `stdout` function, the shape of `argv`) lives in the engine-slots doc once it migrates.
+
+## Testing
+
+- **Engine module loads via `require`** — `require('caspian.engine')` returns a table with the properties and methods documented in the surface table.
+- **Documented properties are assignable** — `engine.caspianj`, `engine.argv`, `engine.stdout`, `engine.stdin`, `engine.stderr` all accept host writes.
+- **Documented methods are callable** — `engine.parse_caspian(source)`, `engine.run()`, and `engine.bootstrap()` are present.
+- **`engine.run()` requires no arguments** — the canonical call site is `engine.run()` with no argv passed; the engine reads everything from properties.
+- **Missing `engine.caspianj` raises** — calling `engine.run()` without staging a program raises before any dispatch begins.
+- **`engine.bootstrap()` runs at the start of `run()`** — runtime state (roles registry, empty call stack, argv, built-in classes) is initialized before the first user statement executes.
+- **Nothing runs between `bootstrap()` and first dispatch** — no phantom setup fires between the two; the first dispatched statement is the first observable execution.
+- **`engine.state` holds the runtime state** — after `bootstrap()`, `engine.state` exposes the roles registry, call stack, and argv.
+- **`user` role registered at bootstrap** — the `user` role is present in the roles registry before the first statement runs.
+- **Call stack starts empty** — before the first dispatch, `engine.state`'s call stack is empty; the first frame is pushed when dispatch begins.
+- **First user frame runs under the `user` role** — the first statement of the user program executes with `%role == 'user'`.
+- **`engine.argv` propagates to `%engine.argv`** — after `engine.argv = {'a', 'b'}`, a user program reading `%engine.argv` sees those values.
+- **Default argv is empty** — an unset `engine.argv` gives the program an empty array from `%engine.argv`, not null.
+- **`puts` writes to `engine.stdout`** — `puts 'hi'` in the user program invokes the host-installed `engine.stdout` with `"hi\n"`.
+- **Unset `engine.stdout` raises on write** — a program that calls `puts` when `engine.stdout` is unset raises rather than falling through to an ambient default.
+- **`engine.stderr` and `engine.stdin` obey the same pattern** — parallel to stdout; unset means raise on use, set means the callback is invoked.
+- **Built-in primitive classes present at bootstrap** — the primitive classes documented in [built-in-classes/primitives](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) are reachable in the first user statement.
+- **Literals materialize immediately** — a first statement `$x = 'hi'` produces a real string value; the class objects are available before user code runs.
+- **User program cannot reach the host** — there is no `%host` or equivalent escape; the user program only sees `%engine.*` and the surfaces the engine exposes.
+- **Withheld capability behaves as unset** — a host that never installed `engine.net` leaves the corresponding surface unreachable to user code with no ambient default.
+- **State resets between runs** — a second `engine.run()` sees a fresh roles registry, empty call stack, and re-copied argv.
+- **Successive runs don't cross-contaminate** — a test harness can call `engine.run()` on fixture A then fixture B without cleanup ceremony.
+- **`engine.run()` has no return value in V1** — the host receives nothing meaningful from `run()` on a successful completion. Programs signal outward via stdout, stderr, or host-wired callbacks.
+- **Errors during `run()` raise in the host language** — an uncaught error surfaces as a Lua error (or the host-language equivalent).
+- **Non-Lua host language conforms via the same surface** — a Ruby/Python/JavaScript host that assigns the property names in its idiom and calls `engine.run()` executes identically.
+- **Marshaling is the host's responsibility** — the engine sees Lua tables regardless of host language; the host's binding layer converts.
+- **Layer visibility rule** — user code cannot see the host; the engine reads its own properties; the host does not reach into runtime state directly.

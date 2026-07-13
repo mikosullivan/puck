@@ -422,3 +422,46 @@ Full spec, including the yield / dispatcher surface used for DSL-style blocks, i
 ## When a function is bare
 
 A function is a bare function when it's declared with the `function` keyword. That keyword is what makes it bare — no captured outer scope, no receiver — regardless of where the declaration appears. `function` can appear anywhere in a Caspian program: top level, inside another function's body, inside a closure, inside a method. See [closure](closure) and [method](method) for the other two types.
+
+## Testing
+
+- **Assignment form defines a callable** — `$foo = function() end` binds `$foo` to a function object; `$foo.object.isa?(function)` is true.
+- **Named form binds the name** — after `function &greet() end`, `$greet` holds the same function object and `&greet` invokes it.
+- **Empty body is legal** — `function() end` parses and evaluates without raising; calling it returns `null`.
+- **Implicit last-value return** — `function() 42 end` invoked returns `42`; no explicit `return` needed.
+- **Explicit `return` exits** — `function() return 7; puts 'no' end` returns `7` and does not execute the `puts`.
+- **`%call.return` exits from the function** — inside a bare function body, `%call.return 'x'` returns `'x'` as the call's value.
+- **`.call` and `&name` are equivalent** — `$greet.call('alice')` and `&greet 'alice'` produce identical return values.
+- **Positional args bind left-to-right** — `function($a, $b) return [$a, $b] end` called as `(1, 2)` returns `[1, 2]`.
+- **Keyword args bind by public name** — `function($name, $rank) return [$name, $rank] end` called as `(name: 'p', rank: 'c')` returns `['p', 'c']`.
+- **Mixed positional/keyword** — `&foo 'p', rank: 'c'` binds `$name = 'p'` and `$rank = 'c'`.
+- **Named arg after positional is legal** — positional args allowed before the first named arg; parses without raise.
+- **Missing required positional raises** — `function($a, $b) end` called as `()` raises at call time.
+- **Missing required keyword raises** — `function($a, $b) end` called as `(a: 1)` raises.
+- **Extra positional with no `*args` raises** — `function($a) end` called as `(1, 2)` raises.
+- **Extra keyword with no `**opts` raises** — `function($a) end` called as `(a: 1, extra: 2)` raises.
+- **Optional parameter defaults to null** — `function($a: {optional: true}) return $a end` called as `()` returns `null`.
+- **`default:` implicitly marks optional** — `function($a: {default: 'x'}) return $a end` called as `()` returns `'x'`.
+- **Default expression re-evaluates each call** — `function($a: {default: []}) $a.push('y'); return $a end` called twice returns `['y']` each time (fresh array).
+- **Default can reference `%now`** — `function($t: {default: %now}) return $t end` returns the current timestamp on each call.
+- **Optionality propagates rightward** — `function($a, $b: {optional: true}, $c) end` allows omission of `$c` even without explicit optional on `$c`.
+- **`*args` captures remaining positionals** — `function($x, *$rest) return $rest end` called as `(1, 2, 3, 4)` returns `[2, 3, 4]`.
+- **`*args` empty when no extras** — `function($x, *$rest) return $rest end` called as `(1)` returns `[]`.
+- **`**opts` captures remaining keywords** — `function($x, **$opts) return $opts end` called as `(1, a: 2, b: 3)` returns `{a: 2, b: 3}`.
+- **`**opts` empty when no extras** — `function($x, **$opts) return $opts end` called as `(1)` returns `{}`.
+- **Combined rest** — `function($x, *$rest, **$opts) end` binds positionals to `$rest` and keywords to `$opts` independently.
+- **`public_name` override changes call-site key** — parameter `$title_sent` with `public_name: 'title'` accepts `title:` at the call site; `title_sent:` raises.
+- **Private name unusable at call site by default** — `function($name) end` called with `name:` works; other names raise.
+- **Duplicate public names raise at definition** — two params resolving to the same public name error when the function is defined, not called.
+- **Public/private collision raises at definition** — `public_name` matching another param's private name is a definition-time error.
+- **Multiple `*args` raise at definition** — two `*args` parameters error at definition.
+- **Multiple `**opts` raise at definition** — two `**opts` parameters error at definition.
+- **Lazy parameter delays evaluation** — `function($x: {lazy: true}) return $x.call end` receives a callable; `.call` produces the value.
+- **Lazy short-circuits** — a lazy `$right` whose expression would raise is never evaluated when `.call` isn't invoked.
+- **`%self` raises inside a bare function** — referencing `%self` from inside `function() %self end` raises.
+- **Outer locals not reachable inside body** — `$outer = 1; function() return $outer end` raises when the inner function tries to read `$outer`.
+- **`%chain` is reachable inside body** — inside a bare function, `%chain` returns the caller's chain frame.
+- **Programmatic metadata edit takes effect** — after `$foo.params['bar'].optional = true`, calling `&foo` without `bar` no longer raises.
+- **`.params` is a hash keyed by private name** — `function($bar) end` produces `.params['bar']` (no `$`).
+- **`.default` returns a thunk** — reading `.default` on a param object returns a callable; `.default.call` returns the value.
+- **Sealed scope: cross-role handoff cannot read caller's locals** — a bare function passed to another role sees no locals from the defining role.

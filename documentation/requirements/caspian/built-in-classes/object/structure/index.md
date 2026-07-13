@@ -19,7 +19,7 @@ Every value is composed of these parts:
 - **bucket** — a hash holding the object's data. Free-form; no reserved keys.
 - **stack** — an ordered array of platters carrying class identity and per-platter metadata. Some platters have special purposes (the shadow, nested-object markers); see [Stack](#stack) below for the full list.
 - **truthy bit** — a single boolean set at construction by the class's constructor. Immutable. Determines how the value evaluates in an `if`/`while` condition.
-- **primitive value slot** (Primitive subclasses only) — an internal, engine-managed slot holding the raw representation of a primitive (the number's integer/float bits, the string's UTF-8 bytes, the array's element sequence, etc.). Not exposed at the Caspian level; engine-level methods reach it directly. See [primitive-buckets](https://puck.uno/documentation/ideas/primitive-buckets) for the design rationale. <!-- outbound-link-allowed -->
+- **primitive value slot** (Primitive subclasses only) — an internal, engine-managed slot holding the raw representation of a primitive (the number's integer/float bits, the string's UTF-8 bytes, the array's element sequence, etc.). Not exposed at the Caspian level; engine-level methods reach it directly. See [primitive-buckets](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets) for the design rationale.
 
 The bucket and stack are visible at the Caspian level via the `object` namespace (`$foo.object.bucket`, `$foo.object.stack`). The truthy bit is exposed via `$foo.object.truthy?`. The primitive value slot is deliberately not exposed — it's how the engine represents primitives, not something Caspian code manipulates directly.
 
@@ -90,7 +90,7 @@ The sections below cover each piece.
 
 The bucket holds the object's data — the state that describes what this object *is*. Class methods read and write it via `@field` or `%bucket['field']`. Downloaded methods applied via `$foo.$method` also reach the bucket, subject to the receiver-ownership rule ([classes/downloaded-methods § The receiver-ownership rule](https://puck.uno/documentation/requirements/caspian/classes/downloaded-methods#the-receiver-ownership-rule)).
 
-**The bucket never contains the primitive value.** For String, Number, and other Primitive subclasses, the raw representation lives in the engine's internal slot alongside the bucket, not inside it. The bucket is for optional metadata: null flavors, faucet provenance, and any downloaded-method-set fields. See [primitive-buckets](https://puck.uno/documentation/ideas/primitive-buckets) for the full model. <!-- outbound-link-allowed -->
+**The bucket never contains the primitive value.** For String, Number, and other Primitive subclasses, the raw representation lives in the engine's internal slot alongside the bucket, not inside it. The bucket is empty by default; the one metadata slot the primitive surface treats as spec'd is a Null's `@flavor`, and beyond that anything sitting in a primitive's bucket got there because user-level code (a class method, a downloaded method, or a direct `@field =` assignment) wrote it. See [primitive-buckets](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets) for the full model.
 
 ## Stack
 
@@ -249,7 +249,7 @@ See [object/methods § truthy?](../methods/#truthy) and the [truthy/falsy syntax
 
 ## Primitive value slot
 
-Primitive subclasses — `String`, `Number` (with its Decimal/Binary/Octal/Hex subclasses), `Hash`, `Array`, `True`, `False`, `Null` — additionally carry an **internal value slot** holding the raw representation of the value.
+[Primitive subclasses](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) additionally carry an **internal value slot** holding the raw representation of the value.
 
 - For a Number, the slot holds the raw integer or fractional bits.
 - For a String, the raw UTF-8 bytes.
@@ -259,9 +259,110 @@ Primitive subclasses — `String`, `Number` (with its Decimal/Binary/Octal/Hex s
 
 The slot lives alongside the bucket, not inside it. Engine methods (Lua-implemented) reach the slot directly through the internal representation and bypass the bucket entirely. Caspian methods reach the value through `%self` — the engine unwraps `%self` to the raw representation at the point of arithmetic, string operations, or indexing.
 
-**The slot is invisible at the Caspian level.** There is no `.value` or `.raw` method that returns it as inspectable data. This is a load-bearing invariant: the primitive value can only be read via operations on `%self` (arithmetic, comparisons, string methods, etc.), never as a bare hash-shaped inspection. This closes the recursion where a primitive's own value would otherwise have to be a Caspian object with its own bucket and its own value slot forever ([primitive-buckets § How this resolves the turtles problem](https://puck.uno/documentation/ideas/primitive-buckets#how-this-resolves-the-turtles-problem)). <!-- outbound-link-allowed -->
+**The slot is invisible at the Caspian level.** There is no `.value` or `.raw` method that returns it as inspectable data. This is a load-bearing invariant: the primitive value can only be read via operations on `%self` (arithmetic, comparisons, string methods, etc.), never as a bare hash-shaped inspection. This closes the recursion where a primitive's own value would otherwise have to be a Caspian object with its own bucket and its own value slot forever ([primitive-buckets § How this resolves the turtles problem](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#how-this-resolves-the-turtles-problem)).
 
-**No interning.** Every primitive literal in source materializes a fresh instance — every `5`, every `'hello'`, every `null`. Two `5`s in source compare `==` (same value in the slot) but are distinct objects with distinct buckets. See [primitive-buckets § No interning](https://puck.uno/documentation/ideas/primitive-buckets#no-interning-every-primitive-literal-is-a-fresh-instance) for the full rule. <!-- outbound-link-allowed -->
+**No interning.** Every primitive literal in source materializes a fresh instance — every `5`, every `'hello'`, every `null`. Two `5`s in source compare `==` (same value in the slot) but are distinct objects with distinct buckets. See [primitive-buckets § No interning](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#no-interning-every-primitive-literal-is-a-fresh-instance) for the full rule.
+
+## Testing
+
+### Bucket
+
+- **Fresh object has an empty bucket** — a bare object has `%bucket` equal to `{}`.
+- **No reserved keys** — writing every key spelling — including `class`, `stack`, `bucket`, `shadow`, `nested`, `warning`, `vibecode`, and UUID-formatted strings — into the top-level bucket via `%bucket[$key] = $value` succeeds and reads back the same value.
+- **`@field` reads the bucket** — `$w.@name` returns whatever `%bucket['name']` holds.
+- **`@field = value` writes the bucket** — after `$w.@name = 'x'`, `%bucket['name']` is `'x'`.
+- **`%bucket['key']` is equivalent to `@key`** — both spellings resolve to the same slot.
+- **Missing bucket key reads as null** — `$w.@undefined_key` returns null (or however the read primitive spec's it), never raises.
+
+### Stack
+
+- **Fresh object's stack contains just its class** — a `Widget.new()` produces an object whose stack has exactly one platter carrying the Widget class.
+- **Bare object's stack contains just Object** — a `%['puck.uno/object'].new()` has exactly one platter carrying Object.
+- **Platter without `class` is skipped by dispatch** — a stack with a warning-only platter followed by a class platter still resolves methods against the class platter.
+- **`class` field is a class object, not a string** — inspecting a platter's `class` value returns something for which class-object operations work; string identifiers are rejected at load.
+- **Dispatch walks top-to-bottom** — a method defined on the platter at index 0 wins over the same method defined at index 1.
+
+### Shadow
+
+- **New object has no shadow** — a fresh object's stack has no platter with `shadow: true`.
+- **Defining a singleton method creates the shadow** — after `method $w.greet() ... end`, the stack has exactly one shadow platter.
+- **Shadow appears at position 0 by convention** — the shadow platter created by a singleton method definition sits at the top of the stack.
+- **Only one shadow per stack** — attempting to load an object whose serialized stack has two `shadow: true` platters raises as malformed.
+- **Shadow methods win** — a method defined on the shadow wins over the same method name on the base class.
+- **Shadow can be created explicitly via `ensure: true`** — `$w.object.classes.shadow(ensure: true)` creates the shadow platter without adding any singleton methods.
+
+### Nested objects
+
+- **Nested platter with UUID marks a bucket entry** — a stack with `{nested: 'UUID', class: Color}` combined with a bucket hash containing the UUID key marks that hash as a Color object.
+- **UUID key in bucket without matching nested platter is plain data** — a bucket hash containing a UUID-formatted key that no `nested:` platter nominates is treated as ordinary data, not as a nested-object marker.
+- **Nested object at any bucket depth is recognized** — a UUID marker inside a value nested inside a value inside the bucket is still matched to the corresponding `nested:` platter.
+- **Multiple nested objects with distinct UUIDs coexist** — two `nested:` platters with different UUIDs each match their own bucket hash and each carry their own class.
+- **Nested objects can themselves carry nested objects** — recursion through nested objects works to arbitrary depth.
+- **Nested platter can carry `bucket`, `warning`, `vibecode`** — those fields on a nested platter round-trip through serialization.
+- **Nested platter cannot be the shadow** — a platter carrying both `nested: ...` and `shadow: true` is malformed and raises on load.
+
+### Per-platter bucket
+
+- **Per-platter bucket is separate from the object's bucket** — writing to `%platter['key']` from a method running under a platter does not affect `%bucket['key']`.
+- **`%platter` resolves to the currently dispatching platter** — inside a method, `%platter` is the platter that supplied the method, not any other.
+- **`@field` continues to reach the object bucket** — `@field` inside a method still means `%bucket['field']`, not `%platter['field']`.
+- **No `@`-shorthand for per-platter bucket** — `%platter['key']` is the only spelling; there is no per-platter `@` sigil.
+- **Per-platter bucket must be a hash when present** — an array or scalar in the `bucket` field of a platter raises on load.
+- **Missing per-platter bucket is fine** — most platters have no `bucket` field.
+
+### Per-platter vibecode
+
+- **Any platter can carry `vibecode`** — a class platter with a `vibecode` block round-trips through serialization.
+- **Standalone vibecode-only platter is legal** — a platter with only `vibecode` (no `class`) round-trips and does not affect dispatch.
+- **Vibecode-only platter is skipped by dispatch** — a stack whose first platter is vibecode-only still resolves methods against the next platter down.
+- **Vibecode contents are free-form** — arbitrary JSON-serializable values inside a `vibecode` block are preserved without validation.
+
+### Warning platter
+
+- **Warning-only platter is legal** — a stack with a platter carrying only `warning: <obj>` (no `class`) round-trips.
+- **Warning-only platter is skipped by dispatch** — method resolution walks past a warning-only platter to the next class-carrying platter.
+- **Warning travels with the object** — after serializing and deserializing an object with a warning, the warning is still on the stack.
+
+### Truthy bit
+
+- **True instance's truthy bit is `true`** — `true.object.truthy?` is `true`.
+- **False instance's truthy bit is `false`** — `false.object.truthy?` is `false`.
+- **Null instance's truthy bit is `false`** — `null.object.truthy?` is `false`.
+- **String instance is truthy** — including the empty string.
+- **Number instance is truthy** — including 0.
+- **Array instance is truthy** — including the empty array.
+- **Hash instance is truthy** — including the empty hash.
+- **User class instance is truthy** — a fresh instance of a user-defined class has truthy bit `true`.
+- **Subclass of Null inherits falsy** — a class extending Null has truthy bit `false` on its instances.
+- **Truthy bit is immutable** — no bucket write, class-add, or method call changes an existing instance's truthy bit.
+- **`if`, `while`, `&&`, `||` consult the truthy bit** — a subclass of Null in `if $inst` skips the consequent even though the object is otherwise a full-fledged value.
+
+### Primitive value slot
+
+- **Slot is not exposed** — there is no `.value`, `.raw`, or `%slot` accessor at the Caspian level that returns a primitive's underlying representation as a bare inspectable value.
+- **Slot is engine-managed** — the value survives serialization and rehydration without any user-level access.
+- **Number arithmetic reaches the slot** — `5 + 3` returns 8 without user code touching a value slot.
+- **String operations reach the slot** — string comparisons and slicing work without exposing the underlying bytes.
+- **Primitive's bucket is not the slot** — the bucket on a primitive can be independently written and read without affecting the primitive's value; e.g., writing `@custom = 'x'` on the number 5 does not change what `5 + 1` produces.
+
+### No interning
+
+- **Two number literals with the same value are distinct instances** — writing a bucket key on one does not appear on the other.
+- **Two string literals with the same value are distinct instances** — same test with strings.
+- **Two null literals with the same value are distinct instances** — same test with nulls.
+- **Two boolean literals with the same value ARE the same shared instance** — `true` refs share identity, as spec'd on the boolean page.
+- **Equality (`==`) still holds across independent primitive instances** — `5 == 5`, `'x' == 'x'`, `null == null` all return `true` despite distinct identities.
+
+### Serialization
+
+- **Empty bucket is optional in JSON** — an object serialized with no bucket field rehydrates identically to one with `bucket: {}`.
+- **Empty stack is optional in JSON** — same for `stack: []`.
+- **Round-trip preserves shape** — serializing and deserializing an arbitrary object produces the same structure (bucket, stack, per-platter fields, nested-object markers, warnings, vibecode).
+- **Class is embedded inline as a class object** — the serialized platter's `class` field is a full class-object hash, not a URL or lookup key.
+- **Reserved-field rule survives round-trip** — writing arbitrary UUIDs and reserved-looking key names into a bucket, serializing, and deserializing preserves them exactly.
+- **Warnings survive round-trip** — a warning-carrying platter comes out with the same warning after serialize-then-deserialize.
+- **Nested objects survive round-trip** — the UUID marker and matching `nested:` platter remain paired after serialize-then-deserialize.
+- **Vibecode blocks survive round-trip** — vibecode contents come through unchanged.
 
 ## Related
 

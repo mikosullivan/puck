@@ -5,7 +5,7 @@
 {"vibecode": {
 	"doc": "requirements_caspian_syntax_loops",
 	"role": "spec for every loop construct in Caspian in one place — the condition-driven `while` and `until` (both in the pre-body form and the post-body `begin ... while` / `begin ... until` loop-at-least-once form), block-driven `.each` on collections, and the numeric-helper trio `.times` / `.upto` / `.downto` on numbers. Also covers the loop-object binding via `as $loop`, its state and control methods, the prefix-free `break` / `break N` exit form, the four structural blocks (`before`, `between`, `after`, `noloop`), and the constructs that were considered and rejected (`for X in Y`, `redo`/`retry`, function-return-from-loop specials).",
-	"status": "draft — main forms, loop-object binding, break with level count, and structural blocks spec'd; a couple of open questions noted (named-loop targeting for break, structural-block edge cases)",
+	"status": "draft — main forms, loop-object binding, break with level count, and structural blocks spec'd; a couple of open questions noted (named-loop targeting for break, structural-block interactions)",
 	"audience": "developers writing Caspian; parser implementers; anyone porting loop-heavy code from another language"
 }}
 ~~~
@@ -305,7 +305,7 @@ end
 $result   # whatever $x += 1 evaluated to on the final iteration
 ~~~
 
-Two edge cases follow directly from the rule:
+Two situations follow directly from the rule:
 
 - **A loop that runs zero iterations** returns `null` — there was no "last iteration," so there's no last expression. This includes an empty collection passed to `.each`, a `while` whose condition is false on entry, and `.times(0)`.
 - **A loop whose body ends with a statement that has no value** returns `null` for that iteration. If that iteration was the last one, the loop returns `null`.
@@ -431,9 +431,68 @@ These were considered and explicitly excluded:
 - **`redo` / `retry`.** Ruby-style restart of the current iteration is not part of Caspian.
 - **A special "return from the enclosing function" inside a loop.** Not needed — a bare `return` does exactly that, whether inside or outside a loop.
 
+## Testing
+
+- **`while` with truthy condition runs body** — `$i = 0; while $i < 3; $i += 1; end; $i` returns `3`.
+- **`while` with false-on-entry condition never runs body** — `while false; $x = 1; end; $x` raises undeclared-variable.
+- **`while` re-evaluates condition before each iteration** — a mutation inside the body that flips the condition ends the loop next check.
+- **`until` runs while condition is falsy** — `$i = 0; until $i == 2; $i += 1; end; $i` returns `2`.
+- **`until` with truthy-on-entry condition never runs body** — `until true; $x = 1; end; $x` raises undeclared-variable.
+- **`begin ... while` runs body at least once even when condition false** — `$i = 0; begin; $i += 1 while false` — `$i` is `1`.
+- **`begin ... until` runs body at least once even when condition true** — `$i = 0; begin; $i += 1 until true` — `$i` is `1`.
+- **`begin` with no trailing `while`/`until` at its nesting level is a parse error for loop form** — a `begin` block terminated only by `end` is not a loop, it's a bare block.
+- **`.each` on an array visits each element in order** — `[1,2,3].each do ($v); $sum += $v; end` — after seeding `$sum = 0`, `$sum` is `6`.
+- **`.each` on empty array does not run body** — `[].each do ($v); $ran = true; end; $ran` raises undeclared-variable.
+- **`.each` on empty array returns null** — `[].each do ($v); end` returns `null`.
+- **`.each` on hash iterates entries** — the standard hash-entry iteration form covers every entry.
+- **`5.times` runs body five times** — `$i = 0; 5.times do; $i += 1; end; $i` returns `5`.
+- **`0.times` does not run body** — `$ran = false; 0.times do; $ran = true; end; $ran` returns `false`.
+- **`.times` block param is 0-based index** — `5.times do ($i); puts $i; end` prints `0 1 2 3 4`.
+- **`.upto` iterates inclusive of upper bound** — `1.upto(3) do ($n); $arr << $n; end` yields `[1, 2, 3]`.
+- **`.upto` with upper less than receiver runs zero times** — `5.upto(1) do; $ran = true; end; $ran` raises undeclared-variable.
+- **`.downto` iterates inclusive of lower bound** — `3.downto(1) do ($n); $arr << $n; end` yields `[3, 2, 1]`.
+- **`as $loop` binds a controller inside the body** — `while true as $loop; $loop.break; end` exits cleanly.
+- **`$loop.count` is 1-based during iteration** — first iteration `$loop.count` is `1`.
+- **`$loop.index` is 0-based during iteration** — first iteration `$loop.index` is `0`.
+- **`$loop.active?` is true during iteration and false after** — checked mid-loop returns `true`; checked from a pre-declared outer binding after the loop returns `false`.
+- **`$loop.count` after loop end reports total iterations** — a pre-declared `$loop` reports the ran count after end.
+- **`$loop.next` skips to next iteration** — a marker after `$loop.next` inside the body is unreached that iteration.
+- **`$loop.break` exits the loop** — the statement after `$loop.break` in that iteration does not run, and no further iterations run.
+- **`$loop.break $value` exits with that value** — `while true as $loop; $loop.break 'x'; end` returns `'x'`.
+- **`$loop.return` is an alias for `$loop.break`** — `while true as $loop; $loop.return 'x'; end` returns `'x'`.
+- **`$loop.break` on ended loop raises** — a pre-declared `$loop` called `.break` after the loop ends raises.
+- **`$loop.next` on ended loop raises** — same.
+- **`$loop.return` on ended loop raises** — same.
+- **State readers on ended loop still work** — `$loop.count`, `$loop.index`, `$loop.active?` all succeed after loop end.
+- **Bare `break` exits innermost loop** — inside a nested loop, `break` exits only the innermost.
+- **`break N` exits N loops** — `break 2` inside a double-nested loop exits both.
+- **`break 0` raises `invalid_argument`** — literal or dynamic.
+- **`break N` where N exceeds nesting raises `invalid_argument`** — e.g. `break 3` inside a two-loop nest.
+- **Bare `next` skips to next iteration of innermost loop** — statements after `next` do not run that iteration.
+- **`break` does not cross function boundaries** — a `break` inside a function called from a loop does not exit the caller's loop; instead it exits or raises depending on inner scope.
+- **`break` flows through `do ... end` blocks passed as arguments** — a `break` inside `.each`'s block exits the loop that owns `.each`.
+- **`before` structural block runs once before first iteration** — with three iterations, `before` runs once.
+- **`after` structural block runs once after last iteration** — with three iterations, `after` runs once.
+- **`after` does not run when loop is exited by `break`** — a `break` mid-iteration causes `after` to be skipped.
+- **`between` runs N-1 times when body runs N times** — three iterations produce two `between` runs.
+- **`between` runs zero times when body runs once** — a single-iteration loop produces no `between`.
+- **`noloop` runs only when body would not run at all** — `.each` on an empty array runs `noloop` once.
+- **`noloop` does not run when at least one iteration ran** — a loop with one iteration does not run `noloop`.
+- **Loop return value is last expression of last iteration** — `[1,2,3].each do ($v); $v * 10; end` returns `30`.
+- **Zero-iteration loop returns null** — `[].each do ($v); $v; end` returns `null`.
+- **Loop ending with valueless statement returns null** — an `.each` whose body's last line is `puts $v` returns `null`.
+- **Bare `return` inside a loop returns from enclosing function, not the loop** — a bare `return 'fn'` inside a loop body returns from the enclosing function.
+- **Nested loops with same `as` name warns and rebinds** — inner `as $loop` rebinds `$loop` to the inner controller; compiler emits a warning; outer loop keeps running.
+- **Nested loops with distinct `as` names keep both bindings** — inner body can read `$outer_loop.count` and `$inner_loop.count`.
+- **Named-loop `.break` exits the named loop from any depth** — `$outer_loop.break` inside two-level nest exits the outer loop.
+- **Loop controller passed to another function can trigger non-local exit** — a function that receives the loop controller and calls `.return 'x'` unwinds to the loop with `'x'` as the loop's value.
+- **`as $loop` variable scoped to the loop** — reading `$loop` after `end` raises undeclared-variable when not pre-declared.
+- **Pre-declared `$loop` retains final state** — `$loop = null; while $x < 10 as $loop; $x += 1; end; $loop.count` returns the number of iterations.
+- **Loop condition side effects run before each iteration check** — a counter in the `while` condition advances the expected number of times.
+
 ## Related
 
 - [if-unless](https://puck.uno/documentation/requirements/caspian/syntax/if-unless) — the sibling conditional keywords `if`/`elsif`/`else` and `unless`, plus the `as $conditional` chain-exit binding.
 - [bare-blocks](https://puck.uno/documentation/requirements/caspian/syntax/bare-blocks) — the `begin ... end` bare-block construct, which reuses the `begin` keyword this doc's loop-at-least-once forms also use.
-- [array § method surface](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#method-surface) — `.each` and the other array methods that take blocks.
-- [number](https://puck.uno/documentation/requirements/caspian/built-in-classes/number/) — the class carrying `.times`, `.upto`, `.downto`.
+- [array § method surface](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/array/#method-surface) — `.each` and the other array methods that take blocks.
+- [number](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/number/) — the class carrying `.times`, `.upto`, `.downto`.

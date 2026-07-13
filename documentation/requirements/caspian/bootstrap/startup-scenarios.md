@@ -59,11 +59,12 @@ engine.argv     = {table.unpack(arg, 2)}              -- pass through program ar
 engine.stdout   = function(s) io.write(s) end         -- real OS stdout
 engine.stderr   = function(s) io.stderr:write(s) end  -- real OS stderr
 
--- Run the program. Returns whatever the program set via %engine.return_val, or nil.
-local ok, result = pcall(engine.run)
+-- Run the program. No meaningful return value in V1; observable output flows through
+-- the wired stdout/stderr callbacks during the run itself.
+local ok, err = pcall(engine.run)
 
 if not ok then
-    io.stderr:write('caspian: ' .. tostring(result) .. '\n')
+    io.stderr:write('caspian: ' .. tostring(err) .. '\n')
     os.exit(1)
 end
 
@@ -77,7 +78,7 @@ os.exit(0)
 3. It reads the user's `.casp` file from disk into a string.
 4. It calls `engine.parse_caspian(source)` to transpile the source into a CaspianJ tree, and stores that on `engine.caspianj`.
 5. It wires the OS stdout and stderr functions onto `engine.stdout` and `engine.stderr`, so `puts` and friends write to the terminal.
-6. It calls `engine.run()` inside `pcall` so any error gets caught and printed cleanly. The return value (whatever the program set via `%engine.return_val`, or null — see [What `engine.run()` returns](#what-engine-run-returns)) isn't used; a CLI cares about stdout and exit codes, not the program's signaled answer.
+6. It calls `engine.run()` inside `pcall` so any error gets caught and printed cleanly. V1 has no return value from `run()`; the CLI cares about stdout and exit codes, both of which are already handled through the wired callbacks and the pcall error path.
 7. It exits with status 0 on success or 1 on engine error.
 
 The reference CLI at `lib/lua/caspian/cli.lua` adds admin flags (`--version`, `--help`, cache management) and shebang handling so a `.casp` file can start with `#!/usr/bin/env caspian` and be directly executable. The core pattern is the same.
@@ -121,12 +122,9 @@ engine.argv     = lua.table_from(['python-host', 'arg1'])
 engine.stdout   = lambda s: sys.stdout.write(s)
 engine.stderr   = lambda s: sys.stderr.write(s)
 
-# Run it.
-result = engine.run()
-
-# `result` is a Lua table — Caspian values are tables with type/payload/owning_role fields.
-# For a string result, the payload is the Python string.
-print("program returned:", result.payload if result else None)
+# Run it. V1 has no meaningful return value; observable output flows through the wired
+# stdout/stderr lambdas during the run itself.
+engine.run()
 ~~~
 
 ### What's happening
@@ -137,7 +135,7 @@ print("program returned:", result.payload if result else None)
 4. `engine.parse_caspian(source)` calls the Lua function — `lupa` handles the marshaling of the Python string in and the Lua tree out. The tree is now stored on `engine.caspianj`.
 5. `lua.table_from([...])` converts a Python list into a Lua-array-shaped table, since `engine.argv` expects a Lua array.
 6. `engine.stdout = lambda s: ...` installs a Python function as the engine's stdout. When the engine eventually calls `engine.stdout(some_string)` from inside Lua, lupa marshals back into Python and runs the lambda.
-7. `engine.run()` executes the program. Output flows through the lambdas to Python's `sys.stdout`. The return value (see [What `engine.run()` returns](#what-engine-run-returns)) is whatever the program last assigned to `%engine.return_val` — marshaled into a native Python value because the spec constrains it to JSON-serializable shapes (a Python `str` for a Caspian string, a `dict` for a hash, etc.). If the program never assigned to `%engine.return_val`, the host gets `None`.
+7. `engine.run()` executes the program. Output flows through the lambdas to Python's `sys.stdout`. V1 has no return value from `run()` — programs that need to signal results back to the host use stdout, stderr, or a host-wired callback in the meantime.
 
 ### Notes specific to this scenario
 
@@ -210,7 +208,7 @@ lua.global.close();
 5. `lua.global.get('engine')` returns a JS proxy that lets you read and assign properties on the Lua engine table. From JS, `engine.caspianj = ...` IS a Lua property assignment, mediated by wasmoon.
 6. The `parse_caspian` call goes JS → Lua, runs, and the result is returned as a JS-friendly representation of the Lua tree. wasmoon does the marshaling automatically.
 7. The stdout callback is a JS function. wasmoon registers it as a Lua global, and the subsequent `engine.stdout = engine_stdout` makes it the engine's output sink. When the program calls `puts`, the callback fires in JS.
-8. `engine.run()` executes. The return value (see [What `engine.run()` returns](#what-engine-run-returns)) is whatever the program last assigned to `%engine.return_val` — marshaled into a native JS value (string, number, object, array) because the spec constrains it to JSON-serializable shapes. If the program never assigned to `%engine.return_val`, the JS side gets `null`.
+8. `engine.run()` executes. V1 has no meaningful return value from `run()`; observable output flows through the stdout callback during the run itself.
 9. `lua.global.close()` releases the WebAssembly memory. Skipping this leaks the VM.
 
 ### Notes specific to this scenario
@@ -220,41 +218,11 @@ lua.global.close();
 - **Each `createEngine()` is independent.** A JS program can run multiple Caspian engines side by side, each in its own VM.
 - **Async wrapping.** wasmoon's `doString` is async (returns a promise) because the WASM-bridge crossings are async. Awaiting around individual calls is the norm.
 
-## What `engine.run()` returns
+## Errors
 
-**`engine.run()` returns whatever the program last assigned to [`%engine.return_val`](https://puck.uno/documentation/requirements/caspian/engine/return-val)** — or null, if the program never assigned to it. That's it. Not stdout. Not an exit code. Not the last statement's value.
+If the engine encounters an uncaught error during the run (a method-not-found, a type mismatch, a manual `raise`), `engine.run()` doesn't complete — it raises in the host's language (Lua error, Python `LuaError`, JS thrown error). The host catches it separately from the "run completed" path.
 
-### Setting the return value
-
-The only way a Caspian program signals an answer back to the host is by assigning to `%engine.return_val` — and **only `user`-role code can do that**. Like every other `%engine` slot, the assignment raises from any non-user role. Non-user code can't set the program's return value; only the user-written program can. The assigned value must be JSON-serializable (strings, numbers, booleans, null, arrays, hashes of strings to any of those). The constraint exists because hosts in different languages need to marshal the return value across a language boundary, and JSON is the lowest-common-denominator shape every host can handle.
-
-~~~caspian
-%engine.return_val = 'hello'
-~~~
-
-After the program completes, `engine.run()` returns the value the host marshals as appropriate — for a Python host, that's a Python `str`; for a JS host, a JS string; for a Lua host, a Lua string. The JSON-shaped value passes through cleanly without Caspian-specific wrapping.
-
-Successive assignments overwrite — last assignment wins. This lets a program decide its return value progressively as it computes, instead of having to defer the assignment until the very end of execution. If the program never assigns to `%engine.return_val`, the host receives null.
-
-### It's developer-controlled, not a status
-
-What ends up returned is **completely under the program author's control**. The engine doesn't synthesize a return value from anything (last expression, stdout output, etc.); the program either assigns to `%engine.return_val` or it doesn't.
-
-This is different from:
-
-- **Stdout.** Goes through the `engine.stdout` callback the host wired up. Independent channel; arrives in real-time as the program runs. `puts 'hello'` writes "hello\n" to stdout — that's *not* the return value.
-- **Exit codes.** A host-level concept. The host decides what exit code to use based on whether `engine.run()` raised, etc. The engine doesn't have an "exit code" concept; that's the host translating outcomes to OS semantics.
-- **Errors.** If the engine encounters an uncaught error during the run (a method-not-found, a type mismatch, a manual `raise`), `engine.run()` doesn't return — it raises in the host's language (Lua error, Python `LuaError`, JS thrown error). The host catches that separately.
-
-### When the return value matters
-
-Different hosts care about the return value to different degrees:
-
-- **Tests.** Care a lot. The whole point of a test is "run this fixture and assert on the result." Tests set `%engine.return_val` to a structured result the test runner can assert against.
-- **Embedded scripting (Python/JS hosts that use Caspian as a logic layer).** Care a lot. The whole reason to embed Caspian is to get its evaluated answers back into the host program; the program signals those by setting `%engine.return_val`.
-- **CLIs.** Usually don't care. A user running `caspian myprogram.casp` cares about stdout and exit codes, not the program's return value. CLI-style programs typically omit `%engine.return_val` and the reference CLI ignores whatever comes back.
-
-If the host doesn't need a meaningful return value, the program ignoring `%engine.return_val` is the right shape — null gets returned and the host moves on.
+Observable output has already flowed through the wired stdout / stderr callbacks by the time an error is raised or a run completes; there is nothing else the host consumes from the call.
 
 ## What stays the same across all three
 
@@ -264,7 +232,7 @@ Despite the wildly different host languages, every scenario follows the same sha
 2. Stage the program tree on `engine.caspianj` (either by calling `engine.parse_caspian(source)` or by writing a CaspianJ tree directly).
 3. Set capabilities on engine properties — `engine.argv`, `engine.stdout`, `engine.stderr`, etc.
 4. Call `engine.run()`.
-5. Read the return value (or check the error).
+5. Handle any raised error; ignore the return value (V1 has none).
 
 The hosts differ in:
 
@@ -274,7 +242,37 @@ The hosts differ in:
 - What kind of stdout they wire up (terminal, captured buffer, Python file object, JS callback).
 - How they handle errors.
 
-But the **engine surface they touch is identical**: same property names, same method names, same return-value shape. That's the contract the engine guarantees. Any host that conforms to it can start a Caspian engine and run programs through it.
+But the **engine surface they touch is identical**: same property names, same method names. That's the contract the engine guarantees. Any host that conforms to it can start a Caspian engine and run programs through it.
+
+## Testing
+
+- **CLI: missing file argument** — `caspian` invoked with no path writes a usage message to stderr and exits with status 2.
+- **CLI: unreadable file** — `caspian /nonexistent.casp` writes "cannot open" to stderr and exits with status 2.
+- **CLI: successful run** — `caspian program.casp` reads the file, parses, runs, and exits 0.
+- **CLI: passes program args as argv** — `caspian program.casp a b c` makes `a`, `b`, `c` visible via `%engine.argv`; the `.casp` path itself is NOT included.
+- **CLI: engine error caught** — an uncaught error during `engine.run()` is caught by `pcall`, printed to stderr, and the process exits with status 1.
+- **CLI: `puts` reaches the real terminal** — a program's `puts 'hi'` produces `hi\n` on the launcher's stdout.
+- **CLI: stderr routing** — output through `engine.stderr` reaches the launcher's stderr, not stdout.
+- **CLI: shebang execution** — a `.casp` file starting with `#!/usr/bin/env caspian` and marked executable runs when invoked directly.
+- **CLI: admin flags** — `--version` and `--help` invoke the reference CLI's admin paths without executing a program.
+- **Python: engine module reachable via lupa** — after extending `package.path`, `lua.eval("require('caspian.engine')")` returns a handle usable from Python.
+- **Python: `parse_caspian` accepts a Python string** — passing a Python `str` returns a CaspianJ tree usable as `engine.caspianj`.
+- **Python: `engine.argv` via `lua.table_from`** — a Python list arrives as a Lua-array-shaped table the engine reads correctly.
+- **Python: stdout callback fires** — a Python lambda installed on `engine.stdout` receives each write from `puts` as a Python string.
+- **Python: multiple engines in one process** — two separate `LuaRuntime()` instances hold independent engine states; changes in one do not affect the other.
+- **Python: engine errors as `LuaError`** — an uncaught error propagates as a Python `LuaError` exception raised out of `engine.run()`.
+- **Python: multiple invocations reuse the engine** — a single `LuaRuntime` can call `engine.run()` repeatedly with new fixtures.
+- **JS: engine module loads via mounted VFS** — after `factory.mountFile` for each `caspian/*.lua`, `require('caspian.engine')` inside the VM resolves.
+- **JS: `parse_caspian` accepts a JS string** — passing a JS string returns a CaspianJ representation usable as `engine.caspianj`.
+- **JS: JS array assigns as argv** — a JS `['js-host', 'arg1']` assigned to `engine.argv` is visible via `%engine.argv`.
+- **JS: stdout callback fires** — a JS function set via `lua.global.set(...)` then bound to `engine.stdout` receives each write from `puts`.
+- **JS: `lua.global.close()` releases WASM memory** — omitting `close()` leaks the VM; calling it releases it.
+- **JS: multiple VMs in parallel** — two `factory.createEngine()` VMs run independent programs concurrently.
+- **JS: async wrapping** — `doString` returns a promise; awaiting it works within JS's async model.
+- **JS: browser vs Node.js** — the same code path works in either; mounting via `fetch` in the browser and `fs` in Node.js produces identical engine behavior.
+- **`engine.run()` has no meaningful return value in V1** — hosts do not consume a value from `run()`; observable output flows through the stdout/stderr callbacks during the run.
+- **Exit code is host-decided** — the engine has no exit-code concept; the CLI translates outcomes to `exit(0)` / `exit(1)`.
+- **Cross-host surface identity** — CLI, Python, and JS scenarios touch identical property/method names (`caspianj`, `argv`, `stdout`, `stderr`, `parse_caspian`, `run`).
 
 ## Related
 

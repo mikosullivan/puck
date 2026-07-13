@@ -86,9 +86,9 @@ $bear = $bar + $baz  # foo owns the resulting string
 
 The `+` expression ran in foo's frame, so foo conceptually created the new string, so foo owns it. The fact that `$baz`'s bytes are part of the result doesn't transfer any ownership to gup or to some "mixed" composite.
 
-This is the simple, ship-able rule. The cost is that **provenance is erased through operations** — once `$bar + $baz` produces a foo-owned string, the role system has no record that gup's data flowed in. Audit can read who owns the value but not who contributed to it.
+Ownership is not the whole story, though. **Every string also carries a `contributors` list** — the set of roles whose data flowed into producing the string. When a string is composed from other strings, the result's `contributors` is the union of every input's contributors. Under the concatenation above, `$result` is owned by foo but its `contributors` list is `[foo, gup]` — foo produced it, gup's data went into it. See [string-contributors](string-contributors) for the full spec, including which operations are blocked when a string has more than one contributor.
 
-V1 accepts this trade-off. Finer-grained provenance (taint tracking, multi-role ownership) is a real concern but specifically deferred — see `ideas/security/string-provenance.md` for the eventual design space.
+Ownership answers "who is responsible for this value?"; contributors answers "whose data went into this?" The two axes are independent, and both are needed — ownership drives the cross-role capability model, contributors drives the tainting-style guards on operations that shouldn't accept mixed-role data.
 
 ### Class instantiation is not an exception
 
@@ -112,7 +112,7 @@ The class and the instance are two separate objects with two separate roles:
 When user calls `$obj.method()`, the method body still runs in a `faucet_1` frame — frame-role tracks the class's owner, not the instance's owner. So inside the method:
 
 - `%self.object.role` is `user` (it's the instance).
-- The frame's role is `faucet_1` (it's the class's role; that's what `%chain.role` reports inside the method).
+- The frame's role is `faucet_1` (it's the class's role; that's what `%role` reports inside the method).
 - `%call.role` is `user` (the caller; see [Self-gating from inside the method](#self-gating-from-inside-the-method)).
 
 Three different "roles" coexist in that method body. Each names a different thing: the instance, the running frame, and the caller. They're not interchangeable.
@@ -121,7 +121,7 @@ Three different "roles" coexist in that method body. Each names a different thin
 
 The creator-owns rule has one important exception: **values pulled through a faucet are owned by the faucet's role**, not by the calling role. When user code does `%chain.stdin.read`, `%chain.argv[0]`, `%chain.env['HOME']`, `%chain.net.fetch(url).body`, etc., the value that comes back is tagged with the source faucet's role — not with `user`.
 
-This is the inbound-data side of the role system, spec'd in [`pipes/faucets/`](https://puck.uno/documentation/requirements/caspian/pipes/faucets/). Each inbound surface (stdin, argv, env, filesystem, network, downloads) has its own distinct role, and values flowing through carry that role. The creator-owns rule still applies to everything OTHER than inbound-faucet values — derived strings, computed hashes, instances of user-defined classes, etc. all follow the calling-role-owns model.
+This is the inbound-data side of the role system, spec'd in [`pipes/faucets/`](https://puck.uno/documentation/requirements/caspian/pipes/faucets/). Each inbound surface has its own distinct role, and values flowing through carry that role — see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/) for the catalog. The creator-owns rule still applies to everything OTHER than inbound-faucet values — derived strings, computed hashes, instances of user-defined classes, etc. all follow the calling-role-owns model.
 
 The faucet rule preserves provenance at the role layer: a recipient can distinguish "a string from the network" from "a string the user typed" from "a string from a config file" without manual taint-tracking. See faucets for the full model.
 
@@ -198,7 +198,7 @@ $net = %chain.net                            # user owns $net
 $some_object.do_thing_with(net: $net)        # non-user object holds $net
 ~~~
 
-Inside `do_thing_with`, when the non-user body calls `$net.fetch(...)`, [methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role) — so the fetch body runs as **user** (the owner of `$net`) and the network call proceeds through user's authority. In effect, **capturing a chain surface into a variable and passing it is one way to hand a specific capability across a role boundary**, alongside [`%chain.role.grant`](https://puck.uno/documentation/requirements/caspian/roles/#granting-capabilities-to-other-roles). Neither displaces the other; both use the same underlying "holding is access" model.
+Inside `do_thing_with`, when the non-user body calls `$net.fetch(...)`, [methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role) — so the fetch body runs as **user** (the owner of `$net`) and the network call proceeds through user's authority. In effect, **capturing a chain surface into a variable and passing it is one way to hand a specific capability across a role boundary**, alongside [`%role.grant`](https://puck.uno/documentation/requirements/caspian/roles/#granting-capabilities-to-other-roles). Neither displaces the other; both use the same underlying "holding is access" model.
 
 The narrowing tool for chain surfaces is the [same jail wrapper](#narrowing-pass-a-jail-not-the-raw-object) as for any object: `%chain.net.object.jail(:fetch)` produces a handle that only exposes `fetch`.
 
@@ -208,7 +208,7 @@ Chain grants control **permission to call methods on `%chain`** — they don't s
 
 ~~~caspian
 # In a user frame:
-%chain.role.grant($widget.object.role, :net) do
+%role.grant($widget.object.role, :net) do
 	$widget.remember_net()     # widget's method captures %chain.net into @net
 end
 # Grant block over — widget's role no longer has %chain.net.
@@ -244,6 +244,50 @@ When non-owner role R is handed an object O owned by role O.owner:
 | Change O's owning role | no | Immutable. |
 | Reach methods the owner withheld via a jail | no | Methods not in the jail's allowlist raise on call. |
 | Introspect to find methods the jail hides | no | The jail exposes only the named methods to any reflection surface. |
+
+## Testing
+
+- **Holding an object grants access to any of its methods** — a non-owning frame calling any method on an object it holds does not raise on role grounds.
+- **A user-passed raw object lets a non-user frame call every method** — no runtime role check on invocation.
+- **`$obj.object.jail(:m1, :m2)` returns a new object** — distinct from `$obj`.
+- **Jail exposes only the named methods** — `$jail.m1` and `$jail.m2` reach the underlying object; `$jail.m3` raises.
+- **Jail is owned by its creator** — `$jail.object.role` is the creating frame's role, not the wrapped object's role.
+- **Methods called through the jail run as the wrapped object's owner** — dispatch role is the target class's owner.
+- **Jails hide un-exposed methods from introspection** — reflection on the jail lists only allowed methods.
+- **`%call` inside a method is owned by the caller** — a downloaded-object method can read `%call.role` to see who invoked it.
+- **A method that raises based on `%call.role != %self.object.role` self-gates correctly** — the pattern is usable for owner-only methods.
+- **Object ownership is immutable** — `$obj.object.role = <other>` raises.
+- **Passing an object across a role boundary preserves its owning role** — `.object.role` unchanged.
+- **A derived string from `$a + $b` is owned by the creator's frame** — regardless of `$a`'s or `$b`'s owner.
+- **A derived hash from `{a: 1}` is owned by the creator's frame** — same rule.
+- **A derived array from `[$a, $b]` is owned by the creator's frame** — same rule.
+- **`.new()` on a class produces an instance owned by the caller** — even when the class is owned by another role.
+- **Inside a called method, `%self.object.role` names the instance's owner** — the instance.
+- **Inside a called method, `%role` names the class's owner** — the frame's running role.
+- **Inside a called method, `%call.role` names the caller's role** — the invoking frame.
+- **The three roles inside a method are potentially all different** — instance, frame, caller.
+- **A value pulled through a faucet is faucet-role-owned, not caller-role-owned** — the faucet exception to creator-owns.
+- **A container's role applies only to the container** — storing a foreign-owned value doesn't change the value's owner.
+- **Reading a value from a container returns it with its original ownership intact** — no laundering through storage.
+- **A deserialized object is owned by whoever rebuilt it** — persistence doesn't preserve ownership.
+- **Reading from a Mikobase store yields objects owned by the reading code's role** — regardless of who wrote them originally.
+- **A captured `%chain.X` handle is a first-class value** — assignable, passable, storable.
+- **A captured chain handle passed to a non-user frame remains callable** — method-runs-as-owner runs the call as the capturer's role.
+- **A captured chain handle outlives the block-scoped grant that made it visible** — after the grant block ends, held references still work.
+- **A jail on a chain handle restricts methods** — same narrowing mechanism as any object.
+- **A raised exception is an object owned by the raising frame's role** — provenance preserved.
+- **Any frame can catch a raised exception regardless of role** — catch is unrestricted.
+- **A caught exception is a normal held object** — holding-is-access applies.
+- **A non-user exception caught in `user` remains non-user-owned** — `.object.role` reads the raiser's role.
+- **Mutation via a mutator method on a held object succeeds** — the runtime doesn't gate mutation on non-ownership.
+- **A jail without mutator methods prevents mutation** — the way to withhold mutation.
+- **Cross-role hand-off preserves reference identity** — same object comparable by identity across the boundary.
+- **A held reference doesn't expire on its own** — non-owning holders can retain references indefinitely.
+- **Reaching a method not in the jail's allowlist raises** — explicit raise, not silent null.
+- **Introspection through a jail cannot enumerate hidden methods** — reflection is blocked.
+- **Ownership is immutable across `.dup` or `.clone`** — a duplicate is a new object owned by the duplicator's frame; the original's owner is unchanged.
+- **Handing an object to a third role and back preserves ownership** — round-tripping doesn't launder.
+- **A jail owned by user code, given to a non-user role, still runs its wrapped-object methods as the wrapped object's owner** — role dispatch tracks the innermost object.
 
 ## See also
 

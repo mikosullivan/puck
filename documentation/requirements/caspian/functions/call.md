@@ -99,3 +99,28 @@ Inside `&run_scenarios`, the blocks land in `%call.blocks` in the order they app
 There's no cap on the count and no shape the receiver has to declare in advance. How many blocks a call passes is a runtime property of that call, not a static feature of the receiver's signature. A receiver that expects a specific count checks `%call.blocks.length` itself.
 
 Full parameter mechanics (metadata, optionality, defaults, `*args`, `**opts`, lazy parameters, public vs. private names) are on the [bare-function page § Parameters](https://puck.uno/documentation/requirements/caspian/functions/bare#parameters).
+
+## Testing
+
+- **`&name` and `.call` are equivalent** — `&greet 'alice'` and `$greet.call 'alice'` produce identical return values.
+- **Parens optional on statement call** — `&greet 'alice'` and `&greet('alice')` are equivalent.
+- **Parens optional on expression call** — `$r = &compute 10, 20` and `$r = &compute(10, 20)` produce the same value.
+- **Method call receiver-first** — `$obj.method_name(1, 2)` dispatches through `$obj`'s class.
+- **Method call parens optional** — `$obj.method_name 1, 2` and `$obj.method_name(1, 2)` are equivalent.
+- **Keyword argument syntax** — `&fetch 'x', timeout: 30` binds `$timeout = 30`.
+- **Positional-then-named order** — positional args before the first `name:` are legal; a positional after a keyword raises.
+- **Positional splat expansion** — `$a = ['x', 'y']; &foo *$a` binds positionals as if `&foo 'x', 'y'`.
+- **Named splat expansion** — `$o = {t: 30}; &foo **$o` binds keyword args as if `&foo t: 30`.
+- **`do` block captures outer scope** — inside a `do ... end` block, an outer local defined above the call is reachable.
+- **`dofunc` block does not capture** — inside a `dofunc ... end` block, referencing an outer local raises.
+- **Blocks land in `%call.blocks`** — a receiver reading `%call.blocks[0]` gets the first block passed at the call site.
+- **Blocks preserve call-site order** — `&foo do end do end dofunc end` populates `%call.blocks[0..2]` in written order.
+- **Mixed `do`/`dofunc` blocks legal** — a single call may pass any combination of `do` and `dofunc` blocks.
+- **Multi-block count has no cap** — a call with 10 blocks populates `%call.blocks.length == 10`.
+- **Each block keeps its scope semantics** — the second `do` block still captures; a `dofunc` in position 2 still does not, regardless of neighbors.
+- **Splat expansion with empty array** — `&foo *[]` produces a call with no positional args.
+- **Splat expansion with empty hash** — `&foo **{}` produces a call with no keyword args.
+- **`%call.yield` invokes the first passed block** — inside the receiver, `%call.yield` runs `%call.blocks[0]`.
+- **No-block call with `%call.yield` raises** — `%call.yield` when `%call.blocks` is empty raises.
+- **Method chain** — `$obj.a().b().c()` calls each method in turn on the returned receiver.
+- **Sealed-scope handoff via `dofunc`** — passing `dofunc` across a role boundary hands the receiver code that cannot read the caller's locals.

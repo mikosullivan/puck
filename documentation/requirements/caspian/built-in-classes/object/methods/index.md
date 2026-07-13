@@ -379,6 +379,156 @@ end
 
 This does mean untrusted code that holds an object can freeze it out from under the owner. Callers who don't want that surface reachable pass a [jail](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#jail) that doesn't expose the freeze methods rather than the raw object.
 
+## Testing
+
+### `.truthy?`
+
+- **Returns `true` for a truthy value** — `5.object.truthy?` is `true`.
+- **Returns `false` for `false`** — `false.object.truthy?` is `false`.
+- **Returns `false` for `null`** — `null.object.truthy?` is `false`.
+- **Empty string is truthy** — `''.object.truthy?` is `true`.
+- **Empty array is truthy** — `[].object.truthy?` is `true`.
+- **Empty hash is truthy** — `{}.object.truthy?` is `true`.
+- **Zero is truthy** — `0.object.truthy?` is `true`.
+- **Return type is always Boolean** — `.object.truthy?` on any value returns `true` or `false`, never any other type.
+- **Truthy bit is immutable** — after `$w = Widget.new()`, no bucket write, no class add, no downloaded-method application on `$w` changes `$w.object.truthy?`.
+- **Subclass of Null inherits falsy** — an instance of a class extending Null reports `.object.truthy?` as `false`.
+- **Subclass of False inherits falsy** — same for a subclass of False.
+
+### `.isa?`
+
+- **Direct class match returns `true`** — `5.object.isa?(Number)` is `true`.
+- **Ancestor class match returns `true`** — an instance of a subclass of Number reports `.object.isa?(Number)` as `true`.
+- **Object is always in the chain** — for any value, `.object.isa?(Object)` is `true`.
+- **Non-ancestor class returns `false`** — `5.object.isa?(String)` is `false`.
+- **Flavored null remains a Null instance** — `null.with_flavor(:pending).object.isa?(Null)` is `true`.
+- **Return type is always Boolean** — `.object.isa?($cls)` on any value returns `true` or `false`.
+
+### `.null?` and `.defined?`
+
+- **`null.object.null?`** is `true`.
+- **`null.with_flavor(:pending).object.null?`** is `true` — flavored nulls are still Null instances.
+- **`false.object.null?`** is `false`.
+- **`0.object.null?`** is `false`.
+- **`''.object.null?`** is `false`.
+- **`[].object.null?`** is `false`.
+- **`null.object.defined?`** is `false`.
+- **`'hello'.object.defined?`** is `true`.
+- **`0.object.defined?`** is `true`.
+- **`false.object.defined?`** is `true` — false is defined but falsy.
+- **`.null?` and `.defined?` are always opposites** — for any value, `.object.null?` and `.object.defined?` return different booleans.
+- **Return type is always Boolean** — both methods return `true` or `false`, never any other type.
+
+### `.jail`
+
+- **Named methods forward to prisoner** — `$w = Widget.new(name: 'x'); $w.object.jail(:name).name` is `'x'`.
+- **Unlisted methods raise** — calling a method NOT in the jail's exposure list raises.
+- **Jail has its own class identity** — `$narrowed.object.isa?(Jail)` is `true`.
+- **Jail is not the prisoner's class** — `$w.object.jail(:name).object.isa?(Widget)` is `false`.
+- **Jail is truthy** — `$w.object.jail(:name).object.truthy?` is `true`.
+- **No `.unjail` method exists on the jail** — calling `.unjail` on the jail raises.
+- **No `.prisoner` method exists on the jail** — calling `.prisoner` on the jail raises.
+- **Re-jailing the jail wraps the jail, not the prisoner** — `$jail.object.jail(:name)` produces a jail whose named-method resolution runs against the outer jail's own surface, not against the original prisoner.
+- **Bucket reads on jail don't reach prisoner** — attempts to read `%bucket` fields from inside the jail do not return prisoner state.
+- **Jail exposes only the exact methods listed** — passing `:name` and `:label` exposes those two and no others, even if the prisoner has closely-named methods.
+
+### `.tap`
+
+- **Returns the receiver** — `5.object.tap { }` is `5`.
+- **Block receives the receiver** — inside `5.object.tap do ($n) ... end`, `$n` is `5`.
+- **Block return value is ignored** — `5.object.tap { $n * 100 }` is `5`, not `500`.
+- **Side effects run** — a `.tap` block that mutates a captured variable observes the mutation afterward.
+- **Chain continues after `.tap`** — `[1, 2].object.tap { }.length` is `2`.
+- **Works on falsy values** — `false.object.tap { }` returns `false`; `null.object.tap { }` returns null.
+- **Block runs exactly once** — a counter incremented inside a `.tap` block increases by 1 per `.tap` call, not zero or more.
+
+### `.classes`
+
+- **Returns the stack classes in order** — for `$w = Widget.new()`, `$w.object.classes` returns an array beginning with Widget.
+- **Freshly built per call** — two successive calls to `.object.classes` return distinct arrays (not the same identity).
+- **Prior snapshot not affected by later stack changes** — a reference to an earlier `.classes` result does not update after `.classes.ensure` adds a new class.
+- **Snapshot mutation does not affect the stack** — pushing or splicing the returned array does not change the object's actual stack.
+
+### `.classes.ensure` (bare form)
+
+- **Adds class when absent** — after `$w.object.classes.ensure(Some_class)`, `$w.object.isa?(Some_class)` is `true`.
+- **New platter goes at the bottom** — the newly added class appears at the end of `.object.classes`.
+- **No-op when class already present** — after two successive `.ensure(Some_class)` calls, only one Some_class platter exists.
+- **Exact-class match, not `.isa?`** — with `$hex = 0xff` (Hex extends Number), `$hex.object.classes.ensure(Number)` adds a Number platter even though Hex is in the stack.
+- **Bare form is permanent** — a class added by bare `.ensure` stays after the enclosing block/method exits.
+
+### `.classes.ensure` (block form)
+
+- **Class present for block duration** — inside `$w.object.classes.ensure(Serializable) do ... end`, `$w.object.isa?(Serializable)` is `true`.
+- **Not present after block exit when added** — after the block exits (class was not there before), the added platter is gone.
+- **Not removed after block exit when already present** — if Serializable was already in the stack before the block, it is still there after the block exits.
+- **Cleanup runs on raise** — if the block raises, the platter added by this call is still removed.
+- **Cleanup is identity-tracked** — if user code inside the block adds its own platter of the same class through a separate path, only the outer's added platter is removed on exit.
+- **Nested block-forms compose** — an outer `ensure($cls)` block containing an inner `ensure($cls)` block leaves the object exactly as it started after both exit.
+- **Block's return value is the block's return** — `$x = $w.object.classes.ensure(Cls) do 42 end` sets `$x` to `42`.
+
+### `.classes.shadow`
+
+- **Bare call returns null when no shadow exists** — a freshly constructed object with no singleton methods has `.object.classes.shadow` equal to null.
+- **Bare call returns the shadow class when it exists** — after `.classes.shadow(ensure: true)`, a subsequent bare `.classes.shadow` returns the shadow class.
+- **`ensure: true` creates the shadow if missing** — the shadow platter exists after `.classes.shadow(ensure: true)` even though the object had none before.
+- **`ensure: true` returns the shadow class** — always returns a class value, never null.
+- **Defining a singleton method implicitly creates the shadow** — after `method $o.foo() ... end` on a bare object, `.classes.shadow` (bare form) returns a non-null class.
+
+### `.warn`
+
+- **Returns the receiver** — `$w.object.warn('msg')` returns `$w`.
+- **Never raises** — calling `.warn` with any string message does not raise.
+- **Never propagates up the chain** — a `.warn` call in a called method does not affect the caller's control flow.
+- **Adds a warning-only platter** — after `.warn('msg')`, the receiver's stack has an added platter carrying `warning` and no `class`.
+- **Multiple warnings stack independently** — `$w.object.warn('a').object.warn('b')` results in two warning platters on the stack; both messages are recoverable via stack inspection.
+- **Warnings don't affect dispatch** — a method call on the receiver after `.warn` resolves against the same class it would have without the warning.
+- **Any role can call `.warn`** — code holding the object under a role other than the owner can call `.warn` without raising.
+
+### `.stack`
+
+- **User role can read the stack** — `.object.stack` returns the stack array when called from user code.
+- **Owning role can read the stack** — code running as the receiver's owning role can call `.stack`.
+- **Non-owner non-user role raises** — a downloaded method running as a foreign role raises when calling `.stack` on a receiver it doesn't own.
+- **Returned array is not the live stack** — mutating the returned array doesn't modify the object's actual stack.
+- **Serialized shape preserved** — the returned platters carry the same `class`, `shadow`, `nested`, `warning`, `bucket`, and `vibecode` fields the object's stack has.
+
+### `.stack.shadow`
+
+- **Bare call returns null when no shadow exists** — same access rules apply as `.stack`.
+- **Bare call returns the shadow platter when it exists** — the returned value is a platter hash with `shadow: true`.
+- **`ensure: true` creates the shadow if missing** — the shadow platter exists after `.stack.shadow(ensure: true)`.
+- **Non-owner non-user role raises** — same access restriction as `.stack`.
+
+### `.freeze_bucket`
+
+- **Bare form is permanent** — after `.freeze_bucket`, top-level bucket writes still raise long after the calling scope exits.
+- **Block form scopes to the block** — after a `.freeze_bucket do ... end` block exits, bucket writes succeed again.
+- **Block form releases on raise** — if the block raises, subsequent bucket writes on the receiver still succeed (the freeze is released).
+- **Blocks top-level bucket writes** — `$w.@name = 'x'` raises after `$w.object.freeze_bucket`.
+- **Blocks nested Hash writes (deep freeze)** — `$w.@config['theme'] = 'light'` raises when `$w.@config` is a Hash and the bucket has been frozen.
+- **Blocks nested Array writes** — `$w.@items.push(4)` raises after the bucket has been frozen.
+- **Reads still work** — `.freeze_bucket` doesn't block reads at any depth.
+- **Does not freeze inner user-class objects** — if `$w.@inner` is a user-class instance, mutating that inner object's state via its own methods still works.
+- **Does not affect the stack** — after `.freeze_bucket`, singleton method definitions and class-add operations still succeed.
+- **Anyone holding the object can freeze it** — freeze follows holding-is-access.
+
+### `.freeze_stack`
+
+- **Bare form is permanent** — stack cannot be modified after `.freeze_stack`.
+- **Block form scopes to the block** — after a `.freeze_stack do ... end` block exits, stack modifications succeed again.
+- **Block form releases on raise** — same exception-safe release as `.freeze_bucket`.
+- **Blocks singleton method definition** — `method $w.foo() ... end` raises after `.freeze_stack`.
+- **Blocks class adds** — `.classes.ensure(Some_class)` raises after `.freeze_stack`.
+- **Bucket writes still work** — `.freeze_stack` doesn't block bucket writes.
+
+### `.freeze`
+
+- **Bare form locks both axes permanently** — bucket and stack are both locked after `.freeze`.
+- **Block form scopes both axes to the block** — after the block exits, both axes are writable again.
+- **Block form releases on raise** — same release behavior as the single-axis freezes.
+- **Equivalent to nested single-axis freezes** — behavior is the same as `.freeze_bucket` composed with `.freeze_stack`.
+
 ## Related
 
 - [Object](../) — the parent Object class doc.

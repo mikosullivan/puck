@@ -81,6 +81,61 @@ Canonical URL: **`https://puck.uno/corporatewriter/`**. Working class name: `Cor
 
 Write-only variant of `.corporate`. Same rules as `MiscWriter` applied to the `corporate` entry.
 
+## Testing
+
+### All six classes are resolvable at startup
+
+- **Misc, MiscReader, MiscWriter, Corporate, CorporateReader, CorporateWriter** — each of `%['puck.uno/misc/']`, `%['puck.uno/miscreader/']`, `%['puck.uno/miscwriter/']`, `%['puck.uno/corporate/']`, `%['puck.uno/corporatereader/']`, `%['puck.uno/corporatewriter/']` returns a class value in a fresh runtime.
+
+### Misc
+
+- **`.misc` returns null when `%bucket['misc']` is absent** — a fresh instance carrying Misc has `$obj.misc` equal to null.
+- **First write lazily creates the misc hash** — after `$obj.misc[:key] = 'v'` on a fresh instance, `$obj.misc` is a hash containing `{key: 'v'}`.
+- **Read after write returns the same value** — after `$obj.misc[:tracking_id] = 'abc'`, `$obj.misc[:tracking_id]` is `'abc'`.
+- **`.misc` returns the live reference** — modifying the returned hash through subsequent operations affects `%bucket['misc']` directly.
+- **Non-hash existing value raises** — after `%bucket['misc'] = 'not a hash'`, calling `$obj.misc` (any operation) raises.
+- **Multiple writes accumulate into the same hash** — `$obj.misc[:a] = 1; $obj.misc[:b] = 2` results in `$obj.misc` equal to `{a: 1, b: 2}`.
+- **misc bucket entry is pass-through** — a value serialized with a misc entry round-trips through JSON with the misc entry intact and not validated.
+
+### MiscReader
+
+- **`.misc` returns null when missing** — same as Misc's read behavior.
+- **Read of existing entry returns the hash** — after `%bucket['misc'] = {a: 1}` (via class-internal method), `$obj.misc[:a]` returns `1`.
+- **Write via `.misc` raises** — `$obj.misc[:new] = 'v'` raises when the class carries only MiscReader.
+- **Non-hash existing value raises on read** — same rule as Misc; a non-hash misc entry causes a read to raise.
+
+### MiscWriter
+
+- **Write succeeds and lazily creates the hash** — after `$obj.misc[:key] = 'v'` on a fresh instance with only MiscWriter, `%bucket['misc']` is `{key: 'v'}` (verifiable from class-internal code).
+- **Read via `.misc` raises** — reading `$obj.misc` raises when the class carries only MiscWriter.
+- **Non-hash existing value raises on write** — same rule as Misc; a non-hash misc entry causes a write to raise.
+
+### Corporate
+
+- **Same shape as Misc, applied to `%bucket['corporate']`** — every behavior spec'd for Misc applies to Corporate with the target key changed. Concrete tests: null on missing; lazy hash creation on first write; live-reference return on read; non-hash existing value raises; multiple writes accumulate; corporate entry is pass-through through JSON.
+
+### CorporateReader
+
+- **Same shape as MiscReader, applied to `%bucket['corporate']`** — read returns null when missing; read of existing entry returns the hash; write via `.corporate` raises; non-hash existing value raises on read.
+
+### CorporateWriter
+
+- **Same shape as MiscWriter, applied to `%bucket['corporate']`** — write succeeds and lazily creates the hash; read via `.corporate` raises; non-hash existing value raises on write.
+
+### Pass-through preservation
+
+- **misc entry is not stripped on serialization** — an object with `%bucket['misc'] = {key: 'v'}` (populated via any path) serializes to JSON with the misc entry present.
+- **corporate entry is not stripped on serialization** — same for corporate.
+- **misc entry is not validated** — arbitrary shapes inside `%bucket['misc']` round-trip without error (subject only to the top-level "must be a hash" invariant checked by these classes' methods).
+- **corporate entry is not validated** — same for corporate.
+- **misc and corporate are independent** — writing to one does not affect the other; both can carry hashes simultaneously.
+
+### Composition
+
+- **Adding a Reader + Writer duplicates the full class's surface** — a class stacking MiscReader and MiscWriter behaves like one stacking Misc alone.
+- **Runtime add-then-use** — after `$obj.object.classes.ensure(Misc); $obj.misc[:k] = 'v'`, `$obj.misc[:k]` returns `'v'`.
+- **Block-scope add releases the surface** — inside `$obj.object.classes.ensure(Misc) do ... end`, `.misc` works; after the block exits (assuming Misc was not already stacked), `.misc` raises.
+
 ## Related
 
 - [bucket-access](https://puck.uno/documentation/requirements/caspian/built-in-classes/bucket-access) — the parallel utility classes for the whole bucket via `[]` / `[]=`.

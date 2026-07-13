@@ -310,6 +310,48 @@ Areas the current spec does not settle:
 - **`.implements?($other_class)`** — a runtime structural conformance check that returns true when the receiver's class carries every method the other class does. Sketched in the old spec; scope for V1 not yet confirmed.
 - **Body serialization format.** Class definitions can be stored and transported as JSON records (in worldlets, Mikobase records, Puck-protocol messages). The exact JSON shape for method bodies (Caspian source string vs. CaspianJ IR tree vs. both) has a couple of pending decisions.
 
+## Testing
+
+- **`class ... end` evaluates to a class object** — `$c = class end; $c.object.isa?(class)` is true.
+- **Inline label parsed but has no dispatch effect** — `class # widget ... end` and `class ... end` produce identical class objects apart from the label metadata.
+- **`.new()` builds an instance** — after `$c = class field @x, class: :number end`, `$c.new(x: 1)` returns an object with `@x == 1`.
+- **`field` declares bucket entry** — a class with `field @name, class: :string` builds instances where `@name` is bucket-backed.
+- **Field default applied on construction** — after `field @rank, default: 'ensign'`, an instance built without a `rank:` arg has `@rank == 'ensign'`.
+- **Field type constraint at construction** — a Caspian class never rejects; passing `rank: 5` where `class: :string` is set still binds (validation is Mikobase-side).
+- **`get: true` auto-generates getter** — `$obj.name` returns the field value.
+- **`set: true` auto-generates setter** — `$obj.name = 'x'` mutates the bucket entry.
+- **`get: true` alone: no setter** — with `get: true` but not `set:`, `$obj.name = 'x'` raises.
+- **`set: true` alone: no getter** — with `set: true` but not `get:`, reading `$obj.name` raises.
+- **`getter :name, value` sets bucket entry and exposes reader** — `getter :foo, 'blah'` creates instances where `@foo == 'blah'` and `$obj.foo` returns `'blah'`.
+- **`getter` produces a fresh expression per instance** — `getter :opts, {}` gives each instance its own hash; mutating one does not affect another.
+- **`getter` writes via `@foo` from within methods** — `@foo = 'x'` inside a method mutates the bucket entry.
+- **`getter` produces no external setter** — `$obj.foo = 'x'` raises with `getter`.
+- **`getter` requires both arguments** — `getter :foo` with no value raises at definition.
+- **`method` declares callable** — `method greet() return 'hi' end` produces `$obj.greet` returning `'hi'`.
+- **Method sees `%self` as receiver** — `method me() return %self end` returns the receiver.
+- **Method sees `@field`** — `method name() return @name end` reads the bucket.
+- **`method &greet` (with sigil) equivalent to `method greet`** — both forms produce the same class method.
+- **`inherits Foo`** — a subclass responds to methods defined on `Foo`.
+- **Multiple inheritance** — `inherits A; inherits B` gives access to methods from both.
+- **Inline inherits list** — `inherits A, B, C` equivalent to three separate `inherits` lines.
+- **`abstract true` blocks direct `.new`** — an abstract class's `.new(...)` raises.
+- **Abstract class subclass instantiable** — a concrete subclass of an abstract class's `.new()` works normally.
+- **`init` runs during `.new`** — `method init(@name) end` called as `.new(name: 'p')` binds `@name = 'p'`.
+- **`init` `@param` auto-assigns** — the `@name` parameter form assigns directly into the bucket with no explicit body.
+- **`init` receives keyword args** — `.new(name: 'p', rank: 'c')` binds both.
+- **`to_string` invoked by `puts`** — `puts $obj` produces whatever `to_string` returns.
+- **`on_close` invoked at destruction** — after the last reference to an instance drops, `on_close` runs; observable via side effect.
+- **`amend $var ... end` extends existing class** — after amending, the class responds to newly added methods.
+- **`amend` on unbound variable raises** — `amend $undefined ... end` errors.
+- **`amend` on non-class value raises** — `amend $string ... end` errors.
+- **`amend` body accepts every class-body construct** — methods, fields, `inherits`, `on_close` all legal inside `amend`.
+- **Method resolution walks class stack** — a method defined on a parent is reachable through the child instance.
+- **Child method shadows parent method** — same-name method on the child takes precedence over inherited one.
+- **Storing class in a hash** — `$library[:widget] = class end; $library[:widget].new()` works.
+- **Publishing via `%puck`** — `%puck.publish(url, class end)` makes the class downloadable at that URL.
+- **`class` inside another expression** — passing `class end` as an argument works; the receiver gets the class object.
+- **Class carries no intrinsic name** — the class object has no `.name` property tied to any variable it was assigned to.
+
 ## Related
 
 - [Classes are the only method-carrier](https://puck.uno/documentation/requirements/caspian/concepts#classes-are-the-only-method-carrier) — the design principle that motivates the flexibility of the class construct.

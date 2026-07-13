@@ -235,3 +235,46 @@ If a controller-return exception escapes past the construct that would catch it 
 **Catchability.** Engine-caught at the corresponding construct's boundary. Whether user code can install a matching catch in addition — TBD.
 
 **Unwinding.** Unwinds gracefully. Ensure blocks between the raise site and the construct boundary run; resources release cleanly.
+
+## Testing
+
+- **`raise` with no argument** — inside `catch()`, produces a `PlainException` with `.details` equal to `null`.
+- **`raise` with string** — `raise 'bad'` produces a `PlainException` with `.details == 'bad'`.
+- **`raise` with hash** — `raise {code: 500}` produces a `PlainException` with `.details == {code: 500}`.
+- **`raise` with existing exception** — `raise $ex` raises `$ex` directly; the caught object is the same object identity.
+- **`$exception.raise` equivalent to `raise $exception`** — identical behavior.
+- **`catch()` returns the exception object** — after a raise inside the body, `$e = catch() raise 'x' end; $e.details` returns `'x'`.
+- **`catch()` returns null when body doesn't raise** — `$e = catch() 42 end; $e.object.null?` is true.
+- **`catch()` matches every catchable exception** — a `PlainException` raised inside is caught.
+- **`catch($class)` matches by class** — `catch(SomeClass)` catches instances of `SomeClass`.
+- **`catch($class)` matches subclasses** — `catch(Parent)` catches an instance of `Child` where `Child` inherits `Parent`.
+- **`catch($a, $b)` acts as OR** — either class matches.
+- **URL-string filter** — `catch('foo.bar/gup/')` matches an instance of that URL-identified class.
+- **URL filter without protocol** — `catch('foo.bar/gup/')` and `catch('https://foo.bar/gup/')` are equivalent.
+- **Mixed class-object and URL filters** — both forms coexist within the same argument list.
+- **Non-matching exception propagates past `catch`** — an exception of class `A` inside `catch(B)` propagates unchanged.
+- **Uncatchable class in filter is silent no-op** — `catch(AbortException) raise abort end` does not catch; the abort propagates.
+- **Empty `catch()` does not catch uncatchable exceptions** — an `AbortException` propagates past `catch()`.
+- **`return` raises `ReturnException` targeted at enclosing function** — inside a nested closure, `return` unwinds to the function boundary.
+- **`%call.return` targets the immediate frame** — inside a closure, exits the closure only.
+- **`exit` raises `ExitException`** — user code's `exit` produces an uncatchable exit that unwinds cleanly and ends the program.
+- **`ExitException` uncatchable in user code** — `catch() exit end` does NOT catch; the program terminates.
+- **`ExitException` uncatchable at engine boundaries** — no engine-level catch intercepts it either.
+- **User-called `abort` ends without unwinding** — no `ensure` blocks run; the program stops immediately.
+- **Non-user-called `abort` unwinds ungracefully until user frame** — frames drop without cleanup up to the user boundary.
+- **Non-user `abort` substitutes to `UntrustedAbortException` in user frame** — the user frame sees an `UntrustedAbortException`, not an `AbortException`.
+- **`UntrustedAbortException` is user-catchable** — `catch(UntrustedAbortException)` in user code matches.
+- **`SecurityException` user-only catchable** — a non-user frame installing `catch(SecurityException)` does NOT catch; the exception propagates through it.
+- **`SecurityException` user-catchable in user code** — `catch(SecurityException)` in a user frame matches.
+- **`.object.isa?` branches on class** — after `$e = catch() raise SomeClass.new end`, `$e.object.isa?(SomeClass)` is true.
+- **Only one exception in flight at a time** — the runtime tracks a single unwinding exception.
+- **Uncaught exception propagates to top of chain** — no user catch, no engine catch matches; the program ends with the uncaught exception.
+- **Nested catch inside catch** — inner `catch()` catches; outer `catch()` returns null (nothing raised past inner).
+- **Cross-role raise** — a non-user frame raising `PlainException` is caught by a `catch()` installed in the user frame.
+- **`ensure`-style cleanup runs during unwinding exception** — a `PlainException`'s propagation triggers cleanup blocks; verified by observable side effect.
+- **`ensure`-style cleanup skipped during non-unwinding exception** — user-raised `AbortException` skips cleanup.
+- **Loop `break` raises `LoopReturnException`** — the engine catches at the loop boundary.
+- **Loop `break` after the loop ends propagates** — a controller captured and invoked past its construct raises an uncaught controller-return exception.
+- **Block controller `.return` inside bare block** — raises `BlockReturnException` caught at the block boundary.
+- **Conditional controller `.return`** — raises `ConditionalReturnException` caught at the `if`/`unless` boundary.
+- **Bare `catch` equals `catch()`** — the parenthesis-less form matches the parenthesized empty form.

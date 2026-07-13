@@ -90,3 +90,30 @@ end
 ~~~
 
 The mechanism is the counter stack from [Overhead](#overhead) above: a new counter pushes on entry, pops on exit. Every interpreter step increments every active counter, so each one ends up with the right answer for its own scope.
+
+## Testing
+
+- **Returns integer count** — `%chain.steps do end` returns a non-negative integer (block-entry step at minimum, possibly zero depending on where the boundary lands per spec).
+- **Return value is the count, not the block** — `%chain.steps do; return 'hello'; end` returns the step count (an integer), not `'hello'`.
+- **Empty block is small** — an empty `%chain.steps do end` returns a small deterministic constant across runs on the same engine.
+- **Determinism run-to-run** — the same program with the same input produces the same step count on repeated runs of the reference engine.
+- **Determinism across engines (acyclic)** — an acyclic program produces the same step count on two conforming engines.
+- **Statement counts** — a block with N sequential simple assignments produces a step count that scales linearly with N.
+- **Expression evaluation counts** — a block containing `$a + $b + $c` reports more steps than a block containing only `$a`.
+- **Method call counts** — a block containing one method call reports more steps than an empty block, plus the body's step count.
+- **Block entry counts** — a block containing `if true; end` reports more steps than the same block without the `if`.
+- **Object lifecycle counts** — a block that creates and drops N objects reports lifecycle steps proportional to N.
+- **Finalizer body counted** — an object whose finalizer runs statements adds those statements' steps to the enclosing count.
+- **Host wall time does not count** — a block that calls `%stdin` and blocks on I/O for a second reports the same step count as one that returns immediately (only language-level operations counted).
+- **Host GC does not count** — repeating the same block twice (once when host GC happens to run mid-block, once when it does not) produces the same step count.
+- **Nesting: inner accurate** — with `&foo` before, `%chain.steps do &bar end` inside, and `&gup` after (as in the doc example), `$inner_count` equals the steps of `&bar` alone.
+- **Nesting: outer accurate** — in the same shape, `$outer_count` equals the sum of `&foo` + `&bar` + `&gup` steps.
+- **Deep nesting** — three levels of `%chain.steps` produce three counters each with correct scope; innermost count is a subset of middle count is a subset of outermost count.
+- **No side effect on execution** — a block returns the same value whether wrapped in `%chain.steps do ... end` or not.
+- **Zero overhead when inactive** — a benchmark comparing a hot loop with no `%chain.steps` active vs after all `%chain.steps` blocks have exited shows no measurable per-instruction cost difference.
+- **Missing block raises** — `%chain.steps` without a block raises (or is a no-op depending on spec — the test pins the behavior).
+- **Wrong-arity raises** — `%chain.steps(5) do end` raises for unexpected argument.
+- **Cycle cleanup counted but non-deterministic across engines** — a program that creates cycles produces different step counts on refcount-only vs mark-sweep engines; a program that avoids cycles matches across both.
+- **Default-granted across role boundaries** — a non-user role can use `%chain.steps` without any explicit grant.
+- **Block early return** — using `return` inside the block returns the step count (not the returned value) from the outer scope's perspective; verify semantics.
+- **Exception inside block** — if the block raises, the count is not observable (the raise unwinds past `%chain.steps`); verify no leaked counter frame remains on the stack.

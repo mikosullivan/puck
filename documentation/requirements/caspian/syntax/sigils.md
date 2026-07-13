@@ -76,3 +76,33 @@ Two properties matter:
 - **Never user-defined.** A Caspian program cannot introduce a new `%X` name. The sigil is reserved to the engine; the language surface is closed.
 
 Most `%X` names are sugar for `%chain.X` — `%now` is `%chain.now`, `%net` is `%chain.net`, and so on. See [%chain](https://puck.uno/documentation/requirements/caspian/chain/) for the full mechanism, including capability propagation and role boundaries. A small number of `%X` names live outside `%chain` (`%call`, `%engine`, `%self`, `%bucket`); those pages spell out where each one hangs.
+
+## Testing
+
+- **`$name` binds a local variable** — `$x = 5; $x` returns `5`.
+- **`$name` on first assignment declares the local** — `$x = 5` in an empty scope creates `$x`.
+- **Reading undeclared `$name` raises** — `$never_set` at the top of a fresh scope raises undeclared-variable.
+- **Parameter uses `$` sigil at declaration site** — `function &f($p); $p; end` declares `$p` as a parameter.
+- **Parameter reads inside body without special sigil** — the parameter is read as `$p`, same as any local.
+- **Bare `name` (no sigil) is a parse error for a variable read** — `x + 1` where `x` is not a keyword fails to parse.
+- **`&name` calls the primary operation of a function value** — `$greet = function(); 'hi'; end; &greet` returns `'hi'`.
+- **`&name` and `$name.call` are equivalent for function values** — both produce identical CaspianJ / behavior.
+- **`&name` on a non-callable raises** — `$x = 5; &x` raises (no primary-call surface on Number).
+- **`&name` on a class calls the class's designated primary operation** — a widget class whose primary is `render` runs `render` on `&widget`.
+- **Definition site uses `&`** — `function &greet` and `method &foo` both parse; without `&` they are parse errors.
+- **`@field` reads bucket entry inside a method** — `@x` inside a method returns the current instance's `x` bucket entry.
+- **`@field = value` writes bucket entry inside a method** — updates the current instance's `x`.
+- **`@field` outside any method raises** — a top-level `@x` raises (no `%bucket` in that scope).
+- **`@field` inside a bare function raises** — bare `function` bodies do not have `%bucket`.
+- **`@field` inside a closure raises** — closure bodies do not have `%bucket`.
+- **`%name` reads a system method** — `%stdout` returns the stdout surface (or raises "not granted" if the role forbids).
+- **`%name` cannot be user-defined** — attempting to write `%foo = 1` is a parse error (`%` on LHS of `=` is not a valid target).
+- **`%name` never returns null for missing surface** — a missing surface either resolves or raises with "not granted"; never returns `null`.
+- **Bare `%X` shortcut resolves to `%chain.X`** — `%now` and `%chain.now` produce the same value.
+- **Two sigils on same identifier is a parse error** — `$&foo` fails to parse.
+- **Sigil with no identifier body is a parse error** — bare `$` with no name fails to parse.
+- **Identifiers are case-sensitive** — `$foo` and `$Foo` are distinct names.
+- **Identifiers accept letters, digits, underscore** — `$abc_123` parses as one name.
+- **Identifier starting with a digit is a parse error** — `$1foo` fails to parse.
+- **Reserved keywords are not sigiled** — `if`, `class`, `do`, `end`, `while`, `until`, `return` all parse as keywords without any sigil.
+- **Sigil on a keyword is invalid** — `$if` is a parse error (or if permitted, does not invoke keyword semantics).
