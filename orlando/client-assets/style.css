@@ -333,6 +333,18 @@ body.home .content h1 .hero-logo {
 	padding: 0;
 	font-size: 0.85em;
 }
+.content pre.terminal-block {
+	background: #000;
+	color: #eee;
+}
+.content pre.terminal-block b {
+	color: #5eff7c;
+	font-weight: bold;
+}
+.content pre.terminal-block .border {color: #66d9ef;}
+.content pre.terminal-block .brand {color: #5eff7c; font-weight: bold;}
+.content pre.terminal-block .dim {color: #888;}
+.content pre.terminal-block .accent {color: #ffb86c;}
 .content pre code .class-object,
 .content pre code i.class-object {color: #555; font-style: italic}
 .content table {

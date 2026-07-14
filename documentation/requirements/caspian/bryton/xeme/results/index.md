@@ -71,3 +71,5 @@ See [failure](failure) — the failure hierarchy lives on its own page because i
 **`null/promise`** indicates that a final result is expected eventually.
 
 <div style="clear: both;"></div>
+
+In this situation it is usually useful to give the xeme a UUID (see the [`uuid` field](../#uuid)) so that it can be found again when the final result arrives.

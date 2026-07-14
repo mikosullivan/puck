@@ -147,6 +147,13 @@ With rare, deliberately-marked exceptions, nothing in `requirements/` should lin
 - `documentation/requirements/audit.md` itself. No audit step writes to that file — the page IS the dashboard, not a snapshot. Only edit if the audit protocol itself changes (this section) or the page shell's directives change.
 - Do NOT add a static problem list, a `snapshot_date` field, a "what changed since last snapshot" section, or prose "How to refresh" content to audit.md.
 
+## Words Miko uses loosely
+
+Terms Miko sometimes uses that don't map to specific technical concepts in the codebase. Interpret them accordingly and don't invent a spec around them.
+
+- **"module"** — no technical concept in Caspian. When Miko uses the word it's just a dignified way to say "doohicky."
+- **"library"** — no technical concept in Caspian. When Miko uses the word it just means a group of related stuff.
+
 ## Miko's formatting preferences
 
 Miko's personal code-formatting preferences live at [miko.json](https://puck.uno/documentation/ecoverse/formatting/miko.json) — the canonical source of truth for indent, line rules, and per-language overrides.

@@ -43,6 +43,10 @@ The `result` field is defined by the classes at [results](results/) — that pag
 
 Optional. How long it took to run the operation.
 
+### `name`
+
+Optional. A human-readable name for the xeme — the test's or group's display label. Neither the Xeme spec nor Bryton require the name to be unique within any scope; two xemes can share a name.
+
 ### `uuid`
 
 Optional. A UUID isn't required, but it can be handy when referring to specific test results.
@@ -59,11 +63,28 @@ Optional. An array of warnings. These do not affect the success/failure of the x
 
 Optional. An array of notes. Notes have no implication about the success/failure of the xeme and do not indicate problems.
 
+### `tags`
+
+Optional. Labels attached to the xeme for filtering, grouping, or reporting. The value may be **either an array or a hash**, at the developer's choice:
+
+- **Array form** — a flat list of tag names. Use this when the tags themselves are all the information you need.
+- **Hash form** — keys are tag names; values carry additional metadata about each tag (a description, a threshold, an audit reference, whatever the tag needs). Use this when a tag needs to carry structured information. In the hash form, a value of **`false`** explicitly indicates that the xeme is *not* a member of that tag.
+
+Xeme does not interpret the tags; consumers do (dashboards, filters, reporting tools).
+
 ### `trimmed`
 
 Optional. On the **top-level xeme only**, marks the tree as the result of trimming — the reduction that removes successful leaves so consumers can focus on failures and nulls. The only useful value is `true`; if the xeme wasn't trimmed there's no need for the field, and inner xemes don't carry it either.
 
 See [trimming](trimming) for the full spec.
+
+### `fail-fast`
+
+Optional. On a **group** xeme only. Declares that the tests within this group's scope run in **fail-fast mode**. The only useful value is `true`. This field defines the *scope* — it does **not** indicate that a failure actually occurred within it.
+
+### `failed-fast`
+
+Optional. On a **test** xeme only. Marks this test as the one at which a fail-fast stop occurred — the test whose result caused the surrounding fail-fast group to halt further tests in its scope. The only useful value is `true`; tests that didn't trigger a stop don't need the field.
 
 ### `misc` and `corporate`
 
