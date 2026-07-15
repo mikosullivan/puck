@@ -437,7 +437,7 @@ $html = instance # report builder
 end
 
 $html.heading('Summary').paragraph('Things went OK.').paragraph('No errors.')
-%fs.write_text('summary.html', $html.render())
+%fs.root.write_text('summary.html', $html.render())
 ~~~
 
 **Why an ad-hoc instance.** State accumulates across method calls (`@sections` grows as the script adds content). Methods are chainable — they're for THIS script's writer, not a builder pattern worth publishing. A plain function would lose the accumulation; a class would be ceremony for what's a one-off bit of report-generation code.

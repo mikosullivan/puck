@@ -80,7 +80,7 @@ Currently **TBD.** Two reasonable options:
 - **A namespace-view object bound to the instance.** `$widget.stats` returns a small object whose methods dispatch back to the widget's nested-namespace methods. This makes the namespace introspectable (`$widget.stats.methods` lists what's in it) and passable as a value.
 - **Only dotted-path calls are legal.** `$widget.stats` on its own raises; only `$widget.stats.something` is a legal expression.
 
-The first is more flexible and is what the [conversion protocol](https://puck.uno/documentation/ideas/conversion) <!-- outbound-link-allowed --> design already needs — `$foo.to` needs to be an object whose methods you can enumerate. So the first is likely what lands; leaving formally open until the protocol lands.
+The first is more flexible and is what the conversion protocol design already needs — `$foo.to` needs to be an object whose methods you can enumerate. So the first is likely what lands; leaving formally open until the protocol lands.
 
 ## Depth
 
@@ -88,7 +88,7 @@ Whether a `nested :name ... end` block can contain another `nested :name ... end
 
 ## Interaction with the conversion protocol
 
-The `.to` and `.from` conversion protocol described in [ideas/conversion](https://puck.uno/documentation/ideas/conversion) <!-- outbound-link-allowed --> uses this exact mechanism. `.to.number` is a nested-method call: the class declares
+The `.to` and `.from` conversion protocol uses this exact mechanism. `.to.number` is a nested-method call: the class declares
 
 ~~~caspian
 class # string

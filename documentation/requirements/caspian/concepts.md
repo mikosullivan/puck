@@ -87,6 +87,19 @@ Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](htt
 
 You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%puck` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/documentation/requirements/caspian/engine/manifest/#sections).
 
+## Caspian is written in Caspian
+
+**Above the primitive line, Caspian is written in Caspian itself.** The host language (Lua and C, in the reference implementation) is used only for what has to live there: the interpreter, the engine's control plane, faucet and sink surfaces, `%engine`, memory-protection primitives, protected-mode windows, and bindings to C libraries (libsodium, CBOR decoder, LPeg, HTTP parser, etc.). Everything above that line — built-in classes, stdlib helpers, protocol validation, orchestration — is Caspian code.
+
+This is a deliberate design commitment, not just implementation hygiene:
+
+- **Users can read and modify the code that runs their programs.** Password, Passkey, the built-in collection classes, and every other stdlib surface are Caspian objects you can `%puck.fetch`, inspect, learn from, fork, or replace. A Caspian program isn't standing on an opaque host-language substrate — it's standing on more Caspian.
+- **Caspian's design concepts get demonstrated in the stdlib itself.** Roles, chains, holding-as-access, classes-as-only-method-carrier, faucet provenance — these become concrete examples in the code every program uses. The stdlib doubles as a working demonstration of what Caspian is for.
+- **The trust surface stays small.** The host-language layer is what the security model has to trust; keeping it minimal makes it audit-able. Everything above the primitive line runs under the same rules any user code runs under.
+- **Iteration doesn't require binary releases.** Fixing a bug in Password's algorithm dispatch, adding an exception class to Passkey, or refining a helper method ships as a new Caspian class version — not a rebuild-and-redistribute of the caspian binary.
+
+The heuristic when designing a new capability: **anything that could be written in Caspian without giving up security, correctness, or usable performance should be.** Reach for the host language only for what genuinely can't exist above the primitive line.
+
 ## Strings are UTF-8
 
 Every string passed into Caspian is automatically re-encoded as UTF-8. Caspian source, string values in downloaded objects, the results of `%puck` fetches, arguments handed to the engine by a host — all of it lands as UTF-8 inside the runtime, and every string value the engine produces or serializes is UTF-8. Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.

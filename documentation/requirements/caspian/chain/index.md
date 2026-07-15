@@ -90,7 +90,7 @@ This includes the return-to-user case — when non-user code invokes a user-supp
 
 ## Inspection
 
-`%chain` itself does not carry chain-frame inspection methods. **The current frame's role is available as [`%role`](https://puck.uno/documentation/requirements/caspian/roles/#role) — a top-level global, not a chain surface.** `%role` is always unconditionally available regardless of what the chain carries. Frame-walking accessors (a full frames array, a parent-frame shortcut) are not part of V1; see [ideas/chain-frames-parent](https://puck.uno/documentation/ideas/chain-frames-parent) <!-- outbound-link-allowed --> for the deferred sketch.
+`%chain` itself does not carry chain-frame inspection methods. **The current frame's role is available as [`%role`](https://puck.uno/documentation/requirements/caspian/roles/#role) — a top-level global, not a chain surface.** `%role` is always unconditionally available regardless of what the chain carries. Frame-walking accessors (a full frames array, a parent-frame shortcut) are not part of V1.
 
 ## Complete catalog
 
@@ -107,7 +107,7 @@ Every method that lives on `%chain`. Each method's surface is documented per-met
 | [`%chain.now`](methods/now) | `%now` | **yes** | capability | Current timestamp from the engine-controlled clock. |
 | [`%chain.puck`](methods/puck) | `%puck` | **yes** | capability | Object download by URL. `%[url]` is the further-shortened form. |
 | [`%chain.random`](methods/random) | `%random` | **yes** | capability | Random-value primitives (UUID, number, string). |
-| [`%chain.root`](methods/root) | | no | capability | The dirjail the engine granted at startup. |
+| [`%fs`](methods/root) | | no | capability | The dirjail the engine granted at startup. |
 | [`%chain.stderr`](methods/stdout-and-stderr) | `%stderr` | no | capability | Diagnostic-output channel. |
 | [`%chain.stdin`](methods/stdin) | `%stdin` | no | capability | The program's input channel. |
 | [`%chain.stdout`](methods/stdout-and-stderr) | `%stdout` | no | capability | Primary output channel. |
@@ -184,7 +184,7 @@ The naïve "copy the parent's hash" approach is O(parent hash size) per frame pu
 - **Shortcut form equivalent to `%chain.X`** — for surfaces with a bare shortcut (`%now`, `%stdout`, `%puck`, `%random`, `%stderr`, `%stdin`), the shortcut and `%chain.X` return the same value.
 - **Engine-startup grant gates presence** — if the host does not install `%chain.net` at startup, calling `%chain.net` raises even inside a grant block; no chain-level operation conjures a withheld surface.
 - **Default-granted list** — `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps` cross role boundaries automatically.
-- **Default-deny list** — every other catalog entry (`%chain.net`, `%chain.tmp`, `%chain.stdout`, `%chain.stdin`, `%chain.stderr`, `%chain.argv`, `%chain.env`, `%chain.forks`, `%chain.memory`, `%chain.root`) is unreachable in a callee of a different role unless explicitly granted.
+- **Default-deny list** — every other catalog entry (`%chain.net`, `%chain.tmp`, `%chain.stdout`, `%chain.stdin`, `%chain.stderr`, `%chain.argv`, `%chain.env`, `%chain.forks`, `%chain.memory`, `%fs`) is unreachable in a callee of a different role unless explicitly granted.
 - **Full catalog rows verified** — every method in the table exists, its shortcut is correct, its default-grant flag matches, and its `Kind` is `capability`.
 - **Same-role descent preserves hash slot** — a same-role subroutine sees the caller's ambient hash values.
 - **Role boundary empties hash slot** — a call into a different role starts the callee with an empty `%chain` hash; the caller's values are not carried.

@@ -32,11 +32,11 @@ Sinks aren't values a program can invent. Every sink traces back to an **engine-
 |---|---|
 | [`%stdout`](https://puck.uno/documentation/requirements/caspian/chain/methods/stdout-and-stderr) / `%engine.stdout` | Bytes written to the program's primary output. |
 | [`%stderr`](https://puck.uno/documentation/requirements/caspian/chain/methods/stdout-and-stderr) / `%engine.stderr` | Bytes written to the diagnostic channel. |
-| [`%chain.root`](https://puck.uno/documentation/requirements/caspian/chain/methods/root) / `%chain.tmp` | Filesystem writes via dirjails. |
+| [`%fs`](https://puck.uno/documentation/requirements/caspian/global-methods/fs) / `%chain.tmp` | Filesystem writes via dirjails. |
 | [`%chain.net`](https://puck.uno/documentation/requirements/caspian/chain/methods/net) | HTTP request bodies, socket writes. |
 | [`%chain.puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) | `%puck.register(url, ...)` publishes an object out to the object network. |
 
-User code can wrap any of these — put an object in front of `%stdout`, narrow `%chain.root` with a nested dirjail, build a per-host adapter over `%chain.net` — but every outbound method call transitively lands on a method the engine implemented. Without an engine-provided handle somewhere in the ancestry, there is no outbound path at all.
+User code can wrap any of these — put an object in front of `%stdout`, narrow `%fs` with a nested dirjail, build a per-host adapter over `%chain.net` — but every outbound method call transitively lands on a method the engine implemented. Without an engine-provided handle somewhere in the ancestry, there is no outbound path at all.
 
 This is what makes the engine the outbound gateway: a program that holds no engine-descended sink object literally can't send data out. There is no "backdoor" outbound primitive at the language level.
 
@@ -51,14 +51,14 @@ $safe_out = %stdout.object.jail(:puts)   # only .puts is reachable
 
 The narrowed handle exposes exactly the methods the caller chose, and nothing else. Callees can't introspect around it.
 
-For faucet/sink dual surfaces (see below), narrowing is often more structured — a [nested dirjail](https://puck.uno/documentation/requirements/caspian/chain/methods/root#nested-dirjails) with `readonly: true` restricts writes without needing an explicit jail; a per-host net wrapper only surfaces the methods it chose. Whatever shape the narrowing takes, the callee can only invoke what's reachable through the wrapper.
+For faucet/sink dual surfaces (see below), narrowing is often more structured — a [nested dirjail](https://puck.uno/documentation/requirements/caspian/global-methods/fs#nested-dirjails) with `readonly: true` restricts writes without needing an explicit jail; a per-host net wrapper only surfaces the methods it chose. Whatever shape the narrowing takes, the callee can only invoke what's reachable through the wrapper.
 
 ## Some surfaces are both faucet and sink
 
 Several engine-provided surfaces are dual-purpose:
 
 - **`%chain.net`** — a faucet (responses come in) AND a sink (request bodies go out).
-- **`%chain.root`** / **`%chain.tmp`** — faucets (file reads produce values) AND sinks (`.write(...)` sends bytes out).
+- **`%fs`** / **`%chain.tmp`** — faucets (file reads produce values) AND sinks (`.write(...)` sends bytes out).
 - **`%chain.puck`** — a faucet (`%puck[url]` returns a downloaded object) AND a sink (`%puck.register(url, ...)` publishes one).
 
 The faucet and sink halves are two aspects of one object. The role model applies to the faucet side (values read carry the faucet's role); the object model applies to the sink side (holding the object is authority to call its methods). Both are always in play; there is no conflict.
@@ -84,13 +84,13 @@ The security work happens at the handoff (deciding whether to pass a sink object
 - **A sink is an ordinary object** — no special runtime primitive; `%stdout.class` names an ordinary class.
 - **Holding `%stdout` is authority to write to it** — a non-user frame holding a passed-in `%stdout` reference can call `.puts`.
 - **Method dispatch on a sink is not role-gated at call time** — the runtime doesn't inspect the caller's role during a `.puts` call.
-- **Every catalog sink descends from `%engine`** — `%stdout`, `%stderr`, `%chain.root`, `%chain.tmp`, `%chain.net`, `%chain.puck` all trace back.
+- **Every catalog sink descends from `%engine`** — `%stdout`, `%stderr`, `%fs`, `%chain.tmp`, `%chain.net`, `%chain.puck` all trace back.
 - **A program holding zero sink-descended handles has no outbound path** — an isolated frame with no sink can send nothing.
 - **Wrapping a sink produces a sink** — a user-defined class that internally calls `%stdout.puts` still qualifies; ancestry traces back to the engine.
 - **Narrowing a sink with a jail restricts methods** — `%stdout.object.jail(:puts)` blocks `.print`.
 - **A jailed sink reaching a non-exposed method raises** — the runtime prevents the call.
 - **`%chain.net` is both a faucet and a sink** — `fetch` reads inbound; request-body sending is outbound.
-- **`%chain.root` is both a faucet and a sink** — reads inbound; writes outbound.
+- **`%fs` is both a faucet and a sink** — reads inbound; writes outbound.
 - **`%chain.tmp` is both a faucet and a sink** — reads inbound; writes outbound.
 - **`%chain.puck` is both a faucet and a sink** — `%puck[url]` inbound; `%puck.register(...)` outbound.
 - **No runtime role check on the value being written** — a foreign-owned string can be written through a user-held sink; no gate on the payload's role.

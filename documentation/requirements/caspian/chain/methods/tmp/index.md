@@ -9,7 +9,7 @@
 
 **Default-granted across role boundaries:** no.  
 
-Each access to `%chain.tmp` returns a fresh dirjail backed by a new temp directory on disk. Code holding the dirjail can read and write inside it but can't escape — same dirjail abstraction used everywhere else in `%chain.root`.
+Each access to `%chain.tmp` returns a fresh dirjail backed by a new temp directory on disk. Code holding the dirjail can read and write inside it but can't escape — same dirjail abstraction used everywhere else in `%fs`.
 
 Three lifetime patterns; pick the one whose scope matches the work.
 

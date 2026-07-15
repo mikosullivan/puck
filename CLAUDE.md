@@ -114,8 +114,7 @@ When Miko says **"audit"**, **"run an audit"**, **"audit consistency"**, **"upda
 4. **Verification.** Probe suspect links via the running Orlando at `http://127.0.0.1:8181/...` to confirm 404 before filing anything link-related.
 5. **Trivial broken links.** If the audit finds a broken link AND the correct target is unambiguous (file moved to a known sibling, renamed concept with one new home, missing trailing slash, etc.), fix inline — do NOT file an issue for the obvious one-step rewrite. Does NOT apply to outbound links (see below).
 6. **Filing.** One verbose GitHub issue per problem that survives the trivial-fix filter (see [filing rules below](#filing-rules)).
-7. **Index normalization.** For every directory under `requirements/`, find all `<!--index: N-->` directives in its direct children (and on each subdir's `index.md`). Sort by current numeric value, then renumber to strict integers starting at 1 and going up in single steps (1, 2, 3, ...). Fix any non-integer values (e.g. `3.5` → integer slot) and any gaps. Apply inline without filing an issue or asking — Miko sometimes uses fractional indexes deliberately to slot new items between existing ones; the audit is when those get re-flattened.
-8. **Cache.** After filing or closing issues, refresh Orlando's cache via `POST /api/refresh-issues` so the dashboard reflects the change immediately. Same when issues are filed outside an audit run.
+7. **Cache.** After filing or closing issues, refresh Orlando's cache via `POST /api/refresh-issues` so the dashboard reflects the change immediately. Same when issues are filed outside an audit run.
 
 ### Checks
 

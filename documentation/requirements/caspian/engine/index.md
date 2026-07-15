@@ -39,7 +39,7 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | `%engine.puck` (TBD) | Object download by URL. | [`%chain.puck`](../chain/methods/puck) |
 | `%engine.random` (TBD) | Random-value primitives (libsodium → OS CSPRNG). | [`%chain.random`](../chain/methods/random) |
 | [`%engine.require`](require) | Declarative dependency statement on a downloaded object. | — |
-| `%engine.root` (TBD) | Root dirjail — the filesystem entry point. | [`%chain.root`](../chain/methods/root) |
+| `%engine.fs` (TBD) | Filesystem dirjail — the filesystem entry point. | [`%fs`](../global-methods/fs) |
 | [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%chain.stderr`](../chain/methods/stdout-and-stderr) |
 | [`%engine.stdin`](stdin) | Input channel. | [`%chain.stdin`](../chain/methods/stdin) |
 | [`%engine.stdout`](stdout-and-stderr) | Primary output channel. | [`%chain.stdout`](../chain/methods/stdout-and-stderr) |

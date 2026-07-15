@@ -25,7 +25,7 @@ The **currently-known faucets** the V1 engine plans to expose:
 | stdin | [`%chain.stdin`](https://puck.uno/documentation/requirements/caspian/chain/methods/stdin) / `%engine.stdin` | Bytes piped to the process. |
 | argv | [`%chain.argv`](https://puck.uno/documentation/requirements/caspian/chain/methods/argv) / `%engine.argv` | Command-line arguments. |
 | env | [`%chain.env`](https://puck.uno/documentation/requirements/caspian/chain/methods/env) | Environment variables. |
-| filesystem | [`%chain.root`](https://puck.uno/documentation/requirements/caspian/chain/methods/root) / `%chain.tmp` | File contents and directory listings read through dirjails. |
+| filesystem | [`%fs`](https://puck.uno/documentation/requirements/caspian/global-methods/fs) / `%chain.tmp` | File contents and directory listings read through dirjails. |
 | network | [`%chain.net`](https://puck.uno/documentation/requirements/caspian/chain/methods/net) | HTTP response bodies, socket reads, UDS data. |
 | downloads | [`%chain.puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) | Objects downloaded from URLs. |
 
@@ -45,9 +45,9 @@ The user-role code holding faucet-owned values can use them, store them, pass th
 
 ## Narrowed faucets don't add roles
 
-Some faucets can be **narrowed** — the caller creates a restricted view of a broader faucet without going back to the engine. Dirjails are the primary case: any code holding a dirjail can construct a nested dirjail rooted at a subdirectory (see [`%chain.root` § Nested dirjails](https://puck.uno/documentation/requirements/caspian/chain/methods/root#nested-dirjails)). The same pattern applies to other narrowable faucets — a per-host wrapper around `%chain.net`, for instance.
+Some faucets can be **narrowed** — the caller creates a restricted view of a broader faucet without going back to the engine. Dirjails are the primary case: any code holding a dirjail can construct a nested dirjail rooted at a subdirectory (see [`%fs` § Nested dirjails](https://puck.uno/documentation/requirements/caspian/global-methods/fs#nested-dirjails)). The same pattern applies to other narrowable faucets — a per-host wrapper around `%chain.net`, for instance.
 
-**Values read through a narrowed faucet carry the parent faucet's role — not a per-narrowing role.** A nested dirjail rooted at `%chain.root['foo']` still delivers files whose owner is `%chain.root`'s role. A per-host wrapper around `%chain.net` still delivers responses whose owner is `%chain.net`'s role. Narrowing restricts *what can be reached*, but doesn't change *what the source is*.
+**Values read through a narrowed faucet carry the parent faucet's role — not a per-narrowing role.** A nested dirjail rooted at `%fs.root['foo']` still delivers files whose owner is `%fs`'s role. A per-host wrapper around `%chain.net` still delivers responses whose owner is `%chain.net`'s role. Narrowing restricts *what can be reached*, but doesn't change *what the source is*.
 
 This is the same pattern as the [object-jail rule](https://puck.uno/documentation/requirements/caspian/roles/object-access#narrowing-pass-a-jail-not-the-raw-object): a jail wrapper restricts which methods reach through but doesn't launder the underlying object's ownership. The narrowed-faucet rule is the same idea applied to a faucet.
 
@@ -81,10 +81,10 @@ The practical wins:
 - **Faucet role for repeated reads from the same faucet is stable** — two reads from stdin yield strings whose owning roles compare `==`.
 - **Faucet roles compare unequal across different faucets** — stdin's role and argv's role are not `==`.
 - **Faucet roles never run user program frames** — no user code executes under a faucet role.
-- **A nested dirjail's file contents are owned by `%chain.root`'s role** — not by the nested-jail creator.
-- **A file read through nested dirjail `%chain.root['sub']` has the same owner role as one read through `%chain.root`** — `==` comparison holds.
+- **A nested dirjail's file contents are owned by `%fs`'s role** — not by the nested-jail creator.
+- **A file read through nested dirjail `%fs.root['sub']` has the same owner role as one read through `%fs`** — `==` comparison holds.
 - **A per-host net wrapper's response is owned by `%chain.net`'s role** — the wrapping doesn't mint a new role.
-- **The narrowing wrapper object itself is owned by its creator** — `%chain.root['sub'].object.role` is the calling frame's role.
+- **The narrowing wrapper object itself is owned by its creator** — `%fs.root['sub'].object.role` is the calling frame's role.
 - **`%engine.roles` includes exactly one entry per catalog faucet plus `user` plus `engine`** — role count matches the catalog.
 - **Programs cannot mint new faucet roles by narrowing** — no runtime surface produces new faucet roles.
 - **A faucet-owned string held by user code is usable** — holding-is-access applies.

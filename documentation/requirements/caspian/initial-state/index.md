@@ -43,7 +43,7 @@ At bootstrap, the engine walks every host-provisioned `%engine` slot and seeds t
 | `%engine.net` | `%chain.net` | Networking — HTTP, sockets, UDS. |
 | `%engine.env` | `%chain.env` | Environment variables. |
 | `%engine.forks` | `%chain.forks` | Process forking. |
-| `%engine.root` | `%chain.root` | Root dirjail — the filesystem entry point. |
+| `%engine.fs` | `%fs` | Filesystem dirjail — the filesystem entry point. |
 
 The host decides what to provision; the engine does the seeding mechanically. If the host didn't provision a slot (no stdin wired, no net granted, etc.), the corresponding chain capability is absent. User code reaching for an absent capability raises.
 
@@ -93,13 +93,13 @@ The chain's frame stack contains exactly one entry — the entry-point frame, ru
 - **Absent `%engine` slot leaves `%chain` capability absent** — a host that omits `%engine.net` leaves `%chain.net` unreachable; user code raises on use.
 - **`%chain.argv` mirrors `%engine.argv`** — reading `%chain.argv` returns the same array as `%engine.argv`.
 - **`%chain.stdin`, `%chain.stdout`, `%chain.stderr` mirror their engine slots** — each capability delegates to its host-installed callback.
-- **`%chain.tmp`, `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.net`, `%chain.env`, `%chain.forks`, `%chain.root` mirror their engine slots** — each capability is present when the host provisioned the corresponding `%engine.X`.
+- **`%chain.tmp`, `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.net`, `%chain.env`, `%chain.forks`, `%fs` mirror their engine slots** — each capability is present when the host provisioned the corresponding `%engine.X`.
 - **`%chain.memory` is present unconditionally** — introspection of process memory works without host provisioning.
 - **`%chain.steps` is present unconditionally** — the step counter is readable from the first statement.
 - **`%chain.timeout` is present unconditionally** — a `%chain.timeout` block works without host provisioning beyond the clock.
 - **`%chain.timer` is present unconditionally** — a `%chain.timer` block works without host provisioning beyond the clock.
 - **Default-granted capabilities cross a role boundary** — `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps` are visible in a non-`user` frame without explicit grant.
-- **Non-default-granted capabilities are absent across a role boundary** — `%chain.net`, `%chain.stdin`, `%chain.stdout`, `%chain.stderr`, `%chain.tmp`, `%chain.env`, `%chain.forks`, `%chain.argv`, `%chain.root` raise in a non-`user` frame with no grant.
+- **Non-default-granted capabilities are absent across a role boundary** — `%chain.net`, `%chain.stdin`, `%chain.stdout`, `%chain.stderr`, `%chain.tmp`, `%chain.env`, `%chain.forks`, `%chain.argv`, `%fs` raise in a non-`user` frame with no grant.
 - **`%chain[]` is empty at start** — reading `%chain['anything']` before any write returns the empty/missing value.
 - **First `%chain[] = ...` creates the entry** — after `%chain['k'] = 'v'`, `%chain['k']` returns `'v'`.
 - **`%chain[]` clears at role boundary** — a call into a different role sees an empty ambient hash even after the caller populated it.

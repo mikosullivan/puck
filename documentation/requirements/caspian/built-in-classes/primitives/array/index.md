@@ -195,14 +195,14 @@ Related but distinct: `.rotate` / `.rotate!` return the rotated array (whole arr
 
 | Method | Description |
 |---|---|
-| `.join($sep)` | Concatenates every element's string form with `$sep` between them. `$sep` is optional — omitted defaults to empty string. Each element is converted to string via its `.to.string` (per the [conversion protocol](https://puck.uno/documentation/ideas/conversion)) or `.to_string` in the interim. |
+| `.join($sep)` | Concatenates every element's string form with `$sep` between them. `$sep` is optional — omitted defaults to empty string. Each element is converted to string via its `.to.string` (per the conversion protocol) or `.to_string` in the interim. |
 | `.to_hash` | Converts an array of `[key, value]` pairs into a hash. Raises if any element isn't a two-element array. Migrates to `.to.hash` once the conversion protocol lands. |
 
 ## Set operations
 
 Set-theoretic operations on arrays — union, intersection, difference, symmetric difference, and subset relationships. Every combination and predicate operation gets **two names**: a Unicode mathematical symbol and a plain-English method name. Both compile to the same call.
 
-The Unicode symbol forms follow the [no-dot method rule](https://puck.uno/documentation/ideas/no-dot-methods) — the symbol sits between the receiver and the argument, separated by spaces, with no dot: `$a ∪ $b`. Parens around the argument are optional (Caspian's general rule for any method call). The English forms keep the dot: `$a.union($b)`.
+The Unicode symbol forms follow the no-dot method rule — the symbol sits between the receiver and the argument, separated by spaces, with no dot: `$a ∪ $b`. Parens around the argument are optional (Caspian's general rule for any method call). The English forms keep the dot: `$a.union($b)`.
 
 ### Combination operations
 
@@ -263,8 +263,6 @@ The following names have been considered and deliberately excluded from the arra
 | `.collect` | Ruby's alias for `.map`; use `.map`. |
 | `.inject` | Ruby's alias for `.reduce`, which is itself excluded. |
 | `.detect` | Ruby's alias for `.find`; if a find-like method lands later, its name is `.find`. |
-
-The [ideas/array-methods](https://puck.uno/documentation/ideas/array-methods) brainstorm has been resolved end-to-end; every candidate is either included above (in the method surface / set operations), listed here as excluded, or has moved into a separate ideas doc ([set-operations-by-key](https://puck.uno/documentation/ideas/set-operations-by-key) for the deferred key-projection kwarg on set operations).
 
 ## Open questions
 

@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_installation_self_test",
-	"role": "index page for the post-install self-test — `caspian --self-test`, the comprehensive build-verification suite that runs as the last step of installation and can be re-run any time. Runs Bryton against the shared Caspian test suite. Bryton and the test files are fetched at install time and cached under XDG cache. Directory contains the user-facing spec (this file) plus download-and-run.md for implementer-facing mechanics.",
+	"role": "index page for the post-install self-test — `caspian --self-test`, the comprehensive build-verification suite that runs as the last step of installation and can be re-run any time. Runs Bryton against the shared Caspian test suite. Bryton and the test files are fetched at install time and cached under XDG cache. Directory contains the user-facing spec (this file) plus self-test-process.md for implementer-facing mechanics.",
 	"status": "spec — command shape, Bryton-driven model, cache prewarming, and download-failure behavior settled; specific test coverage is whatever the shared test suite at https://caspian.uno/tests/ contains at any given time",
 	"audience": "release maintainers implementing the install-time cache prewarm; developers running `caspian --self-test` to diagnose their install; developers maintaining the shared test suite"
 }}
@@ -22,7 +22,7 @@ The `caspian` binary exposes `--self-test` as a subcommand. Same command whether
 - **Bryton** — loaded via `%puck`, the usual way.
 - **The test tree** — downloaded as a **tar.gz** from `caspian.uno` and extracted into a fresh `%chain.tmp` directory. Bryton runs against the extracted tree.
 
-See [download and run](download-and-run) for the mechanics.
+See [self-test process](self-test-process) for the mechanics.
 
 ## Why the tests live outside the binary
 
@@ -127,7 +127,7 @@ Deferred — inherits whatever cache-refresh mechanism the general downloadable-
 ## Related
 
 - [installation](../) — the install flow that invokes `--self-test` as its last step.
-- [download and run](download-and-run) — implementer-facing spec for the fetch, Bryton invocation, and rendering mechanics behind `--self-test`.
+- [self-test process](self-test-process) — implementer-facing spec for the fetch, Bryton invocation, and rendering mechanics behind `--self-test`.
 - [binary](../binary) — what actually ships in the `caspian` binary itself. The `--self-test` subcommand is bundled; Bryton and the test suite it runs are not.
 - [Bryton runner](../../bryton/runner/) — the test framework `--self-test` uses.
 - [Xeme](../../bryton/xeme/) — Bryton's per-test result format, which `--self-test` renders into human-readable output.

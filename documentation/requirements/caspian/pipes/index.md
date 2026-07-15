@@ -20,7 +20,7 @@ The two mechanisms are duals but not symmetric: faucets tag inbound values with 
 
 - **Provenance and audit.** Every inbound value is tagged with its faucet's role, so questions like "did anything from the network reach the filesystem?" become answerable at the runtime level. Sinks don't role-check outbound values — the check happens by capability handoff, not by payload inspection.
 - **Bounded roles and bounded capabilities.** The number of distinct faucet roles equals the number of engine-provided faucets; narrowing (nested dirjails, per-host net wrappers) doesn't mint new roles. Similarly, every sink traces back to an engine-provided object; user code can't invent new outbound paths.
-- **Dual surfaces.** Several `%chain.X` methods are BOTH — `%chain.net` is a faucet (responses in) and a sink (requests out); `%chain.root` is both. Each side is governed by its own model; the object is one identity but plays both roles.
+- **Dual surfaces.** Several `%chain.X` methods are BOTH — `%chain.net` is a faucet (responses in) and a sink (requests out); `%fs` is both. Each side is governed by its own model; the object is one identity but plays both roles.
 
 ## Canonical docs
 

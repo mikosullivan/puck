@@ -268,6 +268,18 @@ local function rewrite_links(body_html)
 end
 
 ------------------------------------------------------------
+-- CSP compliance: lunamark generates inline `style="text-align: X"`
+-- attributes for markdown pipe-table column alignment (from `|---:|`,
+-- `|:-:|`, etc.). Our CSP header sets `style-src 'self'`, so browsers
+-- strip those inline styles. Rewrite them to class attributes that
+-- style.css has rules for (.align-right, .align-center, .align-left).
+------------------------------------------------------------
+
+local function convert_table_align_to_classes(body_html)
+    return (body_html:gsub('style="text%-align:%s*(%w+);?"', 'class="align-%1"'))
+end
+
+------------------------------------------------------------
 -- Auto-TOC: walk the headings in the rendered body and emit a
 -- nested <ul class="toc"> with hidden checkboxes + toggle labels.
 -- No markdown TOC required — docs just write their content; Orlando
@@ -1046,26 +1058,13 @@ M.md_path_to_url = md_path_to_url
 --   - A directory's own index.md (when it exists) comes first as
 --     that directory's entry.
 --   - Other children — files (excluding index.md) and subdirs — are
---     merged into one list. Each child's "effective index" is the
---     numeric value of its <!--index: N--> directive (for files) or
---     the directive on its index.md (for subdirs).
---   - Children with an effective index sort first, ascending; the
---     remainder sort alphabetically by name.
+--     merged into one list sorted alphabetically by name.
 --   - Subdirs are recursively walked at their sort position.
 --
 -- inject_tree_nav drops a "← previous … next →" bar right after the
 -- page's <h1>. Endpoints render their unreachable side as a grayed
 -- span instead of a link.
 ------------------------------------------------------------
-
-local function read_index_directive(md_path)
-    local f = io.open(md_path, "r")
-    if not f then return nil end
-    local chunk = f:read(800) or ""
-    f:close()
-    local val = chunk:match("<!%-%-%s*index:%s*([%d%.]+)%s*%-%->")
-    return val and tonumber(val) or nil
-end
 
 local function read_h1_text(md_path)
     local f = io.open(md_path, "r")
@@ -1138,38 +1137,20 @@ local function walk_tree(root)
         end
         if index_path then out[#out + 1] = index_path end
 
-        -- Merge other files + subdirs into one ordered list.
+        -- Merge other files + subdirs into one alphabetically-ordered list.
         local entries = {}
         for _, f in ipairs(other_files) do
-            local p = dir .. "/" .. f
             entries[#entries + 1] = {
-                name = f, kind = "file", path = p,
-                idx = read_index_directive(p),
+                name = f, kind = "file", path = dir .. "/" .. f,
             }
         end
         for _, d in ipairs(subdirs) do
-            local p = dir .. "/" .. d
-            local sub_index = p .. "/index.md"
-            local idx
-            local probe = io.open(sub_index, "r")
-            if probe then
-                probe:close()
-                idx = read_index_directive(sub_index)
-            end
             entries[#entries + 1] = {
-                name = d, kind = "dir", path = p, idx = idx,
+                name = d, kind = "dir", path = dir .. "/" .. d,
             }
         end
 
-        table.sort(entries, function(a, b)
-            if a.idx and b.idx then
-                if a.idx ~= b.idx then return a.idx < b.idx end
-                return a.name < b.name
-            end
-            if a.idx and not b.idx then return true end
-            if not a.idx and b.idx then return false end
-            return a.name < b.name
-        end)
+        table.sort(entries, function(a, b) return a.name < b.name end)
 
         for _, e in ipairs(entries) do
             if e.kind == "file" then
@@ -1422,6 +1403,7 @@ function M.render_request(ctx)
     local body = M.render(md)
     -- (inject_hero_logo / link_existing_hero_logo were dropped — the
     -- mushroom icon stays in the sidebar header; H1s render plain.)
+    body = convert_table_align_to_classes(body)
     body = rewrite_links(body)
     body = mark_external_links(body)
     body = wrap_code_blocks_with_language_label(body)

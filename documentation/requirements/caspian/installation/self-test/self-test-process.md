@@ -1,8 +1,8 @@
-# Test download and run mechanics
+# Self-test process
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_installation_download_and_run",
+	"doc": "requirements_caspian_installation_self_test_process",
 	"role": "spec for how `caspian --self-test` loads Bryton (via %puck) and downloads the test-tree tarball (via %chain.net, extracted into a %chain.tmp directory) — including the bryton.root marker at the archive's top level so Bryton recognizes the extract as a test root. Scope is deliberately limited to fetch mechanics — running the tests, rendering results, and handling failures belong to Bryton and the self-test renderer and are spec'd elsewhere. User-facing behavior lives in the sibling index.md.",
 	"status": "spec — high-level pipeline enumerated; Bryton fetch defers to %puck (not re-spec'd here); test-tree fetch is a plain %chain.net tar.gz download extracted natively by the caspian binary into %chain.tmp; downstream stages (run, render, report) spec'd elsewhere. Exact tarball URL scheme TBD.",
 	"audience": "implementers of `caspian --self-test`; developers building the shared test suite at https://caspian.uno/tests/"

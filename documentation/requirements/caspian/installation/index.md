@@ -38,7 +38,15 @@ The `linux/` segment in the path leaves room for `darwin/`, `windows/`, and othe
 
 Alternate downloads — specific versions, prior releases, beta / stable channels, checksums — will get a sensible URL scheme at implementation time. Not spec'd here yet.
 
-For what actually ships in the `caspian` binary and how it's built, see [binary](binary).
+## What gets installed
+
+The install delivers three things to the user's machine:
+
+- **The `caspian` binary** — statically-linked, single file per CPU architecture, dropped at `~/.local/bin/caspian`. Includes the Lua 5.4 interpreter, engine, stdlib, and a handful of C extensions.
+- **Pre-installed Lua libraries** — a small set fetched during install and extracted to `~/.local/share/caspian/lua/`. Currently: `lua-http-parser` and `xml2lua`. Loaded lazily by `require`.
+- **XDG directories** — created empty at install time under `~/.cache/caspian/`, `~/.config/caspian/`, `~/.local/share/caspian/`.
+
+For the component-by-component breakdown (sizes, locations, purposes), see [core](../core/).
 
 ## Installation process
 
@@ -79,7 +87,7 @@ No default — the user picks `y` or `n`. The chosen value is saved to `~/.confi
 
 After the blockchain question, the installer briefly describes the [post-install self-test](self-test/) and asks whether to run it.
 
-<pre class="terminal-block">The self-test verifies your Caspian install works correctly on<br>this system. It loads <span class="brand">Bryton</span> and downloads a fresh test suite,<br>then runs a full build-verification pass.<br><br>Run the self-test? (recommended) [<b>Y</b>/n] <b>_</b></pre>
+<pre class="terminal-block">Run the self-test? (recommended) [<b>Y</b>/n] <b>_</b></pre>
 
 Default is `y` — the recommendation is baked in. If the user accepts, the self-test runs as the last step of [install and setup](#install-and-setup). If declined, no self-test-related downloads happen (Bryton and the test suite are not fetched), and the [installation summary](#installation-summary) notes the skip. The user can still invoke `caspian --self-test` at any time later — it'll fetch what it needs on demand.
 
@@ -109,15 +117,18 @@ After the prompts are answered, the installer runs through the actual setup with
 
 ### Installation summary
 
-Once setup completes, the installer prints a summary of every path it touched. The user sees exactly what changed:
+Once setup completes, the installer prints a summary of every path it touched. Most users already have `~/.local/bin` on `PATH`, so the common case looks like this:
 
-<pre class="terminal-block"><span class="brand">Caspian installed.</span><br><br>Files added:<br>  ~/.local/bin/caspian<br>  ~/.config/caspian/config.json<br><br>Directories created:<br>  ~/.cache/caspian/<br>  ~/.config/caspian/<br>  ~/.local/share/caspian/<br><br>Shell config updated:<br>  ~/.bashrc  (added ~/.local/bin to PATH)<br><br>Self-test: <span class="brand">passed</span><br><br><span class="dim">Restart your shell or run: source ~/.bashrc</span></pre>
+<pre class="terminal-block"><span class="brand">Caspian installed.</span><br><br>Files added:<br>  ~/.local/bin/caspian<br>  ~/.config/caspian/config.json<br><br>Directories created:<br>  ~/.cache/caspian/<br>  ~/.config/caspian/<br>  ~/.local/share/caspian/<br><br>Self-test: <span class="brand">passed</span></pre>
 
 The summary lists only what actually happened:
 
 - If a directory already existed, it isn't listed as "created."
-- If `~/.local/bin` was already on PATH, the "Shell config updated" section is omitted.
 - **The self-test line** shows one of: `passed`, `failed` (with a list of which checks failed), or `skipped` (with the reason — the user declined at the self-test prompt, or a required download failed). See [self-test](self-test/) for the full failure-reporting shape.
+- **If `~/.local/bin` was NOT on PATH and the user agreed to the PATH prompt**, an additional "Shell config updated" section appears and a restart hint follows:
+
+  <pre class="terminal-block"><span class="brand">Caspian installed.</span><br><br>Files added:<br>  ~/.local/bin/caspian<br>  ~/.config/caspian/config.json<br><br>Directories created:<br>  ~/.cache/caspian/<br>  ~/.config/caspian/<br>  ~/.local/share/caspian/<br><br>Shell config updated:<br>  ~/.bashrc  (added ~/.local/bin to PATH)<br><br>Self-test: <span class="brand">passed</span><br><br><span class="dim">Restart your shell or run: source ~/.bashrc</span></pre>
+
 - **If the user declined the PATH prompt**, the summary shows the required manual step instead:
 
   <pre class="terminal-block"><span class="brand">Caspian installed.</span><br><br>Files added:<br>  ~/.local/bin/caspian<br>  ~/.config/caspian/config.json<br><br>Directories created:<br>  ~/.cache/caspian/<br>  ~/.config/caspian/<br>  ~/.local/share/caspian/<br><br>Self-test: <span class="brand">passed</span><br><br><span class="accent">You declined to modify your shell rc.</span><br>To use `caspian` without a full path, add this line to<br>your shell config manually:<br><br>  export PATH=&quot;$HOME/.local/bin:$PATH&quot;</pre>
