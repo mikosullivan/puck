@@ -122,9 +122,9 @@ Used when Caspian holds private keys — server-to-server passkey-style auth, ho
 | `openssl` subprocess (ES256, RS256) | new — via the [linux-support/openssl](../../linux-support/openssl) wrapper class; operator-provided | ES256 / RS256 assertion verify. |
 | libsodium key generation | exists | Authenticator-side keypair generation. |
 | `vault.sign` gateway operation | planned for general signing-key support (see [vault § Gateway operations](../vault#gateway-operations)) | Authenticator-side signing. |
-| CBOR decoder | new — shipped as [lua-cbor](../../core/pre-installed-libs) in the Cache tier | COSE_Key parsing; attestation / assertion object parsing. |
+| CBOR decoder | new — shipped as [lua-cbor](../../core/) in the Cache tier | COSE_Key parsing; attestation / assertion object parsing. |
 
-The CBOR decoder is the only genuinely new dependency. It ships as a pre-installed Lua library ([lua-cbor](../../core/pre-installed-libs)) alongside luasocket, lua-http-parser, and xml2lua — fetched at Caspian install time, loaded lazily via `require` the first time Caspian code touches passkey authentication. Zero cost when unused.
+The CBOR decoder is the only genuinely new dependency. It ships as a pre-installed Lua library ([lua-cbor](../../core/)) alongside xml2lua — fetched at Caspian install time, loaded lazily via `require` the first time Caspian code touches passkey authentication. Zero cost when unused.
 
 CBOR has subtle rules around duplicate keys, integer canonicalization, and indefinite-length encodings that a well-audited library has already worked out. Correctness matters here — sloppy CBOR handling has been the root of several WebAuthn implementation vulnerabilities, and a mature library is the right dependency to bring in rather than reinvent.
 
@@ -134,7 +134,7 @@ Per [concepts § Caspian is written in Caspian](../../concepts#caspian-is-writte
 
 ### Lua / C (new)
 
-- **CBOR decoder** ([lua-cbor](../../core/pre-installed-libs) in the Cache tier). Takes bytes, returns a Caspian hash. All downstream COSE_Key, authenticatorData, and attestation-object walking then happens on that hash in Caspian.
+- **CBOR decoder** ([lua-cbor](../../core/) in the Cache tier). Takes bytes, returns a Caspian hash. All downstream COSE_Key, authenticatorData, and attestation-object walking then happens on that hash in Caspian.
 
 ### Lua / C (existing, reused)
 
@@ -170,7 +170,7 @@ The vault gateway is the security boundary in both cases. Everything the Passkey
 
 ## Packaging
 
-The CBOR-decoder dependency ships as **lua-cbor in the [Cache tier](../../core/pre-installed-libs)** — pre-installed at Caspian install time alongside luasocket, lua-http-parser, and xml2lua; loaded lazily via `require` the first time Caspian code touches passkey authentication. Programs that never touch passkeys pay zero runtime cost.
+The CBOR-decoder dependency ships as **lua-cbor in the [Cache tier](../../core/)** — pre-installed at Caspian install time alongside xml2lua; loaded lazily via `require` the first time Caspian code touches passkey authentication. Programs that never touch passkeys pay zero runtime cost.
 
 The Passkey classes themselves are Caspian code and are part of the Caspian engine + stdlib bundle in the Executable tier — no separate download.
 

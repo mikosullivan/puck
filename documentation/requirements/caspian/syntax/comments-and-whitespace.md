@@ -4,20 +4,64 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax_comments_and_whitespace",
-	"role": "spec for Caspian's comment syntax and whitespace rules — the `#` line-comment marker, the `%documentation` and `%vibecode` structured-documentation methods, and the lexer's treatment of blanks, tabs, and newlines",
-	"audience": "lexer implementers; developers writing Caspian"
+	"role": "spec for Caspian's comment syntax and whitespace rules. **Newline-non-significance is a general policy, not an absolute rule** — most of the time newlines are cosmetic and the parser figures out statement boundaries from context, but specific constructs (like heredocs) may require newline structure and are called out on the page that owns each construct. Covers: the `#` line-comment marker, the `%documentation` and `%vibecode` structured-documentation methods, the newline-non-significance policy itself, the semicolon-as-command-separator rule (semicolons always mark a divider between commands; redundant semicolons silently ignored), and the lexer's treatment of blanks and tabs.",
+	"audience": "lexer implementers; parser implementers; developers writing Caspian"
 }}
 ~~~
 
 ## Line comments
 
-Line comments start with `#` and run to end of line. Whitespace is cosmetic outside string literals. Statements are separated by newlines — no terminator character.
+Line comments start with `#` and run to end of line. Whitespace outside string literals is cosmetic.
 
 ~~~caspian
 # a line comment
 $x = 1
 $y = 2   # end-of-line comment
 ~~~
+
+## Newlines are generally not significant
+
+Newlines are **not required** to separate statements. The parser figures out statement boundaries from context — matched delimiters, keyword scopes, operator precedence, argument-list rules. Two statements on separate lines parse the same as two statements on one line without an explicit separator:
+
+~~~caspian
+&foo
+&bar
+~~~
+
+parses identically to:
+
+~~~caspian
+&foo &bar
+~~~
+
+Continuation of an expression across a newline works from either side: a line ending in a binary operator (`|`, `+`, `.`, etc.) OR a line starting with a binary operator both mean "continue the previous expression":
+
+~~~caspian
+$result = &foo() |
+	&bar
+
+$result = &foo()
+	| &bar
+~~~
+
+Both forms parse identically. Whichever reads more naturally in context is fine.
+
+### The rule is not absolute
+
+Newline-non-significance is a **general policy**, not an absolute rule. Specific constructs may require newlines to mark structure — [heredocs](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/string/heredocs) are one such case, where the terminator label must appear on its own line. Additional exceptions may emerge as language features are spec'd; each is called out on the page that owns the construct.
+
+## Semicolons as command separators
+
+`;` is a **command separator**. It always marks a divider between commands. Multiple semicolons in a row, or a semicolon on an otherwise-empty line, are silently ignored:
+
+~~~caspian
+&foo; &bar            # two commands, semicolon separates
+&foo; ; ; &bar        # same — extra ;'s ignored
+;;; &foo              # leading ;'s ignored, one command
+&foo ;                # trailing ; ignored
+~~~
+
+Semicolons are never required — newlines and juxtaposition also serve as command separators. Use `;` when you want an explicit divider on the same line, or when the parser would otherwise be ambiguous.
 
 ## Structured documentation: `%documentation` and `%vibecode`
 
@@ -54,7 +98,16 @@ Full spec at [global-methods § `%documentation`](https://puck.uno/documentation
 - **Trailing whitespace at end of line is ignored** — a line with trailing spaces before the newline parses the same as one without.
 - **Leading whitespace on continuation lines is cosmetic** — tabs and spaces used for indentation carry no meaning to the parser.
 - **Tab and space are both accepted as whitespace** — `$x\t=\t1` and `$x = 1` both parse.
-- **Statement separation is by newline, not by semicolon** — two statements on separate lines parse; no terminator character required.
+- **Two statements on separate lines parse** — `$x = 1\n$y = 2` binds both variables.
+- **Two statements on one line without separator parse** — `&foo() &bar()` parses as two statements.
+- **Semicolon separates statements on one line** — `&foo(); &bar()` parses as two statements.
+- **Multiple consecutive semicolons collapse to one separator** — `&foo() ;;; &bar()` parses as two statements.
+- **Bare semicolon on its own line is a no-op** — `;\n$x = 1` parses; only binds `$x`.
+- **Leading semicolons are ignored** — `;;;&foo()` parses as one statement.
+- **Trailing semicolons are ignored** — `&foo();` parses as one statement.
+- **Trailing operator continues an expression across newline** — `$x = $a +\n$b` binds `$x` to `$a + $b`.
+- **Leading operator on next line continues an expression** — `$x = $a\n+ $b` also binds `$x` to `$a + $b`.
+- **Newlines inside `()`, `[]`, `{}` are not significant** — multi-line calls, arrays, and hashes parse without regard to newline placement inside the delimiters.
 - **`%documentation` heredoc parses at any scope** — `%documentation <<(markdown)EOF ... EOF` at top level parses without error.
 - **`%vibecode` heredoc parses at any scope** — `%vibecode <<EOF ... EOF` at top level parses without error.
 - **`%documentation` produces no runtime artifact** — no readable value is bound; a subsequent `%documentation.last` or similar read raises (surface not defined).

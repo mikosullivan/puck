@@ -44,7 +44,7 @@ Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly
 - **A captured `$out = %engine.stdout` passed to a non-user frame is callable** — method-runs-as-owner semantics; writes attributed to user.
 - **Writing binary data (non-UTF-8 bytes) preserves the bytes verbatim** — no re-encoding.
 - **Bytes are visible to the host promptly or at process exit** — the host observes output either per-call or, at latest, before `engine.run()` returns.
-- **`%engine.stdout` is a sink object** — subject to the sink model (see `pipes/sinks`).
+- **`%engine.stdout` is a sink object** — subject to the sink model (see `plumbing/sinks`).
 - **`%engine.stderr` is a sink object** — same model.
 - **Concurrent writes from within a program interleave deterministically** — Caspian is single-threaded; write ordering matches program order.
 - **Writing a multi-contributor string is not blocked for stdout in V1** — stdout is not in the string-contributors blocked-operations set (V1); this may change post-V1.

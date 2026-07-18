@@ -35,7 +35,7 @@ The bytes returned by a URL may be cached so a re-download doesn't hit the netwo
 
 ## The `as_self` option
 
-By default, a downloaded object is owned by the **`%puck` faucet's role** — same as any other value pulled through a faucet, per the [faucet model](https://puck.uno/documentation/requirements/caspian/pipes/faucets/#every-faucet-has-its-own-role). Downloaded objects don't get their own per-object roles; they share the puck-faucet's role, distinct from the caller's role. That means when the caller invokes a method on the downloaded object, the method body runs as the puck-faucet's role (per [methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role)) and doesn't inherit the caller's `%engine` access or other capabilities.
+By default, a downloaded object is owned by the **`%puck` faucet's role** — same as any other value pulled through a faucet, per the [faucet model](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/#every-faucet-has-its-own-role). Downloaded objects don't get their own per-object roles; they share the puck-faucet's role, distinct from the caller's role. That means when the caller invokes a method on the downloaded object, the method body runs as the puck-faucet's role (per [methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role)) and doesn't inherit the caller's `%engine` access or other capabilities.
 
 The `as_self: true` kwarg overrides the faucet-role default:
 

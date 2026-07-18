@@ -17,7 +17,7 @@ This page collects cross-cutting concepts that don't fit cleanly into any single
 
 The shape of the model:
 
-- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/) for inbound data, downloaded objects for `%puck` content). Roles don't get traded, swapped, or modified — they're permanent identities.
+- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/) for inbound data, downloaded objects for `%puck` content). Roles don't get traded, swapped, or modified — they're permanent identities.
 - **`%engine` is the only path to host resources, and only `user` can call it.** Untrusted code can't reach the host process through `%engine`; the gateway is gated unconditionally at the runtime level. The user has to explicitly hand specific capabilities down through `%chain`.
 - **Capabilities propagate through `%chain` block-by-block, not ambiently.** Granting a capability is a deliberate per-block act; the grant evaporates when the block exits. There's no "this code has been blessed with permanent network access" — every grant is scoped, every revocation is enforceable. See [chain/grant-revoke](https://puck.uno/documentation/requirements/caspian/chain/grant-revoke).
 - **Methods run as their object's role.** Calling a method on a downloaded object enters that object's role frame, not the caller's. The caller's authority doesn't leak across the dispatch boundary; the object can only do what its role has been granted. See [roles § Methods run as their object's role](https://puck.uno/documentation/requirements/caspian/roles/#methods-run-as-their-objects-role).
@@ -42,7 +42,7 @@ When in doubt: **if a developer wants to do something legitimate that the API bl
 Concrete places this principle shapes the spec:
 
 - [object-access § The V1 rule: holding is access](https://puck.uno/documentation/requirements/caspian/roles/object-access#the-v1-rule-holding-is-access) — the runtime doesn't add a second layer of filtering on top of what the owner decided to hand across. Owners narrow by passing a jail; recipients aren't second-guessed by the engine.
-- [sinks § Sinks are just objects](https://puck.uno/documentation/requirements/caspian/pipes/sinks/#sinks-are-just-objects) — sinks don't role-check outbound values. If you hold a sink, you can call its methods; the security work is at the handoff.
+- [sinks § Sinks are just objects](https://puck.uno/documentation/requirements/caspian/plumbing/sinks/#sinks-are-just-objects) — sinks don't role-check outbound values. If you hold a sink, you can call its methods; the security work is at the handoff.
 
 ## Every situation is in scope
 

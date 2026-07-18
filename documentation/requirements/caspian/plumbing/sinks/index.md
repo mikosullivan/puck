@@ -12,7 +12,7 @@
 
 **Everything that leaves the Caspian runtime leaves through a sink.** A sink is an object with methods that send information to the outside world — writing to stdout, writing to a file, sending an HTTP request, publishing an object. The name is a vocabulary choice: data flows out through the sink. There are no other outbound paths.
 
-The complement is a **faucet** — an inbound surface that pulls external values into the program. Faucets are covered separately in [faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/); this doc is the outbound side.
+The complement is a **faucet** — an inbound surface that pulls external values into the program. Faucets are covered separately in [faucets](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/); this doc is the outbound side.
 
 ## Sinks are just objects
 

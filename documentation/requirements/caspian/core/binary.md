@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_core_binary",
-	"role": "spec for the caspian binary: what's compiled into it (Lua interpreter, engine, stdlib, select C extensions, musl libc), how it's built (musl-static, per-CPU-arch), and how it's distributed (per-arch downloads served from caspian.uno). Sibling of pre-installed-libs.md (Lua libs fetched at install time to disk). See index.md for the unified downloads table that covers both.",
+	"role": "spec for the caspian binary: what's compiled into it (Lua interpreter, engine, stdlib, select C extensions, musl libc), how it's built (musl-static, per-CPU-arch), and how it's distributed (per-arch downloads served from caspian.uno). See index.md for the unified downloads table that lists everything (binary contents plus the small set of Cache-tier Lua libs pre-installed to disk).",
 	"status": "spec — packaging model (single static binary, musl-linked, per-CPU-arch) settled; Lua version pending review before V1; specific dependency versions and build pipeline details pending",
 	"audience": "release maintainers building and shipping Caspian binaries; developers curious about what actually gets installed; distribution maintainers"
 }}
@@ -13,7 +13,7 @@ Caspian ships as a **single statically-linked binary per CPU architecture**. The
 
 ## What's in the binary
 
-The full inventory of what ships with Caspian — binary contents plus pre-installed Lua libs — lives in the unified table at [core](https://puck.uno/documentation/requirements/caspian/core/#contents-at-a-glance). Rows tagged **Executable** in that table are what's compiled into the `caspian` binary; rows tagged **Cache** are Lua libs pre-installed to disk (spec'd separately in [pre-installed-libs](pre-installed-libs)).
+The full inventory of what ships with Caspian — binary contents plus pre-installed Lua libs — lives in the unified table at [core](https://puck.uno/documentation/requirements/caspian/core/#contents-at-a-glance). Rows tagged **Executable** in that table are what's compiled into the `caspian` binary; rows tagged **Cache** are Lua libs pre-installed to disk.
 
 Each Executable-tier C extension is registered as a built-in via Lua's C API (`luaL_requiref` at engine startup), so `require('lpeg')` from Caspian just finds the pre-loaded module — no filesystem lookup, no dynamic loader involvement.
 
@@ -86,13 +86,12 @@ The Caspian install creates:
 
 The Caspian install does **not** create:
 
-- Any Lua files beyond the [pre-installed set](pre-installed-libs) under `~/.local/share/caspian/lua/`.
+- Any Lua files beyond the small pre-installed set (Cache rows in [core](https://puck.uno/documentation/requirements/caspian/core/#contents-at-a-glance)) under `~/.local/share/caspian/lua/`.
 - Anywhere for the user to `luarocks install` extra modules for Caspian to pick up. No luarocks integration. The runtime is closed — what ships in the binary plus the pre-installed set is what's available.
 
-If Caspian ever needs a new C dependency post-release, that's a new binary release, not a user-side install. If it needs a new pre-installed Lua lib, that's an addition to the [pre-installed-libs spec](pre-installed-libs).
+If Caspian ever needs a new C dependency post-release, that's a new binary release, not a user-side install. If it needs a new pre-installed Lua lib, that's an addition to [core](https://puck.uno/documentation/requirements/caspian/core/#contents-at-a-glance).
 
 ## Related
 
 - [core index](./) — the unified downloads table and section overview.
 - [installation](../installation/) — the user-facing install flow (prompts, paths, install command).
-- [pre-installed-libs](pre-installed-libs) — Lua libs pre-installed to `~/.local/share/caspian/lua/` alongside the binary, loaded lazily by `require`.

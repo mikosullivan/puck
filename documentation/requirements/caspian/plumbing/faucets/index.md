@@ -12,7 +12,7 @@
 
 **Everything that comes into the Caspian runtime comes in through a faucet.** A faucet is any resource that pulls external values into the program — stdin, environment variables, command-line arguments, the filesystem, the network, the `%puck` download surface. The name is a vocabulary choice: data flows in from outside; the faucet is where it comes out into the runtime. There are no other inbound paths.
 
-The complement is a **sink** — an object with methods that send information out to the world (filesystem write, query send, network output, `%stdout.puts`). Sinks live in their own doc at [sinks](https://puck.uno/documentation/requirements/caspian/pipes/sinks/); this doc is the inbound side.
+The complement is a **sink** — an object with methods that send information out to the world (filesystem write, query send, network output, `%stdout.puts`). Sinks live in their own doc at [sinks](https://puck.uno/documentation/requirements/caspian/plumbing/sinks/); this doc is the inbound side.
 
 ## What's a faucet, concretely
 

@@ -138,7 +138,7 @@ Conversely, Caspian exceptions thrown inside a callback that Lua invokes propaga
 
 ## Working example
 
-Parsing an XML document from Caspian using the pre-installed [xml2lua](../../core/pre-installed-libs):
+Parsing an XML document from Caspian using the pre-installed [xml2lua](../../core/):
 
 ~~~caspian
 %vibecode: <<END

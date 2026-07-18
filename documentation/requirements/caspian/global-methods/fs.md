@@ -53,7 +53,7 @@ More kwargs may arrive as concrete use cases surface; the shape is intentionally
 
 ### Nested dirjails don't get their own role
 
-Values read through a nested dirjail carry the **original engine-provided dirjail's** role, not a role belonging to the nested view. A file read from `$bar_jail` is owned by `%fs`'s role, same as if it had been read directly through `$root`. This is the [narrowed-faucets rule](https://puck.uno/documentation/requirements/caspian/pipes/faucets/#narrowed-faucets-dont-add-roles) applied concretely.
+Values read through a nested dirjail carry the **original engine-provided dirjail's** role, not a role belonging to the nested view. A file read from `$bar_jail` is owned by `%fs`'s role, same as if it had been read directly through `$root`. This is the [narrowed-faucets rule](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/#narrowed-faucets-dont-add-roles) applied concretely.
 
 The dirjail object itself (`$bar_jail`) is owned by whichever role created it — normal creator-owns for the container — but that ownership is separate from the ownership of values read through it.
 

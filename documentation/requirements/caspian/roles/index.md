@@ -5,7 +5,7 @@
 {"vibecode": {
 	"doc": "requirements_caspian_roles",
 	"role": "spec for Caspian's role system — the identities code runs under. Owns the role catalog (user, engine, plus one role per engine-provided faucet), the mechanism of role objects and switching, and the relationship between roles and capabilities.",
-	"status": "settled at the concept level — user + engine + one role per engine-provided faucet (per pipes/faucets); post-V1 candidates (stdlib distinction, forks role semantics, request/agent identity roles) remain deferred",
+	"status": "settled at the concept level — user + engine + one role per engine-provided faucet (per plumbing/faucets); post-V1 candidates (stdlib distinction, forks role semantics, request/agent identity roles) remain deferred",
 	"audience": "engine implementers who will eventually have to enforce this; AI tooling reasoning about who can do what"
 }}
 ~~~
@@ -57,7 +57,7 @@ The engine itself, when it produces output not on behalf of user code. A panic t
 
 ### One role per engine-provided faucet
 
-Every engine-provided faucet has its own distinct role, and every value that comes through the faucet is owned by that role. For the enumeration of faucets, the model of how narrowing works, and why the role count stays bounded, see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/) — that page owns the catalog.
+Every engine-provided faucet has its own distinct role, and every value that comes through the faucet is owned by that role. For the enumeration of faucets, the model of how narrowing works, and why the role count stays bounded, see [plumbing/faucets](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/) — that page owns the catalog.
 
 These roles never run program frames — the code executing is always some `user`/`engine`/downloaded-object role. Faucet roles exist for **value provenance**: an audit or capability check asking "where did this string come from?" reads the value's role and gets a definitive source name.
 
@@ -227,7 +227,7 @@ For the other (non-role-targeted) grant forms — per-capability, multi-capabili
 
 - The `user` role and its `%engine`-only privilege.
 - The `engine` role for engine-emitted attribution.
-- One role per engine-provided faucet, with the narrowing rules that come with it (see [pipes/faucets](https://puck.uno/documentation/requirements/caspian/pipes/faucets/)).
+- One role per engine-provided faucet, with the narrowing rules that come with it (see [plumbing/faucets](https://puck.uno/documentation/requirements/caspian/plumbing/faucets/)).
 - The mechanism: role objects, `$obj.object.role`, `==` and `.current?`, the switch-at-frame-boundary rule.
 - Cross-role capability delegation goes through the role-targeted grant on `%chain` ([#830](https://github.com/mikosullivan/puck/issues/830)), not through any role-acquisition surface.
 

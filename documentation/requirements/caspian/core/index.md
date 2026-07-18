@@ -13,17 +13,17 @@ Everything downloaded at Caspian install time — the runtime binary itself and 
 
 ## Contents at a glance
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 220" width="285" role="img" aria-label="Caspian floppy budget: 1180 kb used, 260 kb free, of 1440 kb total">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 220" width="285" role="img" aria-label="Caspian floppy budget: 1170 kb used, 270 kb free, of 1440 kb total">
 	<title>Caspian floppy budget</title>
 	<g transform="translate(110 110)">
-		<path d="M 0,-80 A 80,80 0 1,1 -72.5,-33.8 L 0,0 Z" fill="#ffb74d"/>
-		<path d="M -72.5,-33.8 A 80,80 0 0,1 0,-80 L 0,0 Z" fill="#81d4fa"/>
+		<path d="M 0,-80 A 80,80 0 1,1 -73.9,-30.6 L 0,0 Z" fill="#ffb74d"/>
+		<path d="M -73.9,-30.6 A 80,80 0 0,1 0,-80 L 0,0 Z" fill="#81d4fa"/>
 	</g>
 	<g font-family="sans-serif" font-size="14" fill="currentColor">
 		<rect x="220" y="65" width="16" height="16" fill="#ffb74d"/>
-		<text x="244" y="78">Used: 1180 kb (82%)</text>
+		<text x="244" y="78">Used: 1170 kb (81%)</text>
 		<rect x="220" y="95" width="16" height="16" fill="#81d4fa"/>
-		<text x="244" y="108">Free: 260 kb (18%)</text>
+		<text x="244" y="108">Free: 270 kb (19%)</text>
 		<text x="220" y="145" font-weight="bold">Total: 1440 kb</text>
 	</g>
 </svg>
@@ -37,13 +37,13 @@ All sizes approximate, in kb.
 | libsodium-minimal | 200 | Executable | C library for hashing, signing, secure random. The vault, secure-memory model, and password/passkey subsystems are keyed on libsodium's specific APIs — not swappable without redesign. |
 | luasodium | 10 | Executable | Lua bindings for libsodium — how the engine reaches libsodium at all. |
 | luasocket | 50 | Executable | TCP / UDP sockets + basic HTTP client. Backs both `%chain.net` (user-facing network access) and `%puck` (the engine's own object-fetch mechanism). Since `%puck` is how downloadable Caspian classes reach the runtime, network is engine machinery — not a per-program feature. Minute-detail coupling to luasocket's specific API means a version drift could silently break engine assumptions; bundling locks the version. |
-| lua-http-parser | 25 | Cache | HTTP/1.x request parser (C extension) — loaded when Caspian code does HTTP-server work. |
+| pegasus | 15 | Executable | Pure-Lua HTTP/1.x server. Handles TCP accept (on top of luasocket), connection lifecycle, request parsing, response writing. Compiled into the binary because HTTP is core to how Caspian does IPC — engine machinery, not per-program feature. Same identity argument as luasocket: minute-detail coupling to pegasus's specific API, no user-facing upgrade path, version drift would silently break engine assumptions. |
 | xml2lua | 30 | Cache | Pure-Lua XML parser — backs out-of-box XML support. |
 | lua-cbor | 25 | Cache | CBOR decoder — backs the Passkey / WebAuthn class (COSE_Key and attestation-object parsing); loaded only when Caspian code touches passkey authentication. |
 | Caspian engine + stdlib | 320 | Executable | This project. |
 | Lua binding wrapper | 20 | Executable | Generic wrapper for accessing Lua libraries from Caspian code via `%lua['name']`. Pure Lua, part of the engine's stdlib. |
 | musl libc (statically linked) | 200 | Executable | System C library baked into the binary — zero runtime dependencies. |
-| **Total** | **1180** | | Against the 1.44 MB floppy target — leaves 260 kb of headroom. |
+| **Total** | **1170** | | Against the 1.44 MB floppy target — leaves 270 kb of headroom. |
 
 **Location** column: **Executable** means compiled into the `caspian` binary. **Cache** means stored on disk under `~/.local/share/caspian/lua/` after Caspian install time, loaded lazily by `require`.
 
@@ -59,7 +59,6 @@ Rough sizing of what specific subsystems contribute to Caspian's own engine + st
 ## In this section
 
 - [binary](binary) — the `caspian` binary itself: what's compiled into it, how it's built (musl-static, per-CPU-arch), and how it's distributed.
-- [pre-installed-libs](pre-installed-libs) — the Lua libraries pre-installed to disk at install time (Cache rows above).
 
 ## Related
 

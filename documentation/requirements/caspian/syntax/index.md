@@ -4,13 +4,13 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax",
-	"role": "hub page for Caspian's surface syntax. Each area (comments, sigils, literals, variables, operators, truthy/falsy, control flow, blocks, callable definitions, calls, classes, system-method sigils) is its own sub-page. Deeper areas (full parameter metadata, exceptions, pipes, regex, DSL, class inheritance, string interpolation, CaspianJ mapping) get their own sub-pages as they land.",
+	"role": "hub page for Caspian's surface syntax. Each area (comments, sigils, literals, variables, operators, truthy/falsy, control flow, blocks, callable definitions, calls, classes, system-method sigils, pipes) is its own sub-page. Deeper areas (full parameter metadata, exceptions, regex, DSL, class inheritance, string interpolation, CaspianJ mapping) get their own sub-pages as they land.",
 	"status": "basic syntax split across sub-pages; deeper areas TBD",
 	"audience": "developers writing Caspian; tooling authors building lexers, parsers, formatters, syntax highlighters, and language-server implementations"
 }}
 ~~~
 
-This section covers Caspian's surface syntax — what a programmer actually types. Semantics (what constructs DO) live in the concept docs (roles, chain, pipes, etc.); the CaspianJ tree (what the parser produces) has its own doc.
+This section covers Caspian's surface syntax — what a programmer actually types. Semantics (what constructs DO) live in the concept docs (roles, chain, plumbing, etc.); the CaspianJ tree (what the parser produces) has its own doc.
 
 ## Basic syntax
 
@@ -24,13 +24,13 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [Bare blocks](https://puck.uno/documentation/requirements/caspian/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`.
 - [Classes](https://puck.uno/documentation/requirements/caspian/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
 - [System-method sigils](https://puck.uno/documentation/requirements/caspian/syntax/system-method-sigils) — `%self`, `%call`, `%chain`, `%engine`, and the six bare-`%X` shortcuts.
+- [Pipes](https://puck.uno/documentation/requirements/caspian/syntax/pipes) — `|` passes the left result as the first arg to the right; `|&` adds sticky null-propagation.
 
 ## Not covered here yet
 
 Sub-pages will fill these in as they get written:
 
 - **Full parameter metadata** — inline `{lazy: true, optional: true, ...}` blocks, `*rest`, `**opts`, class constraints.
-- **Pipe operators** — the `|` operator and its null-safe variant.
 - **Regex literals** — the syntax for pattern literals.
 - **Exceptions** — raise and the catch mechanism.
 - **DSL / bwc entries** — the block-word-callable mechanism that lets libraries register keywords (like `break` and `next` inside loops).
@@ -40,6 +40,6 @@ Sub-pages will fill these in as they get written:
 
 ## Where semantics live
 
-- [roles](https://puck.uno/documentation/requirements/caspian/roles/), [chain](https://puck.uno/documentation/requirements/caspian/chain/), [pipes](https://puck.uno/documentation/requirements/caspian/pipes/) — what the constructs DO.
+- [roles](https://puck.uno/documentation/requirements/caspian/roles/), [chain](https://puck.uno/documentation/requirements/caspian/chain/), [plumbing](https://puck.uno/documentation/requirements/caspian/plumbing/) — what the constructs DO.
 - [global-methods](https://puck.uno/documentation/requirements/caspian/global-methods/) — per-method spec of the `%X` surfaces.
 - [chain/methods/](https://puck.uno/documentation/requirements/caspian/chain/methods/) — per-method spec of each `%chain.X`.

@@ -43,7 +43,7 @@ Alternate downloads — specific versions, prior releases, beta / stable channel
 The install delivers three things to the user's machine:
 
 - **The `caspian` binary** — statically-linked, single file per CPU architecture, dropped at `~/.local/bin/caspian`. Includes the Lua 5.4 interpreter, engine, stdlib, and a handful of C extensions.
-- **Pre-installed Lua libraries** — a small set fetched during install and extracted to `~/.local/share/caspian/lua/`. Currently: `lua-http-parser` and `xml2lua`. Loaded lazily by `require`.
+- **Pre-installed Lua libraries** — a small set fetched during install and extracted to `~/.local/share/caspian/lua/`. Currently: `xml2lua` and `lua-cbor`. Loaded lazily by `require`.
 - **XDG directories** — created empty at install time under `~/.cache/caspian/`, `~/.config/caspian/`, `~/.local/share/caspian/`.
 
 For the component-by-component breakdown (sizes, locations, purposes), see [core](../core/).
