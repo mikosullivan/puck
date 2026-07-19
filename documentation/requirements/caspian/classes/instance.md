@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_classes_instance",
-	"role": "spec for the `instance` keyword — a Caspian construct that builds a single object directly using the same body shape as a class definition. Two forms: `instance ... end` constructs with no args; `instance(args...) ... end` passes the args through to the new object's `&init`. Sugar for `$cls = class ... end; $foo = $cls.new(args...)`. Includes the design-pattern framing (ad-hoc instances), guidance on when to use it, worked examples, and the `auto_run` directive that runs a method on the constructed object and returns its value instead of the object itself (instance-only; is really a boolean property on the method object; three equivalent ways to set it — `auto_run :name` symbol directive, inline `auto_run method name(...) ... end` form, or direct `$m.auto_run = true` assignment on a captured method value; multiple `auto_run` directives raise at compile time).",
+	"role": "spec for the `instance` keyword — a Caspian construct that builds a single object directly using the same body shape as a class definition. Two forms: `instance ... end` constructs with no args; `instance(args...) ... end` passes the args through to the new object's `&init`. Sugar for `$cls = class ... end; $foo = $cls.new(args...)`. Includes the design-pattern framing (ad-hoc instances), guidance on when to use it, worked examples, and the `auto_run` DSL bare-word command that runs a method on the constructed object and returns its value instead of the object itself (instance-only extension of the class-body DSL; is really a boolean property on the method object; three equivalent ways to set it — `auto_run method name(...) ... end` bare-word command form which chains with other transformer commands like `private`, `auto_run :name` symbol directive, or direct `$m.auto_run = true` assignment on a captured method value; multiple `auto_run` directives raise at compile time).",
 	"status": "active spec",
 	"audience": "Caspian programmers; engine implementers"
 }}
@@ -135,15 +135,11 @@ end
 
 ### Setting `auto_run`
 
-Three equivalent forms — all three set the same underlying `.auto_run` property on the method object. Use whichever reads best.
+`auto_run` is a **DSL bare-word command** available inside `instance ... end` bodies. It takes the method object produced by a following `method ... end` declaration, sets `.auto_run = true` on it, and returns it — the same shape as the class-body [`private` command](../definition#private-methods).
 
-**Symbol.** The body-level `auto_run :name` directive resolves the named method and sets its `.auto_run` to `true`. The named method must be declared in the body (or inherited); a missing name raises at `instance` evaluation time.
+Three equivalent forms — all set the same `.auto_run` property. Use whichever reads best:
 
-~~~caspian
-auto_run :dsn
-~~~
-
-**Inline method value.** Because `method name(...) ... end` is a declaration that also evaluates to the method object, prefixing it with `auto_run` sets `.auto_run = true` on the resulting value in the same expression:
+**Bare-word command.** Prefix a `method` declaration with `auto_run`:
 
 ~~~caspian
 $result = instance()
@@ -153,9 +149,37 @@ $result = instance()
 end
 ~~~
 
-The method is declared on the body as `foo` (same as if it appeared standalone) and its `.auto_run` is set to `true` in one step.
+The method is declared on the body as `foo` (same as if it appeared standalone) and its `.auto_run` is set to `true` in one step. The expression `auto_run method foo() ... end` evaluates to the method object — `auto_run` returns what it received — so the value can be captured:
 
-**Direct property assignment.** Because `method name(...) ... end` returns the method value, you can capture it and set the property yourself:
+~~~caspian
+instance()
+	$m = auto_run method foo()
+		return 'result'
+	end
+
+	# $m is the method object; $m.auto_run is already true.
+end
+~~~
+
+**Chained with other DSL commands.** Because each transformer command returns the method object, they compose. `auto_run private method foo() ... end` sets both properties on the same method object in one declaration:
+
+~~~caspian
+$result = instance()
+	auto_run private method foo()
+		return 'result'
+	end
+end
+~~~
+
+Reads right-to-left: `method foo() ... end` produces a method object; `private` receives it and sets `.private = true`; `auto_run` receives that and sets `.auto_run = true`. Modifiers are independent, so order doesn't matter (`private auto_run method foo() ... end` is equivalent).
+
+**Symbol directive.** The body-level `auto_run :name` command resolves the named method and sets its `.auto_run` to `true`. The named method must be declared in the body (or inherited); a missing name raises at `instance` evaluation time:
+
+~~~caspian
+auto_run :dsn
+~~~
+
+**Direct property assignment.** Capture the method object and set the property yourself:
 
 ~~~caspian
 $dsn = instance('localhost', 8080)
@@ -514,6 +538,8 @@ Other languages support related patterns but with friction. Java requires every 
 - **`auto_run` return value replaces the object** — the value of the `instance ... end` expression is the method's return, not the object.
 - **`auto_run :missing` raises** — naming a non-existent method in `auto_run :name` errors at evaluation time.
 - **Inline `auto_run method foo() ... end` sets the property** — the declared method is auto-run; `instance` produces its return.
+- **`auto_run method foo() ... end` evaluates to the method object** — `$m = auto_run method foo() ... end` captures the method object; `$m.auto_run` is `true`.
+- **Chained transformer commands compose** — `auto_run private method foo() ... end` produces a method with both `.auto_run = true` and `.private = true`. Order is irrelevant: `private auto_run method foo() ... end` produces the same result.
 - **Direct property assignment `$m.auto_run = true`** — captured method value's `.auto_run = true` produces the same effect as the symbol directive.
 - **Two `auto_run :name` directives raise at parse time** — `auto_run :a; auto_run :b` in the same body errors.
 - **Two `auto_run method ...` inline forms raise at parse time** — same static conflict.

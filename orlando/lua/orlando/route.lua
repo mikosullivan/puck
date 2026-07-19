@@ -12,6 +12,7 @@
     "dir_index":     "if documentation/<path>/index.md exists, /documentation/<path>/ serves that file as the dir index",
     "dir_listing":   "if /documentation/<path>/ has no index.md, returns kind='dir_listing' with the FS path so the page module can render a listing",
     "redirect_dir":  "/documentation/foo (no slash, when foo is a directory) 301s to /documentation/foo/ — directories are always served with a trailing slash",
+    "tag_redirect":  "/tag/<name> looks up <name> in documentation/tags.md and 302 redirects to the target URL; unknown tag returns not_found",
     "static_mounts": "/static/, /client-assets/, and /documentation/ are mount roots; first match wins",
     "safety":        "any path containing '..' or backslashes is rejected as not_found"
   }
@@ -101,6 +102,17 @@ function M.resolve(url_path)
     -- Serve it from orlando/static/ without the /static/ prefix.
     if rel == "favicon.ico" then
         return { kind = "static", path = "orlando/static/favicon.ico" }
+    end
+
+    -- /tag/<name> → look up in the tag index and 302 to the target URL.
+    -- Missing tag returns not_found (clear 404 for unresolvable tags).
+    local tag_name = rel:match("^tag/(.+)$")
+    if tag_name then
+        local target = require("orlando.tags").lookup(tag_name)
+        if target then
+            return { kind = "redirect", location = target }
+        end
+        return { kind = "not_found" }
     end
 
     -- /documentation (bare, no slash) → canonical is with slash.

@@ -243,10 +243,24 @@ end
 --   "orlando/static/logo.svg"         -> "/static/logo.svg"
 --   "orlando/client-assets/style.css" -> "/client-assets/style.css"
 --   "../baz.md#frag"                  -> "../baz#frag"   (relative; browser resolves)
--- External http(s), # anchors, and mailto: are left alone.
+--   "tag:name#frag"                   -> "/documentation/..." + "#frag" via tag lookup
+-- External http(s), # anchors, and mailto: are left alone. A missing tag
+-- rewrites to "/tag/name" so the click yields a clear 404 from Orlando's
+-- route module — dead references stay visible during audit.
 local function rewrite_one_url(url)
     if url:match("^https?://") or url:sub(1,1) == "#" or url:sub(1,7) == "mailto:" then
         return url
+    end
+    -- tag:name or tag:name#frag → resolved URL at render time
+    if url:sub(1, 4) == "tag:" then
+        local raw = url:sub(5)
+        local tag_name, anchor = raw:match("^([^#]+)(#.*)$")
+        if not tag_name then tag_name, anchor = raw, "" end
+        local target = require("orlando.tags").lookup(tag_name)
+        if target then
+            return target .. anchor
+        end
+        return "/tag/" .. raw
     end
     local path, frag = url:match("^([^#]+)(#.*)$")
     if not path then path, frag = url, "" end

@@ -40,6 +40,20 @@ The reason for the rebuild only sticks if the discipline holds:
 - **Vibecode `role` fields name what each doc owns.** Reading the `role` line should answer "is this the canonical doc for X, or is it referencing X?"
 - **Multiple authoritative claims for the same concept are a bug.** When found, surface and fix.
 
+## Written for an AI implementer
+
+The reader — and implementer — of these requirements is an AI (currently Claude Code). This is a load-bearing fact about how the docs should be written: **information should be stored in whatever manner is clearest to an AI**, not in the form that feels natural for a human reader out of habit.
+
+Practical implications:
+
+- **Prose vs. structure is a judgment, not a default.** Use prose when nuance and rationale carry the meaning; use structured JSON (in vibecode or elsewhere) when categorical values, enumerable atoms, or cross-doc query facts carry the meaning. Neither is inherently more "AI-friendly."
+- **The AI reads the whole doc.** Don't optimize for skimming by summarizing at the top and repeating below; the AI reads every line. Redundancy costs and doesn't help.
+- **Consistency matters more than variety.** An AI is better at recognizing patterns across docs when they use consistent vocabulary. If a concept has a canonical term, use it every time; don't reach for a synonym for stylistic freshness.
+- **State the reasoning, not just the rule.** An AI implementing the spec needs to know *why* a rule exists to make good decisions in edge cases the spec doesn't foresee. "X because Y" is more useful than just "X."
+- **Cross-doc links are edges the AI can walk.** Use them liberally where a concept lives elsewhere; don't restate.
+
+Structural conventions for vibecode blocks (adding tagged metadata fields, structured `related` arrays, per-doc `tags`, etc.) are still being explored — don't add new structured conventions to vibecode without discussing them first.
+
 ## Implementation notes
 
 Generally, requirements docs say **what** the system does, not **how** to build it. Implementation belongs in the slice-by-slice development plans, not here.

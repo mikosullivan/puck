@@ -45,10 +45,22 @@ Method objects add the following methods on top of the [shared function surface]
 
 | Method | Purpose |
 |---|---|
-| `.private` | Read the `private` boolean. When `true`, calls from outside the receiver's own class body raise — the method is only reachable from within its own class. Full semantics are spec'd in the classes section. |
+| `.private` | Read the `private` boolean. When `true`, calls from outside the receiver's own class body raise — the method is only reachable from within its own class. |
 | `.private=` | Set the `private` boolean. `$m.private = true` marks the method as private; assigning `false` makes it callable from anywhere again. |
 
 Methods declared inside an `instance` body additionally carry an `auto_run` getter/setter pair — see [instance § auto_run](https://puck.uno/documentation/requirements/caspian/classes/instance#auto-run) for the property, its semantics, and the one-per-body rule.
+
+**Setting `.private` at declaration time.** Inside a class body, the `private` DSL bare-word command is the idiomatic form:
+
+~~~caspian
+class # widget
+	private method helper()
+		return @count * 2
+	end
+end
+~~~
+
+`method helper() ... end` produces the method object; `private` receives it, sets `.private = true`, and returns it. The class-body DSL spec is on [classes/definition § Private methods](https://puck.uno/documentation/requirements/caspian/classes/definition#private-methods). The `.private = true` assignment form remains available for cases where the property should be set on a captured value after the fact.
 
 ## return
 

@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_classes_definition",
-	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, field declarations with their constraints, method definitions, inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `getter :name, value` shorthand for preset-plus-getter fields, how a class body becomes the class object that appears in an instance's stack, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
+	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, getter, method, private, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `getter :name, value` shorthand for preset-plus-getter fields, how a class body becomes the class object that appears in an instance's stack, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
 	"status": "draft — DSL surface for the common constructs spec'd; a few areas noted as TBD (helper namespaces, hook-in-class declaration, `implements?` structural check)",
 	"audience": "developers writing Caspian classes; parser implementers; anyone reasoning about class construction"
 }}
@@ -89,6 +89,34 @@ end
 
 The class object doesn't carry a name at the language level — where it lives (the variable, the download URL, the record key) is where you find it. That principle applies uniformly: a class stored in `$widget` is at `$widget`; a class published for download at `https://puck.uno/color/` is at that URL; the same class stored somewhere else is at that somewhere-else. Publication addresses are storage locations, not intrinsic identity.
 
+## DSL bare-word commands
+
+Inside a class body, certain bare words are recognized as **DSL commands** — callables scoped to the body. Each command is spec'd in its own section below:
+
+| Command | Purpose |
+|---|---|
+| `field` | Declare a bucket entry with type and constraints. [Fields](#fields). |
+| `getter` | Preset-a-value plus expose a getter, in one line. [`getter` shorthand](#getter-shorthand). |
+| `method` | Declare a class method. [Methods](#methods). |
+| `private` | Mark a method as private. [Private methods](#private-methods). |
+| `inherits` | Declare a parent class. [Inheritance](#inheritance). |
+| `abstract` | Mark the class abstract. [Abstract classes](#abstract-classes). |
+
+**No confusion with variables.** Every Caspian variable begins with `$`; no DSL command does. `private` the command and a would-be `$private` variable never look the same at the parse level.
+
+**Chaining transformer commands.** Some commands take the value produced by the DSL expression that follows and return a mutated version. `method foo() ... end` evaluates to a method object; `private` accepts a method object, sets `.private = true`, and returns it. The two chain naturally:
+
+~~~caspian
+class # foo
+	private method bar()
+	end
+end
+~~~
+
+Reads as: `method bar() ... end` produces a method object; `private` receives that value, mutates it, returns it. Chains of any length compose the same way — see [instance § Setting auto_run](../instance#setting-auto-run) for `auto_run private method foo() ... end`. Commands with fixed-shape argument lists (`field @name, ...`, `inherits Person`, `abstract true`) don't participate in this chain — they take their own args, not a following DSL expression.
+
+**Scope.** The class-body DSL is active inside `class ... end` and inside `instance ... end` (which inherits the class DSL and adds `auto_run`). Outside those bodies, these words are not automatically callable.
+
 ## Fields
 
 `field` declares a bucket entry the class expects instances to carry, along with its constraints. The field name is written with the `@` sigil (matching how the field is accessed inside methods):
@@ -106,9 +134,11 @@ end
 | Setting | Description |
 |---|---|
 | `class:` | The field's type. Symbols for built-ins (`:string`, `:number`, `:boolean`, `:hash`, `:array`, `:timestamp`, etc.), class objects for user classes. |
-| `default:` | Value used when the caller doesn't supply one. |
+| `default:` | Value used when the caller doesn't supply one. Stored as an expression and re-evaluated on every construction — see below. |
 | `get:` / `set:` | Booleans. Auto-generate a reader / writer method for the field. |
 | `collapse:` | Boolean. Compact-serialization hint for storage/transport. |
+
+**Field defaults are fresh on every construction.** Same rule as [parameter defaults](tag:parameter-defaults): a `default:` value is stored as an unevaluated expression and re-runs when a new instance is constructed without providing that field. Mutable defaults (`[]`, `{}`, strings, class instances) produce a fresh object per instance — never a shared mutable object across instances. Two widgets each declared with `field @items, default: []` get two separate arrays; mutating one instance's `@items` does not affect any other instance's.
 
 **Mikobase-only settings.** The Caspian class DSL recognizes these keys for cross-surface compatibility, but they don't affect the class at the language level — they're honored only when a class is used as a Mikobase record shape:
 
@@ -154,7 +184,7 @@ end
 
 **Both arguments required.** The first argument is a symbol naming the bucket entry and the getter method; the second is any expression producing the value to store.
 
-**Value is a fresh expression on each construction.** Same evaluation rule as `default:` on parameters — the expression re-runs for every instance, so `getter :opts, {}` gives each instance its own hash rather than a shared one.
+**Value is a fresh expression on each construction.** Same evaluation rule as [parameter defaults](tag:parameter-defaults) — the expression re-runs for every instance, so `getter :opts, {}` gives each instance its own hash rather than a shared one.
 
 **Internal writes still work.** `@foo = 'other'` from inside a method mutates the bucket entry the same as any other bucket field. `getter` controls the external surface (what callers see on the outside of the object), not internal access from sibling methods.
 
@@ -217,6 +247,32 @@ Engine-invoked methods aren't called from user code directly; they fire on their
 
 `to_string` may migrate to a nested-method form (`to.string`) in a future revision, alongside a broader `to.*` conversion surface (`to.json`, `to.hash`, etc.). Current spec uses the flat name.
 
+### Private methods
+
+`private` is a class-body DSL command that marks a method as private — callable from inside the class's own methods, not from outside. It takes the method object produced by a following `method ... end` declaration, sets `.private = true` on it, and returns it:
+
+~~~caspian
+class # widget
+	method public_op()
+		return %self.helper()
+	end
+
+	private method helper()
+		return @count * 2
+	end
+end
+~~~
+
+`.helper` is reachable from `.public_op` (same class), unreachable from outside the class.
+
+Three equivalent forms — all set the same `.private` property. Use whichever reads best:
+
+- **Bare-word command.** `private method foo() ... end` — the form shown above. Setting the property at the declaration site.
+- **Property assignment on a captured method value.** `$m = method foo() ... end; $m.private = true` — useful when the setting is conditional.
+- **Getter/setter surface on the method object.** `$m.private` reads the flag; `$m.private = true` writes it. Same as the assignment form above, called out because it's part of the general [method surface](https://puck.uno/documentation/requirements/caspian/functions/method#method-surface).
+
+Full runtime semantics (dispatch rule, error on external call) are spec'd on [functions/method § Method surface](https://puck.uno/documentation/requirements/caspian/functions/method#method-surface).
+
 ## Inheritance
 
 `inherits` declares the class's parents. Caspian supports **multiple inheritance** — a class can inherit any number of others:
@@ -239,7 +295,7 @@ end
 
 Inheritance is always **explicit**. There's no path-based, URL-based, or naming-convention-based inheritance — parent-class relationships come from the `inherits` clause and only from there.
 
-The inherited classes contribute methods, fields, and other class-level structure to the child class. Method resolution walks the class's stack in order — see [object structure § Stack](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/structure/#stack) for the mechanics.
+The inherited classes contribute methods, fields, and other class-level structure to the child class. Instance dispatch and `super()` — including multiple-inheritance walk order, diamond handling, and the no-cache guarantee — are spec'd on [method resolution](tag:method-resolution).
 
 ## Abstract classes
 
@@ -317,6 +373,8 @@ Areas the current spec does not settle:
 - **`.new()` builds an instance** — after `$c = class field @x, class: :number end`, `$c.new(x: 1)` returns an object with `@x == 1`.
 - **`field` declares bucket entry** — a class with `field @name, class: :string` builds instances where `@name` is bucket-backed.
 - **Field default applied on construction** — after `field @rank, default: 'ensign'`, an instance built without a `rank:` arg has `@rank == 'ensign'`.
+- **Field default is fresh per instance** — for `field @items, default: []`, two instances built without an `items:` arg have separate arrays; mutating one instance's `@items` doesn't affect the other.
+- **Field default expression re-runs per construction** — for `field @id, default: &generate_id()`, two instances have different `@id` values (assuming `&generate_id` produces distinct values).
 - **Field type constraint at construction** — a Caspian class never rejects; passing `rank: 5` where `class: :string` is set still binds (validation is Mikobase-side).
 - **`get: true` auto-generates getter** — `$obj.name` returns the field value.
 - **`set: true` auto-generates setter** — `$obj.name = 'x'` mutates the bucket entry.

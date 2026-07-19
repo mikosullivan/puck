@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_call_dsl",
-	"role": "plan for how Caspian supports DSLs (domain-specific languages) — the dispatcher mechanism on %call, the four-tier model of where bare-word commands come from, how Caspian's own constructs (class, instance, loops) are built as DSLs, and the open questions that need answers before this lands.",
+	"role": "plan for how Caspian supports DSLs (domain-specific languages) — the dispatcher mechanism on %call, the two forms of .dsl wiring (method form `$d.dsl $recv, 'a', 'b', 'c'` as the emphasized sugar and subscript form `$d.dsl['a'] = $recv` as the underlying primitive kept for introspection, per-name control, removal, and getter/setter split), the four-tier model of where bare-word commands come from, how Caspian's own constructs (class, instance, loops) are built as DSLs, and the open questions that need answers before this lands.",
 	"audience": "engine implementers building the dispatcher, language designers reading Caspian's own use of DSLs, programmers writing custom DSLs in their own code",
 	"status": "plan — the core mechanism (`%call.dispatcher.new`, dsl hash, yield) is settled; tier model is settled; specific unusual-situation rules and sugar forms are open"
 }}
@@ -24,7 +24,7 @@ This page describes how DSLs work, the patterns library authors use, how Caspian
 
 ## The mechanism
 
-A function that wants to expose a DSL constructs a dispatcher explicitly with [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-dispatcher-new), configures its `dsl` hash with bare-word-name to receiver mappings, then yields. When the block uses a bare word, the engine looks it up in the dispatcher's DSL hash; if found, the call dispatches to that receiver.
+A function that wants to expose a DSL constructs a dispatcher explicitly with [`%call.dispatcher.new`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-dispatcher-new), wires a receiver up to handle one or more bwcs, then yields. When the block uses a bwc, the engine looks it up in the dispatcher's DSL; if found, the call dispatches to that receiver.
 
 Dispatchers are not implicit. A function that just calls bare `yield` (the tier-3 bwc for `%call.yield`) hands control to the passed block without involving any dispatcher object. The dispatcher exists only when DSL setup is needed.
 
@@ -32,10 +32,9 @@ The minimal end-to-end shape:
 
 ~~~caspian
 $logger = function()
+	$log_handler = %['foo.bar/logger.casp'].new()
 	$dispatcher = %call.dispatcher.new
-	$dispatcher.dsl['info']  = $log_handler   # bwc 'info'  → $log_handler.info(...)
-	$dispatcher.dsl['warn']  = $log_handler
-	$dispatcher.dsl['error'] = $log_handler
+	$dispatcher.dsl $log_handler, 'info', 'warn', 'error'
 	return $dispatcher.yield
 end
 
@@ -46,11 +45,47 @@ end
 end
 ~~~
 
+`$dispatcher.dsl $receiver, $name1, $name2, ...` wires the receiver as the routing target for each named bwc, in one call. Inside the yielded block, `info 'starting up'` dispatches to `$log_handler.info('starting up')`, `warn '...'` to `$log_handler.warn(...)`, and so on.
+
+`$log_handler` is constructed inside the function body — a fresh instance per call. The class itself lives at the URL; once the engine has fetched it, further calls reuse the resolved class object, so the network hit happens at most once per engine lifetime.
+
 Three rules govern dispatcher behavior:
 
 - The DSL exists for the lifetime of the yielded block. When the block returns, the dispatcher (and its DSL hash) goes away.
 - DSL entries take priority over scope variables. A DSL entry named `foo` shadows a scope variable also named `foo` for the block's duration.
 - DSL bindings do not propagate. A function called from inside the yielded block runs with its own (empty or differently-configured) dispatcher, or none at all. Nested DSL bodies stack rather than merge.
+
+### Two forms: method and subscript
+
+`.dsl` has two forms. Docs and examples emphasize the method form; the subscript form is the underlying primitive.
+
+**Method form** — bulk-wire a receiver to N bwc names in one call:
+
+~~~caspian
+$dispatcher.dsl $log_handler, 'info', 'warn', 'error'
+~~~
+
+Reads as "wire `$log_handler` to handle info, warn, error." Handles the common case (one receiver, several bwcs) cleanly. Multi-receiver DSLs use one call per receiver:
+
+~~~caspian
+$dispatcher.dsl $log_handler, 'info', 'warn', 'error'
+$dispatcher.dsl $timer, 'start', 'stop'
+~~~
+
+**Subscript form** — the underlying primitive. One bwc per assignment:
+
+~~~caspian
+$dispatcher.dsl['info']  = $log_handler
+$dispatcher.dsl['warn']  = $log_handler
+$dispatcher.dsl['error'] = $log_handler
+~~~
+
+The method form is sugar over the subscript form; both write to the same underlying storage. Reach for subscript when the method form doesn't fit:
+
+- **Introspection.** `$dispatcher.dsl['info']` reads the current receiver wired for `info`.
+- **Programmatic wiring.** Loop over a hash and assign each entry, or wire conditionally.
+- **Removal.** Assign `null` to un-wire a name.
+- **Fine-grained getter/setter control.** See [§ Virtual getters and setters](#virtual-getters-and-setters).
 
 ## The four-tier token model
 
@@ -158,16 +193,13 @@ Custom loops add their own bwcs. A test runner registers `pass` / `fail` / `skip
 
 ### Virtual getters and setters
 
-The dispatcher treats read and write dispatch as separate keys: `name` is one entry, `name=` is another. Wire both to the same receiver and the block reads and writes a value as if it were a local variable, with method calls happening underneath:
+The dispatcher treats read and write dispatch as separate bwcs: `name` is one entry, `name=` is another. Wire both to the same receiver and the block reads and writes a value as if it were a local variable, with method calls happening underneath:
 
 ~~~caspian
 $foo = function()
-	$dispatcher = %call.dispatcher.new
-
 	$bear = some_object
-	$dispatcher.dsl['height']  = $bear   # virtual getter
-	$dispatcher.dsl['height='] = $bear   # virtual setter
-
+	$dispatcher = %call.dispatcher.new
+	$dispatcher.dsl $bear, 'height', 'height='
 	return $dispatcher.yield
 end
 
@@ -175,6 +207,12 @@ end
 	puts height       # calls $bear.height
 	height = 400      # calls $bear.height=
 end
+~~~
+
+Both names in one method call. The subscript form works too and lets a caller wire the getter and setter separately when only one direction is wanted:
+
+~~~caspian
+$dispatcher.dsl['height'] = $bear     # getter only — block can read, not write
 ~~~
 
 This unlocks configuration-style blocks, builder blocks, and any "the block's apparent locals are really methods on a backing object" pattern. The `name=` convention reuses the assignment-dispatch shape that property setters already use on regular objects.
@@ -185,7 +223,13 @@ This unlocks configuration-style blocks, builder blocks, and any "the block's ap
 
 ### Receiving fall-through
 
-A receiver wired into the DSL hash exposes its full method surface. When the block writes `foo`, the dispatcher calls `receiver.foo`; when it writes `bar`, the dispatcher calls `receiver.bar`. Both route to the same object. Configuring one DSL entry effectively makes every method on that object reachable as a bwc — useful for "the block is configuring this object" patterns where the configurer object has a small surface and every method is fair game.
+A receiver wired into the DSL exposes each wired name as a route to the matching method. When the block writes `foo`, the dispatcher calls `receiver.foo`; when it writes `bar`, the dispatcher calls `receiver.bar`. The method form makes this shape compact:
+
+~~~caspian
+$dispatcher.dsl $configurer, 'host', 'port', 'timeout', 'retries'
+~~~
+
+One line covers a small configuration surface. Useful for "the block is configuring this object" patterns where the configurer object has a small surface and every method is fair game.
 
 ## DSLs should be documented
 
@@ -241,8 +285,12 @@ Roughly the order this lands in the engine:
 
 ## Testing
 
-- **`%call.dispatcher.new` returns a dispatcher** — the return value has a `dsl` hash and a `yield` method.
-- **DSL entry routes bare word to receiver** — `$d.dsl['info'] = $recv; $d.yield` with a block calling `info 'x'` dispatches to `$recv.info('x')`.
+- **`%call.dispatcher.new` returns a dispatcher** — the return value supports `.dsl`, subscript access on `.dsl`, and a `yield` method.
+- **Method form wires N bwcs to one receiver** — `$d.dsl $recv, 'info', 'warn', 'error'` makes each name route to `$recv`; a block calling `info 'x'` dispatches to `$recv.info('x')`.
+- **Subscript form wires one bwc** — `$d.dsl['info'] = $recv` routes `info` alone.
+- **Method form and subscript form share storage** — a name wired via method form is readable via `$d.dsl['name']`; a name wired via subscript is picked up by a subsequent method-form wiring on a different receiver only if the subscript wrote first, i.e., method form overwrites like subscript does.
+- **Subscript read returns the wired receiver** — `$d.dsl['info']` after a wire reads back the receiver.
+- **Assigning null via subscript un-wires** — `$d.dsl['info'] = null` removes the entry.
 - **DSL entry with args** — `info 'a', 'b'` inside the yielded block calls the receiver with both args.
 - **Undefined bare word falls through to scope variable** — a block naming `foo` with no DSL entry and a scope variable `$foo` reads `$foo`.
 - **Undefined bare word with no scope variable raises** — a block naming `foo` with no DSL entry and no `$foo` raises.
@@ -252,7 +300,7 @@ Roughly the order this lands in the engine:
 - **`%call.dispatcher.new(1)` targets the second passed block** — the second block is what `.yield` runs.
 - **`%call.dispatcher.new()` defaults to block 0** — targets the first passed block.
 - **Yielding a dispatcher targeting a nonexistent block raises** — `%call.dispatcher.new(5).yield` when only 2 blocks were passed raises.
-- **Virtual getter/setter split** — `dsl['name']` and `dsl['name=']` route independently; block writing `name = 5` calls the setter.
+- **Virtual getter/setter split** — `dsl['name']` and `dsl['name=']` route independently; block writing `name = 5` calls the setter. The method form covers both names in one call: `$d.dsl $recv, 'name', 'name='`.
 - **`return` bwc default binding** — a block using `return X` (with no override) invokes `%call.return X`.
 - **`yield` bwc default binding** — a block using `yield X` (with no override) invokes `%call.yield X`.
 - **`raise` bwc default binding** — a block using `raise X` triggers the raise primitive.
@@ -267,5 +315,5 @@ Roughly the order this lands in the engine:
 - **`inherits` inside class body dispatches through DSL** — `inherits Person` calls the class-builder's `inherits` method.
 - **`instance` body uses the same DSL as `class`** — the same bwcs (`field`, `method`, `inherits`) resolve identically inside an `instance ... end` block.
 - **Loop `before` / `after` / `between` are bwcs** — inside a loop block, these names dispatch through the loop's DSL.
-- **Full method surface exposed by receiver** — `dsl['x'] = $r` makes every method on `$r` reachable from the block as a bwc.
+- **Bulk wiring exposes each named method** — `$d.dsl $r, 'a', 'b', 'c'` routes each name to the corresponding method on `$r`.
 - **Multiple `.dispatcher.new` calls per function** — a function can construct one dispatcher per passed block and configure each independently.

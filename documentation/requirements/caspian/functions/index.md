@@ -21,3 +21,5 @@
 **The definition form is spec'd on the [bare function](bare) page.** That page carries the full syntax: parameter list, body, return, everything. The [closure](closure) and [method](method) pages then describe how each type differs from the bare form — the differences are minor, and both pages assume the bare-function page as the baseline.
 
 Call-site syntax (which is uniform across all three types) lives at [call](call).
+
+Parameter defaults — including the fresh-object-per-call semantics and the `function` vs. `closure` scope rules — are spec'd at [parameter-defaults](tag:parameter-defaults).

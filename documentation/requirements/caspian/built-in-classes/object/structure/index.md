@@ -25,7 +25,7 @@ The bucket and stack are visible at the Caspian level via the `object` namespace
 
 ## Serialized form
 
-**The structure shown throughout this doc is the serialized form** — what an object looks like as JSON, whether stored in a [worldlet](https://puck.uno/documentation/requirements/mikobase/worldlets), written to a Mikobase record, or carried in a Puck-protocol message. <!-- outbound-link-allowed --> Caspian's in-memory representation has some differences (engine-internal references, cached dispatch tables, per-object identity slots, the actual sodium_malloc / vault pointers backing protected values). Those differences don't change the contract: the object round-trips to this JSON shape on every serialization boundary, and a JSON value in this shape rehydrates to a full Caspian object on every deserialization.
+**The structure shown throughout this doc is the serialized form** — what an object looks like as JSON, whether stored in a [worldlet](https://puck.uno/documentation/requirements/mikobase/worldlets), written to a Mikobase record, or carried in a Puck-protocol message. <!-- outbound-link-allowed --> Caspian's in-memory representation has some differences (engine-internal references, per-object identity slots, the actual sodium_malloc / vault pointers backing protected values). Those differences don't change the contract: the object round-trips to this JSON shape on every serialization boundary, and a JSON value in this shape rehydrates to a full Caspian object on every deserialization.
 
 The minimum object — empty bucket, no platters:
 
