@@ -3,7 +3,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_functions_types_method",
+	"doc": "requirements_caspian_functions_method",
 	"role": "spec for the method type — a function bound to a receiver object. `%self` is the receiver; `%bucket` is the receiver's bucket; `%chain` is available same as in bare functions and closures. No captured outer scope. Like `function` and `closure`, `method name(...) ... end` is an expression that evaluates to the declared method object, so it can be captured and manipulated as a value. Method objects carry the shared function surface (`.call`, `.params`) plus a method-specific `.private` / `.private=` getter/setter pair; methods declared inside `instance` bodies additionally carry an `auto_run` getter/setter (spec'd on the instance page). Content TBD beyond the shape captured here.",
 	"status": "draft — receiver-bound surface described; deeper semantics of dispatch, ownership, and role interactions to be filled in",
 	"audience": "developers writing Caspian; parser implementers; class authors"
@@ -37,7 +37,11 @@ class # captain
 end
 ~~~
 
-`%self.some_method` (or `%self.some_method(args)`) dispatches through the receiver, so it picks up any method declared on the same class as well as anything inherited. The dispatch is the same one an outside caller uses via `$obj.some_method` — no special short form for in-body calls.
+`%self.some_method` (or `%self.some_method(args)`) dispatches through the receiver, so it picks up any method declared on the same class as well as anything inherited. It uses the same dispatch mechanism an outside caller uses via `$obj.some_method` — no special short form for in-body calls — with one meaningful difference: **the calling frame is inside the class body, so private methods are reachable.**
+
+The engine's private-method check consults [`%call.method_class`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-method-class) at dispatch time. When a sibling method calls `%self.private_helper()`, `%call.method_class` in that sibling's frame is the same class that carries `.private_helper`, so the call is allowed. When outside code calls `$foo.private_helper()`, `%call.method_class` in that frame is a different class (or `null`), and the dispatch raises. The rule is uniform: **access is checked at dispatch time against the current frame, not against the reference**. Capturing `%self` and returning it (`method &me() return %self end`) doesn't grant private access to whoever receives the reference — the calling frame's `%call.method_class` still governs.
+
+Full spec of the private-method mechanism: [classes/definition § Private methods](https://puck.uno/documentation/requirements/caspian/classes/definition/#private-methods).
 
 ## Method surface
 

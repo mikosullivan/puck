@@ -1,16 +1,21 @@
 # Truthy and falsy
+
+<span class="tag">truthiness</span>
+
 <!--index: 6-->
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax_truthy_and_falsy",
-	"role": "spec for Caspian's truthy/falsy rule — only `null` and `false` are falsy; everything else including 0, '', [], {} is truthy",
+	"role": "spec for Caspian's truthy/falsy rule — only `null` and `false` are falsy; everything else including 0, '', [], {} is truthy. Ruby model. The engine implements the rule by reading the object's primitive field (see object/structure § Truthiness): primitive false or null → falsy; anything else, or no primitive field → truthy. The rule is derived from class inheritance without a separate truthy-bit mechanism.",
 	"model": "ruby (only null and false are falsy)",
 	"audience": "developers writing Caspian conditionals; anyone porting logic from other languages"
 }}
 ~~~
 
 Two values are falsy: **`null`** and **`false`**. Everything else is truthy — including `0`, `''`, `[]`, and `{}`. This matches the Ruby model.
+
+Under the hood, the engine implements this rule by reading the object's [primitive field](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/structure/#primitive-field): if the field is `false` or `null`, the object is falsy; anything else (including a primitive value of `0`, `''`, `[]`, `{}`, or a user class with no primitive field at all) is truthy. Subclasses of `False` or `Null` inherit the constructor path that sets the primitive field, so they read as falsy without any extra rule.
 
 ~~~caspian
 if ''

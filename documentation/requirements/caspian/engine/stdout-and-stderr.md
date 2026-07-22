@@ -20,10 +20,30 @@ The program's diagnostic-output channel. Distinct from `%engine.stdout` in seman
 
 Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly. If the host wants non-user code to write diagnostics it grants the global `%stderr` to it — but the `%engine`-prefixed access stays user-only.
 
+## Bare-word sugar: `puts` and `print`
+
+Two bare-word forms are rewritten by the transpiler:
+
+- `puts X` → `%stdout.puts X`
+- `print X` → `%stdout.print X`
+
+Both take the same argument shape as the underlying method call (one or more expressions, comma-separated). The rewrite happens at parse/transpile time; the resulting CaspianJ tree is identical to the explicit form.
+
+Consequences of "sugar" being parse-level:
+
+- **Not rebindable.** `$puts = &something_else` does NOT affect subsequent `puts` calls — the parser has already rewritten them to `%stdout.puts`. To pass the writer around as a value, use `%stdout` or capture `$out = %stdout` and pass `$out`.
+- **Redirection lives at `%chain.stdout`.** The sanctioned way to redirect where `puts` output goes is to rebind `%chain.stdout` for a scope. `puts` rewrites to `%stdout.puts`, which resolves through the current chain slot at call time.
+- **Role gate applies identically.** `puts` and `%stdout.puts` face the same role check on `%stdout` — the rewrite is orthogonal to access control.
+
+No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are explicit: `%stderr.puts 'warning'`. The asymmetry is deliberate — diagnostics should read as diagnostics at the call site.
+
 ## Testing
 
 - **`%engine.stdout.puts('hello')` writes `'hello\n'` to the host's stdout stream** — CLI runner observes those bytes on stdout.
 - **`%engine.stdout.print('hello')` writes without a trailing newline** — no `\n` appended.
+- **Bare `puts 'hello'` rewrites to `%stdout.puts 'hello'`** — the transpiler produces the same CaspianJ tree either way.
+- **Bare `print 'hello'` rewrites to `%stdout.print 'hello'`** — same rewrite pattern.
+- **`$puts = &something_else` does NOT redirect subsequent `puts` calls** — the parser has already rewritten them; `puts` is not a variable lookup at runtime.
 - **`%engine.stderr.puts('warn')` writes to the host's stderr stream** — separate from stdout.
 - **`%engine.stdout` and `%engine.stderr` are independent streams** — bytes written to one don't appear on the other.
 - **A host piping stdout leaves stderr on the terminal** — routing is independent per host policy.

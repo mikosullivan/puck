@@ -17,7 +17,7 @@ Twelve global methods, in alphabetical order. Three categories:
 
 ## `%call`
 
-The current call object. Owned by the caller's role. Inside any function or closure body, `%call` exposes the caller's role (`%call.role`), early-exit (`%call.return`), block yielding (`%call.yield`), and the dispatcher for DSL-style block use. See [`call/`](https://puck.uno/documentation/requirements/caspian/global-methods/call/) for more details.
+The current call object. Owned by the caller's role. Inside any function or closure body, `%call` exposes the caller's role (`%call.role`), early-exit (`%call.return`), and the array of passed blocks as callable values (`%call.blocks`). Yielding is calling — `yield` is a bwc that desugars to `%call.blocks[0].call`. For configured calls (DSL wiring, reusable param setups), see [caller](tag:caller). See [`call/`](https://puck.uno/documentation/requirements/caspian/global-methods/call/) for the full surface.
 
 ## `%chain`
 
@@ -84,6 +84,10 @@ Canonical: [`chain/methods/random`](https://puck.uno/documentation/requirements/
 The current object instance inside a method body. Outside a method (free-standing function, closure, top-level code) `%self` is not available. The bare word `self` is shorthand for `%self`.
 
 `%self.object.role` returns the instance's owning role; `%self.object.broadcast` (and other `%self.object.*` accessors) reach the standard object surface. Methods use `%self` to call into their own object's surface.
+
+**`%self` is a reference, not an access token.** Calling a method through `%self` from inside the class body reaches every method the class carries, **including private methods** — see [functions/method § Calling sibling methods](https://puck.uno/documentation/requirements/caspian/functions/method#calling-sibling-methods). This works because the engine's private-method check consults [`%call.method_class`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-method-class) — the class the currently-executing method was defined on — not the reference itself. From inside a sibling method, `%call.method_class` is the same class that carries the private method, so access is allowed.
+
+Consequence: capturing `%self` inside a method and returning the reference does **not** grant private access to whoever holds the returned reference. Given `method &me() return %self end`, the caller of `.me` receives a reference to the same object; calling a private method through it raises because the caller's frame's `%call.method_class` is not that class. The reference is fine; the calling context isn't. Access is always checked at dispatch time against the current frame, never against the reference's provenance.
 
 ## `%stderr`
 

@@ -1,5 +1,7 @@
 # Pipes
 
+<span class="tag">pipes</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax_pipes",

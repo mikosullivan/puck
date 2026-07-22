@@ -39,3 +39,43 @@ The complete catalog of `%X`-prefixed globals — standalone system namespaces a
 ### chain/
 
 The `%chain` ambient call-frame chain. Every global capability method lives on `%chain`; grant/revoke are block-scoped methods on those capabilities; ambient hash values flow down the chain with role-boundary resets.
+
+### concepts.md
+
+Cross-cutting concepts that don't belong to any one subtree — no-nanny code, edge-case handling, long descriptive names, and other design principles the whole spec references.
+
+### syntax/
+
+Caspian's surface syntax — what a programmer actually types. Sub-pages for comments and whitespace, sigils, variables and assignment, operators, truthy and falsy, if / unless, loops, bare blocks, classes, system-method sigils, and pipes.
+
+### functions/
+
+Function-shaped callables — bare functions, closures, and methods. Also covers parameter defaults, the call surface, and the caller-object mechanism used by DSLs and configured calls.
+
+### classes/
+
+Class-level features beyond what fits on a single class page — definition-time DSL, inheritance, method resolution, and singleton / amend patterns.
+
+### built-in-classes/
+
+The classes Caspian ships out of the box — the JSON-primitive family (string, number, boolean, null, hash, array) and the meta / structure surface (object, class, method, function, closure, caller). Root of the primitive spec sub-tree.
+
+### plumbing/
+
+Faucets and sinks — Caspian's abstractions for values-coming-in and values-going-out that carry role identity across the boundary.
+
+### downloads/
+
+The catalog of first-party classes Caspian fetches on demand at V1 launch (CSV, YAML, TOML, INI, BSON, Markdown, zip, gzip).
+
+### installation/
+
+How the `caspian` binary and its supporting files land on a developer's machine — install script, prompts, XDG paths, self-test, OS checks.
+
+### core/
+
+What Caspian ships — the binary itself, pre-installed Lua libraries, and the floppy-budget accounting for both.
+
+### secure-memory/, exceptions/, filesystem/, puck-discovery/, linux-support/, bryton/, lua/, test-cases/
+
+Deeper areas — the vault and Password class, the exception hierarchy, dirs / grants / dirjails, `%puck` object-download resolution, Linux-specific shellout wrappers (openssl, tar), the Bryton test runner, the Lua-binding surface, and the test-case fixtures.

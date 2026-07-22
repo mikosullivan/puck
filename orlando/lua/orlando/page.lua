@@ -199,6 +199,65 @@ local function process_github_issues_directives(md, can_edit)
 end
 
 ------------------------------------------------------------
+-- Tag list directive: `<!-- tag-list -->` expands into a
+-- table of every tag defined across documentation/, with a
+-- link to the tag's canonical target and the source path(s)
+-- of the marker(s). Multiple sources for one tag means the
+-- tag is duplicated — flagged as an audit error inline.
+------------------------------------------------------------
+
+local function expand_tag_list()
+    local tags = require("orlando.tags").list_all()
+    if #tags == 0 then
+        return "*No tags defined. Add `<span class=\"tag\">NAME</span>` to a doc's heading to register one.*"
+    end
+    local lines = {}
+    lines[#lines + 1] = "| Tag | Target | Source |"
+    lines[#lines + 1] = "|---|---|---|"
+    local duplicates = 0
+    for _, entry in ipairs(tags) do
+        local sources = {}
+        for _, path in ipairs(entry.sources) do
+            sources[#sources + 1] = "`" .. path .. "`"
+        end
+        local source_cell = table.concat(sources, "<br/>")
+        local dup_marker = ""
+        if #entry.sources > 1 then
+            duplicates = duplicates + 1
+            dup_marker = " <span class=\"tag tag-duplicate\">duplicate</span>"
+        end
+        lines[#lines + 1] = string.format(
+            "| [%s](%s) | [%s](%s)%s | %s |",
+            entry.name, "/tag/" .. entry.name,
+            entry.url, entry.url, dup_marker,
+            source_cell
+        )
+    end
+    if duplicates > 0 then
+        local noun = (duplicates == 1) and "duplicate" or "duplicates"
+        table.insert(lines, 1, string.format(
+            "**%d %s detected.** A tag defined in more than one doc is an audit error — the resolver returns only the first source's URL.\n",
+            duplicates, noun
+        ))
+        table.insert(lines, 1, "")
+    end
+    return table.concat(lines, "\n")
+end
+
+local function process_tag_list_directive(md)
+    local TAG_LIST_LINE = "^%s*<!%-%- tag%-list %-%->%s*$"
+    local out = {}
+    for line in (md .. "\n"):gmatch("([^\n]*)\n") do
+        if line:match(TAG_LIST_LINE) then
+            out[#out + 1] = expand_tag_list()
+        else
+            out[#out + 1] = line
+        end
+    end
+    return table.concat(out, "\n")
+end
+
+------------------------------------------------------------
 -- Step 1: markdown -> HTML body
 ------------------------------------------------------------
 
@@ -1016,6 +1075,11 @@ local function add_head(html_tag, title)
             s:attr("defer", "")
             s:text("")
         end)
+        h:tag("script", function(s)
+            s:attr("src",   "/client-assets/ghi.js")
+            s:attr("defer", "")
+            s:text("")
+        end)
     end)
 end
 
@@ -1356,6 +1420,14 @@ local function add_issues_link(nav_tag)
     end)
 end
 
+local function add_tags_link(nav_tag)
+    nav_tag:tag("a", function(a)
+        a:attr("class", "sidebar-tags")
+        a:attr("href",  "/documentation/tags")
+        a:text("Tags")
+    end)
+end
+
 local function add_sidebar(nav_tag, current_md_path, search_query, current_tree, tree_active)
     -- Derive tree from the current source path when the caller didn't
     -- pass one (typical for doc-page render; search results pass the
@@ -1381,6 +1453,7 @@ local function add_sidebar(nav_tag, current_md_path, search_query, current_tree,
     add_search_form(nav_tag, search_query, current_tree, tree_active)
     add_random_link(nav_tag)
     add_issues_link(nav_tag)
+    add_tags_link(nav_tag)
     nav_tag:raw(nav.build(current_md_path))
 end
 
@@ -1413,6 +1486,7 @@ function M.render_request(ctx)
     md = process_file_includes(md, ctx.md_path)
     local request_can_edit = ctx.client_ip ~= nil and config.ip_can_edit(ctx.client_ip)
     md = process_github_issues_directives(md, request_can_edit)
+    md = process_tag_list_directive(md)
 
     local body = M.render(md)
     -- (inject_hero_logo / link_existing_hero_logo were dropped — the

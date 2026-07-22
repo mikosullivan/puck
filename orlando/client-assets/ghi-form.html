@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>File issue</title>
+<link rel="stylesheet" href="/client-assets/ghi-popup.css">
+<script src="/client-assets/issue-copy.js" defer></script>
+<script src="/client-assets/ghi-popup.js" defer></script>
+</head>
+<body>
+<h1 id="ghi-heading">File issue</h1>
+<form id="ghi-form" action="/api/quick-add-issue" method="POST">
+	<label for="ghi-title">Title</label>
+	<input id="ghi-title" type="text" name="title" required>
+
+	<label for="ghi-body">Body</label>
+	<textarea id="ghi-body" name="body"></textarea>
+
+	<div class="ghi-actions">
+		<button type="submit">File issue</button>
+	</div>
+</form>
+
+<div id="ghi-status" class="ghi-status" hidden></div>
+</body>
+</html>

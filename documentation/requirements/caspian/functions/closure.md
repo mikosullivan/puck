@@ -3,7 +3,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_functions_types_closure",
+	"doc": "requirements_caspian_functions_closure",
 	"role": "spec for the closure type — a function that captures its outer lexical scope at the point of definition. Introduces no `%self` of its own, but sees the enclosing scope's `%self` (and `%bucket`) through the same capture mechanism as any other binding — so a closure defined inside a method's body has access to the method's receiver, while a closure defined outside any method does not. `%chain` is available same as in bare functions and methods. Used for callbacks, deferred work, and any pattern where a chunk of code needs to remember the environment it was born in. Content TBD beyond the shape captured here.",
 	"status": "draft — surface described; deeper semantics of scope capture, mutation, and lifetime to be filled in",
 	"audience": "developers writing Caspian; parser implementers"

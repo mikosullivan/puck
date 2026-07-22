@@ -127,7 +127,7 @@ $i.negate      # 0 (not -0) — negation is arithmetic
 
 Note: Caspian has no `-$i` unary-minus operator. To flip a number's sign, either call [`.negate`](#math) on it or multiply by `-1` (`$i *= -1`, or `$j = $i * -1`).
 
-The one place `-0` differs from `0` is **[array indexing](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#zero-based-indexing-from-both-ends)**: `$arr[-0]` is the last element, while `$arr[0]` is the first. Every other consumer of the value — equality, hash keys, JSON serialization, comparison, `.to_string`, `.to_hex`, `.to_bin` — treats `-0` as `0`.
+The one place `-0` differs from `0` is **[array indexing](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/array/#zero-based-indexing-from-both-ends)**: `$arr[-0]` is the last element, while `$arr[0]` is the first. Every other consumer of the value — equality, hash keys, JSON serialization, comparison, `.to_string`, `.to_hex`, `.to_bin` — treats `-0` as `0`.
 
 The internal representation carries a "sign-of-zero" slot on the number object that only matters for the array-indexing lookup. Every other read of the value ignores it. Cost is negligible; benefit is symmetric array indexing.
 

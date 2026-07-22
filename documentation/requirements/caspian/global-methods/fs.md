@@ -1,5 +1,7 @@
 # `%fs`
 
+<span class="tag">fs</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_global_fs",

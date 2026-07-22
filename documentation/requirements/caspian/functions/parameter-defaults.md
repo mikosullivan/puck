@@ -1,5 +1,7 @@
 # Parameter defaults
 
+<span class="tag">parameter-defaults</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_functions_parameter_defaults",

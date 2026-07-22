@@ -4,7 +4,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "under_the_hood_engine_creation",
+	"doc": "requirements_caspian_bootstrap_engine_creation",
 	"role": "canonical spec for what the Caspian 'engine' actually IS at the Lua level — how it comes into existence, how a host loads it, and how the host installs properties on it. Owns the Lua-mechanical view of engine creation and configuration; delegates the conceptual host-engine model to initialization.md, per-property semantics to the engine-slots doc, and worked per-host scenarios to startup-scenarios.md.",
 	"status": "active spec — first authored fresh in the new requirements/ tree",
 	"audience": "anyone writing a host that loads Caspian (Lua scripts, CLI runners, Ruby/Python embeddings); AI tooling reasoning about engine startup at the Lua layer"

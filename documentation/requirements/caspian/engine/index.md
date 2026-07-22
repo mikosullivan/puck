@@ -32,7 +32,7 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | `%engine.forks` (TBD) | Process forking. | [`%chain.forks`](../chain/methods/forks) |
 | [`%engine.http`](http) | HTTP client. | via [`%chain.net.http`](../chain/methods/net) |
 | `%engine.lua` ([doc](lua)) | Information about the Lua host running the reference engine. | — |
-| `%engine.manifest` ([doc](manifest)) | Hash describing the current process. | — |
+| `%engine.manifest` ([doc](manifest/)) | Hash describing the current process. | — |
 | `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%chain.net`](../chain/methods/net) |
 | `%engine.now` (TBD) | Engine-controlled clock. | [`%chain.now`](../chain/methods/now) |
 | [`%engine.platform`](platform) | Host platform information — OS, architecture, engine implementation. | — |
@@ -44,6 +44,7 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | [`%engine.stdin`](stdin) | Input channel. | [`%chain.stdin`](../chain/methods/stdin) |
 | [`%engine.stdout`](stdout-and-stderr) | Primary output channel. | [`%chain.stdout`](../chain/methods/stdout-and-stderr) |
 | `%engine.tmp` (TBD) | Temp-dir capability. | [`%chain.tmp`](../chain/methods/tmp) |
+| [`%engine.util_paths`](util-paths) | Curated hash of absolute paths for non-POSIX system utilities (backs [`%fs.util`](../global-methods/fs-additions#util)). User-mutable. | — |
 
 Entries marked **TBD** have no canonical doc yet — currently described from the chain side. Sweep tracked at [#881](https://github.com/mikosullivan/puck/issues/881).
 

@@ -37,6 +37,29 @@ Two important properties:
 
 This is the ["no nanny code"](https://puck.uno/documentation/requirements/caspian/concepts#no-nanny-code) principle applied to objects: the runtime trusts the developer's handoff decision; it doesn't add a second layer of filtering.
 
+### Jail wrapper specification
+
+`.object.jail(*methods)` returns a new object that exposes exactly the named methods. Every other method call on the jail raises.
+
+~~~caspian
+$jail = $obj.object.jail(:method1, :method2)
+
+$jail.method1(...)      # forwards to $obj.method1
+$jail.method2(...)      # forwards to $obj.method2
+$jail.method3(...)      # raises — not in the jail's allowlist
+~~~
+
+**Narrowing.** A jail can be re-jailed to expose a subset:
+
+~~~caspian
+$narrower = $jail.object.jail(:method1)
+# $narrower exposes :method1 and nothing else.
+~~~
+
+**Widening is impossible.** A jail can never expose more than the object it wraps. If you re-jail a jail with a method name that wasn't in the wrapped jail's allowlist, the new jail's own allowlist declares the method — but calling it still raises, because the wrapped jail refuses to forward it. Net effect: you cannot use re-jailing to widen access.
+
+**Introspection is not a back door.** Code holding a jail cannot reach the internals of the underlying object. `.object.methods` on the jail lists only the allowed methods. There is no `.object.wrapped_by` or equivalent — the jail is opaque. That's why it's a jail.
+
 ## Self-gating from inside the method
 
 The owner-side narrowing (jails) is one side of the picture. The other side is **the method body itself** deciding whether to proceed based on who's calling.

@@ -12,7 +12,7 @@
 
 `%puck` is the gateway between Caspian code and the Puck object system. An object is identified by a URL; `%puck` downloads the object and returns it. Each call returns a **fresh object** — two `%puck['url']` calls return two independent objects, even when the URL is the same.
 
-Caspian doesn't have a "library" concept as a technical primitive — `%puck` downloads objects (classes, instances, dispatchers, etc.). See [concepts § Objects, not libraries](https://puck.uno/documentation/requirements/caspian/concepts#objects-not-libraries) for the framing.
+Caspian doesn't have a "library" concept as a technical primitive — `%puck` downloads objects (classes, instances, records, etc.). See [concepts § Objects, not libraries](https://puck.uno/documentation/requirements/caspian/concepts#objects-not-libraries) for the framing.
 
 ## Download, don't execute
 

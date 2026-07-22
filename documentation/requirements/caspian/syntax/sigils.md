@@ -44,7 +44,7 @@ end
 &greet 'picard'
 ~~~
 
-See [functions/call](https://puck.uno/documentation/requirements/caspian/functions/call) for full call-site syntax when the underlying object is a function.
+See [calling](tag:calling) for full call-site syntax when the underlying object is a function.
 
 ## `@` — bucket entry
 

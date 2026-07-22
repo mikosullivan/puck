@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_syntax",
-	"role": "hub page for Caspian's surface syntax. Each area (comments, sigils, literals, variables, operators, truthy/falsy, control flow, blocks, callable definitions, calls, classes, system-method sigils, pipes) is its own sub-page. Deeper areas (full parameter metadata, exceptions, regex, DSL, class inheritance, string interpolation, CaspianJ mapping) get their own sub-pages as they land.",
+	"role": "hub page for Caspian's surface syntax. Each area (comments, sigils, variables, operators, truthy/falsy, control flow, blocks, callable definitions, calls, classes, system-method sigils, pipes) is its own sub-page. Deeper areas (full parameter metadata, exceptions, regex, DSL, class inheritance, string interpolation, CaspianJ mapping) get their own sub-pages as they land.",
 	"status": "basic syntax split across sub-pages; deeper areas TBD",
 	"audience": "developers writing Caspian; tooling authors building lexers, parsers, formatters, syntax highlighters, and language-server implementations"
 }}

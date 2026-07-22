@@ -3,7 +3,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_functions_types_bare",
+	"doc": "requirements_caspian_functions_bare",
 	"role": "spec for the bare-function type — the type most languages just call a 'function'. Declared with the `function` keyword. No captured outer scope, no `%self`, no receiver. The body only sees its arguments, its locals, and `%chain`. Sealed scope is central to Caspian's security model — it is why untrusted code is safe to run. Covers sealed scope / security model, definition (assignment form and named form), the `.call` / `&name` equivalence, the method surface a function object carries (`.call`, `.params`, everything on `.object`), parameter mechanics (metadata, optional/required, `*args`, `**opts`, lazy, public/private names, programmatic access), return, and `%call`.",
 	"status": "draft — surface and parameter mechanics filled in; deeper semantics of first-class value handling and lifecycle still to be spec'd",
 	"audience": "developers writing Caspian; parser implementers",
@@ -417,7 +417,7 @@ Exits with `return $value` (bare keyword) or `%call.return $value`. Both raise t
 
 Inside a bare function's body, `%call` is a global that returns the **call object** — a first-class object representing the in-progress call. It carries who made the call (`%call.role`), any blocks the caller passed, and the primitives for ending the call early (`%call.return`) or yielding back to a passed block. `%call` is scoped per frame — each function invocation has its own — and it's owned by the caller's role, not the function's.
 
-Full spec, including the yield / dispatcher surface used for DSL-style blocks, is on [`%call`](https://puck.uno/documentation/requirements/caspian/global-methods/call/).
+Full spec, including the block-invocation surface (`%call.blocks[N].call`) and the caller-object mechanism used for DSL-style blocks, is on [`%call`](https://puck.uno/documentation/requirements/caspian/global-methods/call/) and [caller](tag:caller).
 
 ## When a function is bare
 

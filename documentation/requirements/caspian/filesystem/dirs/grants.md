@@ -1,5 +1,7 @@
 # Grants
 
+<span class="tag">grants</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_grants",

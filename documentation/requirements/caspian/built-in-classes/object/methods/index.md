@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_built_in_object_methods",
-	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns the immutable truthy bit set at construction), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)` and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.shadow` accepts `ensure: true` to create the shadow if missing), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — each with permanent and block-scoped forms, denying writes to the named axis or both axes). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
+	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'object'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.object.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — each with permanent and block-scoped forms, denying writes to the named axis or both axes). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
 	"status": "stub — starter methods spec'd (truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, warn, stack/shadow, freeze_bucket/freeze_stack/freeze); more to come",
 	"audience": "developers writing Caspian; engine implementers"
 }}
@@ -16,13 +16,14 @@ Methods in the `object` namespace apply to any value in Caspian. They inherit th
 
 | Method | Description |
 |---|---|
-| `.truthy?` | Returns the immutable truthy value the receiver was constructed with, always as a boolean. |
+| `.truthy?` | Returns the receiver's truthiness, always as a boolean. Derived from the receiver's [primitive field](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/structure/#primitive-field): `false` and `null` primitives read as falsy; everything else (including any other primitive value, or no primitive field at all) reads as truthy. |
 | `.isa?($class)` | Returns whether the receiver is an instance of `$class` or any subclass of `$class`. |
 | `.null?` | Returns whether the receiver is a `Null` instance. |
 | `.defined?` | Returns the opposite of `.null?` — whether the receiver is not a `Null` instance. |
 | `.jail($method_1, ...)` | Returns a separate helper object that forwards only the named methods to the receiver and blocks everything else. |
 | `.tap` | Yields the receiver to a block, runs the block for its side effect, then returns the receiver unchanged so the chain continues. |
-| `.classes` | Returns an array of the classes in the receiver's stack, freshly built per call and not mutable as an array; carries `.ensure($class)` (bare form permanent, block form temporary) and `.shadow` sub-methods that operate on the underlying stack. |
+| `.classes` | Returns an array of the classes in the receiver's stack, freshly built per call and not mutable as an array; carries `.ensure($class)` (bare form permanent, block form temporary), `.add_unconditionally($class)` (always push a new platter — verbose name for the rare case), and `.shadow` sub-methods that operate on the underlying stack. |
+| `.methods` | Returns a lazy methods object with a hash-like surface (`[:name]`, `.keys`, `.values`, `.each`). Method lookup walks the class graph on demand — accessing one method doesn't materialize the whole set. Visibility follows call-site access: from inside the class body (`%self.object.methods`), private methods are included; from outside (`$foo.object.methods`), only public methods appear. Each value is a first-class callable bound to the receiver — composes with the [caller](tag:caller) pattern. |
 | `.warn($message)` | Attaches a warning to the receiver as a new platter carrying the given message. Observational only — never raises, never propagates up the chain. Returns the receiver. |
 | `.stack` | Returns the receiver's stack array; restricted to user and the receiver's owning role; carries a `.shadow` sub-method that returns the shadow platter (with `ensure: true` to create). |
 | `.freeze_bucket` | Locks the receiver's bucket against writes; permanent, or scoped to a block if one is passed. |
@@ -33,9 +34,16 @@ Methods in the `object` namespace apply to any value in Caspian. They inherit th
 
 ### `.truthy?`
 
-Returns the immutable truthy value the receiver was constructed with. Always a boolean (`true` or `false`). Equivalent to how the receiver evaluates in an `if` or `while` condition.
+Returns the receiver's truthiness as a boolean (`true` or `false`). Equivalent to how the receiver evaluates in an `if` or `while` condition.
 
-`False` and `Null` instances (and their subclasses) return `false`; every other value returns `true`. The bit is set by the class's constructor at instantiation and cannot be changed thereafter — no method, no bucket write, no downloaded-method application can flip it.
+The engine reads the receiver's [primitive field](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/structure/#primitive-field) and applies the rule:
+
+- Primitive field is `false` → returns `false`.
+- Primitive field is `null` → returns `false`.
+- Primitive field holds any other JSON value (number, string, array, hash, `true`) → returns `true`.
+- No primitive field at all (user class with no primitive-bearing ancestor) → returns `true`.
+
+Consequence: `False` and `Null` instances (and their subclasses, which inherit the constructor path that sets the primitive field) return `false`; every other value returns `true`. The primitive field is set by the class's constructor at instantiation and cannot be changed thereafter — no method, no bucket write, no downloaded-method application can flip it, so truthiness is stable for the object's lifetime.
 
 ~~~caspian
 5.object.truthy?          # true
@@ -153,7 +161,7 @@ The block's return value is **ignored**. Only side effects (writes, log calls, m
 end                  # returns 5, not 500
 ~~~
 
-### `.classes` / `.classes.ensure($class)` / `.classes.shadow`
+### `.classes` / `.classes.ensure($class)` / `.classes.add_unconditionally($class)` / `.classes.shadow`
 
 **`.classes`** returns an array of the classes currently in the receiver's stack, in stack order (top to bottom). Two properties matter:
 
@@ -239,7 +247,137 @@ end
 $widget.object.classes.shadow      # the shadow class — implicitly created by the definition
 ~~~
 
-Whether a `.classes.add($class)` companion exists — one that always pushes a new platter regardless of existing membership — is still open. Every current use case is covered by `.ensure`; the always-push variant is deferred until a concrete need surfaces.
+**`.classes.add_unconditionally($class)`** always pushes a new platter carrying `$class` at the bottom of the stack, regardless of whether the class is already present. Unlike `.ensure`, this is not idempotent — calling it twice adds two platters. Two forms:
+
+- **Bare call** — permanent. A new platter is pushed at the bottom of the stack and stays there.
+- **Block call** — scoped. A new platter is pushed for the block's duration, then removed at block exit (or on raise). Same identity-tracked cleanup as `.ensure`'s block form — the engine removes the specific platter it added, not just "any platter carrying this class."
+
+~~~caspian
+$widget = Widget.new()
+$widget.object.classes                                     # [Widget]
+
+# Bare form — permanent, always adds:
+$widget.object.classes.add_unconditionally(Widget)         # adds another Widget platter
+$widget.object.classes                                     # [Widget, Widget]
+
+$widget.object.classes.add_unconditionally(Serializable)
+$widget.object.classes                                     # [Widget, Widget, Serializable]
+
+# Block form — scoped, always adds during the block:
+$widget.object.classes.add_unconditionally(Renderer) do
+	# a new Renderer platter is in $widget's stack for the block's duration
+	$widget.render()
+end
+# the Renderer platter added by this call is removed on block exit
+~~~
+
+**The verbose name is deliberate.** `.ensure` is what code should reach for by default; adding a duplicate platter is rare and usually a mistake. The long name is a speed bump that makes the reader (and reviewer) pause on the unusual choice. See [long descriptive names for rarely-used methods](https://puck.uno/documentation/requirements/caspian/concepts) — same rationale.
+
+**Legitimate use cases** are rare but exist: classes that carry per-platter state (`bucket` per platter, see [object structure § bucket (per-platter)](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/structure/#bucket-per-platter)) may want multiple independent platters of the same class on one object. Most classes don't; hence the speed bump.
+
+### `.methods`
+
+Returns a **lazy methods object** that behaves like a [Hash](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/hash) for all **non-mutating** operations. Method lookup walks the class graph on demand; the full set of methods is never eagerly materialized.
+
+**Non-mutating hash surface.** Everything a Hash supports for reading — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests, iteration — works identically on the methods object. Mutating operations (`[:name] = value`, `.delete`, etc.) are not part of the surface; the class is the source of truth, and the methods object never modifies it.
+
+~~~caspian
+class # widget
+	method greet()
+		return 'hi from ' + @name
+	end
+
+	method describe()
+		return @name + ': widget'
+	end
+end
+
+$w = $widget_class.new(name: 'primary')
+$w.object.methods[:greet].call         # 'hi from primary'
+
+$w.object.methods.keys.each do ($name)
+	puts $name
+end
+
+$w.object.methods.each do ($name, $value)
+	puts $name + ': ' + $value.call.to_string
+end
+~~~
+
+`.each` yields `(name, value)` pairs — a two-arg block. A one-arg block raises for wrong param count; Caspian does not auto-collapse the pair into an array. To iterate names alone, use `.keys.each do ($name) ... end`.
+
+**Lazy lookup via `[:name]`.** Each subscript access walks the receiver's class graph for that specific method — same walk that a normal method dispatch would do. If the method exists (and is visible from the call site), the value is a first-class **bound method-callable** with `%self` bound to the receiver. If it doesn't exist, the value is null — subscript on a missing name never raises:
+
+~~~caspian
+$foo.object.methods['not_a_key']   # null
+~~~
+
+Common case: code fetches one method (`$w.object.methods[:greet]`) and never asks about the others. The engine does one graph walk. No hash of every method the class carries gets built.
+
+**`.keys`, `.values`, `.each` walk the graph on demand.** `.keys` walks the class graph, collects the visible method names, and returns a fresh array. `.values` does the same and returns bound callables. `.each` yields `(name, value)` pairs.
+
+Successive calls re-walk the graph. If the class was mutated between two `.keys` calls (a method added, an `amend` applied, a singleton method attached), the two arrays can differ. The methods object doesn't cache a snapshot; each enumeration reflects the class state at call time.
+
+**Not mutable.** Attempting a write on the methods object — `$w.object.methods[:foo] = ...` — raises. Same for `.delete` or any other mutating operation. The methods object exists to read the class's method surface, not to modify it.
+
+**Downloaded methods excluded.** Ad-hoc method application via `$foo.$fn` ([downloaded-methods](https://puck.uno/documentation/requirements/caspian/classes/downloaded-methods)) is a call-site application, not a class-level attachment. Such applications do not appear in `.methods` — the class is the source of truth, and downloaded methods never modify the class.
+
+**All visible top-level methods.** Every method reachable through the receiver's platter stack and inheritance graph is a candidate. Includes inherited methods, methods added via amendments, and shadow methods (singleton methods on this specific object). Method-resolution rules from [method resolution](tag:method-resolution) determine which class's version wins on collision — the methods object reflects what would be dispatched, not every candidate.
+
+**Nested namespaces surface as single entries.** A nested method namespace (defined via [nested](https://puck.uno/documentation/requirements/caspian/classes/nested), including the cross-cutting `object` namespace every value carries) appears as one entry keyed by the namespace name. Its members do not get flattened into the top-level methods list. To enumerate a nested namespace's methods, access the namespace and query its own `.methods`:
+
+~~~caspian
+$w.object.methods.keys           # includes 'greet', 'describe', 'object', and any other nested namespace names — NOT 'truthy?', 'isa?', etc.
+$w.object.methods[:object]       # the object namespace itself
+$w.object.methods[:object].methods.keys   # 'truthy?', 'isa?', 'methods', 'classes', 'warn', ...
+~~~
+
+**Access-context aware.** Visibility depends on where the call is made from:
+
+- **From inside the class body** — `%self.object.methods` returns a methods object that surfaces all methods, including ones marked `.private = true`. The class has full visibility into its own surface.
+- **From outside the class body** — `$foo.object.methods` surfaces only public methods. Private methods do not appear via `[:name]`, `.keys`, or iteration. Same rule as calling a private method directly from outside: the surface is hidden, not just gated.
+
+~~~caspian
+class # widget
+	method public_op()
+		return %self.object.methods    # surfaces :helper — inside the class body
+	end
+
+	private method helper()
+		return @count * 2
+	end
+end
+
+$w.public_op                           # methods object that surfaces :helper
+$w.object.methods                      # methods object that does NOT surface :helper (called from outside)
+~~~
+
+Access checking happens at each lookup — the methods object always exposes "what you can actually call **from where you're asking now.**"
+
+**No bearer-token semantics.** Capturing a callable for a private method from inside the class body (`$m = %self.object.methods[:helper]`) does NOT let outside code invoke it. Access is checked at each `.call` (not at capture) against the current frame's [`%call.method_class`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-method-class). Once `$m` is handed to code outside the class body, invoking `$m.call` from that outside frame raises — the frame's `%call.method_class` doesn't match the class that carries the private method.
+
+The reference doesn't carry access; the calling context always governs. Same rule as calling the method through `%self` vs. through a captured `$obj`.
+
+**On a jail — only the jailed methods appear.** When `.methods` is called on a jail, it reflects the jail's own surface, not the wrapped prisoner's. Method calls on a jail dispatch through the jail (methods not in the allowed list raise), so introspection matches the callable surface — the jail never leaks knowledge of what the prisoner would otherwise expose:
+
+~~~caspian
+$foo.object.jail(:bar, :gup) do ($jail)
+	$jail.methods.keys.each do ($key)
+		puts $key    # outputs 'bar' then 'gup'
+	end
+end
+~~~
+
+**Iteration is over a snapshot from `.keys`.** `.keys.each do ($name) ... end` iterates the array `.keys` returned. Class mutations inside the loop don't retroactively appear in the current iteration — the array was materialized before the loop began. A subsequent `.keys` call re-walks and could return a different set.
+
+**Composes with the caller pattern.** Because each looked-up value is a bound callable, you can build a caller for it:
+
+~~~caspian
+$caller = $w.object.methods[:greet].caller.new
+$caller.call                           # runs $w.greet() with %self = $w
+~~~
+
+For V1, that's the whole story — lazy lookup, no cache across calls, access-scoped by call context.
 
 ### `.warn($message)`
 
@@ -391,7 +529,7 @@ This does mean untrusted code that holds an object can freeze it out from under 
 - **Empty hash is truthy** — `{}.object.truthy?` is `true`.
 - **Zero is truthy** — `0.object.truthy?` is `true`.
 - **Return type is always Boolean** — `.object.truthy?` on any value returns `true` or `false`, never any other type.
-- **Truthy bit is immutable** — after `$w = Widget.new()`, no bucket write, no class add, no downloaded-method application on `$w` changes `$w.object.truthy?`.
+- **Truthiness is immutable** — after `$w = Widget.new()`, no bucket write, no class add, no downloaded-method application on `$w` changes `$w.object.truthy?`. The primitive field is set at construction and never mutated.
 - **Subclass of Null inherits falsy** — an instance of a class extending Null reports `.object.truthy?` as `false`.
 - **Subclass of False inherits falsy** — same for a subclass of False.
 
@@ -467,6 +605,23 @@ This does mean untrusted code that holds an object can freeze it out from under 
 - **Nested block-forms compose** — an outer `ensure($cls)` block containing an inner `ensure($cls)` block leaves the object exactly as it started after both exit.
 - **Block's return value is the block's return** — `$x = $w.object.classes.ensure(Cls) do 42 end` sets `$x` to `42`.
 
+### `.classes.add_unconditionally` (bare form)
+
+- **Adds a platter carrying the class** — after `$w.object.classes.add_unconditionally(Serializable)`, `$w.object.classes` includes `Serializable`.
+- **Duplicates when class already present** — calling `.add_unconditionally(Widget)` on an object whose stack already has Widget results in two Widget entries in `$w.object.classes`.
+- **Multiple calls add multiple platters** — calling `.add_unconditionally(Cls)` twice adds two platters, both carrying `Cls`.
+- **New platter lands at bottom of stack** — a fresh `.add_unconditionally(Cls)` platter appears at the bottom, not above existing platters.
+
+### `.classes.add_unconditionally` (block form)
+
+- **Platter present for block duration** — inside `$w.object.classes.add_unconditionally(Cls) do ... end`, `$w.object.classes` has a platter carrying `Cls`.
+- **Platter removed at block exit** — after the block exits, the added platter is gone.
+- **Cleanup runs on raise** — if the block raises, the added platter is still removed.
+- **Cleanup is identity-tracked** — if user code inside the block adds its own platter through a separate call, only the outer's added platter is removed on exit.
+- **Always adds regardless of existing membership** — even when `Cls` is already in the stack before the block, a new platter is still added for the block's duration and removed on exit.
+- **Nested block-forms compose** — two nested `.add_unconditionally(Cls) do ... end` calls each add and remove their own platter; the stack ends both blocks exactly as it started.
+- **Block's return value is the block's return** — `$x = $w.object.classes.add_unconditionally(Cls) do 42 end` sets `$x` to `42`.
+
 ### `.classes.shadow`
 
 - **Bare call returns null when no shadow exists** — a freshly constructed object with no singleton methods has `.object.classes.shadow` equal to null.
@@ -474,6 +629,34 @@ This does mean untrusted code that holds an object can freeze it out from under 
 - **`ensure: true` creates the shadow if missing** — the shadow platter exists after `.classes.shadow(ensure: true)` even though the object had none before.
 - **`ensure: true` returns the shadow class** — always returns a class value, never null.
 - **Defining a singleton method implicitly creates the shadow** — after `method $o.foo() ... end` on a bare object, `.classes.shadow` (bare form) returns a non-null class.
+
+### `.methods`
+
+- **Returns a methods object** — `$w.object.methods` returns a value supporting `[:name]`, `.keys`, `.values`, `.each`.
+- **`[:name]` returns a bound callable** — `$w.object.methods[:greet]` returns a callable whose `.call` runs `$w.greet()` with `%self = $w`.
+- **`[:missing]` returns null** — `$w.object.methods[:no_such_method]` is null when no such method exists (or none visible from the call site).
+- **Composes with caller** — `$w.object.methods[:greet].caller.new` returns a caller for the bound method; setting params and invoking `.call` on it runs the method with those params and `%self = $w`.
+- **Contains all visible methods via `.keys`** — `.keys` on `$w.object.methods` for an instance of a class defining `.greet` and inheriting `.describe` from a parent returns an array containing both `'greet'` and `'describe'`.
+- **`.keys` returns a fresh array** — two successive `.keys` calls return two distinct arrays.
+- **`.keys` reflects current class state** — mutating the class between two `.keys` calls (adding, removing, or amending a method) can produce different arrays on the two calls.
+- **Iteration is over a snapshot from `.keys`** — inside `.keys.each do ... end`, a method added to the class mid-loop does not retroactively appear in the current iteration.
+- **Mutating writes raise** — `$w.object.methods[:foo] = closure ... end` raises; the methods object is not mutable.
+- **`.delete` raises** — mutating removal methods are not part of the surface.
+- **All non-mutating hash methods work** — `.keys`, `.values`, `.each`, `.length`, and containment tests behave identically to their Hash counterparts.
+- **Downloaded methods do not appear** — an ad-hoc `$w.$fn` application does not add `$fn` to `$w.object.methods.keys`; the class is the source of truth.
+- **Private methods hidden from outside** — `$w.object.methods[:private_name]` from outside the class body returns null; the entry doesn't appear in `.keys` either.
+- **Private methods visible from inside** — `%self.object.methods` inside a method body surfaces private methods via `[:name]` and `.keys`.
+- **Captured private-method callables do NOT retain access** — a callable captured via `$m = %self.object.methods[:helper]` inside the class body and handed to outside code raises when the outside code invokes `$m.call`. Access is checked at each `.call` against the current frame's `%call.method_class`, not at capture.
+- **Shadow methods included** — a singleton method defined via `method $w.foo() ... end` appears in `$w.object.methods.keys` as `'foo'`.
+- **Inherited methods included** — a method defined on a parent class of `$w`'s class appears in `$w.object.methods.keys`.
+- **Method-resolution winner is what's returned** — when both a class and a parent define the same-named method, `$w.object.methods[:name]` returns the version that would dispatch under [method resolution](tag:method-resolution).
+- **Nested namespaces appear as single entries** — `.keys` includes `'object'` (and any other nested namespace name) but does NOT include nested members like `'truthy?'` or `'isa?'`.
+- **Drilling into a namespace** — `$w.object.methods[:object].methods.keys` returns the nested `object` namespace's own method names.
+- **`.each` yields `(name, value)`** — `$w.object.methods.each do ($name, $value) ... end` binds each pair to the block's two params.
+- **`.each` with wrong param count raises** — a one-arg block passed to `.each` raises for incorrect param count; no auto-collapse into an array.
+- **Jail limits methods to the jailed set** — `$foo.object.jail(:bar, :gup) do ($jail); $jail.methods.keys ...` yields `['bar', 'gup']` regardless of what other methods `$foo` carries.
+- **Jail methods hides non-jailed entries from lookup too** — `$jail.methods[:not_jailed]` returns null even if the underlying `$foo` has a `:not_jailed` method.
+- **Lazy lookup does not materialize the full set** — `$w.object.methods[:greet]` walks the class graph for `greet` alone; enumerating every method is not required and does not happen.
 
 ### `.warn`
 

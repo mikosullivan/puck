@@ -1,0 +1,511 @@
+#!/usr/bin/caspian
+
+%vibecode <<EOF
+{
+	"doc": "test_cases_parsing_parse",
+	"role": "test bed for the Caspian to CaspianJ transpiler — exercises every syntactic construct spec'd so far. The code is deliberately nonsense semantically; it just needs to parse cleanly and produce a valid CaspianJ tree. Grouped into sections that mirror the syntax/ spec pages so a failure locates itself.",
+	"status": "grows as new syntax lands"
+}
+EOF
+
+# ============================================================================
+# 1. Comments and whitespace
+# ============================================================================
+
+# Line comment on its own line.
+$sample = 1     # end-of-line comment
+#
+
+$a = 1; $b = 2; $c = 3          # semicolons as command separators
+;;; $d = 4 ;;;                  # collapsed runs of semicolons
+
+# ============================================================================
+# 2. Sigils
+# ============================================================================
+
+$local_var = 10
+&bare_call
+&bare_call 10
+&bare_call(
+&bare_call(10)
+$obj.field_access
+
+# ============================================================================
+# 3. Literals — numbers
+# ============================================================================
+
+$whole = 42
+$sep = 1_000_000
+$frac = 3.14
+$sci = 2.5e-3
+$hex = 0xFF_FF
+$oct = 0o755
+$bin = 0b1111_1111
+$negzero = -0
+$negfive = -5
+
+# ============================================================================
+# 4. Literals — booleans, null, strings, symbols
+# ============================================================================
+
+$yes = true
+$no = false
+$nothing = null
+
+$sq = 'literal string'
+$sym = :hello
+$sq_apostrophe = 'it''s escaped by doubling'
+
+$dq_plain = "plain double-quoted"
+$dq_interp = "hello, #{$sample}"
+$dq_expr = "total is #{$whole + $frac}"
+$dq_nested = "count: #{{a: 1, b: 2}.length}"
+$dq_escaped = "literal #{'not interpolated'} sequence"
+$dq_escapes = "tabs \t and newlines \n and backslashes \\ and quotes \""
+
+$literal_true_string = :true              # the string, not the boolean
+
+# ============================================================================
+# 5. Literals — arrays and hashes
+# ============================================================================
+
+$empty_arr = []
+$arr = [1, 'two', true, null, [3, 4]]
+
+$nested_arr = [
+	[1, 2, 3],
+	[4, 5, 6],
+]
+
+$empty_hash = {}
+$hash = {display: true, color: :red, 'quoted key': 1}
+
+$nested_hash = {
+	outer: {
+		inner: {a: 1, b: 2},
+		list: [10, 20, 30],
+	},
+	tag: :fine,
+}
+
+# ============================================================================
+# 6. Assignment
+# ============================================================================
+
+$x = 10
+$x += 1
+$x -= 1
+$x *= 2
+$x /= 2
+$x %= 3
+$x **= 2
+$x ||= 'default'
+$x &&= 'guarded'
+
+$hash['key'] = 'value'
+$arr[0] = 99
+$obj.name = 'alice'
+
+# ============================================================================
+# 7. Operators
+# ============================================================================
+
+$sum = 1 + 2
+$diff = 10 - 3
+$prod = 4 * 5
+$quot = 20 / 4
+$mod = 7 % 3
+$pow = 2 ** 8
+
+$eq = ($a == $b)
+$ne = ($a != $b)
+$lt = ($a < $b)
+$le = ($a <= $b)
+$gt = ($a > $b)
+$ge = ($a >= $b)
+
+$word_and = $yes and $no
+$word_or = $yes or $no
+$word_not = not $yes
+
+$punct_and = $yes && $no
+$punct_or = $yes || $no
+$punct_not = !$yes
+
+$ternary = ($x > 0) ? 'positive' : 'non-positive'
+
+# ============================================================================
+# 8. if / elsif / else / unless
+# ============================================================================
+
+if $whole < 13
+	&label 'child'
+elsif $whole < 18
+	&label 'teen'
+else
+	&label 'adult'
+end
+
+if $whole == 42
+	&primary
+elseif $whole == 43              # elseif == elsif
+	&secondary
+end
+
+unless $yes
+	&denied
+end
+
+# as $conditional chain-exit binding
+$label = if $whole < 13 as $tier
+	$tier.return 'child'
+elsif $whole < 18
+	$tier.return 'teen'
+else
+	$tier.return 'adult'
+end
+
+# ============================================================================
+# 9. Loops
+# ============================================================================
+
+# while and until
+while $x < 10
+	$x += 1
+end
+
+until $ready
+	&poll
+end
+
+# begin-while and begin-until (loop at least once, no `end`)
+begin
+	begin
+		$next_val = &get_next
+		&process $next_val
+	while $next_val != null
+
+	&foo
+end
+
+while &bar
+	begin as $retry_loop
+		$attempt += 1
+		&try_connect
+	while $attempt < 5
+end
+
+# .each with block parameter
+$items.each do ($item)
+	&handle $item
+end
+
+# numeric helpers
+5.times do ($i)
+	&emit $i
+end
+
+1.upto(3) do ($n)
+	&count_up $n
+end
+
+10.downto(1) do ($n)
+	&count_down $n
+end
+
+# as $loop binding
+$items.each do ($item) as $loop
+	&emit $loop.count + ': ' + $item
+end
+
+while $x < 20 as $loop
+	$x += 1
+end
+
+# break and break N
+$people.each do ($person)
+	if $person.suspicious?
+		break
+	end
+end
+
+$people.each do ($person) as $person_loop
+	$person.addresses.each do ($address)
+		if $address.matches($target)
+			break 2
+		end
+	end
+end
+
+# next
+$items.each do ($item)
+	if $item.skip?
+		next
+	end
+
+	&handle $item
+end
+
+# structural blocks
+$people.each do ($person)
+	&emit $person.name
+
+before
+	&emit '--- START ---'
+
+between
+	&emit '-------------'
+
+after
+	&emit '--- END -----'
+
+noloop
+	&emit '--- NO PEOPLE ---'
+end
+
+# ============================================================================
+# 10. Bare blocks
+# ============================================================================
+
+$sum_block = begin
+	$a = 10
+	$b = 20
+	return $a + $b
+end
+
+$result_block = begin as $block
+	$block.return 'whatever'
+end
+
+# ============================================================================
+# 11. Functions and closures
+# ============================================================================
+
+# assignment form
+$greet = function($name)
+	return 'hello, ' + $name
+end
+
+# named form
+function &welcome($name)
+	return 'welcome, ' + $name
+end
+
+# closure — captures scope
+$make_prefixer = closure($name)
+	return $prefix + $name
+end
+
+# parameter metadata — optional, default, lazy, public_name, splat, hash splat
+$rich_params = function(
+	$name,
+	$rank: {optional: true, default: 'ensign'},
+	$sent_title: {public_name: 'title'},
+	$eager_left: {lazy: true},
+	$eager_right: {lazy: true},
+	*$rest,
+	**$opts,
+)
+	return [$name, $rank, $sent_title, $rest, $opts]
+end
+
+# ============================================================================
+# 12. Call sites
+# ============================================================================
+
+&welcome 'alice'
+&welcome('alice')
+$greet.call('alice')
+$obj.method_name(1, 2)
+$obj.method_name 1, 2
+&fetch 'https://x', timeout: 30, retries: 3
+&welcome *$args
+&fetch 'https://x', **$opts
+
+# ============================================================================
+# 13. do / dofunc blocks, yield, multiple blocks
+# ============================================================================
+
+&some_method do
+	%call.return $outer
+end
+
+&some_method dofunc
+	%call.return &compute
+end
+
+&run_scenarios do
+	%call.return &scenario_a
+end do
+	%call.return &scenario_b
+end dofunc
+	%call.return &scenario_c
+end
+
+$yielded = function()
+	yield                      # sugar for %call.blocks[0].call
+	return null
+end
+
+# ============================================================================
+# 14. Return
+# ============================================================================
+
+function &early_exit($x)
+	if $x < 0
+		return null
+	end
+
+	return $x * 2
+end
+
+$exit_frame = closure()
+	%call.return 'from this frame'
+end
+
+# ============================================================================
+# 15. Classes
+# ============================================================================
+
+$character = class # character
+	inherits Person, Serializable
+	abstract true
+
+	field @name, class: :string, get: true, set: true
+	field @rank, class: :string, default: '', get: true, set: true
+	getter :tag, 'default'
+
+	method &init(@name, @rank)
+		return null
+	end
+
+	method &greet()
+		return @rank + ' ' + @name
+	end
+
+	private method &helper()
+		return @rank
+	end
+
+	method to_string()
+		return @rank + ' ' + @name
+	end
+
+	method on_close()
+		%bucket['foo'] = &baz
+		&emit @name + ' exits.'
+	end
+end
+
+# instantiation
+$captain = $character.new(name: 'picard', rank: 'captain')
+$captain.greet()
+$captain.name
+$captain.name = 'jean-luc'
+
+# singleton method — method attached to one specific object
+$picard = $character.new(name: 'picard', rank: 'captain')
+
+method $picard.log_entry()
+	return 'stardate ' + %now.to_s
+end
+
+# amend — extend a class in place
+amend $character
+	method &farewell()
+		return 'farewell, ' + @name
+	end
+end
+
+# ============================================================================
+# 16. System-method sigils
+# ============================================================================
+
+$self_check = %self
+$frame = %call
+$chain_ref = %chain
+$engine_ref = %engine
+$bucket_ref = %bucket
+
+%stdout.puts 'to standard out'
+%stderr.puts 'to standard error'
+$input = %stdin.read_line
+
+$timestamp = %now
+$noise = %random.bytes(16)
+$puckd = %puck['caspian.uno/csv.casp']
+
+# no-bare-shortcut engine surfaces
+$net = %chain.net
+$timer = %chain.timer
+$timeout = %chain.timeout
+
+# ============================================================================
+# 17. Pipes
+# ============================================================================
+
+# basic — first-arg form
+$value = &get_key | &normalize | &fetch
+
+# with arguments on each stage
+$top10 = &fetch_records() | &sort 'asc' | &take 10
+
+# receiver form on the RHS
+$html = &normalize($text) | $formatter.render
+
+# mixing first-arg (& / $obj.method) and receiver-only (.method / .field)
+$csv = &get_arr | .sort() | .join(', ')
+
+# accessor chain via receiver form
+$name = &get_current_user | .profile | .name
+
+# sticky null-propagation with |&, wrapped over multiple lines
+$saved = &get_record 42 |&
+	&validate |
+	&transform |
+	&save
+
+# ============================================================================
+# 18. %documentation heredoc
+# ============================================================================
+
+%documentation <<(markdown)EOF
+This block is a metadata heredoc — the compiler treats it as prose
+attached to the surrounding scope. Always literal; no `#{...}` and
+no `\n` escape processing regardless of terminator quoting.
+EOF
+
+# ============================================================================
+# 19. Heredoc strings — all four flavors + multi-per-statement
+# ============================================================================
+
+$plain_heredoc = <<EOF
+line one
+line two
+EOF
+
+$typed_heredoc = <<(text/markdown)EOF
+# a heading
+regular text
+EOF
+
+$interp_heredoc = <<"EOF"
+hello, #{$sample}
+tabs \t and newlines \n process here
+EOF
+
+$literal_heredoc = <<'EOF'
+#{no interpolation}
+and no \n escape processing either
+EOF
+
+# two heredocs threaded through one call
+&pair_of_bodies($whole, <<A, $frac, <<B)
+first heredoc body
+A
+second heredoc body
+B
+
+# ============================================================================
+# End of file — the transpiler should reach here without complaint.
+# ============================================================================

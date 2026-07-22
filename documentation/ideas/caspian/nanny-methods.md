@@ -1,5 +1,7 @@
 # Nanny methods on held objects
 
+<span class="tag">nanny-methods</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_nanny_methods",

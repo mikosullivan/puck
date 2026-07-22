@@ -1,9 +1,11 @@
 # Calling functions, closures, and methods
+
+<span class="tag">calling</span>
 <!--index: 6-->
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_caspian_syntax_calling",
+	"doc": "requirements_caspian_functions_call",
 	"role": "spec for Caspian's call syntax — the `&name args` form for stored functions and closures, `.call` equivalence, receiver-first method calls (`$obj.method args`), keyword arguments, splat expansion, and trailing block arguments (`do ... end` for closures, `dofunc ... end` for bare functions). Full parameter mechanics live in a separate sub-page.",
 	"audience": "developers writing Caspian; parser implementers"
 }}
@@ -78,7 +80,7 @@ $outer = 'ensign'
 end
 ~~~
 
-Blocks trail the argument list — they're passed after the last positional or named argument. The receiver reads them from [`%call.blocks`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-blocks) and invokes them via [`%call.yield`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-yield).
+Blocks trail the argument list — they're passed after the last positional or named argument. The receiver reads them from [`%call.blocks`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-blocks); each element is a callable value, so the receiver invokes one by calling it directly (`%call.blocks[N].call args...`) or via the `yield` bwc, which desugars to `%call.blocks[0].call`.
 
 ### Multiple blocks
 
@@ -120,7 +122,7 @@ Full parameter mechanics (metadata, optionality, defaults, `*args`, `**opts`, la
 - **Each block keeps its scope semantics** — the second `do` block still captures; a `dofunc` in position 2 still does not, regardless of neighbors.
 - **Splat expansion with empty array** — `&foo *[]` produces a call with no positional args.
 - **Splat expansion with empty hash** — `&foo **{}` produces a call with no keyword args.
-- **`%call.yield` invokes the first passed block** — inside the receiver, `%call.yield` runs `%call.blocks[0]`.
-- **No-block call with `%call.yield` raises** — `%call.yield` when `%call.blocks` is empty raises.
+- **`yield` invokes the first passed block** — inside the receiver, `yield` desugars to `%call.blocks[0].call` and runs the first block.
+- **No-block call with `yield` raises** — `yield` when `%call.blocks` is empty is an out-of-bounds read on `%call.blocks[0]` and raises.
 - **Method chain** — `$obj.a().b().c()` calls each method in turn on the returned receiver.
 - **Sealed-scope handoff via `dofunc`** — passing `dofunc` across a role boundary hands the receiver code that cannot read the caller's locals.

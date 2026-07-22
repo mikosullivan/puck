@@ -1,5 +1,7 @@
 # Method resolution
 
+<span class="tag">method-resolution</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_classes_method_resolution",

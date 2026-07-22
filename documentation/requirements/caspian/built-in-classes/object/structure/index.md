@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_built_in_object_structure",
-	"role": "spec for how every Caspian value is structured at the object level — bucket (data hash), stack (ordered array of platters carrying class identity and other per-slot metadata), shadow (per-instance class for singleton methods), nested objects (UUID-linked sub-objects sitting inside the parent's bucket), truthy bit (set at construction, immutable), and the primitive value slot (for the Primitive subclasses only). Also spec's the serialized JSON form the object round-trips to at every persistence or protocol boundary.",
-	"status": "draft — structural fields, platter types, shadow lazy-creation, nested-UUID mechanism, truthy bit, and JSON serialization form all spec'd; a few narrower rules (borrow, warning platter conventions, freeze axes) still to grow their own methods pages under object/methods/",
+	"role": "spec for how every Caspian value is structured at the object level — bucket (data hash), stack (ordered array of platters carrying class identity and other per-slot metadata), shadow (per-instance class for singleton methods), nested objects (UUID-linked sub-objects sitting inside the parent's bucket), and the primitive field (optional engine-managed slot holding a JSON primitive — string, number, boolean, null, array, hash — set at construction and immutable; determines the object's truthiness: primitive false or null → falsy, anything else or no primitive field → truthy). Also spec's the serialized JSON form the object round-trips to at every persistence or protocol boundary.",
+	"status": "draft — structural fields, platter types, shadow lazy-creation, nested-UUID mechanism, primitive-field truthiness derivation, and JSON serialization form all spec'd; a few narrower rules (borrow, warning platter conventions, freeze axes) still to grow their own methods pages under object/methods/",
 	"audience": "developers writing Caspian; engine implementers building the object runtime; class authors reasoning about what data structures they're working with; anyone reading serialized worldlet / Mikobase / Puck-protocol payloads and needing to know the shape"
 }}
 ~~~
@@ -18,10 +18,9 @@ Every value is composed of these parts:
 
 - **bucket** — a hash holding the object's data. Free-form; no reserved keys.
 - **stack** — an ordered array of platters carrying class identity and per-platter metadata. Some platters have special purposes (the shadow, nested-object markers); see [Stack](#stack) below for the full list.
-- **truthy bit** — a single boolean set at construction by the class's constructor. Immutable. Determines how the value evaluates in an `if`/`while` condition.
-- **primitive value slot** (Primitive subclasses only) — an internal, engine-managed slot holding the raw representation of a primitive (the number's integer/float bits, the string's UTF-8 bytes, the array's element sequence, etc.). Not exposed at the Caspian level; engine-level methods reach it directly. See [primitive-buckets](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets) for the design rationale.
+- **[primitive field](#primitive-field)** (optional) — an internal, engine-managed slot holding a JSON primitive value (string, number, boolean, null, array, hash). Set at construction and immutable. Not exposed at the Caspian level; engine-level methods reach it directly. Its presence and value determine the object's truthiness — see [§ Truthiness](#truthiness).
 
-The bucket and stack are visible at the Caspian level via the `object` namespace (`$foo.object.bucket`, `$foo.object.stack`). The truthy bit is exposed via `$foo.object.truthy?`. The primitive value slot is deliberately not exposed — it's how the engine represents primitives, not something Caspian code manipulates directly.
+The bucket and stack are visible at the Caspian level via the `object` namespace (`$foo.object.bucket`, `$foo.object.stack`). Truthiness is exposed via `$foo.object.truthy?`. The primitive field is deliberately not directly inspectable — it's how the engine represents primitives, not something Caspian code manipulates directly.
 
 ## Serialized form
 
@@ -233,35 +232,46 @@ The `foreground` hash in the bucket carries two kinds of keys: the UUID marker (
 
 **Reaching nested platter fields.** A `nested:` platter is otherwise a regular platter — it can carry `bucket`, `warning`, `vibecode` (each scoped to the nested object's purpose in the parent), in addition to `class`. The shadow flag is the one exception: a nested platter can't be the shadow, since the shadow belongs to the parent object's identity.
 
-## Truthy bit
+## Primitive field
 
-Every object header carries a single **truthy bit**, set by the constructor and never changed after that.
+<span class="tag">primitive-field</span>
 
-- `False`'s constructor sets `truthy = false`.
-- `Null`'s constructor sets `truthy = false`.
-- Every other constructor (String, Number, Hash, Array, True, and any user class) leaves `truthy = true`.
-- Subclasses inherit the constructor path — a user-defined `Null_flavor_pending extends Null` gets `truthy = false` automatically.
-- The bit is not user-writable. Nothing at the Caspian level can change an object's truthiness after construction.
+Some objects additionally carry a **primitive field** — an internal, engine-managed slot holding a JSON primitive value. The value is set at construction and is immutable thereafter. Not exposed at the Caspian level; engine-level methods reach it directly.
 
-Truthiness checks in `if`, `while`, `&&`, `||`, and every other truth-consuming construct resolve through this bit. The Caspian-level property is `$foo.object.truthy?`, always a boolean.
+The primitive field can hold any JSON primitive:
 
-See [object/methods § truthy?](../methods/#truthy) and the [truthy/falsy syntax rule](https://puck.uno/documentation/requirements/caspian/syntax/truthy-and-falsy) for how the bit is used.
+- **String** — the raw UTF-8 bytes.
+- **Number** — the raw integer or fractional bits.
+- **Array** — the underlying element sequence.
+- **Hash** — the key/value table.
+- **True** — the boolean `true`.
+- **False** — the boolean `false`.
+- **Null** — the JSON `null`.
 
-## Primitive value slot
+Objects that don't wrap a JSON primitive (user classes without a primitive-carrying ancestor) have no primitive field at all — the slot is simply absent.
 
-[Primitive subclasses](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/) additionally carry an **internal value slot** holding the raw representation of the value.
+The field lives alongside the bucket, not inside it. Engine methods (Lua-implemented) reach the field directly through the internal representation and bypass the bucket entirely. Caspian methods reach the value through `%self` — the engine unwraps `%self` to the raw representation at the point of arithmetic, string operations, or indexing.
 
-- For a Number, the slot holds the raw integer or fractional bits.
-- For a String, the raw UTF-8 bytes.
-- For an Array, the underlying element sequence.
-- For a Hash, the key/value table.
-- For True, False, and Null, a fixed tag.
+**The field is invisible at the Caspian level.** There is no `.value` or `.raw` method that returns it as inspectable data. This is a load-bearing invariant: the primitive value can only be read via operations on `%self` (arithmetic, comparisons, string methods, etc.), never as a bare hash-shaped inspection. This closes the recursion where a primitive's own value would otherwise have to be a Caspian object with its own bucket and its own primitive field forever ([primitive-buckets § How this resolves the turtles problem](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#how-this-resolves-the-turtles-problem)).
 
-The slot lives alongside the bucket, not inside it. Engine methods (Lua-implemented) reach the slot directly through the internal representation and bypass the bucket entirely. Caspian methods reach the value through `%self` — the engine unwraps `%self` to the raw representation at the point of arithmetic, string operations, or indexing.
+**Set at instantiation, immutable.** The value is written once by the constructor and never changes. Every string-modifying operation, arithmetic operation, or hash mutation on a primitive returns a **new** instance — the original's primitive field stays whatever it was.
 
-**The slot is invisible at the Caspian level.** There is no `.value` or `.raw` method that returns it as inspectable data. This is a load-bearing invariant: the primitive value can only be read via operations on `%self` (arithmetic, comparisons, string methods, etc.), never as a bare hash-shaped inspection. This closes the recursion where a primitive's own value would otherwise have to be a Caspian object with its own bucket and its own value slot forever ([primitive-buckets § How this resolves the turtles problem](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#how-this-resolves-the-turtles-problem)).
+**No interning.** Every primitive literal in source materializes a fresh instance — every `5`, every `'hello'`, every `null`. Two `5`s in source compare `==` (same value in the field) but are distinct objects with distinct buckets. See [primitive-buckets § No interning](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#no-interning-every-primitive-literal-is-a-fresh-instance) for the full rule.
 
-**No interning.** Every primitive literal in source materializes a fresh instance — every `5`, every `'hello'`, every `null`. Two `5`s in source compare `==` (same value in the slot) but are distinct objects with distinct buckets. See [primitive-buckets § No interning](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/primitive-buckets#no-interning-every-primitive-literal-is-a-fresh-instance) for the full rule.
+### Truthiness
+
+**Truthiness is derived from the primitive field.** The engine reads the field on every truthiness check:
+
+- If the primitive field is `false` → the object is **falsy**.
+- If the primitive field is `null` → the object is **falsy**.
+- Anything else (including any other primitive value — `0`, `''`, `[]`, `{}`, `true`, or a user-defined value) → the object is **truthy**.
+- If the object has **no primitive field at all** → the object is **truthy**.
+
+Consequence: a class inheriting from `False` has instances whose primitive field is `false` (because `False`'s constructor sets it), so those instances are falsy. Same for subclasses of `Null`. User classes with no primitive-bearing ancestor have no primitive field and are truthy. The rule falls out of the class inheritance chain without needing a separate mechanism.
+
+The check is against the JSON-level value, not against a Caspian object wrapper. The engine reads the raw primitive and does a native `is-false-or-null` comparison — no method dispatch, no method-not-found risk, no way for user code to intercept.
+
+The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which reads the primitive field and returns the resulting boolean. See the [truthy/falsy syntax rule](https://puck.uno/documentation/requirements/caspian/syntax/truthy-and-falsy) for how truthiness is consumed by `if`, `while`, `and`/`or`, and other truth-consuming constructs.
 
 ## Testing
 
@@ -323,19 +333,20 @@ The slot lives alongside the bucket, not inside it. Engine methods (Lua-implemen
 - **Warning-only platter is skipped by dispatch** — method resolution walks past a warning-only platter to the next class-carrying platter.
 - **Warning travels with the object** — after serializing and deserializing an object with a warning, the warning is still on the stack.
 
-### Truthy bit
+### Truthiness
 
-- **True instance's truthy bit is `true`** — `true.object.truthy?` is `true`.
-- **False instance's truthy bit is `false`** — `false.object.truthy?` is `false`.
-- **Null instance's truthy bit is `false`** — `null.object.truthy?` is `false`.
-- **String instance is truthy** — including the empty string.
-- **Number instance is truthy** — including 0.
-- **Array instance is truthy** — including the empty array.
-- **Hash instance is truthy** — including the empty hash.
-- **User class instance is truthy** — a fresh instance of a user-defined class has truthy bit `true`.
-- **Subclass of Null inherits falsy** — a class extending Null has truthy bit `false` on its instances.
-- **Truthy bit is immutable** — no bucket write, class-add, or method call changes an existing instance's truthy bit.
-- **`if`, `while`, `&&`, `||` consult the truthy bit** — a subclass of Null in `if $inst` skips the consequent even though the object is otherwise a full-fledged value.
+- **True instance is truthy** — `true.object.truthy?` is `true` (primitive field is `true`).
+- **False instance is falsy** — `false.object.truthy?` is `false` (primitive field is `false`).
+- **Null instance is falsy** — `null.object.truthy?` is `false` (primitive field is `null`).
+- **String instance is truthy** — including the empty string (primitive field is a UTF-8 byte sequence, neither `false` nor `null`).
+- **Number instance is truthy** — including 0 (primitive field is a number, neither `false` nor `null`).
+- **Array instance is truthy** — including the empty array (primitive field is an element sequence).
+- **Hash instance is truthy** — including the empty hash (primitive field is a key/value table).
+- **User class instance is truthy** — a fresh instance of a user-defined class has no primitive field and is therefore truthy.
+- **Subclass of Null inherits falsy** — a class extending Null inherits Null's constructor path, which sets the primitive field to `null`; instances read as falsy.
+- **Subclass of False inherits falsy** — same mechanism; primitive field is `false`.
+- **Primitive field is immutable** — no bucket write, class-add, or method call changes an existing instance's primitive field, so truthiness is stable for the object's lifetime.
+- **`if`, `while`, `and`, `or` consult the primitive field** — a subclass of Null in `if $inst` skips the consequent because the engine reads the primitive field and sees `null`.
 
 ### Primitive value slot
 

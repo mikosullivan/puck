@@ -1,5 +1,7 @@
 # Vibecode fields
 
+<span class="tag">vibecode-fields</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_vibecode_fields",

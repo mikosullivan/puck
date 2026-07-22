@@ -3,8 +3,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_global_fs_additions",
-	"role": "spec for the methods that live on the %fs namespace beyond .root (the accessor for the underlying root dir spec'd on fs.md). Currently: .cwd (getter returns the current cwd dir; setter via %fs.cwd = $dir changes cwd — the general-dir equivalents .cd() / .cwd? live on dirs.md), .path (the executable search path), the bare-name form of .execute that walks .path, and .which for name-to-file lookup without running.",
-	"status": "spec — additions catalog started; bare-name .execute exact API shape marked TBD until settled with implementation; .which name settled (named after the Unix `which` command); .cwd getter/setter settled with property-assignment on %fs, and the dir-side .cd() / .cwd? spec'd separately on dirs.md"
+	"role": "spec for the methods that live on the %fs namespace beyond .root (the accessor for the underlying root dir spec'd on fs.md). Currently: .cwd (getter returns the current cwd dir; setter via %fs.cwd = $dir changes cwd — the general-dir equivalents .cd() / .cwd? live on dirs.md), .path (the executable search path), the bare-name form of .execute that walks .path, .which for name-to-file lookup without running, and .util for resolving canonical system utilities via POSIX's confstr(_CS_PATH) + a small curated table (never trusting $PATH).",
+	"status": "spec — additions catalog started; bare-name .execute exact API shape marked TBD until settled with implementation; .which name settled (named after the Unix `which` command); .cwd getter/setter settled with property-assignment on %fs, and the dir-side .cd() / .cwd? spec'd separately on dirs.md; .util resolution rules settled (confstr for POSIX + user-mutable %engine.util_paths hash for non-POSIX + never $PATH), backed by a C binding to confstr rather than shelling out to getconf"
 }}
 ~~~
 
@@ -83,6 +83,27 @@ $build_dir.execute $tar_bin, '-xzf', 'archive.tar.gz'
 If no path entry matches, the call raises.
 
 Named after the Unix `which` command, which does exactly this — walks `PATH` and reports the first match without running it.
+
+## `.util`
+
+Locate an **"official" system utility** by name, without consulting `$PATH`. Returns a file handle for the resolved binary; raises if the utility can't be located.
+
+~~~caspian
+$tar_bin = %fs.util 'tar'                  # /usr/bin/tar (via POSIX default path)
+$build_dir.execute $tar_bin, '-xzf', 'archive.tar.gz'
+~~~
+
+**Why not just `.which`.** `$PATH` is user-mutable and dangerous to trust in scripts — a hostile or accidental entry earlier in `$PATH` can substitute a rogue binary. `.util` is for the case where the caller wants "whatever the OS considers the canonical `tar`" and refuses to be influenced by whatever the shell environment happens to say.
+
+**Resolution order:**
+
+1. **POSIX-blessed utilities** → resolved via `confstr(_CS_PATH)` (POSIX-standard "default PATH guaranteed to find all standard utilities"). Covers ~160 utilities including `tar`, `gzip`, `gunzip`, `sh`, `sed`, `awk`, `find`, `sort`, the coreutils, and most util-linux commands. This is spec-backed — no curation on Caspian's side; the OS tells us where its own standard utilities live.
+2. **Non-POSIX utilities** → resolved via [`%engine.util_paths`](../engine/util-paths), the curated table Caspian ships with. Initial contents load from [util-paths.json](util-paths.json). Covers utilities that the industry treats as standard but POSIX doesn't (`zip`, `unzip`, `openssl`, `curl`, `git`, `luarocks`, `systemctl`, etc.). The hash is user-mutable, so pinning a specific binary for a given utility is just `%engine.util_paths['name'] = { 'linux': ['/path'] }` — no separate config layer.
+3. **Never `$PATH`.** If neither mechanism above finds the utility, the call raises. No silent fallback — that would defeat the point.
+
+**Implementation note.** The POSIX-path lookup is backed by a C binding to `confstr(_CS_PATH, ...)` rather than shelling out to the `getconf` utility. Two reasons: it avoids a chicken-and-egg bootstrap problem (locating `getconf` in the first place would itself require a hardcoded path), and it works during engine startup before subprocess machinery is initialized. The binding ships as a standalone `lua-confstr` Cache-tier file (not baked into the binary), so it can eventually be published as a `lua-confstr` luarocks rock without repackaging. See [core](../core/).
+
+**Contrast with `.which`.** `.which` walks `%fs.path` (populated from `$PATH`). `.util` refuses `$PATH` on principle and resolves to a fixed, OS-blessed location. Both raise on miss. Use `.which` when the caller genuinely wants "whatever the user's environment says"; use `.util` when the caller wants "the canonical system utility, no games."
 
 ## Related
 

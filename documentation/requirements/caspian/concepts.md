@@ -83,7 +83,7 @@ The upside is a smaller conceptual surface and a uniform way to reason about met
 
 ## Objects, not libraries
 
-Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, dispatchers, anything that fits the Puck object protocol. Each download is one object identified by one URL.
+Caspian doesn't have a "library" concept as a technical primitive. [`%puck`](https://puck.uno/documentation/requirements/caspian/chain/methods/puck) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
 
 You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%puck` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/documentation/requirements/caspian/engine/manifest/#sections).
 

@@ -4,15 +4,19 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_global_call",
-	"role": "spec for %call — the global method that returns the current call object. Holds the caller's role, exposes early-exit, yield-to-block, dispatcher, and the blocks passed to the current call. Distinct from %chain — %call lives on its own, not as a chain entry.",
-	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; early exit via %call.return; yield and dispatcher for DSL-style block usage",
-	"audience": "anyone writing a function or closure body that needs to inspect, return from, or yield back to the current call"
+	"role": "spec for %call — the global method that returns the current call object. Holds the caller's role, exposes early-exit, the callable-value array of blocks the caller passed, and the class the currently-executing method was defined on (%call.method_class — used by the engine's private-method access check and available to user code for the same class-based gating). Yielding to a block is calling the block (no separate primitive) — the `yield` bwc desugars to `%call.blocks[0].call`. Configured calls (DSL wiring, reusable param setup) go through caller objects instead. Distinct from %chain — %call lives on its own, not as a chain entry.",
+	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; the current method's defining class is reachable as %call.method_class (null when not in a method body); early exit via %call.return; blocks are callable values in %call.blocks; yield bwc = %call.blocks[0].call; DSL wiring lives on caller objects, not on %call",
+	"audience": "anyone writing a function or closure body that needs to inspect, return from, or invoke a passed block"
 }}
 ~~~
 
-`%call` is a global method available inside any function or closure body. It returns the **call object** — a first-class object representing the in-progress call. The call object carries the metadata about the call (who made it, what blocks they passed, the dispatcher for DSL-style block use) and provides the primitives for ending the call (`return`, `yield`).
+`%call` is a global method available inside any function or closure body. It returns the **call object** — a first-class object representing the in-progress call. The call object carries the metadata about the call (who made it, what blocks they passed) and provides the primitives for ending the call (`%call.return`).
 
 `%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%puck`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
+
+## Class identity
+
+`%call` returns an instance of the **Call class** at `caspian.uno/call`. `%call.object.isa?(%['caspian.uno/call'])` is `true`. Direct construction of Call objects by user code is TBD — for V1 the only path to a Call object is `%call` inside a live frame; a constructor-side surface for testing / mocking is a post-V1 question.
 
 ## Owned by the caller
 
@@ -24,7 +28,7 @@ Consequences:
 
 - `%call.role` is the caller's role.
 - `%call.return` exits the call from the caller's side — the caller resumes immediately.
-- Anything attached to `%call` (passed blocks, dispatcher state) is caller-side state.
+- Anything attached to `%call` (the passed blocks) is caller-side state.
 
 ## `%call.return`
 
@@ -49,14 +53,22 @@ The distinction:
 
 Use `%call.return` when you specifically want to end **this** call regardless of whether it's a function or closure. Use `return` when you want to end the calling function the way a bare-word `return` does in most languages.
 
-## `%call.yield`
+## `%call.blocks`
 
-Yields control back to the caller's first passed block. The block runs to completion; control returns to the function with the block's return value.
+A plain `Array` of all `do...end` and `dofunc...end` blocks the caller passed, in order. Each element is a **callable value** — a closure (from `do`) or a bare function (from `dofunc`), per [calling § do and dofunc blocks](tag:calling#do-and-dofunc-blocks). Calling a block is the same as calling any function: `.call args...` on the block value. Standard array-read surface (`.length`, `.each`, indexed access) applies exactly as on any other array.
+
+~~~caspian
+function &branch()
+	$blocks = %call.blocks       # array of the passed blocks
+	%call.blocks[0].call 'x'     # invoke block 0 with 'x'
+end
+~~~
+
+**The `yield` bwc.** `yield args...` is a tier-3 bare-word command that desugars to `%call.blocks[0].call args...`. Yielding isn't a separate primitive; it's calling block 0.
 
 ~~~caspian
 function &logger()
-	%call.yield 'starting'   # caller's block sees 'starting' as the do-block arg
-	...
+	yield 'starting'             # sugar for %call.blocks[0].call 'starting'
 end
 
 &logger do ($msg)
@@ -64,28 +76,17 @@ end
 end
 ~~~
 
-`%call.yield` defaults to the first block (index 0) that the caller passed. For multiple blocks or more complex DSL setup, construct a dispatcher with `%call.dispatcher.new`.
+**Multi-block calls.** For blocks beyond index 0, address them directly on the array — `%call.blocks[N].call args...`. There is no dedicated "target block N" primitive; `.call` on the array element is the whole story.
 
-## `%call.dispatcher.new`
-
-Constructs a **dispatcher** — a first-class object that backs DSL-style block configuration. A function uses a dispatcher to register bare-word commands on the `dsl` hash before yielding, so the block can use those commands as if they were keywords. `%call.dispatcher.new(n)` targets the nth passed block; the default targets block 0.
-
-Dispatchers are explicit: bare `yield` (the tier-3 bwc for `%call.yield`) doesn't need one. Construct a dispatcher only when DSL setup is needed.
-
-Full mechanism, examples, and the four-tier token model: [`call/dsl`](https://puck.uno/documentation/requirements/caspian/global-methods/call/dsl).
-
-## `%call.blocks`
-
-An array of all `do...end` blocks the caller passed, in order. Useful when a function accepts a small, fixed set of blocks; for anything beyond a handful, use named-block parameters instead.
+**Configured calls (with DSLs or reusable param setups).** For yielding with a DSL active — or any call that needs configuration before firing — reach for the caller-object surface. See [caller](tag:caller) for the full spec:
 
 ~~~caspian
-function &branch()
-	$blocks = %call.blocks      # array of the passed blocks
-	...
-end
+$caller = %call.blocks[0].caller.new
+$caller.dsl $log_handler, :info, :warn, :error
+$caller.call
 ~~~
 
-The array exposes the blocks themselves; calling them goes through the dispatcher mechanism above. Most code reaches for `%call.dispatcher.new(N)` directly rather than the raw `%call.blocks` array.
+**No-block errors.** `%call.blocks[0]` when no blocks were passed is an out-of-bounds array read — same rule as any other array access. `yield` with no blocks raises for the same reason.
 
 ## `%call.role`
 
@@ -130,16 +131,55 @@ end
 
 The method body runs in the class's role; `%call.role` is the caller's role; the comparison decides whether to proceed. The full rule for cross-role method access lives in [roles/object-access](https://puck.uno/documentation/requirements/caspian/roles/object-access#self-gating-from-inside-the-method).
 
+## `%call.method_class`
+
+The class the currently-executing method was defined on, or `null` when the current frame isn't inside a method (a bare function, a closure with no enclosing method, a top-level call).
+
+~~~caspian
+class # widget
+	method &describe()
+		return %call.method_class    # the widget class itself
+	end
+end
+~~~
+
+Parallel to [`%call.role`](#call-role): where `%call.role` gives class-based code a handle on **who called it**, `%call.method_class` gives code inspecting a dispatch a handle on **what class context the current call is running inside**. Both are per-frame properties the engine already tracks (the class context is needed for `super()` and for private-method access checks); `%call.method_class` exposes it as a first-class value.
+
+### Private-method access uses this
+
+The engine's private-method access check reads `%call.method_class` at dispatch time. When code calls a method marked `.private = true` on some receiver, the check is: **is `%call.method_class` a class that defines the method?** If yes, dispatch. If no, raise.
+
+Consequence: a sibling method calling `%self.private_helper()` from inside the class body succeeds because its frame's `%call.method_class` is the class that carries `.private_helper`. Outside code calling `$foo.private_helper()` raises because the outside frame's `%call.method_class` is either some other class (or `null`). References to the object don't carry any special access — the check is always against the current frame at dispatch time.
+
+See [classes/definition § Private methods](https://puck.uno/documentation/requirements/caspian/classes/definition/#private-methods) for the full private-method spec and [functions/method § Calling sibling methods](https://puck.uno/documentation/requirements/caspian/functions/method#calling-sibling-methods) for the sibling-call surface.
+
+### Self-gating via method class
+
+User code can gate access the same way the engine does:
+
+~~~caspian
+class # widget
+	method &internal_op()
+		if %call.method_class != %self.object.classes.first
+			raise 'internal_op is same-class-only'
+		end
+		# ...
+	end
+end
+~~~
+
+Same shape as the `%call.role` self-gating example; different axis of gating.
+
 ## Catalog
 
 | Surface | Returns | Purpose |
 |---|---|---|
 | `%call` | call object | The current call. Owned by the caller's role. |
 | `%call.role` | role object | Caller's role. |
+| `%call.method_class` | class object or null | Class the currently-executing method was defined on; `null` when the frame isn't a method body. Used by the engine's private-method access check and available to user code for the same class-based gating. |
 | `%call.return value` | exits the call | End this call (function or closure), returning `value`. |
-| `%call.yield args...` | block return value | Yield to the caller's first block, passing `args...`. |
-| `%call.dispatcher.new(n)` | dispatcher | Construct a new dispatcher targeting the nth passed block. Defaults to 0. Created only when DSL setup is needed; bare `yield` doesn't need one. |
-| `%call.blocks` | array of blocks | All blocks the caller passed, in order. |
+| `%call.blocks` | plain Array of callables | All blocks the caller passed, in order. Each element is a callable value (closure or bare function). Standard array-read surface (`.length`, `.each`, `[N]`) applies. |
+| `%call.blocks[N].call args...` | block return value | Invoke block N with `args...`. The `yield` bwc desugars to `%call.blocks[0].call`. |
 
 ## Testing
 
@@ -151,17 +191,24 @@ The method body runs in the class's role; `%call.role` is the caller's role; the
 - **`%call.return` exits function** — `function() %call.return 'x'; 'y' end` invoked returns `'x'`.
 - **`%call.return` inside closure exits closure only** — `function() &foo do %call.return 'x' end; return 'y' end` returns `'y'`; the closure body's `%call.return 'x'` did not propagate.
 - **Bare `return` inside closure exits enclosing function** — contrast to `%call.return`: bare `return` from a `do` block returns from the surrounding function.
-- **`%call.yield` invokes first passed block** — `%call.yield 'x'` runs `%call.blocks[0]` with `'x'` as its argument.
-- **`%call.yield` return value is the block's return value** — the receiver receives whatever the block returned.
-- **`%call.yield` with no blocks raises** — a call passing no blocks whose receiver runs `%call.yield` errors.
-- **`%call.blocks` is an array** — `.length`, `.push` (no — read-only?), indexed access all work as on any array read surface.
+- **`%call.blocks` is an array** — `.length` and indexed access work as on any array read surface.
 - **`%call.blocks` in call-site order** — blocks appear in the order they were written at the call site.
 - **`%call.blocks[0]` is the first block** — a `do` block written first becomes index 0.
 - **`%call.blocks` empty when no blocks passed** — `%call.blocks.length` is 0.
-- **`%call.dispatcher.new` returns a fresh dispatcher** — two calls return two distinct dispatchers.
-- **`%call.dispatcher.new(n)` targets the nth block** — see [`dsl.md` tests](dsl#testing) for full dispatcher behavior.
+- **`%call.blocks[N].call` invokes block N** — `%call.blocks[0].call 'x'` runs the first block with `'x'` as its argument.
+- **`yield` bwc desugars to `%call.blocks[0].call`** — `yield 'x'` and `%call.blocks[0].call 'x'` produce identical behavior.
+- **`yield` with no blocks raises** — evaluating `yield` inside a receiver whose caller passed no blocks is an out-of-bounds read on `%call.blocks[0]` and raises.
+- **`yield` can be called multiple times** — a function body with `yield 'a'; yield 'b'` invokes the block twice; the block runs to completion each time. The block sees `'a'` on the first call and `'b'` on the second.
+- **`yield` can be called zero times** — a function that decides not to invoke `%call.blocks[0].call` runs to completion without touching the block; the block's body never runs.
+- **Block invocation return value** — the receiver receives whatever the block returned.
 - **`%call` is not in `%chain`** — `%chain.entries` (or equivalent) does not include `%call`; `%call` is its own global.
 - **Each invocation has its own `%call`** — recursive calls see their own frame's `%call`, not the enclosing frame's.
 - **Passing a closure and reading `%call.blocks[0]`** — the receiver can inspect the block as a callable value.
 - **Self-gating example works** — a method comparing `%call.role != %self.object.role` and raising blocks a cross-role call from a non-owner.
 - **`%call.return` inside a bare block controller** — see [exceptions § ReturnException](https://puck.uno/documentation/requirements/caspian/exceptions/#returnexception) for the frame targeting.
+- **`%call.method_class` inside a method body** — returns the class the method was defined on. Inside `class # foo; method &m() return %call.method_class end; end`, `$foo.new.m` returns the `foo` class value.
+- **`%call.method_class` inside a bare function body** — returns `null`; bare functions have no method-class context.
+- **`%call.method_class` inside a closure body** — returns `null` when the closure is defined outside a method; returns the enclosing method's class when the closure is defined inside a method (matching how `%self` inherits from an enclosing method's frame).
+- **`%call.method_class` at top level** — returns `null`.
+- **Private-method dispatch consults `%call.method_class`** — a call to `$foo.private_helper()` from outside the class raises because the outside frame's `%call.method_class` doesn't match the class carrying `.private_helper`; a call from a sibling method of the same class succeeds because the sibling's `%call.method_class` matches.
+- **Captured `%self` does not carry access** — `method &me() return %self end; $obj = $foo.me; $obj.private_helper()` raises when the second call is made from outside the class body; the outside frame's `%call.method_class` is not the private helper's class, regardless of where `$obj` came from.

@@ -51,7 +51,6 @@ The host decides what to provision; the engine does the seeding mechanically. If
 
 A handful of chain capabilities are pure runtime introspection or engine-internal accounting — they don't reach outside the script, so they're built into the engine itself rather than provisioned by the host:
 
-- `%chain.memory` — introspection of this process's memory state.
 - `%chain.steps` — Caspian-level evaluation step counter.
 - `%chain.timeout` — wall-clock budget for a block. (Uses the clock provisioned via `%engine.now`, but is itself a chain-only block-scoping construct.)
 - `%chain.timer` — elapsed-time measurement around a block. (Same — uses the engine clock but is itself a chain-only construct.)
@@ -94,7 +93,6 @@ The chain's frame stack contains exactly one entry — the entry-point frame, ru
 - **`%chain.argv` mirrors `%engine.argv`** — reading `%chain.argv` returns the same array as `%engine.argv`.
 - **`%chain.stdin`, `%chain.stdout`, `%chain.stderr` mirror their engine slots** — each capability delegates to its host-installed callback.
 - **`%chain.tmp`, `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.net`, `%chain.env`, `%chain.forks`, `%fs` mirror their engine slots** — each capability is present when the host provisioned the corresponding `%engine.X`.
-- **`%chain.memory` is present unconditionally** — introspection of process memory works without host provisioning.
 - **`%chain.steps` is present unconditionally** — the step counter is readable from the first statement.
 - **`%chain.timeout` is present unconditionally** — a `%chain.timeout` block works without host provisioning beyond the clock.
 - **`%chain.timer` is present unconditionally** — a `%chain.timer` block works without host provisioning beyond the clock.

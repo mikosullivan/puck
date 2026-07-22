@@ -271,6 +271,14 @@ Three equivalent forms — all set the same `.private` property. Use whichever r
 - **Property assignment on a captured method value.** `$m = method foo() ... end; $m.private = true` — useful when the setting is conditional.
 - **Getter/setter surface on the method object.** `$m.private` reads the flag; `$m.private = true` writes it. Same as the assignment form above, called out because it's part of the general [method surface](https://puck.uno/documentation/requirements/caspian/functions/method#method-surface).
 
+**Access is checked at dispatch time via [`%call.method_class`](https://puck.uno/documentation/requirements/caspian/global-methods/call/#call-method-class).** When code dispatches a method marked `.private = true`, the engine reads the current frame's `%call.method_class` — the class the currently-executing method was defined on. If that class defines the private method being dispatched (or is a subclass that inherits it), the call proceeds. Otherwise, it raises. The check is against the CALLING FRAME, not against the reference in hand — so:
+
+- A sibling method calling `%self.helper()` from inside the class body succeeds; `%call.method_class` in the sibling's frame is the same class carrying `.helper`.
+- Outside code calling `$obj.helper()` raises; the outside frame's `%call.method_class` is either some other class or `null`.
+- Capturing `%self` inside a method and returning it (`method &me() return %self end`) doesn't grant private access to whoever receives the reference. The reference itself carries no access token — the calling frame's `%call.method_class` at dispatch time is what governs. See [functions/method § Calling sibling methods](https://puck.uno/documentation/requirements/caspian/functions/method#calling-sibling-methods) for the walkthrough.
+
+Real capability restriction (as opposed to convention-plus-enforcement) uses [jails](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#jail) — pass a jail exposing only the public methods and outside code literally cannot reach anything else.
+
 Full runtime semantics (dispatch rule, error on external call) are spec'd on [functions/method § Method surface](https://puck.uno/documentation/requirements/caspian/functions/method#method-surface).
 
 ## Inheritance

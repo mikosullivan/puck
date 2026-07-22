@@ -1,0 +1,35 @@
+{
+	"curl": {
+		"linux": ["/usr/bin/curl", "/usr/local/bin/curl"]
+	},
+	"git": {
+		"linux": ["/usr/bin/git", "/usr/local/bin/git"]
+	},
+	"gpg": {
+		"linux": ["/usr/bin/gpg", "/usr/local/bin/gpg"]
+	},
+	"jq": {
+		"linux": ["/usr/bin/jq", "/usr/local/bin/jq"]
+	},
+	"luarocks": {
+		"linux": ["/usr/bin/luarocks", "/usr/local/bin/luarocks"]
+	},
+	"openssl": {
+		"linux": ["/usr/bin/openssl", "/usr/local/bin/openssl"]
+	},
+	"rsync": {
+		"linux": ["/usr/bin/rsync", "/usr/local/bin/rsync"]
+	},
+	"systemctl": {
+		"linux": ["/usr/bin/systemctl", "/bin/systemctl"]
+	},
+	"unzip": {
+		"linux": ["/usr/bin/unzip", "/usr/local/bin/unzip"]
+	},
+	"wget": {
+		"linux": ["/usr/bin/wget", "/usr/local/bin/wget"]
+	},
+	"zip": {
+		"linux": ["/usr/bin/zip", "/usr/local/bin/zip"]
+	}
+}
