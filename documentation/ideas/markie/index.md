@@ -12,7 +12,7 @@
 
 **Markie is an HTML-DSL transpiler offered as a service.** You submit a document in Markie's DSL — compact, named components, nested constructs, remote-content placeholders — and you get back standard HTML. Same idea as SASS → CSS or TypeScript → JS, but for HTML.
 
-Markie lives at `markie.uno`. Accessible through the Puck protocol (`%['markie.uno']` from Caspian) and through a standalone HTTP API (any client can POST a DSL doc and get HTML back, no Puck dependency).
+Markie lives at `markie.uno`. Accessible through the Puck protocol (`%('markie.uno')` from Caspian) and through a standalone HTTP API (any client can POST a DSL doc and get HTML back, no Puck dependency).
 
 The motivator: get the developer ergonomics of a component framework (compact source, named components, recursive nesting) without committing the browser to a client-side runtime. Markie does the expansion server-side; the client gets fully-formed HTML and only the lightweight CSS/JS it actually needs.
 
@@ -247,7 +247,7 @@ A flag chooses between formatted (indented, commented) output for development an
 
 ### Puck protocol object
 
-`%['markie.uno'].expand(source: '...')` from Caspian. The first-class Puck integration; lets Caspian code generate Markie input and consume its HTML output without HTTP plumbing.
+`%('markie.uno').expand(source: '...')` from Caspian. The first-class Puck integration; lets Caspian code generate Markie input and consume its HTML output without HTTP plumbing.
 
 ## Open questions
 

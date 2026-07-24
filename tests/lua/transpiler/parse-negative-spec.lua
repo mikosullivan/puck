@@ -1,6 +1,6 @@
 --[[
 {
-	"spec":  "parse_negative_spec",
+	"spec":  "parse-negative-spec",
 	"role":  "Runs the negative test cases from parse-negative.casp. Each case is a source snippet that must cause transpile to raise with an error message containing the declared substring. Kept as a separate spec (and separate fixture file) so malformed Caspian doesn't affect parse.casp's formatting.",
 	"input": "tests/lua/transpiler/parse-negative.casp",
 	"run":   "busted tests/lua/transpiler/parse_negative_spec.lua (from repo root)"
@@ -10,7 +10,7 @@
 package.path = "./code/lua/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
-local extractor  = require("parse_extract")
+local extractor  = require("parse-extract")
 
 describe("transpile parse-negative.casp", function()
 	local cases = extractor.extract("tests/lua/transpiler/parse-negative.casp")

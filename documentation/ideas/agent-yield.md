@@ -116,7 +116,7 @@ Inside the `delegate_to` block, the agent's role gets every permission the calle
 
 What the agent can then do depends on the caller's role. If the caller is in user role, for example:
 
-- Load libraries via `%puck`.
+- Load libraries via `%fetch`.
 - **Build** new libraries — write code that becomes a callable Caspian module for the rest of the run (and possibly persisted via the engine's library cache, depending on how that lands).
 - Redefine classes and functions in scope.
 - Make Puck calls, mutate state, anything else the caller's role permits.

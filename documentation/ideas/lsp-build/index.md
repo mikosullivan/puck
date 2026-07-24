@@ -72,7 +72,7 @@ Two tiers, same as the Caspian engine plan:
 
 **The V1 LSP intentionally stays small.** Anything in [lsp.md § Future options](https://puck.uno/documentation/ideas/lsp#future-options) is post-V1 — including cross-file analysis, find-references, rename, workspace symbol search, signature help, code actions, inlay hints, semantic tokens. Don't expand scope without explicit unlock.
 
-**Workspace configuration discovery is unresolved.** How the LSP locates a project's library layout, `%puck` resolutions, etc. is flagged as an open question in [lsp.md § Future options](https://puck.uno/documentation/ideas/lsp#future-options). For V1, the LSP can assume single-file analysis only — no cross-file scope walking, no project-aware completion. Workspace awareness lands when cross-file analysis lands.
+**Workspace configuration discovery is unresolved.** How the LSP locates a project's library layout, `%fetch` resolutions, etc. is flagged as an open question in [lsp.md § Future options](https://puck.uno/documentation/ideas/lsp#future-options). For V1, the LSP can assume single-file analysis only — no cross-file scope walking, no project-aware completion. Workspace awareness lands when cross-file analysis lands.
 
 **Editor support is VSCode-driven during V1.** Other editors (Vim/Neovim, Emacs, Helix, Zed, etc.) can use the LSP — that's the whole point — but VSCode is the development driver because it's where the in-house extension lives. Documentation for setting up other editors lands when the surface is stable; until then, the LSP works in any editor but the setup story is "configure your LSP client to launch `caspian lsp`."
 

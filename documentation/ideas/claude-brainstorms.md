@@ -162,7 +162,7 @@ A class capability: objects with an explicit lifetime. The
 mikobase auto-collects them after their TTL expires.
 
 ```
-$token = %['puck.uno/auth/token'].new(
+$token = %('puck.uno/auth/token').new(
     expires_at: %now + 3600,
     user: $user
 )

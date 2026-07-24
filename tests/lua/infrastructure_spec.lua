@@ -38,7 +38,7 @@ describe("infrastructure", function()
 	end)
 
 	it("parse.casp yields at least one test case", function()
-		local extractor = require("parse_extract")
+		local extractor = require("parse-extract")
 		local cases = extractor.extract("tests/lua/transpiler/parse.casp")
 		assert.is_true(#cases >= 1,
 			"expected at least one test case in parse.casp, got " .. #cases)

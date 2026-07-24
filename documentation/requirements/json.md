@@ -3,8 +3,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_json",
-	"role": "spec for Caspian's built-in JSON support. Two layers: (1) an engine-internal Lua parser (LPeg-based, retires the current bespoke lib/lua/caspian/json.lua) that the engine uses at startup to parse CaspianJ — the engine's runtime format IS JSON, so JSON parsing has to be usable before Caspian code runs; (2) a user-facing Caspian class at caspian.uno/json.casp, loaded via %['caspian.uno/json.casp'], that user code calls for parse / emit operations. No %json global exists — the class-lookup form is the surface. Preserves hash insertion order across round-trips (CaspianJ requirement).",
-	"status": "spec — Lua-side + LPeg-based decision settled; user-facing surface (%['caspian.uno/json.casp']) settled; API on the class (.parse, .emit) sketched; exception classes TBD at implementation",
+	"role": "spec for Caspian's built-in JSON support. Two layers: (1) an engine-internal Lua parser (LPeg-based, retires the current bespoke lib/lua/caspian/json.lua) that the engine uses at startup to parse CaspianJ — the engine's runtime format IS JSON, so JSON parsing has to be usable before Caspian code runs; (2) a user-facing Caspian class at caspian.uno/json.casp, loaded via %('caspian.uno/json.casp'), that user code calls for parse / emit operations. No %json global exists — the class-lookup form is the surface. Preserves hash insertion order across round-trips (CaspianJ requirement).",
+	"status": "spec — Lua-side + LPeg-based decision settled; user-facing surface (%('caspian.uno/json.casp')) settled; API on the class (.parse, .emit) sketched; exception classes TBD at implementation",
 	"audience": "engine implementers working on the JSON parser; Caspian developers using the JSON class from application code"
 }}
 ~~~
@@ -15,7 +15,7 @@ Caspian parses and emits JSON out of the box. Two layers, one accessible from us
 - **User-facing layer** — a Caspian class at `caspian.uno/json.casp`, loaded and used via:
 
 ~~~caspian
-$json = %['caspian.uno/json.casp']
+$json = %('caspian.uno/json.casp')
 $value = $json.parse '{"a": 1, "b": [true, null]}'
 $serialized = $json.emit $value
 ~~~
@@ -52,7 +52,7 @@ The current `json.lua` achieves this by carrying a `_keys` array on the ordered-
 Details firm up during implementation. Rough surface on the `caspian.uno/json.casp` class:
 
 ~~~caspian
-$json = %['caspian.uno/json.casp']
+$json = %('caspian.uno/json.casp')
 
 # parse — JSON string in, Caspian value out
 $value = $json.parse '{"a": 1, "b": [true, null]}'

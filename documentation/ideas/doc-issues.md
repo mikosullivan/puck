@@ -72,7 +72,7 @@ consistent with recent design decisions:
 - **Deleted `hosted-logging-service.md`** — no broken links.
 - **Dogberry-as-framework framing** — the touchstone/ docs
   correctly reflect Sammy and Robinson as standalone servers.
-- **`%[...]` shorthand for `%puck[...]`** — properly documented
+- **`%(...)` shorthand for `%fetch(...)`** — properly documented
   in system-methods.md.
 - **`%chain.log` and `%stdout`/`%stderr` always-present** — Jasmine
   doc correctly reflects no-guard-needed model.

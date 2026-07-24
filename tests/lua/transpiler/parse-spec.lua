@@ -1,6 +1,6 @@
 --[[
 {
-	"spec":  "parse_spec",
+	"spec":  "parse-spec",
 	"role":  "Loops over the boxed test cases extracted from parse.casp. For 'expects' cases, asserts (a) `transpile(source, {lines: true})` produces the expected full CaspianJ, and (b) `normalize(full)` produces the expected norm CaspianJ (when the fixture provides one). For 'raises' cases, asserts the snippet causes transpile to raise with an error message containing the expected substring. parse.casp runs in line-annotated mode so each fixture pins the source-line each statement/atom lands on.",
 	"input": "tests/lua/transpiler/parse.casp",
 	"run":   "busted tests/lua/transpiler/parse_spec.lua (from repo root)"
@@ -13,7 +13,7 @@ package.path = "./code/lua/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 local normalize  = require("normalize")
-local extractor  = require("parse_extract")
+local extractor  = require("parse-extract")
 
 describe("transpile parse.casp", function()
 	local cases = extractor.extract("tests/lua/transpiler/parse.casp")

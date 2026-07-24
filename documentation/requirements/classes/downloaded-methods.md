@@ -10,9 +10,9 @@
 }}
 ~~~
 
-Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%puck` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
+Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%fetch` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
 
-> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%puck`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
+> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%fetch`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
 
 ## The syntax
 
@@ -26,10 +26,10 @@ Two extensions that use a function value in the method-name slot instead of a na
 
 ~~~caspian
 # Apply a Puck-downloaded function as a method on $foo.
-$foo.%['https://gup.com/bar']
+$foo.%('https://gup.com/bar')
 
 # Store the function first, then apply it.
-$method = %['https://gup.com/bar']
+$method = %('https://gup.com/bar')
 $foo.$method
 ~~~
 
@@ -37,12 +37,12 @@ Both forms treat the function as a method on `$foo`. `%self` inside the method's
 
 ## Semantics
 
-When invoked as `$foo.$method` or `$foo.%['url']`, the applied function runs as a method:
+When invoked as `$foo.$method` or `$foo.%('url')`, the applied function runs as a method:
 
 - **It IS a method.** Everything a class-defined method can do, this one can do too — including direct bucket access via `@field`.
 - **`%self`** is `$foo`.
 - **`%bucket` is fully accessible.** The method can read and write `@name`, `@count`, and any other bucket entry the same way a class-defined method can. No indirection through public methods.
-- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%['url']` runs as the `%chain.puck` faucet role. A locally-defined function that's applied as a method runs as the role that authored it.
+- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%('url')` runs as the `%chain.puck` faucet role. A locally-defined function that's applied as a method runs as the role that authored it.
 - **Objects created by the method are owned by that role.** If the method does `return {new_object}`, that hash is owned by the faucet role (per the creator-owns rule).
 - **`%call`** is the current call object, owned by the caller's role. Same as any method call.
 - **`%chain`** is the caller's chain (subject to the chain-grant model at role boundaries — same rules as any cross-role method call).
@@ -148,7 +148,7 @@ Case 3 fills a real gap: reusing method-shaped code across classes without inher
 
 ## Open questions
 
-- **Shape check.** If `%['url']` returns something that isn't a function (a string, a number, a hash), what happens? Standard method-dispatch error is probably the right answer — same as calling `.foo` on an object with no `foo` method.
+- **Shape check.** If `%('url')` returns something that isn't a function (a string, a number, a hash), what happens? Standard method-dispatch error is probably the right answer — same as calling `.foo` on an object with no `foo` method.
 - **Reflection.** Does `$foo.methods` (or equivalent) include functions that MIGHT be applied via this mechanism? Probably no — the function is a first-class value, not a class member. The set of things you might apply is unbounded.
 - **Introspection inside the method.** Can the body figure out that it's being called via this mechanism vs. defined as a real class method? Probably no, and that's a feature — the code doesn't need to care.
 - **Precedence with class methods.** If the class defines a `bar` method AND you write `$foo.$bar_func`, which wins? The name is different (`bar` vs. `$bar_func`); no conflict. But what about `$foo.$method` where `$method` happens to be a function stored in a variable named the same as a class method? Probably no conflict — the parser distinguishes bare identifiers from `$`-prefixed variables.
@@ -222,7 +222,7 @@ This rule is a **security guarantee**, not paternalism ([no nanny code](https://
 - **`$foo.$fn` writes `@field`** — `function &set() @name = 'x' end; $foo.$set; $foo.@name` is `'x'`.
 - **`$foo.$fn` accesses `%bucket`** — `function &b() return %bucket end; $foo.$b` returns the receiver's bucket hash.
 - **`$foo.$fn` with args** — `function &greet($g) return $g + ', ' + @name end; $foo.$greet('hi')` returns `'hi, ' + name`.
-- **`$foo.%['url']` downloads then applies** — same behavior as storing the download first and applying.
+- **`$foo.%('url')` downloads then applies** — same behavior as storing the download first and applying.
 - **Locally-defined function applied as method** — a function declared inline (not downloaded) can be applied via `$obj.$fn`.
 - **Class method as value applied to another class's instance** — `$m = &Widget.render; $gadget.$m` runs `.render` with `%self = $gadget`.
 - **Applied method runs as function's owning role** — a faucet-downloaded function applied as a method runs in the faucet's role.

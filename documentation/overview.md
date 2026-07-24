@@ -58,7 +58,7 @@ without giving them a way through, that's nanny code.
 ~~~vibecode
 {"vibecode": {
 	"section": "puck_package",
-	"role": "describes the Puck protocol and its features: URL, %puck lookup and call, version window, library resolution, blockchain",
+	"role": "describes the Puck protocol and its features: URL, %fetch lookup and call, version window, library resolution, blockchain",
 	"key_concepts": ["object_protocol", "URL", "puck_lookup", "remote_method_invocation",
 		"version_window", "library_resolution_through_puck", "blockchain_identity"]
 }}
@@ -79,12 +79,12 @@ See [puck.md](puck/index.md) for the full protocol spec.
   `puck.uno/...`. URL is naming/identity, not type hierarchy:
   `puck.uno/touchstone/error/x` is not a subclass of
   `puck.uno/error/x` unless explicitly declared.
-- **`%puck[URL]` lookup.** Caspian code retrieves objects by URL:
-  `%puck['https://foo.com/character']`. The puck (the resolver object)
+- **`%fetch(URL)` lookup.** Caspian code retrieves objects by URL:
+  `%fetch('https://foo.com/character')`. The puck (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
   null.
-- **`%puck.call` remote method invocation.** Explicit cross-process /
+- **`%fetch.call` remote method invocation.** Explicit cross-process /
   cross-host method calls with `%chain` forwarded automatically and a
   defined error model (target-not-found, transport, auth, propagated
   remote exceptions).

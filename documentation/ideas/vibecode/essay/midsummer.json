@@ -37,7 +37,7 @@
     "fairies": {
       "oberon": {"role": "king_of_fairies"},
       "titania": {"role": "queen_of_fairies", "estranged_from": "oberon"},
-      "puck": {"alias": "robin_goodfellow", "role": "knavish_sprite", "serves": "oberon"},
+      "fetch": {"alias": "robin_goodfellow", "role": "knavish_sprite", "serves": "oberon"},
       "titania_servants": ["a_fairy", "peasblossom", "cobweb", "moth", "mustardseed"],
       "indian_changeling": {"ward_of": "titania", "unseen": true}
     }
@@ -343,7 +343,7 @@
     {"year": 1914, "event": "harley_granville_barker_simpler_staging_smaller_cast_elizabethan_folk_music_robotic_insectoid_fairies_based_on_cambodian_idols"},
     {"year": 1970, "event": "peter_brook_rsc_blank_white_box_circus_trapeze_introduces_doubling_theseus_oberon_hippolyta_titania", "cast": ["patrick_stewart", "ben_kingsley", "john_kane_puck", "frances_de_la_tour_helena"]},
     {"venues_new_york": ["theatre_for_a_new_audience_public_theater", "delacorte_central_park"]},
-    {"year": 1978, "event": "riverside_shakespeare_company_outdoor", "cast": {"puck": "eric_hoffmann", "titania": "karen_hurley", "oberon": "eric_conger"}, "director": "gloria_skurski"},
+    {"year": 1978, "event": "riverside_shakespeare_company_outdoor", "cast": {"fetch": "eric_hoffmann", "titania": "karen_hurley", "oberon": "eric_conger"}, "director": "gloria_skurski"},
     {"year": 2015, "event": "maryland_shakespeare_players_queer_production_same_sex_lovers_drag_queen_mechanicals"},
     {"program": "shakespeare_in_the_arb", "venue": "university_of_michigan_nichols_arboretum", "since": 2001, "midsummer_productions": 3, "venue_acres": 123},
     {"year": 2016, "event": "emma_rices_first_globe_production_contemporary_reworking_gender_switched_bollywood_influences"}
@@ -387,17 +387,17 @@
     ],
     "films": [
       {"year": 1925, "title": "wood_love", "director": "hans_neumann", "country": "germany", "kind": "silent"},
-      {"year": 1935, "directors": ["max_reinhardt", "william_dieterle"], "cast": {"bottom": "james_cagney", "puck": "mickey_rooney", "hermia": "olivia_de_havilland", "flute": "joe_e_brown", "lysander": "dick_powell", "titania": "anita_louise", "oberon": "victor_jory"}, "note": "warner_brothers_first_shakespeare_since_1929_taming_of_shrew"},
-      {"year": 1947, "kind": "tv_film", "director": "i_orr_ewing", "cast": {"helena": "iris_baker", "demetrius": "peter_bell", "titania": "vivienne_bennett", "oberon": "john_byron", "lysander": "andrew_faulds", "hermia": "patricia_hicks", "puck": "mary_honer", "theseus": "desmond_llewelyn", "bottom": "hugh_manning", "quince": "peter_sallis", "hippolyta": "angela_shafto"}},
+      {"year": 1935, "directors": ["max_reinhardt", "william_dieterle"], "cast": {"bottom": "james_cagney", "fetch": "mickey_rooney", "hermia": "olivia_de_havilland", "flute": "joe_e_brown", "lysander": "dick_powell", "titania": "anita_louise", "oberon": "victor_jory"}, "note": "warner_brothers_first_shakespeare_since_1929_taming_of_shrew"},
+      {"year": 1947, "kind": "tv_film", "director": "i_orr_ewing", "cast": {"helena": "iris_baker", "demetrius": "peter_bell", "titania": "vivienne_bennett", "oberon": "john_byron", "lysander": "andrew_faulds", "hermia": "patricia_hicks", "fetch": "mary_honer", "theseus": "desmond_llewelyn", "bottom": "hugh_manning", "quince": "peter_sallis", "hippolyta": "angela_shafto"}},
       {"year": 1959, "title": "sen_noci_svatojanske", "director": "jiri_trnka", "kind": "stop_motion_puppet_czech", "english_narrator": "richard_burton"},
-      {"year": 1968, "director": "peter_hall", "company": "royal_shakespeare_company", "cast": {"bottom": "paul_rogers", "puck": "ian_holm", "helena": "diana_rigg", "hermia": "helen_mirren", "oberon": "ian_richardson", "titania": "judi_dench", "quince": "sebastian_shaw"}},
+      {"year": 1968, "director": "peter_hall", "company": "royal_shakespeare_company", "cast": {"bottom": "paul_rogers", "fetch": "ian_holm", "helena": "diana_rigg", "hermia": "helen_mirren", "oberon": "ian_richardson", "titania": "judi_dench", "quince": "sebastian_shaw"}},
       {"year": 1969, "director": "jean_christophe_averty", "cast": {"oberon": "jean_claude_drouot", "helena": "claude_jade", "hermia": "christine_delaroche", "hippolyta": "marie_versini", "flute": "michel_modo", "quinze": "guy_grosso"}},
       {"year": 1982, "title": "a_midsummer_nights_sex_comedy", "writer_director": "woody_allen", "loosely_based_on": "bergman_smiles_of_a_summer_night"},
       {"year": 1983, "title": "bottoms_dream", "director": "john_canemaker", "kind": "animated_short_from_bottoms_pov"},
       {"title": "dead_poets_society", "feature": "neil_perry_cast_as_puck"},
-      {"year": 1996, "director": "adrian_noble", "cast": {"bottom": "desmond_barrit", "puck": "finbar_lynch", "oberon_theseus": "alex_jennings", "titania_hippolyta": "lindsay_duncan"}, "design": "floating_lightbulbs_giant_umbrella_for_titanias_bower"},
+      {"year": 1996, "director": "adrian_noble", "cast": {"bottom": "desmond_barrit", "fetch": "finbar_lynch", "oberon_theseus": "alex_jennings", "titania_hippolyta": "lindsay_duncan"}, "design": "floating_lightbulbs_giant_umbrella_for_titanias_bower"},
       {"year": 1996, "title": "the_apartment_lappartement", "country": "france", "director": "gilles_mimouni"},
-      {"year": 1999, "director": "michael_hoffman", "cast": {"bottom": "kevin_kline", "oberon": "rupert_everett", "titania": "michelle_pfeiffer", "puck": "stanley_tucci", "hippolyta": "sophie_marceau", "demetrius": "christian_bale", "lysander": "dominic_west", "hermia": "anna_friel", "helena": "calista_flockhart"}, "setting": "monte_athena_tuscany"},
+      {"year": 1999, "director": "michael_hoffman", "cast": {"bottom": "kevin_kline", "oberon": "rupert_everett", "titania": "michelle_pfeiffer", "fetch": "stanley_tucci", "hippolyta": "sophie_marceau", "demetrius": "christian_bale", "lysander": "dominic_west", "hermia": "anna_friel", "helena": "calista_flockhart"}, "setting": "monte_athena_tuscany"},
       {"year": 1999, "writer_director": "james_kerwin", "cast": {"demetrius": "travis_schuldt"}, "setting": "techno_clubs_and_ancient_symbols"},
       {"year": 2001, "title": "get_over_it", "director": "tommy_o_haver", "stars": ["kirsten_dunst", "ben_foster", "shane_west", "martin_short", "colin_hanks", "mila_kunis", "sisqo"], "premise": "students_prepare_school_production"},
       {"year": 2002, "title": "the_childrens_midsummer_nights_dream", "director": "christine_edzard", "production": "sands_films_rotherhithe", "cast_size": 350, "cast_age_range": "8-11"},
@@ -409,11 +409,11 @@
     ],
     "tv": [
       {"date": "1964-04-28", "context": "around_the_beatles_british_tv_special", "performed": "pyramus_and_thisbe_act_5", "cast": {"pyramus": "paul_mccartney", "thisbe": "john_lennon", "moonshine": "george_harrison", "lion": "ringo_starr"}, "broadcasts": [{"network": "itv_uk", "date": "1964-05-06"}, {"network": "abc_us", "date": "1964-11-15"}]},
-      {"year": 1981, "production": "bbc_television_shakespeare", "producer": "jonathan_miller", "director": "elijah_moshinsky", "cast": {"titania": "helen_mirren", "oberon": "peter_mcenery", "puck": "phil_daniels", "lysander": "robert_lindsay", "quince": "geoffrey_palmer", "bottom": "brian_glover"}},
-      {"year": 1999, "kind": "animated_short", "studio": "walt_disney_television_animation", "series": "mickey_mouse_works", "featured_in": "house_of_mouse_house_of_scrooge_s3e34_2002", "cast": {"lysander": "mickey_mouse", "hermia": "minnie_mouse", "demetrius": "donald_duck", "helena": "daisy_duck", "theseus": "ludwig_von_drake", "egeus": "scrooge_mcduck", "puck": "goofy"}},
-      {"year": 2005, "series": "shakespeare_re_told_bbc", "writer": "peter_bowker", "cast": {"bottom": "johnny_vegas", "puck": "dean_lennox_kelly", "theo_conflation_theseus_egeus": "bill_paterson", "polly_hippolyta": "imelda_staunton", "oberon": "lennie_james", "titania": "sharon_small", "hermia": "zoe_tapper", "helena": "michelle_bonnard"}},
+      {"year": 1981, "production": "bbc_television_shakespeare", "producer": "jonathan_miller", "director": "elijah_moshinsky", "cast": {"titania": "helen_mirren", "oberon": "peter_mcenery", "fetch": "phil_daniels", "lysander": "robert_lindsay", "quince": "geoffrey_palmer", "bottom": "brian_glover"}},
+      {"year": 1999, "kind": "animated_short", "studio": "walt_disney_television_animation", "series": "mickey_mouse_works", "featured_in": "house_of_mouse_house_of_scrooge_s3e34_2002", "cast": {"lysander": "mickey_mouse", "hermia": "minnie_mouse", "demetrius": "donald_duck", "helena": "daisy_duck", "theseus": "ludwig_von_drake", "egeus": "scrooge_mcduck", "fetch": "goofy"}},
+      {"year": 2005, "series": "shakespeare_re_told_bbc", "writer": "peter_bowker", "cast": {"bottom": "johnny_vegas", "fetch": "dean_lennox_kelly", "theo_conflation_theseus_egeus": "bill_paterson", "polly_hippolyta": "imelda_staunton", "oberon": "lennie_james", "titania": "sharon_small", "hermia": "zoe_tapper", "helena": "michelle_bonnard"}},
       {"year": 2006, "series": "the_suite_life_of_zack_and_cody_s2e22", "title": "a_midsummers_nightmare", "premise": "school_play"},
-      {"year": 2016, "network": "bbc_one", "length_minutes": 90, "writer": "russell_t_davies", "director": "david_kerr", "cast": {"bottom": "matt_lucas", "titania": "maxine_peake", "oberon": "nonso_anozie", "hermia": "prisca_bakare", "puck": "hiran_abeysekera"}}
+      {"year": 2016, "network": "bbc_one", "length_minutes": 90, "writer": "russell_t_davies", "director": "david_kerr", "cast": {"bottom": "matt_lucas", "titania": "maxine_peake", "oberon": "nonso_anozie", "hermia": "prisca_bakare", "fetch": "hiran_abeysekera"}}
     ],
     "role_playing_games": [
       {"setting": "forgotten_realms_dungeons_and_dragons", "archfeys": ["oberon", "titania"]}

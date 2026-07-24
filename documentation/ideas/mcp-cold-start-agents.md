@@ -26,7 +26,7 @@ Concrete failure modes observed while working in this repo:
 - **Sigil confusion.** Agent writes `foo.push(x)` where Caspian requires `$foo.push($x)`. Or emits `%name = 1` on the LHS of an assignment (`%` is engine-only). Or reaches for `@field` in a bare function body where there is no `%bucket`.
 - **Ambient authority assumption.** Agent writes code that calls `%net.get` from a downloaded object as if the caller's grants flow through. The role model says otherwise — a method runs as its object's role, not the caller's. Agent has to be corrected several times before it stops.
 - **Class-mechanism drift.** Agent reaches for "mixin", "module", "trait", "singleton method" — vocabulary from other languages. Caspian has one method-carrier: classes. Every reach for the wrong word buys a follow-up correction.
-- **Library-idiom drift.** Agent writes `require("csv")` or `import csv`. Caspian resolves libraries by URL through `%['caspian.uno/csv.casp']` (or `%puck['...']`). Agent has to be shown the URL-addressed model at least once before it internalizes it.
+- **Library-idiom drift.** Agent writes `require("csv")` or `import csv`. Caspian resolves libraries by URL through `%('caspian.uno/csv.casp')` (or `%fetch('...')`). Agent has to be shown the URL-addressed model at least once before it internalizes it.
 - **File-vs-URL doc references.** Agent, when writing a doc, links to `documentation/foo/bar.md`. Repo policy is puck.uno URLs. Repeatedly corrected in every session.
 - **Test-tier confusion.** Agent puts Caspian-level tests in the Lua tier or vice versa. The two-tier model (Lua tests for transpiler/engine, Bryton tests for language behavior) is a repo-local convention.
 - **CaspianJ vs Caspian source.** Agent conflates them, or emits Caspian source in a place expecting the CaspianJ interchange table.
@@ -42,10 +42,10 @@ Not everything is equally load-bearing at cold start. Ranked by "what would prev
 2. **The role model in one paragraph.** Every value carries a role; methods run as their object's role, not the caller's; `%engine` is `user`-only; grants propagate through `%chain` per block. An agent that understands this stops writing ambient-authority code.
 3. **Classes are the only method-carrier.** No mixins, no modules, no singleton methods. Prevents the vocabulary-drift failure.
 4. **`function` vs `closure` vs `method` distinction.** Three callables with three scope rules. Agent needs to know which to reach for.
-5. **URL-addressed libraries.** `%['caspian.uno/csv.casp']` is how Caspian says `import csv`. Once the agent sees the pattern, the rest of the stdlib surface follows.
+5. **URL-addressed libraries.** `%('caspian.uno/csv.casp')` is how Caspian says `import csv`. Once the agent sees the pattern, the rest of the stdlib surface follows.
 6. **Repo conventions (this repo specifically).** Vibecode blocks; puck.uno URLs for doc links; sentence-case headers; tabs; transpiler/engine split. Not Caspian-language facts, but load-bearing for producing acceptable work in *this* project.
-7. **Common built-in vocabulary.** `%stdout`, `%stderr`, `%chain`, `%call`, `%bucket`, `%self`, `%now`, `%net`, `%puck`. The small closed set of engine surfaces. Complete the "vocab list" and the agent's error rate on surface names drops.
-8. **Common idioms.** Implicit last-value return, `puts` as parse-time sugar, `%call.return` for early exit, `%vibecode` heredoc in samples. Idioms are one-shot corrections that stick once the agent sees them.
+7. **Common built-in vocabulary.** `%stdout`, `%stderr`, `%chain`, `%call`, `%bucket`, `%self`, `%now`, `%net`, `%fetch`. The small closed set of engine surfaces. Complete the "vocab list" and the agent's error rate on surface names drops.
+8. **Common idioms.** Implicit last-value return, `puts` as parse-time sugar, `%call.return` for early exit, `vibecode` heredoc in samples. Idioms are one-shot corrections that stick once the agent sees them.
 
 Below the top eight, marginal value flattens fast — an agent that has those doesn't need to preload the full spec to produce reasonable first drafts.
 
@@ -86,7 +86,7 @@ Best fit for **stance and framing** — the "you are working in Caspian" mental 
 
 - `caspian-orientation` — the compact primer covering sigils, roles, class model, library resolution. Ideally the smallest thing an agent needs to stop making the top failures.
 - `caspian-repo-onboarding` — this repo's conventions (vibecode blocks, puck.uno URLs, transpiler/engine split, two-tier testing).
-- `writing-caspian` — stance for authoring Caspian source (explicit `return`, tabs, blank lines around blocks, `%vibecode` in samples).
+- `writing-caspian` — stance for authoring Caspian source (explicit `return`, tabs, blank lines around blocks, `vibecode` in samples).
 - `writing-docs` — stance for authoring `documentation/` markdown (vibecode at top of section, sentence case, no heading numbers).
 - `writing-caspianj` — stance for handling the interchange format specifically.
 
@@ -160,12 +160,12 @@ The orientation prompt is the load-bearing piece. The pull model works for the l
 
 ## URL symmetry with Caspian's library model
 
-Caspian already resolves classes by URL: `%['caspian.uno/csv.casp']`. The docs already have canonical URLs (puck.uno). MCP resources have URIs. Three URL spaces converge naturally.
+Caspian already resolves classes by URL: `%('caspian.uno/csv.casp')`. The docs already have canonical URLs (puck.uno). MCP resources have URIs. Three URL spaces converge naturally.
 
 Proposal:
 
 - The MCP server exposes each doc page as a resource with URI **matching the puck.uno URL for that page**. So `https://puck.uno/documentation/requirements/syntax/sigils` becomes the MCP resource URI `docs://caspian.uno/requirements/syntax/sigils` (or equivalent scheme). One-to-one, memorable, and the agent's mental model for "how do I find the doc for X" is the same as a human's.
-- The `%[url]` library idiom mirrors this: the docs for `caspian.uno/csv.casp` live at the MCP resource `docs://caspian.uno/csv.casp`. Agent that knows the library URL can guess the doc URI.
+- The `%(url)` library idiom mirrors this: the docs for `caspian.uno/csv.casp` live at the MCP resource `docs://caspian.uno/csv.casp`. Agent that knows the library URL can guess the doc URI.
 - `find_docs(query)` still exists as a fallback for when the agent doesn't know the exact URL.
 
 The upside is that the URL space becomes a shared address system across humans, code, and AI agents. No separate MCP-URI tree to learn.
@@ -181,7 +181,7 @@ The design question — worth calling out — is whether the MCP scheme identifi
 - **Latency and cost of large pulls.** A resource that returns 100 kb of spec is expensive if pulled on speculation. Prefer paged / sectioned resources over monolithic ones. Prefer `find_docs` over "pull the full page and skim."
 - **Allowlist for the `run` tool.** If `run(source)` executes actual Caspian, whose role does it run under, and what grants does it have? Untrusted-code-in-untrusted-code — the whole role model is relevant. Sandbox needs its own design pass.
 - **First-contact tension.** Same argument that deferred the LSP applies here. Requiring an MCP install to work with Caspian conflicts with "developer gets results before buying into whole system." The hosted-server-plus-CLAUDE.md-pointer path is the escape hatch.
-- **Spec-versioning.** If a Caspian project pins to `caspian.uno/csv.casp` version window `[2026-06, 2027-01]`, does the MCP server return the docs current at that window? Version-aware doc lookups exist for `%puck`; whether the MCP server mirrors is a design decision.
+- **Spec-versioning.** If a Caspian project pins to `caspian.uno/csv.casp` version window `[2026-06, 2027-01]`, does the MCP server return the docs current at that window? Version-aware doc lookups exist for `%fetch`; whether the MCP server mirrors is a design decision.
 
 ## Composition with the LSP and with mcp-and-caspian
 

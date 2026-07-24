@@ -1,6 +1,6 @@
 # root file for the Unotate site
 
-%vibecode <<EOF
+vibecode <<EOF
 {
 	"file":     "index.casp",
 	"role":     "root entry point for the mock Unotate site; constructs the Sammy server, registers a home-page route that shows the banner logo and a list of every play, and starts the accept loop",
@@ -10,12 +10,12 @@
 }
 EOF
 
-$server = %['puck.uno/sammy'].new()
+$server = %('puck.uno/sammy').new()
 
 $server.get('/') do($request)
 	$playwrights = %net.fetch('https://www.unotate.com/api/playwrights/').json
 
-	$uma = %['puck.uno/uma'].new()
+	$uma = %('puck.uno/uma').new()
 	$uma.title = 'Unotate'
 
 	$uma.body.img do($img)

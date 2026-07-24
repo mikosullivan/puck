@@ -42,7 +42,7 @@ The shape was well-defined. The **lifecycle** wasn't. Open questions at the time
 
 - **Where does the file live?** Project root? Beside the script? Specific filename convention?
 - **Who reads it?** The engine at startup? The script via explicit call? An external tool only?
-- **When is the check?** Process start? On every `%puck[uns]` lookup? On demand?
+- **When is the check?** Process start? On every `%fetch(uns)` lookup? On demand?
 - **What happens on mismatch?** Raise? Warn? Refuse to start?
 - **What's the `range` syntax?** Single bound, lower/upper, semver-style expression, set-of-allowed-values?
 
@@ -68,7 +68,7 @@ Minority cases (host-FFI consumers, engine-specific extensions, OS-dependent cod
 Pick this back up when one of these becomes true:
 
 - Multiple V1.0 users report wanting to express version constraints for libraries and don't have a workable workaround.
-- The library-resolution layer (`%puck.sources`, fetcher routing) lands and starts surfacing version-skew bugs that constraints would catch earlier.
+- The library-resolution layer (`%fetch.sources`, fetcher routing) lands and starts surfacing version-skew bugs that constraints would catch earlier.
 - Tooling demand (CI, IDE warnings, deploy-time checks) accumulates around "is this code compatible with this environment."
 
 Until one of those forcing functions appears, the deferral holds.
@@ -77,4 +77,4 @@ Until one of those forcing functions appears, the deferral holds.
 
 - [`%engine.manifest`](https://puck.uno/documentation/requirements/engine/manifest) — the runtime report half, which stays in V1.0.
 - [Caspian versioning](https://puck.uno/documentation/requirements/versioning/) — how a program selects which version of a library to look up. Adjacent to the constraints-file concern.
-- [Downloads / `%puck` sources](https://puck.uno/documentation/requirements/downloads/) — the fetch-and-cache layer where library version choices manifest at runtime.
+- [Downloads / `%fetch` sources](https://puck.uno/documentation/requirements/downloads/) — the fetch-and-cache layer where library version choices manifest at runtime.

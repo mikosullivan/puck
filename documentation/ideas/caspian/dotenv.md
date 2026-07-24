@@ -21,7 +21,7 @@ DEBUG=true
 A first-party download at `caspian.uno/dotenv.casp` that parses a `.env` file and returns a hash. That's it. No mutation of the running process's environment — the program decides what to do with the returned hash.
 
 ```caspian
-$env = %['caspian.uno/dotenv.casp'].load('.env')
+$env = %('caspian.uno/dotenv.casp').load('.env')
 $db_url = $env.DATABASE_URL
 ```
 
@@ -29,4 +29,4 @@ Merge into config, feed into a database connector, whatever — the class stays 
 
 ## Why not V1
 
-Genuinely useful, but every real project ends up wiring config into its own layer rather than calling a dotenv parser directly. Not urgent enough to spend V1 scope on. When someone actually needs it, the class is a fifty-line parser sitting behind `%[...]` — takes an afternoon to write.
+Genuinely useful, but every real project ends up wiring config into its own layer rather than calling a dotenv parser directly. Not urgent enough to spend V1 scope on. When someone actually needs it, the class is a fifty-line parser sitting behind `%(...)` — takes an afternoon to write.

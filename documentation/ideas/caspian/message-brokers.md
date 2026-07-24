@@ -289,7 +289,7 @@ The most realistic V1.x move. Caspian programs participate in larger messaging s
 A higher-level abstraction could provide a uniform interface where the underlying broker is configurable:
 
 ~~~caspian
-$client = %puck['https://puck.uno/broker/client'].new(
+$client = %fetch('https://puck.uno/broker/client').new(
     backend: 'rabbitmq',
     host:    'localhost'
 )
@@ -333,7 +333,7 @@ Specifically: a Caspian object's broadcasts could be made reachable to subscribe
 $logger.object.listen_to $server, 'request_received', 'log'
 
 # Remote subscription — same API, the other side just happens to be in another process
-$remote_server = %puck['https://orders.example.com/']
+$remote_server = %fetch('https://orders.example.com/')
 $logger.object.listen_to $remote_server, 'request_received', 'log'
 ~~~
 

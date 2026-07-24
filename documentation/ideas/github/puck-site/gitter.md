@@ -45,7 +45,7 @@ A thin Gitter front-end synthesizes a per-request Donnie source binding, then de
 
 Either way the machinery stays shared. The pieces genuinely unique to Gitter are the **docs-flavored Markie vocabulary** (markdown-to-HTML renderer with the docs panels and highlighting) and the **skin catalog** — both of which probably belong to Markie/Donnie as generic features, not Gitter-specific.
 
-The Caspian-class facade (`%['gitter.puck.uno/<owner>/<repo>/path']`) still makes sense as a friendly entry point regardless of which routing approach wins.
+The Caspian-class facade (`%('gitter.puck.uno/<owner>/<repo>/path')`) still makes sense as a friendly entry point regardless of which routing approach wins.
 
 ## V1 scope
 
@@ -111,7 +111,7 @@ The format button appears for any language Gitter knows how to format, native or
 The natural extension of Gitter as a class: expose `gitpage` as a Puck-native object that can be instantiated in Caspian or fetched from the website. Remote methods on the object cover diff, render with a chosen skin, format blocks, etc.:
 
 ```caspian
-$page = %['gitter.puck.uno/owner/repo/path']
+$page = %('gitter.puck.uno/owner/repo/path')
 $diff = $page.diff_against('v1.0')
 $page.render(skin: 'git-classic')
 ```

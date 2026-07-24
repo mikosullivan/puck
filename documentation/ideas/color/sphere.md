@@ -38,8 +38,8 @@ the [0, 255]³ cube only counts cells that are actually in the cube.
 ## Construction
 
 ```caspian
-$near_red = %['puck.uno/color/sphere'].new(center: $red, radius: 20)
-$away_red = %['puck.uno/color/sphere'].new(center: $red, radius: 20, scope: 'outside')
+$near_red = %('puck.uno/color/sphere').new(center: $red, radius: 20)
+$away_red = %('puck.uno/color/sphere').new(center: $red, radius: 20, scope: 'outside')
 ```
 
 `center` is a `puck.uno/color` instance; `radius` is a number; `scope`
@@ -95,21 +95,21 @@ want, outside-spheres push it away from where you don't.
 
 ```caspian
 # Aesthetic targets — broad regions, not exact colors.
-$primary_zone   = %['puck.uno/color/sphere'].new(
-    center: %['puck.uno/color/teal'],  radius: 40)
-$secondary_zone = %['puck.uno/color/sphere'].new(
-    center: %['puck.uno/color/coral'], radius: 40)
+$primary_zone   = %('puck.uno/color/sphere').new(
+    center: %('puck.uno/color/teal'),  radius: 40)
+$secondary_zone = %('puck.uno/color/sphere').new(
+    center: %('puck.uno/color/coral'), radius: 40)
 
 # Regions to avoid — too dark, too washed out.
-$too_dark  = %['puck.uno/color/sphere'].new(
-    center: %['puck.uno/color'].new('#000000'), radius: 60, scope: 'outside')
-$too_white = %['puck.uno/color/sphere'].new(
-    center: %['puck.uno/color'].new('#ffffff'), radius: 60, scope: 'outside')
+$too_dark  = %('puck.uno/color/sphere').new(
+    center: %('puck.uno/color').new('#000000'), radius: 60, scope: 'outside')
+$too_white = %('puck.uno/color/sphere').new(
+    center: %('puck.uno/color').new('#ffffff'), radius: 60, scope: 'outside')
 
 # Pick the scheme colors. Each call satisfies all four constraints
 # simultaneously: in the target zone, away from the avoid zones.
-$primary   = %['puck.uno/color'].random($primary_zone,   $too_dark, $too_white)
-$secondary = %['puck.uno/color'].random($secondary_zone, $too_dark, $too_white)
+$primary   = %('puck.uno/color').random($primary_zone,   $too_dark, $too_white)
+$secondary = %('puck.uno/color').random($secondary_zone, $too_dark, $too_white)
 ```
 
 Run it again and you get a different but similarly-constrained scheme —

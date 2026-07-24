@@ -13,7 +13,7 @@
 }}
 ~~~
 
-Candidates for a Caspian wrapper class at `caspian.uno/<name>.casp` — Ships-no, fetched via `%puck` on first use, delegates work through `.execute`. Every entry is a menu item, not a commitment. Utilities already spec'd elsewhere (`openssl`, `tar`, `luaexpat`, `lsqlite3`) are omitted.
+Candidates for a Caspian wrapper class at `caspian.uno/<name>.casp` — Ships-no, fetched via `%fetch` on first use, delegates work through `.execute`. Every entry is a menu item, not a commitment. Utilities already spec'd elsewhere (`openssl`, `tar`, `luaexpat`, `lsqlite3`) are omitted.
 
 ## Text processing
 

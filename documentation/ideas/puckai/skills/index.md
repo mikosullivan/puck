@@ -229,7 +229,7 @@ Referencing a skill id that doesn't exist in the top-level `skills` hash is malf
 
 - **Skill conflicts when `when_to_use` overlaps.** If two applied skills both match the same issue, what happens? Both fire? First-match-wins? Need a rule.
 - **Skill registry namespace.** What's the canonical URL pattern for published skills? `https://puck.uno/ai/skills/<name>` is the placeholder above; could be deeper, per-publisher (`<publisher>/skills/<name>`), or community-maintained.
-- **Verification.** Should URL-referenced skills be subject to the same `%puck.blockchain` signature verification as libraries? An untrusted-source skill is a real injection vector — the agent will follow whatever instructions the URL serves.
+- **Verification.** Should URL-referenced skills be subject to the same `%fetch.blockchain` signature verification as libraries? An untrusted-source skill is a real injection vector — the agent will follow whatever instructions the URL serves.
 - **Embedded vs URL — which is the default for tools that construct worldlets?** URL is smaller; inline is more reliable. Mirrors the bootstrap question; probably the same answer (URL by default, inline when explicitly requested).
 - **Skill body limits.** Whether the engine should enforce a size limit on inline skill content to prevent worldlet bloat.
 

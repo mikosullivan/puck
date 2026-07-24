@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_definition",
-	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, getter, method, private, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `getter :name, value` shorthand for preset-plus-getter fields, how a class body becomes the class object that appears in an instance's stack, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
+	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, getter, method, private, main, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `getter :name, value` shorthand for preset-plus-getter fields, the `main` designation (a class can nominate ONE method as its main — invoked when the class is called as a callable; the `main` DSL command sets the class's `%self.methods.main` slot and raises loudly on overwrite; direct property assignment to that slot bypasses the check for the rare intentional swap), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
 	"status": "draft — DSL surface for the common constructs spec'd; a few areas noted as TBD (helper namespaces, hook-in-class declaration, `implements?` structural check)",
 	"audience": "developers writing Caspian classes; parser implementers; anyone reasoning about class construction"
 }}
@@ -99,6 +99,7 @@ Inside a class body, certain bare words are recognized as **DSL commands** — c
 | `getter` | Preset-a-value plus expose a getter, in one line. [`getter` shorthand](#getter-shorthand). |
 | `method` | Declare a class method. [Methods](#methods). |
 | `private` | Mark a method as private. [Private methods](#private-methods). |
+| `main` | Designate a method as the class's main method — the one invoked when the class itself is called as a callable. [The main method](#the-main-method). |
 | `inherits` | Declare a parent class. [Inheritance](#inheritance). |
 | `abstract` | Mark the class abstract. [Abstract classes](#abstract-classes). |
 
@@ -290,6 +291,36 @@ Real capability restriction (as opposed to convention-plus-enforcement) uses [ja
 
 Full runtime semantics (dispatch rule, error on external call) are spec'd on [functions/method § Method surface](https://puck.uno/documentation/requirements/functions/method#method-surface).
 
+### The main method
+
+A class can designate one of its methods as its **main method** — the one invoked when the class itself is called as a callable (`&$my_class(args)`, or bare `$my_class(args)` when the callable-invocation sugar allows). `main` is a class-body DSL command that takes a method object and stores it in the class's `%self.methods.main` slot:
+
+~~~caspian
+$greeter = class # greeter
+	method hello($name)
+		return 'Hello, ' + $name
+	end
+
+	main method &blah($name)
+		return %self.hello($name)
+	end
+end
+
+&$greeter('Puck')   # invokes the main method — returns 'Hello, Puck'
+~~~
+
+**One main per class — enforced at declaration.** `main` raises if the class already has a main assigned. Two `main method ...` declarations in the same class body fails on the second — the whole point of the `main` construct is the loud-fail overwrite check, catching accidental duplicates at build time.
+
+**Three forms — the first two carry the loud-fail check, the third bypasses it:**
+
+- **Chainable modifier.** `main method &blah() ... end` — the common form. `method ... end` produces a method object; `main` writes it to `%self.methods.main` and raises if the slot is already set.
+- **Applied to a captured method.** `main $to_str` or `main %self.methods['bar']` — same modifier, method obtained by variable or lookup. Same loud-fail check.
+- **Direct property assignment.** `%self.methods.main = $method_obj` — plain property write. No safety check. Overwrites silently. Use this when the intent IS to overwrite; anyone reaching for this form has explicit intent.
+
+**Unsetting.** Assign `null` to the slot: `%self.methods.main = null`. Then a subsequent `main $foo` can set it again without raising.
+
+**Chain order with other modifiers.** `main` is peer to `private` and `auto_run` — all take a method object, mutate it (or the class), return it. Order doesn't functionally matter: `main private method ...` and `private main method ...` produce the same result.
+
 ## Inheritance
 
 `inherits` declares the class's parents. Caspian supports **multiple inheritance** — a class can inherit any number of others:
@@ -332,6 +363,63 @@ end
 
 `$animal.new(name: 'x')` raises because `$animal` is abstract; a concrete subclass's `.new()` works normally.
 
+## Declarations on the class itself
+
+The class-body DSL — `field :name`, `method &name()`, `inherits X`, etc. — describes what INSTANCES of the class get. Sometimes you want to attach something to the CLASS OBJECT itself: a value in its bucket, a utility method callable on the class directly, or a metadata slot with generated accessors on the class object. Every one of those uses the same rule: the class is an object, so operate on it the way you'd operate on any object — and inside a class body, `%self` is that object.
+
+### `@name = value` — set the class's bucket
+
+`@name = value` is sugar for `%self.bucket[:name] = value` (see [sigils](https://puck.uno/documentation/requirements/syntax/sigils)). Inside a class body `%self` is the class, so the assignment lands in the class's own bucket, not an instance's:
+
+~~~caspian
+$widget = class
+	@version = 3
+	@created_at = %now
+end
+~~~
+
+`$widget.bucket[:version]` returns `3`. `$widget.new().bucket[:version]` isn't there — new instances get a fresh bucket, not the class's.
+
+### `method %self.name() ... end` — attach a method to the class
+
+The singleton-method form — `method $obj.name() ... end` — attaches a method to a specific object. Using `%self` as the receiver in a class body attaches the method to the class itself:
+
+~~~caspian
+$widget = class
+	method %self.about()
+		return 'widget factory, version ' + @version.to_s
+	end
+end
+
+$widget.about()   # 'widget factory, version 3'
+~~~
+
+The method is callable on the class directly; instances don't inherit it via their normal method dispatch (it lives on the class's shadow, not on the class's method table for instances).
+
+### `%self.object.field :name, ...` — add a field to the class-as-instance
+
+Bare `field :name, kwargs` at class body declares an INSTANCE-side field. To add a field to the class OBJECT itself — a bucket slot with generated accessors on the class — write the operation out in full:
+
+~~~caspian
+$widget = class
+	%self.object.field :version, class: :integer, default: 3, getset: true
+end
+
+$widget.version       # 3 (via the generated getter)
+$widget.version = 4   # sets the class-level slot
+~~~
+
+The long form is intentional. Adding a field to the class itself (as opposed to its instances) is rare — the verbose syntax keeps it visible in code review and hard to write by accident.
+
+### Rule of thumb
+
+Inside a class body:
+
+- Bareword DSL (`field :x`, `method &y()`, `inherits Z`, `abstract true`, etc.) — declares things for INSTANCES.
+- Receiver-form with `%self` (`@x = 1`, `method %self.y()`, `%self.object.field :z`) — declares things on the CLASS itself.
+
+The pattern generalizes: any declaration you'd write on an object with a receiver-form (`$obj.something(...)`) works inside a class body against `%self`, and the target is the class as an object.
+
 ## Amending an existing class
 
 A class value can be extended after its initial `class ... end` block using the `amend` construct. The body has the same shape as a class body, and its declarations are added to the class:
@@ -369,7 +457,7 @@ The `class ... end` construct evaluates to a **class object**. Where it goes dep
 
 - **Assign it**: `$widget = class ... end` — the class object lives at `$widget`.
 - **Store it in a hash or record**: `$library[:widget] = class ... end` — the class object lives inside that hash.
-- **Publish it via `%puck`**: `%puck.publish('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
+- **Publish it via `%fetch`**: `%fetch.publish('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
 - **Use it inline as an argument**: `some_method(class ... end)` — the class object is passed to that method, which stores it wherever the method decides.
 
 The "things live where you store them" principle applies fully — the class object has no intrinsic name or location.
@@ -426,7 +514,7 @@ Areas the current spec does not settle:
 - **Method resolution walks class stack** — a method defined on a parent is reachable through the child instance.
 - **Child method shadows parent method** — same-name method on the child takes precedence over inherited one.
 - **Storing class in a hash** — `$library[:widget] = class end; $library[:widget].new()` works.
-- **Publishing via `%puck`** — `%puck.publish(url, class end)` makes the class downloadable at that URL.
+- **Publishing via `%fetch`** — `%fetch.publish(url, class end)` makes the class downloadable at that URL.
 - **`class` inside another expression** — passing `class end` as an argument works; the receiver gets the class object.
 - **Class carries no intrinsic name** — the class object has no `.name` property tied to any variable it was assigned to.
 

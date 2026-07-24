@@ -45,7 +45,7 @@ forces it.
 
 ## Core Object Model
 
-`%['puck.uno/uma'].new(html?, ...opts)` creates an Uma wrapper
+`%('puck.uno/uma').new(html?, ...opts)` creates an Uma wrapper
 around the underlying parsed HTML document.
 
 If no HTML is supplied, Uma builds a default HTML5 document with
@@ -54,9 +54,9 @@ place.
 
 Convenience constructors:
 
-- `%['puck.uno/uma'].basic()` — same as `.new()` with no args;
+- `%('puck.uno/uma').basic()` — same as `.new()` with no args;
   creates a default HTML5 document.
-- `%['puck.uno/uma'].new($raw_html)` — parses an existing
+- `%('puck.uno/uma').new($raw_html)` — parses an existing
   document.
 
 The instance exposes common document sections directly:
@@ -304,14 +304,14 @@ Useful for debugging and admin UIs.
 
 A bundled stylesheet is available:
 
-- **`%['puck.uno/uma'].json_css`** — returns the CSS used by the
+- **`%('puck.uno/uma').json_css`** — returns the CSS used by the
   JSON rendering helpers.
 
 ---
 
 ## String Wrapping Utility
 
-- **`%['puck.uno/uma'].wrap($str, width: N, sep: '…')`** — wraps
+- **`%('puck.uno/uma').wrap($str, width: N, sep: '…')`** — wraps
   long strings with configurable width and separator text.
 
 ---

@@ -46,9 +46,9 @@ Differ never parses Caspian text directly. Both sides go through the canonical C
 
 This is the same architecture as the engine itself — the interpreter consumes CJS, never Caspian source. Extended outward, every tool that reads Caspian goes through the one parser. Formatters, linters, refactors, and Differ are all CJS-in / Caspian-out generators on top.
 
-The trust requirement collapses to a single sharper property: **the transpiler is lossless**. Lossless here means CJS preserves everything semantically meaningful — code, comments, `%vibecode` heredocs. If the transpiler round-trips correctly (verifiable against a corpus), Differ can't silently hide a real change. A "show raw text diff" toggle is still worth offering as a sanity-check escape hatch — belt-and-suspenders, not the primary safety mechanism.
+The trust requirement collapses to a single sharper property: **the transpiler is lossless**. Lossless here means CJS preserves everything semantically meaningful — code, comments, `vibecode` heredocs. If the transpiler round-trips correctly (verifiable against a corpus), Differ can't silently hide a real change. A "show raw text diff" toggle is still worth offering as a sanity-check escape hatch — belt-and-suspenders, not the primary safety mechanism.
 
-This pushes a dependency back onto CJS: comments and `%vibecode` blocks must be first-class CJS nodes. If they aren't yet, that's the spec change that has to land before any formatter or Differ work begins.
+This pushes a dependency back onto CJS: comments and `vibecode` blocks must be first-class CJS nodes. If they aren't yet, that's the spec change that has to land before any formatter or Differ work begins.
 
 ## Open questions
 
@@ -56,7 +56,7 @@ This pushes a dependency back onto CJS: comments and `%vibecode` blocks must be 
 - Show both sides reformatted side-by-side, or treat reformatting as a hidden normalization step and only render the diff?
 - For GitHub mode: full history walker, or "between these two refs" only?
 - Does it need 3-way (merge) diffing, or two-way only for V1?
-- What about non-Caspian content in the file — heredoc payloads, JSON inside `%vibecode`? Skip, sub-format, or pass through unchanged?
+- What about non-Caspian content in the file — heredoc payloads, JSON inside `vibecode`? Skip, sub-format, or pass through unchanged?
 - Does it need to handle private repos (GitHub auth), or public-only for V1?
 
 ## Out of scope (for now)

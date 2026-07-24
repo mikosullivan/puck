@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_comments_and_whitespace",
-	"role": "spec for Caspian's comment syntax and whitespace rules. **Newline-non-significance is a general policy, not an absolute rule** — most of the time newlines are cosmetic and the parser figures out statement boundaries from context, but specific constructs (like heredocs) may require newline structure and are called out on the page that owns each construct. Covers: the `#` line-comment marker, the `%documentation` and `%vibecode` structured-documentation methods, the newline-non-significance policy itself, the semicolon-as-command-separator rule (semicolons always mark a divider between commands; redundant semicolons silently ignored), the lexer's treatment of blanks and tabs, and the `__END__` end-of-code marker (Ruby/Perl-style; everything after the marker is not parsed).",
+	"role": "spec for Caspian's comment syntax and whitespace rules. **Newline-non-significance is a general policy, not an absolute rule** — most of the time newlines are cosmetic and the parser figures out statement boundaries from context, but specific constructs (like heredocs) may require newline structure and are called out on the page that owns each construct. Covers: the `#` line-comment marker, the `documentation` and `vibecode` structured-documentation constructs (reserved BWCs — not sys-methods, not user-shadowable, always take a heredoc as their arg, never interpolated regardless of terminator quoting), the newline-non-significance policy itself, the semicolon-as-command-separator rule (semicolons always mark a divider between commands; redundant semicolons silently ignored), the lexer's treatment of blanks and tabs, and the `__END__` end-of-code marker (Ruby/Perl-style; everything after the marker is not parsed).",
 	"audience": "lexer implementers; parser implementers; developers writing Caspian"
 }}
 ~~~
@@ -63,17 +63,17 @@ Newline-non-significance is a **general policy**, not an absolute rule. Specific
 
 Semicolons are never required — newlines and juxtaposition also serve as command separators. Use `;` when you want an explicit divider on the same line, or when the parser would otherwise be ambiguous.
 
-## Structured documentation: `%documentation` and `%vibecode`
+## Structured documentation: `documentation` and `vibecode`
 
-For longer or machine-readable documentation, use one of the two documentation methods. Both take a heredoc:
+For longer or machine-readable documentation, use one of the two documentation constructs. Both take a heredoc — the heredoc body IS the payload:
 
 ~~~caspian
-%documentation <<(markdown)EOF
+documentation <<(markdown)EOF
 This routine looks up the current temperature at the given zip code.
 Returns null if the lookup fails.
 EOF
 
-%vibecode <<EOF
+vibecode <<EOF
 {
 	"purpose": "Look up the current temperature at the given zip code",
 	"returns": "number (degrees Fahrenheit) or null on lookup failure"
@@ -81,9 +81,13 @@ EOF
 EOF
 ~~~
 
-Both are **always allowed** — no role or grant governs them — and both **produce no runtime artifact** the script can read back (pre-V1). They exist for tooling (documentation generators, syntax highlighters, AI readers) and are recorded in CaspianJ at parse time.
+Both are **reserved BWCs** — parse-recognized barewords in the same class as `field`, `private`, `main`. User code cannot rebind them; there is no `$documentation` variable or method-of-same-name that can shadow the construct. They are neither system-methods (`%name` sigil) nor user-definable functions.
 
-Full spec at [global-methods § `%documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation) and [global-methods § `%vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode).
+**Runtime rule — never interpolated.** Unlike ordinary heredocs, `documentation` and `vibecode` never process `#{expr}` interpolation in their body, even when the terminator is quoted (`<<"EOF"`). The transpiler still records the `dq: true` flag on the arg for source fidelity, but the runtime treats the body as literal text under both constructs.
+
+Both are **always allowed** — no role or grant governs them — and both **produce no runtime artifact** the script can read back (pre-V1). They exist for tooling (documentation generators, syntax highlighters, AI readers) and are recorded in CaspianJ at parse time as `[{bwc: "documentation"}, {value: text}]` / `[{bwc: "vibecode"}, {value: text}]`.
+
+Full spec at [global-methods § `documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation) and [global-methods § `vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode).
 
 ## `__END__` — end-of-code marker
 
@@ -138,13 +142,13 @@ otherwise raise. All of it invisible to the language.
 - **Trailing operator continues an expression across newline** — `$x = $a +\n$b` binds `$x` to `$a + $b`.
 - **Leading operator on next line continues an expression** — `$x = $a\n+ $b` also binds `$x` to `$a + $b`.
 - **Newlines inside `()`, `[]`, `{}` are not significant** — multi-line calls, arrays, and hashes parse without regard to newline placement inside the delimiters.
-- **`%documentation` heredoc parses at any scope** — `%documentation <<(markdown)EOF ... EOF` at top level parses without error.
-- **`%vibecode` heredoc parses at any scope** — `%vibecode <<EOF ... EOF` at top level parses without error.
-- **`%documentation` produces no runtime artifact** — no readable value is bound; a subsequent `%documentation.last` or similar read raises (surface not defined).
-- **`%vibecode` produces no runtime artifact** — same as `%documentation`.
-- **`%documentation` and `%vibecode` are always allowed** — no grant is required to call them in any role.
-- **Unterminated heredoc raises at parse time** — a `%vibecode <<EOF` with no closing `EOF` fails to parse.
-- **Heredoc label mismatch keeps reading** — a `%vibecode <<EOF` where the body contains `eof` (wrong case) does not terminate the heredoc.
+- **`documentation` heredoc parses at any scope** — `documentation <<(markdown)EOF ... EOF` at top level parses without error.
+- **`vibecode` heredoc parses at any scope** — `vibecode <<EOF ... EOF` at top level parses without error.
+- **`documentation` produces no runtime artifact** — no readable value is bound; a subsequent `documentation.last` or similar read raises (surface not defined).
+- **`vibecode` produces no runtime artifact** — same as `documentation`.
+- **`documentation` and `vibecode` are always allowed** — no grant is required to call them in any role.
+- **Unterminated heredoc raises at parse time** — a `vibecode <<EOF` with no closing `EOF` fails to parse.
+- **Heredoc label mismatch keeps reading** — a `vibecode <<EOF` where the body contains `eof` (wrong case) does not terminate the heredoc.
 - **Comment as first line of file** — `# header\n$x = 1` parses; `$x` is bound.
 - **Comment as last line of file, no trailing newline** — `$x = 1\n# tail` parses (no trailing newline required after the comment).
 - **Comment on its own line inside an expression is not supported** — placing a `# comment` line between the LHS and RHS of a multi-line expression is a parse error unless the expression syntactically continues.

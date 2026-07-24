@@ -91,7 +91,7 @@ strong Kleene logic, K3, or SQL three-valued logic).
 ~~~
 
 All operators are static methods on the `puck.uno/trilean` class, called as
-`%puck['trilean'].<op>(...)`.
+`%fetch('trilean').<op>(...)`.
 
 ### `not(a)`
 
@@ -329,12 +329,12 @@ set.
 Constructing trilean expressions:
 
 ```
-%vibecode <<~VIBECODE
+vibecode <<~VIBECODE
 {"class":"puck.uno/dogberry/page","method":"process","purpose":"shows trilean
 operators in a representative scenario","args":["request","response"]}
 VIBECODE
 
-$tri = %puck['trilean']
+$tri = %fetch('trilean')
 
 $has_consent = %db.fetch_consent($user)        # true, false, or null (unknown)
 $is_minor    = %db.fetch_is_minor($user)       # true, false, or null

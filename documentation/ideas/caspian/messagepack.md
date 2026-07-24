@@ -12,7 +12,7 @@ Binary serialization format shaped like JSON (maps, arrays, strings, numbers, bo
 
 ## Why not day 1
 
-Nothing in the Puck ecoverse speaks MessagePack. `%puck` is JSON on the wire; Mikobase is JSON; blockchain records are JSON. Adding a class Caspian ships that no first-party component uses is dead weight — the library would sit unexercised until a real caller shows up. When a caller does, it becomes a straightforward first-party download at `caspian.uno/messagepack.casp` — same shape as `caspian.uno/csv.casp`.
+Nothing in the Puck ecoverse speaks MessagePack. `%fetch` is JSON on the wire; Mikobase is JSON; blockchain records are JSON. Adding a class Caspian ships that no first-party component uses is dead weight — the library would sit unexercised until a real caller shows up. When a caller does, it becomes a straightforward first-party download at `caspian.uno/messagepack.casp` — same shape as `caspian.uno/csv.casp`.
 
 ## What would flip it to day 1
 

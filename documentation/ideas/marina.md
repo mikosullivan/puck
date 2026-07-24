@@ -160,13 +160,13 @@ character = puck.create('foo.com/character', pk='92677339-df86-4f68-9397-999e40c
 
 ## `puck: true`
 
-A class definition with `"puck": true` signals that remote method calls may be made using
+A class definition with `"fetch": true` signals that remote method calls may be made using
 objects of that class.
 
 ```json
 {
     "name": "foo.com/bar",
-    "puck": true
+    "fetch": true
 }
 ```
 

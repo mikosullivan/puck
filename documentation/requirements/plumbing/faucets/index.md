@@ -10,7 +10,7 @@
 }}
 ~~~
 
-**Everything that comes into the Caspian runtime comes in through a faucet.** A faucet is any resource that pulls external values into the program — stdin, environment variables, command-line arguments, the filesystem, the network, the `%puck` download surface. The name is a vocabulary choice: data flows in from outside; the faucet is where it comes out into the runtime. There are no other inbound paths.
+**Everything that comes into the Caspian runtime comes in through a faucet.** A faucet is any resource that pulls external values into the program — stdin, environment variables, command-line arguments, the filesystem, the network, the `%fetch` download surface. The name is a vocabulary choice: data flows in from outside; the faucet is where it comes out into the runtime. There are no other inbound paths.
 
 The complement is a **sink** — an object with methods that send information out to the world (filesystem write, query send, network output, `%stdout.puts`). Sinks live in their own doc at [sinks](https://puck.uno/documentation/requirements/plumbing/sinks/); this doc is the inbound side.
 
@@ -76,7 +76,7 @@ The practical wins:
 - **An argv string is not `user`-owned** — `%chain.argv[0].object.role != %role`.
 - **An env-var string is not `user`-owned** — `%chain.env['HOME'].object.role != %role`.
 - **A network response body is not `user`-owned** — `%chain.net.fetch(url).body.object.role != %role`.
-- **A downloaded object's identity is not `user`-owned** — `%[url].object.role != %role`.
+- **A downloaded object's identity is not `user`-owned** — `%(url).object.role != %role`.
 - **A filesystem-read value is not `user`-owned** — a file read via a dirjail returns a value owned by the filesystem faucet role.
 - **Faucet role for repeated reads from the same faucet is stable** — two reads from stdin yield strings whose owning roles compare `==`.
 - **Faucet roles compare unequal across different faucets** — stdin's role and argv's role are not `==`.

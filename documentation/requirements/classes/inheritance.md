@@ -83,7 +83,7 @@ $colorize = class # colorize
 	end
 end
 
-%['core:string'].inherited.ensure($colorize) do
+%('core:string').inherited.ensure($colorize) do
 	puts 'hello'.red    # works — every String has .red for the block's duration
 end
 
@@ -94,7 +94,7 @@ Full worked example: [test-cases/colorize/](https://puck.uno/documentation/requi
 
 ## Consequences worth naming
 
-- **Every instance sees the change.** Not just instances constructed after the mutation. Adding a parent to `%['core:string']` means every existing string carries the new methods.
+- **Every instance sees the change.** Not just instances constructed after the mutation. Adding a parent to `%('core:string')` means every existing string carries the new methods.
 - **Cross-fork behavior.** A fork sees a snapshot of the parent at fork time; mutations in one fork don't propagate to sibling forks. Class objects are per-process ([forks](https://puck.uno/documentation/requirements/chain/methods/forks) spec covers memory isolation).
 - **Multi-inheritance ordering.** The parent array is order-sensitive. `.push` appends; `.ensure` appends when it adds. Insert-at-position (`.insert(idx, ...)`) is available as an Array method for cases where declaration-order placement matters.
 - **Not restricted to built-ins.** Any class's `.inherited` is mutable. Adding a parent to a user class works identically.

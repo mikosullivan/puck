@@ -47,7 +47,7 @@ Splitting the two is deliberate: the common case is "did we find one?" not "give
 
 **Safe handling of untrusted strings — required.** The regex engine safely handles any string as input regardless of source. Concretely:
 
-- **The subject string is always safe to match against.** A subject received from stdin, network, `%chain.env`, `%puck`, or any other faucet cannot cause the engine to hang, panic, or misbehave — no ReDoS-style catastrophic backtracking, no unbounded memory growth, no crash on any byte sequence including malformed UTF-8, embedded nulls, or adversarial inputs designed to trip a naive engine. This is the property most regex engines quietly fail to provide (PCRE has famous exponential-blowup cases on innocuous-looking patterns and long inputs); Caspian guarantees it. LPeg's PEG execution model makes this achievable because PEG matching is deterministic — no backtracking-blowup class of failure exists at the engine level.
+- **The subject string is always safe to match against.** A subject received from stdin, network, `%chain.env`, `%fetch`, or any other faucet cannot cause the engine to hang, panic, or misbehave — no ReDoS-style catastrophic backtracking, no unbounded memory growth, no crash on any byte sequence including malformed UTF-8, embedded nulls, or adversarial inputs designed to trip a naive engine. This is the property most regex engines quietly fail to provide (PCRE has famous exponential-blowup cases on innocuous-looking patterns and long inputs); Caspian guarantees it. LPeg's PEG execution model makes this achievable because PEG matching is deterministic — no backtracking-blowup class of failure exists at the engine level.
 - **The pattern from untrusted source is a separate concern.** If a program passes a user-supplied string to `.match($user_pattern)`, the pattern itself is being treated as executable input — same category as `eval`. The engine still won't hang on a malformed pattern (parse errors raise cleanly), but "match what the user asked for" isn't a safety guarantee — it's the user's spec. Applications that accept user-supplied patterns should treat that surface with the same scrutiny they'd give any user-supplied executable input.
 - **Pattern-parts from untrusted source must be escaped.** When user input becomes PART of a pattern via string concatenation (`.match('^' + $prefix + '\\d+$')`), a `.` in the user input silently becomes a wildcard. The safe form is `.literal($prefix)` in the [Regex class builder](#regex-class), which escapes automatically. This is the class of bug the string-form patterns invite and the builder eliminates.
 
@@ -97,7 +97,7 @@ Open: which of these are V1, which are deferred; whether `.starts_with?` / `.end
 
 Traditional regex is compact but cryptic — `^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})$` is dense enough that most developers can't read it fluently after a few weeks away from the codebase. An XML format for defining regexes trades brevity for legibility: each construct gets a named element, options become attributes, and the grammar's tree structure shows in the document's tree structure. It also picks up things traditional regex lacks or handles clunkily — native comments (`<!-- -->`), whitespace flexibility, and named subpatterns you can reference.
 
-**Scope and delivery.** This is a **post-V1** feature and **not built into the language**. V1 ships with the string-form and `regex(/.../ )` surfaces described above, both compiled against LPeg. The XML format arrives (if it arrives) as a downloadable Puck object — same mechanism as any other library: pull it through `%puck`, hold the returned builder, use it to construct `Regex` values that plug into `.match` / `.matches` / `.replace` / everything else the built-in surface accepts. Nothing about the built-in regex surface has to change to accommodate it; the XML form is just another way to produce a `Regex`.
+**Scope and delivery.** This is a **post-V1** feature and **not built into the language**. V1 ships with the string-form and `regex(/.../ )` surfaces described above, both compiled against LPeg. The XML format arrives (if it arrives) as a downloadable Puck object — same mechanism as any other library: pull it through `%fetch`, hold the returned builder, use it to construct `Regex` values that plug into `.match` / `.matches` / `.replace` / everything else the built-in surface accepts. Nothing about the built-in regex surface has to change to accommodate it; the XML form is just another way to produce a `Regex`.
 
 #### Element vocabulary sketch
 
@@ -220,7 +220,7 @@ Beyond DRYing repeated groups, this gives large patterns a legible top-level str
 
 Several loose ends about how the XML surface joins the rest of the language:
 
-- **How does the caller pass it in?** `$str.match(regex_xml('<pattern>...</pattern>'))` (a builder that takes an XML string)? `regex(<pattern>...</pattern>)` (the lexer notices the leading `<` and switches into XML mode)? A dedicated keyword like `xml_regex`? Loading from a file via `%puck` (patterns as first-class objects)?
+- **How does the caller pass it in?** `$str.match(regex_xml('<pattern>...</pattern>'))` (a builder that takes an XML string)? `regex(<pattern>...</pattern>)` (the lexer notices the leading `<` and switches into XML mode)? A dedicated keyword like `xml_regex`? Loading from a file via `%fetch` (patterns as first-class objects)?
 - **How does it compose with `regex(/.../ )` and string-form patterns?** All three should probably produce the same underlying `Regex` object, differing only in how they're written.
 - **Flags — same set (`i`, `s`) or attributes on `<pattern>`?** `<pattern case-insensitive="true">` reads naturally at the top of the document.
 - **Whitespace and newlines in the XML source.** Ignored between elements, preserved inside `<literal>`. Standard XML rules.
@@ -232,13 +232,13 @@ Several loose ends about how the XML surface joins the rest of the language:
 A **programmatic builder** on the Regex class — construct a pattern by calling methods that mirror the tree the XML form spells out. The starting point is instantiating the class:
 
 ~~~caspian
-$rx = %['https://puck.uno/string/regex'].new
+$rx = %('https://puck.uno/string/regex').new
 ~~~
 
 The question is what shape the API takes from there. Sketch of one direction — a **block-form builder** whose method surface mirrors the XML element vocabulary 1:1:
 
 ~~~caspian
-$rx = %['https://puck.uno/string/regex'].new do($r)
+$rx = %('https://puck.uno/string/regex').new do($r)
 	$r.start
 	$r.capture('year') do($c)
 		$c.digit.repeat(4)
@@ -299,7 +299,7 @@ The XML form treats patterns as declarative documents; the builder treats them a
 ~~~caspian
 $prefix = 'foo.bar'   # comes from anywhere at runtime
 
-$rx = %['https://puck.uno/string/regex'].new do($r)
+$rx = %('https://puck.uno/string/regex').new do($r)
 	$r.start
 	$r.literal($prefix)   # matches 'foo.bar' literally; the '.' is not a metacharacter
 	$r.digit.one_or_more
@@ -316,7 +316,7 @@ function &two_digits($r)
 	$r.digit.repeat(2)
 end
 
-$rx = %['https://puck.uno/string/regex'].new do($r)
+$rx = %('https://puck.uno/string/regex').new do($r)
 	$r.start
 	$r.capture('hour') do($c)
 		&two_digits($c)
@@ -353,7 +353,7 @@ end
 Same idea as the XML `<define>` / `<use>`, expressed as builder methods:
 
 ~~~caspian
-$rx = %['https://puck.uno/string/regex'].new do($r)
+$rx = %('https://puck.uno/string/regex').new do($r)
 	$r.define('four_digits') do($d)
 		$d.digit.repeat(4)
 	end
@@ -378,7 +378,7 @@ function &two_digits($r)
 	$r.digit.repeat(2)
 end
 
-$rx = %['https://puck.uno/string/regex'].new do($r)
+$rx = %('https://puck.uno/string/regex').new do($r)
 	$r.start
 	$r.capture('year')  do($c) $c.digit.repeat(4) end
 	$r.literal('-')
@@ -396,7 +396,7 @@ Whether the builder needs its own `.define` / `.use` layer or should just lean o
 The block form is one way in. A pure imperative form should also work — the builder is just an object:
 
 ~~~caspian
-$rx = %['https://puck.uno/string/regex'].new
+$rx = %('https://puck.uno/string/regex').new
 $rx.start
 $rx.digit.repeat(4)
 $rx.literal('-')
@@ -409,7 +409,7 @@ $rx.string_end
 Whether `$rx` here IS a Regex you can already call `.match` on, or is a builder that has to produce a Regex via `.build` / `.compile`, is a design call:
 
 - **Direct use.** `$rx` is-a Regex; every method mutates its own pattern; `.match` at any point runs the current pattern. Zero ceremony but means the "builder" and the "compiled pattern" are the same object with mutable state.
-- **Explicit finalize.** `$rx = %['puck.uno/string/regex'].new(); ...build steps...; $pattern = $rx.compile`. Immutable Regex at the end; builder throws away. More ceremony but clearer separation.
+- **Explicit finalize.** `$rx = %('puck.uno/string/regex').new(); ...build steps...; $pattern = $rx.compile`. Immutable Regex at the end; builder throws away. More ceremony but clearer separation.
 
 Leaning direct-use for the block form (`.new do ... end` returns a completed Regex) and explicit-finalize for the imperative form (holding the builder past its build phase and reusing it invites bugs).
 
@@ -418,7 +418,7 @@ Leaning direct-use for the block form (`.new do ... end` returns a completed Reg
 - **`.start` / `.string_end` naming.** `.end` collides with the block-terminator keyword, so beginning-of-string and end-of-string can't share the same asymmetry. `.start` / `.string_end`, or `.line_start` / `.line_end`, or `.at_start` / `.at_end` — all workable, none perfect.
 - **Repetition placement.** `.digit.repeat(4)` reads left-to-right ("digit, four times"); `.repeat(4) do $r.digit end` is uniform-with-blocks. Pick one convention or allow both.
 - **Alternation ergonomics.** `.any_of do($a) $a.alt do ... end end` is clunky. Could accept an array of closures: `.any_of([function &($x) $x.literal('a') end, function &($x) $x.literal('b') end])`. Or a variadic block-list. Open.
-- **How does it relate to `regex(/.../)` and string form?** Same underlying `Regex` class; three ways to construct it. Should the builder be reachable as `Regex.new` (built-in class exposed by name), `%['puck.uno/string/regex'].new` (Puck-download form the user example uses), or both? Probably both — the same class, reachable through either surface.
+- **How does it relate to `regex(/.../)` and string form?** Same underlying `Regex` class; three ways to construct it. Should the builder be reachable as `Regex.new` (built-in class exposed by name), `%('puck.uno/string/regex').new` (Puck-download form the user example uses), or both? Probably both — the same class, reachable through either surface.
 - **Post-V1 or V1?** The XML form is post-V1 per the scope note above. The programmatic builder is more foundational — a real regex class in Caspian ought to be constructible programmatically from the start. Argues for V1 inclusion, at least in a minimal form.
 
 ## Related in-tree

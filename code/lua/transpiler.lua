@@ -458,7 +458,10 @@ local function find_last_top_level_pipe(s)
 				-- `||` is logical OR, not a pipe. Skip both chars.
 				i = i + 2
 			elseif nxt == "&" then
-				-- `|&` is the null-safe pipe (deferred). Skip both chars.
+				-- `|&` is the null-safe pipe — record its position and advance
+				-- past both chars. Callers check s[pos+1] to distinguish `|`
+				-- from `|&` and slice the RHS accordingly.
+				last = i
 				i = i + 2
 			else
 				last = i
@@ -537,45 +540,36 @@ local function consume_receiver(s)
 		return attach_line({var = d}), s:sub(2 + #d)
 	end
 
-	-- `%[...]` short-form Puck lookup — distinct atom from `%puck[...]` so
-	-- tooling can tell the two source forms apart. Bracket content parses
-	-- like a regular call arg list: positional url expression(s) plus
-	-- optional `key: value` kwargs. Detected BEFORE the `%name` case since
-	-- `%[` doesn't start with an identifier char.
-	if s:sub(1, 2) == "%[" then
-		local bracket = s:sub(2):match("^(%b[])")
+	-- Fetch lookup — two source forms, one atom.
+	--   Short: `%(url, kw: v)`  — bareword-less sigil-call, parens.
+	--   Long:  `%fetch(url, kw: v)` — sigil-with-name-called-as-if-callable.
+	-- Both produce `{fetch: {args, kw?}}`. Detected BEFORE the `%name` case
+	-- so `%fetch(` is consumed as fetch, not as a `{sys: fetch}` sys atom.
+	local fetch_after
+	if s:sub(1, 2) == "%(" then
+		fetch_after = 2
+	elseif s:sub(1, 7) == "%fetch(" then
+		fetch_after = 7
+	end
 
-		if bracket then
-			local content = trim(bracket:sub(2, -2))
+	if fetch_after then
+		local paren = s:sub(fetch_after):match("^(%b())")
+
+		if paren then
+			local content = trim(paren:sub(2, -2))
 
 			if content == "" then
-				error("transpile: `%[...]` puck lookup needs a URL: " .. s)
+				error("transpile: `%()` / `%fetch()` needs a URL: " .. s)
 			end
 
-			local args_list = {}
-			local kwargs = {}
-
-			for _, arg in ipairs(split_top_level(content, ",")) do
-				local at = trim(arg)
-
-				if at ~= "" then
-					local kw_key, kw_val = at:match("^([%w_]+)%s*:%s*(.+)$")
-
-					if kw_key and kw_val and kw_val ~= "" then
-						table.insert(kwargs, {kw_key, parse_expression(trim(kw_val))})
-					else
-						table.insert(args_list, parse_expression(at))
-					end
-				end
-			end
-
-			local puck_body = {args = args_list}
+			local positionals, kwargs = parse_call_args(content, "fetch", true)
+			local fetch_body = {args = positionals}
 
 			if #kwargs > 0 then
-				puck_body.kw = kwargs
+				fetch_body.kw = kwargs
 			end
 
-			return attach_line({puck = puck_body}), s:sub(2 + #bracket)
+			return attach_line({fetch = fetch_body}), s:sub(fetch_after + #paren)
 		end
 	end
 
@@ -606,7 +600,7 @@ local function consume_dot_segments(s)
 			table.insert(segments, attach_line({var = svar}))
 			rest = sr
 		else
-			local name, r = rest:match("^%.([%w_]+)(.*)")
+			local name, r = rest:match("^%.([%w_]+%??)(.*)")
 
 			if not name then
 				break
@@ -774,6 +768,72 @@ parse_expression = function(s)
 		end
 	end
 
+	-- Assignment as expression. LOWEST precedence — tried FIRST so it splits
+	-- before any operator. Right-associative (`$a = $b = $c` = `$a = ($b = $c)`).
+	--   `$name++` / `$name--` → {postinc: name} / {postdec: name} — postfix
+	--       increment/decrement, sugar for `$name += 1` / `$name -= 1`
+	--   `$name OP= EXPR`      → {setvar_op: {op, name, value}} — compound-assign
+	--       as expression, sugar for `$name = $name OP EXPR`
+	--   `$name = EXPR`        → {setvar: {name, value}} — plain assignment
+	--       as expression; yields the assigned value
+	-- Full CaspJ preserves each source form as a distinct atom; norm collapses
+	-- postinc/postdec/setvar_op down to plain setvar (with the layered
+	-- desugaring applied). Only variable targets (`$name`) are handled here;
+	-- property / subscript / class-field targets stay at statement position.
+	do
+		local pi_name = s:match("^%$([%w_]+)%s*%+%+$")
+
+		if pi_name then
+			return attach_line({postinc = pi_name})
+		end
+
+		local pd_name = s:match("^%$([%w_]+)%s*%-%-$")
+
+		if pd_name then
+			return attach_line({postdec = pd_name})
+		end
+
+		-- Compound-assign forms (longest op first so `**=` beats `*=`).
+		local compound_ops = {
+			{op = "**", pat = "%*%*"},
+			{op = "||", pat = "||"},
+			{op = "&&", pat = "&&"},
+			{op = "+",  pat = "%+"},
+			{op = "-",  pat = "%-"},
+			{op = "*",  pat = "%*"},
+			{op = "/",  pat = "/"},
+			{op = "%",  pat = "%%"},
+		}
+
+		for _, entry in ipairs(compound_ops) do
+			local name, rhs = s:match("^%$([%w_]+)%s*" .. entry.pat .. "=%s*(.+)$")
+
+			if name and rhs and rhs ~= "" then
+				return attach_line({
+					setvar_op = {
+						op = entry.op,
+						name = name,
+						value = parse_expression(rhs),
+					},
+				})
+			end
+		end
+
+		-- Plain `$name = EXPR`. The `=` must NOT be part of `==`, `!=`, `<=`,
+		-- `>=` — those fail the `^%$name%s*=` prefix (chars intervening between
+		-- the name and `=`). Also skip `==` by checking the char AFTER `=`.
+		local sv_name, sv_rhs = s:match("^%$([%w_]+)%s*=%s*(.+)$")
+
+		if sv_name and sv_rhs and sv_rhs ~= "" and sv_rhs:sub(1, 1) ~= "=" then
+			return attach_line({
+				setvar = {
+					name = sv_name,
+					value = parse_expression(sv_rhs),
+				},
+			})
+		end
+	end
+
 	-- Logical connectives (`or`, `and`, `||`, `&&`) bind LOOSER than the pipe.
 	-- Handled here at the top of parse_expression so they split before the pipe
 	-- does — `A | B || C` groups as `(A | B) || C` (fallback pattern), not as
@@ -799,20 +859,21 @@ parse_expression = function(s)
 		end
 	end
 
-	-- Pipe operator `|` — looser than every other operator except the logical
-	-- connectives above; left-to-right associative. The rightmost top-level
-	-- pipe splits first so `A | B | C` parses as `((A | B) | C)` and produces
-	-- `{op:"|", left:{op:"|", left:A, right:B}, right:C}`. `||` and `|&` are
-	-- skipped by the finder.
+	-- Pipe operator `|` (basic) or `|&` (null-safe) — looser than every other
+	-- operator except the logical connectives above; left-to-right associative.
+	-- The rightmost top-level pipe splits first. `||` is skipped by the finder.
 	do
 		local pipe_pos = find_last_top_level_pipe(s)
 
 		if pipe_pos then
+			local is_null_safe = s:sub(pipe_pos + 1, pipe_pos + 1) == "&"
+			local op_len = is_null_safe and 2 or 1
 			local lhs_str = trim(s:sub(1, pipe_pos - 1))
-			local rhs_str = trim(s:sub(pipe_pos + 1))
+			local rhs_str = trim(s:sub(pipe_pos + op_len))
 
 			if lhs_str ~= "" and rhs_str ~= "" then
-				return desugar_pipe(parse_expression(lhs_str), rhs_str)
+				return desugar_pipe(parse_expression(lhs_str), rhs_str,
+					is_null_safe and "|&" or "|")
 			end
 		end
 	end
@@ -884,6 +945,7 @@ parse_expression = function(s)
 			or first_word == "method" or first_word == "class"
 			or first_word == "instance" or first_word == "amend"
 			or first_word == "do" or first_word == "dofunc"
+			or first_word == "begin"
 		) then
 			local atom = parse_construct_as_expression(s)
 
@@ -970,7 +1032,7 @@ parse_expression = function(s)
 		local out = {{bwc = bare_call_name}}
 
 		if args_str ~= "" then
-			local positionals, kwargs = parse_call_args(args_str, bare_call_name)
+			local positionals, kwargs = parse_call_args(args_str, bare_call_name, true)
 
 			for _, p in ipairs(positionals) do
 				table.insert(out, p)
@@ -982,6 +1044,46 @@ parse_expression = function(s)
 		end
 
 		return out
+	end
+
+	-- Generalized `&(EXPR)` — the ampersand invokes any expression that produces
+	-- a callable. Two atom-shape variants:
+	--   * bareword name (`&foo`) — `{amp: "foo"}` (existing sugar shape)
+	--   * anything else (`&(EXPR)`) — `{amp: <expr-atom>}`
+	-- Both shapes act as a callable atom at position 1 of a call array.
+	local bwc_paren_inner, bwc_paren_rest = s:match("^&(%b())(.*)$")
+
+	if bwc_paren_inner then
+		local inner = trim(bwc_paren_inner:sub(2, -2))
+
+		if inner == "" then
+			error("transpile: `&(...)` needs an expression: " .. s)
+		end
+
+		local callable_atom = parse_expression(inner)
+		local rest = trim(bwc_paren_rest)
+		local out = {attach_line({amp = callable_atom})}
+
+		if rest == "" then
+			return out
+
+		elseif rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
+			local args_str = trim(rest:sub(2, -2))
+
+			if args_str ~= "" then
+				local positionals, kwargs = parse_call_args(args_str, "&(...)", true)
+
+				for _, p in ipairs(positionals) do
+					table.insert(out, p)
+				end
+
+				if #kwargs > 0 then
+					table.insert(out, {kw = kwargs})
+				end
+			end
+
+			return out
+		end
 	end
 
 	-- Bare-word call as expression. Three forms — same shape as bwc-as-statement,
@@ -1006,7 +1108,7 @@ parse_expression = function(s)
 			return {attach_line({amp = bwc_p_name})}
 		end
 
-		local positionals, kwargs = parse_call_args(args_str, bwc_p_name)
+		local positionals, kwargs = parse_call_args(args_str, bwc_p_name, true)
 		local out = {attach_line({amp = bwc_p_name})}
 
 		for _, p in ipairs(positionals) do
@@ -1025,8 +1127,16 @@ parse_expression = function(s)
 	if bwc_pl_name and bwc_pl_tail and bwc_pl_tail:sub(1, 1) ~= "&" then
 		-- Guard against greedy matches: `&foo == true` matches this pattern
 		-- but the tail isn't an arg list. pcall lets a failed args-parse fall
-		-- through to the operator parser below.
-		local ok, positionals, kwargs = pcall(parse_call_args, bwc_pl_tail, bwc_pl_name)
+		-- through to the operator parser below — EXCEPT when the failure is a
+		-- trailing-comma syntax error, which must surface to the caller instead
+		-- of being swallowed as "maybe this isn't an arg list after all".
+		local ok, positionals, kwargs = pcall(parse_call_args, bwc_pl_tail, bwc_pl_name, false)
+
+		if not ok and type(positionals) == "string"
+			and positionals:find("trailing comma allowed only inside", 1, true)
+		then
+			error(positionals)
+		end
 
 		if ok then
 			local out = {attach_line({amp = bwc_pl_name})}
@@ -1048,11 +1158,11 @@ parse_expression = function(s)
 	local ec_recv, ec_after = consume_receiver(s)
 
 	if ec_recv then
-		local ec_method, ec_paren = ec_after:match("^%.([%w_]+)%s*(%b())$")
+		local ec_method, ec_paren = ec_after:match("^%.([%w_]+%??)%s*(%b())$")
 
 		if ec_method then
 			local args_str = trim(ec_paren:sub(2, -2))
-			local envelope = build_call_envelope(args_str, ec_method)
+			local envelope = build_call_envelope(args_str, ec_method, true)
 
 			if envelope then
 				return {ec_recv, ec_method, attach_line(envelope)}
@@ -1070,7 +1180,7 @@ parse_expression = function(s)
 
 		if ec_svar then
 			local args_str = trim(ec_svar_paren:sub(2, -2))
-			local envelope = build_call_envelope(args_str, ec_svar)
+			local envelope = build_call_envelope(args_str, ec_svar, true)
 
 			if envelope then
 				return {ec_recv, attach_line({var = ec_svar}), attach_line(envelope)}
@@ -1168,12 +1278,12 @@ end
 	"note": "wraps parse_call_args so every method-call and object-as-method site uses the same shape decision. Splats and kwsplats route through the same helper."
 }
 ]]
-build_call_envelope = function(args_str, ctx_name)
+build_call_envelope = function(args_str, ctx_name, in_brackets)
 	if args_str == "" then
 		return nil
 	end
 
-	local positionals, kwargs = parse_call_args(args_str, ctx_name)
+	local positionals, kwargs = parse_call_args(args_str, ctx_name, in_brackets)
 	local envelope = {args = positionals}
 
 	if #kwargs > 0 then
@@ -1183,7 +1293,21 @@ build_call_envelope = function(args_str, ctx_name)
 	return envelope
 end
 
-parse_call_args = function(remainder, ctx_name)
+parse_call_args = function(remainder, ctx_name, in_brackets)
+	-- `in_brackets` = true when the arg list is enclosed in `[]`, `{}`, or `()`
+	-- (or when calling from a context that has already established a delimited
+	-- envelope). Only bracketed lists tolerate a trailing comma. Paren-less
+	-- call arg lists (`&foo 1, 2, 3,` / `field :name, class: :string,`) reject
+	-- one — the comma is a syntax error, not a permissive-formatting nicety.
+	if not in_brackets then
+		local trimmed = trim(remainder or "")
+
+		if trimmed:sub(-1) == "," then
+			error("transpile: trailing comma allowed only inside `[]`, `{}`,"
+				.. " or `()` — in `" .. ctx_name .. "` call")
+		end
+	end
+
 	local positionals = {}
 	local kwargs = {}
 	local seen_kwarg = false
@@ -1221,9 +1345,30 @@ parse_call_args = function(remainder, ctx_name)
 				table.insert(positionals, {splat = parse_expression(rest)})
 
 			else
-				-- `key: value` where key is a bareword identifier is a kwarg.
+				-- `key: value` — kwarg. Key can be a bareword identifier
+				-- (`name: 'x'`), a single-quoted string (`'name': 'x'`), or
+				-- a double-quoted string (`"name": 'x'`). All three produce
+				-- the same kwarg-key string; source form isn't preserved.
 				-- `:sym` (leading colon) is a symbol literal, not a kwarg.
 				local kw_key, kw_val = at:match("^([%w_]+)%s*:%s*(.+)$")
+
+				if not kw_key then
+					local sq_key, sq_rest = at:match("^'([^']*)'%s*:%s*(.+)$")
+
+					if sq_key and sq_rest and sq_rest ~= "" then
+						kw_key = sq_key
+						kw_val = sq_rest
+					end
+				end
+
+				if not kw_key then
+					local dq_key, dq_rest = at:match('^"([^"]*)"%s*:%s*(.+)$')
+
+					if dq_key and dq_rest and dq_rest ~= "" then
+						kw_key = dq_key
+						kw_val = dq_rest
+					end
+				end
 
 				if kw_key and kw_val and kw_val ~= "" then
 					seen_kwarg = true
@@ -1271,30 +1416,17 @@ local COMPOUND_OPS = {
 	"note": "only expression-level pipes come through here — statement-leading `| bwc` is handled separately in Section 17."
 }
 ]]
-desugar_pipe = function(lhs_atom, rhs_str)
-	-- Parenthesized RHS: `LHS | (expr)` — unwrap and use the inner expression
-	-- as the pipe's right atom. The inner expression is a value that the
-	-- runtime evaluates and treats as a callable, calling it with LHS routed
-	-- as the first positional. Common case: `A | (some_computed_callable)`.
-	if rhs_str:sub(1, 1) == "(" and rhs_str:sub(-1) == ")"
-		and has_matched_outer_parens(rhs_str)
-	then
-		local inner = trim(rhs_str:sub(2, -2))
-
-		if inner ~= "" then
-			return {op = "|", left = lhs_atom, right = parse_expression(inner)}
-		end
-	end
-
+desugar_pipe = function(lhs_atom, rhs_str, op)
+	op = op or "|"
 	-- LHS | .method(args) — receiverless method call. Runtime uses LHS as receiver.
-	local m_name, m_paren = rhs_str:match("^%.([%w_]+)%s*(%b())$")
+	local m_name, m_paren = rhs_str:match("^%.([%w_]+%??)%s*(%b())$")
 
 	if m_name then
 		local rhs_atom = {method = m_name}
 		local args_str = trim(m_paren:sub(2, -2))
 
 		if args_str ~= "" then
-			local positionals, kwargs = parse_call_args(args_str, m_name)
+			local positionals, kwargs = parse_call_args(args_str, m_name, true)
 
 			if #positionals > 0 then
 				rhs_atom.args = positionals
@@ -1305,14 +1437,14 @@ desugar_pipe = function(lhs_atom, rhs_str)
 			end
 		end
 
-		return {op = "|", left = lhs_atom, right = rhs_atom}
+		return {op = op, left = lhs_atom, right = rhs_atom}
 	end
 
 	-- LHS | .method (no parens) — receiverless bare method reference.
-	local a_name = rhs_str:match("^%.([%w_]+)$")
+	local a_name = rhs_str:match("^%.([%w_]+%??)$")
 
 	if a_name then
-		return {op = "|", left = lhs_atom, right = {method = a_name}}
+		return {op = op, left = lhs_atom, right = {method = a_name}}
 	end
 
 	-- LHS | &fn(args) — bwc call. Runtime prepends LHS as first positional.
@@ -1323,7 +1455,7 @@ desugar_pipe = function(lhs_atom, rhs_str)
 		local args_str = trim(bwc_p_paren:sub(2, -2))
 
 		if args_str ~= "" then
-			local positionals, kwargs = parse_call_args(args_str, bwc_p_name)
+			local positionals, kwargs = parse_call_args(args_str, bwc_p_name, true)
 
 			for _, p in ipairs(positionals) do
 				table.insert(rhs_call, p)
@@ -1334,24 +1466,80 @@ desugar_pipe = function(lhs_atom, rhs_str)
 			end
 		end
 
-		return {op = "|", left = lhs_atom, right = rhs_call}
+		return {op = op, left = lhs_atom, right = rhs_call}
+	end
+
+	-- LHS | &fn arg1, arg2 — paren-less bwc call with args. Same shape as the
+	-- parens form. Matched BEFORE the bare form so `&fn arg` isn't misread as
+	-- `&fn` + `arg`.
+	local bwc_pl_name, bwc_pl_tail = rhs_str:match("^&([%w_]+)%s+(.+)$")
+
+	if bwc_pl_name and bwc_pl_tail ~= "" then
+		local rhs_call = {{amp = bwc_pl_name}}
+		local positionals, kwargs = parse_call_args(bwc_pl_tail, bwc_pl_name, false)
+
+		for _, p in ipairs(positionals) do
+			table.insert(rhs_call, p)
+		end
+
+		if #kwargs > 0 then
+			table.insert(rhs_call, {kw = kwargs})
+		end
+
+		return {op = op, left = lhs_atom, right = rhs_call}
 	end
 
 	-- LHS | &fn (bare) — bwc call, no extras.
 	local bwc_bare = rhs_str:match("^&([%w_]+)$")
 
 	if bwc_bare then
-		return {op = "|", left = lhs_atom, right = {{amp = bwc_bare}}}
+		return {op = op, left = lhs_atom, right = {{amp = bwc_bare}}}
+	end
+
+	-- LHS | &(EXPR) — generalized ampersand: invoke the callable produced by
+	-- the parenthesized expression. Trailing args (parens or paren-less) are
+	-- allowed; the piped LHS routes into first-positional at normalize time.
+	local paren_inner, paren_rest = rhs_str:match("^&(%b())(.*)$")
+
+	if paren_inner then
+		local inner = trim(paren_inner:sub(2, -2))
+
+		if inner ~= "" then
+			local callable_atom = parse_expression(inner)
+			local rhs_call = {attach_line({amp = callable_atom})}
+			local rest = trim(paren_rest)
+
+			if rest == "" then
+				return {op = op, left = lhs_atom, right = rhs_call}
+
+			elseif rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
+				local args_str = trim(rest:sub(2, -2))
+
+				if args_str ~= "" then
+					local positionals, kwargs = parse_call_args(args_str, "&(...)", true)
+
+					for _, p in ipairs(positionals) do
+						table.insert(rhs_call, p)
+					end
+
+					if #kwargs > 0 then
+						table.insert(rhs_call, {kw = kwargs})
+					end
+				end
+
+				return {op = op, left = lhs_atom, right = rhs_call}
+			end
+		end
 	end
 
 	-- LHS | $obj.method(args) — method call with args. LHS prepends.
 	local recv_sig, recv_name, recv_meth, recv_paren = rhs_str:match(
-		"^([%$%%])([%w_]+)%.([%w_]+)%s*(%b())$")
+		"^([%$%%])([%w_]+)%.([%w_]+%??)%s*(%b())$")
 
 	if recv_sig then
 		local recv_atom = (recv_sig == "$") and {var = recv_name}
 			or {sys = recv_name}
-		local envelope = build_call_envelope(trim(recv_paren:sub(2, -2)), recv_meth)
+		local envelope = build_call_envelope(trim(recv_paren:sub(2, -2)), recv_meth, true)
 		local rhs_call
 
 		if envelope then
@@ -1360,17 +1548,17 @@ desugar_pipe = function(lhs_atom, rhs_str)
 			rhs_call = {recv_atom, recv_meth}
 		end
 
-		return {op = "|", left = lhs_atom, right = rhs_call}
+		return {op = op, left = lhs_atom, right = rhs_call}
 	end
 
 	-- LHS | $obj.method (bare) — bare method access.
 	local recv_sig2, recv_name2, recv_meth2 = rhs_str:match(
-		"^([%$%%])([%w_]+)%.([%w_]+)$")
+		"^([%$%%])([%w_]+)%.([%w_]+%??)$")
 
 	if recv_sig2 then
 		local recv_atom2 = (recv_sig2 == "$") and {var = recv_name2}
 			or {sys = recv_name2}
-		return {op = "|", left = lhs_atom, right = {recv_atom2, recv_meth2}}
+		return {op = op, left = lhs_atom, right = {recv_atom2, recv_meth2}}
 	end
 
 	error("transpile: pipe RHS must be a call — got: " .. rhs_str)
@@ -1397,14 +1585,24 @@ end
 }
 ]]
 local function transpile_statement(stmt)
+	-- Assignment has the LOWEST precedence. If the statement is a
+	-- `$name [OP]= EXPR` / `$name++` / `$name--` form, the outermost shape
+	-- is the assignment — any operator split must happen INSIDE the RHS. So
+	-- we detect the assignment-head and skip the LOOSER_THAN_PIPE / pipe
+	-- splits in that case; the assignment matchers further down produce the
+	-- correct statement row with the RHS parsed as an expression.
+	local looks_like_assignment =
+		stmt:match("^%$[%w_]+%s*%+%+$")
+		or stmt:match("^%$[%w_]+%s*%-%-$")
+		or stmt:match("^%$[%w_]+%s*[%+%-%*%/%%|&]*=[^=]")
+
 	-- Statement-level: logical connectives (`or`, `and`, `||`, `&&`) bind LOOSER
 	-- than the pipe. Handled here so `&foo | &bar || &gup` groups as
 	-- `(&foo | &bar) || &gup` (fallback pattern), not as `&foo | (&bar || &gup)`
 	-- (which would be an invalid pipe RHS). Guarded by pcall: if the LHS
-	-- doesn't parse as an expression (because the statement is actually an
-	-- assignment or other non-expression form), fall through to the other
-	-- statement patterns.
-	do
+	-- doesn't parse as an expression (because the statement is actually a
+	-- non-expression form), fall through to the other statement patterns.
+	if not looks_like_assignment then
 		local LOOSER_THAN_PIPE = {" or ", " and ", "||", "&&"}
 
 		for _, op in ipairs(LOOSER_THAN_PIPE) do
@@ -1426,22 +1624,20 @@ local function transpile_statement(stmt)
 		end
 	end
 
-	-- Statement-level pipe: `LHS | RHS` at statement position transpiles to
-	-- the same `{op: "|", left, right}` atom parse_expression builds for
-	-- expression-level pipes, wrapped in a statement-list. Runs BEFORE the
-	-- `&`-BWC / method-call handlers so `&foo | &bar` gets treated as a pipe
-	-- rather than as `&foo` with `| &bar` as an arg list. Guarded by pcall
-	-- for the same assignment-fallthrough reason.
-	do
+	-- Statement-level pipe: same guard as LOOSER_THAN_PIPE above.
+	if not looks_like_assignment then
 		local pipe_pos = find_last_top_level_pipe(stmt)
 
 		if pipe_pos then
+			local is_null_safe = stmt:sub(pipe_pos + 1, pipe_pos + 1) == "&"
+			local op_len = is_null_safe and 2 or 1
 			local lhs_str = trim(stmt:sub(1, pipe_pos - 1))
-			local rhs_str = trim(stmt:sub(pipe_pos + 1))
+			local rhs_str = trim(stmt:sub(pipe_pos + op_len))
 
 			if lhs_str ~= "" and rhs_str ~= "" then
 				local ok, atom = pcall(function()
-					return desugar_pipe(parse_expression(lhs_str), rhs_str)
+					return desugar_pipe(parse_expression(lhs_str), rhs_str,
+						is_null_safe and "|&" or "|")
 				end)
 
 				if ok then
@@ -1540,6 +1736,22 @@ local function transpile_statement(stmt)
 		}
 	end
 
+	-- `$name++` / `$name--` at statement position — emit value-atom-row
+	-- `[{postinc: name}]` / `[{postdec: name}]`; row value discarded at
+	-- statement position. Full CaspJ preserves source; norm may collapse
+	-- to `setvar_op` (which itself collapses to plain `setvar`).
+	local pi_name = stmt:match("^%$([%w_]+)%s*%+%+$")
+
+	if pi_name then
+		return {attach_line({postinc = pi_name})}
+	end
+
+	local pd_name = stmt:match("^%$([%w_]+)%s*%-%-$")
+
+	if pd_name then
+		return {attach_line({postdec = pd_name})}
+	end
+
 	for _, pair in ipairs(COMPOUND_OPS) do
 		local op = pair[1]
 		local pat = pair[2]
@@ -1564,18 +1776,55 @@ local function transpile_statement(stmt)
 		return {"scope", "setat", at_assign_name, parse_expression(at_assign_rhs)}
 	end
 
+	-- Generalized `&(EXPR)` at statement position — call the callable produced
+	-- by EXPR. Mirrors the parse_expression branch. Args (parens or paren-less)
+	-- may follow.
+	local paren_inner_stmt, paren_rest_stmt = stmt:match("^&(%b())(.*)$")
+
+	if paren_inner_stmt then
+		local inner = trim(paren_inner_stmt:sub(2, -2))
+
+		if inner ~= "" then
+			local callable_atom = parse_expression(inner)
+			local stmt_ast = {{amp = callable_atom}}
+			local rest = trim(paren_rest_stmt)
+			local rest_bracketed = false
+
+			if rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
+				rest = trim(rest:sub(2, -2))
+				rest_bracketed = true
+			end
+
+			if rest ~= "" then
+				local positionals, kwargs = parse_call_args(rest, "&(...)", rest_bracketed)
+
+				for _, p in ipairs(positionals) do
+					table.insert(stmt_ast, p)
+				end
+
+				if #kwargs > 0 then
+					table.insert(stmt_ast, {kw = kwargs})
+				end
+			end
+
+			return stmt_ast
+		end
+	end
+
 	local bwc_name, tail = stmt:match("^&([%w_]+)%s*(.-)$")
 
 	if bwc_name then
 		local stmt_ast = {{amp = bwc_name}}
 		local remainder = trim(tail)
+		local remainder_bracketed = false
 
 		if remainder:sub(1, 1) == "(" and remainder:sub(-1) == ")" then
 			remainder = trim(remainder:sub(2, -2))
+			remainder_bracketed = true
 		end
 
 		if remainder ~= "" then
-			local positionals, kwargs = parse_call_args(remainder, bwc_name)
+			local positionals, kwargs = parse_call_args(remainder, bwc_name, remainder_bracketed)
 
 			for _, p in ipairs(positionals) do
 				table.insert(stmt_ast, p)
@@ -1624,11 +1873,11 @@ local function transpile_statement(stmt)
 	-- receiver expression ({var} vs {sys}). Kwargs / splats route through the
 	-- shared parse_call_args helper via build_call_envelope.
 	local mc_sig, mc_recv, mc_method, mc_paren = stmt:match(
-		"^([%$%%])([%w_]+)%.([%w_]+)%s*(%b())$")
+		"^([%$%%])([%w_]+)%.([%w_]+%??)%s*(%b())$")
 
 	if mc_sig and mc_recv then
 		local recv_expr = (mc_sig == "$") and {var = mc_recv} or {sys = mc_recv}
-		local envelope = build_call_envelope(trim(mc_paren:sub(2, -2)), mc_method)
+		local envelope = build_call_envelope(trim(mc_paren:sub(2, -2)), mc_method, true)
 
 		if envelope then
 			return {recv_expr, mc_method, envelope}
@@ -1644,7 +1893,7 @@ local function transpile_statement(stmt)
 
 	if sv_sig and sv_recv then
 		local recv_expr = (sv_sig == "$") and {var = sv_recv} or {sys = sv_recv}
-		local envelope = build_call_envelope(trim(sv_paren:sub(2, -2)), sv_var)
+		local envelope = build_call_envelope(trim(sv_paren:sub(2, -2)), sv_var, true)
 
 		if envelope then
 			return {recv_expr, {var = sv_var}, envelope}
@@ -1654,11 +1903,11 @@ local function transpile_statement(stmt)
 	end
 
 	local mc2_sig, mc2_recv, mc2_method, mc2_tail = stmt:match(
-		"^([%$%%])([%w_]+)%.([%w_]+)%s+(.-)$")
+		"^([%$%%])([%w_]+)%.([%w_]+%??)%s+(.-)$")
 
 	if mc2_sig and mc2_recv and mc2_tail and mc2_tail ~= "" then
 		local recv_expr = (mc2_sig == "$") and {var = mc2_recv} or {sys = mc2_recv}
-		local envelope = build_call_envelope(trim(mc2_tail), mc2_method)
+		local envelope = build_call_envelope(trim(mc2_tail), mc2_method, false)
 
 		if envelope then
 			return {recv_expr, mc2_method, envelope}
@@ -1673,7 +1922,7 @@ local function transpile_statement(stmt)
 
 	if sv2_sig and sv2_recv and sv2_tail and sv2_tail ~= "" then
 		local recv_expr = (sv2_sig == "$") and {var = sv2_recv} or {sys = sv2_recv}
-		local envelope = build_call_envelope(trim(sv2_tail), sv2_var)
+		local envelope = build_call_envelope(trim(sv2_tail), sv2_var, false)
 
 		if envelope then
 			return {recv_expr, {var = sv2_var}, envelope}
@@ -1739,7 +1988,7 @@ local function transpile_statement(stmt)
 
 	if bwc_stmt_name and bwc_stmt_tail and not bwc_stmt_tail:match("^=[^=]") then
 		local stmt_ast = {{bwc = bwc_stmt_name}}
-		local positionals, kwargs = parse_call_args(bwc_stmt_tail, bwc_stmt_name)
+		local positionals, kwargs = parse_call_args(bwc_stmt_tail, bwc_stmt_name, false)
 
 		for _, p in ipairs(positionals) do
 			table.insert(stmt_ast, p)
@@ -1777,11 +2026,11 @@ local function transpile_statement(stmt)
 			while tail ~= "" do
 				-- Method call: `.name(args)` — envelope carries kwargs / splats.
 				local m_name, m_paren, m_rest =
-					tail:match("^%.([%w_]+)%s*(%b())(.*)$")
+					tail:match("^%.([%w_]+%??)%s*(%b())(.*)$")
 
 				if m_name then
 					local envelope = build_call_envelope(
-						trim(m_paren:sub(2, -2)), m_name)
+						trim(m_paren:sub(2, -2)), m_name, true)
 
 					if envelope then
 						current = {current, m_name, envelope}
@@ -1818,7 +2067,7 @@ local function transpile_statement(stmt)
 				end
 
 				-- Bare attribute: `.name` (no parens).
-				local a_name, a_rest = tail:match("^%.([%w_]+)(.*)$")
+				local a_name, a_rest = tail:match("^%.([%w_]+%??)(.*)$")
 
 				if a_name then
 					current = {current, a_name}
@@ -1983,7 +2232,7 @@ local CONSTRUCT_KEYWORDS = {
 	["class"]    = true, ["amend"]   = true, ["instance"] = true,
 	["do"]       = true, ["dofunc"]  = true,
 }
-local CONSTRUCT_CLAUSES  = {["before"] = true, ["between"] = true, ["after"] = true, ["noloop"] = true}
+local CONSTRUCT_CLAUSES  = {["before"] = true, ["between"] = true, ["after"] = true, ["noloop"] = true, ["ensure"] = true}
 
 -- Keywords that require an expression after them (cond for while/if/etc.,
 -- target for amend).
@@ -2086,6 +2335,27 @@ local function scan_content_end(s, start_i)
 				return save
 			end
 
+			-- Trailing-pipe continuation: if the content just before the
+			-- whitespace run ends with `|` or `|&`, the statement continues on
+			-- the next line and we don't split. Covers `$r = &foo |\n\t&bar`
+			-- and `$s = &foo |&\n\t&bar` line-wrapping. `||` and `&&` are
+			-- logical connectives, not pipes — those don't continue lines
+			-- this way, so we exclude by checking the char two positions back.
+			if has_newline and i > 1 then
+				local prev = s:sub(i - 1, i - 1)
+
+				if prev == "|" then
+					local prev2 = i > 2 and s:sub(i - 2, i - 2) or ""
+
+					if prev2 ~= "|" then
+						goto continue_scan_no_split
+					end
+
+				elseif prev == "&" and i > 2 and s:sub(i - 2, i - 2) == "|" then
+					goto continue_scan_no_split
+				end
+			end
+
 			-- `|` at the start of a new line begins a pipe statement — split here.
 			if next_c == "|" and has_newline then
 				return save
@@ -2100,6 +2370,8 @@ local function scan_content_end(s, start_i)
 			then
 				return save
 			end
+
+			::continue_scan_no_split::
 
 			if next_c:match("[%w_]") then
 				local wstart = j
@@ -2454,7 +2726,7 @@ local function read_signature(source, start_i, keyword_name)
 			error("transpile: `" .. keyword_name .. "` with malformed receiver")
 		end
 
-		local recv_str, name_str = sig_prefix:match("^(.-)%.([%w_]+)$")
+		local recv_str, name_str = sig_prefix:match("^(.-)%.([%w_]+%??)$")
 
 		if not recv_str or recv_str == "" or name_str == "" then
 			error("transpile: `" .. keyword_name .. " " .. sig_prefix
@@ -3096,7 +3368,10 @@ local function parse_construct(tokens, result)
 				clauses.body = blk.body
 				add_stmt({"scope", blk.close_verb, parse_expression(blk.cond), clauses})
 			elseif blk.type == "begin" then
-				add_stmt({"scope", "begin_end", blk.clauses})
+				-- Emit as value-atom row `[{begin_end: clauses}]` so it works
+				-- both at statement position (value discarded) and at expression
+				-- position (unwraps to the atom via parse_construct_as_expression).
+				add_stmt({{begin_end = blk.clauses}})
 			elseif blk.type == "if" then
 				add_stmt({"scope", "if_end", {branches = blk.branches}})
 			elseif blk.type == "unless" then
@@ -3237,6 +3512,14 @@ local function parse_construct(tokens, result)
 		elseif tok.type == "clause" then
 			if #stack == 0 or stack[#stack].type ~= "begin" then
 				error("transpile: clause marker `" .. tok.name .. "` outside of a begin block")
+			end
+
+			-- Initialize slot on demand — `ensure` isn't in the default 5-slot
+			-- set, so absent-source-declaration => no empty `ensure` slot.
+			local clauses = stack[#stack].clauses
+
+			if clauses[tok.name] == nil then
+				clauses[tok.name] = {}
 			end
 
 			stack[#stack].cur = tok.name

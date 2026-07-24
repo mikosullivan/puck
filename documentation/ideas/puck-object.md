@@ -3,11 +3,11 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "puck-object",
-	"role": "historical brainstorm that worked out the puck-object-vs-%puck distinction; superseded by the canonical puck.md but kept as a record of how the design developed",
+	"role": "historical brainstorm that worked out the puck-object-vs-%fetch distinction; superseded by the canonical puck.md but kept as a record of how the design developed",
 	"key_concepts": ["puck_object_vs_system_method", "chain_scoped_puck",
 		"historical_record"],
 	"status": "folded_into_canonical",
-	"note": "version-window-on-puck design has since moved off the puck to %puck.era; see versioning.md"
+	"note": "version-window-on-puck design has since moved off the puck to %fetch.era; see versioning.md"
 }}
 ~~~
 
@@ -21,7 +21,7 @@
 >
 > **Update — the version window has since moved off the puck object.**
 > The current design puts the cutoff on `%chain` via a block-scoped
-> `%puck.era(upper:, lower:) do ... end` form (see
+> `%fetch.era(upper:, lower:) do ... end` form (see
 > [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain)).
 > The "Version Window" and "restrict do ... end" sections below are
 > preserved as the earlier design.
@@ -30,39 +30,39 @@
 
 **(Original status:)** brainstorming. Captures notes from the role-model
 discussion about what a puck *is* as an object, distinct from the
-`%puck` system method that returns one. Once the model stabilizes,
+`%fetch` system method that returns one. Once the model stabilizes,
 material here may be folded into [puck.md](../requirements/puck/index.md).
 
 ---
 
-## Puck Object vs. `%puck`
+## Puck Object vs. `%fetch`
 
-A **puck** (lowercase, the object) is distinct from **`%puck`** (the
+A **puck** (lowercase, the object) is distinct from **`%fetch`** (the
 system method). A puck is a kind of object that knows how to resolve
-URLs to their registered objects. `%puck` is the
+URLs to their registered objects. `%fetch` is the
 system-method handle through which user code gets a puck object back.
 
-**`%puck` is scoped via `%chain`.** What it returns depends on
-context. The current puck lives in `%chain` — `%puck` reads from
+**`%fetch` is scoped via `%chain`.** What it returns depends on
+context. The current puck lives in `%chain` — `%fetch` reads from
 there. Because `%chain` is wiped at role boundaries (see
 [roles.md](../requirements/roles.md)), the current puck does not propagate across
 boundaries; each role gets its own world.
 
-- Outside any `restrict` block, in the outer role, `%puck` returns
+- Outside any `restrict` block, in the outer role, `%fetch` returns
   whatever the engine placed in the chain at program start
   (typically the engine-provided default puck).
-- Inside a `restrict do ... end` block, `%puck` returns the derived
+- Inside a `restrict do ... end` block, `%fetch` returns the derived
   (narrower) puck that `restrict` installed in the chain for the
   block's duration.
 - After the block returns, the prior chain value is restored.
-- **When there is no puck in the chain, `%puck` returns plain
+- **When there is no puck in the chain, `%fetch` returns plain
   null** — no flavor, no fallback, no error. The caller deals with
   it however they want.
 
-This is why `%puck` does not always return the same object.
+This is why `%fetch` does not always return the same object.
 
 **You can have any number of pucks.** When the docs say "the puck,"
-that's shorthand for whatever puck `%puck` returns at the moment —
+that's shorthand for whatever puck `%fetch` returns at the moment —
 usually the engine-provided one. The model supports any number, and
 code that constructs alternate pucks for specific purposes
 (different cutoffs, different fetcher sets, different policies) can
@@ -76,30 +76,30 @@ block.
 
 ### `restrict do ... end`
 
-> **Superseded.** Replaced by `%puck.era(upper:, lower:)
+> **Superseded.** Replaced by `%fetch.era(upper:, lower:)
 > do ... end` — see
 > [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 > The block-scoped narrowing pattern survives; the verb and the
 > property location moved from the puck object to `%chain`.
 
-`restrict` is the canonical way to scope `%puck` to a narrower
+`restrict` is the canonical way to scope `%fetch` to a narrower
 window for a block of code:
 
 ```
-%puck                                  # outer puck (no extra restriction)
+%fetch                                  # outer puck (no extra restriction)
 
-%puck.restrict(upper: 'may 3, 2023') do
-    %puck                              # narrower derived puck, in effect inside the block
+%fetch.restrict(upper: 'may 3, 2023') do
+    %fetch                              # narrower derived puck, in effect inside the block
 end
 
-%puck                                  # back to the outer puck
+%fetch                                  # back to the outer puck
 ```
 
 `restrict` does two things at once:
 
 1. **Derives** a narrower puck from the current one (per the
    one-way ratchet — narrower or equal, never broader).
-2. **Installs** the derived puck as the active `%puck` for the
+2. **Installs** the derived puck as the active `%fetch` for the
    duration of the block.
 
 Nested `restrict` calls compose — narrowing further from inside an
@@ -115,7 +115,7 @@ Same shape as the other scoped-block primitives in the framework
 
 > **Superseded.** The version window no longer lives on the puck
 > object. Current design puts the cutoff on `%chain` as a
-> block-scoped `%puck.era(upper:, lower:) do ... end`
+> block-scoped `%fetch.era(upper:, lower:) do ... end`
 > form — see
 > [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 > The technical observations about lookup mechanics (multi-fetcher
@@ -128,8 +128,8 @@ lives on the puck object itself; the engine sets it when the puck
 is created. (This replaces the earlier `%chain.cutoff` design.)
 
 ```
-%puck.lower = 'may 3, 2018'      # versions must be on or after
-%puck.upper = 'may 3, 2028'      # versions must be on or before
+%fetch.lower = 'may 3, 2018'      # versions must be on or after
+%fetch.upper = 'may 3, 2028'      # versions must be on or before
 ```
 
 The two properties:
@@ -389,7 +389,7 @@ it on.
 
 ## The Engine Decides the Policy
 
-**The engine controls which puck `%puck` returns**, and that puck's
+**The engine controls which puck `%fetch` returns**, and that puck's
 configuration determines everything about provenance policy:
 
 - Which sources the puck consults.
@@ -404,15 +404,15 @@ user code a puck that just trusts the cache. The Caspian code is the
 same; the puck differs.
 
 User code typically doesn't reason about which puck it got. It calls
-`%puck['https://some.com/uns']`, and whatever the engine set up determines
+`%fetch('https://some.com/uns')`, and whatever the engine set up determines
 the result and the checks.
 
 ---
 
 ## Open Questions
 
-- **Does `%puck` always return the same puck object across calls?**
-  Resolved: no. `%puck` is scoped. By default it returns the
+- **Does `%fetch` always return the same puck object across calls?**
+  Resolved: no. `%fetch` is scoped. By default it returns the
   engine-provided puck; inside a `restrict do ... end` block, it
   returns the derived (narrower) puck. See the `restrict` section
   above.
@@ -422,8 +422,8 @@ the result and the checks.
 - **Where the version cutoff lives.** Resolved three times: first onto
   the puck object (see "Version Window" section above), then off it
   onto `%chain` as a block-scoped `version_timespan`, then back onto
-  `%puck` as `%puck.era` — see
-  [caspian/versioning § Setting the cutoff with %puck.era](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
+  `%fetch` as `%fetch.era` — see
+  [caspian/versioning § Setting the cutoff with %fetch.era](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 - **Granularity of puck-source roles** — one role per **fetcher**
   inside the puck. Faucets *inside* a fetcher (download + cache)
   share the fetcher's role to keep cache state from changing the

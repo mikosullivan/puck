@@ -58,8 +58,8 @@ Several substantial questions have to settle before this can ship:
 **Where do the methods come from?**
 
 - **Built-in per-type sets.** The engine ships JSON, HTML, XML, CSV, YAML method sets. Then the built-in String surface grows a large method inventory. Every format the engine cares about lives in the core.
-- **Downloaded via `%puck`.** The engine looks up `puck.uno/content-types/text/json` (or similar) when a content type is set and attaches its method set. Composes with the ecosystem — anyone can publish a format handler — but couples runtime behavior to network availability and the fetcher chain.
-- **Hybrid.** Common types built in; unknown types delegate to `%puck` lookup. Best of both, but two mechanisms to keep consistent.
+- **Downloaded via `%fetch`.** The engine looks up `puck.uno/content-types/text/json` (or similar) when a content type is set and attaches its method set. Composes with the ecosystem — anyone can publish a format handler — but couples runtime behavior to network availability and the fetcher chain.
+- **Hybrid.** Common types built in; unknown types delegate to `%fetch` lookup. Best of both, but two mechanisms to keep consistent.
 
 **Method precedence.**
 
@@ -75,7 +75,7 @@ Setting `$str.content_type = 'text/html'` in one function silently changes what 
 
 **Security surface.**
 
-`$str.content_type = 'text/attacker_supplied'` becomes a way to route method calls to different code. If any of the resolution paths involve `%puck` fetch, the type string becomes a URL fragment — an attacker who controls the type controls what code runs. Any per-type method set needs a trust anchor decision (baked-in whitelist? blockchain-signed only? user-configured?), which is real security work.
+`$str.content_type = 'text/attacker_supplied'` becomes a way to route method calls to different code. If any of the resolution paths involve `%fetch` fetch, the type string becomes a URL fragment — an attacker who controls the type controls what code runs. Any per-type method set needs a trust anchor decision (baked-in whitelist? blockchain-signed only? user-configured?), which is real security work.
 
 **Reflection.**
 
@@ -102,13 +102,13 @@ $parsed = $body.parsed_json         # or: $body.parsed (with content_type)
 
 Zero runtime dispatch complexity — the methods are always available on every string; calling `.parsed_json` on a non-JSON string is just an error at runtime like any other bad call. String stays simple; content_type stays annotational.
 
-### Alternative 2: type-aware parser lookup via `%puck`
+### Alternative 2: type-aware parser lookup via `%fetch`
 
 No String method inheritance at all. Consumers explicitly reach for the parser they want:
 
 ~~~caspian
 $body.content_type = 'text/json'
-$parsed = %['puck.uno/json'].parse($body)
+$parsed = %('puck.uno/json').parse($body)
 ~~~
 
 The string carries the type; the parser is a Puck-downloaded library. Fully explicit, no dispatch magic, uses existing mechanisms end-to-end. Less ergonomic than the "methods just appear" version, but every step is greppable and every failure mode is legible.
@@ -126,7 +126,7 @@ Separates the "I know what this is" declaration (`content_type` on the string) f
 
 ## When to revisit
 
-Once V1 ships and real Caspian code accumulates that touches HTTP bodies, config files, downloaded artifacts, and so on — we'll have concrete data on how often the ergonomics of "typed string with format methods" actually pays for itself. If the answer is "constantly," the design surface above is worth working through carefully. If callers happily reach for `%['puck.uno/json'].parse($body)` and don't miss the inheritance form, then the base-annotation-only story is enough.
+Once V1 ships and real Caspian code accumulates that touches HTTP bodies, config files, downloaded artifacts, and so on — we'll have concrete data on how often the ergonomics of "typed string with format methods" actually pays for itself. If the answer is "constantly," the design surface above is worth working through carefully. If callers happily reach for `%('puck.uno/json').parse($body)` and don't miss the inheritance form, then the base-annotation-only story is enough.
 
 Until then, V1 keeps `content_type` purely annotational as spec'd in [heredocs § Type annotation](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#type-annotation).
 

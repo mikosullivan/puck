@@ -98,7 +98,7 @@ A sister idea, also already baked into the existing object model:
 clone the full class stack of one object onto another.
 
 ```
-$bar = %['some/base'].new()
+$bar = %('some/base').new()
 $bar.object.classes = $foo.object.classes
 ```
 
@@ -114,13 +114,13 @@ need another client with the same decoration profile pointed at
 a different host, copy the class stack onto a fresh instance.
 
 ```
-$db1 = %['my/db'].new(host: 'db1.example.com')
-$db1.object.classes.push(%['my/decorators/retry'])
-$db1.object.classes.push(%['my/decorators/cache'])
-$db1.object.classes.push(%['my/decorators/metrics'])
+$db1 = %('my/db').new(host: 'db1.example.com')
+$db1.object.classes.push(%('my/decorators/retry'))
+$db1.object.classes.push(%('my/decorators/cache'))
+$db1.object.classes.push(%('my/decorators/metrics'))
 
 # Clone the decoration onto a second client
-$db2 = %['my/db'].new(host: 'db2.example.com')
+$db2 = %('my/db').new(host: 'db2.example.com')
 $db2.object.classes = $db1.object.classes
 ```
 

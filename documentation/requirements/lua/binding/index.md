@@ -142,7 +142,7 @@ Conversely, Caspian exceptions thrown inside a callback that Lua invokes propaga
 Parsing an XML document from Caspian using the pre-installed [luaexpat](../../core/) — the SAX-style callback surface accumulates element/text events into a Caspian hash:
 
 ~~~caspian
-%vibecode: <<END
+vibecode: <<END
 	role: parse an RSS feed and print each item title using luaexpat's SAX callbacks
 END
 

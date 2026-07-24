@@ -38,16 +38,16 @@ Three forms — pick whichever reads best at the call site:
 
 ```caspian
 # Hex string — 6 or 8 digits
-$red = %['puck.uno/color'].new('#ff0000')
-$translucent_red = %['puck.uno/color'].new('#ff0000ac')
+$red = %('puck.uno/color').new('#ff0000')
+$translucent_red = %('puck.uno/color').new('#ff0000ac')
 
 # Name string — any of the standard HTML colors (~110)
-$red = %['puck.uno/color'].new('red')
-$purple = %['puck.uno/color'].new('rebeccapurple')
+$red = %('puck.uno/color').new('red')
+$purple = %('puck.uno/color').new('rebeccapurple')
 
 # URL-as-name — every named color is its own URL-addressable instance
-$red = %['puck.uno/color/red']
-$purple = %['puck.uno/color/rebeccapurple']
+$red = %('puck.uno/color/red')
+$purple = %('puck.uno/color/rebeccapurple')
 ```
 
 Hex forms:
@@ -132,7 +132,7 @@ in-between cells are evenly spaced along the line.
 A class-level method returns a uniformly random cell from the cube:
 
 ```caspian
-%['puck.uno/color'].random   # any cell, uniform over [0,255]³
+%('puck.uno/color').random   # any cell, uniform over [0,255]³
 ```
 
 **With selectors.** Pass any number of [`sphere`](sphere.md) instances
@@ -140,7 +140,7 @@ to constrain the choice. The returned color must satisfy **every**
 sphere's membership test (per each sphere's own `scope`):
 
 ```caspian
-%['puck.uno/color'].random(
+%('puck.uno/color').random(
     $primary_zone,   # inside-sphere: pull toward this region
     $too_dark,       # outside-sphere: push away from this region
     $too_white,      # outside-sphere: push away from this one too

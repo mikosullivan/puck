@@ -1,6 +1,6 @@
 # Installation Lua libs
 
-*Design for the CLI install-and-use story for Lua libraries in Caspian. Caspian objects are hot-fetched via `%puck` at first use; Lua libraries need an explicit install step because Lua's `require` uses filesystem path search, not URL fetch.*
+*Design for the CLI install-and-use story for Lua libraries in Caspian. Caspian objects are hot-fetched via `%fetch` at first use; Lua libraries need an explicit install step because Lua's `require` uses filesystem path search, not URL fetch.*
 
 ~~~vibecode
 {"vibecode": {

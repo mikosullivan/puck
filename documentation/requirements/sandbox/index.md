@@ -15,7 +15,7 @@
 Sandboxes are entered as a block on a `%fs` directory handle:
 
 ~~~caspian
-%vibecode <<EOF
+vibecode <<EOF
 {"role": "run untrusted code with only /tmp/foo visible"}
 EOF
 %fs['/tmp/foo'].sandbox do

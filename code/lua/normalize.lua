@@ -86,12 +86,7 @@ desugar_pipe = function(left, right)
 		return out
 	end
 
-	-- Shape we can't statically desugar (a parenthesized pipe expression as
-	-- RHS, an unknown call form, etc.). Preserve the pipe atom so runtime
-	-- can evaluate the RHS and invoke it with LHS as first arg. Norm stays
-	-- a subset of full atoms where practical, but this edge case keeps the
-	-- pipe atom rather than fabricating a shape that doesn't match runtime.
-	return {op = "|", left = left, right = normalize_atom(right)}
+	error("normalize: unhandled pipe RHS shape")
 end
 
 --[[
@@ -110,8 +105,22 @@ normalize_atom = function(v)
 		return nil
 	end
 
-	-- Pipe operator — desugar to nested call.
-	if v.op == "|" and v.left ~= nil and v.right ~= nil then
+	-- `documentation` / `vibecode` BWC statement rows — parse-time metadata
+	-- with no runtime effect. Same drop rule as comments: return nil so the
+	-- parent list filters them out entirely (row disappears; no empty-array
+	-- placeholder). Detects the statement-row shape `[{bwc: "documentation"},
+	-- ...]` and `[{bwc: "vibecode"}, ...]`. Recurses into all body lists,
+	-- so a `documentation <<EOF ... EOF` inside a class body also drops.
+	if #v > 0 and type(v[1]) == "table"
+			and (v[1].bwc == "documentation" or v[1].bwc == "vibecode") then
+		return nil
+	end
+
+	-- Pipe operator — desugar to nested call. Both `|` and `|&` (null-safe)
+	-- desugar to the same call shape; the null-safe distinction is a runtime
+	-- concern that norm doesn't statically resolve here (spec says once you
+	-- enter a `|&` chain, subsequent pipes stay null-safe — that's runtime).
+	if (v.op == "|" or v.op == "|&") and v.left ~= nil and v.right ~= nil then
 		return desugar_pipe(normalize_atom(v.left), v.right)
 	end
 

@@ -88,7 +88,7 @@ or sign up for both products with a single account.
 
 Every Puck tutorial, demo, and example needs a place to put
 data. A free mikobase service is the obvious answer:
-"`%puck['https://logs.puck.uno/mikobase'].new(account: '...')` — done."
+"`%fetch('https://logs.puck.uno/mikobase').new(account: '...')` — done."
 No setup, no infra, just a working data store.
 
 ### With other future products

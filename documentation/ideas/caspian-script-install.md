@@ -7,13 +7,13 @@
 	"doc": "idea_caspian_script_install",
 	"role": "brainstorm for how Caspian can provide a simple process for downloading and installing scripts as executables (single scripts as the primary case). The core tension: Caspian's 'no install' ethos applies to library-style objects, but shell executables fundamentally need to exist as files on PATH. The design goal is a familiar mechanism, not a novel one — currently converging on `caspian --install-script <url>` writing to XDG-standard `~/.local/bin/<name>` (or `/usr/local/bin/<name>` under `--global`).",
 	"status": "brainstorm — direction converging on `caspian --install-script` with XDG paths; details of naming, updates, uninstall, and provenance still open",
-	"related": ["requirements/installation/ (Caspian's own bootstrap install — same XDG-path pattern this design follows)", "requirements/puck-discovery (Puck object surface)", "requirements/cache-dir (existing cache location)", "requirements/bryton/ (Bryton is the first case that surfaces this need — its `bryton` runner has to be launchable at the shell)"]
+	"related": ["requirements/installation/ (Caspian's own bootstrap install — same XDG-path pattern this design follows)", "requirements/fetch-discovery (Puck object surface)", "requirements/cache-dir (existing cache location)", "requirements/bryton/ (Bryton is the first case that surfaces this need — its `bryton` runner has to be launchable at the shell)"]
 }}
 ~~~
 
 ## The challenge
 
-Caspian's design principle is that **libraries are cached, not installed** — referenced by URL, resolved on demand through the provider chain. That works cleanly for Puck objects: `%['puck.uno/foo']` inside Caspian code triggers a fetch-and-cache; no explicit install step, no lock file, no manifest.
+Caspian's design principle is that **libraries are cached, not installed** — referenced by URL, resolved on demand through the provider chain. That works cleanly for Puck objects: `%('puck.uno/foo')` inside Caspian code triggers a fetch-and-cache; no explicit install step, no lock file, no manifest.
 
 **Shell executables don't fit that model.** A user typing `foo` at the shell needs `foo` to exist as a file the OS can find on `PATH`. There's no Puck-native way for that to work today. The gap surfaces first for [Bryton](../requirements/bryton/) — the runner needs to be launchable as `bryton` — but it applies to any Caspian-authored tool a developer wants to invoke by name.
 
@@ -95,12 +95,12 @@ The `puck install <url>` command:
 
 Both simple objects (no metadata) and structured ones (with `bin`) work; developers pick the amount of ceremony they want.
 
-### Idea 4: Caspian-side `%puck.install`
+### Idea 4: Caspian-side `%fetch.install`
 
 Same as Idea 1 but expressed as a Caspian method rather than a shell CLI:
 
 ~~~caspian
-%puck.install 'https://puck.uno/bryton/runner/'
+%fetch.install 'https://puck.uno/bryton/runner/'
 ~~~
 
 Called from an installer script or interactive Caspian session. The `puck` shell CLI (if any) would just be a thin wrapper around this.
@@ -115,7 +115,7 @@ Instead of "installing" anything, ship a tiny shell wrapper that lives on PATH a
 
 ~~~bash
 #!/usr/bin/env bash
-exec caspian -e '%["https://puck.uno/bryton/runner/"].run()' "$@"
+exec caspian -e '%("https://puck.uno/bryton/runner/").run()' "$@"
 ~~~
 
 The developer writes (or downloads) that wrapper once, drops it in `~/.local/bin/bryton`, chmod +x. No Puck-side install logic — just a Puck URL and a standard shell technique.
@@ -134,7 +134,7 @@ If we go with a `bin` declaration (Ideas 2 / 3), possible homes:
 
 - **In `%meta`** — the object's compile-time metadata block. Non-executable at runtime; readable by tools.
 - **A dedicated `%install` block** — parallel to `%meta`, specifically for install-time hints.
-- **Inline in `%vibecode`** — since vibecode already carries structured tool-facing metadata.
+- **Inline in `vibecode`** — since vibecode already carries structured tool-facing metadata.
 
 `%meta` is the natural choice — vibecode is AI-facing; a dedicated `%install` block is one more concept to spec.
 
@@ -144,7 +144,7 @@ If we go with a `bin` declaration (Ideas 2 / 3), possible homes:
 - **Update / uninstall.** `puck update foo` re-fetches from the same URL and reinstalls. `puck uninstall foo` removes the file. Both standard-shape; needs a bookkeeping index (`~/.local/share/puck/installed.json`?).
 - **Shebang handling.** Caspian scripts need `#!/usr/bin/env caspian`. Does `puck install` add or verify the shebang if the downloaded file doesn't have one? Or reject files without a proper shebang?
 - **Bin-dir choice.** `~/.local/bin` is XDG-standard and increasingly common. But some setups don't have it on PATH by default. Alternatives: `~/.cargo/bin`-style dedicated dir (`~/.puck/bin`), or user's choice via config.
-- **Trust and provenance.** Installing an executable from a URL is riskier than fetching a library — the executable runs with the user's privileges. Should `puck install` require the URL to be blockchain-endorsed (per the `%puck.blockchain` setting)? Prompt on unverified URLs?
+- **Trust and provenance.** Installing an executable from a URL is riskier than fetching a library — the executable runs with the user's privileges. Should `puck install` require the URL to be blockchain-endorsed (per the `%fetch.blockchain` setting)? Prompt on unverified URLs?
 
 ## Direction
 
@@ -180,7 +180,7 @@ The file lands at `/usr/local/bin/<name>` (the de facto Unix convention for loca
 
 ## Blockchain
 
-Scripts can be installed via Puck's [blockchain](../requirements/puck-discovery/blockchain/) — the signed-endorsement ledger at `blockchain.puck.uno`. The blockchain fetcher looks up the signed endorsement for a URL, fetches the bytes from the endorsed origin, verifies them against the recorded hash, and installs the file only if everything checks out.
+Scripts can be installed via Puck's [blockchain](../requirements/fetch-discovery/blockchain/) — the signed-endorsement ledger at `blockchain.puck.uno`. The blockchain fetcher looks up the signed endorsement for a URL, fetches the bytes from the endorsed origin, verifies them against the recorded hash, and installs the file only if everything checks out.
 
 ### Opt-in preference
 
@@ -209,7 +209,7 @@ The flags are mutually exclusive at the "primary source" level — you can't ask
 
 ### License requirement
 
-Like any other artifact endorsed on the blockchain, a script installed via blockchain **must include at least an open-source license** — license is a required field on every endorsement (see [publishing](../requirements/puck-discovery/blockchain/publishing)). A script without a license can't be published to the blockchain in the first place, so a blockchain install never delivers unlicensed code.
+Like any other artifact endorsed on the blockchain, a script installed via blockchain **must include at least an open-source license** — license is a required field on every endorsement (see [publishing](../requirements/fetch-discovery/blockchain/publishing)). A script without a license can't be published to the blockchain in the first place, so a blockchain install never delivers unlicensed code.
 
 Direct installs (via `--direct` or the not-opted-in default) don't check for a license; the responsibility for verifying licensing shifts to the developer, same as any manual download.
 

@@ -34,7 +34,7 @@ Commands whose names collide with Caspian reserved words (rare, but conceivable)
 The default shape for a wrapper is a **command builder** — instantiate, configure via property assignment, hand the built instance to `.execute`. Same pattern as the tar wrapper:
 
 ~~~caspian
-$gzip = %['caspian.uno/linux/cli/gzip'].new
+$gzip = %('caspian.uno/linux/cli/gzip').new
 $gzip.input = 'archive.txt'
 $gzip.keep = true               # -k
 $gzip.level = 9                 # -9

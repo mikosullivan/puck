@@ -15,7 +15,7 @@ for content-shaped sites where each URL corresponds to a file.
 
 **Robinson is not bundled with Puck.** It's a **library available
 through Puck** — when Caspian code references
-`%['puck.uno/robinson']`, Puck's resolver fetches it from its URL
+`%('puck.uno/robinson')`, Puck's resolver fetches it from its URL
 source on first use and caches it locally; subsequent references
 hit the cache. Programs that don't use Robinson never pull it in.
 See [puck.md](../../requirements/puck/index.md) for the resolution + caching
@@ -170,7 +170,7 @@ mechanisms aren't special cases — they're just chain order.
 ## Quick example
 
 ```
-$server = %['puck.uno/robinson'].new(dir: $jail)
+$server = %('puck.uno/robinson').new(dir: $jail)
 $server.run()
 ```
 

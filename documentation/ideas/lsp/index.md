@@ -40,7 +40,7 @@ Cheap-to-ship features that meaningfully improve the experience without expandin
 - **Document symbols** (`textDocument/documentSymbol`). Powers the editor's Outline view and "Go to symbol in file" (`Ctrl+Shift+O` in VSCode). One AST walk, emit a flat list of top-level functions, classes, named expressions. Users hit it dozens of times per session.
 - **Document highlight** (`textDocument/documentHighlight`). When the cursor lands on a variable, the editor highlights every other use of the same symbol in the file. Trivial from the AST plus the lexical-scope analysis already needed for go-to-definition.
 - **Folding ranges** (`textDocument/foldingRange`). Emit one range per block (function body, `do...end`, `if...end`, etc.). Walk the AST, emit start/end line pairs. The editor renders collapsible regions automatically.
-- **Hover for keywords and `%`-surfaces.** Static lookup table mapping `function`, `closure`, `%call`, `%role`, `%puck`, `%bucket`, etc. to a short description plus a `https://puck.uno/...` link. Zero compute — just a hash lookup. High value for new users hovering on unfamiliar syntax.
+- **Hover for keywords and `%`-surfaces.** Static lookup table mapping `function`, `closure`, `%call`, `%role`, `%fetch`, `%bucket`, etc. to a short description plus a `https://puck.uno/...` link. Zero compute — just a hash lookup. High value for new users hovering on unfamiliar syntax.
 - **Selection ranges** (`textDocument/selectionRange`). Supports "expand selection" (`Ctrl+Shift+→` in VSCode and equivalents). Given the AST, it's "find the smallest enclosing node, then walk parents." Editors that use it heavily make it feel magical.
 - **On-type formatting** (`textDocument/onTypeFormatting`). When the user types `end`, auto-indent to match the opening keyword's column. Reuses the formatter's indentation logic. Tiny implementation, large quality-of-life.
 - **TODO/FIXME diagnostics.** Scan comments for `TODO`/`FIXME`/`XXX`, emit Info-severity diagnostics. Surfaces them in the editor's Problems panel. ~20 lines of code; almost every language plugin ships it.
@@ -103,5 +103,5 @@ Everything in this section is **post-V1** — not blocking the V1 ship, but wort
 ### Open questions to resolve before those land
 
 - **Cross-file analysis for V1?** Even basic go-to-definition across files would require building a workspace index. Likely defer to a follow-up slice; flag as a stretch goal for V1.
-- **Workspace configuration discovery.** How does the LSP know about a project's library layout, `%puck` resolutions, etc.? Probably a `.caspian/` config dir at the project root, but not yet specified.
+- **Workspace configuration discovery.** How does the LSP know about a project's library layout, `%fetch` resolutions, etc.? Probably a `.caspian/` config dir at the project root, but not yet specified.
 - **Restart and crash recovery.** If the LSP crashes mid-session, how does the editor recover? Standard LSP clients handle restart; the question is what state the LSP needs to rebuild on restart.

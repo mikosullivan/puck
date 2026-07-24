@@ -34,7 +34,7 @@ Unlike most CLI wrappers, `convert`'s flags are position-sensitive — `convert 
 
 ## Method surface
 
-TBD. `$c = %['caspian.uno/linux/cli/convert'].new $input, $output; $c.op :resize, '50%'; $c.op :blur, '0x2'` — operations append in order; `.execute` renders argv from the list. A convenience `.new.convert($input, $output)` handles the pure format-conversion case with no transformations.
+TBD. `$c = %('caspian.uno/linux/cli/convert').new $input, $output; $c.op :resize, '50%'; $c.op :blur, '0x2'` — operations append in order; `.execute` renders argv from the list. A convenience `.new.convert($input, $output)` handles the pure format-conversion case with no transformations.
 
 ## Testing
 

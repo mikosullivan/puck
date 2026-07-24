@@ -24,7 +24,7 @@ See [the network index](index.md) for the top-level `%net` surface, the permissi
 ## `puck.uno/smtp/client`
 
 ```
-$mail = %puck['https://puck.uno/smtp/client'].new(
+$mail = %fetch('https://puck.uno/smtp/client').new(
     host: 'smtp.example.com',
     port: 587,
     user: 'noreply@example.com',

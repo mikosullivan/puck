@@ -48,15 +48,15 @@ Five concerns argue for deferring until we have real data on what several specia
 
 ## Additional Caspian-specific concerns
 
-- **Compile-time availability.** Caspian classes are downloaded through `%puck`. A reader has to be available at *parse* time — before user code runs. That's chicken-and-egg for anything not shipped with the engine. Do readers live in a separate namespace? Are they pre-declared? A separate `%puck.readers` grant? Unresolved.
+- **Compile-time availability.** Caspian classes are downloaded through `%fetch`. A reader has to be available at *parse* time — before user code runs. That's chicken-and-egg for anything not shipped with the engine. Do readers live in a separate namespace? Are they pre-declared? A separate `%fetch.readers` grant? Unresolved.
 - **Editor extension story.** Caspian's tooling (VS Code extension, syntax highlighter) has to know how to render reader contents. That means each reader ships not just runtime code but tooling annotations — an editor plugin per reader. Doable, but real.
-- **First special-syntax case doesn't need the mechanism.** `regex(/.../ )` ships as a hardcoded lexer special case in V1. The XML-regex idea can ship as a plain `%puck`-downloaded builder that produces `Regex` values through the normal method surface — no custom parser required. Neither of the current motivating cases forces the general feature.
+- **First special-syntax case doesn't need the mechanism.** `regex(/.../ )` ships as a hardcoded lexer special case in V1. The XML-regex idea can ship as a plain `%fetch`-downloaded builder that produces `Regex` values through the normal method surface — no custom parser required. Neither of the current motivating cases forces the general feature.
 
 ## When to revisit
 
 Once we have real experience with several special-syntax candidates — `regex`, XML-regex, SQL, JSON path, whatever else surfaces — we'll have the data to pick a shape. The concerns above are addressable, but each answer is easier to get right when there are three or four cases to test it against, not one.
 
-Until then: hardcode special cases (as `regex` does for V1), or ship them as normal `%puck`-downloaded builders (as the XML-regex form does).
+Until then: hardcode special cases (as `regex` does for V1), or ship them as normal `%fetch`-downloaded builders (as the XML-regex form does).
 
 ## Related
 

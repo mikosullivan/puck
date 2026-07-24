@@ -35,11 +35,11 @@ Either works for WebAuthn; the wrapper picks one and sticks with it for consiste
 Basic ES256 verify — the primary Passkey use case:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'verify an ES256 passkey assertion signature';
 end
 
-$verify = %['caspian.uno/linux/cli/openssl'].new
+$verify = %('caspian.uno/linux/cli/openssl').new
 $verify.algorithm = 'ES256'
 $verify.public_key = $pem
 $verify.signature = $sig
@@ -55,7 +55,7 @@ end
 Distinguishing verify-failure from openssl-infrastructure error (the Passkey.verify path — the two failure modes raise different exception classes):
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'turn openssl exit code into the right passkey exception';
 end
 

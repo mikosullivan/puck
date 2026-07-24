@@ -15,6 +15,7 @@ This section covers Caspian's surface syntax — what a programmer actually type
 ## Basic syntax
 
 - [Comments and whitespace](https://puck.uno/documentation/requirements/syntax/comments-and-whitespace) — line comments and lexical whitespace rules.
+- [Trailing commas](https://puck.uno/documentation/requirements/syntax/trailing-commas) — allowed only inside `[]`, `{}`, and `()`; paren-less call positions reject.
 - [Sigils](https://puck.uno/documentation/requirements/syntax/sigils) — `$`, `&`, `@`, `%` and what each names.
 - [Variables and assignment](https://puck.uno/documentation/requirements/syntax/variables-and-assignment) — `=`, compound operators, assignment targets, scope.
 - [Subscripts](https://puck.uno/documentation/requirements/syntax/subscripts) — `recv[k]`, multi-key `recv[k1, k2, ...]` walking nested containers, auto-vivify on assignment, trailing `?` for null-safe.
@@ -23,6 +24,7 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [if and unless](https://puck.uno/documentation/requirements/syntax/if-unless) — `if`/`elsif`/`else`, `unless`, and the `as $conditional` chain-exit binding.
 - [Loops](https://puck.uno/documentation/requirements/syntax/loops) — `while`, `until`, `begin ... while` / `begin ... until`, `.each`, numeric helpers, `as $loop`, `break`/`break N`, structural blocks.
 - [Bare blocks](https://puck.uno/documentation/requirements/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`.
+- [Clause slots](https://puck.uno/documentation/requirements/syntax/clause-slots) — the `body` / `before` / `between` / `after` / `noloop` / `ensure` clauses any block-carrying construct (loops, `begin`, callables) can have, including scope rules and the iterator-method convention.
 - [Classes](https://puck.uno/documentation/requirements/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
 - [System-method sigils](https://puck.uno/documentation/requirements/syntax/system-method-sigils) — `%self`, `%call`, `%chain`, `%engine`, and the six bare-`%X` shortcuts.
 - [Pipes](https://puck.uno/documentation/requirements/syntax/pipes) — `|` passes the left result as the first arg to the right; `|&` adds sticky null-propagation.

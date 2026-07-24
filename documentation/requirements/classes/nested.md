@@ -95,7 +95,7 @@ class # string
 	nested :to
 		method &number()
 			# parse @value into a number
-			return %puck.number.from.string(%self)
+			return %fetch.number.from.string(%self)
 		end
 	end
 end

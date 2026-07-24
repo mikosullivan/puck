@@ -12,11 +12,11 @@
 
 `%call` is a global method available inside any function or closure body. It returns the **call object** — a first-class object representing the in-progress call. The call object carries the metadata about the call (who made it, what blocks they passed) and provides the primitives for ending the call (`%call.return`).
 
-`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%puck`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
+`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%fetch`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
 
 ## Class identity
 
-`%call` returns an instance of the **Call class** at `caspian.uno/call`. `%call.object.isa?(%['caspian.uno/call'])` is `true`. Direct construction of Call objects by user code is TBD — for V1 the only path to a Call object is `%call` inside a live frame; a constructor-side surface for testing / mocking is a post-V1 question.
+`%call` returns an instance of the **Call class** at `caspian.uno/call`. `%call.object.isa?(%('caspian.uno/call'))` is `true`. Direct construction of Call objects by user code is TBD — for V1 the only path to a Call object is `%call` inside a live frame; a constructor-side surface for testing / mocking is a post-V1 question.
 
 ## Owned by the caller
 

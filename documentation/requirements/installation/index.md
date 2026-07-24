@@ -77,7 +77,7 @@ The installer's first act is a welcome message and a yes/no question. The user c
 
 ### Blockchain opt-in prompt
 
-After the user agrees to install, the installer briefly describes the [Puck blockchain](../puck-discovery/blockchain/) — a public ledger of signed endorsements that lets Caspian verify downloaded scripts and libraries came from their claimed publisher and haven't been tampered with — and asks whether to opt in.
+After the user agrees to install, the installer briefly describes the [Puck blockchain](../fetch-discovery/blockchain/) — a public ledger of signed endorsements that lets Caspian verify downloaded scripts and libraries came from their claimed publisher and haven't been tampered with — and asks whether to opt in.
 
 <pre class="terminal-block">The <span class="brand">Puck blockchain</span> is a public ledger of signed<br>endorsements. When enabled, Caspian verifies scripts and<br>libraries against it before downloading — guaranteeing<br>each artifact came from the claimed publisher and hasn't<br>been tampered with.<br><br>You can change this later by editing ~/.config/caspian/config.json.<br><br>Opt into blockchain verification? [y/n] <b>_</b></pre>
 
@@ -114,7 +114,7 @@ After the prompts are answered, the installer runs through the actual setup with
 3. **Write** `~/.config/caspian/config.json` with the blockchain preference from the prompt.
 4. **Modify the shell rc** if the user agreed to the PATH prompt — append `export PATH="$HOME/.local/bin:$PATH"` to the appropriate file (`~/.bashrc`, `~/.zshrc`, `~/.profile`).
 5. **Run the [OS checks](os-checks)** — probes for kernel/OS features that Caspian's own features depend on. Blocking probes (e.g., "OS is Linux") abort install; non-blocking ones downgrade the affected feature and get noted in the summary.
-6. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%puck` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
+6. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%fetch` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
 
 ### Installation summary
 

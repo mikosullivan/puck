@@ -36,7 +36,7 @@ Examples: [Differ](../differ.md), a hypothetical Caspian-aware blame viewer, a v
 
 ### 2. Browser extension
 
-An opt-in extension the viewer installs that rewrites github.com pages directly: syntax-highlighting `.casp` files, rendering `%vibecode` blocks specially, resolving URL references to live links, replacing diff views with normalized diffs.
+An opt-in extension the viewer installs that rewrites github.com pages directly: syntax-highlighting `.casp` files, rendering `vibecode` blocks specially, resolving URL references to live links, replacing diff views with normalized diffs.
 
 Each viewer chooses to install. The repo owner can't push it.
 
@@ -47,7 +47,7 @@ For things that fit GitHub's native surface: PR-side checks (Caspian syntax erro
 ## Caspian-aware things worth doing
 
 - **Syntax highlighting** for `.casp` files in source view and diffs (browser extension only — GitHub's own highlighter is Linguist-controlled, and Linguist won't know Caspian for a while).
-- **Vibecode block rendering** — pretty-print the JSON inside `%vibecode <<EOF ... EOF`, possibly collapsible.
+- **Vibecode block rendering** — pretty-print the JSON inside `vibecode <<EOF ... EOF`, possibly collapsible.
 - **Normalized diffs** — see [Differ](../differ.md).
 - **URL link resolution** — turn `puck.uno/color` references in source into clickable links pointing at the canonical doc.
 - **`.casp` file preview** in the file tree popover, formatted to viewer's `style.json`.

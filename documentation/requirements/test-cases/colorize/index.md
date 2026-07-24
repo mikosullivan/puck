@@ -38,7 +38,7 @@ Two methods, both wrapping the receiver in ANSI escape codes. `\e` is the ASCII 
 Add Colorize as a parent of `String` for the duration of a block; remove it on exit:
 
 ~~~caspian
-%['core:string'].inherited.ensure($colorize) do
+%('core:string').inherited.ensure($colorize) do
 	puts 'error'.red        # outputs: "\e[31merror\e[0m"
 	puts 'ok'.blue          # outputs: "\e[34mok\e[0m"
 end
@@ -53,7 +53,7 @@ Inside the block, every String has `.red` and `.blue` — method resolution walk
 Same call, no block. Colorize becomes a parent of String for the rest of the process:
 
 ~~~caspian
-%['core:string'].inherited.ensure($colorize)
+%('core:string').inherited.ensure($colorize)
 # String now has .red / .blue forever.
 ~~~
 
@@ -69,7 +69,7 @@ puts 'error'.$colorize.methods['red']
 
 ## What's actually happening
 
-1. `%['core:string'].inherited` is the live inheritance array on the built-in `String` class. Any class can be added to it; instances of the class immediately see the new parent's methods via normal method resolution.
+1. `%('core:string').inherited` is the live inheritance array on the built-in `String` class. Any class can be added to it; instances of the class immediately see the new parent's methods via normal method resolution.
 2. `.ensure($colorize)` (block form) — if `$colorize` isn't already a parent, adds it, runs the block, and removes exactly that platter at block exit. Identity-tracked cleanup: the engine remembers which platter it added and removes only that one.
 3. Inside the block, calling `'error'.red` dispatches through method resolution. `String` doesn't have `.red`, but its inheritance graph now includes `$colorize`, which does. The dispatch finds `.red` there, invokes it with `%self` bound to `'error'`, gets back the wrapped string.
 4. On block exit, `.ensure`'s cleanup removes the `$colorize` platter. Subsequent `.red` on any String raises method-not-found.

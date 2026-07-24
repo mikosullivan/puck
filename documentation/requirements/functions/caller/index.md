@@ -5,7 +5,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_functions_caller",
-	"role": "spec for caller objects — reusable, configurable pending calls to a specific callable (function, closure, method, or block). Built via `$callable.caller.new`; each function's `.caller` is a subclass of the base caller class specialized to that callable. Params are set via subscript (named-only; `.new` accepts no initial params). `.call` invokes the underlying callable. Trailing blocks pass at the `.call()` site using standard trailing-block syntax. Caller objects are reusable — invoke `.call` any number of times with params sticky between invocations. Callable-typed params use `closure`/`function` at declaration since `do`/`dofunc` are trailing-block syntax only. DSL wiring on a caller has its own sub-page at caller/dsl (the .dsl method + subscript surface, multi-receiver, virtual getters/setters, namespace separation from params).",
+	"role": "spec for caller objects — reusable, configurable pending calls to a specific callable (function, closure, method, or block). Built via `$callable.caller.new`; each function's `.caller` is a subclass of the base caller class specialized to that callable. Params are set via subscript (named-only; `.new` accepts no initial params). `.call` invokes the underlying callable. Trailing blocks pass at the `.call()` site using standard trailing-block syntax. Caller objects are reusable — invoke `.call` any number of times with params sticky between invocations. Callable-typed params use `closure`/`function` at declaration since `do`/`dofunc` are trailing-block syntax only. If the target declared `as $name` (a loop-controller binding), the caller exposes a `.controller` slot for the object that binds to `$name` at invocation; `.wants_controller?` introspects whether the target asked for one so iterator methods can skip controller construction when unneeded; unset `.controller` means `$name` binds to `null`; setting `.controller` on a target that didn't declare `as $name` raises. DSL wiring on a caller has its own sub-page at caller/dsl (the .dsl method + subscript surface, multi-receiver, virtual getters/setters, namespace separation from params).",
 	"status": "spec — mechanism, param surface, and reuse rules settled. Jails and additional introspection surface (enumerate all params) deferred.",
 	"audience": "developers building configurable pending calls; anyone reasoning about how DSLs get wired at call sites"
 }}
@@ -93,6 +93,58 @@ end
 
 The block passed here lands in the target callable's `%call.blocks[0]`. Multiple `do`/`dofunc` blocks chain at the `.call()` site the same way they chain at any call site — see [calling § Multiple blocks](tag:calling#multiple-blocks).
 
+## Loop-controller slot (`as $name` on the target)
+
+When the target callable declares an `as $name` binding — e.g. `closure($idx) as $loop`, `function &foo() as $loop`, or `do($item) as $loop` — the caller exposes a **`.controller` slot** carrying the object that will bind to `$name` at invocation time:
+
+~~~caspian
+$foo = closure($idx) as $loop
+	puts $loop.index
+end
+
+$caller = $foo.caller.new
+$caller.controller = $loop_controller
+$caller.call 1
+~~~
+
+**Default is `null`.** If `.controller` was never set, `$name` binds to `null` inside the target's body. Any `.method` invocation on `$loop` then raises the standard method-on-null error — same treatment as any other null.
+
+That's deliberate: iterator methods choose whether to supply a controller; direct callers who don't care skip the setup entirely. `$foo.call 1` on a target that declared `as $loop` succeeds; `$loop.index` inside the body raises if the body actually reaches for it.
+
+### `.wants_controller?`
+
+To let iterator methods avoid constructing a controller for targets that don't want one, the caller exposes a boolean introspector:
+
+~~~caspian
+$caller = $foo.caller.new
+
+if $caller.wants_controller?
+	$caller.controller = $loop_controller
+end
+
+$caller.call 1
+~~~
+
+**`.wants_controller?` returns `true` iff the target's declaration includes `as $name`.** Iterator methods use it to skip controller construction for blocks that never asked for one — loop-controller objects can carry non-trivial per-iteration state (index, count, timing), and skipping when unwanted matters at hot-loop scale.
+
+### Contract violation: unknown controller slot
+
+Setting `.controller` on a caller whose target did NOT declare `as $name` **raises**. Same posture as passing an unknown named argument to any call — the caller isn't configuring anything the target can read, so silently accepting the assignment would mask developer errors.
+
+### CaspJ shape for `as $name` bindings
+
+Constructs that accept `as $name` — `while`, `until`, `begin`, `begin ... while` / `begin ... until`, `if`, `unless`, and callable definitions (`function`, `closure`, `method`, `do`) — carry the binding on their atom as a **dedicated `as` field** (Option B: field appears only when declared, no empty-slot padding):
+
+~~~
+{begin_end: {as: "block", body: [...]}}
+{if_end:    {as: "conditional", branches: [...]}}
+{while_end: {as: "loop", cond, body, ...clauses}}
+{closure:   {as: "loop", params, body}}
+{begin_while: {as: "block", cond, body, ...clauses}}
+~~~
+
+Without a declared `as`, the field simply isn't present — same principle the clause slots use. The runtime dispatch (through the caller pattern above) sees the field's presence via `.wants_controller?` and provides the controller object accordingly.
+
 ## DSL wiring
 
 `.dsl` on the caller wires bare-word commands for the block invoked by `.call`. Full spec on [dsl](tag:dsl).
@@ -116,11 +168,11 @@ $caller.call
 
 ## Class-accessors-on-context pattern
 
-`.caller` on every callable is one instance of a broader pattern. Because Caspian classes are URL-identified (Puck-resolved via `%[uns]`), fetching a class every time you'd want to construct one would force users to memorize URLs. Instead, an object that "knows" which class fits its context can expose an accessor pointing at that class — the user just chains through.
+`.caller` on every callable is one instance of a broader pattern. Because Caspian classes are URL-identified (Puck-resolved via `%(uns)`), fetching a class every time you'd want to construct one would force users to memorize URLs. Instead, an object that "knows" which class fits its context can expose an accessor pointing at that class — the user just chains through.
 
-`$foo.caller` returns the caller class for `$foo` — a subclass of the base caller class that knows which callable it's for. The user writes `$foo.caller.new` instead of `%['caspian.uno/caller.casp'].new($foo)`.
+`$foo.caller` returns the caller class for `$foo` — a subclass of the base caller class that knows which callable it's for. The user writes `$foo.caller.new` instead of `%('caspian.uno/caller.casp').new($foo)`.
 
-This pattern shows up elsewhere in Caspian. Whenever a specialized class would otherwise be the natural target for `%[uns]` retrieval, prefer to expose it as an accessor on whatever object provides the specialization context.
+This pattern shows up elsewhere in Caspian. Whenever a specialized class would otherwise be the natural target for `%(uns)` retrieval, prefer to expose it as an accessor on whatever object provides the specialization context.
 
 ## Testing
 

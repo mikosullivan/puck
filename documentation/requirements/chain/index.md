@@ -104,7 +104,7 @@ Every method that lives on `%chain`. Each method's surface is documented per-met
 | [`%chain.forks`](methods/forks) | | no | capability | Spawn forked child processes. |
 | [`%chain.net`](methods/net) | | no | capability | Networking — HTTP client, sockets, UDS. |
 | [`%chain.now`](methods/now) | `%now` | **yes** | capability | Current timestamp from the engine-controlled clock. |
-| [`%chain.puck`](methods/puck) | `%puck` | **yes** | capability | Object download by URL. `%[url]` is the further-shortened form. |
+| [`%chain.puck`](methods/puck) | `%fetch` | **yes** | capability | Object download by URL. `%(url)` is the further-shortened form. |
 | [`%chain.random`](methods/random) | `%random` | **yes** | capability | Random-value primitives (UUID, number, string). |
 | [`%chain.stderr`](methods/stdout-and-stderr) | `%stderr` | no | capability | Diagnostic-output channel. |
 | [`%chain.stdin`](methods/stdin) | `%stdin` | no | capability | The program's input channel. |
@@ -179,7 +179,7 @@ The naïve "copy the parent's hash" approach is O(parent hash size) per frame pu
 - **Frame inheritance: hash assignment needs no block** — unlike grant/revoke, `%chain['k'] = 'v'` mutates the current frame directly.
 - **Missing key returns null** — reading `%chain['nonexistent']` returns null, not raise.
 - **Global methods accessible via `%chain.X`** — `%chain.now`, `%chain.net`, `%chain.tmp`, and every catalog entry are addressable through the chain.
-- **Shortcut form equivalent to `%chain.X`** — for surfaces with a bare shortcut (`%now`, `%stdout`, `%puck`, `%random`, `%stderr`, `%stdin`), the shortcut and `%chain.X` return the same value.
+- **Shortcut form equivalent to `%chain.X`** — for surfaces with a bare shortcut (`%now`, `%stdout`, `%fetch`, `%random`, `%stderr`, `%stdin`), the shortcut and `%chain.X` return the same value.
 - **Engine-startup grant gates presence** — if the host does not install `%chain.net` at startup, calling `%chain.net` raises even inside a grant block; no chain-level operation conjures a withheld surface.
 - **Default-granted list** — `%chain.now`, `%chain.puck`, `%chain.random`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps` cross role boundaries automatically.
 - **Default-deny list** — every other catalog entry (`%chain.net`, `%chain.tmp`, `%chain.stdout`, `%chain.stdin`, `%chain.stderr`, `%chain.argv`, `%chain.env`, `%chain.forks`) is unreachable in a callee of a different role unless explicitly granted.

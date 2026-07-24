@@ -3,11 +3,11 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "annotation-pattern",
-	"role": "speculative note: formalize the %name(label) <<HEREDOC pattern (already used by %documentation) as a uniform mechanism for attaching labeled, format-tagged data blobs to scripts and classes; alternative to inventing a __DATA__ sub-language",
+	"role": "speculative note: formalize the %name(label) <<HEREDOC pattern (already used by documentation) as a uniform mechanism for attaching labeled, format-tagged data blobs to scripts and classes; alternative to inventing a __DATA__ sub-language",
 	"key_concepts": ["no_meta_language", "heredoc_as_payload",
 		"uniform_introspection", "metadata_vs_runtime_payload"],
 	"status": "brainstorm",
-	"context": "raised 2026-05-27 after building Caspian's __END__ marker; Miko's redirect: don't invent a sub-language for embedded data, lean on the existing %documentation pattern"
+	"context": "raised 2026-05-27 after building Caspian's __END__ marker; Miko's redirect: don't invent a sub-language for embedded data, lean on the existing documentation pattern"
 }}
 ~~~
 
@@ -15,7 +15,7 @@ Caspian already has a pattern for attaching labeled blobs to a class:
 
 ```caspian
 class
-    %documentation('markdown') <<EOF
+    documentation('markdown') <<EOF
     = User
     Represents a user record.
     EOF
@@ -24,7 +24,7 @@ end
 
 That single line is doing three things at once:
 
-1. **Calling a system method** (`%documentation`) that registers the blob
+1. **Calling a system method** (`documentation`) that registers the blob
 2. **Tagging the blob with a format hint** (`'markdown'`) — the body is opaque to the runtime
 3. **Carrying the body as a heredoc** — first-class string
 
@@ -32,7 +32,7 @@ If the pattern itself is treated as the API surface, embedded-data needs no new 
 
 ```caspian
 class
-    %documentation('markdown') <<EOF
+    documentation('markdown') <<EOF
     = User
     EOF
 
@@ -59,11 +59,11 @@ Compared to a `__DATA__` sub-language (Perl style):
 
 ### Metadata vs runtime payload
 
-`%documentation` is metadata — read by tools, not by the program. `%data` would be runtime payload — read by the program itself. Same shape, different consumers. Worth distinguishing in the API, or is one namespace fine with consumer-side filtering?
+`documentation` is metadata — read by tools, not by the program. `%data` would be runtime payload — read by the program itself. Same shape, different consumers. Worth distinguishing in the API, or is one namespace fine with consumer-side filtering?
 
 ### Scope
 
-`%documentation` inside `class ... end` attaches to the class. Where does `%data` live in a top-level script with no class? Attached to the script object? Or does each annotation type declare its own target?
+`documentation` inside `class ... end` attaches to the class. Where does `%data` live in a top-level script with no class? Attached to the script object? Or does each annotation type declare its own target?
 
 ### Disambiguation with regular method calls
 
@@ -71,4 +71,4 @@ Compared to a `__DATA__` sub-language (Perl style):
 
 ### `%annotation` as a single primitive?
 
-One general-purpose `%annotation(name, label, format)` primitive with `%documentation`, `%data`, etc. as thin conventions over it? Or each annotation kind as its own system method with shared shape but no shared implementation?
+One general-purpose `%annotation(name, label, format)` primitive with `documentation`, `%data`, etc. as thin conventions over it? Or each annotation kind as its own system method with shared shape but no shared implementation?

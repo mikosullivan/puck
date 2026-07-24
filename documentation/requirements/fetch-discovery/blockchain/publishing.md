@@ -123,9 +123,9 @@ For files hosted on platforms with a public metadata API — GitHub, GitLab, and
 - **npm-specific fields not in Puck's schema are ignored** — `main`, `scripts`, `dependencies`, `engines` in `%meta` do not affect the endorsement.
 - **SPDX expressions are not supported at V1** — a `license` value like `"MIT OR Apache-2.0"` is refused at V1.
 - **Bad-form warning when both sources present** — publishing a file that has both a `%meta` and platform metadata surfaces a warning about drift risk (does not refuse).
-- **Published file is retrievable through Ledger** — after publication, `%puck[url]` with the URL through the Ledger fetcher returns the file's bytes.
+- **Published file is retrievable through Ledger** — after publication, `%fetch(url)` with the URL through the Ledger fetcher returns the file's bytes.
 
 ## Related
 
-- [puck-discovery/blockchain](./) — the parent page describing the blockchain, the Ledger fetcher, the trust-anchor role, and the endorsement structure that publishing produces.
+- [fetch-discovery/blockchain](./) — the parent page describing the blockchain, the Ledger fetcher, the trust-anchor role, and the endorsement structure that publishing produces.
 - [content-types](https://puck.uno/documentation/requirements/content-types) — the Content-Type an author's file is served with, both from the origin and from the blockchain's cache.

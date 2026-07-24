@@ -3,8 +3,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "declared_dependencies",
-	"role": "future-idea note: a class could declare ahead of time which other downloaded objects it needs and whether those should share its role. Optional ergonomics on top of the existing %puck download model. Post-V1.",
-	"status": "deferred — not part of V1; revisit when the pattern of methods doing ad-hoc %puck calls becomes friction worth removing"
+	"role": "future-idea note: a class could declare ahead of time which other downloaded objects it needs and whether those should share its role. Optional ergonomics on top of the existing %fetch download model. Post-V1.",
+	"status": "deferred — not part of V1; revisit when the pattern of methods doing ad-hoc %fetch calls becomes friction worth removing"
 }}
 ~~~
 
@@ -13,7 +13,7 @@ Under the V1 model, every dependency another downloaded object needs is fetched 
 ~~~caspian
 class &widget
     method &render()
-        $renderer = %puck['https://example.com/renderer']
+        $renderer = %fetch('https://example.com/renderer')
         $renderer.render(self)
     end
 end
@@ -21,8 +21,8 @@ end
 
 Works fine, but two patterns become awkward at scale:
 
-1. **Discoverability.** Reading the class doesn't tell you what objects it depends on — those are buried in method bodies. A maintainer or auditor has to walk the methods to find every `%puck[...]` call.
-2. **Role sharing.** If `widget` is loaded `as_self: true` (so it runs in the caller's role), the inline `%puck['renderer']` call doesn't automatically inherit that. The author has to remember to write `%puck['renderer', as_self: true]` everywhere, and every downstream maintainer has to remember the same. Easy to forget; security-relevant when forgotten.
+1. **Discoverability.** Reading the class doesn't tell you what objects it depends on — those are buried in method bodies. A maintainer or auditor has to walk the methods to find every `%fetch(...)` call.
+2. **Role sharing.** If `widget` is loaded `as_self: true` (so it runs in the caller's role), the inline `%fetch('renderer')` call doesn't automatically inherit that. The author has to remember to write `%fetch('renderer', as_self: true)` everywhere, and every downstream maintainer has to remember the same. Easy to forget; security-relevant when forgotten.
 
 ## The idea
 
@@ -48,12 +48,12 @@ What this would give:
 
 ## What's NOT in scope here
 
-This idea is about ergonomics and explicit declaration, not new security primitives. The mechanism it would build on (`%puck` downloads, role assignment, `as_self`) already exists. The `requires` form is sugar over what you can already do today by hand.
+This idea is about ergonomics and explicit declaration, not new security primitives. The mechanism it would build on (`%fetch` downloads, role assignment, `as_self`) already exists. The `requires` form is sugar over what you can already do today by hand.
 
 ## Why deferred
 
-- The V1 model (inline `%puck[...]`) works fine for small classes. The friction this idea relieves only shows up at scale.
+- The V1 model (inline `%fetch(...)`) works fine for small classes. The friction this idea relieves only shows up at scale.
 - Declaring dependencies adds syntax that has to be specified, parsed, and enforced — non-trivial design surface.
 - Class-level static dependency declarations interact with the eventual versioning story (`requirements/downloads/`); better to settle versioning first, then layer this on top.
 
-Revisit when the inline `%puck[...]` pattern has been used for real long enough that the friction is clear and the desired ergonomics are obvious.
+Revisit when the inline `%fetch(...)` pattern has been used for real long enough that the friction is clear and the desired ergonomics are obvious.

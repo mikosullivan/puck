@@ -1,6 +1,6 @@
 #!/usr/bin/caspian
 
-%vibecode <<EOF
+vibecode <<EOF
 {
 	"doc": "test_cases_parsing_parse_negative",
 	"role": "negative test bed for the Caspian to CaspianJ transpiler — snippets that SHOULD fail transpilation. Same boxed fixture layout as parse.casp: `# name: LABEL` inside `#===...` outer borders, `#--- code ---` for the invalid source, `#--- raises ---` for the error-substring the transpiler must produce. Kept in a separate file so syntactically invalid samples don't mess up parse.casp's formatting.",
@@ -531,3 +531,92 @@ unclosed begin block
 # name: unclosed begin block (no terminating while)
 #====================================================================
 
+
+
+#====================================================================
+# name: parenthesized expression as pipe RHS
+#
+
+#--- code -----------------------------------------------------------
+$x = &foo | (&yeah | &dude)
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+pipe RHS must be a call
+#--------------------------------------------------------------------
+
+#
+# name: parenthesized expression as pipe RHS
+#====================================================================
+
+
+#====================================================================
+# name: trailing comma in paren-less bwc statement call
+# `&foo 1, 2, 3,` — trailing comma allowed only inside brackets/braces/parens
+#
+
+#--- code -----------------------------------------------------------
+&foo 1, 2, 3,
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+trailing comma allowed only inside
+#--------------------------------------------------------------------
+
+#
+# name: trailing comma in paren-less bwc statement call
+#====================================================================
+
+
+#====================================================================
+# name: trailing comma in paren-less bareword statement call
+# `field :name, class: :string,` — trailing comma allowed only inside brackets/braces/parens
+#
+
+#--- code -----------------------------------------------------------
+field :name, class: :string,
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+trailing comma allowed only inside
+#--------------------------------------------------------------------
+
+#
+# name: trailing comma in paren-less bareword statement call
+#====================================================================
+
+
+#====================================================================
+# name: trailing comma in pipe RHS paren-less bwc call
+# `A | &sort 'asc',` — trailing comma allowed only inside brackets/braces/parens
+#
+
+#--- code -----------------------------------------------------------
+$x = &foo | &sort 'asc',
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+trailing comma allowed only inside
+#--------------------------------------------------------------------
+
+#
+# name: trailing comma in pipe RHS paren-less bwc call
+#====================================================================
+
+
+#====================================================================
+# name: trailing comma in expression-position paren-less bwc call
+# `$x = &foo 1, 2,` — pcall in expression-position bwc handler must not swallow the syntax error
+#
+
+#--- code -----------------------------------------------------------
+$x = &foo 1, 2,
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+trailing comma allowed only inside
+#--------------------------------------------------------------------
+
+#
+# name: trailing comma in expression-position paren-less bwc call
+#====================================================================

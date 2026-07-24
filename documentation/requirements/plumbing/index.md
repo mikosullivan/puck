@@ -13,7 +13,7 @@
 
 **Plumbing** covers the edges of the Caspian runtime — every value that enters or leaves the program does so through one. Two shapes:
 
-- **[Faucets](https://puck.uno/documentation/requirements/plumbing/faucets/)** bring values IN. Every inbound value (stdin bytes, an env var, a network response, a `%puck` object) comes through a faucet with its own role, and the value carries that role.
+- **[Faucets](https://puck.uno/documentation/requirements/plumbing/faucets/)** bring values IN. Every inbound value (stdin bytes, an env var, a network response, a `%fetch` object) comes through a faucet with its own role, and the value carries that role.
 - **[Sinks](https://puck.uno/documentation/requirements/plumbing/sinks/)** push values OUT. Every outbound method (a stdout write, an HTTP request body, a filesystem write) is a method on a sink object, and holding the object is authority to call it.
 
 The two mechanisms are duals but not symmetric: faucets tag inbound values with a source role (provenance), while sinks are role-neutral (capability lives in holding the object, not in role-checking each value). See the individual docs for the load-bearing rules on each side.

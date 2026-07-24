@@ -4,9 +4,9 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_puck_discovery_blockchain_ledger",
-	"role": "spec for the on-chain format of the Puck blockchain — the linear append-only ledger of signed records that backs the Ledger fetcher (see puck-discovery/blockchain/index.md) and the publishing flow (see puck-discovery/blockchain/publishing.md). Covers the record envelope, the signing scheme (Ed25519 over RFC-8785-canonicalized JSON, SHA-256 hashes), the bootstrap sequence (Puck.uno authority block first, first grammar block second), the six block intents (authority, grammar, endorse, delegate, deprecate, revoke) with their payloads, the grammar system that lets block-format rules evolve, the endorsement structure and its latest-wins resolution rule, delegation semantics, and revocation with recommended engine caching behavior.",
+	"role": "spec for the on-chain format of the Puck blockchain — the linear append-only ledger of signed records that backs the Ledger fetcher (see fetch-discovery/blockchain/index.md) and the publishing flow (see fetch-discovery/blockchain/publishing.md). Covers the record envelope, the signing scheme (Ed25519 over RFC-8785-canonicalized JSON, SHA-256 hashes), the bootstrap sequence (Puck.uno authority block first, first grammar block second), the six block intents (authority, grammar, endorse, delegate, deprecate, revoke) with their payloads, the grammar system that lets block-format rules evolve, the endorsement structure and its latest-wins resolution rule, delegation semantics, and revocation with recommended engine caching behavior.",
 	"status": "draft — brought over from the requirements-old blockchain-implementation spec. Envelope, signing, bootstrap, and the six block intents are settled at the sketch level; several details (key rotation, delegation-by-intent shape, `audit` endorsement payload, whether every software identifier belongs on-chain) are still open.",
-	"audience": "implementers of blockchain.puck.uno; anyone verifying Ledger responses locally; class authors reading Ledger-returned data; anyone reasoning about the trust model that Ledger and %puck.blockchain sit on top of"
+	"audience": "implementers of blockchain.puck.uno; anyone verifying Ledger responses locally; class authors reading Ledger-returned data; anyone reasoning about the trust model that Ledger and %fetch.blockchain sit on top of"
 }}
 ~~~
 
@@ -236,6 +236,6 @@ This model has three practical consequences worth naming:
 
 ## Related
 
-- [puck-discovery/blockchain](./) — the parent page on how the blockchain is used at the fetcher-and-verification layer. Everything on this page describes what those responses actually contain.
+- [fetch-discovery/blockchain](./) — the parent page on how the blockchain is used at the fetcher-and-verification layer. Everything on this page describes what those responses actually contain.
 - [publishing](./publishing) — how authors submit URLs to be endorsed. This page describes the ledger records their submission ultimately produces.
 - [content-types](https://puck.uno/documentation/requirements/content-types) — Content-Type strings used in blockchain API responses.

@@ -79,7 +79,7 @@ Multiple operations apply in URL order: `?width=400&rotate=90&format=webp` resiz
 
 ### Puck protocol object
 
-`%['cobweb.uno'].transform(source: ..., width: 400, rotate: 90)` from Caspian. First-class Puck integration; lets Caspian code transform images without HTTP plumbing.
+`%('cobweb.uno').transform(source: ..., width: 400, rotate: 90)` from Caspian. First-class Puck integration; lets Caspian code transform images without HTTP plumbing.
 
 ## Caching
 

@@ -26,7 +26,7 @@ namespace.
 remotely**. There is very little Caspian in the class definition; all
 methods are remote calls. The class on the client side is essentially a
 stub that exposes the method surface and dispatches each call to the
-puck.uno server via `%puck.call` (see
+puck.uno server via `%fetch.call` (see
 [puck.md](../requirements/puck/index.md) — `remote function`).
 
 The actual geolocation logic — databases, caches, algorithms — lives on
@@ -193,7 +193,7 @@ and metadata like `place_rank` and `osm_id`.
 #### Call flow
 
 1. Client calls `$geo.address`. The local stub sends the entire `$geo`
-   object to the puck.uno server via `%puck.call` (per standard
+   object to the puck.uno server via `%fetch.call` (per standard
    Puck remote-call mechanics).
 2. The puck.uno server checks its own **cache** for the lat/long key.
 3. Cache miss: the server makes a Nominatim request, respecting OSM's
@@ -265,7 +265,7 @@ $here.distance_to($there)    # → integer meters, straight-line
 
 This is "as the crow flies" — math on the two coordinates, not the
 actual road distance. Locally computable on the puck.uno side (no
-remote round-trip needed beyond the initial `%puck.call`); could
+remote round-trip needed beyond the initial `%fetch.call`); could
 even be done client-side eventually if we ship the formula in a
 client library.
 
@@ -446,7 +446,7 @@ it's a map property. If it's a button, voice line, or other thing
 #### Example: configuring a navigator
 
 ```
-$navigator = %['puck.uno/geo/navigator'].new()
+$navigator = %('puck.uno/geo/navigator').new()
 
 # Map: things that affect what's drawn on the rendering surface
 $navigator.map.center = [42.3601, -71.0589]
@@ -525,7 +525,7 @@ If you just want to embed a map without any of the navigator
 chrome, instantiate `puck.uno/geo/map` directly:
 
 ```
-$map = %['puck.uno/geo/map'].new()
+$map = %('puck.uno/geo/map').new()
 $map.center = [42.3601, -71.0589]
 $map.zoom = 14
 $html = $map.html

@@ -25,7 +25,7 @@ The brainstorm that follows is preserved for that future revisit.
 ## The idea
 
 ```caspian
-$n = %puck['https://puck.uno/hex'].new(255)
+$n = %fetch('https://puck.uno/hex').new(255)
 $n.to_string    # 'ff'
 $n + 1          # 256 (arithmetic stays numeric)
 

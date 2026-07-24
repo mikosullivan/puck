@@ -323,7 +323,7 @@ from the `.casp` declarations.
 Sketched `.casp`:
 
 ```caspian
-%vibecode <<HEREDOC
+vibecode <<HEREDOC
 {"binding_for": "foo",
  "engine_slot": "foo",
  "owning_role": "foo",
@@ -365,7 +365,7 @@ return M
 Programs that need a non-core binding declare it in their vibecode:
 
 ```caspian
-%vibecode <<HEREDOC
+vibecode <<HEREDOC
 {"bindings": ["puck.uno/binding/foo"]}
 HEREDOC
 
@@ -376,7 +376,7 @@ $result = %engine.foo.greet(name: 'world')
 At program load, the engine:
 
 1. Reads the `bindings` list.
-2. Resolves each via `%puck` lookup (downloads/installs if needed).
+2. Resolves each via `%fetch` lookup (downloads/installs if needed).
 3. Loads the `.casp` + `.lua` pair.
 4. Registers the class under the declared role.
 5. Sets `%engine.foo` to an instance.

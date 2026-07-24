@@ -31,7 +31,7 @@ To build `tar -xzf archive.tar.gz -C target_dir`:
 The class is a **command builder**: instantiate with `.new`, configure via property assignment, then pass the instance to `.execute`. `.execute` reads the built command via the executable-object protocol (spec'd separately) and runs `tar` directly — no shell involved.
 
 ~~~caspian
-$tar = %['caspian.uno/linux/cli/tar'].new
+$tar = %('caspian.uno/linux/cli/tar').new
 $tar.extract = true            # x
 $tar.gzip = true               # z
 $tar.file = 'tests.tar.gz'     # f

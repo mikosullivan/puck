@@ -55,7 +55,7 @@ documents. Two related operations:
 ## Possible API shape (sketch)
 
 ```
-$result = %['puck.uno/html5-validator'].validate($html)
+$result = %('puck.uno/html5-validator').validate($html)
 $result.valid?           # boolean
 $result.violations       # array of structured violation reports
 $result.tidied           # cleaned-up version (optional, configurable)

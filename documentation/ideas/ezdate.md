@@ -40,7 +40,7 @@ needed for the common reads; just access the field.
 For Caspian this translates naturally to:
 
 ~~~caspian
-$now = %['puck.uno/time'].new()
+$now = %('puck.uno/time').new()
 $now.year         # 2026
 $now.month_long   # "May"
 $now.weekday_short # "Sat"
@@ -53,7 +53,7 @@ This is the killer feature. Set any property and the rest of the time-point
 recalculates to satisfy the new value:
 
 ~~~caspian
-$d = %['puck.uno/time'].new('2001-04-14')  # Saturday
+$d = %('puck.uno/time').new('2001-04-14')  # Saturday
 $d.weekday_number = 1                       # Monday → now 2001-04-09
 $d.epoch_day = $d.epoch_day + 1             # next day → 2001-04-10
 $d.month_number = 2                         # → 2001-02-10 (or 2001-02-28 if was 31st)
@@ -111,7 +111,7 @@ strftime; brace-properties for Caspian-native usage.
 Define a format once, use it everywhere:
 
 ~~~caspian
-%['puck.uno/time'].define_format('miko_default',
+%('puck.uno/time').define_format('miko_default',
     '{weekday_long}, {month_long} {day_of_month}, {year}')
 
 $d.miko_default   # "Saturday, April 14, 2001"
@@ -328,11 +328,11 @@ Not a spec — just a shape to argue with. Name TBD: `puck.uno/time`,
 ### Construction
 
 ~~~caspian
-$now = %['puck.uno/time'].new
-$d   = %['puck.uno/time'].new('2026-05-23T14:30:00Z')
-$d   = %['puck.uno/time'].new('May 23, 2026 2:30pm', zone: 'America/New_York')
-$d   = %['puck.uno/time'].new(epoch_second: 1748000000)
-$d   = %['puck.uno/time'].new('yesterday')
+$now = %('puck.uno/time').new
+$d   = %('puck.uno/time').new('2026-05-23T14:30:00Z')
+$d   = %('puck.uno/time').new('May 23, 2026 2:30pm', zone: 'America/New_York')
+$d   = %('puck.uno/time').new(epoch_second: 1748000000)
+$d   = %('puck.uno/time').new('yesterday')
 ~~~
 
 ### Property access
@@ -377,7 +377,7 @@ $d.format('{weekday_long}, {month_long} {day_of_month}')    # brace style
 $d.iso8601                                                   # built-in: "2026-05-23T14:30:00Z"
 
 # named format, defined once per class:
-%['puck.uno/time'].define_format('miko',
+%('puck.uno/time').define_format('miko',
     '{weekday_long}, {month_long} {day_of_month}, {year}')
 $d.format('miko')
 ~~~
@@ -397,7 +397,7 @@ $diff = $b - $a        # returns puck.uno/duration
 ~~~caspian
 $start.range_to($end)              # "Mar 5-7, 2004"  (date_range_string)
 $start.time_range_to($end)         # "10:00-11:00am"  (time_range_string)
-%['puck.uno/time'].lump_days($dates)  # → array of [start, end] spans
+%('puck.uno/time').lump_days($dates)  # → array of [start, end] spans
 ~~~
 
 ---

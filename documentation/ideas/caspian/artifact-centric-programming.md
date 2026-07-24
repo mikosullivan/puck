@@ -53,8 +53,8 @@ A cluster of Caspian's design choices look unrelated until you see them as expre
 A class fetched from `puck.uno/color` and a class fetched from `myorg.com/color` aren't "the same type in two places." They're two separate artifacts. Each is whatever class it happens to be; neither resolves to a shared abstract `Color` type that the runtime knows about.
 
 ~~~caspian
-$puck_color  = %puck['https://puck.uno/color']
-$myorg_color = %puck['https://myorg.com/color']
+$puck_color  = %fetch('https://puck.uno/color')
+$myorg_color = %fetch('https://myorg.com/color')
 
 # Two separate artifacts. Per-object identity; no global "Color" they both
 # resolve to.
@@ -150,7 +150,7 @@ This is the most visible expression of the paradigm. In a type-centric language,
 When you call `$foo.bar()`, Caspian walks the stack of classes `$foo` happens to carry, looking for a `bar` method. It does NOT consult a tree of types that `$foo` belongs to. The object's identity, for dispatch purposes, is what's *on* it, not what category it's been classified *into*.
 
 ~~~caspian
-$ship = %['starfleet.com/ship'].new(name: 'Enterprise')
+$ship = %('starfleet.com/ship').new(name: 'Enterprise')
 
 # Attach an additional class — adds auditing behavior to this one ship.
 $ship.object.classes.add('logging.uno/audit')
@@ -170,7 +170,7 @@ A type-centric language asks "what type is this?" then looks up the method in th
 `method $foo.name(params) ... end` adds a method directly to that one object. Not to its class. Not to a category of similar things. To this one artifact.
 
 ~~~caspian
-$alice = %['starfleet.com/officer'].new(name: 'Alice')
+$alice = %('starfleet.com/officer').new(name: 'Alice')
 
 # Attach a method to just this one officer.
 method $alice.salute()
@@ -180,34 +180,34 @@ end
 $alice.salute   # 'Captain Alice reporting!'
 
 # Other officers don't get the method — it's on the artifact, not the class.
-$bob = %['starfleet.com/officer'].new(name: 'Bob')
+$bob = %('starfleet.com/officer').new(name: 'Bob')
 $bob.salute   # raises method_missing
 ~~~
 
 A type-centric language treats this as exotic (Ruby's singleton methods, Python's monkey-patching) — something you can do but that's against the grain. In Caspian it's just adding behavior to an artifact. Same shape as adding behavior to a class, because both are artifacts with shadow classes.
 
-### `%puck` resolves URLs to artifacts, not types to instances
+### `%fetch` resolves URLs to artifacts, not types to instances
 
-`%puck['https://example.com/thing']` fetches the artifact at that URL. The result is whatever the artifact happens to be — a class, a function, a Mikobase record, a config blob. The lookup mechanism doesn't ask "what type is this?" before returning; it just returns the artifact.
+`%fetch('https://example.com/thing')` fetches the artifact at that URL. The result is whatever the artifact happens to be — a class, a function, a Mikobase record, a config blob. The lookup mechanism doesn't ask "what type is this?" before returning; it just returns the artifact.
 
 ~~~caspian
 # Fetching a class artifact:
-$color = %puck['https://puck.uno/color']
+$color = %fetch('https://puck.uno/color')
 $red   = $color.new(r: 255, g: 0, b: 0)
 
 # Fetching a function artifact:
-$validate = %puck['https://utils.org/email_validator']
+$validate = %fetch('https://utils.org/email_validator')
 &validate 'foo@bar.com'
 
 # Fetching a data artifact (a Mikobase record, say):
-$config = %puck['https://example.com/site_config']
+$config = %fetch('https://example.com/site_config')
 $config.theme
 
 # The lookup is the same regardless of what's there. The caller deals
 # with what they get.
 ~~~
 
-A type-centric module system would have you `import Thing from 'example.com'` and the result would be a typed Thing reference. Caspian's `%puck` is artifact-typed — you get whatever is there.
+A type-centric module system would have you `import Thing from 'example.com'` and the result would be a typed Thing reference. Caspian's `%fetch` is artifact-typed — you get whatever is there.
 
 ## What the paradigm encourages in practice
 

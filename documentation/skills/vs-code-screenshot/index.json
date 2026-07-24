@@ -50,7 +50,7 @@
 		"indent_via_x_coordinate_not_leading_spaces": "SVG renderers collapse leading whitespace inside <text>/<tspan> elements — `    drop_safeguards()` will render as `drop_safeguards()` with no visible indent. Express indentation by setting the text element's `x` attribute. At the default 17px monospace, char width is roughly 10 px, so 4-space indent = base_x + 40. xml:space=preserve also works but explicit x is easier to read and doesn't risk other whitespace surprises.",
 		"method_calls_get_an_explicit_receiver": "Bare function calls (`drop_safeguards()`) read as standalone operations and can suggest implicit globals. Prefer `$receiver.method_name()` form in screenshots — it shows method dispatch concretely and matches typical Caspian code in the wild. Pick a plausible receiver name (`$manager`, `$db`, etc.) rather than leaving it implicit.",
 		"every_token_uses_a_palette_color": "Don't eyeball syntax colors. Match every Caspian construct to the caspian_syntax_color_map below. Consistency across diagrams matters more than per-diagram artistic flourishes.",
-		"caspian_style_preferences_apply_in_screenshots_too": "Code shown in screenshots follows the same style rules as code in docs/examples: lowercase variables, hash spacing with one space after colon, `%[uns]` short form for lookups, implicit return, etc. See caspian_code_style_in_screenshots."
+		"caspian_style_preferences_apply_in_screenshots_too": "Code shown in screenshots follows the same style rules as code in docs/examples: lowercase variables, hash spacing with one space after colon, `%(uns)` short form for lookups, implicit return, etc. See caspian_code_style_in_screenshots."
 	},
 
 	"canvas": {
@@ -124,11 +124,11 @@
 		"sigils_and_system_surfaces": {
 			"%role": "system_surface (#c586c0)",
 			"%call": "system_surface (#c586c0)",
-			"%puck": "system_surface (#c586c0)",
+			"%fetch": "system_surface (#c586c0)",
 			"%bucket": "system_surface (#c586c0)",
 			"%chain": "system_surface (#c586c0)",
 			"%engine": "system_surface (#c586c0)",
-			"%[uns]_short_form": "system_surface (#c586c0) for the %, default_text for [...], string (#ce9178) for the contents",
+			"%(uns)_short_form": "system_surface (#c586c0) for the %, default_text for [...], string (#ce9178) for the contents",
 			"any_other_%name": "system_surface (#c586c0)"
 		},
 		"keywords": {
@@ -165,10 +165,10 @@
 		"rules": {
 			"lowercase_variables": "Never use capital letters in variable names. `$user`, `$db_connection`, NOT `$User` or `$DBConnection`.",
 			"hash_spacing": "One space after colons in hash literals: `{lazy: true}`, NOT `{lazy:true}`.",
-			"puck_lookup_short_form": "Prefer `%[uns]` over the verbose `%puck[uns]` in code samples.",
+			"puck_lookup_short_form": "Prefer `%(uns)` over the verbose `%fetch(uns)` in code samples.",
 			"implicit_return": "Use implicit last-value return; reserve `%call.return` for actual early-exit cases.",
 			"explicit_method_receivers": "Always `$foo.bar()`, not bare `bar()`, in screenshots (see method_calls_get_an_explicit_receiver principle).",
-			"vibecode_in_real_code": "Real Caspian source uses `%vibecode` heredoc comments at the top of each unit. Screenshots can omit these for space, but if the screenshot is showing 'real-looking' code (not just a 2-line snippet), include one.",
+			"vibecode_in_real_code": "Real Caspian source uses `vibecode` heredoc comments at the top of each unit. Screenshots can omit these for space, but if the screenshot is showing 'real-looking' code (not just a 2-line snippet), include one.",
 			"utf8_throughout": "Caspian is UTF-8 by guarantee; emojis and non-ASCII characters render fine. Don't shy away from them in strings if the example wants them.",
 			"return_idiom_in_examples": "Don't show explicit `return` unless the example is specifically about early-exit semantics; prefer implicit return."
 		}

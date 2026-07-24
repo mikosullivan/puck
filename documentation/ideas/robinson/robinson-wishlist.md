@@ -379,12 +379,12 @@ Open:
 > **not** apply to Sammy-only servers. May revisit if a real use case
 > surfaces; for now, Sammy's surface is what's specified here.
 
-A bare `%puck['https://puck.uno/Robinson'].new()` returns an **empty server** — no
+A bare `%fetch('https://puck.uno/Robinson').new()` returns an **empty server** — no
 handlers, no routes, nothing registered. To get the Ruby-Sinatra-style
 method-selector API, opt into the **Sammy handler**:
 
 ```
-$server = %puck['https://puck.uno/Robinson'].new(sammy: true)
+$server = %fetch('https://puck.uno/Robinson').new(sammy: true)
 
 $server.get('/') do($request)
     response.new(200, {content_type: 'text/plain'}, 'Hello world')
@@ -547,7 +547,7 @@ the response class. So instead of:
 
 ```
 $server.get('/') do($request)
-    %puck['https://puck.uno/Robinson/response'].new(200, {content_type: 'text/plain'}, 'Hello world')
+    %fetch('https://puck.uno/Robinson/response').new(200, {content_type: 'text/plain'}, 'Hello world')
 end
 ```
 
@@ -560,7 +560,7 @@ end
 ```
 
 The DSL is scoped to handler closures specifically — it's not a global
-alias. Outside a handler closure, you go through `%puck[...]` as usual.
+alias. Outside a handler closure, you go through `%fetch(...)` as usual.
 
 #### Constructor Shape (Sketch)
 

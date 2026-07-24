@@ -74,7 +74,7 @@ Simple example:
 $pw = null
 
 %process.malloc do
-	$pw = %['caspian.uno/password/hash'].new 'secret password'
+	$pw = %('caspian.uno/password/hash').new 'secret password'
 end
 
 $pw   # a Password object
@@ -100,7 +100,7 @@ $request = null
 %process.malloc do
 	$raw = $socket.read
 	$request = [parse $raw]
-	$request['pw'] = %['caspian.uno/password/protected/'].new $request['pw']
+	$request['pw'] = %('caspian.uno/password/protected/').new $request['pw']
 end
 
 $request['pw']   # protected Password object

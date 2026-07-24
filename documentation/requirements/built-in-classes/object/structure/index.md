@@ -287,7 +287,7 @@ The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which 
 ### Stack
 
 - **Fresh object's stack contains just its class** — a `Widget.new()` produces an object whose stack has exactly one platter carrying the Widget class.
-- **Bare object's stack contains just Object** — a `%['puck.uno/object'].new()` has exactly one platter carrying Object.
+- **Bare object's stack contains just Object** — a `%('puck.uno/object').new()` has exactly one platter carrying Object.
 - **Platter without `class` is skipped by dispatch** — a stack with a warning-only platter followed by a class platter still resolves methods against the class platter.
 - **`class` field is a class object, not a string** — inspecting a platter's `class` value returns something for which class-object operations work; string identifiers are rejected at load.
 - **Dispatch walks top-to-bottom** — a method defined on the platter at index 0 wins over the same method defined at index 1.

@@ -49,7 +49,7 @@ The `coverage` section is a hash keyed by file identifier (local path for user c
 }
 ~~~
 
-- Keys under `coverage` are the file's identity — a local path for source in the user's tree, a URL for anything downloaded via [`%puck`](https://puck.uno/documentation/requirements/chain/methods/puck).
+- Keys under `coverage` are the file's identity — a local path for source in the user's tree, a URL for anything downloaded via [`%fetch`](https://puck.uno/documentation/requirements/chain/methods/puck).
 - Each entry has a single field, `lines` — a hash whose keys are line numbers (as strings, per JSON) and whose values are hit counts. Only executable lines appear; blank lines, comments, and non-executable syntax are omitted.
 - Which lines are retained in `lines` depends on the retention value passed to `%engine.coverage`:
     - `true` — only lines with hit count `0`.
@@ -77,7 +77,7 @@ V1 commits to the process-wide property form only. Finer-grained scoping (per-bl
 - **Downloaded objects are keyed by URL** — `%engine.manifest.coverage['https://example.com/widget']` returns a `lines` hash.
 - **Line numbers in `lines` are string keys** — JSON forces string keys; `.lines['12']` (string) reaches the hit count, not `.lines[12]`.
 - **Files with zero retained lines are omitted from `coverage`** — a file where every line ran once under `true` (uncovered-only) retention doesn't appear.
-- **Coverage instruments downloaded objects** — a `%[url]` load produces coverage entries for the downloaded file when coverage is on.
+- **Coverage instruments downloaded objects** — a `%(url)` load produces coverage entries for the downloaded file when coverage is on.
 - **Coverage tracks both user files and dependencies** — a run loading two user files and three downloaded objects has entries for all five under `:all`.
 - **Only executable lines appear** — a line containing only `#comment` never shows up.
 - **A line that never runs has hit count `0`** — appears under `true` and `:all` retention, absent under `N` when `N` is negative (which raises).

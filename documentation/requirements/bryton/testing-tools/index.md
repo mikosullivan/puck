@@ -16,7 +16,7 @@ Because Bryton itself is language-agnostic (the [runner](../runner/) executes an
 The tools live at:
 
 ~~~caspian
-%['https://puck.uno/bryton/tools/']
+%('https://puck.uno/bryton/tools/')
 ~~~
 
 Test authors download the tools through the normal Puck object surface and use them from their Caspian test files.
@@ -26,7 +26,7 @@ Test authors download the tools through the normal Puck object surface and use t
 Create a test runner by calling `.new()` on the downloaded tools class:
 
 ~~~caspian
-$bryton = %['https://puck.uno/bryton/tools/'].new()
+$bryton = %('https://puck.uno/bryton/tools/').new()
 ~~~
 
 `$bryton` is the handle the test file uses to declare tests and produce a xeme.

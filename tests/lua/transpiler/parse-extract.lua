@@ -1,6 +1,6 @@
 --[[
 {
-	"module":  "parse_extract",
+	"module":  "parse-extract",
 	"role":    "Extracts test cases from a Caspian source file that uses the boxed fixture format. Each fixture is delimited by `#===...` outer borders and carries a `#--- code ---` section plus one of: `#--- full ---` (JSON — the expected full-CaspJ from `transpile(source, {lines: true})`), `#--- norm ---` (JSON — the expected norm-CaspJ from `normalize(full)`), or `#--- raises ---` (plain-text error substring). An 'expects' fixture has both `full` and `norm`. Section content ends at the next `#-----...` bare closing border. Regex-based; does not depend on the transpiler.",
 	"exports": {
 		"extract": "path (string) -> [ {name, line, kind, expected, norm?, source}, ... ]"

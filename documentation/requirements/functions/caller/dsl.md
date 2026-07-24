@@ -32,7 +32,7 @@ The minimal end-to-end shape:
 
 ~~~caspian
 $logger = function()
-	$log_handler = %['foo.bar/logger.casp'].new()
+	$log_handler = %('foo.bar/logger.casp').new()
 
 	$caller = %call.blocks[0].caller.new
 	$caller.dsl $log_handler, :info, :warn, :error

@@ -39,7 +39,7 @@ $obj.items <+ $new_item    # LHS can be a property chain
 $hash['queue'] <+ 'task'   # or a subscript
 ~~~
 
-The LHS is any expression that resolves to a receiver — a variable, a property chain, a subscript, or a `%[url]`-shaped puck lookup. The RHS is any expression.
+The LHS is any expression that resolves to a receiver — a variable, a property chain, a subscript, or a `%(url)`-shaped fetch lookup. The RHS is any expression.
 
 Whitespace on both sides is recommended for readability; `$x <+ 5` and `$x<+5` both parse. The tokenizer treats `<+` as a single two-char operator token wherever it appears — `$x <+ 5` is not `$x < (+5)`. Write `$x < (+5)` explicitly if that's what you mean.
 

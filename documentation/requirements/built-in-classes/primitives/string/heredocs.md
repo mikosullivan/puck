@@ -4,13 +4,13 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_string_heredocs",
-	"role": "spec for Caspian's heredoc syntax — the `<<TERMINATOR ... TERMINATOR` multi-line string form, its terminator quoting, the (type) annotation slot for tooling metadata, and the compile-time metadata methods' (%documentation, %vibecode) special always-literal rule. Sibling of string/index.md (the class every heredoc materializes into) and regular-expressions.md under primitives/string/.",
+	"role": "spec for Caspian's heredoc syntax — the `<<TERMINATOR ... TERMINATOR` multi-line string form, its terminator quoting, the (type) annotation slot for tooling metadata, and the compile-time metadata methods' (documentation, vibecode) special always-literal rule. Sibling of string/index.md (the class every heredoc materializes into) and regular-expressions.md under primitives/string/.",
 	"status": "spec — basic form, indent-stripping rule (least-indented-line-sets-base; mixing tabs and spaces raises a compile-time warning), (type) annotation, terminator-quoting-controls-interpolation rule, `#{expr}` interpolation form, escape processing follows terminator quoting (literal terminators have no escapes; double-quoted terminators process escapes), heredocs-as-arguments with strict in-order body collection, per-statement duplicate-terminator-name raise, and compile-time-metadata always-literal override all settled. A related open question about `<<` as array-append operator (which would conflict with the heredoc opener) lives on the array page, not here.",
 	"audience": "developers writing Caspian; lexer implementers"
 }}
 ~~~
 
-A **heredoc** is a multi-line string literal — the content starts on the line after the opener and runs until a terminator line. Every heredoc produces a plain [string](./) at runtime; nothing about the heredoc form changes the resulting type. Heredocs are used both by the compile-time metadata methods ([`%documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation), [`%vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode)) and anywhere else a string literal is expected.
+A **heredoc** is a multi-line string literal — the content starts on the line after the opener and runs until a terminator line. Every heredoc produces a plain [string](./) at runtime; nothing about the heredoc form changes the resulting type. Heredocs are used both by the compile-time metadata methods ([`documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation), [`vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode)) and anywhere else a string literal is expected.
 
 ## Basic form
 
@@ -172,17 +172,17 @@ The rule applies per statement, not globally — different statements can indepe
 
 ## Compile-time metadata methods: always literal
 
-Heredocs feeding the compile-time metadata methods `%documentation` and `%vibecode` **never interpolate, regardless of terminator quoting.** All three of these produce identical (literal) content:
+Heredocs feeding the compile-time metadata methods `documentation` and `vibecode` **never interpolate, regardless of terminator quoting.** All three of these produce identical (literal) content:
 
 ~~~caspian
-%documentation <<EOF
-%documentation <<"EOF"
-%documentation <<'EOF'
+documentation <<EOF
+documentation <<"EOF"
+documentation <<'EOF'
 ~~~
 
 Variables, expressions, and escape sequences inside those heredoc bodies appear as literal text. Compile-time metadata blocks aren't evaluated at runtime; there's nothing to interpolate against.
 
-The type slot on these methods' heredocs still works as normal — `%documentation <<(markdown)EOF ... EOF` records `text/markdown` as the annotation the tooling layer reads (the `%documentation` block itself produces no observable runtime string, so the `content_type` question is moot for these methods specifically; but the recording is what the tooling layer reads).
+The type slot on these methods' heredocs still works as normal — `documentation <<(markdown)EOF ... EOF` records `text/markdown` as the annotation the tooling layer reads (the `documentation` block itself produces no observable runtime string, so the `content_type` question is moot for these methods specifically; but the recording is what the tooling layer reads).
 
 ## Testing
 
@@ -256,16 +256,16 @@ The type slot on these methods' heredocs still works as normal — `%documentati
 
 ### Compile-time metadata methods
 
-- **`%documentation <<EOF` body is literal** — variables and escapes appear as text.
-- **`%documentation <<"EOF"` is ALSO literal** — the interpolation/escape rules do not fire on compile-time metadata heredocs.
-- **`%documentation <<'EOF'` is also literal**.
-- **`%vibecode <<EOF` is literal** with the same override.
-- **`%documentation <<(type)EOF` records the type annotation** for tooling; the block produces no observable runtime string, but the annotation is readable by tooling.
+- **`documentation <<EOF` body is literal** — variables and escapes appear as text.
+- **`documentation <<"EOF"` is ALSO literal** — the interpolation/escape rules do not fire on compile-time metadata heredocs.
+- **`documentation <<'EOF'` is also literal**.
+- **`vibecode <<EOF` is literal** with the same override.
+- **`documentation <<(type)EOF` records the type annotation** for tooling; the block produces no observable runtime string, but the annotation is readable by tooling.
 
 ## Related
 
 - [string](./) — the class every heredoc materializes into.
 - [regular-expressions](regular-expressions) — the other Caspian-side surface under `string/`.
 - [array § Open questions](https://puck.uno/documentation/requirements/built-in-classes/primitives/array/#open-questions) — whether `<<` doubles as an array-append operator, which would create a token conflict with the heredoc opener here. Open question owned by the array doc.
-- [global-methods § `%documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation) — the compile-time documentation method that consumes heredocs.
-- [global-methods § `%vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode) — the compile-time AI-readable-JSON documentation method; shorthand for `%documentation <<(vibecode)EOF ... EOF`.
+- [global-methods § `documentation`](https://puck.uno/documentation/requirements/global-methods/#documentation) — the compile-time documentation method that consumes heredocs.
+- [global-methods § `vibecode`](https://puck.uno/documentation/requirements/global-methods/#vibecode) — the compile-time AI-readable-JSON documentation method; shorthand for `documentation <<(vibecode)EOF ... EOF`.

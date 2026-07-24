@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_global_methods_root",
-	"role": "index of every %X-prefixed global — the standalone system namespaces (%chain, %engine, %call, %self), the bare-%X capability shortcuts, and the always-allowed compile-time documentation methods (%documentation, %vibecode). Each section points to the canonical doc and, for capability shortcuts, notes the user-only %engine slot the surface comes from.",
+	"role": "index of every %X-prefixed global — the standalone system namespaces (%chain, %engine, %call, %self), the bare-%X capability shortcuts, and the always-allowed compile-time documentation methods (documentation, vibecode). Each section points to the canonical doc and, for capability shortcuts, notes the user-only %engine slot the surface comes from.",
 	"audience": "anyone looking up which globals exist"
 }}
 ~~~
@@ -12,8 +12,8 @@
 Twelve global methods, in alphabetical order. Three categories:
 
 - **Standalone system namespaces** (`%call`, `%chain`, `%engine`, `%self`) — each its own thing.
-- **Bare-`%X` chain shortcuts** (`%now`, `%puck`, `%random`, `%stderr`, `%stdin`, `%stdout`) — short forms for chain-mediated capabilities, also reachable as `%chain.X` (the form used for `.grant`/`.revoke`). Every chain capability is provisioned by the engine at startup and reachable as a user-only `%engine.X` slot too — the `%chain.X` form is what carries the surface across role boundaries.
-- **Compile-time documentation methods** (`%documentation`, `%vibecode`) — always allowed regardless of role or grant; recorded in CaspianJ at parse time but produce no runtime artifact the program can observe (pre-V1).
+- **Bare-`%X` chain shortcuts** (`%now`, `%fetch`, `%random`, `%stderr`, `%stdin`, `%stdout`) — short forms for chain-mediated capabilities, also reachable as `%chain.X` (the form used for `.grant`/`.revoke`). Every chain capability is provisioned by the engine at startup and reachable as a user-only `%engine.X` slot too — the `%chain.X` form is what carries the surface across role boundaries.
+- **Compile-time documentation methods** (`documentation`, `vibecode`) — always allowed regardless of role or grant; recorded in CaspianJ at parse time but produce no runtime artifact the program can observe (pre-V1).
 
 ## `%call`
 
@@ -25,29 +25,29 @@ The ambient call-frame chain. Every chain-mediated capability lives on `%chain`;
 
 Canonical: [`chain/`](https://puck.uno/documentation/requirements/chain/).
 
-## `%documentation`
+## `documentation`
 
 Compile-time documentation annotation. Takes a heredoc argument, optionally tagged with a MIME type on the heredoc opener:
 
 ~~~caspian
 # No MIME type — defaults to plain text
-%documentation <<EOF
+documentation <<EOF
 This routine looks up the current temperature at the given zip code.
 EOF
 
 # Explicit MIME type
-%documentation <<('text/markdown')EOF
+documentation <<('text/markdown')EOF
 This routine looks up the current temperature at the given zip code.
 
 Supports **zip+4** as well.
 EOF
 ~~~
 
-**Heredoc syntax details** — the `<<TERMINATOR ... TERMINATOR` form, the optional `(type)` annotation slot, recognized types, terminator quoting — live at [built-in-classes/primitives/string/heredocs](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs). That page owns the syntax; this section covers what `%documentation` does with the heredoc it receives.
+**Heredoc syntax details** — the `<<TERMINATOR ... TERMINATOR` form, the optional `(type)` annotation slot, recognized types, terminator quoting — live at [built-in-classes/primitives/string/heredocs](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs). That page owns the syntax; this section covers what `documentation` does with the heredoc it receives.
 
-**The body is always literal.** Heredocs consumed by `%documentation` never interpolate, regardless of terminator quoting — see [heredocs § Compile-time metadata methods: always literal](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#compile-time-metadata-methods-always-literal) for the rule.
+**The body is always literal.** Heredocs consumed by `documentation` never interpolate, regardless of terminator quoting — see [heredocs § Compile-time metadata methods: always literal](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#compile-time-metadata-methods-always-literal) for the rule.
 
-**Always allowed.** No role or grant governs `%documentation`; any code in any frame may write one. **Produces no runtime artifact the program can observe** (pre-V1) — the block is recorded in CaspianJ at parse time, but the script itself can't read it back at runtime and the engine doesn't act on it. It exists for tooling (documentation generators, syntax highlighters, AI readers, etc.), not for the running program.
+**Always allowed.** No role or grant governs `documentation`; any code in any frame may write one. **Produces no runtime artifact the program can observe** (pre-V1) — the block is recorded in CaspianJ at parse time, but the script itself can't read it back at runtime and the engine doesn't act on it. It exists for tooling (documentation generators, syntax highlighters, AI readers, etc.), not for the running program.
 
 ## `%engine`
 
@@ -63,9 +63,9 @@ Shortcut for `%chain.now`. Reaches the same clock as the user-only [`%engine.now
 
 Canonical: [`chain/methods/now`](https://puck.uno/documentation/requirements/chain/methods/now).
 
-## `%puck`
+## `%fetch`
 
-Object download by URL. Each call returns a fresh object. `%[url]` is the further-shortened form. Default-granted across role boundaries.
+Object download by URL. Each call returns a fresh object. `%(url)` is the further-shortened form. Default-granted across role boundaries.
 
 Shortcut for `%chain.puck`. Reaches the same object-download surface as the user-only [`%engine.puck`](https://puck.uno/documentation/requirements/engine/).
 
@@ -113,12 +113,12 @@ Shortcut for `%chain.stdout`. Reaches the same stream as the user-only [`%engine
 
 Canonical: [`chain/methods/stdout-and-stderr`](https://puck.uno/documentation/requirements/chain/methods/stdout-and-stderr).
 
-## `%vibecode`
+## `vibecode`
 
-Compile-time AI-readable-JSON documentation annotation. Shorthand for `%documentation <<(vibecode)EOF ... EOF`:
+Compile-time AI-readable-JSON documentation annotation. Shorthand for `documentation <<(vibecode)EOF ... EOF`:
 
 ~~~caspian
-%vibecode <<EOF
+vibecode <<EOF
 {
 	"purpose": "Look up the current temperature at the given zip code",
 	"returns": "number (degrees Fahrenheit) or null on lookup failure"
@@ -128,9 +128,9 @@ EOF
 
 An optional `side` field inside the JSON indicates attachment intent — `"target"` for the left-hand side of an assignment, `"value"` for the right-hand side. Omit `side` for statements with no assignment. Consumer effect of `side` is TBD; the field is recorded in CaspianJ for future use but no current consumer reads it.
 
-**Heredoc syntax details** live at [built-in-classes/primitives/string/heredocs](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs). The body is always literal regardless of terminator quoting — same rule as `%documentation`, per [heredocs § Compile-time metadata methods: always literal](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#compile-time-metadata-methods-always-literal).
+**Heredoc syntax details** live at [built-in-classes/primitives/string/heredocs](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs). The body is always literal regardless of terminator quoting — same rule as `documentation`, per [heredocs § Compile-time metadata methods: always literal](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#compile-time-metadata-methods-always-literal).
 
-**Always allowed** and **produces no runtime artifact** — same rules as `%documentation`.
+**Always allowed** and **produces no runtime artifact** — same rules as `documentation`.
 
 ## Testing
 
@@ -146,19 +146,19 @@ An optional `side` field inside the JSON indicates attachment intent — `"targe
 - **Bare `self` shorthand equals `%self`** — inside a method body, `self` and `%self` produce the same reference.
 - **`%now` default-granted to any role** — a non-user frame reading `%now` returns a timestamp without an explicit grant.
 - **`%now` reaches the engine clock** — `%now` and `%engine.now` (in user code) return the same value.
-- **`%puck` default-granted** — a non-user frame calling `%puck 'https://example.com/x'` produces the downloaded object without an explicit grant.
-- **`%[url]` short form** — `%['x']` is equivalent to `%puck 'x'`.
+- **`%fetch` default-granted** — a non-user frame calling `%fetch 'https://example.com/x'` produces the downloaded object without an explicit grant.
+- **`%(url)` short form** — `%('x')` is equivalent to `%fetch 'x'`.
 - **`%random` default-granted** — a non-user frame calling `%random.uuid` returns a UUID string without an explicit grant.
 - **`%stdout` NOT default-granted** — a non-user frame reading `%stdout` with no grant raises.
 - **`%stdout` after grant** — `%chain.grant :stdout` inside user code makes `%stdout` reachable from the called non-user frame.
 - **`%stderr` NOT default-granted** — a non-user frame reading `%stderr` with no grant raises.
 - **`%stdin` NOT default-granted** — a non-user frame reading `%stdin` with no grant raises.
 - **Revoke removes surface** — after `%chain.revoke :stdout`, a non-user frame reading `%stdout` raises.
-- **`%documentation` allowed in any role** — a non-user frame including a `%documentation` heredoc parses and does not raise.
-- **`%documentation` produces no runtime artifact (pre-V1)** — the script cannot read its own `%documentation` back at runtime.
-- **`%vibecode` allowed in any role** — same rules as `%documentation`.
-- **`%vibecode` body always literal** — a heredoc marked with the `vibecode` MIME type does not interpolate, regardless of terminator quoting.
+- **`documentation` allowed in any role** — a non-user frame including a `documentation` heredoc parses and does not raise.
+- **`documentation` produces no runtime artifact (pre-V1)** — the script cannot read its own `documentation` back at runtime.
+- **`vibecode` allowed in any role** — same rules as `documentation`.
+- **`vibecode` body always literal** — a heredoc marked with the `vibecode` MIME type does not interpolate, regardless of terminator quoting.
 - **`%chain.now` equivalent to `%now`** — the two names read the same clock.
-- **`%chain.puck` equivalent to `%puck`** — same.
+- **`%chain.puck` equivalent to `%fetch`** — same.
 - **`%chain.random` equivalent to `%random`** — same.
 - **Twelve globals total** — no additional `%X` name resolves at the language level beyond the twelve cataloged here.

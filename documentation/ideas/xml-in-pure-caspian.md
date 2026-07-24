@@ -38,7 +38,7 @@ Real reasons a pure-Caspian XML parser earns its keep:
 
 - **Consistency with JSON's design endpoint.** The user-facing JSON class at `caspian.uno/json.casp` IS Caspian — [json § Where the parser lives](https://puck.uno/documentation/requirements/json#where-the-parser-lives-and-why-the-engine-layer-has-to-be-lua) makes clear the JSON class delegates to a Lua primitive only because CaspianJ (which the engine parses at startup) is itself JSON. XML has no equivalent bootstrap tie: nothing in the engine's own startup path parses XML. The Lua binding is a convenience, not a floor.
 - **Auditable stdlib.** Same argument the concepts doc makes about Password. A user who wants to read, fork, or replace the parser reads Caspian, not Lua.
-- **Extensibility in Caspian idioms.** Node classes carry `.buckets`, roles, `%vibecode`, downloaded methods, and the rest of the Caspian object model. An xml2lua-backed wrapper produces plain Lua tables — the Caspian wrapper has to reconstitute node identity as Caspian objects anyway, so a chunk of the "Caspian side" already exists in the wrapper case.
+- **Extensibility in Caspian idioms.** Node classes carry `.buckets`, roles, `vibecode`, downloaded methods, and the rest of the Caspian object model. An xml2lua-backed wrapper produces plain Lua tables — the Caspian wrapper has to reconstitute node identity as Caspian objects anyway, so a chunk of the "Caspian side" already exists in the wrapper case.
 - **Trust surface.** Every Lua library counts against the surface the runtime has to trust. Retiring one is one less dependency to pin, patch, or upgrade.
 
 Reasons this is probably not V1:
@@ -130,7 +130,7 @@ Two shapes to weigh.
 Distinct Caspian classes for each node kind:
 
 ~~~caspian
-%vibecode <<END
+vibecode <<END
 	Sketch of the node-class shape. `.new` takes named args matching the field
 	names auto-declared with `get: true`. `class # element` is the inline label
 	convention on class definitions.
@@ -239,13 +239,13 @@ Two natural packages, mirroring the JSON precedent:
 Method surface parallel to JSON:
 
 ~~~caspian
-%vibecode <<END
+vibecode <<END
 	`.parse` returns the document. `.emit` serializes back to XML source.
 	`.emit` with `pretty: true` reindents; without, it round-trips the input's
 	whitespace as-received.
 END
 
-$xml = %['caspian.uno/xml.casp']
+$xml = %('caspian.uno/xml.casp')
 
 $doc = $xml.parse '<book isbn="0-19-853453-9"><title>Hamlet</title></book>'
 
@@ -273,20 +273,20 @@ The honest read: pure Caspian works for the common case, and callers who hit the
 
 Three tiers per [core/](https://puck.uno/documentation/requirements/core/): Executable (compiled into the caspian binary), Cache (downloaded on install, loaded lazily from disk), Prerequisite (OS-supplied CLI utility). A pure-Caspian XML parser could fit any of them.
 
-- **Executable / Ships-yes.** Bundled with the caspian binary. Costs against the [floppy budget](https://puck.uno/documentation/requirements/core/) (currently 210 kb free). ≈15-25 kb of Caspian source is plausible. The argument for bundling is that XML is common enough that first-use latency shouldn't include a `%puck` round trip. The argument against is that JSON is more common than XML, and even JSON's user-facing class is arguably not Executable — it's fetched via `%['caspian.uno/json.casp']`.
-- **Cache tier (fetch-on-demand, Ships-no).** Downloaded to the local byte cache on first `%[URL]` reference. Matches the shape most of the [downloads/](https://puck.uno/documentation/requirements/downloads/) family takes. Best fit for a class that most programs won't touch.
+- **Executable / Ships-yes.** Bundled with the caspian binary. Costs against the [floppy budget](https://puck.uno/documentation/requirements/core/) (currently 210 kb free). ≈15-25 kb of Caspian source is plausible. The argument for bundling is that XML is common enough that first-use latency shouldn't include a `%fetch` round trip. The argument against is that JSON is more common than XML, and even JSON's user-facing class is arguably not Executable — it's fetched via `%('caspian.uno/json.casp')`.
+- **Cache tier (fetch-on-demand, Ships-no).** Downloaded to the local byte cache on first `%(URL)` reference. Matches the shape most of the [downloads/](https://puck.uno/documentation/requirements/downloads/) family takes. Best fit for a class that most programs won't touch.
 - **Prerequisite.** Shell out to `xmlstarlet` or `xmllint`. Common on most systems but not universal; already the pattern for tar/gzip/openssl in the ecoverse. Not a **pure-Caspian** answer — this row is here for completeness.
 
-**The split Miko committed to:** the non-Caspian parts of XML support (any native binding — luaexpat's `.so`, luaexpat's Lua helpers, or the equivalent for libxml2) ship in the **core install download** — the install-time Cache tier that a fresh Caspian install already pulls down. The Caspian-side wrapper (`caspian.uno/xml.casp`) does NOT need to be in the core download — it's fetched lazily from puck.uno on first `%[…]` reference and cached locally.
+**The split Miko committed to:** the non-Caspian parts of XML support (any native binding — luaexpat's `.so`, luaexpat's Lua helpers, or the equivalent for libxml2) ship in the **core install download** — the install-time Cache tier that a fresh Caspian install already pulls down. The Caspian-side wrapper (`caspian.uno/xml.casp`) does NOT need to be in the core download — it's fetched lazily from puck.uno on first `%(…)` reference and cached locally.
 
-Rationale: a native `.so` has an install story (per-arch build, `libexpat.so.1` prerequisite, dpkg/rpm/brew coupling); it's not something a runtime `%puck` fetch can drop into place at first-use time. Caspian source is a plain text file — trivially fetched, trivially cached. Put the awkward-to-install artifacts in the install download; let the language-native artifacts flow through the Puck-fetch path.
+Rationale: a native `.so` has an install story (per-arch build, `libexpat.so.1` prerequisite, dpkg/rpm/brew coupling); it's not something a runtime `%fetch` fetch can drop into place at first-use time. Caspian source is a plain text file — trivially fetched, trivially cached. Put the awkward-to-install artifacts in the install download; let the language-native artifacts flow through the Puck-fetch path.
 
 Executable-tier promotion for either half — pure-Caspian parser OR native binding — is only worth doing after real usage shows the fetch/cache latency biting often enough to matter. This lines up with [concepts § Lean on installed Linux utilities](https://puck.uno/documentation/requirements/concepts#lean-on-installed-linux-utilities-when-theyre-better) — the shape underneath the code (pure Caspian or CLI shell-out) is orthogonal to whether it eats floppy budget.
 
 Access pattern:
 
 ~~~caspian
-$xml = %['caspian.uno/xml.casp']
+$xml = %('caspian.uno/xml.casp')
 $doc = $xml.parse $source
 ~~~
 
@@ -310,7 +310,7 @@ macOS ships libxml2 in the base system. Windows doesn't ship either but distribu
 
 Three shapes:
 
-- **Lua binding, Cache tier.** `luaexpat` exists and is stable; libxml2 bindings for Lua also exist. Cache on first `%[…]` reference. Caspian talks to Lua, Lua talks to C. Same packaging shape as any other Cache-tier Lua binding. Cheapest path.
+- **Lua binding, Cache tier.** `luaexpat` exists and is stable; libxml2 bindings for Lua also exist. Cache on first `%(…)` reference. Caspian talks to Lua, Lua talks to C. Same packaging shape as any other Cache-tier Lua binding. Cheapest path.
 - **Small C shim, Executable/Identity tier.** Purpose-built wrapper compiled into the caspian binary, exposing only the SAX events Caspian wants. Tighter surface, no Lua-binding drift, some kb against the [floppy budget](https://puck.uno/documentation/requirements/core/). Only worth it if XML is common enough that the kb are earned.
 - **Shell out to `xmllint`.** Not really SAX. `xmllint --stream` walks the document but returns `xmllint`-formatted output on stdout — not a Caspian-side event stream. Fine for validate / pretty-print / `--xpath`; not for an event-driven parser.
 
@@ -349,10 +349,10 @@ Luaexpat costs 10-33 kb more per Cache-tier install than xml2lua, plus per-arch 
 An event-callback shape with `do` blocks matches Caspian idiom:
 
 ~~~caspian
-%vibecode <<EOF
+vibecode <<EOF
 {"role": "SAX walk emitting one line per element enter and exit"}
 EOF
-$xml = %['caspian.uno/xml.casp']
+$xml = %('caspian.uno/xml.casp')
 
 $xml.sax $source do
 	on_element do ($name, $attrs)
@@ -381,7 +381,7 @@ Or a streaming iterator that yields events for an `each` loop. Both fit; the cal
 
 ### Relationship to the pure-Caspian parser
 
-Not either/or. The doc's main thread stays pure Caspian for the common case. A system-SAX handle at `%['caspian.uno/xml.sax.casp']` (or similar name) is the "you have a 500 MB SOAP envelope, hand it off" escape hatch. Both can coexist; the naming should make clear which is which.
+Not either/or. The doc's main thread stays pure Caspian for the common case. A system-SAX handle at `%('caspian.uno/xml.sax.casp')` (or similar name) is the "you have a 500 MB SOAP envelope, hand it off" escape hatch. Both can coexist; the naming should make clear which is which.
 
 ## Open questions
 

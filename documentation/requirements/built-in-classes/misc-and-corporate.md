@@ -85,7 +85,7 @@ Write-only variant of `.corporate`. Same rules as `MiscWriter` applied to the `c
 
 ### All six classes are resolvable at startup
 
-- **Misc, MiscReader, MiscWriter, Corporate, CorporateReader, CorporateWriter** — each of `%['puck.uno/misc/']`, `%['puck.uno/miscreader/']`, `%['puck.uno/miscwriter/']`, `%['puck.uno/corporate/']`, `%['puck.uno/corporatereader/']`, `%['puck.uno/corporatewriter/']` returns a class value in a fresh runtime.
+- **Misc, MiscReader, MiscWriter, Corporate, CorporateReader, CorporateWriter** — each of `%('puck.uno/misc/')`, `%('puck.uno/miscreader/')`, `%('puck.uno/miscwriter/')`, `%('puck.uno/corporate/')`, `%('puck.uno/corporatereader/')`, `%('puck.uno/corporatewriter/')` returns a class value in a fresh runtime.
 
 ### Misc
 

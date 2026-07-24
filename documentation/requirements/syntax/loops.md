@@ -392,9 +392,9 @@ end
 
 If `break` (or `break N`) exits a loop, the loop's `after` structural block does **not** run — `after` only runs after a complete iteration sweep. The `between` block does not run on the iteration that breaks. The `noloop` block remains a no-op (it only runs when the loop body didn't run at all).
 
-## Structural blocks
+## Structural clauses
 
-Loops support four optional structural blocks: `before`, `between`, `after`, and `noloop`. None of them have access to the iteration variable — they exist at the loop's structural phases, not inside the iteration:
+Loops support optional structural clauses: `before`, `between`, `after`, `noloop`, and `ensure`. None of them have access to the iteration variable — they run at the loop's structural phases, not inside the iteration:
 
 ~~~caspian
 $people.each do ($person)
@@ -411,17 +411,25 @@ after
 
 noloop
 	puts '--- NO PEOPLE ---'
+
+ensure
+	puts '(always runs, even on exception or break)'
 end
 ~~~
 
-| Block | When it runs |
+| Clause | When it runs |
 |---|---|
 | `before` | Once before the first iteration. |
 | `between` | Between each pair of iterations — runs N-1 times when the body runs N times. Doesn't run when the body runs zero or one time. |
-| `after` | Once after the last iteration. |
+| `after` | Once after the last iteration, only on the normal-completion path. |
 | `noloop` | Only when the collection is empty (no iterations ran). |
+| `ensure` | Always runs — normal completion, exception, `break`, controller `.return`. Parallel to Ruby's `ensure` / Python's `finally`. |
 
-`before` and `after` run whenever the body would run at least once. **`between` runs between iterations**, so it needs at least two iterations to run at all — one iteration produces zero betweens; two iterations produce one; three iterations produce two; and so on. `noloop` runs exactly when the loop body would not run at all — useful for "nothing matched" messages without an extra emptiness check around the loop.
+`before` and `after` run whenever the body would run at least once. **`between` runs between iterations**, so it needs at least two iterations to run at all — one iteration produces zero betweens; two iterations produce one; three iterations produce two; and so on. `noloop` runs exactly when the loop body would not run at all — useful for "nothing matched" messages without an extra emptiness check around the loop. `ensure` runs on every exit path, guaranteed — use it for cleanup that must not be skipped (releasing a resource, closing a handle) whether the loop finished normally or raised.
+
+**Scope.** Each clause runs in its own fresh scope. Variables set inside `body` are not visible in `before` / `between` / `after` / `noloop` / `ensure`. To share state across clauses, use a variable declared in the enclosing scope. Full rules in [clause-slots § Scope](https://puck.uno/documentation/requirements/syntax/clause-slots#scope-each-clause-is-its-own-scope).
+
+**These clauses are not loop-specific.** Same set applies to `begin ... end` (single-shot forms), `function` / `closure` / `method` / `do` (any callable can carry them), spec'd once in [clause-slots](https://puck.uno/documentation/requirements/syntax/clause-slots).
 
 ## Deliberately out of scope
 

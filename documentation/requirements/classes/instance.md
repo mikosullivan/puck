@@ -302,7 +302,7 @@ Worked examples showing common shapes the `instance` keyword takes. Each one is 
 A deploy script needs a handful of configurable values plus a method or two for using them:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'the deploy script configuration — one object, used across the script';
 end
 
@@ -334,7 +334,7 @@ end
 A script processes a small custom markup format used only here. The parsing logic isn't worth publishing as a class:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'parse a one-off markup format used only by this report script';
 end
 
@@ -369,7 +369,7 @@ $ast = $parser.parse
 Arithmetic-expression parser with mutually-recursive grammar rules. Each rule (`parse_expression`, `parse_term`, `parse_factor`) is a method that calls sibling rules and shares cursor state through the bucket:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'parse an arithmetic expression string into a nested-hash AST';
 end
 
@@ -438,7 +438,7 @@ The same shape shows up in interpreters (`eval_call` → `eval_if` → `eval_lam
 A script generates a one-off summary document by accumulating sections:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'build a summary HTML page; not a reusable builder class';
 end
 
@@ -471,7 +471,7 @@ $html.heading('Summary').paragraph('Things went OK.').paragraph('No errors.')
 A maintenance script manages one specific server through its lifecycle:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'manage the one server this script is targeting';
 end
 

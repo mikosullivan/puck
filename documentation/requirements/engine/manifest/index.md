@@ -12,7 +12,7 @@
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
 
-**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%puck.parsers`](https://puck.uno/documentation/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
+**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%fetch.parsers`](https://puck.uno/documentation/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
 
 ## Sections
 
@@ -24,7 +24,7 @@ The manifest has six top-level sections: `process`, `os`, `engine`, `caspian`, `
 | `os` | Operating system the engine is running on. |
 | `engine` | Engine implementation identity — codename, version, host VM. |
 | `caspian` | Caspian language version this engine implements. |
-| `downloads` | Every object downloaded by this process via [`%puck`](https://puck.uno/documentation/requirements/chain/methods/puck), keyed by URL. |
+| `downloads` | Every object downloaded by this process via [`%fetch`](https://puck.uno/documentation/requirements/chain/methods/puck), keyed by URL. |
 | `coverage` | Coverage data. Present only when [`%engine.coverage`](https://puck.uno/documentation/requirements/engine/coverage) is set; absent when coverage is off. |
 
 ## Field inventory
@@ -203,6 +203,6 @@ The mechanism for how a script declares its requirements (manifest header in the
 - **Reading `%engine.manifest` twice back-to-back returns different `process.time.stop`** — reflects distinct moments.
 - **Reading `%engine.manifest` twice returns identical `process.time.start`** — the start is set once.
 - **`downloads` reflects `%engine.require` calls** — a URL required at startup appears in `downloads` on first manifest read.
-- **`downloads` reflects `%[url]` first-use loads** — objects loaded via first-use appear once fetched.
+- **`downloads` reflects `%(url)` first-use loads** — objects loaded via first-use appear once fetched.
 - **All values in the manifest are JSON-native** — usable directly for serialization.
 - **Coverage section shape depends on retention setting** — full spec in `%engine.coverage`.

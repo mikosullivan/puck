@@ -271,7 +271,7 @@ Same operations available programmatically. Lets a deployment pipeline register 
 
 ### Puck protocol object
 
-`%['dogberry.uno'].register_domain(domain: ..., source: ...)` from Caspian. First-class Puck integration; lets a Caspian program manage its own hosting.
+`%('dogberry.uno').register_domain(domain: ..., source: ...)` from Caspian. First-class Puck integration; lets a Caspian program manage its own hosting.
 
 ### Webhook receivers
 

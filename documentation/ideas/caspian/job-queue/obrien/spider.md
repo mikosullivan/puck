@@ -35,7 +35,7 @@ When the queue drains, the spider is done. Failed pages are recorded as `failed`
 A job is just a function the worker calls. No class needed when the job is one operation that takes some args and outputs a Xeme to STDOUT — and most spider-style jobs are that shape.
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'one crawl job — fetch a URL, parse it, return what was found plus URLs to enqueue next';
 	notes: 'returned Xeme uses producer-namespaced `enqueue` field to ask the manager to enqueue follow-up jobs';
 end
@@ -44,7 +44,7 @@ $execute = function($url)
 	$response = %net.fetch($url)
 
 	if $response.ok?
-		$doc = %['https://puck.uno/html/parser/links']($response.body)
+		$doc = %('https://puck.uno/html/parser/links')($response.body)
 		$followups = $doc.links
 
 		puts {
@@ -81,7 +81,7 @@ Notes:
 - **Writing `success: true` is the positive-assertion path.** The worker says explicitly "I succeeded" by writing a Xeme to STDOUT with `success: true`. Writing `success: false` with structured `errors[]` is the explicit-failure path.
 - **The worker does NOT write anything to Mikobase.** STDOUT is its only output channel; the manager translates that into the Mikobase write.
 - **`enqueue` is a producer-namespaced field on the Xeme** (allowed by the Xeme spec for non-reserved fields). The manager looks for `enqueue[]` in the worker's Xeme and enqueues those URLs as follow-up jobs. This keeps the worker side simple (just write a Xeme) and the manager invariant intact (only the manager writes to Mikobase).
-- **Some details are sketched.** `%['https://puck.uno/html/parser/links']`, `$doc.links`, `$doc.title`, and `$response.ok?` are placeholders for whatever the real APIs are; the point of the example is the O'Brien flow.
+- **Some details are sketched.** `%('https://puck.uno/html/parser/links')`, `$doc.links`, `$doc.title`, and `$response.ok?` are placeholders for whatever the real APIs are; the point of the example is the O'Brien flow.
 - **No depth limit or seen-set deduplication shown.** A real spider needs both. They're caller-level concerns; O'Brien itself doesn't decide how the spider terminates.
 
 ---
@@ -91,12 +91,12 @@ Notes:
 Seed the queue and start the manager:
 
 ~~~caspian
-%vibecode
+vibecode
 	role: 'driver script: seed URLs, start the manager with concurrency cap';
 end
 
 # Instantiate the O'Brien manager, telling it which function to run per job
-$obrien = %puck['https://puck.uno/obrien'].new(
+$obrien = %fetch('https://puck.uno/obrien').new(
 	job: $execute
 )
 

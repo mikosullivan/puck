@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_variables_and_assignment",
-	"role": "spec for variable declaration and assignment in Caspian — the `=` operator, assignment targets, compound-assignment sugar, and the scope of `$foo` bindings",
+	"role": "spec for variable declaration and assignment in Caspian — the `=` operator, assignment targets, compound-assignment sugar, assignment-as-expression (plain `=` yields the assigned value; compound operators desugar to plain `=` around read-modify-write and yield the new value; postfix `++`/`--` are one more sugar layer on top of compound assignment), and the scope of `$foo` bindings. V1 does NOT accept prefix `++$foo` / `--$foo` — postfix only.",
 	"audience": "developers writing Caspian; anyone building a formatter or linter that needs to understand assignment shape"
 }}
 ~~~
@@ -23,9 +23,60 @@ $arr[0]    = 99            # array index
 $flag ||= 'default'        # assign only if $flag is falsy
 ~~~
 
-Compound operators (`+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `||=`, `&&=`) all desugar to read-modify-write around plain `=`.
-
 Local variables (`$foo`) are scoped to the enclosing function or closure. A top-level `$foo` in a script persists for the run of the script.
+
+## Assignment as expression
+
+`$foo = <expr>` is an **expression** — it yields the assigned value. That value can be used anywhere an expression is expected:
+
+~~~caspian
+$x = $foo = 42        # both $x and $foo end up 42
+&fn($status = 'ok')   # passes 'ok' to &fn; also sets $status
+$arr[$i = 0]          # subscript at 0; also sets $i
+~~~
+
+The rule composes with compound assignment and with `++`/`--` sugar (spec'd below) — each layer yields the assigned value.
+
+**Sigil visibility.** The `$` on every variable makes assignment expressions unmistakable in code. `if $x = 1` is clearly an assignment, not a typo for `==`. Caspian isn't a nanny language — developers distinguish `=` from `==` themselves; the sigil just makes the distinction easier to see.
+
+## Compound assignment
+
+Compound-assign operators (`+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `||=`, `&&=`) are **sugar for plain `=`** with the operator applied to the current value:
+
+~~~caspian
+$foo += 3             # sugar for  $foo = $foo + 3
+$flag ||= 'default'   # sugar for  $flag = $flag || 'default'
+~~~
+
+The desugared `=` is an expression per the previous section, so compound assignment is also an expression that yields the new value:
+
+~~~caspian
+$foo = 5
+$x = ($foo += 3)      # $foo == 8, $x == 8
+~~~
+
+## Increment and decrement
+
+Caspian supports **postfix increment** and **postfix decrement** for numeric variables:
+
+~~~caspian
+$foo = 1
+$foo++                # $foo == 2
+$foo--                # $foo == 1
+~~~
+
+These are one more sugar layer on top of compound assignment. `$foo++` desugars to `$foo += 1`, which desugars to `$foo = $foo + 1`. All three yield the new value at expression position:
+
+~~~caspian
+$foo = 1
+$x = $foo++           # $foo == 2, $x == 2
+~~~
+
+Note the yielded value is the **new** value, not the old value as in C-style postfix. That's the natural consequence of `$foo++` being sugar for `$foo = $foo + 1` — the yielded value is the assigned value.
+
+**No prefix form in V1.** `++$foo` and `--$foo` are not accepted. Postfix only. Prefix forms may be added later; not V1.
+
+**Undefined variable.** `$foo++` on an undefined `$foo` raises. Under the desugaring, the RHS reads undefined `$foo` and fails — same behavior as plain `$foo + 1` on an undefined variable. Initialize before incrementing.
 
 ## Testing
 
