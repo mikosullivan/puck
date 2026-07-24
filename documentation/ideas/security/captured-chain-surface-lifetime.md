@@ -11,7 +11,7 @@
 
 ## V1 rule
 
-**A captured chain surface stays usable after the grant that made it reachable ends.** From [roles/object-access § Chain-reachable surfaces are first-class values](https://puck.uno/documentation/requirements/caspian/roles/object-access#chain-reachable-surfaces-are-first-class-values): the grant on `%chain.X` controls **permission to call methods on `%chain`**. Once the method has been called and returned an object, the object is a normal held reference — it's usable as long as anyone holds it, regardless of what the chain looks like later.
+**A captured chain surface stays usable after the grant that made it reachable ends.** From [roles/object-access § Chain-reachable surfaces are first-class values](https://puck.uno/documentation/requirements/roles/object-access#chain-reachable-surfaces-are-first-class-values): the grant on `%chain.X` controls **permission to call methods on `%chain`**. Once the method has been called and returned an object, the object is a normal held reference — it's usable as long as anyone holds it, regardless of what the chain looks like later.
 
 Concretely: a non-user object can capture `%chain.net` into an instance variable during a brief grant, and continue using that instance variable after the grant block ends.
 
@@ -37,5 +37,5 @@ The composition with holding-is-access and methods-run-as-object's-role is settl
 ## Related
 
 - puck#917 — where this decision was made.
-- [roles/object-access](https://puck.uno/documentation/requirements/caspian/roles/object-access) — the V1 rules this decision composed from.
-- The [chain grant model](https://puck.uno/documentation/requirements/caspian/chain/#grant-and-revoke) — the block-scoped grant mechanism whose lifetime story this idea revisits.
+- [roles/object-access](https://puck.uno/documentation/requirements/roles/object-access) — the V1 rules this decision composed from.
+- The [chain grant model](https://puck.uno/documentation/requirements/chain/#grant-and-revoke) — the block-scoped grant mechanism whose lifetime story this idea revisits.

@@ -144,4 +144,4 @@ The trust policy only applies to signed objects. An unsigned object is rejected 
 regardless of policy. The policy controls what signed objects are permitted and at what
 permission level — it assumes the signing problem is already solved.
 
-See [signing.md](../../requirements/caspian/blockchain/index.md) for how object signatures work.
+See [signing.md](../../requirements/blockchain/index.md) for how object signatures work.

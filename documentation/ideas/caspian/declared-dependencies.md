@@ -54,6 +54,6 @@ This idea is about ergonomics and explicit declaration, not new security primiti
 
 - The V1 model (inline `%puck[...]`) works fine for small classes. The friction this idea relieves only shows up at scale.
 - Declaring dependencies adds syntax that has to be specified, parsed, and enforced — non-trivial design surface.
-- Class-level static dependency declarations interact with the eventual versioning story (`requirements/caspian/downloads/`); better to settle versioning first, then layer this on top.
+- Class-level static dependency declarations interact with the eventual versioning story (`requirements/downloads/`); better to settle versioning first, then layer this on top.
 
 Revisit when the inline `%puck[...]` pattern has been used for real long enough that the friction is clear and the desired ergonomics are obvious.

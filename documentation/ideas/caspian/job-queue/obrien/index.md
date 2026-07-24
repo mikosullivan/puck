@@ -25,9 +25,9 @@ O'Brien manages a queue of jobs in a single Caspian process. The manager forks o
 
 The design pulls heavily on three Caspian primitives:
 
-- **[`%utils.forks.multiple(N)`](https://puck.uno/documentation/requirements/caspian/forking/)** for the worker pool with built-in concurrency cap.
+- **[`%utils.forks.multiple(N)`](https://puck.uno/documentation/requirements/forking/)** for the worker pool with built-in concurrency cap.
 - **[Mikobase](https://puck.uno/documentation/requirements/mikobase/)** for durable job records.
-- **[Xeme](https://puck.uno/documentation/requirements/caspian/packages/bryton/xeme/)** as the result-recording format.
+- **[Xeme](https://puck.uno/documentation/requirements/packages/bryton/xeme/)** as the result-recording format.
 
 The sibling [study.md](study.md) surveys how other languages do this and discusses the broader design space. This file is the path we may actually build.
 
@@ -76,12 +76,12 @@ Only the manager process writes to job records. Workers report back to the paren
 
 ### Job outcomes are Xemes
 
-Every job result is recorded as a [Xeme](https://puck.uno/documentation/requirements/caspian/packages/bryton/xeme/). Xeme is the existing Caspian-standard JSON tree format for structured outcomes (test results, log entries, anything that needs a verdict plus structured reasons).
+Every job result is recorded as a [Xeme](https://puck.uno/documentation/requirements/packages/bryton/xeme/). Xeme is the existing Caspian-standard JSON tree format for structured outcomes (test results, log entries, anything that needs a verdict plus structured reasons).
 
 Concretely, a job record stores a Xeme that carries:
 
 - **`success`** — `true` (done) or `false` (failed). O'Brien doesn't use `null` (no-verdict) in V1 — every job ends with a definitive verdict, since worker death, missing output, etc. all resolve to `success: false` with a structured `errors[]` entry.
-- **`errors[]`** — structured failure reasons when `success: false`. Each entry has its own `class` identifying the kind. O'Brien **reuses the existing [Xeme runtime error classes](https://puck.uno/documentation/requirements/caspian/packages/bryton/xeme/#class-field)** rather than inventing new ones — so worker crashes use `bryton/runtime/crashed`, timeouts use `bryton/runtime/timedout`, unparseable STDOUT uses `bryton/runtime/unparseable`, etc. The benefit: the existing Xeme icon set covers them all by name lookup.
+- **`errors[]`** — structured failure reasons when `success: false`. Each entry has its own `class` identifying the kind. O'Brien **reuses the existing [Xeme runtime error classes](https://puck.uno/documentation/requirements/packages/bryton/xeme/#class-field)** rather than inventing new ones — so worker crashes use `bryton/runtime/crashed`, timeouts use `bryton/runtime/timedout`, unparseable STDOUT uses `bryton/runtime/unparseable`, etc. The benefit: the existing Xeme icon set covers them all by name lookup.
 - **`meta.uuid`**, **`meta.timestamp`**, **`meta.run_time`** — record-keeping fields.
 - **`io.stdout`**, **`io.stderr`** — captured worker output, useful for failure forensics.
 - **`class`** — identifies the kind of job (`myorg.com/job/email_send`, etc.).
@@ -164,7 +164,7 @@ The contract is "STDOUT must end with a valid JSON hash," not "STDOUT must conta
 
 Concretely:
 
-- The worker function calls `puts {success: ..., ...}` (or any other path that emits a JSON hash as the final STDOUT bytes) and exits. By the [to_primitives conversion chain](../../../requirements/caspian/to-primitives.md), `puts` on a hash produces the hash's JSON form, so a plain `puts {...}` at the end of the function is enough.
+- The worker function calls `puts {success: ..., ...}` (or any other path that emits a JSON hash as the final STDOUT bytes) and exits. By the [to_primitives conversion chain](../../../requirements/to-primitives.md), `puts` on a hash produces the hash's JSON form, so a plain `puts {...}` at the end of the function is enough.
 - The manager reads STDOUT after `$mgr.wait` returns. Parses the trailing JSON hash. If parsing succeeds, that's the worker's Xeme; any STDOUT content before the hash becomes `io.stdout` on the Xeme. If no parseable JSON hash is at the end, the manager writes a default failure Xeme: `{success: false, errors: [{class: "bryton/runtime/unparseable"}]}` with the raw STDOUT captured into `io.stdout`.
 - Empty STDOUT + exit 0 means "no verdict reported." Under implicit mode that's success; under positive-assertion mode that's failure (see [Two verification modes](#two-verification-modes-for-worker-success)).
 
@@ -208,7 +208,7 @@ These are the design questions still in flight:
 ## See also
 
 - [study.md](study.md) — the broader survey of how other languages do this and the design alternatives considered.
-- [Caspian forking](https://puck.uno/documentation/requirements/caspian/forking/) — the fork primitives O'Brien builds on.
-- [Caspian events](https://puck.uno/documentation/requirements/caspian/events/) — the in-process broadcast/listen system, useful for external observability hooks.
+- [Caspian forking](https://puck.uno/documentation/requirements/forking/) — the fork primitives O'Brien builds on.
+- [Caspian events](https://puck.uno/documentation/requirements/events/) — the in-process broadcast/listen system, useful for external observability hooks.
 - [Mikobase](https://puck.uno/documentation/requirements/mikobase/) — the structured object store backing the queue.
-- [Xeme](https://puck.uno/documentation/requirements/caspian/packages/bryton/xeme/) — the result-recording format O'Brien uses for job outcomes.
+- [Xeme](https://puck.uno/documentation/requirements/packages/bryton/xeme/) — the result-recording format O'Brien uses for job outcomes.

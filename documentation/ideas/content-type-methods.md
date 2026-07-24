@@ -8,7 +8,7 @@
 	"role": "captures the idea that Caspian could let strings inherit format-specific methods based on their content_type — setting the content_type doesn't just annotate, it changes what methods are reachable. Includes the appeal, the design surface it opens, and lighter alternatives that preserve much of the ergonomics without the runtime dispatch complexity.",
 	"status": "idea_captured_deferred_until_after_v1",
 	"deferred_because": "makes content_type semantically load-bearing rather than annotational; adds a dispatch layer; opens real design work on method sourcing, precedence, security, and reflection semantics",
-	"related": ["requirements/caspian/built-in-classes/primitives/string/heredocs (owns the content_type slot and its setter/getter semantics — V1 keeps them purely annotational)"]
+	"related": ["requirements/built-in-classes/primitives/string/heredocs (owns the content_type slot and its setter/getter semantics — V1 keeps them purely annotational)"]
 }}
 ~~~
 
@@ -128,9 +128,9 @@ Separates the "I know what this is" declaration (`content_type` on the string) f
 
 Once V1 ships and real Caspian code accumulates that touches HTTP bodies, config files, downloaded artifacts, and so on — we'll have concrete data on how often the ergonomics of "typed string with format methods" actually pays for itself. If the answer is "constantly," the design surface above is worth working through carefully. If callers happily reach for `%['puck.uno/json'].parse($body)` and don't miss the inheritance form, then the base-annotation-only story is enough.
 
-Until then, V1 keeps `content_type` purely annotational as spec'd in [heredocs § Type annotation](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/string/heredocs#type-annotation).
+Until then, V1 keeps `content_type` purely annotational as spec'd in [heredocs § Type annotation](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#type-annotation).
 
 ## Related
 
-- [heredocs § Type annotation](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/string/heredocs#type-annotation) — the V1 spec for `content_type`: getter/setter, no validation, no runtime dispatch.
+- [heredocs § Type annotation](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/heredocs#type-annotation) — the V1 spec for `content_type`: getter/setter, no validation, no runtime dispatch.
 - [ideas/pluggable-syntax.md](pluggable-syntax.md) — a related "make the language more extensible" idea also deferred until after V1.

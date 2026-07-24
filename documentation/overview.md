@@ -58,28 +58,28 @@ without giving them a way through, that's nanny code.
 ~~~vibecode
 {"vibecode": {
 	"section": "puck_package",
-	"role": "describes the Puck protocol and its features: UNS, %puck lookup and call, version window, library resolution, blockchain",
-	"key_concepts": ["object_protocol", "UNS", "puck_lookup", "remote_method_invocation",
+	"role": "describes the Puck protocol and its features: URL, %puck lookup and call, version window, library resolution, blockchain",
+	"key_concepts": ["object_protocol", "URL", "puck_lookup", "remote_method_invocation",
 		"version_window", "library_resolution_through_puck", "blockchain_identity"]
 }}
 ~~~
 
 Puck is a **protocol for working with objects across languages and
 systems**. It gives every object in the ecoverse a global address (a
-UNS) and a uniform way to retrieve, query, and invoke methods on
+URL) and a uniform way to retrieve, query, and invoke methods on
 objects regardless of where they physically live.
 
 See [puck.md](puck/index.md) for the full protocol spec.
 
 ### Features
 
-- **UNS (Universal Namespace).** Every class and well-known object has
+- **URL-style class identifier.** Every class and well-known object has
   a URL-shaped global address — your domain gives you a unique
   namespace (`foo.com/character`); built-ins live under
-  `puck.uno/...`. UNS is naming/identity, not type hierarchy:
+  `puck.uno/...`. URL is naming/identity, not type hierarchy:
   `puck.uno/touchstone/error/x` is not a subclass of
   `puck.uno/error/x` unless explicitly declared.
-- **`%puck[UNS]` lookup.** Caspian code retrieves objects by UNS:
+- **`%puck[URL]` lookup.** Caspian code retrieves objects by URL:
   `%puck['https://foo.com/character']`. The puck (the resolver object)
   walks a configured chain of providers — local cache, network
   sources, blockchain attestations — and returns the right thing or
@@ -94,7 +94,7 @@ See [puck.md](puck/index.md) for the full protocol spec.
   (one-way ratchet); you can't broaden it. Enables reproducible
   builds and historical queries.
 - **Libraries are cached, not installed.** Caspian has no install
-  step, no lockfile, no manifest. Libraries are referenced by UNS in
+  step, no lockfile, no manifest. Libraries are referenced by URL in
   source code and resolved on demand through the provider chain.
   Cached locally on first use; subsequent references hit the cache.
 - **Blockchain identity and provenance.** The Puck blockchain
@@ -135,7 +135,7 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
   `class ... end` defines a class with fields, properties,
   methods, and helpers. Bare/anonymous classes
   (`class\n    inherits ... end`) for cases where identity comes
-  from location rather than UNS.
+  from location rather than URL.
 - **[Functions and closures](caspian/index.md#functions).**
   `function &name(args) ... end` for named functions; closures
   capture lexical scope; functions don't. Parameters carry metadata
@@ -150,10 +150,10 @@ explicitly send them in as paramters. See [roles.md](caspian/roles.md).
   exceptions; `%chain.warn`/`throw`/`error`/`exit`/`abort` for
   engine-aware flag-raising. Stack traces on every exception. See
   [caspian-runtime.md](caspian/lucy/index.md).
-- **Built-in [HTTP middleware](requirements/caspian/network/http/server/touchstone/) family.**
-  [Touchstone](requirements/caspian/network/http/server/touchstone/index.md) provides the
+- **Built-in [HTTP middleware](requirements/network/http/server/touchstone/) family.**
+  [Touchstone](requirements/network/http/server/touchstone/index.md) provides the
   per-request infrastructure (transactions, sessions, body buffering,
-  CSP). [Sammy](requirements/caspian/network/http/server/sammy/index.md) is a built-in
+  CSP). [Sammy](requirements/network/http/server/sammy/index.md) is a built-in
   framework on Touchstone for route-style serving.
 
 ---

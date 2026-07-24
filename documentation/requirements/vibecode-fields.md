@@ -27,7 +27,7 @@ Every field is optional. Include the ones that carry meaning; omit the rest.
 **Example:**
 
 ~~~
-"doc": "requirements_caspian_syntax_pipes"
+"doc": "requirements_syntax_pipes"
 ~~~
 
 ### `role`

@@ -6,7 +6,7 @@
 	"role": "report on the 'artifact-centric programming' paradigm — a name for the design stance Caspian seems to embody, contrasted with the dominant type-centric OOP tradition. Surveys what the term means, which Caspian features fall out of it as natural consequences, where the paradigm sits relative to other systems (Smalltalk, Self, Lisp, filesystems), and where the framing has limits.",
 	"status": "active brainstorming — the term is the author's analytical lens, not an established label of art",
 	"audience": "Caspian designers and reviewers thinking about whether a proposed feature is on-paradigm",
-	"related": ["../requirements/caspian/classes/instance.md (where this paradigm is referenced as the underlying stance behind the `instance` keyword)"]
+	"related": ["../requirements/classes/instance.md (where this paradigm is referenced as the underlying stance behind the `instance` keyword)"]
 }}
 ~~~
 
@@ -126,7 +126,7 @@ This is barely surprising in 2026 — most modern languages have first-class fun
 
 ### Ad-hoc instances need no type
 
-The [`instance` keyword](../requirements/caspian/classes/instance) builds an object without declaring a class. The object exists as an artifact in its own right. No type vocabulary needs to admit it; nothing about the engine treats it specially.
+The [`instance` keyword](../requirements/classes/instance) builds an object without declaring a class. The object exists as an artifact in its own right. No type vocabulary needs to admit it; nothing about the engine treats it specially.
 
 ~~~caspian
 $config = instance

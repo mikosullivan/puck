@@ -9,7 +9,7 @@
 	"status": "idea_scope_set_design_open",
 	"forcing_function": "agent_yield_run_as_self_block_needs_a_way_for_caller_role_to_apply_to_agent_code",
 	"design_principle": "narrow_not_agent_specific",
-	"related": ["requirements/caspian/roles.md (settled roles spec)",
+	"related": ["requirements/roles.md (settled roles spec)",
 		"ideas/agent-yield.md (the forcing function)"]
 }}
 ~~~
@@ -44,4 +44,4 @@ The block-level wrapping is intentional: the developer is marking a region where
 ## See also
 
 - [`$agent.yield`](../agent-yield.md) — the forcing function for this idea.
-- [Caspian roles spec](https://puck.uno/documentation/requirements/caspian/roles) — the settled roles system this would extend.
+- [Caspian roles spec](https://puck.uno/documentation/requirements/roles) — the settled roles system this would extend.

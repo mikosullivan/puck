@@ -12,7 +12,7 @@
 
 **Status:** early-stage idea, deferred. Seed-planted in a discussion
 about Jasmine's
-[`no_writers_ok`](../../requirements/caspian/packages/jasmine/index.md#constructing-a-jasmine-log) escape
+[`no_writers_ok`](../../requirements/packages/jasmine/index.md#constructing-a-jasmine-log) escape
 hatch — the first filed instance of a "Don't worry nanny" feature.
 
 **Current direction (2026-05-13):** invent opt-out flags ad-hoc
@@ -192,7 +192,7 @@ A few benefits a first-class nanny could give us:
   wipes refresh it)? Object-scoped (so each object carries its
   own)? Both, with override semantics?
 - **How are warnings named?** Strings (`"no-writers"`)? Structured
-  identifiers like Puck UNS-style? Per-feature enums?
+  identifiers like Puck URL-style? Per-feature enums?
 - **How are warnings silenced?** Per-call (`no_writers_ok: true` at
   construction)? Per-instance (`$log.silence("no-writers")`)?
   Per-chain (`%nanny.silence(...)`)? Per-role?

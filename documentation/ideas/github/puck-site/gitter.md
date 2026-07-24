@@ -19,7 +19,7 @@ The broader public-service ambition — `gitter.puck.uno` rendering any public G
 
 GitHub's own browser is fine but generic. Docs that follow conventions — heavy markdown, nested directory trees, vibecode-style metadata, Caspian source — deserve a viewer tuned for those conventions. [Orlando](../../../misc/orlando.md) already does this for puck.uno; Gitter is the production Caspian-native replacement for Orlando's role on the site, plus the seed of a public service later.
 
-It's also the delivery vehicle for Puck tooling that can't live inside github.com (see [github.md](../index.md)): vibecode-aware rendering, UNS link resolution, Caspian syntax highlighting, and — post-V1 — normalized diffs and in-place code formatting.
+It's also the delivery vehicle for Puck tooling that can't live inside github.com (see [github.md](../index.md)): vibecode-aware rendering, URL link resolution, Caspian syntax highlighting, and — post-V1 — normalized diffs and in-place code formatting.
 
 ## Relationship to Orlando
 

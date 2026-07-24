@@ -22,7 +22,7 @@
 > **Update — the version window has since moved off the puck object.**
 > The current design puts the cutoff on `%chain` via a block-scoped
 > `%puck.era(upper:, lower:) do ... end` form (see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain)).
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain)).
 > The "Version Window" and "restrict do ... end" sections below are
 > preserved as the earlier design.
 
@@ -39,13 +39,13 @@ material here may be folded into [puck.md](../requirements/puck/index.md).
 
 A **puck** (lowercase, the object) is distinct from **`%puck`** (the
 system method). A puck is a kind of object that knows how to resolve
-UNS addresses to their registered objects. `%puck` is the
+URLs to their registered objects. `%puck` is the
 system-method handle through which user code gets a puck object back.
 
 **`%puck` is scoped via `%chain`.** What it returns depends on
 context. The current puck lives in `%chain` — `%puck` reads from
 there. Because `%chain` is wiped at role boundaries (see
-[roles.md](../requirements/caspian/roles.md)), the current puck does not propagate across
+[roles.md](../requirements/roles.md)), the current puck does not propagate across
 boundaries; each role gets its own world.
 
 - Outside any `restrict` block, in the outer role, `%puck` returns
@@ -78,7 +78,7 @@ block.
 
 > **Superseded.** Replaced by `%puck.era(upper:, lower:)
 > do ... end` — see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 > The block-scoped narrowing pattern survives; the verb and the
 > property location moved from the puck object to `%chain`.
 
@@ -117,7 +117,7 @@ Same shape as the other scoped-block primitives in the framework
 > object. Current design puts the cutoff on `%chain` as a
 > block-scoped `%puck.era(upper:, lower:) do ... end`
 > form — see
-> [caspian/versioning.md § The Cutoff in %chain](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
+> [caspian/versioning.md § The Cutoff in %chain](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 > The technical observations about lookup mechanics (multi-fetcher
 > walking under bounds, tie-breaking, etc.) still apply; only the
 > property location and verbs have changed.
@@ -190,7 +190,7 @@ give them a network faucet in the first place. Use jails to
 restrict what passes across role boundaries.
 
 Consistent with the broader "developer decides what to expose by
-what they pass" principle (see [roles.md](../requirements/caspian/roles.md) — boundary
+what they pass" principle (see [roles.md](../requirements/roles.md) — boundary
 crossings do not gate method access; jails are the explicit
 narrowing mechanism).
 
@@ -202,14 +202,14 @@ Lookup semantics:
   `lower`.
 - Both set — return the latest version in `[lower, upper]`.
 - If no version exists in the allowed span, lookup behaves as if
-  the UNS isn't there (returns null-flavored `not_found`).
+  the URL isn't there (returns null-flavored `not_found`).
 
 ### Implication for fetcher walking
 
 The version window changes the lookup mechanic. **The puck may need
 to consult all its fetchers to find the latest version within bounds**,
 rather than short-circuiting on first hit. Each fetcher reports its
-latest-within-window for the UNS; the puck returns the latest of
+latest-within-window for the URL; the puck returns the latest of
 those responses.
 
 This is materially different from "first hit wins" — a later-in-order
@@ -218,7 +218,7 @@ holds an older one. Order of fetchers in the puck matters less for
 priority; the window decides what's returned.
 
 **Tie-breaking** when two fetchers return versions with the same
-timestamp: pick the first. Same UNS at the same timestamp means
+timestamp: pick the first. Same URL at the same timestamp means
 the same object — if two fetchers returned different content at
 the same timestamp, something is broken (corruption,
 misconfiguration), but the normal case is that they agree, so
@@ -251,12 +251,12 @@ TBD — likely `.lookup($uns)` or similar; the actual name will be
 settled when the class is spec'd in detail.)
 
 **Base implementation:** the puck walks its fetchers, asking each
-one for the latest version of the UNS that falls within the puck's
+one for the latest version of the URL that falls within the puck's
 [lower, upper] window. The puck then returns the latest result
 across all fetchers' responses. If no fetcher has any version of the
-UNS within the window, lookup returns a null with the flavor
+URL within the window, lookup returns a null with the flavor
 `puck.uno/null/flavor/not_found` (per the HTTP-style null-flavor
-scheme in [nulls.md](../requirements/caspian/built-in-classes/nulls.md)). Callers
+scheme in [nulls.md](../requirements/built-in-classes/nulls.md)). Callers
 can inspect `flavor.code` to tell the difference between "lookup
 didn't match" and "the registered value is intentionally null."
 
@@ -266,15 +266,15 @@ on first hit — finding the latest requires checking each.)
 
 #### The `explicit`-null rule for sources
 
-If a puck faucet reaches a UNS where the registered value is
+If a puck faucet reaches a URL where the registered value is
 intentionally null, **the source must mark that null as
 `puck.uno/null/flavor/explicit`** (code 200). Otherwise the puck
-treats an unflavored null as "lookup didn't find this UNS" and
+treats an unflavored null as "lookup didn't find this URL" and
 falls through to the next fetcher.
 
 In other words: at the puck-lookup layer, **unflavored null means
 "no result"**, and `explicit` is how a source positively affirms
-"yes, this UNS exists; the registered value is null." Same pattern
+"yes, this URL exists; the registered value is null." Same pattern
 as HTTP 200 with an empty body vs. HTTP 404.
 
 The obligation lands on the source. Puck-native sources serialize
@@ -283,7 +283,7 @@ third-party protocols) need their faucet implementation to
 translate appropriately.
 
 **Subclassable for fancier dispatch.** The base implementation is
-intentionally simple. Engines or developers needing UNS-prefix
+intentionally simple. Engines or developers needing URL-prefix
 matching, regex routing, dispatch tables, or fallback policies can
 subclass puck and override the lookup method.
 
@@ -298,7 +298,7 @@ logical sources.
 property that resolves the download-vs-cache problem. Caspian caches
 remote objects on demand — first-time fetches go through download,
 subsequent fetches through cache. Both are faucets inside the same
-fetcher, both produce objects with the fetcher's role. The same UNS
+fetcher, both produce objects with the fetcher's role. The same URL
 hands back identically-tagged objects regardless of cache state.
 
 ```
@@ -330,15 +330,15 @@ faucet (trusts the cache directory's self-asserted contents) — same
 puck, different per-faucet rules.
 
 A faucet's responsibility is **provenance** — verifying that an
-object it returns for a UNS actually came from the namespace
-authority that UNS claims. *Whether the code itself is safe to run*
+object it returns for a URL actually came from the namespace
+authority that URL claims. *Whether the code itself is safe to run*
 is a separate concern handled by the role model and capability-
 passing mechanics; the faucet's job is just "is this really from
 where it says it's from?"
 
 ### Case 1: Actual fetch from the URL
 
-An **HTTPS faucet** that fetches from the URL claimed by the UNS.
+An **HTTPS faucet** that fetches from the URL claimed by the URL.
 TLS handles the certificate verification at the network layer; the
 response by construction came from the verified server. No
 additional check needed at this faucet's layer.
@@ -371,8 +371,8 @@ layer their own checks; this is one such layering.
 
 Examples:
 
-- **Puck blockchain** ([blockchain.md](../requirements/caspian/blockchain/index.md)) holds
-  signed attestations from UNS authorities. Cached objects are
+- **Puck blockchain** ([blockchain.md](../requirements/blockchain/index.md)) holds
+  signed attestations from URL authorities. Cached objects are
   verified against blockchain entries before being trusted.
 - Traditional public-key signing infrastructures (the source signs
   releases; the puck holds the public key and verifies).
@@ -418,14 +418,14 @@ the result and the checks.
   above.
 - **Cache role's default capabilities** — what can code running as
   `cache` actually do? (Cross-references the open question in
-  [roles.md](../requirements/caspian/roles.md).)
+  [roles.md](../requirements/roles.md).)
 - **Where the version cutoff lives.** Resolved three times: first onto
   the puck object (see "Version Window" section above), then off it
   onto `%chain` as a block-scoped `version_timespan`, then back onto
   `%puck` as `%puck.era` — see
-  [caspian/versioning § Setting the cutoff with %puck.era](../requirements/caspian/versioning/timestamp.md#the-cutoff-in-chain).
+  [caspian/versioning § Setting the cutoff with %puck.era](../requirements/versioning/timestamp.md#the-cutoff-in-chain).
 - **Granularity of puck-source roles** — one role per **fetcher**
   inside the puck. Faucets *inside* a fetcher (download + cache)
   share the fetcher's role to keep cache state from changing the
   tag. Aligns with the broader granularity question in
-  [roles.md](../requirements/caspian/roles.md).
+  [roles.md](../requirements/roles.md).

@@ -37,7 +37,7 @@ CaspianJ is structured JSON. Structured JSON is what language models
 reliably produce — strict shape, no whitespace/indent concerns, no
 "looked right but the parser rejected it" risk.
 
-The current convention in [caspianj.md](../requirements/caspian/caspianj.md)
+The current convention in [caspianj.md](../requirements/caspianj.md)
 is "code is shared as Caspian source, not CaspianJ" — a human-centric
 default. For AI-to-AI exchange, the reverse may be the better default:
 CaspianJ is the cleaner artifact for machines to author and consume.
@@ -64,13 +64,13 @@ The script-message form needs two things to be workable:
 
 1. **Provenance** — when I receive a script, I need to know who wrote
    it. The blockchain (per
-   [blockchain.md](../requirements/caspian/blockchain/index.md)) provides the
+   [blockchain.md](../requirements/blockchain/index.md)) provides the
    identity + signature scaffolding. Each script-message is signed
    by its author; the recipient verifies the signature before deciding
    anything.
 2. **Capability gating** — even from a trusted author, the recipient
    should choose what the script can do on the recipient's machine.
-   The role model ([roles.md](../requirements/caspian/roles.md)) is exactly the
+   The role model ([roles.md](../requirements/roles.md)) is exactly the
    tool for this: the recipient grants whatever capability set it
    chooses, regardless of who sent the script. Identity is
    verifiable; authorization is the recipient's discretion.
@@ -87,11 +87,11 @@ the recipient's sandbox with the recipient's role choices.
   already defines the temporal-worldlet format for AI conversations.
   That's the conversation *log* angle. Script-messages are a peer
   concept: not a log, but an exchange of executable artifacts.
-- **[roles.md](../requirements/caspian/roles.md)** — the capability-gating layer
+- **[roles.md](../requirements/roles.md)** — the capability-gating layer
   that makes accepting foreign code safe.
-- **[blockchain.md](../requirements/caspian/blockchain/index.md)** — provenance
+- **[blockchain.md](../requirements/blockchain/index.md)** — provenance
   layer; identity + signature.
-- **[caspianj.md](../requirements/caspian/caspianj.md)** — the canonical form
+- **[caspianj.md](../requirements/caspianj.md)** — the canonical form
   the messages contain.
 
 ---

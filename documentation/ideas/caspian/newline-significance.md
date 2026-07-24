@@ -1,6 +1,6 @@
 # When newlines are significant in Caspian
 
-> **Policy landed as spec** at [syntax/comments-and-whitespace](../../requirements/caspian/syntax/comments-and-whitespace) — newlines are generally not significant; the parser figures out statement boundaries from context; semicolons are command separators (with redundant ones ignored); exceptions like heredocs are called out per-page. This ideas doc retains the case analysis and reasoning that led to the policy.
+> **Policy landed as spec** at [syntax/comments-and-whitespace](../../requirements/syntax/comments-and-whitespace) — newlines are generally not significant; the parser figures out statement boundaries from context; semicolons are command separators (with redundant ones ignored); exceptions like heredocs are called out per-page. This ideas doc retains the case analysis and reasoning that led to the policy.
 
 ~~~vibecode
 {"vibecode": {
@@ -207,7 +207,7 @@ The rule is essentially "if it can be parsed unambiguously from the tokens, it's
 ### Reasons this works
 
 - **Reads how developers already think.** A leading `|` on the next line is visually attached; forcing the developer to move it to the previous line is a discipline that has to be taught and enforced.
-- **Consistent with Caspian's no-nanny-code posture** ([concepts § No nanny code](https://puck.uno/documentation/requirements/caspian/concepts#no-nanny-code)). Rejecting sloppy-but-parseable syntax is the parser saying "you can't because I think you shouldn't." Permissive parsing lets the developer decide.
+- **Consistent with Caspian's no-nanny-code posture** ([concepts § No nanny code](https://puck.uno/documentation/requirements/concepts#no-nanny-code)). Rejecting sloppy-but-parseable syntax is the parser saying "you can't because I think you shouldn't." Permissive parsing lets the developer decide.
 - **Same-line juxtaposition is rare in practice.** `&foo 'blah' &bar` reads as sloppy code and most developers won't write it. But if someone does, the parser accepts it rather than rejecting it as an error.
 - **Fewer rules to teach.** No "trailing operator vs leading operator" rule to memorize. Fewer edge cases in style guides.
 
@@ -235,7 +235,7 @@ If Policy C is adopted, these rules follow:
 
 Under Policy C:
 
-- **Pipes** — [syntax/pipes](https://puck.uno/documentation/requirements/caspian/syntax/pipes) currently documents multi-line pipes with trailing `|`. Under Policy C, both trailing-`|` AND leading-`|` on next line work. Doc could note this or leave the recommendation as-is (trailing) with the understanding that leading-`|` also parses.
+- **Pipes** — [syntax/pipes](https://puck.uno/documentation/requirements/syntax/pipes) currently documents multi-line pipes with trailing `|`. Under Policy C, both trailing-`|` AND leading-`|` on next line work. Doc could note this or leave the recommendation as-is (trailing) with the understanding that leading-`|` also parses.
 - **Method chains** — same shape as pipes; leading `.` or trailing `.` for continuation both work.
 - **Arithmetic** — same rule: `$a + $b` on one line, or split across lines with the operator at either end.
 - **Function calls with many args** — args span lines inside paren-bound lists (unchanged) or via comma continuation.
@@ -246,5 +246,5 @@ Policy A (strict) is available as a fallback if Policy C creates real problems i
 
 ## Related
 
-- [syntax/pipes](https://puck.uno/documentation/requirements/caspian/syntax/pipes) — pipe operators, which raised this question during design.
-- [syntax/](https://puck.uno/documentation/requirements/caspian/syntax/) — the hub for surface syntax specs; wherever this policy lands, it lives there.
+- [syntax/pipes](https://puck.uno/documentation/requirements/syntax/pipes) — pipe operators, which raised this question during design.
+- [syntax/](https://puck.uno/documentation/requirements/syntax/) — the hub for surface syntax specs; wherever this policy lands, it lives there.

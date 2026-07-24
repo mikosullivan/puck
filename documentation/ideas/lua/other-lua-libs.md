@@ -1,20 +1,20 @@
 # Other Lua libs
 
-> **Archived.** This page is redundant to [requirements/caspian/core/](../../requirements/caspian/core/), which owns the authoritative "what ships with Caspian" table and detail pages. Kept here for the shopping-list framing and the design rationale that surfaced during the design process (Network / HTTP server / XML parser candidate discussions and the tier model that emerged).
+> **Archived.** This page is redundant to [requirements/core/](../../requirements/core/), which owns the authoritative "what ships with Caspian" table and detail pages. Kept here for the shopping-list framing and the design rationale that surfaced during the design process (Network / HTTP server / XML parser candidate discussions and the tier model that emerged).
 
-*Shopping list — exploring which Lua libraries would be worth shipping with Caspian by default. Two ways this can happen: **bundled in the binary** (the current model for LPeg, libsodium, and luasodium — always in memory, no filesystem lookup) or **auto-installed at Caspian install time** into `~/.local/share/caspian/lua/`, loaded lazily by Lua's normal `require` only when actually used. Both count against the [floppy budget](../../requirements/caspian/core/binary#size-budget-floppy-fits) — every kb has to be transferred to the user's machine to complete the install. Developer-driven post-install downloads (via CLI) are a separate concern and out of scope for this document.*
+*Shopping list — exploring which Lua libraries would be worth shipping with Caspian by default. Two ways this can happen: **bundled in the binary** (the current model for LPeg, libsodium, and luasodium — always in memory, no filesystem lookup) or **auto-installed at Caspian install time** into `~/.local/share/caspian/lua/`, loaded lazily by Lua's normal `require` only when actually used. Both count against the [floppy budget](../../requirements/core/binary#size-budget-floppy-fits) — every kb has to be transferred to the user's machine to complete the install. Developer-driven post-install downloads (via CLI) are a separate concern and out of scope for this document.*
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "idea_other_lua_libs",
-	"role": "ARCHIVED shopping-list brainstorm for Lua libraries shipped with Caspian by default. Redundant to the authoritative spec at requirements/caspian/core/ (both the unified downloads table and per-lib detail pages). Kept here for the shopping-list framing, the tier model discussion (Executable vs Cache), and the Network / HTTP server / XML parser candidate discussions that led to the current selection.",
-	"status": "archived — redundant to specs at requirements/caspian/core/; retained for design rationale"
+	"role": "ARCHIVED shopping-list brainstorm for Lua libraries shipped with Caspian by default. Redundant to the authoritative spec at requirements/core/ (both the unified downloads table and per-lib detail pages). Kept here for the shopping-list framing, the tier model discussion (Executable vs Cache), and the Network / HTTP server / XML parser candidate discussions that led to the current selection.",
+	"status": "archived — redundant to specs at requirements/core/; retained for design rationale"
 }}
 ~~~
 
 ## What already ships with Caspian
 
-Per [installation/binary § What's in the binary](../../requirements/caspian/core/binary#whats-in-the-binary) for the bundled parts. All sizes are approximate and in kb.
+Per [installation/binary § What's in the binary](../../requirements/core/binary#whats-in-the-binary) for the bundled parts. All sizes are approximate and in kb.
 
 | Component | Size | Location | Purpose |
 |---|---:|---|---|
@@ -38,7 +38,7 @@ Sub-totals: **Executable** rows sum to 990 kb (that's the actual binary size); *
 
 - **Tier 1 — bundled in binary.** Compiled in as `luaL_requiref`'d built-ins so `require('lpeg')` finds pre-loaded modules with no filesystem lookup or dynamic loader involvement. Right fit for internal-use primitives Caspian's own runtime depends on (regex engine, crypto). Adds to binary size; always in memory whether used or not.
 - **Tier 2 — auto-installed at Caspian install time.** Downloaded during `install.sh`, extracted to `~/.local/share/caspian/lua/`, loaded lazily by Lua's normal `require` when the code actually touches them. Right fit for user-facing features Caspian promises out-of-box (XML parsing, etc.) where implementing in pure Caspian would be painful. Adds to install-download size but not binary size or per-startup cost. Updatable independent of the binary.
-- **Both tiers count against the [floppy budget](../../requirements/caspian/core/binary#size-budget-floppy-fits).** Room isn't a mandate to fill; each addition earns its weight.
+- **Both tiers count against the [floppy budget](../../requirements/core/binary#size-budget-floppy-fits).** Room isn't a mandate to fill; each addition earns its weight.
 - **Deciding between tiers.** If the lib is needed at process startup or by Caspian's own runtime, Tier 1. If it backs a user-facing feature that might not be touched every run, Tier 2. If it's neither, probably not in scope for this file — that's Tier 3 territory (opt-in CLI install, spec'd elsewhere).
 
 ## Candidates
@@ -73,7 +73,7 @@ Each candidate is tagged **Tier 1** (bundle in binary) or **Tier 2** (auto-insta
 
 - **What luasocket provides.** TCP and UDP sockets, plus a basic HTTP client module (`socket.http`). No HTTP-server library of its own — server-side request parsing comes from lua-http-parser (see below); response building is Caspian-level.
 - **Size.** ~50 kb.
-- **Tier.** Tier 1 (backs [`%chain.net`](../../requirements/caspian/chain/methods/net), a first-class Caspian primitive).
+- **Tier.** Tier 1 (backs [`%chain.net`](../../requirements/chain/methods/net), a first-class Caspian primitive).
 
 **Driving use case: IPC** — inter-process communication between Caspian processes. Spec'd elsewhere. HTTP client and server are related capabilities that fall out of the same primitive.
 

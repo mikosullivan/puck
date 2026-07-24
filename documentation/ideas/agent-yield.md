@@ -12,7 +12,7 @@
 	"distinct_from": ["puckai_worldlet_exchange_between_agents", "static_codegen_at_edit_time", "callout_to_oracle_service"],
 	"related": ["requirements/ecoverse/puckai/ (worldlet format for inter-agent collaboration)",
 		"ideas/puckai/skills/ (skill definitions)",
-		"requirements/caspian/drinian/ (process introspection state the agent could read)"]
+		"requirements/drinian/ (process introspection state the agent could read)"]
 }}
 ~~~
 
@@ -44,7 +44,7 @@ The line above asks "agent, take over here — when you're done, give me back a 
 }}
 ~~~
 
-Under the hood, `$agent.yield` opens an [ACP](https://puck.uno/documentation/requirements/caspian/packages/acp/) connection to an agent. The connection is a session that lives for the duration of the yield call — possibly through several round-trips — and closes when the agent's outermost function returns. The caller's Caspian process blocks while the session is open.
+Under the hood, `$agent.yield` opens an [ACP](https://puck.uno/documentation/requirements/packages/acp/) connection to an agent. The connection is a session that lives for the duration of the yield call — possibly through several round-trips — and closes when the agent's outermost function returns. The caller's Caspian process blocks while the session is open.
 
 ### Connection setup and role
 
@@ -52,7 +52,7 @@ The agent object is owned by its own role — the same way every object in Caspi
 
 This isn't a yield-specific "sandboxed default" the protocol invents. It's just the standard Caspian role model. The agent's role's envelope (what it can read, what it can call, what capabilities it has) is set up by whoever configured the agent, the same way any role is configured. Different agents have different roles with different envelopes. The yield protocol just runs the agent's returned function as the agent's role, like any other cross-role call in Caspian.
 
-The opt-in for wider access uses [`%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to) — covered in [Delegating to the agent's role](#delegating-to-the-agents-role) below.
+The opt-in for wider access uses [`%role.delegate_to`](https://puck.uno/documentation/requirements/roles#role-delegate_to) — covered in [Delegating to the agent's role](#delegating-to-the-agents-role) below.
 
 ### Initial handshake
 
@@ -73,7 +73,7 @@ The developer at the yield site already knows roughly what the agent is being as
 
 ### The agent's response
 
-The agent replies with a Caspian function in [CaspJ](https://puck.uno/documentation/requirements/caspian/caspianj) form, whose parameter signature is **the agent itself as the first param, followed by the kwargs the caller supplied**. For the call above (`$agent.yield(db: $db, dir: $dirjail)`):
+The agent replies with a Caspian function in [CaspJ](https://puck.uno/documentation/requirements/caspianj) form, whose parameter signature is **the agent itself as the first param, followed by the kwargs the caller supplied**. For the call above (`$agent.yield(db: $db, dir: $dirjail)`):
 
 ```
 function agent:, db:, dir: do
@@ -104,7 +104,7 @@ The same model covers protocol-level failures — network unreachable, timeout, 
 
 ## Delegating to the agent's role
 
-By default the agent's code runs in the fresh sandboxed role created for the connection. The opt-in for wider access uses the [`%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to) primitive: a block-scoped grant that temporarily extends the **caller's** permissions to the agent's role.
+By default the agent's code runs in the fresh sandboxed role created for the connection. The opt-in for wider access uses the [`%role.delegate_to`](https://puck.uno/documentation/requirements/roles#role-delegate_to) primitive: a block-scoped grant that temporarily extends the **caller's** permissions to the agent's role.
 
 ```
 %role.delegate_to($agent.object.role) do
@@ -112,7 +112,7 @@ By default the agent's code runs in the fresh sandboxed role created for the con
 end
 ```
 
-Inside the `delegate_to` block, the agent's role gets every permission the caller's current role has. When the block exits, the grant lifts cleanly. The agent's role identity itself doesn't change — only its permissions are temporarily extended. Audit trails continue to attribute actions to the agent's role; the elevation is visible in source as the enclosing `delegate_to` block. (Full mechanism in the [roles spec](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to).)
+Inside the `delegate_to` block, the agent's role gets every permission the caller's current role has. When the block exits, the grant lifts cleanly. The agent's role identity itself doesn't change — only its permissions are temporarily extended. Audit trails continue to attribute actions to the agent's role; the elevation is visible in source as the enclosing `delegate_to` block. (Full mechanism in the [roles spec](https://puck.uno/documentation/requirements/roles#role-delegate_to).)
 
 What the agent can then do depends on the caller's role. If the caller is in user role, for example:
 
@@ -165,7 +165,7 @@ The engine invokes that function in the connection's role, binding `$err` to the
 
 Three responsibilities, cleanly separated: the **developer** decides what the agent sees by choosing which kwargs to pass; the **agent** writes the function body based on the worldlet + kwargs; the **engine** glues them together.
 
-The agent's function can only see its declared parameters. That's the language's general rule for `function` — functions are closed; they can't reach into the caller's scope. See [Functions](https://puck.uno/documentation/requirements/caspian/functions) for the full spec. It's why the developer's choice of kwargs is the *whole* contract: anything not passed in as a param is invisible to the agent's code.
+The agent's function can only see its declared parameters. That's the language's general rule for `function` — functions are closed; they can't reach into the caller's scope. See [Functions](https://puck.uno/documentation/requirements/functions) for the full spec. It's why the developer's choice of kwargs is the *whole* contract: anything not passed in as a param is invisible to the agent's code.
 
 ## Why this might matter
 
@@ -196,7 +196,7 @@ Agent-yield is an unusually strong fit for **runtime security auditing**. An aud
 
 Via the worldlet handshake (and the agent's ability to call back for more):
 
-- **The full call stack** (potentially all of [Drinian](https://puck.uno/documentation/requirements/caspian/drinian/)) — every frame, every owning role, every local variable, every cross-role transition.
+- **The full call stack** (potentially all of [Drinian](https://puck.uno/documentation/requirements/drinian/)) — every frame, every owning role, every local variable, every cross-role transition.
 - **The owning role of every reachable object** — lets the agent reason about which role boundaries were actually crossed and which weren't.
 - **The faucet provenance of every value** — where each piece of data entered the process. Taint tracking at the language level, not at the type level.
 - **The dirjail and capability state** — what file paths, network endpoints, and other constrained surfaces are currently reachable from this scope.
@@ -214,7 +214,7 @@ Things static tools and signature scanners can't do equivalently:
 
 The audit agent's default sandboxed role is sufficient for inspection: it gets read-only access to introspection surfaces (`%role.current`, Drinian snapshots, the manifest, faucet provenance). No write permissions, no Puck calls, no faucet access — just looking.
 
-If the agent wants to **actively probe** attack paths (try to do something a real attacker would, to confirm whether it would succeed), that requires explicit [`%role.delegate_to`](https://puck.uno/documentation/requirements/caspian/roles#role-delegate_to). The developer has to opt in deliberately — active probing IS a real action against the running process, and the framework makes that an intentional choice.
+If the agent wants to **actively probe** attack paths (try to do something a real attacker would, to confirm whether it would succeed), that requires explicit [`%role.delegate_to`](https://puck.uno/documentation/requirements/roles#role-delegate_to). The developer has to opt in deliberately — active probing IS a real action against the running process, and the framework makes that an intentional choice.
 
 ### Where it slots in
 
@@ -227,7 +227,7 @@ This is one of the strongest forcing functions for getting agent-yield's design 
 
 ## Open questions
 
-- **What is `$agent`?** Implicit globally-available object? Explicit, configured at engine startup (`%engine.agent = ...`)? Created on demand from a UNS? Multiple agents named per program?
+- **What is `$agent`?** Implicit globally-available object? Explicit, configured at engine startup (`%engine.agent = ...`)? Created on demand from a URL? Multiple agents named per program?
 - **Trust envelope.** An agent yielded into the live process can in principle do anything the process can do — read state, write state, call out, mutate the codebase. Some Puckai-style `recruits` allowlist probably has to apply. What's the minimum-friction default that's still safe?
 - **What does the agent see?** ~~Resolved~~: the agent sees the kwargs explicitly passed at the yield site plus the skills attached to the handshake worldlet. Raw process state (locals, call stack, surrounding source) is not automatic — it has to be explicitly handed in. See [Initial handshake](#initial-handshake).
 - **How does the agent act?** Does it execute Caspian code via the engine? Construct a CaspianJ tree and have the engine eval it? Modify the program text on disk? Some combination?
@@ -241,4 +241,4 @@ This is one of the strongest forcing functions for getting agent-yield's design 
 
 - [Puckai worldlet format](https://puck.uno/documentation/requirements/ecoverse/puckai/) — the persistent inter-agent record. `$agent.yield` is the in-process analog, not a replacement.
 - [Puckai skills](https://puck.uno/documentation/ideas/puckai/skills/) — task-shaped instructions that a yielded agent could consult before acting.
-- [Drinian](https://puck.uno/documentation/requirements/caspian/drinian/) — the process-state introspection format the agent would presumably read to understand the live context.
+- [Drinian](https://puck.uno/documentation/requirements/drinian/) — the process-state introspection format the agent would presumably read to understand the live context.

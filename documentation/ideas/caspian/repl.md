@@ -31,4 +31,4 @@ None of these are hard, but they're all distinct from "run a complete program on
 
 ## Until then
 
-Removed from the bootstrap doc's example-hosts list ([engine-creation § Examples of hosts](https://puck.uno/documentation/requirements/caspian/bootstrap/engine-creation#examples-of-hosts)). When V1 host enumeration evolves, this idea page is the placeholder.
+Removed from the bootstrap doc's example-hosts list ([engine-creation § Examples of hosts](https://puck.uno/documentation/requirements/bootstrap/engine-creation#examples-of-hosts)). When V1 host enumeration evolves, this idea page is the placeholder.

@@ -8,7 +8,7 @@
 	"role": "captures the deferred `%engine.return_val` design — a user-role-only settable engine slot for a Caspian program to signal an answer back to the host via engine.run()'s return value. Sketched during V1 spec work but pulled before landing because the details weren't clear enough. Reserved for post-V1 revisit.",
 	"status": "idea_captured_deferred_until_after_v1",
 	"deferred_because": "the mechanics — where the slot lives, what it means for streaming/long-running programs, how it interacts with fork/agent-yield/etc. — weren't clear enough to commit to for V1. V1 hosts get no return value from engine.run(); if a program needs to signal something to the host, use stdout, an explicit callback wired into the engine, or wait for post-V1.",
-	"related": ["requirements/caspian/bootstrap/initialization (V1 bootstrap sequence — no return value in it now)", "requirements/caspian/bootstrap/startup-scenarios (V1 scenarios don't consume a return value)"]
+	"related": ["requirements/bootstrap/initialization (V1 bootstrap sequence — no return value in it now)", "requirements/bootstrap/startup-scenarios (V1 scenarios don't consume a return value)"]
 }}
 ~~~
 

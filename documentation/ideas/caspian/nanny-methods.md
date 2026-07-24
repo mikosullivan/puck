@@ -5,8 +5,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_nanny_methods",
-	"role": "design analysis for a Caspian pattern that's emerging: certain methods on user-role objects that a non-user holder is refused from calling, despite the general holding-is-access rule. Currently two known instances (.execute, .cd()); the shape is that the method reaches beyond the handle's scope to mutate process-global or system-external state. Miko has explicitly called this nanny code — accepted as such, not going away, needs a general treatment rather than accreting one-off carve-outs. This doc catalogs the pattern and enumerates likely future instances. The grant mechanism designed here (.grant(...) and .dirjail(grant:)) has been promoted to authoritative spec at requirements/caspian/filesystem/dirs/grants — this page keeps the design analysis, that page owns the API.",
-	"status": "design analysis — nanny pattern settled; grant mechanism promoted to requirements/caspian/filesystem/dirs/grants",
+	"role": "design analysis for a Caspian pattern that's emerging: certain methods on user-role objects that a non-user holder is refused from calling, despite the general holding-is-access rule. Currently two known instances (.execute, .cd()); the shape is that the method reaches beyond the handle's scope to mutate process-global or system-external state. Miko has explicitly called this nanny code — accepted as such, not going away, needs a general treatment rather than accreting one-off carve-outs. This doc catalogs the pattern and enumerates likely future instances. The grant mechanism designed here (.grant(...) and .dirjail(grant:)) has been promoted to authoritative spec at requirements/filesystem/dirs/grants — this page keeps the design analysis, that page owns the API.",
+	"status": "design analysis — nanny pattern settled; grant mechanism promoted to requirements/filesystem/dirs/grants",
 	"audience": "Miko; anyone reasoning about Caspian's holding-is-access rule and where it bends"
 }}
 ~~~
@@ -17,8 +17,8 @@ Caspian's general rule for object access is **holding is access**: if a non-user
 
 But two known methods break this rule:
 
-- **`.execute`** on file and dir objects — spawns a subprocess with the user's OS privileges. See [linux-support](https://puck.uno/documentation/requirements/caspian/linux-support/#executing-from-a-directory).
-- **`.cd()`** on dir objects — mutates the process's current working directory (in both its permanent and block-scoped forms). See [dirs § .cd()](https://puck.uno/documentation/requirements/caspian/filesystem/dirs/#cd).
+- **`.execute`** on file and dir objects — spawns a subprocess with the user's OS privileges. See [linux-support](https://puck.uno/documentation/requirements/linux-support/#executing-from-a-directory).
+- **`.cd()`** on dir objects — mutates the process's current working directory (in both its permanent and block-scoped forms). See [dirs § .cd()](https://puck.uno/documentation/requirements/filesystem/dirs/#cd).
 
 For all three, the engine refuses the call from non-user roles — even when the callee legitimately holds the object.
 
@@ -58,7 +58,7 @@ Read-side observers of the same state (`%fs.cwd` getter, reading `umask`, listin
 
 ## Grant mechanism — promoted to spec
 
-The design of `.grant(...)` and `.dirjail(grant: [...])` was drafted here and has been promoted to the authoritative spec at [requirements/caspian/filesystem/dirs/grants](https://puck.uno/documentation/requirements/caspian/filesystem/dirs/grants). That page owns the API, the subset-only invariant, the file-inheritance rule, and the introspection surface.
+The design of `.grant(...)` and `.dirjail(grant: [...])` was drafted here and has been promoted to the authoritative spec at [requirements/filesystem/dirs/grants](https://puck.uno/documentation/requirements/filesystem/dirs/grants). That page owns the API, the subset-only invariant, the file-inheritance rule, and the introspection surface.
 
 This ideas doc keeps the surrounding design analysis (above): the nanny pattern itself, what unifies the nanny methods, and the catalog of likely future instances. Both remain in scope for design-thinking; the grant spec is what implementation follows.
 
@@ -73,8 +73,8 @@ The nanny-methods grant is **per-object**: the user hands a specific dir to a sp
 
 ## Related
 
-- [concepts § Security](https://puck.uno/documentation/requirements/caspian/concepts#security) — where holding-is-access is stated.
-- [concepts § No nanny code](https://puck.uno/documentation/requirements/caspian/concepts#no-nanny-code) — the general anti-nanny principle that this class of methods deliberately breaks.
-- [dirs § .cd()](https://puck.uno/documentation/requirements/caspian/filesystem/dirs/#cd) — one of the two current nanny methods.
-- [linux-support § Executing from a directory](https://puck.uno/documentation/requirements/caspian/linux-support/#executing-from-a-directory) — the other current nanny method.
+- [concepts § Security](https://puck.uno/documentation/requirements/concepts#security) — where holding-is-access is stated.
+- [concepts § No nanny code](https://puck.uno/documentation/requirements/concepts#no-nanny-code) — the general anti-nanny principle that this class of methods deliberately breaks.
+- [dirs § .cd()](https://puck.uno/documentation/requirements/filesystem/dirs/#cd) — one of the two current nanny methods.
+- [linux-support § Executing from a directory](https://puck.uno/documentation/requirements/linux-support/#executing-from-a-directory) — the other current nanny method.
 - [role-delegation](role-delegation), [grantable-permissions-beyond-capabilities](grantable-permissions-beyond-capabilities) — role-scoped grant mechanisms; related design vocabulary, not the same thing.

@@ -1,14 +1,14 @@
 # Passwords
 
-> **Archived.** The Password class spec is now at [requirements/caspian/secure-memory/password/](../../../requirements/caspian/secure-memory/password/). The vault mechanics and Touchstone-walkthrough content have been folded into the sibling [secure-memory pages](../../../requirements/caspian/secure-memory/) — see `vault`, `process-security`, and `ui` there. The sibling `passkeys.md` has been promoted to [requirements/caspian/secure-memory/passkey/](../../../requirements/caspian/secure-memory/passkey/). This file is kept as design-history.
+> **Archived.** The Password class spec is now at [requirements/secure-memory/password/](../../../requirements/secure-memory/password/). The vault mechanics and Touchstone-walkthrough content have been folded into the sibling [secure-memory pages](../../../requirements/secure-memory/) — see `vault`, `process-security`, and `ui` there. The sibling `passkeys.md` has been promoted to [requirements/secure-memory/passkey/](../../../requirements/secure-memory/passkey/). This file is kept as design-history.
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "passwords",
-	"role": "ARCHIVED design brainstorm — the Password class, vault mechanics, and Touchstone walkthrough have all been folded into requirements/caspian/secure-memory/ (Password → secure-memory/password/, vault → secure-memory/vault, process-security → secure-memory/process-security, developer surface → secure-memory/ui). Sibling passkeys.md has been promoted to secure-memory/passkey/. Kept here as design-history for the reasoning trail.",
-	"status": "archived — content promoted to requirements/caspian/secure-memory/; retained for design context",
+	"role": "ARCHIVED design brainstorm — the Password class, vault mechanics, and Touchstone walkthrough have all been folded into requirements/secure-memory/ (Password → secure-memory/password/, vault → secure-memory/vault, process-security → secure-memory/process-security, developer surface → secure-memory/ui). Sibling passkeys.md has been promoted to secure-memory/passkey/. Kept here as design-history for the reasoning trail.",
+	"status": "archived — content promoted to requirements/secure-memory/; retained for design context",
 	"audience": "design historians; anyone tracing the reasoning trail from the initial design to the promoted spec",
-	"related": ["passkeys.md (sibling archive, also promoted — see requirements/caspian/secure-memory/passkey/)"]
+	"related": ["passkeys.md (sibling archive, also promoted — see requirements/secure-memory/passkey/)"]
 }}
 ~~~
 

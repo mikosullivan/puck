@@ -15,13 +15,13 @@ for content-shaped sites where each URL corresponds to a file.
 
 **Robinson is not bundled with Puck.** It's a **library available
 through Puck** — when Caspian code references
-`%['puck.uno/robinson']`, Puck's resolver fetches it from its UNS
+`%['puck.uno/robinson']`, Puck's resolver fetches it from its URL
 source on first use and caches it locally; subsequent references
 hit the cache. Programs that don't use Robinson never pull it in.
 See [puck.md](../../requirements/puck/index.md) for the resolution + caching
 model that governs all library resolution.
 
-Built on [Touchstone](../../requirements/caspian/network/http/server/touchstone/index.md) (which **does** ship with
+Built on [Touchstone](../../requirements/network/http/server/touchstone/index.md) (which **does** ship with
 Puck), Robinson inherits the transaction model, request/response
 objects, sessions, body buffering, the handler chain, CSRF guard,
 CSP, and the response constructor. Robinson adds multi-site
@@ -174,7 +174,7 @@ $server = %['puck.uno/robinson'].new(dir: $jail)
 $server.run()
 ```
 
-`$dir` is a [jail](../../requirements/caspian/built-in-classes/filesystem.md) over the Robinson
+`$dir` is a [jail](../../requirements/built-in-classes/filesystem.md) over the Robinson
 server's root directory, with `read + execute` permission.
 Robinson reads `server.json` from there, loads each listed site,
 and starts dispatching.
@@ -287,9 +287,9 @@ end
 ```
 
 Robinson invokes the file (via Caspian's
-[file-invocation model](../../requirements/caspian/modules.md)), takes the
+[file-invocation model](../../requirements/modules.md)), takes the
 returned class, instantiates it, calls `process($request)`, and
-uses the returned response. The class has no UNS — its identity
+uses the returned response. The class has no URL — its identity
 is its location in the tree.
 
 **No caching in v1.** Every request re-invokes the file from
@@ -303,7 +303,7 @@ deferred.
 
 Non-`.casp` files (HTML, CSS, JS, images, etc.) are served
 as-is, with content type inferred from extension (via
-[Touchstone's factory map](../../requirements/caspian/network/http/server/touchstone/index.md#content-type-factory-defaults)).
+[Touchstone's factory map](../../requirements/network/http/server/touchstone/index.md#content-type-factory-defaults)).
 
 ### Path resolution
 
@@ -885,7 +885,7 @@ borg.com," developer's custom CORS handler). Without this,
 debugging a chain of handlers means guessing which one threw.
 
 This is a Touchstone feature, not Robinson-specific — see
-[touchstone.md § Handler attribution](../../requirements/caspian/network/http/server/touchstone/index.md#handler-attribution-on-exceptions).
+[touchstone.md § Handler attribution](../../requirements/network/http/server/touchstone/index.md#handler-attribution-on-exceptions).
 
 ### Cleanup errors don't mask the original
 
@@ -903,22 +903,22 @@ If Jasmine itself fails to log (downstream service down, disk
 full, etc.), the original event isn't silently swallowed — it
 falls through to stderr with a `[JASMINE FAILED]` marker.
 
-A Jasmine feature; see [jasmine.md](../../requirements/caspian/packages/jasmine/index.md).
+A Jasmine feature; see [jasmine.md](../../requirements/packages/jasmine/index.md).
 
 ---
 
 ## What Robinson inherits from Touchstone
 
-Everything in [Touchstone](../../requirements/caspian/network/http/server/touchstone/index.md). Notably:
+Everything in [Touchstone](../../requirements/network/http/server/touchstone/index.md). Notably:
 
-- [The transaction object](../../requirements/caspian/network/http/server/touchstone/index.md#the-transaction-object)
-- [The request object](../../requirements/caspian/network/http/server/touchstone/index.md#the-request-object) (steps, params, body)
-- [Sessions](../../requirements/caspian/network/http/server/touchstone/index.md#sessions)
-- [Body buffering](../../requirements/caspian/network/http/server/touchstone/index.md#body-buffering)
-- [The handler chain](../../requirements/caspian/network/http/server/touchstone/index.md#the-handler-chain)
-- [The response object](../../requirements/caspian/network/http/server/touchstone/index.md#the-response-object) (constructor, helpers, headers, redirects)
-- [CSRF Protection](../../requirements/caspian/network/http/server/touchstone/index.md#csrf-protection)
-- [Content Security Policy (CSP)](../../requirements/caspian/network/http/server/touchstone/index.md#content-security-policy)
+- [The transaction object](../../requirements/network/http/server/touchstone/index.md#the-transaction-object)
+- [The request object](../../requirements/network/http/server/touchstone/index.md#the-request-object) (steps, params, body)
+- [Sessions](../../requirements/network/http/server/touchstone/index.md#sessions)
+- [Body buffering](../../requirements/network/http/server/touchstone/index.md#body-buffering)
+- [The handler chain](../../requirements/network/http/server/touchstone/index.md#the-handler-chain)
+- [The response object](../../requirements/network/http/server/touchstone/index.md#the-response-object) (constructor, helpers, headers, redirects)
+- [CSRF Protection](../../requirements/network/http/server/touchstone/index.md#csrf-protection)
+- [Content Security Policy (CSP)](../../requirements/network/http/server/touchstone/index.md#content-security-policy)
 
 A page's `process` method is just a Handler `process` that
 happens to be loaded from a file at request time. No new
@@ -955,7 +955,7 @@ Touchstone is in charge.
 ## What's out of scope
 
 If your app is mostly ad-hoc routes rather than content-as-files,
-use [Sammy](../../requirements/caspian/network/http/server/sammy/index.md). If you need both styles in one
+use [Sammy](../../requirements/network/http/server/sammy/index.md). If you need both styles in one
 server, that's possible in principle (both expose Handlers); the
 ergonomics of that combination are deferred until a real use
 case surfaces.

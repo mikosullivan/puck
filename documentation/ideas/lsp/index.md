@@ -66,7 +66,7 @@ Editors discover the binary via `$PATH`. The Caspian installer puts the launcher
 **Caspian.** The LSP is written in Caspian itself — same dogfooding philosophy as the installer (`install.casp`). It needs:
 
 - Stdio JSON-RPC — handled with Caspian's standard I/O and JSON parsing.
-- Caspian source parsing — the engine's lexer/parser/transpiler stack ([engine.md](https://puck.uno/documentation/requirements/caspian/engine)) is exposed to the LSP code.
+- Caspian source parsing — the engine's lexer/parser/transpiler stack ([engine.md](https://puck.uno/documentation/requirements/engine)) is exposed to the LSP code.
 - Long-running process model — the LSP stays alive for the editor session, processing requests as they arrive.
 
 Writing the LSP in Caspian validates that Caspian is suitable for non-trivial tooling work. If the language can't comfortably implement its own LSP, that's a signal worth taking seriously.

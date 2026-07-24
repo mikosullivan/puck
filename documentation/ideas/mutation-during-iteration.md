@@ -5,7 +5,7 @@
 	"doc": "mutation_during_iteration",
 	"role": "survey of how mainstream languages handle mutation of a collection while iterating over it (Python, Ruby, JavaScript, Java, C#, Rust, Go, Swift, and a note on functional languages), plus the settled Caspian rule: iterating methods (`.each`, `.map`, `.keep`, `.reject`, `.sum`, etc.) snapshot their input at loop start. Iteration walks a shallow clone; mutations to the source have no effect on the loop. The same rule applies to `.each` on an elements object. Implementable via copy-on-write so callers don't pay for the snapshot in the mutation-free case.",
 	"status": "settled — snapshot-at-loop-start rule confirmed; ready to fold into requirements/",
-	"references": ["https://puck.uno/documentation/requirements/caspian/built-in-classes/array/elements", "https://docs.python.org/3/reference/datamodel.html", "https://docs.oracle.com/javase/8/docs/api/java/util/ConcurrentModificationException.html"]
+	"references": ["https://puck.uno/documentation/requirements/built-in-classes/array/elements", "https://docs.python.org/3/reference/datamodel.html", "https://docs.oracle.com/javase/8/docs/api/java/util/ConcurrentModificationException.html"]
 }}
 ~~~
 
@@ -232,7 +232,7 @@ The pattern: give callers a first-class way to say "iterate AND mutate together"
 
 ## Implications for Caspian
 
-Caspian's spec'd model has one property that changes the calculus: the [elements-object surface](https://puck.uno/documentation/requirements/caspian/built-in-classes/array/elements) gives element handles that stay stable across mutations. A caller iterating `$arr.elements` and calling `.delete`, `.move_to_start`, or `.index = $n` on an element handle isn't fighting the iterator — the handles track their own positions.
+Caspian's spec'd model has one property that changes the calculus: the [elements-object surface](https://puck.uno/documentation/requirements/built-in-classes/array/elements) gives element handles that stay stable across mutations. A caller iterating `$arr.elements` and calling `.delete`, `.move_to_start`, or `.index = $n` on an element handle isn't fighting the iterator — the handles track their own positions.
 
 That covers some cases cleanly. Open questions worth pinning down:
 
@@ -323,5 +323,5 @@ The elements-object model gives Caspian one thing no surveyed language has: an e
 
 ## Related
 
-- [built-in-classes/array/elements](https://puck.uno/documentation/requirements/caspian/built-in-classes/array/elements) — the elements-object spec that motivated this survey.
-- [built-in-classes/array](https://puck.uno/documentation/requirements/caspian/built-in-classes/array) — the parent array spec, including the settled `.keep!` / `.reject!` filter-in-place methods.
+- [built-in-classes/array/elements](https://puck.uno/documentation/requirements/built-in-classes/array/elements) — the elements-object spec that motivated this survey.
+- [built-in-classes/array](https://puck.uno/documentation/requirements/built-in-classes/array) — the parent array spec, including the settled `.keep!` / `.reject!` filter-in-place methods.

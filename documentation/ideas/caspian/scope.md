@@ -62,5 +62,5 @@ Whether `%scope` is itself a top-level system method or moved under another name
 
 ## Cross-refs
 
-- [Lucy / Caspian-runtime](../../requirements/caspian/lucy/index.md) — describes the scope substrate the engine maintains for `$foo` resolution.
-- [Syntax / system-methods catalog](../../requirements/caspian/syntax/system-methods) — current V1 system-methods set; `%scope` is intentionally absent.
+- [Lucy / Caspian-runtime](../../requirements/lucy/index.md) — describes the scope substrate the engine maintains for `$foo` resolution.
+- [Syntax / system-methods catalog](../../requirements/syntax/system-methods) — current V1 system-methods set; `%scope` is intentionally absent.

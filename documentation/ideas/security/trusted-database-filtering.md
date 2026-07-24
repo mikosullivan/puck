@@ -14,7 +14,7 @@ Not implemented. Worth recording so future decisions can build on it.
 
 ## The Idea
 
-Under the role model ([roles.md](../../requirements/caspian/roles.md)), a database faucet has its
+Under the role model ([roles.md](../../requirements/roles.md)), a database faucet has its
 own role, and values pulled through it are owned by that role. If that
 role is trusted by the caller's role, the values can flow freely.
 

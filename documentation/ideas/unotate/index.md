@@ -9,7 +9,7 @@
 }}
 ~~~
 
-We're going to build a small mock web site using [Sammy](../../requirements/caspian/network/http/server/sammy/), modeled on [unotate.com](https://www.unotate.com/). The mock site pulls its data live from unotate.com's API and renders pages — plays, scenes, playwrights, images — to demonstrate Sammy as a server framework and Caspian as an HTTP-client / JSON-consumer.
+We're going to build a small mock web site using [Sammy](../../requirements/network/http/server/sammy/), modeled on [unotate.com](https://www.unotate.com/). The mock site pulls its data live from unotate.com's API and renders pages — plays, scenes, playwrights, images — to demonstrate Sammy as a server framework and Caspian as an HTTP-client / JSON-consumer.
 
 The actual Caspian source for the mock site lives under [site/](site/). Building it up file by file is also an exercise in seeing how Caspian comes together as a working application.
 

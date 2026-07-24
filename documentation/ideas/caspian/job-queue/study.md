@@ -103,8 +103,8 @@ Caspian's design — single-threaded with explicit forks, Mikobase available as 
 
 ### What's already there
 
-- **[`%utils.forks.multiple(N)`](https://puck.uno/documentation/requirements/caspian/forking/)** spawns N tracked child processes, each running the same block independently. The "capped concurrency" the proposed design wants is exactly this primitive.
-- **[`%utils.forks.single()`](https://puck.uno/documentation/requirements/caspian/forking/)** spawns one tracked child. Fine for one-at-a-time job processing or for ad-hoc fork management.
+- **[`%utils.forks.multiple(N)`](https://puck.uno/documentation/requirements/forking/)** spawns N tracked child processes, each running the same block independently. The "capped concurrency" the proposed design wants is exactly this primitive.
+- **[`%utils.forks.single()`](https://puck.uno/documentation/requirements/forking/)** spawns one tracked child. Fine for one-at-a-time job processing or for ad-hoc fork management.
 - **`$mgr.wait`** on a fork manager blocks the parent until the child exits and lets the parent observe the exit status. The "harvest" step of the proposed design.
 - **Auto-close at script end** means if the manager process dies, all tracked children get cleaned up (SIGTERM then SIGKILL). No zombies, no orphans.
 - **Mikobase** can store job records as queryable, durable, structured data — pending status, payload, attempts, last_error, etc.
@@ -225,7 +225,7 @@ The simplest first cut would be: in-memory queue, fork-per-job with a fixed conc
 
 ## See also
 
-- [Caspian forking](https://puck.uno/documentation/requirements/caspian/forking/) — the fork primitives the manager builds on.
-- [Caspian events](https://puck.uno/documentation/requirements/caspian/events/) — the in-process broadcast/listen system useful for manager↔worker notifications.
+- [Caspian forking](https://puck.uno/documentation/requirements/forking/) — the fork primitives the manager builds on.
+- [Caspian events](https://puck.uno/documentation/requirements/events/) — the in-process broadcast/listen system useful for manager↔worker notifications.
 - [Mikobase](https://puck.uno/documentation/requirements/mikobase/) — the structured object store proposed as the queue backend.
 - [Message brokers report](message-brokers.md) — adjacent space; brokers do queueing too, but at a different scope (cross-process, distributed) than the in-process fork-pool design proposed here.

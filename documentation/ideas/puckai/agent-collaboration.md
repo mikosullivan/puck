@@ -81,7 +81,7 @@ vocabulary makes output readable by any AI or human without prior coordination.
 
 ### Registration and Identity
 
-Each agent could have a UNS address:
+Each agent could have a URL:
 
 ```
 mikosullivan.com/agent/main

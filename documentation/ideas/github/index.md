@@ -36,7 +36,7 @@ Examples: [Differ](../differ.md), a hypothetical Caspian-aware blame viewer, a v
 
 ### 2. Browser extension
 
-An opt-in extension the viewer installs that rewrites github.com pages directly: syntax-highlighting `.casp` files, rendering `%vibecode` blocks specially, resolving UNS references to live links, replacing diff views with normalized diffs.
+An opt-in extension the viewer installs that rewrites github.com pages directly: syntax-highlighting `.casp` files, rendering `%vibecode` blocks specially, resolving URL references to live links, replacing diff views with normalized diffs.
 
 Each viewer chooses to install. The repo owner can't push it.
 
@@ -49,7 +49,7 @@ For things that fit GitHub's native surface: PR-side checks (Caspian syntax erro
 - **Syntax highlighting** for `.casp` files in source view and diffs (browser extension only — GitHub's own highlighter is Linguist-controlled, and Linguist won't know Caspian for a while).
 - **Vibecode block rendering** — pretty-print the JSON inside `%vibecode <<EOF ... EOF`, possibly collapsible.
 - **Normalized diffs** — see [Differ](../differ.md).
-- **UNS link resolution** — turn `puck.uno/color` references in source into clickable links pointing at the canonical doc.
+- **URL link resolution** — turn `puck.uno/color` references in source into clickable links pointing at the canonical doc.
 - **`.casp` file preview** in the file tree popover, formatted to viewer's `style.json`.
 - **Bryton test result badges** in PR view, fed by a GitHub Action.
 
@@ -59,7 +59,7 @@ For things that fit GitHub's native surface: PR-side checks (Caspian syntax erro
 - Bookmarklet vs full browser extension for redirecting to external web services? (Bookmarklet has no install friction; extension can intercept transparently.)
 - Should there be a GitHub App for repo-side validation (syntax checks, Bryton runs) even though it can't inject UI? Probably yes once Caspian is real.
 - Hosting model for the external web service — `puck.uno/...` subpaths? Separate subdomain per tool (`differ.puck.uno`, `blame.puck.uno`)? Single SPA?
-- For browser-extension features that pull data from a server (e.g. UNS lookups), where does the server live and how does it handle rate limits?
+- For browser-extension features that pull data from a server (e.g. URL lookups), where does the server live and how does it handle rate limits?
 
 ## Out of scope (for now)
 

@@ -7,7 +7,7 @@
 	"doc": "idea_regexes",
 	"role": "working brainstorm for Caspian's regex surface. Captures the settled points (LPeg as the engine, `regex(...)` keyword for literals, split `.match` / `.matches` on String, single-Match-per-hit) and the open sub-decisions (flags syntax, escaping, interpolation stance, Regex return-type name, and the pattern-facing method surface beyond match/matches).",
 	"status": "brainstorming — main-line decisions settled through conversation; four sub-decisions and the full String method surface still open",
-	"related": ["requirements/caspian/built-in-classes/primitives/string/regular-expressions (stub landing page pointing at LPeg's own docs)"]
+	"related": ["requirements/built-in-classes/primitives/string/regular-expressions (stub landing page pointing at LPeg's own docs)"]
 }}
 ~~~
 
@@ -423,4 +423,4 @@ Leaning direct-use for the block form (`.new do ... end` returns a completed Reg
 
 ## Related in-tree
 
-- [built-in-classes/primitives/string/regular-expressions](https://puck.uno/documentation/requirements/caspian/built-in-classes/primitives/string/regular-expressions) — the stub in `requirements/` that pins LPeg as the engine and defers pattern-syntax docs to LPeg's own reference. Fills in with the settled-and-decided content from this brainstorm as pieces land.
+- [built-in-classes/primitives/string/regular-expressions](https://puck.uno/documentation/requirements/built-in-classes/primitives/string/regular-expressions) — the stub in `requirements/` that pins LPeg as the engine and defers pattern-syntax docs to LPeg's own reference. Fills in with the settled-and-decided content from this brainstorm as pieces land.

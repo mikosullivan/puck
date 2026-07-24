@@ -19,7 +19,7 @@ Marina is the codeword for a design exploration of Puck, Q0, and class definitio
 ## Overview
 
 Puck is a remote object system designed to be simpler and more intuitive than systems like
-REST. Classes in Puck are identified by UNS strings — a URL without the `https://`
+REST. Classes in Puck are identified by URL strings — a URL without the `https://`
 protocol prefix — providing a globally unique namespace.
 
 Examples:
@@ -50,7 +50,7 @@ defined. For now, implicit class rules are documented ad-hoc where they apply.
 
 ## Getting a Class
 
-`puck.get_class(uns, **params)` fetches a class definition from its UNS URL and returns a
+`puck.get_class(uns, **params)` fetches a class definition from its URL URL and returns a
 local class object. The class definition includes fields and remote methods. Parameters may
 be used to control which version of the definition is retrieved — for example, `cutoff`
 pins the definition to a historical point in time.
@@ -126,7 +126,7 @@ Specific rules:
 - If `method` refers to a method that does not exist, the server returns an error object.
 - If `class` is not a request class, the server returns an error object. A subclass of
   `puck.uno/request` is acceptable, but the server must already know it is a subclass —
-  the server is not required to query the UNS to verify the inheritance relationship.
+  the server is not required to query the URL to verify the inheritance relationship.
 
 The response structure is not yet defined.
 
@@ -516,7 +516,7 @@ If the field or path does not exist, the result is `null`.
 |---|---|
 | `{"record": "pk"}` | The record's primary key |
 | `{"record": "updated_at"}` | The timestamp of the record's latest version |
-| `{"record": "class"}` | The record's class name (UNS string) |
+| `{"record": "class"}` | The record's class name (URL string) |
 
 ---
 
@@ -596,7 +596,7 @@ record. It is declared using `"foreign"` and optionally `"field"`. The explicit 
 "appearances": {"foreign": "borg.com/appearance", "field": "person"}
 ```
 
-- `foreign` — the UNS class name to query
+- `foreign` — the URL class name to query
 - `field` — the field in the foreign class whose value must match this record's pk
 
 ### Join inference

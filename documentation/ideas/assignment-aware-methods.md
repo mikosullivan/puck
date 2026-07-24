@@ -146,5 +146,5 @@ Under discussion. Might land in V1 depending on how the open points settle. The 
 ## Related
 
 - [ideas/multicast.md](multicast.md) — separate engine-dispatch idea (deferred from V1).
-- [syntax/assignment-operators.md](../requirements/caspian/syntax/assignment-operators.md) — the receiver object that `=foo` would receive is the same shape used by `=` and compound assignment operators.
-- [classes/index.md](../requirements/caspian/classes/index.md) — class definition spec where `=foo` methods would live.
+- [syntax/assignment-operators.md](../requirements/syntax/assignment-operators.md) — the receiver object that `=foo` would receive is the same shape used by `=` and compound assignment operators.
+- [classes/index.md](../requirements/classes/index.md) — class definition spec where `=foo` methods would live.

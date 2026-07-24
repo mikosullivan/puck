@@ -276,7 +276,7 @@ If RLIMIT_MEMLOCK proves to be a real ceiling in practice, the cap becomes user-
 
 When a Caspian program forks (`%forks.branch` etc.), the child inherits the parent's memory pages including `K` and any `K_d` for open dirjails. This is just how `fork(2)` works — the child can decrypt anything the parent could.
 
-The design report's open question about cross-process sharing (`tmp_share` capability) becomes simpler in this light: any forked child already has access; the question is just whether the child SHOULD have access by default. **Recommendation: children inherit by default (matching the no-role-change-on-fork rule from [forks: no role change](https://puck.uno/documentation/requirements/caspian/roles/#forks-no-role-change)); a `%forks.branch(no_inherit_tmp: true)` opt-out is the escape hatch for the case where the parent wants the child sealed off.**
+The design report's open question about cross-process sharing (`tmp_share` capability) becomes simpler in this light: any forked child already has access; the question is just whether the child SHOULD have access by default. **Recommendation: children inherit by default (matching the no-role-change-on-fork rule from [forks: no role change](https://puck.uno/documentation/requirements/roles/#forks-no-role-change)); a `%forks.branch(no_inherit_tmp: true)` opt-out is the escape hatch for the case where the parent wants the child sealed off.**
 
 ## Testing strategy
 
@@ -310,5 +310,5 @@ Real questions the implementation will surface that aren't fully settled:
 ## See also
 
 - [encrypted-tmp](https://puck.uno/documentation/ideas/caspian/encrypted-tmp) — the design report this implementation realizes.
-- [`%tmp`](https://puck.uno/documentation/requirements/caspian/chain/methods/tmp) — the current unencrypted `%tmp` spec; the encrypted surface will eventually fold into here per Phase 5.
-- [`%chain.encryption`](https://puck.uno/documentation/requirements/caspian/chain/methods/encryption) — the encryption capability surface; the symmetric primitives introduced here (ChaCha20-Poly1305, HKDF, HMAC) would land here or in a lower-level crypto layer if surfaced to user code.
+- [`%tmp`](https://puck.uno/documentation/requirements/chain/methods/tmp) — the current unencrypted `%tmp` spec; the encrypted surface will eventually fold into here per Phase 5.
+- [`%chain.encryption`](https://puck.uno/documentation/requirements/chain/methods/encryption) — the encryption capability surface; the symmetric primitives introduced here (ChaCha20-Poly1305, HKDF, HMAC) would land here or in a lower-level crypto layer if surfaced to user code.

@@ -70,7 +70,7 @@ This matches well-trodden cooperative event-handling patterns in other languages
 
 ## Relationship to the existing event system
 
-Caspian's [event-broadcasting system](../../requirements/caspian/events/) already lets any object broadcast and any object listen. The engine could just BE another broadcaster — `%utils.broadcast` calls fired from inside the engine's internals.
+Caspian's [event-broadcasting system](../../requirements/events/) already lets any object broadcast and any object listen. The engine could just BE another broadcaster — `%utils.broadcast` calls fired from inside the engine's internals.
 
 Under that framing, `%engine.wait` could be sugar for:
 

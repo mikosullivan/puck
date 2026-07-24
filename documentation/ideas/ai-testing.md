@@ -34,7 +34,7 @@ In the meantime: developers writing tests against `$agent.yield` code can constr
 
 - [`$agent.yield`](agent-yield.md) — the main forcing function for this concern.
 - [Puckai](https://puck.uno/documentation/requirements/ecoverse/puckai/) — worldlet-based agent collaboration; testing Puckai-using code has similar needs.
-- [Bryton (Caspian test framework)](https://puck.uno/documentation/requirements/caspian/packages/bryton/) — wherever a built-in mock-agent helper eventually lands, Bryton is likely its home.
+- [Bryton (Caspian test framework)](https://puck.uno/documentation/requirements/packages/bryton/) — wherever a built-in mock-agent helper eventually lands, Bryton is likely its home.
 
 ## Open thinking
 

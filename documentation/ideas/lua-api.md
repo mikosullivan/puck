@@ -155,7 +155,7 @@ boundary; sodium runs in its own context; on return, the caller's
 context is restored.
 
 `%engine` is user-role-only by a dedicated check in the engine object
-itself; see [engine/](../requirements/caspian/engine/). Its
+itself; see [engine/](../requirements/engine/). Its
 children are normal objects. Capability is enforced at each method
 call by the role transition, not by the namespace.
 
@@ -191,7 +191,7 @@ soon as user code runs.
 
 `%engine` is user-role-only — a deliberate special-case check in
 the engine object refuses calls from any role other than `user`.
-See [engine/](../requirements/caspian/engine/). Its
+See [engine/](../requirements/engine/). Its
 children (`%engine.sodium` etc.) are normal objects; capability is
 enforced at each method call by the role transition, not by the
 namespace structure.
@@ -261,7 +261,7 @@ end
 ```
 
 Subject to the standard `on_close` strict rules from
-[garbage-collection.md](../requirements/caspian/garbage-collection.md) — 2 ms cap,
+[garbage-collection.md](../requirements/garbage-collection.md) — 2 ms cap,
 no I/O, no allocation. C-library release paths are usually
 microseconds; not a real constraint.
 
@@ -389,7 +389,7 @@ lines in" — load-time refusal.
 
 How non-core bindings reach the user's machine:
 
-- **UNS lookup** — `puck.uno/binding/foo` is resolved via the
+- **URL lookup** — `puck.uno/binding/foo` is resolved via the
   standard Puck resolution chain (bundled cache → user cache →
   network → fail).
 - **Local install** — `caspian install puck.uno/binding/foo` pulls
@@ -418,7 +418,7 @@ What V1 explicitly does **not** commit to (free to revisit):
 - The `.casp` + `.lua` two-file format
 - The `extern` keyword
 - The vibecode `"bindings"` field for per-program declarations
-- UNS resolution of bindings
+- URL resolution of bindings
 - The `caspian install` subcommand
 
 These are all V2+ design problems, settled when extensibility is on

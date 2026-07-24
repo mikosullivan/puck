@@ -9,7 +9,7 @@
 }}
 ~~~
 
-**All decisions on this page have been implemented in the [array spec's Set operations section](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#set-operations)** and its Excluded methods table. This doc is kept as a design record of the accept/reject decisions and their rationale; nothing here is still under consideration.
+**All decisions on this page have been implemented in the [array spec's Set operations section](https://puck.uno/documentation/requirements/built-in-classes/array#set-operations)** and its Excluded methods table. This doc is kept as a design record of the accept/reject decisions and their rationale; nothing here is still under consideration.
 
 ## Background — always-in-effect Caspian conventions
 
@@ -41,8 +41,8 @@ Ready to move into the array spec when Miko says go.
 | `$a ⊂ $b` | `$a.proper_subset_of?($b)` | True if every element of `$a` is in `$b` AND `$b` has at least one element not in `$a`. |
 | `$a ⊆ $b` | `$a.subset_of?($b)` | True if every element of `$a` is in `$b`. Equal arrays satisfy this. |
 | [none] | `$a.disjoint?($b)` | True if `$a` and `$b` share no elements. English form only (no standard Unicode symbol exists). |
-| `$a.∅?` | `$a.empty?` | True if `$a` has no elements. Already in the array spec's [Query and predicates table](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#query-and-predicates); repeated here because empty-set is a natural fit for the section. |
-| `$a.∃?` | `$a.any?` | True if `$a` has at least one element. Complement of `.empty?`. Already in the array spec's [Query and predicates table](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#query-and-predicates) with the `∃?` alias added. |
+| `$a.∅?` | `$a.empty?` | True if `$a` has no elements. Already in the array spec's [Query and predicates table](https://puck.uno/documentation/requirements/built-in-classes/array#query-and-predicates); repeated here because empty-set is a natural fit for the section. |
+| `$a.∃?` | `$a.any?` | True if `$a` has at least one element. Complement of `.empty?`. Already in the array spec's [Query and predicates table](https://puck.uno/documentation/requirements/built-in-classes/array#query-and-predicates) with the `∃?` alias added. |
 
 ### Design principles
 
@@ -66,7 +66,7 @@ Set operations compare elements with `==`. Caspian's `==` does a full recursive 
 
 ## Rejected
 
-Will not land in the array spec. Some may move into the [array spec's Excluded methods table](https://puck.uno/documentation/requirements/caspian/built-in-classes/array#excluded-methods) when the Accepted set is implemented.
+Will not land in the array spec. Some may move into the [array spec's Excluded methods table](https://puck.uno/documentation/requirements/built-in-classes/array#excluded-methods) when the Accepted set is implemented.
 
 ### Ruby-style operator forms
 

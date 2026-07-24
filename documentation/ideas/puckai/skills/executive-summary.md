@@ -68,7 +68,7 @@ This split mirrors the broader picture in the [MCP analysis](https://puck.uno/do
 
 ## How skills augment MCP
 
-**Skills declare which MCP servers and tools the agent should reach for.** The skill's `tools_to_use` field is an array of UNS strings. Today they're nominally service or library identifiers; they can equally name MCP server endpoints (`mcp://internal/calendar`, etc.) and even specific tool/resource names within those servers. A skill becomes the *task-aware discovery layer* for MCP — instead of the agent enumerating every server it has access to and guessing relevance, the skill says exactly what to consult for this kind of work.
+**Skills declare which MCP servers and tools the agent should reach for.** The skill's `tools_to_use` field is an array of URL strings. Today they're nominally service or library identifiers; they can equally name MCP server endpoints (`mcp://internal/calendar`, etc.) and even specific tool/resource names within those servers. A skill becomes the *task-aware discovery layer* for MCP — instead of the agent enumerating every server it has access to and guessing relevance, the skill says exactly what to consult for this kind of work.
 
 Each resulting MCP call still produces a [`puck.uno/ai/puckai/consultation`](https://puck.uno/documentation/requirements/ecoverse/puckai/#consultation) record, per the augmentation pattern in the MCP analysis. The skill steers; MCP delivers; the consultation record captures what happened. Three layers, one workflow, each doing the thing it was designed for.
 

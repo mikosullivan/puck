@@ -46,7 +46,7 @@ The instance is still a string. It's just *also* a `foo.uno/upper`.
 The class chain holds both, and method dispatch walks the chain.
 
 **Dispatch order** (per
-[lucy.md § The Class Stack](../requirements/caspian/lucy/index.md#the-class-stack)):
+[lucy.md § The Class Stack](../requirements/lucy/index.md#the-class-stack)):
 the shadow class is consulted first, then the class stack is walked
 from top to bottom. The class an object was created with sits at
 the bottom (first pushed). Subsequent `.classes.add` calls push to
@@ -105,7 +105,7 @@ the class is purely a tag the engine reads.
 - **Class chain order is settled.** Push goes to the top of the
   stack (under shadow); dispatch walks top-to-bottom; later
   additions shadow earlier ones. See
-  [lucy.md § The Class Stack](../requirements/caspian/lucy/index.md#the-class-stack).
+  [lucy.md § The Class Stack](../requirements/lucy/index.md#the-class-stack).
 - **Method conflicts between multiple added classes follow the same
   rule.** If two added classes both define `to_string`, the more
   recently added one wins because it sits higher in the stack.
@@ -184,7 +184,7 @@ at the top because it's a pinned platter at the top, not because
 of a separate rule. The same is true for the `puck.uno/truthiness`
 platter when present — it's a pinned platter in the pinned region,
 participating in normal dispatch order. See
-[object.md § Mechanism](../requirements/caspian/built-in-classes/object.md#bool-mechanism)
+[object.md § Mechanism](../requirements/built-in-classes/object.md#bool-mechanism)
 for how the truthiness platter encodes null / false / true via a
 single class with a bucket-carried `truthy` field.
 
@@ -290,10 +290,10 @@ A class in the stack is a **platter** (mental metaphor: LP records
 stacked on a turntable). Today every platter shares the same
 `%bucket` for instance data — collisions between platters are the
 developer's responsibility, and mix-ins manage the problem with the
-soft `uns.<UNS>` namespace convention.
+soft `url.<url>` namespace convention.
 
 **Proposed change:** each platter gets its own private bucket,
-formalizing what the `uns.<UNS>` convention has been doing by hand.
+formalizing what the `url.<url>` convention has been doing by hand.
 
 ### Proposed shape
 
@@ -328,7 +328,7 @@ record (the class reference plus its own private bucket):
 libsodium. Object IDs use the engine's global sequencer
 (integer-strings), but platter IDs cannot — they appear as **keys
 inside user buckets** (via the per-platter-marker mechanism in
-[nulls.md § Serialization](../requirements/caspian/built-in-classes/nulls.md#serialization))
+[nulls.md § Serialization](../requirements/built-in-classes/nulls.md#serialization))
 where they need to be collision-safe against arbitrary user-chosen
 field names. An integer-string `"7"` could collide with a user
 bucket key; a UUID's 128-bit address space can't, in practice.
@@ -361,7 +361,7 @@ Two strong constraints shaped this:
 
 - **The bucket should be absolutely free-form, no reserved keys.**
   This rules out formalizing `bucket.uns` as an engine-managed
-  namespace. The `uns.<UNS>` convention stays a soft convention,
+  namespace. The `url.<url>` convention stays a soft convention,
   not a runtime mechanism. The top-level bucket remains genuinely
   developer-owned, with no special keys.
 
@@ -404,7 +404,7 @@ yours.
 
 The per-platter bucket design above is what makes this policy
 tenable. Without per-platter buckets, mix-ins had to namespace
-their state somewhere — the soft `uns.<UNS>` convention was the
+their state somewhere — the soft `url.<url>` convention was the
 workaround. Per-platter buckets give every class its own
 designated space, so no class has to encroach on another's
 bucket via key conventions. The convention becomes obsolete.
@@ -466,7 +466,7 @@ dispatch (same mechanism that tracks the active class for
 - **Mix-in safety, no convention needed.** A mix-in class (e.g.,
   Trivet's node class) carries state in its own bucket; no need
   to remember to namespace under `bucket.uns.<self-uns>`.
-- **The `uns.<UNS>` bucket convention becomes obsolete.** Mix-ins
+- **The `url.<url>` bucket convention becomes obsolete.** Mix-ins
   use their own platter bucket; the soft convention can be
   retired once the formal mechanism lands. Lucy.md's documentation
   of `uns` as a reserved bucket key would go away.
@@ -511,16 +511,16 @@ keyword level.
 
 Settled changes that propagate:
 
-- [lucy.md § Two-Property Objects](../requirements/caspian/lucy/index.md) —
+- [lucy.md § Two-Property Objects](../requirements/lucy/index.md) —
   needs updating to describe the platter-record shape. "Every
   object has classes (a list of platters) and a bucket (shared
   hash)."
-- [lucy.md § %bucket](../requirements/caspian/lucy/index.md#bucket) — the `uns`
+- [lucy.md § %bucket](../requirements/lucy/index.md#bucket) — the `uns`
   bucket-key convention can be retired in favor of per-platter
   buckets.
-- [drinian.md](../requirements/caspian/drinian/index.md) — snapshot/revive
+- [drinian.md](../requirements/drinian/index.md) — snapshot/revive
   shape needs to handle the new structure: each platter record
-  serializes with its class UNS and its bucket.
+  serializes with its class URL and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become
   `{classes: {<id>: {class, bucket}, ...}, bucket}` to match.
   Worth flagging this in the Mikobase spec.
@@ -641,14 +641,14 @@ end
 Property assignment goes immediately after the function
 definition by convention — the two-line pair carries the
 visibility a keyword would have. See
-[lucy.md § `on_call` property](../requirements/caspian/lucy/index.md#on-call-property)
+[lucy.md § `on_call` property](../requirements/lucy/index.md#on-call-property)
 for the full design (mutability, caching consequences, future
 properties in the same family).
 
 `on_close` is the canonical multicast case — every platter that
 defines `on_close` gets to clean up its own state, not just the
 top one. See
-[garbage-collection.md § Multicast across platters](../requirements/caspian/garbage-collection.md#on-close-multicast).
+[garbage-collection.md § Multicast across platters](../requirements/garbage-collection.md#on-close-multicast).
 The same model covers `after_set` / `after_delete` on hashes and
 any future class-body lifecycle hook — see
 [#343](https://github.com/mikosullivan/puck/issues/343).
@@ -691,7 +691,7 @@ the method — TBD as the API matures.
 ## Open design questions
 
 - **API surface for `classes.add`** — what does the method actually
-  look like? Does it take a class object, a UNS string, or both?
+  look like? Does it take a class object, a URL string, or both?
   Does it also accept an initial bucket?
 - **Accessing one's own platter bucket** — what's the syntax from
   inside a class method? `@field` currently accesses the shared
@@ -706,7 +706,7 @@ the method — TBD as the API matures.
 - **Iteration** — `classes.each do |platter| ... end` to walk the
   chain?
 - **Snapshot serialization** — confirmed: each platter record
-  serializes as a self-contained chunk with its class UNS and
+  serializes as a self-contained chunk with its class URL and
   its bucket. Empty buckets either always shown as `{}` or omitted
   for compactness — see Bucket invariants above.
 - **Empty buckets per platter — always present or lazy?** See

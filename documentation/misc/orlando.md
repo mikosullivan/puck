@@ -75,7 +75,7 @@ This is important enough to call out explicitly:
 - Orlando is **not** Sammy. Sammy is a route-style serving framework
   built on Touchstone, intended for real applications. Orlando is a
   practice tool for serving static files.
-- Orlando does **not** use the Puck ecoverse. No UNS lookup, no
+- Orlando does **not** use the Puck ecoverse. No URL lookup, no
   Mikobase, no Caspian engine, no Puck blockchain, no Puck client.
   Orlando is a plain Lua program that reads files from disk and
   writes bytes to a socket.

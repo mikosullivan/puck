@@ -26,7 +26,7 @@
 	"process": [
 		"Decide which LSP feature to depict. One per image. Match it to the doc section that will host the image.",
 		"Pick a tight Caspian code snippet (≤8 lines, often 4–5) that plausibly triggers the feature. Avoid noise unrelated to the feature.",
-		"Start from templates/window-frame.svg. Save the working copy in the destination doc's directory (e.g., documentation/requirements/caspian/lsp/hover-role.svg), not in documentation/skills/.",
+		"Start from templates/window-frame.svg. Save the working copy in the destination doc's directory (e.g., documentation/requirements/lsp/hover-role.svg), not in documentation/skills/.",
 		"Replace the placeholders in the window frame: filename in title bar and tab, sidebar file listing (mark the active file with the selection highlight), breadcrumbs row.",
 		"Render the code lines in the editor content zone using the syntax-color palette below. Use a monospace font (ui-monospace stack). Default line height 23 px starting at y=120.",
 		"For indented lines, set the text element's `x` attribute explicitly — DO NOT use leading spaces inside <tspan>, they get collapsed by SVG renderers. See svg_authoring_gotchas.",
@@ -148,7 +148,7 @@
 			"vibecode_block": "comment (#6a9955) for the % and the heredoc markers; JSON inside follows JSON syntax-highlighting if available, otherwise default_text"
 		},
 		"class_references": {
-			"uns_reference": "type (#4ec9b0) — `puck.uno/foo`, `myapp.com/bar` (the full UNS string)",
+			"uns_reference": "type (#4ec9b0) — `puck.uno/foo`, `myapp.com/bar` (the full URL string)",
 			"class_in_function_body": "default_text (#d4d4d4) when used as a value/argument; type (#4ec9b0) when in a declaration context"
 		},
 		"operators": {
@@ -199,7 +199,7 @@
 			"composition": "Window frame + code with the hovered token marked + hover-tooltip overlay placed below-right of the token.",
 			"emphasis": "Dashed-outline rect around the hovered token. Overlay positioned ~30 px below the token's baseline so it doesn't visually overlap.",
 			"content_in_overlay": "Token name (in syntax color) + kind label + 2-4 line description + optional type/signature + canonical doc link.",
-			"common_targets": ["$variable (shows source line + class)", "%sigil (shows surface description)", "method name (shows signature)", "class UNS reference (shows class definition link)"]
+			"common_targets": ["$variable (shows source line + class)", "%sigil (shows surface description)", "method name (shows signature)", "class URL reference (shows class definition link)"]
 		},
 		"completion": {
 			"trigger": "Cursor at end of a partial token (e.g., `$db.spl`).",
@@ -306,7 +306,7 @@
 		"validate_xml": "Run `python3 -c \"import xml.etree.ElementTree as ET; ET.parse('file.svg')\"` to catch parse errors. SVG is XML; malformed will throw.",
 		"check_file_size": "`stat -c%s file.svg`. Soft ceiling: 20 KB. Larger usually means too much chrome detail.",
 		"check_at_actual_render_size": "The docs site may render the SVG at less than 100% size. Open in browser at 50% zoom to see how it'll look on smaller screens.",
-		"compare_against_an_existing_example": "Put your draft next to documentation/requirements/caspian/lsp/hover-role.svg and check that the visual style matches."
+		"compare_against_an_existing_example": "Put your draft next to documentation/requirements/lsp/hover-role.svg and check that the visual style matches."
 	},
 
 	"iteration_checklist": {
@@ -363,8 +363,8 @@
 	"examples": [
 		{
 			"name": "Hover on %role",
-			"file_path": "documentation/requirements/caspian/lsp/hover-role.svg",
-			"referenced_from": "documentation/requirements/caspian/lsp/index.md",
+			"file_path": "documentation/requirements/lsp/hover-role.svg",
+			"referenced_from": "documentation/requirements/lsp/index.md",
 			"feature": "hover",
 			"target_token": "%role (line 1)",
 			"overlay_content": "Token name + 'system surface' kind label + 3-line description + return type + puck.uno docs link",

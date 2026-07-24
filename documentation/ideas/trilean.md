@@ -51,7 +51,7 @@ The three values are `true`, `false`, and `null`. `null` represents "could be tr
 could be false, we don't know."
 
 Trilean operators classify each operand by reading `.object.bool` on it (see
-[object.md](../requirements/caspian/built-in-classes/object.md)). The result is one of three categories: `true` for any
+[object.md](../requirements/built-in-classes/object.md)). The result is one of three categories: `true` for any
 truthy value (the boolean `true`, the number `1`, a non-empty string, etc.),
 `false` for the boolean `false` value (and other strictly-falsy values like
 `0`, empty strings, etc.), or `null` for null values.
@@ -312,7 +312,7 @@ unknown case, ordinary `if $result` is safe.
 
 The `.object.null?`, `.object.defined?`, `.object.truthy?`, and `.object.bool`
 methods are universal — they are not specific to trilean. They are general-purpose
-introspection available on any value. See [object.md](../requirements/caspian/built-in-classes/object.md) for the full
+introspection available on any value. See [object.md](../requirements/built-in-classes/object.md) for the full
 set.
 
 ---

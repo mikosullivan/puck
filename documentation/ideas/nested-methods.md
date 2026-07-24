@@ -6,7 +6,7 @@
 	"role": "design notes on nested methods — methods grouped under a namespace path on a class. Replaces the older helper-as-sub-object model with namespaces-as-pure-organization. The .object namespace is the canonical example: it holds the universal-introspection methods so user classes don't inherit them into their top-level namespace.",
 	"status": "active_design",
 	"audience": "Miko and Claude collaborating on the design",
-	"related": ["requirements/caspian/lucy/index.md (helpers — the older model this replaces)",
+	"related": ["requirements/lucy/index.md (helpers — the older model this replaces)",
 		"requirements/ecoverse/objects/index.md (object structure)",
 		"requirements/ecoverse/worldlets/worldlet.json (records.b shows a 'beverage.nested.tea_earl_grey_hot' shape)"]
 }}
@@ -16,7 +16,7 @@
 
 A nested method is a method declared under a namespace path on its class. Calling `$foo.bar.gup()` dispatches `gup` from the `bar` namespace on `$foo`'s class. The namespace is **organizational only** — no sub-object is created, `self` inside `gup` is `$foo`, and `gup` has the same access to `$foo`'s bucket and other methods that a top-level method would.
 
-This replaces the older helper-as-sub-object model documented in [caspian/lucy/index.md § Helpers](../requirements/caspian/lucy/index.md#helpers). Under that model, `$foo.bar` returned a separate object holding a backreference to `$foo`, and helper methods could only reach back into the parent through that backreference's public surface. The new model collapses that: `$foo.bar` is no longer an object, it's a name prefix.
+This replaces the older helper-as-sub-object model documented in [caspian/lucy/index.md § Helpers](../requirements/lucy/index.md#helpers). Under that model, `$foo.bar` returned a separate object holding a backreference to `$foo`, and helper methods could only reach back into the parent through that backreference's public surface. The new model collapses that: `$foo.bar` is no longer an object, it's a name prefix.
 
 ## Why namespaces exist
 

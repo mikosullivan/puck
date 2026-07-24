@@ -4,8 +4,8 @@
 {"vibecode": {
 	"doc": "claude-md",
 	"role": "project-guidance file for Claude Code: repo overview, layout, build/test commands, conventions, and design principles to honor when editing this codebase",
-	"key_concepts": ["puck_ecoverse", "walking_skeleton_v001", "two_tier_testing",
-		"engine_pipeline", "vibecode_blocks", "no_nanny_code"]
+	"key_concepts": ["caspian_only_repo", "fresh_transpiler_start", "two_tier_testing",
+		"transpiler_engine_split", "vibecode_blocks", "no_nanny_code"]
 }}
 ~~~
 
@@ -31,73 +31,78 @@ Translation rule:
 
 ## What this repo is
 
-The Puck ecoverse: a designed-from-scratch suite of interconnected tools (Caspian language, Mikobase object store, Puck remote-object protocol, etc.). The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and code under [code/](code/) is a walking skeleton.
+This repo is the **Caspian** language — the programming language originally designed as part of the Puck ecoverse, now developed in its own project. Puck (the remote-object protocol) and Mikobase (the object store) were extracted; they'll be developed in separate repos eventually. As of the `pre-caspian-only` tag, the extractable content of those projects lives in git history reachable from that tag; the working tree from that point forward is Caspian-only.
 
-The directory is named `mikobase` for historical reasons; the umbrella name is **Puck**. Read [README.md](README.md) and [documentation/overview](https://puck.uno/documentation/overview) before doing substantive design work.
+The repository is **design-heavy and implementation-early** — the bulk of value lives under [documentation/](documentation/), and the code under [code/](code/) is being written fresh. The archived walking-skeleton implementation is preserved under [archive/](archive/) as reference material; it does not run.
 
-Current development target is **V0.01 "hello-world"** — see [documentation/development/](https://puck.uno/documentation/development/) for the walking-skeleton roadmap and the canonical statement of what is in/out of scope. The development plan uses a **soft feature lock**: do not expand V0.01 scope without explicit unlock.
+Read [README.md](README.md) and [documentation/overview](https://puck.uno/documentation/overview) before doing substantive design work.
 
-## Repo layout (non-obvious bits)
+## Repo layout
 
-- [documentation/](documentation/) — canonical specs. Markdown here is the source of truth.
-- [code/](code/) — implementation, organized by component then host language: `code/<component>/<lang>/`. Only `lib/lua/caspian/` has substantial code today; `code/mikobase/`, `code/puck/`, `code/dogberry/` are placeholders for future work.
-- [tests/](tests/) — mirrors `code/` shape. Only `tests/caspian/` has tests today.
-- [experiments/](experiments/) — scratch files; not part of the build or tests.
-- [domain/](domain/) — one-off Ruby script for finding available `.io` domain names ([domain/find_io.rb](domain/find_io.rb)). Unrelated to Puck the protocol.
+- [documentation/](documentation/) — canonical specs. Markdown here is the source of truth. The Caspian requirements tree lives directly under `documentation/requirements/` (no `caspian/` sub-namespace — the whole repo is Caspian).
+- [code/](code/) — implementation, organized by host language: `code/<lang>/`. Currently `code/lua/` (fresh, empty — the Lua reference engine is being written from scratch).
+- [tests/](tests/) — test files. Currently empty; the first tests land alongside the first fresh code.
+- [archive/](archive/) — preserved reference material from before the fresh restart. Read-only; does not run.
+- [orlando/](orlando/) — the docs server that renders `documentation/` at `http://127.0.0.1:8181/`. Lua application, has its own layout under `orlando/lua/` and `orlando/client-assets/`.
+- [graphics/](graphics/) — brand assets and figures.
 - [web/](web/) — nginx site config for the portia host. Not application code.
-- [vscode/](vscode/) — VSCode extension scaffolding for Caspian syntax highlighting.
+- [tools/](tools/) — repo-maintenance scripts.
 - `settings.json` at the repo root is **gitignored**. Any `settings.json` you see locally is a personal config and may legitimately contain hardcoded credentials — do not flag those.
 
 ## Build, run, test
 
-There is no build step. The Lua reference engine runs directly.
+There is no build step. The fresh Lua transpiler and (eventually) engine run directly.
 
-**Run the Lua test suite (currently the only test suite):**
+**Test suite:** currently empty. When the first test lands at `tests/`, run it with:
+
 ```
-lua5.4 tests/caspian/run.lua
+lua5.4 tests/run.lua
 ```
-Run from the repo root — the runner sets `package.path` to resolve `require("caspian")` against `lib/lua/caspian/` and test modules against `tests/caspian/`. Exits 0 on all pass, 1 on any failure. Requires Lua 5.4.
 
-**Use `lua5.4` explicitly, not bare `lua`.** On systems with multiple Lua versions, `lua` may resolve to an older version; `lua5.4` is unambiguous. See [aslan § Lessons learned](https://puck.uno/documentation/development/v1/caspian/aslan#lessons-learned) for context.
+Run from the repo root — the runner sets `package.path` to `./code/lua/?.lua;./tests/?.lua` so bare-name requires (`require("transpiler")`, `require("lexer")`) resolve against the fresh code.
 
-**Always run the full test suite before moving to a new milestone.** No "I'll just check this one file" — run everything. Regressions in unrelated areas are how walking-skeleton development falls apart. The full suite is fast (under a second for current scope); there's no cost reason to skip it.
+**Use `lua5.4` explicitly, not bare `lua`.** On systems with multiple Lua versions, `lua` may resolve to an older version; `lua5.4` is unambiguous.
 
-**Run a single test file:** edit [tests/caspian/run.lua](tests/caspian/run.lua) and comment out the other `require` lines, or `require` the single file from a one-liner with the same `package.path` prefix. There is no built-in single-test filter.
-
-**Test framework** is the minimal `support/runner.lua` + `support/assert.lua` in [tests/caspian/support/](tests/caspian/support/) — `runner.suite(name)`, `runner.test(desc, fn)`, `runner.report()`. Module-global accumulator; don't `require` from multiple processes.
+**Bare-name requires.** The fresh code lives directly under `code/lua/` with no `caspian/` sub-namespace, so `require("lexer")` finds `code/lua/lexer.lua`. There's no `require("caspian.lexer")` in the fresh code — the redundant `caspian.` prefix (this whole repo is Caspian) is dropped.
 
 ## Two-tier testing model
 
 The development plan distinguishes two test tiers and they have different homes — keep them separate:
 
-- **Tier 1 — Lua tests** for the engine and any other Lua-implemented infrastructure (including the Bryton runner itself, once written). Permanent. Lives next to the implementation in `tests/caspian/`.
-- **Tier 2 — Bryton tests** for Caspian-level language behavior. `.casp` files emit Xeme JSON; a Bryton runner walks a directory and aggregates. Arrives at V0.1. Until then, Caspian-level behavior is tested via Lua-host harnesses that stage the parsed tree on `engine.caspianj` and call `engine.run()`, then assert on the return value.
+- **Tier 1 — Lua tests** for the transpiler, engine, and other Lua-implemented infrastructure (including the Bryton runner itself, once written). Permanent. Lives at `tests/`.
+- **Tier 2 — Bryton tests** for Caspian-level language behavior. `.casp` files emit Xeme JSON; a Bryton runner walks a directory and aggregates. Arrives at V0.1. Until then, Caspian-level behavior is tested via Lua-host harnesses that transpile source and hand the resulting CaspianJ to `engine.run()`.
 
-Engine tests never migrate to Bryton.
+Engine and transpiler tests never migrate to Bryton.
 
-## Engine architecture (Lua reference)
+## Transpiler / engine split
 
-Two modules the host touches:
+Two separate components, one interchange format:
 
-- **[lib/lua/caspian/engine.lua](lib/lua/caspian/engine.lua)** — the executor. Host configures via properties (`engine.caspianj`, `engine.std`, `engine.root`) then calls `engine.run()` with no args. Also hosts `engine.parse_caspian(source)` for the source-to-tree pipeline.
-- **[lib/lua/caspian/init.lua](lib/lua/caspian/init.lua)** — lower-level entry points: `caspian.tokenize`, `caspian.parse`, `caspian.dump`, `caspian.null`. Useful for tooling that needs just tokens or just an AST.
+- **Transpiler** — Caspian source → CaspianJ. Standalone module. No knowledge of the engine.
+- **Engine** — takes CaspianJ, executes. Standalone module. No knowledge of Caspian source, of the lexer, of the parser, of any AST that lived inside the transpiler.
+- **CaspianJ** — the only thing they share. That's the whole interchange contract.
 
-```
-Caspian source  →  lexer  →  parser  →  transpiler  →  CaspianJ  →  engine
-                              (engine.parse_caspian)                 (engine.run)
-```
+Public API shape (once written):
 
-Modules under [lib/lua/caspian/](lib/lua/caspian/): `engine.lua`, `lexer.lua`, `parser.lua`, `transpiler.lua`, `json.lua`. (`interpreter.lua` is dead code from the pre-Aslan pipeline; pending removal.) CaspianJ is the canonical runtime format — the engine consumes CaspianJ, never Caspian text. V0.01 hand-writes CaspianJ fixtures and bypasses the source-text path entirely.
+- `caspian.transpile(source)` → CaspianJ Lua table
+- `caspian.engine.run(caspianj)` → executes and returns whatever
 
-Use `caspian.null` (re-exported as `json.null`) for JSON null in CaspianJ tables; Lua `nil` cannot round-trip.
+No convenience method combines them (the archived pipeline had `engine.parse_caspian()`, which crossed the boundary — the engine calling the transpiler internally). If a caller wants source-to-execution, they call `caspian.transpile()` themselves and hand the result to `engine.run()`.
+
+The transpiler's internal structure (lexer, parser, code-gen, AST-or-not) is implementation detail. Only `caspian.transpile(source) → CaspianJ` is exposed.
+
+Use a JSON null sentinel for CaspianJ null values that need to survive round-trips; Lua `nil` cannot.
+
+## Archived reference
+
+The walking-skeleton implementation lives at `archive/`. It was written before recent design decisions, so it does NOT agree with the current spec in many places (e.g., `puts` was a bwc the engine dispatched directly, not parse-time sugar for `%stdout.puts`). Consult it for ideas about **how** to solve implementation problems, not for **what** the semantics should be — the spec is the source of truth. The archived tests are not runnable (their `require("caspian.X")` statements point at paths that no longer exist).
 
 ## Conventions visible across the codebase
 
 These are project-wide, not personal preferences — follow them in any file you edit:
 
 - **Vibecode blocks.** Most documentation sections begin with a `vibecode:` JSON block giving AI-readable context for the surrounding prose. When adding or editing a documentation section, include or update its vibecode block. The development plan explicitly states vibecode blocks are the source of truth where prose disagrees with them.
-- **UNS (Universal Namespace)** for class names: a URL without `https://`, e.g. `foo.com/character`. Built-ins are under `puck.uno/...`.
-- **Reserved pass-through fields** on every Puckverse object: `vibecode`, `comment`, `misc`, `corporate`. Always passed through; never stripped or validated. See [standard-fields](https://puck.uno/documentation/ecoverse/standard-fields).
+- **URL-style class identifiers** for `caspian.uno/*` classes — a URL without `https://`. Built-in and first-party downloadable classes use `caspian.uno/...`. (The historical "UNS" acronym is dropped; do NOT introduce new `puck.uno/x/y` class identifiers.)
 - **Module headers in Lua code** are JSON `--[[ {...} ]]` blocks describing role, pipeline, exports, and dependencies. Per-function headers describe `in`/`out`/`note`. Match this style in new Lua code.
 - **Field names use underscores; file names use dashes.** `fail_fast` in JSON, `foo-bar.md` on disk.
 - **MIT license** for any code distributed through the ecosystem.
@@ -120,7 +125,7 @@ When Miko says **"audit"**, **"run an audit"**, **"audit consistency"**, **"upda
 
 - Broken cross-references (links to files or anchors that 404).
 - Stale vibecode `role` fields (mentions of paths that have moved or been renamed).
-- **Contradictions across docs.** Any load-bearing claim in one doc that disagrees with a claim in another. This is broader than "which doc owns this concept" — it includes cases like doc A saying a surface is default-granted while doc B says default-deny, an overview doc saying V1 has two roles while a detail doc references a third role as if it exists, one doc saying a field is required and another treating it as optional, etc. **Method:** read the overview-level docs (concepts.md, roles/index.md, chain/index.md, engine/index.md, pipes/faucets/index.md, pipes/sinks/index.md, bootstrap/index.md, initial-state/index.md, global-methods/index.md) first to note the load-bearing claims, then spot-check the detail docs (chain/methods/, engine/, roles/) for statements that contradict.
+- **Contradictions across docs.** Any load-bearing claim in one doc that disagrees with a claim in another. This is broader than "which doc owns this concept" — it includes cases like doc A saying a surface is default-granted while doc B says default-deny, an overview doc saying V1 has two roles while a detail doc references a third role as if it exists, one doc saying a field is required and another treating it as optional, etc. **Method:** read the overview-level docs (concepts.md, roles/index.md, chain/index.md, engine/index.md, plumbing/index.md, bootstrap/index.md, initial-state/index.md, global-methods/index.md) first to note the load-bearing claims, then spot-check the detail docs (chain/methods/, engine/, roles/) for statements that contradict.
 - Stale wording (old file names, renamed concepts, removed sections).
 - Single-source-of-truth violations (two docs both DEFINING the same concept rather than one defining and the other linking — distinct from contradictions, which are two docs disagreeing about the concept).
 - Outbound references (see below).
@@ -165,7 +170,6 @@ The format spec that miko.json follows is at [formatting/](https://puck.uno/docu
 
 - **No nanny code.** The system does not block legitimate developer choices for paternalism. Safe defaults and security guarantees stay; "you can't because I think you shouldn't" is rejected. See [overview](https://puck.uno/documentation/overview) "No Nanny Code".
 - **Caspian is single-threaded by default.** Forking is an opt-in, engine-granted feature; do not assume concurrency primitives in the language.
-- **Mikobase is always a live process**, not a passive file.
-- **Libraries are cached, not installed.** No package manager, no lockfile, no manifest — libraries are referenced by UNS and resolved on demand through a provider chain.
+- **Libraries are cached, not installed.** No package manager, no lockfile, no manifest — libraries are referenced by URL and resolved on demand through a provider chain.
 - **Surface conflicts; don't silently pick a winner.** When spec and code disagree, or two specs disagree, flag both sides and ask which way to resolve. There is no universal "spec wins" or "code wins" rule. The one documented exception is the development plan: vibecode blocks win over surrounding prose.
 - **Don't formalize emerging conventions prematurely.** Describe informal patterns descriptively ("current usage clusters around…"), not prescriptively, until they've earned a rule.

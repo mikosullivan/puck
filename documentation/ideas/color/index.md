@@ -45,7 +45,7 @@ $translucent_red = %['puck.uno/color'].new('#ff0000ac')
 $red = %['puck.uno/color'].new('red')
 $purple = %['puck.uno/color'].new('rebeccapurple')
 
-# UNS-as-name — every named color is its own UNS-addressable instance
+# URL-as-name — every named color is its own URL-addressable instance
 $red = %['puck.uno/color/red']
 $purple = %['puck.uno/color/rebeccapurple']
 ```

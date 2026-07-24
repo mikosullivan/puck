@@ -61,7 +61,7 @@ A skill — whether served at a URL or embedded inline — is a vibecode documen
 | `when_to_use` | prose | The conditions under which the agent should bring this skill to bear on an issue. |
 | `process` | array of prose | Ordered sequence of steps the agent should follow when applying this skill. Each entry is one step. |
 | `principles` | hash of prose | Named heuristics, thresholds, and reasoning guides the agent should keep in mind. Each key is the principle's name; each value describes it. |
-| `tools_to_use` | array of UNS strings | Recommended tools, libraries, or APIs (by UNS) this skill expects the agent to consult. |
+| `tools_to_use` | array of URL strings | Recommended tools, libraries, or APIs (by URL) this skill expects the agent to consult. |
 | `examples` | array of hashes | Illustrative cases. Each example is a hash with whatever fields the skill author finds clarifying (`input`, `agent_output`, `notes`, etc.). |
 | `out_of_scope` | prose | What this skill explicitly does NOT cover, so the agent knows when to reach for a different skill. |
 

@@ -130,6 +130,6 @@ Reopening requires either: the leading direction above gets refined enough to la
 
 ## Related
 
-- [garbage-collection.md § on_close](../requirements/caspian/garbage-collection.md#on-close) — V1 `on_close` spec (unicast).
-- [engine-invoked-methods.md](../requirements/caspian/engine-invoked-methods.md) — cheat sheet of engine-invoked methods, all unicast in V1.
+- [garbage-collection.md § on_close](../requirements/garbage-collection.md#on-close) — V1 `on_close` spec (unicast).
+- [engine-invoked-methods.md](../requirements/engine-invoked-methods.md) — cheat sheet of engine-invoked methods, all unicast in V1.
 - GitHub issue [#343](https://github.com/mikosullivan/puck/issues/343) — earlier closure resolved as "multicast model adopted." Superseded by this deferral.

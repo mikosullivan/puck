@@ -10,7 +10,7 @@
 }}
 ~~~
 
-**Included in V1.** All design decisions on this page are now spec'd at [built-in-classes/object/methods/ § `.tap`](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#tap). This brainstorm is kept as a design record; nothing here is still under consideration.
+**Included in V1.** All design decisions on this page are now spec'd at [built-in-classes/object/methods/ § `.tap`](https://puck.uno/documentation/requirements/built-in-classes/object/methods/#tap). This brainstorm is kept as a design record; nothing here is still under consideration.
 
 Ruby's `tap` pattern: receive a value in a block, run side-effecting
 logic on it, return the value unchanged so the chain continues.
@@ -78,4 +78,4 @@ inside the block, you want the actual value.
 ## Status
 
 **Included in V1.** Placement and block semantics settled 2026-05-27;
-folded into the [object-methods spec](https://puck.uno/documentation/requirements/caspian/built-in-classes/object/methods/#tap) 2026-07-05.
+folded into the [object-methods spec](https://puck.uno/documentation/requirements/built-in-classes/object/methods/#tap) 2026-07-05.

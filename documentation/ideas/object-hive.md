@@ -73,7 +73,7 @@ Multi-user object-oriented environments where every room, thing, and player is a
 These are the most familiar "objects waiting to be triggered" pattern most developers know.
 
 - **Cocoa / AppKit** (Objective-C / Swift) — every UI element is a responder in a chain; events bubble. NotificationCenter for global pub-sub.
-- **Qt** — signals and slots: objects emit signals; other objects connect slots. Strikingly close to the [events spec](../requirements/caspian/events/) we already settled, plus a cooperative main loop.
+- **Qt** — signals and slots: objects emit signals; other objects connect slots. Strikingly close to the [events spec](../requirements/events/) we already settled, plus a cooperative main loop.
 - **Tk / Tcl** — `bind` widgets to commands. Tiny, explicit.
 
 ### Game-engine-style ECS / scene-graph
@@ -90,7 +90,7 @@ Single-threaded, cooperative, server-oriented, server-as-object-hive — that co
 
 - **MOO** gives the "the program is a world" framing. A LambdaMOO server holds a graph of objects (rooms, items, players); inputs from sockets dispatch to verbs on objects. The program literally is the world; you don't write `def main():` because the program IS the running state. This matches the "Caspian-as-Mikobase-mirror" intuition very closely — a Mikobase IS a running collection of objects, and so is a MOO.
 - **Erlang** gives the cleaner mechanics — message-passing primitives, mailboxes, `receive`. Cooperative scheduling that fits the "no threads" constraint. The actor model's "things waiting to be triggered" maps directly onto what the vision describes.
-- **Qt's signals and slots** is interesting as a third reference, because the [events system](../requirements/caspian/events/) already settled in Caspian is essentially that pattern. The infrastructure exists; what's missing is the "things are alive and waiting" framing on top.
+- **Qt's signals and slots** is interesting as a third reference, because the [events system](../requirements/events/) already settled in Caspian is essentially that pattern. The infrastructure exists; what's missing is the "things are alive and waiting" framing on top.
 
 The combination would be: each Caspian object can broadcast events and listen for them (the existing event system handles this); a long-running server program drains a queue of work using the cooperative event-loop pattern (see [engine-events.md](caspian/engine-events.md)); and the server's "world" is the graph of live objects that receive and react to incoming inputs.
 

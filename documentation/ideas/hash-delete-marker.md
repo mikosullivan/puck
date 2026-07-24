@@ -92,5 +92,5 @@ null-as-typed-thing model.
 
 Not in v1. Filed for reconsideration when either meta-hash
 genuinely needs it (more than `%chain`'s security barrier, which
-can build a fresh chain instead — see [meta-hash.md](../requirements/caspian/built-in-classes/meta-hash.md))
+can build a fresh chain instead — see [meta-hash.md](../requirements/built-in-classes/meta-hash.md))
 or another cascading-config use case surfaces.

@@ -9,7 +9,7 @@
 	"status": "deferred_from_v1_revisit_later",
 	"v1_decision_date": "2026-06-03",
 	"v1_decision_rationale": "juice_not_worth_squeeze_lifecycle_underspecified",
-	"related_spec": "https://puck.uno/documentation/requirements/caspian/engine/manifest"
+	"related_spec": "https://puck.uno/documentation/requirements/engine/manifest"
 }}
 ~~~
 
@@ -75,6 +75,6 @@ Until one of those forcing functions appears, the deferral holds.
 
 ## See also
 
-- [`%engine.manifest`](https://puck.uno/documentation/requirements/caspian/engine/manifest) — the runtime report half, which stays in V1.0.
-- [Caspian versioning](https://puck.uno/documentation/requirements/caspian/versioning/) — how a program selects which version of a library to look up. Adjacent to the constraints-file concern.
-- [Downloads / `%puck` sources](https://puck.uno/documentation/requirements/caspian/downloads/) — the fetch-and-cache layer where library version choices manifest at runtime.
+- [`%engine.manifest`](https://puck.uno/documentation/requirements/engine/manifest) — the runtime report half, which stays in V1.0.
+- [Caspian versioning](https://puck.uno/documentation/requirements/versioning/) — how a program selects which version of a library to look up. Adjacent to the constraints-file concern.
+- [Downloads / `%puck` sources](https://puck.uno/documentation/requirements/downloads/) — the fetch-and-cache layer where library version choices manifest at runtime.

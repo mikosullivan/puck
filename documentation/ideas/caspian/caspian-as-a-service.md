@@ -92,7 +92,7 @@ Service" as a placeholder, not a final name.
   `run_source` with the request body as the source and a tightly-scoped
   `env` for stdout capture. The host happens to be an HTTP request
   instead of a CLI invocation.
-- **Role model** ([roles.md](../../requirements/caspian/roles.md)) handles the trust
+- **Role model** ([roles.md](../../requirements/roles.md)) handles the trust
   question. The server decides what capabilities the submitted script
   gets — "user + stdout, that's it" for a public playground; "user +
   stdout + per-session mikobase" for an authenticated session; etc.
@@ -102,7 +102,7 @@ Service" as a placeholder, not a final name.
   across multiple script submissions. A session is a worldlet (likely
   non-temporal); each script submission is a small interaction with
   it.
-- **Blockchain** ([blockchain.md](../../requirements/caspian/blockchain/index.md))
+- **Blockchain** ([blockchain.md](../../requirements/blockchain/index.md))
   provides client identity if the service needs to authenticate, bill,
   or audit.
 
@@ -119,7 +119,7 @@ Service" as a placeholder, not a final name.
 - **Resource limits.** CPU time, memory, network, disk. The server
   needs guardrails to avoid abuse — likely an alarm + per-request
   timeout (per the `%utils.timeout` machinery in
-  [caspian-runtime.md](../../requirements/caspian/lucy/index.md)).
+  [caspian-runtime.md](../../requirements/lucy/index.md)).
 - **Statelessness vs sessions.** Each request a fresh engine, or
   long-lived sessions with persistent context (mikobase-backed)?
   Probably both, picked per endpoint.
@@ -148,7 +148,7 @@ Service" as a placeholder, not a final name.
 
 If the service is also a playground, the *interesting* part is what
 the submitted scripts get to do. Each capability is a role grant per
-[roles.md](../../requirements/caspian/roles.md); the server chooses what to grant per
+[roles.md](../../requirements/roles.md); the server chooses what to grant per
 endpoint (or per user, or per tier).
 
 ### Curated datasets (read-only mikobases)
@@ -198,7 +198,7 @@ This is where playground becomes *project*.
 Caspian-flavored uniquely because the role model + mikobase +
 capability system makes safe coordination easy:
 
-- **Shared scratch mikobase** — write to a well-known UNS, others
+- **Shared scratch mikobase** — write to a well-known URL, others
   read.
 - **Pub/sub** — a script registers as a listener; others emit events.
   Implemented over role grants.

@@ -285,7 +285,7 @@ that range is a research project.
 
 ### Time intervals as first-class
 
-**Decided — landed in [time.md § Time spans](../requirements/caspian/time.md#time-spans).**
+**Decided — landed in [time.md § Time spans](../requirements/time.md#time-spans).**
 EzDate's TODO mentioned wanting a "time interval" class for "2 days, 3 hours,
 18 seconds." Caspian ships one as a peer to the point-in-time class. Modern
 date libraries (Java's `Duration`, Python's `timedelta`, Go's

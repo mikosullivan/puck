@@ -31,7 +31,7 @@ method $alice.salute()
 end
 ~~~
 
-`@name` means `$alice`'s bucket. No surrounding-scope capture. Dispatches normally. Identical to a class method in every respect except that it lives on one object instead of every instance of a class. See [built-in-classes/object § method](../requirements/caspian/built-in-classes/object.md#method).
+`@name` means `$alice`'s bucket. No surrounding-scope capture. Dispatches normally. Identical to a class method in every respect except that it lives on one object instead of every instance of a class. See [built-in-classes/object § method](../requirements/built-in-classes/object.md#method).
 
 ## What was lost
 

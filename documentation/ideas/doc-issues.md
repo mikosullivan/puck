@@ -28,7 +28,7 @@ found so far.
     model (`puck.uno/robinson/page`, `puck.uno/sammy`).
 - **`overview.md`** — `%chain.cutoff` reference replaced with the
   puck-object cutoff window. Cross-reference to [puck.md](../requirements/puck/index.md)
-  added alongside [versioning](../requirements/caspian/versioning/).
+  added alongside [versioning](../requirements/versioning/).
 
 ---
 

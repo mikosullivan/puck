@@ -237,7 +237,7 @@ Padding to 4 KiB blocks costs ≤4 KiB per file plus the I/O to write it. Neglig
 
 **Phase 5: spec migration.**
 
-- The encrypted-tmp story moves out of `ideas/` into `requirements/caspian/chain/methods/tmp.md` as the canonical behavior.
+- The encrypted-tmp story moves out of `ideas/` into `requirements/chain/methods/tmp.md` as the canonical behavior.
 - Document the threat model and residual risks in that canonical doc.
 - Update `%tmp` user-facing docs to mention the security guarantee.
 
@@ -249,10 +249,10 @@ Padding to 4 KiB blocks costs ≤4 KiB per file plus the I/O to write it. Neglig
 
 - **Filesystem implementation detail.** Should the encryption layer be at the Caspian-class level (dirjail/file classes do the crypto) or at a lower level (libsodium-backed file wrapper that the dirjail uses)? Lower-level is more reusable for other Caspian filesystem layers; class-level keeps the security knob visible in the spec for `%tmp` specifically. I lean lower-level — the dirjail's filesystem class wraps an encryption-aware backend that other surfaces can also use.
 
-- **Test mode.** Tests need to be able to inspect what got written. The `test` role (per [roles/index.md](../../requirements/caspian/roles/index.md)) could legitimately get the decryption capability for the dirjail it owns. Aligns with the broader "test gets things production code doesn't" framing.
+- **Test mode.** Tests need to be able to inspect what got written. The `test` role (per [roles/index.md](../../requirements/roles/index.md)) could legitimately get the decryption capability for the dirjail it owns. Aligns with the broader "test gets things production code doesn't" framing.
 
 ## See also
 
-- [`%tmp`](../../requirements/caspian/chain/methods/tmp) — the current `%tmp` spec (unencrypted).
-- [`%chain.encryption`](https://puck.uno/documentation/requirements/caspian/chain/methods/encryption) — the Ed25519/SHA encryption primitives spec (does NOT include symmetric primitives; this proposal would add ChaCha20-Poly1305 and AES-SIV to that surface or to a lower-level crypto layer).
-- [`%random`](../../requirements/caspian/chain/methods/random) — for libsodium-backed key/nonce generation, already specified.
+- [`%tmp`](../../requirements/chain/methods/tmp) — the current `%tmp` spec (unencrypted).
+- [`%chain.encryption`](https://puck.uno/documentation/requirements/chain/methods/encryption) — the Ed25519/SHA encryption primitives spec (does NOT include symmetric primitives; this proposal would add ChaCha20-Poly1305 and AES-SIV to that surface or to a lower-level crypto layer).
+- [`%random`](../../requirements/chain/methods/random) — for libsodium-backed key/nonce generation, already specified.

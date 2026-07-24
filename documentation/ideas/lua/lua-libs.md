@@ -37,7 +37,7 @@ Hybrid: pure Lua by default, plus a small curated set of pre-built C-extension b
 
 ## Where the pre-built binaries are served
 
-Same basis as the [`caspian` binary itself](../../requirements/caspian/installation/): per-arch builds under `/download/linux/<arch>/`, fronted by the same dispatcher pattern. One release infrastructure, one convention.
+Same basis as the [`caspian` binary itself](../../requirements/installation/): per-arch builds under `/download/linux/<arch>/`, fronted by the same dispatcher pattern. One release infrastructure, one convention.
 
 - **URL scheme.** `/download/linux/<arch>/lua-libs/<lib>` (exact suffix TBD).
 - **Dispatcher.** Extends `arch.casp` (or a sibling script) to accept a library identifier along with OS/arch — same 302-redirect model.
