@@ -620,3 +620,25 @@ trailing comma allowed only inside
 #
 # name: trailing comma in expression-position paren-less bwc call
 #====================================================================
+
+
+#====================================================================
+# name: trailing comma inside a function body with `end` on the next line
+# The trailing-comma continuation rule requires MORE content on the
+# following line — `end` is a construct closer, not continuation content,
+# so `&foo 'x',` inside a function body still raises.
+#
+
+#--- code -----------------------------------------------------------
+function()
+	&foo 'x',
+end
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+trailing comma allowed only inside
+#--------------------------------------------------------------------
+
+#
+# name: trailing comma inside a function body with `end` on the next line
+#====================================================================

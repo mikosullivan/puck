@@ -12,6 +12,85 @@ local M = {}
 
 local normalize_atom
 local desugar_pipe
+local collapse_amp_call
+
+-- An object atom is considered a "line meta" (statement-level line annotation
+-- with no runtime effect) when its sole key is `line`. Kwargs / envelopes /
+-- other atoms may also carry a `line` field but always have additional keys.
+local function is_line_meta(v)
+	if type(v) ~= "table" or v.line == nil then
+		return false
+	end
+
+	for k in pairs(v) do
+		if k ~= "line" then
+			return false
+		end
+	end
+
+	return true
+end
+
+--[[
+{
+	"in":  "a call array beginning with an `{amp: X}` atom — `[{amp: X}, ...args, {kw:...}?, {line:N}?]`",
+	"out": "the equivalent method-call array `[recv, \"call\", envelope?, {line:N}?]`. recv is `{var: NAME}` when X is a bareword string; recv is X itself (already an atom) when X is a value-atom (from `&(EXPR)` / `&$var`)"
+}
+]]
+collapse_amp_call = function(v)
+	local amp = v[1]
+	local recv
+
+	if type(amp.amp) == "string" then
+		recv = {var = amp.amp}
+
+		if amp.line then recv.line = amp.line end
+	else
+		recv = amp.amp
+	end
+
+	-- Peel off the optional trailing `{line: N}` meta (statement-position line
+	-- annotation) so it stays outside the envelope, matching `$foo.call(...)`.
+	local last = #v
+	local line_meta
+
+	if last >= 2 and is_line_meta(v[last]) then
+		line_meta = v[last]
+		last = last - 1
+	end
+
+	-- Peel off the optional kwargs entry `{kw: [...]}` (the ONLY per-arg atom
+	-- that carries the `kw` key).
+	local kw_atom
+
+	if last >= 2 and type(v[last]) == "table" and v[last].kw then
+		kw_atom = v[last]
+		last = last - 1
+	end
+
+	local positionals = {}
+
+	for i = 2, last do
+		table.insert(positionals, normalize_atom(v[i]))
+	end
+
+	local envelope
+
+	if #positionals > 0 or kw_atom then
+		envelope = {args = positionals}
+
+		if kw_atom then
+			envelope.kw = normalize_atom(kw_atom).kw
+		end
+	end
+
+	local out = {normalize_atom(recv), "call"}
+
+	if envelope then table.insert(out, envelope) end
+	if line_meta then table.insert(out, line_meta) end
+
+	return out
+end
 
 --[[
 {
@@ -121,7 +200,27 @@ normalize_atom = function(v)
 	-- concern that norm doesn't statically resolve here (spec says once you
 	-- enter a `|&` chain, subsequent pipes stay null-safe — that's runtime).
 	if (v.op == "|" or v.op == "|&") and v.left ~= nil and v.right ~= nil then
-		return desugar_pipe(normalize_atom(v.left), v.right)
+		local piped = desugar_pipe(normalize_atom(v.left), v.right)
+
+		-- Pipe-desugared bareword-amp shape lands as `[{amp: ...}, ...]`;
+		-- fold it through the same amp-collapse so pipe-invoked callables
+		-- share the method-call norm shape with direct `&fn args` calls.
+		if type(piped[1]) == "table" and piped[1].amp ~= nil then
+			return collapse_amp_call(piped)
+		end
+
+		return piped
+	end
+
+	-- Amp-call row — `[{amp: X}, ...args, {kw:...}?, {line:N}?]` collapses to
+	-- the method-call shape `[recv, "call", envelope?, {line:N}?]`. `&foo`,
+	-- `&$var`, and `&(EXPR)` all route through the same runtime dispatch as
+	-- an explicit `.call(...)`, so norm CaspJ merges them into one shape.
+	-- Bareword commands (`{bwc: name}`) are NOT collapsed — a bwc is a
+	-- context-resolved command (`field`, `puts`, ...) rather than "invoke
+	-- this callable", so it keeps its distinct atom in norm.
+	if #v > 0 and type(v[1]) == "table" and v[1].amp ~= nil then
+		return collapse_amp_call(v)
 	end
 
 	-- Array-shaped (statement row, method-call row, body list): recurse and

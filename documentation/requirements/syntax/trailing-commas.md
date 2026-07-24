@@ -5,7 +5,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_trailing_commas",
-	"role": "spec for where a trailing comma is legal in Caspian source. Rule: a trailing comma is allowed ONLY when the comma-separated list is delimited by brackets (`[]`), braces (`{}`), or parens (`()`). Paren-less call positions — bareword-call args (`field :name, class: :string`), bareword-amp statement calls (`&foo 1, 2`), and pipe-RHS paren-less calls (`| &sort 'asc'`) — reject a trailing comma and raise `trailing comma allowed only inside \\`[]\\`, \\`{}\\`, or \\`()\\``. This is a deliberate scope limit: allowing it everywhere invites the parser to keep swallowing 'nothing between commas' as valid, which then hides real typos. Delimiters mark the developer's explicit boundary; without them, a stray comma is more likely a mistake than a formatting choice.",
+	"role": "spec for where a trailing comma is legal in Caspian source. Rule: a trailing comma is allowed ONLY when the comma-separated list is delimited by brackets (`[]`), braces (`{}`), or parens (`()`). Paren-less call positions — bareword-call args (`field :name, class: :string`), bareword-amp statement calls (`&foo 1, 2`), and pipe-RHS paren-less calls (`| &sort 'asc'`) — reject a trailing comma and raise `trailing comma allowed only inside \\`[]\\`, \\`{}\\`, or \\`()\\``. Separate but related: a comma at end-of-line followed by more source on the next line is a line-continuation signal (same as trailing `|` / `|&`), not a trailing comma — the parser folds the next line into the same statement, so a paren-less multi-line arg list works cleanly. Delimiters mark the developer's explicit boundary; without them, a stray comma with nothing after is more likely a mistake than a formatting choice.",
 	"audience": "developers writing Caspian; parser implementers deciding when to accept vs. reject a comma-terminated list"
 }}
 ~~~
@@ -41,6 +41,23 @@ The fix in each case is to add the delimiter you meant:
 field(:name, class: :string,)
 $x = &foo | &sort('asc',)
 ~~~
+
+## Comma-plus-newline is a line-continuation signal
+
+A comma at end-of-line followed by more source on the next line **is not a trailing comma** — the parser reads it as a line-continuation signal, folding the next line into the same statement. Programmers already know this from most languages: a line ending in `,` says "I'm not done." Same shape as the trailing `|` / `|&` pipe-continuation rule.
+
+Both forms below parse identically:
+
+~~~caspian
+&foo 'x',
+	&bar
+~~~
+
+~~~caspian
+&foo 'x', &bar
+~~~
+
+The trailing-comma error only fires when the comma really is the last thing — no further content on any subsequent line. `&foo 'x',` as the whole statement raises; `&foo 'x',\n\t&bar` reads as one call with two args.
 
 ## Rationale
 

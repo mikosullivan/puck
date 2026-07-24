@@ -1047,31 +1047,69 @@ parse_expression = function(s)
 	end
 
 	-- Generalized `&(EXPR)` — the ampersand invokes any expression that produces
-	-- a callable. Two atom-shape variants:
+	-- a callable. Three atom-shape variants:
 	--   * bareword name (`&foo`) — `{amp: "foo"}` (existing sugar shape)
 	--   * anything else (`&(EXPR)`) — `{amp: <expr-atom>}`
-	-- Both shapes act as a callable atom at position 1 of a call array.
-	local bwc_paren_inner, bwc_paren_rest = s:match("^&(%b())(.*)$")
+	--   * variable shorthand (`&$var`) — sugar for `&($var)`, same `{amp: {var}}`
+	-- All three shapes act as a callable atom at position 1 of a call array.
+	do
+		local callable_atom, amp_rest
 
-	if bwc_paren_inner then
-		local inner = trim(bwc_paren_inner:sub(2, -2))
+		local paren_inner, paren_rest = s:match("^&(%b())(.*)$")
 
-		if inner == "" then
-			error("transpile: `&(...)` needs an expression: " .. s)
+		if paren_inner then
+			local inner = trim(paren_inner:sub(2, -2))
+
+			if inner == "" then
+				error("transpile: `&(...)` needs an expression: " .. s)
+			end
+
+			callable_atom = parse_expression(inner)
+			amp_rest = paren_rest
+		else
+			-- `&$name` (paren-less variable-form generalized amp). Emitted as
+			-- `{amp: {var: name}}` — same shape as `&($name)`. Held out of the
+			-- bwc-name branch below so `&foo` (bareword) stays distinct in full
+			-- CaspJ; normalize collapses both to the method-call shape.
+			local var_name, var_rest = s:match("^&%$([%w_]+)(.*)$")
+
+			if var_name then
+				callable_atom = attach_line({var = var_name})
+				amp_rest = var_rest
+			end
 		end
 
-		local callable_atom = parse_expression(inner)
-		local rest = trim(bwc_paren_rest)
-		local out = {attach_line({amp = callable_atom})}
+		if callable_atom then
+			local rest = trim(amp_rest)
+			local out = {attach_line({amp = callable_atom})}
 
-		if rest == "" then
-			return out
+			if rest == "" then
+				return out
 
-		elseif rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
-			local args_str = trim(rest:sub(2, -2))
+			elseif rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
+				local args_str = trim(rest:sub(2, -2))
 
-			if args_str ~= "" then
-				local positionals, kwargs = parse_call_args(args_str, "&(...)", true)
+				if args_str ~= "" then
+					local positionals, kwargs = parse_call_args(args_str, "&(...)", true)
+
+					for _, p in ipairs(positionals) do
+						table.insert(out, p)
+					end
+
+					if #kwargs > 0 then
+						table.insert(out, {kw = kwargs})
+					end
+				end
+
+				return out
+
+			elseif type(callable_atom) == "table" and callable_atom.var
+				and rest ~= "" and rest:sub(1, 1) ~= "("
+			then
+				-- Paren-less args on `&$var` shorthand only (not on `&(EXPR)` —
+				-- that keeps its parens-only args rule since the inner expr can
+				-- itself contain commas).
+				local positionals, kwargs = parse_call_args(rest, "&$var", false)
 
 				for _, p in ipairs(positionals) do
 					table.insert(out, p)
@@ -1080,9 +1118,9 @@ parse_expression = function(s)
 				if #kwargs > 0 then
 					table.insert(out, {kw = kwargs})
 				end
-			end
 
-			return out
+				return out
+			end
 		end
 	end
 
@@ -1169,6 +1207,41 @@ parse_expression = function(s)
 			end
 
 			return {ec_recv, ec_method}
+		end
+	end
+
+	-- Method call as expression, paren-less: `recv.method arg1, arg2`. Mirrors
+	-- the parens form above. pcall guards a failed args-parse (e.g. the tail is
+	-- actually an operator continuation like `$foo.bar > 5`) so we fall through
+	-- to the attribute-access / operator-parser paths. Trailing-comma errors
+	-- re-raise instead of falling through — same pattern as the expression-
+	-- position `&fn args` handler further up. The separator is space-or-tab
+	-- ONLY (not `%s+` which would swallow newlines) — an `if <cond>\n<body>`
+	-- construct whose cond ends in a `.method?` must NOT eat body content.
+	if ec_recv then
+		local ec_pl_method, ec_pl_tail = ec_after:match("^%.([%w_]+%??)[ \t]+(.+)$")
+
+		if ec_pl_method and ec_pl_tail:sub(1, 1) ~= "."
+			and ec_pl_tail:sub(1, 1) ~= "["
+		then
+			local ok, positionals, kwargs =
+				pcall(parse_call_args, ec_pl_tail, ec_pl_method, false)
+
+			if not ok and type(positionals) == "string"
+				and positionals:find("trailing comma allowed only inside", 1, true)
+			then
+				error(positionals)
+			end
+
+			if ok then
+				local envelope = {args = positionals}
+
+				if #kwargs > 0 then
+					envelope.kw = kwargs
+				end
+
+				return {ec_recv, ec_pl_method, attach_line(envelope)}
+			end
 		end
 	end
 
@@ -1496,18 +1569,34 @@ desugar_pipe = function(lhs_atom, rhs_str, op)
 		return {op = op, left = lhs_atom, right = {{amp = bwc_bare}}}
 	end
 
-	-- LHS | &(EXPR) — generalized ampersand: invoke the callable produced by
-	-- the parenthesized expression. Trailing args (parens or paren-less) are
-	-- allowed; the piped LHS routes into first-positional at normalize time.
-	local paren_inner, paren_rest = rhs_str:match("^&(%b())(.*)$")
+	-- LHS | &(EXPR) or LHS | &$var — generalized ampersand: invoke the callable
+	-- produced by the parenthesized expression (or by the variable slot for the
+	-- shorthand form). Trailing args (parens or paren-less) allowed; the piped
+	-- LHS routes into first-positional at normalize time.
+	do
+		local callable_atom, amp_rest
 
-	if paren_inner then
-		local inner = trim(paren_inner:sub(2, -2))
+		local paren_inner, paren_rest = rhs_str:match("^&(%b())(.*)$")
 
-		if inner ~= "" then
-			local callable_atom = parse_expression(inner)
+		if paren_inner then
+			local inner = trim(paren_inner:sub(2, -2))
+
+			if inner ~= "" then
+				callable_atom = parse_expression(inner)
+				amp_rest = paren_rest
+			end
+		else
+			local var_name, var_rest = rhs_str:match("^&%$([%w_]+)(.*)$")
+
+			if var_name then
+				callable_atom = attach_line({var = var_name})
+				amp_rest = var_rest
+			end
+		end
+
+		if callable_atom then
 			local rhs_call = {attach_line({amp = callable_atom})}
-			local rest = trim(paren_rest)
+			local rest = trim(amp_rest)
 
 			if rest == "" then
 				return {op = op, left = lhs_atom, right = rhs_call}
@@ -1525,6 +1614,19 @@ desugar_pipe = function(lhs_atom, rhs_str, op)
 					if #kwargs > 0 then
 						table.insert(rhs_call, {kw = kwargs})
 					end
+				end
+
+				return {op = op, left = lhs_atom, right = rhs_call}
+
+			elseif type(callable_atom) == "table" and callable_atom.var then
+				local positionals, kwargs = parse_call_args(rest, "&$var", false)
+
+				for _, p in ipairs(positionals) do
+					table.insert(rhs_call, p)
+				end
+
+				if #kwargs > 0 then
+					table.insert(rhs_call, {kw = kwargs})
 				end
 
 				return {op = op, left = lhs_atom, right = rhs_call}
@@ -1778,16 +1880,31 @@ local function transpile_statement(stmt)
 
 	-- Generalized `&(EXPR)` at statement position — call the callable produced
 	-- by EXPR. Mirrors the parse_expression branch. Args (parens or paren-less)
-	-- may follow.
-	local paren_inner_stmt, paren_rest_stmt = stmt:match("^&(%b())(.*)$")
+	-- may follow. Also handles `&$var args` variable shorthand.
+	do
+		local callable_atom, amp_rest
 
-	if paren_inner_stmt then
-		local inner = trim(paren_inner_stmt:sub(2, -2))
+		local paren_inner_stmt, paren_rest_stmt = stmt:match("^&(%b())(.*)$")
 
-		if inner ~= "" then
-			local callable_atom = parse_expression(inner)
+		if paren_inner_stmt then
+			local inner = trim(paren_inner_stmt:sub(2, -2))
+
+			if inner ~= "" then
+				callable_atom = parse_expression(inner)
+				amp_rest = paren_rest_stmt
+			end
+		else
+			local var_name, var_rest = stmt:match("^&%$([%w_]+)(.*)$")
+
+			if var_name then
+				callable_atom = attach_line({var = var_name})
+				amp_rest = var_rest
+			end
+		end
+
+		if callable_atom then
 			local stmt_ast = {{amp = callable_atom}}
-			local rest = trim(paren_rest_stmt)
+			local rest = trim(amp_rest)
 			local rest_bracketed = false
 
 			if rest:sub(1, 1) == "(" and rest:sub(-1) == ")" then
@@ -1796,7 +1913,9 @@ local function transpile_statement(stmt)
 			end
 
 			if rest ~= "" then
-				local positionals, kwargs = parse_call_args(rest, "&(...)", rest_bracketed)
+				local ctx = (type(callable_atom) == "table" and callable_atom.var
+					and not rest_bracketed) and "&$var" or "&(...)"
+				local positionals, kwargs = parse_call_args(rest, ctx, rest_bracketed)
 
 				for _, p in ipairs(positionals) do
 					table.insert(stmt_ast, p)
@@ -2335,12 +2454,15 @@ local function scan_content_end(s, start_i)
 				return save
 			end
 
-			-- Trailing-pipe continuation: if the content just before the
-			-- whitespace run ends with `|` or `|&`, the statement continues on
-			-- the next line and we don't split. Covers `$r = &foo |\n\t&bar`
-			-- and `$s = &foo |&\n\t&bar` line-wrapping. `||` and `&&` are
-			-- logical connectives, not pipes — those don't continue lines
+			-- Trailing-pipe / trailing-comma continuation: if the content just
+			-- before the whitespace run ends with `|`, `|&`, or `,`, the
+			-- statement continues on the next line and we don't split. Covers
+			-- `$r = &foo |\n\t&bar`, `$s = &foo |&\n\t&bar`, and paren-less
+			-- multi-line arg lists like `&foo 'x',\n\t&bar`. `||` and `&&`
+			-- are logical connectives, not pipes — those don't continue lines
 			-- this way, so we exclude by checking the char two positions back.
+			-- A bare trailing comma at end-of-input (nothing to continue into)
+			-- is left for parse_call_args to reject as a syntax error.
 			if has_newline and i > 1 then
 				local prev = s:sub(i - 1, i - 1)
 
@@ -2352,6 +2474,9 @@ local function scan_content_end(s, start_i)
 					end
 
 				elseif prev == "&" and i > 2 and s:sub(i - 2, i - 2) == "|" then
+					goto continue_scan_no_split
+
+				elseif prev == "," then
 					goto continue_scan_no_split
 				end
 			end

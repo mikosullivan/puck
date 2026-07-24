@@ -554,9 +554,10 @@ $local_var = 10
 [
 	[
 		{
-			"amp": "bare_call",
-			"line": 1
-		}
+			"line": 1,
+			"var": "bare_call"
+		},
+		"call"
 	]
 ]
 #--------------------------------------------------------------------
@@ -595,11 +596,16 @@ $local_var = 10
 [
 	[
 		{
-			"amp": "bare_call"
+			"var": "bare_call"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": 10
+			"args": [
+				{
+					"line": 1,
+					"value": 10
+				}
+			]
 		},
 		{
 			"line": 1
@@ -636,9 +642,10 @@ $local_var = 10
 [
 	[
 		{
-			"amp": "bare_call",
-			"line": 1
-		}
+			"line": 1,
+			"var": "bare_call"
+		},
+		"call"
 	]
 ]
 #--------------------------------------------------------------------
@@ -677,11 +684,16 @@ $local_var = 10
 [
 	[
 		{
-			"amp": "bare_call"
+			"var": "bare_call"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": 10
+			"args": [
+				{
+					"line": 1,
+					"value": 10
+				}
+			]
 		},
 		{
 			"line": 1
@@ -3443,17 +3455,22 @@ $x = $foo++
 [
 	[
 		{
-			"amp": "fn"
+			"var": "fn"
 		},
+		"call",
 		{
-			"line": 1,
-			"setvar": {
-				"name": "status",
-				"value": {
+			"args": [
+				{
 					"line": 1,
-					"value": "ok"
+					"setvar": {
+						"name": "status",
+						"value": {
+							"line": 1,
+							"value": "ok"
+						}
+					}
 				}
-			}
+			]
 		},
 		{
 			"line": 1
@@ -4853,11 +4870,16 @@ end
 					"body": [
 						[
 							{
-								"amp": "label"
+								"var": "label"
 							},
+							"call",
 							{
-								"line": 2,
-								"value": "child"
+								"args": [
+									{
+										"line": 2,
+										"value": "child"
+									}
+								]
 							},
 							{
 								"line": 2
@@ -4881,11 +4903,16 @@ end
 					"body": [
 						[
 							{
-								"amp": "label"
+								"var": "label"
 							},
+							"call",
 							{
-								"line": 4,
-								"value": "teen"
+								"args": [
+									{
+										"line": 4,
+										"value": "teen"
+									}
+								]
 							},
 							{
 								"line": 4
@@ -4909,11 +4936,16 @@ end
 					"body": [
 						[
 							{
-								"amp": "label"
+								"var": "label"
 							},
+							"call",
 							{
-								"line": 6,
-								"value": "twentysomething"
+								"args": [
+									{
+										"line": 6,
+										"value": "twentysomething"
+									}
+								]
 							},
 							{
 								"line": 6
@@ -4952,11 +4984,16 @@ end
 					"body": [
 						[
 							{
-								"amp": "label"
+								"var": "label"
 							},
+							"call",
 							{
-								"line": 8,
-								"value": "adult"
+								"args": [
+									{
+										"line": 8,
+										"value": "adult"
+									}
+								]
 							},
 							{
 								"line": 8
@@ -5066,9 +5103,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "primary",
-								"line": 2
-							}
+								"line": 2,
+								"var": "primary"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5088,9 +5126,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "secondary",
-								"line": 4
-							}
+								"line": 4,
+								"var": "secondary"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5171,9 +5210,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "denied",
-								"line": 2
-							}
+								"line": 2,
+								"var": "denied"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5251,9 +5291,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "denied",
-								"line": 3
-							}
+								"line": 3,
+								"var": "denied"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5334,9 +5375,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "denied",
-								"line": 3
-							}
+								"line": 3,
+								"var": "denied"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5421,9 +5463,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "denied",
-								"line": 3
-							}
+								"line": 3,
+								"var": "denied"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5508,9 +5551,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "denied",
-								"line": 3
-							}
+								"line": 3,
+								"var": "denied"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5588,9 +5632,10 @@ end
 					"body": [
 						[
 							{
-								"amp": "proceed",
-								"line": 2
-							}
+								"line": 2,
+								"var": "proceed"
+							},
+							"call"
 						]
 					],
 					"cond": {
@@ -5675,25 +5720,28 @@ if &ok &yay else &nay end
 					"body": [
 						[
 							{
-								"amp": "yay",
-								"line": 1
-							}
+								"line": 1,
+								"var": "yay"
+							},
+							"call"
 						]
 					],
 					"cond": [
 						{
-							"amp": "ok",
-							"line": 1
-						}
+							"line": 1,
+							"var": "ok"
+						},
+						"call"
 					]
 				},
 				{
 					"body": [
 						[
 							{
-								"amp": "nay",
-								"line": 1
-							}
+								"line": 1,
+								"var": "nay"
+							},
+							"call"
 						]
 					],
 					"cond": []
@@ -5912,11 +5960,16 @@ while $foo > 1
 			"after": [
 				[
 					{
-						"amp": "emit"
+						"var": "emit"
 					},
+					"call",
 					{
-						"line": 9,
-						"value": "--- END -----"
+						"args": [
+							{
+								"line": 9,
+								"value": "--- END -----"
+							}
+						]
 					},
 					{
 						"line": 9
@@ -5926,11 +5979,16 @@ while $foo > 1
 			"before": [
 				[
 					{
-						"amp": "emit"
+						"var": "emit"
 					},
+					"call",
 					{
-						"line": 3,
-						"value": "--- START ---"
+						"args": [
+							{
+								"line": 3,
+								"value": "--- START ---"
+							}
+						]
 					},
 					{
 						"line": 3
@@ -5940,11 +5998,16 @@ while $foo > 1
 			"between": [
 				[
 					{
-						"amp": "emit"
+						"var": "emit"
 					},
+					"call",
 					{
-						"line": 6,
-						"value": "-------------"
+						"args": [
+							{
+								"line": 6,
+								"value": "-------------"
+							}
+						]
 					},
 					{
 						"line": 6
@@ -5955,11 +6018,16 @@ while $foo > 1
 			"noloop": [
 				[
 					{
-						"amp": "emit"
+						"var": "emit"
 					},
+					"call",
 					{
-						"line": 12,
-						"value": "--- NO PEOPLE ---"
+						"args": [
+							{
+								"line": 12,
+								"value": "--- NO PEOPLE ---"
+							}
+						]
 					},
 					{
 						"line": 12
@@ -6040,9 +6108,10 @@ while &foo while &bar end end
 		"while_end",
 		[
 			{
-				"amp": "foo",
-				"line": 1
-			}
+				"line": 1,
+				"var": "foo"
+			},
+			"call"
 		],
 		{
 			"after": [],
@@ -6054,9 +6123,10 @@ while &foo while &bar end end
 					"while_end",
 					[
 						{
-							"amp": "bar",
-							"line": 1
-						}
+							"line": 1,
+							"var": "bar"
+						},
+						"call"
 					],
 					{
 						"after": [],
@@ -6145,9 +6215,10 @@ while &foo begin while &bar end
 		"while_end",
 		[
 			{
-				"amp": "foo",
-				"line": 1
-			}
+				"line": 1,
+				"var": "foo"
+			},
+			"call"
 		],
 		{
 			"after": [],
@@ -6159,9 +6230,10 @@ while &foo begin while &bar end
 					"begin_while",
 					[
 						{
-							"amp": "bar",
-							"line": 1
-						}
+							"line": 1,
+							"var": "bar"
+						},
+						"call"
 					],
 					{
 						"after": [],
@@ -6263,9 +6335,10 @@ while &foo == true begin while ! &bar end
 		{
 			"left": [
 				{
-					"amp": "foo",
-					"line": 1
-				}
+					"line": 1,
+					"var": "foo"
+				},
+				"call"
 			],
 			"line": 1,
 			"op": "==",
@@ -6287,9 +6360,10 @@ while &foo == true begin while ! &bar end
 						"op": "!",
 						"operand": [
 							{
-								"amp": "bar",
-								"line": 1
-							}
+								"line": 1,
+								"var": "bar"
+							},
+							"call"
 						]
 					},
 					{
@@ -6512,9 +6586,10 @@ end
 			"body": [
 				[
 					{
-						"amp": "poll",
-						"line": 2
-					}
+						"line": 2,
+						"var": "poll"
+					},
+					"call"
 				]
 			],
 			"noloop": []
@@ -6685,9 +6760,10 @@ end
 		"while_end",
 		[
 			{
-				"amp": "bar",
-				"line": 6
-			}
+				"line": 6,
+				"var": "bar"
+			},
+			"call"
 		],
 		{
 			"after": [],
@@ -6741,9 +6817,10 @@ end
 							],
 							[
 								{
-									"amp": "try_connect",
-									"line": 4
-								}
+									"line": 4,
+									"var": "try_connect"
+								},
+								"call"
 							]
 						],
 						"noloop": []
@@ -6836,11 +6913,16 @@ end
 						"body": [
 							[
 								{
-									"amp": "handle"
+									"var": "handle"
 								},
+								"call",
 								{
-									"line": 2,
-									"var": "item"
+									"args": [
+										{
+											"line": 2,
+											"var": "item"
+										}
+									]
 								},
 								{
 									"line": 2
@@ -6989,30 +7071,35 @@ end
 							],
 							[
 								{
-									"amp": "emit"
+									"var": "emit"
 								},
+								"call",
 								{
-									"left": [
+									"args": [
 										{
+											"left": [
+												{
+													"line": 2,
+													"var": "loop"
+												},
+												"count"
+											],
 											"line": 2,
-											"var": "loop"
-										},
-										"count"
-									],
-									"line": 2,
-									"op": "+",
-									"right": {
-										"left": {
-											"line": 2,
-											"value": ": "
-										},
-										"line": 2,
-										"op": "+",
-										"right": {
-											"line": 2,
-											"var": "item"
+											"op": "+",
+											"right": {
+												"left": {
+													"line": 2,
+													"value": ": "
+												},
+												"line": 2,
+												"op": "+",
+												"right": {
+													"line": 2,
+													"var": "item"
+												}
+											}
 										}
-									}
+									]
 								},
 								{
 									"line": 2
@@ -9180,11 +9267,16 @@ end
 				"body": [
 					[
 						{
-							"amp": "get"
+							"var": "get"
 						},
+						"call",
 						{
-							"line": 2,
-							"var": "url"
+							"args": [
+								{
+									"line": 2,
+									"var": "url"
+								}
+							]
 						},
 						{
 							"line": 2
@@ -10378,6 +10470,400 @@ $obj.method_name 1, 2
 
 
 #====================================================================
+# name: paren-less method call inside `&(EXPR)` pipe RHS
+# `$bar.call 'whatever'` inside the inner pipe parses the same as
+# `$bar.call('whatever')` — the paren-less method-call form is allowed at
+# expression position, matching the paren form byte-for-byte in full CaspJ
+# (aside from the source line each fixture row lands on).
+#
+
+#--- code -----------------------------------------------------------
+&($bar.call 'whatever' | &blah)
+&($bar.call('whatever') | &blah)
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"amp": {
+				"left": [
+					{
+						"line": 1,
+						"var": "bar"
+					},
+					"call",
+					{
+						"args": [
+							{
+								"line": 1,
+								"value": "whatever"
+							}
+						],
+						"line": 1
+					}
+				],
+				"op": "|",
+				"right": [
+					{
+						"amp": "blah"
+					}
+				]
+			},
+			"line": 1
+		}
+	],
+	[
+		{
+			"amp": {
+				"left": [
+					{
+						"line": 2,
+						"var": "bar"
+					},
+					"call",
+					{
+						"args": [
+							{
+								"line": 2,
+								"value": "whatever"
+							}
+						],
+						"line": 2
+					}
+				],
+				"op": "|",
+				"right": [
+					{
+						"amp": "blah"
+					}
+				]
+			},
+			"line": 2
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		[
+			{
+				"var": "blah"
+			},
+			"call",
+			{
+				"args": [
+					[
+						{
+							"line": 1,
+							"var": "bar"
+						},
+						"call",
+						{
+							"args": [
+								{
+									"line": 1,
+									"value": "whatever"
+								}
+							],
+							"line": 1
+						}
+					]
+				]
+			}
+		],
+		"call"
+	],
+	[
+		[
+			{
+				"var": "blah"
+			},
+			"call",
+			{
+				"args": [
+					[
+						{
+							"line": 2,
+							"var": "bar"
+						},
+						"call",
+						{
+							"args": [
+								{
+									"line": 2,
+									"value": "whatever"
+								}
+							],
+							"line": 2
+						}
+					]
+				]
+			}
+		],
+		"call"
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: paren-less method call inside `&(EXPR)` pipe RHS
+#====================================================================
+
+
+#====================================================================
+# name: two amp calls on separate lines
+# The trio of contrast fixtures below shows how amp-call parsing
+# disambiguates by whitespace: newline-separated is two calls, space-
+# separated is one call, and trailing-comma-then-newline is one call
+# continued across lines.
+#
+
+#--- code -----------------------------------------------------------
+&foo
+&bar
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"amp": "foo",
+			"line": 1
+		}
+	],
+	[
+		{
+			"amp": "bar",
+			"line": 2
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		{
+			"line": 1,
+			"var": "foo"
+		},
+		"call"
+	],
+	[
+		{
+			"line": 2,
+			"var": "bar"
+		},
+		"call"
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: two amp calls on separate lines
+#====================================================================
+
+
+#====================================================================
+# name: amp call with paren-less amp argument
+# `&foo &bar` on one line is a single amp call — `&bar` is the paren-less
+# first arg to `&foo`, not a second statement. Contrast with the newline-
+# separated form immediately above and the comma-continued form below.
+#
+
+#--- code -----------------------------------------------------------
+&foo &bar
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"amp": "foo"
+		},
+		[
+			{
+				"amp": "bar",
+				"line": 1
+			}
+		],
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				[
+					{
+						"line": 1,
+						"var": "bar"
+					},
+					"call"
+				]
+			]
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: amp call with paren-less amp argument
+#====================================================================
+
+
+#====================================================================
+# name: trailing-comma line continuation on a paren-less amp call
+# A paren-less arg list ending in `,` at end-of-line signals the statement
+# continues on the next line — same rule programmers already know from most
+# languages. Parses identically to writing the whole call on one line.
+#
+
+#--- code -----------------------------------------------------------
+&foo 'x',
+	&bar
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"amp": "foo"
+		},
+		{
+			"line": 1,
+			"value": "x"
+		},
+		[
+			{
+				"amp": "bar",
+				"line": 1
+			}
+		],
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 1,
+					"value": "x"
+				},
+				[
+					{
+						"line": 1,
+						"var": "bar"
+					},
+					"call"
+				]
+			]
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: trailing-comma line continuation on a paren-less amp call
+#====================================================================
+
+
+#====================================================================
+# name: trailing-comma line continuation on a paren-less bareword call
+# Same rule applies to bareword-command calls — `puts 'a',\n\t'b'` reads
+# the same as `puts 'a', 'b'`.
+#
+
+#--- code -----------------------------------------------------------
+puts 'a',
+	'b',
+	'c'
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"bwc": "puts"
+		},
+		{
+			"line": 1,
+			"value": "a"
+		},
+		{
+			"line": 1,
+			"value": "b"
+		},
+		{
+			"line": 1,
+			"value": "c"
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		{
+			"bwc": "puts"
+		},
+		{
+			"line": 1,
+			"value": "a"
+		},
+		{
+			"line": 1,
+			"value": "b"
+		},
+		{
+			"line": 1,
+			"value": "c"
+		},
+		{
+			"line": 1
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: trailing-comma line continuation on a paren-less bareword call
+#====================================================================
+
+
+#====================================================================
 # name: method call with a nested expression as arg
 #
 
@@ -11051,13 +11537,16 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "fetch"
+			"var": "fetch"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": "https://x"
-		},
-		{
+			"args": [
+				{
+					"line": 1,
+					"value": "https://x"
+				}
+			],
 			"kw": [
 				[
 					"timeout",
@@ -11120,13 +11609,18 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "welcome"
+			"var": "welcome"
 		},
+		"call",
 		{
-			"splat": {
-				"line": 1,
-				"var": "args"
-			}
+			"args": [
+				{
+					"splat": {
+						"line": 1,
+						"var": "args"
+					}
+				}
+			]
 		},
 		{
 			"line": 1
@@ -11176,17 +11670,22 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": "x"
-		},
-		{
-			"splat": {
-				"line": 1,
-				"var": "args"
-			}
+			"args": [
+				{
+					"line": 1,
+					"value": "x"
+				},
+				{
+					"splat": {
+						"line": 1,
+						"var": "args"
+					}
+				}
+			]
 		},
 		{
 			"line": 1
@@ -11240,13 +11739,16 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "fetch"
+			"var": "fetch"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": "https://x"
-		},
-		{
+			"args": [
+				{
+					"line": 1,
+					"value": "https://x"
+				}
+			],
 			"kw": [
 				{
 					"kwsplat": {
@@ -11312,9 +11814,11 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
+			"args": [],
 			"kw": [
 				[
 					"a",
@@ -11386,15 +11890,18 @@ $obj.run(*$args, **$opts)
 [
 	[
 		{
-			"amp": "greet"
+			"var": "greet"
 		},
+		"call",
 		{
-			"splat": {
-				"line": 1,
-				"var": "args"
-			}
-		},
-		{
+			"args": [
+				{
+					"splat": {
+						"line": 1,
+						"var": "args"
+					}
+				}
+			],
 			"kw": [
 				{
 					"kwsplat": {
@@ -11522,9 +12029,10 @@ $foo = &bar
 		"foo",
 		[
 			{
-				"amp": "bar",
-				"line": 1
-			}
+				"line": 1,
+				"var": "bar"
+			},
+			"call"
 		],
 		{
 			"line": 1
@@ -11579,12 +12087,17 @@ $greeting = &greet('alice')
 		"greeting",
 		[
 			{
-				"amp": "greet",
-				"line": 1
-			},
-			{
 				"line": 1,
-				"value": "alice"
+				"var": "greet"
+			},
+			"call",
+			{
+				"args": [
+					{
+						"line": 1,
+						"value": "alice"
+					}
+				]
 			}
 		],
 		{
@@ -11643,16 +12156,21 @@ $result = &compute(10, 20)
 		"result",
 		[
 			{
-				"amp": "compute",
-				"line": 1
-			},
-			{
 				"line": 1,
-				"value": 10
+				"var": "compute"
 			},
+			"call",
 			{
-				"line": 1,
-				"value": 20
+				"args": [
+					{
+						"line": 1,
+						"value": 10
+					},
+					{
+						"line": 1,
+						"value": 20
+					}
+				]
 			}
 		],
 		{
@@ -11717,14 +12235,17 @@ $resp = &fetch('https://x', timeout: 30)
 		"resp",
 		[
 			{
-				"amp": "fetch",
-				"line": 1
-			},
-			{
 				"line": 1,
-				"value": "https://x"
+				"var": "fetch"
 			},
+			"call",
 			{
+				"args": [
+					{
+						"line": 1,
+						"value": "https://x"
+					}
+				],
 				"kw": [
 					[
 						"timeout",
@@ -11846,34 +12367,39 @@ end
 [
 	[
 		{
-			"amp": "some_method",
-			"line": 1
+			"line": 1,
+			"var": "some_method"
 		},
+		"call",
 		{
-			"blocks": [
+			"args": [
 				{
-					"do": {
-						"body": [
-							[
-								{
-									"sys": "call"
-								},
-								"return",
-								{
-									"args": [
+					"blocks": [
+						{
+							"do": {
+								"body": [
+									[
 										{
-											"line": 2,
-											"var": "outer"
+											"sys": "call"
+										},
+										"return",
+										{
+											"args": [
+												{
+													"line": 2,
+													"var": "outer"
+												}
+											]
+										},
+										{
+											"line": 2
 										}
 									]
-								},
-								{
-									"line": 2
-								}
-							]
-						],
-						"params": []
-					}
+								],
+								"params": []
+							}
+						}
+					]
 				}
 			]
 		}
@@ -11941,36 +12467,42 @@ end
 [
 	[
 		{
-			"amp": "some_method",
-			"line": 1
+			"line": 1,
+			"var": "some_method"
 		},
+		"call",
 		{
-			"blocks": [
+			"args": [
 				{
-					"dofunc": {
-						"body": [
-							[
-								{
-									"sys": "call"
-								},
-								"return",
-								{
-									"args": [
-										[
-											{
-												"amp": "compute",
-												"line": 2
-											}
-										]
+					"blocks": [
+						{
+							"dofunc": {
+								"body": [
+									[
+										{
+											"sys": "call"
+										},
+										"return",
+										{
+											"args": [
+												[
+													{
+														"line": 2,
+														"var": "compute"
+													},
+													"call"
+												]
+											]
+										},
+										{
+											"line": 2
+										}
 									]
-								},
-								{
-									"line": 2
-								}
-							]
-						],
-						"params": []
-					}
+								],
+								"params": []
+							}
+						}
+					]
 				}
 			]
 		}
@@ -12094,88 +12626,96 @@ end
 [
 	[
 		{
-			"amp": "run_scenarios",
-			"line": 1
+			"line": 1,
+			"var": "run_scenarios"
 		},
+		"call",
 		{
-			"blocks": [
+			"args": [
 				{
-					"do": {
-						"body": [
-							[
-								{
-									"sys": "call"
-								},
-								"return",
-								{
-									"args": [
-										[
-											{
-												"amp": "scenario_a",
-												"line": 2
-											}
-										]
+					"blocks": [
+						{
+							"do": {
+								"body": [
+									[
+										{
+											"sys": "call"
+										},
+										"return",
+										{
+											"args": [
+												[
+													{
+														"line": 2,
+														"var": "scenario_a"
+													},
+													"call"
+												]
+											]
+										},
+										{
+											"line": 2
+										}
 									]
-								},
-								{
-									"line": 2
-								}
-							]
-						],
-						"params": []
-					}
-				},
-				{
-					"do": {
-						"body": [
-							[
-								{
-									"sys": "call"
-								},
-								"return",
-								{
-									"args": [
-										[
-											{
-												"amp": "scenario_b",
-												"line": 4
-											}
-										]
+								],
+								"params": []
+							}
+						},
+						{
+							"do": {
+								"body": [
+									[
+										{
+											"sys": "call"
+										},
+										"return",
+										{
+											"args": [
+												[
+													{
+														"line": 4,
+														"var": "scenario_b"
+													},
+													"call"
+												]
+											]
+										},
+										{
+											"line": 4
+										}
 									]
-								},
-								{
-									"line": 4
-								}
-							]
-						],
-						"params": []
-					}
-				},
-				{
-					"dofunc": {
-						"body": [
-							[
-								{
-									"sys": "call"
-								},
-								"return",
-								{
-									"args": [
-										[
-											{
-												"amp": "scenario_c",
-												"line": 6
-											}
-										]
+								],
+								"params": []
+							}
+						},
+						{
+							"dofunc": {
+								"body": [
+									[
+										{
+											"sys": "call"
+										},
+										"return",
+										{
+											"args": [
+												[
+													{
+														"line": 6,
+														"var": "scenario_c"
+													},
+													"call"
+												]
+											]
+										},
+										{
+											"line": 6
+										}
 									]
-								},
-								{
-									"line": 6
-								}
-							]
-						],
-						"params": []
-					}
+								],
+								"params": []
+							}
+						}
+					]
 				}
 			]
 		}
@@ -12256,11 +12796,16 @@ end
 						"body": [
 							[
 								{
-									"amp": "handle"
+									"var": "handle"
 								},
+								"call",
 								{
-									"line": 2,
-									"var": "item"
+									"args": [
+										{
+											"line": 2,
+											"var": "item"
+										}
+									]
 								},
 								{
 									"line": 2
@@ -12590,9 +13135,10 @@ return &compute
 		"return",
 		[
 			{
-				"amp": "compute",
-				"line": 1
-			}
+				"line": 1,
+				"var": "compute"
+			},
+			"call"
 		],
 		{
 			"line": 1
@@ -14360,9 +14906,10 @@ end
 												},
 												[
 													{
-														"amp": "baz",
-														"line": 41
-													}
+														"line": 41,
+														"var": "baz"
+													},
+													"call"
 												]
 											]
 										},
@@ -16109,30 +16656,47 @@ end
 	[
 		[
 			{
-				"amp": "gup"
+				"var": "gup"
 			},
-			[
-				{
-					"amp": "bar"
-				},
-				[
-					{
-						"amp": "foo",
-						"line": 1
-					}
-				],
-				[
-					{
-						"amp": "dude"
-					},
+			"call",
+			{
+				"args": [
 					[
 						{
-							"amp": "yeah",
-							"line": 1
+							"var": "bar"
+						},
+						"call",
+						{
+							"args": [
+								[
+									{
+										"line": 1,
+										"var": "foo"
+									},
+									"call"
+								],
+								[
+									{
+										"var": "dude"
+									},
+									"call",
+									{
+										"args": [
+											[
+												{
+													"line": 1,
+													"var": "yeah"
+												},
+												"call"
+											]
+										]
+									}
+								]
+							]
 						}
 					]
 				]
-			]
+			}
 		]
 	]
 ]
@@ -16206,34 +16770,55 @@ end
 	[
 		[
 			{
-				"amp": "gup"
+				"var": "gup"
 			},
-			[
-				{
-					"amp": "bar"
-				},
-				[
-					{
-						"amp": "foo",
-						"line": 1
-					}
-				],
-				[
-					{
-						"amp": "dude"
-					},
+			"call",
+			{
+				"args": [
 					[
 						{
-							"amp": "yeah",
-							"line": 1
+							"var": "bar"
 						},
+						"call",
 						{
-							"line": 1,
-							"value": "x"
+							"args": [
+								[
+									{
+										"line": 1,
+										"var": "foo"
+									},
+									"call"
+								],
+								[
+									{
+										"var": "dude"
+									},
+									"call",
+									{
+										"args": [
+											[
+												{
+													"line": 1,
+													"var": "yeah"
+												},
+												"call",
+												{
+													"args": [
+														{
+															"line": 1,
+															"value": "x"
+														}
+													]
+												}
+											]
+										]
+									}
+								]
+							]
 						}
 					]
 				]
-			]
+			}
 		]
 	]
 ]
@@ -16305,33 +16890,46 @@ end
 		{
 			"left": [
 				{
-					"amp": "bar"
+					"var": "bar"
 				},
-				[
-					{
-						"amp": "foo",
-						"line": 1
-					}
-				],
-				[
-					{
-						"amp": "dude"
-					},
-					[
-						{
-							"amp": "yeah",
-							"line": 1
-						}
+				"call",
+				{
+					"args": [
+						[
+							{
+								"line": 1,
+								"var": "foo"
+							},
+							"call"
+						],
+						[
+							{
+								"var": "dude"
+							},
+							"call",
+							{
+								"args": [
+									[
+										{
+											"line": 1,
+											"var": "yeah"
+										},
+										"call"
+									]
+								]
+							}
+						]
 					]
-				]
+				}
 			],
 			"line": 1,
 			"op": "||",
 			"right": [
 				{
-					"amp": "gup",
-					"line": 1
-				}
+					"line": 1,
+					"var": "gup"
+				},
+				"call"
 			]
 		}
 	]
@@ -16404,33 +17002,46 @@ end
 		{
 			"left": [
 				{
-					"amp": "bar"
+					"var": "bar"
 				},
-				[
-					{
-						"amp": "foo",
-						"line": 1
-					}
-				],
-				[
-					{
-						"amp": "dude"
-					},
-					[
-						{
-							"amp": "yeah",
-							"line": 1
-						}
+				"call",
+				{
+					"args": [
+						[
+							{
+								"line": 1,
+								"var": "foo"
+							},
+							"call"
+						],
+						[
+							{
+								"var": "dude"
+							},
+							"call",
+							{
+								"args": [
+									[
+										{
+											"line": 1,
+											"var": "yeah"
+										},
+										"call"
+									]
+								]
+							}
+						]
 					]
-				]
+				}
 			],
 			"line": 1,
 			"op": "||",
 			"right": [
 				{
-					"amp": "gup",
-					"line": 1
-				}
+					"line": 1,
+					"var": "gup"
+				},
+				"call"
 			]
 		}
 	]
@@ -16496,14 +17107,20 @@ $foo.bar(&gup | &baz)
 			"args": [
 				[
 					{
-						"amp": "baz"
+						"var": "baz"
 					},
-					[
-						{
-							"amp": "gup",
-							"line": 1
-						}
-					]
+					"call",
+					{
+						"args": [
+							[
+								{
+									"line": 1,
+									"var": "gup"
+								},
+								"call"
+							]
+						]
+					}
 				]
 			]
 		},
@@ -16599,19 +17216,30 @@ $value = &get_key | &normalize | &fetch
 		"value",
 		[
 			{
-				"amp": "fetch"
+				"var": "fetch"
 			},
-			[
-				{
-					"amp": "normalize"
-				},
-				[
-					{
-						"amp": "get_key",
-						"line": 1
-					}
+			"call",
+			{
+				"args": [
+					[
+						{
+							"var": "normalize"
+						},
+						"call",
+						{
+							"args": [
+								[
+									{
+										"line": 1,
+										"var": "get_key"
+									},
+									"call"
+								]
+							]
+						}
+					]
 				]
-			]
+			}
 		],
 		{
 			"line": 1
@@ -16687,26 +17315,37 @@ $top10 = &fetch_records() | &sort 'asc' | &take 10
 		"top10",
 		[
 			{
-				"amp": "take"
+				"var": "take"
 			},
-			[
-				{
-					"amp": "sort"
-				},
-				[
-					{
-						"amp": "fetch_records",
-						"line": 1
-					}
-				],
-				{
-					"line": 1,
-					"value": "asc"
-				}
-			],
+			"call",
 			{
-				"line": 1,
-				"value": 10
+				"args": [
+					[
+						{
+							"var": "sort"
+						},
+						"call",
+						{
+							"args": [
+								[
+									{
+										"line": 1,
+										"var": "fetch_records"
+									},
+									"call"
+								],
+								{
+									"line": 1,
+									"value": "asc"
+								}
+							]
+						}
+					],
+					{
+						"line": 1,
+						"value": 10
+					}
+				]
 			}
 		],
 		{
@@ -16787,30 +17426,44 @@ $x = &foo | &(&bear | &baz) | &gup
 		"x",
 		[
 			{
-				"amp": "gup"
+				"var": "gup"
 			},
-			[
-				{
-					"amp": [
-						{
-							"amp": "baz"
-						},
+			"call",
+			{
+				"args": [
+					[
 						[
 							{
-								"amp": "bear",
-								"line": 1
+								"var": "baz"
+							},
+							"call",
+							{
+								"args": [
+									[
+										{
+											"line": 1,
+											"var": "bear"
+										},
+										"call"
+									]
+								]
 							}
-						]
-					],
-					"line": 1
-				},
-				[
-					{
-						"amp": "foo",
-						"line": 1
-					}
+						],
+						"call",
+						{
+							"args": [
+								[
+									{
+										"line": 1,
+										"var": "foo"
+									},
+									"call"
+								]
+							]
+						}
+					]
 				]
-			]
+			}
 		],
 		{
 			"line": 1
@@ -16821,6 +17474,133 @@ $x = &foo | &(&bear | &baz) | &gup
 
 #
 # name: generalized `&(EXPR)` as pipe RHS
+#====================================================================
+
+
+# three equivalent forms all normalize to the same method-call shape
+#====================================================================
+# name: `&<obj>` normalizes to the object's `.call` method
+# `&` before any object means "invoke the object's main method" — for functions
+# that's `.call`. Full CaspJ preserves the three surface forms distinctly
+# ({var}/method-call for `$foo.call(...)`, `{amp: "foo"}` for `&foo`, and
+# `{amp: {var: "foo"}}` for the `&$foo` shorthand). Norm collapses all three
+# to `[{var: "foo"}, "call", envelope]` — the runtime sees one dispatch shape.
+#
+
+#--- code -----------------------------------------------------------
+$foo.call('xyz')
+&foo 'xyz'
+&$foo 'xyz'
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 1,
+					"value": "xyz"
+				}
+			]
+		},
+		{
+			"line": 1
+		}
+	],
+	[
+		{
+			"amp": "foo"
+		},
+		{
+			"line": 2,
+			"value": "xyz"
+		},
+		{
+			"line": 2
+		}
+	],
+	[
+		{
+			"amp": {
+				"line": 3,
+				"var": "foo"
+			}
+		},
+		{
+			"line": 3,
+			"value": "xyz"
+		},
+		{
+			"line": 3
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 1,
+					"value": "xyz"
+				}
+			]
+		},
+		{
+			"line": 1
+		}
+	],
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 2,
+					"value": "xyz"
+				}
+			]
+		},
+		{
+			"line": 2
+		}
+	],
+	[
+		{
+			"line": 3,
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 3,
+					"value": "xyz"
+				}
+			]
+		},
+		{
+			"line": 3
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: `&<obj>` normalizes to the object's `.call` method
 #====================================================================
 
 
@@ -16880,12 +17660,17 @@ $html = &normalize($text) | $formatter.render
 				"args": [
 					[
 						{
-							"amp": "normalize",
-							"line": 1
-						},
-						{
 							"line": 1,
-							"var": "text"
+							"var": "normalize"
+						},
+						"call",
+						{
+							"args": [
+								{
+									"line": 1,
+									"var": "text"
+								}
+							]
 						}
 					]
 				]
@@ -16959,9 +17744,10 @@ $csv = &get_arr | .sort() | .join(', ')
 			[
 				[
 					{
-						"amp": "get_arr",
-						"line": 1
-					}
+						"line": 1,
+						"var": "get_arr"
+					},
+					"call"
 				],
 				"sort"
 			],
@@ -17037,9 +17823,10 @@ $name = &get_current_user | .profile | .name
 			[
 				[
 					{
-						"amp": "get_current_user",
-						"line": 1
-					}
+						"line": 1,
+						"var": "get_current_user"
+					},
+					"call"
 				],
 				"profile"
 			],
@@ -17125,28 +17912,48 @@ $saved = &get_record 42 |&
 		"saved",
 		[
 			{
-				"amp": "save"
+				"var": "save"
 			},
-			[
-				{
-					"amp": "transform"
-				},
-				[
-					{
-						"amp": "validate"
-					},
+			"call",
+			{
+				"args": [
 					[
 						{
-							"amp": "get_record",
-							"line": 1
+							"var": "transform"
 						},
+						"call",
 						{
-							"line": 1,
-							"value": 42
+							"args": [
+								[
+									{
+										"var": "validate"
+									},
+									"call",
+									{
+										"args": [
+											[
+												{
+													"line": 1,
+													"var": "get_record"
+												},
+												"call",
+												{
+													"args": [
+														{
+															"line": 1,
+															"value": 42
+														}
+													]
+												}
+											]
+										]
+									}
+								]
+							]
 						}
 					]
 				]
-			]
+			}
 		],
 		{
 			"line": 1
@@ -17621,21 +18428,26 @@ B
 [
 	[
 		{
-			"amp": "pair_of_bodies"
+			"var": "pair_of_bodies"
 		},
+		"call",
 		{
-			"line": 1,
-			"var": "whole"
-		},
-		{
-			"value": "first heredoc body"
-		},
-		{
-			"line": 1,
-			"var": "frac"
-		},
-		{
-			"value": "second heredoc body"
+			"args": [
+				{
+					"line": 1,
+					"var": "whole"
+				},
+				{
+					"value": "first heredoc body"
+				},
+				{
+					"line": 1,
+					"var": "frac"
+				},
+				{
+					"value": "second heredoc body"
+				}
+			]
 		},
 		{
 			"line": 1
@@ -17739,17 +18551,22 @@ B
 [
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
-			"line": 1,
-			"value": "x"
-		},
-		{
-			"value": "whatever"
-		},
-		{
-			"value": "dude"
+			"args": [
+				{
+					"line": 1,
+					"value": "x"
+				},
+				{
+					"value": "whatever"
+				},
+				{
+					"value": "dude"
+				}
+			]
 		},
 		{
 			"line": 1
@@ -20017,23 +20834,30 @@ $$foo.a.b
 [
 	[
 		{
-			"amp": "foo",
-			"line": 1
-		}
-	],
-	[
-		{
-			"amp": "foo",
-			"line": 2
-		}
-	],
-	[
-		{
-			"amp": "foo"
+			"line": 1,
+			"var": "foo"
 		},
+		"call"
+	],
+	[
 		{
-			"line": 3,
-			"value": "bar"
+			"line": 2,
+			"var": "foo"
+		},
+		"call"
+	],
+	[
+		{
+			"var": "foo"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 3,
+					"value": "bar"
+				}
+			]
 		},
 		{
 			"line": 3
@@ -20041,9 +20865,11 @@ $$foo.a.b
 	],
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
+			"args": [],
 			"kw": [
 				[
 					"gup",
@@ -20060,9 +20886,11 @@ $$foo.a.b
 	],
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
+			"args": [],
 			"kw": [
 				[
 					"gup",
@@ -24087,15 +24915,185 @@ $caller.call 1
 #====================================================================
 
 
-# deferred: `.wants_controller?` introspection uses a `?`-suffix method name; `?`-suffix
-# method-name parsing is a separate deferred item (see the `.each do` control-flow
-# deferred block). Once `?` in method names lands, this fixture becomes:
+#====================================================================
+# name: caller `.wants_controller?` introspection idiom
+# The `?`-suffix method-name convention is used for boolean introspectors
+# like `.wants_controller?`. This is the caller-pattern idiom from
+# functions/caller — build a caller, ask if the target wants a controller,
+# supply one if so, then fire.
 #
-#     $caller = $foo.caller.new
-#     if $caller.wants_controller?
-#         $caller.controller = $ctrl
-#     end
-#     $caller.call 1
+
+#--- code -----------------------------------------------------------
+$caller = $foo.caller.new
+if $caller.wants_controller?
+	$caller.controller = $ctrl
+end
+$caller.call 1
+#--------------------------------------------------------------------
+
+#--- full -----------------------------------------------------------
+[
+	[
+		"scope",
+		"setvar",
+		"caller",
+		[
+			[
+				{
+					"line": 1,
+					"var": "foo"
+				},
+				"caller"
+			],
+			"new"
+		],
+		{
+			"line": 1
+		}
+	],
+	[
+		"scope",
+		"if_end",
+		{
+			"branches": [
+				{
+					"body": [
+						[
+							{
+								"line": 3,
+								"var": "caller"
+							},
+							"controller=",
+							{
+								"args": [
+									{
+										"line": 3,
+										"var": "ctrl"
+									}
+								]
+							},
+							{
+								"line": 3
+							}
+						]
+					],
+					"cond": [
+						{
+							"line": 2,
+							"var": "caller"
+						},
+						"wants_controller?"
+					]
+				}
+			]
+		},
+		{
+			"line": 4
+		}
+	],
+	[
+		{
+			"var": "caller"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 5,
+					"value": 1
+				}
+			]
+		},
+		{
+			"line": 5
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#--- norm -----------------------------------------------------------
+[
+	[
+		"scope",
+		"setvar",
+		"caller",
+		[
+			[
+				{
+					"line": 1,
+					"var": "foo"
+				},
+				"caller"
+			],
+			"new"
+		],
+		{
+			"line": 1
+		}
+	],
+	[
+		"scope",
+		"if_end",
+		{
+			"branches": [
+				{
+					"body": [
+						[
+							{
+								"line": 3,
+								"var": "caller"
+							},
+							"controller=",
+							{
+								"args": [
+									{
+										"line": 3,
+										"var": "ctrl"
+									}
+								]
+							},
+							{
+								"line": 3
+							}
+						]
+					],
+					"cond": [
+						{
+							"line": 2,
+							"var": "caller"
+						},
+						"wants_controller?"
+					]
+				}
+			]
+		},
+		{
+			"line": 4
+		}
+	],
+	[
+		{
+			"var": "caller"
+		},
+		"call",
+		{
+			"args": [
+				{
+					"line": 5,
+					"value": 1
+				}
+			]
+		},
+		{
+			"line": 5
+		}
+	]
+]
+#--------------------------------------------------------------------
+
+#
+# name: caller `.wants_controller?` introspection idiom
+#====================================================================
 
 
 # deferred: `as $name` binding on a callable definition (function / closure / method /
@@ -24245,9 +25243,10 @@ end # end of outer function
 				"body": [
 					[
 						{
-							"amp": "myfunc",
-							"line": 13
-						}
+							"line": 13,
+							"var": "myfunc"
+						},
+						"call"
 					]
 				],
 				"params": [
@@ -24548,19 +25547,24 @@ $arr[0, 1, 2,]
 	],
 	[
 		{
-			"amp": "foo"
+			"var": "foo"
 		},
+		"call",
 		{
-			"line": 3,
-			"value": 1
-		},
-		{
-			"line": 3,
-			"value": 2
-		},
-		{
-			"line": 3,
-			"value": 3
+			"args": [
+				{
+					"line": 3,
+					"value": 1
+				},
+				{
+					"line": 3,
+					"value": 2
+				},
+				{
+					"line": 3,
+					"value": 3
+				}
+			]
 		},
 		{
 			"line": 3
