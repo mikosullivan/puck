@@ -100,6 +100,8 @@ This is a deliberate design commitment, not just implementation hygiene:
 
 The heuristic when designing a new capability: **anything that could be written in Caspian without giving up security, correctness, or usable performance should be.** Reach for the host language only for what genuinely can't exist above the primitive line.
 
+**Floppy budget can override the preference.** Caspian-in-Caspian is a design preference, not a hard requirement. If implementing a subsystem in Caspian would push the [floppy budget](https://puck.uno/documentation/requirements/core/) past what fits — either through fat CaspM cache-tier code or through stdlib growth needed to support it — falling back to a Lua implementation for that subsystem is legitimate. The trade-off is real: less user-inspectable code, larger trust surface, harder to fork or replace at the Caspian level. But shrinking the install below the floppy line wins when it's the difference between Caspian fitting on target hosts and not fitting. Note the choice at the affected subsystem's spec page so a future reader knows a Lua implementation was chosen over Caspian for size reasons, not preference.
+
 ## Lean on installed Linux utilities when they're better
 
 Where a system utility is near-universally installed and does the job better than a Lua library Caspian would otherwise ship, Caspian prefers to shell out. Two things get better at once: the floppy budget stays smaller, and the software Caspian relies on is more mature and better-tested than any Cache-tier reimplementation. The Prerequisite tier at [core/](https://puck.uno/documentation/requirements/core/) is where this pattern lives, alongside the openssl / tar / gzip / curl utilities that already earn their spot there.
@@ -112,6 +114,29 @@ Two conditions must hold before a utility qualifies:
 The trade in one sentence: **give up bundle self-containment to free floppy budget and inherit better software**. See [xml-in-pure-caspian § How Caspian would call it](https://puck.uno/documentation/ideas/xml-in-pure-caspian#how-caspian-would-call-it) for a worked case.
 
 **The process rule that follows:** any time a new capability is proposed that would need a Cache-tier Lua library, the design pass **must** first check whether an already-installed Linux facility could deliver the same result. What kind of facility — a CLI utility, a shared C library linked directly, a system service — is decided case by case for that surface. Only reach for the Lua library once the check has come back negative: no facility is universal enough, none is superior, or the operation shape (streaming, event-driven, fork-per-call cost, ABI drift concerns) makes the substitution a poor fit. Applies to core surfaces and to Puck-hosted class implementations equally. The check is cheap; skipping it is how Cache-tier bloat accumulates. Where the check comes back positive, [linux-utilities-vs-lua-libraries](https://puck.uno/documentation/ideas/linux-utilities-vs-lua-libraries) is the receipts pattern for writing up the trade.
+
+## Primitive reuse
+
+**One well-chosen primitive that fits many shapes is worth more than several specialized ones.** Every reuse keeps engine code smaller, keeps the developer mental model tighter, and keeps the floppy budget healthier. When designing a new capability, first ask: does an existing primitive fit this shape?
+
+Examples that have earned their reuse in Caspian:
+
+- **Exceptions** serve return / raise / exit. One control-flow mechanism carries three semantic uses; the engine has one exception dispatcher, developers learn one machinery.
+- **Aggregate hashes** ([`lua/aggregate-hash`](https://puck.uno/documentation/requirements/lua/aggregate-hash)) serve `%chain` / scope frames / class-method resolution / delegated environments — every "lookup walks a chain of hashes" pattern. One primitive, many roles.
+- **`function_call` bwc** ([caspianj § Calls](https://puck.uno/documentation/requirements/caspianj#calls)) collapses bareword calls, dot method calls, closure invocations, downloaded-method applications — every callable invocation — to one CaspM shape.
+- **Freeze** is Caspian's constant mechanism across three surfaces: variables via [`variable-object.freeze`](https://puck.uno/documentation/requirements/built-in-classes/variable-object#freezing), hash fields via [`.freeze_field`](https://puck.uno/documentation/requirements/built-in-classes/primitives/hash#freezing-fields), whole objects via [`.object.freeze`](https://puck.uno/documentation/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze). No separate `const` keyword; freeze does everything.
+- **`assign` bwc** serves variable assign and subscript assign — dispatch on lvalue shape.
+- **Aggregate `.set(key, value)`** is the scope runtime's assignment mechanism AND the general walk-then-write primitive available to any aggregate consumer.
+
+The heuristic: when adding a new capability, look at what's already in the vocabulary before inventing a new primitive. If the new need fits an existing shape, use it. If the fit is forced — bending the existing primitive out of shape or teaching it a special case that doesn't belong — invent a new primitive. But that's the rare path, not the default.
+
+Failure modes if the check is skipped:
+
+- **Engine bloat.** N specialized primitives means N dispatch handlers, N implementations, N places to fix a related bug.
+- **Cognitive load for developers.** N ways to do slightly-different things when one general way would do.
+- **Divergent behavior.** Each specialized primitive develops its own edge cases; the general primitive gets one set of edge cases everyone shares.
+
+**Not a suicide pact.** Force-fitting a primitive to a wrong shape is worse than adding a new one. The check is "does it fit?" — not "how can I make it fit?" When exceptions started serving return and exit alongside raise, that was a natural extension of one control-flow mechanism. Trying to fit something structurally different — cross-thread message passing, for example — onto exceptions would be forcing the shape; a different primitive would be right.
 
 ## Strings are UTF-8
 

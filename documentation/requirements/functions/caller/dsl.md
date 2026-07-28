@@ -173,7 +173,7 @@ Each of `inherits`, `field`, `method`, `private` is a bare-word command that the
 
 ### `instance` is the same DSL body
 
-`instance` builds a single ad-hoc object using the **same body shape** as `class`. The DSL inside the body is identical: `field`, `method`, `private`, `inherits`, plus `auto_run`. The only difference is the parser-baked outer wrapper (`instance ... end` vs `class ... end`) and what happens after the block returns — `class` finalizes a class; `instance` finalizes a single object backed by a per-instance shadow class.
+`instance` builds a single ad-hoc object using the **same body shape** as `class`. The DSL inside the body is identical: `field`, `method`, `private`, `inherits`, plus `autorun`. The only difference is the parser-baked outer wrapper (`instance ... end` vs `class ... end`) and what happens after the block returns — `class` finalizes a class; `instance` finalizes a single object backed by a per-instance shadow class.
 
 ~~~caspian
 $config = instance
@@ -268,7 +268,7 @@ Roughly the order this lands in the engine:
 2. **Resolution chain.** When a bare word is evaluated inside a block, the engine resolves it in order: reserved bwcs (tier 1, tier 2) → DSL entries from the currently active caller → scope variables. Get this right once; everything else rides on it.
 3. **Tier 3 default bindings.** `return`, `yield`, `raise`, `catch` ship as default bindings in an ambient core DSL that every scope inherits.
 4. **Loop-control wiring.** Each loop type (`each`, `while`, etc.) wires `break`, `next`, and any structural-hook bwcs on the caller for its body before invoking. The shared wiring helper is worth pulling out so loop authors don't write the same boilerplate.
-5. **Class-body DSL.** The class definer wires `field`, `method`, `private`, `inherits`, `abstract` onto the class-builder receiver and invokes the body. `instance` reuses the same DSL and adds `auto_run`.
+5. **Class-body DSL.** The class definer wires `field`, `method`, `private`, `inherits`, `abstract` onto the class-builder receiver and invokes the body. `instance` reuses the same DSL and adds `autorun`.
 6. **Refactor any V0.01 cheats.** Class-body bwcs that were parser-baked move into the DSL receiver. The construct's surface behavior is unchanged; the implementation path is what shifts.
 
 ## Open questions
@@ -331,5 +331,5 @@ Roughly the order this lands in the engine:
 
 - **Class body uses class-DSL** — `class ... field :name, class: :string ... end` resolves `field` as a bwc in the class-builder DSL.
 - **`inherits` inside class body dispatches through DSL** — `inherits Person` calls the class-builder's `inherits` method.
-- **`instance` body uses the same DSL as `class`, plus `auto_run`** — the same bwcs (`field`, `method`, `inherits`, `private`) resolve identically inside `instance ... end`; `auto_run` is instance-only.
+- **`instance` body uses the same DSL as `class`, plus `autorun`** — the same bwcs (`field`, `method`, `inherits`, `private`) resolve identically inside `instance ... end`; `autorun` is instance-only.
 - **Loop `before` / `after` / `between` are bwcs** — inside a loop block, these names dispatch through the loop's DSL.

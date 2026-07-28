@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_instance",
-	"role": "spec for the `instance` keyword — a Caspian construct that builds a single object directly using the same body shape as a class definition. Two forms: `instance ... end` constructs with no args; `instance(args...) ... end` passes the args through to the new object's `&init`. Sugar for `$cls = class ... end; $foo = $cls.new(args...)`. Includes the design-pattern framing (ad-hoc instances), guidance on when to use it, worked examples, and the `auto_run` DSL bare-word command that runs a method on the constructed object and returns its value instead of the object itself (instance-only extension of the class-body DSL; is really a boolean property on the method object; three equivalent ways to set it — `auto_run method name(...) ... end` bare-word command form which chains with other transformer commands like `private`, `auto_run :name` symbol directive, or direct `$m.auto_run = true` assignment on a captured method value; multiple `auto_run` directives raise at compile time).",
+	"role": "spec for the `instance` keyword — a Caspian construct that builds a single object directly using the same body shape as a class definition. Two forms: `instance ... end` constructs with no args; `instance(args...) ... end` passes the args through to the new object's `&init`. Sugar for `$cls = class ... end; $foo = $cls.new(args...)`. Includes the design-pattern framing (ad-hoc instances), guidance on when to use it, worked examples, and the `autorun` DSL bare-word command that runs a method on the constructed object and returns its value instead of the object itself (instance-only extension of the class-body DSL; is really a boolean property on the method object; three equivalent ways to set it — `autorun method name(...) ... end` bare-word command form which chains with other transformer commands like `private`, `autorun :name` symbol directive, or direct `$m.autorun = true` assignment on a captured method value; multiple `autorun` directives raise at compile time).",
 	"status": "active spec",
 	"audience": "Caspian programmers; engine implementers"
 }}
@@ -102,9 +102,9 @@ Concretely:
 
 ---
 
-## `auto_run`
+## `autorun`
 
-A method declared inside an `instance` body carries a boolean `auto_run` property, default `false`. (Methods declared inside a `class` body or as singleton methods on an object do not — the property is specific to methods that come out of `instance`.) When the `instance` is constructed, if any of its methods has `.auto_run = true`, that method is invoked on the new object and **the method's return value is what `instance` produces** — the object itself is discarded.
+A method declared inside an `instance` body carries a boolean `autorun` property, default `false`. (Methods declared inside a `class` body or as singleton methods on an object do not — the property is specific to methods that come out of `instance`.) When the `instance` is constructed, if any of its methods has `.autorun = true`, that method is invoked on the new object and **the method's return value is what `instance` produces** — the object itself is discarded.
 
 ~~~caspian
 $dsn = instance('localhost', 8080)
@@ -115,13 +115,13 @@ $dsn = instance('localhost', 8080)
 		return 'tcp://' + @host + ':' + @port
 	end
 
-	auto_run :dsn
+	autorun :dsn
 end
 ~~~
 
 `$dsn` above holds the string `'tcp://localhost:8080'`, not the constructed object. The build-and-use flow collapses into a single expression: `instance` constructs the object, calls `.dsn` on it, and hands back the result.
 
-**Instance-only.** `auto_run` matters inside `instance` bodies and has no counterpart in `class` construction. A class doesn't run on its own — it produces instances, and each caller of `.new` decides what to do with the result. `instance ... end` is a one-shot construction, so "run this method and return its value" is meaningful in a way it isn't for a class-plus-`.new` sequence.
+**Instance-only.** `autorun` matters inside `instance` bodies and has no counterpart in `class` construction. A class doesn't run on its own — it produces instances, and each caller of `.new` decides what to do with the result. `instance ... end` is a one-shot construction, so "run this method and return its value" is meaningful in a way it isn't for a class-plus-`.new` sequence.
 
 **When it fits.** Any place where a script wants "build this ad-hoc object, use it once, keep only the result":
 
@@ -129,54 +129,54 @@ end
 - One-off pipeline stages where the object exists purely to package the computation.
 - Config-and-run helpers where the object's whole purpose is a single output.
 
-**When it doesn't fit.** If code outside the `instance ... end` block needs to reach back into the object, or if the object will be used more than once, don't set `auto_run` — construct the instance normally and drive it from the outside.
+**When it doesn't fit.** If code outside the `instance ... end` block needs to reach back into the object, or if the object will be used more than once, don't set `autorun` — construct the instance normally and drive it from the outside.
 
 **Interaction with `init`.** `init` runs first (as it does on any construction). The auto-run method runs next, on the fully-initialized object, and sees whatever `init` set up in the bucket.
 
-### Setting `auto_run`
+### Setting `autorun`
 
-`auto_run` is a **DSL bare-word command** available inside `instance ... end` bodies. It takes the method object produced by a following `method ... end` declaration, sets `.auto_run = true` on it, and returns it — the same shape as the class-body [`private` command](../definition#private-methods).
+`autorun` is a **DSL bare-word command** available inside `instance ... end` bodies. It takes the method object produced by a following `method ... end` declaration, sets `.autorun = true` on it, and returns it — the same shape as the class-body [`private` command](../definition#private-methods).
 
-Three equivalent forms — all set the same `.auto_run` property. Use whichever reads best:
+Three equivalent forms — all set the same `.autorun` property. Use whichever reads best:
 
-**Bare-word command.** Prefix a `method` declaration with `auto_run`:
+**Bare-word command.** Prefix a `method` declaration with `autorun`:
 
 ~~~caspian
 $result = instance()
-	auto_run method foo()
+	autorun method foo()
 		return 'result'
 	end
 end
 ~~~
 
-The method is declared on the body as `foo` (same as if it appeared standalone) and its `.auto_run` is set to `true` in one step. The expression `auto_run method foo() ... end` evaluates to the method object — `auto_run` returns what it received — so the value can be captured:
+The method is declared on the body as `foo` (same as if it appeared standalone) and its `.autorun` is set to `true` in one step. The expression `autorun method foo() ... end` evaluates to the method object — `autorun` returns what it received — so the value can be captured:
 
 ~~~caspian
 instance()
-	$m = auto_run method foo()
+	$m = autorun method foo()
 		return 'result'
 	end
 
-	# $m is the method object; $m.auto_run is already true.
+	# $m is the method object; $m.autorun is already true.
 end
 ~~~
 
-**Chained with other DSL commands.** Because each transformer command returns the method object, they compose. `auto_run private method foo() ... end` sets both properties on the same method object in one declaration:
+**Chained with other DSL commands.** Because each transformer command returns the method object, they compose. `autorun private method foo() ... end` sets both properties on the same method object in one declaration:
 
 ~~~caspian
 $result = instance()
-	auto_run private method foo()
+	autorun private method foo()
 		return 'result'
 	end
 end
 ~~~
 
-Reads right-to-left: `method foo() ... end` produces a method object; `private` receives it and sets `.private = true`; `auto_run` receives that and sets `.auto_run = true`. Modifiers are independent, so order doesn't matter (`private auto_run method foo() ... end` is equivalent).
+Reads right-to-left: `method foo() ... end` produces a method object; `private` receives it and sets `.private = true`; `autorun` receives that and sets `.autorun = true`. Modifiers are independent, so order doesn't matter (`private autorun method foo() ... end` is equivalent).
 
-**Symbol directive.** The body-level `auto_run :name` command resolves the named method and sets its `.auto_run` to `true`. The named method must be declared in the body (or inherited); a missing name raises at `instance` evaluation time:
+**Symbol directive.** The body-level `autorun :name` command resolves the named method and sets its `.autorun` to `true`. The named method must be declared in the body (or inherited); a missing name raises at `instance` evaluation time:
 
 ~~~caspian
-auto_run :dsn
+autorun :dsn
 ~~~
 
 **Direct property assignment.** Capture the method object and set the property yourself:
@@ -190,7 +190,7 @@ $dsn = instance('localhost', 8080)
 		return 'tcp://' + @host + ':' + @port
 	end
 
-	$m.auto_run = true
+	$m.autorun = true
 end
 ~~~
 
@@ -198,7 +198,7 @@ Useful when the property should be set conditionally, or when the setting has to
 
 The auto-run method must accept an empty argument list — the runtime invokes it with no arguments (the arguments the caller passed to `instance` go to `&init`, not to the auto-run method).
 
-**Multiple methods with `auto_run = true`.** Raise. If a body would produce two methods both marked auto-run, the parser rejects it when it can see the conflict statically (two `auto_run :name` directives, or two `auto_run method ...` inline forms). When one or both settings happen via direct property assignment and the conflict isn't visible at parse time, the engine raises at `instance` evaluation time instead. Either way: at most one method may have `auto_run = true` per body.
+**Multiple methods with `autorun = true`.** Raise. If a body would produce two methods both marked auto-run, the parser rejects it when it can see the conflict statically (two `autorun :name` directives, or two `autorun method ...` inline forms). When one or both settings happen via direct property assignment and the conflict isn't visible at parse time, the engine raises at `instance` evaluation time instead. Either way: at most one method may have `autorun = true` per body.
 
 ---
 
@@ -240,12 +240,12 @@ $foo = $_cls.new($arg1, $arg2)
 
 The anonymous class isn't kept around past construction (no variable holds it; nothing else can reach it). Everything the body declares ends up on the new object's shadow.
 
-**With `auto_run`.** When the body includes an `auto_run :name` directive, the desugar has one extra step: after `.new`, the object's `.name` method is invoked and its return value becomes the value of the whole expression.
+**With `autorun`.** When the body includes an `autorun :name` directive, the desugar has one extra step: after `.new`, the object's `.name` method is invoked and its return value becomes the value of the whole expression.
 
 ~~~caspian
 $result = instance($arg1, $arg2)
 	# body
-	auto_run :run
+	autorun :run
 end
 ~~~
 
@@ -253,7 +253,7 @@ is equivalent to:
 
 ~~~caspian
 $_cls = class
-	# body (minus the auto_run directive)
+	# body (minus the autorun directive)
 end
 $_obj = $_cls.new($arg1, $arg2)
 $result = $_obj.run()
@@ -279,7 +279,7 @@ The canonical case: a developer is writing a custom script for one specific situ
 - **A bespoke handler / actor / agent** that exists only inside one function or one script. Defines its behavior inline; nobody outside the script ever sees it.
 - **A test fixture** that needs tailored behavior for one assertion. Local to the test, dies with the test.
 - **A module-global "the X"** — the logger, the registry, the connection pool — when there really is only one of it and inventing a class to make one feels like overhead.
-- **An object factory.** Wrap `instance ... end` in a function and each call constructs a fresh object with its own bucket state, using args flowed through `&init` — a clean way to produce tailored objects on demand without needing a named class. Especially good when the shape is fixed and only the state varies per call; `auto_run` also lets the factory return a computed value instead of the object.
+- **An object factory.** Wrap `instance ... end` in a function and each call constructs a fresh object with its own bucket state, using args flowed through `&init` — a clean way to produce tailored objects on demand without needing a named class. Especially good when the shape is fixed and only the state varies per call; `autorun` also lets the factory return a computed value instead of the object.
 
 What unites these: **the object is one-of-a-kind by intent** (or, in the factory case, each object *from* the factory is one-of-a-kind by intent), not a candidate-for-reuse waiting to be extracted into a named class later.
 
@@ -425,11 +425,11 @@ $ast = instance('1 + 2 * (3 - 4)') # expression parser
 		return $ch
 	end
 
-	auto_run :parse_expression
+	autorun :parse_expression
 end
 ~~~
 
-**Why an ad-hoc instance.** This example is the canonical case for the pattern. Each grammar rule dispatches to sibling rules — `parse_expression` calls `parse_term`, `parse_term` calls `parse_factor`, and `parse_factor` recurses back into `parse_expression` for parenthesized sub-expressions. **Bare functions can't express this**: a bare function can't see other functions defined nearby (sealed scope; see [functions/bare § Sealed scope](../functions/bare#sealed-scope)), so calling `&parse_term` from inside `&parse_expression`'s body would raise. The alternatives without `instance` are painful — thread both a cursor state dict and a hash of function references through every call, or build a shared `$fns = {}` lookup hash the closures can reach through. `instance` collapses both concerns: sibling dispatch through `%self.name`, shared cursor state through `@pos`. `auto_run :parse_expression` returns the resulting AST directly, since the parser object is throwaway once its output is captured.
+**Why an ad-hoc instance.** This example is the canonical case for the pattern. Each grammar rule dispatches to sibling rules — `parse_expression` calls `parse_term`, `parse_term` calls `parse_factor`, and `parse_factor` recurses back into `parse_expression` for parenthesized sub-expressions. **Bare functions can't express this**: a bare function can't see other functions defined nearby (sealed scope; see [functions/bare § Sealed scope](../functions/bare#sealed-scope)), so calling `&parse_term` from inside `&parse_expression`'s body would raise. The alternatives without `instance` are painful — thread both a cursor state dict and a hash of function references through every call, or build a shared `$fns = {}` lookup hash the closures can reach through. `instance` collapses both concerns: sibling dispatch through `%self.name`, shared cursor state through `@pos`. `autorun :parse_expression` returns the resulting AST directly, since the parser object is throwaway once its output is captured.
 
 The same shape shows up in interpreters (`eval_call` → `eval_if` → `eval_lambda`, sharing an environment), state machines (each state a method that transitions to sibling states), and multi-pass code generators (`build_header` → `build_body` → `build_footer` sharing a buffer). Anywhere many small pieces of code call each other AND need shared state, `instance` is the natural fit.
 
@@ -534,24 +534,24 @@ Other languages support related patterns but with friction. Java requires every 
 - **Inheritance from `instance` body** — `instance inherits Parent end` builds an object that responds to `Parent`'s methods.
 - **Inline label parses** — `instance # my label ... end` parses; label has no dispatch effect.
 - **No reusable class produced** — the anonymous shadow class is not reachable outside the constructed object.
-- **`auto_run :name` invokes named method** — `instance method foo() return 5 end; auto_run :foo end` produces `5`, not the object.
-- **`auto_run` return value replaces the object** — the value of the `instance ... end` expression is the method's return, not the object.
-- **`auto_run :missing` raises** — naming a non-existent method in `auto_run :name` errors at evaluation time.
-- **Inline `auto_run method foo() ... end` sets the property** — the declared method is auto-run; `instance` produces its return.
-- **`auto_run method foo() ... end` evaluates to the method object** — `$m = auto_run method foo() ... end` captures the method object; `$m.auto_run` is `true`.
-- **Chained transformer commands compose** — `auto_run private method foo() ... end` produces a method with both `.auto_run = true` and `.private = true`. Order is irrelevant: `private auto_run method foo() ... end` produces the same result.
-- **Direct property assignment `$m.auto_run = true`** — captured method value's `.auto_run = true` produces the same effect as the symbol directive.
-- **Two `auto_run :name` directives raise at parse time** — `auto_run :a; auto_run :b` in the same body errors.
-- **Two `auto_run method ...` inline forms raise at parse time** — same static conflict.
-- **Mixed static + runtime dual `auto_run = true` raises at evaluation** — a body producing two methods with `auto_run = true` errors when `instance` runs.
-- **`auto_run` methods with args raise** — the runtime invokes the auto-run method with zero args, so a required-parameter signature errors.
+- **`autorun :name` invokes named method** — `instance method foo() return 5 end; autorun :foo end` produces `5`, not the object.
+- **`autorun` return value replaces the object** — the value of the `instance ... end` expression is the method's return, not the object.
+- **`autorun :missing` raises** — naming a non-existent method in `autorun :name` errors at evaluation time.
+- **Inline `autorun method foo() ... end` sets the property** — the declared method is auto-run; `instance` produces its return.
+- **`autorun method foo() ... end` evaluates to the method object** — `$m = autorun method foo() ... end` captures the method object; `$m.autorun` is `true`.
+- **Chained transformer commands compose** — `autorun private method foo() ... end` produces a method with both `.autorun = true` and `.private = true`. Order is irrelevant: `private autorun method foo() ... end` produces the same result.
+- **Direct property assignment `$m.autorun = true`** — captured method value's `.autorun = true` produces the same effect as the symbol directive.
+- **Two `autorun :name` directives raise at parse time** — `autorun :a; autorun :b` in the same body errors.
+- **Two `autorun method ...` inline forms raise at parse time** — same static conflict.
+- **Mixed static + runtime dual `autorun = true` raises at evaluation** — a body producing two methods with `autorun = true` errors when `instance` runs.
+- **`autorun` methods with args raise** — the runtime invokes the auto-run method with zero args, so a required-parameter signature errors.
 - **`init` runs before auto-run method** — the auto-run method sees the bucket after `init` has populated it.
 - **Args pass to `init`, not to auto-run** — arguments to `instance(...)` route to `init` only.
-- **Method with `.auto_run = false` not invoked** — default value; a plain method in an `instance` body doesn't fire on construction.
-- **Method declared inside `class` body has no `.auto_run`** — accessing `.auto_run` on a class-defined method raises (property is `instance`-only).
+- **Method with `.autorun = false` not invoked** — default value; a plain method in an `instance` body doesn't fire on construction.
+- **Method declared inside `class` body has no `.autorun`** — accessing `.autorun` on a class-defined method raises (property is `instance`-only).
 - **`instance` desugars to class + `.new`** — the observable behavior matches the explicit `$_cls = class end; $_cls.new()` form.
 - **Object's shadow class holds all body declarations** — inspecting `$obj.object.classes` (or equivalent) shows the anonymous class carries the body's methods and fields.
 - **Nested field defaults are per-instance** — `field :opts, default: {}` gives each ad-hoc instance its own hash.
 - **`%self` inside an `instance` method is the constructed object** — verified by `method me() return %self end; $obj.me == $obj`.
 - **Recursive-descent parser pattern works** — the mutually-recursive-methods example (from `parse_expression` → `parse_term` → `parse_factor`) executes and returns the correct AST for `'1 + 2 * (3 - 4)'`.
-- **`auto_run` method invoked exactly once** — repeated observation of side effects confirms one call, not zero or two.
+- **`autorun` method invoked exactly once** — repeated observation of side effects confirms one call, not zero or two.

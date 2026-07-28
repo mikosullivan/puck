@@ -81,7 +81,7 @@ vibecode <<EOF
 EOF
 ~~~
 
-Both are **reserved BWCs** — parse-recognized barewords in the same class as `field`, `private`, `main`. User code cannot rebind them; there is no `$documentation` variable or method-of-same-name that can shadow the construct. They are neither system-methods (`%name` sigil) nor user-definable functions.
+Both are **reserved BWCs** — parse-recognized barewords in the same class as `field`, `private`, `autorun`. User code cannot rebind them; there is no `$documentation` variable or method-of-same-name that can shadow the construct. They are neither system-methods (`%name` sigil) nor user-definable functions.
 
 **Runtime rule — never interpolated.** Unlike ordinary heredocs, `documentation` and `vibecode` never process `#{expr}` interpolation in their body, even when the terminator is quoted (`<<"EOF"`). The transpiler still records the `dq: true` flag on the arg for source fidelity, but the runtime treats the body as literal text under both constructs.
 

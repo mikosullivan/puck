@@ -48,6 +48,20 @@ All sizes approximate, in kb.
 
 **Location** column: **Executable** means compiled into the `caspian` binary. **Cache** means stored on disk under `~/.local/share/caspian/lua/` after Caspian install time, loaded lazily by `require`.
 
+## Core Caspian code storage
+
+Caspian code that ships in the core binary — the stdlib written above the primitive line, per [concepts § Caspian is written in Caspian](../concepts#caspian-is-written-in-caspian) — is stored as **minified CaspM** (the [AST format](../caspianj)). The transpiler runs at build time; the Caspian source doesn't ship in the binary. This is the V1 storage strategy for the floppy budget.
+
+**Line info stripped.** Core CaspM is built with `normalize(caspj, {lines: false})` — see [caspianj § Stripping line info from CaspM](../caspianj#stripping-line-info-from-caspm). Runtime errors surfacing inside stdlib code would point at CaspM the end user can't see or edit; the bytes are better spent on functionality. User-provided code (application source, downloaded classes) still keeps line info.
+
+If further reductions are needed pre-release, levers to consider in order of engineering cost:
+
+1. **`luac` bytecode-compile the Lua host code** (`transpiler.lua`, `normalize.lua`, engine internals) — ≈50% reduction on those files, uses existing Lua tooling, no new engine code.
+2. **gzip / brotli compression** on the minified CaspM blobs at build time; decompress at load.
+3. **Caspian-native bytecode** below CaspM — biggest engineering investment (new compiler + interpreter, versioned spec); only if the previous levers aren't enough.
+
+Nothing on this list is committed for V1. Minified CaspM is the current baseline; the other levers stay in the pocket.
+
 ## Feature cost estimates
 
 Rough sizing of what specific subsystems contribute to Caspian's own engine + stdlib code. Not exhaustive — a running notebook for features whose cost has been sized during design. All sizes in kb; actual figures shake out at implementation time.

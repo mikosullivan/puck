@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_definition",
-	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, method, private, main, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `main` designation (a class can nominate ONE method as its main — invoked when the class is called as a callable; the `main` DSL command sets the class's `%self.methods.main` slot and raises loudly on overwrite; direct property assignment to that slot bypasses the check for the rare intentional swap), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
+	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, method, private, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `.call` method convention (defining a method named `.call` makes an instance amp-invocable — `&$instance(args)` desugars to `$instance.call(args)` at CaspM time, no runtime property lookup), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
 	"status": "draft — DSL surface for the common constructs spec'd; a few areas noted as TBD (helper namespaces, hook-in-class declaration, `implements?` structural check)",
 	"audience": "developers writing Caspian classes; parser implementers; anyone reasoning about class construction"
 }}
@@ -100,7 +100,6 @@ Inside a class body, certain bare words are recognized as **DSL commands** — c
 | `public_const` | Declare a class-level frozen constant with an external getter. [Constants](#constants). |
 | `method` | Declare a class method. [Methods](#methods). |
 | `private` | Mark a method as private. [Private methods](#private-methods). |
-| `main` | Designate a method as the class's main method — the one invoked when the class itself is called as a callable. [The main method](#the-main-method). |
 | `inherits` | Declare a parent class. [Inheritance](#inheritance). |
 | `abstract` | Mark the class abstract. [Abstract classes](#abstract-classes). |
 
@@ -115,9 +114,9 @@ class # foo
 end
 ~~~
 
-Reads as: `method bar() ... end` produces a method object; `private` receives that value, mutates it, returns it. Chains of any length compose the same way — see [instance § Setting auto_run](../instance#setting-auto-run) for `auto_run private method foo() ... end`. Commands with fixed-shape argument lists (`field :name, ...`, `inherits Person`, `abstract true`) don't participate in this chain — they take their own args, not a following DSL expression.
+Reads as: `method bar() ... end` produces a method object; `private` receives that value, mutates it, returns it. Chains of any length compose the same way — see [instance § Setting autorun](../instance#setting-auto-run) for `autorun private method foo() ... end`. Commands with fixed-shape argument lists (`field :name, ...`, `inherits Person`, `abstract true`) don't participate in this chain — they take their own args, not a following DSL expression.
 
-**Scope.** The class-body DSL is active inside `class ... end` and inside `instance ... end` (which inherits the class DSL and adds `auto_run`). Outside those bodies, these words are not automatically callable.
+**Scope.** The class-body DSL is active inside `class ... end` and inside `instance ... end` (which inherits the class DSL and adds `autorun`). Outside those bodies, these words are not automatically callable.
 
 ## Fields
 
@@ -329,9 +328,9 @@ Real capability restriction (as opposed to convention-plus-enforcement) uses [ja
 
 Full runtime semantics (dispatch rule, error on external call) are spec'd on [functions/method § Method surface](https://puck.uno/documentation/requirements/functions/method#method-surface).
 
-### The main method
+### The `.call` method — making a class amp-invocable
 
-A class can designate one of its methods as its **main method** — the one invoked when the class itself is called as a callable (`&$my_class(args)`, or bare `$my_class(args)` when the callable-invocation sugar allows). `main` is a class-body DSL command that takes a method object and stores it in the class's `%self.methods.main` slot:
+A class becomes `&`-invocable by defining a method named `.call`. `&$my_instance(args)` desugars to `$my_instance.call(args)` — there's no runtime property lookup, no class-level "which method is main?" question, just a direct method call by the name `call`.
 
 ~~~caspian
 $greeter = class # greeter
@@ -339,25 +338,15 @@ $greeter = class # greeter
 		return 'Hello, ' + $name
 	end
 
-	main method &blah($name)
+	method &call($name)
 		return %self.hello($name)
 	end
 end
 
-&$greeter('Puck')   # invokes the main method — returns 'Hello, Puck'
+&$greeter('Puck')   # invokes .call — returns 'Hello, Puck'
 ~~~
 
-**One main per class — enforced at declaration.** `main` raises if the class already has a main assigned. Two `main method ...` declarations in the same class body fails on the second — the whole point of the `main` construct is the loud-fail overwrite check, catching accidental duplicates at build time.
-
-**Three forms — the first two carry the loud-fail check, the third bypasses it:**
-
-- **Chainable modifier.** `main method &blah() ... end` — the common form. `method ... end` produces a method object; `main` writes it to `%self.methods.main` and raises if the slot is already set.
-- **Applied to a captured method.** `main $to_str` or `main %self.methods['bar']` — same modifier, method obtained by variable or lookup. Same loud-fail check.
-- **Direct property assignment.** `%self.methods.main = $method_obj` — plain property write. No safety check. Overwrites silently. Use this when the intent IS to overwrite; anyone reaching for this form has explicit intent.
-
-**Unsetting.** Assign `null` to the slot: `%self.methods.main = null`. Then a subsequent `main $foo` can set it again without raising.
-
-**Chain order with other modifiers.** `main` is peer to `private` and `auto_run` — all take a method object, mutate it (or the class), return it. Order doesn't functionally matter: `main private method ...` and `private main method ...` produce the same result.
+Same convention as Ruby (`Proc#call`), Python (`__call__`), Java (`Callable.call()`). If a class wants domain-specific naming for its callable verb — say `Report` with `.generate` as the semantic action — write `.call` as a one-line wrapper: `method &call() &generate end`.
 
 ## Inheritance
 

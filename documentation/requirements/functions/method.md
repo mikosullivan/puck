@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_functions_method",
-	"role": "spec for the method type — a function bound to a receiver object. `%self` is the receiver; `%bucket` is the receiver's bucket; `%chain` is available same as in bare functions and closures. No captured outer scope. Like `function` and `closure`, `method name(...) ... end` is an expression that evaluates to the declared method object, so it can be captured and manipulated as a value. Method objects carry the shared function surface (`.call`, `.params`) plus a method-specific `.private` / `.private=` getter/setter pair; methods declared inside `instance` bodies additionally carry an `auto_run` getter/setter (spec'd on the instance page). Content TBD beyond the shape captured here.",
+	"role": "spec for the method type — a function bound to a receiver object. `%self` is the receiver; `%bucket` is the receiver's bucket; `%chain` is available same as in bare functions and closures. No captured outer scope. Like `function` and `closure`, `method name(...) ... end` is an expression that evaluates to the declared method object, so it can be captured and manipulated as a value. Method objects carry the shared function surface (`.call`, `.params`) plus a method-specific `.private` / `.private=` getter/setter pair; methods declared inside `instance` bodies additionally carry an `autorun` getter/setter (spec'd on the instance page). Content TBD beyond the shape captured here.",
 	"status": "draft — receiver-bound surface described; deeper semantics of dispatch, ownership, and role interactions to be filled in",
 	"audience": "developers writing Caspian; parser implementers; class authors"
 }}
@@ -52,7 +52,7 @@ Method objects add the following methods on top of the [shared function surface]
 | `.private` | Read the `private` boolean. When `true`, calls from outside the receiver's own class body raise — the method is only reachable from within its own class. |
 | `.private=` | Set the `private` boolean. `$m.private = true` marks the method as private; assigning `false` makes it callable from anywhere again. |
 
-Methods declared inside an `instance` body additionally carry an `auto_run` getter/setter pair — see [instance § auto_run](https://puck.uno/documentation/requirements/classes/instance#auto-run) for the property, its semantics, and the one-per-body rule.
+Methods declared inside an `instance` body additionally carry an `autorun` getter/setter pair — see [instance § autorun](https://puck.uno/documentation/requirements/classes/instance#auto-run) for the property, its semantics, and the one-per-body rule.
 
 **Setting `.private` at declaration time.** Inside a class body, the `private` DSL bare-word command is the idiomatic form:
 
@@ -112,7 +112,7 @@ end
 
 Inside the class body above, `rank` is declared on the class as a normal class method AND the method object is assigned to the local `$m`. Both effects happen from the single expression; the value captured at `$m` is the same object the class now has for `.rank`.
 
-Capturing the value lets code hand the method to constructs that expect one. The [`instance` doc's `auto_run` section](https://puck.uno/documentation/requirements/classes/instance#auto-run) is the current motivating example: `$m.auto_run = true` on a captured method value flips a boolean property that changes how `instance` construction finishes.
+Capturing the value lets code hand the method to constructs that expect one. The [`instance` doc's `autorun` section](https://puck.uno/documentation/requirements/classes/instance#auto-run) is the current motivating example: `$m.autorun = true` on a captured method value flips a boolean property that changes how `instance` construction finishes.
 
 ## Testing
 
@@ -141,7 +141,7 @@ Capturing the value lets code hand the method to constructs that expect one. The
 - **Ad-hoc application via `$obj.$fn`** — an externally-defined bare function applied as `$obj.$fn` runs with `%self = $obj`.
 - **Downloaded methods have full `%bucket` access** — an applied function reads `@field` directly on the receiver.
 - **Ad-hoc application by non-user role requires ownership** — see [downloaded-methods § receiver-ownership rule](https://puck.uno/documentation/requirements/classes/downloaded-methods#the-receiver-ownership-rule); the applied call raises when the current role neither owns the receiver nor is user.
-- **Instance-only `auto_run`** — methods declared inside `instance ... end` bodies carry `.auto_run`; methods declared inside `class ... end` bodies do not.
+- **Instance-only `autorun`** — methods declared inside `instance ... end` bodies carry `.autorun`; methods declared inside `class ... end` bodies do not.
 
 ## Related
 

@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_files",
-	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %fetch. Covers the file-as-value model, the single-class pattern, and the two multi-class patterns (plain hash literal for pure lookup, or instance-with-`public_const` when the file also needs helpers, hooks, or other structure). Includes the auto_run caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
+	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %fetch. Covers the file-as-value model, the single-class pattern, and the two multi-class patterns (plain hash literal for pure lookup, or instance-with-`public_const` when the file also needs helpers, hooks, or other structure). Includes the autorun caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
 	"status": "spec — single-class and multi-class file shapes settled; two multi-class patterns (hash literal for pure lookup, instance-with-public_const when other capabilities are needed) documented as peers",
 	"audience": "developers authoring Caspian source files; anyone publishing objects for %fetch fetch; engine implementers who realize a file's value after evaluation"
 }}
@@ -101,19 +101,19 @@ $paint = $colors.red.new(shade: 'crimson')
 $colors.describe   # 'colors library'
 ~~~
 
-`public_const :name, value` freezes the value into the class-object's bucket and generates an external getter method with the same name (see [classes/definition § Constants](https://puck.uno/documentation/requirements/classes/definition#constants)). Because the wrapping is a full instance, the file body can also carry shared helpers, config values, an `init` hook, singleton methods, or `main` — anything a regular `instance ... end` body can carry.
+`public_const :name, value` freezes the value into the class-object's bucket and generates an external getter method with the same name (see [classes/definition § Constants](https://puck.uno/documentation/requirements/classes/definition#constants)). Because the wrapping is a full instance, the file body can also carry shared helpers, config values, an `init` hook, singleton methods, or a `.call` method (making the file's returned instance amp-invocable) — anything a regular `instance ... end` body can carry.
 
 ### Choosing between them
 
 - **Read ergonomics.** `$colors.red` reads better than `$colors['red']` at every call site.
-- **Extension.** The instance form can grow to include helpers, shared state, hooks, or a `main`. The hash form is a fixed lookup — adding anything else requires switching to `instance` later.
+- **Extension.** The instance form can grow to include helpers, shared state, hooks, or a `.call` method. The hash form is a fixed lookup — adding anything else requires switching to `instance` later.
 - **Introspection.** The instance form exposes structure via the object's method surface. A hash is just a hash.
 
 Reach for the hash form when the file is a pure lookup table; use the instance form when the file carries additional capabilities or is likely to grow.
 
-## `auto_run` in a class-serving instance
+## `autorun` in a class-serving instance
 
-Setting `auto_run` on a method inside a class-serving instance replaces the instance with that method's return value as the file's value — so consumers stop receiving the instance and start receiving whatever the method returns:
+Setting `autorun` on a method inside a class-serving instance replaces the instance with that method's return value as the file's value — so consumers stop receiving the instance and start receiving whatever the method returns:
 
 ~~~caspian
 instance
@@ -125,11 +125,11 @@ instance
 		return null
 	end
 
-	auto_run :compute_something   # file's value is now null, not the instance
+	autorun :compute_something   # file's value is now null, not the instance
 end
 ~~~
 
-Almost always the wrong shape for a class-serving file. Don't set `auto_run` on a class-serving instance — `auto_run` is meaningful for instances that exist to compute a single result; class-serving instances exist to hold classes and want the instance itself to be the file's value.
+Almost always the wrong shape for a class-serving file. Don't set `autorun` on a class-serving instance — `autorun` is meaningful for instances that exist to compute a single result; class-serving instances exist to hold classes and want the instance itself to be the file's value.
 
 ## Testing
 
@@ -142,7 +142,7 @@ Almost always the wrong shape for a class-serving file. Don't set `auto_run` on 
 - **Instance-form file honors `init` hook** — an `init` hook inside the wrapping instance runs exactly once when the file is loaded, not on each class-property access.
 - **Hash-form file yields a hash** — a file whose body is a hash literal of classes yields a hash; `$colors['red']` returns the red class.
 - **Hash-form file class is instantiable** — `$colors['red'].new(...)` produces a valid instance.
-- **`auto_run` on a class-serving instance replaces the file's value** — after adding `auto_run :compute_something` that returns `null`, `%fetch(url)` yields `null`, not the instance.
+- **`autorun` on a class-serving instance replaces the file's value** — after adding `autorun :compute_something` that returns `null`, `%fetch(url)` yields `null`, not the instance.
 - **Fetching from `local:` produces the same value as HTTP** — a file at `local:/widget.casp` and the same file served over HTTP yield equivalent objects.
 - **Fetching from cache produces the same value** — a cached copy of a file yields a value equivalent to the origin fetch.
 - **Fetching an empty file raises** — a zero-byte `.casp` file raises per [non-caspian-mime-types § Empty-content handling](https://puck.uno/documentation/requirements/non-caspian-mime-types#empty-content-handling).
