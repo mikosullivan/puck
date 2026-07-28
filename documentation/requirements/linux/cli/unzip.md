@@ -26,7 +26,7 @@ Stub.
 
 TBD. Builder with `archive`, `into`, `list_only`, `overwrite` (tri-state: `:prompt` / `:always` / `:never`), `password`. The list-vs-extract split is prominent enough to warrant either two methods (`.list` and `.extract`) or a mode property.
 
-Passwords surfaced through this wrapper should route through the [Password class](https://puck.uno/documentation/requirements/secure-memory/password/) rather than being handed as plain strings on the argv (the argv is visible in `ps` for the duration of the call — a real leak).
+Passwords surfaced through this wrapper should route through the [Password class](https://puck.uno/documentation/requirements/protected/password) rather than being handed as plain strings on the argv (the argv is visible in `ps` for the duration of the call — a real leak).
 
 ## Testing
 

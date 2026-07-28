@@ -13,7 +13,7 @@ Everything downloaded at Caspian install time — the runtime binary itself and 
 
 ## Contents at a glance
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 220" width="285" role="img" aria-label="Caspian floppy budget: 1238 kb used, 202 kb free, of 1440 kb total">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 220" width="356" role="img" aria-label="Caspian floppy budget: 1238 kb used, 202 kb free, of 1440 kb total">
 	<title>Caspian floppy budget</title>
 	<g transform="translate(110 110)">
 		<path d="M 0,-80 A 80,80 0 1,1 -61.6,-51.0 L 0,0 Z" fill="#ffb74d"/>
@@ -34,7 +34,7 @@ All sizes approximate, in kb.
 |---|---:|---|---|
 | Lua 5.4 interpreter (stripped, static) | 250 | Executable | The interpreter itself. |
 | LPeg | 50 | Executable | C extension for PEG-based pattern matching — used by Caspian's source parser, regex engine, and JSON parser. Compiled into the binary rather than lazy-loaded from disk: it's on the critical path at engine startup (CaspianJ parsing = JSON parsing, which is LPeg-based), so it's effectively always loaded — and being an engine implementation detail, there's no user-facing reason to make it independently upgradable. |
-| libsodium-minimal | 200 | Executable | C library for hashing, signing, secure random. The vault, secure-memory model, and password/passkey subsystems are keyed on libsodium's specific APIs — not swappable without redesign. |
+| libsodium-minimal | 200 | Executable | C library for hashing, signing, secure random. The vault, protected-memory model, and password/passkey subsystems are keyed on libsodium's specific APIs — not swappable without redesign. |
 | luasodium | 10 | Executable | Lua bindings for libsodium — how the engine reaches libsodium at all. |
 | luasocket | 50 | Executable | TCP / UDP sockets + basic HTTP client. Backs both `%chain.net` (user-facing network access) and `%fetch` (the engine's own object-fetch mechanism). Since `%fetch` is how downloadable Caspian classes reach the runtime, network is engine machinery — not a per-program feature. Minute-detail coupling to luasocket's specific API means a version drift could silently break engine assumptions; bundling locks the version. |
 | pegasus | 15 | Executable | Pure-Lua HTTP/1.x server. Handles TCP accept (on top of luasocket), connection lifecycle, request parsing, response writing. Compiled into the binary because HTTP is core to how Caspian does IPC — engine machinery, not per-program feature. Same identity argument as luasocket: minute-detail coupling to pegasus's specific API, no user-facing upgrade path, version drift would silently break engine assumptions. |
@@ -54,8 +54,8 @@ Rough sizing of what specific subsystems contribute to Caspian's own engine + st
 
 | Feature | Size | Notes |
 |---|---:|---|
-| Secure memory subsystem | 60 | Vault management (≈20), `%process.malloc` primitive (≈25), Password class (≈10), process-security wiring (≈5). See [secure-memory/](../secure-memory/). Uses libsodium + luasodium which are already bundled — no new C libraries needed. |
-| Passkey subsystem | 15 | Passkey server-side + authenticator-side classes in Caspian (≈15). See [secure-memory/passkey/](../secure-memory/passkey/). The CBOR decoder is now a V1 download requirement reached via `%(caspian.uno/cbor.casp)` — zero install-download cost, fetched lazily on first passkey use. Impl spec deferred. libsodium's Ed25519 verify, CSPRNG, and key-generation primitives are already bundled and reused. ES256 / RS256 signature verify calls the operator-installed `openssl` binary directly via `.execute` — subprocess invocation, no shell involved — treated as a Caspian prerequisite in the same posture as `luarocks` and `tar`. Zero bundled cost. Per [concepts § Caspian is written in Caspian](../concepts#caspian-is-written-in-caspian), both Passkey classes and all assertion-validation logic live above the primitive line as Caspian code — the ≈15 kb bumps the Caspian engine + stdlib line when the work lands. |
+| Protected memory subsystem | 60 | Vault management (≈20), `core:protected/memory` primitive (≈25), Password class (≈10), process-security wiring (≈5). See [protected/](../protected/). Uses libsodium + luasodium which are already bundled — no new C libraries needed. |
+| Passkey subsystem | 15 | Passkey server-side + authenticator-side classes in Caspian (≈15). See [protected/passkey/](../protected/passkey/). The CBOR decoder is now a V1 download requirement reached via `%(caspian.uno/cbor.casp)` — zero install-download cost, fetched lazily on first passkey use. Impl spec deferred. libsodium's Ed25519 verify, CSPRNG, and key-generation primitives are already bundled and reused. ES256 / RS256 signature verify calls the operator-installed `openssl` binary directly via `.execute` — subprocess invocation, no shell involved — treated as a Caspian prerequisite in the same posture as `luarocks` and `tar`. Zero bundled cost. Per [concepts § Caspian is written in Caspian](../concepts#caspian-is-written-in-caspian), both Passkey classes and all assertion-validation logic live above the primitive line as Caspian code — the ≈15 kb bumps the Caspian engine + stdlib line when the work lands. |
 
 ## In this section
 

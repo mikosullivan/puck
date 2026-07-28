@@ -181,6 +181,8 @@ The engine installs an implicit `catch` at the appropriate frame boundary — th
 
 If a return exception is raised outside any matching frame — or otherwise gets past all the engine's boundary catches — it behaves like any other uncaught exception and propagates to the top of `%chain`.
 
+**Return-from-a-distance.** A call object is a first-class value — pass it out, stash it in `%chain`, hand it to anyone who needs it. `.return $value` on a call object raises a `ReturnException` targeted at the **owning frame**, not at the frame that fired the exception. The exception passes through every intermediate frame's boundary catch (those don't match, since they were installed for a different call object) and lands at the owning frame's implicit catch. That's how deeply nested code can return from an outer function without any of the intermediates opting in. See [%call § Passing the call object out — return-from-a-distance](https://puck.uno/documentation/requirements/global-methods/call/#passing-the-call-object-out-return-from-a-distance) for the mechanism and worked examples.
+
 **Catchability.** TBD.
 
 **Unwinding.** TBD.

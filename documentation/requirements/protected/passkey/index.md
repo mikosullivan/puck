@@ -1,9 +1,11 @@
 # Passkey
 
+<span class="tag">passkey</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_caspian_secure_memory_passkey",
-	"role": "spec for Caspian's Passkey classes (WebAuthn / FIDO2). Two roles: server-side relying party (holds non-secret credential metadata, verifies assertions via libsodium signature primitives) and authenticator-side (holds the private key in the vault, signs through vault.sign gateway operations). Both are Caspian classes built on top of the [vault](../vault) — no new memory-protection primitives needed. The only genuinely new engine dependency is a CBOR decoder for COSE_Key and attestation/assertion parsing.",
+	"role": "spec for Caspian's Passkey classes (WebAuthn / FIDO2). Two roles: server-side relying party (holds non-secret credential metadata, verifies assertions via libsodium signature primitives) and authenticator-side (holds the private key in the vault, signs through vault.sign gateway operations). Both are Caspian classes built on top of the [vault](tag:vault) — no new memory-protection primitives needed. The only genuinely new engine dependency is a CBOR decoder for COSE_Key and attestation/assertion parsing.",
 	"status": "spec — class shape, method surface, and exception model settled from the design pass; CBOR-decoder packaging (C binding vs pure-Caspian implementation) and exact algorithm support (ES256/EdDSA/RS256) pending implementation-time decisions",
 	"audience": "Caspian developers implementing WebAuthn login flows or passkey-style server-to-server authentication; anyone building or auditing the Passkey classes themselves"
 }}
@@ -12,7 +14,7 @@
 Caspian's Passkey classes for WebAuthn / FIDO2 authentication. Two roles, two classes:
 
 - **Server-side (relying party):** holds credential metadata in regular bucket fields; verifies assertions via libsodium signature primitives. No vault needed — nothing in the bucket is crypto-secret.
-- **Authenticator-side:** holds the private key in the [vault](../vault); signs through `vault.sign` gateway operations. Uses the vault + protected-mode model spec'd in the sibling secure-memory pages.
+- **Authenticator-side:** holds the private key in the [vault](tag:vault); signs through `vault.sign` gateway operations. Uses the vault + protected-mode model spec'd in the sibling protected/ pages.
 
 Both are Caspian classes. The only genuinely new engine dependency is a **CBOR decoder** for COSE_Key parsing and attestation / assertion objects. Everything else (CSPRNG, signature primitives, vault) is already available or on the roadmap for unrelated reasons.
 
@@ -81,7 +83,7 @@ Used when Caspian holds private keys — server-to-server passkey-style auth, ho
 
 | Field | Type | Purpose |
 |---|---|---|
-| `vault_id` | string | Handle to the private key in the [vault](../vault). |
+| `vault_id` | string | Handle to the private key in the [vault](tag:vault). |
 | `credential_id` | bytes | Assigned at registration. |
 | `public_key` | bytes (COSE_Key CBOR) | Cached public half — kept in the bucket since it's public. |
 | `algorithm` | integer | COSE alg identifier. |
@@ -110,7 +112,7 @@ Used when Caspian holds private keys — server-to-server passkey-style auth, ho
 
 ### What's never exposed
 
-- **The private key bytes.** No accessor returns them; `.sign` and `.export_attestation` are the only operations that use them, and both go through the vault gateway. Same guarantee as [Password](../password/) — the class is a handle, not a container.
+- **The private key bytes.** No accessor returns them; `.sign` and `.export_attestation` are the only operations that use them, and both go through the vault gateway. Same guarantee as [Password](../password) — the class is a handle, not a container.
 - **The vault ID is exposed** as `@vault_id`, but it's useless without the engine's gateway.
 
 ## Required engine primitives
@@ -121,7 +123,7 @@ Used when Caspian holds private keys — server-to-server passkey-style auth, ho
 | libsodium signature verify (Ed25519) | exists | EdDSA assertion verify. |
 | `openssl` subprocess (ES256, RS256) | new — via the [linux/cli/openssl](https://puck.uno/documentation/requirements/linux/cli/openssl) wrapper class; operator-provided | ES256 / RS256 assertion verify. |
 | libsodium key generation | exists | Authenticator-side keypair generation. |
-| `vault.sign` gateway operation | planned for general signing-key support (see [vault § Gateway operations](../vault#gateway-operations)) | Authenticator-side signing. |
+| `vault.sign` gateway operation | planned for general signing-key support (see [vault § Gateway operations](tag:vault-gateway-ops)) | Authenticator-side signing. |
 | CBOR decoder | new — fetched on first passkey use via `%(caspian.uno/cbor.casp)` (V1 download, spec deferred) | COSE_Key parsing; attestation / assertion object parsing. |
 
 The CBOR decoder is the only genuinely new dependency. It is a **V1 download requirement** — fetched via `%(caspian.uno/cbor.casp)` on the first passkey call, then cached locally like any other `%fetch` object. The specific implementation (pure-Caspian decoder, C binding, or something else) is deferred; the requirement V1 commits to is that passkey code reaches it through the puck.uno URL, not that a specific library ships in the core install. Zero install-download cost; small first-use fetch when a program actually touches passkeys.
@@ -164,7 +166,7 @@ Per [concepts § Caspian is written in Caspian](../../concepts#caspian-is-writte
 Yes.
 
 - **Server-side:** no secrets are ever in play. Every field the server holds is public or metadata. Signature verification runs in a hardened C library either way — libsodium for Ed25519 (in-process), `openssl` for ES256 / RS256 (subprocess) — with constant-time comparison guaranteed. The Caspian layer only decides which primitive to call and what exception to raise on failure. Correctness of the assertion-validation logic matters, but that logic being in Caspian makes it easier to audit, not harder.
-- **Authenticator-side:** the private key lives in the [vault](../vault) under `PROT_NONE`. The Caspian Passkey code holds a `vault_id` and calls `vault.sign` — same handle-not-container pattern as [Password](../password/). Raw private-key bytes never reach the Caspian layer, so keeping the class above the primitive line changes nothing about the key's protection.
+- **Authenticator-side:** the private key lives in the [vault](tag:vault) under `PROT_NONE`. The Caspian Passkey code holds a `vault_id` and calls `vault.sign` — same handle-not-container pattern as [Password](../password). Raw private-key bytes never reach the Caspian layer, so keeping the class above the primitive line changes nothing about the key's protection.
 
 The vault gateway is the security boundary in both cases. Everything the Passkey classes do sits above that gateway — Caspian code running under the same rules any user program runs under.
 
@@ -178,7 +180,7 @@ The Passkey classes themselves are Caspian code and are part of the Caspian engi
 
 ## Related
 
-- [vault](../vault) — the storage primitive the authenticator-side Passkey uses via `vault.sign`.
-- [password](../password/) — the sibling secret-holding class. Same handle-not-container pattern.
-- [secure-memory index](../) — the umbrella overview.
+- [vault](tag:vault) — the storage primitive the authenticator-side Passkey uses via `vault.sign`.
+- [password](../password) — the sibling secret-holding class. Same handle-not-container pattern.
+- [protected/ index](../) — the umbrella overview.
 - [linux/cli/openssl](https://puck.uno/documentation/requirements/linux/cli/openssl) — the wrapper class that invokes the operator-installed `openssl` binary directly for ES256 / RS256 signature verify.

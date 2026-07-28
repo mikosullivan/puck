@@ -8,7 +8,7 @@
 }}
 ~~~
 
-`%engine.manifest` returns a hash describing the running process: the operating system underneath, the engine implementation, the Caspian language version, the objects downloaded so far, timing data, and (when coverage is on) coverage results. It's a debug and introspection tool — a developer asking "what's happening in this process right now?" calls `%engine.manifest` to get the answer.
+`%engine.manifest` returns a hash describing the running process: the operating system underneath, the engine implementation, the Caspian language version, the objects downloaded so far, and timing data. It's a debug and introspection tool — a developer asking "what's happening in this process right now?" calls `%engine.manifest` to get the answer.
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
 
@@ -16,7 +16,7 @@ Each call returns a fresh hash representing state at the moment of the call — 
 
 ## Sections
 
-The manifest has six top-level sections: `process`, `os`, `engine`, `caspian`, `downloads`, and `coverage`.
+The manifest has five top-level sections: `process`, `os`, `engine`, `caspian`, and `downloads`.
 
 | Section | What it covers |
 |---|---|
@@ -25,7 +25,6 @@ The manifest has six top-level sections: `process`, `os`, `engine`, `caspian`, `
 | `engine` | Engine implementation identity — codename, version, host VM. |
 | `caspian` | Caspian language version this engine implements. |
 | `downloads` | Every object downloaded by this process via [`%fetch`](https://puck.uno/documentation/requirements/chain/methods/puck), keyed by URL. |
-| `coverage` | Coverage data. Present only when [`%engine.coverage`](https://puck.uno/documentation/requirements/engine/coverage) is set; absent when coverage is off. |
 
 ## Field inventory
 
@@ -148,10 +147,6 @@ Currently only `version` — the Caspian language spec version the engine implem
 
 Objects don't always come directly from the URL they live at. A separate provider layer (the blockchain registry, spec'd in its own doc [TBD]) can return a cached or intermediated copy from a different URL — the manifest records that path via the `via` field so the actual provenance is inspectable.
 
-### `coverage`
-
-Structure documented in [`%engine.coverage` § Manifest field inventory](https://puck.uno/documentation/requirements/engine/coverage#manifest-field-inventory). The section is absent when coverage is off; when on, its shape depends on the retention value set on `%engine.coverage`.
-
 ## Declaring requirements
 
 A second purpose of the manifest, beyond runtime introspection, is to **declare what a script needs to run**. A script's manifest names the resources it requires — `%chain.stdout`, `%chain.net`, `%chain.tmp`, specific downloaded objects with version constraints, a particular engine version, etc. — and an engine starting that script reads the declared requirements and decides whether it can provide all of them. If it can't, it refuses to start rather than running the script partway and failing mid-execution against a missing capability.
@@ -163,9 +158,7 @@ The mechanism for how a script declares its requirements (manifest header in the
 ## Testing
 
 - **`%engine.manifest` returns a hash** — the top-level value is a hash object.
-- **Manifest has the six documented sections** — `process`, `os`, `engine`, `caspian`, `downloads`, `coverage` (last only when coverage is on).
-- **`coverage` section is absent when coverage is off** — the key is missing, not present-as-null.
-- **`coverage` section is present when `%engine.coverage` is set** — enabling coverage makes the section appear.
+- **Manifest has five sections** — `process`, `os`, `engine`, `caspian`, `downloads`.
 - **Each call returns a fresh hash** — mutating one manifest hash and then calling `%engine.manifest` again returns unmutated data.
 - **Manifest is a snapshot, not a live view** — a returned hash does not update when program state changes afterward.
 - **`process.time.start` is set at process start** — the value doesn't change across manifest calls within one run.
@@ -205,4 +198,3 @@ The mechanism for how a script declares its requirements (manifest header in the
 - **`downloads` reflects `%engine.require` calls** — a URL required at startup appears in `downloads` on first manifest read.
 - **`downloads` reflects `%(url)` first-use loads** — objects loaded via first-use appear once fetched.
 - **All values in the manifest are JSON-native** — usable directly for serialization.
-- **Coverage section shape depends on retention setting** — full spec in `%engine.coverage`.

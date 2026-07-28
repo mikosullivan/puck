@@ -31,7 +31,11 @@ Closures use `%call.return $value` to exit. The bare `return` keyword returns fr
 
 ## When a function is a closure
 
-A function is a closure when it's declared with the `closure` keyword. That keyword is what triggers outer-scope capture — a bare `function` in the same location would not capture, and a `method` in the same location would bind to a receiver instead. `closure` can appear anywhere `function` can: top level, inside another function or closure body, inside a method. See [bare function](bare) and [method](method) for the other two types.
+A function is a closure when it's declared with the `closure` keyword. That keyword is what triggers outer-scope capture — a bare `function` in the same location would not capture arbitrary variables, and a `method` in the same location would bind to a receiver instead. `closure` can appear anywhere `function` can: top level, inside another function or closure body, inside a method. See [bare function](bare) and [method](method) for the other two types.
+
+## Relationship to the reach spectrum
+
+Closures sit at the widest end of the reach spectrum. Bare functions reach only args, locals, and `%chain` (assignment form) or additionally the enclosing Module's methods via `%module` (named form). Closures capture the full enclosing lexical scope — every variable binding, `%self` and `%bucket` inherited from an enclosing method, and — as a superset — the surrounding scope's Module methods are reachable through the closure's captured `%module`. See [bare § The three tiers of function-scope reach](bare#the-three-tiers-of-function-scope-reach) and [modules](https://puck.uno/documentation/requirements/modules/) for the graded model.
 
 ## Testing
 

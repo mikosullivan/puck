@@ -10,7 +10,7 @@
 		"line":           "integer — line in the source file where the fixture opens",
 		"kind":           "'expects' | 'raises'",
 		"expected":       "for 'expects': the decoded full CaspianJ (Lua table). for 'raises': a plain-text substring the error message must contain.",
-		"norm":           "for 'expects' only: the decoded norm CaspianJ (Lua table). Absent when the fixture has no `#--- norm ---` section.",
+		"norm":           "for 'expects' only: the decoded norm CaspianJ (Lua table). Absent when the fixture has no `#--- norm ---` section — by convention, that means the norm form is identical to the full form, and parse-spec.lua defaults to comparing normalize(full) against the full section itself.",
 		"source":         "Caspian source snippet (from the code section); leading/trailing whitespace trimmed"
 	}
 }

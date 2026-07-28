@@ -1,19 +1,30 @@
-# Vault
+# vault
+
+<span class="tag">vault</span>
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_secure_memory_vault",
-	"role": "spec for the vault primitive — libsodium-backed per-secret storage that keeps raw sensitive bytes out of reach of anything reachable from user code. Each vault entry lives in a sodium_malloc'd region (guard pages + mlock + PROT_NONE + MADV_DONTDUMP) and is accessed only through a narrow operation-oriented gateway. Consumers (Password class, future key classes, etc.) hold vault IDs but never see raw bytes. Covers sodium_malloc internals, gateway operations, entry lifecycle, protected-mode discipline for the code paths that briefly hold raw bytes, RLIMIT_MEMLOCK handling, and threat model.",
+	"doc": "requirements_lua_vault",
+	"role": "spec for the vault — the engine-internal Lua module (with C backing) that provides libsodium-backed per-secret protected storage. NOT a Caspian-facing class; developers never construct `%('core:protected/vault')`. The vault is consumed by (a) the engine's HTTP intake pre-pass via `vault.store_buffer` when a route schema declares a password/passkey field, (b) the [Passkey](tag:passkey) authenticator-side class via `vault.sign` for signing operations, and (c) [`core:protected/hash`](tag:protected-hash) for its per-key storage backing (Password inherits via hash). Each vault entry lives in a sodium_malloc'd region with guard pages, mlock'd into RAM, PROT_NONE by default; access only through a narrow operation-oriented gateway. Covers sodium_malloc internals, gateway operations, entry lifecycle, protected-mode discipline for the code paths that briefly hold raw bytes, RLIMIT_MEMLOCK handling, and threat model.",
 	"status": "spec — mechanism settled; specific gateway operation list will grow as new secret types get spec'd",
-	"audience": "Caspian engine implementers building the vault; security reviewers auditing the code paths that touch raw secret bytes"
+	"audience": "Caspian engine implementers writing the vault C module and its Lua binding; security reviewers auditing the code paths that touch raw secret bytes"
 }}
 ~~~
 
-The vault is an engine-managed storage region for sensitive raw bytes — separate from ordinary Caspian memory, invisible to anything reachable from user code. Each entry is keyed by an internal vault ID, held inside a `sodium_malloc`'d buffer with guard pages, `mlock`'d into RAM, and marked `MADV_DONTDUMP`.
+The vault is the engine's per-secret protected-storage primitive — a Lua module (with C backing) that keeps raw sensitive bytes out of reach of anything reachable from user code. **Not a Caspian-facing class.** Caspian developers never call `%('core:protected/vault')`; the vault is a lower-layer mechanism the following consumers reach into from trusted Lua:
 
-Access to the vault is through a narrow operation-oriented gateway — **never** a `vault.get(id)` that returns bytes. User code (and Caspian-the-language) interacts with the vault only via the gateway.
+- [`core:protected/hash`](tag:protected-hash) — for its per-key storage backing. Each hash entry is a vault entry, giving hash the vault's guard-page and PROT_NONE-by-default protections on top of its own defenses.
+- [`core:protected/password`](tag:protected-password) — indirectly, since it subclasses hash.
+- [Passkey (authenticator-side)](tag:passkey) — `.sign` calls `vault.sign(vault_id, message)`.
+- **The engine's HTTP intake pre-pass** — Touchstone's parser, when a route schema declares a password/passkey field, calls `vault.store_buffer(bytes, len)` to move parsed plaintext into vault storage. See [§ HTTP intake flow](tag:http-intake-flow).
+
+Each entry is keyed by an internal vault ID, held inside a `sodium_malloc`'d buffer with guard pages, `mlock`'d into RAM, and marked `MADV_DONTDUMP`.
+
+Access to the vault is through a narrow operation-oriented gateway — **never** a `vault.get(id)` that returns bytes. Consumers hold vault IDs but interact with the vault only via the gateway.
 
 ## Gateway operations
+
+<span class="tag">vault-gateway-ops</span>
 
 The gateway is operation-oriented. Callers hand in an operation ("verify this hash", "sign this message") and get back a result — never the raw bytes themselves:
 
@@ -30,6 +41,8 @@ Additional operations get added as new secret types get spec'd. Adding a gateway
 **Why this works.** The gateway never returns plaintext or any function of plaintext that reveals it. User code can't extract bytes. Aliasing a handle (passing it around, storing it in fields) is harmless — every alias points at the same vault entry; the bytes don't propagate, only the ID does. And the engine doesn't manage any cryptographic key of its own — the vault is access-controlled memory, not a crypto provider.
 
 ## sodium_malloc: what a vault entry looks like
+
+<span class="tag">sodium-malloc-anatomy</span>
 
 Each entry uses libsodium's `sodium_malloc`. On Linux, one `sodium_malloc(n)` call expands into roughly six steps:
 
@@ -96,6 +109,8 @@ Bytes spend the vast majority of their lifetime under `PROT_NONE`, briefly trans
 
 ## Protected mode
 
+<span class="tag">vault-protected-mode</span>
+
 Some engine code paths need to hold raw secret bytes briefly — long enough to copy them from an HTTP body into the vault, for example. **Protected mode** is the discipline that bounds those code paths.
 
 **Protected mode is a duration during which the engine has a specific `sodium_malloc`'d buffer alive that contains raw secret bytes.** It begins with the `sodium_malloc` call that allocates the buffer and ends with one of two specific actions: handing the buffer to the vault, or `sodium_free`-ing it. There's no third option.
@@ -134,8 +149,9 @@ A protected buffer must end its life either as a vault entry or as freed memory.
 - **Environment-variable bootstrap for declared secrets** at engine startup: declared-secret env vars get read into a protected buffer, handed to the vault, source env var wiped.
 - **Secrets-file readers:** allocate, read, hand to vault, free.
 - **Vault gateway operations themselves:** each opens a brief protected-mode window internally to `mprotect` its stored buffer to `PROT_READONLY`, run the primitive, `mprotect` back.
+- **Caspian developer code via [`core:protected/memory`](tag:protected-memory).** The `.run do ... end` block form opens a protected-mode window on demand from Caspian code. Same mechanism as the engine-internal entry points above; exposed at the developer level so any code path that needs the discipline can open its own window without depending on Touchstone.
 
-Adding a new entry point is a deliberate engine change. The complete set is small enough to enumerate, audit, and review individually.
+Adding a new engine-internal entry point is a deliberate engine change. The complete set is small enough to enumerate, audit, and review individually. Developer-opened windows via `core:protected/memory` are not part of that fixed set — the developer's own code is where the audit lives.
 
 **Properties this gives:**
 
@@ -146,7 +162,9 @@ Adding a new entry point is a deliberate engine change. The complete set is smal
 
 ## The HTTP intake flow
 
-The driving use case for this whole subsystem (see [index § Driving use case](./#driving-use-case-http-password-intake)) is parsing an HTTP request that contains a password or passkey without the plaintext ever existing as a normal string. The specialized protected-mode entry looks like this:
+<span class="tag">http-intake-flow</span>
+
+The driving use case for the whole protected-memory subsystem is parsing an HTTP request that contains a password or passkey **without the plaintext ever existing as a normal string in main memory**. At no point should there be a plaintext value that could end up in a coredump, get accidentally written to a log, or persist in some intermediate buffer that never gets zeroed. The specialized protected-mode entry looks like this:
 
 1. Touchstone's route lookup detects a declared password field in the schema.
 2. **Enter protected mode:** allocate a `sodium_malloc`'d parse buffer; copy raw body bytes in; wipe the source engine buffer.
@@ -192,7 +210,7 @@ A vault holding many entries can easily exceed 64 KB. If `mlock` fails, `sodium_
 
 **Engine responsibilities:**
 
-- **Check return values.** `sodium_malloc` returning NULL means out-of-secure-memory. Don't silently fall back to regular allocation — that would put plaintext in unprotected memory and violate the contract.
+- **Check return values.** `sodium_malloc` returning NULL means out-of-protected-memory. Don't silently fall back to regular allocation — that would put plaintext in unprotected memory and violate the contract.
 - **Raise the limit at startup if possible.** If the engine has `CAP_SYS_RESOURCE`, call `setrlimit(RLIMIT_MEMLOCK, ...)` to raise the soft limit to something like 64 MB. Otherwise, expect operators to raise it via `ulimit -l`, systemd `LimitMEMLOCK=`, or `/etc/security/limits.conf`.
 - **Fail loudly at startup** if neither is possible and the limit is too small for a viable vault. Refusing to enable the vault (with a clear message — "secure memory unavailable; raise `RLIMIT_MEMLOCK` or run with `CAP_IPC_LOCK`") is the right behavior. Silent degradation to insecure storage is not.
 
@@ -212,4 +230,4 @@ A vault holding many entries can easily exceed 64 KB. If `mlock` fails, `sodium_
 - **Debugger attached via `ptrace`.** Can modify page protections, bypass `mprotect`, read everything. Mitigations at the process level are in [process-security](process-security).
 - **Side-channel attacks** (Spectre, Meltdown, Rowhammer, cache-timing). Not addressed by in-process memory protection.
 - **In-process memory-disclosure bugs.** A bug in the engine that returns memory contents to user code could leak vault bytes during a `PROT_READ` window. The narrow window helps; fix the bug.
-- **Hibernation to disk.** RAM image gets written to disk during suspend. `mlock` doesn't prevent that. See [process-security](process-security).
+- **Hibernation to disk.** RAM image gets written to disk during suspend. `mlock` doesn't prevent that. See [process-security](tag:process-security).

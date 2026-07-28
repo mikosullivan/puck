@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_number",
-	"role": "spec for Caspian's built-in number class — the class every numeric literal materializes into. One value shape for both integers and fractional values (the language does not distinguish); four subclasses (Decimal, Binary, Octal, Hex) that differ only in stringification, with fractional values represented via a C99-extended pattern uniformly across all four bases. Arithmetic across subclasses follows the left-operand rule (operators are methods on the left operand's class). Covers literal forms, the immutability rule, arithmetic, comparison, testing predicates, rounding-by-multiple, math methods, bitwise (via .bitwise), and conversion methods.",
+	"role": "spec for Caspian's built-in number class — the class every numeric literal materializes into. One value shape for both integers and fractional values (the language does not distinguish); four subclasses (Decimal, Binary, Octal, Hex) that differ only in stringification, with fractional values represented via a C99-extended pattern uniformly across all four bases. Arithmetic across subclasses follows the left-operand rule (operators are methods on the left operand's class). Covers literal forms (including leading-dot `.5` and the trailing-dot-is-a-parse-error rule), the method-call disambiguation on numeric literals (`5.times` splits into number-then-method via single-char lookahead after digit-plus-dot), immutability, arithmetic, comparison, testing predicates, rounding-by-multiple, math methods, bitwise (via .bitwise), and conversion methods.",
 	"status": "draft — most of the method surface spec'd; open questions at the bottom",
 	"audience": "developers writing Caspian; engine implementers building the numeric runtime; tooling authors"
 }}
@@ -16,6 +16,7 @@ A **number** represents a numeric value. Caspian does not distinguish between in
 
 - **Whole-value:** `0`, `42`, `-5`, `1_000_000`.
 - **Fractional:** `3.14`, `-0.5`, `1e10`, `2.5e-3`.
+- **Leading-dot fractional:** `.5` (== `0.5`), `-.75` (== `-0.75`). The `0` before the dot is optional.
 - **Hexadecimal:** `0xFF`, `0xFF_FF`.
 - **Octal:** `0o755`.
 - **Signed:** a leading `-` produces a negative value.
@@ -28,6 +29,54 @@ $hex = 0xFF_FF         # same as 0xFFFF
 ~~~
 
 Leading and trailing underscores are invalid. Doubled underscores between digits are allowed.
+
+### Numeric literals must end with a digit
+
+A number literal **must end with a digit**. A trailing bare `.` (no fractional digits following) is a parse error, not a shorthand for `.0`:
+
+~~~caspian
+5.0     # ok
+5       # ok
+5.      # RAISES — bare trailing dot on numeric literal
+~~~
+
+Write `5` for the integer or `5.0` for the fractional form. The trailing-dot rejection matters for method-call disambiguation: `5.times` unambiguously splits into the integer `5` and the method call `.times` (see [§ Method calls on numeric literals](#method-calls-on-numeric-literals)), and that split rule needs the "no trailing dot on numbers" guarantee to work.
+
+### Numbers do not have to start with a digit
+
+The `0` in `0.5` is optional — `.5` is a valid numeric literal equal to `0.5`. Same for the signed form: `-.75` is `-0.75`. Both forms are equivalent; use whichever reads better at the site. The lexer recognizes `.` followed by a digit as the start of a numeric literal.
+
+~~~caspian
+$half   = .5
+$dashed = -.75
+$sum    = .1 + .2      # both operands leading-dot; result is 0.3 (rounding aside)
+~~~
+
+## Method calls on numeric literals
+
+Numeric literals are ordinary values, and Caspian supports method calls on them directly — `5.times`, `3.14.floor`, `.5.ceiling`, `0xFF.to_string`, etc. The parser disambiguates the two roles of `.` (fractional-digit separator vs method-call operator) with a **single-character lookahead** after any digit-then-dot sequence:
+
+| Pattern | Interpretation |
+|---|---|
+| `<digit>.<digit>` | Continue as a numeric literal — the second digit is the start of the fractional part. |
+| `<digit>.<letter/underscore>` | Split. The digit sequence terminates as a number; the `.<name>` starts a method call. |
+
+The rule relies on two other rules already in place:
+
+- **Identifiers can't start with a digit.** So after a `.`, if the next character is a digit, it's a fractional continuation — never a method name (there's no such method name).
+- **Numeric literals must end with a digit.** So there's no `5.` on its own to be ambiguous with — a bare trailing dot is a parse error.
+
+With those two rules holding, disambiguation is deterministic and single-pass:
+
+~~~caspian
+5.5             # numeric literal — 5.5
+5.times         # integer 5, then method call .times
+5.5.ceiling     # numeric literal 5.5, then method call .ceiling — reads as (5.5).ceiling
+.5.ceiling      # numeric literal .5 (== 0.5), then method call .ceiling
+0xFF.to_string  # integer 0xFF, then method call .to_string
+~~~
+
+**Any receiver expression works.** The disambiguation only matters for bare numeric literals. Parenthesized expressions are unambiguous regardless: `(5).times`, `(5 + 1).abs`, `($count * 2).even?` all parse straightforwardly through the general method-call path.
 
 ## Integers and floats are both `number`
 

@@ -109,4 +109,4 @@ TBD.
 - [Linux CLI wrappers](./) — general pattern.
 - [linux-support](https://puck.uno/documentation/requirements/linux-support/) — the general `.execute` model this wrapper delegates to.
 - [tar](tar) — sibling wrapper class.
-- [secure-memory/passkey/](https://puck.uno/documentation/requirements/secure-memory/passkey/) — the primary consumer.
+- [protected/passkey/](https://puck.uno/documentation/requirements/protected/passkey/) — the primary consumer.

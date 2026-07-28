@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_global_call",
-	"role": "spec for %call — the global method that returns the current call object. Holds the caller's role, exposes early-exit, the callable-value array of blocks the caller passed, and the class the currently-executing method was defined on (%call.method_class — used by the engine's private-method access check and available to user code for the same class-based gating). Yielding to a block is calling the block (no separate primitive) — the `yield` bwc desugars to `%call.blocks[0].call`. Configured calls (DSL wiring, reusable param setup) go through caller objects instead. Distinct from %chain — %call lives on its own, not as a chain entry.",
-	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; the current method's defining class is reachable as %call.method_class (null when not in a method body); early exit via %call.return; blocks are callable values in %call.blocks; yield bwc = %call.blocks[0].call; DSL wiring lives on caller objects, not on %call",
+	"role": "spec for %call — the global method that returns the current call object. Holds the caller's role, exposes early-exit, the callable-value array of blocks the caller passed, and the class the currently-executing method was defined on (%call.method_class — used by the engine's private-method access check and available to user code for the same class-based gating). Yielding to a block is calling the block (no separate primitive) — the `yield` bwc desugars to `%call.blocks[0].call`. Configured calls (DSL wiring, reusable param setup) go through caller objects instead. Distinct from %chain — %call lives on its own, not as a chain entry. The call object is a first-class value: passing it out or stashing it in %chain lets deeply nested code return from the owning function without any intermediate function opting in — that's Caspian's general access rule (if you can see an object, you can call its methods) applied to the call primitive.",
+	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; the current method's defining class is reachable as %call.method_class (null when not in a method body); early exit via %call.return; blocks are callable values in %call.blocks; yield bwc = %call.blocks[0].call; DSL wiring lives on caller objects, not on %call; the call object is a first-class value — passing it out or stashing in %chain lets any downstream code call .return on it and unwind to the owning frame",
 	"audience": "anyone writing a function or closure body that needs to inspect, return from, or invoke a passed block"
 }}
 ~~~
@@ -52,6 +52,61 @@ The distinction:
 | `%call.return value` | The current call only — closure if inside a closure, function if inside a function. |
 
 Use `%call.return` when you specifically want to end **this** call regardless of whether it's a function or closure. Use `return` when you want to end the calling function the way a bare-word `return` does in most languages.
+
+## Passing the call object out — return-from-a-distance
+
+The call object returned by `%call` is a **first-class value**. It can be passed as an argument, assigned to a variable, stored in a hash, stashed in `%chain`, or handed off in any other way ordinary values move. Whoever eventually holds it can call `.return $value` on it — and the exception unwinds all the way to the frame the call object represents, not to the caller of the code that fired `.return`.
+
+This follows Caspian's general access rule:
+
+> If you can see an object, you can call its methods.
+
+There's no lexical-scope wall around who's allowed to end a call. If code has a reference to a call object, `.return` works — whether the reference came in through an arg, was pulled from `%chain`, or was fished out of a shared collection.
+
+**Passing via argument.** The receiving function can return from the passing function without any further "returns" propagating up the stack:
+
+~~~caspian
+function &gup($foo, $bar)
+	&foo %call, $bar     # hand gup's own call object to foo
+end
+
+function &foo($caller_call, $bar)
+	&bar $caller_call
+end
+
+function &bar($caller_call)
+	$caller_call.return 'x'   # unwinds directly to gup's boundary
+end
+
+puts &gup($foo, $bar)         # prints "x"
+~~~
+
+`bar`'s `.return` raises the [`ReturnException`](https://puck.uno/documentation/requirements/exceptions/#returnexception) targeted at **gup's** frame. The exception passes through bar's boundary and foo's boundary without stopping — they don't own that call object, so their implicit return-catches don't match — and lands at gup's implicit catch, which unpacks `'x'` as gup's return.
+
+**Stashing via `%chain`.** The same mechanism works without threading the reference through arguments — put it in `%chain` and any downstream code can reach it:
+
+~~~caspian
+function &gup($foo, $bar)
+	%chain['call'] = %call
+	&foo $bar
+end
+
+function &foo($bar)
+	&bar
+end
+
+function &bar()
+	%chain['call'].return 'x'    # unwinds to gup's boundary
+end
+
+puts &gup($foo, $bar)            # prints "x"
+~~~
+
+Same end result — bar reads gup's call object out of `%chain` and calls `.return` on it. Neither foo nor bar carries the call object in their signatures; the coupling is invisible at the call sites of foo and bar. That's the trade-off of the `%chain`-based version: less argument clutter, less local readability of "who can return from whom."
+
+**Consequences.** Nested code that can see a call object — through any path — can return from the function that owns the object without any intermediate function opting in. This is the mechanism that makes patterns like "install a handler that can bail out of the whole thing" work with no special syntax; it's also the reason to reason carefully about who you hand a call object to and what you drop into `%chain`.
+
+**Stale call objects.** If the call the object represents has already returned, invoking `.return` on it raises. The specific error surface — and whether it's the same or a different exception class from the normal-path `ReturnException` — is TBD; the guarantee is that a stale `.return` never silently no-ops and never accidentally returns from a newer frame.
 
 ## `%call.blocks`
 
@@ -206,6 +261,10 @@ Same shape as the `%call.role` self-gating example; different axis of gating.
 - **Passing a closure and reading `%call.blocks[0]`** — the receiver can inspect the block as a callable value.
 - **Self-gating example works** — a method comparing `%call.role != %self.object.role` and raising blocks a cross-role call from a non-owner.
 - **`%call.return` inside a bare block controller** — see [exceptions § ReturnException](https://puck.uno/documentation/requirements/exceptions/#returnexception) for the frame targeting.
+- **Call object passed as an argument returns from the passing frame** — `function &gup() &foo %call end; function &foo($c) $c.return 'x' end; &gup` returns `'x'`; foo's `.return` on gup's call object unwinds through foo's boundary and lands at gup's implicit catch.
+- **Call object stashed in `%chain` returns from the stashing frame** — `function &gup() %chain['c'] = %call; &foo end; function &foo() %chain['c'].return 'x' end; &gup` returns `'x'`; the chain read gives foo the same target-gup capability without an argument.
+- **Deep nesting is transparent** — a return-from-a-distance unwinds through any number of intermediate frames without their catches firing; the exception's target frame is the one owning the call object, not the closest enclosing frame.
+- **Stale call object raises** — invoking `.return` on a call object whose owning frame has already returned raises (exact class TBD); no silent no-op, no accidental unwind of a newer frame.
 - **`%call.method_class` inside a method body** — returns the class the method was defined on. Inside `class # foo; method &m() return %call.method_class end; end`, `$foo.new.m` returns the `foo` class value.
 - **`%call.method_class` inside a bare function body** — returns `null`; bare functions have no method-class context.
 - **`%call.method_class` inside a closure body** — returns `null` when the closure is defined outside a method; returns the enclosing method's class when the closure is defined inside a method (matching how `%self` inherits from an enclosing method's frame).

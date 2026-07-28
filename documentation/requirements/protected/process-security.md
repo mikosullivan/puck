@@ -1,5 +1,7 @@
 # Process security
 
+<span class="tag">process-security</span>
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_secure_memory_process_security",
@@ -9,7 +11,7 @@
 }}
 ~~~
 
-Whole-process OS-level hardening on top of the per-secret [vault](vault). Every setting on this page is **deployment-level opt-in** — the engine doesn't turn them on by default because each has real operational tradeoffs.
+Whole-process OS-level hardening on top of the per-secret [vault](tag:vault). Every setting on this page is **deployment-level opt-in** — the engine doesn't turn them on by default because each has real operational tradeoffs.
 
 The vault protects specific known secrets. The settings here block whole classes of attacks (swap-to-disk, coredumps, `ptrace` inspection) that could bypass in-process protections regardless of what the vault does. For deployments where sensitive material is handled broadly, where compliance frameworks require defense in depth, or where the threat model includes an attacker with local (but unprivileged) access, turning these on is the right move.
 
@@ -84,7 +86,7 @@ Defaults are all "off" / "don't check" (least restrictive). Operators opt in exp
 
 ## How this supports the HTTP intake use case
 
-The driving use case (see [index § Driving use case](./#driving-use-case-http-password-intake)) is parsing an HTTP request that contains a password without the plaintext ever existing as a normal string. The vault handles the storage of the password bytes; each process-security setting closes a leakage path that the vault alone can't cover:
+The driving use case (see [vault § HTTP intake flow](tag:http-intake-flow)) is parsing an HTTP request that contains a password without the plaintext ever existing as a normal string. The vault handles the storage of the password bytes; each process-security setting closes a leakage path that the vault alone can't cover:
 
 - **`mlockall`** — the parse buffer inside a protected-mode window is `sodium_malloc`'d (already `mlock`'d individually). But *surrounding* memory (parser state, temporary variables, libc heap fragments freed during parsing) can hold bytes that briefly touched the plaintext. Without `mlockall`, those could be swapped to disk between allocation and vaulting. With `mlockall`, no part of the process memory can be swapped.
 - **`PR_SET_DUMPABLE, 0`** — if the process crashes mid-parse (bad body format, OOM, engine bug), a coredump would contain the whole process's memory — including the protected-mode parse buffer and any transient copies. `MADV_DONTDUMP` on vault pages helps, but a whole-process `PR_SET_DUMPABLE, 0` closes the door on any accidental dump, including the parse buffer before it's vaulted.
@@ -109,4 +111,4 @@ A typical security-critical deployment turns on all three engine settings and co
 
 ## Related
 
-- [vault](vault) — per-secret storage primitive that these process-level settings sit on top of.
+- [vault](tag:vault) — per-secret storage primitive that these process-level settings sit on top of.

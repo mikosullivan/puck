@@ -1,13 +1,15 @@
-# `%engine.coverage`
-<!--index: 10 -->
+# Idea: `%engine.coverage`
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_engine_coverage",
-	"role": "spec for %engine.coverage — line-level coverage tracking. Off by default. V1 has only the property form (sets retention for the rest of the process). A block form was considered and deferred.",
-	"default": "off"
+	"doc": "ideas_engine_coverage",
+	"role": "post-V1 design note for %engine.coverage — line-level coverage tracking. Moved out of requirements/ because it is not part of V1; kept here as a settled design ready to promote back into requirements/ when it ships. Property form (assign to control retention); a block form was considered and remains deferred. Structure integrates with %engine.manifest — when coverage is on, a `coverage` section appears in the manifest.",
+	"status": "post-V1 — design settled; not part of V1 engine surface. Promote to requirements/engine/coverage.md when it ships.",
+	"context": "Moved from requirements/engine/coverage.md on 2026-07-25 per issue #1290: 'Take out coverage completely until after V1.'"
 }}
 ~~~
+
+> **Post-V1 idea.** Not part of V1. This page records the settled design for when `%engine.coverage` eventually ships. Nothing in requirements/ references it; nothing in V1 depends on it.
 
 `%engine.coverage` is line-level coverage tracking — which lines of which Caspian files ran, and how many times. It's off by default.
 

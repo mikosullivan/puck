@@ -1864,6 +1864,19 @@ local function transpile_statement(stmt)
 		end
 	end
 
+	-- `$$foo = value` — varobj-slot reassignment. NOT a valid Caspian
+	-- operation: a varobj IS the slot; there's no "replace the slot with
+	-- a different varobj" semantics. Raise a specific error steering the
+	-- author toward `$foo = value` (which reassigns the value the slot
+	-- holds) instead of the generic `cannot parse` fallthrough.
+	local dd_reassign = stmt:match("^%$%$([%w_]+)%s*=")
+
+	if dd_reassign then
+		error("transpile: cannot reassign varobj slot `$$" .. dd_reassign
+			.. "` — use `$" .. dd_reassign
+			.. " = ...` to reassign the value it holds")
+	end
+
 	local name, rhs = stmt:match("^%$([%w_]+)%s*=%s*(.-)$")
 
 	if name and rhs and rhs ~= "" then
@@ -2816,6 +2829,31 @@ end
 -- hash_splat) are deferred.
 --
 -- Returns: name (string or nil), params (list of strings), position after `)`.
+--[[
+{
+	"in":  "source (whole program), start_i (position immediately after a header — e.g. after a callable's `)` or after `begin` / a while-cond)",
+	"out": "(as_name?, new_i) — as_name is the bareword captured after `as $` when present, nil otherwise; new_i skips past the binding when found, otherwise equals start_i",
+	"note": "shared helper for `as $name` post-header bindings on callables (function / closure / method / do / dofunc), bare `begin`, `while` / `until` loops, and any future construct that accepts a controller slot. Only consumes when the next non-whitespace token is exactly `as $<word>`; anything else leaves start_i unchanged."
+}
+]]
+local function read_optional_as_binding(source, start_i)
+	local len = #source
+	local i = start_i
+
+	while i <= len and source:sub(i, i):match("[ \t]") do
+		i = i + 1
+	end
+
+	local rest = source:sub(i)
+	local prefix, name = rest:match("^(as%s+%$([%w_]+))")
+
+	if prefix then
+		return name, i + #prefix
+	end
+
+	return nil, start_i
+end
+
 local function read_signature(source, start_i, keyword_name)
 	local len = #source
 	local i = start_i
@@ -3102,7 +3140,13 @@ local function read_signature(source, start_i, keyword_name)
 		end
 	end
 
-	return name, params, i, receiver
+	-- Optional `as $name` binding after the params paren — the controller
+	-- slot the caller-machinery fills in at invocation time. Not runtime
+	-- code; lifted onto the callable atom as an `as: NAME` field.
+	local as_binding, i_after_as = read_optional_as_binding(source, i)
+	i = i_after_as
+
+	return name, params, i, receiver, as_binding
 end
 
 local function tokenize_construct(source, start_line)
@@ -3169,12 +3213,14 @@ local function tokenize_construct(source, start_line)
 
 			if word and CONSTRUCT_KEYWORDS[word] then
 				if SIG_KEYWORDS[word] then
-					local sig_name, sig_params, new_i, sig_receiver = read_signature(source, i, word)
+					local sig_name, sig_params, new_i, sig_receiver, sig_as =
+						read_signature(source, i, word)
 					table.insert(tokens, {
 						type = word,
 						name = sig_name,
 						params = sig_params,
 						receiver = sig_receiver,
+						as_binding = sig_as,
 						line = tok_line,
 					})
 					i = new_i
@@ -3225,7 +3271,15 @@ local function tokenize_construct(source, start_line)
 						end
 					end
 
-					table.insert(tokens, {type = word, params = params, line = tok_line})
+					local do_as, i_after = read_optional_as_binding(source, i)
+					i = i_after
+
+					table.insert(tokens, {
+						type = word,
+						params = params,
+						as_binding = do_as,
+						line = tok_line,
+					})
 
 				elseif word == "instance" then
 					-- Optional `(args)` for construction. Args are call-args,
@@ -3289,10 +3343,24 @@ local function tokenize_construct(source, start_line)
 						table.insert(tokens, ct)
 					end
 
-					table.insert(tokens, {type = word, cond = cond, line = tok_line})
-					i = new_i
+					local cond_as, i_after = read_optional_as_binding(source, new_i)
+
+					table.insert(tokens, {
+						type = word,
+						cond = cond,
+						as_binding = cond_as,
+						line = tok_line,
+					})
+					i = i_after
 				else
-					table.insert(tokens, {type = word, line = tok_line})
+					local kw_as, i_after = read_optional_as_binding(source, i)
+
+					table.insert(tokens, {
+						type = word,
+						as_binding = kw_as,
+						line = tok_line,
+					})
+					i = i_after
 				end
 
 			elseif word and CONSTRUCT_CLAUSES[word] then
@@ -3315,8 +3383,20 @@ local function tokenize_construct(source, start_line)
 	return tokens
 end
 
+-- Clause-set-per-construct policy. `begin ... end` (bare block) admits
+-- ONLY `ensure` — the cleanup hook. Everything else that carries a body —
+-- functions/closures/methods/do blocks AND loops — is "callable-shaped"
+-- from the parser's perspective (the engine may realize loop bodies as
+-- closures), so they admit the iteration-lifecycle clauses (before /
+-- between / after / noloop) but NOT `ensure`. `begin ... while COND` /
+-- `begin ... until COND` transition from a begin frame into a loop
+-- construct at close-time, so they follow the loop set — the begin
+-- frame accepts any clause during parse and validates at close.
+local BEGIN_END_CLAUSES  = {ensure = true}
+local CALLABLE_CLAUSES   = {before = true, between = true, after = true, noloop = true}
+
 local function empty_clauses()
-	return {body = {}, before = {}, between = {}, after = {}, noloop = {}}
+	return {body = {}}
 end
 
 local function parse_construct(tokens, result)
@@ -3389,7 +3469,7 @@ local function parse_construct(tokens, result)
 
 		local top = stack[#stack]
 
-		if top.type == "begin" then
+		if top.clauses then
 			table.insert(top.clauses[top.cur], annotate(stmt))
 		elseif top.type == "if" or top.type == "unless" then
 			table.insert(top.branches[top.cur_branch].body, annotate(stmt))
@@ -3410,14 +3490,57 @@ local function parse_construct(tokens, result)
 
 			if #stack > 0 and stack[#stack].type == "begin" then
 				local blk = table.remove(stack)
+
+				-- `begin ... while COND` / `begin ... until COND` is a loop, so
+				-- the iteration-lifecycle rule applies — `ensure` is only for
+				-- the bare `begin ... end` form. Also `noloop` is dead code
+				-- here: begin-while / begin-until always runs the body at
+				-- least once (that's the whole point of the trailing-cond
+				-- form), so the "body-never-ran" hook can never fire — reject
+				-- with a specific error rather than let the developer wonder
+				-- why their `noloop` block never runs.
+				for cname in pairs(blk.clauses) do
+					if cname == "body" or cname == "as" then
+						-- fine
+					elseif cname == "noloop" then
+						error("transpile: `noloop` is not valid on a"
+							.. " `begin ... " .. tok.type .. "` loop — the"
+							.. " body always runs at least once, so `noloop`"
+							.. " would be dead code. Use a leading-cond loop"
+							.. " (`" .. tok.type .. " COND ... noloop ... end`)"
+							.. " if you need it.")
+					elseif not CALLABLE_CLAUSES[cname] then
+						error("transpile: `" .. cname .. "` is not valid on a"
+							.. " `begin ... " .. tok.type .. "` loop;"
+							.. " `ensure` is only for the bare `begin ... end`"
+							.. " form")
+					end
+				end
+
+				if tok.as_binding then
+					blk.clauses.as = tok.as_binding
+				end
+
 				add_stmt({"scope", verb, parse_expression(tok.cond), blk.clauses})
 			else
 				local end_verb = tok.type == "while" and "while_end" or "until_end"
-				table.insert(stack, {type = tok.type, cond = tok.cond, body = {}, close_verb = end_verb})
+				table.insert(stack, {
+					type = tok.type,
+					cond = tok.cond,
+					clauses = empty_clauses(),
+					cur = "body",
+					close_verb = end_verb,
+					as_binding = tok.as_binding,
+				})
 			end
 
 		elseif tok.type == "begin" then
-			table.insert(stack, {type = "begin", clauses = empty_clauses(), cur = "body"})
+			table.insert(stack, {
+				type = "begin",
+				clauses = empty_clauses(),
+				cur = "body",
+				as_binding = tok.as_binding,
+			})
 
 		elseif tok.type == "function" or tok.type == "closure" or tok.type == "method" then
 			table.insert(stack, {
@@ -3425,7 +3548,9 @@ local function parse_construct(tokens, result)
 				name = tok.name,
 				receiver = tok.receiver,
 				params = tok.params,
-				body = {},
+				clauses = empty_clauses(),
+				cur = "body",
+				as_binding = tok.as_binding,
 			})
 
 		elseif tok.type == "class" then
@@ -3442,7 +3567,13 @@ local function parse_construct(tokens, result)
 			table.insert(stack, {type = "instance", args = tok.args, body = {}})
 
 		elseif tok.type == "do" or tok.type == "dofunc" then
-			table.insert(stack, {type = tok.type, params = tok.params, body = {}})
+			table.insert(stack, {
+				type = tok.type,
+				params = tok.params,
+				clauses = empty_clauses(),
+				cur = "body",
+				as_binding = tok.as_binding,
+			})
 
 		elseif tok.type == "if" or tok.type == "unless" then
 			table.insert(stack, {
@@ -3489,18 +3620,57 @@ local function parse_construct(tokens, result)
 			local blk = table.remove(stack)
 
 			if blk.type == "while" or blk.type == "until" then
-				local clauses = empty_clauses()
-				clauses.body = blk.body
+				local clauses = blk.clauses
+
+				if blk.as_binding then
+					clauses.as = blk.as_binding
+				end
+
 				add_stmt({"scope", blk.close_verb, parse_expression(blk.cond), clauses})
 			elseif blk.type == "begin" then
+				-- Bare `begin ... end` only accepts `ensure`. Any other clause
+				-- (before / between / after / noloop) is a parser error steering
+				-- the author to a loop or callable body. Validation deferred
+				-- until close because at clause-marker time we don't yet know
+				-- whether this begin will close as bare (`end`) or as a loop
+				-- (`begin ... while COND` / `begin ... until COND`).
+				for cname in pairs(blk.clauses) do
+					if cname ~= "body" and not BEGIN_END_CLAUSES[cname] then
+						error("transpile: `" .. cname .. "` is not valid inside"
+							.. " a bare `begin ... end`; use it on a loop"
+							.. " (`while` / `until` / `.each` / ...) or a"
+							.. " callable body (function / closure / method / do)."
+							.. " `begin ... end` only accepts `ensure`.")
+					end
+				end
+
 				-- Emit as value-atom row `[{begin_end: clauses}]` so it works
 				-- both at statement position (value discarded) and at expression
 				-- position (unwraps to the atom via parse_construct_as_expression).
+				if blk.as_binding then
+					blk.clauses.as = blk.as_binding
+				end
+
 				add_stmt({{begin_end = blk.clauses}})
-			elseif blk.type == "if" then
-				add_stmt({"scope", "if_end", {branches = blk.branches}})
-			elseif blk.type == "unless" then
-				add_stmt({"scope", "unless_end", {branches = blk.branches}})
+			elseif blk.type == "if" or blk.type == "unless" then
+				-- Wrap each branch's body in a zero-param closure atom so the
+				-- engine's dispatch model stays uniform — "invoke this body"
+				-- is always "invoke a closure". Runtime doesn't need a special
+				-- branch-body primitive. Parser-level clause validation
+				-- already ran (the clause-marker handler rejects iteration
+				-- clauses on if / unless frames), so the emitted closures
+				-- never carry `before` / `between` / `after` / `noloop`.
+				local wrapped_branches = {}
+
+				for _, br in ipairs(blk.branches) do
+					table.insert(wrapped_branches, {
+						cond = br.cond,
+						body = {closure = {params = {}, body = br.body}},
+					})
+				end
+
+				local verb = (blk.type == "if") and "if_end" or "unless_end"
+				add_stmt({"scope", verb, {branches = wrapped_branches}})
 			elseif blk.type == "function" or blk.type == "closure" or blk.type == "method" then
 				-- Auto-assign for `@name` params (method-only): each `@name`
 				-- entry in the params list gets its `at_assign` flag stripped
@@ -3537,7 +3707,7 @@ local function parse_construct(tokens, result)
 					end
 				end
 
-				local final_body = blk.body
+				local final_body = blk.clauses.body
 
 				if #at_prefix > 0 then
 					final_body = {}
@@ -3546,12 +3716,20 @@ local function parse_construct(tokens, result)
 						table.insert(final_body, s)
 					end
 
-					for _, s in ipairs(blk.body) do
+					for _, s in ipairs(blk.clauses.body) do
 						table.insert(final_body, s)
 					end
 				end
 
 				local inner = {params = final_params, body = final_body}
+
+				-- Attach any declared iteration-lifecycle clauses. Option B:
+				-- absent slots don't appear at all.
+				for _, cname in ipairs({"before", "between", "after", "noloop"}) do
+					if blk.clauses[cname] then
+						inner[cname] = blk.clauses[cname]
+					end
+				end
 
 				if blk.name then
 					inner.name = blk.name
@@ -3559,6 +3737,10 @@ local function parse_construct(tokens, result)
 
 				if blk.receiver then
 					inner.receiver = blk.receiver
+				end
+
+				if blk.as_binding then
+					inner.as = blk.as_binding
 				end
 
 				local value = {[blk.type] = inner}
@@ -3596,7 +3778,7 @@ local function parse_construct(tokens, result)
 				else
 					local top = stack[#stack]
 
-					if top.type == "begin" then
+					if top.clauses then
 						target_list = top.clauses[top.cur]
 					elseif top.type == "if" or top.type == "unless" then
 						target_list = top.branches[top.cur_branch].body
@@ -3624,7 +3806,19 @@ local function parse_construct(tokens, result)
 						.. "` block after non-call statement")
 				end
 
-				local block_value = {[blk.type] = {params = blk.params, body = blk.body}}
+				local do_inner = {params = blk.params, body = blk.clauses.body}
+
+				if blk.as_binding then
+					do_inner.as = blk.as_binding
+				end
+
+				for _, cname in ipairs({"before", "between", "after", "noloop"}) do
+					if blk.clauses[cname] then
+						do_inner[cname] = blk.clauses[cname]
+					end
+				end
+
+				local block_value = {[blk.type] = do_inner}
 				local last = prev[#prev]
 
 				if type(last) == "table" and last.blocks ~= nil then
@@ -3635,19 +3829,53 @@ local function parse_construct(tokens, result)
 			end
 
 		elseif tok.type == "clause" then
-			if #stack == 0 or stack[#stack].type ~= "begin" then
-				error("transpile: clause marker `" .. tok.name .. "` outside of a begin block")
+			if #stack == 0 then
+				error("transpile: clause marker `" .. tok.name
+					.. "` outside of any block")
 			end
 
-			-- Initialize slot on demand — `ensure` isn't in the default 5-slot
-			-- set, so absent-source-declaration => no empty `ensure` slot.
-			local clauses = stack[#stack].clauses
+			local top = stack[#stack]
+			local frame_type = top.type
 
-			if clauses[tok.name] == nil then
-				clauses[tok.name] = {}
+			-- `begin` frames accept ANY clause during parse — we don't yet know
+			-- if the block will close as bare `end` (only `ensure` allowed) or
+			-- as a loop (`while` / `until`, iteration-clauses allowed). The
+			-- end / while-conversion handler does the final validation.
+			--
+			-- Callable-shaped frames (function / closure / method / do / dofunc
+			-- / while / until) enforce the iteration-lifecycle set here so the
+			-- error points at the clause line, not the far-away `end`.
+			if frame_type == "begin" then
+				-- deferred
+			elseif frame_type == "function" or frame_type == "closure"
+				or frame_type == "method" or frame_type == "do"
+				or frame_type == "dofunc" or frame_type == "while"
+				or frame_type == "until"
+			then
+				if not CALLABLE_CLAUSES[tok.name] then
+					error("transpile: `" .. tok.name .. "` is only valid inside"
+						.. " a bare `begin ... end`; " .. frame_type
+						.. " bodies use `before` / `between` / `after` / `noloop`")
+				end
+			elseif frame_type == "if" or frame_type == "unless" then
+				-- `if` / `unless` branch bodies are one-shot closures — no
+				-- iterator ever invokes their lifecycle hooks, so declaring
+				-- a clause slot on an if branch would be dead code. Reject
+				-- at parse time with the same steering as the callable case.
+				error("transpile: `" .. tok.name .. "` is not valid inside an"
+					.. " `" .. frame_type .. "` branch; clause markers are"
+					.. " only for callable bodies (function / closure / method"
+					.. " / do) and loops (while / until / .each / .times / ...)")
+			else
+				error("transpile: clause marker `" .. tok.name
+					.. "` not allowed inside a `" .. frame_type .. "` block")
 			end
 
-			stack[#stack].cur = tok.name
+			if top.clauses[tok.name] == nil then
+				top.clauses[tok.name] = {}
+			end
+
+			top.cur = tok.name
 
 		elseif tok.type == "comment" then
 			add_stmt({comment = tok.text})
@@ -3682,7 +3910,7 @@ local function parse_construct(tokens, result)
 				else
 					local top = stack[#stack]
 
-					if top.type == "begin" then
+					if top.clauses then
 						target_list = top.clauses[top.cur]
 					elseif top.type == "if" or top.type == "unless" then
 						target_list = top.branches[top.cur_branch].body

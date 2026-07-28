@@ -1,19 +1,21 @@
 # UI
 
+<span class="tag">protected-ui</span>
+
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_secure_memory_ui",
-	"role": "spec for the Caspian-code developer interface to the secure-memory subsystem — the code a developer actually writes to hold, verify, and manage secrets. Covers the Password class API (constructor, verify, hash, needs_rehash?, destroy), declaring password/passkey fields in HTTP route schemas so Touchstone's protected-mode pre-pass kicks in, engine-config entries for process-security settings, anti-patterns and what you deliberately cannot do, and a worked login-route example. The vault (storage) and process-security (OS hardening) primitives are spec'd in the sibling pages; this file is the surface a developer touches.",
+	"doc": "requirements_protected_memory_ui",
+	"role": "spec for the Caspian-code developer interface to the protected-memory subsystem — the code a developer actually writes to hold, verify, and manage secrets. Covers the Password class API (constructor, verify, hash, needs_rehash?, destroy), declaring password/passkey fields in HTTP route schemas so Touchstone's protected-mode pre-pass kicks in, engine-config entries for process-security settings, anti-patterns and what you deliberately cannot do, and a worked login-route example. The vault (storage) and process-security (OS hardening) primitives are spec'd in the sibling pages; this file is the surface a developer touches.",
 	"status": "spec — API surface and configuration surface settled; specific Drinian on_snapshot behavior for handles and full sidecar-map wiring pending",
-	"audience": "Caspian developers writing code that handles passwords, passkeys, or other secrets; anyone reviewing the developer-visible surface of the secure-memory subsystem"
+	"audience": "Caspian developers writing code that handles passwords, passkeys, or other secrets; anyone reviewing the developer-visible surface of the protected-memory subsystem"
 }}
 ~~~
 
-How Caspian developers actually use the secure-memory subsystem in their code. The [vault](vault) and [process-security](process-security) pages spec the mechanics under the hood; this page is the surface a developer touches.
+How Caspian developers actually use the protected-memory subsystem in their code. The [vault](tag:vault) and [process-security](process-security) pages spec the mechanics under the hood; this page is the surface a developer touches.
 
 ## The Password class
 
-The primary developer-visible interface. A `Password` is a Caspian object whose bucket holds a vault ID — the plaintext bytes live in the [vault](vault) and are never reachable from Caspian code.
+The primary developer-visible interface. A `Password` is a Caspian object whose bucket holds a vault ID — the plaintext bytes live in the [vault](tag:vault) and are never reachable from Caspian code.
 
 ### Constructing
 
@@ -56,7 +58,7 @@ handler do($request)
 end
 ~~~
 
-The `class: 'puck.uno/password'` declaration opts the route into Touchstone's protected-mode pre-pass (see [index § Driving use case](./#driving-use-case-http-password-intake) and [vault § The HTTP intake flow](vault#the-http-intake-flow) for the mechanics). Effects visible to the developer:
+The `class: 'puck.uno/password'` declaration opts the route into Touchstone's protected-mode pre-pass (see [vault § The HTTP intake flow](tag:http-intake-flow) for the mechanics). Effects visible to the developer:
 
 - **`$request['pw']` is a `Password` from the first moment user code can touch it.** There is no earlier state where it exists as a plaintext string.
 - **The request body has `"#####"` where the password value was.** Safe to log, forward downstream, or feed to other parsers.
@@ -66,41 +68,41 @@ Same pattern applies to passkeys and any other secret-typed field — the class 
 
 ## Explicit protected-mode blocks
 
-For cases outside the HTTP path — CLI tools, script bootstrap, anything reading secrets from files or stdin — Caspian code opens a protected-mode window explicitly with `%process.malloc do ... end`. Inside the block, allocations live in `sodium_malloc`'d secure memory. On block exit, that memory is zeroed and freed. Vault-backed handles (like `Password`) created inside the block **survive past exit**, because the vault owns their storage separately.
+For cases outside the HTTP path — CLI tools, script bootstrap, anything reading secrets from files or stdin — Caspian code opens a protected-mode window explicitly with `%('core:protected/memory').run do ... end`. Inside the block, allocations live in `sodium_malloc`'d protected memory. On block exit, that memory is zeroed and freed. Vault-backed handles (like `Password`) created inside the block **survive past exit**, because the vault owns their storage separately.
+
+Full spec at [core:protected/memory](memory).
 
 Simple example:
 
 ~~~caspian
-$pw = null
-
-%process.malloc do
-	$pw = %('caspian.uno/password/hash').new 'secret password'
+$pw = %('core:protected/memory').run do
+	return Password.new plaintext: 'secret password'
 end
 
 $pw   # a Password object
 ~~~
 
-The `'secret password'` bytes exist only inside the block. When the block exits, the secure buffer is wiped. `$pw` retains its Password handle — the plaintext it wrapped is in the vault, not in the (now-freed) block buffer, and never in ordinary heap memory.
+The `'secret password'` bytes exist only inside the block. When the block exits, the protected buffer is wiped. `$pw` retains its Password handle — the plaintext it wrapped is in the vault, not in the (now-freed) block buffer, and never in ordinary heap memory.
 
 ### Objects that survive past the block
 
 Normal Caspian scoping applies inside the block. Variables declared inside go out of scope at the end; objects survive if a wider-scope variable holds them. Two shapes to be aware of:
 
-- **Vault-backed handles** (like `Password`) are safe to hold past the block. Their bytes live in the vault, not in the block's secure buffer, so nothing has to move — the handle just keeps working after the block exits.
+- **Vault-backed handles** (like `Password`) are safe to hold past the block. Their bytes live in the vault, not in the block's protected buffer, so nothing has to move — the handle just keeps working after the block exits.
 - **Non-vault objects** (plain strings, tables, anything without vault backing) that get referenced by an outer variable **migrate to regular memory** at block exit. No nanny check: if the developer holds a plaintext string in an outer variable and lets it survive past the block, they now have plaintext in ordinary heap memory. That's the developer's responsibility, not the system's. For anything sensitive that needs to persist, use a vault-backed handle.
 
 ### The HTTP intake is built on this primitive
 
-The HTTP password intake described earlier ([route-schema-declares-Password-field](#declaring-password-fields-in-http-routes)) isn't a black box — it's the same `%process.malloc` primitive, at scale. Sketch of the shape underneath:
+The HTTP password intake described earlier ([route-schema-declares-Password-field](#declaring-password-fields-in-http-routes)) isn't a black box — it's the same `core:protected/memory` primitive, at scale. Sketch of the shape underneath:
 
 ~~~caspian
 $socket = [a socket listening on a port]
-$request = null
 
-%process.malloc do
+$request = %('core:protected/memory').run do
 	$raw = $socket.read
-	$request = [parse $raw]
-	$request['pw'] = %('caspian.uno/password/protected/').new $request['pw']
+	$req = [parse $raw]
+	$req['pw'] = Password.new plaintext: $req['pw']
+	return $req
 end
 
 $request['pw']   # protected Password object
@@ -108,7 +110,7 @@ $request['pw']   # protected Password object
 
 Real Touchstone code is more elaborate — route matching, schema-driven field dispatch, body redaction with the `"#####"` placeholder, sidecar map for reconstitution when `$request` is materialized — but this is the primitive underneath. The socket bytes are read into the protected buffer, parsed inside the window, and the sensitive field is converted to a Password (vault-backed). When the block exits, the parse buffer is wiped; the plaintext exists only in the vault from that point.
 
-The developer using the route-schema form never has to touch `%process.malloc` themselves — Touchstone opens the window for them. The primitive is there for cases where the developer needs explicit control (CLI tools, script bootstrap, custom protocols, or anything outside the HTTP path).
+The developer using the route-schema form never has to touch `core:protected/memory` themselves — Touchstone opens the window for them. The primitive is there for cases where the developer needs explicit control (CLI tools, script bootstrap, custom protocols, or anything outside the HTTP path).
 
 ## Engine configuration for process-level protections
 
@@ -127,6 +129,8 @@ The [process-security](process-security) settings are configured in the engine's
 Application code doesn't reach these — they're operator-controlled at deployment time. See [process-security § Engine configuration](process-security#engine-configuration) for the meaning of each.
 
 ## What you deliberately cannot do
+
+<span class="tag">ui-cannot-do</span>
 
 The following are absent by design. Attempts to work around them are code smells and usually indicate the developer wants a different pattern:
 
@@ -179,6 +183,6 @@ All of that happens under the surface. The developer writes ordinary Caspian cod
 
 ## Related
 
-- [vault](vault) — how the storage actually works.
-- [process-security](process-security) — the OS-level protections that surround the vault.
+- [vault](tag:vault) — how the storage actually works.
+- [process-security](tag:process-security) — the OS-level protections that surround the vault.
 - [index § Driving use case](./#driving-use-case-http-password-intake) — the HTTP intake flow from the outside.

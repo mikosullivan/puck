@@ -15,7 +15,7 @@
 
 **Every slot on `%engine` is reachable only from code running under the `user` role.** A method call on `%engine` (or `%engine[...]`) from any other role is a runtime error. There is no per-slot opt-in for non-user access; the gate applies to the whole surface.
 
-This is what makes `%engine` the program's gateway and not just a convenient namespace. Host resources flow through `user` code. If non-user code needs something `%engine` exposes — an HTTP client, a manifest entry, a coverage block — the user is the one who reaches into `%engine`, takes what's needed, and hands it across. The user is the actor; everything else is a tool the user employs.
+This is what makes `%engine` the program's gateway and not just a convenient namespace. Host resources flow through `user` code. If non-user code needs something `%engine` exposes — an HTTP client, a manifest entry, a stdout stream — the user is the one who reaches into `%engine`, takes what's needed, and hands it across. The user is the actor; everything else is a tool the user employs.
 
 ## Engine methods
 
@@ -26,11 +26,10 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | Method | Description | Mirrored in `%chain` |
 |---|---|---|
 | [`%engine.argv`](argv) | Command-line arguments. | [`%chain.argv`](../chain/methods/argv) |
-| `%engine.coverage` ([doc](coverage)) | Line-level coverage tracking. | — |
 | `%engine.encryption` (TBD) | Cryptographic primitives. | [`%chain.encryption`](../chain/methods/encryption) |
 | `%engine.env` (TBD) | Environment-variable accessor. | [`%chain.env`](../chain/methods/env) |
 | `%engine.forks` (TBD) | Process forking. | [`%chain.forks`](../chain/methods/forks) |
-| [`%engine.http`](http) | HTTP client. | via [`%chain.net.http`](../chain/methods/net) |
+| [`%engine.http_client`](http_client) | HTTP client. | via [`%chain.net.http`](../chain/methods/net) |
 | `%engine.lua` ([doc](lua)) | Information about the Lua host running the reference engine. | — |
 | `%engine.manifest` ([doc](manifest/)) | Hash describing the current process. | — |
 | `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%chain.net`](../chain/methods/net) |
@@ -56,11 +55,11 @@ Beyond the standard slots, a host may expose application-specific resources by n
 
 - **`%engine` reachable from `user`** — the first program statement (running under `user`) can call any documented slot.
 - **`%engine` from a non-user role raises** — a method on a class owned by a non-user role calling `%engine.argv` raises the blanket `%engine` gate error.
-- **Every slot is gated identically** — `%engine.stdout`, `%engine.http`, `%engine.manifest`, `%engine.roles`, and every other slot all raise from non-user role frames.
+- **Every slot is gated identically** — `%engine.stdout`, `%engine.http_client`, `%engine.manifest`, `%engine.roles`, and every other slot all raise from non-user role frames.
 - **Bracket form is gated identically** — `%engine['argv']` from a non-user frame raises just as `%engine.argv` does.
 - **`%engine` is non-capturable** — attempting `$e = %engine` and calling `$e.argv` from a non-user frame raises. Capturing the reference does not bypass the gate.
 - **`%engine` is top-level-only** — a non-user role cannot receive a `%engine` reference through a constructor argument and later call methods on it; capture attempts at that layer raise.
-- **A captured slot value is still usable across frames under method-runs-as-owner** — `$net = %engine.http` handed to a non-user object still works when the non-user code calls `$net.get(url)`, because the method runs under the user role.
+- **A captured slot value is still usable across frames under method-runs-as-owner** — `$net = %engine.http_client` handed to a non-user object still works when the non-user code calls `$net.get(url)`, because the method runs under the user role.
 - **Unknown standard slot raises a "no such slot" error** — `%engine.no_such_slot` raises a specific missing-slot error distinct from the blanket gate error.
 - **Custom slot reachable via bracket form** — a host that populates `%engine['myapp']` makes that slot reachable to `user` code via `%engine['myapp']`.
 - **Custom slot values subject to the same user-only gate** — `%engine['myapp']` from a non-user frame raises.

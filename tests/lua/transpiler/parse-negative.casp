@@ -642,3 +642,144 @@ trailing comma allowed only inside
 #
 # name: trailing comma inside a function body with `end` on the next line
 #====================================================================
+
+
+#====================================================================
+# name: varobj-slot reassignment ($$foo = X) raises with steering hint
+# A varobj IS the slot; there is no "replace the varobj with a different
+# one" operation. Parser rejects `$$foo = X` at transpile time and points
+# the author at the `$foo = X` form (which reassigns the value the slot
+# holds).
+#
+
+#--- code -----------------------------------------------------------
+$$foo = 42
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+cannot reassign varobj slot `$$foo`
+#--------------------------------------------------------------------
+
+#
+# name: varobj-slot reassignment ($$foo = X) raises with steering hint
+#====================================================================
+
+
+#====================================================================
+# name: ensure inside a callable body raises
+# `ensure` is only valid in a bare `begin ... end`. Callables (function
+# / closure / method / do) use the iteration-lifecycle set (before /
+# between / after / noloop) instead.
+#
+
+#--- code -----------------------------------------------------------
+$foo = closure($idx)
+	puts $idx
+ensure
+	puts 'done'
+end
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+`ensure` is only valid inside a bare `begin ... end`
+#--------------------------------------------------------------------
+
+#
+# name: ensure inside a callable body raises
+#====================================================================
+
+
+#====================================================================
+# name: before inside a bare begin block raises
+# The iteration-lifecycle clauses (before / between / after / noloop)
+# are not valid on a single-shot `begin ... end` — use them on a loop
+# or callable body instead.
+#
+
+#--- code -----------------------------------------------------------
+begin
+	puts 1
+before
+	puts '--- START ---'
+end
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+`before` is not valid inside a bare `begin ... end`
+#--------------------------------------------------------------------
+
+#
+# name: before inside a bare begin block raises
+#====================================================================
+
+
+#====================================================================
+# name: ensure inside begin-while loop raises
+# `begin ... while COND` is a loop, so the iteration-clauses apply and
+# `ensure` is rejected. `ensure` is only for the bare `begin ... end`.
+#
+
+#--- code -----------------------------------------------------------
+begin
+	puts 1
+ensure
+	puts 'done'
+while $x < 10
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+`ensure` is not valid on a `begin ... while` loop
+#--------------------------------------------------------------------
+
+#
+# name: ensure inside begin-while loop raises
+#====================================================================
+
+
+#====================================================================
+# name: noloop inside begin-while loop raises
+# `begin ... while COND` always runs the body at least once (trailing-cond
+# do-while), so a `noloop` block would be dead code. Reject at parse time
+# and steer to the leading-cond form (`while COND ... noloop ... end`)
+# which can genuinely encounter an empty-iteration case.
+#
+
+#--- code -----------------------------------------------------------
+begin
+	puts 1
+noloop
+	puts 0
+while $x > 0
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+`noloop` is not valid on a `begin ... while` loop
+#--------------------------------------------------------------------
+
+#
+# name: noloop inside begin-while loop raises
+#====================================================================
+
+
+#====================================================================
+# name: noloop inside begin-until loop raises
+# Same rule as begin-while: begin-until always runs the body at least
+# once, so `noloop` is dead code. Use `until COND ... noloop ... end`
+# (the leading-cond form) if you need a body-never-ran hook.
+#
+
+#--- code -----------------------------------------------------------
+begin
+	puts 1
+noloop
+	puts 0
+until $x > 0
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+`noloop` is not valid on a `begin ... until` loop
+#--------------------------------------------------------------------
+
+#
+# name: noloop inside begin-until loop raises
+#====================================================================

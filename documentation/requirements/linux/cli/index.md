@@ -71,7 +71,7 @@ Priority is the order the wrappers land in V1. Sub-pages are stubs until each ge
 
 ### Outside the priority list
 
-- [openssl](openssl) — ES256 / RS256 signature verify for the [Passkey subsystem](https://puck.uno/documentation/requirements/secure-memory/passkey/). Predates the priority list; migrated in from `linux-support/` as the namespace consolidated.
+- [openssl](openssl) — ES256 / RS256 signature verify for the [Passkey subsystem](https://puck.uno/documentation/requirements/protected/passkey/). Predates the priority list; migrated in from `linux-support/` as the namespace consolidated.
 
 ## Prior-art notes
 

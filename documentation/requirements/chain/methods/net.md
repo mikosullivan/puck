@@ -45,9 +45,9 @@ The host grants `%chain.net` (via the underlying networking capability) by polic
 - **`.sockets` SSL** — an SSL/TLS wrapper handshakes with a compatible peer.
 - **`.uds` server** — a Unix-domain-socket server can be constructed at a filesystem path and accepts client connections.
 - **Response body carries net role provenance** — bytes read from a `.fetch` response carry the role tag of the net faucet.
-- **Matches `%engine.http` semantics** — the same request through `%chain.net.fetch` and `%engine.http` returns equivalent responses under identical inputs.
+- **Matches `%engine.http_client` semantics** — the same request through `%chain.net.fetch` and `%engine.http_client` returns equivalent responses under identical inputs.
 - **Revoke clears the surface** — after `%chain.net` is revoked in a nested block, it is `null` inside that block and reverts on block exit.
 
 ## See also
 
-- [`%engine.http`](../../engine/http) — user-only access to the same underlying HTTP client.
+- [`%engine.http_client`](../../engine/http_client) — user-only access to the same underlying HTTP client.

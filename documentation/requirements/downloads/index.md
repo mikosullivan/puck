@@ -16,6 +16,7 @@ Stub. This section will hold per-class specs for the first-party classes Caspian
 - [BSON](bson) — binary JSON superset (MongoDB wire format). Stub.
 - [CSV](csv) — comma-separated values encode/decode, streaming row iteration. Stub.
 - [Gzip](gzip) — gzip compress / decompress; shellout wrapper around the `gzip` utility. Stub. **Ships-tier decision pending** — currently marked as core in the stdlib review.
+- [Helpers](helpers) — `caspian.uno/helpers.casp`, the class inherited via multiple inheritance to give a class a hash-like `.helpers` slot for per-instance helper attachment. Base infrastructure for the pattern; concrete helpers (Accept, Cookie, etc.) live under their own URLs and target consuming classes like `core:http/request`.
 - [INI](ini) — traditional key=value config format (systemd units, gitconfig, legacy tools). Stub.
 - [Markdown](markdown) — port of Orlando's Markdown parser to a standalone class. Stub.
 - [TOML](toml) — Tom's Obvious Minimal Language, used by pyproject.toml, Cargo.toml. Stub.

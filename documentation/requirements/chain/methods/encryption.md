@@ -38,7 +38,7 @@ The slot is named `sha` rather than `hash` because it's SHA-family specifically.
 
 ## Not for password storage
 
-Neither sub-surface is the right tool for password hashing. Passwords have their own separate spec covering Argon2id, salt management, and verification — see the [Password class](https://puck.uno/documentation/requirements/secure-memory/password/).
+Neither sub-surface is the right tool for password hashing. Passwords have their own separate spec covering Argon2id, salt management, and verification — see the [Password class](https://puck.uno/documentation/requirements/protected/password).
 
 ## Testing
 
