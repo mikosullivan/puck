@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_files",
-	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %fetch. Covers the file-as-value model, the two canonical patterns for class-serving files (single class or an instance with getter methods per class), the hash-form alternative, and the auto_run caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
-	"status": "spec — single-class and multi-class file shapes settled; hash form documented as legal but instance form is recommended for multi-class",
+	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %fetch. Covers the file-as-value model, the single-class pattern, and the two multi-class patterns (plain hash literal for pure lookup, or instance-with-`public_const` when the file also needs helpers, hooks, or other structure). Includes the auto_run caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
+	"status": "spec — single-class and multi-class file shapes settled; two multi-class patterns (hash literal for pure lookup, instance-with-public_const when other capabilities are needed) documented as peers",
 	"audience": "developers authoring Caspian source files; anyone publishing objects for %fetch fetch; engine implementers who realize a file's value after evaluation"
 }}
 ~~~
@@ -37,67 +37,79 @@ No wrapping, no ceremony — the class **is** the file.
 
 ## Multi-class files
 
-For files that expose more than one class from a single URL, wrap them in `instance ... end` and expose each class through a getter:
+For files that expose more than one class from a single URL, two patterns work — pick based on whether the file also needs to carry helpers, hooks, or other structure alongside the classes.
 
-~~~caspian
-instance # colors
-	getter :red, class
-		# ... red class body ...
-	end
+### Pattern A: plain hash literal
 
-	getter :green, class
-		# ... green class body ...
-	end
-
-	getter :blue, class
-		# ... blue class body ...
-	end
-end
-~~~
-
-The file's value is the instance. Consumers reach each class through the getter:
-
-~~~caspian
-$colors = %('https://foo.bar/colors.casp')
-$red = $colors.red
-
-$paint = $colors.red.new(shade: 'crimson')
-~~~
-
-The wrapping instance is a full object, not just a lookup table. It can carry shared helpers, config values, an `init` hook, singleton methods — anything a regular `instance ... end` body can carry. Classes exposed via `getter` are the everyday case; the extra capacity is there when a file needs it.
-
-## Alternative: hash form
-
-A file body that evaluates to a plain hash of classes also works:
+The file body is a hash whose values are classes:
 
 ~~~caspian
 {
 	red: class # red
-		# ...
+		# ... red class body ...
 	end,
 	green: class # green
-		# ...
+		# ... green class body ...
 	end,
 	blue: class # blue
-		# ...
+		# ... blue class body ...
 	end
 }
 ~~~
 
-Consumers reach classes via subscript:
+Consumers reach each class via subscript:
 
 ~~~caspian
 $colors = %('https://foo.bar/colors.casp')
 $red = $colors['red']
+$paint = $colors['red'].new(shade: 'crimson')
 ~~~
 
-The hash form is legal, but the instance form is the recommended shape for class-serving files. Three reasons:
+Reach for the hash form when the file is a pure lookup table and nothing else.
+
+### Pattern B: instance with `public_const`
+
+The file body is an `instance ... end` block that exposes each class through a `public_const` declaration:
+
+~~~caspian
+instance # colors
+	public_const :red, class # red
+		# ... red class body ...
+	end
+
+	public_const :green, class # green
+		# ... green class body ...
+	end
+
+	public_const :blue, class # blue
+		# ... blue class body ...
+	end
+
+	method &describe()
+		return 'colors library'
+	end
+end
+~~~
+
+The file's value is the instance. Consumers reach each class through the generated getter:
+
+~~~caspian
+$colors = %('https://foo.bar/colors.casp')
+$red = $colors.red
+$paint = $colors.red.new(shade: 'crimson')
+
+$colors.describe   # 'colors library'
+~~~
+
+`public_const :name, value` freezes the value into the class-object's bucket and generates an external getter method with the same name (see [classes/definition § Constants](https://puck.uno/documentation/requirements/classes/definition#constants)). Because the wrapping is a full instance, the file body can also carry shared helpers, config values, an `init` hook, singleton methods, or `main` — anything a regular `instance ... end` body can carry.
+
+### Choosing between them
 
 - **Read ergonomics.** `$colors.red` reads better than `$colors['red']` at every call site.
-- **Extension.** The instance form can grow to include helpers, shared state, or hooks. The hash form is a fixed lookup — adding anything else requires switching to `instance` later.
-- **Introspection.** The instance form exposes structure via the object's method surface (`$colors.object.classes` and similar). A hash is just a hash.
+- **Extension.** The instance form can grow to include helpers, shared state, hooks, or a `main`. The hash form is a fixed lookup — adding anything else requires switching to `instance` later.
+- **Introspection.** The instance form exposes structure via the object's method surface. A hash is just a hash.
 
-Reach for the hash form when the file genuinely produces a lookup table and nothing more; use `instance` for anything that might grow.
+Reach for the hash form when the file is a pure lookup table; use the instance form when the file carries additional capabilities or is likely to grow.
 
 ## `auto_run` in a class-serving instance
 
@@ -105,7 +117,7 @@ Setting `auto_run` on a method inside a class-serving instance replaces the inst
 
 ~~~caspian
 instance
-	getter :red, class
+	public_const :red, class
 		# ...
 	end
 
@@ -123,11 +135,11 @@ Almost always the wrong shape for a class-serving file. Don't set `auto_run` on 
 
 - **Single-class file yields the class** — a file whose body is one `class ... end` fetched via `%fetch` returns the class object; `.new(...)` on it produces an instance.
 - **Class name literal-label is preserved** — a `class # widget` file yields a class whose introspectable label is `widget`.
-- **Multi-class instance file yields the instance** — a file wrapping several `getter :name, class` expressions inside `instance ... end` fetched via `%fetch` returns the instance.
-- **Named getter reaches its class** — after fetching the multi-class instance, `$colors.red` returns the `red` class object.
-- **Getter's class is instantiable** — `$colors.red.new(shade: 'crimson')` produces a valid instance.
-- **Instance-form file may carry helpers** — a helper method or config value declared alongside the getters is reachable on the returned instance.
-- **Instance-form file honors `init` hook** — an `init` hook inside the wrapping instance runs exactly once when the file is loaded, not on each getter access.
+- **Multi-class instance file yields the instance** — a file wrapping several `public_const :name, class` expressions inside `instance ... end` fetched via `%fetch` returns the instance.
+- **`public_const` reaches its class** — after fetching the multi-class instance, `$colors.red` returns the `red` class object.
+- **`public_const` class is instantiable** — `$colors.red.new(shade: 'crimson')` produces a valid instance.
+- **Instance-form file may carry helpers** — a helper method or config value declared alongside the `public_const` declarations is reachable on the returned instance.
+- **Instance-form file honors `init` hook** — an `init` hook inside the wrapping instance runs exactly once when the file is loaded, not on each class-property access.
 - **Hash-form file yields a hash** — a file whose body is a hash literal of classes yields a hash; `$colors['red']` returns the red class.
 - **Hash-form file class is instantiable** — `$colors['red'].new(...)` produces a valid instance.
 - **`auto_run` on a class-serving instance replaces the file's value** — after adding `auto_run :compute_something` that returns `null`, `%fetch(url)` yields `null`, not the instance.
@@ -141,5 +153,5 @@ Almost always the wrong shape for a class-serving file. Don't set `auto_run` on 
 ## Related
 
 - [content-types](https://puck.uno/documentation/requirements/content-types) — how the file is transported over HTTP (the wire-level companion to this page's what-does-the-file-produce concern).
-- [classes/definition § getter shorthand](https://puck.uno/documentation/requirements/classes/definition#getter-shorthand) — the `getter :name, value` construct used by the multi-class pattern.
+- [classes/definition § Constants](https://puck.uno/documentation/requirements/classes/definition#constants) — the `public_const` construct used by the instance-based multi-class pattern.
 - [instance](https://puck.uno/documentation/requirements/classes/instance) — the full spec for the `instance ... end` construct.

@@ -112,6 +112,102 @@ $hsh.deleted? 'a' # false
 
 Layered lookup patterns — `%chain` frames, scope frames, and similar walk-a-chain-of-hashes designs — need to distinguish "this layer never had the key" from "this layer explicitly deleted it." Without a tombstone marker, deleting a key in an inner layer silently un-shadows whatever was in an outer layer. The consumer (chain runtime, scope runtime, etc.) opts each frame in with `.note_deleted = true` so the walker can stop on an explicit delete instead of falling through.
 
+## Freezing fields
+
+<span class="tag">hash-freeze-field</span>
+
+Individual fields in a hash can be frozen with `.freeze_field(key)`. Once frozen, any attempt to write a new value at that key raises. Reads are unaffected; `.delete` on a frozen key raises.
+
+~~~caspian
+$config = {debug: false, host: 'localhost'}
+$config.freeze_field 'host'
+
+$config['debug'] = true       # ok — debug not frozen
+$config['host'] = 'other'     # raises — host is frozen
+~~~
+
+**Companion predicate: `.field_frozen?(key)`** returns `true` if `.freeze_field` has been called on the key, `false` otherwise. Parallel to variable-object's `.frozen?`.
+
+~~~caspian
+$config.field_frozen? 'host'   # true
+$config.field_frozen? 'debug'  # false
+~~~
+
+**Freezing an unset key is allowed.** The key doesn't need to exist yet; the freeze marks it so any future write raises. `.field_frozen?` reflects the frozen marker regardless of whether the key was ever set.
+
+~~~caspian
+$hsh = {}
+$hsh.freeze_field('foo')
+$hsh.field_frozen?('foo') # true
+$hsh['foo'] = 1           # raises
+~~~
+
+**Frozen fields cannot be deleted.** Freezing settles the whole field (both existence and value); `.delete` would undo the settlement.
+
+~~~caspian
+$hsh = {'a': 'b'}
+$hsh.freeze_field('a')
+$hsh.delete 'a' # raises
+~~~
+
+**Freezing is fine-grained.** Freezing one field doesn't freeze others; the hash as a whole stays mutable. Different fields can be frozen independently.
+
+**Freezing is Caspian's constant mechanism for hash entries.** Same pattern that variable-objects use: assign the value freely, then freeze. No separate `const` field-declaration keyword — one primitive, applied through different access paths. See [variable-object § Freezing](https://puck.uno/documentation/requirements/built-in-classes/variable-object#freezing) for the parallel variable-level story.
+
+**Common use: instance constants on `%bucket`.** Method bodies can freeze bucket fields to prevent later mutation:
+
+~~~caspian
+method &init($id)
+	@id = $id
+	%bucket.freeze_field 'id'  # @id is now immutable for this instance
+end
+~~~
+
+## Freezing (whole-hash)
+
+<span class="tag">hash-freeze</span>
+
+For "no more writes to any key, no new keys, no removals" semantics, call `.freeze` **directly on the hash** (NOT on `.object` — the primitive-contents freeze is a hash-instance concern, not a general-object concern; see [object/methods § freeze surface](https://puck.uno/documentation/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze) for the object-level split).
+
+~~~caspian
+$foo = {'a': 'b'}
+$foo.freeze
+$foo['b'] = 1     # raises
+$foo.delete 'a'   # raises
+~~~
+
+**Two forms** — same bare / block pattern as the object-level freeze surface:
+
+- **Bare `.freeze`** — permanent. There is no `unfreeze`.
+- **Block `.freeze do ... end`** — locks for the block, releases at exit. Exception-safe.
+
+~~~caspian
+$foo = {}
+$foo.freeze do
+	# $foo is frozen inside this block
+end
+# $foo is mutable again out here
+~~~
+
+**Idempotent.** Calling `.freeze` on an already-frozen hash is a no-op.
+
+**Companion predicate: `.frozen?`** returns `true` if `.freeze` has been called (or is active for a block form), `false` otherwise.
+
+~~~caspian
+$foo = {}
+$foo.frozen?    # false
+$foo.freeze
+$foo.frozen?    # true
+~~~
+
+**Composes with `.freeze_field(key)`.** Fine-grained field-level freezes are preserved through hash-level freeze cycles:
+
+- `.freeze_field(k)` early → the field is frozen individually.
+- `.freeze` later → whole hash frozen; the individual field freeze is a strict subset of the whole-hash freeze.
+- Block-form `.freeze do ... end` release → the block-form hash-wide freeze goes away, but any per-field freeze that was set separately stays.
+
+**Distinct from `.object.freeze_bucket`.** `.object.freeze_bucket` freezes the hash's METADATA bucket (the `note_deleted` flag, the per-field freeze markers, etc.). It does NOT freeze the key-value contents. Use `.freeze` (direct) for that.
+
 ## Testing
 
 - **Empty hash literal `{}` materializes to a Hash instance** — `{}.object.isa?(Hash)` is `true`.
@@ -150,6 +246,26 @@ Layered lookup patterns — `%chain` frames, scope frames, and similar walk-a-ch
 - **`.delete` on a note-deleted hash records a key that never existed** — after `$hsh = {}; $hsh.note_deleted = true; $hsh.delete 'a'`, `$hsh.deleted? 'a'` is `true`.
 - **Setting `.note_deleted = false` wipes the tombstone set** — after toggling off then back on, a previously-tombstoned key is no longer `.deleted?`.
 - **Re-assigning a tombstoned key un-tombstones it** — after `$hsh.delete 'a'; $hsh['a'] = 'bar'`, `$hsh.deleted? 'a'` is `false` and `$hsh.has_key? 'a'` is `true`.
+- **`.freeze_field` prevents further writes at that key** — after `$h = {a: 1}; $h.freeze_field 'a'`, `$h['a'] = 2` raises.
+- **`.freeze_field` leaves other keys mutable** — after `$h = {a: 1, b: 2}; $h.freeze_field 'a'`, `$h['b'] = 99` succeeds and `$h['b']` is `99`.
+- **`.field_frozen?` returns true for frozen keys** — after `$h = {a: 1}; $h.freeze_field 'a'`, `$h.field_frozen? 'a'` is `true`.
+- **`.field_frozen?` returns false for unfrozen keys** — for `$h = {a: 1, b: 2}` with only `a` frozen, `$h.field_frozen? 'b'` is `false`.
+- **`.field_frozen?` on a never-touched key returns false** — `$h = {a: 1}; $h.field_frozen? 'nonexistent'` is `false`.
+- **`.freeze_field` on an unset key succeeds** — `$h = {}; $h.freeze_field 'foo'` does not raise.
+- **Frozen unset key rejects writes** — after `$h = {}; $h.freeze_field 'foo'`, `$h['foo'] = 1` raises.
+- **`.field_frozen?` returns true for a frozen unset key** — after `$h = {}; $h.freeze_field 'foo'`, `$h.field_frozen? 'foo'` is `true`.
+- **`.delete` on a frozen field raises** — after `$h = {a: 'b'}; $h.freeze_field 'a'`, `$h.delete 'a'` raises.
+- **Bumping a frozen subscript raises** — after `$h = {a: 1}; $h.freeze_field 'a'`, `$h['a']++` raises (the underlying subscript-write is blocked by the freeze, same as `$h['a'] = 2`).
+- **`.freeze_field` is idempotent** — calling `.freeze_field 'a'` twice on the same key does not raise on the second call.
+- **`.freeze` (whole-hash) prevents writes to any key** — after `$h = {a: 1}; $h.freeze`, `$h['a'] = 2` raises.
+- **`.freeze` prevents new keys** — after `$h = {}; $h.freeze`, `$h['x'] = 1` raises.
+- **`.freeze` prevents removals** — after `$h = {a: 1}; $h.freeze`, `$h.delete 'a'` raises.
+- **`.freeze` is idempotent** — calling `.freeze` twice on the same hash does not raise on the second call.
+- **`.frozen?` returns false initially** — for a fresh `$h = {}`, `$h.frozen?` is `false`.
+- **`.frozen?` returns true after `.freeze`** — after `$h = {}; $h.freeze`, `$h.frozen?` is `true`.
+- **Block-form `.freeze` releases at block exit** — after `$h = {}; $h.freeze do end`, `$h.frozen?` is `false` and `$h['x'] = 1` succeeds.
+- **`.frozen?` returns true inside block-form `.freeze`** — inside `$h.freeze do ... end`, `$h.frozen?` is `true`.
+- **`.freeze` composes with `.freeze_field`** — after `$h = {a: 1, b: 2}; $h.freeze_field 'a'; $h.freeze do end`, `$h.field_frozen? 'a'` is still `true` after block exit.
 
 ## Related
 

@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_object_methods",
-	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'object'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.object.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — each with permanent and block-scoped forms, denying writes to the named axis or both axes). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
-	"status": "stub — starter methods spec'd (truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, warn, stack/shadow, freeze_bucket/freeze_stack/freeze); more to come",
+	"role": "spec for the methods in the `object` method namespace — cross-cutting methods available on every Caspian value via `$foo.object.X`. Currently spec'd: `.truthy?` (returns truthiness derived from the receiver's primitive field: false/null primitive → false; anything else or no primitive field → true; immutable per instance), `.isa?($class)` (class-hierarchy query), `.null?` and `.defined?` (paired predicates for the null-vs-not-null check; each is the opposite of the other), `.jail(...)` (constructs a narrowing wrapper that exposes only the named methods), `.tap` (Ruby-style chain-preserving side-effect helper — yields the receiver, runs the block, returns the receiver), `.classes` (returns an array of the receiver's stack classes, with `.ensure($class)`, `.add_unconditionally($class)`, and `.shadow` sub-methods; `.ensure($class)` has a bare form (permanent add if missing) and a block form (temporary add-if-missing with identity-tracked cleanup at block exit); `.add_unconditionally($class)` always pushes a new platter regardless of existing membership — verbose name deliberately since the always-push case is rare — and has the same bare/block form pair with the block form always adding and always removing at exit; `.shadow` accepts `ensure: true` to create the shadow if missing), `.methods` (returns a lazy methods object that behaves like a Hash for all non-mutating operations — `[:name]`, `.keys`, `.values`, `.each`, `.length`, containment tests; per-lookup walk of the class graph so single-method access doesn't materialize the whole set; `.keys` returns a fresh array on each call and can differ between calls if the class was mutated; nested namespaces surface as single entries — `.methods.keys` includes `'object'` and other nested-namespace names but not the nested members underneath; mutating operations like `[:name] = value` and `.delete` raise; access-scoped so private methods surface when called from inside the class body via %self.object.methods but not from outside; composes with the caller pattern), `.warn($message)` (attaches a warning-only platter to the receiver; never raises, never propagates up the chain — observational only), `.stack` (returns the receiver's stack array; user- and owner-only; carries a `.shadow` sub-method that returns the shadow platter, with the same `ensure: true` kwarg), and the freeze surface (`.freeze_bucket`, `.freeze_stack`, `.freeze` — two independent object-level immutability axes plus a shortcut that locks both; each with permanent and block-scoped forms; `.freeze_bucket` is top-level-only on the receiver's own bucket, does not cascade into nested structures; freezing primitive-value contents like Hash keys or Array elements is NOT covered here — that's a direct `.freeze` method on the primitive itself) and the companion frozen-predicate surface (`.bucket_frozen?`, `.stack_frozen?`, `.frozen?` — each returns true iff the corresponding freeze method has been called; `.frozen?` returns true iff both axis predicates return true; reflect the CURRENT freeze state so block-form freezes return true DURING the block and false again after); all freeze methods are idempotent (freezing already-frozen axes is a no-op). Rule: shadows are never created by magic through a query — a bare `.shadow` call always returns whatever exists; `ensure: true` is the explicit opt-in for create-if-missing. Defining a singleton method (`method $foo.bar() ... end`) is the other explicit path that creates a shadow — the definition itself does the ensuring. More methods to be added as they're identified.",
+	"status": "stub — starter methods spec'd (truthy?, isa?, null?, defined?, jail, tap, classes/ensure/shadow, warn, stack/shadow, freeze_bucket/freeze_stack/freeze, bucket_frozen?/stack_frozen?/frozen?); more to come",
 	"audience": "developers writing Caspian; engine implementers"
 }}
 ~~~
@@ -28,7 +28,12 @@ Methods in the `object` namespace apply to any value in Caspian. They inherit th
 | `.stack` | Returns the receiver's stack array; restricted to user and the receiver's owning role; carries a `.shadow` sub-method that returns the shadow platter (with `ensure: true` to create). |
 | `.freeze_bucket` | Locks the receiver's bucket against writes; permanent, or scoped to a block if one is passed. |
 | `.freeze_stack` | Locks the receiver's stack against modification; permanent, or scoped to a block if one is passed. |
-| `.freeze` | Locks both the bucket and the stack; permanent, or scoped to a block if one is passed. |
+| `.freeze` | Locks both bucket and stack; permanent, or scoped to a block if one is passed. |
+| `.bucket_frozen?` | Returns `true` if the receiver's bucket is currently frozen. |
+| `.stack_frozen?` | Returns `true` if the receiver's stack is currently frozen. |
+| `.frozen?` | Returns `true` if both bucket and stack are currently frozen. |
+
+**Note:** freezing the primitive-value contents of a Hash, Array, or other primitive is a direct method on the receiver (`$hsh.freeze`), NOT part of the `.object` freeze surface. The `.object` surface only covers concerns common to every object (bucket, stack). See [Hash § Freezing](https://puck.uno/documentation/requirements/built-in-classes/primitives/hash#freezing) and the corresponding primitive-instance pages.
 
 ## Worked examples
 
@@ -454,22 +459,44 @@ $widget.object.stack.shadow                  # the shadow platter hash
 
 ### `.freeze_bucket` / `.freeze_stack` / `.freeze`
 
-Caspian splits object immutability into two independent axes — the bucket and the stack — plus a shortcut that locks both at once. Every freeze method has two forms:
+Caspian splits object-level immutability into two independent axes — the bucket and the stack — plus a shortcut that locks both at once. Primitive-value contents (Hash keys, Array elements) are frozen separately, via a direct `.freeze` method on the primitive itself — see the note under the methods table.
+
+**Every freeze method has two forms.** All three methods (`.freeze_bucket`, `.freeze_stack`, `.freeze`) accept the same bare / block pattern.
 
 - **Bare call** — locks the axis (or axes) **permanently**. There is no `unfreeze`; once the axis is frozen it stays frozen for the lifetime of the object.
-- **Block call** — locks the axis for the block's duration and releases when the block exits. Exception-safe: the release runs even if the block raises.
+
+  ~~~caspian
+  $foo.object.freeze()  # $foo is now permanently frozen
+  ~~~
+
+- **Block call** — locks the axis (or axes) for the block's duration and releases when the block exits. Exception-safe: the release runs even if the block raises.
+
+  ~~~caspian
+  $foo.object.freeze() do
+    # $foo is frozen inside this block
+  end
+
+  # $foo is mutable again out here
+  ~~~
+
+Same pattern for each individual-axis method — `$foo.object.freeze_bucket() do ... end`, `.freeze_stack() do ... end`. Each temporarily locks its axis for the block and releases at block exit.
+
+**Idempotent.** Calling a freeze method on an already-frozen axis is a no-op — no raise, no change. This means `.freeze` after `.freeze_bucket` still works (adds the stack freeze; bucket stays as-is), and re-freezing the same axis is harmless.
 
 What each method locks:
 
-| Method | Bucket | Stack |
-|---|---|---|
-| `.freeze_bucket` | locked | (unchanged) |
-| `.freeze_stack` | (unchanged) | locked |
-| `.freeze` | locked | locked |
+| Method | Bucket | Stack | Primitive contents |
+|---|---|---|---|
+| `.freeze_bucket` | locked | (unchanged) | (unchanged) |
+| `.freeze_stack` | (unchanged) | locked | (unchanged) |
+| `.freeze_primitive` | (unchanged) | (unchanged) | locked |
+| `.freeze` | locked | locked | locked |
 
-**Bucket freeze** — a **deep freeze** on the receiver's bucket. The bucket hash itself becomes read-only, and so does every Hash and Array reachable through it at any depth. Writes via `@field = ...`, `%bucket['key'] = ...`, or a nested write like `@config['theme'] = 'light'` or `@config.items.push(x)` all raise. Reads still work.
+**Most developers just call `.freeze`.** The three-axis split is precise but the common case is "make this object immutable" — one call, done. The individual-axis methods are there for the cases where finer control is needed (freeze just the class stack while leaving state mutable, freeze just the primitive contents while leaving metadata writable, etc.).
 
-**Objects stored in the bucket keep their own methods and mutability.** If a bucket entry is a user-class instance (a `Widget`, a `Session`, anything with its own class), that inner object's methods still work and can still mutate its own state. Bucket freeze deep-freezes reachable Hashes and Arrays; it does not freeze the inner objects those references point to.
+**Bucket freeze** — a **top-level freeze** on the receiver's bucket. The bucket hash itself becomes read-only: `@field = ...` and `%bucket['key'] = ...` raise. Reads still work.
+
+**Objects reachable through the bucket keep their own mutability.** The freeze applies only to the bucket's own top-level entries, not to what those entries point at. A nested Hash, Array, or user-class instance stored in the bucket can still be mutated through its own surface — `@config['theme'] = 'light'`, `@config.items.push(x)`, and `@inner.rename('renamed')` all still work after `.freeze_bucket`. If you want deeper immutability, freeze the nested structures separately (each nested Hash and Array has its own `.object.freeze_bucket`; each user-class instance has its own freeze surface).
 
 ~~~caspian
 $widget.@config = {theme: 'dark', items: [1, 2, 3]}
@@ -478,20 +505,20 @@ $widget.@inner = Widget.new(name: 'nested')
 $widget.object.freeze_bucket
 
 $widget.@config = {}                # raises — top-level bucket write
-$widget.@config['theme'] = 'light'  # raises — nested Hash, deep-frozen
-$widget.@config.items.push(4)       # raises — nested Array, deep-frozen
+$widget.@config['theme'] = 'light'  # works — nested Hash, freeze doesn't cascade
+$widget.@config.items.push(4)       # works — nested Array, freeze doesn't cascade
+$widget.@inner.rename('renamed')    # works — nested Widget, freeze doesn't cascade
 
-$widget.@inner.rename('renamed')    # works — the inner Widget has its own state
-                                    # and its own methods; the outer freeze doesn't
-                                    # touch it. If you want the inner widget frozen
-                                    # too, freeze it separately.
+# For deeper immutability, freeze each reachable structure yourself:
+$widget.@config.object.freeze_bucket
+$widget.@config.items.object.freeze_bucket
 ~~~
 
-Freeze depth applies specifically to structural primitives (Hash, Array) because they're the shapes whose "contents" ARE their state. Objects with their own classes get to decide their own mutation rules through their own methods.
+Design rationale for top-level-only: bucket freeze is a **single-object statement** — "no more writes to THIS bucket." Auto-cascading would silently freeze things the developer may not own or expect frozen; making each freeze explicit keeps the surface predictable and the developer in control of what actually locks down.
 
 **Stack freeze** — no platter can be added, removed, or reordered. `object.method` (defining a singleton method, which would grow the shadow) is blocked; adding a class via `%foo.object.classes.add ...` (when that surface is spec'd) is blocked; nothing about the stack shape can change. The methods the object has at freeze time are the methods it will always have.
 
-**`.freeze` locks both.** Equivalent to calling `.freeze_bucket` and `.freeze_stack` in sequence, or nesting the two block forms.
+**`.freeze` locks both bucket and stack.** Equivalent to calling `.freeze_bucket` and `.freeze_stack` in sequence, or nesting the two block forms.
 
 ~~~caspian
 # Permanent freeze on the bucket only:
@@ -516,6 +543,38 @@ end
 **Any holder can call.** Freezing follows the general holding-is-access rule — anyone with a reference to the object can freeze any of its axes. Freezing denies future writes; it doesn't grant any capability the caller didn't already have.
 
 This does mean untrusted code that holds an object can freeze it out from under the owner. Callers who don't want that surface reachable pass a [jail](https://puck.uno/documentation/requirements/built-in-classes/object/methods/#jail) that doesn't expose the freeze methods rather than the raw object.
+
+### `.bucket_frozen?` / `.stack_frozen?` / `.frozen?`
+
+Companion predicates to the freeze surface. Each returns `true` if the corresponding freeze method has been called on the receiver (either directly, or via `.freeze` which triggers both).
+
+| Predicate | Returns `true` when |
+|---|---|
+| `.bucket_frozen?` | `.freeze_bucket` (or `.freeze`) has been called |
+| `.stack_frozen?` | `.freeze_stack` (or `.freeze`) has been called |
+| `.frozen?` | both axis predicates return `true` |
+
+Predicates reflect the **current** freeze state — for block-form freezes, the predicate returns `true` DURING the block and `false` again after the block exits.
+
+~~~caspian
+$foo = {a: 1}
+
+$foo.object.frozen?                 # false initially — no axis frozen
+$foo.object.freeze_bucket
+$foo.object.bucket_frozen?          # true
+$foo.object.frozen?                 # false — only bucket is frozen
+
+$foo.object.freeze                  # locks both axes
+$foo.object.frozen?                 # true
+
+$bar = {a: 1}
+$bar.object.freeze_stack do
+	$bar.object.stack_frozen?       # true here
+end
+$bar.object.stack_frozen?           # false again after the block
+~~~
+
+Predicates parallel the fine-grained `.frozen?` on variable-objects and `.field_frozen?(key)` on hashes — one naming convention across the freeze surfaces.
 
 ## Testing
 

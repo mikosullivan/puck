@@ -783,3 +783,27 @@ until $x > 0
 #
 # name: noloop inside begin-until loop raises
 #====================================================================
+
+
+#====================================================================
+# name: dot followed by bare begin-block raises
+# `$foo.begin` on its own is a valid method call (method named "begin").
+# What breaks here is the trailing `as $block ... end` block — with the
+# bareword `begin` interpreted as a method name, the `as $block` clause
+# and block body have nothing to attach to. Any block expression in
+# method position needs parens: `$foo.(begin as $block ... end)`.
+#
+
+#--- code -----------------------------------------------------------
+$foo.begin as $block
+	return 'match'
+end
+#--------------------------------------------------------------------
+
+#--- raises ---------------------------------------------------------
+cannot parse
+#--------------------------------------------------------------------
+
+#
+# name: dot followed by bare begin-block raises
+#====================================================================

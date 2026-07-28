@@ -20,20 +20,17 @@ The program's diagnostic-output channel. Distinct from `%engine.stdout` in seman
 
 Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly. If the host wants non-user code to write diagnostics it grants the global `%stderr` to it — but the `%engine`-prefixed access stays user-only.
 
-## Bare-word sugar: `puts` and `print`
+## Bare-word `puts` and `print`
 
-Two bare-word forms are rewritten by the transpiler:
+`puts` and `print` are **bareword commands** (bwcs). They stay as bwc atoms through both CaspJ and CaspM — the transpiler does NOT rewrite them at parse time. The engine's `puts` / `print` handlers decide where the output goes at runtime.
 
-- `puts X` → `%stdout.puts X`
-- `print X` → `%stdout.print X`
+In V1, both handlers route through `%chain.stdout` (or whatever the current chain frame has installed there). Future situations might route `puts` to `%chain.stderr` or elsewhere based on runtime context — leaving the resolution at the engine level rather than pinning it at parse time keeps that flexibility.
 
-Both take the same argument shape as the underlying method call (one or more expressions, comma-separated). The rewrite happens at parse/transpile time; the resulting CaspianJ tree is identical to the explicit form.
+Both take the same argument shape as an explicit `%stdout.puts` / `%stdout.print` method call (one or more expressions, comma-separated).
 
-Consequences of "sugar" being parse-level:
-
-- **Not rebindable.** `$puts = &something_else` does NOT affect subsequent `puts` calls — the parser has already rewritten them to `%stdout.puts`. To pass the writer around as a value, use `%stdout` or capture `$out = %stdout` and pass `$out`.
-- **Redirection lives at `%chain.stdout`.** The sanctioned way to redirect where `puts` output goes is to rebind `%chain.stdout` for a scope. `puts` rewrites to `%stdout.puts`, which resolves through the current chain slot at call time.
-- **Role gate applies identically.** `puts` and `%stdout.puts` face the same role check on `%stdout` — the rewrite is orthogonal to access control.
+- **Not rebindable.** `$puts = &something_else` does NOT affect subsequent `puts` calls — `puts` is a bwc, not a variable lookup at runtime. To pass the writer around as a value, use `%stdout` or capture `$out = %stdout` and pass `$out`.
+- **Redirection lives at `%chain.stdout`.** The sanctioned V1 way to redirect where `puts` output goes is to rebind `%chain.stdout` for a scope. The engine's `puts` handler resolves through the current chain slot at call time.
+- **Role gate applies identically.** `puts` and `%stdout.puts` face the same role check on `%stdout` — the bwc resolution is orthogonal to access control.
 
 No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are explicit: `%stderr.puts 'warning'`. The asymmetry is deliberate — diagnostics should read as diagnostics at the call site.
 
@@ -41,9 +38,9 @@ No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are e
 
 - **`%engine.stdout.puts('hello')` writes `'hello\n'` to the host's stdout stream** — CLI runner observes those bytes on stdout.
 - **`%engine.stdout.print('hello')` writes without a trailing newline** — no `\n` appended.
-- **Bare `puts 'hello'` rewrites to `%stdout.puts 'hello'`** — the transpiler produces the same CaspianJ tree either way.
-- **Bare `print 'hello'` rewrites to `%stdout.print 'hello'`** — same rewrite pattern.
-- **`$puts = &something_else` does NOT redirect subsequent `puts` calls** — the parser has already rewritten them; `puts` is not a variable lookup at runtime.
+- **Bare `puts 'hello'` writes `'hello\n'` to the current `%chain.stdout`** — same observable output as `%stdout.puts 'hello'` when no chain redirection is in effect. `puts` stays as a bwc in the CaspJ / CaspM tree; the engine's puts handler routes at runtime.
+- **Bare `print 'hello'` writes without a trailing newline** — same runtime routing as `puts`.
+- **`$puts = &something_else` does NOT redirect subsequent `puts` calls** — `puts` is a bwc, not a variable lookup at runtime.
 - **`%engine.stderr.puts('warn')` writes to the host's stderr stream** — separate from stdout.
 - **`%engine.stdout` and `%engine.stderr` are independent streams** — bytes written to one don't appear on the other.
 - **A host piping stdout leaves stderr on the terminal** — routing is independent per host policy.

@@ -22,6 +22,8 @@ The usual method call, where the method is looked up in the object's class:
 $foo.bar
 ~~~
 
+The underlying CaspJ shape for every dot-call form on this page (`$foo.bar`, `$foo.$fn`, `$foo.&func`, `$foo.(expr)`) is spec'd at [caspianj § Dot operator](https://puck.uno/documentation/requirements/caspianj#dot-operator) — dot is a binary operator in full form, desugars to a `method_call` bwc invocation in norm.
+
 Two extensions that use a function value in the method-name slot instead of a name:
 
 ~~~caspian

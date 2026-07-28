@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_definition",
-	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, getter, method, private, main, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `getter :name, value` shorthand for preset-plus-getter fields, the `main` designation (a class can nominate ONE method as its main — invoked when the class is called as a callable; the `main` DSL command sets the class's `%self.methods.main` slot and raises loudly on overwrite; direct property assignment to that slot bypasses the check for the rare intentional swap), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
+	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, method, private, main, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `main` designation (a class can nominate ONE method as its main — invoked when the class is called as a callable; the `main` DSL command sets the class's `%self.methods.main` slot and raises loudly on overwrite; direct property assignment to that slot bypasses the check for the rare intentional swap), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
 	"status": "draft — DSL surface for the common constructs spec'd; a few areas noted as TBD (helper namespaces, hook-in-class declaration, `implements?` structural check)",
 	"audience": "developers writing Caspian classes; parser implementers; anyone reasoning about class construction"
 }}
@@ -96,7 +96,8 @@ Inside a class body, certain bare words are recognized as **DSL commands** — c
 | Command | Purpose |
 |---|---|
 | `field` | Declare a bucket entry with type and constraints. [Fields](#fields). |
-| `getter` | Preset-a-value plus expose a getter, in one line. [`getter` shorthand](#getter-shorthand). |
+| `private_const` | Declare a class-level frozen constant, internal-only (no external getter). [Constants](#constants). |
+| `public_const` | Declare a class-level frozen constant with an external getter. [Constants](#constants). |
 | `method` | Declare a class method. [Methods](#methods). |
 | `private` | Mark a method as private. [Private methods](#private-methods). |
 | `main` | Designate a method as the class's main method — the one invoked when the class itself is called as a callable. [The main method](#the-main-method). |
@@ -174,33 +175,70 @@ $widget.label = 'other'  # auto-generated setter
 
 Callers wanting bucket-shaped subscript access (`$widget[:label]`) instead of named accessors should use one of the [bucket-access utility classes](https://puck.uno/documentation/requirements/built-in-classes/bucket-access).
 
-### `getter` shorthand
+## Constants
 
-`getter :name, value` is a one-liner shortcut for the common pattern of "put a value in the bucket and expose it via a getter method." The line below sets `%bucket['foo'] = 'foo'` on every new instance and creates a `.foo` method that returns `@foo`:
+Class-body DSL for declaring **class-level constants** — values shared across all instances, initialized once at class-definition time, and frozen against reassignment. Two commands, distinguished by external visibility:
+
+- **`private_const :name, value`** — sets the class-bucket field, freezes it. No external accessor; reachable inside class methods via `@name`.
+- **`public_const :name, value`** — same as `private_const` plus a getter method so instances can read the value externally as `$instance.name`.
+
+~~~caspian
+class # my_database
+	private_const :internal_id, 'abcd-1234'
+	public_const :path, '/home/miko/shakespeare.db'
+
+	method report()
+		return @internal_id + ': ' + @path
+	end
+end
+
+$db = $my_database.new()
+$db.path         # '/home/miko/shakespeare.db' — public_const getter
+$db.report       # 'abcd-1234: /home/miko/shakespeare.db' — internal_id readable from inside
+$db.internal_id  # raises — no getter for private_const
+~~~
+
+### Desugaring
+
+**`private_const :name, value`** desugars to:
+
+~~~caspian
+@name = value
+%bucket.freeze_field 'name'
+~~~
+
+**`public_const :name, value`** desugars to:
+
+~~~caspian
+@name = value
+%bucket.freeze_field 'name'
+%self.field :name, get: true
+~~~
+
+`public_const` is a strict superset of `private_const` — same first two steps plus the getter declaration.
+
+### Fail-loud on redefine
+
+Redefining a constant raises. Since the second step of both desugarings freezes the field, any subsequent `@name = other_value` (whether from another `private_const :name, ...` call or from anywhere else in the class body) hits the frozen-field guard and raises.
 
 ~~~caspian
 class
-	getter :foo, 'blah'
+	private_const :path, '/first'
+	private_const :path, '/second'  # raises — 'path' is already frozen
 end
 ~~~
 
-Equivalent to the full field form:
+No silent overwrite. Fail-loud behavior comes for free from the freeze mechanism — no special-case logic in the DSL commands.
 
-~~~caspian
-class
-	field :foo, default: 'blah', get: true
-end
-~~~
+### Composition
 
-**Both arguments required.** The first argument is a symbol naming the bucket entry and the getter method; the second is any expression producing the value to store.
+Both commands compose from primitives spec'd elsewhere:
 
-**Value is a fresh expression on each construction.** Same evaluation rule as [parameter defaults](tag:parameter-defaults) — the expression re-runs for every instance, so `getter :opts, {}` gives each instance its own hash rather than a shared one.
+- **`%bucket['name'] = value`** — write to the class's bucket (see [built-in-classes/primitives/hash](https://puck.uno/documentation/requirements/built-in-classes/primitives/hash)).
+- **`.freeze_field 'name'`** — freeze the field ([hash § Freezing fields](https://puck.uno/documentation/requirements/built-in-classes/primitives/hash#freezing-fields)).
+- **`field :name, get: true`** — declare the getter ([Fields](#fields)).
 
-**Internal writes still work.** `@foo = 'other'` from inside a method mutates the bucket entry the same as any other bucket field. `getter` controls the external surface (what callers see on the outside of the object), not internal access from sibling methods.
-
-**Getter only — no matching setter.** If the field should also be externally writable, use the full `field :foo, default: 'foo', get: true, set: true` form. `getter` is deliberately narrower.
-
-**When to reach for it.** Small classes with several preset values — decorators, tag classes, small handlers with a fixed label or type. Once a field needs a type constraint, custom validation, or the paired setter, drop back to the full `field` form.
+The DSL commands are sugar over these primitives; developers who need non-standard combinations (e.g., a private constant with a hand-written getter that computes something) can compose the primitives directly.
 
 ## Methods
 
@@ -488,11 +526,6 @@ Areas the current spec does not settle:
 - **`set: true` alone: no getter** — with `set: true` but not `get:`, reading `$obj.name` raises.
 - **`getset: true` generates both accessors** — with `field :name, getset: true`, both `$obj.name` and `$obj.name = 'x'` work; equivalent to `get: true, set: true`.
 - **Combining `get:` / `set:` / `getset:` raises** — any combination raises at class-body evaluation. Contradictory (`field :name, getset: true, get: false`) and pure-redundancy (`field :name, getset: true, get: true`) cases both raise with a message naming the two flags.
-- **`getter :name, value` sets bucket entry and exposes reader** — `getter :foo, 'blah'` creates instances where `@foo == 'blah'` and `$obj.foo` returns `'blah'`.
-- **`getter` produces a fresh expression per instance** — `getter :opts, {}` gives each instance its own hash; mutating one does not affect another.
-- **`getter` writes via `@foo` from within methods** — `@foo = 'x'` inside a method mutates the bucket entry.
-- **`getter` produces no external setter** — `$obj.foo = 'x'` raises with `getter`.
-- **`getter` requires both arguments** — `getter :foo` with no value raises at definition.
 - **`method` declares callable** — `method greet() return 'hi' end` produces `$obj.greet` returning `'hi'`.
 - **Method sees `%self` as receiver** — `method me() return %self end` returns the receiver.
 - **Method sees `@field`** — `method name() return @name end` reads the bucket.
@@ -517,6 +550,13 @@ Areas the current spec does not settle:
 - **Publishing via `%fetch`** — `%fetch.publish(url, class end)` makes the class downloadable at that URL.
 - **`class` inside another expression** — passing `class end` as an argument works; the receiver gets the class object.
 - **Class carries no intrinsic name** — the class object has no `.name` property tied to any variable it was assigned to.
+- **`public_const` exposes a getter on instances** — after `class ... public_const :path, '/x' end`, `$c.new().path` is `'/x'`.
+- **`private_const` does NOT expose a getter** — after `class ... private_const :id, 'abc' end`, `$c.new().id` raises with method-missing.
+- **`private_const` is reachable inside class methods via `@name`** — after `class ... private_const :id, 'abc'; method report() return @id end end`, `$c.new().report` is `'abc'`.
+- **Constants are frozen against reassignment inside the class** — after `public_const :path, '/x'`, any `@path = '/y'` from inside a method raises.
+- **Redefining a constant in the class body raises** — `private_const :path, 'a'; private_const :path, 'b'` raises on the second declaration.
+- **Constants are shared across all instances** — two instances of the same class see the same constant value; mutating one does not affect any other (constants are frozen anyway).
+- **Constant expression evaluates once at class-definition time** — `private_const :now, %now` captures `%now` at class-definition, not at each instance construction; every instance sees the same timestamp.
 
 ## Related
 

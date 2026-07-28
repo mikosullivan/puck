@@ -19,6 +19,34 @@ Inside the body:
 - **[`%chain`](https://puck.uno/documentation/requirements/chain/)** — the ambient capability channel, same as in bare functions and methods. Per-frame and always reachable; carries `%now`, `%stdout`, `%net`, and every other granted global.
 - **What's reachable.** Arguments passed in, names defined locally in the body, names inherited from the captured outer scope (including `%self` and `%bucket` when the enclosing scope has them), and `%chain`. The lexical capture is by reference: if the outer scope mutates a binding after the closure is defined, the closure sees the mutation.
 
+## Captured scope keeps resources alive
+
+A closure holds a reference to the scope that was current at the point of definition. Every scope element in that scope — including any pushed by intermediate `begin`, `if`, `for`, etc. blocks that were active when the closure was declared — stays alive as long as the closure does. Names bound in those elements, and any objects those names reference, stay alive with them.
+
+**Consequence: objects don't fall out of scope on the enclosing block's `end`.** They fall out of scope when the CLOSURE itself becomes unreachable. For objects whose `on_close` fires on scope exit (database handles, file descriptors, protected-memory allocations, sockets, and so on), that means cleanup happens whenever the closure is dropped — not when the syntactic block that seemed to own the object ends.
+
+~~~caspian
+begin
+	$cl = null
+
+	begin
+		$dbh = %sqlite.open 'data.db'
+
+		$cl = closure()
+			return $dbh
+		end
+	end # inner begin ends, but $dbh does NOT close — the closure captured it
+
+	&cl # returns the still-open $dbh
+end # outer begin ends, $cl goes out of scope, closure is dropped, $dbh's on_close fires and closes it
+~~~
+
+**Mitigation patterns:**
+
+- **Explicit close before dropping the closure.** If the resource has a `.close`, `.destroy`, or similar method, call it explicitly when you're done with it. Don't rely on scope exit to trigger cleanup when a closure holds the reference.
+- **Narrow the capture.** If the closure only needs a small piece of state from the outer scope, extract that piece into an inner scope so the closure captures a chain that doesn't include the resource-holding element.
+- **Drop the closure reference early.** Setting `$cl = null` releases the closure and its captured chain; the captured scope elements become eligible for cleanup as soon as any other holders release them too.
+
 ## return and %call.return
 
 Closures use `%call.return $value` to exit. The bare `return` keyword returns from the enclosing function or method, not from the closure itself — matching the general rule that `return` targets a function or method boundary while `%call.return` targets whichever frame is currently `%call`. See [exceptions § ReturnException](https://puck.uno/documentation/requirements/exceptions/#returnexception).

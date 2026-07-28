@@ -5,8 +5,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_lua_aggregate_hash",
-	"role": "spec for the aggregate-hash primitive — the engine-internal Lua module that wraps an ordered array of hash references and presents a walked-view read interface. The primitive that %chain, scope frames, class-method resolution, and any 'lookup walks a chain of hashes' pattern build on. Nickname 'agg'. NOT a Caspian-facing class by default; developers do not routinely construct %('core:aggregate_hash') as part of writing Caspian. An optional Caspian-facing class surface is possible if a use case emerges.",
-	"status": "spec — walk semantics, reference-not-copy constructor, read-only-through-agg constraint, and tombstone hookup to hash.note_deleted settled; open items: .keys / .each surface, post-construction mutation of .hashes, Caspian-facing class-shortname if the class surface is exposed",
+	"role": "spec for the aggregate-hash primitive — the engine-internal Lua module that wraps an ordered array of hash references and presents a walked-view read interface, a .defined_in(key) helper for finding the owning element, and a .set(key, value) writer with find-or-create-in-innermost semantics (walks via .defined_in; writes to the owning element if found; writes to the innermost element if not). The primitive that %chain, scope frames, class-method resolution, and any 'lookup walks a chain of hashes' pattern build on. Nickname 'agg'. NOT a Caspian-facing class by default; developers do not routinely construct %('core:aggregate_hash') as part of writing Caspian. An optional Caspian-facing class surface is possible if a use case emerges.",
+	"status": "spec — walk semantics, reference-not-copy constructor, tombstone hookup to hash.note_deleted, .defined_in(key) helper, and .set(key, value) writer with find-or-create-in-innermost semantics all settled; open items: .keys / .each surface, post-construction mutation of .hashes (push/pop for scope frame lifecycle), Caspian-facing class-shortname if the class surface is exposed",
 	"audience": "Caspian engine implementers writing the aggregate-hash Lua module and its consumers (%chain runtime, scope-frame runtime, class-method resolution)"
 }}
 ~~~
@@ -62,17 +62,39 @@ $agg['missing'] # null — no hash has it
 
 Matches the "stack of frames" mental model: pushing appends to the end (top of stack), lookup walks from the top down.
 
-## Read-only through the aggregate
+## Writing via `.set(key, value)`
 
-`$agg[key] = value` raises. Writes cannot happen through the aggregate interface — they must target a specific underlying hash directly.
+Aggregates support `.set(key, value)` (and equivalent `[]=` subscript syntax) with a specific **find-or-create-in-innermost** semantic:
+
+1. Call `.defined_in(key)` to find the owning element.
+2. If found, write to that element.
+3. If not found, write to `.hashes[last]` — the innermost (most-recently-pushed) element.
 
 ~~~caspian
-$agg['x'] = 5 # raises
-$hash_b['x'] = 5 # ok — writes to the underlying hash
-$agg['x'] # 5 — walked view now includes it
+$hash_a = {'foo': 'bar'}
+$hash_b = {}
+$agg = %('core:aggregate_hash').new($hash_a, $hash_b)
+
+$agg['foo'] = 'quux'   # $hash_a already has 'foo' — writes to $hash_a
+$hash_a['foo']         # 'quux'
+$hash_b['foo']         # (still absent)
+
+$agg['new'] = 'here'   # no element has 'new' — writes to $hash_b (innermost)
+$hash_b['new']         # 'here'
+$hash_a['new']         # (still absent)
 ~~~
 
-Rationale: no defensible answer to "which hash should the write go into." Refusing to guess sidesteps the ambiguity. The developer either writes to a specific frame they hold a reference to, or (more commonly) the runtime that built the agg knows which frame owns the mutation and writes to it directly.
+**Frozen-enforcement inherits automatically.** If the found element has the key `.freeze_field`'d, the underlying hash write raises — the aggregate doesn't add its own check.
+
+**Same primitive scopes use for variable assignment.** The scope runtime's assignment path IS `current_scope_agg.set(name, value)`. See [lua/scope § Assignment](https://puck.uno/documentation/requirements/lua/scope#assignment-walks-the-scope-agg). Any aggregate consumer that wants write-through semantics gets it uniformly from this one primitive.
+
+**Direct writes to underlying hashes still work** and are the ONLY way to explicitly target a specific frame:
+
+~~~caspian
+$hash_b['x'] = 5   # writes to $hash_b directly, bypassing the aggregate's walk
+~~~
+
+Use `.set` when you want the walk-then-write behavior. Use direct hash writes when you need to target a specific element regardless of where the key currently lives (or doesn't).
 
 ## Tombstones via note-deleted hashes
 
@@ -99,6 +121,37 @@ return null
 Conceptual only — the actual Lua walk can use a numeric-index loop, a precomputed reverse iterator, or whatever's efficient, as long as observable semantics match (end-to-start walk, first `.has_key?` hit wins, tombstone stops the walk, `.deleted?` consulted only on `.note_deleted = true` layers).
 
 The agg itself does not assume that every underlying hash is note-deleted. Consumers that need tombstone semantics (`%chain`, scope frames) set `.note_deleted = true` on the frames they push. Hashes used for other purposes stay lean without paying for the feature.
+
+## Finding the defining element
+
+`.defined_in(key)` returns the **innermost element** — that is, the first one encountered when walking end-to-start — in which the key is **defined**, where "defined" includes both bound keys and tombstoned keys. Returns `null` if no element in the chain defines the key.
+
+An element is defined-for-key when either:
+
+- `element.has_key?(key)` is `true`, OR
+- `element.note_deleted` is `true` and `element.deleted?(key)` is `true`.
+
+~~~caspian
+$outer = {'foo': 'bar'}
+$inner = {}
+$inner.note_deleted = true
+$inner.delete 'foo'
+$agg = %('core:aggregate_hash').new($outer, $inner)
+
+$agg.defined_in 'foo' # $inner — tombstoned there, walk stops
+$agg['foo'] # null — the tombstone stops the walk with a null read
+~~~
+
+~~~caspian
+$outer = {'foo': 'bar'}
+$inner = {}
+$agg = %('core:aggregate_hash').new($outer, $inner)
+
+$agg.defined_in 'foo' # $outer — not in $inner, walk falls through, found in $outer
+$agg.defined_in 'baz' # null — not defined in any element
+~~~
+
+**Why this exists.** Walk-then-write consumers — notably the [scope runtime](https://puck.uno/documentation/requirements/lua/scope) — need to identify WHICH element owns a given key so they can write to that element's underlying hash directly. `.defined_in` factors that walk into a reusable method that already knows about tombstone-as-defining. Without it, every walk-then-write consumer would reimplement the same walk logic.
 
 ## Consumers
 
