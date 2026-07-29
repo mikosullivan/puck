@@ -10,7 +10,7 @@
 }}
 ~~~
 
-Bit-level operations on numbers are exposed through a dedicated **wrapper object** accessed via `.bitwise`. This keeps the [number class](https://puck.uno/requirements/built-in-classes/number/) uncluttered, makes bitwise intent explicit at the call site, and frees the top-level operators (`|` used for pipe, `&` used as the call sigil) for their more common meanings.
+Bit-level operations on numbers are exposed through a dedicated **wrapper object** accessed via `.bitwise`. This keeps the [number class](https://puck.uno/requirements/built-in-classes/primitives/number/) uncluttered, makes bitwise intent explicit at the call site, and frees the top-level operators (`|` used for pipe, `&` used as the call sigil) for their more common meanings.
 
 ## Access
 
@@ -40,7 +40,7 @@ Each `.bitwise` at the call site is a deliberate "I mean bitwise" marker. Nothin
 
 ## Methods
 
-Every method returns a plain [number](https://puck.uno/requirements/built-in-classes/number/). Where a method takes a right-hand operand, it's a plain number.
+Every method returns a plain [number](https://puck.uno/requirements/built-in-classes/primitives/number/). Where a method takes a right-hand operand, it's a plain number.
 
 | Method | Alias | Description |
 |---|---|---|

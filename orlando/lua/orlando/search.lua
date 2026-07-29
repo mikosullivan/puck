@@ -6,7 +6,7 @@
     "search":         "query, tree? -> list of { md_path, url, count, score, preamble } sorted by score desc; tree scopes to files whose md_path starts with the prefix",
     "render":         "query, tree? -> full HTML results page (uses page.render_results_page for site chrome)",
     "handle":         "request_path (incl. query string) -> { status, body, content_type } — server-facing entry",
-    "list_md_files": "() -> sorted list of every markdown source path (README.md + documentation/**/*.md); shared with orlando.random"
+    "list_md_files": "() -> sorted list of every markdown source path (README.md + <root>/**/*.md for each root in DOC_ROOTS); shared with orlando.random"
   },
   "ranking": "score = 10*hit_in_filename + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path",
   "notes": ["always case-insensitive — query is folded to lowercase before scanning",
@@ -56,6 +56,9 @@ local function basename_no_ext(path)
     return (name:gsub("%.md$", ""))
 end
 
+-- Doc trees to search. Keep in sync with orlando.nav's DOC_ROOTS.
+local DOC_ROOTS = {"documentation", "ideas", "requirements", "skills"}
+
 local function list_md_files()
     local files = {}
 
@@ -63,14 +66,16 @@ local function list_md_files()
         files[#files + 1] = "README.md"
     end
 
-    local handle = io.popen('find documentation -type f -name "*.md" 2>/dev/null')
+    for _, root in ipairs(DOC_ROOTS) do
+        local handle = io.popen('find ' .. root .. ' -type f -name "*.md" 2>/dev/null')
 
-    if handle then
-        for line in handle:lines() do
-            files[#files + 1] = line
+        if handle then
+            for line in handle:lines() do
+                files[#files + 1] = line
+            end
+
+            handle:close()
         end
-
-        handle:close()
     end
 
     table.sort(files)

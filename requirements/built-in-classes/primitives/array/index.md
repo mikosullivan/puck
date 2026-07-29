@@ -35,7 +35,7 @@ $arr[-1]   # 'd' — 1 from the end
 $arr[-4]   # 'a' — 4 from the end (first)
 ~~~
 
-The symmetric-indexing pattern relies on **[negative zero](https://puck.uno/requirements/built-in-classes/number/#negative-zero)**. `-0` is a distinct signed-zero value that equals `0` in every other context (arithmetic, comparison, hash keys) but reads as "0 from the end" when used as an array index.
+The symmetric-indexing pattern relies on **[negative zero](https://puck.uno/requirements/built-in-classes/primitives/number/#negative-zero)**. `-0` is a distinct signed-zero value that equals `0` in every other context (arithmetic, comparison, hash keys) but reads as "0 from the end" when used as an array index.
 
 This is a deliberate departure from Ruby and Python conventions where `$arr[-1]` is the last element. In Caspian, `$arr[-1]` is the SECOND-to-last (1 from the end); `$arr[-0]` is the last (0 from the end). The trade-off is worth it because the from-start and from-end index schemes now match — you never have to remember "0 from the front but 1 from the back."
 
@@ -139,7 +139,7 @@ Note: `.push`, `.pop`, `.unshift`, and `.shift` don't follow the `!` naming conv
 
 | Method | Description |
 |---|---|
-| `.length` | Number of elements as a [number](https://puck.uno/requirements/built-in-classes/number/). |
+| `.length` | Number of elements as a [number](https://puck.uno/requirements/built-in-classes/primitives/number/). |
 | `.empty?` / `.∅?` | True if the array has no elements. `∅?` is a Unicode alias — `∅` is the empty-set symbol; both names call the same method. |
 | `.any?` / `.∃?` | True if the array has at least one element. Complement of `.empty?`. `∃?` is a Unicode alias — `∃` is the mathematical "there exists" quantifier; both names call the same method. No block form — for "does any element satisfy this predicate," use `.keep(block).any?`. |
 | `.first` | The first element. Same as `$arr[0]`. Raises on an empty array. |
@@ -266,7 +266,7 @@ The following names have been considered and deliberately excluded from the arra
 
 ## `<+` append operator
 
-`$arr <+ $item` appends `$item` to the array — equivalent to `$arr.push($item)`. The operator lives in [syntax/operators § `<+` append](https://puck.uno/requirements/syntax/operators/#-append); on an Array receiver it dispatches to the same code path as `.push`.
+`$arr <+ $item` appends `$item` to the array — equivalent to `$arr.push($item)`. The operator lives in [syntax/operators § `<+` append](https://puck.uno/requirements/syntax/operators#-append); on an Array receiver it dispatches to the same code path as `.push`.
 
 ~~~caspian
 $arr = []

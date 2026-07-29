@@ -17,7 +17,7 @@ Inside the body:
 - **`%self`** — the receiver itself. `%self.some_method(...)` reaches sibling methods on the same receiver; `%self.@field` reads a specific bucket entry via `%self`.
 - **`%bucket`** — the receiver's bucket hash. `%bucket['field']` reads and writes bucket entries directly.
 - **`@field`** — shorthand for `%bucket['field']`. The most common way to read and write bucket state.
-- **[`%chain`](https://puck.uno/requirements/chain/)** — the ambient capability channel, the same one bare functions and closures see. Per-frame and always reachable; carries `%stdout`, `%net`, `%fetch`, and everything else the caller granted.
+- **[`%chain`](https://puck.uno/requirements/chain/)** — the ambient capability channel, the same one bare functions and closures see. Per-frame and always reachable; carries `%stdout`, `%net`, `%import`, and everything else the caller granted.
 - **No captured outer scope.** A method defined inside another function or class body does not see that outer scope's locals. The receiver surface (`%self`, `%bucket`, sibling methods) is what a method has instead. This is the difference from a closure — closures and methods each have their own environment, and neither can also be the other.
 
 ### Calling sibling methods

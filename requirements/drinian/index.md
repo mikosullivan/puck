@@ -658,7 +658,7 @@ end
 
 ### Loaded remote library and the trust barrier
 
-A program that loads a remote Caspian library via `%fetch` and calls a method on it — and along the way puts something into `%chain` that the library is NOT supposed to see:
+A program that loads a remote Caspian library via `%import` and calls a method on it — and along the way puts something into `%chain` that the library is NOT supposed to see:
 
 ~~~caspian
 $markdown = %('markdown.uno/render')
@@ -714,14 +714,14 @@ Whether a particular call actually snapshots, or completes inline because the re
 At the `promise()` call:
 
 1. The runtime assigns the request a unique correlation ID.
-2. The runtime serializes the entire process state — worldlet, call stack, src, roots — tagged with the correlation ID. The snapshot includes everything needed to resume execution from the line after the `promise()` call.
+2. The runtime serializes the entire process state — the Drinian hash: objects, references, call_stack, roles, srcs, roots, and any other top-level fields — tagged with the correlation ID. The snapshot includes everything needed to resume execution from the line after the `promise()` call.
 3. The runtime hands `(correlation_id, request)` to an external dispatcher (a small daemon, a queue, or a network service — exact mechanism TBD per the host).
 4. The Caspian host process exits. Memory is freed.
 5. The dispatcher executes the HTTP request.
 6. When the response arrives, the dispatcher locates the snapshot by correlation ID, revives it, and binds the response value as the return of `promise()`.
 7. Execution continues from the line after the call as if nothing had happened.
 
-No class-level hooks fire at snapshot or revive. The runtime serializes whatever's in the worldlet; the worldlet is everything. Anything that genuinely needs to live outside the worldlet (an open TCP socket, a file descriptor) belongs to the host engine, not to user code — see [on_snapshot / on_revive class hooks](#on_snapshot--on_revive-class-hooks) below.
+No class-level hooks fire at snapshot or revive. The runtime serializes whatever's in Drinian; Drinian is everything. Anything that genuinely needs to live outside Drinian (an open TCP socket, a file descriptor) belongs to the host engine, not to user code — see [on_snapshot / on_revive class hooks](#on_snapshot--on_revive-class-hooks) below.
 
 ---
 
@@ -753,7 +753,7 @@ V1 `promise()` returns the resolved value directly, not a promise/future object.
 
 ### `on_snapshot` / `on_revive` class hooks
 
-No per-class hooks fire at snapshot or revive time **in V1**. The original aspiration was "never to need them" — the worldlet is the single source of truth for runtime state, and external-resource management belongs in the engine, not in user code.
+No per-class hooks fire at snapshot or revive time **in V1**. The original aspiration was "never to need them" — Drinian is the single source of truth for runtime state, and external-resource management belongs in the engine, not in user code.
 
 That position is softened by at least one concrete future use case: **redaction of sensitive fields before serialization.** If a snapshot is written to disk or over a network, sensitive fields (passwords, API tokens, session keys) would be exposed in the serialized form. The class needs a chance to sanitize itself before the snapshot is taken.
 
@@ -770,7 +770,7 @@ class
 end
 ~~~
 
-`on_snapshot` fires for every reachable instance before the engine serializes the worldlet. The handler can mutate `$call.receiver` to redact fields. The mutation is permanent — once `@password` is nulled, the original is gone from this snapshot. If the program continues running after the snapshot, it would need to re-acquire the password (re-prompt, re-fetch, etc.) to use it again.
+`on_snapshot` fires for every reachable instance before the engine serializes Drinian. The handler can mutate `$call.receiver` to redact fields. The mutation is permanent — once `@password` is nulled, the original is gone from this snapshot. If the program continues running after the snapshot, it would need to re-acquire the password (re-prompt, re-fetch, etc.) to use it again.
 
 Possible sugar for the common "just null out these fields" case:
 
@@ -794,7 +794,7 @@ Open design questions to resolve before implementing:
 
 - **Order of `on_snapshot` calls** across reachable instances. Probably undefined like `on_close`, with the same "don't depend on order" rule.
 - **What happens if `on_snapshot` itself raises?** Probably the same engine-level catch + `state.gc_errors`-style log + continue pattern. Same time/allocation/I/O constraints might apply. <!-- SPEC CONFLICT: archive cross-refs garbage-collection.md § Engine wraps the handler; no such doc in current requirements/ — GC spec needs writing -->
-- **Mutation visibility to the live program.** If the program continues after the snapshot, do the redactions persist in the live worldlet? Probably yes — the redaction IS the mutation, and a program that snapshotted and continued would see the redacted state. (To preserve live state across a snapshot, the engine would need to copy-then-redact, doubling memory cost. Probably not worth it.)
+- **Mutation visibility to the live program.** If the program continues after the snapshot, do the redactions persist in the live Drinian hash? Probably yes — the redaction IS the mutation, and a program that snapshotted and continued would see the redacted state. (To preserve live state across a snapshot, the engine would need to copy-then-redact, doubling memory cost. Probably not worth it.)
 - **Composition with non-redaction use cases.** If `on_snapshot` is the general "pre-serialize hook," other use cases might emerge (computed derivations, normalization, etc.). Worth scoping to "just redaction" for the initial implementation and resisting feature creep.
 
 Until then, treat the absence of these hooks as deliberate for V1. **Programs that handle sensitive data should not snapshot in V1.** When the hooks land, revisit.

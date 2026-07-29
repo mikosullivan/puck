@@ -4,9 +4,9 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_chain_methods_root",
-	"role": "container for the per-method spec pages for surfaces that live on %chain. The catalog (table of every chain method, shortcut, default-grant) lives one level up at chain/. This page is a slim entry to the per-method docs below.",
-	"audience": "developers navigating into a specific method's page"
+	"role": "stub — %chain no longer carries methods; the files in this directory are stale and awaiting relocation to their correct homes",
+	"status": "stub — historical directory retained while its contents are relocated"
 }}
 ~~~
 
-Each method on `%chain` has its own spec page in this directory. For the catalog (all methods at a glance, with shortcut and default-grant columns) plus the chain mechanism itself, see [`%chain`](..).
+`%chain` no longer carries methods. See [chain/index](https://puck.uno/requirements/chain/) for the current permission-only spec. The files in this directory that describe `%chain.X` methods are stale, being cleaned up progressively.

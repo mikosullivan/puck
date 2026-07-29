@@ -36,4 +36,4 @@ TBD.
 ## Related
 
 - [Linux CLI wrappers](./) — general pattern.
-- [Installation § OS checks](https://puck.uno/requirements/installation/os-checks/) — the install-time consumer that most cares about kernel/OS.
+- [Installation § OS checks](https://puck.uno/requirements/installation/os-checks) — the install-time consumer that most cares about kernel/OS.

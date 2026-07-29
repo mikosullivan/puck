@@ -123,7 +123,7 @@ For files hosted on platforms with a public metadata API — GitHub, GitLab, and
 - **npm-specific fields not in Puck's schema are ignored** — `main`, `scripts`, `dependencies`, `engines` in `%meta` do not affect the endorsement.
 - **SPDX expressions are not supported at V1** — a `license` value like `"MIT OR Apache-2.0"` is refused at V1.
 - **Bad-form warning when both sources present** — publishing a file that has both a `%meta` and platform metadata surfaces a warning about drift risk (does not refuse).
-- **Published file is retrievable through Ledger** — after publication, `%fetch(url)` with the URL through the Ledger fetcher returns the file's bytes.
+- **Published file is retrievable through Ledger** — after publication, `%import(url)` with the URL through the Ledger fetcher returns the file's bytes.
 
 ## Related
 

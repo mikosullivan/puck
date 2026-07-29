@@ -25,7 +25,7 @@ Both media types use the `x-` prefix that RFC 6648 designates for unregistered /
 
 Serving Caspian source and CaspianJ trees with distinct Content-Types lets any client tell them apart without inferring from extensions or sniffing bytes:
 
-- **Engines fetch by URL.** `%fetch('https://foo.bar/whatever')` may not include a recognizable extension in the URL. The Content-Type header is the authoritative signal for which parser (if any) to apply.
+- **Engines fetch by URL.** `%import('https://foo.bar/whatever')` may not include a recognizable extension in the URL. The Content-Type header is the authoritative signal for which parser (if any) to apply.
 - **Tooling.** Editor plugins, linters, and package managers all pick handling based on Content-Type when the extension is missing, ambiguous, or wrong for the actual payload.
 - **Direct browser fetches.** Reviewing a published object in a browser (for debugging, verification, or documentation) gets the right downstream handling from browser extensions and pipeline tools.
 

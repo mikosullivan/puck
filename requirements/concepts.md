@@ -17,11 +17,11 @@ This page collects cross-cutting concepts that don't fit cleanly into any single
 
 The shape of the model:
 
-- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/requirements/plumbing/faucets/) for inbound data, downloaded objects for `%fetch` content). Roles don't get traded, swapped, or modified — they're permanent identities.
+- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/requirements/plumbing/faucets/) for inbound data, downloaded objects for `%import` content). Roles don't get traded, swapped, or modified — they're permanent identities.
 - **`%engine` is the only path to host resources, and only `user` can call it.** Untrusted code can't reach the host process through `%engine`; the gateway is gated unconditionally at the runtime level. The user has to explicitly hand specific capabilities down through `%chain`.
 - **Capabilities propagate through `%chain` block-by-block, not ambiently.** Granting a capability is a deliberate per-block act; the grant evaporates when the block exits. There's no "this code has been blessed with permanent network access" — every grant is scoped, every revocation is enforceable. See [chain/grant-revoke](https://puck.uno/requirements/chain/grant-revoke).
 - **Methods run as their object's role.** Calling a method on a downloaded object enters that object's role frame, not the caller's. The caller's authority doesn't leak across the dispatch boundary; the object can only do what its role has been granted. See [roles § Methods run as their object's role](https://puck.uno/requirements/roles/#methods-run-as-their-objects-role).
-- **Faucets preserve provenance.** Every value entering the runtime through stdin, env, the filesystem, the network, or a `%fetch` download is tagged with its source's role. That tag survives storage, passing, and most operations — "did this string ever come from the network?" is a real, answerable question.
+- **Faucets preserve provenance.** Every value entering the runtime through stdin, env, the filesystem, the network, or a `%import` download is tagged with its source's role. That tag survives storage, passing, and most operations — "did this string ever come from the network?" is a real, answerable question.
 - **Holding is access, but the owner controls what gets handed across.** A non-owner role with a reference to an object can call any method on it; the owner narrows what's reachable by passing a [jail wrapper](https://puck.uno/requirements/roles/object-access#narrowing-pass-a-jail-not-the-raw-object) instead of the raw object.
 - **No nanny defaults.** The runtime never refuses a developer-chosen action by paternalism. Safe defaults and security guarantees stay, but "you can't because we think you shouldn't" is rejected. Full spec at [No nanny code](#no-nanny-code) below.
 
@@ -83,9 +83,9 @@ The upside is a smaller conceptual surface and a uniform way to reason about met
 
 ## Objects, not libraries
 
-Caspian doesn't have a "library" concept as a technical primitive. [`%fetch`](https://puck.uno/requirements/chain/methods/puck) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
+Caspian doesn't have a "library" concept as a technical primitive. [`%import`](https://puck.uno/requirements/import) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
 
-You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%fetch` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/requirements/engine/manifest/#sections).
+You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%import` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/requirements/engine/manifest/#sections).
 
 ## Caspian is written in Caspian
 
@@ -93,7 +93,7 @@ You may informally call a group of related downloads a "library" — the same wa
 
 This is a deliberate design commitment, not just implementation hygiene:
 
-- **Users can read and modify the code that runs their programs.** Password, Passkey, the built-in collection classes, and every other stdlib surface are Caspian objects you can `%fetch.fetch`, inspect, learn from, fork, or replace. A Caspian program isn't standing on an opaque host-language substrate — it's standing on more Caspian.
+- **Users can read and modify the code that runs their programs.** Password, Passkey, the built-in collection classes, and every other stdlib surface are Caspian objects you can `%import.raw`, inspect, learn from, fork, or replace. A Caspian program isn't standing on an opaque host-language substrate — it's standing on more Caspian.
 - **Caspian's design concepts get demonstrated in the stdlib itself.** Roles, chains, holding-as-access, classes-as-only-method-carrier, faucet provenance — these become concrete examples in the code every program uses. The stdlib doubles as a working demonstration of what Caspian is for.
 - **The trust surface stays small.** The host-language layer is what the security model has to trust; keeping it minimal makes it audit-able. Everything above the primitive line runs under the same rules any user code runs under.
 - **Iteration doesn't require binary releases.** Fixing a bug in Password's algorithm dispatch, adding an exception class to Passkey, or refining a helper method ships as a new Caspian class version — not a rebuild-and-redistribute of the caspian binary.
@@ -140,7 +140,7 @@ Failure modes if the check is skipped:
 
 ## Strings are UTF-8
 
-Every string passed into Caspian is automatically re-encoded as UTF-8. Caspian source, string values in downloaded objects, the results of `%fetch` fetches, arguments handed to the engine by a host — all of it lands as UTF-8 inside the runtime, and every string value the engine produces or serializes is UTF-8. Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.
+Every string passed into Caspian is automatically re-encoded as UTF-8. Caspian source, string values in downloaded objects, the results of `%import` fetches, arguments handed to the engine by a host — all of it lands as UTF-8 inside the runtime, and every string value the engine produces or serializes is UTF-8. Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.
 
 In practice the conversion is usually trivial:
 
@@ -169,8 +169,8 @@ The exact conversion policy for other encodings — legacy single-byte charsets,
 - **Classes are the only method carrier** — attaching a method by any mechanism other than a class definition (module, mixin, per-instance dictionary, prototype patch) fails or has no equivalent syntax.
 - **Instance-level method lives on the shadow class** — a method defined on a specific instance is dispatched via that instance's shadow class and is not visible on other instances of the same underlying class.
 - **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the platter stack in declared order.
-- **One URL, one object via `%fetch`** — two successive `%fetch(url)` calls with the same URL and same fetcher chain state return the same object identity.
-- **`%engine.manifest.downloads` tracks each URL separately** — two `%fetch` fetches of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
+- **One URL, one object via `%import`** — two successive `%import(url)` calls with the same URL and same fetcher chain state return the same object identity.
+- **`%engine.manifest.downloads` tracks each URL separately** — two `%import` fetches of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
 - **ASCII input passes through unchanged** — a pure-ASCII input string arrives at Caspian byte-identical.
 - **UTF-8 input passes through unchanged** — a UTF-8-encoded string arrives at Caspian byte-identical.
 - **UTF-16 input is transcoded to UTF-8** — a UTF-16-encoded string arrives at Caspian as its UTF-8 equivalent.

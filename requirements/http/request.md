@@ -17,7 +17,7 @@
 
 Two construction paths:
 
-- **Plain unauthenticated request** — some `%net`-style constructor TBD (`%net.request(url)`? `%chain.net.request(url)`? See [Related](#related)). Returns a request pre-configured with the URL and no auth attached.
+- **Plain unauthenticated request** — some `%net`-style constructor TBD (`%net.request(url)`? `%chain.net.request(url)`? See [Related](#related)). Returns a request pre-configured with the URL and no auth attached. <!-- STALE: %chain.X syntax being reworked -->
 - **Authenticated request** — [`$auth.request(url)`](tag:auth-api) where `$auth` is a [`core:auth/api`](tag:auth-api) instance. Returns a request pre-configured with the URL AND the auth's policy — allowed-domains validation on the URL, an `.auth_headers` slot for credential-carrying header templates, allowed-headers scope check on that slot.
 
 Both paths return the same class. An authenticated request just carries a reference to `$auth` and adds the `.auth_headers` slot on top; everything else is the same shape.
@@ -152,7 +152,7 @@ Deliberately deferred to future passes:
 - **TLS configuration** — cert pinning, self-signed cert acceptance for dev, ALPN, minimum TLS version.
 - **Connection reuse** — pooling, keepalive, HTTP/2 multiplexing.
 - **Progress callbacks** — upload / download byte counts for large bodies.
-- **Interaction with `%chain.net`** — how the request class connects to the existing `%chain.net.fetch` short-form and `%chain.net.http_client` long-lived-client patterns.
+- **Interaction with `%chain.net`** — how the request class connects to the existing `%chain.net.fetch` short-form and `%chain.net.http_client` long-lived-client patterns. <!-- STALE: %chain.X syntax being reworked -->
 - **Header-helper design details** — the helper machinery, base classes (`helper.casp` / `header.casp` / `array.casp` / `hash.casp`), and concrete helpers (`.accept`, `.cookie`, `.accept_language`, `.accept_encoding`, `.cache_control`) are being spitballed on [ideas/request-extensibility](https://puck.uno/ideas/request-extensibility) and will promote here when settled. The [Header helpers § .accept](#accept) sketch on this page is a first-pass placeholder for the pattern.
 - **The `.headers` exception list** — where the un-nannied posture yields to enforcement (Cookie's semicolon-vs-multi-line, etc.).
 
@@ -160,4 +160,4 @@ Deliberately deferred to future passes:
 
 - [`core:auth/api`](tag:auth-api) — the auth object that constructs authenticated requests via `$auth.request(url)`; adds the `.auth_headers` slot for credential templates and the send-time composition machinery that keeps plaintext credentials out of Lua-visible memory.
 - [`core:protected/hash/http`](tag:protected-hash-http) — the byte-set rules (`tchar` for keys, VCHAR+SP+HTAB for values) that `.headers` validation references.
-- `%chain.net` (`requirements/chain/methods/net.md`) — the chain-mediated networking surface where `.fetch`, `.http_client`, `.sockets`, and `.uds` currently live. Overlap with this class's construction path is unresolved.
+- `%chain.net` (`requirements/chain/methods/net.md`) — the chain-mediated networking surface where `.fetch`, `.http_client`, `.sockets`, and `.uds` currently live. Overlap with this class's construction path is unresolved. <!-- STALE: %chain.X syntax being reworked -->

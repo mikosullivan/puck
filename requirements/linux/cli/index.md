@@ -48,7 +48,7 @@ Some wrappers deviate — a utility with a fundamentally different shape (stream
 
 ## Prerequisite check
 
-A wrapper doesn't check for the utility's presence eagerly. `%fs.execute` (or the dirjail's `.execute`) does the lookup by name; if the utility isn't installed, the resulting raise names it. Wrappers that want a friendlier error may probe `%fs.which('{name}')` (see [fs-additions](https://puck.uno/requirements/global-methods/fs-additions/)) at construction and raise with a package hint, but that's optional per wrapper.
+A wrapper doesn't check for the utility's presence eagerly. `%fs.execute` (or the dirjail's `.execute`) does the lookup by name; if the utility isn't installed, the resulting raise names it. Wrappers that want a friendlier error may probe `%fs.which('{name}')` (see [fs-additions](https://puck.uno/requirements/global-methods/fs-additions)) at construction and raise with a package hint, but that's optional per wrapper.
 
 ## Wrapper index — priority order
 
@@ -80,5 +80,5 @@ Two wrapper stubs also exist under [downloads/](https://puck.uno/requirements/do
 ## Related
 
 - [linux-support](https://puck.uno/requirements/linux-support/) — general `.execute` model; the low-level primitive every wrapper here delegates to.
-- [fs-additions](https://puck.uno/requirements/global-methods/fs-additions/) — `%fs.which`, `%fs.execute`, and related search-path surfaces the wrappers can use.
+- [fs-additions](https://puck.uno/requirements/global-methods/fs-additions) — `%fs.which`, `%fs.execute`, and related search-path surfaces the wrappers can use.
 - [concepts § Lean on installed Linux utilities when they're better](https://puck.uno/requirements/concepts#lean-on-installed-linux-utilities-when-theyre-better) — the design principle these wrappers embody.

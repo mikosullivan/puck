@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_puck_discovery_blockchain",
-	"role": "spec for the Puck blockchain fetcher — nickname Ledger — a fetcher class in %fetch.fetchers that resolves URLs by querying blockchain.puck.uno for signed endorsements of what should live at the URL. Covers the blockchain's high-level role (append-only ledger of signed endorsements linking URLs to artifact hashes, license, semver), the fetcher's use of the /v1/download endpoint (server fetches origin, verifies against signed hash, returns bytes plus the signed endorsement in a response header so the client can verify locally without a second round-trip), the /v1/endorsement endpoint for verification-only lookups, and the separate role the blockchain plays as a trust anchor for verifying content returned by any fetcher (not just Ledger). V1 scope note: Caspian ships the client, signing verification, and native support for the service interface, but does not ship the chain engine itself; that lives at blockchain.puck.uno as a Puck-run service.",
+	"role": "spec for the Puck blockchain fetcher — nickname Ledger — a fetcher class in %import.fetchers that resolves URLs by querying blockchain.puck.uno for signed endorsements of what should live at the URL. Covers the blockchain's high-level role (append-only ledger of signed endorsements linking URLs to artifact hashes, license, semver), the fetcher's use of the /v1/download endpoint (server fetches origin, verifies against signed hash, returns bytes plus the signed endorsement in a response header so the client can verify locally without a second round-trip), the /v1/endorsement endpoint for verification-only lookups, and the separate role the blockchain plays as a trust anchor for verifying content returned by any fetcher (not just Ledger). V1 scope note: Caspian ships the client, signing verification, and native support for the service interface, but does not ship the chain engine itself; that lives at blockchain.puck.uno as a Puck-run service.",
 	"status": "draft — brought over from the requirements-old blockchain design; API endpoints, response contracts, and trust model settled at the sketch level; per-endpoint field details, semver interaction, and configuration surface all still to be filled in.",
 	"audience": "developers who want to understand where Puck objects come from with signed provenance; anyone configuring the Ledger fetcher; class authors writing engine-side verification code; anyone thinking about the trust-anchor question independently from the fetcher question"
 }}
@@ -21,14 +21,14 @@ Signatures are portable. Whichever fetcher returns the bytes for a URL, the engi
 
 ## The Ledger fetcher
 
-Nickname: **Ledger.** A fetcher class in `%fetch.fetchers` that resolves URLs by querying `blockchain.puck.uno`. When the array-walk reaches Ledger, it:
+Nickname: **Ledger.** A fetcher class in `%import.fetchers` that resolves URLs by querying `blockchain.puck.uno`. When the array-walk reaches Ledger, it:
 
 1. Issues `GET /v1/download?url=<encoded-URL>` against `blockchain.puck.uno`.
 2. The service looks up the signed endorsement for the URL, fetches the origin bytes, computes the hash, and compares against the signed value.
 3. On match, the service returns the raw bytes with the artifact's own Content-Type in the HTTP response and includes the signed endorsement in a response header so the client can verify locally without a second round-trip.
 4. On any failure (no endorsement, hash mismatch, origin unreachable), the service returns the appropriate error status and Ledger passes — the next fetcher in the array is tried.
 
-Ledger sits in `%fetch.fetchers` alongside Wire, the Cache instances, and any host-specific translators. Its natural place is **after any local caches** (fast, offline) and **before Wire** (direct network) — a trip through the blockchain is a network round-trip, but it delivers verified bytes rather than raw ones.
+Ledger sits in `%import.fetchers` alongside Wire, the Cache instances, and any host-specific translators. Its natural place is **after any local caches** (fast, offline) and **before Wire** (direct network) — a trip through the blockchain is a network round-trip, but it delivers verified bytes rather than raw ones.
 
 ## The service API
 
@@ -82,16 +82,16 @@ The engine ships with a baked-in public key for the Puck-run chain, so signature
 
 ## Trust anchor (separate from fetching)
 
-Configuring the chain as a fetcher (via `%fetch.fetchers`) and configuring it as a trust anchor (via a separate setting — working name `%fetch.blockchain`) are **independent choices**. A caller can:
+Configuring the chain as a fetcher (via `%import.fetchers`) and configuring it as a trust anchor (via a separate setting — working name `%import.blockchain`) are **independent choices**. A caller can:
 
 - Fetch through Ledger and verify against Puck's default chain — the common configuration.
 - Fetch from a private mirror (a Cache or Wire against an internal URL) and still verify against Puck's default chain — the signature travels with the bytes.
-- Fetch from anywhere and verify against a *different* trusted chain (`%fetch.blockchain = 'https://blockchain.example.com'`) — useful for organizations running their own endorsement chains.
-- Disable verification entirely (`%fetch.blockchain = null` or `false`) — the escape hatch for developer situations where signature checks get in the way.
+- Fetch from anywhere and verify against a *different* trusted chain (`%import.blockchain = 'https://blockchain.example.com'`) — useful for organizations running their own endorsement chains.
+- Disable verification entirely (`%import.blockchain = null` or `false`) — the escape hatch for developer situations where signature checks get in the way.
 
-The **default** is to verify against Puck's own chain: `%fetch.blockchain = true`.
+The **default** is to verify against Puck's own chain: `%import.blockchain = true`.
 
-Details of `%fetch.blockchain` — its exact shape, the semantics of each accepted value, and how it composes with per-fetcher and per-URL overrides — are spec'd separately as they get worked out.
+Details of `%import.blockchain` — its exact shape, the semantics of each accepted value, and how it composes with per-fetcher and per-URL overrides — are spec'd separately as they get worked out.
 
 ## V1 scope
 
@@ -99,7 +99,7 @@ The V1 Puck ecoverse ships:
 
 - The Ledger fetcher (client code that queries `blockchain.puck.uno` and handles responses).
 - Engine-side signature verification with the baked-in Puck public key.
-- Configuration surfaces for `%fetch.fetchers` and `%fetch.blockchain`.
+- Configuration surfaces for `%import.fetchers` and `%import.blockchain`.
 - The API contract at `blockchain.puck.uno` — service interface, endpoint shapes, response formats.
 
 The V1 Puck ecoverse **does not** ship the chain engine itself. The append-only ledger lives at `blockchain.puck.uno` as a Puck-run public service; individual Caspian installations do not run their own chain nodes in V1. Third-party chain implementations may be built later, and the trust-anchor mechanism is designed to accommodate them without further Caspian changes.
@@ -108,7 +108,7 @@ The V1 Puck ecoverse **does not** ship the chain engine itself. The append-only 
 
 - **Ledger issues `GET /v1/download`** — a Ledger fetch against a URL sends a request to `blockchain.puck.uno/v1/download?url=<encoded-URL>`.
 - **URL is URL-encoded in the query string** — a URL containing reserved characters (spaces, `?`, `&`) is percent-encoded before being sent.
-- **Ledger returns bytes on 200** — a successful `/v1/download` response with body bytes and `Content-Type` yields those bytes to `%fetch` with the artifact's Content-Type.
+- **Ledger returns bytes on 200** — a successful `/v1/download` response with body bytes and `Content-Type` yields those bytes to `%import` with the artifact's Content-Type.
 - **`Endorsement:` response header is captured** — the endorsement JSON is available for local verification without a second call.
 - **`Vibecode:` response header is captured** — the vibecode pointer is preserved for downstream cold-agent onboarding.
 - **404 causes Ledger to pass** — a `no endorsement exists` response causes Ledger to pass and the walk continues.
@@ -122,20 +122,20 @@ The V1 Puck ecoverse **does not** ship the chain engine itself. The append-only 
 - **Signature verifies against baked-in Puck key** — a returned endorsement's Ed25519 signature verifies against the engine's built-in public key.
 - **Signature mismatch raises** — a tampered endorsement (any byte changed after signing) fails verification and raises.
 - **Locally-verified endorsement matches server-verified bytes** — the SHA-256 the client computes over the response body matches the `artifact_hash` in the endorsement.
-- **Content-Type in `Endorsement` header does not override response Content-Type** — the response's own `Content-Type` is what `%fetch` returns.
+- **Content-Type in `Endorsement` header does not override response Content-Type** — the response's own `Content-Type` is what `%import` returns.
 - **All-blocks-by-URL query returns entries newest-first** — for a URL with multiple endorsements over time, the returned array has the newest block at index 0.
 - **All-blocks-by-signer query returns everything the signer posted** — for a given signer, the query returns their authority block plus every endorse/delegate/deprecate/revoke they signed.
 - **Intersection query returns blocks-by-signer-about-URL** — the intersection endpoint is equivalent to filtering all-blocks-by-URL to a specific signer.
-- **`%fetch.blockchain = true` verifies against Puck's chain** — bytes returned by any fetcher are verified against Puck's default chain.
-- **`%fetch.blockchain = null` disables verification** — bytes returned by any fetcher are not verified; the caller accepts them as-is.
-- **`%fetch.blockchain = 'https://...'` verifies against a private chain** — signatures are checked against the chain at the given URL, not Puck's default.
-- **Ledger fetch verified against a different trust anchor works** — Ledger returns the bytes, but `%fetch.blockchain` determines which chain's signature is treated as authoritative.
+- **`%import.blockchain = true` verifies against Puck's chain** — bytes returned by any fetcher are verified against Puck's default chain.
+- **`%import.blockchain = null` disables verification** — bytes returned by any fetcher are not verified; the caller accepts them as-is.
+- **`%import.blockchain = 'https://...'` verifies against a private chain** — signatures are checked against the chain at the given URL, not Puck's default.
+- **Ledger fetch verified against a different trust anchor works** — Ledger returns the bytes, but `%import.blockchain` determines which chain's signature is treated as authoritative.
 - **Ledger position is after caches and before Wire** — the default fetcher array places Ledger after cache entries and before Wire.
-- **Non-`user` role reading `%fetch.blockchain` — spec-driven test placeholder** — behavior TBD as the trust-anchor surface is spec'd.
+- **Non-`user` role reading `%import.blockchain` — spec-driven test placeholder** — behavior TBD as the trust-anchor surface is spec'd.
 
 ## Related
 
-- [fetch-discovery](./) — the parent page describing the `%fetch.fetchers` array and the fetcher classes Ledger is one of.
+- [fetch-discovery](./) — the parent page describing the `%import.fetchers` array and the fetcher classes Ledger is one of.
 - [cache-dir](https://puck.uno/requirements/cache-dir) — Cache-format directories, another fetcher class in the array. `meta.json`'s stored endorsement (when present) is what lets a Cache-served version be verified against the trust anchor.
 - [content-types](https://puck.uno/requirements/content-types) — Content-Type strings the blockchain service uses in responses.
-- [`%fetch`](https://puck.uno/requirements/chain/methods/puck) — the gateway that walks `%fetch.fetchers`.
+- [`%import`](https://puck.uno/requirements/import) — the gateway that walks `%import.fetchers`.

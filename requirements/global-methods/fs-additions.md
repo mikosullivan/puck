@@ -29,11 +29,11 @@ $config = $here['config.json']
 %fs.cwd = $some_dir              # changes the process cwd via chdir(2)
 ~~~
 
-Equivalent shape on any dir is [`.cd()`](../dirs#cd) — `$some_dir.cd()` does the same thing. The property-assignment form here is the `%fs`-side idiom; the method-call form on any dir is the general-dir idiom. Two entry points, one underlying operation. See [dirs](../dirs) for `.cd()` and the sibling `.cwd?` predicate.
+Equivalent shape on any dir is [`.cd()`](../filesystem/dirs#cd) — `$some_dir.cd()` does the same thing. The property-assignment form here is the `%fs`-side idiom; the method-call form on any dir is the general-dir idiom. Two entry points, one underlying operation. See [dirs](../filesystem/dirs) for `.cd()` and the sibling `.cwd?` predicate.
 
-**User-only.** Assigning `%fs.cwd` is user-only (trivially, since `%fs` itself is user-only). The same rule applies to `$dir.cd()` on any dir — process cwd is process-global state, and letting non-user code redirect it is a privilege escalation vector. See [dirs § .cd()](../dirs#cd) for the full reasoning.
+**User-only.** Assigning `%fs.cwd` is user-only (trivially, since `%fs` itself is user-only). The same rule applies to `$dir.cd()` on any dir — process cwd is process-global state, and letting non-user code redirect it is a privilege escalation vector. See [dirs § .cd()](../filesystem/dirs#cd) for the full reasoning.
 
-**Failure modes and process-global-scope note:** same as documented for [`.cd()`](../dirs#cd).
+**Failure modes and process-global-scope note:** same as documented for [`.cd()`](../filesystem/dirs#cd).
 
 ## `.path`
 
@@ -55,7 +55,7 @@ Mutation from the user role uses ordinary array operations:
 
 ## `.execute` — bare-name form
 
-File objects have `.execute` for running the file itself, and dir objects have `.execute_in` for running a child process with the dir as its cwd (the argv-array, no-shell mechanics are spec'd on [linux-support](../../linux-support/#executing-files)). `%fs` adds a **bare-name form**: when the first argument is a bare name (no path separator), `%fs.execute` walks `.path` in order for the first match, then `exec`s it directly. The bare-name form is a search-path shortcut, not a dir-context call — it keeps the plain `.execute` name.
+File objects have `.execute` for running the file itself, and dir objects have `.execute_in` for running a child process with the dir as its cwd (the argv-array, no-shell mechanics are spec'd on [linux-support](../linux-support/#executing-files)). `%fs` adds a **bare-name form**: when the first argument is a bare name (no path separator), `%fs.execute` walks `.path` in order for the first match, then `exec`s it directly. The bare-name form is a search-path shortcut, not a dir-context call — it keeps the plain `.execute` name.
 
 ~~~caspian
 $result = %fs.execute 'tar', '-xzf', 'archive.tar.gz'
@@ -108,5 +108,5 @@ $build_dir.execute_in $tar_bin, '-xzf', 'archive.tar.gz'
 ## Related
 
 - [%fs](fs) — the base spec: `%fs` as a user-only dir object with the ordinary dir-object surface.
-- [linux-support](../../linux-support/) — the `.execute` mechanism (subprocess-not-shell, argv-array, structured result) that these methods build on.
-- [linux-support § The search path](../../linux-support/#the-search-path) — the search-path story from the executable-invocation angle.
+- [linux-support](../linux-support/) — the `.execute` mechanism (subprocess-not-shell, argv-array, structured result) that these methods build on.
+- [linux-support § The search path](../linux-support/#the-search-path) — the search-path story from the executable-invocation angle.

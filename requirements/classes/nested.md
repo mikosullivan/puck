@@ -95,7 +95,7 @@ class # string
 	nested :to
 		method &number()
 			# parse @value into a number
-			return %fetch.number.from.string(%self)
+			return %import.number.from.string(%self)
 		end
 	end
 end

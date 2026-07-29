@@ -8,7 +8,7 @@
 }}
 ~~~
 
-A program loads a remote Caspian library via `%fetch` and calls a method on it. Before the call, the user stashes an API token in `%chain` — the library MUST NOT be able to see it. The trust barrier falls out of the existing cross-role chain reset described in [chain § Role boundaries reset everything](https://puck.uno/requirements/chain/#role-boundaries-reset-everything); no new mechanism needed.
+A program loads a remote Caspian library via `%import` and calls a method on it. Before the call, the user stashes an API token in `%chain` — the library MUST NOT be able to see it. The trust barrier falls out of the existing cross-role chain reset described in [chain § Role boundaries reset everything](https://puck.uno/requirements/chain/#role-boundaries-reset-everything); no new mechanism needed.
 
 Caspian source (capture happens during the `to_html` call, inside the loaded library — there's no user-source line to mark; the library is doing the work):
 
@@ -70,7 +70,7 @@ Paused inside `to_html` in the loaded library, after the library has tokenized t
 }
 ~~~
 
-<!-- SPEC CONFLICT: archive uses %puck['url'] which is legacy; current spec uses %fetch(url) or %(url) — rewritten to %(...) -->
+<!-- SPEC CONFLICT: archive uses %puck['url'] which is legacy; current spec uses %import(url) or %(url) — rewritten to %(...) -->
 
 <!-- SPEC CONFLICT: archive stores chain values in a nested "misc" sub-hash (chain.misc.api_token). Current spec (chain/index.md) uses a flat hash: %chain['api_token']. Rewritten to the flat form. Also, archive shows chain as always present on every frame with {log: {}, misc: {}} skeleton; current spec has no such structure — needs Miko decision on whether the chain field appears at all in the per-frame snapshot or is implied by the aggregate-hash walk -->
 

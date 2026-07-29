@@ -1,5 +1,7 @@
 # `%chain.env`
 
+**STALE — pending relocation.** `%chain` no longer carries methods. This file describes what used to live on `%chain.X` and awaits relocation to its correct home (typically a top-level global, a downloadable core object, or a permission-indicator stub). See [chain/index](https://puck.uno/requirements/chain/) for the current `%chain` scope.
+
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_global_utils_env",

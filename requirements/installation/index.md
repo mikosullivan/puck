@@ -114,7 +114,7 @@ After the prompts are answered, the installer runs through the actual setup with
 3. **Write** `~/.config/caspian/config.json` with the blockchain preference from the prompt.
 4. **Modify the shell rc** if the user agreed to the PATH prompt — append `export PATH="$HOME/.local/bin:$PATH"` to the appropriate file (`~/.bashrc`, `~/.zshrc`, `~/.profile`).
 5. **Run the [OS checks](os-checks)** — probes for kernel/OS features that Caspian's own features depend on. Blocking probes (e.g., "OS is Linux") abort install; non-blocking ones downgrade the affected feature and get noted in the summary.
-6. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%fetch` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
+6. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%import` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
 
 ### Installation summary
 

@@ -19,7 +19,7 @@ The `caspian` binary exposes `--self-test` as a subcommand. Same command whether
 
 `--self-test` needs Bryton itself and a tree of tests.
 
-- **Bryton** — loaded via `%fetch`, the usual way.
+- **Bryton** — loaded via `%import`, the usual way.
 - **The test tree** — downloaded as a **tar.gz** from `caspian.uno` and extracted into a fresh `%chain.tmp` directory. Bryton runs against the extracted tree.
 
 See [self-test process](self-test-process) for the mechanics.
@@ -27,9 +27,9 @@ See [self-test process](self-test-process) for the mechanics.
 ## Why the tests live outside the binary
 
 - **Updatable independently of the binary.** Fix a flaky test, add coverage for a newly-discovered edge case, adjust a threshold — no need to re-release the whole runtime.
-- **Dogfoods `%fetch`.** Loading Bryton is `%fetch`'s first real workload on a fresh install. If that fetch/verify/cache path works, a big chunk of Caspian's on-demand model has just been proven live on the user's system.
+- **Dogfoods `%import`.** Loading Bryton is `%import`'s first real workload on a fresh install. If that fetch/verify/cache path works, a big chunk of Caspian's on-demand model has just been proven live on the user's system.
 - **Dogfoods Bryton.** The install-time verification is Bryton's first real workload on the user's box. If Bryton runs the test tree successfully, Bryton is proven working too — free coverage of the test framework itself.
-- **Exercises the blockchain path (if opted in) as a side effect.** When the user has opted into blockchain verification, the `%fetch` Bryton fetch travels the blockchain-verified path. That's live coverage of blockchain infrastructure the user just opted into.
+- **Exercises the blockchain path (if opted in) as a side effect.** When the user has opted into blockchain verification, the `%import` Bryton fetch travels the blockchain-verified path. That's live coverage of blockchain infrastructure the user just opted into.
 - **One test tree, two use cases.** The tests packaged into the tar.gz are the same tests Caspian's own developers run against a build. There's no separate "install-verification" suite drifting out of sync with the "real" suite.
 
 ## What the self-test covers
@@ -128,7 +128,7 @@ Deferred — inherits whatever cache-refresh mechanism the general downloadable-
 
 - [installation](../) — the install flow that invokes `--self-test` as its last step.
 - [self-test process](self-test-process) — implementer-facing spec for the fetch, Bryton invocation, and rendering mechanics behind `--self-test`.
-- [binary](../binary) — what actually ships in the `caspian` binary itself. The `--self-test` subcommand is bundled; Bryton and the test suite it runs are not.
+- [binary](../../core/binary) — what actually ships in the `caspian` binary itself. The `--self-test` subcommand is bundled; Bryton and the test suite it runs are not.
 - [Bryton runner](../../bryton/runner/) — the test framework `--self-test` uses.
 - [Xeme](../../bryton/xeme/) — Bryton's per-test result format, which `--self-test` renders into human-readable output.
 - [cache-dir](../../cache-dir) — where the downloaded classes live on the user's system.

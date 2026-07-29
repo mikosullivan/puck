@@ -4,15 +4,15 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_cache_dir",
-	"role": "spec for how a Puck cache directory is laid out on disk. A cache holds multiple versions of Puck-fetched objects per URL, with bytes in a file literally named `content` and per-version metadata in `meta.json` (url, sha256, content-type), both grouped under a reserved `+versions/` subdirectory. The `url` field in meta.json is authoritative when present — the CLI uses it in preference to reconstructing the URL from the disk path, guarding against case-sensitivity mismatches and hand-edited renames. URLs are canonicalized per RFC 3986 before being mapped to disk (lowercase scheme/host, percent-encoding normalization, dot-segment resolution, doubled-slash collapse, fragment strip) — query strings are deliberately not canonicalized. The canonical URL structure maps onto the directory tree in this order: scheme (`https/`, `http/`, ...), then domain, then each path segment — each URL component becomes its own filesystem directory. Each component is normalized independently by percent-encoding unreserved RFC 3986 characters and encoding everything else. Domain-position ports use `~` as the separator (`foo.bar~8080`) since DNS forbids `~` in real domain names, making the split unambiguous and more readable than percent-encoding. Version subdirs are named by ISO 8601 timestamps in a dot-form canonical (`2008-12-03T14.30.00.123-05.00`) that avoids the colons Windows filenames forbid; strict ISO with colons is also accepted where the filesystem allows it. A cache-root `+config.json` carries per-cache settings; `require_sha256` defaults to `true`. Sits as one node in %fetch's search path — a miss falls through to the next node rather than raising.",
+	"role": "spec for how a Puck cache directory is laid out on disk. A cache holds multiple versions of Puck-fetched objects per URL, with bytes in a file literally named `content` and per-version metadata in `meta.json` (url, sha256, content-type), both grouped under a reserved `+versions/` subdirectory. The `url` field in meta.json is authoritative when present — the CLI uses it in preference to reconstructing the URL from the disk path, guarding against case-sensitivity mismatches and hand-edited renames. URLs are canonicalized per RFC 3986 before being mapped to disk (lowercase scheme/host, percent-encoding normalization, dot-segment resolution, doubled-slash collapse, fragment strip) — query strings are deliberately not canonicalized. The canonical URL structure maps onto the directory tree in this order: scheme (`https/`, `http/`, ...), then domain, then each path segment — each URL component becomes its own filesystem directory. Each component is normalized independently by percent-encoding unreserved RFC 3986 characters and encoding everything else. Domain-position ports use `~` as the separator (`foo.bar~8080`) since DNS forbids `~` in real domain names, making the split unambiguous and more readable than percent-encoding. Version subdirs are named by ISO 8601 timestamps in a dot-form canonical (`2008-12-03T14.30.00.123-05.00`) that avoids the colons Windows filenames forbid; strict ISO with colons is also accepted where the filesystem allows it. A cache-root `+config.json` carries per-cache settings; `require_sha256` defaults to `true`. Sits as one node in %import's search path — a miss falls through to the next node rather than raising.",
 	"status": "spec — on-disk layout, normalization, reserved markers, timestamp grammar, meta and config file semantics all settled. Unknown-extension fallback in content-type resolution and additional meta.json fields (fetched_at, HTTP headers, byte count, etc.) still open.",
-	"audience": "developers who host or synchronize local Puck caches; CLI implementers who read caches when resolving %fetch fetches; anyone reasoning about how time-based version queries land on disk"
+	"audience": "developers who host or synchronize local Puck caches; CLI implementers who read caches when resolving %import fetches; anyone reasoning about how time-based version queries land on disk"
 }}
 ~~~
 
 A **Puck cache directory** is a locally-managed on-disk store of Puck-fetched objects. Unlike a plain URL-mapped directory (which serves exactly one file per URL), a cache directory can hold **multiple versions** of the same URL and answer version-constrained queries — including timestamp-based queries like "give me this object as it was at time T."
 
-Cache directories are one of the nodes in `%fetch`'s search path. When `%fetch` resolves a URL fetch, it walks its search path in order; if a cache directory is in that path, `%fetch` queries it and takes the response as it would any other search-path node. A **miss on the cache does not raise** — the fetch continues along `%fetch`'s search path to the next node.
+Cache directories are one of the nodes in `%import`'s search path. When `%import` resolves a URL fetch, it walks its search path in order; if a cache directory is in that path, `%import` queries it and takes the response as it would any other search-path node. A **miss on the cache does not raise** — the fetch continues along `%import`'s search path to the next node.
 
 ## Practical guidance
 
@@ -221,7 +221,7 @@ A per-version JSON file carrying metadata about the cached content. All fields b
 
 ## Content-type resolution
 
-When the CLI reads a cached version, it needs to know the content-type to hand back to `%fetch`. Resolution order:
+When the CLI reads a cached version, it needs to know the content-type to hand back to `%import`. Resolution order:
 
 1. **`meta.json`'s `content_type` field.** If present, it wins outright — including when it disagrees with any extension the URL might carry.
 2. **The URL's own file extension**, mapped through [content-types](https://puck.uno/requirements/content-types). A URL ending in `.casp` implies `text/x-caspian`; `.caspj` implies `text/x-caspianj`. This is the extension of the URL's leaf path segment, preserved as the leaf subdirectory name after normalization.
@@ -328,7 +328,7 @@ The sidecar is norm CaspJ with **line info kept** (default for cached norm — s
 - **URL extension resolves content-type when `meta.json` omits it** — a `.casp` cache entry with no `content_type` yields `text/x-caspian` to the caller.
 - **Unknown extension with no `content_type` — TBD-marked test placeholder** — pending spec resolution.
 - **Missing `+config.json` yields defaults** — a cache with no config file behaves as if `require_sha256: true`.
-- **Cache miss falls through, does not raise** — a fetch of a URL not present in the cache continues to the next node in `%fetch`'s search path.
+- **Cache miss falls through, does not raise** — a fetch of a URL not present in the cache continues to the next node in `%import`'s search path.
 - **Two caches on the same machine have independent settings** — one cache configured `require_sha256: true` and another `require_sha256: false` behave differently for the same URL.
 - **Case-only collision on case-insensitive filesystem — undefined behavior sentinel** — `/API/x.casp` vs `/api/x.casp` on APFS/NTFS does not need to succeed; test simply asserts it doesn't corrupt other entries.
 - **Fresh norm sidecar is loaded directly** — a `norm.caspj` whose `transpiler` tag matches the current transpiler is decoded and returned without touching `content`.
@@ -342,4 +342,4 @@ The sidecar is norm CaspJ with **line info kept** (default for cached norm — s
 - [content-types](https://puck.uno/requirements/content-types) — the canonical Content-Type strings for Caspian source and CaspianJ tree files. Used both as the target values of `meta.json`'s `content_type` field and as the mapping for URL-extension fallback.
 - [non-caspian-mime-types](https://puck.uno/requirements/non-caspian-mime-types) — how the engine handles content types other than Caspian and CaspianJ, including the empty-content rules that apply when the cache serves a stored version back to a caller.
 - [caspianj](https://puck.uno/requirements/caspianj) — the two CaspJ formats (full and norm), the `transpile` / `normalize` API pair, and what the norm sidecar in a cache version directory actually contains.
-- [`%fetch`](https://puck.uno/requirements/chain/methods/puck) — the Caspian-side gateway for fetches. `%fetch`'s search path (spec'd elsewhere) is where a cache directory sits.
+- [`%import`](https://puck.uno/requirements/import) — the Caspian-side gateway for fetches. `%import`'s search path (spec'd elsewhere) is where a cache directory sits.

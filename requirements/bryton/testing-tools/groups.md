@@ -9,7 +9,7 @@
 }}
 ~~~
 
-Test groups let a test author organize related tests together under a single named parent. Each group produces a [group xeme](../../xeme/groups) in the emitted result.
+Test groups let a test author organize related tests together under a single named parent. Each group produces a [group xeme](../xeme/groups) in the emitted result.
 
 ## `$bryton.group`
 

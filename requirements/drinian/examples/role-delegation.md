@@ -110,7 +110,7 @@ We're paused inside the agent's returned function, partway through a `$db.split(
 
 <!-- SPEC CONFLICT: archive uses "stdlib" as the role for the built-in string.split method_call; current spec has no stdlib role. Rewritten as "engine" throughout this file. Same conflict flagged elsewhere — needs one Miko decision that applies across all examples -->
 
-<!-- SPEC CONFLICT: archive uses %puck['url'] for the agent construction; current spec uses %fetch(url) or %(url). Rewritten to %(...) -->
+<!-- SPEC CONFLICT: archive uses %puck['url'] for the agent construction; current spec uses %import(url) or %(url). Rewritten to %(...) -->
 
 <!-- SPEC CONFLICT: this example relies on an "agent" role that isn't documented in current spec (roles/index.md lists V1 as user + engine + faucet roles, with request/agent identity roles explicitly deferred). The agent-yield protocol is referenced but the "agent" role's status is unclear — needs Miko decision on whether this example should demonstrate a faucet role instead, or whether the agent role is now in scope somewhere the roles index doesn't yet reflect -->
 

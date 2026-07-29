@@ -21,7 +21,7 @@
 	"directives": {
 		"github-issues-summary: PATH/": "emits 'All clear' when zero matching issues, 'Attention — N open issues' otherwise; place above any prose so readers see status before content",
 		"github-issues-against: PATH/": "renders each matching issue as H3. Heading contains the 'Issue NNN' copy badge, the issue's short title linked to the page (and section anchor when present in the title) it's filed against, any label chips, and — for allow-listed IPs — Comment and Close chips. Body markdown follows, rendered inline.",
-		"match_criteria": "issue title starts with 'File: documentation/<prefix>/' AND the referenced file currently exists on disk",
+		"match_criteria": "issue title starts with 'File: <prefix>/' (repo-relative — any top-level tree, no documentation/ wrapper) AND the referenced file currently exists on disk",
 		"implementation": "orlando/lua/orlando/page.lua — process_github_issues_directives"
 	}
 }}

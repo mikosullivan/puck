@@ -114,9 +114,14 @@ end
 ------------------------------------------------------------
 
 local function file_path_from_issue_title(title)
-    -- Issue titles filed via the per-section "GitHub issue" chip
-    -- start with "File: documentation/<rest>".
-    return title and title:match("^File:%s+(documentation/%S+%.md)")
+    -- Issue titles filed via the per-section "GitHub issue" chip start
+    -- with "File: <repo-relative-path>". The path may reference either
+    -- a specific .md file or a tree prefix (for sweep-style issues that
+    -- span multiple files across a tree). Under the whole-repo-as-root
+    -- layout, the path is any top-level tree (requirements/,
+    -- documentation/, ideas/, skills/, etc.); previously it was forced
+    -- to start with "documentation/".
+    return title and title:match("^File:%s+(%S+)")
 end
 
 local function file_exists_on_disk(path)
@@ -127,20 +132,20 @@ local function file_exists_on_disk(path)
 end
 
 local function matching_issues(prefix)
-    -- Normalize the prefix to a "documentation/<prefix>/" needle.
-    -- Strip a leading slash and ensure a trailing slash so the
-    -- match is exact at a directory boundary (avoids "requirements"
-    -- matching "requirements-old").
+    -- Normalize the prefix — strip leading slash, ensure trailing slash
+    -- so the match is exact at a directory boundary (avoids
+    -- "requirements" matching "requirements-old"). The prefix is
+    -- repo-relative (e.g. "requirements/", "documentation/foo/"), NOT
+    -- wrapped in any parent directory.
     local needle = prefix:gsub("^/+", "")
     if needle:sub(-1) ~= "/" then needle = needle .. "/" end
-    local doc_needle = "documentation/" .. needle
 
     local issues = issues_fetcher.fetch_all()
     local matching = {}
     for _, issue in ipairs(issues or {}) do
         local fpath = file_path_from_issue_title(issue.title)
         if fpath
-            and fpath:sub(1, #doc_needle) == doc_needle
+            and fpath:sub(1, #needle) == needle
             and file_exists_on_disk(fpath)
         then
             matching[#matching + 1] = issue

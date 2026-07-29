@@ -83,7 +83,7 @@ A **block** is a chunk of code passed to a function or method as a trailing argu
 - **`do ... end`** — a **closure** block. Captures the surrounding lexical scope; the block body can name variables from where the call is written.
 - **`dofunc ... end`** — a **bare-function** block. No captured scope; the block body can only see its own parameters, its locals, and `%chain`.
 
-The split mirrors the definition-site split between [`closure`](closure) and [`function`](bare) — same tradeoff, same rationale. `do` is the common case; `dofunc` is for sealed-scope handoffs, where the caller wants to guarantee the block cannot reach into the surrounding scope (untrusted receiver, cross-role handoff, anywhere the [security model](bare#why-this-is-caspian-s-security-model) matters).
+The split mirrors the definition-site split between [`closure`](../closure) and [`function`](../bare) — same tradeoff, same rationale. `do` is the common case; `dofunc` is for sealed-scope handoffs, where the caller wants to guarantee the block cannot reach into the surrounding scope (untrusted receiver, cross-role handoff, anywhere the [security model](../bare#why-this-is-caspian-s-security-model) matters).
 
 ~~~caspian
 $outer = 'ensign'

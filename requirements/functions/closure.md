@@ -16,7 +16,7 @@ Inside the body:
 
 - **No own `%self`.** A closure isn't bound to a receiver of its own. It does not introduce a new `%self`; whether `%self` is available inside the closure body depends on the enclosing scope. When a closure is defined inside a method's body, the method's `%self` and `%bucket` are captured through the same outer-scope mechanism as any other binding — inside the closure, `%self` is the enclosing method's receiver and `%bucket` is that receiver's bucket. When the closure is defined outside any method (top level, inside a bare function, or inside another closure that has no captured `%self`), `%self` and `%bucket` are not in scope and referring to them raises.
 - **Outer-scope capture.** Names defined in the enclosing scope are reachable from the closure body — the closure carries a reference to that scope so the bindings survive as long as the closure does.
-- **[`%chain`](https://puck.uno/requirements/chain/)** — the ambient capability channel, same as in bare functions and methods. Per-frame and always reachable; carries `%stdout`, `%net`, `%fetch`, and every other granted global.
+- **[`%chain`](https://puck.uno/requirements/chain/)** — the ambient capability channel, same as in bare functions and methods. Per-frame and always reachable; carries `%stdout`, `%net`, `%import`, and every other granted global.
 - **What's reachable.** Arguments passed in, names defined locally in the body, names inherited from the captured outer scope (including `%self` and `%bucket` when the enclosing scope has them), and `%chain`. The lexical capture is by reference: if the outer scope mutates a binding after the closure is defined, the closure sees the mutation.
 
 ## Captured scope keeps resources alive

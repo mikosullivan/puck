@@ -12,7 +12,7 @@
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
 
-**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%fetch.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
+**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%import.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
 
 ## Sections
 
@@ -24,7 +24,7 @@ The manifest has five top-level sections: `process`, `os`, `engine`, `caspian`, 
 | `os` | Operating system the engine is running on. |
 | `engine` | Engine implementation identity — codename, version, host VM. |
 | `caspian` | Caspian language version this engine implements. |
-| `downloads` | Every object downloaded by this process via [`%fetch`](https://puck.uno/requirements/chain/methods/puck), keyed by URL. |
+| `downloads` | Every object downloaded by this process via [`%import`](https://puck.uno/requirements/import), keyed by URL. |
 
 ## Field inventory
 
@@ -43,7 +43,7 @@ Every section is a hash; the fields inside each are as follows.
 }
 ~~~
 
-The engine records a wall-clock timestamp at process start (this becomes `time.start`) and initializes the step counter at `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. All values are stable for a given call — they reflect the moment of the manifest call, not whatever happens between accessing the returned hash and reading its fields. Step semantics are covered in [`%chain.steps`](https://puck.uno/requirements/chain/methods/steps).
+The engine records a wall-clock timestamp at process start (this becomes `time.start`) and initializes the step counter at `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. All values are stable for a given call — they reflect the moment of the manifest call, not whatever happens between accessing the returned hash and reading its fields. Step semantics are covered in [`%chain.steps`](https://puck.uno/requirements/chain/methods/steps). <!-- STALE: %chain.X syntax being reworked -->
 
 ### `os`
 
@@ -149,7 +149,7 @@ Objects don't always come directly from the URL they live at. A separate provide
 
 ## Declaring requirements
 
-A second purpose of the manifest, beyond runtime introspection, is to **declare what a script needs to run**. A script's manifest names the resources it requires — `%chain.stdout`, `%chain.net`, `%chain.tmp`, specific downloaded objects with version constraints, a particular engine version, etc. — and an engine starting that script reads the declared requirements and decides whether it can provide all of them. If it can't, it refuses to start rather than running the script partway and failing mid-execution against a missing capability.
+A second purpose of the manifest, beyond runtime introspection, is to **declare what a script needs to run**. A script's manifest names the resources it requires — the `stdout`, `net`, `tmp` capabilities, specific downloaded objects with version constraints, a particular engine version, etc. — and an engine starting that script reads the declared requirements and decides whether it can provide all of them. If it can't, it refuses to start rather than running the script partway and failing mid-execution against a missing capability.
 
 The same data structure expresses both purposes: the manifest a running script EXPOSES (introspection — what's actually here right now) and the shape a script would DECLARE up front (requirements — what it needs in order to be willing to run). Same field set, same nesting, same conventions. Specifying the structure once covers both sides.
 

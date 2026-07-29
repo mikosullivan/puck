@@ -114,7 +114,7 @@ class # foo
 end
 ~~~
 
-Reads as: `method bar() ... end` produces a method object; `private` receives that value, mutates it, returns it. Chains of any length compose the same way — see [instance § Setting autorun](../instance#setting-auto-run) for `autorun private method foo() ... end`. Commands with fixed-shape argument lists (`field :name, ...`, `inherits Person`, `abstract true`) don't participate in this chain — they take their own args, not a following DSL expression.
+Reads as: `method bar() ... end` produces a method object; `private` receives that value, mutates it, returns it. Chains of any length compose the same way — see [instance § autorun](../instance#autorun) for `autorun private method foo() ... end`. Commands with fixed-shape argument lists (`field :name, ...`, `inherits Person`, `abstract true`) don't participate in this chain — they take their own args, not a following DSL expression.
 
 **Scope.** The class-body DSL is active inside `class ... end` and inside `instance ... end` (which inherits the class DSL and adds `autorun`). Outside those bodies, these words are not automatically callable.
 
@@ -484,7 +484,7 @@ The `class ... end` construct evaluates to a **class object**. Where it goes dep
 
 - **Assign it**: `$widget = class ... end` — the class object lives at `$widget`.
 - **Store it in a hash or record**: `$library[:widget] = class ... end` — the class object lives inside that hash.
-- **Publish it via `%fetch`**: `%fetch.publish('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
+- **Publish it via `%import`**: `%import.publish('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
 - **Use it inline as an argument**: `some_method(class ... end)` — the class object is passed to that method, which stores it wherever the method decides.
 
 The "things live where you store them" principle applies fully — the class object has no intrinsic name or location.
@@ -536,7 +536,7 @@ Areas the current spec does not settle:
 - **Method resolution walks class stack** — a method defined on a parent is reachable through the child instance.
 - **Child method shadows parent method** — same-name method on the child takes precedence over inherited one.
 - **Storing class in a hash** — `$library[:widget] = class end; $library[:widget].new()` works.
-- **Publishing via `%fetch`** — `%fetch.publish(url, class end)` makes the class downloadable at that URL.
+- **Publishing via `%import`** — `%import.publish(url, class end)` makes the class downloadable at that URL.
 - **`class` inside another expression** — passing `class end` as an argument works; the receiver gets the class object.
 - **Class carries no intrinsic name** — the class object has no `.name` property tied to any variable it was assigned to.
 - **`public_const` exposes a getter on instances** — after `class ... public_const :path, '/x' end`, `$c.new().path` is `'/x'`.

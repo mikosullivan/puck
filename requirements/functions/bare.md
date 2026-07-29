@@ -24,7 +24,7 @@ Inside the body:
 A bare function's body can see:
 
 1. **Its parameters and locals.** The arguments the caller passed, and anything the body defines with `$x = ...`.
-2. **`%chain`.** The ambient capability channel — the global methods (`%stdout`, `%net`, `%fetch`, ...) that the caller had, plus anything the caller placed on the chain before calling.
+2. **`%chain`.** The ambient capability channel — the global methods (`%stdout`, `%net`, `%import`, ...) that the caller had, plus anything the caller placed on the chain before calling.
 3. **Its own Module via `%module`.** Because the body is inside SOME code-container, `%module` returns the innermost containing Module. What's on that Module — `%module.methods`, `%module.classes` — is only the source's explicitly-named declarations at that container's scope. See [modules](https://puck.uno/requirements/modules/) for what a Module exposes and (importantly) what it does NOT expose.
 
 That's the full list. No outer function's locals, no enclosing script's top-level variables, no state from wherever the bare function was defined. The definition site's variable environment is invisible from inside the body.

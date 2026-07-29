@@ -301,9 +301,9 @@ $foo.round_down(multiple: 10)  # returns -10
 
 | Method | Description |
 |---|---|
-| `.bitwise` | Returns a chainable [bitwise-wrapper object](https://puck.uno/requirements/built-in-classes/number/bitwise) around the number. |
+| `.bitwise` | Returns a chainable [bitwise-wrapper object](https://puck.uno/requirements/built-in-classes/primitives/number/bitwise) around the number. |
 
-Full method surface — `.or`, `.and`, `.xor`, `.not`, `.shift_left` (aliased `<<`), `.shift_right` (aliased `>>`), `.nand`, `.nor`, `.xnor` — is spec'd at [bitwise](https://puck.uno/requirements/built-in-classes/number/bitwise). Bitwise operations are only meaningful on whole-value numbers; `.bitwise` on any number with a fractional part raises.
+Full method surface — `.or`, `.and`, `.xor`, `.not`, `.shift_left` (aliased `<<`), `.shift_right` (aliased `>>`), `.nand`, `.nor`, `.xnor` — is spec'd at [bitwise](https://puck.uno/requirements/built-in-classes/primitives/number/bitwise). Bitwise operations are only meaningful on whole-value numbers; `.bitwise` on any number with a fractional part raises.
 
 ## Conversion
 

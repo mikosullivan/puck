@@ -44,7 +44,7 @@ $literal = 'hello, #{$name}'            # literal — single-quoted, no interpol
 
 The symbol and key notations are purely syntactic sugar for identifier-shaped string literals. **Caspian does not have Ruby-style symbols.** `:hello` and `'hello'` produce indistinguishable strings — `:hello == 'hello'` is `true`, both are `String` instances, neither carries any special interning or identity semantics. Ruby users should note that this notation is a shorthand only, not a separate type or optimization.
 
-Since Caspian doesn't intern primitives (every literal materializes a fresh instance — see [primitive-buckets](https://puck.uno/requirements/built-in-classes/primitive-buckets)), `:hello` written twice in source produces two distinct String instances that compare `==` (same value) but are separate objects. This is exactly the same as writing `'hello'` twice.
+Since Caspian doesn't intern primitives (every literal materializes a fresh instance — see [primitive-buckets](https://puck.uno/requirements/built-in-classes/primitives/primitive-buckets)), `:hello` written twice in source produces two distinct String instances that compare `==` (same value) but are separate objects. This is exactly the same as writing `'hello'` twice.
 
 ### Allowed character set
 
@@ -118,7 +118,7 @@ More to come — comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`), `+` co
 
 ## Number conversion
 
-Parse a string into a number. Each method parses the string's content (prefix-aware: `"0x..."`, `"0o..."`, `"0b..."` are recognized as their respective bases; no prefix is treated as decimal) and returns the result as the corresponding [number](https://puck.uno/requirements/built-in-classes/number/) subclass:
+Parse a string into a number. Each method parses the string's content (prefix-aware: `"0x..."`, `"0o..."`, `"0b..."` are recognized as their respective bases; no prefix is treated as decimal) and returns the result as the corresponding [number](https://puck.uno/requirements/built-in-classes/primitives/number/) subclass:
 
 | Method | Returns | Description |
 |---|---|---|

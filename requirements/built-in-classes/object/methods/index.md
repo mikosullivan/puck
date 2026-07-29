@@ -129,6 +129,7 @@ Because the jail is its own object:
 
 Common pattern: user code holding a private-state-bearing instance passes only the safe surface to untrusted code:
 
+<!-- STALE: %chain.X syntax being reworked -->
 ~~~caspian
 %chain.puck.grant do
 	$library.render($widget.object.jail(:name, :label, :bounding_box))
@@ -386,7 +387,7 @@ For V1, that's the whole story — lazy lookup, no cache across calls, access-sc
 
 ### `.warn($message)`
 
-Attaches a warning to the receiver by pushing a new **warning-only platter** onto the stack. The platter carries `warning: <the created warning object>` — a Warning-class instance wrapping `$message`. The warning-platter form is spec'd in [object/structure § warning](../../structure/#warning).
+Attaches a warning to the receiver by pushing a new **warning-only platter** onto the stack. The platter carries `warning: <the created warning object>` — a Warning-class instance wrapping `$message`. The warning-platter form is spec'd in [object/structure § warning](../structure/#warning).
 
 **Never raises.** `.warn` is purely observational — nothing about control flow changes. The receiver keeps running as it was; the warning just sits attached to it for whoever cares to inspect the stack later.
 
@@ -413,7 +414,7 @@ Any code — engine, library, or application — can call `.warn`. Inspecting wa
 
 ### `.stack`
 
-Returns the receiver's stack array — the ordered sequence of platters described in [object/structure § Stack](../../structure/#stack). The full serialized shape is available: each platter's `class`, `shadow` flag, `nested` UUID link, `warning`, per-platter `bucket`, and per-platter `vibecode` all show through.
+Returns the receiver's stack array — the ordered sequence of platters described in [object/structure § Stack](../structure/#stack). The full serialized shape is available: each platter's `class`, `shadow` flag, `nested` UUID link, `warning`, per-platter `bucket`, and per-platter `vibecode` all show through.
 
 **Access is restricted.** Only two roles can call `.stack`:
 

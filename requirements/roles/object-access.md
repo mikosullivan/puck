@@ -142,6 +142,7 @@ Three different "roles" coexist in that method body. Each names a different thin
 
 ## Values pulled through faucets carry the faucet's role
 
+<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references in this file predate the permission-only %chain model. See [chain/index](https://puck.uno/requirements/chain/). -->
 The creator-owns rule has one important exception: **values pulled through a faucet are owned by the faucet's role**, not by the calling role. When user code does `%chain.stdin.read`, `%chain.argv[0]`, `%chain.env['HOME']`, `%chain.net.fetch(url).body`, etc., the value that comes back is tagged with the source faucet's role — not with `user`.
 
 This is the inbound-data side of the role system, spec'd in [`plumbing/faucets/`](https://puck.uno/requirements/plumbing/faucets/). Each inbound surface has its own distinct role, and values flowing through carry that role — see [plumbing/faucets](https://puck.uno/requirements/plumbing/faucets/) for the catalog. The creator-owns rule still applies to everything OTHER than inbound-faucet values — derived strings, computed hashes, instances of user-defined classes, etc. all follow the calling-role-owns model.

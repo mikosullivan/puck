@@ -32,9 +32,10 @@ Sinks aren't values a program can invent. Every sink traces back to an **engine-
 |---|---|
 | [`%stdout`](https://puck.uno/requirements/chain/methods/stdout-and-stderr) / `%engine.stdout` | Bytes written to the program's primary output. |
 | [`%stderr`](https://puck.uno/requirements/chain/methods/stdout-and-stderr) / `%engine.stderr` | Bytes written to the diagnostic channel. |
+<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references throughout this file (table rows below, prose, testing bullets) predate the permission-only %chain model. See [chain/index](https://puck.uno/requirements/chain/). -->
 | [`%fs`](https://puck.uno/requirements/global-methods/fs) / `%chain.tmp` | Filesystem writes via dirjails. |
 | [`%chain.net`](https://puck.uno/requirements/chain/methods/net) | HTTP request bodies, socket writes. |
-| [`%chain.puck`](https://puck.uno/requirements/chain/methods/puck) | `%fetch.register(url, ...)` publishes an object out to the object network. |
+| [`%import`](https://puck.uno/requirements/import) | `%import.register(url, ...)` publishes an object out to the object network. |
 
 User code can wrap any of these — put an object in front of `%stdout`, narrow `%fs` with a nested dirjail, build a per-host adapter over `%chain.net` — but every outbound method call transitively lands on a method the engine implemented. Without an engine-provided handle somewhere in the ancestry, there is no outbound path at all.
 
@@ -59,7 +60,7 @@ Several engine-provided surfaces are dual-purpose:
 
 - **`%chain.net`** — a faucet (responses come in) AND a sink (request bodies go out).
 - **`%fs`** / **`%chain.tmp`** — faucets (file reads produce values) AND sinks (`.write(...)` sends bytes out).
-- **`%chain.puck`** — a faucet (`%fetch(url)` returns a downloaded object) AND a sink (`%fetch.register(url, ...)` publishes one).
+- **`%chain.puck`** — a faucet (`%import(url)` returns a downloaded object) AND a sink (`%import.register(url, ...)` publishes one).
 
 The faucet and sink halves are two aspects of one object. The role model applies to the faucet side (values read carry the faucet's role); the object model applies to the sink side (holding the object is authority to call its methods). Both are always in play; there is no conflict.
 
@@ -92,7 +93,7 @@ The security work happens at the handoff (deciding whether to pass a sink object
 - **`%chain.net` is both a faucet and a sink** — `fetch` reads inbound; request-body sending is outbound.
 - **`%fs` is both a faucet and a sink** — reads inbound; writes outbound.
 - **`%chain.tmp` is both a faucet and a sink** — reads inbound; writes outbound.
-- **`%chain.puck` is both a faucet and a sink** — `%fetch(url)` inbound; `%fetch.register(...)` outbound.
+- **`%chain.puck` is both a faucet and a sink** — `%import(url)` inbound; `%import.register(...)` outbound.
 - **No runtime role check on the value being written** — a foreign-owned string can be written through a user-held sink; no gate on the payload's role.
 - **A sink's method takes any value the method's contract accepts** — no sink-side role table.
 - **No default policy at the sink level** — sinks are objects; whether a role holds one depends on grant history, not on a sink-side default.

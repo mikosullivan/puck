@@ -13,7 +13,7 @@ Every class Caspian ships. Two groups: user-facing `core:` classes (six JSON pri
 
 ## `core:` — the reserved namespace
 
-`core:` is the reserved namespace for engine primitives and canonical stdlib classes — anything user code shouldn't need to install because the runtime provides it. `%('core:X')` (shorthand for `%fetch('core:X')`) is intercepted by the engine and returns its baked-in implementation directly — no network, no cache miss.
+`core:` is the reserved namespace for engine primitives and canonical stdlib classes — anything user code shouldn't need to install because the runtime provides it. `%('core:X')` (shorthand for `%import('core:X')`) is intercepted by the engine and returns its baked-in implementation directly — no network, no cache miss.
 
 ## User-facing classes
 
@@ -31,7 +31,7 @@ Reachable by their `core:` class identifier — as the target of `%('core:X')` (
 | [`core:null`](https://puck.uno/requirements/built-in-classes/primitives/null) | The single null value. Source form: `null`. Falsy. Distinct from `false`. Not a placeholder for "any absent value" — Caspian raises rather than silently returning null when a lookup misses. |
 | [`core:number`](https://puck.uno/requirements/built-in-classes/primitives/number/) | Numeric values — integers and floats share one class. Source form: `42`, `3.14`, `0xFF`, `2.5e-3`. Source-form annotations (base, scientific) round-trip through CaspJ but drop in CaspM. |
 | [`core:protected/hash`](https://puck.uno/requirements/protected/hash/) | Protected-hash class — hash-shaped storage backed by the vault, memory-safe against coredump / log leakage. |
-| [`core:protected/hash/http`](https://puck.uno/requirements/protected/hash/http) | HTTP-specialized protected hash — the shape [`core:auth/api`](https://puck.uno/requirements/protected/auth/api) hands off to `%chain.net.http.send`. |
+| [`core:protected/hash/http`](https://puck.uno/requirements/protected/hash/http) | HTTP-specialized protected hash — the shape [`core:auth/api`](https://puck.uno/requirements/protected/auth/api) hands off to `%chain.net.http.send`. <!-- STALE: %chain.X syntax being reworked --> |
 | [`core:protected/memory`](https://puck.uno/requirements/protected/memory) | Developer-facing protected-mode entry — `.run do ... end` establishes a window during which plaintext values live only in vault-backed storage. |
 | [`core:protected/password`](https://puck.uno/requirements/protected/password) | Password class — protected-hash-backed wrapper around a single credential value. |
 | `core:random` | Randomness — UUID / number / string / bytes primitives, all drawing from libsodium → OS CSPRNG. Canonical spec TBD. |
@@ -58,5 +58,5 @@ Named `core:` primitives that engine devs reference in specs but Caspian code ra
 
 ## Not on this sheet
 
-- **`%X` global methods** — see the [global methods cheat sheet](global-methods) for the eight `%X`-prefixed globals. Some (`%fetch`, `%stdout`) reach engine surfaces; none of them use `core:` naming.
+- **`%X` global methods** — see the [global methods cheat sheet](global-methods) for the eight `%X`-prefixed globals. Some (`%import`, `%stdout`) reach engine surfaces; none of them use `core:` naming.
 - **`caspian.uno/*` first-party downloads** — `caspian.uno/csv`, `caspian.uno/yaml`, and the other stdlib-adjacent classes live on the network and go through cache/wire/octocat lookup. Distinct from `core:` names (which bypass fetch-discovery entirely).

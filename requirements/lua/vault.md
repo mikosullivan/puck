@@ -227,7 +227,7 @@ A vault holding many entries can easily exceed 64 KB. If `mlock` fails, `sodium_
 
 **What still beats the vault:**
 
-- **Debugger attached via `ptrace`.** Can modify page protections, bypass `mprotect`, read everything. Mitigations at the process level are in [process-security](process-security).
+- **Debugger attached via `ptrace`.** Can modify page protections, bypass `mprotect`, read everything. Mitigations at the process level are in [process-security](tag:process-security).
 - **Side-channel attacks** (Spectre, Meltdown, Rowhammer, cache-timing). Not addressed by in-process memory protection.
 - **In-process memory-disclosure bugs.** A bug in the engine that returns memory contents to user code could leak vault bytes during a `PROT_READ` window. The narrow window helps; fix the bug.
 - **Hibernation to disk.** RAM image gets written to disk during suspend. `mlock` doesn't prevent that. See [process-security](tag:process-security).

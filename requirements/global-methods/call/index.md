@@ -12,7 +12,7 @@
 
 `%call` is a global method available inside any function or closure body. It returns the **call object** — a first-class object representing the in-progress call. The call object carries the metadata about the call (who made it, what blocks they passed) and provides the primitives for ending the call (`%call.return`).
 
-`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%fetch`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
+`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%import`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
 
 ## Class identity
 
@@ -85,6 +85,7 @@ puts &gup($foo, $bar)         # prints "x"
 
 **Stashing via `%chain`.** The same mechanism works without threading the reference through arguments — put it in `%chain` and any downstream code can reach it:
 
+<!-- STALE: ambient-hash-slot moving to %amber -->
 ~~~caspian
 function &gup($foo, $bar)
 	%chain['call'] = %call
@@ -256,13 +257,13 @@ Same shape as the `%call.role` self-gating example; different axis of gating.
 - **`yield` can be called multiple times** — a function body with `yield 'a'; yield 'b'` invokes the block twice; the block runs to completion each time. The block sees `'a'` on the first call and `'b'` on the second.
 - **`yield` can be called zero times** — a function that decides not to invoke `%call.blocks[0].call` runs to completion without touching the block; the block's body never runs.
 - **Block invocation return value** — the receiver receives whatever the block returned.
-- **`%call` is not in `%chain`** — `%chain.entries` (or equivalent) does not include `%call`; `%call` is its own global.
+- **`%call` is not in `%chain`** — `%chain.entries` (or equivalent) does not include `%call`; `%call` is its own global. <!-- STALE: %chain.X syntax being reworked -->
 - **Each invocation has its own `%call`** — recursive calls see their own frame's `%call`, not the enclosing frame's.
 - **Passing a closure and reading `%call.blocks[0]`** — the receiver can inspect the block as a callable value.
 - **Self-gating example works** — a method comparing `%call.role != %self.object.role` and raising blocks a cross-role call from a non-owner.
 - **`%call.return` inside a bare block controller** — see [exceptions § ReturnException](https://puck.uno/requirements/exceptions/#returnexception) for the frame targeting.
 - **Call object passed as an argument returns from the passing frame** — `function &gup() &foo %call end; function &foo($c) $c.return 'x' end; &gup` returns `'x'`; foo's `.return` on gup's call object unwinds through foo's boundary and lands at gup's implicit catch.
-- **Call object stashed in `%chain` returns from the stashing frame** — `function &gup() %chain['c'] = %call; &foo end; function &foo() %chain['c'].return 'x' end; &gup` returns `'x'`; the chain read gives foo the same target-gup capability without an argument.
+- **Call object stashed in `%chain` returns from the stashing frame** — `function &gup() %chain['c'] = %call; &foo end; function &foo() %chain['c'].return 'x' end; &gup` returns `'x'`; the chain read gives foo the same target-gup capability without an argument. <!-- STALE: ambient-hash-slot moving to %amber -->
 - **Deep nesting is transparent** — a return-from-a-distance unwinds through any number of intermediate frames without their catches firing; the exception's target frame is the one owning the call object, not the closest enclosing frame.
 - **Stale call object raises** — invoking `.return` on a call object whose owning frame has already returned raises (exact class TBD); no silent no-op, no accidental unwind of a newer frame.
 - **`%call.method_class` inside a method body** — returns the class the method was defined on. Inside `class # foo; method &m() return %call.method_class end; end`, `$foo.new.m` returns the `foo` class value.

@@ -24,6 +24,7 @@ Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly
 
 `puts` and `print` are **bareword commands** (bwcs). They stay as bwc atoms through both CaspJ and CaspM — the transpiler does NOT rewrite them at parse time. The engine's `puts` / `print` handlers decide where the output goes at runtime.
 
+<!-- STALE: %chain.X syntax being reworked — the "chain slot" framing here predates the permission-only %chain model. -->
 In V1, both handlers route through `%chain.stdout` (or whatever the current chain frame has installed there). Future situations might route `puts` to `%chain.stderr` or elsewhere based on runtime context — leaving the resolution at the engine level rather than pinning it at parse time keeps that flexibility.
 
 Both take the same argument shape as an explicit `%stdout.puts` / `%stdout.print` method call (one or more expressions, comma-separated).

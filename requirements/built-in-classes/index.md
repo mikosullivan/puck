@@ -10,7 +10,7 @@
 }}
 ~~~
 
-Some classes are **built in** — the engine guarantees they exist at startup, and literals in Caspian source materialize into instances of them. A `42` in Caspian source is an instance of the number class; `'hi'` is an instance of the string class; `[1, 2, 3]` is an instance of the array class. Programs can rely on these being present without any `%fetch` call to download them.
+Some classes are **built in** — the engine guarantees they exist at startup, and literals in Caspian source materialize into instances of them. A `42` in Caspian source is an instance of the number class; `'hi'` is an instance of the string class; `[1, 2, 3]` is an instance of the array class. Programs can rely on these being present without any `%import` call to download them.
 
 ## Scope
 
@@ -38,13 +38,13 @@ The six classes every JSON document can contain — string, number, boolean, nul
 
 ## Testing
 
-- **Engine guarantees each primitive class at startup** — String, Number, Boolean, Null, Array, and Hash are each resolvable in a fresh runtime with no user code loaded and no `%fetch` calls made.
-- **Number literal materializes without `%fetch`** — evaluating `42` in an engine with the network disabled produces a Number instance and does not attempt any `%fetch` fetch.
-- **String literal materializes without `%fetch`** — same test with `'hi'`.
-- **Boolean literals materialize without `%fetch`** — same test with `true` and `false`.
-- **Null literal materializes without `%fetch`** — same test with `null`.
-- **Array literal materializes without `%fetch`** — same test with `[1, 2, 3]`.
-- **Hash literal materializes without `%fetch`** — same test with `{a: 1}`.
+- **Engine guarantees each primitive class at startup** — String, Number, Boolean, Null, Array, and Hash are each resolvable in a fresh runtime with no user code loaded and no `%import` calls made.
+- **Number literal materializes without `%import`** — evaluating `42` in an engine with the network disabled produces a Number instance and does not attempt any `%import` fetch.
+- **String literal materializes without `%import`** — same test with `'hi'`.
+- **Boolean literals materialize without `%import`** — same test with `true` and `false`.
+- **Null literal materializes without `%import`** — same test with `null`.
+- **Array literal materializes without `%import`** — same test with `[1, 2, 3]`.
+- **Hash literal materializes without `%import`** — same test with `{a: 1}`.
 - **`42.object.isa?(Number)`** is `true`.
 - **`'hi'.object.isa?(String)`** is `true`.
 - **`true.object.isa?(Boolean)`** is `true`.

@@ -10,7 +10,7 @@
 }}
 ~~~
 
-**Everything that comes into the Caspian runtime comes in through a faucet.** A faucet is any resource that pulls external values into the program — stdin, environment variables, command-line arguments, the filesystem, the network, the `%fetch` download surface. The name is a vocabulary choice: data flows in from outside; the faucet is where it comes out into the runtime. There are no other inbound paths.
+**Everything that comes into the Caspian runtime comes in through a faucet.** A faucet is any resource that pulls external values into the program — stdin, environment variables, command-line arguments, the filesystem, the network, the `%import` download surface. The name is a vocabulary choice: data flows in from outside; the faucet is where it comes out into the runtime. There are no other inbound paths.
 
 The complement is a **sink** — an object with methods that send information out to the world (filesystem write, query send, network output, `%stdout.puts`). Sinks live in their own doc at [sinks](https://puck.uno/requirements/plumbing/sinks/); this doc is the inbound side.
 
@@ -22,12 +22,13 @@ The **currently-known faucets** the V1 engine plans to expose:
 
 | Faucet | Surface | What flows in |
 |---|---|---|
+<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references throughout this file (table rows below, testing bullets further down) predate the permission-only %chain model. See [chain/index](https://puck.uno/requirements/chain/). -->
 | stdin | [`%chain.stdin`](https://puck.uno/requirements/chain/methods/stdin) / `%engine.stdin` | Bytes piped to the process. |
 | argv | [`%chain.argv`](https://puck.uno/requirements/chain/methods/argv) / `%engine.argv` | Command-line arguments. |
 | env | [`%chain.env`](https://puck.uno/requirements/chain/methods/env) | Environment variables. |
 | filesystem | [`%fs`](https://puck.uno/requirements/global-methods/fs) / `%chain.tmp` | File contents and directory listings read through dirjails. |
 | network | [`%chain.net`](https://puck.uno/requirements/chain/methods/net) | HTTP response bodies, socket reads, UDS data. |
-| downloads | [`%chain.puck`](https://puck.uno/requirements/chain/methods/puck) | Objects downloaded from URLs. |
+| downloads | [`%import`](https://puck.uno/requirements/import) | Objects downloaded from URLs. |
 
 Each row is a distinct faucet with its own role — see the next section.
 

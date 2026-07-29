@@ -10,9 +10,9 @@
 }}
 ~~~
 
-Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%fetch` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
+Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%import` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
 
-> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%fetch`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
+> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%import`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
 
 ## The syntax
 
@@ -44,7 +44,7 @@ When invoked as `$foo.$method` or `$foo.%('url')`, the applied function runs as 
 - **It IS a method.** Everything a class-defined method can do, this one can do too — including direct bucket access via `@field`.
 - **`%self`** is `$foo`.
 - **`%bucket` is fully accessible.** The method can read and write `@name`, `@count`, and any other bucket entry the same way a class-defined method can. No indirection through public methods.
-- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%('url')` runs as the `%chain.puck` faucet role. A locally-defined function that's applied as a method runs as the role that authored it.
+- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%('url')` runs as the `%chain.puck` faucet role. <!-- STALE: %chain.X syntax being reworked --> A locally-defined function that's applied as a method runs as the role that authored it.
 - **Objects created by the method are owned by that role.** If the method does `return {new_object}`, that hash is owned by the faucet role (per the creator-owns rule).
 - **`%call`** is the current call object, owned by the caller's role. Same as any method call.
 - **`%chain`** is the caller's chain (subject to the chain-grant model at role boundaries — same rules as any cross-role method call).

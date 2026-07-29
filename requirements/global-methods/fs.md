@@ -71,7 +71,7 @@ The host can choose whether `%fs` is present at all — typically via a launch-s
 
 ## `%engine` counterpart
 
-**`%fs` is a shortcut for `%engine.fs`.** The engine-side slot is the actual thing; `%fs` is the short-form sugar that matches the `%net` / `%stdout` / `%fetch` short-form family. Both are user-only; both reach the same underlying dirjail. See [engine § One slot per chain surface](../../engine/#one-slot-per-chain-surface).
+**`%fs` is a shortcut for `%engine.fs`.** The engine-side slot is the actual thing; `%fs` is the short-form sugar that matches the `%net` / `%stdout` / `%import` short-form family. Both are user-only; both reach the same underlying dirjail. See [engine § One slot per chain surface](../engine/#one-slot-per-chain-surface).
 
 (The older name `%engine.root` is retired.)
 

@@ -165,7 +165,7 @@ Roles themselves don't get traded, swapped, or modified. They're permanent ident
 
 ## How capabilities flow
 
-Capabilities are granted **per role**, not ambient. A grant attaches a surface (e.g., `%chain.net`) to a role; code in frames with that role can reach the surface.
+Capabilities are granted **per role**, not ambient. A grant attaches a surface (e.g., `%chain.net`) to a role; code in frames with that role can reach the surface. <!-- STALE: %chain.X syntax being reworked -->
 
 Grants flow down the call chain explicitly. When code calls into a different-role frame, the caller can pass capabilities through `%chain` — the new frame sees those capabilities as available; descendants see them too. When the caller doesn't pass a capability, the callee doesn't get it. The chain is the only way capabilities propagate.
 
@@ -196,7 +196,7 @@ Inside the block, `$agent.object.role` gains every capability the granting frame
 - **Can't delegate what you don't have.** The granting frame must possess each capability being delegated; delegation is bounded by what the granter currently holds.
 - **Snapshots at the call site.** The set of capabilities delegated is whatever the granting frame has at the moment of the `%role.delegate_to` call. Adding capabilities to the granting frame inside the block does not retroactively expand the delegation.
 - **Block-scoped only.** No persistent delegation — the extension lifts on block exit.
-- **Composes with capability grants that flow through the chain.** A delegation and a `%chain.X.grant` can both be in effect for the same descendant frame; the descendant sees the union.
+- **Composes with capability grants that flow through the chain.** A delegation and a `%chain.X.grant` can both be in effect for the same descendant frame; the descendant sees the union. <!-- STALE: %chain.X syntax being reworked -->
 
 ### Deferred: fine-grained grant and revoke
 
@@ -236,7 +236,7 @@ Each of these is a separate design question, not blocked on any single other spe
 - **`.current?` on the current frame's role reference is true** — `%role.current?` is `true`.
 - **`.current?` on a non-current role reference is false** — points to a different role than the frame is running as.
 - **A string literal's `.object.role` matches the creating frame's role** — literals in user code are user-owned.
-- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.object.role != %role`.
+- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.object.role != %role`. <!-- STALE: %chain.X syntax being reworked -->
 - **Faucet roles never run user program frames** — provenance only.
 - **`%engine.roles` enumerates every registered role** — returns a list of role references.
 - **`%engine.roles` from a non-user frame raises** — the blanket gate applies.
@@ -252,9 +252,9 @@ Each of these is a separate design question, not blocked on any single other spe
 - **Can't delegate what you don't have** — capabilities not held by the granting frame don't appear at the target either.
 - **`%role.delegate_to`'s target lookup is by role identity** — if the target role never appears in the call tree, the delegation sits unused; no error.
 - **`%role.delegate_to` is block-scoped only** — after the block ends, target loses the delegation.
-- **Delegation composes with `%chain.X.grant`** — a descendant sees the union of both paths.
+- **Delegation composes with `%chain.X.grant`** — a descendant sees the union of both paths. <!-- STALE: %chain.X syntax being reworked -->
 - **`%role` inside a downloaded object's method returns the object's owning role** — not `user`.
 - **A role reference obtained via `.object.role` and one via `%role` compare equal when they name the same role** — regardless of retrieval path.
 - **`%role.name` for a faucet role is a stable string identifier** — same value across reads.
-- **`%role` does not appear on `%chain`** — reading `%chain.role` raises or is undefined; `%role` is a language primitive.
+- **`%role` does not appear on `%chain`** — reading `%chain.role` raises or is undefined; `%role` is a language primitive. <!-- STALE: %chain.X syntax being reworked -->
 - **A role held in a variable and later used for delegation behaves the same as inline access** — capture doesn't change semantics.

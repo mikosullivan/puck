@@ -45,4 +45,4 @@ Sub-pages will fill these in as they get written:
 
 - [roles](https://puck.uno/requirements/roles/), [chain](https://puck.uno/requirements/chain/), [plumbing](https://puck.uno/requirements/plumbing/) — what the constructs DO.
 - [global-methods](https://puck.uno/requirements/global-methods/) — per-method spec of the `%X` surfaces.
-- [chain/methods/](https://puck.uno/requirements/chain/methods/) — per-method spec of each `%chain.X`.
+- [chain/methods/](https://puck.uno/requirements/chain/methods/) — per-method spec of each `%chain.X`. <!-- STALE: %chain.X syntax being reworked -->
