@@ -109,7 +109,7 @@ These are project-wide, not personal preferences — follow them in any file you
 
 ## Running an audit of requirements/
 
-When Miko says **"audit"**, **"run an audit"**, **"audit consistency"**, **"update consistency"**, **"rewrite audit.md"**, or an obvious equivalent, follow the protocol below. This is a specific, ordered workflow — not an ad-hoc "look for problems" pass. [audit.md](https://puck.uno/documentation/requirements/audit) itself is the dashboard rendered from live GitHub issues; the audit process files/closes those issues.
+When Miko says **"audit"**, **"run an audit"**, **"audit consistency"**, **"update consistency"**, **"rewrite audit.md"**, or an obvious equivalent, follow the protocol below. This is a specific, ordered workflow — not an ad-hoc "look for problems" pass. [audit.md](https://puck.uno/requirements/audit) itself is the dashboard rendered from live GitHub issues; the audit process files/closes those issues.
 
 ### Ordered steps
 

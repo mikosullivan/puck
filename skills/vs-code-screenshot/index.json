@@ -1,0 +1,417 @@
+{
+	"vibecode": {
+		"doc": "skill_vs_code_screenshot",
+		"role": "skill definition for generating cartoony-but-recognizable SVG depictions of Visual Studio Code showing a Language-Server feature in action, for use in documentation that needs to illustrate IDE behavior without real screenshots",
+		"status": "working draft — exercised once for the LSP hover example",
+		"key_concepts": ["cartoony_simplification", "one_feature_per_image",
+			"dark_theme_default", "vs_code_chrome_template", "lsp_feature_overlay",
+			"reusable_svg_snippets", "explicit_x_for_indentation",
+			"canonical_doc_link_in_every_overlay", "caspian_syntax_color_map"]
+	},
+
+	"purpose": "Produce an SVG image that reads as 'this is VS Code' at a glance and showcases one specific Language-Server feature (hover, completion, diagnostic, go-to-definition, document symbols, etc.) in clear focus.",
+
+	"when_to_use": "Whenever documentation needs to illustrate what an editor/LSP feature looks like to the end user. Cheaper, more maintainable, and version-stable compared to real screenshots that bind the docs to a particular VS Code release. Especially useful when the underlying feature exists in spec but isn't yet shipped — you can show the intended UX without needing the implementation.",
+
+	"out_of_scope": [
+		"Real pixel-accurate VS Code mimicry — that's a graphics-design task, not what this skill targets.",
+		"Animated demos or screen recordings (use a different medium).",
+		"Light-theme variants until a doc actually needs one (dark is the V1 default per this skill).",
+		"Multi-pane / split-editor layouts (one editor pane per image).",
+		"Showing more than one LSP feature in a single image — focus suffers.",
+		"Non-VS-Code editors (Vim, Emacs, Helix, etc.) — possible but each editor needs its own skill; don't shoehorn into this one.",
+		"Live screenshots — if you need an actual screenshot, take one; this skill is for the synthetic case."
+	],
+
+	"process": [
+		"Decide which LSP feature to depict. One per image. Match it to the doc section that will host the image.",
+		"Pick a tight Caspian code snippet (≤8 lines, often 4–5) that plausibly triggers the feature. Avoid noise unrelated to the feature.",
+		"Start from templates/window-frame.svg. Save the working copy in the destination doc's directory (e.g., requirements/lsp/hover-role.svg), not in skills/.",
+		"Replace the placeholders in the window frame: filename in title bar and tab, sidebar file listing (mark the active file with the selection highlight), breadcrumbs row.",
+		"Render the code lines in the editor content zone using the syntax-color palette below. Use a monospace font (ui-monospace stack). Default line height 23 px starting at y=120.",
+		"For indented lines, set the text element's `x` attribute explicitly — DO NOT use leading spaces inside <tspan>, they get collapsed by SVG renderers. See svg_authoring_gotchas.",
+		"Add a visual emphasis on the target token: dashed-outline rect, cursor mark, or hover halo. The reader's eye should land on the token and then the overlay in that order.",
+		"Layer the LSP overlay (tooltip / popup / squiggle) from templates/. Position it adjacent to the target token with ~10–20 px breathing room, and inside the editor pane.",
+		"Add the canonical puck.uno doc link inside the overlay. Reinforces the 'click for docs' affordance shown in the spec.",
+		"Run the iteration_checklist below before declaring done.",
+		"Reference the SVG from the doc using a markdown image link with descriptive alt text: ![Diagram: ...](filename.svg)."
+	],
+
+	"principles": {
+		"recognizability_over_accuracy": "Pixel-perfect VS Code mimicry is not the goal. Readers should think 'that's VS Code-ish' instantly and then focus on the LSP overlay. Skip details that don't reinforce that recognition.",
+		"one_feature_per_image": "Don't try to show multiple LSP features in one diagram. Focused diagrams read faster. If the doc needs to show several features, use several SVGs.",
+		"dark_theme_by_default": "VS Code's dark theme contrasts cleanly with bright syntax-highlight colors and makes overlays pop. Light theme works too but contrasts less with the overlay; defer until a doc actually needs it.",
+		"overlay_inside_the_editor_pane": "Tooltips, completion popups, and squiggles belong inside the editor area (x=270–920 in the default frame). Letting them spill into the sidebar reads as a layout mistake, not as 'overlay floating above editor'.",
+		"breathing_room_around_overlays": "Overlays need ~10–20 px gap from the token they describe. Without gap they look glued; with too much gap they look detached.",
+		"link_to_canonical_docs_inside_overlay": "Every overlay should end with a 'puck.uno/...' doc-link line. Reinforces both the visual model (LSP shows docs) and the convention that puck.uno is the canonical source of truth.",
+		"keep_chrome_simple": "Activity-bar icons are simplified glyphs, not faithful Codicons. Status bar carries only the segments that matter to the story ('caspian lsp ready' is worth a callout; the encoding indicator is filler).",
+		"file_lives_next_to_the_doc_that_references_it": "The finished SVG lives in the same directory as the .md that references it (so the markdown image-link is a bare filename). Templates live in skills/vs-code-screenshot/templates/ and are reference material, not deployable assets.",
+		"reuse_existing_caspian_examples_when_possible": "If the host doc already has a Caspian snippet, reuse it in the screenshot instead of inventing a parallel example. Keeps the doc internally consistent.",
+		"indent_via_x_coordinate_not_leading_spaces": "SVG renderers collapse leading whitespace inside <text>/<tspan> elements — `    drop_safeguards()` will render as `drop_safeguards()` with no visible indent. Express indentation by setting the text element's `x` attribute. At the default 17px monospace, char width is roughly 10 px, so 4-space indent = base_x + 40. xml:space=preserve also works but explicit x is easier to read and doesn't risk other whitespace surprises.",
+		"method_calls_get_an_explicit_receiver": "Bare function calls (`drop_safeguards()`) read as standalone operations and can suggest implicit globals. Prefer `$receiver.method_name()` form in screenshots — it shows method dispatch concretely and matches typical Caspian code in the wild. Pick a plausible receiver name (`$manager`, `$db`, etc.) rather than leaving it implicit.",
+		"every_token_uses_a_palette_color": "Don't eyeball syntax colors. Match every Caspian construct to the caspian_syntax_color_map below. Consistency across diagrams matters more than per-diagram artistic flourishes.",
+		"caspian_style_preferences_apply_in_screenshots_too": "Code shown in screenshots follows the same style rules as code in docs/examples: lowercase variables, hash spacing with one space after colon, `%(uns)` short form for lookups, implicit return, etc. See caspian_code_style_in_screenshots."
+	},
+
+	"canvas": {
+		"width": 880,
+		"height": 420,
+		"layout_zones": {
+			"title_bar": {"x": 0, "y": 0, "width": 880, "height": 30},
+			"activity_bar": {"x": 0, "y": 30, "width": 44, "height": 368},
+			"sidebar": {"x": 44, "y": 30, "width": 180, "height": 368},
+			"tab_bar": {"x": 224, "y": 30, "width": 656, "height": 34},
+			"breadcrumbs": {"x": 224, "y": 64, "width": 656, "height": 22},
+			"editor": {"x": 224, "y": 86, "width": 656, "height": 312},
+			"status_bar": {"x": 0, "y": 398, "width": 880, "height": 22}
+		},
+		"editor_text_origin": {"x": 270, "y_first_line": 120, "line_height": 28},
+		"gutter_text_origin": {"x": 240, "y_first_line": 120, "line_height": 28},
+		"code_font_size": 17,
+		"monospace_char_width_at_17px": "approx 10 px; use 10 for indent math (4-space indent = +40 px)",
+		"sizing_history": "Original canvas was 920×600 with 13px code font; trimmed to 880×420 with 17px on 2026-06-05 after Miko called for bigger text and less empty space. Net effect at fixed display width: roughly 37% bigger rendered text."
+	},
+
+	"palette": {
+		"chrome": {
+			"window_bg": "#1e1e1e",
+			"title_bar": "#3c3c3c",
+			"activity_bar": "#333333",
+			"sidebar": "#252526",
+			"tab_bar": "#2d2d2d",
+			"active_tab": "#1e1e1e",
+			"tab_accent": "#0078d4",
+			"selection_row": "#37373d",
+			"selection_accent": "#0078d4",
+			"status_bar": "#007acc",
+			"gutter_text": "#858585",
+			"overlay_bg": "#252526",
+			"overlay_border": "#454545",
+			"overlay_divider": "#3c3c3c"
+		},
+		"syntax_dark_plus": {
+			"default_text": "#d4d4d4",
+			"keyword": "#c586c0",
+			"variable": "#9cdcfe",
+			"string": "#ce9178",
+			"number": "#b5cea8",
+			"comment": "#6a9955",
+			"function_call": "#dcdcaa",
+			"system_surface": "#c586c0",
+			"type": "#4ec9b0",
+			"constant": "#569cd6"
+		},
+		"diagnostic_severity": {
+			"error": "#f48771",
+			"warning": "#cca700",
+			"info": "#3794ff",
+			"hint": "#75beff"
+		},
+		"link": "#3794ff",
+		"docs_emoji_or_glyph": "📖"
+	},
+
+	"caspian_syntax_color_map": {
+		"description": "Token-by-token map of Caspian constructs to syntax_dark_plus palette entries. When in doubt, default to default_text rather than inventing a new color.",
+		"identifiers": {
+			"$variable": "variable (#9cdcfe) — every $-prefixed local/scope variable",
+			"@instance_var": "variable (#9cdcfe) — instance fields read via @ sigil",
+			"$variable_in_string_interpolation": "variable (#9cdcfe) — even inside 'hello, $name'",
+			"method_name_in_call": "function_call (#dcdcaa) — the identifier after a dot in $foo.bar()",
+			"function_name_in_definition": "function_call (#dcdcaa) — the name after `function &name`",
+			"&function_reference": "function_call (#dcdcaa) — &-prefixed function references"
+		},
+		"sigils_and_system_surfaces": {
+			"%role": "system_surface (#c586c0)",
+			"%call": "system_surface (#c586c0)",
+			"%fetch": "system_surface (#c586c0)",
+			"%bucket": "system_surface (#c586c0)",
+			"%chain": "system_surface (#c586c0)",
+			"%engine": "system_surface (#c586c0)",
+			"%(uns)_short_form": "system_surface (#c586c0) for the %, default_text for [...], string (#ce9178) for the contents",
+			"any_other_%name": "system_surface (#c586c0)"
+		},
+		"keywords": {
+			"control_flow": "keyword (#c586c0) — if, elsif, else, end, for, while, do, loop, break, continue, return, yield",
+			"declarations": "keyword (#c586c0) — function, closure, class, const",
+			"booleans_and_null": "constant (#569cd6) — null, true, false",
+			"logical_operators": "keyword (#c586c0) — and, or, not, in",
+			"class_body_keywords": "keyword (#c586c0) — on_close, on_create, on_freeze, etc."
+		},
+		"literals": {
+			"strings": "string (#ce9178) — single-quoted or double-quoted; includes the quotes themselves",
+			"numbers": "number (#b5cea8) — integers, floats, all bases",
+			"string_interpolation_braces": "default_text (#d4d4d4) for ${...}, contents follow their own rules"
+		},
+		"comments": {
+			"line_comment": "comment (#6a9955) — # everything to end of line",
+			"vibecode_block": "comment (#6a9955) for the % and the heredoc markers; JSON inside follows JSON syntax-highlighting if available, otherwise default_text"
+		},
+		"class_references": {
+			"uns_reference": "type (#4ec9b0) — `puck.uno/foo`, `myapp.com/bar` (the full URL string)",
+			"class_in_function_body": "default_text (#d4d4d4) when used as a value/argument; type (#4ec9b0) when in a declaration context"
+		},
+		"operators": {
+			"arithmetic_comparison_assignment": "default_text (#d4d4d4) — =, ==, !=, <, >, +, -, *, /, %, =>, etc.",
+			"dot_for_method_dispatch": "default_text (#d4d4d4) — the . in $foo.bar"
+		},
+		"punctuation": {
+			"parens_braces_brackets_commas_colons_semicolons": "default_text (#d4d4d4)"
+		}
+	},
+
+	"caspian_code_style_in_screenshots": {
+		"description": "Code shown in screenshots should follow Caspian's conventional style. Aligns screenshots with docs and example programs.",
+		"rules": {
+			"lowercase_variables": "Never use capital letters in variable names. `$user`, `$db_connection`, NOT `$User` or `$DBConnection`.",
+			"hash_spacing": "One space after colons in hash literals: `{lazy: true}`, NOT `{lazy:true}`.",
+			"puck_lookup_short_form": "Prefer `%(uns)` over the verbose `%fetch(uns)` in code samples.",
+			"implicit_return": "Use implicit last-value return; reserve `%call.return` for actual early-exit cases.",
+			"explicit_method_receivers": "Always `$foo.bar()`, not bare `bar()`, in screenshots (see method_calls_get_an_explicit_receiver principle).",
+			"vibecode_in_real_code": "Real Caspian source uses `vibecode` heredoc comments at the top of each unit. Screenshots can omit these for space, but if the screenshot is showing 'real-looking' code (not just a 2-line snippet), include one.",
+			"utf8_throughout": "Caspian is UTF-8 by guarantee; emojis and non-ASCII characters render fine. Don't shy away from them in strings if the example wants them.",
+			"return_idiom_in_examples": "Don't show explicit `return` unless the example is specifically about early-exit semantics; prefer implicit return."
+		}
+	},
+
+	"templates": {
+		"window_frame": {
+			"file": "templates/window-frame.svg",
+			"purpose": "Empty VS Code window — title bar, activity bar, sidebar with one placeholder file, tab bar, breadcrumbs, editor content zone, status bar. Drop editor content into the zone marked in the template comments."
+		},
+		"hover_tooltip": {
+			"file": "templates/hover-tooltip.svg",
+			"purpose": "Floating tooltip overlay for `textDocument/hover` results. Header line with token + kind, 3-line description, optional type/signature line, footer doc link."
+		},
+		"completion_popup": {
+			"file": "templates/completion-popup.svg",
+			"purpose": "IntelliSense-style suggestion list for `textDocument/completion`. Icon glyph + symbol name + right-aligned type hint per row; first row pre-selected with the dark-blue highlight."
+		},
+		"diagnostic_squiggle": {
+			"file": "templates/diagnostic-squiggle.svg",
+			"purpose": "Wavy under-line decoration for syntax/semantic errors. Severity color swappable (red/yellow/blue). Optional message badge."
+		}
+	},
+
+	"feature_specific_recipes": {
+		"hover": {
+			"trigger": "Cursor parked on an identifier or `%`-surface.",
+			"composition": "Window frame + code with the hovered token marked + hover-tooltip overlay placed below-right of the token.",
+			"emphasis": "Dashed-outline rect around the hovered token. Overlay positioned ~30 px below the token's baseline so it doesn't visually overlap.",
+			"content_in_overlay": "Token name (in syntax color) + kind label + 2-4 line description + optional type/signature + canonical doc link.",
+			"common_targets": ["$variable (shows source line + class)", "%sigil (shows surface description)", "method name (shows signature)", "class URL reference (shows class definition link)"]
+		},
+		"completion": {
+			"trigger": "Cursor at end of a partial token (e.g., `$db.spl`).",
+			"composition": "Window frame + code line with partial token + cursor caret + completion-popup overlay below.",
+			"emphasis": "Caret bar at cursor position (small dark-blue vertical line). First row of the popup selected.",
+			"content_in_popup": "4–8 suggestions; mix variable/function/keyword icons. Right-align type hints. Selected row gets a docs preview at the bottom.",
+			"icon_legend": {"ƒ": "function/method", "$": "variable", "⌘": "keyword", "⊕": "class/type", "□": "module"}
+		},
+		"diagnostic": {
+			"trigger": "Code contains a syntax or semantic error.",
+			"composition": "Window frame + code with the bad token + squiggle under the token + (optional) tooltip showing the diagnostic message.",
+			"emphasis": "Red squiggle for errors, yellow for warnings, blue for info. Squiggle width matches token width exactly.",
+			"content_in_tooltip": "Severity icon + diagnostic message + (optional) quick-fix hint + canonical doc link to the relevant spec section.",
+			"problems_panel_variant": "If showing the Problems panel (bottom-of-screen panel), it gets its own zone and pushes the editor up. Out of scope for a 600-px canvas — use a wider/taller canvas if you need it."
+		},
+		"go_to_definition": {
+			"trigger": "Cursor on a reference; user invokes 'Go to definition' (Ctrl+click or F12).",
+			"composition": "Show the cursor on the reference + a small floating peek panel showing the definition site, OR show the editor jumping to the definition line with the line highlighted.",
+			"emphasis": "Dashed outline on the reference; solid highlight on the definition line.",
+			"content_in_peek": "File path header + 3–5 lines of code centered on the definition."
+		},
+		"document_symbols": {
+			"trigger": "User opens the outline view or hits 'Go to symbol in file'.",
+			"composition": "Hide the file-explorer sidebar; show the outline view in its place. List functions/classes/named expressions with appropriate icons. Selected symbol highlighted; corresponding line in editor also highlighted.",
+			"emphasis": "Two-way visual link between the outline and the editor (matching highlight colors)."
+		},
+		"folding": {
+			"trigger": "User collapses a block region.",
+			"composition": "Code with a collapsed region shown as a single line with `…` and a small folded-block marker in the gutter.",
+			"emphasis": "Replace the multi-line block with a single line plus a `▶` gutter icon. The line above and below should be the unfolded code surrounding the fold."
+		},
+		"signature_help": {
+			"trigger": "Cursor positioned inside a function call's parentheses; user is typing arguments.",
+			"composition": "Window frame + code with the call + a small floating tooltip-style box above (or below) showing the function signature with the current parameter highlighted.",
+			"emphasis": "The current parameter in the signature is bold/highlighted (use #ffffff or a brighter version of the variable color). Other parameters are dimmer.",
+			"content_in_overlay": "Function name + parameter list with current param highlighted + 1-line description of the current param + doc link."
+		},
+		"code_lens": {
+			"trigger": "Above certain code constructs (function definitions, class definitions), the editor shows a small action row.",
+			"composition": "Window frame + code with a small italic/light-colored line above a function definition showing actions like '3 references | Run | Debug'.",
+			"emphasis": "The lens text is dimmer than code text (around #4d4d4d to #6a6a6a) and italic, in a slightly smaller font."
+		},
+		"inlay_hints": {
+			"trigger": "Editor shows inferred types/parameter names inline within the code.",
+			"composition": "Window frame + code with small light-gray text inline showing inferred info — e.g., `$user.greet(:name 'Aslan')` where `:name` is the inlay hint shown in gray.",
+			"emphasis": "Inlay hints are visually distinct from code: lighter color (#7a7a7a), smaller font (~11 px vs the 13 px code), often with a subtle background tint (#2a2a2a)."
+		},
+		"document_highlight": {
+			"trigger": "Cursor on a symbol; editor highlights every other occurrence of the same symbol in the file.",
+			"composition": "Window frame + code with the symbol shown multiple times. Cursor's instance has a strong highlight (cursor + box); other instances have a subtle box (#2d4452 or similar low-saturation accent).",
+			"emphasis": "All instances clearly visually linked but the cursor's instance is unmistakably the 'active' one."
+		},
+		"on_type_formatting": {
+			"trigger": "User types a keyword that triggers auto-indent (typically `end`).",
+			"composition": "Two side-by-side panels showing before/after: 'before' has misaligned `end`; 'after' shows it snapped into place. Or single image with an arrow indicating the snap.",
+			"emphasis": "Arrow or motion line showing the `end` moving to align with its opening keyword."
+		},
+		"breadcrumb_navigation": {
+			"trigger": "User clicks a breadcrumb segment to navigate within or across files.",
+			"composition": "Window frame with the breadcrumb bar prominently visible; one segment showing a dropdown of siblings.",
+			"emphasis": "The breadcrumb's dropdown menu styled like the file explorer."
+		}
+	},
+
+	"svg_authoring_gotchas": {
+		"whitespace_collapses_inside_text": "Leading and consecutive whitespace inside <text>/<tspan> elements gets collapsed by SVG renderers. `    code` becomes `code`. Fix: set x= attribute explicitly for indented lines.",
+		"font_fallback_matters": "Don't specify a single font that may not exist on the reader's system. Use a stack: `ui-monospace, 'SF Mono', Menlo, Consolas, monospace` for code; `system-ui, -apple-system, 'Segoe UI', sans-serif` for UI chrome.",
+		"emoji_rendering_is_unpredictable": "Emoji like 📖 may render as color images on some systems and as monochrome glyphs on others. They will render at slightly different sizes. Fine for decorative use; don't rely on them for layout-critical positioning.",
+		"viewbox_vs_explicit_dimensions": "Use viewBox without width/height attributes so the SVG scales to fit its container. `<svg viewBox=\"0 0 920 600\">` not `<svg width=\"920\" height=\"600\">`. Lets the doc renderer (Orlando) decide display size.",
+		"drop_shadows_need_a_filter_definition": "Use <filter><feDropShadow/></filter> inside <defs>, referenced via filter=\"url(#shadow-id)\". Don't rely on CSS filters; some SVG-to-PNG converters drop them.",
+		"text_alignment_uses_text_anchor": "For centered text, use text-anchor=\"middle\" and position the text element at the center x-coordinate. For right-aligned text, text-anchor=\"end\" with x at the right edge.",
+		"color_inheritance_quirks": "fill on <text> applies to all child <tspan> unless they override. Stacking colors inside a tspan? Each tspan gets its own fill attribute.",
+		"avoid_inline_styles_on_each_element": "Repeated styles bloat the file. Use a <style> block inside <defs> or class attributes for common patterns.",
+		"check_for_unclosed_tags": "Browsers tolerate unclosed tags less in SVG than HTML. Always close every element. Use xml.etree.ElementTree.parse() (Python) or `xmllint` to validate before commit."
+	},
+
+	"chrome_variations": {
+		"description": "When to show vs hide chrome elements.",
+		"always_show": ["title bar", "editor pane", "status bar"],
+		"usually_show": ["activity bar", "sidebar (file explorer)", "tab bar"],
+		"hide_when_distracting": {
+			"sidebar": "Hide when the feature has nothing to do with files (e.g., a focused completion popup screenshot). Replace with a wider editor pane.",
+			"breadcrumbs": "Hide when the feature isn't about navigation. Frees up vertical space for code.",
+			"minimap": "Never include — adds noise without informative value at this canvas size."
+		},
+		"swap_when_relevant": {
+			"sidebar_to_outline": "For document_symbols feature, replace the file explorer with the outline view.",
+			"sidebar_to_search": "For search-based features (find-references), show the search results view in the sidebar slot.",
+			"sidebar_to_git": "For git-related features, show the source-control view."
+		}
+	},
+
+	"annotation_patterns": {
+		"description": "When and how to add annotation overlays beyond the standard LSP overlay.",
+		"callout_arrow": "Use sparingly — a small curved arrow with a short text label, pointing from the feature to its description. Only when the feature is subtle (e.g., a tiny cursor mark that needs to be called out).",
+		"numbered_markers": "Circles with numbers (① ② ③) when the screenshot needs to be read in a specific order. Use only when sequence matters — most LSP-feature screenshots don't.",
+		"before_after_split": "For features that show a state change (e.g., on-type formatting), use a vertical line splitting the editor pane in half with 'before' and 'after' labels.",
+		"avoid_overuse": "Each annotation competes with the feature for the reader's attention. If the screenshot needs more than one annotation to be understood, the screenshot is probably trying to show too much."
+	},
+
+	"rendering_and_verification": {
+		"preview_in_browser": "Open the SVG file directly in any browser. Chrome, Firefox, Safari all render SVG; differences are usually negligible.",
+		"preview_in_vscode": "VS Code's built-in SVG preview (right-click → 'Open Preview') is convenient and works without leaving the editor.",
+		"validate_xml": "Run `python3 -c \"import xml.etree.ElementTree as ET; ET.parse('file.svg')\"` to catch parse errors. SVG is XML; malformed will throw.",
+		"check_file_size": "`stat -c%s file.svg`. Soft ceiling: 20 KB. Larger usually means too much chrome detail.",
+		"check_at_actual_render_size": "The docs site may render the SVG at less than 100% size. Open in browser at 50% zoom to see how it'll look on smaller screens.",
+		"compare_against_an_existing_example": "Put your draft next to requirements/lsp/hover-role.svg and check that the visual style matches."
+	},
+
+	"iteration_checklist": {
+		"description": "Run through this list before committing the SVG.",
+		"items": [
+			"Does the title bar show the right filename?",
+			"Does the active tab show the right filename?",
+			"Does the sidebar show the active file selected (left accent bar + row background)?",
+			"Do all code lines use palette colors per the caspian_syntax_color_map?",
+			"Are indented lines using explicit x= (not leading whitespace)?",
+			"Is the target token visually emphasized (dashed box, caret, halo)?",
+			"Is the overlay positioned with ~10–20 px breathing room from the target?",
+			"Does the overlay stay inside the editor pane (x=270–920)?",
+			"Does the overlay include a canonical puck.uno doc link?",
+			"Is the status bar text relevant (showing 'caspian lsp ready' or similar)?",
+			"Does the SVG parse as valid XML?",
+			"Is the file size < 20 KB?",
+			"Is the SVG saved next to the doc that references it, not in skills/?",
+			"Does the markdown image-link in the doc use the bare filename and descriptive alt text?"
+		]
+	},
+
+	"naming_convention": {
+		"file_name": "Use kebab-case describing the depicted feature + target. Examples: `hover-role.svg`, `completion-string-methods.svg`, `diagnostic-unknown-variable.svg`, `goto-def-function.svg`.",
+		"alt_text": "Pattern: 'Diagram: VS Code editor showing [user action], with [overlay type] displaying [overlay content].' Keeps it descriptive enough for screen readers without padding.",
+		"caption_in_doc": "Don't add a markdown caption beneath the image — alt text is enough. The surrounding prose should describe what the screenshot demonstrates."
+	},
+
+	"size_optimization": {
+		"target": "Under 20 KB per SVG.",
+		"common_bloat_sources": [
+			"Per-element style attributes instead of <style> block or class.",
+			"Unnecessary precision in coordinates — round to integers where possible.",
+			"Embedded fonts (don't).",
+			"Embedded raster images (don't).",
+			"Inline JavaScript (definitely don't).",
+			"Comments in the SVG body (fine for templates; trim from the working copy)."
+		],
+		"if_over_20_kb": "Probably the chrome is too detailed (real Codicons, gradients, etc.). Strip back to simplified glyphs."
+	},
+
+	"accessibility": {
+		"alt_text": "Always provide descriptive alt text in the markdown image-link. Pattern in naming_convention.alt_text above.",
+		"color_contrast": "VS Code's dark theme palette is generally accessible (WCAG AA for foreground/background pairs in syntax highlighting). The diagnostic colors are NOT all colorblind-safe — red vs yellow vs blue is the only differentiator. If colorblindness is a concern for a specific doc, add a label or icon alongside the squiggle.",
+		"svg_inline_vs_img_tag": "Markdown image-link renders SVG as <img>, which loses any inline aria-labels inside the SVG. Alt text on the markdown link is what screen readers will use."
+	},
+
+	"versioning_strategy": {
+		"vs_code_redesigns": "When VS Code visibly redesigns elements we depict (rare but happens — e.g., title bar style changed in 2024), update window-frame.svg in templates/ and propagate to existing SVGs as time allows. Don't block on a full sweep; update lazily.",
+		"feature_changes": "If the LSP feature's behavior changes (e.g., hover layout adds a new field), update the relevant feature_specific_recipe in this skill and the next screenshot built will reflect the change. Existing screenshots can age out unless they actively mislead.",
+		"breaking_changes_to_this_skill": "If a principle here gets reversed (e.g., we decide to support light theme everywhere), bump status from 'working draft' to 'v2' and note the change in the vibecode block's key_concepts so future builders see it immediately."
+	},
+
+	"examples": [
+		{
+			"name": "Hover on %role",
+			"file_path": "requirements/lsp/hover-role.svg",
+			"referenced_from": "requirements/lsp/index.md",
+			"feature": "hover",
+			"target_token": "%role (line 1)",
+			"overlay_content": "Token name + 'system surface' kind label + 3-line description + return type + puck.uno docs link",
+			"notes": "Demonstrates the core hover use case and the keyword/sigil-hover low-hanging-fruit feature. The code is short enough to read at a glance; the elevated/safeguards branching with $manager method calls is just context to make %role's role-of-current-code framing concrete."
+		}
+	],
+
+	"failure_modes": [
+		"Trying to match VS Code pixel-for-pixel — wastes time and breaks when VS Code redesigns. Cartoony simplification is the contract.",
+		"Putting too much code on screen — readers stop reading. Eight lines is a soft ceiling.",
+		"Forgetting the dashed-outline / caret / squiggle emphasis on the target token — without it the reader's eye doesn't know where to land.",
+		"Overlay overlapping the target token — leave breathing room.",
+		"Overlay running off the canvas — check the right edge.",
+		"Color outside the palette — keeps the look consistent across diagrams.",
+		"Forgetting the canonical doc link in the overlay — undercuts the 'puck.uno is the source of truth' convention.",
+		"Using leading whitespace inside tspan for indentation — renders flat. Use explicit x= instead.",
+		"Bare function calls without an explicit receiver — reads as implicit globals. Use $receiver.method() form.",
+		"Capitalized variable names — violates Caspian style. Always lowercase $variables.",
+		"Including a minimap — adds noise; skip it.",
+		"Annotating with multiple arrows and numbered markers when the screenshot should speak for itself."
+	],
+
+	"success_criteria": [
+		"A reader unfamiliar with the doc identifies VS Code, Caspian, and the depicted feature in under 3 seconds.",
+		"The feature being shown is unambiguous — no guessing which LSP capability this is meant to illustrate.",
+		"The image still reads cleanly at half-size (some viewers will render it small).",
+		"The SVG file is < 20 KB. Larger means the diagram is doing too much.",
+		"Every code token uses a color from the caspian_syntax_color_map — no eyeballing.",
+		"The overlay includes a canonical puck.uno doc link.",
+		"The iteration_checklist passes top to bottom."
+	],
+
+	"tools_to_use": [
+		"Any SVG-capable text editor — the format is hand-authorable.",
+		"A browser (Chrome/Firefox/Safari) to preview the output.",
+		"VS Code's built-in SVG preview ('Open Preview' from the right-click menu) for in-editor checking.",
+		"Templates in skills/vs-code-screenshot/templates/ as starting points.",
+		"`python3 -c \"import xml.etree.ElementTree as ET; ET.parse('file.svg')\"` for XML validation.",
+		"`stat -c%s file.svg` for file-size check."
+	],
+
+	"related_skills": {
+		"description": "Other skills/conventions this one composes with.",
+		"items": {
+			"caspian_code_style": "Same style rules as code in docs; this skill restates the ones most relevant in screenshots. Canonical rules live in Miko's formatter config at documentation/ecoverse/formatting/miko.json.",
+			"file_links_as_puck_urls": "All doc links in overlays use puck.uno URLs — same rule as everywhere else in this codebase.",
+			"vibecode_blocks": "If this skill ever gets a Caspian wrapper class or formal validator, the source-of-truth would be a vibecode block at the top of index.json (which it already has)."
+		}
+	}
+}

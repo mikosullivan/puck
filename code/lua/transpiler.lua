@@ -1020,10 +1020,9 @@ parse_expression = function(s)
 	end
 
 	-- Bare-word call as expression, parens form: `name(args)`. Nested BWC
-	-- calls like `private(method &foo() end)` and `autorun(private(...))`
-	-- land here. Statement position handles the same shape via the
-	-- bareword-BWC path in transpile_statement; this is the expression-position
-	-- equivalent.
+	-- calls like `private(method &foo() end)` land here. Statement position
+	-- handles the same shape via the bareword-BWC path in transpile_statement;
+	-- this is the expression-position equivalent.
 	local bare_call_name, bare_call_paren =
 		s:match("^([%w_]+)%s*(%b())$")
 
@@ -2094,9 +2093,9 @@ local function transpile_statement(stmt)
 
 	-- BWC-call statement (fallback). Bareword identifier at statement start,
 	-- optionally followed by args. Covers class-body DSL commands (field,
-	-- private, inherits, abstract, main, autorun) and any user-defined DSL
-	-- BWC. Placed near the end so specific patterns (return, sigiled assigns,
-	-- method calls, etc.) get first crack.
+	-- private, inherits, abstract) and any user-defined DSL BWC. Placed near
+	-- the end so specific patterns (return, sigiled assigns, method calls,
+	-- etc.) get first crack.
 	local bwc_paren_name, bwc_paren = stmt:match("^([%w_]+)%s*(%b())$")
 
 	if bwc_paren_name then

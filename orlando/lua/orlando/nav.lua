@@ -1,19 +1,22 @@
 --[[
 {
   "module": "orlando.nav",
-  "role": "Walk the documentation directory and produce the sidebar HTML — nested <details>/<ul>/<li> reflecting the directory tree, with the current page highlighted.",
+  "role": "Walk every configured doc-tree directory (documentation/, requirements/, etc.) and produce the sidebar HTML — nested <details>/<ul>/<li> reflecting each tree, with the current page highlighted.",
   "exports": {
     "build": "current_md_path -> sidebar HTML string"
   },
-  "url_convention": "URLs match Orlando's routing: /foo/bar (no .md, no .html). The current-page detection compares against the current_md_path argument; if it matches, the entry is rendered as bold text rather than a link.",
-  "no_caching": "build() walks the directory on every call. Cheap (a few dozen files), and aligns with the Orlando no-caching design."
+  "url_convention": "URLs match Orlando's routing: /<doc-root>/foo/bar (no .md, no .html). The current-page detection compares against the current_md_path argument; if it matches, the entry is rendered as bold text rather than a link.",
+  "no_caching": "build() walks the directories on every call. Cheap (a few dozen files each), and aligns with the Orlando no-caching design."
 }
 ]]
 local quick_builder = require("orlando.quick_builder")
 
 local M = {}
 
-local DOC_ROOT = "documentation"
+-- Doc trees to walk for the sidebar. Order determines display order.
+-- Sidebar-only whitelist — Orlando's routing serves the whole repo now,
+-- but the sidebar stays focused on doc trees (not code/, tests/, etc.).
+local DOC_ROOTS = {"documentation", "ideas", "requirements", "skills"}
 
 -- List entries in a directory, sorted, separating files from subdirectories.
 local function list_dir(path)
@@ -216,9 +219,40 @@ end
     "out": "string (sidebar HTML, no surrounding <nav>)"
 } ]]
 function M.build(current_md_path)
-    local tree = build_tree(DOC_ROOT)
     local root = quick_builder.new("div")  -- throwaway wrapper; we'll strip it
-    render_ul(root, tree, DOC_ROOT, "/documentation", current_md_path)
+    root:tag("ul", function(top_ul)
+        for _, doc_root in ipairs(DOC_ROOTS) do
+            local tree = build_tree(doc_root)
+            if #tree.files > 0 or next(tree.subdirs) ~= nil then
+                local expanded = on_path(current_md_path, doc_root)
+                -- Also expand if the doc_root's own index.md is the current page.
+                if current_md_path == doc_root .. "/index.md" then
+                    expanded = true
+                end
+                top_ul:tag("li", function(li)
+                    li:attr("class", "dir")
+                    li:tag("details", function(d)
+                        if expanded then d:attr("open", "") end
+                        d:tag("summary", function(s)
+                            s:tag("span", function(m)
+                                m:attr("class", "marker")
+                                m:text("")
+                            end)
+                            s:tag("a", function(a)
+                                a:attr("href", "/" .. doc_root .. "/")
+                                a:text(doc_root .. "/")
+                            end)
+                        end)
+                        -- Strip index.md from top-level so it doesn't appear
+                        -- as a sibling entry (same rule as subdirs).
+                        local top_files, _ = pull_index_file(tree.files, doc_root)
+                        local top_tree = { files = top_files, subdirs = tree.subdirs }
+                        render_ul(d, top_tree, doc_root, "/" .. doc_root, current_md_path)
+                    end)
+                end)
+            end
+        end
+    end)
     -- Render the wrapper and strip the <div>...</div>.
     local html = root:render()
     return (html:gsub("^<div>", ""):gsub("</div>$", ""))

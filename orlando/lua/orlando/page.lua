@@ -325,7 +325,12 @@ local function rewrite_one_url(url)
     if not path then path, frag = url, "" end
     path = path:gsub("^orlando/static/",         "/static/")
     path = path:gsub("^orlando/client%-assets/", "/client-assets/")
-    path = path:gsub("^documentation/",          "/documentation/")
+    -- Any top-level doc-tree path (documentation/, requirements/, ideas/,
+    -- skills/, README.md, etc.) IS the URL: repo layout is the URL layout.
+    -- Just strip .md and prefix with /.
+    if path:sub(1,1) ~= "/" and not path:match("^%.%./") and not path:match("^%./") then
+        path = "/" .. path
+    end
     path = path:gsub("%.md$", "")
     return path .. frag
 end
@@ -1083,8 +1088,8 @@ local function add_head(html_tag, title)
     end)
 end
 
--- True if documentation/<rel> is a directory that Orlando can serve at
--- /documentation/<rel>/ — covers any of three ways a dir is navigable:
+-- True if <rel> is a directory that Orlando can serve at /<rel>/ — covers
+-- any of three ways a dir is navigable:
 --   1. index.md (the standard dir-index convention)
 --   2. same-named index file (legacy <rel>/<lastpart>.md convention)
 --   3. auto-generated directory listing (route.lua's fallback for dirs
@@ -1093,7 +1098,7 @@ end
 -- is enough to decide the breadcrumb segment can be a link.
 local function has_dir_index(rel)
     if rel == "" then return false end
-    local f = io.open("documentation/" .. rel, "rb")
+    local f = io.open(rel, "rb")
     if not f then return false end
     local _, err = f:read(1)
     f:close()
@@ -1108,22 +1113,23 @@ end
 -- <dir>/<dir>.md (legacy same-named convention) serves at /documentation/<dir>/.
 -- Everything else serves at /documentation/<rel> (no trailing slash).
 local function md_path_to_url(md_path)
-    if md_path == "README.md" then return "/documentation/" end
-    local rel = md_path:gsub("^documentation/", ""):gsub("%.md$", "")
-    -- index.md convention.
+    -- README.md at repo root IS the home page.
+    if md_path == "README.md" then return "/" end
+    local rel = md_path:gsub("%.md$", "")
+    -- index.md convention: foo/bar/index → /foo/bar/
     local parent_idx = rel:match("^(.*)/index$")
     if parent_idx then
-        return "/documentation/" .. parent_idx .. "/"
+        return "/" .. parent_idx .. "/"
     end
-    -- Same-named convention.
+    -- Same-named convention: foo/foo → /foo/
     local parent, name = rel:match("^(.*)/([^/]+)$")
     if parent and name then
         local parent_last = parent:match("([^/]+)$") or parent
         if parent_last == name then
-            return "/documentation/" .. parent .. "/"
+            return "/" .. parent .. "/"
         end
     end
-    return "/documentation/" .. rel
+    return "/" .. rel
 end
 
 M.md_path_to_url = md_path_to_url
@@ -1324,11 +1330,11 @@ local function inject_tree_nav(body_html, md_path)
 end
 
 -- Does a given URL path serve a markdown page? Used by the breadcrumb
--- to decide whether each intermediate segment links somewhere.
+-- to decide whether each intermediate segment links somewhere. Under the
+-- whole-repo-as-root model, URL path IS the filesystem path from repo root.
 local function url_has_index(url_path)
-    if url_path == "/documentation" then return true end  -- README.md is the index
-    local rel = url_path:gsub("^/documentation/", "")
-    if rel == url_path then return false end  -- not under /documentation/
+    local rel = url_path:gsub("^/+", "")
+    if rel == "" then return true end  -- "/" is home (README.md)
     return has_dir_index(rel)
 end
 
@@ -1553,7 +1559,7 @@ end
 } ]]
 function M.render_dir_listing(ctx)
     local fs_path  = ctx.fs_path
-    local url_path = ctx.url_path  -- e.g. "/documentation/ideas/" — always trailing-slash
+    local url_path = ctx.url_path  -- e.g. "/ideas/" — always trailing-slash
     if url_path:sub(-1) ~= "/" then url_path = url_path .. "/" end
 
     -- Use `ls -1aF` (same convention as nav.lua) so dirs get a trailing /.

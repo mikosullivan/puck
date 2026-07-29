@@ -6,7 +6,7 @@
 // up).
 
 (function () {
-	var DOC = "File: documentation/ideas/caspian/stdlib-suggestions-review.md — ";
+	var DOC = "File: ideas/caspian/stdlib-suggestions-review.md — ";
 
 	function htmlEscape(s) {
 		return String(s == null ? "" : s)

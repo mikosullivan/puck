@@ -13,7 +13,7 @@ local M = {}
 
 -- Directories to search for tag markers. Extendable if new roots ever
 -- carry canonical docs.
-local SEARCH_ROOTS = {"documentation/requirements", "documentation/ideas", "documentation"}
+local SEARCH_ROOTS = {"requirements", "ideas", "documentation"}
 
 -- Marker pattern for a tag. Exact string form Orlando enforces:
 --   <span class="tag">NAME</span>
@@ -49,6 +49,8 @@ end
 -- Path -> URL, mirroring Orlando's usual rewrite:
 --   documentation/foo/bar.md    -> /documentation/foo/bar
 --   documentation/foo/index.md  -> /documentation/foo/
+--   requirements/foo/bar.md     -> /requirements/foo/bar
+--   requirements/foo/index.md   -> /requirements/foo/
 local function path_to_url(path)
     local url = "/" .. path
     url = url:gsub("/index%.md$", "/")
