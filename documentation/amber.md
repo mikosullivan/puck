@@ -4,7 +4,7 @@
 {"vibecode": {
 	"doc": "documentation_amber",
 	"role": "user-facing introduction to %amber, Caspian's ambient-hash surface. Explains the concept, motivates it with everyday use cases, contextualizes it against prior art in other languages, and points at the requirements spec for the precise rules. No implementation details, no per-operation rule enumeration — that lives in the spec.",
-	"status": "user doc — accompanies (does not duplicate) the spec at ideas/ambient-hash (soon to be promoted to requirements/amber)",
+	"status": "user doc — accompanies (does not duplicate) the spec at requirements/amber",
 	"audience": "Caspian programmers who want to know what %amber is for and when to reach for it"
 }}
 ~~~
@@ -71,4 +71,4 @@ The closest single match is Common Lisp specials with `setq`. If you already kno
 
 ## For the exact rules
 
-This doc is the intro. For the precise semantics — init failure modes, grant permission arrays, block-form vs plain form, the `.remove` / `.clear` / `.has_key?` operations, the aggregate-hash mechanism underneath — see the spec at [`ideas/ambient-hash`](https://puck.uno/ideas/ambient-hash) (soon promoted to `requirements/amber`).
+This doc is the intro. For the precise semantics — init failure modes, grant permission arrays, block-form vs plain form, the `.remove` / `.clear` / `.has_key?` operations, the aggregate-hash mechanism underneath — see the spec at [`requirements/amber`](https://puck.uno/requirements/amber).

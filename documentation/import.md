@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "documentation_import",
-	"role": "user-facing introduction to %import (and its short form %()) — what it does, the load-once cached-forever model (same as Python's import, Ruby's require, Node's require), the 'top-level is a declaration' contract, the shared-mutation caveat, the cache: false opt-out for one-shot loads, and %import.unload for explicit release.",
+	"role": "user-facing introduction to %import (and its short form %()) — what it does, the load-once cached-forever model (same as Python's import, Ruby's require, Node's require), the 'top-level is a declaration' contract, the shared-mutation caveat, %import.uncache for dropping a specific cache entry, and %import.flush_unused for sweeping unreferenced entries. For transient one-shot loads that shouldn't be cached, see the companion %fetch operator (documentation/fetch).",
 	"status": "user doc — accompanies (does not duplicate) the spec at requirements/import",
 	"audience": "Caspian programmers loading libraries, classes, or values from URLs"
 }}
@@ -102,60 +102,64 @@ Same shape as monkey-patching an imported module in Python, opening a class in R
 - **If you must mutate at runtime, understand it's process-wide.** Every future caller of the URL will see the mutation.
 - **Need a fresh copy?** Don't import again — you'll get the shared value. For a class, use `.new()` to get a fresh instance. If the class provides a `.clone` or `.copy` method, use that.
 
-## When you don't want caching: `cache: false`
+## When you don't want caching: use `%fetch`
 
-Some values shouldn't be kept in memory forever. A huge library you'll use once, a large data file you'll process and throw away — nothing to gain from pinning them in the load registry. Opt out with `cache: false`:
+Some values shouldn't be kept in memory forever. A huge library you'll use once, a large data file you'll process and throw away — nothing to gain from pinning them in the load registry. Use the companion `%fetch` operator instead — every call runs top level fresh and returns a value that isn't cached:
 
 ~~~caspian
-$parser = %('foo.bar/heavy-xml-parser.casp', cache: false)
+$parser = %fetch('foo.bar/heavy-xml-parser.casp')
 $result = &$parser.parse($doc)
 # $parser goes out of scope; the parser collects normally.
-# Nothing was added to the load registry.
 ~~~
 
-Semantics of `cache: false`:
+See [documentation/fetch](https://puck.uno/documentation/fetch) for the full story on when to reach for `%fetch` over `%import`.
 
-- **Always fresh execution.** The top level runs regardless of whether the URL is already in the load registry. You get a new value; the registry is not consulted.
-- **Not stored.** The result is not added to the load registry. When you drop your reference to it, it collects like any other value.
-- **Predictable.** `cache: false` means the same thing every time. What other code has imported doesn't affect it.
+## `%import.uncache('url')` — drop the cache entry
 
-**Consequence: identity is not preserved for `cache: false` imports.** Two calls to `%('url', cache: false)` return two different objects; two `.new()`s from two `cache: false` imports of the same class produce instances whose `.class` fields are different objects. That's the trade-off — the identity guarantee applies only to cached imports.
-
-**When to reach for it:**
-
-- Loading a heavy library for a single operation and never again.
-- Reading a large config or data file once at startup, then discarding.
-- Any case where you know a fetched value is one-shot and would waste memory sitting in the registry.
-
-**When NOT to reach for it:**
-
-- Ordinary library imports. The registry is small compared to the cost of re-running top-level code repeatedly.
-- Classes whose instances you'll create and use across the program. You want those instances to share identity via a single class object.
-- Anything you're going to import in more than one place. Caching gives you sharing for free; opting out means each call site gets its own copy.
-
-## `%import.unload('url')` — explicit release
-
-For the case where a URL was cached and you want to release it (memory pressure, dev iteration after editing the source, changed your mind about installing something), `%import.unload('url')` drops the URL from the load registry. A subsequent `%('url')` runs the top level fresh and returns a new value.
+For the case where a URL was cached and you want to drop it from the cache (memory pressure, dev iteration after editing the source, changed your mind about installing something), `%import.uncache('url')` removes the URL from the load registry. A subsequent `%('url')` runs the top level fresh and returns a new value.
 
 ~~~caspian
 $class = %('foo.bar/gup.casp')          # cached
 # ...done with it, want the memory back...
-%import.unload('foo.bar/gup.casp')      # remove from load registry
+%import.uncache('foo.bar/gup.casp')      # remove from load registry
 # next import runs top level again:
 $fresh = %('foo.bar/gup.casp')          # different object from $class
 ~~~
 
-**A note.** If code elsewhere in the process is still holding a reference to the previously-cached value (existing instances of a class you unloaded, a variable bound to the class, etc.), those references still work — the value stays alive as long as anything holds it. Only future `%()` calls of the URL run fresh. That means for a brief window you may have two versions of the same URL's value coexisting — the old one held by existing references, the new one produced by the next import. Usually harmless; occasionally worth being aware of during dev iteration.
+**The name is deliberately "uncache," not "unload."** The operation removes the URL from the cache; it doesn't destroy the loaded value. If `$class` above is still bound to a variable when `%import.uncache` runs, `$class` keeps working — the value stays alive as long as anything holds it. Only the CACHE entry is dropped; future `%(url)` calls that would have hit the cache now run fresh.
+
+**Role scope.** From user role, uncache drops all entries for the URL across every role (both the default puck-faucet entry AND every per-role `as_self` entry). From any other role, uncache only drops entries under the caller's own role.
+
+**Two live values may briefly coexist.** For a brief window after uncache, you may have two versions of the same URL's value coexisting — the old one held by existing references, the new one produced by the next import. Usually harmless; occasionally worth being aware of during dev iteration.
+
+## The `as_self` option
+
+`%import` (and its companion [`%fetch`](https://puck.uno/documentation/fetch)) support an `as_self: true` option that changes which role an imported object's methods run under. By default, an imported object runs its methods under the puck-faucet's role (not yours), so a downloaded class's methods can't reach `%engine` or other caller capabilities — a security default. Passing `as_self: true` opts in to running the object's methods under the caller's role.
+
+~~~caspian
+$obj = %('foo.bar/widget.casp')                       # default: puck-faucet role
+$obj = %import('foo.bar/widget.casp', as_self: true)  # your role — object can reach your capabilities
+~~~
+
+Use `as_self: true` when the loaded object is trusted enough to act with your authority — typically your own project's objects, or objects you deliberately want to fold into your own identity.
+
+**How `as_self` interacts with the cache:** the cache is keyed by URL AND role. Default imports (no `as_self`) all share one entry — everyone gets the same puck-faucet-owned object regardless of which role called. `as_self: true` imports get per-role entries — each role that imports the same URL as_self gets its own copy. If you (as user) do `%import(url, as_self: true)` and another role also does `%import(url, as_self: true)`, you each have your own class object; instances from your copy have a different `.class` than instances from theirs. Within your own role, repeated as_self imports of the same URL share (cache hit); across roles, they don't.
+
+**Class identity across roles.** For default imports (no `as_self`), class identity holds across roles — everyone's `%(url)` returns the same class object. For `as_self` imports, class identity holds only within a role. If you pass an as_self-loaded instance from your role to another role, the receiving role's `%(url, as_self: true)` returns a DIFFERENT class from your instance's `.class`. That's the intended behavior — as_self is opt-in role personalization, and different roles claiming ownership get separate values.
+
+See [`%import` spec § The `as_self` option](https://puck.uno/requirements/import#the-as_self-option) and [`%import` spec § Per-role caching](https://puck.uno/requirements/import#per-role-caching) for the full details. The same option works identically on `%fetch` for the ownership question, but `%fetch` doesn't cache regardless of `as_self`.
 
 ## `%import.flush_unused()` — release everything not being used
 
-When you want to reclaim memory without naming URLs one at a time, `%import.flush_unused()` sweeps the whole load registry and drops any entry whose value isn't referenced from outside the registry. Returns the number of entries dropped.
+When you want to reclaim memory without naming URLs one at a time, `%import.flush_unused()` sweeps the load registry and drops any entry whose value isn't referenced from outside the registry. Returns the number of entries dropped.
 
 ~~~caspian
 %import.flush_unused()   # returns 3, say — dropped three URLs' cached values
 ~~~
 
-Rarely needed. The registry footprint is bounded by distinct URLs the program has ever imported, which for most programs is a small set. Reach for it when:
+**Role scope.** From user role, this sweeps everything across all roles (user is the god role). From any other role, it sweeps only entries under the caller's own role — you can't reach into another role's cache. Same rule applies to [`%import.uncache(url)`](#import-uncache-url-drop-the-cache-entry): user's uncache is a clean sweep across roles; another role's uncache only drops that role's entry.
+
+Rarely needed. The registry footprint is bounded by distinct URLs the program has ever imported (times the roles that used `as_self`), which for most programs is a small set. Reach for it when:
 
 - Your program hit a memory limit and you want to reclaim what you can.
 - You just finished a batch of tasks that loaded heavy one-off libraries and want to release them.
@@ -163,8 +167,8 @@ Rarely needed. The registry footprint is bounded by distinct URLs the program ha
 
 **Same rules as regular garbage collection**, applied to the registry: entries with any external reference (a live variable holding the value, an instance of a class you imported, another object that contains the value) are kept. Entries whose values are only pinned by the registry get dropped.
 
-**When to use `flush_unused` vs `unload`:**
-- **`unload('url')`** — you know exactly which URL to release.
+**When to use `flush_unused` vs `uncache`:**
+- **`uncache('url')`** — you know exactly which URL to release.
 - **`flush_unused()`** — you know a good moment to release, but don't want to enumerate.
 
 Both are opt-in escape hatches. Ordinary programs never need to call either.
@@ -174,6 +178,6 @@ Both are opt-in escape hatches. Ordinary programs never need to call either.
 - `%('url')` returns the value at the URL — same URL, same value, for the lifetime of the process. Same shape as Python's `import`, Ruby's `require`, Node's `require`.
 - Downloadable files have a **declaration** at the top level, not a computation. Top level runs once at first import.
 - Runtime mutations to imported values are visible to all other callers — same caveat as Python / Ruby / Node.
-- `%('url', cache: false)` opts out of caching for one-shot loads. Always fresh, never stored, no identity across calls.
-- `%import.unload('url')` drops a specific cached URL from the registry; a subsequent import runs fresh.
+- For one-shot loads that shouldn't be cached, use [`%fetch`](https://puck.uno/documentation/fetch) — always fresh, never stored, no identity across calls.
+- `%import.uncache('url')` drops a specific cached URL from the registry; a subsequent import runs fresh.
 - `%import.flush_unused()` sweeps the registry, dropping any entry whose value isn't otherwise referenced. Rarely needed; escape hatch for memory pressure.

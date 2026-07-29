@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_big_processes",
-	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, drinian-sqlite, ambient-hash) and what would need to be added to complete the picture.",
+	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, drinian-sqlite, %amber) and what would need to be added to complete the picture.",
 	"status": "idea — spitball only. NOT V1 scope; nothing here has a promotion path to requirements/ implied."
 }}
 ~~~
@@ -26,7 +26,7 @@ Three of the recent idea threads are secretly building toward this:
 
 - **[bigstring](big-string)** — strings that live on disk but act like values. `$doc.length`, `$doc.split("\n")`, `$doc.match(regex)` all work regardless of whether the string is 200 bytes or 200 GB. Backing is file-or-DB, transparent.
 - **[drinian-sqlite](drinian-sqlite)** — runtime state itself becomes pluggable. Drinian defines an abstract storage interface; a Lua-table driver ships for V1; a SQLite driver arrives when snapshot-and-revive or huge state calls for it.
-- **[ambient-hash](ambient-hash)** — %amber built on the aggregate-hash primitive. Same "composable storage tiers behind a value-shaped surface" pattern.
+- **[%amber](https://puck.uno/requirements/amber)** — ambient hash built on the aggregate-hash primitive. Same "composable storage tiers behind a value-shaped surface" pattern.
 
 Each piece independently makes something small into something scalable-without-touching-the-language. Together they suggest a broader move: **every collection primitive gets pluggable backing.**
 

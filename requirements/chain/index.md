@@ -17,7 +17,7 @@
 `%chain` used to be much bigger. Two responsibilities have moved:
 
 - **Methods** — `%chain.net`, `%chain.tmp`, `%chain.encryption`, and the rest used to be canonical `%chain.X` surfaces. That's gone. The actual functionality lives elsewhere now (top-level globals like `%import`, downloadable core objects like `%('core:random')`, or its own file spec). `%chain` retains only the permission indicator for each capability, not the method surface.
-- **Ambient hash slot** — the arbitrary-value ambient-context surface has moved to `%amber`, pending promotion from [ideas/ambient-hash](../../ideas/ambient-hash). If you're reading a doc that shows `%chain['key'] = value` for ambient context, that's stale content awaiting cleanup.
+- **Ambient hash slot** — the arbitrary-value ambient-context surface has moved to [`%amber`](../amber). If you're reading a doc that shows `%chain['key'] = value` for ambient context, that's stale content awaiting cleanup.
 
 Any doc under [methods/](methods/) that still describes `%chain.X` methods is stale — being cleaned up in a separate sweep.
 
