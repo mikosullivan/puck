@@ -218,8 +218,8 @@ Each subclass's page is (or will be) the authoritative spec for its specifics. T
 - **Definition inside `if` branch is scoped to that branch** — `if $t; function &foo() end; end; %module.foo` raises: foo was defined in the branch closure's Module, not the enclosing Script.
 - **Loop and if branches are Modules** — inside `while $t; %module.type; end`, `%module.type` returns `"closure"` (branch/loop bodies are closures).
 - **Class body is a Module during the definition pass** — inside `class ... end`, `%module.type` returns `"class_body"`.
-- **Class object is NOT a Module** — after `class # widget ... end` finishes, the resulting widget class value does not satisfy `.object.isa?(%('caspian.uno/module'))`; it's a class value, not a Module.
-- **Fresh Module per function invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; &outer().object.id != &outer().object.id`: two calls to outer produce two distinct inner function objects.
+- **Class object is NOT a Module** — after `class # widget ... end` finishes, the resulting widget class value does not satisfy `.obj.isa?(%('caspian.uno/module'))`; it's a class value, not a Module.
+- **Fresh Module per function invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; &outer().obj.id != &outer().obj.id`: two calls to outer produce two distinct inner function objects.
 - **No `.parent` accessor in V1** — Modules do not expose an enclosing-Module reference; nested code that needs to reach an outer Module's method receives the reference explicitly (or captures via `closure`).
 
 ## Related

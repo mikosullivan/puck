@@ -57,7 +57,7 @@ No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are e
 - **`%engine.stderr` cannot be reassigned** — `%engine.stderr = ...` raises.
 - **Writing a string with embedded newlines writes them verbatim** — `'a\nb'` produces three bytes: `a`, newline, `b`.
 - **Writing a string with embedded null bytes preserves them** — `\0` bytes appear on the output stream.
-- **A jail on `%engine.stdout` restricts methods** — `%engine.stdout.object.jail(:puts)` exposes only `.puts`; calling `.print` on the jail raises.
+- **A jail on `%engine.stdout` restricts methods** — `%engine.stdout.obj.jail(:puts)` exposes only `.puts`; calling `.print` on the jail raises.
 - **A jail on `%engine.stderr` restricts methods** — same mechanism.
 - **A captured `$out = %engine.stdout` passed to a non-user frame is callable** — method-runs-as-owner semantics; writes attributed to user.
 - **Writing binary data (non-UTF-8 bytes) preserves the bytes verbatim** — no re-encoding.

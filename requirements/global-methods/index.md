@@ -4,17 +4,17 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_global_methods_root",
-	"role": "spec for how Caspian's global methods (%X-prefixed identifiers) work. Two flavors: capability objects (%import, %stdout, %fs, %net, etc. — anything the program uses to reach a host resource) that inherit from core:capability and share a uniform surface for presence check, grant, revoke, and ungranted-access errors; and context objects (%call, %self, %role, %engine) that are specific-purpose per-frame surfaces. Rules on the capability-object surface: truthy iff granted; %X.grant/.revoke are block-scoped and single-boundary by default; ungranted access returns a specialized null whose method calls raise with an informative message. Formal spec for the core:capability class is pending; catalog of individual capabilities is pending relocation from the retired chain/methods/ directory. Bareword commands (documentation, vibecode, puts, print, field, method, etc.) are NOT globals.",
+	"role": "spec for how Caspian's global methods (%X-prefixed identifiers) work. Two flavors: capability objects (%fetch, %stdout, %fs, %net, etc. — anything the program uses to reach a host resource) that inherit from core:capability and share a uniform surface for presence check, grant, revoke, and ungranted-access errors; and context objects (%call, %self, %role, %engine) that are specific-purpose per-frame surfaces. Rules on the capability-object surface: truthy iff granted; %X.grant/.revoke are block-scoped and single-boundary by default; ungranted access returns a specialized null whose method calls raise with an informative message. Formal spec for the core:capability class is pending; catalog of individual capabilities is pending relocation from the retired chain/methods/ directory. Bareword commands (documentation, vibecode, puts, print, field, method, etc.) are NOT globals.",
 	"audience": "Caspian programmers learning the surface; documentation authors relocating individual capability specs from chain/methods/; engine implementers building the runtime"
 }}
 ~~~
 
 Caspian's globals are the `%X`-prefixed identifiers reachable from any Caspian code without an import. Two flavors, distinguished by what they do:
 
-- **Capability objects** — the program's gateway to host resources. `%import`, `%stdout`, `%stderr`, `%stdin`, `%fs`, `%net`, `%tmp`, `%timer`, `%encryption`, and similar. All inherit from `core:capability` (spec pending) and share a common surface: presence check, grant, revoke, and informative errors when ungranted. Documented uniformly below.
+- **Capability objects** — the program's gateway to host resources. `%fetch`, `%stdout`, `%stderr`, `%stdin`, `%fs`, `%net`, `%tmp`, `%timer`, `%encryption`, and similar. All inherit from `core:capability` (spec pending) and share a common surface: presence check, grant, revoke, and informative errors when ungranted. Documented uniformly below.
 - **Context objects** — per-frame surfaces that describe the current execution. `%call` (the current call), `%self` (the current instance inside a method), `%role` (the current frame's role), `%engine` (the host-resource gateway, user-role only). Each is its own specific-purpose thing; documented per-object.
 
-Bareword commands (`documentation`, `vibecode`, `puts`, `print`, `field`, `method`, etc.) are NOT globals — they're a separate parser category (bwcs). Downloadable core objects (`%('core:now')`, `%('core:random')`) are not globals either — they're plain values reached through `%import`.
+Bareword commands (`documentation`, `vibecode`, `puts`, `print`, `field`, `method`, etc.) are NOT globals — they're a separate parser category (bwcs). Downloadable core objects (`%('core:now')`, `%('core:random')`) are not globals either — they're plain values reached through `%fetch`.
 
 ## Capability objects
 
@@ -103,7 +103,7 @@ A capability is available to code only if BOTH:
 
 Each capability declares its cross-role-boundary behavior:
 
-- **Default-granted** — automatically visible in any callee, including callees in a different role. `%import` is default-granted (library loading is a common need); a few others are too. Fall-back model: available unless explicitly revoked.
+- **Default-granted** — automatically visible in any callee, including callees in a different role. `%fetch` is default-granted (library loading is a common need); a few others are too. Fall-back model: available unless explicitly revoked.
 - **Default-deny** — descendants get the flavored null unless the caller explicitly grants the capability across the boundary. `%stdout`, `%fs`, `%net`, and most other side-effect-carrying capabilities are default-deny. Explicit-only: unavailable unless explicitly granted.
 
 The default-grant flag is a per-capability attribute declared in each capability's spec.
@@ -126,7 +126,7 @@ The current frame's role. Always unconditionally available regardless of what ca
 
 ### `%self`
 
-The current object instance inside a method body. Outside a method (free-standing function, closure, top-level code), `%self` is not available. Always written with the `%` sigil — there is no bare `self` shortcut. `%self.object.role` returns the instance's owning role; `%self.object.*` reaches the standard object surface. See [`built-in-classes/object/methods`](../built-in-classes/object/methods/) for the full `.object` surface.
+The current object instance inside a method body. Outside a method (free-standing function, closure, top-level code), `%self` is not available. Always written with the `%` sigil — there is no bare `self` shortcut. `%self.obj.role` returns the instance's owning role; `%self.obj.*` reaches the standard object surface. See [`built-in-classes/object/methods`](../built-in-classes/object/methods/) for the full `.obj` surface.
 
 **`%self` is a reference, not an access token.** Calling a method through `%self` from inside the class body reaches every method the class carries, including private methods — see [functions/method § Calling sibling methods](../functions/method#calling-sibling-methods). The engine's private-method check consults [`%call.method_class`](call/#call-method-class) — the class the currently-executing method was defined on — not the reference itself. From inside a sibling method, `%call.method_class` is the same class that carries the private method, so access is allowed. Capturing `%self` and returning it does NOT grant private access to the receiver of the returned reference; access is always checked at dispatch time against the current frame, never against the reference's provenance.
 
@@ -153,4 +153,4 @@ The current object instance inside a method body. Outside a method (free-standin
 - **Default-granted capability crosses without explicit grant** — for a capability marked default-granted, a callee in a different role sees the capability without the caller explicitly granting.
 - **Default-deny capability blocked without explicit grant** — for a capability marked default-deny, a callee in a different role sees the flavored null unless the caller explicitly granted.
 - **Engine-startup grant gates presence** — if the host does not install `%X` at startup, no chain-level grant can conjure it; even inside a `%X.grant` block (from a role that HAS %X), the callee only gets the capability if the engine has it at all.
-- **Downloadable core objects are not globals** — `%('core:now')` and `%('core:random')` are plain downloads via `%import`, not entries in the globals catalog; they don't participate in the grant/revoke machinery.
+- **Downloadable core objects are not globals** — `%('core:now')` and `%('core:random')` are plain downloads via `%fetch`, not entries in the globals catalog; they don't participate in the grant/revoke machinery.

@@ -267,7 +267,7 @@ Passing a controller to code running in an untrusted role is a **security concer
 **If you want to hand across a controller without granting exit capability**, wrap it in a [jail](https://puck.uno/requirements/built-in-classes/object/methods/#jail) that exposes only the state readers:
 
 ~~~caspian
-&untrusted_helper $loop.object.jail(:index, :count)
+&untrusted_helper $loop.obj.jail(:index, :count)
 ~~~
 
 The recipient can read `.index` and `.count` (and any other state-reader you list) but can't reach `.break`, `.return`, or `.next` — the jail forwards only the named methods to the underlying controller. This is the standard [object-capability](https://puck.uno/requirements/roles/object-access) pattern applied to controllers.

@@ -107,7 +107,7 @@ The same model covers protocol-level failures — network unreachable, timeout, 
 By default the agent's code runs in the fresh sandboxed role created for the connection. The opt-in for wider access uses the [`%role.delegate_to`](https://puck.uno/requirements/roles#role-delegate_to) primitive: a block-scoped grant that temporarily extends the **caller's** permissions to the agent's role.
 
 ```
-%role.delegate_to($agent.object.role) do
+%role.delegate_to($agent.obj.role) do
     $agent.yield db: $db, foo: $bar
 end
 ```

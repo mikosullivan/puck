@@ -89,7 +89,7 @@ The `.execute` / `.execute_in` primitives are deliberately low-level — argv in
 
 These wrappers are just normal Caspian classes. Nothing special about them beyond convention — they call `.execute_in` (or the file-form `.execute`) internally. They do **not** link native libraries for the utility they wrap; the utility itself does the work.
 
-Distributed via `%import` like any other class. Over time the ecoverse can grow a canonical set — hosted at whatever URLs the maintainers land on. Third parties can publish alternatives at their own domains.
+Distributed via `%fetch` like any other class. Over time the ecoverse can grow a canonical set — hosted at whatever URLs the maintainers land on. Third parties can publish alternatives at their own domains.
 
 Per-utility wrapper specs live at [linux/cli/](https://puck.uno/requirements/linux/cli/) — the index there carries the priority-ordered V1 list (tar, gzip, gunzip, zip, unzip, file, cut, sort, uniq, uname, pandoc, convert, 7z, bzip2) plus [openssl](https://puck.uno/requirements/linux/cli/openssl) for the Passkey subsystem. Each is a separate design pass; this page just covers the general `.execute_in` model they all delegate to.
 

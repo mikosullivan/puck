@@ -91,9 +91,17 @@ After the blockchain question, the installer briefly describes the [post-install
 
 Default is `y` — the recommendation is baked in. If the user accepts, the self-test runs as the last step of [install and setup](#install-and-setup). If declined, no self-test-related downloads happen (Bryton and the test suite are not fetched), and the [installation summary](#installation-summary) notes the skip. The user can still invoke `caspian --self-test` at any time later — it'll fetch what it needs on demand.
 
+### Example code prompt
+
+After the self-test question, the installer asks whether to download a starter set of example Caspian scripts.
+
+<pre class="terminal-block">Caspian ships with a small library of example scripts —<br>hello world, HTTP requests, file I/O, class definitions.<br>They install to ~/.local/share/caspian/examples/ so you<br>have working code to read and modify.<br><br>Download the examples? [y/n] <b>_</b></pre>
+
+No default — the user picks `y` or `n`. If accepted, the examples are fetched during [install and setup](#install-and-setup) and land at `~/.local/share/caspian/examples/`. If declined, nothing is downloaded; the [installation summary](#installation-summary) notes the skip. The user can install them at any time later with `caspian --download-examples`.
+
 ### PATH prompt
 
-After the blockchain question, the installer checks whether `~/.local/bin` is already on the user's `PATH`.
+After the example-code question, the installer checks whether `~/.local/bin` is already on the user's `PATH`.
 
 - **If it's already there** — nothing to prompt about; the installer moves on silently.
 - **If it isn't** — the installer prompts before modifying any shell rc file. Shell rc files belong to the user; the installer doesn't touch them without permission.
@@ -114,7 +122,8 @@ After the prompts are answered, the installer runs through the actual setup with
 3. **Write** `~/.config/caspian/config.json` with the blockchain preference from the prompt.
 4. **Modify the shell rc** if the user agreed to the PATH prompt — append `export PATH="$HOME/.local/bin:$PATH"` to the appropriate file (`~/.bashrc`, `~/.zshrc`, `~/.profile`).
 5. **Run the [OS checks](os-checks)** — probes for kernel/OS features that Caspian's own features depend on. Blocking probes (e.g., "OS is Linux") abort install; non-blocking ones downgrade the affected feature and get noted in the summary.
-6. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%import` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
+6. **Download the examples** — if the user accepted the [example code prompt](#example-code-prompt), fetch the example tarball from `caspian.uno` and extract it to `~/.local/share/caspian/examples/`. If declined, this step is skipped entirely — no download — and the summary notes the skip.
+7. **Run the self-test** — if the user accepted the [self-test prompt](#self-test-prompt), invoke `caspian --self-test`. The binary loads Bryton via `%fetch` and downloads the test-tree tarball from `caspian.uno` into a temp dir, then runs Bryton against it. See [self-test](self-test/) for the full spec. The result is shown in the installation summary. If the user declined, this step is skipped entirely — no downloads, no run — and the summary notes the skip.
 
 ### Installation summary
 
@@ -125,6 +134,7 @@ Once setup completes, the installer prints a summary of every path it touched. M
 The summary lists only what actually happened:
 
 - If a directory already existed, it isn't listed as "created."
+- **The examples line** shows either `downloaded` (with the path `~/.local/share/caspian/examples/`) or `skipped` (the user declined at the example-code prompt). Omitted from the summary entirely if the download failed for reasons the installer already reported inline.
 - **The self-test line** shows one of: `passed`, `failed` (with a list of which checks failed), or `skipped` (with the reason — the user declined at the self-test prompt, or a required download failed). See [self-test](self-test/) for the full failure-reporting shape.
 - **If `~/.local/bin` was NOT on PATH and the user agreed to the PATH prompt**, an additional "Shell config updated" section appears and a restart hint follows:
 

@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "nested_methods",
-	"role": "design notes on nested methods — methods grouped under a namespace path on a class. Replaces the older helper-as-sub-object model with namespaces-as-pure-organization. The .object namespace is the canonical example: it holds the universal-introspection methods so user classes don't inherit them into their top-level namespace.",
+	"role": "design notes on nested methods — methods grouped under a namespace path on a class. Replaces the older helper-as-sub-object model with namespaces-as-pure-organization. The .obj namespace is the canonical example: it holds the universal-introspection methods so user classes don't inherit them into their top-level namespace.",
 	"status": "active_design",
 	"audience": "Miko and Claude collaborating on the design",
 	"related": ["requirements/lucy/index.md (helpers — the older model this replaces)",
@@ -41,34 +41,34 @@ end
 
 would expose **fifteen-plus methods** at the top level — only one of which the user wrote. Auto-completion clutters; the namespace of "what this thing does" drowns in inherited infrastructure.
 
-The fix: put all of the universal operations under a single namespace, conventionally `object`. So `$conn` exposes exactly two names at its top level — `.send` (what the user wrote) and `.object` (the universal-method namespace). The universal cloud is reachable but namespaced away.
+The fix: put all of the universal operations under a single namespace, conventionally `obj`. So `$conn` exposes exactly two names at its top level — `.send` (what the user wrote) and `.obj` (the universal-method namespace). The universal cloud is reachable but namespaced away.
 
 This is the load-bearing reason the mechanism exists. Method-namespacing for user classes (like a `metrics` or `transport` cluster) is the same machinery applied to user-driven organization, but the original — and ongoing — purpose is keeping base-class methods from polluting every class's top-level surface.
 
-## `.object` is a namespace
+## `.obj` is a namespace
 
 ~~~caspian
-$foo.object.bool          # tri-value truthiness
-$foo.object.truthy?       # bool predicate
-$foo.object.null?         # null predicate
-$foo.object.classes       # the platter stack
-$foo.object.role          # current role
-$foo.object.on_close ...  # close-handler introspection
+$foo.obj.bool          # tri-value truthiness
+$foo.obj.truthy?       # bool predicate
+$foo.obj.null?         # null predicate
+$foo.obj.classes       # the platter stack
+$foo.obj.role          # current role
+$foo.obj.on_close ...  # close-handler introspection
 ~~~
 
-Under the new model, `$foo.object` is a name prefix into the `object` namespace. The dispatcher walks the path `object.<method>` and finds the method definition; the method runs with `self = $foo`. Identical to how any user-defined namespace would work.
+Under the new model, `$foo.obj` is a name prefix into the `obj` namespace. The dispatcher walks the path `obj.<method>` and finds the method definition; the method runs with `self = $foo`. Identical to how any user-defined namespace would work.
 
 ## What's gained vs the helper-sub-object model
 
 - **No boilerplate accessors.** Old model forced classes to expose getters/setters just so the helper could see state. Now a method inside any namespace reads `@bucket['x']` directly.
 - **No fake encapsulation barrier between same-class methods.** Conventional across Ruby, Python, Java, etc.: methods of the same class see each other's state. The old helper model put an unusual sub-API barrier in the way for nested concerns. The new model aligns with the common mental model.
-- **One identity, one bucket, one trust boundary** per object. The namespace path doesn't carve out a distinct identity for `$foo.object`; it's just a route through `$foo`'s method table.
+- **One identity, one bucket, one trust boundary** per object. The namespace path doesn't carve out a distinct identity for `$foo.obj`; it's just a route through `$foo`'s method table.
 - **Lazy instantiation goes away.** No sub-object means nothing to instantiate. The namespace exists in the class definition; method lookup is a path walk at dispatch time.
 
 ## What's given up
 
 - **The old model offered encapsulation as a side effect.** If you wanted "nested methods that can only see the parent's public surface," that came for free. With namespaces, encapsulation is no longer automatic; you'd have to build a separate-class-with-a-reference pattern explicitly if you wanted that boundary.
-- **`.object` as object-of-its-own goes away.** Previously, `$foo.object` was itself an object, with its own identity. Some patterns leaned on this — `$foo.object == $bar.object` for "same object" comparison, for example. Under the new model, `$foo.object` isn't a thing of its own anymore; it's a name prefix. Identity-equality comparisons need a different mechanism (a method that returns an engine-generated object-id value, or a `same_object?` operation).
+- **`.obj` as object-of-its-own goes away.** Previously, `$foo.obj` was itself an object, with its own identity. Some patterns leaned on this — `$foo.obj == $bar.obj` for "same object" comparison, for example. Under the new model, `$foo.obj` isn't a thing of its own anymore; it's a name prefix. Identity-equality comparisons need a different mechanism (a method that returns an engine-generated object-id value, or a `same_object?` operation).
 
 ## JSON shape
 
@@ -170,5 +170,5 @@ Adding any of those to worldlet.json would extend the example as the spec settle
 - **Inheritance with namespaces.** Can a subclass add methods to a namespace declared on its parent class? Most likely yes — a subclass's `bar.nested.foo` merges with the parent's `bar.nested` rather than shadowing the whole namespace. But the merge / override semantics need to be settled. Especially: what happens if both parent and subclass define `bar.gup`? Standard inheritance rules (subclass shadows parent) should apply at the method level, not the namespace level.
 - **Nested namespaces — how deep?** `$foo.a.b.c.method()` works conceptually. Should there be a depth limit, or is unbounded fine? Likely unbounded for the spec; usage convention will keep it shallow.
 - **Cross-namespace dispatch.** Inside `bar.gup`, can the method call `self.baz.qux` and reach another namespace's method on the same object? Yes — same object, dispatch walks the path from `self`. Just spell the path.
-- **Identity replacement for the lost `$foo.object`-as-object.** What does `$foo.object_id` (or whatever the replacement spelling is) return, and how is "same object?" tested? Needs to settle before the `.object` namespace ships, since some existing patterns leaned on the helper-as-object property.
+- **Identity replacement for the lost `$foo.obj`-as-object.** What does `$foo.object_id` (or whatever the replacement spelling is) return, and how is "same object?" tested? Needs to settle before the `.obj` namespace ships, since some existing patterns leaned on the helper-as-object property.
 - **Namespace-level metadata.** Can a namespace itself carry a description / vibecode / other metadata, sibling to its `nested` key? E.g., `"beverage": {"description": "Replicator-related methods", "nested": {...}}`. Useful for documentation; harmless structurally.

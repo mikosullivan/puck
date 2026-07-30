@@ -34,7 +34,7 @@ Typical contents:
 - **`%engine.platform.engine` is the discriminator** — code that reads `%engine.lua` should first check `%engine.platform.engine == 'lucy'`.
 - **`%engine.lua` is user-only** — a non-user frame reading `%engine.lua` raises the blanket gate error.
 - **`%engine.lua` is read-only** — `%engine.lua.version = '99'` raises.
-- **The returned hash is faucet-role-owned** — `%engine.lua.object.role` is the host-info faucet role, not `user`.
+- **The returned hash is faucet-role-owned** — `%engine.lua.obj.role` is the host-info faucet role, not `user`.
 - **Values are stable across reads within a run** — the version string doesn't change between calls.
 - **`%engine.lua.libraries.contains?` on an unknown library returns false** — no raise; false result.
 - **Deleting or mutating the returned hash raises** — every field is read-only.

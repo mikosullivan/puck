@@ -10,7 +10,7 @@
 
 `%engine.http_client` is the HTTP client — the surface for making outbound network requests from a Caspian program. It covers the standard verbs (GET, POST, PUT, DELETE, etc.) plus the common ergonomics: query strings, request headers, body encodings, response decoding, redirect handling, and timeouts.
 
-Most user code reaches this through the global shortcut `%chain.net.http` (or further-shortened helpers like `%import.download`); `%engine.http_client` is the underlying surface those globals are built on. <!-- STALE: %chain.X syntax being reworked -->
+Most user code reaches this through the global shortcut `%chain.net.http`; `%engine.http_client` is the underlying surface those globals are built on. <!-- STALE: %chain.X syntax being reworked -->
 
 The detailed method-level spec (the exact call shapes, options, error classes) lives in the HTTP doc — to migrate from `requirements-old/caspian/network/http.md` into this tree.
 
@@ -42,7 +42,7 @@ The detailed method-level spec (the exact call shapes, options, error classes) l
 - **Request body accepts a string** — passing `body: 'abc'` sends those three bytes.
 - **Chunked-encoded response bodies assemble correctly** — `transfer-encoding: chunked` results in a body equal to the concatenation of all chunks.
 - **Empty response body is the empty string** — a 204 returns `.body == ''`, not null.
-- **Response object is role-tagged with the network faucet's role** — `response.object.role` is that role, not `user`.
+- **Response object is role-tagged with the network faucet's role** — `response.obj.role` is that role, not `user`.
 - **`.body` contributors list includes the network faucet role** — `.body.contributors` records the source.
 - **`.headers` values are strings** — every value in the hash is a string, not parsed to another type.
 - **Repeated response headers are captured** — a server sending two `Set-Cookie` headers is exposed via `.headers` in a way that preserves both.

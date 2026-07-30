@@ -31,20 +31,20 @@ All six primitives share the same object shape — a bucket, a truthy bit, and p
 
 ## Testing
 
-- **Engine guarantees six primitive classes at startup** — String, Number, Boolean, Null, Array, and Hash are each resolvable by name in a fresh runtime with no user code loaded and no `%import` calls made.
-- **String literal materializes to a String instance** — `'hello'.object.isa?(String)` is `true`.
-- **Number literal materializes to a Number instance** — `42.object.isa?(Number)` is `true`.
-- **Boolean literals materialize to Boolean instances** — `true.object.isa?(Boolean)` and `false.object.isa?(Boolean)` are both `true`.
-- **Null literal materializes to a Null instance** — `null.object.isa?(Null)` is `true`.
-- **Array literal materializes to an Array instance** — `[1, 2, 3].object.isa?(Array)` is `true`.
-- **Hash literal materializes to a Hash instance** — `{a: 1}.object.isa?(Hash)` is `true`.
-- **Every primitive is an Object** — each of the six primitive instances above reports `.object.isa?(Object)` as `true`.
+- **Engine guarantees six primitive classes at startup** — String, Number, Boolean, Null, Array, and Hash are each resolvable by name in a fresh runtime with no user code loaded and no `%fetch` calls made.
+- **String literal materializes to a String instance** — `'hello'.obj.isa?(String)` is `true`.
+- **Number literal materializes to a Number instance** — `42.obj.isa?(Number)` is `true`.
+- **Boolean literals materialize to Boolean instances** — `true.obj.isa?(Boolean)` and `false.obj.isa?(Boolean)` are both `true`.
+- **Null literal materializes to a Null instance** — `null.obj.isa?(Null)` is `true`.
+- **Array literal materializes to an Array instance** — `[1, 2, 3].obj.isa?(Array)` is `true`.
+- **Hash literal materializes to a Hash instance** — `{a: 1}.obj.isa?(Hash)` is `true`.
+- **Every primitive is an Object** — each of the six primitive instances above reports `.obj.isa?(Object)` as `true`.
 - **JSON parse produces only primitive instances at leaves** — parsing a JSON document whose leaves are strings, numbers, booleans, and nulls yields a tree where every non-container node is an instance of one of the six primitive classes.
 - **JSON round-trip preserves class** — serializing a primitive to JSON and parsing the result produces an instance of the same class (String round-trips to String, etc.).
-- **No primitive requires `%import`** — code that uses the six literal forms runs in an engine with the network completely disabled; no `%import` calls happen.
+- **No primitive requires `%fetch`** — code that uses the six literal forms runs in an engine with the network completely disabled; no `%fetch` calls happen.
 
 ## Related
 
 - [built-in-classes](https://puck.uno/requirements/built-in-classes/) — the parent hub; the primitives are one of the two groupings alongside the object namespace.
 - [bucket-access](https://puck.uno/requirements/built-in-classes/bucket-access) — the sigils and shorthands (`@field`, `%bucket`, `$obj.@field`) programs use to read and write bucket entries on any object, primitive or not.
-- [syntax/literals](https://puck.uno/requirements/syntax/) — the source-level literal forms that materialize into primitive instances.
+- [syntax](https://puck.uno/requirements/syntax/) — source-level literal forms live under individual sub-pages there (variables-and-assignment, sigils, etc.).

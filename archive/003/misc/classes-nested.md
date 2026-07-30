@@ -1,11 +1,14 @@
 # Nested methods
+
+> **Retired 2026-07-30.** This design is superseded. The "nested methods = pure namespace, no sub-object" approach is being replaced by an agent/helper model in which `$foo.bar` is a real sub-object that either has (agent) or does not have (helper) access to the parent's internals. See [ideas/helpers/](../../../ideas/helpers/) for the new direction. This file is preserved for historical reference only; do not treat it as authoritative.
+
 <!--index: 2-->
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_nested",
 	"role": "spec for the `nested :name ... end` construct inside a class body — a way to group methods under a named sub-namespace reachable via dotted paths (`$obj.name.method(...)`). Nested methods have full access to the parent instance's bucket, %self, and ambient surfaces; the nesting is a naming convention, not an isolation boundary.",
-	"status": "draft — DSL form, access semantics, and dispatch spec'd; a few open questions listed at the bottom",
+	"status": "RETIRED 2026-07-30 — superseded by the agent/helper model; see ideas/agents. Preserved for historical reference.",
 	"audience": "developers writing Caspian classes; engine implementers building the class-runtime; tooling authors"
 }}
 ~~~
@@ -159,4 +162,4 @@ Since each nested entry has the same shape as a top-level method, arbitrary dept
 - **Nested method's role** — the nested method runs as the class's role, same as any top-level method on the class.
 - **`.to.number` example** — a class with `nested :to method &number() ... end end` on a string primitive is invocable as `$s.to.number` and produces the parsed number.
 - **Cross-role nested call** — a nested method invoked from another role runs with `%call.role` as the caller's role.
-- **`%self.object` accessible from nested method** — the standard object surface is reachable through `%self.object.*` inside a nested method.
+- **`%self.obj` accessible from nested method** — the standard object surface is reachable through `%self.obj.*` inside a nested method.

@@ -22,7 +22,7 @@ This is the same posture as Unix process boundaries: you don't get a reference t
 When the owner wants to restrict what a non-owner can do with an object, the mechanism is a **jail wrapper** — a thin object that exposes only the named methods of the underlying object.
 
 ~~~caspian
-$jail = $obj.object.jail(:safe_method, :read_only_method)
+$jail = $obj.obj.jail(:safe_method, :read_only_method)
 &untrusted_function $jail
 ~~~
 
@@ -32,17 +32,17 @@ The original `$obj` still has its full surface for the owner. The jail is a per-
 
 Two important properties:
 
-- **Jails are cheap.** The narrowing pattern only works if creating a jail is a one-liner. `$obj.object.jail(:m1, :m2)` is exactly that.
+- **Jails are cheap.** The narrowing pattern only works if creating a jail is a one-liner. `$obj.obj.jail(:m1, :m2)` is exactly that.
 - **The owner decides what to expose.** The framework doesn't second-guess; the language doesn't gate methods at the call site. Whatever the owner passes is what the recipient can use.
 
 This is the ["no nanny code"](https://puck.uno/requirements/concepts#no-nanny-code) principle applied to objects: the runtime trusts the developer's handoff decision; it doesn't add a second layer of filtering.
 
 ### Jail wrapper specification
 
-`.object.jail(*methods)` returns a new object that exposes exactly the named methods. Every other method call on the jail raises.
+`.obj.jail(*methods)` returns a new object that exposes exactly the named methods. Every other method call on the jail raises.
 
 ~~~caspian
-$jail = $obj.object.jail(:method1, :method2)
+$jail = $obj.obj.jail(:method1, :method2)
 
 $jail.method1(...)      # forwards to $obj.method1
 $jail.method2(...)      # forwards to $obj.method2
@@ -52,13 +52,13 @@ $jail.method3(...)      # raises — not in the jail's allowlist
 **Narrowing.** A jail can be re-jailed to expose a subset:
 
 ~~~caspian
-$narrower = $jail.object.jail(:method1)
+$narrower = $jail.obj.jail(:method1)
 # $narrower exposes :method1 and nothing else.
 ~~~
 
 **Widening is impossible.** A jail can never expose more than the object it wraps. If you re-jail a jail with a method name that wasn't in the wrapped jail's allowlist, the new jail's own allowlist declares the method — but calling it still raises, because the wrapped jail refuses to forward it. Net effect: you cannot use re-jailing to widen access.
 
-**Introspection is not a back door.** Code holding a jail cannot reach the internals of the underlying object. `.object.methods` on the jail lists only the allowed methods. There is no `.object.wrapped_by` or equivalent — the jail is opaque. That's why it's a jail.
+**Introspection is not a back door.** Code holding a jail cannot reach the internals of the underlying object. `.obj.methods` on the jail lists only the allowed methods. There is no `.obj.wrapped_by` or equivalent — the jail is opaque. That's why it's a jail.
 
 ## Self-gating from inside the method
 
@@ -69,7 +69,7 @@ Inside any method, `%call` is the call object — an object representing the cur
 ~~~caspian
 class &widget
 	method &destroy()
-		if %call.role != %self.object.role
+		if %call.role != %self.obj.role
 			raise 'only the owner can destroy this widget'
 		end
 
@@ -129,12 +129,12 @@ $obj = $widget.new()       # user owns $obj — running .new() is just another e
 
 The class and the instance are two separate objects with two separate roles:
 
-- `$widget.object.role` is `faucet_1` (the class itself, defined and owned by `faucet_1`).
-- `$obj.object.role` is `user` (the instance, created by user code calling `.new()`).
+- `$widget.obj.role` is `faucet_1` (the class itself, defined and owned by `faucet_1`).
+- `$obj.obj.role` is `user` (the instance, created by user code calling `.new()`).
 
 When user calls `$obj.method()`, the method body still runs in a `faucet_1` frame — frame-role tracks the class's owner, not the instance's owner. So inside the method:
 
-- `%self.object.role` is `user` (it's the instance).
+- `%self.obj.role` is `user` (it's the instance).
 - The frame's role is `faucet_1` (it's the class's role; that's what `%role` reports inside the method).
 - `%call.role` is `user` (the caller; see [Self-gating from inside the method](#self-gating-from-inside-the-method)).
 
@@ -224,7 +224,7 @@ $some_object.do_thing_with(net: $net)        # non-user object holds $net
 
 Inside `do_thing_with`, when the non-user body calls `$net.fetch(...)`, [methods run as their object's role](https://puck.uno/requirements/roles/#methods-run-as-their-objects-role) — so the fetch body runs as **user** (the owner of `$net`) and the network call proceeds through user's authority. In effect, **capturing a chain surface into a variable and passing it is one way to hand a specific capability across a role boundary**, alongside [`%role.delegate_to`](https://puck.uno/requirements/roles/#granting-capabilities-to-other-roles). Neither displaces the other; both use the same underlying "holding is access" model.
 
-The narrowing tool for chain surfaces is the [same jail wrapper](#narrowing-pass-a-jail-not-the-raw-object) as for any object: `%chain.net.object.jail(:fetch)` produces a handle that only exposes `fetch`.
+The narrowing tool for chain surfaces is the [same jail wrapper](#narrowing-pass-a-jail-not-the-raw-object) as for any object: `%chain.net.obj.jail(:fetch)` produces a handle that only exposes `fetch`.
 
 ### Captured surfaces outlive the grant that made them reachable
 
@@ -232,7 +232,7 @@ Chain grants control **permission to call methods on `%chain`** — they don't s
 
 ~~~caspian
 # In a user frame:
-%role.delegate_to($widget.object.role) do
+%role.delegate_to($widget.obj.role) do
 	$widget.remember_net()     # widget's method captures %chain.net into @net
 end
 # Delegation block over — widget's role no longer has %chain.net.
@@ -273,20 +273,20 @@ When non-owner role R is handed an object O owned by role O.owner:
 
 - **Holding an object grants access to any of its methods** — a non-owning frame calling any method on an object it holds does not raise on role grounds.
 - **A user-passed raw object lets a non-user frame call every method** — no runtime role check on invocation.
-- **`$obj.object.jail(:m1, :m2)` returns a new object** — distinct from `$obj`.
+- **`$obj.obj.jail(:m1, :m2)` returns a new object** — distinct from `$obj`.
 - **Jail exposes only the named methods** — `$jail.m1` and `$jail.m2` reach the underlying object; `$jail.m3` raises.
-- **Jail is owned by its creator** — `$jail.object.role` is the creating frame's role, not the wrapped object's role.
+- **Jail is owned by its creator** — `$jail.obj.role` is the creating frame's role, not the wrapped object's role.
 - **Methods called through the jail run as the wrapped object's owner** — dispatch role is the target class's owner.
 - **Jails hide un-exposed methods from introspection** — reflection on the jail lists only allowed methods.
 - **`%call` inside a method is owned by the caller** — a downloaded-object method can read `%call.role` to see who invoked it.
-- **A method that raises based on `%call.role != %self.object.role` self-gates correctly** — the pattern is usable for owner-only methods.
-- **Object ownership is immutable** — `$obj.object.role = <other>` raises.
-- **Passing an object across a role boundary preserves its owning role** — `.object.role` unchanged.
+- **A method that raises based on `%call.role != %self.obj.role` self-gates correctly** — the pattern is usable for owner-only methods.
+- **Object ownership is immutable** — `$obj.obj.role = <other>` raises.
+- **Passing an object across a role boundary preserves its owning role** — `.obj.role` unchanged.
 - **A derived string from `$a + $b` is owned by the creator's frame** — regardless of `$a`'s or `$b`'s owner.
 - **A derived hash from `{a: 1}` is owned by the creator's frame** — same rule.
 - **A derived array from `[$a, $b]` is owned by the creator's frame** — same rule.
 - **`.new()` on a class produces an instance owned by the caller** — even when the class is owned by another role.
-- **Inside a called method, `%self.object.role` names the instance's owner** — the instance.
+- **Inside a called method, `%self.obj.role` names the instance's owner** — the instance.
 - **Inside a called method, `%role` names the class's owner** — the frame's running role.
 - **Inside a called method, `%call.role` names the caller's role** — the invoking frame.
 - **The three roles inside a method are potentially all different** — instance, frame, caller.
@@ -302,7 +302,7 @@ When non-owner role R is handed an object O owned by role O.owner:
 - **A raised exception is an object owned by the raising frame's role** — provenance preserved.
 - **Any frame can catch a raised exception regardless of role** — catch is unrestricted.
 - **A caught exception is a normal held object** — holding-is-access applies.
-- **A non-user exception caught in `user` remains non-user-owned** — `.object.role` reads the raiser's role.
+- **A non-user exception caught in `user` remains non-user-owned** — `.obj.role` reads the raiser's role.
 - **Mutation via a mutator method on a held object succeeds** — the runtime doesn't gate mutation on non-ownership.
 - **A jail without mutator methods prevents mutation** — the way to withhold mutation.
 - **Cross-role hand-off preserves reference identity** — same object comparable by identity across the boundary.
@@ -317,4 +317,4 @@ When non-owner role R is handed an object O owned by role O.owner:
 
 - [`roles/`](https://puck.uno/requirements/roles/) — the role catalog and the role system overall.
 - [`chain/`](https://puck.uno/requirements/chain/) — capability propagation across role boundaries (the chain side; this doc is the object side).
-- The forthcoming jail spec (TBD) — full mechanics of `$obj.object.jail(...)`.
+- The forthcoming jail spec (TBD) — full mechanics of `$obj.obj.jail(...)`.

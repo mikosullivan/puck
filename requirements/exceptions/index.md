@@ -88,7 +88,7 @@ $exception = catch()
 	do_thing()
 end
 
-if $exception.object.null?
+if $exception.obj.null?
 	# nothing was caught
 else
 	# handle $exception
@@ -135,14 +135,14 @@ $exception = catch()
 	risky_operation()
 end
 
-if $exception.object.isa?(SomeSpecificClass)
+if $exception.obj.isa?(SomeSpecificClass)
 	# specific handling
-elsif $exception.object.isa?(AnotherClass)
+elsif $exception.obj.isa?(AnotherClass)
 	# other handling
 end
 ~~~
 
-The [`.object.isa?`](https://puck.uno/requirements/built-in-classes/object/methods/#isaclass) method is the standard way to branch on class; it's subclass-inclusive too, so the branches read the same way `catch` filters do.
+The [`.obj.isa?`](https://puck.uno/requirements/built-in-classes/object/methods/#isaclass) method is the standard way to branch on class; it's subclass-inclusive too, so the branches read the same way `catch` filters do.
 
 ## Exception catalog
 
@@ -246,7 +246,7 @@ If a controller-return exception escapes past the construct that would catch it 
 - **`raise` with existing exception** — `raise $ex` raises `$ex` directly; the caught object is the same object identity.
 - **`$exception.raise` equivalent to `raise $exception`** — identical behavior.
 - **`catch()` returns the exception object** — after a raise inside the body, `$e = catch() raise 'x' end; $e.details` returns `'x'`.
-- **`catch()` returns null when body doesn't raise** — `$e = catch() 42 end; $e.object.null?` is true.
+- **`catch()` returns null when body doesn't raise** — `$e = catch() 42 end; $e.obj.null?` is true.
 - **`catch()` matches every catchable exception** — a `PlainException` raised inside is caught.
 - **`catch($class)` matches by class** — `catch(SomeClass)` catches instances of `SomeClass`.
 - **`catch($class)` matches subclasses** — `catch(Parent)` catches an instance of `Child` where `Child` inherits `Parent`.
@@ -268,7 +268,7 @@ If a controller-return exception escapes past the construct that would catch it 
 - **`UntrustedAbortException` is user-catchable** — `catch(UntrustedAbortException)` in user code matches.
 - **`SecurityException` user-only catchable** — a non-user frame installing `catch(SecurityException)` does NOT catch; the exception propagates through it.
 - **`SecurityException` user-catchable in user code** — `catch(SecurityException)` in a user frame matches.
-- **`.object.isa?` branches on class** — after `$e = catch() raise SomeClass.new end`, `$e.object.isa?(SomeClass)` is true.
+- **`.obj.isa?` branches on class** — after `$e = catch() raise SomeClass.new end`, `$e.obj.isa?(SomeClass)` is true.
 - **Only one exception in flight at a time** — the runtime tracks a single unwinding exception.
 - **Uncaught exception propagates to top of chain** — no user catch, no engine catch matches; the program ends with the uncaught exception.
 - **Nested catch inside catch** — inner `catch()` catches; outer `catch()` returns null (nothing raised past inner).

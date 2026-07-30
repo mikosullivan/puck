@@ -133,8 +133,8 @@ Write-only variant of `.corporate`. Same rules as `MiscWriter` applied to the `c
 ### Composition
 
 - **Adding a Reader + Writer duplicates the full class's surface** — a class stacking MiscReader and MiscWriter behaves like one stacking Misc alone.
-- **Runtime add-then-use** — after `$obj.object.classes.ensure(Misc); $obj.misc[:k] = 'v'`, `$obj.misc[:k]` returns `'v'`.
-- **Block-scope add releases the surface** — inside `$obj.object.classes.ensure(Misc) do ... end`, `.misc` works; after the block exits (assuming Misc was not already stacked), `.misc` raises.
+- **Runtime add-then-use** — after `$obj.obj.classes.ensure(Misc); $obj.misc[:k] = 'v'`, `$obj.misc[:k]` returns `'v'`.
+- **Block-scope add releases the surface** — inside `$obj.obj.classes.ensure(Misc) do ... end`, `.misc` works; after the block exits (assuming Misc was not already stacked), `.misc` raises.
 
 ## Related
 

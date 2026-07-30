@@ -189,7 +189,7 @@ The variable-object class is identified as **`core:variable`**. Access the class
 
 ~~~caspian
 $foo = 1
-$$foo.object.isa? %('core:variable') # true
+$$foo.obj.isa? %('core:variable') # true
 ~~~
 
 The URL is what typed parameters use to constrain their arguments:
@@ -216,7 +216,7 @@ _No open items — closure-capture behavior settled in [Interaction with closure
 
 ## Testing
 
-- **`$$foo` returns a variable-object** — `$foo = 1; $$foo.object.isa? %('core:variable')` is `true`.
+- **`$$foo` returns a variable-object** — `$foo = 1; $$foo.obj.isa? %('core:variable')` is `true`.
 - **`.value` reads current value** — after `$foo = 42`, `$$foo.value` is `42`; same as `$foo`.
 - **`.value=` writes new value** — after `$foo = 1; $$foo.value = 99`, `$foo` is `99`.
 - **`$$foo = X` raises** — reassigning the varobj slot itself is not permitted; raises with a specific error pointing at `$foo = X` as the intended form.

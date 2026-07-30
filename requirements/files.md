@@ -4,13 +4,13 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_files",
-	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %import. Covers the file-as-value model, the single-class pattern, and the two multi-class patterns (plain hash literal for pure lookup, or instance-with-`public_const` when the file also needs helpers, hooks, or other structure). Includes the autorun caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
+	"role": "spec for what a Caspian source file evaluates to when executed or fetched via %fetch. Covers the file-as-value model, the single-class pattern, and the two multi-class patterns (plain hash literal for pure lookup, or instance-with-`public_const` when the file also needs helpers, hooks, or other structure). Includes the autorun caveat for class-serving instances. Sits alongside content-types.md — that page specs how a file is transported over HTTP; this page specs what fetchers actually receive.",
 	"status": "spec — single-class and multi-class file shapes settled; two multi-class patterns (hash literal for pure lookup, instance-with-public_const when other capabilities are needed) documented as peers",
-	"audience": "developers authoring Caspian source files; anyone publishing objects for %import fetch; engine implementers who realize a file's value after evaluation"
+	"audience": "developers authoring Caspian source files; anyone publishing objects for %fetch download; engine implementers who realize a file's value after evaluation"
 }}
 ~~~
 
-A Caspian source file is a program. When executed — whether run locally or fetched and evaluated through `%import` — the file produces a **value**: whatever its top-level evaluation yields. That value is what fetchers receive, what other files see when they reference the file's URL, and what the engine hands to any consumer of the file.
+A Caspian source file is a program. When executed — whether run locally or fetched and evaluated through `%fetch` — the file produces a **value**: whatever its top-level evaluation yields. That value is what fetchers receive, what other files see when they reference the file's URL, and what the engine hands to any consumer of the file.
 
 ## Single-class files
 
@@ -131,16 +131,16 @@ Almost always the wrong shape for a class-serving file. Don't declare an `autoru
 
 ## Testing
 
-- **Single-class file yields the class** — a file whose body is one `class ... end` fetched via `%import` returns the class object; `.new(...)` on it produces an instance.
+- **Single-class file yields the class** — a file whose body is one `class ... end` fetched via `%fetch` returns the class object; `.new(...)` on it produces an instance.
 - **Class name literal-label is preserved** — a `class # widget` file yields a class whose introspectable label is `widget`.
-- **Multi-class instance file yields the instance** — a file wrapping several `public_const :name, class` expressions inside `instance ... end` fetched via `%import` returns the instance.
+- **Multi-class instance file yields the instance** — a file wrapping several `public_const :name, class` expressions inside `instance ... end` fetched via `%fetch` returns the instance.
 - **`public_const` reaches its class** — after fetching the multi-class instance, `$colors.red` returns the `red` class object.
 - **`public_const` class is instantiable** — `$colors.red.new(shade: 'crimson')` produces a valid instance.
 - **Instance-form file may carry helpers** — a helper method or config value declared alongside the `public_const` declarations is reachable on the returned instance.
 - **Instance-form file honors `init` hook** — an `init` hook inside the wrapping instance runs exactly once when the file is loaded, not on each class-property access.
 - **Hash-form file yields a hash** — a file whose body is a hash literal of classes yields a hash; `$colors['red']` returns the red class.
 - **Hash-form file class is instantiable** — `$colors['red'].new(...)` produces a valid instance.
-- **`autorun` method on a class-serving instance replaces the file's value** — after adding `method autorun() return null end`, `%import(url)` yields `null`, not the instance.
+- **`autorun` method on a class-serving instance replaces the file's value** — after adding `method autorun() return null end`, `%fetch(url)` yields `null`, not the instance.
 - **Fetching from `local:` produces the same value as HTTP** — a file at `local:/widget.casp` and the same file served over HTTP yield equivalent objects.
 - **Fetching from cache produces the same value** — a cached copy of a file yields a value equivalent to the origin fetch.
 - **Fetching an empty file raises** — a zero-byte `.casp` file raises per [non-caspian-mime-types § Empty-content handling](https://puck.uno/requirements/non-caspian-mime-types#empty-content-handling).

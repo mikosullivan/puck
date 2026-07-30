@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_definition",
-	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, method, private, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `.call` method convention (defining a method named `.call` makes an instance amp-invocable — `&$instance(args)` desugars to `$instance.call(args)` at CaspM time, no runtime property lookup), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.object.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
+	"role": "spec for how classes are defined in Caspian — the `class ... end` DSL, the inline `# label` convention, the DSL bare-word commands active inside the class body (field, method, private, inherits, abstract), field declarations with their constraints, method definitions, private methods (chainable via the `private method foo()` DSL prefix that transforms the method object it receives), inheritance (single and multiple), engine-invoked hooks (init, to_string, on_close), abstract classes, auto-getters/setters, the `.call` method convention (defining a method named `.call` makes an instance amp-invocable — `&$instance(args)` desugars to `$instance.call(args)` at CaspM time, no runtime property lookup), how a class body becomes the class object that appears in an instance's stack, declarations targeting the class itself — `@x = v` sets the class's bucket, `method %self.foo()` attaches a singleton method to the class, `%self.obj.field :x, ...` adds a field to the class-as-instance — with the underlying rule that `%self` is the class inside a class body and any object-op works against it, and the `amend $var ... end` construct that extends an existing class with additional declarations (Ruby-style class reopening; mutation-vs-derived-class semantics still open). Uniqueness constraints and the `join` shorthand are Mikobase concepts and are not part of the Caspian class model.",
 	"status": "draft — DSL surface for the common constructs spec'd; a few areas noted as TBD (helper namespaces, hook-in-class declaration, `implements?` structural check)",
 	"audience": "developers writing Caspian classes; parser implementers; anyone reasoning about class construction"
 }}
@@ -423,13 +423,13 @@ $widget.about()   # 'widget factory, version 3'
 
 The method is callable on the class directly; instances don't inherit it via their normal method dispatch (it lives on the class's shadow, not on the class's method table for instances).
 
-### `%self.object.field :name, ...` — add a field to the class-as-instance
+### `%self.obj.field :name, ...` — add a field to the class-as-instance
 
 Bare `field :name, kwargs` at class body declares an INSTANCE-side field. To add a field to the class OBJECT itself — a bucket slot with generated accessors on the class — write the operation out in full:
 
 ~~~caspian
 $widget = class
-	%self.object.field :version, class: :integer, default: 3, getset: true
+	%self.obj.field :version, class: :integer, default: 3, getset: true
 end
 
 $widget.version       # 3 (via the generated getter)
@@ -443,7 +443,7 @@ The long form is intentional. Adding a field to the class itself (as opposed to 
 Inside a class body:
 
 - Bareword DSL (`field :x`, `method &y()`, `inherits Z`, `abstract true`, etc.) — declares things for INSTANCES.
-- Receiver-form with `%self` (`@x = 1`, `method %self.y()`, `%self.object.field :z`) — declares things on the CLASS itself.
+- Receiver-form with `%self` (`@x = 1`, `method %self.y()`, `%self.obj.field :z`) — declares things on the CLASS itself.
 
 The pattern generalizes: any declaration you'd write on an object with a receiver-form (`$obj.something(...)`) works inside a class body against `%self`, and the target is the class as an object.
 
@@ -484,7 +484,7 @@ The `class ... end` construct evaluates to a **class object**. Where it goes dep
 
 - **Assign it**: `$widget = class ... end` — the class object lives at `$widget`.
 - **Store it in a hash or record**: `$library[:widget] = class ... end` — the class object lives inside that hash.
-- **Publish it via `%import`**: `%import.publish('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
+- **Publish it via `%fetch`**: `%fetch.register('https://foo.com/widget', class ... end)` — the class object lives at the given URL for download.
 - **Use it inline as an argument**: `some_method(class ... end)` — the class object is passed to that method, which stores it wherever the method decides.
 
 The "things live where you store them" principle applies fully — the class object has no intrinsic name or location.
@@ -500,7 +500,7 @@ Areas the current spec does not settle:
 
 ## Testing
 
-- **`class ... end` evaluates to a class object** — `$c = class end; $c.object.isa?(class)` is true.
+- **`class ... end` evaluates to a class object** — `$c = class end; $c.obj.isa?(class)` is true.
 - **Inline label parsed but has no dispatch effect** — `class # widget ... end` and `class ... end` produce identical class objects apart from the label metadata.
 - **`.new()` builds an instance** — after `$c = class field :x, class: :number end`, `$c.new(x: 1)` returns an object with `@x == 1`.
 - **`field` declares bucket entry** — a class with `field :name, class: :string` builds instances where `@name` is bucket-backed.
@@ -536,7 +536,7 @@ Areas the current spec does not settle:
 - **Method resolution walks class stack** — a method defined on a parent is reachable through the child instance.
 - **Child method shadows parent method** — same-name method on the child takes precedence over inherited one.
 - **Storing class in a hash** — `$library[:widget] = class end; $library[:widget].new()` works.
-- **Publishing via `%import`** — `%import.publish(url, class end)` makes the class downloadable at that URL.
+- **Publishing via `%fetch`** — `%fetch.register(url, class end)` makes the class downloadable at that URL.
 - **`class` inside another expression** — passing `class end` as an argument works; the receiver gets the class object.
 - **Class carries no intrinsic name** — the class object has no `.name` property tied to any variable it was assigned to.
 - **`public_const` exposes a getter on instances** — after `class ... public_const :path, '/x' end`, `$c.new().path` is `'/x'`.

@@ -5,7 +5,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_classes_has_method",
-	"role": "spec for `.has_method?(name)` on class objects. Returns the method object if the class (or any class in its inheritance chain) publishes a method with the given name; returns a falsy value (null or false — implementation-time economy call) otherwise. Truthy-when-found and falsy-when-not, so it composes with `if $m = $class.has_method?(:foo)` idiom — the returned method captures if the caller wants it for introspection or direct invocation, but the check itself works as a plain predicate too. Consults the standard method-resolution graph, sees inherited methods just like real dispatch. Accepts the method name as a symbol or a string. Returning the method object rather than a synthesized boolean is cheaper — no allocation, the class already holds the reference. Used by delegation dispatch (see ideas/helper-build) and general introspection.",
+	"role": "spec for `.has_method?(name)` on class objects. Returns the method object if the class (or any class in its inheritance chain) publishes a method with the given name; returns a falsy value (null or false — implementation-time economy call) otherwise. Truthy-when-found and falsy-when-not, so it composes with `if $m = $class.has_method?(:foo)` idiom — the returned method captures if the caller wants it for introspection or direct invocation, but the check itself works as a plain predicate too. Consults the standard method-resolution graph, sees inherited methods just like real dispatch. Accepts the method name as a symbol or a string. Returning the method object rather than a synthesized boolean is cheaper — no allocation, the class already holds the reference. Used by delegation dispatch (see ideas/helpers/basic) and general introspection.",
 	"status": "spec — return-method-or-falsy shape and lookup semantics settled; private-method visibility and nested-namespace behavior still open; specific choice of null-vs-false for the falsy return deliberately deferred to implementation",
 	"audience": "developers writing delegation, introspection, or class-inspection tools; anyone building on top of class objects at runtime"
 }}
@@ -62,7 +62,7 @@ Method names accepted as either symbols (`:foo`) or strings (`'foo'`). Consisten
 
 ## Typical use
 
-**Delegation dispatch** — when the engine walks a class's delegations looking for a match, class-ref entries are consulted via `.has_method?`. The engine only needs the boolean signal for the dispatch decision; the returned method is available if it's useful, and cheap regardless. See [ideas/helper-build § The dispatch model](https://puck.uno/ideas/helper-build#the-dispatch-model) for the driving use case.
+**Delegation dispatch** — when the engine walks a class's delegations looking for a match, class-ref entries are consulted via `.has_method?`. The engine only needs the boolean signal for the dispatch decision; the returned method is available if it's useful, and cheap regardless. See [ideas/helpers/basic § The dispatch model](https://puck.uno/ideas/helpers/basic#the-dispatch-model) for the driving use case.
 
 Also useful for:
 
@@ -87,8 +87,8 @@ Also useful for:
 
 ## Open
 
-- **Private methods.** When called from inside the class's own methods, does `.has_method?` return private methods (yes, since they're callable from that context)? From outside, does it return them (probably no, since they're not callable)? Access-scoped, matching how `.object.methods` handles the same question, is the likely answer — but needs confirming.
-- **Nested-namespace names.** `$foo.has_method?(:object)` — does it return the top-level namespace-object for `.object` (which every class inherits)? What about `$foo.has_method?(:truthy?)` — does it walk into the `.object` namespace to find `truthy?`, or return falsy since `truthy?` isn't a top-level method on the class? Matches whatever [object/methods § `.methods`](https://puck.uno/requirements/built-in-classes/object/methods/#methods) does for the same case; worth restating here.
+- **Private methods.** When called from inside the class's own methods, does `.has_method?` return private methods (yes, since they're callable from that context)? From outside, does it return them (probably no, since they're not callable)? Access-scoped, matching how `.obj.methods` handles the same question, is the likely answer — but needs confirming.
+- **Nested-namespace names.** `$foo.has_method?(:obj)` — does it return the top-level namespace-object for `.obj` (which every class inherits)? What about `$foo.has_method?(:truthy?)` — does it walk into the `.obj` namespace to find `truthy?`, or return falsy since `truthy?` isn't a top-level method on the class? Matches whatever [object/methods § `.methods`](https://puck.uno/requirements/built-in-classes/object/methods/#methods) does for the same case; worth restating here.
 
 ## Related
 

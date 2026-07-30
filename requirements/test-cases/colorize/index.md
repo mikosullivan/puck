@@ -82,7 +82,7 @@ puts 'error'.$colorize.methods['red']
 ## Related
 
 - [classes/definition § Inheritance](https://puck.uno/requirements/classes/definition/#inheritance) — the `inherits` clause; class-level inheritance.
-- [built-in-classes/object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) — the per-instance analog (`$obj.object.classes.ensure(...)`).
+- [built-in-classes/object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) — the per-instance analog (`$obj.obj.classes.ensure(...)`).
 - [primitives/string/](https://puck.uno/requirements/built-in-classes/primitives/string/) — the base String class this example extends.
 - [downloaded-methods](https://puck.uno/requirements/classes/downloaded-methods) — the `.$fn` explicit-per-call alternative.
 - [fazibear/colorize (Ruby)](https://github.com/fazibear/colorize) — the pattern this example mirrors.

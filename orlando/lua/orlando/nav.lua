@@ -16,7 +16,7 @@ local M = {}
 -- Doc trees to walk for the sidebar. Order determines display order.
 -- Sidebar-only whitelist — Orlando's routing serves the whole repo now,
 -- but the sidebar stays focused on doc trees (not code/, tests/, etc.).
-local DOC_ROOTS = {"documentation", "ideas", "requirements", "skills"}
+local DOC_ROOTS = {"archive", "documentation", "ideas", "requirements", "skills"}
 
 -- List entries in a directory, sorted, separating files from subdirectories.
 local function list_dir(path)

@@ -50,7 +50,7 @@ the language runtime. Implementation will live at `code/caspian/stdlib/trilean.c
 The three values are `true`, `false`, and `null`. `null` represents "could be true,
 could be false, we don't know."
 
-Trilean operators classify each operand by reading `.object.bool` on it (see
+Trilean operators classify each operand by reading `.obj.bool` on it (see
 [object.md](../requirements/built-in-classes/object.md)). The result is one of three categories: `true` for any
 truthy value (the boolean `true`, the number `1`, a non-empty string, etc.),
 `false` for the boolean `false` value (and other strictly-falsy values like
@@ -200,7 +200,7 @@ arbitrary value equality — use Caspian's regular `==` for that, with its stand
 truthy-falsy semantics.
 
 The SQL trap applies: `eq(null, null)` is `null`, not `true`. To check "is this
-null?" use `$x.object.null?`, never `eq(x, null)`.
+null?" use `$x.obj.null?`, never `eq(x, null)`.
 
 ---
 
@@ -279,7 +279,7 @@ chain frame, so `%chain` access and exception propagation behave normally.
 
 A trilean operator always returns one of three strict values: `true`, `false`, or
 `null`. Branching on the result is straightforward — use direct comparisons or
-the universal `.object.null?` / `.object.defined?` helpers (which live on every
+the universal `.obj.null?` / `.obj.defined?` helpers (which live on every
 value in Caspian, not just trileans):
 
 ```
@@ -297,7 +297,7 @@ end
 Or equivalently:
 
 ```
-if $result.object.null?
+if $result.obj.null?
     # we don't know
 elsif $result
     # definitely true (truthy)
@@ -310,7 +310,7 @@ The second form takes advantage of Caspian's default truthy semantics, where
 null is treated as falsy in an `if`. After the `null?` check has handled the
 unknown case, ordinary `if $result` is safe.
 
-The `.object.null?`, `.object.defined?`, `.object.truthy?`, and `.object.bool`
+The `.obj.null?`, `.obj.defined?`, `.obj.truthy?`, and `.obj.bool`
 methods are universal — they are not specific to trilean. They are general-purpose
 introspection available on any value. See [object.md](../requirements/built-in-classes/object.md) for the full
 set.
@@ -387,14 +387,14 @@ The implementation lives at [code/caspian/stdlib/trilean.casp](https://github.co
   returns `true`; `$tri.or(0, "hello")` returns `true`. Any truthy non-null
   value is treated as `true`, any falsy non-null value as `false`, and null
   is null. The return value is always strict `true`, `false`, or `null`.
-- **Use direct comparisons or `.object.null?` for branching.** A trilean
+- **Use direct comparisons or `.obj.null?` for branching.** A trilean
   result is one of three strict values, so `$result == true`, `$result == false`,
-  and `$result.object.null?` are all unambiguous. Don't reach for trilean
+  and `$result.obj.null?` are all unambiguous. Don't reach for trilean
   operators inside an `if` condition without remembering that the outer `if`
   will treat the resulting null as falsy — usually the intent, but worth
   being explicit about.
 - **`eq` is null-poisoning.** Never use `eq(x, null)` to check for null; use
-  `$x.object.null?`. This is the same trap SQL programmers learn the hard way.
+  `$x.obj.null?`. This is the same trap SQL programmers learn the hard way.
 - **No bare-word `tri_and` / `tri_or` aliases.** Keeping the operations
   namespaced under `puck.uno/trilean` avoids polluting the bare-word namespace
   and makes their three-valued semantics explicit at every call site.

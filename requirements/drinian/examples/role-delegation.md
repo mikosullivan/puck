@@ -8,7 +8,7 @@
 }}
 ~~~
 
-Drinian mid-execution at a moment when **user is delegating to agent**. The program entered a `%role.delegate_to($agent.object.role) do ... end` block, called `$agent.yield(...)`, the engine received the agent-authored function back, and is now invoking that function — which has itself made a string-method call on the connection-string passed in as a kwarg.
+Drinian mid-execution at a moment when **user is delegating to agent**. The program entered a `%role.delegate_to($agent.obj.role) do ... end` block, called `$agent.yield(...)`, the engine received the agent-authored function back, and is now invoking that function — which has itself made a string-method call on the connection-string passed in as a kwarg.
 
 The Caspian source:
 
@@ -16,7 +16,7 @@ The Caspian source:
 $db = '[some database connection]'
 $agent = %('agents.example.com/claude').new()
 
-$result = %role.delegate_to($agent.object.role) do
+$result = %role.delegate_to($agent.obj.role) do
 	$agent.yield(prompt: 'find recent users', db: $db)
 end
 ~~~
@@ -43,7 +43,7 @@ We're paused inside the agent's returned function, partway through a `$db.split(
 			}
 		},
 		{
-			"comment": "Frame 1: the delegate_to block. The delegations field records that this frame grants the agent's role (obtained via $agent.object.role) the user role's permissions for the block's lifetime. The call field carries the call object — owned by user (the caller's role), accessible as %call from inside this frame.",
+			"comment": "Frame 1: the delegate_to block. The delegations field records that this frame grants the agent's role (obtained via $agent.obj.role) the user role's permissions for the block's lifetime. The call field carries the call object — owned by user (the caller's role), accessible as %call from inside this frame.",
 			"action": "delegate_to",
 			"role": "user",
 			"delegations": {"agent": {}},
@@ -110,7 +110,7 @@ We're paused inside the agent's returned function, partway through a `$db.split(
 
 <!-- SPEC CONFLICT: archive uses "stdlib" as the role for the built-in string.split method_call; current spec has no stdlib role. Rewritten as "engine" throughout this file. Same conflict flagged elsewhere — needs one Miko decision that applies across all examples -->
 
-<!-- SPEC CONFLICT: archive uses %puck['url'] for the agent construction; current spec uses %import(url) or %(url). Rewritten to %(...) -->
+<!-- SPEC CONFLICT: archive uses %puck['url'] for the agent construction; current spec uses %fetch(url) or %(url). Rewritten to %(...) -->
 
 <!-- SPEC CONFLICT: this example relies on an "agent" role that isn't documented in current spec (roles/index.md lists V1 as user + engine + faucet roles, with request/agent identity roles explicitly deferred). The agent-yield protocol is referenced but the "agent" role's status is unclear — needs Miko decision on whether this example should demonstrate a faucet role instead, or whether the agent role is now in scope somewhere the roles index doesn't yet reflect -->
 

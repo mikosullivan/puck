@@ -179,7 +179,7 @@ Consider this Caspian program:
 $db = %('dirjail')['./data'].new()
 $agent = %('agents.example.com/claude').new()
 
-$result = %role.delegate_to($agent.object.role) do
+$result = %role.delegate_to($agent.obj.role) do
 	$agent.yield(db: $db, prompt: 'find recent users')
 end
 ~~~
@@ -658,7 +658,7 @@ end
 
 ### Loaded remote library and the trust barrier
 
-A program that loads a remote Caspian library via `%import` and calls a method on it — and along the way puts something into `%chain` that the library is NOT supposed to see:
+A program that loads a remote Caspian library via `%fetch` and calls a method on it — and along the way puts something into `%chain` that the library is NOT supposed to see:
 
 ~~~caspian
 $markdown = %('markdown.uno/render')

@@ -95,7 +95,7 @@ Whether to spec these as primitive constructs or as derived sugar over the regis
 - **Nesting.** Inside a `wait` closure, can the script call another `wait`? Recurse the event loop?
 - **Coexistence with normal broadcasts.** While `wait` is blocking, can OTHER objects' broadcasts (from the regular event system) still propagate to their registered handlers? In single-threaded Caspian, only one thing runs at a time, so this is mostly a question of "do queued events from other sources fire when wait is the active call?"
 - **Sugar vs primitive.** Implementable on top of the existing event system (`%utils.register` + a yield primitive), or built into the engine directly?
-- **Primary vs only.** Is `%engine.wait` the only way to receive engine events, or are there parallel APIs (e.g., the regular `.object.listen_to` form also catches engine broadcasts when they fire)?
+- **Primary vs only.** Is `%engine.wait` the only way to receive engine events, or are there parallel APIs (e.g., the regular `.obj.listen_to` form also catches engine broadcasts when they fire)?
 
 ---
 

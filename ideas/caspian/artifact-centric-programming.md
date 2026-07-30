@@ -63,7 +63,7 @@ $puck_color == $myorg_color   # false
 # An instance from one isn't "an instance of Color" abstractly — it's an
 # instance of one specific class artifact.
 $red = $puck_color.new(...)
-$red.object.classes.includes?($myorg_color)   # false
+$red.obj.classes.includes?($myorg_color)   # false
 ~~~
 
 The artifacts themselves don't know or care where they came from. The URLs above are how the *caller* found them; once fetched, each artifact is just an object in memory, identical in kind to one constructed inline or pulled from a Mikobase record. Identity is per-object, not derived from origin.
@@ -153,14 +153,14 @@ When you call `$foo.bar()`, Caspian walks the stack of classes `$foo` happens to
 $ship = %('starfleet.com/ship').new(name: 'Enterprise')
 
 # Attach an additional class — adds auditing behavior to this one ship.
-$ship.object.classes.add('logging.uno/audit')
+$ship.obj.classes.add('logging.uno/audit')
 
 # Now $ship carries two classes. Method calls walk both:
 $ship.fire_torpedo   # resolved on starfleet.com/ship
 $ship.audit_log      # resolved on logging.uno/audit
 
 # The object's identity is what it carries, not what type it "is".
-$ship.object.classes   # ['starfleet.com/ship', 'logging.uno/audit']
+$ship.obj.classes   # ['starfleet.com/ship', 'logging.uno/audit']
 ~~~
 
 A type-centric language asks "what type is this?" then looks up the method in that type's vtable. Caspian asks "what classes does this artifact carry?" then walks them. The framing is artifact-first, type-second.

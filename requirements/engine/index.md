@@ -36,7 +36,7 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 | `%engine.manifest` ([doc](manifest/)) | Hash describing the current process. | — |
 | `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%chain.net`](../chain/methods/net) |
 | [`%engine.platform`](platform) | Host platform information — OS, architecture, engine implementation. | — |
-| `%engine.puck` (TBD) | Object download by URL. | [`%import`](../import) <!-- STALE: %chain.X syntax being reworked --> |
+| `%engine.puck` (TBD) | Object download by URL. | [`%fetch`](../fetch) <!-- STALE: %chain.X syntax being reworked --> |
 | [`%engine.require`](require) | Declarative dependency statement on a downloaded object. | — |
 | `%engine.fs` (TBD) | Filesystem dirjail — the filesystem entry point. | [`%fs`](../global-methods/fs) |
 | [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%chain.stderr`](../chain/methods/stdout-and-stderr) |
@@ -47,7 +47,7 @@ The "Mirrored in `%chain`" column names the chain capability that gets seeded fr
 
 Entries marked **TBD** have no canonical doc yet — currently described from the chain side. Sweep tracked at [#881](https://github.com/mikosullivan/puck/issues/881).
 
-**Not on `%engine`: clock and randomness.** Timestamps and random values are downloadable core objects — reach them via `%('core:now')` and `%('core:random')`. No `%engine.now` / `%engine.random` slot; no role gate on the reads themselves (any role that can `%import` can read the clock or draw randomness).
+**Not on `%engine`: clock and randomness.** Timestamps and random values are downloadable core objects — reach them via `%('core:now')` and `%('core:random')`. No `%engine.now` / `%engine.random` slot; no role gate on the reads themselves (any role that can `%fetch` can read the clock or draw randomness).
 
 ## Custom resources via `%engine['name']`
 

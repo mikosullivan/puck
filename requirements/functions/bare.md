@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_functions_bare",
-	"role": "spec for the bare-function type — the type most languages just call a 'function'. Declared with the `function` keyword. No captured outer variables, no `%self`, no receiver. Two declaration forms with DIFFERENT effect: `function &name(...) ... end` adds `name` as a method on the enclosing Module (siblings reach each other via `%module.name` — no variable binding, no `&name` shorthand for Module methods); `$var = function(...) ... end` binds a local callable variable and does NOT touch the Module. Both forms produce fully-hermetic function bodies — the body sees only args, locals, and `%chain`. Cross-sibling access is via explicit `%module` lookup, always — Caspian does NOT walk up implicitly from `&name` to `%module.name`. There are no mystery variables in a function's namespace. See modules/index for the Module concept the named form plugs into. Covers the two forms, the `.call` / `&name` equivalence for variable-held callables, the method surface a function object carries (`.call`, `.params`, everything on `.object`), parameter mechanics (metadata, optional/required, `*args`, `**opts`, lazy, public/private names, programmatic access), return, and `%call`.",
+	"role": "spec for the bare-function type — the type most languages just call a 'function'. Declared with the `function` keyword. No captured outer variables, no `%self`, no receiver. Two declaration forms with DIFFERENT effect: `function &name(...) ... end` adds `name` as a method on the enclosing Module (siblings reach each other via `%module.name` — no variable binding, no `&name` shorthand for Module methods); `$var = function(...) ... end` binds a local callable variable and does NOT touch the Module. Both forms produce fully-hermetic function bodies — the body sees only args, locals, and `%chain`. Cross-sibling access is via explicit `%module` lookup, always — Caspian does NOT walk up implicitly from `&name` to `%module.name`. There are no mystery variables in a function's namespace. See modules/index for the Module concept the named form plugs into. Covers the two forms, the `.call` / `&name` equivalence for variable-held callables, the method surface a function object carries (`.call`, `.params`, everything on `.obj`), parameter mechanics (metadata, optional/required, `*args`, `**opts`, lazy, public/private names, programmatic access), return, and `%call`.",
 	"status": "draft — surface and parameter mechanics filled in; the Module-method model is settled as the sibling-access mechanism (supersedes the earlier sibling-&-name-capture design)",
 	"audience": "developers writing Caspian; parser implementers",
 	"example_universe": "star trek — picard, ranks, ships, registries"
@@ -24,7 +24,7 @@ Inside the body:
 A bare function's body can see:
 
 1. **Its parameters and locals.** The arguments the caller passed, and anything the body defines with `$x = ...`.
-2. **`%chain`.** The ambient capability channel — the global methods (`%stdout`, `%net`, `%import`, ...) that the caller had, plus anything the caller placed on the chain before calling.
+2. **`%chain`.** The ambient capability channel — the global methods (`%stdout`, `%net`, `%fetch`, ...) that the caller had, plus anything the caller placed on the chain before calling.
 3. **Its own Module via `%module`.** Because the body is inside SOME code-container, `%module` returns the innermost containing Module. What's on that Module — `%module.methods`, `%module.classes` — is only the source's explicitly-named declarations at that container's scope. See [modules](https://puck.uno/requirements/modules/) for what a Module exposes and (importantly) what it does NOT expose.
 
 That's the full list. No outer function's locals, no enclosing script's top-level variables, no state from wherever the bare function was defined. The definition site's variable environment is invisible from inside the body.
@@ -185,7 +185,7 @@ The hermetic form is the security default: use it whenever you want to guarantee
 
 ## Method surface
 
-A function object exposes a small set of methods directly, plus everything on the [`object` namespace](https://puck.uno/requirements/built-in-classes/object) that every value carries.
+A function object exposes a small set of methods directly, plus everything on the [`obj` namespace](https://puck.uno/requirements/built-in-classes/object) that every value carries.
 
 **Direct methods on a function:**
 
@@ -194,9 +194,9 @@ A function object exposes a small set of methods directly, plus everything on th
 | [`.call(args)`](call) | Invoke the function with the given arguments. `$fn.call args` and `&fn args` produce identical results; the sigil form is sugar for `.call`. |
 | `.params` | Hash of parameter metadata objects, keyed by private name (without the `$`). Each entry carries `.lazy`, `.optional`, `.default`, and `.public_name` properties. See [§ Parameters](#parameters) for the full spec of what each entry holds. |
 
-**Cross-cutting `object` methods:**
+**Cross-cutting `obj` methods:**
 
-Everything on the `.object` namespace is available — `$fn.object.freeze`, `$fn.object.isa?(...)`, `$fn.object.classes`, `$fn.object.jail(...)`, and so on. Function objects use the same `object` surface every other value does; they don't add anything special or hide anything from it. See [built-in-classes/object](https://puck.uno/requirements/built-in-classes/object) for the catalog.
+Everything on the `.obj` namespace is available — `$fn.obj.freeze`, `$fn.obj.isa?(...)`, `$fn.obj.classes`, `$fn.obj.jail(...)`, and so on. Function objects use the same `obj` surface every other value does; they don't add anything special or hide anything from it. See [built-in-classes/object](https://puck.uno/requirements/built-in-classes/object) for the catalog.
 
 ## Parameters
 
@@ -530,7 +530,7 @@ A function is a bare function when it's declared with the `function` keyword. Th
 
 ## Testing
 
-- **Assignment form defines a callable** — `$foo = function() end` binds `$foo` to a function object; `$foo.object.isa?(function)` is true.
+- **Assignment form defines a callable** — `$foo = function() end` binds `$foo` to a function object; `$foo.obj.isa?(function)` is true.
 - **Named form binds the name** — after `function &greet() end`, `$greet` holds the same function object and `&greet` invokes it.
 - **Named-form declaration adds a Module method** — `function &foo() return 'x' end; %module.foo` returns `'x'`; `%module.methods['foo']` returns the function object.
 - **Named-form ALSO binds a local variable in the declaring scope** — after `function &foo() end`, `$foo` at the same scope is bound to the function value; `&foo` at the same scope invokes it.

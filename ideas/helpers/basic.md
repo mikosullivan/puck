@@ -1,17 +1,15 @@
-# Idea: Helper build
+# Basic helper
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_helper_build",
-	"role": "spitball page for a different way to attach helpers to a class than the inheritance-based `caspian.uno/helpers.casp` pattern. The core idea: helpers get declared inline inside the parent class body via a `helper &name(inherits:[@base]) ... end` DSL command. The class's body IS the helper class body — no separate `.casp` file, no `.helpers.add` call at construction time. Shared behavior across a family of helpers goes through a plain class assigned to a bucket field (`@base = class ... end`) and referenced by the concrete helpers via the `inherits:` kwarg. The standard helper root (something like `caspian.uno/helper.casp`, singular) still provides the `@target` field and shared machinery — every inline helper inherits it implicitly. Isolation preserved: helper reaches its parent only via `@target.public_method()`, not through the parent's `%bucket`. Complementary to `caspian.uno/helpers.casp` (retained for reusable-across-classes helpers), not a replacement.",
-	"status": "brainstorm — pattern shape settled from design conversation; syntax details and framework mechanics still being worked out",
-	"context": "started after the helper-based approach for HTTP requests was walked back for complexity reasons; this pattern collapses the two-step 'define a helper class + wire it up' friction into a single inline declaration"
+	"doc": "ideas_helpers_basic",
+	"role": "design doc for the inline-helper pattern: a class body declares its helpers via `helper &name(inherits:[@base]) ... end` DSL commands. The parent class body IS the helper's declaration site — no separate .casp file, no wiring call at construction time. Shared behavior across a family of helpers goes through a plain class assigned to a bucket field (`@base = class ... end`) and referenced by concrete helpers via the `inherits:` kwarg. Isolation: helper reaches its parent only via `@target.public_method()`, not through the parent's `%bucket`. Companion to [ideas/helpers/agents](agents), which spec's the internal-access variant.",
+	"status": "active_design — pattern shape settled from design conversation; syntax details and framework mechanics still being worked out",
+	"context": "started after the helper-based approach for HTTP requests was walked back for complexity reasons; this pattern collapses the two-step 'define a helper class + wire it up' friction into a single inline declaration. Supersedes the older `caspian.uno/helpers.casp` download-based approach (moved to ideas/helper-helper as historical reference)."
 }}
 ~~~
 
-Exploring a different way to attach helpers to a class than the inheritance-based [`caspian.uno/helpers.casp`](tag:helpers) pattern. That approach was judged too complex when applied to `core:http/request` because defining a helper required two steps — write a separate helper class in its own file, then wire it up at construction time via `.helpers.add`. This page explores collapsing both into a single inline declaration inside the parent class body.
-
-Not a replacement for `helpers.casp` — that stays as a V1 download for reusable helpers that plug into multiple different parent classes. The pattern here is for parent-class-specific helpers where separating the class definition and the wiring is overhead without payoff.
+The class body declares its helpers inline. Each helper gets a `helper &name(inherits:[@base]) ... end` block inside the parent class; the helper's methods are defined right there. No separate `.casp` file, no `.helpers.add` wiring call at parent-construction time. Every helper reaches its parent via `@target`.
 
 ## The pattern
 
@@ -183,34 +181,16 @@ Each stores its own entry in `.delegations`. Dispatch walks them in declaration 
 - **Explicit list + class ref in one call.** `delegate :@items, [%('core:array'), 'extra_method']` — allow the mixed form to combine a class-ref with additional specific methods? Or one form per call, and mix via two `delegate` lines?
 - **`delegate` command scope.** Class-body DSL only for helpers, or general to any class body? General is more flexible; helper-scoped keeps the surface narrow. Since `.delegations` is on class objects generally, the DSL command probably should be general too.
 
-## Comparison to `caspian.uno/helpers.casp`
-
-The `.helpers.add` approach:
-
-~~~caspian
-$request.helpers.add 'accept', %('caspian.uno/http/accept.casp')
-~~~
-
-- Requires a separate `.casp` file for the helper class.
-- Requires a wiring call at parent-construction time (or later).
-- Helper class is reusable across any parent that inherits `helpers.casp`.
-
-The inline approach:
-
-- Helper class body sits inside the parent class body — one file.
-- No wiring call at construction time — the `helper &` declaration handles registration once, at class-definition time.
-- Helper class is bound to this parent — not reusable across other classes.
-
-Both patterns can coexist. Use inline for parent-specific helpers where separation is overhead; use `helpers.casp` when the same helper needs to plug into multiple different parent classes.
-
 ## Isolation
 
-Same posture as `helpers.casp` — the helper reaches its parent only through `@target`, and only via the parent's public method surface. The helper's own bucket (`@items`, `@base` etc.) is its own; the parent's bucket stays private. Caspian's normal class-visibility rules enforce this; nothing helper-specific.
+The helper reaches its parent only through `@target`, and only via the parent's public method surface. The helper's own bucket (`@items`, `@base`, etc.) is its own; the parent's bucket stays private. Caspian's normal class-visibility rules enforce this; nothing helper-specific.
+
+For the parallel variant that DOES have internal access to the parent, see [ideas/helpers/agents](agents).
 
 ## Open design points
 
 - **`method unique()` sigil.** Miko's example writes `method unique()` without the `&` sigil, distinct from `method &init(@target)` and `method &append($x)`. Whether the sigil-less form has a specific meaning (property accessor? class-attribute-like?) or is informal shorthand — unresolved. Preserved verbatim above; may need clarification.
-- **Standard helper root.** Every inline helper implicitly inherits a standard base (something like `caspian.uno/helper.casp` — singular counterpart to the plural `helpers.casp`) that provides `@target` and any framework surface. The base's exact contents (constructor scaffolding, convention-method hooks, etc.) still to spec.
+- **Standard helper root.** Every inline helper implicitly inherits a standard base (something like `caspian.uno/helper.casp`) that provides `@target` and any framework surface. The base's exact contents (constructor scaffolding, convention-method hooks, etc.) still to spec.
 - **Class-level vs per-instance `@base`.** `@base = class ... end` at class-body scope reads like a bucket field assignment. Whether this is class-level (shared across all instances) or per-instance (new base class allocated per instance — expensive) is a Caspian semantics question. Class-level is the sensible read; syntax may need refinement to make that explicit.
 - **Cross-source uniqueness.** The `unique()` method returning `true`/`false` per helper suggests the parent class walks its helpers and consults each one at composition time. Whether this integrates with any general cross-source-collision machinery (like the rule the request class has for `.headers` vs `.auth_headers`) is TBD.
 - **Lazy vs eager instantiation.** Does `$instance.accept` create the helper on first read (lazy — matches the "untouched helper = no header" behavior we wanted for `.accept`), or at parent construction time (eager — helpers always exist)? Lazy is more likely useful.

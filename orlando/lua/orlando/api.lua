@@ -26,17 +26,25 @@ local M = {}
 
 local GH_REPO = "mikosullivan/puck"
 
+-- Doc trees the edit endpoints will accept a path inside. Kept in sync
+-- with orlando.search's DOC_ROOTS; excludes `archive/` (read-only
+-- reference material — not editable through the web UI).
+local EDITABLE_ROOTS = {"documentation/", "ideas/", "requirements/", "skills/"}
+
 local function is_safe_md_path(path)
     if not path or path == "" then return false end
     if path:find("%.%.") then return false end
     if path:find("\\")   then return false end
     if path:sub(1, 1) == "/" then return false end
+    if path:match("%.md$") == nil then return false end
 
-    if path ~= "README.md" and path:sub(1, #"documentation/") ~= "documentation/" then
-        return false
+    if path == "README.md" then return true end
+
+    for _, root in ipairs(EDITABLE_ROOTS) do
+        if path:sub(1, #root) == root then return true end
     end
 
-    return path:match("%.md$") ~= nil
+    return false
 end
 
 local function url_decode(s)

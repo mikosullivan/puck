@@ -27,7 +27,7 @@ Every element is a string. The array may be empty.
 - **Argument with embedded spaces** — a single quoted shell token `'a b c'` becomes one element `'a b c'`.
 - **Empty-string argument survives** — passing `""` on the shell gives `%engine.argv[0]` equal to `''` (empty string), not omitted.
 - **Very long argv preserves every element** — 1000 shell tokens produce a 1000-element array.
-- **Argv elements are role-tagged with the argv faucet's role** — `%engine.argv[0].object.role` is the argv faucet's role, distinct from `user`.
+- **Argv elements are role-tagged with the argv faucet's role** — `%engine.argv[0].obj.role` is the argv faucet's role, distinct from `user`.
 - **Argv is read-only** — `%engine.argv.push('x')` (or any mutating call) raises.
 - **Argv cannot be reassigned** — `%engine.argv = []` raises; the slot is not settable.
 - **Non-user role reading `%engine.argv` raises** — a method on a non-user-owned class attempting the read raises the `%engine`-blanket runtime error.

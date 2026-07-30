@@ -136,7 +136,7 @@ The grants spec'd here are **per-object**: the user hands a specific dir or file
 
 ## Testing
 
-- **`.grant(cd:true)` returns a distinct object** — `$dir.grant(cd:true).object.id != $dir.object.id`.
+- **`.grant(cd:true)` returns a distinct object** — `$dir.grant(cd:true).obj.id != $dir.obj.id`.
 - **Aliasing the receiver does not confer the grant** — after `$granted = $dir.grant(cd:true)`, calling `$dir.cd()` from a non-user role still raises; only `$granted.cd()` succeeds.
 - **`.permissions` returns the granted set** — `$dir.grant(cd:true, exec:true).permissions` equals `['cd', 'exec']` (order unspecified; treated as a set).
 - **`.can?('name')` returns true for granted methods** — `$dir.grant(cd:true).can?('cd')` is `true`.

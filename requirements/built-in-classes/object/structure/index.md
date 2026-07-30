@@ -20,7 +20,7 @@ Every value is composed of these parts:
 - **stack** — an ordered array of platters carrying class identity and per-platter metadata. Some platters have special purposes (the shadow, nested-object markers); see [Stack](#stack) below for the full list.
 - **[primitive field](#primitive-field)** (optional) — an internal, engine-managed slot holding a JSON primitive value (string, number, boolean, null, array, hash). Set at construction and immutable. Not exposed at the Caspian level; engine-level methods reach it directly. Its presence and value determine the object's truthiness — see [§ Truthiness](#truthiness).
 
-The bucket and stack are visible at the Caspian level via the `object` namespace (`$foo.object.bucket`, `$foo.object.stack`). Truthiness is exposed via `$foo.object.truthy?`. The primitive field is deliberately not directly inspectable — it's how the engine represents primitives, not something Caspian code manipulates directly.
+The bucket and stack are visible at the Caspian level via the `obj` namespace (`$foo.obj.bucket`, `$foo.obj.stack`). Truthiness is exposed via `$foo.obj.truthy?`. The primitive field is deliberately not directly inspectable — it's how the engine represents primitives, not something Caspian code manipulates directly.
 
 ## Serialized form
 
@@ -120,7 +120,7 @@ A platter carrying `shadow: true` is the object's **shadow** — the home for si
 
 **The shadow is lazy.** It comes into existence only when code defines a singleton method on the object. At that moment, if no shadow platter exists, the engine creates one and inserts it at position 0 (the top of the stack).
 
-**Convention: the shadow sits at position 0.** New class platters added via `.object.classes.ensure` (see [object/methods/](../methods/)) land at the bottom of the stack, leaving the shadow undisturbed at the top. That's the convention every well-behaved piece of code follows.
+**Convention: the shadow sits at position 0.** New class platters added via `.obj.classes.ensure` (see [object/methods/](../methods/)) land at the bottom of the stack, leaving the shadow undisturbed at the top. That's the convention every well-behaved piece of code follows.
 
 **The convention is not enforced.** User (or the object's owning role) can manually place the shadow anywhere in the stack — the engine doesn't (and practically can't) prevent it. Doing so is bad practice: dispatch walks top-to-bottom, so a shadow buried mid-stack loses its "override everything else" semantics for any platter above it. The rule is a spec-level convention, not a runtime guard. Code that moves the shadow deliberately owns the consequences.
 
@@ -271,7 +271,7 @@ Consequence: a class inheriting from `False` has instances whose primitive field
 
 The check is against the JSON-level value, not against a Caspian object wrapper. The engine reads the raw primitive and does a native `is-false-or-null` comparison — no method dispatch, no method-not-found risk, no way for user code to intercept.
 
-The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which reads the primitive field and returns the resulting boolean. See the [truthy/falsy syntax rule](https://puck.uno/requirements/syntax/truthy-and-falsy) for how truthiness is consumed by `if`, `while`, `and`/`or`, and other truth-consuming constructs.
+The Caspian-level surface is [`$foo.obj.truthy?`](../methods/#truthy), which reads the primitive field and returns the resulting boolean. See the [truthy/falsy syntax rule](https://puck.uno/requirements/syntax/truthy-and-falsy) for how truthiness is consumed by `if`, `while`, `and`/`or`, and other truth-consuming constructs.
 
 ## Testing
 
@@ -299,7 +299,7 @@ The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which 
 - **Shadow appears at position 0 by convention** — the shadow platter created by a singleton method definition sits at the top of the stack.
 - **Only one shadow per stack** — attempting to load an object whose serialized stack has two `shadow: true` platters raises as malformed.
 - **Shadow methods win** — a method defined on the shadow wins over the same method name on the base class.
-- **Shadow can be created explicitly via `ensure: true`** — `$w.object.classes.shadow(ensure: true)` creates the shadow platter without adding any singleton methods.
+- **Shadow can be created explicitly via `ensure: true`** — `$w.obj.classes.shadow(ensure: true)` creates the shadow platter without adding any singleton methods.
 
 ### Nested objects
 
@@ -335,9 +335,9 @@ The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which 
 
 ### Truthiness
 
-- **True instance is truthy** — `true.object.truthy?` is `true` (primitive field is `true`).
-- **False instance is falsy** — `false.object.truthy?` is `false` (primitive field is `false`).
-- **Null instance is falsy** — `null.object.truthy?` is `false` (primitive field is `null`).
+- **True instance is truthy** — `true.obj.truthy?` is `true` (primitive field is `true`).
+- **False instance is falsy** — `false.obj.truthy?` is `false` (primitive field is `false`).
+- **Null instance is falsy** — `null.obj.truthy?` is `false` (primitive field is `null`).
 - **String instance is truthy** — including the empty string (primitive field is a UTF-8 byte sequence, neither `false` nor `null`).
 - **Number instance is truthy** — including 0 (primitive field is a number, neither `false` nor `null`).
 - **Array instance is truthy** — including the empty array (primitive field is an element sequence).
@@ -378,6 +378,6 @@ The Caspian-level surface is [`$foo.object.truthy?`](../methods/#truthy), which 
 ## Related
 
 - [Object](../) — the parent Object class doc.
-- [Object methods](../methods/) — the `object` method namespace, which is how the structure spec'd here is inspected at the Caspian level.
-- [classes/nested](https://puck.uno/requirements/classes/nested) — the nested-method-namespace mechanism `object` uses.
+- [Object methods](../methods/) — the `obj` method namespace, which is how the structure spec'd here is inspected at the Caspian level.
+- [classes/nested](https://puck.uno/requirements/classes/nested) — the nested-method-namespace mechanism `obj` uses.
 - [classes/downloaded-methods](https://puck.uno/requirements/classes/downloaded-methods) — how downloaded methods reach a receiver's bucket, subject to the receiver-ownership rule.

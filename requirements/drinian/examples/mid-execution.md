@@ -214,7 +214,6 @@ Paused inside `greet` on the first iteration, after `$msg` has been computed but
 			"locals": {"who": "5", "msg": "6"}
 		}
 	],
-	"pending_exceptions": [],
 	"gc_errors": []
 }
 ~~~

@@ -12,7 +12,7 @@
 When designing how singleton methods get attached to one specific object, we considered passing the body as a closure:
 
 ~~~caspian
-$alice.object.method(:salute) do
+$alice.obj.method(:salute) do
 	'Captain ' + @name + ' reporting!'
 end
 ~~~
@@ -55,6 +55,6 @@ A few situations where this might come back on the table:
 
 - **The closure-attached-to-object pattern turns out to be common** and the two-step form starts feeling like ceremony. If real Caspian code routinely stores closures on objects and invokes them through `.handler` style fields, we may want a syntactic shortcut.
 - **A reframing of `@`** that makes the rebinding less magical. If there's a way to express "this closure has its `@` bound to *this* receiver" that reads naturally instead of as engine magic, the closure-method form might become coherent.
-- **A different attachment surface** — e.g., a separate `.object.handler` namespace for closure-shaped attachments, distinct from `.object.method` for real methods — that keeps the two models cleanly separated while still giving the closure case syntactic support.
+- **A different attachment surface** — e.g., a separate `.obj.handler` namespace for closure-shaped attachments, distinct from `.obj.method` for real methods — that keeps the two models cleanly separated while still giving the closure case syntactic support.
 
 For now, none of these has materialized. The chosen one-form design holds.

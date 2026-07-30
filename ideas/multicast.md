@@ -94,28 +94,28 @@ Combined with the narrowness of the use case in current spec — per-platter buc
 The shape we like most for a future revisit splits the question into two independent decisions:
 
 1. **Engine-fired hooks** (`on_close`, future lifecycle events) are multicast by engine policy. The engine knows which method names it treats this way; the developer is expected to know the list. No language surface needed for this — it's just what the engine does.
-2. **User-fired calls** are unicast by default. User code that wants multicast asks for it explicitly at the call site through `.object.multicast`:
+2. **User-fired calls** are unicast by default. User code that wants multicast asks for it explicitly at the call site through `.obj.multicast`:
 
    ~~~caspian
-   $foo.object.multicast :bar              # fire every matching :bar along the platter walk
-   $foo.object.multicast(:bar, args...)    # general form with args
+   $foo.obj.multicast :bar              # fire every matching :bar along the platter walk
+   $foo.obj.multicast(:bar, args...)    # general form with args
    ~~~
 
-`.object.multicast` lives in the engine-protocol namespace alongside `.object.classes`, `.object.freeze`, etc. — symmetric with the rest of the surface that addresses the object's structure rather than its instance methods.
+`.obj.multicast` lives in the engine-protocol namespace alongside `.obj.classes`, `.obj.freeze`, etc. — symmetric with the rest of the surface that addresses the object's structure rather than its instance methods.
 
 ### What this resolves
 
 - **The per-call-site authority problem evaporates.** The caller decides per invocation; no need to elect a platter as authoritative, no tie-breaker rule when classes disagree on dispatch kind.
 - **No per-function metadata.** Function objects stay clean — no `on_call` property to set or read, nothing the engine has to consult before the walk.
 - **Two layers, two mechanisms, one idea.** Engine policy and user opt-in share the *concept* of multicast without sharing an implementation. Each is the simplest thing that solves its own case.
-- **Extensibility is honest.** A third-party class can opt its callers into multicast on any of its methods just by being called via `.object.multicast`. No magic-name registration, no per-class declaration, no engine-side allowlist for user methods.
+- **Extensibility is honest.** A third-party class can opt its callers into multicast on any of its methods just by being called via `.obj.multicast`. No magic-name registration, no per-class declaration, no engine-side allowlist for user methods.
 
 ### What still needs design
 
 - **Return shape.** A regular method call returns one value. `multicast :bar` returns... what? An array of values from each handler in walk order? A summary? Nothing? Lifecycle hooks don't care about return values, but if user code can multicast arbitrary methods, the return type matters.
 - **Error handling.** If one handler raises, do the rest fire? `on_close` already has the GC's per-handler catch-anything wrapper; user multicasts would need their own error story. Candidates: collect-all-errors, fail-fast, ignore-and-continue.
 - **Argument shape.** Whether `multicast :bar` for the no-arg lifecycle case and `multicast(:bar, args...)` for the general case are one method or two; whether args are passed identically to each handler or shaped per-handler somehow.
-- **Whether engine-fired hooks ever route through `.object.multicast`** internally (so the mechanism is uniform), or stay a separate engine-internal path that just happens to behave the same way.
+- **Whether engine-fired hooks ever route through `.obj.multicast`** internally (so the mechanism is uniform), or stay a separate engine-internal path that just happens to behave the same way.
 
 ## Other paths considered
 

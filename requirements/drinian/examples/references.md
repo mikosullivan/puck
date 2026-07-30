@@ -101,7 +101,6 @@ Paused at the comment line. Three variables bound, one hash with one element, an
 			}
 		}
 	},
-	"pending_exceptions": [],
 	"gc_errors": []
 }
 ~~~
@@ -192,7 +191,7 @@ inverse["4"] = {"3"}
 
 Maintained automatically by hash-mutation hooks on the `references` hash (`after_set`, `after_delete`). Every write to `references` fires the hooks; the hooks update the inverse index. The hooks live in an engine-pushed platter on the `references` hash itself.
 
-If a future Caspian version wants to expose `<obj>.object.referrers` (or similar) at the language level, the inverse index is already maintained and waiting. Until then, it stays engine-internal — easy to walk back if the design needs to change.
+If a future Caspian version wants to expose `<obj>.obj.referrers` (or similar) at the language level, the inverse index is already maintained and waiting. Until then, it stays engine-internal — easy to walk back if the design needs to change.
 
 ## Related docs
 

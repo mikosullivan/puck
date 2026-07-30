@@ -102,6 +102,26 @@ $greeting = $name + '!'    # returns a new string 'alice!'; $name is unchanged
 
 This is a load-bearing property: passing a string across a role boundary is safe by default because the recipient can't alter it. Provenance stays intact (the role tag on the string is set at creation and never changes; see [roles § Objects also have roles](https://puck.uno/requirements/roles/#objects-also-have-roles)).
 
+## Encoding: UTF-8
+
+Every string in Caspian is UTF-8. There is no encoding parameter, no encoding attribute, no runtime concept of "what encoding is this string in" — every string value the runtime holds is UTF-8, always. Encoding lives at the boundary; the runtime doesn't carry it.
+
+Every string passed into Caspian is automatically re-encoded as UTF-8 at the boundary:
+
+- **Caspian source** files, string values in downloaded objects, results of `%fetch` calls, arguments handed to the engine by a host.
+- **All of it** lands as UTF-8 inside the runtime.
+- **Every string value** the engine produces or serializes is UTF-8.
+
+Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.
+
+In practice the conversion is usually trivial:
+
+- **ASCII** is already valid UTF-8 — no work required.
+- **UTF-8** input passes through as-is.
+- **UTF-16** and other Unicode encodings are transcoded to UTF-8 at the boundary using the standard mappings.
+
+The exact conversion policy for other encodings — legacy single-byte charsets, non-Unicode double-byte encodings, byte sequences with no declared encoding, and any invalid or partially-valid input — will be filled in as the boundary handling is designed.
+
 ## Method surface
 
 The guaranteed methods so far:
@@ -190,6 +210,14 @@ $n == $m                      # true
 - **`.lower` returns a new instance; receiver unchanged**.
 - **`+` concatenation returns a new instance** — `'a' + 'b'` returns `'ab'`; neither operand is mutated.
 - **No method mutates the receiver's character sequence**.
+
+### Encoding: UTF-8
+
+- **ASCII input passes through unchanged** — a pure-ASCII input string arrives at Caspian byte-identical.
+- **UTF-8 input passes through unchanged** — a UTF-8-encoded string arrives at Caspian byte-identical.
+- **UTF-16 input is transcoded to UTF-8** — a UTF-16-encoded string arrives at Caspian as its UTF-8 equivalent.
+- **Every string value inside the runtime is UTF-8** — after any of the above inputs, `str.bytes` returns valid UTF-8 for every string reachable from user code.
+- **Serialized outputs are UTF-8** — a string emitted via `%stdout`, written to a file, or handed back to a sink is UTF-8 regardless of the input encoding.
 
 ### `.upper` / `.lower`
 

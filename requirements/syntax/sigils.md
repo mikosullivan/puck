@@ -68,7 +68,7 @@ end
 
 ## `%` — system method
 
-`%name` names a system method — a surface the engine provides. `%self`, `%chain`, `%engine`, `%import`, `%call`, `%bucket`, `%stdout`, `%stderr`, `%net`, and so on. The full list lives under [global-methods](https://puck.uno/requirements/global-methods/).
+`%name` names a system method — a surface the engine provides. `%self`, `%chain`, `%engine`, `%fetch`, `%call`, `%bucket`, `%stdout`, `%stderr`, `%net`, and so on. The full list lives under [global-methods](https://puck.uno/requirements/global-methods/).
 
 Two properties matter:
 

@@ -65,7 +65,7 @@ The engine module surface (per the V1 spec):
 | `engine.run()` | method — no arguments; executes the staged tree. V1 has no return value; the host receives nothing from `run()`. |
 | `engine.bootstrap()` | internal — called by `engine.run()`; not normally called by the host directly |
 
-More properties and slots arrive as later slices add them. The current shape is set by the V1 development plan; the canonical inventory of engine properties (the user-visible `%engine.*` surface) will live in its own doc once the slice machinery for it migrates from `requirements-old/`.
+More properties and slots arrive as later slices add them. The current shape is set by the V1 development plan; the canonical inventory of engine properties (the user-visible `%engine.*` surface) lives at [engine](https://puck.uno/requirements/engine/).
 
 ### 2. Configure the engine
 
@@ -118,7 +118,7 @@ When the first statement of the user program runs, it can reach:
 - `%engine.*` — the engine object the host configured (argv, stdout, stdin, stderr, and whatever else the host wired).
 - `%stdout`, `%stderr`, `%stdin` — top-level system methods that read through `engine.*` properties. The exact access rules (which roles can call them) live in the system-methods doc once it migrates.
 - The built-in classes — `puck.uno/string` and others — reachable for instantiation and method dispatch.
-- All language constructs the slice this program is targeting actually supports. (Aslan: literal-method-call only. Bree: + the source-text pipeline. Corin: + BWC dispatch and `puts`. Etc.)
+- All language constructs the V1 slice this program targets actually supports.
 
 What the user program does NOT see:
 

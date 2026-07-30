@@ -414,13 +414,33 @@ end
 -- slug we compute matches what ensure_heading_ids will compute from the
 -- rendered HTML. Covers `code`, **bold**, *italic*, _x_, [text](url),
 -- and trailing ATX-close hashes.
+--
+-- Intraword underscores are LEFT ALONE, matching CommonMark's rule:
+-- `foo_bar_baz` is not emphasized. The old naive `_+([^_]+)_+ → %1`
+-- consumed underscores inside identifiers, producing wrong slugs for
+-- headings like "`.freeze_bucket` / `.freeze_stack` / `.freeze`" —
+-- the TOC's href stripped to `freezebucket-freezestack-freeze` while
+-- ensure_heading_ids (working from lunamark's correct HTML) generated
+-- `freeze_bucket-freeze_stack-freeze`, so the anchor never matched.
 local function md_heading_text_to_plain(text)
     text = text:gsub("%s+#+%s*$", "")               -- ATX close: `## Title ##`
     text = text:gsub("!%[([^%]]*)%]%([^)]*%)", "%1") -- ![alt](url) -> alt
     text = text:gsub("%[([^%]]*)%]%([^)]*%)", "%1")  -- [text](url) -> text
     text = text:gsub("`+([^`]*)`+", "%1")           -- inline code
     text = text:gsub("%*+([^%*]+)%*+", "%1")        -- **bold** / *italic*
-    text = text:gsub("_+([^_]+)_+", "%1")           -- _emphasis_
+    -- _emphasis_ — only when the underscores are NOT surrounded by word
+    -- chars (CommonMark's intraword rule). Position captures let us
+    -- inspect the char immediately before / after the match in the
+    -- original string.
+    text = text:gsub("()(_+)([^_]+)(_+)()",
+        function(a, open, content, close, b)
+            local pre  = a > 1        and text:sub(a - 1, a - 1) or ""
+            local post = b <= #text   and text:sub(b, b)         or ""
+            if pre:match("%w") or post:match("%w") then
+                return open .. content .. close  -- intraword; leave alone
+            end
+            return content
+        end)
     return text
 end
 
@@ -1060,6 +1080,12 @@ local function add_head(html_tag, title)
             l:attr("rel",  "stylesheet")
             l:attr("href", "/documentation/site/frameworks/jqmin/jqmin.css")
         end)
+        -- Sidebar toggle: loaded non-defer so its IIFE can apply the
+        -- persisted hidden state to <html> before body renders.
+        h:tag("script", function(s)
+            s:attr("src", "/client-assets/sidebar-toggle.js")
+            s:text("")
+        end)
         h:tag("script", function(s)
             s:attr("src",   "/client-assets/quick-add.js")
             s:attr("defer", "")
@@ -1447,6 +1473,13 @@ local function add_sidebar(nav_tag, current_md_path, search_query, current_tree,
         current_tree = tree_of(current_md_path)
     end
 
+    nav_tag:tag("button", function(btn)
+        btn:attr("class",      "sidebar-hide-btn")
+        btn:attr("type",       "button")
+        btn:attr("aria-label", "Hide sidebar")
+        btn:text("«")
+    end)
+
     nav_tag:tag("h1", function(h1)
         h1:tag("a", function(a)
             a:attr("href", "/")
@@ -1520,6 +1553,12 @@ function M.render_request(ctx)
     html:tag("body", function(b)
         b:tag("div", function(layout)
             layout:attr("class", "layout")
+            layout:tag("button", function(btn)
+                btn:attr("class",      "sidebar-show-btn")
+                btn:attr("type",       "button")
+                btn:attr("aria-label", "Show sidebar")
+                btn:text("»")
+            end)
             layout:tag("nav", function(n)
                 n:attr("class", "sidebar")
                 add_sidebar(n, ctx.md_path)
@@ -1644,6 +1683,13 @@ function M.render_results_page(ctx)
     html:tag("body", function(b)
         b:tag("div", function(layout)
             layout:attr("class", "layout")
+
+            layout:tag("button", function(btn)
+                btn:attr("class",      "sidebar-show-btn")
+                btn:attr("type",       "button")
+                btn:attr("aria-label", "Show sidebar")
+                btn:text("»")
+            end)
 
             layout:tag("nav", function(n)
                 n:attr("class", "sidebar")

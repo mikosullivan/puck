@@ -32,7 +32,7 @@ The canonical example:
 
 ~~~caspian
 $foo = 'string'
-$foo.object.classes.add 'foo.uno/upper'
+$foo.obj.classes.add 'foo.uno/upper'
 
 puts $foo    # STRING
 ~~~
@@ -69,7 +69,7 @@ The cleanest concrete example is `puck.uno/class/redact` (see
 ~~~caspian
 @password = nil
 $pw = secure_input()
-$pw.object.classes.add 'puck.uno/class/redact'   # mark as sensitive
+$pw.obj.classes.add 'puck.uno/class/redact'   # mark as sensitive
 @password = $pw
 ~~~
 
@@ -110,7 +110,7 @@ the class is purely a tag the engine reads.
   rule.** If two added classes both define `to_string`, the more
   recently added one wins because it sits higher in the stack.
   A class that needs to dispatch to a class lower in the stack
-  uses `$obj.object.call_with($lower_class, 'method', ...)`.
+  uses `$obj.obj.call_with($lower_class, 'method', ...)`.
 - **Sticky vs removable.** Per-platter, not per-class. Each platter
   record carries its own `sticky: true` field if it's a sticky
   platter (omitted otherwise). See [Pinned and mutable regions](#pinned-and-mutable-regions)
@@ -188,7 +188,7 @@ participating in normal dispatch order. See
 for how the truthiness platter encodes null / false / true via a
 single class with a bucket-carried `truthy` field.
 
-`$foo.object.classes` returns all platters in stack order
+`$foo.obj.classes` returns all platters in stack order
 (top to bottom), **including the shadow platter at position 0**.
 Programs that want to iterate only "user-relevant" platters can
 filter by sticky/class-uns/etc.
@@ -551,10 +551,10 @@ accumulation cost is worth not tracing.
 
 **What `active: false` doesn't affect:**
 
-- **`.object.isa?`** — still returns true if the class is in the
+- **`.obj.isa?`** — still returns true if the class is in the
   stack, active or not. Class membership is independent of dispatch
   participation.
-- **`.object.classes`** — returns the full stack including inactive
+- **`.obj.classes`** — returns the full stack including inactive
   platters (with their `active: false` field visible).
 - **Engine scans for marker presence** (truthiness markers, redact,
   etc.) — the engine reads the full classes hash; an inactive
@@ -683,7 +683,7 @@ the per-instance platter, not the resolved ancestor class. This
 keeps per-platter bucket access stable regardless of where the
 method came from.
 
-**`call_with` semantics.** `$obj.object.call_with($class, 'method', ...)`
+**`call_with` semantics.** `$obj.obj.call_with($class, 'method', ...)`
 dispatches explicitly to the named class. Could optionally walk up
 that class's inheritance chain if the named class doesn't define
 the method — TBD as the API matures.

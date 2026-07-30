@@ -29,7 +29,7 @@ $widget.inherited            # [displayable, serializable, $extra_class]
 
 Because it's a live view (not a snapshot), holding `$arr = $widget.inherited` gives you a reference to the same underlying array — subsequent mutations show up when you read `$arr` again.
 
-**Contrast with `$obj.object.classes`.** The per-instance surface at [object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) mutates the platter stack of a single instance. `.inherited` on the class mutates the class itself, affecting every instance. Pick the one that matches your scope.
+**Contrast with `$obj.obj.classes`.** The per-instance surface at [object/methods § `.classes`](https://puck.uno/requirements/built-in-classes/object/methods/#classes--classesensureclass--classesaddunconditionallyclass--classesshadow) mutates the platter stack of a single instance. `.inherited` on the class mutates the class itself, affecting every instance. Pick the one that matches your scope.
 
 ## Mutation methods
 

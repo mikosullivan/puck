@@ -16,7 +16,7 @@ System methods start with `%`. They are always available (subject to grants and 
 Two syntactic shapes appear:
 
 - **Canonical namespace form** — `%X` or `%X.Y`. Standalone namespaces (`%self`, `%call`, `%chain`, `%engine`) and chain-mediated capabilities in their full `%chain.X` form.
-- **Bare-`%X` shortcut** — a short form for a small set of chain-mediated capabilities (`%import`, `%stdin`, `%stdout`, `%stderr`). Each bare form resolves to its `%chain.X` canonical equivalent; the canonical form is the one `.grant`/`.revoke` operates on.
+- **Bare-`%X` shortcut** — a short form for a small set of chain-mediated capabilities (`%fetch`, `%stdin`, `%stdout`, `%stderr`). Each bare form resolves to its `%chain.X` canonical equivalent; the canonical form is the one `.grant`/`.revoke` operates on.
 
 Other globals on `%chain` (`%chain.net`, `%chain.timer`, `%chain.timeout`, etc.) have no bare shortcut and are only reachable through the canonical form.
 
@@ -32,7 +32,7 @@ For the catalog of every sigil, per-sigil semantics, and which bare shortcuts ex
 - **`%chain.X` resolves the named chain-mediated capability** — `%chain.puck` returns the object-download surface.
 - **`%engine` parses at the top level** — a top-level `%engine.X` call resolves (subject to role).
 - **`%engine` inside user-code role raises** — invoking `%engine` from a role that does not permit engine access raises.
-- **Bare `%import` shortcut resolves to `%chain.puck`** — both yield the same value.
+- **Bare `%fetch` shortcut resolves to `%chain.puck`** — both yield the same value.
 - **Bare `%stdin` shortcut resolves to `%chain.stdin`** — both yield the same value.
 - **Bare `%stdout` shortcut resolves to `%chain.stdout`** — both yield the same value.
 - **Bare `%stderr` shortcut resolves to `%chain.stderr`** — both yield the same value.

@@ -5,18 +5,18 @@
 {"vibecode": {
 	"doc": "requirements_global_call",
 	"role": "spec for %call — the global method that returns the current call object. Holds the caller's role, exposes early-exit, the callable-value array of blocks the caller passed, and the class the currently-executing method was defined on (%call.method_class — used by the engine's private-method access check and available to user code for the same class-based gating). Yielding to a block is calling the block (no separate primitive) — the `yield` bwc desugars to `%call.blocks[0].call`. Configured calls (DSL wiring, reusable param setup) go through caller objects instead. Distinct from %chain — %call lives on its own, not as a chain entry. The call object is a first-class value: passing it out or stashing it in %chain lets deeply nested code return from the owning function without any intermediate function opting in — that's Caspian's general access rule (if you can see an object, you can call its methods) applied to the call primitive.",
-	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; the current method's defining class is reachable as %call.method_class (null when not in a method body); early exit via %call.return; blocks are callable values in %call.blocks; yield bwc = %call.blocks[0].call; DSL wiring lives on caller objects, not on %call; the call object is a first-class value — passing it out or stashing in %chain lets any downstream code call .return on it and unwind to the owning frame",
+	"settled": "owned by the caller's role; the caller's role is reachable as %call.role; %call.trusted? is a boolean shortcut for 'caller's role matches current frame's role OR caller is user' — covers the very common same-role-or-user self-gating pattern; the current method's defining class is reachable as %call.method_class (null when not in a method body); early exit via %call.return; blocks are callable values in %call.blocks; yield bwc = %call.blocks[0].call; DSL wiring lives on caller objects, not on %call; the call object is a first-class value — passing it out or stashing in %chain lets any downstream code call .return on it and unwind to the owning frame",
 	"audience": "anyone writing a function or closure body that needs to inspect, return from, or invoke a passed block"
 }}
 ~~~
 
 `%call` is a global method available inside any function or closure body. It returns the **call object** — a first-class object representing the in-progress call. The call object carries the metadata about the call (who made it, what blocks they passed) and provides the primitives for ending the call (`%call.return`).
 
-`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%import`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
+`%call` is **not** a `%chain` entry. It's its own global, alongside `%chain`, `%engine`, `%fetch`, etc. It needs no grant — every function body has its own `%call` for the duration of that frame.
 
 ## Class identity
 
-`%call` returns an instance of the **Call class** at `caspian.uno/call`. `%call.object.isa?(%('caspian.uno/call'))` is `true`. Direct construction of Call objects by user code is TBD — for V1 the only path to a Call object is `%call` inside a live frame; a constructor-side surface for testing / mocking is a post-V1 question.
+`%call` returns an instance of the **Call class** at `caspian.uno/call`. `%call.obj.isa?(%('caspian.uno/call'))` is `true`. Direct construction of Call objects by user code is TBD — for V1 the only path to a Call object is `%call` inside a live frame; a constructor-side surface for testing / mocking is a post-V1 question.
 
 ## Owned by the caller
 
@@ -164,7 +164,7 @@ Putting the call object on the caller's side (rather than the function's side) i
 This connects to the broader role-and-ownership model. Three different roles can coexist in one method body:
 
 - The **running frame's role** — `%role`. For methods, this is the class's role; for free-standing functions and closures, the defining role.
-- The **instance's role** — `%self.object.role`. Owned by whoever called `.new()`.
+- The **instance's role** — `%self.obj.role`. Owned by whoever called `.new()`.
 - The **caller's role** — `%call.role`. Owned by whoever made this specific call.
 
 They're not interchangeable; `%call.role` is specifically the third one. See [roles/object-access § Class instantiation is not an exception](https://puck.uno/requirements/roles/object-access#class-instantiation-is-not-an-exception) for the broader breakdown.
@@ -176,7 +176,7 @@ Methods can use `%call.role` to restrict access from inside the body, since Casp
 ~~~caspian
 class &widget
 	method &destroy()
-		if %call.role != %self.object.role
+		if %call.role != %self.obj.role
 			raise 'only the owner can destroy this widget'
 		end
 
@@ -186,6 +186,52 @@ end
 ~~~
 
 The method body runs in the class's role; `%call.role` is the caller's role; the comparison decides whether to proceed. The full rule for cross-role method access lives in [roles/object-access](https://puck.uno/requirements/roles/object-access#self-gating-from-inside-the-method).
+
+## `%call.trusted?`
+
+Returns `true` if the caller can be treated as trusted for this frame's purposes — that is, if either:
+
+- The caller's role is the same as the current frame's role (`%call.role == %role`), OR
+- The caller's role is `user`.
+
+Returns `false` in every other case.
+
+This is the shortcut for the very common self-gating pattern:
+
+~~~caspian
+if %call.role != %role and not %call.role.user?
+	raise 'not trusted'
+end
+~~~
+
+Which collapses to:
+
+~~~caspian
+if not %call.trusted?
+	raise 'not trusted'
+end
+~~~
+
+**Why user is always trusted.** The `user` role is the program author. It has ambient authority over every value in the runtime — it can read `.obj.stack`, mutate anything, invoke anything. `%call.trusted?` reflects that reality: if the caller is user, treat them as trusted regardless of role identity.
+
+**Why same-role means trusted.** A method being called from another method in the same role is essentially calling code that has the same authority to begin with. Two frames sharing a role can't sensibly restrict each other; the check is only meaningful across a role boundary.
+
+### Self-gating with `.trusted?`
+
+~~~caspian
+class # widget
+	method &destroy_backend()
+		if not %call.trusted?
+			raise 'destroy_backend is trusted-callers-only'
+		end
+		# ...
+	end
+end
+~~~
+
+Same shape as the [`%call.role` self-gating example](#call-role) but expressed with a single predicate. When the gating rule really is "same role or user" — which is the default rule for framework-level operations across the `.obj` surface — this reads better than the manual comparison.
+
+**Not the only trust model.** `.trusted?` covers the "same role or user" case only. Rules that need finer distinctions (only user, only a specific role, only the receiver's owning role rather than the frame's role) still write the comparison out explicitly.
 
 ## `%call.method_class`
 
@@ -216,7 +262,7 @@ User code can gate access the same way the engine does:
 ~~~caspian
 class # widget
 	method &internal_op()
-		if %call.method_class != %self.object.classes.first
+		if %call.method_class != %self.obj.classes.first
 			raise 'internal_op is same-class-only'
 		end
 		# ...
@@ -232,6 +278,7 @@ Same shape as the `%call.role` self-gating example; different axis of gating.
 |---|---|---|
 | `%call` | call object | The current call. Owned by the caller's role. |
 | `%call.role` | role object | Caller's role. |
+| `%call.trusted?` | boolean | `true` if the caller's role is the same as the current frame's role OR the caller is `user`; `false` otherwise. Shortcut for the "same role or user" self-gating pattern. |
 | `%call.method_class` | class object or null | Class the currently-executing method was defined on; `null` when the frame isn't a method body. Used by the engine's private-method access check and available to user code for the same class-based gating. |
 | `%call.return value` | exits the call | End this call (function or closure), returning `value`. |
 | `%call.blocks` | plain Array of callables | All blocks the caller passed, in order. Each element is a callable value (closure or bare function). Standard array-read surface (`.length`, `.each`, `[N]`) applies. |
@@ -244,6 +291,10 @@ Same shape as the `%call.role` self-gating example; different axis of gating.
 - **`%call` reachable inside method body** — a method body reading `%call` returns its own call object.
 - **`%call.role` is the caller's role, not the function's role** — a method invoked cross-role reads `%call.role` as the caller.
 - **`%call.role` inside top-level user script** — returns the user role.
+- **`%call.trusted?` returns `true` for same-role caller** — a method invoked by another frame in the same role reads `%call.trusted?` as `true`.
+- **`%call.trusted?` returns `true` for user caller** — a method invoked from user code reads `%call.trusted?` as `true`, regardless of the frame's own role.
+- **`%call.trusted?` returns `false` for cross-role non-user caller** — a method in role A invoked from role B (B ≠ A, B ≠ user) reads `%call.trusted?` as `false`.
+- **`%call.trusted?` return type is always Boolean** — never any other type.
 - **`%call.return` exits function** — `function() %call.return 'x'; 'y' end` invoked returns `'x'`.
 - **`%call.return` inside closure exits closure only** — `function() &foo do %call.return 'x' end; return 'y' end` returns `'y'`; the closure body's `%call.return 'x'` did not propagate.
 - **Bare `return` inside closure exits enclosing function** — contrast to `%call.return`: bare `return` from a `do` block returns from the surrounding function.
@@ -260,7 +311,7 @@ Same shape as the `%call.role` self-gating example; different axis of gating.
 - **`%call` is not in `%chain`** — `%chain.entries` (or equivalent) does not include `%call`; `%call` is its own global. <!-- STALE: %chain.X syntax being reworked -->
 - **Each invocation has its own `%call`** — recursive calls see their own frame's `%call`, not the enclosing frame's.
 - **Passing a closure and reading `%call.blocks[0]`** — the receiver can inspect the block as a callable value.
-- **Self-gating example works** — a method comparing `%call.role != %self.object.role` and raising blocks a cross-role call from a non-owner.
+- **Self-gating example works** — a method comparing `%call.role != %self.obj.role` and raising blocks a cross-role call from a non-owner.
 - **`%call.return` inside a bare block controller** — see [exceptions § ReturnException](https://puck.uno/requirements/exceptions/#returnexception) for the frame targeting.
 - **Call object passed as an argument returns from the passing frame** — `function &gup() &foo %call end; function &foo($c) $c.return 'x' end; &gup` returns `'x'`; foo's `.return` on gup's call object unwinds through foo's boundary and lands at gup's implicit catch.
 - **Call object stashed in `%chain` returns from the stashing frame** — `function &gup() %chain['c'] = %call; &foo end; function &foo() %chain['c'].return 'x' end; &gup` returns `'x'`; the chain read gives foo the same target-gup capability without an argument. <!-- STALE: ambient-hash-slot moving to %amber -->

@@ -8,7 +8,8 @@
     "handle":         "request_path (incl. query string) -> { status, body, content_type } — server-facing entry",
     "list_md_files": "() -> sorted list of every markdown source path (README.md + <root>/**/*.md for each root in DOC_ROOTS); shared with orlando.random"
   },
-  "ranking": "score = 10*hit_in_filename + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path",
+  "ranking": "score = 10*hit_in_filename + 8*hit_in_dirname + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path. Dirname hit: any directory component of the path contains the query (case-insensitive substring). Lets a query like 'helpers' find files under `ideas/helpers/` even when no basename or body contains 'helpers'.",
+  "directory_results": "Directories under DOC_ROOTS are also first-class search results. A query matching a directory's basename (e.g. 'helpers' → `ideas/helpers/`) surfaces the directory itself, scored the same as a filename hit (10). Works even when the directory has no index.md.",
   "notes": ["always case-insensitive — query is folded to lowercase before scanning",
     "preamble is the doc's intro prose (post-H1, post-vibecode, pre-first-H2); HTML-escaped on render with light markdown stripping; query hits in the preamble are wrapped in <mark>",
     "tree filter: when tree is non-empty, only files whose md_path starts with the tree prefix are considered (prefix should end with '/'; empty or nil = whole site)"]
@@ -22,6 +23,7 @@ local PREAMBLE_MAX = 320
 
 -- Score weights for ranking.
 local SCORE_FILENAME = 10
+local SCORE_DIRNAME  = 8
 local SCORE_TITLE    = 5
 local SCORE_BODY_HIT = 1
 
@@ -56,6 +58,18 @@ local function basename_no_ext(path)
     return (name:gsub("%.md$", ""))
 end
 
+-- Directory components of a path (everything except the basename).
+-- Returns an array of segment strings; empty for a bare filename.
+-- Used for dirname-match scoring so a query like "helpers" finds files
+-- under `ideas/helpers/` even when no basename contains "helpers".
+local function dir_components(path)
+    local parts = {}
+    for part in path:gmatch("([^/]+)/") do
+        parts[#parts + 1] = part
+    end
+    return parts
+end
+
 -- Doc trees to search. Keep in sync with orlando.nav's DOC_ROOTS.
 local DOC_ROOTS = {"documentation", "ideas", "requirements", "skills"}
 
@@ -83,6 +97,33 @@ local function list_md_files()
 end
 
 M.list_md_files = list_md_files
+
+-- All subdirectories under DOC_ROOTS. Used so search can surface a
+-- directory as a first-class result — e.g., a query for "helpers"
+-- returns `ideas/helpers/` itself, not just the files under it. The
+-- root names themselves are included so `documentation/`, `ideas/`,
+-- `requirements/`, `skills/` are findable by name.
+local function list_dirs()
+    local dirs = {}
+
+    for _, root in ipairs(DOC_ROOTS) do
+        dirs[#dirs + 1] = root
+        local handle = io.popen('find ' .. root .. ' -type d 2>/dev/null')
+
+        if handle then
+            for line in handle:lines() do
+                if line ~= root then
+                    dirs[#dirs + 1] = line
+                end
+            end
+
+            handle:close()
+        end
+    end
+
+    table.sort(dirs)
+    return dirs
+end
 
 local function read_file(path)
     local f = io.open(path, "rb")
@@ -185,6 +226,23 @@ function M.search(query, tree)
     local results = {}
     local scoped  = tree and tree ~= ""
 
+    for _, dir in ipairs(list_dirs()) do
+        if not scoped or dir:sub(1, #tree) == tree then
+            local basename = dir:match("([^/]+)$") or dir
+            if basename:lower():find(q_lower, 1, true) ~= nil then
+                results[#results + 1] = {
+                    md_path  = dir,
+                    url      = "/" .. dir .. "/",
+                    title    = dir .. "/",
+                    count    = 0,
+                    score    = SCORE_FILENAME,
+                    preamble = "",
+                    is_dir   = true,
+                }
+            end
+        end
+    end
+
     for _, path in ipairs(list_md_files()) do
         if not scoped or path:sub(1, #tree) == tree then
             local data = read_file(path)
@@ -193,12 +251,20 @@ function M.search(query, tree)
                 local positions = find_all(data:lower(), q_lower)
                 local in_filename =
                     basename_no_ext(path):lower():find(q_lower, 1, true) ~= nil
+                local in_dirname = false
+                for _, seg in ipairs(dir_components(path)) do
+                    if seg:lower():find(q_lower, 1, true) ~= nil then
+                        in_dirname = true
+                        break
+                    end
+                end
                 local in_title =
                     title_of(data):lower():find(q_lower, 1, true) ~= nil
 
-                if #positions > 0 or in_filename or in_title then
+                if #positions > 0 or in_filename or in_dirname or in_title then
                     local score = #positions * SCORE_BODY_HIT
                     if in_filename then score = score + SCORE_FILENAME end
+                    if in_dirname  then score = score + SCORE_DIRNAME  end
                     if in_title    then score = score + SCORE_TITLE    end
 
                     results[#results + 1] = {
@@ -265,10 +331,13 @@ local function render_body(query, results, tree)
         end
 
         local title_html = highlight_query(html_escape(title), query)
-        local count_html = ' <span class="search-count">'
-            .. tostring(r.count)
-            .. (r.count == 1 and ' match' or ' matches')
-            .. '</span>'
+        local count_html = ''
+        if r.count and r.count > 0 then
+            count_html = ' <span class="search-count">'
+                .. tostring(r.count)
+                .. (r.count == 1 and ' match' or ' matches')
+                .. '</span>'
+        end
 
         parts[#parts + 1] = '<li class="search-result">'
             .. '<a class="search-title" href="' .. r.url .. '">'

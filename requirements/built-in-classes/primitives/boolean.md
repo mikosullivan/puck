@@ -29,13 +29,13 @@ TBD. Sub-page will list guaranteed methods (logical operators — `and`, `or`, `
 
 ## Testing
 
-- **`true` literal materializes to a boolean instance** — `true.object.isa?(Boolean)` is `true`.
-- **`false` literal materializes to a boolean instance** — `false.object.isa?(Boolean)` is `true`.
+- **`true` literal materializes to a boolean instance** — `true.obj.isa?(Boolean)` is `true`.
+- **`false` literal materializes to a boolean instance** — `false.obj.isa?(Boolean)` is `true`.
 - **`true` is the same shared instance every time** — the object identity of `true` in one expression equals the object identity of `true` in a separate expression; there is only one `true` object in the runtime.
 - **`false` is the same shared instance every time** — same identity check as `true`, applied to `false`.
 - **`true` and `false` are distinct instances** — `true` and `false` are not identity-equal and not `==`.
-- **`true.object.truthy?` returns `true`** — the truthy bit on the `true` instance is `true`.
-- **`false.object.truthy?` returns `false`** — the truthy bit on the `false` instance is `false`.
+- **`true.obj.truthy?` returns `true`** — the truthy bit on the `true` instance is `true`.
+- **`false.obj.truthy?` returns `false`** — the truthy bit on the `false` instance is `false`.
 - **`if true` branches into the then-body** — a condition of literal `true` runs the consequent.
 - **`if false` branches into the else-body** — a condition of literal `false` skips the consequent and runs any `else`.
 - **`0` is truthy** — `if 0 then :yes else :no end` evaluates to `:yes`; only `false` and `null` are falsy.
@@ -54,7 +54,7 @@ TBD. Sub-page will list guaranteed methods (logical operators — `and`, `or`, `
 - **`not false` is `true`** — same, other direction.
 - **`not null` is `true`** — negating a falsy non-boolean produces `true`.
 - **`not 0` is `false`** — negating a truthy value produces `false`.
-- **`true.object.isa?(Object)` is `true`** — every boolean is ultimately an Object.
+- **`true.obj.isa?(Object)` is `true`** — every boolean is ultimately an Object.
 
 ## Related
 

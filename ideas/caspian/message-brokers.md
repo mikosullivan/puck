@@ -324,17 +324,17 @@ The implementation could lean on existing Caspian pieces: TCP/UDS for transport,
 
 ### Angle C: extending the in-process event system across processes
 
-Caspian already has [an event system](https://puck.uno/requirements/events/) — `%self.object.broadcast`, `listen_to`, `on_broadcast`. Currently it's strictly in-process. **The same API could be extended to cross process and host boundaries.**
+Caspian already has [an event system](https://puck.uno/requirements/events/) — `%self.obj.broadcast`, `listen_to`, `on_broadcast`. Currently it's strictly in-process. **The same API could be extended to cross process and host boundaries.**
 
 Specifically: a Caspian object's broadcasts could be made reachable to subscribers in other processes (other Caspian instances, maybe even other languages via a Puck-protocol surface). Local subscribers continue to work as today; remote subscribers participate through some transport (probably the broker from Angle B, or via existing brokers from Angle A).
 
 ~~~caspian
 # Local subscription — unchanged
-$logger.object.listen_to $server, 'request_received', 'log'
+$logger.obj.listen_to $server, 'request_received', 'log'
 
 # Remote subscription — same API, the other side just happens to be in another process
 $remote_server = %fetch('https://orders.example.com/')
-$logger.object.listen_to $remote_server, 'request_received', 'log'
+$logger.obj.listen_to $remote_server, 'request_received', 'log'
 ~~~
 
 This is the most Caspian-native of the options. The developer-facing API doesn't change; the engine handles whether the subscription is local, cross-process on the same host, or cross-network.

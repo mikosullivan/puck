@@ -35,8 +35,8 @@ end
 
 - **`null` is falsy in `if`** — `if null; 'a'; else; 'b'; end` returns `'b'`.
 - **`false` is falsy in `if`** — `if false; 'a'; else; 'b'; end` returns `'b'`.
-- **`null` remains falsy after its class platter is removed** — falsiness derives from the primitive field (which still holds `null`), not from the class identity in the stack. Given `$n = null; $n.object.classes.remove(Null)`, the object has no class platter but the primitive field is still `null`; `if $n; 'a'; else; 'b'; end` returns `'b'`.
-- **`false` remains falsy after its class platter is removed** — same rule; the primitive field still holds `false`. Given `$f = false; $f.object.classes.remove(Boolean)`, `if $f; 'a'; else; 'b'; end` returns `'b'`.
+- **`null` remains falsy after its class platter is removed** — falsiness derives from the primitive field (which still holds `null`), not from the class identity in the stack. Given `$n = null; $n.obj.classes.remove(Null)`, the object has no class platter but the primitive field is still `null`; `if $n; 'a'; else; 'b'; end` returns `'b'`.
+- **`false` remains falsy after its class platter is removed** — same rule; the primitive field still holds `false`. Given `$f = false; $f.obj.classes.remove(Boolean)`, `if $f; 'a'; else; 'b'; end` returns `'b'`.
 - **`true` is truthy in `if`** — `if true; 'a'; else; 'b'; end` returns `'a'`.
 - **`0` is truthy in `if`** — `if 0; 'a'; else; 'b'; end` returns `'a'`.
 - **Negative zero is truthy** — `if -0; 'a'; else; 'b'; end` returns `'a'`.

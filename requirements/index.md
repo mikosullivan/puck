@@ -86,7 +86,7 @@ What Caspian ships — the binary itself, pre-installed Lua libraries, and the f
 
 ### protected/, exceptions/, filesystem/, fetch-discovery/, linux-support/, bryton/, lua/, test-cases/
 
-Deeper areas — the vault and Password class, the exception hierarchy, dirs / grants / dirjails, `%import` object-download resolution, Linux-specific shellout wrappers (openssl, tar), the Bryton test runner, the Lua-binding surface, and the test-case fixtures.
+Deeper areas — the vault and Password class, the exception hierarchy, dirs / grants / dirjails, `%fetch` object-download resolution, Linux-specific shellout wrappers (openssl, tar), the Bryton test runner, the Lua-binding surface, and the test-case fixtures.
 
 ## What does NOT live here
 

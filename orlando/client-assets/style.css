@@ -1317,3 +1317,40 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 }
 .tree-nav-prev, .tree-nav-next {text-decoration: none}
 .tree-nav-disabled {color: #b0b5bb; cursor: default}
+
+/* === Sidebar collapse toggle === */
+
+.sidebar-hide-btn {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	background: transparent;
+	border: 1px solid #d1d5da;
+	color: #57606a;
+	cursor: pointer;
+	padding: 2px 8px;
+	font-size: 14px;
+	line-height: 1;
+	border-radius: 4px;
+}
+.sidebar-hide-btn:hover {background: #eaecef}
+
+.sidebar-show-btn {
+	position: fixed;
+	top: 8px;
+	left: 8px;
+	background: #f6f7f9;
+	border: 1px solid #d1d5da;
+	color: #57606a;
+	cursor: pointer;
+	padding: 2px 8px;
+	font-size: 14px;
+	line-height: 1;
+	border-radius: 4px;
+	z-index: 100;
+	display: none;
+}
+.sidebar-show-btn:hover {background: #eaecef}
+
+html.sidebar-hidden .sidebar {display: none}
+html.sidebar-hidden .sidebar-show-btn {display: block}

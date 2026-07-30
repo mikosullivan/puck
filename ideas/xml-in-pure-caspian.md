@@ -149,7 +149,7 @@ $xml_element = class # element
 		$out = ''
 
 		@children.each() as $child
-			if $child.object.isa?($xml_text)
+			if $child.obj.isa?($xml_text)
 				$out = $out + $child.value
 			end
 		end
@@ -161,7 +161,7 @@ end
 
 Pros:
 
-- Type-tested trees. `$node.object.isa?($xml_element)` is unambiguous.
+- Type-tested trees. `$node.obj.isa?($xml_element)` is unambiguous.
 - Methods hang naturally on each class. `.text` on Element, `.value` on Text, `.target` and `.data` on ProcessingInstruction.
 - Roles and `%bucket` work per-node the way the rest of the language uses them.
 

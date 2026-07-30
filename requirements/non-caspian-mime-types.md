@@ -4,42 +4,42 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_non_caspian_mime_types",
-	"role": "spec for how %import and the engine handle content whose Content-Type is NOT `text/x-caspian` or `text/x-caspianj`. Two-tier model: recognized Content-Types are run through a parser registered in `%import.parsers` (a plain hash keyed by MIME type, user-role writes, ambient reads, process-scoped, matching the shape of `%import.locals` and `%import.maps`) and returned as a parsed object; unrecognized Content-Types are returned as a typed byte blob for the caller to handle. Caspian ships built-in parsers for plain text, JSON, YAML, and XML. Additional parsers are registered by the script that needs them; future config-file mechanisms may let developers assign parsers at engine-launch time. Empty content raises for structured Content-Types (Caspian, CaspianJ, SVG, and any unfamiliar type by default); text/plain allows empty; per-type rules can override.",
+	"role": "spec for how %fetch and the engine handle content whose Content-Type is NOT `text/x-caspian` or `text/x-caspianj`. Two-tier model: recognized Content-Types are run through a parser registered in `%fetch.parsers` (a plain hash keyed by MIME type, user-role writes, ambient reads, process-scoped, matching the shape of `%fetch.locals` and `%fetch.maps`) and returned as a parsed object; unrecognized Content-Types are returned as a typed byte blob for the caller to handle. Caspian ships built-in parsers for plain text, JSON, YAML, and XML. Additional parsers are registered by the script that needs them; future config-file mechanisms may let developers assign parsers at engine-launch time. Empty content raises for structured Content-Types (Caspian, CaspianJ, SVG, and any unfamiliar type by default); text/plain allows empty; per-type rules can override.",
 	"status": "stub — two-tier model settled; parser registry shape settled; empty-content posture settled; parser signature and per-type behavior to be filled in as concrete needs arrive.",
-	"audience": "developers using %import to download non-Caspian content; developers registering custom parsers; engine implementers realizing the per-type dispatch; anyone thinking about how format-specific handling composes with the fetch pipeline"
+	"audience": "developers using %fetch to download non-Caspian content; developers registering custom parsers; engine implementers realizing the per-type dispatch; anyone thinking about how format-specific handling composes with the fetch pipeline"
 }}
 ~~~
 
-`%import` is a general-purpose downloader — it fetches by URL and does not restrict what the URL serves. Caspian and CaspianJ are the two content types the engine parses and evaluates natively; **everything else** is handled by a two-tier model driven by the Content-Type the server returns (or the `meta.json` value the cache stores).
+`%fetch` is a general-purpose downloader — it fetches by URL and does not restrict what the URL serves. Caspian and CaspianJ are the two content types the engine parses and evaluates natively; **everything else** is handled by a two-tier model driven by the Content-Type the server returns (or the `meta.json` value the cache stores).
 
 ## The two-tier model
 
-For any Content-Type other than `text/x-caspian` and `text/x-caspianj`, `%import` operates in one of two modes:
+For any Content-Type other than `text/x-caspian` and `text/x-caspianj`, `%fetch` operates in one of two modes:
 
-**Recognized (parser mode).** If a parser is registered for the Content-Type in [`%import.parsers`](#the-parser-registry), `%import` runs the response bytes through that parser and returns the resulting object. The parser understands the format; the caller receives a domain-appropriate value they can use directly.
+**Recognized (parser mode).** If a parser is registered for the Content-Type in [`%fetch.parsers`](#the-parser-registry), `%fetch` runs the response bytes through that parser and returns the resulting object. The parser understands the format; the caller receives a domain-appropriate value they can use directly.
 
 ~~~caspian
-$config = %import('https://foo.bar/config.json')   # parsed JSON hash
-$rules = %import('https://foo.bar/rules.yaml')     # parsed YAML value
+$config = %fetch('https://foo.bar/config.json')   # parsed JSON hash
+$rules = %fetch('https://foo.bar/rules.yaml')     # parsed YAML value
 ~~~
 
-**Unrecognized (blob mode).** If no parser is registered for the Content-Type, `%import` returns a **typed byte payload** — the raw bytes together with the Content-Type — to the caller. The engine does not parse or evaluate; the caller decides how to interpret the bytes.
+**Unrecognized (blob mode).** If no parser is registered for the Content-Type, `%fetch` returns a **typed byte payload** — the raw bytes together with the Content-Type — to the caller. The engine does not parse or evaluate; the caller decides how to interpret the bytes.
 
 ~~~caspian
-$blob = %import('https://foo.bar/image.png')       # blob: raw bytes + 'image/png'
+$blob = %fetch('https://foo.bar/image.png')       # blob: raw bytes + 'image/png'
 &write_png_file $blob.bytes
 ~~~
 
-The two-tier model gives the caller uniform ergonomics for common types (parsed objects arrive ready to use) without restricting what %import will fetch (unknown types still work, just as blobs).
+The two-tier model gives the caller uniform ergonomics for common types (parsed objects arrive ready to use) without restricting what %fetch will fetch (unknown types still work, just as blobs).
 
 ## The parser registry
 
-`%import.parsers` is a plain hash keyed by MIME type. Same conventions as `%import.locals` and `%import.maps`:
+`%fetch.parsers` is a plain hash keyed by MIME type. Same conventions as `%fetch.locals` and `%fetch.maps`:
 
-- **Plain hash.** Any standard hash operation works — iterate to inspect, assign to add or replace, unset to remove, `%import.parsers.has?('application/json')` to check.
-- **User-role writes.** A non-user role attempting to assign to `%import.parsers` raises. Untrusted code cannot inject parsers or hijack what %import returns.
-- **Ambient reads.** Any role that can use `%import` sees the registered parsers.
-- **Process-scoped.** Registrations persist for the whole process run; `%import` does not live on `%chain`, so a parser registered in one script applies to every subsequent fetch anywhere in the process.
+- **Plain hash.** Any standard hash operation works — iterate to inspect, assign to add or replace, unset to remove, `%fetch.parsers.has?('application/json')` to check.
+- **User-role writes.** A non-user role attempting to assign to `%fetch.parsers` raises. Untrusted code cannot inject parsers or hijack what %fetch returns.
+- **Ambient reads.** Any role that can use `%fetch` sees the registered parsers.
+- **Process-scoped.** Registrations persist for the whole process run; `%fetch` does not live on `%chain`, so a parser registered in one script applies to every subsequent fetch anywhere in the process.
 - **Last-write-wins.** One parser per Content-Type. Assigning to a Content-Type that already has a parser replaces the old one silently.
 
 The parser value itself — whether it's a function, a class, a callable, or a specific interface — is not yet spec'd. Track that as an open question until concrete needs pin it down.
@@ -53,24 +53,24 @@ Caspian ships with parsers pre-registered for four common Content-Types:
 - **`application/yaml`** (also `text/yaml`, `application/x-yaml`) — YAML parser. Returns the same value types as JSON, plus YAML-specific structures where applicable.
 - **`application/xml`** (also `text/xml`) — XML parser. Returns a document-tree object.
 
-No explicit registration is needed to use these; they're on `%import.parsers` at engine startup.
+No explicit registration is needed to use these; they're on `%fetch.parsers` at engine startup.
 
 ## Adding parsers in scripts
 
-Parsers for any Content-Type beyond the built-ins are added by the script that needs them, via direct assignment to `%import.parsers`. Only user-role scripts can register parsers (matching the write-restriction on the hash).
+Parsers for any Content-Type beyond the built-ins are added by the script that needs them, via direct assignment to `%fetch.parsers`. Only user-role scripts can register parsers (matching the write-restriction on the hash).
 
 ~~~caspian
-%import.parsers['image/svg+xml'] = $svg_parser
-%import.parsers['application/vnd.acme.thing'] = $acme_parser
+%fetch.parsers['image/svg+xml'] = $svg_parser
+%fetch.parsers['application/vnd.acme.thing'] = $acme_parser
 
-$diagram = %import('https://foo.bar/logo.svg')     # parsed by $svg_parser
+$diagram = %fetch('https://foo.bar/logo.svg')     # parsed by $svg_parser
 ~~~
 
-Once registered, the parser applies to every subsequent `%import` fetch (in any role) that returns a matching Content-Type.
+Once registered, the parser applies to every subsequent `%fetch` fetch (in any role) that returns a matching Content-Type.
 
 ## Future: config-file registration
 
-Caspian doesn't currently have a launch-time config-file mechanism. If one is spec'd later, one of the things it should consider is **allowing parsers to be assigned to MIME types in the config**, so a project can register its parsers once at launch instead of repeating the registration in every script. Until then, the only way to extend `%import.parsers` beyond the built-ins is a script-level assignment.
+Caspian doesn't currently have a launch-time config-file mechanism. If one is spec'd later, one of the things it should consider is **allowing parsers to be assigned to MIME types in the config**, so a project can register its parsers once at launch instead of repeating the registration in every script. Until then, the only way to extend `%fetch.parsers` beyond the built-ins is a script-level assignment.
 
 ## Empty-content handling
 
@@ -100,9 +100,9 @@ Whether an empty response is a legitimate result depends on the Content-Type. Th
 - **`application/json` returns Caspian data** — a JSON response of `{"a":1}` yields a hash with key `a` mapped to `1`.
 - **`application/yaml` variants share a parser** — `application/yaml`, `text/yaml`, and `application/x-yaml` all route through the same parser.
 - **`application/xml` and `text/xml` share a parser** — both media types route through the same XML parser.
-- **Built-in parsers are registered at startup** — the first line of user code sees `text/plain`, `application/json`, `application/yaml`, and `application/xml` already in `%import.parsers`.
-- **User-role script can register a new parser** — `%import.parsers['image/svg+xml'] = ...` succeeds and subsequent fetches of that Content-Type run through it.
-- **Non-user role registration raises** — a non-`user` assignment to `%import.parsers` raises without mutating the hash.
+- **Built-in parsers are registered at startup** — the first line of user code sees `text/plain`, `application/json`, `application/yaml`, and `application/xml` already in `%fetch.parsers`.
+- **User-role script can register a new parser** — `%fetch.parsers['image/svg+xml'] = ...` succeeds and subsequent fetches of that Content-Type run through it.
+- **Non-user role registration raises** — a non-`user` assignment to `%fetch.parsers` raises without mutating the hash.
 - **Ambient read from non-user role** — a non-`user` fetch of a URL whose Content-Type has a registered parser returns the parsed value.
 - **Last-write-wins on re-registration** — assigning a new parser to a Content-Type that already has one replaces the earlier parser silently.
 - **Process-scoped persistence** — a parser registered in one script is used by subsequent fetches from any script in the same process.
@@ -122,4 +122,4 @@ Whether an empty response is a legitimate result depends on the Content-Type. Th
 
 - [content-types](https://puck.uno/requirements/content-types) — canonical Content-Type strings for Caspian source and CaspianJ tree files, plus how servers should return them.
 - [cache-dir](https://puck.uno/requirements/cache-dir) — how the cache stores non-Caspian content alongside its Content-Type in `meta.json`. The empty-content rules on this page apply when the cache serves a stored version back to a caller.
-- [`%import`](https://puck.uno/requirements/import) — the Caspian-side gateway for URL fetches. `%import.parsers` sits alongside `%import.maps` and other `%import.X` state.
+- [`%fetch`](https://puck.uno/requirements/fetch) — the Caspian-side gateway for URL fetches. `%fetch.parsers` sits alongside `%fetch.maps` and other `%fetch.X` state.

@@ -22,7 +22,7 @@ Informally, prose sometimes talks about `%fs` as if it were the root dir itself 
 
 For non-user code to reach the filesystem, the user constructs a **dirjail** (via `%fs.root`, or nested via a dirjail's `.dirjail` method) and hands the dirjail to the callee as an ordinary value. Dirjails are plain Caspian objects — passing them is normal parameter passing; no chain machinery is involved. The callee holds a reference; when the reference goes out of scope, that's the end of that access path.
 
-Operations (full spec to migrate from `requirements-old/caspian/built-in-classes/filesystem.md`):
+Operations:
 
 | Operation | Purpose |
 |---|---|
@@ -71,7 +71,7 @@ The host can choose whether `%fs` is present at all — typically via a launch-s
 
 ## `%engine` counterpart
 
-**`%fs` is a shortcut for `%engine.fs`.** The engine-side slot is the actual thing; `%fs` is the short-form sugar that matches the `%net` / `%stdout` / `%import` short-form family. Both are user-only; both reach the same underlying dirjail. See [engine § One slot per chain surface](../engine/#one-slot-per-chain-surface).
+**`%fs` is a shortcut for `%engine.fs`.** The engine-side slot is the actual thing; `%fs` is the short-form sugar that matches the `%net` / `%stdout` / `%fetch` short-form family. Both are user-only; both reach the same underlying dirjail. See [engine](../engine/).
 
 (The older name `%engine.root` is retired.)
 

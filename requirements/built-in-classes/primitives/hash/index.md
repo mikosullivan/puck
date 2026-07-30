@@ -167,7 +167,7 @@ end
 
 <span class="tag">hash-freeze</span>
 
-For "no more writes to any key, no new keys, no removals" semantics, call `.freeze` **directly on the hash** (NOT on `.object` — the primitive-contents freeze is a hash-instance concern, not a general-object concern; see [object/methods § freeze surface](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze) for the object-level split).
+For "no more writes to any key, no new keys, no removals" semantics, call `.freeze` **directly on the hash** (NOT on `.obj` — the primitive-contents freeze is a hash-instance concern, not a general-object concern; see [object/methods § freeze surface](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze) for the object-level split).
 
 ~~~caspian
 $foo = {'a': 'b'}
@@ -206,12 +206,12 @@ $foo.frozen?    # true
 - `.freeze` later → whole hash frozen; the individual field freeze is a strict subset of the whole-hash freeze.
 - Block-form `.freeze do ... end` release → the block-form hash-wide freeze goes away, but any per-field freeze that was set separately stays.
 
-**Distinct from `.object.freeze_bucket`.** `.object.freeze_bucket` freezes the hash's METADATA bucket (the `note_deleted` flag, the per-field freeze markers, etc.). It does NOT freeze the key-value contents. Use `.freeze` (direct) for that.
+**Distinct from `.obj.freeze_bucket`.** `.obj.freeze_bucket` freezes the hash's METADATA bucket (the `note_deleted` flag, the per-field freeze markers, etc.). It does NOT freeze the key-value contents. Use `.freeze` (direct) for that.
 
 ## Testing
 
-- **Empty hash literal `{}` materializes to a Hash instance** — `{}.object.isa?(Hash)` is `true`.
-- **Populated hash literal materializes to a Hash instance** — `{a: 1}.object.isa?(Hash)` is `true`.
+- **Empty hash literal `{}` materializes to a Hash instance** — `{}.obj.isa?(Hash)` is `true`.
+- **Populated hash literal materializes to a Hash instance** — `{a: 1}.obj.isa?(Hash)` is `true`.
 - **Bare-identifier keys become string keys** — `{name: 'alice'}` is equal to `{'name': 'alice'}`.
 - **Explicit string keys are preserved** — `{'name': 'alice'}` and `{name: 'alice'}` are indistinguishable at the value level.
 - **Numeric-looking literal key stringifies** — `{42: 'x'}` equals `{'42': 'x'}`; both keyed by the string `'42'`.

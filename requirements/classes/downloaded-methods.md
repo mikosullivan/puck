@@ -10,9 +10,9 @@
 }}
 ~~~
 
-Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%import` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
+Because objects in the Puck ecoverse can be **downloaded from anywhere**, methods don't have to live in the class definition to be called on an instance. A function — whether defined locally or pulled fresh through `%fetch` — can be applied to any object with method-call syntax, and at the point of application it IS a method that runs locally in the caller's engine.
 
-> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%import`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
+> **Not "remote methods".** In Puck, "remote methods" specifically names methods that execute on a Puck server as part of the Puck-protocol dispatch. What this page describes is different: the function body is downloaded (via `%fetch`) and then executed **locally** in the caller's Caspian engine. No cross-machine call happens at the point of application.
 
 ## The syntax
 

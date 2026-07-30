@@ -17,7 +17,7 @@ The current role is `user`.
 
 Caspian tracks which role owns the code that is currently executing. The first thing the engine runs is the program supplied by the host, and that program runs under the `user` role. Code running in other roles may switch to their own role for the duration of their own frames, but the entry point — the user's program — always starts as `user`.
 
-The role is reachable at any time as [`%role`](https://puck.uno/requirements/roles/#role) — a top-level global, always unconditionally available, in every frame regardless of chain state. `%role` does not live on `%chain`; it's a language primitive that returns whichever role reference belongs to the currently-executing frame.
+The current frame's role is exposed as [`%role`](https://puck.uno/requirements/roles/#role); see the roles spec for the full surface.
 
 <!-- STALE: %chain.X syntax being reworked — most of the rest of this doc describes %chain.X as if %chain still carried methods; the model has changed (%chain is now permission-only). See [chain/index](https://puck.uno/requirements/chain/). -->
 
@@ -47,7 +47,7 @@ At bootstrap, the engine walks every host-provisioned `%engine` slot and seeds t
 
 The host decides what to provision; the engine does the seeding mechanically. If the host didn't provision a slot (no stdin wired, no net granted, etc.), the corresponding chain capability is absent. User code reaching for an absent capability raises.
 
-**Clock and randomness are not chain capabilities.** They're downloadable core objects reached through `%('core:now')` and `%('core:random')` — no `%engine.now` / `%engine.random` slot, no `%chain.now` / `%chain.random` seeding, no default-grant flag. If a role can `%import`, it can read the clock or draw randomness.
+**Clock and randomness are not chain capabilities.** They're downloadable core objects reached through `%('core:now')` and `%('core:random')` — no `%engine.now` / `%engine.random` slot, no `%chain.now` / `%chain.random` seeding, no default-grant flag. If a role can `%fetch`, it can read the clock or draw randomness.
 
 ### Chain capabilities with no `%engine` counterpart
 

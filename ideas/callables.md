@@ -184,7 +184,7 @@ Same class in the stack — a helper doesn't need a Function subclass. The prese
 
 ## Bucket fields vs methods: separate namespaces
 
-Ruby-style separation applies: `$foo.class` invokes the `.class` method (from the object namespace); `%bucket['class']` reads the bucket field. They coexist without conflict.
+Ruby-style separation applies: `$foo.class` invokes the `.class` method (from the `obj` namespace); `%bucket['class']` reads the bucket field. They coexist without conflict.
 
 This means the `class` bucket field on a helper doesn't collide with the built-in `.class` accessor:
 
@@ -208,4 +208,4 @@ If we want a public accessor for the stored helper class, it's an explicit metho
 - [functions/method](https://puck.uno/requirements/functions/method) — the current method spec, similarly revised under this unification.
 - [functions/closure](https://puck.uno/requirements/functions/closure) — closures are still a distinct subtype (standalone-only); this spec sharpens why.
 - [downloaded-methods](https://puck.uno/requirements/classes/downloaded-methods) — the `$obj.$fn` pattern that already binds a callable to a receiver at the call site; the unification here generalizes that as the primary method-invocation mechanism.
-- [ideas/helper-build](helper-build) — the inline-helper DSL that produces these helper objects.
+- [ideas/helpers/basic](helpers/basic) — the inline-helper DSL that produces these helper objects.

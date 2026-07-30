@@ -18,7 +18,7 @@ If non-user code needs input, the user is the one who reaches into `%engine.stdi
 - **A program with no piped input reads empty** — the read produces the empty string, not null.
 - **`%engine.stdin` is user-only** — a non-user frame reading from it raises the blanket gate error.
 - **A captured `$stdin = %engine.stdin` handed to a non-user frame is still callable** — method-runs-as-owner applies; the read happens under user's authority.
-- **Values from `%engine.stdin` are role-tagged with the stdin faucet's role** — a string read has `.object.role` equal to that faucet role, not `user`.
+- **Values from `%engine.stdin` are role-tagged with the stdin faucet's role** — a string read has `.obj.role` equal to that faucet role, not `user`.
 - **Values from `%engine.stdin` include the stdin faucet role in `contributors`** — provenance is durable.
 - **UTF-8 input produces a UTF-8 string** — piping unicode text yields a string with unicode intact.
 - **Binary bytes round-trip** — piping non-UTF-8 bytes yields a string of exactly those bytes.

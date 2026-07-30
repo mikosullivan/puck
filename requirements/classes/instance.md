@@ -200,7 +200,7 @@ $result = $_obj.autorun()
 ## What an ad-hoc instance is
 
 - **Conceptual, not technical.** "Ad-hoc instance" is a design-pattern label, not an engine concept. Nothing in Caspian's runtime cares whether an object was built this way; the resulting object is structurally identical to one built through any other path.
-- **Starts bare, gets built up.** Conceptually, the developer instantiates "object" itself — an empty thing with no methods and no inherited classes — and then adds custom behavior to its shadow. The `instance` keyword does this in one block, but the same outcome could be reached by creating a bare object and using `.object.classes.add` plus `method $obj.name() ... end` step by step.
+- **Starts bare, gets built up.** Conceptually, the developer instantiates "object" itself — an empty thing with no methods and no inherited classes — and then adds custom behavior to its shadow. The `instance` keyword does this in one block, but the same outcome could be reached by creating a bare object and using `.obj.classes.add` plus `method $obj.name() ... end` step by step.
 - **Singleton-spirited.** Like a singleton, it's one of its kind. Unlike a singleton, there's no global registry, no convention for finding it later — it lives wherever the variable holding it lives, and when that variable goes out of scope, the object goes with it.
 
 ---
@@ -480,7 +480,7 @@ Other languages support related patterns but with friction. Java requires every 
 - **Args pass to `init`, not to `autorun`** — arguments to `instance(...)` route to `init` only.
 - **`autorun` on a class-defined instance is just a method** — `$cls = class method autorun() end end; $obj = $cls.new` produces the object; `.autorun` is not auto-invoked (the convention only fires from the `instance` construct, not from `.new`).
 - **`instance` desugars to class + `.new` (+ optional `.autorun`)** — the observable behavior matches the explicit `$_cls = class end; $_obj = $_cls.new(); $_obj.autorun` form.
-- **Object's shadow class holds all body declarations** — inspecting `$obj.object.classes` (or equivalent) shows the anonymous class carries the body's methods and fields.
+- **Object's shadow class holds all body declarations** — inspecting `$obj.obj.classes` (or equivalent) shows the anonymous class carries the body's methods and fields.
 - **Nested field defaults are per-instance** — `field :opts, default: {}` gives each ad-hoc instance its own hash.
 - **`%self` inside an `instance` method is the constructed object** — verified by `method me() return %self end; $obj.me == $obj`.
 - **Recursive-descent parser pattern works** — the mutually-recursive-methods example (from `parse_expression` → `parse_term` → `parse_factor`) executes and returns the correct AST for `'1 + 2 * (3 - 4)'`.

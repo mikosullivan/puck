@@ -17,7 +17,7 @@ Every class Caspian ships. Two groups: user-facing `core:` classes (six JSON pri
 
 ## User-facing classes
 
-Reachable by their `core:` class identifier — as the target of `%('core:X')` (each fetch returns a fresh object) or as the type value in a typed parameter, `%self.object.classes.has?`, etc. Sorted alphabetically.
+Reachable by their `core:` class identifier — as the target of `%('core:X')` (each fetch returns a fresh object) or as the type value in a typed parameter, `%self.obj.classes.has?`, etc. Sorted alphabetically.
 
 | Identifier | Purpose |
 |---|---|

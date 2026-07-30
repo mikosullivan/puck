@@ -85,10 +85,10 @@ A role object is NOT a string. It's an object with methods (`==`, `.current?`, e
 
 ### Getting a role object from an object
 
-The primary mechanism: `$obj.object.role` on any object returns the role object that owns it.
+The primary mechanism: `$obj.obj.role` on any object returns the role object that owns it.
 
 ~~~caspian
-$role = $some_object.object.role
+$role = $some_object.obj.role
 %role.delegate_to($role) do
 	$some_object.do_thing()
 end
@@ -108,7 +108,7 @@ The `user` role has broader access via `%engine.roles`, which returns every role
 end
 ~~~
 
-**V1 limitation: this doesn't actually do much.** A role reference in V1 is mostly an identity handle — you can compare it (equality, identity), use it as a grant/revoke target, and read its name (a string identifier). You cannot introspect the role's state, its held objects, its current permissions, or anything else about it. `%engine.roles` mainly exists for completeness and future use; in V1 it gives you a list of handles that you can't get much information from. The `$obj.object.role` pattern covers nearly every practical case.
+**V1 limitation: this doesn't actually do much.** A role reference in V1 is mostly an identity handle — you can compare it (equality, identity), use it as a grant/revoke target, and read its name (a string identifier). You cannot introspect the role's state, its held objects, its current permissions, or anything else about it. `%engine.roles` mainly exists for completeness and future use; in V1 it gives you a list of handles that you can't get much information from. The `$obj.obj.role` pattern covers nearly every practical case.
 
 ### Comparing role references
 
@@ -118,19 +118,19 @@ A **role reference** is a handle to a role — a value you hold in code that poi
 $s = 'hello'           # user-owned (created by user code)
 $h = {a: 1}             # also user-owned
 
-$role_of_s = $s.object.role
-$role_of_h = $h.object.role
+$role_of_s = $s.obj.role
+$role_of_h = $h.obj.role
 
 $role_of_s == $role_of_h   # true — both reach the user role
 ~~~
 
-Both `.object.role` calls land on the same role (`user`), so the two references compare equal even though they were obtained from completely different objects.
+Both `.obj.role` calls land on the same role (`user`), so the two references compare equal even though they were obtained from completely different objects.
 
 The point: comparing references is reliable. Code that wants to check "is the caller's role the same as my role?" can do it by comparison:
 
 ~~~caspian
-$caller_role = $passed_in_object.object.role
-$my_role     = $my_own_object.object.role
+$caller_role = $passed_in_object.obj.role
+$my_role     = $my_own_object.obj.role
 
 if $caller_role == $my_role
 	# caller is in the same role as me
@@ -139,12 +139,25 @@ end
 
 Without this rule, code would have to compare role NAMES (strings), which is fragile — typos, naming-convention drift, ambiguity between roles with similar names. With `==` doing the right thing, comparing identities is one expression.
 
+### `.user?`
+
+Every role reference has a `.user?` method that returns true if it points at the `user` role, false otherwise.
+
+~~~caspian
+$widget = Widget.new()
+if $widget.obj.role.user?
+	# $widget is owned by user
+end
+~~~
+
+Convenience sugar — `$role == %('user')` (or whichever spelling refers to the user role directly) would compute the same answer, but "is this the user role?" comes up often enough in trust checks and access-control code to deserve its own predicate. Common companion to `%call.role.user?` in gating patterns.
+
 ### `.current?`
 
 Every role reference has a `.current?` method that returns true if the role it names is the role the calling frame is currently running in.
 
 ~~~caspian
-if $some_object.object.role.current?
+if $some_object.obj.role.current?
 	# the calling frame is running in $role
 end
 ~~~
@@ -183,12 +196,12 @@ The "nothing by default" rule is doing most of the security work. The role catal
 The V1 primitive for cross-role capability delegation is **`%role.delegate_to`**: temporarily extend the current frame's capabilities to a target role for the duration of a block. `%role` is the top-level accessor for the current frame's role; `.delegate_to` on it delegates everything the current role has to the target role.
 
 ~~~caspian
-%role.delegate_to($agent.object.role) do
+%role.delegate_to($agent.obj.role) do
 	$agent.act_as_me()
 end
 ~~~
 
-Inside the block, `$agent.object.role` gains every capability the granting frame currently has — including the default-granted ones. When the block exits, the extension lifts cleanly. The target's role identity doesn't change; only its permissions are temporarily broadened. Audit trails continue to attribute actions to the target role; the elevation is visible in source as the enclosing `delegate_to` block.
+Inside the block, `$agent.obj.role` gains every capability the granting frame currently has — including the default-granted ones. When the block exits, the extension lifts cleanly. The target's role identity doesn't change; only its permissions are temporarily broadened. Audit trails continue to attribute actions to the target role; the elevation is visible in source as the enclosing `delegate_to` block.
 
 ### Rules
 
@@ -207,7 +220,7 @@ Post-V1, this section will grow forms for grant-specific-capabilities-only and s
 - The `user` role and its `%engine`-only privilege.
 - The `engine` role for engine-emitted attribution.
 - One role per engine-provided faucet, with the narrowing rules that come with it (see [plumbing/faucets](https://puck.uno/requirements/plumbing/faucets/)).
-- The mechanism: role objects, `$obj.object.role`, `==` and `.current?`, the switch-at-frame-boundary rule.
+- The mechanism: role objects, `$obj.obj.role`, `==` and `.current?`, the switch-at-frame-boundary rule.
 - Cross-role capability delegation goes through the role-targeted grant on `%chain` ([#830](https://github.com/mikosullivan/puck/issues/830)), not through any role-acquisition surface.
 
 ## Deferred until post-V1
@@ -229,18 +242,21 @@ Each of these is a separate design question, not blocked on any single other spe
 - **`user` is the only role that reaches `%engine`** — from a `user` frame, `%engine.argv` succeeds; from any non-user frame it raises.
 - **Non-user role attempting any `%engine` slot raises** — the gate is blanket, not per-slot.
 - **`engine` role does not run user program frames** — no user code runs under `engine`; the role exists for attribution.
-- **`$obj.object.role` returns the object's owning role** — reading it grants no permissions.
-- **Two role references to the same role compare equal via `==`** — `$s.object.role == $h.object.role` when both are user-owned.
+- **`$obj.obj.role` returns the object's owning role** — reading it grants no permissions.
+- **Two role references to the same role compare equal via `==`** — `$s.obj.role == $h.obj.role` when both are user-owned.
 - **`==` on role references compares identity, not name strings** — the check is by role identity.
 - **`%role == %role` is true** — trivial identity.
 - **`.current?` on the current frame's role reference is true** — `%role.current?` is `true`.
 - **`.current?` on a non-current role reference is false** — points to a different role than the frame is running as.
-- **A string literal's `.object.role` matches the creating frame's role** — literals in user code are user-owned.
-- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.object.role != %role`. <!-- STALE: %chain.X syntax being reworked -->
+- **`.user?` on the user role is true** — the user role's own reference reports `.user?` as `true`.
+- **`.user?` on any non-user role is false** — every other role reference reports `.user?` as `false`.
+- **`.user?` return type is always Boolean** — never any other type.
+- **A string literal's `.obj.role` matches the creating frame's role** — literals in user code are user-owned.
+- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.obj.role != %role`. <!-- STALE: %chain.X syntax being reworked -->
 - **Faucet roles never run user program frames** — provenance only.
 - **`%engine.roles` enumerates every registered role** — returns a list of role references.
 - **`%engine.roles` from a non-user frame raises** — the blanket gate applies.
-- **A role reference from a faucet-owned value is a valid delegation target** — `%role.delegate_to($str.object.role) do ... end` runs.
+- **A role reference from a faucet-owned value is a valid delegation target** — `%role.delegate_to($str.obj.role) do ... end` runs.
 - **Cross-role dispatch runs the method as the object's owner** — calling `$other_role_obj.method()` from a `user` frame runs the method body under the object's owner role.
 - **On method return, the calling frame's role is restored** — control returns to the caller with its original role.
 - **Roles are permanent identities** — a role object compares equal to itself across the entire process lifetime.
@@ -254,7 +270,7 @@ Each of these is a separate design question, not blocked on any single other spe
 - **`%role.delegate_to` is block-scoped only** — after the block ends, target loses the delegation.
 - **Delegation composes with `%chain.X.grant`** — a descendant sees the union of both paths. <!-- STALE: %chain.X syntax being reworked -->
 - **`%role` inside a downloaded object's method returns the object's owning role** — not `user`.
-- **A role reference obtained via `.object.role` and one via `%role` compare equal when they name the same role** — regardless of retrieval path.
+- **A role reference obtained via `.obj.role` and one via `%role` compare equal when they name the same role** — regardless of retrieval path.
 - **`%role.name` for a faucet role is a stable string identifier** — same value across reads.
 - **`%role` does not appear on `%chain`** — reading `%chain.role` raises or is undefined; `%role` is a language primitive. <!-- STALE: %chain.X syntax being reworked -->
 - **A role held in a variable and later used for delegation behaves the same as inline access** — capture doesn't change semantics.

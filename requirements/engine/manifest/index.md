@@ -12,7 +12,7 @@
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
 
-**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%import.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
+**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%fetch.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
 
 ## Sections
 
@@ -24,7 +24,7 @@ The manifest has five top-level sections: `process`, `os`, `engine`, `caspian`, 
 | `os` | Operating system the engine is running on. |
 | `engine` | Engine implementation identity — codename, version, host VM. |
 | `caspian` | Caspian language version this engine implements. |
-| `downloads` | Every object downloaded by this process via [`%import`](https://puck.uno/requirements/import), keyed by URL. |
+| `downloads` | Every object downloaded by this process via [`%fetch`](https://puck.uno/requirements/fetch), keyed by URL. |
 
 ## Field inventory
 

@@ -24,7 +24,7 @@ Full spec of the Module concept, subclass tree, and per-invocation semantics: [m
 
 `%module` returns a Module frame — an instance of some subclass of `Module`. The specific subclass depends on the code's enclosing container: `Script` at file top level, `Function` inside a bare function body, `Closure` inside a closure (including if/unless branch closures and loop bodies), `Method` inside a method body, `Begin` inside a `begin ... end`, `ClassBody` inside a class body.
 
-`%module.object.isa?(%('caspian.uno/module'))` is `true` for every case. The specific subclass can be checked via `%module.type` (see [Direct methods](#direct-methods) below) or via `%module.object.isa?(%('caspian.uno/module/function'))` and similar.
+`%module.obj.isa?(%('caspian.uno/module'))` is `true` for every case. The specific subclass can be checked via `%module.type` (see [Direct methods](#direct-methods) below) or via `%module.obj.isa?(%('caspian.uno/module/function'))` and similar.
 
 ## Reaching siblings
 
@@ -147,7 +147,7 @@ For the common case (function bodies with no nested named definitions), the per-
 - **`%module` inside an `if` branch is the branch's Closure Module** — `if $t; return %module.type; end` returns `"closure"`.
 - **Definition inside `if` branch is scoped to that branch** — `if $t; function &foo() end; end` puts foo on the branch Closure Module, not the enclosing Script; `%module.methods['foo']` at Script level is absent (see [modules § Definitions live in their lexical Module](https://puck.uno/requirements/modules/#definitions-live-in-their-lexical-module)).
 - **Class body is a Module during the definition pass** — inside `class ... end`, `%module.type` returns `"class_body"`.
-- **Class object is NOT a Module** — `class # widget end` produces a widget class value; `widget.object.isa?(%('caspian.uno/module'))` is `false`.
-- **Nested named definition is fresh per outer-invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; %module.outer().object.id != %module.outer().object.id`: two calls to outer produce two distinct inner function objects.
-- **Top-level function's `%module` is the persistent Script frame** — `function &foo() return %module.object.id end; %module.foo == %module.foo`: two calls return the same frame id.
-- **Nested function's `%module` is a per-invocation frame** — `function &outer() function &inner() return %module.object.id end; return %module.methods['inner'] end; %module.outer().call != %module.outer().call`: two outer-invocations produce two frames.
+- **Class object is NOT a Module** — `class # widget end` produces a widget class value; `widget.obj.isa?(%('caspian.uno/module'))` is `false`.
+- **Nested named definition is fresh per outer-invocation** — `function &outer() function &inner() end; return %module.methods['inner'] end; %module.outer().obj.id != %module.outer().obj.id`: two calls to outer produce two distinct inner function objects.
+- **Top-level function's `%module` is the persistent Script frame** — `function &foo() return %module.obj.id end; %module.foo == %module.foo`: two calls return the same frame id.
+- **Nested function's `%module` is a per-invocation frame** — `function &outer() function &inner() return %module.obj.id end; return %module.methods['inner'] end; %module.outer().call != %module.outer().call`: two outer-invocations produce two frames.

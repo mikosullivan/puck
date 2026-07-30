@@ -21,7 +21,7 @@ for the established shadow-class concept this idea builds on.
 ## The idea
 
 The shadow class is normally a per-object hidden thing — you
-`object.define` methods on it to customize one specific instance,
+`obj.define` methods on it to customize one specific instance,
 and that's the end of it. Once the object is garbage-collected,
 the shadow goes with it.
 
@@ -33,7 +33,7 @@ and `.new()` more objects from its shadow:
 ```
 $foo = some_class.new()
 
-$foo.object.define do
+$foo.obj.define do
     function &bar
         # ... custom method only on $foo, in foo's shadow class ...
     end
@@ -42,7 +42,7 @@ end
 # $foo is now a one-off — only $foo has &bar.
 
 # But the shadow class is reachable. Instantiate from it:
-$foo_2 = $foo.object.shadow.new()
+$foo_2 = $foo.obj.shadow.new()
 
 # $foo_2's class stack: [its own fresh shadow,
 #                         $foo's shadow (the one we customized),
@@ -72,13 +72,13 @@ new object spawned from its shadow.
 
 ## Open questions
 
-- **Bucket state.** Does `$foo.object.shadow.new()` start with a
+- **Bucket state.** Does `$foo.obj.shadow.new()` start with a
   fresh empty bucket, or copy $foo's bucket as initial state?
   Both are defensible; the latter is closer to "factory by
   example" but blurs the line between class and instance.
-- **Chained shadows.** If `$foo_2 = $foo.object.shadow.new()`,
+- **Chained shadows.** If `$foo_2 = $foo.obj.shadow.new()`,
   and then I customize $foo_2's own shadow, what happens to a
-  `$foo_3 = $foo_2.object.shadow.new()`? The class stack starts
+  `$foo_3 = $foo_2.obj.shadow.new()`? The class stack starts
   to nest: `$foo_3` would have its own shadow, then $foo_2's
   customizations, then $foo's. That's potentially powerful, but
   also a way to build inscrutable class hierarchies.
@@ -87,7 +87,7 @@ new object spawned from its shadow.
   Probably yes (class methods are shared across instances), but
   the "shadow customized on a per-instance basis" framing makes
   this surprising.
-- **Naming and discoverability.** What does `$foo_2.object.classes`
+- **Naming and discoverability.** What does `$foo_2.obj.classes`
   return? If $foo's shadow shows up in the stack, it needs a
   name — but shadows historically don't have names because
   they're implicit per-object.
@@ -99,11 +99,11 @@ clone the full class stack of one object onto another.
 
 ```
 $bar = %('some/base').new()
-$bar.object.classes = $foo.object.classes
+$bar.obj.classes = $foo.obj.classes
 ```
 
 This is enabled by the role model: the owning role can mutate
-`object.classes` directly. Foreign roles cannot. So an object's
+`obj.classes` directly. Foreign roles cannot. So an object's
 configuration profile — base class plus any additional classes
 added to its stack — can be replicated onto another object
 without writing a factory.
@@ -115,13 +115,13 @@ a different host, copy the class stack onto a fresh instance.
 
 ```
 $db1 = %('my/db').new(host: 'db1.example.com')
-$db1.object.classes.push(%('my/decorators/retry'))
-$db1.object.classes.push(%('my/decorators/cache'))
-$db1.object.classes.push(%('my/decorators/metrics'))
+$db1.obj.classes.push(%('my/decorators/retry'))
+$db1.obj.classes.push(%('my/decorators/cache'))
+$db1.obj.classes.push(%('my/decorators/metrics'))
 
 # Clone the decoration onto a second client
 $db2 = %('my/db').new(host: 'db2.example.com')
-$db2.object.classes = $db1.object.classes
+$db2.obj.classes = $db1.obj.classes
 ```
 
 No factory function. No DSL. No "decorator pattern" framework.

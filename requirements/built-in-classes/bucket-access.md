@@ -73,7 +73,7 @@ The three classes aren't mutually exclusive — nothing stops a class author fro
 
 If two of the three do end up on the same stack, method resolution walks the stack per the usual [stack](https://puck.uno/requirements/built-in-classes/object/structure/#stack) rules — but since every collision boils down to two methods that do the same thing, which one wins doesn't matter.
 
-Adding any of the three at class-definition time makes it part of the class's built-in surface for every instance. Adding one at runtime via `$foo.object.classes.ensure(BucketAccessor)` (or its block form for temporary access) works for specific instances or specific scopes.
+Adding any of the three at class-definition time makes it part of the class's built-in surface for every instance. Adding one at runtime via `$foo.obj.classes.ensure(BucketAccessor)` (or its block form for temporary access) works for specific instances or specific scopes.
 
 ## Testing
 
@@ -86,7 +86,7 @@ Adding any of the three at class-definition time makes it part of the class's bu
 - **Read of missing key returns null** — `$w[:not_there]` on an instance with BucketAccessor returns null; it does not raise.
 - **Write is direct — no validation** — writing any value at any key succeeds without filtering or hook interception.
 - **Write goes to the bucket** — after `$w[:name] = 'x'`, `%bucket['name']` on `$w` (from inside a method) is `'x'`.
-- **Adding BucketAccessor at runtime enables `[]` on that instance** — `$w.object.classes.ensure(Bucket_accessor); $w[:key] = 'v'; $w[:key]` returns `'v'`.
+- **Adding BucketAccessor at runtime enables `[]` on that instance** — `$w.obj.classes.ensure(Bucket_accessor); $w[:key] = 'v'; $w[:key]` returns `'v'`.
 - **Block-form `.classes.ensure(BucketAccessor) do ... end` scopes the surface** — subscript works inside the block and raises after the block exits (assuming BucketAccessor wasn't already stacked).
 
 ### BucketReader
@@ -111,7 +111,7 @@ Adding any of the three at class-definition time makes it part of the class's bu
 - **Stacking BucketAccessor and BucketReader together** — an instance carrying both still supports read and write; the redundant `[]` method resolution follows standard stack rules and produces the same read result either way.
 - **No error on redundant stacking** — combining any two or all three of these classes on one instance does not raise at class-add time.
 - **Adding at class-definition time affects every instance** — a class that lists BucketAccessor in its definition produces instances that all support subscript access.
-- **Adding at runtime affects only the instance** — `.object.classes.ensure(BucketAccessor)` on one instance does not add the class to other instances of the same class.
+- **Adding at runtime affects only the instance** — `.obj.classes.ensure(BucketAccessor)` on one instance does not add the class to other instances of the same class.
 
 ## Related
 

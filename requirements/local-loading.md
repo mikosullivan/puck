@@ -4,49 +4,49 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_local_loading",
-	"role": "spec for two mechanisms that reach local files from Caspian. (1) The `local:` URL scheme — `%import('local:/whatever.casp')` (single or triple slash) — looks up `whatever.casp` by walking `%import.locals`, a plain array of directory paths that is user-role-only for both read and write, process-scoped, assembled at CLI startup from four sources (`--lib` flags, `CASPIANLIB` colon-separated env var, XDG Base Directory defaults, and script-level modifications). (2) URL mapping — `%import.maps` is a plain hash keyed by URL prefix, values are directory paths, used to redirect http/https URL fetches to local directories. Reads are ambient (any role that can use `%import` sees the mappings), writes are user-only. Prefix match, first-registered wins on overlap. Miss on a mapping falls through to the next node in %import's search path. Framed as CLI behavior — the engine has no ambient filesystem access.",
-	"status": "spec — `local:` scheme, `%import.locals`, `%import.maps`, and four-source assembly settled; additional affordances (debugging, project-level overrides) may be layered later.",
+	"role": "spec for two mechanisms that reach local files from Caspian. (1) The `local:` URL scheme — `%fetch('local:/whatever.casp')` (single or triple slash) — looks up `whatever.casp` by walking `%fetch.locals`, a plain array of directory paths that is user-role-only for both read and write, process-scoped, assembled at CLI startup from four sources (`--lib` flags, `CASPIANLIB` colon-separated env var, XDG Base Directory defaults, and script-level modifications). (2) URL mapping — `%fetch.maps` is a plain hash keyed by URL prefix, values are directory paths, used to redirect http/https URL fetches to local directories. Reads are ambient (any role that can use `%fetch` sees the mappings), writes are user-only. Prefix match, first-registered wins on overlap. Miss on a mapping falls through to the next node in %fetch's search path. Framed as CLI behavior — the engine has no ambient filesystem access.",
+	"status": "spec — `local:` scheme, `%fetch.locals`, `%fetch.maps`, and four-source assembly settled; additional affordances (debugging, project-level overrides) may be layered later.",
 	"audience": "developers publishing or consuming local Caspian files; CLI implementers; anyone reasoning about where a fetched class actually comes from"
 }}
 ~~~
 
 Two mechanisms reach local files from Caspian:
 
-- **`local:` URLs** address files explicitly authored as local — `%import('local:/widget.casp')` walks the `%import.locals` array. Only the user role can use `local:`.
-- **URL mapping** redirects http/https URL fetches to local directories — `%import.maps['https://foo.bar/'] = '/home/miko/gup'` makes any fetch under `https://foo.bar/` resolve to a file under `/home/miko/gup`. Reads are ambient; only the user role can register or modify mappings.
+- **`local:` URLs** address files explicitly authored as local — `%fetch('local:/widget.casp')` walks the `%fetch.locals` array. Only the user role can use `local:`.
+- **URL mapping** redirects http/https URL fetches to local directories — `%fetch.maps['https://foo.bar/'] = '/home/miko/gup'` makes any fetch under `https://foo.bar/` resolve to a file under `/home/miko/gup`. Reads are ambient; only the user role can register or modify mappings.
 
-**Framing.** Local-file lookup is CLI behavior, not engine behavior. The Caspian engine has no ambient filesystem access — it can only reach files the CLI hands it via `%chain`'s fetch surface. When any script fetches a URL, the CLI walks `%import`'s search path (which includes URL mapping, the `local:` mechanism, local caches, and the network), reads and evaluates the first hit, and hands the resulting value back to the engine as though the URL had been fetched remotely. Consistent with Caspian's sealed-scope model: no ambient globals, no engine-level reach into the developer's environment.
+**Framing.** Local-file lookup is CLI behavior, not engine behavior. The Caspian engine has no ambient filesystem access — it can only reach files the CLI hands it via `%chain`'s fetch surface. When any script fetches a URL, the CLI walks `%fetch`'s search path (which includes URL mapping, the `local:` mechanism, local caches, and the network), reads and evaluates the first hit, and hands the resulting value back to the engine as though the URL had been fetched remotely. Consistent with Caspian's sealed-scope model: no ambient globals, no engine-level reach into the developer's environment.
 
 ## The `local:` scheme
 
 A `local:` URL names a file to look up on the developer's machine:
 
 ~~~caspian
-$widget = %import('local:/widget.casp')
+$widget = %fetch('local:/widget.casp')
 ~~~
 
-The path after `local:` — `widget.casp` in the example — is looked up under each directory in `%import.locals`, in order. The first directory that has a matching file wins; the CLI reads and evaluates that file, and the result is the fetch's return value. If no directory has a match, the fetch raises.
+The path after `local:` — `widget.casp` in the example — is looked up under each directory in `%fetch.locals`, in order. The first directory that has a matching file wins; the CLI reads and evaluates that file, and the result is the fetch's return value. If no directory has a match, the fetch raises.
 
 **Slash forgiveness.** The one-slash form is canonical, but the CLI also accepts the standard empty-authority URL form (`local://`) for forgiveness. Both fetches below refer to the same file and resolve identically:
 
 ~~~caspian
-%import('local:/widget.casp')
-%import('local:///widget.casp')
+%fetch('local:/widget.casp')
+%fetch('local:///widget.casp')
 ~~~
 
 The two-slash form (`local://widget.casp` with the authority reading `widget.casp`) is not a canonical URL shape and is not accepted; use the one-slash or three-slash form.
 
-**User-role-only.** `local:` URLs can only be fetched by code running under the user role. A non-user role attempting `%import('local:/x.casp')` raises. Untrusted code cannot reach into the developer's machine, cannot influence which local files are searched, and cannot enumerate `%import.locals`. That property is what makes it safe to expose local paths to Caspian at all.
+**User-role-only.** `local:` URLs can only be fetched by code running under the user role. A non-user role attempting `%fetch('local:/x.casp')` raises. Untrusted code cannot reach into the developer's machine, cannot influence which local files are searched, and cannot enumerate `%fetch.locals`. That property is what makes it safe to expose local paths to Caspian at all.
 
-## The `%import.locals` array
+## The `%fetch.locals` array
 
-`%import.locals` is a plain array of directory paths. Local-file lookups walk the array in order until the target file is found. Access is **user-role only** and **process-scoped** — untrusted roles have no visibility into or reach on the array, and modifications persist for the whole process run (they do not vanish when a modifying script's frame returns). Because `%import.locals` is only ever manipulated by the user role, it does not live on `%chain`.
+`%fetch.locals` is a plain array of directory paths. Local-file lookups walk the array in order until the target file is found. Access is **user-role only** and **process-scoped** — untrusted roles have no visibility into or reach on the array, and modifications persist for the whole process run (they do not vanish when a modifying script's frame returns). Because `%fetch.locals` is only ever manipulated by the user role, it does not live on `%chain`.
 
-Because it's a plain array, any array operation works: `<<` to append, `.prepend` to prepend, direct assignment to replace, iteration to inspect, dedup or splice at any position. The script picks the semantics it wants; nothing about `%import.locals` is special beyond the fact that the CLI reads it when resolving a `local:` fetch.
+Because it's a plain array, any array operation works: `<<` to append, `.prepend` to prepend, direct assignment to replace, iteration to inspect, dedup or splice at any position. The script picks the semantics it wants; nothing about `%fetch.locals` is special beyond the fact that the CLI reads it when resolving a `local:` fetch.
 
 ## Assembly of the initial array
 
-When the CLI starts up, it builds the initial `%import.locals` array by concatenating four sources in priority order:
+When the CLI starts up, it builds the initial `%fetch.locals` array by concatenating four sources in priority order:
 
 1. **`--lib` CLI flags** — highest priority, added in the order they appear on the command line.
 2. **`CASPIANLIB` environment variable** — colon-separated list, in the order specified.
@@ -91,17 +91,17 @@ The full default chain comes from the [XDG Base Directory Specification](https:/
 
 ### Script-level modifications
 
-Once the initial array is assembled, a script running under the user role can modify `%import.locals` at will. Common patterns:
+Once the initial array is assembled, a script running under the user role can modify `%fetch.locals` at will. Common patterns:
 
 ~~~caspian
-%import.locals << '/tmp/my-libs'          # add as fallback (append)
-%import.locals.prepend '/opt/priority'    # add as priority (prepend)
-%import.locals = ['/only/this']           # replace wholesale
+%fetch.locals << '/tmp/my-libs'          # add as fallback (append)
+%fetch.locals.prepend '/opt/priority'    # add as priority (prepend)
+%fetch.locals = ['/only/this']           # replace wholesale
 ~~~
 
 The modification persists for the rest of the process run and applies to every subsequent `local:` fetch, including those triggered by scripts loaded from within the current one.
 
-Untrusted roles have no read or write access to `%import.locals`. A non-user role attempting to touch it raises.
+Untrusted roles have no read or write access to `%fetch.locals`. A non-user role attempting to touch it raises.
 
 ## XDG environment variable overrides
 
@@ -116,28 +116,28 @@ Per the XDG specification, setting these variables replaces the defaults wholesa
 
 ## URL mapping
 
-The `local:` scheme covers URLs the developer explicitly authors as "look this up locally." A parallel mechanism, **`%import.maps`**, redirects **http / https URL fetches** to local directories. This lets code that fetches a real URL — during development, offline, in a test — resolve to a local file transparently, without changing the URL itself.
+The `local:` scheme covers URLs the developer explicitly authors as "look this up locally." A parallel mechanism, **`%fetch.maps`**, redirects **http / https URL fetches** to local directories. This lets code that fetches a real URL — during development, offline, in a test — resolve to a local file transparently, without changing the URL itself.
 
 ~~~caspian
-%import.maps['https://foo.bar/gup/'] = '/home/miko/gup'
+%fetch.maps['https://foo.bar/gup/'] = '/home/miko/gup'
 
-$class = %import('https://foo.bar/gup/whatever.casp')
+$class = %fetch('https://foo.bar/gup/whatever.casp')
 # resolves to /home/miko/gup/whatever.casp
 ~~~
 
 ### Prefix mapping
 
-The URL key is a **prefix**. Any URL that starts with the key matches, and the tail after the prefix is appended to the mapped directory. The mapping `%import.maps['https://foo.bar/gup/'] = '/home/miko/gup'` handles both `.../gup/whatever.casp` (→ `/home/miko/gup/whatever.casp`) and `.../gup/sub/other.casp` (→ `/home/miko/gup/sub/other.casp`) from a single entry.
+The URL key is a **prefix**. Any URL that starts with the key matches, and the tail after the prefix is appended to the mapped directory. The mapping `%fetch.maps['https://foo.bar/gup/'] = '/home/miko/gup'` handles both `.../gup/whatever.casp` (→ `/home/miko/gup/whatever.casp`) and `.../gup/sub/other.casp` (→ `/home/miko/gup/sub/other.casp`) from a single entry.
 
 ### Overlapping mappings
 
 If more than one mapping matches a URL, the mapping that was **registered first** wins:
 
 ~~~caspian
-%import.maps['https://foo.bar/']      = '/home/miko/root'
-%import.maps['https://foo.bar/gup/']  = '/home/miko/gup'
+%fetch.maps['https://foo.bar/']      = '/home/miko/root'
+%fetch.maps['https://foo.bar/gup/']  = '/home/miko/gup'
 
-$class = %import('https://foo.bar/gup/whatever.casp')
+$class = %fetch('https://foo.bar/gup/whatever.casp')
 # resolves to /home/miko/root/gup/whatever.casp — the shorter prefix was
 # registered first, so it wins.
 ~~~
@@ -146,61 +146,61 @@ To give a more specific mapping priority over a general one, register the specif
 
 ### Ambient read, user-only write
 
-Any role that can use `%import` sees the mappings — fetching a mapped URL from any role transparently resolves through the redirect. That's the whole point; downstream code shouldn't need to know whether a URL was redirected.
+Any role that can use `%fetch` sees the mappings — fetching a mapped URL from any role transparently resolves through the redirect. That's the whole point; downstream code shouldn't need to know whether a URL was redirected.
 
-**Writes are restricted to the user role.** A non-user role attempting to assign to `%import.maps` — add a mapping, modify an existing one, remove one — raises. The asymmetry is deliberate: reads are ambient because the redirect is meant to be transparent; writes are locked down because untrusted code shouldn't be able to hijack URL resolution.
+**Writes are restricted to the user role.** A non-user role attempting to assign to `%fetch.maps` — add a mapping, modify an existing one, remove one — raises. The asymmetry is deliberate: reads are ambient because the redirect is meant to be transparent; writes are locked down because untrusted code shouldn't be able to hijack URL resolution.
 
 ### Miss falls through
 
-When a mapping resolves a URL to a local path but the file isn't there, the fetch doesn't raise and doesn't retry other mappings. `%import` walks its own ordered search path — built-in files, URL mappings, local caches, the network, and other resource nodes — with the URL-mapping mechanism sitting as one node in that path. A miss on the mapping just continues to the next node. (The full `%import` search path is spec'd elsewhere.)
+When a mapping resolves a URL to a local path but the file isn't there, the fetch doesn't raise and doesn't retry other mappings. `%fetch` walks its own ordered search path — built-in files, URL mappings, local caches, the network, and other resource nodes — with the URL-mapping mechanism sitting as one node in that path. A miss on the mapping just continues to the next node. (The full `%fetch` search path is spec'd elsewhere.)
 
 ### Persistence
 
-`%import.maps` persists for the whole process run. `%import` doesn't live on `%chain`, so a mapping doesn't vanish when the script that added it returns.
+`%fetch.maps` persists for the whole process run. `%fetch` doesn't live on `%chain`, so a mapping doesn't vanish when the script that added it returns.
 
 ### Plain hash
 
-`%import.maps` is a plain hash keyed by URL prefix, values are directory paths. Any standard hash operation works — iterate to inspect, assign to add or update, unset to remove, replace wholesale to reset. Nothing about `%import.maps` is special beyond the fact that `%import` reads it during URL resolution.
+`%fetch.maps` is a plain hash keyed by URL prefix, values are directory paths. Any standard hash operation works — iterate to inspect, assign to add or update, unset to remove, replace wholesale to reset. Nothing about `%fetch.maps` is special beyond the fact that `%fetch` reads it during URL resolution.
 
 ### One directory per prefix — no versioning
 
-A mapping ties a URL prefix to a single directory. That means the mechanism can't serve **different versions** of a file at a mapped URL — `%import.maps['https://foo.bar/'] = '/home/miko/gup'` points at exactly one `whatever.casp` under `/home/miko/gup`, with no way to distinguish "the v1 build" from "the v2 build" at the same URL.
+A mapping ties a URL prefix to a single directory. That means the mechanism can't serve **different versions** of a file at a mapped URL — `%fetch.maps['https://foo.bar/'] = '/home/miko/gup'` points at exactly one `whatever.casp` under `/home/miko/gup`, with no way to distinguish "the v1 build" from "the v2 build" at the same URL.
 
-Local versioning support — the ability to hold multiple versions of a file at a URL and hand back the right one on demand — needs the directory to be formatted as a [**cache**](https://puck.uno/requirements/cache-dir), not a plain mapping target. Caches are a separate mechanism sitting elsewhere in `%import`'s search path.
+Local versioning support — the ability to hold multiple versions of a file at a URL and hand back the right one on demand — needs the directory to be formatted as a [**cache**](https://puck.uno/requirements/cache-dir), not a plain mapping target. Caches are a separate mechanism sitting elsewhere in `%fetch`'s search path.
 
 ### Version-constrained fetches raise on mapped directories
 
-If a `%import` fetch carries a **timestamp constraint** and resolves to a mapped directory, the engine raises. A mapped directory has no version information — every file inside represents "the current file at this location," with no timestamp — so the engine cannot honor a version constraint against it. Silently serving the mapped file could satisfy the fetch with content that doesn't match the requested version, which is exactly the kind of quiet mismatch that produces subtle bugs later.
+If a `%fetch` fetch carries a **timestamp constraint** and resolves to a mapped directory, the engine raises. A mapped directory has no version information — every file inside represents "the current file at this location," with no timestamp — so the engine cannot honor a version constraint against it. Silently serving the mapped file could satisfy the fetch with content that doesn't match the requested version, which is exactly the kind of quiet mismatch that produces subtle bugs later.
 
 If a project needs both version constraints AND local overrides, the directory should be formatted as a [cache](https://puck.uno/requirements/cache-dir), which carries per-version subdirectories. If a more flexible resolution is warranted in the future — e.g., a per-mapping opt-in to serve untimestamped files under version-constrained fetches — the community can propose it.
 
 ## Testing
 
-- **`local:/name.casp` resolves against `%import.locals`** — with a directory in `%import.locals` containing `widget.casp`, `%import('local:/widget.casp')` returns the file's value.
-- **First matching directory wins** — with two `%import.locals` entries each containing `widget.casp`, the fetch returns the earlier directory's copy.
+- **`local:/name.casp` resolves against `%fetch.locals`** — with a directory in `%fetch.locals` containing `widget.casp`, `%fetch('local:/widget.casp')` returns the file's value.
+- **First matching directory wins** — with two `%fetch.locals` entries each containing `widget.casp`, the fetch returns the earlier directory's copy.
 - **Miss on all entries raises** — a `local:/missing.casp` with no entry providing the file raises.
-- **Three-slash form is equivalent to one-slash form** — `%import('local:///widget.casp')` and `%import('local:/widget.casp')` resolve identically.
-- **Two-slash form is rejected** — `%import('local://widget.casp')` raises as an unrecognized shape.
-- **Non-user role attempting `local:` fetch raises** — the same `%import('local:/widget.casp')` call from a non-`user` role raises regardless of grants.
-- **Non-user role reading `%import.locals` raises** — read attempts from a non-`user` role raise before any value is returned.
-- **Non-user role writing `%import.locals` raises** — `%import.locals << ...` from a non-`user` role raises without mutating the array.
-- **`--lib` flags land at the front of the initial array** — starting `caspian --lib ~/a --lib ~/b script.casp` produces initial `%import.locals` beginning with `~/a`, then `~/b`.
+- **Three-slash form is equivalent to one-slash form** — `%fetch('local:///widget.casp')` and `%fetch('local:/widget.casp')` resolve identically.
+- **Two-slash form is rejected** — `%fetch('local://widget.casp')` raises as an unrecognized shape.
+- **Non-user role attempting `local:` fetch raises** — the same `%fetch('local:/widget.casp')` call from a non-`user` role raises regardless of grants.
+- **Non-user role reading `%fetch.locals` raises** — read attempts from a non-`user` role raise before any value is returned.
+- **Non-user role writing `%fetch.locals` raises** — `%fetch.locals << ...` from a non-`user` role raises without mutating the array.
+- **`--lib` flags land at the front of the initial array** — starting `caspian --lib ~/a --lib ~/b script.casp` produces initial `%fetch.locals` beginning with `~/a`, then `~/b`.
 - **`--lib` flag order is preserved** — flags on the command line appear in the array in the order they were given.
 - **`CASPIANLIB` entries land after `--lib`** — with `--lib ~/a` and `CASPIANLIB=~/b:~/c`, the array order begins `~/a`, `~/b`, `~/c`.
 - **XDG defaults land at the tail** — the last three entries of the initial array are `~/.local/share/caspian/`, `/usr/local/share/caspian/`, `/usr/share/caspian/` when the XDG env vars are unset.
 - **`XDG_DATA_HOME` overrides the user data location** — with `XDG_DATA_HOME=/opt/x`, the user portion of the array is `/opt/x/caspian/`.
 - **`XDG_DATA_DIRS` replaces the system data locations wholesale** — with `XDG_DATA_DIRS=/opt/y`, the system portion is only `/opt/y/caspian/`; the defaults are not silently appended.
 - **User-first shadow rule holds** — a file at `~/.local/share/caspian/widget.casp` shadows one at `/usr/local/share/caspian/widget.casp` when both exist.
-- **Script-level mutation persists across frames** — a `%import.locals << '/tmp/x'` in one script is visible to subsequent scripts loaded from within the same process.
-- **`%import.maps` prefix match rewrites the fetch target** — after `%import.maps['https://foo.bar/'] = '/home/miko/root'`, `%import('https://foo.bar/x.casp')` resolves to `/home/miko/root/x.casp`.
-- **Sub-path after the prefix is appended** — with the mapping `https://foo.bar/gup/` → `/home/miko/gup`, `%import('https://foo.bar/gup/sub/other.casp')` resolves to `/home/miko/gup/sub/other.casp`.
+- **Script-level mutation persists across frames** — a `%fetch.locals << '/tmp/x'` in one script is visible to subsequent scripts loaded from within the same process.
+- **`%fetch.maps` prefix match rewrites the fetch target** — after `%fetch.maps['https://foo.bar/'] = '/home/miko/root'`, `%fetch('https://foo.bar/x.casp')` resolves to `/home/miko/root/x.casp`.
+- **Sub-path after the prefix is appended** — with the mapping `https://foo.bar/gup/` → `/home/miko/gup`, `%fetch('https://foo.bar/gup/sub/other.casp')` resolves to `/home/miko/gup/sub/other.casp`.
 - **First-registered mapping wins on overlap** — with `https://foo.bar/` registered before `https://foo.bar/gup/`, a fetch of `https://foo.bar/gup/whatever.casp` routes through the shorter prefix.
-- **Non-user role reading `%import.maps` sees the mappings** — a fetch from a non-`user` role transparently uses whatever mappings were registered.
-- **Non-user role writing `%import.maps` raises** — a non-`user` assignment to `%import.maps` raises without mutating.
-- **Mapping miss falls through** — when a mapped directory does not contain the resolved file, the fetch continues to the next node in `%import`'s search path and does not raise.
+- **Non-user role reading `%fetch.maps` sees the mappings** — a fetch from a non-`user` role transparently uses whatever mappings were registered.
+- **Non-user role writing `%fetch.maps` raises** — a non-`user` assignment to `%fetch.maps` raises without mutating.
+- **Mapping miss falls through** — when a mapped directory does not contain the resolved file, the fetch continues to the next node in `%fetch`'s search path and does not raise.
 - **Mapping persists across script frames** — a mapping added in one script is visible to fetches issued from a later script in the same process.
-- **`%import.maps` is a plain hash** — `.has?`, iteration, assignment, and unset behave like any hash.
-- **Version-constrained fetch against a mapped directory raises** — a `%import` fetch that carries a timestamp constraint and would resolve through `%import.maps` raises.
+- **`%fetch.maps` is a plain hash** — `.has?`, iteration, assignment, and unset behave like any hash.
+- **Version-constrained fetch against a mapped directory raises** — a `%fetch` fetch that carries a timestamp constraint and would resolve through `%fetch.maps` raises.
 - **Version-constrained fetch against a cache directory succeeds** — same fetch through a cache-format directory resolves normally.
 
 ## Related

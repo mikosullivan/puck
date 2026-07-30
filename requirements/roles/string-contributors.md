@@ -61,7 +61,7 @@ Ownership never grows beyond a single role; the ownership rule (whoever created 
 - **`.replace(...)` inherits contributors from both target and replacement** — the replacement's contributors join the result's list.
 - **Duplicate roles collapse** — a concatenation whose inputs both contribute role `X` yields `[X]`, not `[X, X]`.
 - **Order in `contributors` is unspecified but stable per identical inputs** — membership is what matters.
-- **Ownership is a single role regardless of contributor count** — `.object.role` is one role.
+- **Ownership is a single role regardless of contributor count** — `.obj.role` is one role.
 - **Ownership names the creating frame** — not any input role.
 - **A multi-contributor string raises when written to disk** — V1 blocked posture.
 - **The raised error names every contributing role** — the exception exposes the full list.

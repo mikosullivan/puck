@@ -17,11 +17,11 @@ This page collects cross-cutting concepts that don't fit cleanly into any single
 
 The shape of the model:
 
-- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/requirements/plumbing/faucets/) for inbound data, downloaded objects for `%import` content). Roles don't get traded, swapped, or modified — they're permanent identities.
+- **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/requirements/plumbing/faucets/) for inbound data, downloaded objects for `%fetch` content). Roles don't get traded, swapped, or modified — they're permanent identities.
 - **`%engine` is the only path to host resources, and only `user` can call it.** Untrusted code can't reach the host process through `%engine`; the gateway is gated unconditionally at the runtime level. The user has to explicitly hand specific capabilities down through `%chain`.
 - **Capabilities propagate through `%chain` block-by-block, not ambiently.** Granting a capability is a deliberate per-block act; the grant evaporates when the block exits. There's no "this code has been blessed with permanent network access" — every grant is scoped, every revocation is enforceable. See [chain/grant-revoke](https://puck.uno/requirements/chain/grant-revoke).
 - **Methods run as their object's role.** Calling a method on a downloaded object enters that object's role frame, not the caller's. The caller's authority doesn't leak across the dispatch boundary; the object can only do what its role has been granted. See [roles § Methods run as their object's role](https://puck.uno/requirements/roles/#methods-run-as-their-objects-role).
-- **Faucets preserve provenance.** Every value entering the runtime through stdin, env, the filesystem, the network, or a `%import` download is tagged with its source's role. That tag survives storage, passing, and most operations — "did this string ever come from the network?" is a real, answerable question.
+- **Faucets preserve provenance.** Every value entering the runtime through stdin, env, the filesystem, the network, or a `%fetch` download is tagged with its source's role. That tag survives storage, passing, and most operations — "did this string ever come from the network?" is a real, answerable question.
 - **Holding is access, but the owner controls what gets handed across.** A non-owner role with a reference to an object can call any method on it; the owner narrows what's reachable by passing a [jail wrapper](https://puck.uno/requirements/roles/object-access#narrowing-pass-a-jail-not-the-raw-object) instead of the raw object.
 - **No nanny defaults.** The runtime never refuses a developer-chosen action by paternalism. Safe defaults and security guarantees stay, but "you can't because we think you shouldn't" is rejected. Full spec at [No nanny code](#no-nanny-code) below.
 
@@ -83,9 +83,9 @@ The upside is a smaller conceptual surface and a uniform way to reason about met
 
 ## Objects, not libraries
 
-Caspian doesn't have a "library" concept as a technical primitive. [`%import`](https://puck.uno/requirements/import) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
+Caspian doesn't have a "library" concept as a technical primitive. [`%fetch`](https://puck.uno/requirements/fetch) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
 
-You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%import` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/requirements/engine/manifest/#sections).
+You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%fetch` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/requirements/engine/manifest/#sections).
 
 ## Caspian is written in Caspian
 
@@ -93,7 +93,7 @@ You may informally call a group of related downloads a "library" — the same wa
 
 This is a deliberate design commitment, not just implementation hygiene:
 
-- **Users can read and modify the code that runs their programs.** Password, Passkey, the built-in collection classes, and every other stdlib surface are Caspian objects you can `%import.raw`, inspect, learn from, fork, or replace. A Caspian program isn't standing on an opaque host-language substrate — it's standing on more Caspian.
+- **Users can read and modify the code that runs their programs.** Password, Passkey, the built-in collection classes, and every other stdlib surface are Caspian objects you can download, inspect, learn from, fork, or replace. A Caspian program isn't standing on an opaque host-language substrate — it's standing on more Caspian.
 - **Caspian's design concepts get demonstrated in the stdlib itself.** Roles, chains, holding-as-access, classes-as-only-method-carrier, faucet provenance — these become concrete examples in the code every program uses. The stdlib doubles as a working demonstration of what Caspian is for.
 - **The trust surface stays small.** The host-language layer is what the security model has to trust; keeping it minimal makes it audit-able. Everything above the primitive line runs under the same rules any user code runs under.
 - **Iteration doesn't require binary releases.** Fixing a bug in Password's algorithm dispatch, adding an exception class to Passkey, or refining a helper method ships as a new Caspian class version — not a rebuild-and-redistribute of the caspian binary.
@@ -124,7 +124,7 @@ Examples that have earned their reuse in Caspian:
 - **Exceptions** serve return / raise / exit. One control-flow mechanism carries three semantic uses; the engine has one exception dispatcher, developers learn one machinery.
 - **Aggregate hashes** ([`lua/aggregate-hash`](https://puck.uno/requirements/lua/aggregate-hash)) serve `%chain` / scope frames / class-method resolution / delegated environments — every "lookup walks a chain of hashes" pattern. One primitive, many roles.
 - **`function_call` bwc** ([caspianj § Calls](https://puck.uno/requirements/caspianj#calls)) collapses bareword calls, dot method calls, closure invocations, downloaded-method applications — every callable invocation — to one CaspM shape.
-- **Freeze** is Caspian's constant mechanism across three surfaces: variables via [`variable-object.freeze`](https://puck.uno/requirements/built-in-classes/variable-object#freezing), hash fields via [`.freeze_field`](https://puck.uno/requirements/built-in-classes/primitives/hash#freezing-fields), whole objects via [`.object.freeze`](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze). No separate `const` keyword; freeze does everything.
+- **Freeze** is Caspian's constant mechanism across three surfaces: variables via [`variable-object.freeze`](https://puck.uno/requirements/built-in-classes/variable-object#freezing), hash fields via [`.freeze_field`](https://puck.uno/requirements/built-in-classes/primitives/hash#freezing-fields), whole objects via [`.obj.freeze`](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze). No separate `const` keyword; freeze does everything.
 - **`assign` bwc** serves variable assign and subscript assign — dispatch on lvalue shape.
 - **Aggregate `.set(key, value)`** is the scope runtime's assignment mechanism AND the general walk-then-write primitive available to any aggregate consumer.
 
@@ -138,17 +138,22 @@ Failure modes if the check is skipped:
 
 **Not a suicide pact.** Force-fitting a primitive to a wrong shape is worse than adding a new one. The check is "does it fit?" — not "how can I make it fit?" When exceptions started serving return and exit alongside raise, that was a natural extension of one control-flow mechanism. Trying to fit something structurally different — cross-thread message passing, for example — onto exceptions would be forcing the shape; a different primitive would be right.
 
-## Strings are UTF-8
+## Cost if you don't use it
 
-Every string passed into Caspian is automatically re-encoded as UTF-8. Caspian source, string values in downloaded objects, the results of `%import` fetches, arguments handed to the engine by a host — all of it lands as UTF-8 inside the runtime, and every string value the engine produces or serializes is UTF-8. Developers never see an "encoding" concept at the language level; the runtime handles the conversion at the boundary.
+**A feature earns its weight only if it's invisible to programs that don't use it.** When adding capability to the language or the engine, the design question isn't just "how much does this cost when in use?" — it's also "how much does this tax code that never touches it?" A feature that adds cycles, memory, or complexity to every program regardless of whether the program uses it is a feature charged to everyone; it needs to justify that.
 
-In practice the conversion is usually trivial:
+This is a design axis, not an absolute rule. Some features genuinely cost something universal (the GC, the aggregate hash for scope, the reference table for reachability) and that cost is well-spent. But when a feature CAN be built so that non-users pay nothing, that's the shape to reach for.
 
-- **ASCII** is already valid UTF-8 — no work required.
-- **UTF-8** input passes through as-is.
-- **UTF-16** and other Unicode encodings are transcoded to UTF-8 at the boundary using the standard mappings.
+Examples from Caspian's design:
 
-The exact conversion policy for other encodings — legacy single-byte charsets, non-Unicode double-byte encodings, byte sequences with no declared encoding, and any invalid or partially-valid input — will be filled in as the boundary handling is designed.
+- **Event handling** ([`requirements/events`](https://puck.uno/requirements/events/)) — broadcasting an event when nothing is listening is a single hash lookup that finds no entry; the broadcaster returns immediately. Programs that never `.broadcast` and never `.listen_to` pay zero for the feature's existence. Programs that use it lightly pay lightly. The mechanism scales with actual use.
+- **Class-listeners** ([`requirements/events/listen-to-class`](https://puck.uno/requirements/events/listen-to-class)) — the ancestor walk adds a small per-broadcast cost, but if no class-listeners are registered anywhere for an event, each ancestor lookup is a fast hash miss. Non-users of the feature pay only the miss cost. No always-on overhead.
+- **Capability grant machinery** — most programs never call `.grant` / `.revoke`. Those that don't pay only the cost of the ordinary chain hash lookups (which the language uses for other reasons anyway). Grant/revoke doesn't add per-frame overhead to programs that don't use it.
+- **`%amber`** ([`requirements/amber`](https://puck.uno/requirements/amber)) — a program that never calls `%amber.init(...)` never touches the ambient-hash layer; the aggregate hash's amber slot stays empty; iteration finds nothing. The mechanism costs the check, not the storage.
+
+The heuristic: when designing a new feature, ask "what does this cost programs that don't use it?" If the answer is "one extra lookup per hot-path operation" or "one extra field per object" — that's a tax on everyone. Look for a shape where non-users bear zero (or near-zero) cost. Sometimes the shape is available; sometimes it isn't; but the question is always worth asking before committing.
+
+Failure mode if the check is skipped: features accumulate, each adding "a little" overhead to every operation, and cumulatively the language gets slow-and-fat for reasons no single feature accounts for. Death by a thousand cheap features. Every feature has to earn its keep against the invariant: "non-users pay nothing."
 
 ## Testing
 
@@ -169,10 +174,5 @@ The exact conversion policy for other encodings — legacy single-byte charsets,
 - **Classes are the only method carrier** — attaching a method by any mechanism other than a class definition (module, mixin, per-instance dictionary, prototype patch) fails or has no equivalent syntax.
 - **Instance-level method lives on the shadow class** — a method defined on a specific instance is dispatched via that instance's shadow class and is not visible on other instances of the same underlying class.
 - **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the platter stack in declared order.
-- **One URL, one object via `%import`** — two successive `%import(url)` calls with the same URL and same fetcher chain state return the same object identity.
-- **`%engine.manifest.downloads` tracks each URL separately** — two `%import` fetches of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
-- **ASCII input passes through unchanged** — a pure-ASCII input string arrives at Caspian byte-identical.
-- **UTF-8 input passes through unchanged** — a UTF-8-encoded string arrives at Caspian byte-identical.
-- **UTF-16 input is transcoded to UTF-8** — a UTF-16-encoded string arrives at Caspian as its UTF-8 equivalent.
-- **Every string value inside the runtime is UTF-8** — after any of the above inputs, `str.bytes` returns valid UTF-8 for every string reachable from user code.
-- **Serialized outputs are UTF-8** — a string emitted via `%stdout`, written to a file, or handed back to a sink is UTF-8 regardless of the input encoding.
+- **Each `%fetch` call produces a fresh object** — two successive `%fetch(url)` calls with the same URL return two distinct objects; developers wanting shared identity fetch once and pass the reference around.
+- **`%engine.manifest.downloads` tracks each URL separately** — two `%fetch` calls of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
