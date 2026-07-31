@@ -6,10 +6,11 @@
     "search":         "query, tree? -> list of { md_path, url, count, score, preamble } sorted by score desc; tree scopes to files whose md_path starts with the prefix",
     "render":         "query, tree? -> full HTML results page (uses page.render_results_page for site chrome)",
     "handle":         "request_path (incl. query string) -> { status, body, content_type } — server-facing entry",
-    "list_md_files": "() -> sorted list of every markdown source path (README.md + <root>/**/*.md for each root in DOC_ROOTS); shared with orlando.random"
+    "list_md_files": "() -> sorted list of every markdown source path in the repo, filtered by is_excluded_path (no dotfiles, no settings.json); shared with orlando.random"
   },
+  "scope": "whole-repo. Search walks every markdown file under the repo root — no doc-tree whitelist. Filters out dotfile paths (.git, .env, .claude, etc.) and known-sensitive files (settings.json) to match route.lua's serve-side exclusions.",
   "ranking": "score = 10*hit_in_filename + 8*hit_in_dirname + 5*hit_in_title + 1*occurrence_count; ties broken alphabetically by md_path. Dirname hit: any directory component of the path contains the query (case-insensitive substring). Lets a query like 'helpers' find files under `ideas/helpers/` even when no basename or body contains 'helpers'.",
-  "directory_results": "Directories under DOC_ROOTS are also first-class search results. A query matching a directory's basename (e.g. 'helpers' → `ideas/helpers/`) surfaces the directory itself, scored the same as a filename hit (10). Works even when the directory has no index.md.",
+  "directory_results": "Directories anywhere in the repo are also first-class search results. A query matching a directory's basename (e.g. 'helpers' → `ideas/helpers/`) surfaces the directory itself, scored the same as a filename hit (10). Works even when the directory has no index.md.",
   "notes": ["always case-insensitive — query is folded to lowercase before scanning",
     "preamble is the doc's intro prose (post-H1, post-vibecode, pre-first-H2); HTML-escaped on render with light markdown stripping; query hits in the preamble are wrapped in <mark>",
     "tree filter: when tree is non-empty, only files whose md_path starts with the tree prefix are considered (prefix should end with '/'; empty or nil = whole site)"]
@@ -70,26 +71,33 @@ local function dir_components(path)
     return parts
 end
 
--- Doc trees to search. Keep in sync with orlando.nav's DOC_ROOTS.
-local DOC_ROOTS = {"documentation", "ideas", "requirements", "skills"}
+-- Whole-repo scan. Search walks every markdown file and every directory
+-- under the repo root, filtering out dotfile paths (.git, .env, .claude,
+-- etc.) and known-sensitive files (settings.json) — matches route.lua's
+-- serve-side exclusions.
+local function is_excluded_path(path)
+    -- Any path segment starting with '.' is excluded (dotfiles / dotdirs).
+    for segment in path:gmatch("[^/]+") do
+        if segment:sub(1, 1) == "." then return true end
+        if segment == "settings.json" then return true end
+    end
+    return false
+end
 
 local function list_md_files()
     local files = {}
+    -- find prunes dotdirs at descent time so we don't waste work on .git.
+    local handle = io.popen([[find . -mindepth 1 \( -name '.*' -prune \) -o -type f -name '*.md' -print 2>/dev/null]])
 
-    if io.open("README.md", "rb") then
-        files[#files + 1] = "README.md"
-    end
-
-    for _, root in ipairs(DOC_ROOTS) do
-        local handle = io.popen('find ' .. root .. ' -type f -name "*.md" 2>/dev/null')
-
-        if handle then
-            for line in handle:lines() do
-                files[#files + 1] = line
+    if handle then
+        for line in handle:lines() do
+            local path = line:gsub("^%./", "")
+            if not is_excluded_path(path) then
+                files[#files + 1] = path
             end
-
-            handle:close()
         end
+
+        handle:close()
     end
 
     table.sort(files)
@@ -98,27 +106,22 @@ end
 
 M.list_md_files = list_md_files
 
--- All subdirectories under DOC_ROOTS. Used so search can surface a
+-- All subdirectories in the whole repo. Used so search can surface a
 -- directory as a first-class result — e.g., a query for "helpers"
--- returns `ideas/helpers/` itself, not just the files under it. The
--- root names themselves are included so `documentation/`, `ideas/`,
--- `requirements/`, `skills/` are findable by name.
+-- returns `ideas/helpers/` itself, not just the files under it.
 local function list_dirs()
     local dirs = {}
+    local handle = io.popen([[find . -mindepth 1 \( -name '.*' -prune \) -o -type d -print 2>/dev/null]])
 
-    for _, root in ipairs(DOC_ROOTS) do
-        dirs[#dirs + 1] = root
-        local handle = io.popen('find ' .. root .. ' -type d 2>/dev/null')
-
-        if handle then
-            for line in handle:lines() do
-                if line ~= root then
-                    dirs[#dirs + 1] = line
-                end
+    if handle then
+        for line in handle:lines() do
+            local path = line:gsub("^%./", "")
+            if path ~= "" and path ~= "." and not is_excluded_path(path) then
+                dirs[#dirs + 1] = path
             end
-
-            handle:close()
         end
+
+        handle:close()
     end
 
     table.sort(dirs)

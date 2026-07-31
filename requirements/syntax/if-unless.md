@@ -25,6 +25,32 @@ end
 
 `elsif` and `elseif` are both accepted. `unless` is the negation of `if` — its body runs when the condition is falsy. There is no `for X in Y` — iterate by calling `.each` on a collection; every loop construct (including `.each`, `while`, `until`) is spec'd in [loops](https://puck.uno/requirements/syntax/loops).
 
+## Each branch is its own scope
+
+Every branch of an if-chain (or `unless` body) is its own scope. Variables initialized inside a branch are **not** visible outside it. This differs from Ruby (and some other languages) where a variable set inside an `if` leaks out to the enclosing scope; in Caspian, it does not.
+
+```caspian
+if $x > 0
+    $label = 'positive'
+end
+puts $label                # raises — $label was never introduced in this scope
+```
+
+To use a value produced by an if-chain, either pre-declare in the outer scope, or take the chain's value as an expression:
+
+```caspian
+$label = if $x > 0
+    'positive'
+else
+    'nonpositive'
+end
+puts $label                # works — $label is in the outer scope
+```
+
+**Implementation note.** Whether each branch is literally a closure (allocated as a first-class callable) or an inline block sharing the frame is a conscious choice deferred to implementation time. Either way, the scoping rule above holds: branches are their own scopes and don't leak.
+
+**Strong default: closures.** Making branches literal closures reuses the closure primitive (fits Caspian's primitive-reuse principle), gives every branch a `%call` for `%call.return` early-exit, and makes the scoping rule fall out of standard closure semantics. Keeping branches inline would avoid per-branch closure allocation in hot code paths but requires the scoping rule to be enforced by the parser or normalizer rather than by closure semantics — and would give up the primitive-reuse win. A very compelling case (specific benchmarks, real allocation-cost problem, no workable engine-level closure-elimination optimization) would be required to choose inline over closures. Whichever is chosen, observable behavior is the same.
+
 ## Conditional object via `as`
 
 `if` and `unless` blocks can be named with `as $name` to bind a **conditional object** for the duration of the whole if-chain. The binding sits on the opening `if` (or `unless`); it cannot be attached to an `elsif` or `else`. The object gives every branch a way to exit the chain and optionally hand a value back to the caller.
@@ -43,6 +69,8 @@ The primary method is `$conditional.return`:
 - `$conditional.return` (no argument) — exits with `null` as the chain's value.
 
 `.return` on the conditional object is a chain-scoped exit, not a function return. A bare `return` inside a conditional body still returns from the enclosing function.
+
+**Relationship to `%call.return`.** Since each branch is its own scope and the chain's value is the branch's last-executed statement, `%call.return $x` at the top of a branch produces the same result as `$tier.return $x` — both cause the chain to evaluate to `$x`. The two diverge only inside a nested closure within the branch: `%call.return` there exits the nested closure only (execution continues past that closure, and the branch's later statements still determine the chain's value); `$tier.return` reaches out to the enclosing chain and exits it. Use `%call.return` when you mean "end the closest closure"; use `$tier.return` when you mean "end this specific if-chain regardless of how deep I am."
 
 The conditional binding is available in every branch of the same chain — the `if`, every `elsif`, and the `else`:
 
@@ -88,6 +116,7 @@ Scoping follows the same rule as `as` on loops: the conditional variable is decl
 - **`as` on `elsif` is a parse error** — `if $x; ... elsif $y as $c` fails to parse.
 - **`as` on `else` is a parse error** — `if $x; ... else as $c` fails to parse.
 - **`as` binding scoped to the chain** — `if true as $c; end; $c` raises undeclared-variable outside.
+- **Variable declared in a branch doesn't leak** — after `if true; $x = 5; end`, a bare reference to `$x` in the enclosing scope raises undeclared-variable. Unlike Ruby.
 - **Pre-declared `$c` survives the chain** — `$c = null; if true as $c; end; $c` returns the conditional-controller object.
 - **Implicit last-expression return works without `.return`** — `if true; 42; end` returns `42` without any `.return` call.
 - **`unless` with `as $conditional` binding** — `unless false as $c; $c.return 'ran'; end` returns `'ran'`.

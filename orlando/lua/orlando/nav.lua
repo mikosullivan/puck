@@ -1,22 +1,25 @@
 --[[
 {
   "module": "orlando.nav",
-  "role": "Walk every configured doc-tree directory (documentation/, requirements/, etc.) and produce the sidebar HTML — nested <details>/<ul>/<li> reflecting each tree, with the current page highlighted.",
+  "role": "Walk the whole repo and produce the sidebar HTML — nested <details>/<ul>/<li> reflecting each top-level directory, plus top-level files, with the current page highlighted. Excludes dotfiles (via list_dir) and known-sensitive top-level files (settings.json). README.md is skipped in the sidebar because it's the home page.",
   "exports": {
     "build": "current_md_path -> sidebar HTML string"
   },
   "url_convention": "URLs match Orlando's routing: /<doc-root>/foo/bar (no .md, no .html). The current-page detection compares against the current_md_path argument; if it matches, the entry is rendered as bold text rather than a link.",
-  "no_caching": "build() walks the directories on every call. Cheap (a few dozen files each), and aligns with the Orlando no-caching design."
+  "no_caching": "build() walks the directories on every call. Cheap and aligns with the Orlando no-caching design."
 }
 ]]
 local quick_builder = require("orlando.quick_builder")
 
 local M = {}
 
--- Doc trees to walk for the sidebar. Order determines display order.
--- Sidebar-only whitelist — Orlando's routing serves the whole repo now,
--- but the sidebar stays focused on doc trees (not code/, tests/, etc.).
-local DOC_ROOTS = {"archive", "documentation", "ideas", "requirements", "skills"}
+-- Sidebar walks the whole repo. Every top-level entry (file or directory)
+-- that isn't a dotfile or settings.json appears at the top of the sidebar.
+-- Kept in sync with orlando.search's exclusion list and route.lua's serve
+-- rules — Orlando exposes the whole repo, and so does the sidebar.
+local BLOCKED_TOP_LEVEL = {
+    ["settings.json"] = true,
+}
 
 -- List entries in a directory, sorted, separating files from subdirectories.
 local function list_dir(path)
@@ -219,37 +222,79 @@ end
     "out": "string (sidebar HTML, no surrounding <nav>)"
 } ]]
 function M.build(current_md_path)
+    -- Scan the repo root for top-level entries. list_dir already filters
+    -- dotfiles; we additionally drop anything in BLOCKED_TOP_LEVEL and
+    -- README.md (it's the home page — reachable via the logo, no sidebar
+    -- entry needed).
+    local top_files, top_dirs = list_dir(".")
+
     local root = quick_builder.new("div")  -- throwaway wrapper; we'll strip it
     root:tag("ul", function(top_ul)
-        for _, doc_root in ipairs(DOC_ROOTS) do
-            local tree = build_tree(doc_root)
-            if #tree.files > 0 or next(tree.subdirs) ~= nil then
-                local expanded = on_path(current_md_path, doc_root)
-                -- Also expand if the doc_root's own index.md is the current page.
-                if current_md_path == doc_root .. "/index.md" then
-                    expanded = true
+        -- Top-level files first (sorted alphabetically by list_dir).
+        for _, name in ipairs(top_files) do
+            if not BLOCKED_TOP_LEVEL[name] and name ~= "README.md" then
+                local is_md = name:sub(-3) == ".md"
+                local label, url
+                if is_md then
+                    label = name:sub(1, -4)
+                    url   = "/" .. label
+                else
+                    label = name
+                    url   = "/" .. name
                 end
+                local is_current = name == current_md_path
+                local li_class = (is_md and "file" or "file asset")
+                    .. (is_current and " current" or "")
                 top_ul:tag("li", function(li)
-                    li:attr("class", "dir")
-                    li:tag("details", function(d)
-                        if expanded then d:attr("open", "") end
-                        d:tag("summary", function(s)
-                            s:tag("span", function(m)
-                                m:attr("class", "marker")
-                                m:text("")
-                            end)
-                            s:tag("a", function(a)
-                                a:attr("href", "/" .. doc_root .. "/")
-                                a:text(doc_root .. "/")
-                            end)
+                    li:attr("class", li_class)
+                    if is_current then
+                        li:tag("span", function(s) s:text(label) end)
+                    else
+                        li:tag("a", function(a)
+                            a:attr("href", url)
+                            if not is_md then
+                                a:attr("target", "_blank")
+                                a:attr("rel",    "noopener")
+                            end
+                            a:text(label)
                         end)
-                        -- Strip index.md from top-level so it doesn't appear
-                        -- as a sibling entry (same rule as subdirs).
-                        local top_files, _ = pull_index_file(tree.files, doc_root)
-                        local top_tree = { files = top_files, subdirs = tree.subdirs }
-                        render_ul(d, top_tree, doc_root, "/" .. doc_root, current_md_path)
-                    end)
+                    end
                 end)
+            end
+        end
+
+        -- Top-level directories.
+        for _, doc_root in ipairs(top_dirs) do
+            if not BLOCKED_TOP_LEVEL[doc_root] then
+                local tree = build_tree(doc_root)
+                if #tree.files > 0 or next(tree.subdirs) ~= nil then
+                    local expanded = on_path(current_md_path, doc_root)
+                    -- Also expand if the doc_root's own index.md is the current page.
+                    if current_md_path == doc_root .. "/index.md" then
+                        expanded = true
+                    end
+                    top_ul:tag("li", function(li)
+                        li:attr("class", "dir")
+                        li:tag("details", function(d)
+                            if expanded then d:attr("open", "") end
+                            d:tag("summary", function(s)
+                                s:tag("span", function(m)
+                                    m:attr("class", "marker")
+                                    m:text("")
+                                end)
+                                s:tag("a", function(a)
+                                    a:attr("href", "/" .. doc_root .. "/")
+                                    a:text(doc_root .. "/")
+                                end)
+                            end)
+                            -- Strip index.md from top-level so it doesn't appear
+                            -- as a sibling entry (same rule as subdirs).
+                            local top_files_of_root, _ = pull_index_file(tree.files, doc_root)
+                            local top_tree = { files = top_files_of_root, subdirs = tree.subdirs }
+                            render_ul(d, top_tree, doc_root, "/" .. doc_root, current_md_path)
+                        end)
+                    end)
+                end
             end
         end
     end)

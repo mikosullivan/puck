@@ -5,8 +5,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_nanny_methods",
-	"role": "design analysis for a Caspian pattern that's emerging: certain methods on user-role objects that a non-user holder is refused from calling, despite the general holding-is-access rule. Currently two known instances (.execute, .cd()); the shape is that the method reaches beyond the handle's scope to mutate process-global or system-external state. Miko has explicitly called this nanny code — accepted as such, not going away, needs a general treatment rather than accreting one-off carve-outs. This doc catalogs the pattern and enumerates likely future instances. The grant mechanism designed here (.grant(...) and .dirjail(grant:)) has been promoted to authoritative spec at requirements/filesystem/dirs/grants — this page keeps the design analysis, that page owns the API.",
-	"status": "design analysis — nanny pattern settled; grant mechanism promoted to requirements/filesystem/dirs/grants",
+	"role": "design analysis for a Caspian pattern that's emerging: certain methods on user-role objects that a non-user holder is refused from calling, despite the general holding-is-access rule. Currently two known instances (.execute, .cd()); the shape is that the method reaches beyond the handle's scope to mutate process-global or system-external state. Miko has explicitly called this nanny code — accepted as such, not going away, needs a general treatment rather than accreting one-off carve-outs. This doc catalogs the pattern and enumerates likely future instances. The grant mechanism designed here (.grant(...) and .dirjail(grant:)) was briefly promoted to spec then archived; snapshot preserved at archive/003/misc/dirs-grants.md.",
+	"status": "design analysis — nanny pattern settled; grant mechanism drafted, archived pending rethink (snapshot at archive/003/misc/dirs-grants.md)",
 	"audience": "Miko; anyone reasoning about Caspian's holding-is-access rule and where it bends"
 }}
 ~~~
@@ -56,11 +56,11 @@ Most probably don't ship in V1 — but when they do, they should refuse non-user
 
 Read-side observers of the same state (`%fs.cwd` getter, reading `umask`, listing env vars) don't need the nanny treatment; only mutations do.
 
-## Grant mechanism — promoted to spec
+## Grant mechanism — drafted, archived
 
-The design of `.grant(...)` and `.dirjail(grant: [...])` was drafted here and has been promoted to the authoritative spec at [requirements/filesystem/dirs/grants](https://puck.uno/requirements/filesystem/dirs/grants). That page owns the API, the subset-only invariant, the file-inheritance rule, and the introspection surface.
+The design of `.grant(...)` and `.dirjail(grant: [...])` was drafted here, briefly promoted to spec at `requirements/filesystem/dirs/grants`, then pulled back — the snapshot lives at `archive/003/misc/dirs-grants.md`. Nothing in current `requirements/` owns a grant API.
 
-This ideas doc keeps the surrounding design analysis (above): the nanny pattern itself, what unifies the nanny methods, and the catalog of likely future instances. Both remain in scope for design-thinking; the grant spec is what implementation follows.
+This ideas doc keeps the surrounding design analysis (above): the nanny pattern itself, what unifies the nanny methods, and the catalog of likely future instances. The grant mechanism itself is available in the archive as a starting point when the design is picked up again.
 
 ## Not the same thing as role delegation
 

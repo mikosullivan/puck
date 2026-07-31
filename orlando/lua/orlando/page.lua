@@ -18,6 +18,7 @@ local quick_builder     = require("orlando.quick_builder")
 local nav               = require("orlando.nav")
 local json_highlight    = require("orlando.json_highlight")
 local caspian_highlight = require("orlando.caspian_highlight")
+local lua_highlight     = require("orlando.lua_highlight")
 local issues_fetcher    = require("orlando.issues")
 local issue_panel       = require("orlando.issue_panel")
 local config            = require("orlando.config")
@@ -972,6 +973,16 @@ local function highlight_caspian_blocks(body_html)
         end))
 end
 
+local function highlight_lua_blocks(body_html)
+    return (body_html:gsub(
+        '<pre><code class="language%-lua">(.-)</code></pre>',
+        function(escaped_source)
+            local source = decode_html_entities(escaped_source)
+            local highlighted = lua_highlight.highlight(source)
+            return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
+        end))
+end
+
 ------------------------------------------------------------
 -- Open-issues panel at the top of each page.
 -- Lists every open GitHub issue whose title is "File: <md_path> ..."
@@ -1541,6 +1552,7 @@ function M.render_request(ctx)
     body = wrap_code_blocks_with_language_label(body)
     body = highlight_json_blocks(body)
     body = highlight_caspian_blocks(body)
+    body = highlight_lua_blocks(body)
     body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)
     body = transform_toc(body, toc_headings)
     body = mark_skeletor_blocks(body)
