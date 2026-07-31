@@ -19,6 +19,7 @@ local nav               = require("orlando.nav")
 local json_highlight    = require("orlando.json_highlight")
 local caspian_highlight = require("orlando.caspian_highlight")
 local lua_highlight     = require("orlando.lua_highlight")
+local sql_highlight     = require("orlando.sql_highlight")
 local issues_fetcher    = require("orlando.issues")
 local issue_panel       = require("orlando.issue_panel")
 local config            = require("orlando.config")
@@ -52,6 +53,7 @@ local EXT_TO_LANG = {
     casp  = "caspian",
     caspj = "caspian",
     lua   = "lua",
+    sql   = "sql",
 }
 
 local function expand_include(md_dir, rel_path)
@@ -983,6 +985,16 @@ local function highlight_lua_blocks(body_html)
         end))
 end
 
+local function highlight_sql_blocks(body_html)
+    return (body_html:gsub(
+        '<pre><code class="language%-sql">(.-)</code></pre>',
+        function(escaped_source)
+            local source = decode_html_entities(escaped_source)
+            local highlighted = sql_highlight.highlight(source)
+            return '<pre class="highlight"><code>' .. highlighted .. '</code></pre>'
+        end))
+end
+
 ------------------------------------------------------------
 -- Open-issues panel at the top of each page.
 -- Lists every open GitHub issue whose title is "File: <md_path> ..."
@@ -1553,6 +1565,7 @@ function M.render_request(ctx)
     body = highlight_json_blocks(body)
     body = highlight_caspian_blocks(body)
     body = highlight_lua_blocks(body)
+    body = highlight_sql_blocks(body)
     body = inject_issues_panel(body, ctx.md_path, ctx.client_ip)
     body = transform_toc(body, toc_headings)
     body = mark_skeletor_blocks(body)
