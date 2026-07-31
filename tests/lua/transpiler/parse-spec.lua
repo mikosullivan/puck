@@ -7,9 +7,9 @@
 }
 ]]
 
--- Wire up bare-name requires against ./code/lua/ and ./tests/lua/transpiler/.
+-- Wire up bare-name requires against ./src/engine/ and ./tests/lua/transpiler/.
 -- Prepending to package.path preserves luarocks-provided paths (dkjson, etc.).
-package.path = "./code/lua/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
+package.path = "./src/engine/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 local normalize  = require("normalize")

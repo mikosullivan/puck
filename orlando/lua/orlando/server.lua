@@ -129,6 +129,17 @@ local function respond(client, request_line)
         return
     end
 
+    -- /documentation/cheat-sheets/code dynamically walks src/ and build/
+    -- and shows file sizes. Lives here rather than as a static markdown
+    -- file alongside the other cheat sheets because it's live-generated.
+    -- Intercepts before the markdown route so it doesn't fall through to
+    -- a 404 on a nonexistent file.
+    if path == "/documentation/cheat-sheets/code" then
+        local resp = require("orlando.cheatsheet").handle(path)
+        client:send(build_response(resp.status, resp.body, resp.content_type, resp.headers))
+        return
+    end
+
     -- /issues lists every open GitHub issue in the repo.
     if path == "/issues" then
         local resp = issues_page.handle({path = path, client_ip = client_ip})

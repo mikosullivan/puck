@@ -2,7 +2,7 @@
 
 local script_dir = arg[0]:match('(.*/)') or './'
 local repo_root = script_dir .. '../../../../'
-package.path = repo_root .. 'code/lua/?.lua;' .. script_dir .. '?.lua;' .. package.path
+package.path = repo_root .. 'src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 
 local trivet = require('trivet')
 local unotate = require('unotate')

@@ -33,8 +33,8 @@ end
 
 --[[
 {
-	"in":  "a call array beginning with an `{amp: X}` atom — `[{amp: X}, ...args, {kw:...}?, {line:N}?]`",
-	"out": "the equivalent method-call array `[recv, \"call\", envelope?, {line:N}?]`. recv is `{var: NAME}` when X is a bareword string; recv is X itself (already an atom) when X is a value-atom (from `&(EXPR)` / `&$var`)"
+	"in":  "a call array beginning with an `{amp: X}` atom — `[{amp: X}, ...args, {kw:...}?, {blocks:[...]}?, {line:N}?]`. The `{blocks: [...]}` and `{kw: [...]}` atoms may appear in either order at row-tail (before any statement-line meta); positional args are everything else.",
+	"out": "the equivalent method-call array `[recv, \"call\", envelope?, {line:N}?]`. recv is `{var: NAME}` when X is a bareword string; recv is X itself (already an atom) when X is a value-atom (from `&(EXPR)` / `&$var`). Envelope carries `args`, `kw`, and `blocks` — omitted from output when their source atom was absent."
 }
 ]]
 collapse_amp_call = function(v)
@@ -59,28 +59,41 @@ collapse_amp_call = function(v)
 		last = last - 1
 	end
 
-	-- Peel off the optional kwargs entry `{kw: [...]}` (the ONLY per-arg atom
-	-- that carries the `kw` key).
-	local kw_atom
-
-	if last >= 2 and type(v[last]) == "table" and v[last].kw then
-		kw_atom = v[last]
-		last = last - 1
-	end
-
+	-- Filter atoms in positions [2..last] into positional args, kw envelope
+	-- entry, and blocks envelope entry. Meta atoms are identified by having
+	-- their signature key (`kw` or `blocks`) present and no array part. Stray
+	-- sole-line-key metas mid-row are dropped defensively — the spec requires
+	-- them only at row-tail (already peeled above), so anything mid-row is a
+	-- transpiler leak and shouldn't be handed to the engine as an arg value.
 	local positionals = {}
+	local kw_atom
+	local blocks_atom
 
 	for i = 2, last do
-		table.insert(positionals, normalize_atom(v[i]))
+		local atom = v[i]
+
+		if type(atom) == "table" and atom[1] == nil and atom.kw ~= nil then
+			kw_atom = atom
+		elseif type(atom) == "table" and atom[1] == nil and atom.blocks ~= nil then
+			blocks_atom = atom
+		elseif is_line_meta(atom) then
+			-- drop stray mid-row line meta
+		else
+			table.insert(positionals, normalize_atom(atom))
+		end
 	end
 
 	local envelope
 
-	if #positionals > 0 or kw_atom then
+	if #positionals > 0 or kw_atom or blocks_atom then
 		envelope = {args = positionals}
 
 		if kw_atom then
 			envelope.kw = normalize_atom(kw_atom).kw
+		end
+
+		if blocks_atom then
+			envelope.blocks = blocks_atom.blocks
 		end
 	end
 

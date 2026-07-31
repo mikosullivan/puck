@@ -10,7 +10,7 @@
 		syntax, it just shuttles bytes through the transpiler. Molly ships in its
 		own repository, install-free for the user.",
 	"status": "design — repository not yet created; transpiler forward direction
-		is in flight in the Caspian repo (code/lua/transpiler.lua)",
+		is in flight in the Caspian repo (src/engine/transpiler.lua)",
 	"key_concepts": ["vs_code_extension", "formatter", "round_trip",
 		"caspj_as_intermediate", "wasmoon", "install_free", "separate_repo",
 		"formatter_preferences"]
@@ -126,7 +126,7 @@ Reverse-direction module (CaspJ → Caspian, style-parameterized) is a **new** m
 
 ## Related
 
-- The transpiler forward direction is in the Caspian repo at [code/lua/transpiler.lua](https://github.com/mikosullivan/puck) (not yet on puck.uno as it's implementation, not documentation).
+- The transpiler forward direction is in the Caspian repo at [src/engine/transpiler.lua](https://github.com/mikosullivan/puck) (not yet on puck.uno as it's implementation, not documentation).
 - [concepts § Caspian is written in Caspian](https://puck.uno/requirements/concepts#caspian-is-written-in-caspian) — the design principle that makes CaspJ a first-class execution input, which is what lets Molly skip needing a runtime install.
 - [mcp-cold-start-agents](https://puck.uno/ideas/mcp-cold-start-agents) — parallel design question for AI agents. Molly serves humans-in-editors; MCP serves AI agents; both benefit from the transpiler being available as a standalone library.
 - The Caspian syntax-highlighting grammar is already published as the earlier "Caspian" VS Code extension. Molly V1 is essentially that extension plus the formatter plus language-configuration wiring, all in a new dedicated repo.

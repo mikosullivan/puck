@@ -6,7 +6,7 @@
 }
 ]]
 
-package.path = "./code/lua/?.lua;" .. package.path
+package.path = "./src/engine/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 

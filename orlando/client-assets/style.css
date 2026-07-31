@@ -402,6 +402,9 @@ body.home .content h1 .hero-logo {
 .content .align-right {text-align: right}
 .content .align-center {text-align: center}
 .content .align-left {text-align: left}
+.content .floppy-budget {border: 3px solid #d0d7de; border-radius: 6px; overflow: hidden}
+.content .floppy-budget thead th {background: #0277bd; color: #fff}
+.content .floppy-budget tbody > tr > th {background: #f6f8fa}
 .content blockquote {
 	border-left: 3px solid #d0d7de;
 	margin: 0;

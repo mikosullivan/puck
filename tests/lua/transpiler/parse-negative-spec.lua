@@ -7,7 +7,7 @@
 }
 ]]
 
-package.path = "./code/lua/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
+package.path = "./src/engine/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 local extractor  = require("parse-extract")

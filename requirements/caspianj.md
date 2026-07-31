@@ -36,9 +36,16 @@ Corollary: CaspM's atom vocabulary can evolve freely for dispatch efficiency. Ad
 
 ## CaspJ
 
-**CaspJ** is the direct output of `transpile(source)`. It preserves every distinction the source expressed:
+**CaspJ** is the direct output of `transpile(source)`. It has **two purposes**:
 
-- **Comment atoms** — `{comment: "text"}` appear inline where source comments did.
+1. **Input to the normalizer** that produces CaspM for execution.
+2. **Round-trippable representation** for tools that recompile back to Caspian source — formatters, differs, linters, refactor tools. Every tool that reads Caspian source should go through the canonical transpiler, never parse Caspian text directly.
+
+Preserving every distinction the source expressed is what makes both purposes work:
+
+- **Comment atoms** — `{comment: "text"}` appear inline where source comments did. Positional; a comment atom at index N in the enclosing list sits between statement N-1 and statement N+1. With `{lines: true}` each carries a `line` field, so formatters can distinguish "trailing on the same line as statement X" from "standalone before statement Y."
+- **`vibecode` heredocs** — `[{bwc: "vibecode"}, {value: "..."}]` statement rows preserved intact. These are parse-time metadata (AI-consumer context) with no runtime effect.
+- **`documentation` heredocs** — `[{bwc: "documentation"}, {value: "..."}]` statement rows preserved intact. Same category as vibecode — parse-time only, no runtime effect.
 - **Line annotations** — opt-in via `transpile(source, {lines: true})`. Every value-atom object carries a `line` field. **Multi-line statement rows** additionally carry a trailing `{line: N}` meta-atom recording the line where the statement ends (typically where `end`, `)`, or the closing marker sits). **Single-line statements** get no trailing meta — the inner atoms already share the statement's line, so the meta would be redundant. See [§ Statement-line meta](#statement-line-meta) for the rule in detail.
 - **Number-base annotations** — a literal written `0o755` produces `{value: 493, base: "oct"}`; a literal written `493` produces `{value: 493}`.
 - **Double-quote flag** — a string written `"hi"` produces `{value: "hi", dq: true}`; `'hi'` produces `{value: "hi"}`.
@@ -47,7 +54,7 @@ Corollary: CaspM's atom vocabulary can evolve freely for dispatch efficiency. Ad
 - **Op atoms** — pipes (`A | B` → `{op: "|", left, right}`), dots (`$foo.bar` → `{op: ".", left, right, args?}`), bumps (`$foo++` → `{op: "++_suffix", operand}`), and other source-level operators stay as op atoms.
 - **Bareword calls stay row-shaped** — `&func(1, 2)` produces `[{amp: "func"}, {value: 1}, {value: 2}, {line: N}]`, preserving the source's positional-arg layout.
 
-CaspJ is the readable, round-trippable form. Test fixtures assert against it; debuggers, formatters, and source-map tools consume it; it's the starting point every other format is derived from.
+CaspJ is the readable, round-trippable form. Test fixtures assert against it; debuggers, formatters, and source-map tools consume it; it's the starting point every other format is derived from. Original whitespace and blank-line choices are NOT preserved — those are the formatter's domain (regenerated per the user's `style.json`), not something CaspJ owns.
 
 ## CaspM
 
@@ -58,7 +65,7 @@ Compared to CaspJ:
 - **All calls collapse to a single CaspM internal primitive, `function_call` (`{in: "fc"}`).** Bareword calls, dot method calls, closure invocations, downloaded-method applications — all become one shape. See [§ Calls](#calls) below.
 - **Operator sugar dispatches to internal primitives.** Pipes desugar to their equivalent calls. Bumps (`++`, `--`) become direct `{in: "si"}` / `{in: "pi"}` / etc. dispatches. See [§ Bumps](#bumps).
 - **Bareword-command atoms resolve** where the meaning is settled. A `{bwc: "field"}` at class-body position becomes the concrete field-declaration shape; a `{bwc}` whose meaning is still runtime-decided stays.
-- **Comment atoms drop.** The engine has no use for them.
+- **Comment, `vibecode`, and `documentation` atoms drop.** All three are parse-time metadata with no runtime effect — preserved in CaspJ so tools that recompile back to Caspian source can render them, absent from CaspM because the engine has no use for them.
 - **Cosmetic flags fold.** `dq: true` folds into the string's escape processing before it lands in CaspM; `base` annotations drop (the numeric value carries the meaning); `sym: true` drops (since `:foo` and `'foo'` produce the same string value, the source-form distinction has no runtime meaning).
 - **Line annotations are kept.** Runtime errors need them to point at source. Value-atom `line` fields survive; trailing statement-row meta-atoms survive only on multi-line statements (same rule as CaspJ — the transpiler emits them only there in the first place).
 

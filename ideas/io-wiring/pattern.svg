@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="680" role="img" aria-label="Three-part wiring: host installs, engine wraps, engine grants to user">
+	<title>Wiring pattern</title>
+
+	<rect x="10" y="30" width="200" height="120" rx="6" fill="#e1f5fe" stroke="#0288d1" stroke-width="1.5"/>
+	<text x="110" y="55" font-family="sans-serif" font-size="12" font-weight="bold" fill="#01579b" text-anchor="middle">1. Host installs</text>
+	<text x="110" y="85" font-family="monospace" font-size="11" fill="#01579b" text-anchor="middle">engine.stdout =</text>
+	<text x="110" y="100" font-family="monospace" font-size="11" fill="#01579b" text-anchor="middle">function(s)</text>
+	<text x="110" y="115" font-family="monospace" font-size="11" fill="#01579b" text-anchor="middle">  io.write(s)</text>
+	<text x="110" y="130" font-family="monospace" font-size="11" fill="#01579b" text-anchor="middle">end</text>
+
+	<path d="M 215,90 L 250,90" stroke="#37474f" stroke-width="1.5" fill="none" marker-end="url(#arrow2)"/>
+
+	<rect x="255" y="30" width="200" height="120" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="1.5"/>
+	<text x="355" y="55" font-family="sans-serif" font-size="12" font-weight="bold" fill="#4a148c" text-anchor="middle">2. Engine wraps</text>
+	<text x="355" y="80" font-family="sans-serif" font-size="11" fill="#4a148c" text-anchor="middle">during bootstrap():</text>
+	<text x="355" y="100" font-family="monospace" font-size="11" fill="#4a148c" text-anchor="middle">%stdout capability</text>
+	<text x="355" y="115" font-family="sans-serif" font-size="11" fill="#4a148c" text-anchor="middle">closes over the callback,</text>
+	<text x="355" y="130" font-family="sans-serif" font-size="11" fill="#4a148c" text-anchor="middle">exposes .puts / .write</text>
+
+	<path d="M 460,90 L 495,90" stroke="#37474f" stroke-width="1.5" fill="none" marker-end="url(#arrow2)"/>
+
+	<rect x="500" y="30" width="210" height="120" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+	<text x="605" y="55" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1b5e20" text-anchor="middle">3. Engine grants</text>
+	<text x="605" y="80" font-family="sans-serif" font-size="11" fill="#1b5e20" text-anchor="middle">seeded on user's chain:</text>
+	<text x="605" y="100" font-family="monospace" font-size="11" fill="#1b5e20" text-anchor="middle">%chain.stdout =</text>
+	<text x="605" y="115" font-family="monospace" font-size="11" fill="#1b5e20" text-anchor="middle">  &lt;capability&gt;</text>
+	<text x="605" y="135" font-family="sans-serif" font-size="11" fill="#1b5e20" text-anchor="middle">reachable via %stdout</text>
+
+	<text x="360" y="180" font-family="sans-serif" font-size="11" fill="#37474f" text-anchor="middle" font-style="italic">host: OS-aware  ·  engine: substrate-agnostic  ·  user: sees only capabilities</text>
+
+	<defs>
+		<marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth">
+			<path d="M 0,0 L 6,4 L 0,8 Z" fill="#37474f"/>
+		</marker>
+	</defs>
+</svg>

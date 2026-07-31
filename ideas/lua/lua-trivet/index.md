@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_lua_trivet",
-	"role": "spec for a Lua-native tree library — port of the Trivet concept from Miko's Ruby Trivet library. Motivation: Lua tables are graphs (multiple references, cycles legal), not trees; a tree library gives us the invariants (single parent, no cycles) that role management and other use cases assume. The implementation ships at code/lua/trivet.lua with tests at tests/lua/trivet/ (invoke via `lua5.4 tests/lua/trivet/run.lua`). The unotate/ subdir here remains as the ideas-level demo (character.lua walks the Shakespeare corpus using Trivet). Role management is the anchor use case.",
+	"role": "spec for a Lua-native tree library — port of the Trivet concept from Miko's Ruby Trivet library. Motivation: Lua tables are graphs (multiple references, cycles legal), not trees; a tree library gives us the invariants (single parent, no cycles) that role management and other use cases assume. The implementation ships at src/engine/trivet.lua with tests at tests/lua/trivet/ (invoke via `lua5.4 tests/lua/trivet/run.lua`). The unotate/ subdir here remains as the ideas-level demo (character.lua walks the Shakespeare corpus using Trivet). Role management is the anchor use case.",
 	"status": "built and tested — 478 LOC, 93 passing tests. API shape settled on node-wraps-value (values opaque, tree logic never touches them). No container class: trivet.new(value) returns a root Node directly."
 }}
 ~~~

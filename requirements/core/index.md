@@ -11,57 +11,132 @@
 
 Everything downloaded at Caspian install time — the runtime binary itself and the small set of Lua libraries pre-installed alongside it. Every entry counts against the floppy budget. The install process (prompts, flow, setup) is a separate topic — see [installation](../installation/).
 
-## Contents at a glance
+## Floppy budget
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 240" width="468" role="img" aria-label="Caspian floppy budget: Caspian itself 86 kb, wiggle room 100 kb, everything else 963 kb, free 291 kb, of 1440 kb total">
-	<title>Caspian floppy budget</title>
-	<g transform="rotate(180 110 120)">
-		<rect x="5" y="10" width="210" height="220" rx="6" fill="#29b6f6"/>
-		<rect x="40" y="20" width="150" height="50" rx="3" fill="#b0bec5"/>
-		<rect x="120" y="28" width="25" height="34" rx="1" fill="#455a64"/>
-		<rect x="20" y="85" width="180" height="135" rx="3" fill="#fafafa"/>
-	</g>
-	<g transform="translate(110 87.5)">
-		<path d="M 0,-60 A 60,60 0 0,1 22.0,-55.8 L 0,0 Z" fill="#81c784"/>
-		<path d="M 22.0,-55.8 A 60,60 0 0,1 43.5,-41.3 L 0,0 Z" fill="#fff176"/>
-		<path d="M 43.5,-41.3 A 60,60 0 1,1 -57.3,-17.8 L 0,0 Z" fill="#ffb74d"/>
-		<path d="M -57.3,-17.8 A 60,60 0 0,1 0,-60 L 0,0 Z" fill="#81d4fa"/>
-	</g>
-	<g font-family="sans-serif" font-size="14" fill="currentColor">
-		<rect x="240" y="55" width="16" height="16" fill="#81c784"/>
-		<text x="264" y="68">Caspian itself: 86 kb (6%)</text>
-		<rect x="240" y="85" width="16" height="16" fill="#fff176"/>
-		<text x="264" y="98">wiggle room: 100 kb (7%)</text>
-		<rect x="240" y="115" width="16" height="16" fill="#ffb74d"/>
-		<text x="264" y="128">everything else: 963 kb (67%)</text>
-		<rect x="240" y="145" width="16" height="16" fill="#81d4fa"/>
-		<text x="264" y="158">free: 291 kb (20%)</text>
-		<text x="240" y="195" font-weight="bold">Total: 1440 kb</text>
-	</g>
-</svg>
+![Caspian floppy budget: CLI 450 kb, Engine 84 kb, everything else 513 kb, wiggle room 100 kb, free 293 kb, of 1440 kb total](./floppy-budget.svg)
 
 All sizes approximate, in kb.
 
-| Component | Size | Location | Purpose |
-|---|---:|---|---|
-| Caspian itself | 86 | Executable | Live measurement: 60% × total bytes of Caspian's own Lua source under `code/lua/`. Currently ≈143 kb (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below. Grows as the stdlib grows. |
-| wiggle room | 100 | Executable | Reserved slack for size uncertainty in the components below, small dependencies that don't warrant their own line, and rounding. Absorbs surprise growth without triggering a floppy-budget alert. |
-| Lua 5.4 interpreter (stripped, static) | 250 | Executable | The interpreter itself. |
-| LPeg | 50 | Executable | C extension for PEG-based pattern matching — used by Caspian's source parser and regex engine. Compiled into the binary rather than lazy-loaded from disk: it's on the critical path at engine startup (parser is invoked on every source load), and being an engine implementation detail, there's no user-facing reason to make it independently upgradable. |
-| lua-cjson | 35 | Executable | C-native JSON parser/encoder. JSON parsing is critical path — CaspianJ IS JSON, and the engine reads/writes it on every run. Native cjson runs ≈10-50× faster than pure-Lua alternatives (dkjson, rxi/json.lua) and ≈5-10× faster than LPeg-driven pure-Lua JSON. Same critical-path / version-lock argument as luasocket and pegasus: minute-detail coupling to cjson's specific API (sparse-array config, `cjson.null` sentinel, integer-precision handling), no user-facing upgrade path, version drift would silently break engine assumptions. Handles null (via `cjson.null`), 64-bit integers on Lua 5.3+, Unicode escapes including surrogate pairs, and duplicate keys correctly. |
-| libsodium-minimal | 200 | Executable | C library for hashing, signing, secure random. The vault, protected-memory model, and password/passkey subsystems are keyed on libsodium's specific APIs — not swappable without redesign. |
-| luasodium | 10 | Executable | Lua bindings for libsodium — how the engine reaches libsodium at all. |
-| luasocket | 50 | Executable | TCP / UDP sockets + basic HTTP client. Backs both the `net` capability (user-facing network access) and `%fetch` (the engine's own object-fetch mechanism). Since `%fetch` is how downloadable Caspian classes reach the runtime, network is engine machinery — not a per-program feature. Minute-detail coupling to luasocket's specific API means a version drift could silently break engine assumptions; bundling locks the version. |
-| pegasus | 15 | Executable | Pure-Lua HTTP/1.x server. Handles TCP accept (on top of luasocket), connection lifecycle, request parsing, response writing. Compiled into the binary because HTTP is core to how Caspian does IPC — engine machinery, not per-program feature. Same identity argument as luasocket: minute-detail coupling to pegasus's specific API, no user-facing upgrade path, version drift would silently break engine assumptions. |
-| luaexpat | 63 | Cache | Lua binding to libexpat (C-native SAX parser) — backs out-of-box XML support. ≈40 kb for the `lxp.so` binding (per arch) + Lua helpers ≈23 kb (`lom.lua` DOM, `totable.lua`, `threat.lua` billion-laughs protection). The `.so`-only minimum-viable install is ≈40 kb if the Lua-side helpers are dropped. The `libexpat.so.1` it links against is a documented prerequisite in the same posture as `libsqlite3.so.0`, `luarocks`, `openssl`, and `tar` (universally present on Linux, in macOS base, distributed via package managers on Windows). C-native SAX parse is ≈100× faster than pure-Lua alternatives, with correct namespaces, entity handling, and encoding auto-detect. |
-| lsqlite3 | 55 | Cache | Lua binding to SQLite — backs out-of-box SQLite support. Dynamic-link build stripped ≈55 kb; the `libsqlite3.so.0` it links against is a documented prerequisite in the same posture as `luarocks`, `openssl`, and `tar` (universally present on target platforms). |
-| lua-confstr | 5 | Cache | Lua binding to POSIX `confstr()` — Caspian-authored, since no existing Lua binding covers it. Backs `%fs.util` for locating canonical system utilities (`_CS_PATH` → the POSIX-blessed PATH for finding `tar`, `gzip`, etc. without trusting `$PATH`). Standalone `.so` file, not baked into the binary. Kept as a separate file so the code can eventually be published as a standalone `lua-confstr` luarocks rock without repackaging. |
-| Vibecode | 10 | Executable | Embedded JSON blob of vibecode describing the Caspian binary and its stdlib for AI consumers. Minified — 10 kb of JSON is enough for many pages of structured context (role, key concepts, invariants, non-obvious behaviors, cross-references to spec). Extractable externally via `caspian --vibecode`. Reserved as a fixed budget so vibecode growth stays visible against the floppy line rather than creeping into general engine size. |
-| Lua binding wrapper | 20 | Executable | Generic wrapper for accessing Lua libraries from Caspian code via `%lua['name']`. Pure Lua, part of the engine's stdlib. |
-| musl libc (statically linked) | 200 | Executable | System C library baked into the binary — zero runtime dependencies. |
-| **Total** | **1149** | | Against the 1.44 MB floppy target — leaves 291 kb of headroom. |
+<table class="floppy-budget">
+<thead>
+<tr>
+	<th>Component</th>
+	<th class="align-right">Size</th>
+	<th>Purpose</th>
+</tr>
+</thead>
 
-**Location** column: **Executable** means compiled into the `caspian` binary. **Cache** means stored on disk under `~/.local/share/caspian/lua/` after Caspian install time, loaded lazily by `require`.
+<tbody>
+<tr><th colspan="3">CLI</th></tr>
+<tr>
+	<td>CLI shim (Caspian-authored)</td>
+	<td class="align-right">0</td>
+	<td>Live measurement: <strong>90% × total bytes</strong> of Caspian's own CLI-side source under <code>src/cli/</code>. Currently ≈0.5 kb (<code>caspian.c</code>, a minimal C wrapper that hosts the Lua interpreter and loads the on-disk engine) — rounds to 0 kb at whole-KB granularity. 90% is a conservative estimate (worse-case minification) since CLI code tends to have less compressible structure than engine code. Grows as CLI features are added.</td>
+</tr>
+<tr>
+	<td>Lua 5.4 interpreter (stripped, static)</td>
+	<td class="align-right">250</td>
+	<td>The interpreter itself. Statically linked into the caspian binary — hosts the CLI shim and, via that shim, loads the on-disk engine. Non-Lua embedders bring their own Lua interpreter (that second copy is the embedding tax and is not counted here).</td>
+</tr>
+<tr>
+	<td>musl libc (statically linked)</td>
+	<td class="align-right">200</td>
+	<td>System C library baked into the caspian binary — zero runtime dependencies.</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr><th colspan="3">Engine</th></tr>
+<tr>
+	<td>Engine</td>
+	<td class="align-right">84</td>
+	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction). Ships as <code>engine.lua</code> (+ stdlib .lua files) on disk at <code>~/.local/share/caspian/lua/</code>; the caspian CLI and any non-Lua host embedding Caspian both load from this one canonical on-disk location. Grows as the stdlib grows.</td>
+</tr>
+<tr>
+	<td>libsodium-minimal</td>
+	<td class="align-right">200</td>
+	<td>C library for hashing, signing, secure random. Statically linked into the caspian binary. The vault, protected-memory model, and password/passkey subsystems are keyed on libsodium's specific APIs — not swappable without redesign.</td>
+</tr>
+<tr>
+	<td>luasodium</td>
+	<td class="align-right">10</td>
+	<td>Lua bindings for libsodium — how the engine reaches libsodium at all. Statically linked.</td>
+</tr>
+<tr>
+	<td>luasocket</td>
+	<td class="align-right">50</td>
+	<td>TCP / UDP sockets + basic HTTP client. Statically linked into the caspian binary. Backs both the <code>net</code> capability (user-facing network access) and <code>%fetch</code> (the engine's own object-fetch mechanism). Minute-detail coupling to luasocket's specific API means a version drift silently breaks engine assumptions; bundling locks the version.</td>
+</tr>
+<tr>
+	<td>pegasus</td>
+	<td class="align-right">15</td>
+	<td>Pure-Lua HTTP/1.x server. Statically linked into the caspian binary because HTTP is core to how Caspian does IPC and the engine's code is tightly matched to pegasus's specific API — a version drift would silently break engine assumptions. Handles TCP accept (on top of luasocket), connection lifecycle, request parsing, response writing.</td>
+</tr>
+<tr>
+	<td>LPeg</td>
+	<td class="align-right">50</td>
+	<td>C extension for PEG-based pattern matching — used by Caspian's source parser and regex engine. Statically linked into the caspian binary (critical path at engine startup, engine implementation detail with no user-facing upgrade path).</td>
+</tr>
+<tr>
+	<td>lua-cjson</td>
+	<td class="align-right">35</td>
+	<td>C-native JSON parser/encoder. JSON parsing is critical path — CaspianJ IS JSON, and the engine reads/writes it on every run. Statically linked into the caspian binary. Handles null (via <code>cjson.null</code>), 64-bit integers on Lua 5.3+, Unicode escapes including surrogate pairs, and duplicate keys correctly.</td>
+</tr>
+<tr>
+	<td>Lua binding wrapper</td>
+	<td class="align-right">20</td>
+	<td>Generic wrapper for accessing Lua libraries from Caspian code via <code>%lua['name']</code>. Pure Lua, part of the engine's stdlib.</td>
+</tr>
+<tr>
+	<td>Vibecode</td>
+	<td class="align-right">10</td>
+	<td>Embedded JSON blob of vibecode describing the Caspian binary and its stdlib for AI consumers. Minified — 10 kb of JSON is enough for many pages of structured context (role, key concepts, invariants, non-obvious behaviors, cross-references to spec). Extractable externally via <code>caspian --vibecode</code>. Reserved as a fixed budget so vibecode growth stays visible against the floppy line rather than creeping into general engine size.</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr><th colspan="3">Cache</th></tr>
+<tr>
+	<td>luaexpat</td>
+	<td class="align-right">63</td>
+	<td>Lua binding to libexpat (C-native SAX parser) — backs out-of-box XML support. ≈40 kb for the <code>lxp.so</code> binding (per arch) + Lua helpers ≈23 kb (<code>lom.lua</code> DOM, <code>totable.lua</code>, <code>threat.lua</code> billion-laughs protection). The <code>.so</code>-only minimum-viable install is ≈40 kb if the Lua-side helpers are dropped. The <code>libexpat.so.1</code> it links against is a documented prerequisite in the same posture as <code>libsqlite3.so.0</code>, <code>luarocks</code>, <code>openssl</code>, and <code>tar</code> (universally present on Linux, in macOS base, distributed via package managers on Windows). C-native SAX parse is ≈100× faster than pure-Lua alternatives, with correct namespaces, entity handling, and encoding auto-detect.</td>
+</tr>
+<tr>
+	<td>lsqlite3</td>
+	<td class="align-right">55</td>
+	<td>Lua binding to SQLite — backs out-of-box SQLite support. Dynamic-link build stripped ≈55 kb; the <code>libsqlite3.so.0</code> it links against is a documented prerequisite in the same posture as <code>luarocks</code>, <code>openssl</code>, and <code>tar</code> (universally present on target platforms).</td>
+</tr>
+<tr>
+	<td>lua-confstr</td>
+	<td class="align-right">5</td>
+	<td>Lua binding to POSIX <code>confstr()</code> — Caspian-authored, since no existing Lua binding covers it. Backs <code>%fs.util</code> for locating canonical system utilities (<code>_CS_PATH</code> → the POSIX-blessed PATH for finding <code>tar</code>, <code>gzip</code>, etc. without trusting <code>$PATH</code>). Standalone <code>.so</code> file, not baked into the binary. Kept as a separate file so the code can eventually be published as a standalone <code>lua-confstr</code> luarocks rock without repackaging.</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr><th colspan="3">wiggle room</th></tr>
+<tr>
+	<td>wiggle room</td>
+	<td class="align-right">100</td>
+	<td>Reserved slack for size uncertainty across every tier, small dependencies that don't warrant their own line, and rounding. Absorbs surprise growth without triggering a floppy-budget alert. Its own tier since surprise growth can happen anywhere — not tied to CLI, Engine, or Cache specifically.</td>
+</tr>
+</tbody>
+
+<tfoot>
+<tr>
+	<td><strong>Total</strong></td>
+	<td class="align-right"><strong>1147</strong></td>
+	<td>Against the 1.44 MB floppy target — leaves 293 kb of headroom.</td>
+</tr>
+</tfoot>
+</table>
+
+Tiers:
+
+- **CLI** — statically linked into the caspian binary. Specific to how the CLI runs; non-Lua embedders bring their own equivalent.
+- **Engine** — the engine and everything it tightly depends on. Physical location varies per row: `engine.lua` itself lives on disk (loaded by both the CLI and non-Lua embedders); the C libraries and pure-Lua libs whose APIs the engine is intimately tied to (pegasus, luasocket, LPeg, cjson, libsodium, luasodium, Lua binding wrapper) are statically linked into the caspian binary to lock the version.
+- **wiggle room** — reserved slack, unassigned to any specific tier because surprise growth can happen anywhere.
+- **Cache** — optional, swappable libs stored on disk under `~/.local/share/caspian/lua/` after install, loaded lazily by `require`. Per-arch fetch at install time.
 
 ## Core Caspian code storage
 

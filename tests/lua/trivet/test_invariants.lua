@@ -1,5 +1,5 @@
 local script_dir = arg[0]:match('(.*/)') or './'
-package.path = script_dir .. '../../../code/lua/?.lua;' .. script_dir .. '?.lua;' .. package.path
+package.path = script_dir .. '../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 
 local trivet = require('trivet')
 local h = require('helpers')

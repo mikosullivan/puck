@@ -6,9 +6,9 @@
 }
 ]]
 
--- Wire up bare-name requires against ./code/lua/ and ./tests/lua/transpiler/.
+-- Wire up bare-name requires against ./src/engine/ and ./tests/lua/transpiler/.
 -- Prepending preserves luarocks-provided paths (dkjson, busted itself, etc.).
-package.path = "./code/lua/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
+package.path = "./src/engine/?.lua;./tests/lua/transpiler/?.lua;" .. package.path
 
 describe("infrastructure", function()
 

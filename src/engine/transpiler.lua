@@ -3817,7 +3817,12 @@ local function parse_construct(tokens, result)
 					end
 				end
 
-				local block_value = {[blk.type] = do_inner}
+				-- Translate parser frame type to canonical CaspJ atom key:
+				-- `do` (captures outer scope) -> `closure`; `dofunc` (sealed
+				-- scope) -> `function`. The parser tracks the source keyword;
+				-- the atom vocabulary uses the semantic name.
+				local atom_key = blk.type == "do" and "closure" or "function"
+				local block_value = {[atom_key] = do_inner}
 				local last = prev[#prev]
 
 				if type(last) == "table" and last.blocks ~= nil then
