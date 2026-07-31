@@ -3,8 +3,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_lua_trivet",
-	"role": "spitball page for a Lua-native tree library — port of the Trivet concept from Miko's Ruby Trivet library. Motivation: Lua tables are graphs (multiple references, cycles legal), not trees; a tree library gives us the invariants (single parent, no cycles) that role management and other use cases assume. Role management is the anchor use case — this page sketches how Trivet would slot in.",
-	"status": "early — anchor use case (role management) sketched; API shape (node-wraps-value vs mixin) still open pending Ruby Trivet review"
+	"role": "spec for a Lua-native tree library — port of the Trivet concept from Miko's Ruby Trivet library. Motivation: Lua tables are graphs (multiple references, cycles legal), not trees; a tree library gives us the invariants (single parent, no cycles) that role management and other use cases assume. The implementation ships at code/lua/trivet.lua with tests at tests/lua/trivet/ (invoke via `lua5.4 tests/lua/trivet/run.lua`). The unotate/ subdir here remains as the ideas-level demo (character.lua walks the Shakespeare corpus using Trivet). Role management is the anchor use case.",
+	"status": "built and tested — 478 LOC, 93 passing tests. API shape settled on node-wraps-value (values opaque, tree logic never touches them). No container class: trivet.new(value) returns a root Node directly."
 }}
 ~~~
 
@@ -18,28 +18,26 @@ Trivet is a generic n-ary tree library. It doesn't care what a node's value is �
 
 ### Node shape
 
-A node wraps a value and knows its own parent and children. Values themselves are opaque to Trivet.
+A node wraps a value and knows its own parent and children. Values themselves are opaque to Trivet — a value can be any Lua type (string, table, class instance, closure, userdata).
 
 ~~~lua
-node.value          -- the wrapped value (any Lua value)
-node.parent         -- parent node, or nil at the root
-node:children()     -- iterator over child nodes (insertion order)
+local node = trivet.new(some_value)   -- returns a fresh root Node
+
+node.value             -- the wrapped value (any Lua value)
+node.parent            -- parent node, or nil at the root
+node:children()        -- iterator over child nodes (insertion order)
 ~~~
 
-**Open question — API shape.** Two candidates:
-
-- **Node-wraps-value** (assumed above) — the tree holds `Node` objects; the value is `.value`. Any Lua type can be a value; the tree is separable from the value type.
-- **Value-is-node (mixin)** — the value itself IS the node, via a mixin that stamps `.parent` / `.children` / etc. onto the value's class. More ergonomic (`caller:is_ancestor_of(target)` reads naturally on the domain object) but couples the value type to the tree library.
-
-Which one the Ruby Trivet uses drives the Lua port. Filling in after that review.
+**Node-wraps-value shape** was chosen over the mixin alternative (`value` itself being the Node via stamped-on methods). Rationale: the tree is separable from the value type, values can be anything, and there's no monkeypatching. Downside: `caller:is_ancestor_of(target)` reads on the Node, not the domain object — but callers can add a thin wrapper if they want the domain object to expose tree operations directly.
 
 ### Structural invariants
 
 Trivet enforces these; violations raise at construction / mutation time:
 
-- **Single parent** — each node has exactly one parent (or is a root). Assigning the same node as a child of two parents is a Trivet-level error.
-- **No cycles** — add-child refuses if the proposed parent is a descendant of the proposed child.
+- **Single parent** — each node has exactly one parent (or is a root). Enforced by construction: `create_child` / `insert_child` always mint fresh nodes (can't already have a parent), and `move_to` moves the sole reference (not clones), so a node can never be a child of two parents simultaneously.
+- **No cycles** — `move_to` walks the target's ancestor chain and refuses if self appears. `create_child` and `insert_child` can't cycle (they mint fresh nodes with nothing above them).
 - **Root is a derivation, not a state** — a node is a root iff `node.parent == nil`. There is no container holding the tree; the root node IS the tree.
+- **Child order is preserved** — the order in which children are added is the order they iterate, and every mutation (`insert_child`, `remove`, `move_to`, `move_before`, `move_after`) keeps the remaining siblings in their existing relative order. `create_child` appends at the end; `insert_child(i, v)` shifts subsequent siblings right; `remove` closes the gap; `move_to` appends at the destination's end.
 
 ### Module methods
 
@@ -110,10 +108,7 @@ Predicates use the Lua-idiomatic `is_X` / `has_X` prefix — Lua identifiers can
 
 ### Serialization is not core
 
-Trivet doesn't ship `to_json` / `from_json` on the base class. Not every node value is serializable (closures, file handles, values with identity), and consumers want different formats (Drinian snapshots, debug dumps, HTTP responses). Serialization is a per-consumer concern:
-
-- **Subclasses** — a Trivet subclass whose values ARE JSON-compatible can add its own `to_json` and control the shape.
-- **Ad-hoc callers** — walk the tree with the existing traversals (`node:descendants()`, `t:walk(...)`) and produce whatever output shape is wanted.
+Trivet doesn't ship `to_json` / `from_json`. Not every node value is serializable (closures, file handles, values with identity), and consumers want different formats (Drinian snapshots, debug dumps, HTTP responses). Serialization is a per-consumer concern — walk the tree with the existing traversals (`node:descendants()`, `node:subtree()`, `node:walk(fn)`) and produce whatever output shape is wanted.
 
 Trivet's job is the walk; the shape of the output is not.
 
@@ -157,7 +152,7 @@ end
 
 ### Which operations roles don't use
 
-- **Reparenting** — roles never move.
-- **Sibling order** — role siblings don't have meaningful ordering; enumeration order is whatever.
+- **Reparenting** — roles never move once placed.
+- **Sibling order** — Trivet preserves child insertion order (see the [structural invariants](#structural-invariants) above), but role management doesn't rely on that: siblings of a role are unordered from the security-model perspective. If two roles share a parent, neither "comes before" the other in any meaningful sense.
 
 None of these unused features cost roles anything — Trivet just doesn't call them.
