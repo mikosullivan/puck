@@ -76,7 +76,7 @@ Two properties matter:
 - **Never user-defined.** A Caspian program cannot introduce a new `%X` name. The sigil is reserved to the engine; the language surface is closed.
 
 <!-- STALE: %chain.X syntax being reworked — %chain no longer carries methods; the framing below is out-of-date. -->
-Most `%X` names are sugar for `%chain.X` — `%stdout` is `%chain.stdout`, `%net` is `%chain.net`, and so on. See [%chain](https://puck.uno/requirements/chain/) for the full mechanism, including capability propagation and role boundaries. A small number of `%X` names live outside `%chain` (`%call`, `%engine`, `%self`, `%bucket`); those pages spell out where each one hangs.
+Most `%X` names are sugar for `%chain.X` — `%stdout` is `%stdout`, `%net` is `%net`, and so on. See [%chain](https://puck.uno/archive/003/misc/chain-old/) for the full mechanism, including capability propagation and role boundaries. A small number of `%X` names live outside `%chain` (`%call`, `%engine`, `%self`, `%bucket`); those pages spell out where each one hangs.
 
 ## Testing
 
@@ -99,7 +99,7 @@ Most `%X` names are sugar for `%chain.X` — `%stdout` is `%chain.stdout`, `%net
 - **`%name` reads a system method** — `%stdout` returns the stdout surface (or raises "not granted" if the role forbids).
 - **`%name` cannot be user-defined** — attempting to write `%foo = 1` is a parse error (`%` on LHS of `=` is not a valid target).
 - **`%name` never returns null for missing surface** — a missing surface either resolves or raises with "not granted"; never returns `null`.
-- **Bare `%X` shortcut resolves to `%chain.X`** — `%stdout` and `%chain.stdout` produce the same value. <!-- STALE: %chain.X syntax being reworked -->
+- **Bare `%X` shortcut resolves to `%chain.X`** — `%stdout` and `%stdout` produce the same value. <!-- STALE: %chain.X syntax being reworked -->
 - **Two sigils on same identifier is a parse error** — `$&foo` fails to parse.
 - **Sigil with no identifier body is a parse error** — bare `$` with no name fails to parse.
 - **Identifiers are case-sensitive** — `$foo` and `$Foo` are distinct names.

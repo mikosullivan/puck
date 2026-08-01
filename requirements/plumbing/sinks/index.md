@@ -26,18 +26,18 @@ This is the same posture as objects generally: the runtime doesn't add a second 
 
 ## All sinks descend from engine-provided objects
 
-Sinks aren't values a program can invent. Every sink traces back to an **engine-provided object** — one of the small set of things the engine hands `user` at startup (populated on `%engine`, mirrored onto `%chain`). The engine's method implementations are what actually push bytes to stdout, write to the filesystem, send over the socket, etc. Concretely:
+Sinks aren't values a program can invent. Every sink traces back to an **engine-provided object** — one of the small set of things the engine hands `user` at startup (populated on `%engine`, exposed as top-level globals like `%stdout`, `%net`, `%fs`). The engine's method implementations are what actually push bytes to stdout, write to the filesystem, send over the socket, etc. Concretely:
 
 | Surface | What it sinks |
 |---|---|
-| [`%stdout`](https://puck.uno/requirements/chain/methods/stdout-and-stderr) / `%engine.stdout` | Bytes written to the program's primary output. |
-| [`%stderr`](https://puck.uno/requirements/chain/methods/stdout-and-stderr) / `%engine.stderr` | Bytes written to the diagnostic channel. |
-<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references throughout this file (table rows below, prose, testing bullets) predate the permission-only %chain model. See [chain/index](https://puck.uno/requirements/chain/). -->
-| [`%fs`](https://puck.uno/requirements/global-methods/fs) / `%chain.tmp` | Filesystem writes via dirjails. |
-| [`%chain.net`](https://puck.uno/requirements/chain/methods/net) | HTTP request bodies, socket writes. |
+| [`%stdout`](https://puck.uno/archive/003/misc/chain-old/methods/stdout-and-stderr) / `%engine.stdout` | Bytes written to the program's primary output. |
+| [`%stderr`](https://puck.uno/archive/003/misc/chain-old/methods/stdout-and-stderr) / `%engine.stderr` | Bytes written to the diagnostic channel. |
+<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references throughout this file (table rows below, prose, testing bullets) predate the permission-only %chain model. See [chain/index](https://puck.uno/archive/003/misc/chain-old/). -->
+| [`%fs`](https://puck.uno/requirements/global-methods/fs) / `%tmp` | Filesystem writes via dirjails. |
+| [`%net`](https://puck.uno/archive/003/misc/chain-old/methods/net) | HTTP request bodies, socket writes. |
 | [`%fetch`](https://puck.uno/requirements/fetch) | `%fetch.register(url, ...)` publishes an object out to the object network. |
 
-User code can wrap any of these — put an object in front of `%stdout`, narrow `%fs` with a nested dirjail, build a per-host adapter over `%chain.net` — but every outbound method call transitively lands on a method the engine implemented. Without an engine-provided handle somewhere in the ancestry, there is no outbound path at all.
+User code can wrap any of these — put an object in front of `%stdout`, narrow `%fs` with a nested dirjail, build a per-host adapter over `%net` — but every outbound method call transitively lands on a method the engine implemented. Without an engine-provided handle somewhere in the ancestry, there is no outbound path at all.
 
 This is what makes the engine the outbound gateway: a program that holds no engine-descended sink object literally can't send data out. There is no "backdoor" outbound primitive at the language level.
 
@@ -58,9 +58,9 @@ For faucet/sink dual surfaces (see below), narrowing is often more structured �
 
 Several engine-provided surfaces are dual-purpose:
 
-- **`%chain.net`** — a faucet (responses come in) AND a sink (request bodies go out).
-- **`%fs`** / **`%chain.tmp`** — faucets (file reads produce values) AND sinks (`.write(...)` sends bytes out).
-- **`%chain.puck`** — a faucet (`%fetch(url)` returns a downloaded object) AND a sink (`%fetch.register(url, ...)` publishes one).
+- **`%net`** — a faucet (responses come in) AND a sink (request bodies go out).
+- **`%fs`** / **`%tmp`** — faucets (file reads produce values) AND sinks (`.write(...)` sends bytes out).
+- **`%puck`** — a faucet (`%fetch(url)` returns a downloaded object) AND a sink (`%fetch.register(url, ...)` publishes one).
 
 The faucet and sink halves are two aspects of one object. The role model applies to the faucet side (values read carry the faucet's role); the object model applies to the sink side (holding the object is authority to call its methods). Both are always in play; there is no conflict.
 
@@ -69,7 +69,7 @@ The faucet and sink halves are two aspects of one object. The role model applies
 The sink model is deliberately narrow. A lot of things that might look like "sink policy" aren't part of it:
 
 - **No automatic role check on the value.** The runtime does not inspect the owning role of a value passing through a sink. Code that holds a sink object can send any value through it, regardless of where that value originated. If a policy wants to restrict per-source, the wrapper enforces it — or the raw sink isn't handed over in the first place.
-- **No default policy at the sink level.** There is no "sinks are default-deny/default-allow." Sinks are objects; if a role holds one, it can use it. Which sinks a role holds by default is decided by the chain grant model (see [chain § Two layers of grant](https://puck.uno/requirements/chain/#two-layers-of-grant)), same as any other capability.
+- **No default policy at the sink level.** There is no "sinks are default-deny/default-allow." Sinks are objects; if a role holds one, it can use it. Which sinks a role holds by default is decided by the chain grant model (see [chain § Two layers of grant](https://puck.uno/archive/003/misc/chain-old/#two-layers-of-grant)), same as any other capability.
 - **No cross-role transfer via serialization.** When code writes a value to a file, the stored bytes carry no role tag. On the read side, deserialization produces a new object owned by the reader (see [object-access § Persistence doesn't preserve ownership](https://puck.uno/requirements/roles/object-access#persistence-doesnt-preserve-ownership)).
 
 The security work happens at the handoff (deciding whether to pass a sink object) and at the narrowing (deciding which methods the wrapped sink exposes). Not at the moment of method call.
@@ -85,21 +85,21 @@ The security work happens at the handoff (deciding whether to pass a sink object
 - **A sink is an ordinary object** — no special runtime primitive; `%stdout.class` names an ordinary class.
 - **Holding `%stdout` is authority to write to it** — a non-user frame holding a passed-in `%stdout` reference can call `.puts`.
 - **Method dispatch on a sink is not role-gated at call time** — the runtime doesn't inspect the caller's role during a `.puts` call.
-- **Every catalog sink descends from `%engine`** — `%stdout`, `%stderr`, `%fs`, `%chain.tmp`, `%chain.net`, `%chain.puck` all trace back.
+- **Every catalog sink descends from `%engine`** — `%stdout`, `%stderr`, `%fs`, `%tmp`, `%net`, `%puck` all trace back.
 - **A program holding zero sink-descended handles has no outbound path** — an isolated frame with no sink can send nothing.
 - **Wrapping a sink produces a sink** — a user-defined class that internally calls `%stdout.puts` still qualifies; ancestry traces back to the engine.
 - **Narrowing a sink with a jail restricts methods** — `%stdout.obj.jail(:puts)` blocks `.print`.
 - **A jailed sink reaching a non-exposed method raises** — the runtime prevents the call.
-- **`%chain.net` is both a faucet and a sink** — `fetch` reads inbound; request-body sending is outbound.
+- **`%net` is both a faucet and a sink** — `fetch` reads inbound; request-body sending is outbound.
 - **`%fs` is both a faucet and a sink** — reads inbound; writes outbound.
-- **`%chain.tmp` is both a faucet and a sink** — reads inbound; writes outbound.
-- **`%chain.puck` is both a faucet and a sink** — `%fetch(url)` inbound; `%fetch.register(...)` outbound.
+- **`%tmp` is both a faucet and a sink** — reads inbound; writes outbound.
+- **`%puck` is both a faucet and a sink** — `%fetch(url)` inbound; `%fetch.register(...)` outbound.
 - **No runtime role check on the value being written** — a foreign-owned string can be written through a user-held sink; no gate on the payload's role.
 - **A sink's method takes any value the method's contract accepts** — no sink-side role table.
 - **No default policy at the sink level** — sinks are objects; whether a role holds one depends on grant history, not on a sink-side default.
 - **Bytes written pass through the sink method** — the engine-provided implementation is what actually pushes to the stream.
 - **A jail-narrowed sink cannot be unwrapped by introspection** — the recipient sees only the exposed methods.
-- **A per-host net wrapper is a sink whose methods delegate to `%chain.net`** — same policy end-to-end.
+- **A per-host net wrapper is a sink whose methods delegate to `%net`** — same policy end-to-end.
 - **Passing a sink to a non-user role and having that role call it succeeds** — capability lives in holding; method-runs-as-owner applies.
 - **A multi-contributor string written through a disk sink raises** — see `roles/string-contributors`; the string-level guard fires, not the sink.
 - **No cross-role transfer via serialization** — writing a value through a filesystem sink produces bytes with no role tag; reads yield fresh objects.

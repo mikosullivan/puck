@@ -24,13 +24,12 @@ Like `%engine.stdout`, only `user`-role code can reach `%engine.stderr` directly
 
 `puts` and `print` are **bareword commands** (bwcs). They stay as bwc atoms through both CaspJ and CaspM — the transpiler does NOT rewrite them at parse time. The engine's `puts` / `print` handlers decide where the output goes at runtime.
 
-<!-- STALE: %chain.X syntax being reworked — the "chain slot" framing here predates the permission-only %chain model. -->
-In V1, both handlers route through `%chain.stdout` (or whatever the current chain frame has installed there). Future situations might route `puts` to `%chain.stderr` or elsewhere based on runtime context — leaving the resolution at the engine level rather than pinning it at parse time keeps that flexibility.
+In V1, both handlers route through `%stdout` (or whatever the current chain frame has installed there). Future situations might route `puts` to `%stderr` or elsewhere based on runtime context — leaving the resolution at the engine level rather than pinning it at parse time keeps that flexibility.
 
 Both take the same argument shape as an explicit `%stdout.puts` / `%stdout.print` method call (one or more expressions, comma-separated).
 
 - **Not rebindable.** `$puts = &something_else` does NOT affect subsequent `puts` calls — `puts` is a bwc, not a variable lookup at runtime. To pass the writer around as a value, use `%stdout` or capture `$out = %stdout` and pass `$out`.
-- **Redirection lives at `%chain.stdout`.** The sanctioned V1 way to redirect where `puts` output goes is to rebind `%chain.stdout` for a scope. The engine's `puts` handler resolves through the current chain slot at call time.
+- **Redirection lives at `%stdout`.** The sanctioned V1 way to redirect where `puts` output goes is to rebind `%stdout` for a scope. The engine's `puts` handler resolves through the current chain slot at call time.
 - **Role gate applies identically.** `puts` and `%stdout.puts` face the same role check on `%stdout` — the bwc resolution is orthogonal to access control.
 
 No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are explicit: `%stderr.puts 'warning'`. The asymmetry is deliberate — diagnostics should read as diagnostics at the call site.
@@ -39,7 +38,7 @@ No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are e
 
 - **`%engine.stdout.puts('hello')` writes `'hello\n'` to the host's stdout stream** — CLI runner observes those bytes on stdout.
 - **`%engine.stdout.print('hello')` writes without a trailing newline** — no `\n` appended.
-- **Bare `puts 'hello'` writes `'hello\n'` to the current `%chain.stdout`** — same observable output as `%stdout.puts 'hello'` when no chain redirection is in effect. `puts` stays as a bwc in the CaspJ / CaspM tree; the engine's puts handler routes at runtime.
+- **Bare `puts 'hello'` writes `'hello\n'` to the current `%stdout`** — same observable output as `%stdout.puts 'hello'` when no chain redirection is in effect. `puts` stays as a bwc in the CaspJ / CaspM tree; the engine's puts handler routes at runtime.
 - **Bare `print 'hello'` writes without a trailing newline** — same runtime routing as `puts`.
 - **`$puts = &something_else` does NOT redirect subsequent `puts` calls** — `puts` is a bwc, not a variable lookup at runtime.
 - **`%engine.stderr.puts('warn')` writes to the host's stderr stream** — separate from stdout.
@@ -50,9 +49,9 @@ No corresponding `eputs` / `eprint` sugar for `%stderr`. Diagnostic writes are e
 - **Writing an empty string via `.print('')` writes zero bytes** — no-op.
 - **Writing an empty string via `.puts('')` writes `'\n'`** — the newline is the `puts` contribution.
 - **Bytes written via `%engine.stdout` are role-attributed to `user`** — attribution names `user`.
-- **Bytes written via `%chain.stdout` from a non-user frame are attributed to that non-user role** — attribution follows the writing frame.
+- **Bytes written via `%stdout` from a non-user frame are attributed to that non-user role** — attribution follows the writing frame.
 - **`%engine.stdout` is user-only** — a non-user frame reaching `%engine.stdout` directly raises the blanket gate error.
-- **`%chain.stdout` may be granted to non-user roles by the host** — the sanctioned way to let non-user code write.
+- **`%stdout` may be granted to non-user roles by the host** — the sanctioned way to let non-user code write.
 - **`%engine.stdout` cannot be reassigned** — `%engine.stdout = ...` raises.
 - **`%engine.stderr` cannot be reassigned** — `%engine.stderr = ...` raises.
 - **Writing a string with embedded newlines writes them verbatim** — `'a\nb'` produces three bytes: `a`, newline, `b`.

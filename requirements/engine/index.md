@@ -23,26 +23,26 @@ Each slot has its own page in this directory (or one pending, marked TBD).
 
 The "Mirrored in `%chain`" column names the chain capability that gets seeded from the engine slot at bootstrap. Capabilities that reach outside the script all have a chain mirror; user-only metadata and control slots don't.
 
-<!-- STALE: %chain.X syntax being reworked — every `%chain.X` reference in the mirror column below is out-of-date; %chain no longer carries methods. See [chain/index](https://puck.uno/requirements/chain/). -->
+<!-- STALE: %chain.X syntax being reworked — every `%chain.X` reference in the mirror column below is out-of-date; %chain no longer carries methods. See [chain/index](https://puck.uno/archive/003/misc/chain-old/). -->
 
 | Method | Description | Mirrored in `%chain` |
 |---|---|---|
 | [`%engine.argv`](argv) | Command-line arguments. | [`%chain.argv`](../chain/methods/argv) |
-| `%engine.encryption` (TBD) | Cryptographic primitives. | [`%chain.encryption`](../chain/methods/encryption) |
+| `%engine.encryption` (TBD) | Cryptographic primitives. | [`%encryption`](../chain/methods/encryption) |
 | `%engine.env` (TBD) | Environment-variable accessor. | [`%chain.env`](../chain/methods/env) |
 | `%engine.forks` (TBD) | Process forking. | [`%chain.forks`](../chain/methods/forks) |
-| [`%engine.http_client`](http_client) | HTTP client. | via [`%chain.net.http`](../chain/methods/net) |
+| [`%engine.http_client`](http_client) | HTTP client. | via [`%net.http`](../chain/methods/net) |
 | `%engine.lua` ([doc](lua)) | Information about the Lua host running the reference engine. | — |
 | `%engine.manifest` ([doc](manifest/)) | Hash describing the current process. | — |
-| `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%chain.net`](../chain/methods/net) |
+| `%engine.net` (TBD) | Networking — HTTP, sockets, UDS. | [`%net`](../chain/methods/net) |
 | [`%engine.platform`](platform) | Host platform information — OS, architecture, engine implementation. | — |
 | `%engine.puck` (TBD) | Object download by URL. | [`%fetch`](../fetch) <!-- STALE: %chain.X syntax being reworked --> |
 | [`%engine.require`](require) | Declarative dependency statement on a downloaded object. | — |
 | `%engine.fs` (TBD) | Filesystem dirjail — the filesystem entry point. | [`%fs`](../global-methods/fs) |
-| [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%chain.stderr`](../chain/methods/stdout-and-stderr) |
-| [`%engine.stdin`](stdin) | Input channel. | [`%chain.stdin`](../chain/methods/stdin) |
-| [`%engine.stdout`](stdout-and-stderr) | Primary output channel. | [`%chain.stdout`](../chain/methods/stdout-and-stderr) |
-| `%engine.tmp` (TBD) | Temp-dir capability. | [`%chain.tmp`](../chain/methods/tmp) |
+| [`%engine.stderr`](stdout-and-stderr) | Diagnostic-output channel. | [`%stderr`](../chain/methods/stdout-and-stderr) |
+| [`%engine.stdin`](stdin) | Input channel. | [`%stdin`](../chain/methods/stdin) |
+| [`%engine.stdout`](stdout-and-stderr) | Primary output channel. | [`%stdout`](../chain/methods/stdout-and-stderr) |
+| `%engine.tmp` (TBD) | Temp-dir capability. | [`%tmp`](../chain/methods/tmp) |
 | [`%engine.util_paths`](util-paths) | Curated hash of absolute paths for non-POSIX system utilities (backs [`%fs.util`](../global-methods/fs-additions#util)). User-mutable. | — |
 
 Entries marked **TBD** have no canonical doc yet — currently described from the chain side. Sweep tracked at [#881](https://github.com/mikosullivan/puck/issues/881).
@@ -67,7 +67,7 @@ Beyond the standard slots, a host may expose application-specific resources by n
 - **Custom slot values subject to the same user-only gate** — `%engine['myapp']` from a non-user frame raises.
 - **Bracket form required for non-identifier keys** — a slot whose name contains a dot is reachable only via bracket form.
 - **Missing bracket-form key raises a "no such slot" error** — `%engine['undefined_key']` raises the missing-slot error.
-- **`%engine` is a distinct object from `%chain`** — `%engine.stdout` and `%chain.stdout` are separate references with their own gates. <!-- STALE: %chain.X syntax being reworked -->
+- **`%engine` is a distinct object from `%chain`** — `%engine.stdout` and `%stdout` are separate references with their own gates. <!-- STALE: %chain.X syntax being reworked -->
 - **There is no per-slot opt-in surface** — attempting a hypothetical "grant slot X to role Y" mechanism raises or is not defined; the gate is on the whole `%engine`.
 - **User default grants include `%engine`** — a fresh program run has `%engine` reachable from the first statement with no explicit grant.
 - **Every standard slot has a `%chain` mirror or an explicit user-only marker** — the catalog table names either a chain counterpart or a dash.

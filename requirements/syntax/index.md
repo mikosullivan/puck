@@ -26,7 +26,7 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [Bare blocks](https://puck.uno/requirements/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`.
 - [Clause slots](https://puck.uno/requirements/syntax/clause-slots) — the `body` / `before` / `between` / `after` / `noloop` / `ensure` clauses any block-carrying construct (loops, `begin`, callables) can have, including scope rules and the iterator-method convention.
 - [Classes](https://puck.uno/requirements/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
-- [System-method sigils](https://puck.uno/requirements/syntax/system-method-sigils) — `%self`, `%call`, `%chain`, `%engine`, and the six bare-`%X` shortcuts.
+- [System-method sigils](https://puck.uno/requirements/syntax/system-method-sigils) — `%self`, `%call`, `%engine`, and the six bare-`%X` shortcuts.
 - [Pipes](https://puck.uno/requirements/syntax/pipes) — `|` passes the left result as the first arg to the right; `|&` adds sticky null-propagation.
 
 ## Not covered here yet
@@ -43,6 +43,5 @@ Sub-pages will fill these in as they get written:
 
 ## Where semantics live
 
-- [roles](https://puck.uno/requirements/roles/), [chain](https://puck.uno/requirements/chain/), [plumbing](https://puck.uno/requirements/plumbing/) — what the constructs DO.
+- [roles](https://puck.uno/requirements/roles/), [chain](https://puck.uno/archive/003/misc/chain-old/), [plumbing](https://puck.uno/requirements/plumbing/) — what the constructs DO.
 - [global-methods](https://puck.uno/requirements/global-methods/) — per-method spec of the `%X` surfaces.
-- [chain/methods/](https://puck.uno/requirements/chain/methods/) — per-method spec of each `%chain.X`. <!-- STALE: %chain.X syntax being reworked -->

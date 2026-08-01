@@ -178,7 +178,7 @@ Roles themselves don't get traded, swapped, or modified. They're permanent ident
 
 ## How capabilities flow
 
-Capabilities are granted **per role**, not ambient. A grant attaches a surface (e.g., `%chain.net`) to a role; code in frames with that role can reach the surface. <!-- STALE: %chain.X syntax being reworked -->
+Capabilities are granted **per role**, not ambient. A grant attaches a surface (e.g., `%net`) to a role; code in frames with that role can reach the surface. <!-- STALE: %chain.X syntax being reworked -->
 
 Grants flow down the call chain explicitly. When code calls into a different-role frame, the caller can pass capabilities through `%chain` — the new frame sees those capabilities as available; descendants see them too. When the caller doesn't pass a capability, the callee doesn't get it. The chain is the only way capabilities propagate.
 
@@ -252,7 +252,7 @@ Each of these is a separate design question, not blocked on any single other spe
 - **`.user?` on any non-user role is false** — every other role reference reports `.user?` as `false`.
 - **`.user?` return type is always Boolean** — never any other type.
 - **A string literal's `.obj.role` matches the creating frame's role** — literals in user code are user-owned.
-- **A value pulled through a faucet has the faucet's role** — `%chain.stdin.read.obj.role != %role`. <!-- STALE: %chain.X syntax being reworked -->
+- **A value pulled through a faucet has the faucet's role** — `%stdin.read.obj.role != %role`. <!-- STALE: %chain.X syntax being reworked -->
 - **Faucet roles never run user program frames** — provenance only.
 - **`%engine.roles` enumerates every registered role** — returns a list of role references.
 - **`%engine.roles` from a non-user frame raises** — the blanket gate applies.

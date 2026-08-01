@@ -142,8 +142,8 @@ Three different "roles" coexist in that method body. Each names a different thin
 
 ## Values pulled through faucets carry the faucet's role
 
-<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references in this file predate the permission-only %chain model. See [chain/index](https://puck.uno/requirements/chain/). -->
-The creator-owns rule has one important exception: **values pulled through a faucet are owned by the faucet's role**, not by the calling role. When user code does `%chain.stdin.read`, `%chain.argv[0]`, `%chain.env['HOME']`, `%chain.net.fetch(url).body`, etc., the value that comes back is tagged with the source faucet's role — not with `user`.
+<!-- STALE: %chain.X syntax being reworked — the `%chain.X` references in this file predate the permission-only %chain model. See [chain/index](https://puck.uno/archive/003/misc/chain-old/). -->
+The creator-owns rule has one important exception: **values pulled through a faucet are owned by the faucet's role**, not by the calling role. When user code does `%stdin.read`, `%chain.argv[0]`, `%chain.env['HOME']`, `%net.fetch(url).body`, etc., the value that comes back is tagged with the source faucet's role — not with `user`.
 
 This is the inbound-data side of the role system, spec'd in [`plumbing/faucets/`](https://puck.uno/requirements/plumbing/faucets/). Each inbound surface has its own distinct role, and values flowing through carry that role — see [plumbing/faucets](https://puck.uno/requirements/plumbing/faucets/) for the catalog. The creator-owns rule still applies to everything OTHER than inbound-faucet values — derived strings, computed hashes, instances of user-defined classes, etc. all follow the calling-role-owns model.
 
@@ -199,13 +199,13 @@ If a system needs role-preserving persistence (provenance audit across restarts,
 A `%chain.X` method namespace can be captured into a variable and passed around like any other object:
 
 ~~~caspian
-$net = %chain.net
+$net = %net
 ~~~
 
 `$net` is a first-class value. It can be held, stored, passed as an argument, captured by a closure — all the things a regular object reference can do. A common use is **giving an object the ability to do networking** (or filesystem access, or whatever the captured surface covers) by handing it the captured reference at construction:
 
 ~~~caspian
-$worker = $WorkerClass.new(net: %chain.net)
+$worker = $WorkerClass.new(net: %net)
 ~~~
 
 The worker now has its own handle on the network surface; the constructor didn't have to do anything special.
@@ -218,13 +218,13 @@ The interaction with role boundaries falls out of the existing rules — no spec
 
 ~~~caspian
 # In user frame:
-$net = %chain.net                            # user owns $net
+$net = %net                            # user owns $net
 $some_object.do_thing_with(net: $net)        # non-user object holds $net
 ~~~
 
 Inside `do_thing_with`, when the non-user body calls `$net.fetch(...)`, [methods run as their object's role](https://puck.uno/requirements/roles/#methods-run-as-their-objects-role) — so the fetch body runs as **user** (the owner of `$net`) and the network call proceeds through user's authority. In effect, **capturing a chain surface into a variable and passing it is one way to hand a specific capability across a role boundary**, alongside [`%role.delegate_to`](https://puck.uno/requirements/roles/#granting-capabilities-to-other-roles). Neither displaces the other; both use the same underlying "holding is access" model.
 
-The narrowing tool for chain surfaces is the [same jail wrapper](#narrowing-pass-a-jail-not-the-raw-object) as for any object: `%chain.net.obj.jail(:fetch)` produces a handle that only exposes `fetch`.
+The narrowing tool for chain surfaces is the [same jail wrapper](#narrowing-pass-a-jail-not-the-raw-object) as for any object: `%net.obj.jail(:fetch)` produces a handle that only exposes `fetch`.
 
 ### Captured surfaces outlive the grant that made them reachable
 
@@ -233,9 +233,9 @@ Chain grants control **permission to call methods on `%chain`** — they don't s
 ~~~caspian
 # In a user frame:
 %role.delegate_to($widget.obj.role) do
-	$widget.remember_net()     # widget's method captures %chain.net into @net
+	$widget.remember_net()     # widget's method captures %net into @net
 end
-# Delegation block over — widget's role no longer has %chain.net.
+# Delegation block over — widget's role no longer has %net.
 
 $widget.use_it_later()          # succeeds — @net is still a held reference
 ~~~
@@ -316,5 +316,5 @@ When non-owner role R is handed an object O owned by role O.owner:
 ## See also
 
 - [`roles/`](https://puck.uno/requirements/roles/) — the role catalog and the role system overall.
-- [`chain/`](https://puck.uno/requirements/chain/) — capability propagation across role boundaries (the chain side; this doc is the object side).
+- [`chain/`](https://puck.uno/archive/003/misc/chain-old/) — capability propagation across role boundaries (the chain side; this doc is the object side).
 - The forthcoming jail spec (TBD) — full mechanics of `$obj.obj.jail(...)`.

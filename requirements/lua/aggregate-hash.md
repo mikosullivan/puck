@@ -5,15 +5,15 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_lua_aggregate_hash",
-	"role": "spec for the aggregate-hash primitive — the engine-internal Lua module that wraps an ordered array of hash references and presents a walked-view read interface, a .defined_in(key) helper for finding the owning element, and a .set(key, value) writer with find-or-create-in-innermost semantics (walks via .defined_in; writes to the owning element if found; writes to the innermost element if not). The primitive that %chain, scope frames, class-method resolution, and any 'lookup walks a chain of hashes' pattern build on. Nickname 'agg'. NOT a Caspian-facing class by default; developers do not routinely construct %('core:aggregate_hash') as part of writing Caspian. An optional Caspian-facing class surface is possible if a use case emerges.",
+	"role": "spec for the aggregate-hash primitive — the engine-internal Lua module that wraps an ordered array of hash references and presents a walked-view read interface, a .defined_in(key) helper for finding the owning element, and a .set(key, value) writer with find-or-create-in-innermost semantics (walks via .defined_in; writes to the owning element if found; writes to the innermost element if not). The primitive that %chain, scope frames, and any 'lookup walks a chain of hashes' pattern build on. Nickname 'agg'. NOT a Caspian-facing class by default; developers do not routinely construct %('core:aggregate_hash') as part of writing Caspian. An optional Caspian-facing class surface is possible if a use case emerges.",
 	"status": "spec — walk semantics, reference-not-copy constructor, tombstone hookup to hash.note_deleted, .defined_in(key) helper, and .set(key, value) writer with find-or-create-in-innermost semantics all settled; open items: .keys / .each surface, post-construction mutation of .hashes (push/pop for scope frame lifecycle), Caspian-facing class-shortname if the class surface is exposed",
-	"audience": "Caspian engine implementers writing the aggregate-hash Lua module and its consumers (%chain runtime, scope-frame runtime, class-method resolution)"
+	"audience": "Caspian engine implementers writing the aggregate-hash Lua module and its consumers (%chain runtime, scope-frame runtime)"
 }}
 ~~~
 
 An **aggregate hash** (**agg** for short) wraps an ordered array of ordinary hashes and presents a hash-like read interface whose semantics walk the array. It is not a `Hash`; it is a distinct type that happens to expose a hash-like surface. **Not a Caspian-facing class by default.** The engine consumes it internally; developers do not routinely construct `%('core:aggregate_hash')` as part of writing Caspian.
 
-The primitive fits any "chain of hashes with parent lookup" shape: [`%chain`](https://puck.uno/requirements/chain/), scope frames, class-method resolution, delegated environments. Same design economy as exceptions serving return / raise / exit — pick one well-chosen primitive, reuse it for every fitting shape, resist the temptation to build a specialized type per use case.
+The primitive fits any "chain of hashes with parent lookup" shape: [`%chain`](https://puck.uno/archive/003/misc/chain-old/), scope frames, delegated environments. Same design economy as exceptions serving return / raise / exit — pick one well-chosen primitive, reuse it for every fitting shape, resist the temptation to build a specialized type per use case.
 
 ## Structure
 
@@ -159,7 +159,6 @@ The pattern fits several engine-internal use cases:
 
 - **`%chain`.** Each scope frame that installs a chain override pushes a hash onto the agg. Lookup walks from the innermost override toward the bootstrap root. Setting a chain override in the current frame writes to the current-frame hash directly; reading walks the chain.
 - **Scope frames.** Variable lookup walks the current scope, then the enclosing scope, then the parent scope, and so on. Each scope is a hash; the agg walks the chain.
-- **Class-method resolution.** Walk from the object's own methods, through its class's methods, through inherited-class methods. Each layer is a hash-like map of name → method.
 - **Delegated environments.** Any lookup pattern where "look here first, fall back to parent, fall back to grandparent" is the read model.
 
 Each consumer decides per-frame whether to opt in to `.note_deleted` depending on whether "un-shadow" or "explicit-delete" is the correct semantic for frame-local removal.
@@ -178,4 +177,4 @@ The above is the observable conceptual model. The engine's actual Lua implementa
 
 - [Hash § Noting deleted keys](https://puck.uno/requirements/built-in-classes/primitives/hash#noting-deleted-keys) — the opt-in tombstone feature that aggs' walker consults.
 - [Hash](https://puck.uno/requirements/built-in-classes/primitives/hash) — the primitive being aggregated.
-- [`%chain`](https://puck.uno/requirements/chain/) — the canonical layered-override surface; aggs is the primitive underneath.
+- [`%chain`](https://puck.uno/archive/003/misc/chain-old/) — the canonical layered-override surface; aggs is the primitive underneath.

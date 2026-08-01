@@ -262,7 +262,6 @@ Inside a method body:
 - **`@name`** is shorthand for `%bucket['name']` — direct access to the instance's bucket.
 - **`%bucket`** is the full bucket hash if the caller needs the bucket object itself.
 - **`%call`** is the current call frame (arguments, caller, etc.).
-- **`%chain`** is the ambient chain for role-mediated capabilities.
 
 ### Method parameters
 

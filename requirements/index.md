@@ -44,10 +44,6 @@ The role system — the identity that owns currently-executing code. Owns the ro
 
 The complete catalog of `%X`-prefixed globals — standalone system namespaces and chain-mediated capability shortcuts. The catalog lives in `index.md`; specs that don't already have a home elsewhere (currently `%call`) live as their own files in this directory. Per-capability specs for the chain-mediated globals link back into `chain/methods/`.
 
-### chain/
-
-The `%chain` ambient call-frame chain. Every global capability method lives on `%chain`; grant/revoke are block-scoped methods on those capabilities; ambient hash values flow down the chain with role-boundary resets.
-
 ### concepts.md
 
 Cross-cutting concepts that don't belong to any one subtree — no-nanny code, edge-case handling, long descriptive names, and other design principles the whole spec references.

@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_functions_method",
-	"role": "spec for the method type — a function bound to a receiver object. `%self` is the receiver; `%bucket` is the receiver's bucket; `%chain` is available same as in bare functions and closures. No captured outer scope. Like `function` and `closure`, `method name(...) ... end` is an expression that evaluates to the declared method object, so it can be captured and manipulated as a value. Method objects carry the shared function surface (`.call`, `.params`) plus a method-specific `.private` / `.private=` getter/setter pair. Content TBD beyond the shape captured here.",
+	"role": "spec for the method type — a function bound to a receiver object. `%self` is the receiver; `%bucket` is the receiver's bucket. No captured outer scope. Like `function` and `closure`, `method name(...) ... end` is an expression that evaluates to the declared method object, so it can be captured and manipulated as a value. Method objects carry the shared function surface (`.call`, `.params`) plus a method-specific `.private` / `.private=` getter/setter pair. Content TBD beyond the shape captured here.",
 	"status": "draft — receiver-bound surface described; deeper semantics of dispatch, ownership, and role interactions to be filled in",
 	"audience": "developers writing Caspian; parser implementers; class authors"
 }}
@@ -17,7 +17,7 @@ Inside the body:
 - **`%self`** — the receiver itself. `%self.some_method(...)` reaches sibling methods on the same receiver; `%self.@field` reads a specific bucket entry via `%self`.
 - **`%bucket`** — the receiver's bucket hash. `%bucket['field']` reads and writes bucket entries directly.
 - **`@field`** — shorthand for `%bucket['field']`. The most common way to read and write bucket state.
-- **[`%chain`](https://puck.uno/requirements/chain/)** — the ambient capability channel, the same one bare functions and closures see. Per-frame and always reachable; carries `%stdout`, `%net`, `%fetch`, and everything else the caller granted.
+<!-- STALE: the "ambient capability channel" bullet that used to sit here described %chain, which no longer exists. Capability grants now live directly on the capability objects (%stdout.grant, %net.grant, etc.); ambient hash moved to %amber. -->
 - **No captured outer scope.** A method defined inside another function or class body does not see that outer scope's locals. The receiver surface (`%self`, `%bucket`, sibling methods) is what a method has instead. This is the difference from a closure — closures and methods each have their own environment, and neither can also be the other.
 
 ### Calling sibling methods

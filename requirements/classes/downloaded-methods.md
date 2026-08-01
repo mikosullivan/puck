@@ -44,10 +44,10 @@ When invoked as `$foo.$method` or `$foo.%('url')`, the applied function runs as 
 - **It IS a method.** Everything a class-defined method can do, this one can do too — including direct bucket access via `@field`.
 - **`%self`** is `$foo`.
 - **`%bucket` is fully accessible.** The method can read and write `@name`, `@count`, and any other bucket entry the same way a class-defined method can. No indirection through public methods.
-- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%('url')` runs as the `%chain.puck` faucet role. <!-- STALE: %chain.X syntax being reworked --> A locally-defined function that's applied as a method runs as the role that authored it.
+- **The method runs as its OWN owning role — specifically, the role of the faucet it came from.** A method downloaded via `%('url')` runs as the `%puck` faucet role. A locally-defined function that's applied as a method runs as the role that authored it.
 - **Objects created by the method are owned by that role.** If the method does `return {new_object}`, that hash is owned by the faucet role (per the creator-owns rule).
 - **`%call`** is the current call object, owned by the caller's role. Same as any method call.
-- **`%chain`** is the caller's chain (subject to the chain-grant model at role boundaries — same rules as any cross-role method call).
+<!-- STALE: bullet describing %chain visibility across role boundaries removed — %chain no longer exists. Capability grants that survive a cross-role method call now flow through the per-capability grant model (e.g. `%net.grant do ... end`). Full spec of the cross-role grant model TBD. -->
 
 There's one guardrail on the mechanism, described in full in [the receiver-ownership rule](#the-receiver-ownership-rule) below: **ad-hoc method application requires the caller to have inspection authority over `$foo`** — i.e., the caller owns `$foo`, or the caller is user. This blocks untrusted code from injecting arbitrary bodies into objects it doesn't own; every other consequence of "the applied function IS a method" still holds.
 
@@ -57,7 +57,7 @@ The load-bearing consequence within that guardrail: **applying a function as a m
 
 **A method is not a closure.** A closure carries captured outer scope; a method carries `%self` and bucket access. Those are different mechanisms.
 
-When a function is applied as a method via `$foo.$method`, it's treated as a method — the captured-scope behavior of a closure doesn't come along even if the function was defined in a closure-shaped context. What it has at runtime is `%self`, `%bucket`, `%call`, `%chain` — the standard method surface.
+When a function is applied as a method via `$foo.$method`, it's treated as a method — the captured-scope behavior of a closure doesn't come along even if the function was defined in a closure-shaped context. What it has at runtime is `%self`, `%bucket`, `%call` — the standard method surface.
 
 If you specifically want closure-style captured scope, closures still exist and work as before (see [functions](https://puck.uno/requirements/functions/) for the callable surface). They're just a different construct from what this mechanism produces.
 

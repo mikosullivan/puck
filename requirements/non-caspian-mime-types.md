@@ -39,7 +39,7 @@ The two-tier model gives the caller uniform ergonomics for common types (parsed 
 - **Plain hash.** Any standard hash operation works — iterate to inspect, assign to add or replace, unset to remove, `%fetch.parsers.has?('application/json')` to check.
 - **User-role writes.** A non-user role attempting to assign to `%fetch.parsers` raises. Untrusted code cannot inject parsers or hijack what %fetch returns.
 - **Ambient reads.** Any role that can use `%fetch` sees the registered parsers.
-- **Process-scoped.** Registrations persist for the whole process run; `%fetch` does not live on `%chain`, so a parser registered in one script applies to every subsequent fetch anywhere in the process.
+- **Process-scoped.** Registrations persist for the whole process run; `%fetch` state is process-wide, not per-frame, so a parser registered in one script applies to every subsequent fetch anywhere in the process.
 - **Last-write-wins.** One parser per Content-Type. Assigning to a Content-Type that already has a parser replaces the old one silently.
 
 The parser value itself — whether it's a function, a class, a callable, or a specific interface — is not yet spec'd. Track that as an open question until concrete needs pin it down.

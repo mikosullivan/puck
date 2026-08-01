@@ -22,9 +22,9 @@
 
 | Form | Reaches |
 |---|---|
-| `$x = function(...) end` | Nothing beyond args, locals, and `%chain` — fully hermetic. Not published on any Module. |
-| `function &name(...) end` | Args, locals, `%chain`, and the enclosing Module's methods / classes via `%module`. Published as a Module method. |
-| `closure(...) end` | Args, locals, `%chain`, and the full enclosing lexical scope (variables and Module methods alike). |
+| `$x = function(...) end` | Nothing beyond args and locals — fully hermetic. Not published on any Module. |
+| `function &name(...) end` | Args, locals, and the enclosing Module's methods / classes via `%module`. Published as a Module method. |
+| `closure(...) end` | Args, locals, and the full enclosing lexical scope (variables and Module methods alike). |
 | `method &name(...) end` inside a class | `%self`, `%bucket`, sibling methods on the class (reached via `%self.class` — the class object holds the methods; the class body's Module frame was ephemeral). See [method](method). |
 
 Every step is an explicit choice by the author; there is no "default lexical capture" behavior. See [bare § Sibling access via %module](bare#sibling-access-via-module) and [modules](https://puck.uno/requirements/modules/) for the Module mechanism the named form plugs into.

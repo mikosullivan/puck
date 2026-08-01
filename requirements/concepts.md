@@ -19,7 +19,7 @@ The shape of the model:
 
 - **Roles tag every value and every running frame** with an identity. Code's role is set when the engine starts (`user` for the program) or by the surface that introduced it ([faucets](https://puck.uno/requirements/plumbing/faucets/) for inbound data, downloaded objects for `%fetch` content). Roles don't get traded, swapped, or modified — they're permanent identities.
 - **`%engine` is the only path to host resources, and only `user` can call it.** Untrusted code can't reach the host process through `%engine`; the gateway is gated unconditionally at the runtime level. The user has to explicitly hand specific capabilities down through `%chain`.
-- **Capabilities propagate through `%chain` block-by-block, not ambiently.** Granting a capability is a deliberate per-block act; the grant evaporates when the block exits. There's no "this code has been blessed with permanent network access" — every grant is scoped, every revocation is enforceable. See [chain/grant-revoke](https://puck.uno/requirements/chain/grant-revoke).
+- **Capabilities propagate through `%chain` block-by-block, not ambiently.** Granting a capability is a deliberate per-block act; the grant evaporates when the block exits. There's no "this code has been blessed with permanent network access" — every grant is scoped, every revocation is enforceable. See [chain/grant-revoke](https://puck.uno/archive/003/misc/chain-old/grant-revoke).
 - **Methods run as their object's role.** Calling a method on a downloaded object enters that object's role frame, not the caller's. The caller's authority doesn't leak across the dispatch boundary; the object can only do what its role has been granted. See [roles § Methods run as their object's role](https://puck.uno/requirements/roles/#methods-run-as-their-objects-role).
 - **Faucets preserve provenance.** Every value entering the runtime through stdin, env, the filesystem, the network, or a `%fetch` download is tagged with its source's role. That tag survives storage, passing, and most operations — "did this string ever come from the network?" is a real, answerable question.
 - **Holding is access, but the owner controls what gets handed across.** A non-owner role with a reference to an object can call any method on it; the owner narrows what's reachable by passing a [jail wrapper](https://puck.uno/requirements/roles/object-access#narrowing-pass-a-jail-not-the-raw-object) instead of the raw object.
@@ -59,7 +59,7 @@ Method names, field names, chain-mediated permissions, and other surfaces balanc
 Caspian picks explicitly per surface:
 
 - **Frequent surfaces get short names.** `.push`, `.pop`, `.map`, `%bucket`, `%self`, `%stdout`. Every program touches these; brevity pays for itself in every file.
-- **Rare surfaces get long descriptive names.** `.absolute_negative`, `.repeated_permutation`, `%chain.allow_abort_escalation`. A reader encountering these once a year benefits from a name that explains itself in context — no doc lookup required.
+- **Rare surfaces get long descriptive names.** `.absolute_negative`, `.repeated_permutation`. A reader encountering these once a year benefits from a name that explains itself in context — no doc lookup required.
 
 When in doubt about frequency, lean verbose. Renaming a long name to a short one later is a mechanical sweep; typing a confusing short name into rarely-touched code is a maintenance cost forever.
 
@@ -86,6 +86,28 @@ The upside is a smaller conceptual surface and a uniform way to reason about met
 Caspian doesn't have a "library" concept as a technical primitive. [`%fetch`](https://puck.uno/requirements/fetch) downloads **objects** — typically classes, but also instances, records, anything that fits the Puck object protocol. Each download is one object identified by one URL.
 
 You may informally call a group of related downloads a "library" — the same way you'd informally call several files a "module" or several functions a "toolkit." That's a developer-side description of how code is organized, not a runtime entity. The engine never sees "libraries"; it sees individual objects downloaded by `%fetch` calls, each tracked separately in [`%engine.manifest`'s `downloads` section](https://puck.uno/requirements/engine/manifest/#sections).
+
+## Bounded-lifetime objects
+
+**Many Caspian objects are useful only within a defined window** — most commonly the block they were created in. After that window closes, the object is dead: method calls on it raise, and holding a reference to it is either useless or (worse) confusing to the reader.
+
+The pattern shows up across the language:
+
+- **Transactions** are useful from open to commit / rollback / block exit. After that boundary, the handle refers to nothing the database is still tracking.
+- **Brokers and dirjails** hand out limited authority for a block; when the block ends, the wrapper is dead and any capability it held is released.
+- **File and stream handles** are useful until close; a subsequent read or write raises.
+- **Iterators** produced by walk-shaped operations are useful until exhausted or their scope ends.
+
+Uniform machinery makes the pattern consistent across every instance:
+
+- **`obj.destroy`** — explicit "kill it now" verb. Idempotent.
+- **`obj.destroyed?`** — predicate for defensive checks.
+- **Method calls on destroyed objects raise** with a consistent error class, not silently no-op.
+- **The error message is class-configurable.** A class declares its destroyed-error string as a class-level attribute — `Transaction` → "Transaction closed", `File` → "File closed", `Iterator` → "Iterator exhausted". Classes that don't declare one get a generic "object destroyed" default. The error class stays uniform (callers rescue by class); only the message text varies. Cost if unused: zero — no per-object storage, just a class-level default.
+
+The raise is deliberate: dead objects that quietly do nothing hide bugs. A raise on the first offending call surfaces the error where it happens rather than letting execution continue against a phantom. A specific message ("Transaction closed") beats a generic one ("unknown method") every time — the class knows the right word for its own failure mode.
+
+**Why the convention belongs at the language level rather than each type's spec:** the shape is uniform across every kind of bounded-lifetime object. Once the general mechanism exists, each new class gets it for free — no per-class re-invention, no divergence in how "dead" is signaled between one class and another.
 
 ## Caspian is written in Caspian
 
@@ -122,7 +144,7 @@ The trade in one sentence: **give up bundle self-containment to free floppy budg
 Examples that have earned their reuse in Caspian:
 
 - **Exceptions** serve return / raise / exit. One control-flow mechanism carries three semantic uses; the engine has one exception dispatcher, developers learn one machinery.
-- **Aggregate hashes** ([`lua/aggregate-hash`](https://puck.uno/requirements/lua/aggregate-hash)) serve `%chain` / scope frames / class-method resolution / delegated environments — every "lookup walks a chain of hashes" pattern. One primitive, many roles.
+- **Aggregate hashes** ([`lua/aggregate-hash`](https://puck.uno/requirements/lua/aggregate-hash)) serve `%amber` / scope frames / delegated environments — every "lookup walks a chain of hashes" pattern. One primitive, many roles.
 - **`function_call` bwc** ([caspianj § Calls](https://puck.uno/requirements/caspianj#calls)) collapses bareword calls, dot method calls, closure invocations, downloaded-method applications — every callable invocation — to one CaspM shape.
 - **Freeze** is Caspian's constant mechanism across three surfaces: variables via [`variable-object.freeze`](https://puck.uno/requirements/built-in-classes/variable-object#freezing), hash fields via [`.freeze_field`](https://puck.uno/requirements/built-in-classes/primitives/hash#freezing-fields), whole objects via [`.obj.freeze`](https://puck.uno/requirements/built-in-classes/object/methods#freeze_bucket--freeze_stack--freeze). No separate `const` keyword; freeze does everything.
 - **`assign` bwc** serves variable assign and subscript assign — dispatch on lvalue shape.
@@ -148,7 +170,7 @@ Examples from Caspian's design:
 
 - **Event handling** ([`requirements/events`](https://puck.uno/requirements/events/)) — broadcasting an event when nothing is listening is a single hash lookup that finds no entry; the broadcaster returns immediately. Programs that never `.broadcast` and never `.listen_to` pay zero for the feature's existence. Programs that use it lightly pay lightly. The mechanism scales with actual use.
 - **Class-listeners** ([`requirements/events/listen-to-class`](https://puck.uno/requirements/events/listen-to-class)) — the ancestor walk adds a small per-broadcast cost, but if no class-listeners are registered anywhere for an event, each ancestor lookup is a fast hash miss. Non-users of the feature pay only the miss cost. No always-on overhead.
-- **Capability grant machinery** — most programs never call `.grant` / `.revoke`. Those that don't pay only the cost of the ordinary chain hash lookups (which the language uses for other reasons anyway). Grant/revoke doesn't add per-frame overhead to programs that don't use it.
+- **Capability grant machinery** — most programs never call `.grant` / `.revoke`. Those that don't pay only the cost of the ordinary chain permission lookup — a single per-frame lookup that happens whether grants are in play or not. Grant/revoke doesn't add per-frame overhead to programs that don't use it.
 - **`%amber`** ([`requirements/amber`](https://puck.uno/requirements/amber)) — a program that never calls `%amber.init(...)` never touches the ambient-hash layer; the aggregate hash's amber slot stays empty; iteration finds nothing. The mechanism costs the check, not the storage.
 
 The heuristic: when designing a new feature, ask "what does this cost programs that don't use it?" If the answer is "one extra lookup per hot-path operation" or "one extra field per object" — that's a tax on everyone. Look for a shape where non-users bear zero (or near-zero) cost. Sometimes the shape is available; sometimes it isn't; but the question is always worth asking before committing.
@@ -176,3 +198,8 @@ Failure mode if the check is skipped: features accumulate, each adding "a little
 - **Multiple inheritance dispatches through the class stack** — a class inheriting from two parents resolves methods by walking the platter stack in declared order.
 - **Each `%fetch` call produces a fresh object** — two successive `%fetch(url)` calls with the same URL return two distinct objects; developers wanting shared identity fetch once and pass the reference around.
 - **`%engine.manifest.downloads` tracks each URL separately** — two `%fetch` calls of two URLs produce two distinct entries under `downloads`; nothing groups them under a "library" identity.
+- **`obj.destroy` marks the object dead** — after `.destroy`, `.destroyed?` returns true.
+- **`destroy` is idempotent** — a second `.destroy` on an already-destroyed object does not raise.
+- **Method calls on destroyed objects raise** — any method call other than `.destroy` or `.destroyed?` on a destroyed object raises the standard destroyed-object error class.
+- **Bounded-lifetime object dies at its scope boundary** — an object whose useful lifetime is bounded (by block exit, by explicit close, by exhaustion, etc.) is destroyed at that boundary; subsequent method calls raise.
+- **Class-declared destroyed-error message is used** — a class that declares its destroyed-error string raises with that specific message when a method is called after `.destroy`; a class that doesn't declare one raises with the generic default.

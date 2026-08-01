@@ -11,6 +11,17 @@ pragma foreign_keys = on;
 -- propagate through the affected subgraph. Per-connection setting.
 pragma recursive_triggers = on;
 
+-- Meta table: key/value settings about the database itself. For V1 the
+-- only row is `schema`, which names the schema version this file was
+-- built against. The key/value shape leaves room to add rows later
+-- without a schema change.
+create table meta (
+	key text primary key,
+	value text
+);
+
+insert into meta (key, value) values ('schema', '1.0');
+
 create table hsa (
 	hsa_pk integer primary key autoincrement,
 	type text not null check (type in ('h', 's', 'a')),
@@ -183,26 +194,65 @@ begin
 	-- The moved row stays parked; the outer UPDATE overwrites it to NEW.idx.
 end;
 
--- Garbage collection. After any relationship deletion, purge hsa rows that
--- no longer trace back to root. Runs a full reachability sweep from root
--- (hsa_pk = 1); anything unreachable is deleted. The delete cascades to
--- remove each removed row's remaining edges, which re-fires this trigger
--- (requires pragma recursive_triggers = on). Iterations converge quickly:
--- once the unreachable set is gone, the next fire's CTE finds nothing to
--- delete and recursion stops. Correct under cycles because reachability
--- from root is graph-shape-agnostic — a fully-detached cycle simply never
--- makes it into `reachable`.
+-- Shift-down on array-parented DELETE. Every sibling with a higher idx
+-- moves down by 1 to close the gap. Ruby-array semantics for
+-- arr.delete_at(N). Preserves sparseness: [a=0, b=1000] with delete idx 0
+-- yields [b=999], not [b=0]. Array-only; hash-parented deletes leave a
+-- gap (users don't observe hash idx directly).
+--
+-- UNDOCUMENTED-BEHAVIOR NOTICE: this trigger relies on SQLite processing
+-- UPDATE rows in ASCENDING idx order for the pattern `WHERE parent = ?
+-- AND idx > ?`, because that's what avoids intermediate unique-constraint
+-- violations mid-shift (each row's target slot is one that was just
+-- vacated by the row below it). The ordering is empirically stable — the
+-- planner uses the (parent, idx) unique index and scans ascending — but
+-- is NOT a written API contract as of SQLite 3.45.1. A feature request
+-- to document this guarantee is pending upstream. If a future SQLite
+-- version chose descending scan or a different plan, this trigger would
+-- fail loudly with unique-constraint violations, and the shift tests in
+-- test_relationships.lua would catch it immediately.
+create trigger relationships_shift_down_on_array_delete
+after delete on relationships
+when (select type from hsa where hsa_pk = old.parent) = 'a'
+begin
+	update relationships set idx = idx - 1
+	where parent = old.parent and idx > old.idx;
+end;
+
+-- Garbage collection: Bacon-Rajan-style upward reachability check.
+-- After a relationship is deleted, walk upward from the removed edge's
+-- old child through its remaining incoming relationships. If root
+-- (hsa_pk = 1) shows up in the walk, the child is still anchored — do
+-- nothing. Otherwise the child is orphaned and gets deleted; the delete
+-- cascades to its outgoing relationships, each re-firing this trigger
+-- for the next level down (requires pragma recursive_triggers = on).
+--
+-- The recursive CTE is the "temp-table upward walk" approach: seed with
+-- the deleted child, extend by adding every parent of a current member,
+-- terminate when nothing new can be added or root shows up. SQLite runs
+-- that iteration internally.
+--
+-- Cycles handled: an unanchored cycle traversed from any member converges
+-- to just the cycle's nodes, without root, so all members get purged one
+-- by one via the cascade + retrigger loop.
+--
+-- Trade-off vs. full-sweep-from-root: this doesn't clean up subgraphs
+-- that were already unreachable before the current delete (e.g., a
+-- pre-existing detached cycle that no delete has touched). Callers who
+-- need that guarantee invoke full_sweep().
 create trigger relationships_purge_after_delete
 after delete on relationships
 begin
 	delete from hsa
-	where hsa_pk not in (
-		with recursive reachable(hsa_pk) as (
-			select 1
-			union
-			select r.child from relationships r
-			join reachable on r.parent = reachable.hsa_pk
-		)
-		select hsa_pk from reachable
-	);
+	where hsa_pk = old.child
+		and hsa_pk <> 1
+		and not exists (
+			with recursive ancestors(pk) as (
+				select old.child
+				union
+				select r.parent from relationships r
+				join ancestors on r.child = ancestors.pk
+			)
+			select 1 from ancestors where pk = 1
+		);
 end;

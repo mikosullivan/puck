@@ -5,7 +5,7 @@
 	"doc": "ideas_security_external_accounts",
 	"role": "design-exploration essay on whether — and how — Caspian's internal role system should tie into external identity (Unix uids, GitHub accounts, OAuth, LDAP, SSO). Enumerates interpretations, use cases, integration paths against the five-rule model, prior art, tensions, concrete design sketches, and a recommendation. Companion to the settled model at requirements/security/model/ and the critique at ideas/roles-critique.",
 	"status": "exploration — no direction promoted to spec; the recommendation is a working position, not a decision",
-	"context": "Stuart, reading the model for the first time, assumed roles meant things like Unix accounts or GitHub identities. They don't. But the confusion pointed at real programs Caspian will eventually want to serve — multi-user services, per-developer permissions, auditable action trails — and Miko wanted the design space written down before it accretes ad-hoc."
+	"context": "Stuart, reading the model for the first time, assumed roles meant things like Unix accounts or GitHub identities. They don't. But the confusion pointed at real programs Caspian will eventually want to serve — multi-user services, per-developer permissions, auditable action trails — and Miko wanted the design space written down before it accretes ad-hoc. Later addition: a second Stuart insight — the Puck blockchain itself is a natural source of external identity for the .claim attribute — is covered in a follow-up section at the bottom of the doc."
 }}
 ~~~
 
@@ -249,3 +249,135 @@ This satisfies the audit-trail use case, the multi-user-service use case (as lon
 The failure mode to avoid is a slow accretion of external-identity surfaces bolted onto the current model piecemeal — one convenience method here, one Rule 5 exception there. Every step feels small; the sum is a model no one can teach. Doing the minimum (a claim attribute, and nothing else) leaves the door open for every direction the design might eventually go, without pre-committing to any of them.
 
 Miko's instinct here should be conservative. The current five-rule model is small enough to be a *feature*, and external identity is exactly the kind of concern that grows without bound if you let it inside the language. Keep it outside. Let the host inject a claim; let application code read it; do not build any engine-enforced meaning on top of it. If a real program later demands more, the demand will arrive with concrete constraints, and the design can respond then.
+
+## Puck-native identity via the blockchain
+
+*Later addition.* A second Stuart insight points at a source of external identity that Caspian already needs: **the Puck blockchain itself**.
+
+The chain (spec at [requirements/fetch-discovery/blockchain](https://puck.uno/requirements/fetch-discovery/blockchain)) exists to record signed endorsements — an append-only ledger of "publisher X signed artifact Y with hash H." Every publisher on the chain has a cryptographic identity: their signing key, verifiable against the chain state. Reusing that identity as an axis for the `.claim` attribute costs essentially zero — the identity machinery is already there, cryptographically verified, and independent of any third party.
+
+**Why this fits the .claim shape well:**
+
+- **Self-contained.** No dependency on GitHub, OAuth providers, corporate SSO, or any external identity service. The Puck ecosystem provides its own identity primitive.
+- **Cryptographically verifiable offline.** A signature against a chain-registered key can be verified locally with cached chain state — no live network needed for verification, unlike OAuth (needs the provider up) or GitHub identity (needs GitHub up).
+- **Portable across Caspian tooling.** The same identity works in Caspian, Puck, blockchain.puck.uno, and any Caspian-adjacent tool. One key, one identity, everywhere.
+- **Direction A composes cleanly.** `.claim['puck']` becomes the natural first-class axis of the claim hash, sitting alongside potential future `.claim['github']` or `.claim['oauth']` axes. Nothing about "opaque claim, application-read, no engine semantics" breaks.
+
+**What becomes cheap:**
+
+- **Direction C stops being deferred.** Publisher identity for downloaded code was parked because "Puck's signing story doesn't exist yet." It does now. `%fetch` can populate `.claim['puck']` on downloaded objects automatically from the chain endorsement that signed them. Trust policies expressed against publisher become a declarative check on the claim — "grant `%net` only to code from publishers on this allow-list" is a language-level idea, not application hand-rolling.
+- **Automated agent identity.** A bot that signs its actions with a chain-registered key has verifiable Puck identity — no OAuth ceremony, no browser flow, no third-party token.
+- **Cross-Caspian mutual trust.** Two Caspian processes talking to each other (via Puck's remote object protocol) can each present chain-registered identities and verify each other without any intermediary.
+
+**Where Puck-blockchain identity is a worse fit:**
+
+- **Authenticated web users.** A human logging into a Caspian-built web service via "Sign in with GitHub" is not (usually) a Puck-blockchain publisher. Onboarding a random end user through blockchain-key enrollment is much heavier ceremony than OAuth. For Direction B (per-request roots for multi-user services), OAuth / SSO axes remain the better fit — Puck-chain identity supplements rather than replaces them.
+- **Person-vs-key gap.** Same limitation as any PGP-lineage scheme: the chain proves "this key signed this thing." Whether that key belongs to a specific human, an organization, or a compromised bot is a separate question — a social one, not a cryptographic one. Not new, and worth naming.
+
+**Extension of the chain scope required:**
+
+Today the chain records URL→hash endorsements — signatures on *artifacts*. Using it as an identity registry — where publishers register a human-readable handle and can bind linked claims (`github:alice`, `alice@example.com`) with signed proof, Keybase-style — is a design addition. The primitive (chain-registered keys) exists; the identity-record shape (whatever data structure links a Puck identity to external axes) needs its own spec.
+
+## Updated recommendation
+
+Original Direction A recommendation stands. Add one first-class axis, `.claim['puck']`, populated by the chain layer once the identity-record shape is spec'd. Direction C becomes implementable at that point — no longer deferred pending a signing story, since the signing story now exists.
+
+The Puck axis doesn't replace OAuth or GitHub axes; those still matter for user-facing services with typical login flows. But it becomes the first-class identity axis for the Puck ecosystem itself, and it makes trust decisions against publishers a declarative language feature rather than an application concern. Consistent with the "keep the engine out of it" discipline from the original recommendation — the Puck axis is still just a claim; the engine still assigns no semantics. Application code (or a future declarative trust-policy layer) decides what to do with it.
+
+## Concrete walkthrough: what "trusting Stuart's code" actually looks like
+
+Grounding the discussion — what does it mean at the mechanism level to say "I trust Stuart's code"?
+
+### Today (domain-keyed trust)
+
+Trust is keyed by **domain**. The trust-policy config (see [trust-policy](https://puck.uno/ideas/security/trust-policy)) is a JSON blob the host injects at engine boot, listing domains and per-domain permissions:
+
+~~~json
+{
+    "mode": "allow_list",
+    "domains": {
+        "stuart.example.com": {
+            "network": true,
+            "storage": true,
+            "fork": false
+        }
+    }
+}
+~~~
+
+When `%fetch('stuart.example.com/some-module')` pulls code, the fetched object gets whatever permissions the config granted to `stuart.example.com`. That's trust in Stuart's *code hosting location*, not in Stuart himself.
+
+**Fault lines with the domain-keyed model:**
+
+- If Stuart contributes to code on multiple hosts (his own site, a company repo, blockchain.puck.uno mirror), each host needs its own trust entry — even though it's the same person.
+- If someone else uploads malicious code to `stuart.example.com` (compromise, DNS hijack, etc.), the trust config still says "trust that domain," and the malicious code inherits Stuart's permissions.
+- The trust policy has no way to say "I trust Stuart, wherever his code shows up."
+
+### Under blockchain-identity trust (publisher-keyed)
+
+Trust becomes keyed by **publisher identity**:
+
+~~~json
+{
+    "mode": "allow_list",
+    "publishers": {
+        "puck:stuart-abcd1234": {
+            "network": true,
+            "storage": true,
+            "fork": false
+        }
+    }
+}
+~~~
+
+End-to-end when Caspian code does `%fetch('some-url')` and that URL has code Stuart signed:
+
+1. **`%fetch` retrieves the bytes** via whichever fetcher wins the search-path race (blockchain.puck.uno mirror, direct HTTP, wherever).
+2. **The chain endorsement is retrieved** for that URL — a signed record saying "puck:stuart-abcd1234 endorses hash H for this URL."
+3. **The bytes are hash-verified** against the endorsement.
+4. **The signature is verified** against the chain-registered key for `puck:stuart-abcd1234` — cryptographic, offline against cached chain state.
+5. **The role for the fetched object gets `.claim['puck'] = 'stuart-abcd1234'`** automatically, populated by the fetch layer from the chain endorsement.
+6. **When code in that role calls `%net.request(...)`**, the engine consults the trust policy: sees the claim, matches `puck:stuart-abcd1234`, checks its granted permissions, grants `%net` if allowed.
+
+### What this actually changes
+
+- **Trust travels with code, not with location.** If Stuart's code moves hosts (different repo, mirrored server, republished tomorrow), trust doesn't need reconfiguring — the signature is what matters.
+- **The compromise story flips.** Someone taking over `stuart.example.com` doesn't get Stuart's permissions — they'd also need Stuart's private key. Domain compromise ≠ identity compromise.
+- **Attenuation still works.** Code fetched by trusted-Stuart can still be handed to a subsystem with permissions stripped — Rule 4's capability-attenuation is unchanged.
+- **Domain-keyed trust doesn't go away.** It becomes one legitimate axis alongside identity-keyed trust. Fetches without chain endorsements (a random unsigned artifact) still need domain-based rules — same behavior as today.
+
+### What "trust" IS at the machinery level
+
+Three existing pieces slotting together, no new mechanism:
+
+- **`.claim['puck']`** — opaque identity attribute on the role (Direction A).
+- **Chain verification** — populates the claim, backed by cryptography (this doc's later insight).
+- **Trust policy check** — engine looks up the claim's `puck` axis in the policy hash, grants accordingly (Rule 5 + the trust-policy design).
+
+No new rule. No new engine mechanism. The trust-policy config is still just a hash of `{key → permission-set}`; the engine still just checks it at grant time; the claim mechanism carries identity across the boundary between fetch and grant.
+
+### Schema tweak needed for the trust-policy config
+
+The current trust-policy schema keys grants by domain only. Extending it to also key by publisher identity is a schema addition, not a mechanism change. Two shapes worth considering:
+
+**Parallel maps:**
+
+~~~json
+{
+    "domains":    { "borg.com": { ... } },
+    "publishers": { "puck:stuart-abcd1234": { ... } }
+}
+~~~
+
+**Unified entries with match type:**
+
+~~~json
+{
+    "entries": [
+        { "match": { "type": "domain",    "host": "borg.com" },          "grants": { ... } },
+        { "match": { "type": "publisher", "id":   "puck:stuart-abcd1234" }, "grants": { ... } }
+    ]
+}
+~~~
+
+The unified shape scales better if more identity axes land later (`github:`, `oauth:`, etc.); the parallel-maps shape is simpler for the two-axis case. Design pass on the trust-policy doc when we're ready to promote publisher-keyed trust from idea to spec.

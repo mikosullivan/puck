@@ -47,7 +47,7 @@ $foo # 'zap'
 
 **Unbound-name assignment creates a new local in the innermost element.** When `$foo = value` walks the chain and doesn't find `$foo` anywhere, a new slot is created in the innermost scope element (the current block / function / closure frame). This is the create-in-innermost policy (Ruby-like default) — no explicit declaration required.
 
-**One primitive, one behavior.** The scope runtime doesn't reimplement walk-then-write logic; it just calls `.set` on the current scope agg. Same primitive `%chain` and other agg consumers use for write-through semantics. Frozen-slot enforcement inherits from the underlying hash's `.freeze_field`.
+**One primitive, one behavior.** The scope runtime doesn't reimplement walk-then-write logic; it just calls `.set` on the current scope agg. Same primitive other agg consumers use for write-through semantics. Frozen-slot enforcement inherits from the underlying hash's `.freeze_field`.
 
 ## Closures capture the current scope
 

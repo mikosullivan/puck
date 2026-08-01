@@ -468,7 +468,7 @@ Other languages support related patterns but with friction. Java requires every 
 - **Keyword args to `init`** — `instance(a: 'x') method init(@a) end end` binds `@a == 'x'`.
 - **Args with no `init` raises** — `instance('x') end` (body has no `init`) raises.
 - **Field defaults apply** — `instance field :host, default: 'localhost' end` produces an object with `@host == 'localhost'`.
-- **Methods dispatch normally** — a method declared in `instance` body reaches `%self`, `@field`, `%bucket`, `%chain` like any class method.
+- **Methods dispatch normally** — a method declared in `instance` body reaches `%self`, `@field`, `%bucket` like any class method.
 - **Inheritance from `instance` body** — `instance inherits Parent end` builds an object that responds to `Parent`'s methods.
 - **Inline label parses** — `instance # my label ... end` parses; label has no dispatch effect.
 - **No reusable class produced** — the anonymous shadow class is not reachable outside the constructed object.

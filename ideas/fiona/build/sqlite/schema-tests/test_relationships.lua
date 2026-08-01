@@ -624,3 +624,270 @@ h.test("shift on move: identity update (NEW.idx = OLD.idx) is a no-op", function
 	h.assert_eq(children[2], 4, "unchanged")
 	h.assert_eq(children[3], 5, "unchanged")
 end)
+
+-- ------------------------------------------------------------
+-- Shift-by-1 on array delete — Ruby arr.delete_at() semantics
+-- ------------------------------------------------------------
+
+h.test("array delete shifts every higher-idx sibling down by 1 (dense case)", function()
+	local db = fresh_array(5)  -- [3, 4, 5, 6, 7] at idx 0..4
+	-- Delete idx 2 (child 5); expect 3, 4 stay at 0, 1 and 6, 7 shift to 2, 3.
+	exec(db, "delete from relationships where parent = 2 and idx = 2")
+
+	local by_idx = {}
+	for row in db:nrows("select idx, child from relationships where parent = 2") do
+		by_idx[row.idx] = row.child
+	end
+
+	h.assert_eq(by_idx[0], 3, "3 stays at 0")
+	h.assert_eq(by_idx[1], 4, "4 stays at 1")
+	h.assert_eq(by_idx[2], 6, "6 shifted from 3 to 2")
+	h.assert_eq(by_idx[3], 7, "7 shifted from 4 to 3")
+	h.assert_eq(by_idx[4], nil, "idx 4 no longer occupied")
+end)
+
+h.test("array delete preserves sparseness — shifts by exactly 1, doesn't collapse gaps", function()
+	-- Sparse array: two elements, one at idx 0 and one at idx 1000.
+	-- Deleting idx 0 shifts the b element from 1000 → 999, NOT 0.
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('a')")                                      -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")                  -- 3
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")                  -- 4
+	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 4, 1000)")
+
+	exec(db, "delete from relationships where parent = 2 and idx = 0")
+
+	local at
+	for row in db:nrows("select idx, child from relationships where parent = 2") do
+		at = row
+	end
+	h.assert_eq(at.child, 4, "only child 4 remains")
+	h.assert_eq(at.idx, 999, "shifted by exactly 1 (1000 → 999); sparseness preserved")
+end)
+
+h.test("array delete of last idx: no siblings to shift, straightforward removal", function()
+	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
+	exec(db, "delete from relationships where parent = 2 and idx = 2")
+
+	local children = read_array(db)
+	h.assert_eq(#children, 2, "two remain")
+	h.assert_eq(children[1], 3, "3 stays at 0")
+	h.assert_eq(children[2], 4, "4 stays at 1")
+end)
+
+h.test("array delete of only element leaves an empty array", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('a')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 3
+	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
+
+	exec(db, "delete from relationships where parent = 2 and idx = 0")
+
+	for row in db:nrows("select count(*) as c from relationships where parent = 2") do
+		h.assert_eq(row.c, 0, "no siblings left in the array")
+		return
+	end
+end)
+
+h.test("hash delete does NOT shift; leaves a gap (hash idx is internal)", function()
+	-- Hashes get gap-preserving delete — users don't observe hash idx directly.
+	-- Confirms the WHEN clause on the shift trigger correctly excludes hashes.
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")                                             -- 2 (hash)
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")                         -- 3
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")                         -- 4
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 30)")                         -- 5
+
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 1)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 2)")
+
+	-- Delete the middle entry by key.
+	exec(db, "delete from relationships where parent = 2 and key = 'b'")
+
+	local by_idx = {}
+	for row in db:nrows("select idx, key from relationships where parent = 2") do
+		by_idx[row.idx] = row.key
+	end
+	h.assert_eq(by_idx[0], "a", "a stays at 0")
+	h.assert_eq(by_idx[1], nil, "idx 1 (was b) is a gap; hash does not shift")
+	h.assert_eq(by_idx[2], "c", "c stays at 2 (no shift for hash)")
+end)
+
+h.test("array shift-down handles a large sparse gap correctly", function()
+	-- Regression test for the empirical UPDATE processing order. If SQLite
+	-- ever changes planner behavior to process in a non-ascending order,
+	-- shifting a dense-then-sparse-then-dense pattern would fail with
+	-- unique-constraint violations. This test catches that.
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('a')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
+
+	for i = 3, 8 do
+		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
+	end
+
+	-- Three-cluster pattern: [3 at 0, 4 at 1, 5 at 2, 6 at 100, 7 at 101, 8 at 102].
+	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 4, 1)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 5, 2)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 6, 100)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 7, 101)")
+	exec(db, "insert into relationships (parent, child, idx) values (2, 8, 102)")
+
+	-- Delete an entry in the first cluster.
+	exec(db, "delete from relationships where parent = 2 and idx = 1")
+
+	local by_idx = {}
+	for row in db:nrows("select idx, child from relationships where parent = 2") do
+		by_idx[row.idx] = row.child
+	end
+	h.assert_eq(by_idx[0], 3,  "3 stays at 0")
+	h.assert_eq(by_idx[1], 5,  "5 shifted from 2 to 1")
+	h.assert_eq(by_idx[2], nil, "idx 2 vacated by the shift")
+	h.assert_eq(by_idx[99],  6, "6 shifted from 100 to 99 — sparse gap preserved")
+	h.assert_eq(by_idx[100], 7, "7 shifted from 101 to 100")
+	h.assert_eq(by_idx[101], 8, "8 shifted from 102 to 101")
+end)
+
+-- ------------------------------------------------------------
+-- normalize_hashes — explicit safety-valve API method
+-- ------------------------------------------------------------
+
+h.test("normalize_hashes: renumbers hash entries to dense 0..n-1", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash)
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 3
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")  -- 4
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 30)")  -- 5
+
+	-- Sparse idx values.
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 100)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 200)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 300)")
+
+	h.normalize_hashes(db)
+
+	local max_idx, count
+	for row in db:nrows("select max(idx) as m, count(*) as c from relationships where parent = 2") do
+		max_idx = row.m
+		count = row.c
+	end
+	h.assert_eq(count, 3, "three entries")
+	h.assert_eq(max_idx, 2, "max idx is 2 after normalize (0, 1, 2)")
+end)
+
+h.test("normalize_hashes: preserves insertion order", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
+
+	for i = 3, 6 do
+		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
+	end
+
+	-- Ascending idx values, insertion order == first/second/third/fourth.
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'first',  10)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'second', 500)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'third',  9000)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 6, 'fourth', 100000)")
+
+	h.normalize_hashes(db)
+
+	local order = {}
+	for row in db:nrows("select key from relationships where parent = 2 order by idx") do
+		order[#order + 1] = row.key
+	end
+	h.assert_eq(order[1], "first",  "first at idx 0")
+	h.assert_eq(order[2], "second", "second at idx 1")
+	h.assert_eq(order[3], "third",  "third at idx 2")
+	h.assert_eq(order[4], "fourth", "fourth at idx 3")
+end)
+
+h.test("normalize_hashes: does NOT touch array idx values", function()
+	local db = h.fresh_db()
+	-- Set up a hash AND an array under root.
+	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash)
+	exec(db, "insert into hsa (type) values ('a')")  -- 3 (array)
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'a', 1)")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 4
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")  -- 5
+
+	-- Put both in with sparse idx.
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 100)")
+	exec(db, "insert into relationships (parent, child, idx) values (3, 5, 100000)")
+
+	h.normalize_hashes(db)
+
+	-- Hash entry renumbered.
+	local hash_idx
+	for row in db:nrows("select idx from relationships where parent = 2 and key = 'x'") do
+		hash_idx = row.idx
+	end
+	h.assert_eq(hash_idx, 0, "hash entry normalized to idx 0")
+
+	-- Array entry unchanged.
+	local array_idx
+	for row in db:nrows("select idx from relationships where parent = 3") do
+		array_idx = row.idx
+	end
+	h.assert_eq(array_idx, 100000, "array entry idx preserved (100000)")
+end)
+
+h.test("normalize_hashes: multiple hash parents normalized independently", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash A)
+	exec(db, "insert into hsa (type) values ('h')")  -- 3 (hash B)
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'ha', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'hb', 1)")
+
+	for i = 4, 7 do
+		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
+	end
+
+	-- Hash A: two entries at sparse idx.
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 500)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'y', 900)")
+	-- Hash B: two entries at sparse idx.
+	exec(db, "insert into relationships (parent, child, key, idx) values (3, 6, 'p', 1000)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (3, 7, 'q', 2000)")
+
+	h.normalize_hashes(db)
+
+	-- Each hash independently 0..1.
+	local a_max, b_max
+	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do a_max = row.m end
+	for row in db:nrows("select max(idx) as m from relationships where parent = 3") do b_max = row.m end
+	h.assert_eq(a_max, 1, "hash A: dense 0..1")
+	h.assert_eq(b_max, 1, "hash B: dense 0..1")
+end)
+
+h.test("normalize_hashes: no-op on already-dense hash", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
+
+	for i = 3, 5 do
+		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
+	end
+
+	-- Already dense: idx 0, 1, 2.
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 1)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 2)")
+
+	h.normalize_hashes(db)
+
+	local max_idx
+	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
+		max_idx = row.m
+	end
+	h.assert_eq(max_idx, 2, "still dense 0..2, order preserved")
+end)
+

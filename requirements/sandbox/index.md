@@ -142,7 +142,7 @@ Discussed in detail at [ideas/caspian/sandboxing-primitives](https://puck.uno/id
 
 ## What sandboxing is not
 
-- **Not a full-syscall sandbox.** Sandbox restricts filesystem view only. A block inside a sandbox can still open network sockets, run subprocesses, allocate memory. Constraining those is the role of [grants](https://puck.uno/requirements/roles/) and `%chain`, which compose with sandboxing but are separate concerns.
+- **Not a full-syscall sandbox.** Sandbox restricts filesystem view only. A block inside a sandbox can still open network sockets, run subprocesses, allocate memory. Constraining those is the role of [grants](https://puck.uno/requirements/roles/) — a separate mechanism that composes with sandboxing.
 - **Not a security boundary against the same-process attacker.** A malicious Lua library called from inside the sandbox that finds a kernel escape or manipulates the engine's saved fds is not stopped by this mechanism. Sandboxes give a bounded filesystem view; they don't turn user code into hostile-code territory.
 - **Not a resource cap.** No CPU limit, no memory limit, no wall-clock limit. Cgroups is a separate mechanism; not part of the sandbox surface.
 - **Not cross-platform.** Linux-only. macOS and Windows have different sandboxing primitives (`sandbox_init` on macOS, AppContainer on Windows); if Caspian ever targets them, the abstraction may broaden, but for V1 the surface is Linux-native.

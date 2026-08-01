@@ -12,7 +12,7 @@
 
 Each call returns a fresh hash representing state at the moment of the call — the manifest is not a live view.
 
-**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%fetch.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, `%chain` seeding, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
+**One purpose of the manifest is to serve as a configuration file for the engine.** Beyond its role as a runtime introspection surface, the manifest is also the intended vehicle for engine-launch configuration — settings that a project applies once at startup rather than repeating in every script. Examples of what configuration might live in the manifest include [`%fetch.parsers`](https://puck.uno/requirements/non-caspian-mime-types#the-parser-registry) registrations for non-Caspian MIME types, faucet and sink setup, initial capability grants, and any other engine-level state a project wants applied automatically. This dual role — read-in configuration plus read-out state — is intentional: the same shape describes what the engine will run and what it is running. Concrete details of the configuration surface will be filled in as it stabilizes.
 
 ## Sections
 
@@ -43,7 +43,7 @@ Every section is a hash; the fields inside each are as follows.
 }
 ~~~
 
-The engine records a wall-clock timestamp at process start (this becomes `time.start`) and initializes the step counter at `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. All values are stable for a given call — they reflect the moment of the manifest call, not whatever happens between accessing the returned hash and reading its fields. Step semantics are covered in [`%chain.steps`](https://puck.uno/requirements/chain/methods/steps). <!-- STALE: %chain.X syntax being reworked -->
+The engine records a wall-clock timestamp at process start (this becomes `time.start`) and initializes the step counter at `0`. When `%engine.manifest` is called, the engine captures the current wall-clock timestamp (`time.stop`), computes `time.run` as the delta, and reads the current step counter. All values are stable for a given call — they reflect the moment of the manifest call, not whatever happens between accessing the returned hash and reading its fields. <!-- STALE: step-semantics doc reference — the old %chain.steps has no current home; migration target TBD when the feature is re-defined. -->
 
 ### `os`
 

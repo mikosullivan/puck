@@ -4,7 +4,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_built_in_hash",
-	"role": "spec for Caspian's built-in hash class — ordered key-value map. Covers the literal form, key/value semantics (string keys, arbitrary values), insertion-ordered iteration, the guaranteed method surface (fetch, set, delete, keys, values, each, length, containment tests), and an opt-in note_deleted feature for recording explicit deletions that layered-lookup consumers like %chain and scope frames build on.",
+	"role": "spec for Caspian's built-in hash class — ordered key-value map. Covers the literal form, key/value semantics (string keys, arbitrary values), insertion-ordered iteration, the guaranteed method surface (fetch, set, delete, keys, values, each, length, containment tests), and an opt-in note_deleted feature for recording explicit deletions that layered-lookup consumers like scope frames build on.",
 	"status": "stub — literal form, ordering-preserved rule, and note_deleted opt-in feature spec'd; broader method surface TBD",
 	"audience": "developers writing Caspian; engine implementers"
 }}
@@ -110,7 +110,7 @@ $hsh.deleted? 'a' # false
 
 ### Why this exists
 
-Layered lookup patterns — `%chain` frames, scope frames, and similar walk-a-chain-of-hashes designs — need to distinguish "this layer never had the key" from "this layer explicitly deleted it." Without a tombstone marker, deleting a key in an inner layer silently un-shadows whatever was in an outer layer. The consumer (chain runtime, scope runtime, etc.) opts each frame in with `.note_deleted = true` so the walker can stop on an explicit delete instead of falling through.
+Layered lookup patterns — scope frames and similar walk-a-chain-of-hashes designs — need to distinguish "this layer never had the key" from "this layer explicitly deleted it." Without a tombstone marker, deleting a key in an inner layer silently un-shadows whatever was in an outer layer. The consumer (scope runtime, etc.) opts each frame in with `.note_deleted = true` so the walker can stop on an explicit delete instead of falling through.
 
 ## Freezing fields
 

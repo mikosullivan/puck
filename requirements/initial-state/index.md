@@ -19,11 +19,11 @@ Caspian tracks which role owns the code that is currently executing. The first t
 
 The current frame's role is exposed as [`%role`](https://puck.uno/requirements/roles/#role); see the roles spec for the full surface.
 
-<!-- STALE: %chain.X syntax being reworked — most of the rest of this doc describes %chain.X as if %chain still carried methods; the model has changed (%chain is now permission-only). See [chain/index](https://puck.uno/requirements/chain/). -->
+<!-- STALE: %chain.X syntax being reworked — most of the rest of this doc describes %chain.X as if %chain still carried methods; the model has changed (%chain is now permission-only). See [chain/index](https://puck.uno/archive/003/misc/chain-old/). -->
 
 ## The chain is populated from `%engine`
 
-Most of the methods user code reaches for at runtime live on [`%chain`](https://puck.uno/requirements/chain/), not on `%engine` directly. The chain is where capabilities propagate down through the call tree; the engine is the user-only gateway that hands the host's provisioned resources up to the chain in the first place.
+Most of the methods user code reaches for at runtime live on [`%chain`](https://puck.uno/archive/003/misc/chain-old/), not on `%engine` directly. The chain is where capabilities propagate down through the call tree; the engine is the user-only gateway that hands the host's provisioned resources up to the chain in the first place.
 
 At bootstrap, the engine walks every host-provisioned `%engine` slot and seeds the corresponding chain capability so user code (and, where granted, downstream roles) can reach it.
 
@@ -34,13 +34,13 @@ At bootstrap, the engine walks every host-provisioned `%engine` slot and seeds t
 | `%engine` slot (user-only) | Seeded as | What it reaches |
 |---|---|---|
 | `%engine.argv` | `%chain.argv` | Command-line arguments. |
-| `%engine.stdin` | `%chain.stdin` | Input channel. |
-| `%engine.stdout` | `%chain.stdout` | Primary output. |
-| `%engine.stderr` | `%chain.stderr` | Diagnostic output. |
-| `%engine.tmp` | `%chain.tmp` | Temp-dir capability. |
-| `%engine.puck` | `%chain.puck` | Object download by URL. |
-| `%engine.encryption` | `%chain.encryption` | Cryptographic primitives (host's crypto). |
-| `%engine.net` | `%chain.net` | Networking — HTTP, sockets, UDS. |
+| `%engine.stdin` | `%stdin` | Input channel. |
+| `%engine.stdout` | `%stdout` | Primary output. |
+| `%engine.stderr` | `%stderr` | Diagnostic output. |
+| `%engine.tmp` | `%tmp` | Temp-dir capability. |
+| `%engine.puck` | `%puck` | Object download by URL. |
+| `%engine.encryption` | `%encryption` | Cryptographic primitives (host's crypto). |
+| `%engine.net` | `%net` | Networking — HTTP, sockets, UDS. |
 | `%engine.env` | `%chain.env` | Environment variables. |
 | `%engine.forks` | `%chain.forks` | Process forking. |
 | `%engine.fs` | `%fs` | Filesystem dirjail — the filesystem entry point. |
@@ -54,24 +54,24 @@ The host decides what to provision; the engine does the seeding mechanically. If
 A handful of chain capabilities are pure runtime introspection or engine-internal accounting — they don't reach outside the script, so they're built into the engine itself rather than provisioned by the host:
 
 - `%chain.steps` — Caspian-level evaluation step counter.
-- `%chain.timeout` — wall-clock budget for a block. Uses an engine-internal clock (not a chain-mediated capability); the surface itself is a chain-only block-scoping construct.
-- `%chain.timer` — elapsed-time measurement around a block. Same — uses the engine-internal clock, is itself a chain-only construct.
+- `%timeout` — wall-clock budget for a block. Uses an engine-internal clock (not a chain-mediated capability); the surface itself is a chain-only block-scoping construct.
+- `%timer` — elapsed-time measurement around a block. Same — uses the engine-internal clock, is itself a chain-only construct.
 
 These are present on the chain at initialization unconditionally.
 
 ### Default-grant status
 
-Whether each chain capability propagates across role boundaries by default is set at this moment, per the [Two layers of grant](https://puck.uno/requirements/chain/#two-layers-of-grant) policy. Default-granted at initialization:
+Whether each chain capability propagates across role boundaries by default is set at this moment, per the [Two layers of grant](https://puck.uno/archive/003/misc/chain-old/#two-layers-of-grant) policy. Default-granted at initialization:
 
-- `%chain.puck`
-- `%chain.encryption`
-- `%chain.timeout`
-- `%chain.timer`
+- `%puck`
+- `%encryption`
+- `%timeout`
+- `%timer`
 - `%chain.steps`
 
 Everything else is default-deny — present on the chain for `user`, but a role boundary resets visibility unless `user` explicitly grants it through.
 
-For the full catalog of chain methods and the canonical spec of the grant mechanism, see [`chain/`](https://puck.uno/requirements/chain/).
+For the full catalog of chain methods and the canonical spec of the grant mechanism, see [`chain/`](https://puck.uno/archive/003/misc/chain-old/).
 
 ## The ambient hash slot is empty
 
@@ -79,7 +79,7 @@ For the full catalog of chain methods and the canonical spec of the grant mechan
 `%chain['key']` is the ambient hash for arbitrary key/value context. At initialization it's empty — no entries, no inherited values. The first user statement that writes to it (`%chain['request_id'] = '...'`) creates the first entry.
 
 <!-- STALE: ambient-hash-slot moving to %amber -->
-**Cleared at role boundaries.** Entries in `%chain[]` do not cross a role boundary. When a call transitions into a different role, the callee's frame sees an empty ambient hash — whatever the caller set is invisible to the callee's role, and nothing the callee sets propagates back or forward through further role transitions. Descendants that stay within the same role see the entries the parent frame set (that's the "flows downward within a role" property of `%chain` — see [chain § Frame inheritance](https://puck.uno/requirements/chain/#frame-inheritance)); crossing into a different role resets the ambient hash to empty as part of the same role-boundary reset that resets grants (see [chain § Role boundaries reset everything](https://puck.uno/requirements/chain/#role-boundaries-reset-everything)).
+**Cleared at role boundaries.** Entries in `%chain[]` do not cross a role boundary. When a call transitions into a different role, the callee's frame sees an empty ambient hash — whatever the caller set is invisible to the callee's role, and nothing the callee sets propagates back or forward through further role transitions. Descendants that stay within the same role see the entries the parent frame set (that's the "flows downward within a role" property of `%chain` — see [chain § Frame inheritance](https://puck.uno/archive/003/misc/chain-old/#frame-inheritance)); crossing into a different role resets the ambient hash to empty as part of the same role-boundary reset that resets grants (see [chain § Role boundaries reset everything](https://puck.uno/archive/003/misc/chain-old/#role-boundaries-reset-everything)).
 
 ## The call chain has one frame
 
@@ -91,16 +91,16 @@ The chain's frame stack contains exactly one entry — the entry-point frame, ru
 - **`%role` is reachable in first frame** — reading `%role` before any grant modification returns `'user'` without raising.
 - **`%role` is not on `%chain`** — introspection of `%chain`'s catalog does not list `role`; `%role` is a top-level global.
 - **Every provisioned `%engine` slot has a matching `%chain` capability** — for each `%engine.X` the host wired, `%chain.X` is present and callable in the first user statement.
-- **Absent `%engine` slot leaves `%chain` capability absent** — a host that omits `%engine.net` leaves `%chain.net` unreachable; user code raises on use.
+- **Absent `%engine` slot leaves `%chain` capability absent** — a host that omits `%engine.net` leaves `%net` unreachable; user code raises on use.
 - **`%chain.argv` mirrors `%engine.argv`** — reading `%chain.argv` returns the same array as `%engine.argv`.
-- **`%chain.stdin`, `%chain.stdout`, `%chain.stderr` mirror their engine slots** — each capability delegates to its host-installed callback.
-- **`%chain.tmp`, `%chain.puck`, `%chain.encryption`, `%chain.net`, `%chain.env`, `%chain.forks`, `%fs` mirror their engine slots** — each capability is present when the host provisioned the corresponding `%engine.X`.
+- **`%stdin`, `%stdout`, `%stderr` mirror their engine slots** — each capability delegates to its host-installed callback.
+- **`%tmp`, `%puck`, `%encryption`, `%net`, `%chain.env`, `%chain.forks`, `%fs` mirror their engine slots** — each capability is present when the host provisioned the corresponding `%engine.X`.
 - **Clock and randomness via `%('core:X')`** — `%('core:now')` and `%('core:random')` return the clock and RNG sources respectively; no chain slot, no engine slot.
 - **`%chain.steps` is present unconditionally** — the step counter is readable from the first statement.
-- **`%chain.timeout` is present unconditionally** — a `%chain.timeout` block works without host provisioning beyond the clock.
-- **`%chain.timer` is present unconditionally** — a `%chain.timer` block works without host provisioning beyond the clock.
-- **Default-granted capabilities cross a role boundary** — `%chain.puck`, `%chain.encryption`, `%chain.timeout`, `%chain.timer`, `%chain.steps` are visible in a non-`user` frame without explicit grant.
-- **Non-default-granted capabilities are absent across a role boundary** — `%chain.net`, `%chain.stdin`, `%chain.stdout`, `%chain.stderr`, `%chain.tmp`, `%chain.env`, `%chain.forks`, `%chain.argv`, `%fs` raise in a non-`user` frame with no grant.
+- **`%timeout` is present unconditionally** — a `%timeout` block works without host provisioning beyond the clock.
+- **`%timer` is present unconditionally** — a `%timer` block works without host provisioning beyond the clock.
+- **Default-granted capabilities cross a role boundary** — `%puck`, `%encryption`, `%timeout`, `%timer`, `%chain.steps` are visible in a non-`user` frame without explicit grant.
+- **Non-default-granted capabilities are absent across a role boundary** — `%net`, `%stdin`, `%stdout`, `%stderr`, `%tmp`, `%chain.env`, `%chain.forks`, `%chain.argv`, `%fs` raise in a non-`user` frame with no grant.
 - **`%chain[]` is empty at start** — reading `%chain['anything']` before any write returns the empty/missing value. <!-- STALE: ambient-hash-slot moving to %amber -->
 - **First `%chain[] = ...` creates the entry** — after `%chain['k'] = 'v'`, `%chain['k']` returns `'v'`. <!-- STALE: ambient-hash-slot moving to %amber -->
 - **`%chain[]` clears at role boundary** — a call into a different role sees an empty ambient hash even after the caller populated it. <!-- STALE: ambient-hash-slot moving to %amber -->

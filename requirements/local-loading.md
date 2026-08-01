@@ -15,7 +15,7 @@ Two mechanisms reach local files from Caspian:
 - **`local:` URLs** address files explicitly authored as local — `%fetch('local:/widget.casp')` walks the `%fetch.locals` array. Only the user role can use `local:`.
 - **URL mapping** redirects http/https URL fetches to local directories — `%fetch.maps['https://foo.bar/'] = '/home/miko/gup'` makes any fetch under `https://foo.bar/` resolve to a file under `/home/miko/gup`. Reads are ambient; only the user role can register or modify mappings.
 
-**Framing.** Local-file lookup is CLI behavior, not engine behavior. The Caspian engine has no ambient filesystem access — it can only reach files the CLI hands it via `%chain`'s fetch surface. When any script fetches a URL, the CLI walks `%fetch`'s search path (which includes URL mapping, the `local:` mechanism, local caches, and the network), reads and evaluates the first hit, and hands the resulting value back to the engine as though the URL had been fetched remotely. Consistent with Caspian's sealed-scope model: no ambient globals, no engine-level reach into the developer's environment.
+**Framing.** Local-file lookup is CLI behavior, not engine behavior. The Caspian engine has no ambient filesystem access — it can only reach files the CLI hands it via `%fetch`. When any script fetches a URL, the CLI walks `%fetch`'s search path (which includes URL mapping, the `local:` mechanism, local caches, and the network), reads and evaluates the first hit, and hands the resulting value back to the engine as though the URL had been fetched remotely. Consistent with Caspian's sealed-scope model: no ambient globals, no engine-level reach into the developer's environment.
 
 ## The `local:` scheme
 
@@ -40,7 +40,7 @@ The two-slash form (`local://widget.casp` with the authority reading `widget.cas
 
 ## The `%fetch.locals` array
 
-`%fetch.locals` is a plain array of directory paths. Local-file lookups walk the array in order until the target file is found. Access is **user-role only** and **process-scoped** — untrusted roles have no visibility into or reach on the array, and modifications persist for the whole process run (they do not vanish when a modifying script's frame returns). Because `%fetch.locals` is only ever manipulated by the user role, it does not live on `%chain`.
+`%fetch.locals` is a plain array of directory paths. Local-file lookups walk the array in order until the target file is found. Access is **user-role only** and **process-scoped** — untrusted roles have no visibility into or reach on the array, and modifications persist for the whole process run (they do not vanish when a modifying script's frame returns).
 
 Because it's a plain array, any array operation works: `<<` to append, `.prepend` to prepend, direct assignment to replace, iteration to inspect, dedup or splice at any position. The script picks the semantics it wants; nothing about `%fetch.locals` is special beyond the fact that the CLI reads it when resolving a `local:` fetch.
 
@@ -156,7 +156,7 @@ When a mapping resolves a URL to a local path but the file isn't there, the fetc
 
 ### Persistence
 
-`%fetch.maps` persists for the whole process run. `%fetch` doesn't live on `%chain`, so a mapping doesn't vanish when the script that added it returns.
+`%fetch.maps` persists for the whole process run — mappings don't vanish when the script that added them returns.
 
 ### Plain hash
 

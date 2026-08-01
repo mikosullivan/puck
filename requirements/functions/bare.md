@@ -17,7 +17,7 @@ Inside the body:
 
 - **No `%self`.** The bare function isn't bound to any receiver. Referring to `%self` inside a bare function raises.
 - **No captured outer variables.** Even if the bare function is defined inside another function's body, it does not capture that outer function's locals or any other variable binding.
-- **What's reachable.** The arguments passed in (via the parameter list), the names defined locally within the body, [`%chain`](https://puck.uno/requirements/chain/), and — when the function was declared with the named form (`function &name(...) end`) — the surrounding [Module](https://puck.uno/requirements/modules/)'s methods and classes via [`%module`](https://puck.uno/requirements/global-methods/module/).
+- **What's reachable.** The arguments passed in (via the parameter list), the names defined locally within the body, [`%chain`](https://puck.uno/archive/003/misc/chain-old/), and — when the function was declared with the named form (`function &name(...) end`) — the surrounding [Module](https://puck.uno/requirements/modules/)'s methods and classes via [`%module`](https://puck.uno/requirements/global-methods/module/).
 
 ## Sealed scope
 
@@ -44,7 +44,7 @@ Named-form functions (`function &foo(...) end`) add a limited surface: the enclo
 
 The property depends on both halves working together: sealed lexical scope for variables keeps the function from reading arbitrary bindings by name, and `%chain`'s per-frame capability model keeps ambient surfaces from leaking in without explicit grant. Bare functions supply the first half; `%chain` supplies the second. Neither half alone would be enough — a language with sealed lexical scope but ambient globals is still a wide-open attack surface, and a language with capability-based ambient access but lexical capture leaks state through the closure. Caspian's guarantee holds because both mechanisms line up.
 
-See [`%chain`](https://puck.uno/requirements/chain/) for how the capability side works — grant propagation, role boundaries, default-deny vs. default-grant per surface.
+See [`%chain`](https://puck.uno/archive/003/misc/chain-old/) for how the capability side works — grant propagation, role boundaries, default-deny vs. default-grant per surface.
 
 ## Definition
 

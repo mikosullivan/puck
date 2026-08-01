@@ -1538,14 +1538,14 @@ function M.render_request(ctx)
 
     -- Pull headings out of the original markdown source — before any
     -- directive expansion or file-include substitution. Drives both
-    -- the TOC (h2/h3 only) and the section-chip eligibility check in
+    -- the TOC (h2-h4) and the section-chip eligibility check in
     -- inject_issue_links (any id in the set).
     local all_md_headings = extract_headings_from_md(md)
     local toc_headings = {}
     local original_heading_ids = {}
     for _, h in ipairs(all_md_headings) do
         original_heading_ids[h.id] = true
-        if h.level <= 3 then
+        if h.level <= 4 then
             toc_headings[#toc_headings + 1] = h
         end
     end

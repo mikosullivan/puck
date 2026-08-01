@@ -20,7 +20,7 @@ The `caspian` binary exposes `--self-test` as a subcommand. Same command whether
 `--self-test` needs Bryton itself and a tree of tests.
 
 - **Bryton** — loaded via `%fetch`, the usual way.
-- **The test tree** — downloaded as a **tar.gz** from `caspian.uno` and extracted into a fresh `%chain.tmp` directory. Bryton runs against the extracted tree.
+- **The test tree** — downloaded as a **tar.gz** from `caspian.uno` and extracted into a fresh `%tmp` directory. Bryton runs against the extracted tree.
 
 See [self-test process](self-test-process) for the mechanics.
 

@@ -9,7 +9,7 @@
 }}
 ~~~
 
-**User-only.** Only code running in the `user` role can call `%fs`. Non-user roles have no `%fs` at all — a call raises. This is a hard rule of the role system, distinct from chain-mediated capability propagation: `%fs` is not on the chain, doesn't propagate through frames, isn't grantable via `%chain`.
+**User-only.** Only code running in the `user` role can call `%fs`. Non-user roles have no `%fs` at all — a call raises. This is a hard rule of the role system: `%fs` has no capability-grant surface at all — there's no way to hand `%fs` access to a non-user role.
 
 `%fs` is the user-only **filesystem namespace**. It carries the filesystem access surface (dirjail rooted at wherever the host has configured) plus a handful of filesystem-adjacent methods that don't live on ordinary dirs. To reach the actual root dir handle, use `%fs.root`:
 
