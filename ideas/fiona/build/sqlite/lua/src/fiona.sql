@@ -47,11 +47,20 @@ create table hsa (
 	check (type = 's' or value is null)
 );
 
--- every row is immutable; changes happen via insert + delete, never update.
+-- Identity (hsa_pk, type) is immutable; everything else is content and
+-- follows the CHECK constraints on the columns. In practice that means
+-- scalars can freely UPDATE their st/value (change a counter, retype a
+-- number to a string) but hashes and arrays can't grow st/value because
+-- the CHECKs above forbid non-null st or value for type in ('h','a').
 create trigger hsa_no_update
 before update on hsa
 begin
-	select raise(abort, 'hsa rows are immutable');
+	select case
+		when new.hsa_pk is not old.hsa_pk
+			then raise(abort, 'hsa.hsa_pk is immutable')
+		when new.type is not old.type
+			then raise(abort, 'hsa.type is immutable')
+	end;
 end;
 
 -- the root hash cannot be deleted. it's always hsa_pk = 1 because it's
@@ -121,8 +130,11 @@ begin
 	end;
 end;
 
--- Immutability: every column is immutable except idx, which can shift as
--- items are inserted or reordered within an array.
+-- Identity is (rel_pk, parent, key) — those spell out "which slot this
+-- edge is." child is content (what the slot holds) and can change in
+-- place; idx is position and is managed by the shift triggers below.
+-- The purge_after_update_of_child trigger downstream keeps GC firing
+-- when child changes so orphaned rows still get collected.
 create trigger relationships_no_update
 before update on relationships
 begin
@@ -131,8 +143,6 @@ begin
 			then raise(abort, 'relationships.rel_pk is immutable')
 		when new.parent is not old.parent
 			then raise(abort, 'relationships.parent is immutable')
-		when new.child is not old.child
-			then raise(abort, 'relationships.child is immutable')
 		when new.key is not old.key
 			then raise(abort, 'relationships.key is immutable')
 	end;
@@ -242,6 +252,28 @@ end;
 -- need that guarantee invoke full_sweep().
 create trigger relationships_purge_after_delete
 after delete on relationships
+begin
+	delete from hsa
+	where hsa_pk = old.child
+		and hsa_pk <> 1
+		and not exists (
+			with recursive ancestors(pk) as (
+				select old.child
+				union
+				select r.parent from relationships r
+				join ancestors on r.child = ancestors.pk
+			)
+			select 1 from ancestors where pk = 1
+		);
+end;
+
+-- Same GC walk on child-swap. When set_hash_element / set_array_element
+-- change a relationship's child in place (the mutable-child path), the
+-- OLD child might no longer be reachable — same ancestor walk decides.
+-- NEW.child is safe because the row still points at it, so the walk
+-- from NEW.child would find root; we only check OLD.child.
+create trigger relationships_purge_after_update_of_child
+after update of child on relationships
 begin
 	delete from hsa
 	where hsa_pk = old.child

@@ -318,24 +318,44 @@ h.test("reject update of type", function()
 		"immutable", "update type")
 end)
 
-h.test("reject update of st", function()
+h.test("reject update of hsa_pk", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'hi')")
-	h.assert_raises(function() exec(db, "update hsa set st = 'n' where hsa_pk = 2") end,
-		"immutable", "update st")
+	exec(db, "insert into hsa (type) values ('h')")
+	h.assert_raises(function() exec(db, "update hsa set hsa_pk = 42 where hsa_pk = 2") end,
+		"immutable", "update hsa_pk")
 end)
 
-h.test("reject update of value", function()
+h.test("allow update of st on a scalar (content-mutable)", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'hi')")
-	h.assert_raises(function() exec(db, "update hsa set value = 'bye' where hsa_pk = 2") end,
-		"immutable", "update value")
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 42)")
+	exec(db, "update hsa set st = 's', value = 'now a string' where hsa_pk = 2")
+	for row in db:nrows("select st, value from hsa where hsa_pk = 2") do
+		h.assert_eq(row.st, "s", "st updated")
+		h.assert_eq(row.value, "now a string", "value updated")
+	end
 end)
 
-h.test("reject update of the root row", function()
+h.test("allow update of value on a scalar (content-mutable)", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 42)")
+	exec(db, "update hsa set value = 43 where hsa_pk = 2")
+	for row in db:nrows("select value from hsa where hsa_pk = 2") do
+		h.assert_eq(row.value, 43, "value bumped in place")
+	end
+end)
+
+h.test("update on scalar still enforced by CHECK — bad st/value combo rejected", function()
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 42)")
+	h.assert_raises(function()
+		exec(db, "update hsa set value = 'oops' where hsa_pk = 2")
+	end, "CHECK", "st='n' but value is text")
+end)
+
+h.test("reject update of the root row's type", function()
 	local db = h.fresh_db()
 	h.assert_raises(function() exec(db, "update hsa set type = 'a' where hsa_pk = 1") end,
-		"immutable", "update root row")
+		"immutable", "update root row's type")
 end)
 
 -- ------------------------------------------------------------

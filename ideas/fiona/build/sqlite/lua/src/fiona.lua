@@ -163,54 +163,52 @@ function Db:set_hash_element(parent_pk, key, child_pk)
 		error("set_hash_element: child_pk must be a number; got " .. type(child_pk))
 	end
 
-	atomic(self._conn, function()
-		-- Look up existing (parent, key). Need both child (for no-op check)
-		-- and idx (for position preservation on replace).
-		local existing_idx, existing_child
-		local sel = self._conn:prepare("select idx, child from relationships where parent = :p and key = :k")
-		sel:bind_names({p = parent_pk, k = key})
+	-- Look up existing (parent, key) — if present, we UPDATE the child
+	-- in place (identity-immutable, content-mutable). If absent, we
+	-- INSERT a fresh entry at max_idx + 1.
+	local existing_child
+	local sel = self._conn:prepare("select child from relationships where parent = :p and key = :k")
+	sel:bind_names({p = parent_pk, k = key})
 
-		if sel:step() == sqlite3.ROW then
-			existing_idx = sel:get_value(0)
-			existing_child = sel:get_value(1)
+	if sel:step() == sqlite3.ROW then
+		existing_child = sel:get_value(0)
+	end
+
+	sel:finalize()
+
+	-- Same child already there — nothing to do.
+	if existing_child == child_pk then
+		return
+	end
+
+	if existing_child then
+		-- UPDATE in place. The purge_after_update_of_child trigger fires
+		-- and GCs the old child if it's now unreachable.
+		local upd = self._conn:prepare("update relationships set child = :c where parent = :p and key = :k")
+		upd:bind_names({c = child_pk, p = parent_pk, k = key})
+		local rc = upd:step()
+		upd:finalize()
+
+		if rc ~= sqlite3.DONE then
+			error("set_hash_element: update failed — " .. self._conn:errmsg())
 		end
-
-		sel:finalize()
-
-		-- No-op if setting to the same child. If we blindly went through
-		-- delete+insert here, BR would GC the child during the delete and
-		-- the follow-up insert would fail on the child FK.
-		if existing_child == child_pk then
-			return
-		end
-
-		local target_idx
-
-		if existing_idx then
-			-- Replace at same position: DELETE + INSERT.
-			local del = self._conn:prepare("delete from relationships where parent = :p and key = :k")
-			del:bind_names({p = parent_pk, k = key})
-			del:step()
-			del:finalize()
-			target_idx = existing_idx
-		else
-			-- New key: append at max+1 (or 0 if empty).
-			local max_sel = self._conn:prepare("select coalesce(max(idx) + 1, 0) from relationships where parent = :p")
-			max_sel:bind_names({p = parent_pk})
-			max_sel:step()
-			target_idx = max_sel:get_value(0)
-			max_sel:finalize()
-		end
+	else
+		-- New key — append at max+1 (or 0 if empty).
+		local max_sel = self._conn:prepare("select coalesce(max(idx) + 1, 0) from relationships where parent = :p")
+		max_sel:bind_names({p = parent_pk})
+		max_sel:step()
+		local next_idx = max_sel:get_value(0)
+		max_sel:finalize()
 
 		local ins = self._conn:prepare("insert into relationships (parent, child, key, idx) values (:p, :c, :k, :i)")
-		ins:bind_names({p = parent_pk, c = child_pk, k = key, i = target_idx})
+		ins:bind_names({p = parent_pk, c = child_pk, k = key, i = next_idx})
 		local rc = ins:step()
 		ins:finalize()
 
 		if rc ~= sqlite3.DONE then
 			error("set_hash_element: insert failed — " .. self._conn:errmsg())
 		end
-	end)
+	end
 end
 
 --[[ {"in": {"parent_pk": "integer", "idx": "integer >= 0", "child_pk": "integer"}, "out": "nil"} ]]
@@ -231,33 +229,32 @@ function Db:set_array_element(parent_pk, idx, child_pk)
 		error("set_array_element: child_pk must be a number; got " .. type(child_pk))
 	end
 
-	atomic(self._conn, function()
-		-- Look up existing (parent, idx) — need the child for the no-op check.
-		local existing_child
-		local sel = self._conn:prepare("select child from relationships where parent = :p and idx = :i")
-		sel:bind_names({p = parent_pk, i = idx})
+	-- Same shape as set_hash_element: UPDATE in place if (parent, idx) is
+	-- occupied; INSERT at that idx if not.
+	local existing_child
+	local sel = self._conn:prepare("select child from relationships where parent = :p and idx = :i")
+	sel:bind_names({p = parent_pk, i = idx})
 
-		if sel:step() == sqlite3.ROW then
-			existing_child = sel:get_value(0)
+	if sel:step() == sqlite3.ROW then
+		existing_child = sel:get_value(0)
+	end
+
+	sel:finalize()
+
+	if existing_child == child_pk then
+		return
+	end
+
+	if existing_child then
+		local upd = self._conn:prepare("update relationships set child = :c where parent = :p and idx = :i")
+		upd:bind_names({c = child_pk, p = parent_pk, i = idx})
+		local rc = upd:step()
+		upd:finalize()
+
+		if rc ~= sqlite3.DONE then
+			error("set_array_element: update failed — " .. self._conn:errmsg())
 		end
-
-		sel:finalize()
-
-		-- No-op if setting to the same child. Blind delete+insert would
-		-- let BR GC the child before the reinsert.
-		if existing_child == child_pk then
-			return
-		end
-
-		if existing_child then
-			-- Replace: DELETE first (shift-down fires but is undone by the
-			-- follow-up INSERT's shift-up — net zero sibling motion).
-			local del = self._conn:prepare("delete from relationships where parent = :p and idx = :i")
-			del:bind_names({p = parent_pk, i = idx})
-			del:step()
-			del:finalize()
-		end
-
+	else
 		local ins = self._conn:prepare("insert into relationships (parent, child, idx) values (:p, :c, :i)")
 		ins:bind_names({p = parent_pk, c = child_pk, i = idx})
 		local rc = ins:step()
@@ -266,7 +263,7 @@ function Db:set_array_element(parent_pk, idx, child_pk)
 		if rc ~= sqlite3.DONE then
 			error("set_array_element: insert failed — " .. self._conn:errmsg())
 		end
-	end)
+	end
 end
 
 ------------------------------------------------------------

@@ -135,7 +135,9 @@ h.test("set_array_element to the SAME child is a no-op", function()
 	end
 end)
 
-h.test("set_array_element pathological case: replacing with a descendant of the old child raises and rolls back", function()
+h.test("set_array_element: replacing with a descendant of the old child now works (formerly pathological)", function()
+	-- With mutable-child, this is a single UPDATE — same logic as the
+	-- hash case above.
 	local db = fiona.get_db(":memory:", "rw")
 
 	local arr = db:add_array()
@@ -147,27 +149,21 @@ h.test("set_array_element pathological case: replacing with a descendant of the 
 	local deep_child = db:add_scalar("under old_child")
 	db:set_hash_element(old_child, "sub", deep_child)
 
-	local hsa_before
-	for row in db._conn:nrows("select count(*) as c from hsa") do
-		hsa_before = row.c
-	end
-
-	h.assert_raises(function()
-		db:set_array_element(arr, 0, deep_child)
-	end, "FOREIGN KEY", "FK error when new child was a descendant of old child")
-
-	-- Savepoint should have restored everything.
-	local hsa_after
-	for row in db._conn:nrows("select count(*) as c from hsa") do
-		hsa_after = row.c
-	end
-	h.assert_eq(hsa_after, hsa_before, "savepoint rolled back — no hsa rows lost")
+	db:set_array_element(arr, 0, deep_child)  -- clean; used to raise FK
 
 	local child_after
 	for row in db._conn:nrows("select child from relationships where parent = " .. arr .. " and idx = 0") do
 		child_after = row.child
 	end
-	h.assert_eq(child_after, old_child, "original (arr, 0) → old_child edge restored")
+	h.assert_eq(child_after, deep_child, "arr[0] now points at deep_child")
+
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = " .. old_child) do
+		h.assert_eq(row.c, 0, "old_child was GCed")
+	end
+
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = " .. deep_child) do
+		h.assert_eq(row.c, 1, "deep_child survived")
+	end
 end)
 
 h.test("set_array_element raises on a read-only handle", function()

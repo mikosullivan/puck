@@ -296,12 +296,30 @@ h.test("reject update of parent", function()
 	end, "immutable", "update parent")
 end)
 
-h.test("reject update of child", function()
+h.test("allow update of child (content-mutable)", function()
 	local db = db_with_fixtures()
 	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
-	h.assert_raises(function()
-		exec(db, "update relationships set child = 5 where key = 'x'")
-	end, "immutable", "update child")
+	exec(db, "update relationships set child = 5 where key = 'x'")
+	for row in db:nrows("select child from relationships where key = 'x'") do
+		h.assert_eq(row.child, 5, "child swung in place")
+	end
+end)
+
+h.test("update of child fires purge trigger — old child is GCed if unreachable", function()
+	-- Build root → h2, then swap h2 to a fresh h3. h2 should be GCed
+	-- because the (root, 'x') edge is the only thing anchoring it.
+	local db = h.fresh_db()
+	exec(db, "insert into hsa (type) values ('h')")  -- 2
+	exec(db, "insert into hsa (type) values ('h')")  -- 3
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
+	exec(db, "update relationships set child = 3 where parent = 1 and key = 'x'")
+
+	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 2") do
+		h.assert_eq(row.c, 0, "old child (h2) was GCed via purge_after_update_of_child")
+	end
+	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 3") do
+		h.assert_eq(row.c, 1, "new child (h3) survives — reachable via updated edge")
+	end
 end)
 
 h.test("reject update of key (hash parent)", function()

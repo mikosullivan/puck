@@ -178,12 +178,17 @@ h.test("set_hash_element preserves the hash element's index when replacing (alre
 	h.assert_eq(after.gamma, before.gamma, "gamma's idx unchanged")
 end)
 
-h.test("set_hash_element pathological case: replacing with a descendant of the old child raises and rolls back", function()
+h.test("set_hash_element: replacing with a descendant of the old child now works (formerly pathological)", function()
 	-- Setup: root → hash → old_parent → deep_child
-	-- Attempt: db:set_hash_element(hash, "key", deep_child)
-	--   The DELETE step orphans old_parent → BR deletes old_parent → cascade
-	--   removes (old_parent, "sub") → BR deletes deep_child → INSERT fails
-	--   on FK for deep_child. Documented V1 edge case; savepoint rolls back.
+	-- Call: db:set_hash_element(hash, "key", deep_child)
+	--   With the mutable-child move, this is a single UPDATE that swings
+	--   the (hash, "key") edge from old_parent to deep_child.
+	--   purge_after_update_of_child fires with OLD.child = old_parent:
+	--     walk upward from old_parent finds nothing (its only edge was the
+	--     one just re-pointed away), so old_parent gets GCed. Cascade
+	--     removes (old_parent, "sub"). purge_after_delete fires with
+	--     OLD.child = deep_child; walk from deep_child finds the newly
+	--     rewired (hash, "key") edge → root; deep_child survives.
 	local db = fiona.get_db(":memory:", "rw")
 
 	local hash = db:add_hash()
@@ -195,28 +200,24 @@ h.test("set_hash_element pathological case: replacing with a descendant of the o
 	local deep_child = db:add_scalar("i live under old_parent")
 	db:set_hash_element(old_parent, "sub", deep_child)
 
-	local hsa_before
-	for row in db._conn:nrows("select count(*) as c from hsa") do
-		hsa_before = row.c
-	end
+	db:set_hash_element(hash, "key", deep_child)  -- used to raise FK; now clean
 
-	h.assert_raises(function()
-		db:set_hash_element(hash, "key", deep_child)
-	end, "FOREIGN KEY", "FK error when new child was a descendant of old child")
-
-	-- Savepoint rollback should have restored every row.
-	local hsa_after
-	for row in db._conn:nrows("select count(*) as c from hsa") do
-		hsa_after = row.c
-	end
-	h.assert_eq(hsa_after, hsa_before, "savepoint rolled back — no hsa rows lost")
-
-	-- Concretely: the original edge is still there and pointing at old_parent.
+	-- The (hash, "key") edge now points at deep_child.
 	local child_after
 	for row in db._conn:nrows("select child from relationships where parent = " .. hash .. " and key = 'key'") do
 		child_after = row.child
 	end
-	h.assert_eq(child_after, old_parent, "original (hash, 'key') → old_parent edge restored")
+	h.assert_eq(child_after, deep_child, "hash['key'] now points at deep_child")
+
+	-- old_parent is gone (was only reachable through the just-rewired edge).
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = " .. old_parent) do
+		h.assert_eq(row.c, 0, "old_parent was GCed")
+	end
+
+	-- deep_child survives (reachable through the new edge).
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = " .. deep_child) do
+		h.assert_eq(row.c, 1, "deep_child survived — still reachable via new (hash, 'key') edge")
+	end
 end)
 
 h.test("set_hash_element raises on a read-only handle", function()
