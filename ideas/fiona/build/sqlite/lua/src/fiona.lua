@@ -51,7 +51,80 @@ function Db.new(conn, mode, path)
 		_conn = conn,
 		_mode = mode,
 		_path = path,
+		-- Prepared-statement cache, keyed by SQL text. Populated lazily by
+		-- Db:_stmt(). Statements live as long as the Db instance and are
+		-- finalized implicitly when the connection is closed.
+		_stmts = {},
 	}, Db)
+end
+
+-- Return a cached prepared statement, preparing on first use. The
+-- statement is reset() before return so it's ready to bind and step
+-- regardless of what any previous caller left it in (mid-scan, errored,
+-- or fully done). Callers still need to reset() a SELECT after
+-- consuming its ROW value so the read cursor doesn't hold state
+-- through the following write.
+--[[ {"in": {"sql": "string"}, "out": "prepared statement handle"} ]]
+function Db:_stmt(sql)
+	local stmt = self._stmts[sql]
+
+	if not stmt then
+		stmt = self._conn:prepare(sql)
+
+		if not stmt then
+			error("_stmt: prepare failed for '" .. sql .. "' — " .. self._conn:errmsg())
+		end
+
+		self._stmts[sql] = stmt
+	end
+
+	stmt:reset()
+	return stmt
+end
+
+-- One-value SELECT helper. Runs sql with the given name→value bindings
+-- (or nothing if binds is nil), returns column 0 of the first row, or
+-- nil if no row. Resets the statement after use so the read cursor
+-- doesn't hold state through any subsequent write on the same table.
+--
+-- Callers never touch prepare / bind / step / reset directly, so
+-- "forgot to reset" is not a possible bug.
+--[[ {"in": {"sql": "string", "binds": "table? — name→value map"}, "out": "any — column 0 of first row, or nil"} ]]
+function Db:_query_one(sql, binds)
+	local stmt = self:_stmt(sql)
+
+	if binds then
+		stmt:bind_names(binds)
+	end
+
+	local value
+
+	if stmt:step() == sqlite3.ROW then
+		value = stmt:get_value(0)
+	end
+
+	stmt:reset()
+	return value
+end
+
+-- Write helper. Runs sql with the given name→value bindings (or nothing
+-- if binds is nil), asserts step returns DONE, resets. `label` is the
+-- error prefix used if step didn't return DONE — pick one that identifies
+-- which caller failed (e.g., "add_hash: insert").
+--[[ {"in": {"sql": "string", "binds": "table? — name→value map", "label": "string — error prefix"}, "out": "nil"} ]]
+function Db:_exec(sql, binds, label)
+	local stmt = self:_stmt(sql)
+
+	if binds then
+		stmt:bind_names(binds)
+	end
+
+	local rc = stmt:step()
+	stmt:reset()
+
+	if rc ~= sqlite3.DONE then
+		error(label .. " failed — " .. self._conn:errmsg())
+	end
 end
 
 -- Run fn() atomically via a SAVEPOINT. Nests correctly if the caller
@@ -88,12 +161,7 @@ function Db:add_hash()
 		error("add_hash: database is opened in read-only mode ('r'); writes are not allowed")
 	end
 
-	local rc = self._conn:exec("insert into hsa (type, st, value) values ('h', null, null)")
-
-	if rc ~= sqlite3.OK then
-		error("add_hash: insert failed — " .. self._conn:errmsg())
-	end
-
+	self:_exec("insert into hsa (type, st, value) values ('h', null, null)", nil, "add_hash: insert")
 	return self._conn:last_insert_rowid()
 end
 
@@ -103,12 +171,7 @@ function Db:add_array()
 		error("add_array: database is opened in read-only mode ('r'); writes are not allowed")
 	end
 
-	local rc = self._conn:exec("insert into hsa (type, st, value) values ('a', null, null)")
-
-	if rc ~= sqlite3.OK then
-		error("add_array: insert failed — " .. self._conn:errmsg())
-	end
-
+	self:_exec("insert into hsa (type, st, value) values ('a', null, null)", nil, "add_array: insert")
 	return self._conn:last_insert_rowid()
 end
 
@@ -133,14 +196,10 @@ function Db:add_scalar(value)
 		error("add_scalar: value must be nil, boolean, number, or string — got " .. t .. " (use add_hash / add_array for collections)")
 	end
 
-	local stmt = self._conn:prepare("insert into hsa (type, st, value) values ('s', :st, :val)")
-	stmt:bind_names({st = st, val = stored})
-	local rc = stmt:step()
-	stmt:finalize()
-
-	if rc ~= sqlite3.DONE then
-		error("add_scalar: insert failed — " .. self._conn:errmsg())
-	end
+	self:_exec(
+		"insert into hsa (type, st, value) values ('s', :st, :val)",
+		{st = st, val = stored},
+		"add_scalar: insert")
 
 	return self._conn:last_insert_rowid()
 end
@@ -166,15 +225,9 @@ function Db:set_hash_element(parent_pk, key, child_pk)
 	-- Look up existing (parent, key) — if present, we UPDATE the child
 	-- in place (identity-immutable, content-mutable). If absent, we
 	-- INSERT a fresh entry at max_idx + 1.
-	local existing_child
-	local sel = self._conn:prepare("select child from relationships where parent = :p and key = :k")
-	sel:bind_names({p = parent_pk, k = key})
-
-	if sel:step() == sqlite3.ROW then
-		existing_child = sel:get_value(0)
-	end
-
-	sel:finalize()
+	local existing_child = self:_query_one(
+		"select child from relationships where parent = :p and key = :k",
+		{p = parent_pk, k = key})
 
 	-- Same child already there — nothing to do.
 	if existing_child == child_pk then
@@ -184,30 +237,20 @@ function Db:set_hash_element(parent_pk, key, child_pk)
 	if existing_child then
 		-- UPDATE in place. The purge_after_update_of_child trigger fires
 		-- and GCs the old child if it's now unreachable.
-		local upd = self._conn:prepare("update relationships set child = :c where parent = :p and key = :k")
-		upd:bind_names({c = child_pk, p = parent_pk, k = key})
-		local rc = upd:step()
-		upd:finalize()
-
-		if rc ~= sqlite3.DONE then
-			error("set_hash_element: update failed — " .. self._conn:errmsg())
-		end
+		self:_exec(
+			"update relationships set child = :c where parent = :p and key = :k",
+			{c = child_pk, p = parent_pk, k = key},
+			"set_hash_element: update")
 	else
 		-- New key — append at max+1 (or 0 if empty).
-		local max_sel = self._conn:prepare("select coalesce(max(idx) + 1, 0) from relationships where parent = :p")
-		max_sel:bind_names({p = parent_pk})
-		max_sel:step()
-		local next_idx = max_sel:get_value(0)
-		max_sel:finalize()
+		local next_idx = self:_query_one(
+			"select coalesce(max(idx) + 1, 0) from relationships where parent = :p",
+			{p = parent_pk})
 
-		local ins = self._conn:prepare("insert into relationships (parent, child, key, idx) values (:p, :c, :k, :i)")
-		ins:bind_names({p = parent_pk, c = child_pk, k = key, i = next_idx})
-		local rc = ins:step()
-		ins:finalize()
-
-		if rc ~= sqlite3.DONE then
-			error("set_hash_element: insert failed — " .. self._conn:errmsg())
-		end
+		self:_exec(
+			"insert into relationships (parent, child, key, idx) values (:p, :c, :k, :i)",
+			{p = parent_pk, c = child_pk, k = key, i = next_idx},
+			"set_hash_element: insert")
 	end
 end
 
@@ -231,40 +274,54 @@ function Db:set_array_element(parent_pk, idx, child_pk)
 
 	-- Same shape as set_hash_element: UPDATE in place if (parent, idx) is
 	-- occupied; INSERT at that idx if not.
-	local existing_child
-	local sel = self._conn:prepare("select child from relationships where parent = :p and idx = :i")
-	sel:bind_names({p = parent_pk, i = idx})
-
-	if sel:step() == sqlite3.ROW then
-		existing_child = sel:get_value(0)
-	end
-
-	sel:finalize()
+	local existing_child = self:_query_one(
+		"select child from relationships where parent = :p and idx = :i",
+		{p = parent_pk, i = idx})
 
 	if existing_child == child_pk then
 		return
 	end
 
 	if existing_child then
-		local upd = self._conn:prepare("update relationships set child = :c where parent = :p and idx = :i")
-		upd:bind_names({c = child_pk, p = parent_pk, i = idx})
-		local rc = upd:step()
-		upd:finalize()
-
-		if rc ~= sqlite3.DONE then
-			error("set_array_element: update failed — " .. self._conn:errmsg())
-		end
+		self:_exec(
+			"update relationships set child = :c where parent = :p and idx = :i",
+			{c = child_pk, p = parent_pk, i = idx},
+			"set_array_element: update")
 	else
-		local ins = self._conn:prepare("insert into relationships (parent, child, idx) values (:p, :c, :i)")
-		ins:bind_names({p = parent_pk, c = child_pk, i = idx})
-		local rc = ins:step()
-		ins:finalize()
-
-		if rc ~= sqlite3.DONE then
-			error("set_array_element: insert failed — " .. self._conn:errmsg())
-		end
+		self:_exec(
+			"insert into relationships (parent, child, idx) values (:p, :c, :i)",
+			{p = parent_pk, c = child_pk, i = idx},
+			"set_array_element: insert")
 	end
 end
+
+------------------------------------------------------------
+-- Explicit teardown — finalizes cached statements and closes the
+-- underlying connection. Idempotent. Also wired as __gc below so the
+-- safety net fires even for callers who never call close() themselves.
+--
+-- Set on the metatable BEFORE any Db instance is created via
+-- Db.new() — Lua 5.4 activates __gc based on whether it's present on
+-- the metatable at setmetatable() time, so this line has to run at
+-- module load before get_db() is ever called.
+------------------------------------------------------------
+
+--[[ {"in": {}, "out": "nil"} ]]
+function Db:close()
+	if not self._conn then
+		return
+	end
+
+	for _, stmt in pairs(self._stmts) do
+		stmt:finalize()
+	end
+
+	self._stmts = {}
+	self._conn:close()
+	self._conn = nil
+end
+
+Db.__gc = Db.close
 
 ------------------------------------------------------------
 -- get_db(path, mode) — opens or creates a Fiona SQLite DB
