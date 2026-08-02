@@ -202,6 +202,74 @@ h.test("purge: root is never deleted or marked, even when its only edge goes", f
 	end
 end)
 
+h.test("purge: root → root self-loop deletion leaves root alive and unmarked", function()
+	-- Edge case: root references itself. When we delete that relationship,
+	-- old.child = 1, which the mark trigger's `when old.child <> 1` guard
+	-- rejects, so nothing gets flagged. Root survives (as always), the
+	-- self-loop is gone, and no drain state leaks.
+	local db = fiona.get_db(":memory:", "rw")
+
+	db:set_hash_element(1, "self", 1)
+
+	-- Sanity: the self-loop is present.
+	local pre
+	for row in db._conn:nrows("select count(*) as c from relationships where parent = 1 and key = 'self' and child = 1") do
+		pre = row.c
+	end
+	h.assert_eq(pre, 1, "root → root edge established")
+
+	db:delete_hash_element(1, "self")
+
+	-- Root is still there.
+	local root_count
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = 1") do
+		root_count = row.c
+	end
+	h.assert_eq(root_count, 1, "root untouched by the self-loop deletion")
+
+	-- The relationship is gone.
+	local rel_count
+	for row in db._conn:nrows("select count(*) as c from relationships") do
+		rel_count = row.c
+	end
+	h.assert_eq(rel_count, 0, "self-loop relationship removed")
+
+	-- Neither flag was ever set on root (or anywhere).
+	assert_flags_clean(db)
+end)
+
+h.test("purge: root → root self-loop coexisting with other children — deleting self-loop preserves everything", function()
+	-- Same shape but with additional children hanging off root. The
+	-- self-loop deletion still triggers the `old.child <> 1` skip on
+	-- the mark side and the drain sees no work, so the other children
+	-- stay untouched — no accidental sweep.
+	local db = fiona.get_db(":memory:", "rw")
+
+	local scalar = db:add_scalar("keep me")
+	db:set_hash_element(1, "child", scalar)
+	db:set_hash_element(1, "self", 1)
+
+	db:delete_hash_element(1, "self")
+
+	-- The other child stays.
+	local scalar_count
+	for row in db._conn:nrows("select count(*) as c from hsa where hsa_pk = " .. scalar) do
+		scalar_count = row.c
+	end
+	h.assert_eq(scalar_count, 1, "unrelated child survives the self-loop delete")
+
+	-- Its edge stays.
+	local edge_count
+	for row in db._conn:nrows(
+		"select count(*) as c from relationships where parent = 1 and key = 'child'"
+	) do
+		edge_count = row.c
+	end
+	h.assert_eq(edge_count, 1, "unrelated edge intact")
+
+	assert_flags_clean(db)
+end)
+
 -- ------------------------------------------------------------
 -- Deep chain — the whole point of moving GC out of triggers
 -- ------------------------------------------------------------
