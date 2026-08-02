@@ -1,7 +1,7 @@
 --[[
 {
   "module": "helpers",
-  "role": "Test helpers for the Fiona hsa test suite. Wires lsqlite3 (the Cache-tier binding that ships with Caspian) via the per-user luarocks install; exposes fresh_db() that loads ../lua/src/fiona.sql (schema sits next to fiona.lua) into a fresh in-memory database; provides assert helpers and a test-registration + reporting harness.",
+  "role": "Test helpers for the Fiona schema test suite. Wires lsqlite3 (the Cache-tier binding that ships with Caspian) via the per-user luarocks install; exposes fresh_db() that loads ../../lua/src/fiona.sql into a fresh in-memory database; provides assert helpers and a test-registration + reporting harness.",
   "exports": {
     "test":                    "name, fn -> nil (registers a test)",
     "reset":                   "() -> nil (clears results between files)",
@@ -106,7 +106,7 @@ function H.assert_uses_index(db, sql, label)
 	-- an index. Benign SCAN forms — SCAN CONSTANT ROW (CTE base case),
 	-- SCAN SUBQUERY, SCAN <cte_name> — are not real table scans and pass
 	-- through. Add table names here as the schema grows.
-	local base_tables = {hsa = true, relationships = true}
+	local base_tables = {collections = true, relationships = true}
 
 	for _, detail in ipairs(H.plan(db, sql)) do
 		local scanned = detail:match("^SCAN (%w+)")
@@ -129,7 +129,7 @@ end
 function H.normalize_hashes(db)
 	local ok1 = db:exec([[
 		update relationships set idx = idx + 1000000000000000000
-		where parent in (select hsa_pk from hsa where type = 'h')
+		where parent in (select collection_pk from collections where type = 'h')
 	]])
 
 	if ok1 ~= sqlite3.OK then

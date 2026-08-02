@@ -58,7 +58,7 @@ h.test("get_db applies the schema to a fresh ':memory:' database", function()
 		seen[row.name] = true
 	end
 
-	h.assert_true(seen.hsa, "hsa table should exist")
+	h.assert_true(seen.collections, "collections table should exist")
 	h.assert_true(seen.relationships, "relationships table should exist")
 	h.assert_true(seen.meta, "meta table should exist")
 end)

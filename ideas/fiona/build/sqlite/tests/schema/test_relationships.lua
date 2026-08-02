@@ -1,4 +1,8 @@
--- Tests for the relationships table.
+-- Tests for the relationships table. Every row is EITHER a collection
+-- edge (child set, st null, scalar null) OR a scalar-carrying row
+-- (child null, st set, scalar has the value per st's shape). The
+-- exclusive-union CHECK guards that invariant; per-st CHECKs guard
+-- each scalar shape.
 
 local script_dir = arg[0]:match("(.*/)") or "./"
 package.path = script_dir .. "?.lua;" .. package.path
@@ -14,81 +18,99 @@ local function exec(db, sql)
 	end
 end
 
--- Set up a database with a few standard hsa rows for reuse:
+-- Set up a database with a few standard collections rows for reuse:
 --   pk=1: root hash (built-in)
 --   pk=2: another hash
 --   pk=3: an array
---   pk=4: a string scalar
---   pk=5: a number scalar
 local function db_with_fixtures()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")               -- 2
-	exec(db, "insert into hsa (type) values ('a')")               -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'hello')") -- 4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 42)")      -- 5
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into collections (type) values ('a')")  -- 3
 	return db
 end
 
 -- ------------------------------------------------------------
--- Positive tests
+-- Positive tests — collection-edge rows
 -- ------------------------------------------------------------
 
-h.test("insert relationship: hash parent + key + idx + string child", function()
+h.test("insert collection-edge: hash parent + key + idx + collection child", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'greeting', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a_ref', 0)")
 end)
 
-h.test("insert relationship: array parent + idx + number child", function()
+h.test("insert collection-edge: array parent + idx + collection child", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, idx) values (3, 5, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (3, 2, 0)")
 end)
 
-h.test("insert relationship: root hash as parent", function()
+h.test("insert collection-edge: root hash as parent", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 4, 'msg', 0)")
-end)
-
-h.test("child can be any hsa type — hash", function()
-	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 1, 'root_ref', 0)")
-end)
-
-h.test("child can be any hsa type — array", function()
-	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'arr_ref', 0)")
-end)
-
-h.test("child can be any hsa type — scalar", function()
-	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'num_ref', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h_ref', 0)")
 end)
 
 h.test("multiple parents can point at the same child (graph, not tree)", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 4, 'a_ref', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b_ref', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a_ref', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 2, 'b_ref', 0)")
 end)
 
-h.test("distinct keys under the same hash parent", function()
+-- ------------------------------------------------------------
+-- Positive tests — scalar-carrying rows (child null, st + scalar set)
+-- ------------------------------------------------------------
+
+h.test("insert scalar row: string under hash", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'first', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'second', 1)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'name', 0, 's', 'hello')")
 end)
 
-h.test("distinct idx values under the same array parent", function()
+h.test("insert scalar row: number under hash", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, idx) values (3, 4, 0)")
-	exec(db, "insert into relationships (parent, child, idx) values (3, 5, 1)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'age', 0, 'n', 42)")
 end)
 
--- idx accepts real and negative values used to be valid; the shift-trigger
--- design now requires non-negative integers (see fiona.sql for the OFFSET
--- rationale). The rejection cases live in the "idx type/range" section
--- below.
-
-h.test("delete a relationship works", function()
+h.test("insert scalar row: real number under hash", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'pi', 0, 'n', 3.14)")
+end)
+
+h.test("insert scalar row: boolean true (stored as 1)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'flag', 0, 'b', 1)")
+end)
+
+h.test("insert scalar row: boolean false (stored as 0)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'flag', 0, 'b', 0)")
+end)
+
+h.test("insert scalar row: null flavor 'u' with null scalar", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'u', null)")
+end)
+
+h.test("insert scalar row: string under array", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (3, 0, 's', 'first')")
+end)
+
+-- ------------------------------------------------------------
+-- Positive tests — mixed shapes coexisting under the same parent
+-- ------------------------------------------------------------
+
+h.test("hash parent can hold both collection-edge and scalar rows", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'ref', 0)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'name', 1, 's', 'hello')")
+
+	for row in db:nrows("select count(*) as c from relationships where parent = 2") do
+		h.assert_eq(row.c, 2, "both rows landed")
+		return
+	end
+end)
+
+h.test("delete a scalar-carrying relationship works", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 's', 'hi')")
 	exec(db, "delete from relationships where parent = 2 and key = 'x'")
 
 	for row in db:nrows("select count(*) as c from relationships") do
@@ -98,12 +120,12 @@ h.test("delete a relationship works", function()
 end)
 
 -- ------------------------------------------------------------
--- Positive test — idx mutability
+-- Positive tests — content mutability
 -- ------------------------------------------------------------
 
 h.test("update idx is allowed", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, idx) values (3, 4, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (3, 2, 0)")
 	exec(db, "update relationships set idx = 5 where parent = 3 and idx = 0")
 
 	for row in db:nrows("select idx from relationships where parent = 3") do
@@ -112,31 +134,150 @@ h.test("update idx is allowed", function()
 	end
 end)
 
+h.test("update child is allowed (content-mutable ref)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into collections (type) values ('h')")  -- 4
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+	exec(db, "update relationships set child = 4 where key = 'x'")
+
+	for row in db:nrows("select child from relationships where key = 'x'") do
+		h.assert_eq(row.child, 4, "child swung in place")
+	end
+end)
+
+h.test("update scalar value is allowed", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'v', 0, 'n', 1)")
+	exec(db, "update relationships set scalar = 99 where key = 'v'")
+
+	for row in db:nrows("select scalar from relationships where key = 'v'") do
+		h.assert_eq(row.scalar, 99, "scalar swapped in place")
+	end
+end)
+
+h.test("update st + scalar together is allowed (change scalar type)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'v', 0, 'n', 1)")
+	exec(db, "update relationships set st = 's', scalar = 'now text' where key = 'v'")
+
+	for row in db:nrows("select st, scalar from relationships where key = 'v'") do
+		h.assert_eq(row.st, "s", "st changed")
+		h.assert_eq(row.scalar, "now text", "scalar changed")
+	end
+end)
+
+h.test("swing a row from collection-edge to scalar shape (child cleared, st set)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+	exec(db, "update relationships set child = null, st = 's', scalar = 'now scalar' where key = 'x'")
+
+	for row in db:nrows("select child, st, scalar from relationships where key = 'x'") do
+		h.assert_true(row.child == nil, "child cleared")
+		h.assert_eq(row.st, "s", "st set")
+		h.assert_eq(row.scalar, "now scalar", "scalar set")
+	end
+end)
+
+h.test("swing a row from scalar shape to collection-edge (st cleared, child set)", function()
+	local db = db_with_fixtures()
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 's', 'hi')")
+	exec(db, "update relationships set child = 3, st = null, scalar = null where key = 'x'")
+
+	for row in db:nrows("select child, st, scalar from relationships where key = 'x'") do
+		h.assert_eq(row.child, 3, "child set")
+		h.assert_true(row.st == nil, "st cleared")
+		h.assert_true(row.scalar == nil, "scalar cleared")
+	end
+end)
+
+-- ------------------------------------------------------------
+-- Negative tests — exclusive-union CHECK
+-- ------------------------------------------------------------
+
+h.test("reject row with both child AND st set (violates exclusive union)", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, child, key, idx, st, scalar) values (2, 3, 'x', 0, 's', 'hi')")
+	end, "CHECK", "child+st both set rejected")
+end)
+
+h.test("reject row with both child null AND st null (neither shape)", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx) values (2, 'x', 0)")
+	end, "CHECK", "neither child nor st set rejected")
+end)
+
+-- ------------------------------------------------------------
+-- Negative tests — per-st scalar shape
+-- ------------------------------------------------------------
+
+h.test("reject st = 'b' with scalar = 2 (boolean must be 0 or 1)", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'b', 2)")
+	end, "CHECK", "boolean value 2 rejected")
+end)
+
+h.test("reject st = 'b' with scalar = null (boolean must be 0 or 1)", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'b', null)")
+	end, "CHECK", "boolean null rejected")
+end)
+
+h.test("reject st = 'u' with non-null scalar", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'u', 'oops')")
+	end, "CHECK", "null-flavor with a value rejected")
+end)
+
+h.test("reject st = 'n' with a text scalar", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'n', 'not a number')")
+	end, "CHECK", "number st with text scalar rejected")
+end)
+
+h.test("reject st = 's' with a numeric scalar", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 's', 42)")
+	end, "CHECK", "string st with numeric scalar rejected")
+end)
+
+h.test("reject invalid st value", function()
+	local db = db_with_fixtures()
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 0, 'z', 'hi')")
+	end, "CHECK", "unknown st rejected")
+end)
+
 -- ------------------------------------------------------------
 -- Negative tests — foreign keys
 -- ------------------------------------------------------------
 
-h.test("reject parent referencing non-existent hsa row", function()
+h.test("reject parent referencing non-existent collection row", function()
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key, idx) values (999, 4, 'x', 0)")
+		exec(db, "insert into relationships (parent, child, key, idx) values (999, 2, 'x', 0)")
 	end, "FOREIGN KEY", "parent FK")
 end)
 
-h.test("reject child referencing non-existent hsa row", function()
+h.test("reject child referencing non-existent collection row", function()
 	local db = db_with_fixtures()
 	h.assert_raises(function()
 		exec(db, "insert into relationships (parent, child, key, idx) values (2, 999, 'x', 0)")
 	end, "FOREIGN KEY", "child FK")
 end)
 
-h.test("delete of parent hsa row cascades to its relationships", function()
-	-- FKs use `on delete cascade` on both parent and child so the purge
-	-- trigger can remove hsa rows and have their edges drop. Same applies
-	-- to a direct hsa delete: cascade removes edges, purge sweeps orphans.
+h.test("delete of parent collection row cascades to its relationships", function()
+	-- FKs use `on delete cascade` on both parent and child, so the drain
+	-- can remove collection rows and have their edges drop with them.
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
-	exec(db, "delete from hsa where hsa_pk = 2")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+	exec(db, "delete from collections where collection_pk = 2")
 
 	for row in db:nrows("select count(*) as c from relationships") do
 		h.assert_eq(row.c, 0, "relationship cascade-deleted with parent")
@@ -144,26 +285,15 @@ h.test("delete of parent hsa row cascades to its relationships", function()
 	end
 end)
 
-h.test("delete of child hsa row cascades to its relationships", function()
+h.test("delete of child collection row cascades to its relationships", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
-	exec(db, "delete from hsa where hsa_pk = 4")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+	exec(db, "delete from collections where collection_pk = 3")
 
 	for row in db:nrows("select count(*) as c from relationships") do
 		h.assert_eq(row.c, 0, "relationship cascade-deleted with child")
 		return
 	end
-end)
-
--- ------------------------------------------------------------
--- Negative tests — parent must be a hash or array
--- ------------------------------------------------------------
-
-h.test("reject parent that references a scalar", function()
-	local db = db_with_fixtures()
-	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key, idx) values (4, 5, 'x', 0)")
-	end, "hash or array", "scalar parent")
 end)
 
 -- ------------------------------------------------------------
@@ -173,14 +303,14 @@ end)
 h.test("reject hash parent with no key (idx alone is not enough)", function()
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, idx) values (2, 4, 0)")
+		exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
 	end, "must set key", "hash needs key")
 end)
 
 h.test("reject array parent with key set", function()
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key, idx) values (3, 4, 'x', 0)")
+		exec(db, "insert into relationships (parent, child, key, idx) values (3, 2, 'x', 0)")
 	end, "must not set key", "array can't have key")
 end)
 
@@ -189,18 +319,16 @@ end)
 -- ------------------------------------------------------------
 
 h.test("reject hash parent with no idx", function()
-	-- Ruby/Caspian ordering means hashes carry idx too. Key alone isn't
-	-- enough; NOT NULL fires (the trigger passes since key IS set).
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key) values (2, 4, 'x')")
+		exec(db, "insert into relationships (parent, child, key) values (2, 3, 'x')")
 	end, "NOT NULL", "hash needs idx too")
 end)
 
 h.test("reject array parent with no idx", function()
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child) values (3, 4)")
+		exec(db, "insert into relationships (parent, child) values (3, 2)")
 	end, "NOT NULL", "array needs idx")
 end)
 
@@ -209,47 +337,41 @@ end)
 -- ------------------------------------------------------------
 
 h.test("reject idx that is a text value", function()
-	-- Untyped `idx` column (BLOB affinity) prevents SQLite from silently
-	-- coercing 'foo' to a number, so typeof(idx)='text' and CHECK rejects.
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, idx) values (3, 4, 'foo')")
+		exec(db, "insert into relationships (parent, child, idx) values (3, 2, 'foo')")
 	end, "CHECK", "idx as text")
 end)
 
 h.test("reject idx that is a numeric-looking text", function()
-	-- '42' is text (not integer); the check catches it.
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, idx) values (3, 4, '42')")
+		exec(db, "insert into relationships (parent, child, idx) values (3, 2, '42')")
 	end, "CHECK", "idx as numeric text")
 end)
 
 h.test("reject idx that is a real (float)", function()
-	-- Shift-trigger design requires integer-only idx.
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, idx) values (3, 4, 3.14)")
+		exec(db, "insert into relationships (parent, child, idx) values (3, 2, 3.14)")
 	end, "CHECK", "idx as real")
 end)
 
 h.test("reject idx that is negative", function()
-	-- Shift-trigger design requires non-negative idx (the safe range hop
-	-- would collide with negatives).
 	local db = db_with_fixtures()
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, idx) values (3, 4, -1)")
+		exec(db, "insert into relationships (parent, child, idx) values (3, 2, -1)")
 	end, "CHECK", "idx as negative")
 end)
 
 h.test("accept idx = 0", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, idx) values (3, 4, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (3, 2, 0)")
 end)
 
 h.test("accept idx as very large integer (well below OFFSET)", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, idx) values (3, 4, 999999999999)")
+	exec(db, "insert into relationships (parent, child, idx) values (3, 2, 999999999999)")
 end)
 
 -- ------------------------------------------------------------
@@ -258,75 +380,45 @@ end)
 
 h.test("reject duplicate (parent, key) for a hash", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'x', 1)")
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 1, 's', 'dupe')")
 	end, "UNIQUE", "duplicate key under hash")
 end)
 
--- The old "reject duplicate (parent, idx)" tests are now covered by the
--- shift-trigger section below — the trigger auto-resolves the collision
--- by shifting the existing row up. The UNIQUE(parent, idx) constraint is
--- still active; it just never fires because the trigger clears its path.
-
 h.test("same key under different hash parents is allowed", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into hsa (type) values ('h')")  -- 6
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'name', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (6, 4, 'name', 0)")
+	exec(db, "insert into collections (type) values ('h')")  -- 4
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'name', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (4, 3, 'name', 0)")
 end)
 
 h.test("same idx under different array parents is allowed", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into hsa (type) values ('a')")  -- 6
-	exec(db, "insert into relationships (parent, child, idx) values (3, 4, 0)")
-	exec(db, "insert into relationships (parent, child, idx) values (6, 4, 0)")
+	exec(db, "insert into collections (type) values ('a')")  -- 4
+	exec(db, "insert into relationships (parent, child, idx) values (3, 2, 0)")
+	exec(db, "insert into relationships (parent, child, idx) values (4, 2, 0)")
 end)
 
 -- ------------------------------------------------------------
--- Negative tests — immutability (parent, child, key, rel_pk)
+-- Negative tests — immutability (rel_pk, parent, key)
 -- ------------------------------------------------------------
 
 h.test("reject update of parent", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into hsa (type) values ('h')")  -- 6
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
+	exec(db, "insert into collections (type) values ('h')")  -- 4
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+
 	h.assert_raises(function()
-		exec(db, "update relationships set parent = 6 where key = 'x'")
+		exec(db, "update relationships set parent = 4 where key = 'x'")
 	end, "immutable", "update parent")
 end)
 
-h.test("allow update of child (content-mutable)", function()
+h.test("reject update of key", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
-	exec(db, "update relationships set child = 5 where key = 'x'")
-	for row in db:nrows("select child from relationships where key = 'x'") do
-		h.assert_eq(row.child, 5, "child swung in place")
-	end
-end)
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
 
-h.test("update of child marks old child needs_trace = 1", function()
-	-- The mark trigger sets needs_trace on the old child. Actual GC of
-	-- unreachable subgraphs happens in the Lua drain (Db:_drain_needs_trace),
-	-- exercised by the interface-level purge tests. Here we only verify the
-	-- schema-level side effect: the flag transitions on the row.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into hsa (type) values ('h')")  -- 3
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
-	exec(db, "update relationships set child = 3 where parent = 1 and key = 'x'")
-
-	for row in db:nrows("select needs_trace from hsa where hsa_pk = 2") do
-		h.assert_eq(row.needs_trace, 1, "old child (h2) marked needs_trace")
-	end
-	for row in db:nrows("select needs_trace from hsa where hsa_pk = 3") do
-		h.assert_true(row.needs_trace == nil, "new child (h3) is not marked")
-	end
-end)
-
-h.test("reject update of key (hash parent)", function()
-	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
 	h.assert_raises(function()
 		exec(db, "update relationships set key = 'y' where key = 'x'")
 	end, "immutable", "update key")
@@ -334,7 +426,8 @@ end)
 
 h.test("reject update of rel_pk", function()
 	local db = db_with_fixtures()
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 0)")
+	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'x', 0)")
+
 	h.assert_raises(function()
 		exec(db, "update relationships set rel_pk = 999 where key = 'x'")
 	end, "immutable", "update rel_pk")
@@ -344,39 +437,119 @@ end)
 -- Mark trigger — needs_trace tagging on relationship delete
 -- ------------------------------------------------------------
 --
--- These test the schema-level effect of the mark trigger: after a
--- relationship delete, the row's child hsa gets needs_trace = 1 (unless
--- the child is root). The actual GC — walking the reference graph and
--- deleting unreachable rows — is Lua-side and lives in tests/lua/
--- (test_purge.lua). Here we only verify the trigger fires and marks.
+-- The mark trigger fires when a collection-edge relationship is deleted
+-- (or when child is swung via UPDATE OF child), and only marks children
+-- that are (a) non-null and (b) not root. Scalar-carrying rows have
+-- child null and don't trigger a mark on delete. The actual GC —
+-- walking upward from marked seeds and deleting unreachable subgraphs
+-- — is Lua-side and lives in tests/lua/test_purge.lua.
 
-h.test("mark: orphaned child gets needs_trace = 1", function()
+h.test("mark on delete: orphaned collection child gets needs_trace = 1", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'leaf')")  -- 2
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'child', 0)")
 	exec(db, "delete from relationships where parent = 1 and key = 'child'")
 
-	for row in db:nrows("select needs_trace from hsa where hsa_pk = 2") do
+	for row in db:nrows("select needs_trace from collections where collection_pk = 2") do
 		h.assert_eq(row.needs_trace, 1, "child marked needs_trace")
 	end
 end)
 
-h.test("mark: root is not marked when a relationship whose child is root is deleted", function()
-	-- Root can never legitimately be a relationship's child, but the
-	-- trigger's when-clause is defense in depth: if such a row ever
-	-- exists and gets deleted, root stays clean.
+h.test("mark on delete: scalar-carrying row delete does NOT mark anything", function()
+	-- No collection to mark — the trigger's `when old.child is not null`
+	-- guard short-circuits.
 	local db = h.fresh_db()
-	-- Manufacture the impossible: force a relationship where child = 1.
-	-- Insert bypasses the check trigger by using a valid parent (h2), then
-	-- we directly modify the child via update — actually we can't, child
-	-- update triggers the mark. So instead, we just delete a "normal"
-	-- relationship and verify root's needs_trace is null.
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'k', 0)")
-	exec(db, "delete from relationships where parent = 1 and key = 'k'")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (1, 'x', 0, 's', 'leaf')")
+	exec(db, "delete from relationships where parent = 1 and key = 'x'")
 
-	for row in db:nrows("select needs_trace from hsa where hsa_pk = 1") do
+	for row in db:nrows("select count(*) as c from collections where needs_trace = 1") do
+		h.assert_eq(row.c, 0, "no collection marked")
+	end
+end)
+
+h.test("mark on delete: root as child is never marked (defense-in-depth guard)", function()
+	-- Root can be a legitimate child (e.g., root → root self-loop). Deleting
+	-- that edge leaves root's needs_trace null because of the `old.child <> 1`
+	-- guard, avoiding a drain that would spin on root.
+	local db = h.fresh_db()
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 1, 'self', 0)")
+	exec(db, "delete from relationships where parent = 1 and key = 'self'")
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 1") do
 		h.assert_true(row.needs_trace == nil, "root's needs_trace stays null")
+	end
+end)
+
+h.test("mark on update of child: swinging away marks the old child", function()
+	local db = h.fresh_db()
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into collections (type) values ('h')")  -- 3
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
+	exec(db, "update relationships set child = 3 where parent = 1 and key = 'x'")
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 2") do
+		h.assert_eq(row.needs_trace, 1, "old child (h2) marked needs_trace")
+	end
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 3") do
+		h.assert_true(row.needs_trace == nil, "new child (h3) not marked")
+	end
+end)
+
+h.test("mark on update of child: swing from ref shape to scalar shape marks the old ref", function()
+	-- Update sets child = null while filling in st + scalar. `is not`
+	-- comparison correctly identifies the null-vs-non-null transition;
+	-- the old child (still non-root, non-null) gets marked.
+	local db = h.fresh_db()
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
+	exec(db, "update relationships set child = null, st = 's', scalar = 'now scalar' where key = 'x'")
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 2") do
+		h.assert_eq(row.needs_trace, 1, "old ref marked when row goes scalar")
+	end
+end)
+
+h.test("mark on update of child: swing from scalar to ref shape does NOT mark", function()
+	-- Old row had child = null, so the trigger's `old.child is not null`
+	-- guard short-circuits — nothing to mark.
+	local db = h.fresh_db()
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (1, 'x', 0, 's', 'hi')")
+	exec(db, "update relationships set child = 2, st = null, scalar = null where key = 'x'")
+
+	for row in db:nrows("select count(*) as c from collections where needs_trace = 1") do
+		h.assert_eq(row.c, 0, "no collection marked on scalar→ref swing")
+	end
+end)
+
+h.test("mark on update of child: swinging to root is not the marked child (old was non-root)", function()
+	-- Old child = h2 (non-root); new child = 1 (root). Old h2 gets marked
+	-- (it's what left the row); root is the new destination, not the old.
+	local db = h.fresh_db()
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
+	exec(db, "update relationships set child = 1 where key = 'x'")
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 2") do
+		h.assert_eq(row.needs_trace, 1, "old child h2 marked")
+	end
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 1") do
+		h.assert_true(row.needs_trace == nil, "root is not marked")
+	end
+end)
+
+h.test("mark on update of child: same target is a schema-level no-op", function()
+	-- `old.child is not new.child` returns false when both sides are the
+	-- same value; trigger doesn't fire.
+	local db = h.fresh_db()
+	exec(db, "insert into collections (type) values ('h')")  -- 2
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
+	exec(db, "update relationships set child = 2 where key = 'x'")
+
+	for row in db:nrows("select needs_trace from collections where collection_pk = 2") do
+		h.assert_true(row.needs_trace == nil, "no mark on identity update")
 	end
 end)
 
@@ -384,105 +557,92 @@ end)
 -- Shift triggers — new record inserted at an occupied idx
 -- ------------------------------------------------------------
 
--- Small helper for shift tests: build an array under root with N scalar
--- children packed at idx 0..N-1. Returns the array's hsa_pk (2). The
--- children get hsa_pk 3..N+2.
+-- Small helper: build an array under root with N scalar-carrying entries
+-- packed at idx 0..N-1 with values (i+1)*10. Returns the db.
 local function fresh_array(n)
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('a')")                                     -- 2
+	exec(db, "insert into collections (type) values ('a')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
 
 	for i = 0, n - 1 do
 		exec(db, string.format(
-			"insert into hsa (type, st, value) values ('s', 'n', %d)", i * 10))         -- 3..n+2
-		exec(db, string.format(
-			"insert into relationships (parent, child, idx) values (2, %d, %d)", 3 + i, i))
+			"insert into relationships (parent, idx, st, scalar) values (2, %d, 'n', %d)",
+			i, (i + 1) * 10))
 	end
 
 	return db
 end
 
--- Read the array under parent 2 as an ordered array of children (indexed
--- 1..n in Lua, i.e., idx 0..n-1 in the DB).
+-- Read the array under parent 2 as an ordered list of scalar values.
 local function read_array(db)
 	local out = {}
 
-	for row in db:nrows("select idx, child from relationships where parent = 2 order by idx") do
-		out[#out + 1] = row.child
+	for row in db:nrows("select idx, scalar from relationships where parent = 2 order by idx") do
+		out[#out + 1] = row.scalar
 	end
 
 	return out
 end
 
 h.test("shift on insert: collision at existing idx bumps sibling up", function()
-	local db = fresh_array(2)  -- array holds [3, 4] at idx 0, 1
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 999)")  -- 5
-	exec(db, "insert into relationships (parent, child, idx) values (2, 5, 0)")
+	local db = fresh_array(2)  -- [10, 20] at idx 0, 1
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 0, 'n', 999)")
 
-	local children = read_array(db)
-	h.assert_eq(children[1], 5, "new child at idx 0")
-	h.assert_eq(children[2], 3, "old idx 0 shifted to 1")
-	h.assert_eq(children[3], 4, "old idx 1 shifted to 2")
+	local values = read_array(db)
+	h.assert_eq(values[1], 999, "new value at idx 0")
+	h.assert_eq(values[2], 10,  "old idx 0 shifted to 1")
+	h.assert_eq(values[3], 20,  "old idx 1 shifted to 2")
 end)
 
 h.test("shift on insert: cascade — insert at 0 in a 5-item array", function()
-	local db = fresh_array(5)  -- array holds [3, 4, 5, 6, 7] at idx 0..4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 999)")  -- 8
-	exec(db, "insert into relationships (parent, child, idx) values (2, 8, 0)")
+	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 0, 'n', 999)")
 
-	local children = read_array(db)
-	h.assert_eq(children[1], 8, "new at 0")
-	h.assert_eq(children[2], 3, "3 shifted to 1")
-	h.assert_eq(children[3], 4, "4 shifted to 2")
-	h.assert_eq(children[4], 5, "5 shifted to 3")
-	h.assert_eq(children[5], 6, "6 shifted to 4")
-	h.assert_eq(children[6], 7, "7 shifted to 5")
+	local values = read_array(db)
+	h.assert_eq(values[1], 999)
+	h.assert_eq(values[2], 10)
+	h.assert_eq(values[3], 20)
+	h.assert_eq(values[4], 30)
+	h.assert_eq(values[5], 40)
+	h.assert_eq(values[6], 50)
 end)
 
 h.test("shift on insert: insert in the middle shifts only rows at or above", function()
-	local db = fresh_array(5)  -- [3, 4, 5, 6, 7]
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 999)")  -- 8
-	exec(db, "insert into relationships (parent, child, idx) values (2, 8, 2)")
+	local db = fresh_array(5)  -- [10, 20, 30, 40, 50]
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 2, 'n', 999)")
 
-	local children = read_array(db)
-	-- Expected: [3, 4, 8, 5, 6, 7]
-	h.assert_eq(children[1], 3, "0 unchanged")
-	h.assert_eq(children[2], 4, "1 unchanged")
-	h.assert_eq(children[3], 8, "new at 2")
-	h.assert_eq(children[4], 5, "old 2 shifted to 3")
-	h.assert_eq(children[5], 6, "old 3 shifted to 4")
-	h.assert_eq(children[6], 7, "old 4 shifted to 5")
+	local values = read_array(db)
+	-- Expected: [10, 20, 999, 30, 40, 50]
+	h.assert_eq(values[1], 10)
+	h.assert_eq(values[2], 20)
+	h.assert_eq(values[3], 999)
+	h.assert_eq(values[4], 30)
+	h.assert_eq(values[5], 40)
+	h.assert_eq(values[6], 50)
 end)
 
 h.test("shift on insert: sparse insert (no collision) is a no-op", function()
-	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 999)")  -- 6
-	exec(db, "insert into relationships (parent, child, idx) values (2, 6, 100)")
+	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 100, 'n', 999)")
 
 	local at_100
-	for row in db:nrows("select child from relationships where parent = 2 and idx = 100") do
-		at_100 = row.child
+	for row in db:nrows("select scalar from relationships where parent = 2 and idx = 100") do
+		at_100 = row.scalar
 	end
-	h.assert_eq(at_100, 6, "sparse insert lands at 100 with no shift")
+	h.assert_eq(at_100, 999, "sparse insert lands at 100 with no shift")
 
-	-- Existing rows unchanged.
 	for row in db:nrows("select count(*) as c from relationships where parent = 2 and idx in (0,1,2)") do
 		h.assert_eq(row.c, 3, "originals still at 0..2")
 	end
 end)
 
-h.test("shift on insert: hash — collision at (parent, idx) shifts, key uniqueness still enforced", function()
-	-- Hash parent: (parent, key) is unique too. A collision on idx alone
-	-- shifts as normal; a collision on key alone raises.
+h.test("shift on insert: hash collision at (parent, idx) shifts, key uniqueness still enforced", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")                                              -- 2
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")                          -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")                          -- 4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 30)")                          -- 5
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 0)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 0, 'n', 10)")
 	-- New entry with different key + same idx: shift lets it in.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 0)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'b', 0, 'n', 20)")
 
 	local at_0, at_1
 	for row in db:nrows("select idx, key from relationships where parent = 2 order by idx") do
@@ -494,7 +654,7 @@ h.test("shift on insert: hash — collision at (parent, idx) shifts, key uniquen
 
 	-- Same key as existing entry still raises regardless of idx.
 	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'a', 5)")
+		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 5, 'n', 30)")
 	end, "UNIQUE", "duplicate key under hash still rejected")
 end)
 
@@ -503,71 +663,68 @@ end)
 -- ------------------------------------------------------------
 
 h.test("shift on move: up-move shifts intervening siblings up by 1", function()
-	local db = fresh_array(5)  -- [3, 4, 5, 6, 7] at idx 0..4
-	-- Move child 6 (currently at idx 3) to idx 1.
-	exec(db, "update relationships set idx = 1 where parent = 2 and child = 6")
+	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
+	-- Move value 40 (currently at idx 3) to idx 1.
+	exec(db, "update relationships set idx = 1 where parent = 2 and scalar = 40")
 
-	local children = read_array(db)
-	-- Expected: [3, 6, 4, 5, 7]
-	h.assert_eq(children[1], 3, "3 stays at 0")
-	h.assert_eq(children[2], 6, "6 moved to 1")
-	h.assert_eq(children[3], 4, "4 shifted to 2")
-	h.assert_eq(children[4], 5, "5 shifted to 3")
-	h.assert_eq(children[5], 7, "7 stays at 4 (outside shift range)")
+	local values = read_array(db)
+	-- Expected: [10, 40, 20, 30, 50]
+	h.assert_eq(values[1], 10)
+	h.assert_eq(values[2], 40)
+	h.assert_eq(values[3], 20)
+	h.assert_eq(values[4], 30)
+	h.assert_eq(values[5], 50)
 end)
 
 h.test("shift on move: down-move shifts intervening siblings down by 1", function()
-	local db = fresh_array(5)  -- [3, 4, 5, 6, 7] at idx 0..4
-	-- Move child 4 (currently at idx 1) to idx 3.
-	exec(db, "update relationships set idx = 3 where parent = 2 and child = 4")
+	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
+	-- Move value 20 (currently at idx 1) to idx 3.
+	exec(db, "update relationships set idx = 3 where parent = 2 and scalar = 20")
 
-	local children = read_array(db)
-	-- Expected: [3, 5, 6, 4, 7]
-	h.assert_eq(children[1], 3, "3 stays at 0")
-	h.assert_eq(children[2], 5, "5 shifted to 1")
-	h.assert_eq(children[3], 6, "6 shifted to 2")
-	h.assert_eq(children[4], 4, "4 moved to 3")
-	h.assert_eq(children[5], 7, "7 stays at 4 (outside shift range)")
+	local values = read_array(db)
+	-- Expected: [10, 30, 40, 20, 50]
+	h.assert_eq(values[1], 10)
+	h.assert_eq(values[2], 30)
+	h.assert_eq(values[3], 40)
+	h.assert_eq(values[4], 20)
+	h.assert_eq(values[5], 50)
 end)
 
 h.test("shift on move: no collision means no shift", function()
-	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
-	-- Move child 3 (idx 0) to idx 100 (fresh position).
-	exec(db, "update relationships set idx = 100 where parent = 2 and child = 3")
+	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
+	-- Move value 10 (idx 0) to idx 100 (fresh position).
+	exec(db, "update relationships set idx = 100 where parent = 2 and scalar = 10")
 
 	local at_100
-	for row in db:nrows("select child from relationships where parent = 2 and idx = 100") do
-		at_100 = row.child
+	for row in db:nrows("select scalar from relationships where parent = 2 and idx = 100") do
+		at_100 = row.scalar
 	end
-	h.assert_eq(at_100, 3, "3 at 100")
+	h.assert_eq(at_100, 10, "10 landed at 100")
 
-	-- Others unchanged at 1, 2 (0 now vacant).
 	local at_1, at_2
-	for row in db:nrows("select idx, child from relationships where parent = 2 order by idx") do
-		if row.idx == 1 then at_1 = row.child
-		elseif row.idx == 2 then at_2 = row.child end
+	for row in db:nrows("select idx, scalar from relationships where parent = 2 order by idx") do
+		if row.idx == 1 then at_1 = row.scalar
+		elseif row.idx == 2 then at_2 = row.scalar end
 	end
-	h.assert_eq(at_1, 4, "4 unchanged at 1")
-	h.assert_eq(at_2, 5, "5 unchanged at 2")
+	h.assert_eq(at_1, 20, "20 unchanged at 1")
+	h.assert_eq(at_2, 30, "30 unchanged at 2")
 end)
 
 h.test("shift on move: density preserved for both directions", function()
-	local db = fresh_array(6)  -- [3, 4, 5, 6, 7, 8]
+	local db = fresh_array(6)  -- [10, 20, 30, 40, 50, 60]
 
-	-- Up-move: 8 (idx 5) to idx 0.
-	exec(db, "update relationships set idx = 0 where parent = 2 and child = 8")
-	local after_up = read_array(db)
-	h.assert_eq(#after_up, 6, "still 6 children")
+	-- Up-move: 60 (idx 5) to idx 0.
+	exec(db, "update relationships set idx = 0 where parent = 2 and scalar = 60")
+
 	local max_idx_up
 	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
 		max_idx_up = row.m
 	end
 	h.assert_eq(max_idx_up, 5, "max idx still 5 — dense after up-move")
 
-	-- Now move 3 (currently at idx 1 after the shift) to idx 5.
-	exec(db, "update relationships set idx = 5 where parent = 2 and child = 3")
-	local after_down = read_array(db)
-	h.assert_eq(#after_down, 6, "still 6 children")
+	-- Down-move: 10 (currently at idx 1) to idx 5.
+	exec(db, "update relationships set idx = 5 where parent = 2 and scalar = 10")
+
 	local max_idx_down
 	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
 		max_idx_down = row.m
@@ -576,69 +733,30 @@ h.test("shift on move: density preserved for both directions", function()
 end)
 
 h.test("shift on move: identity update (NEW.idx = OLD.idx) is a no-op", function()
-	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
-	exec(db, "update relationships set idx = 1 where parent = 2 and child = 4")
+	local db = fresh_array(3)
+	exec(db, "update relationships set idx = 1 where parent = 2 and idx = 1")
 
-	local children = read_array(db)
-	h.assert_eq(children[1], 3, "unchanged")
-	h.assert_eq(children[2], 4, "unchanged")
-	h.assert_eq(children[3], 5, "unchanged")
+	local values = read_array(db)
+	h.assert_eq(values[1], 10)
+	h.assert_eq(values[2], 20)
+	h.assert_eq(values[3], 30)
 end)
 
 -- ------------------------------------------------------------
--- Shift-by-1 on array delete — Ruby arr.delete_at() semantics
+-- Hash gap semantics — raw DELETE on a hash leaves a gap
 -- ------------------------------------------------------------
 
--- Shift-down on delete lives in Db:delete_array_element (Lua) now,
--- not in a schema trigger. The dense-case shift, sparseness
--- preservation, and previously-undocumented-planner-order regression
--- test all live in tests/lua/test_delete_array_element.lua.
---
--- Direct raw-SQL DELETE on an array-parented relationship (which was
--- what these schema tests exercised) is no longer part of the
--- supported contract — the shift semantic belongs to the API, not the
--- schema.
-
-h.test("array delete of last idx: no siblings to shift, straightforward removal", function()
-	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
-	exec(db, "delete from relationships where parent = 2 and idx = 2")
-
-	local children = read_array(db)
-	h.assert_eq(#children, 2, "two remain")
-	h.assert_eq(children[1], 3, "3 stays at 0")
-	h.assert_eq(children[2], 4, "4 stays at 1")
-end)
-
-h.test("array delete of only element leaves an empty array", function()
+h.test("hash delete leaves a gap (no shift for hashes)", function()
+	-- Users don't observe hash idx directly. Confirms shift-down on
+	-- delete is not a schema trigger.
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('a')")  -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 3
-	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
-
-	exec(db, "delete from relationships where parent = 2 and idx = 0")
-
-	for row in db:nrows("select count(*) as c from relationships where parent = 2") do
-		h.assert_eq(row.c, 0, "no siblings left in the array")
-		return
-	end
-end)
-
-h.test("hash delete does NOT shift; leaves a gap (hash idx is internal)", function()
-	-- Hashes get gap-preserving delete — users don't observe hash idx directly.
-	-- Confirms the WHEN clause on the shift trigger correctly excludes hashes.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")                                             -- 2 (hash)
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")                         -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")                         -- 4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 30)")                         -- 5
 
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 1)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 2)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 0, 'n', 10)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'b', 1, 'n', 20)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'c', 2, 'n', 30)")
 
-	-- Delete the middle entry by key.
 	exec(db, "delete from relationships where parent = 2 and key = 'b'")
 
 	local by_idx = {}
@@ -650,26 +768,35 @@ h.test("hash delete does NOT shift; leaves a gap (hash idx is internal)", functi
 	h.assert_eq(by_idx[2], "c", "c stays at 2 (no shift for hash)")
 end)
 
--- Note: the previous large-sparse-gap shift regression test moved to
--- tests/lua/test_delete_array_element.lua where it exercises the
--- Lua-side Db:_shift_down_array two-phase hop through the actual API.
+h.test("array raw DELETE leaves a gap (shift-down is Lua-side, not a schema trigger)", function()
+	-- The API's delete_array_element runs the two-phase 10^18 hop in Lua.
+	-- Direct raw-SQL DELETE on the array leaves the sibling positions
+	-- untouched — the schema does not shift.
+	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
+	exec(db, "delete from relationships where parent = 2 and idx = 1")
+
+	local by_idx = {}
+	for row in db:nrows("select idx, scalar from relationships where parent = 2") do
+		by_idx[row.idx] = row.scalar
+	end
+	h.assert_eq(by_idx[0], 10, "10 stays at 0")
+	h.assert_eq(by_idx[1], nil, "idx 1 is a gap; schema doesn't shift")
+	h.assert_eq(by_idx[2], 30, "30 stays at 2")
+end)
 
 -- ------------------------------------------------------------
--- normalize_hashes — explicit safety-valve API method
+-- normalize_hashes — the safety-valve helper
 -- ------------------------------------------------------------
 
 h.test("normalize_hashes: renumbers hash entries to dense 0..n-1", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash)
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")  -- 4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 30)")  -- 5
 
-	-- Sparse idx values.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 100)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 200)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 300)")
+	-- Sparse idx values on scalar rows.
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 100, 'n', 10)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'b', 200, 'n', 20)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'c', 300, 'n', 30)")
 
 	h.normalize_hashes(db)
 
@@ -684,18 +811,14 @@ end)
 
 h.test("normalize_hashes: preserves insertion order", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
 
-	for i = 3, 6 do
-		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
-	end
-
-	-- Ascending idx values, insertion order == first/second/third/fourth.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'first',  10)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'second', 500)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'third',  9000)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 6, 'fourth', 100000)")
+	-- Ascending idx values (insertion order).
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'first',  10,     'n', 1)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'second', 500,    'n', 2)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'third',  9000,   'n', 3)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'fourth', 100000, 'n', 4)")
 
 	h.normalize_hashes(db)
 
@@ -703,36 +826,31 @@ h.test("normalize_hashes: preserves insertion order", function()
 	for row in db:nrows("select key from relationships where parent = 2 order by idx") do
 		order[#order + 1] = row.key
 	end
-	h.assert_eq(order[1], "first",  "first at idx 0")
-	h.assert_eq(order[2], "second", "second at idx 1")
-	h.assert_eq(order[3], "third",  "third at idx 2")
-	h.assert_eq(order[4], "fourth", "fourth at idx 3")
+	h.assert_eq(order[1], "first")
+	h.assert_eq(order[2], "second")
+	h.assert_eq(order[3], "third")
+	h.assert_eq(order[4], "fourth")
 end)
 
 h.test("normalize_hashes: does NOT touch array idx values", function()
 	local db = h.fresh_db()
-	-- Set up a hash AND an array under root.
-	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash)
-	exec(db, "insert into hsa (type) values ('a')")  -- 3 (array)
+	exec(db, "insert into collections (type) values ('h')")  -- 2 (hash)
+	exec(db, "insert into collections (type) values ('a')")  -- 3 (array)
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'a', 1)")
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")  -- 4
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")  -- 5
 
-	-- Put both in with sparse idx.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 100)")
-	exec(db, "insert into relationships (parent, child, idx) values (3, 5, 100000)")
+	-- Both with sparse idx.
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 100, 'n', 10)")
+	exec(db, "insert into relationships (parent, idx, st, scalar) values (3, 100000, 'n', 20)")
 
 	h.normalize_hashes(db)
 
-	-- Hash entry renumbered.
 	local hash_idx
 	for row in db:nrows("select idx from relationships where parent = 2 and key = 'x'") do
 		hash_idx = row.idx
 	end
 	h.assert_eq(hash_idx, 0, "hash entry normalized to idx 0")
 
-	-- Array entry unchanged.
 	local array_idx
 	for row in db:nrows("select idx from relationships where parent = 3") do
 		array_idx = row.idx
@@ -742,25 +860,20 @@ end)
 
 h.test("normalize_hashes: multiple hash parents normalized independently", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2 (hash A)
-	exec(db, "insert into hsa (type) values ('h')")  -- 3 (hash B)
+	exec(db, "insert into collections (type) values ('h')")  -- 2 (hash A)
+	exec(db, "insert into collections (type) values ('h')")  -- 3 (hash B)
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'ha', 0)")
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'hb', 1)")
 
-	for i = 4, 7 do
-		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
-	end
-
 	-- Hash A: two entries at sparse idx.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'x', 500)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'y', 900)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'x', 500, 'n', 4)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'y', 900, 'n', 5)")
 	-- Hash B: two entries at sparse idx.
-	exec(db, "insert into relationships (parent, child, key, idx) values (3, 6, 'p', 1000)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (3, 7, 'q', 2000)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (3, 'p', 1000, 'n', 6)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (3, 'q', 2000, 'n', 7)")
 
 	h.normalize_hashes(db)
 
-	-- Each hash independently 0..1.
 	local a_max, b_max
 	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do a_max = row.m end
 	for row in db:nrows("select max(idx) as m from relationships where parent = 3") do b_max = row.m end
@@ -770,17 +883,13 @@ end)
 
 h.test("normalize_hashes: no-op on already-dense hash", function()
 	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
+	exec(db, "insert into collections (type) values ('h')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
 
-	for i = 3, 5 do
-		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
-	end
-
-	-- Already dense: idx 0, 1, 2.
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'a', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 4, 'b', 1)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 5, 'c', 2)")
+	-- Already dense.
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 0, 'n', 3)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'b', 1, 'n', 4)")
+	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'c', 2, 'n', 5)")
 
 	h.normalize_hashes(db)
 
@@ -788,6 +897,5 @@ h.test("normalize_hashes: no-op on already-dense hash", function()
 	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
 		max_idx = row.m
 	end
-	h.assert_eq(max_idx, 2, "still dense 0..2, order preserved")
+	h.assert_eq(max_idx, 2, "still dense 0..2")
 end)
-

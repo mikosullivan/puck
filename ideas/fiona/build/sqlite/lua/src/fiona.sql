@@ -1,173 +1,160 @@
--- Fiona database design.
+-- Fiona database design. Collections (h/a) live in the collections
+-- table. Scalars live inline in the relationships table via st +
+-- scalar columns. Each relationship is EITHER a collection-edge
+-- (child set, st null) OR a scalar-carrying row (child null, st +
+-- scalar set).
 
--- Foreign-key enforcement is off by default in SQLite; turn it on so the
--- `references` clauses actually enforce existence at insert/delete time.
--- Per-connection setting — callers opening additional connections need to
--- set it again themselves.
 pragma foreign_keys = on;
 
--- Recursive triggers are off by default. Turn them on so that the mark
--- triggers below fire on the cascade-deletes produced by the drain step
--- of the Lua-side GC — that's what lets a bulk delete of the in_trace
--- set feed the next round of needs_trace candidates. Per-connection
--- setting.
+-- Recursive triggers are on so mark triggers fire on FK cascade-deletes
+-- during the drain's bulk DELETE FROM collections. Depth stays bounded
+-- because the mark triggers' action is a plain UPDATE with no cascade.
 pragma recursive_triggers = on;
 
--- Meta table: key/value settings about the database itself. For V1 the
--- only row is `schema`, which names the schema version this file was
--- built against. The key/value shape leaves room to add rows later
--- without a schema change.
+-- ------------------------------------------------------------
+-- Meta table
+-- ------------------------------------------------------------
+
 create table meta (
 	key text primary key,
 	value text
 );
 
-insert into meta (key, value) values ('schema', '1.0');
+insert into meta (key, value) values ('schema', '2.0');
 
-create table hsa (
-	hsa_pk integer primary key autoincrement,
-	type text not null check (type in ('h', 's', 'a')),
-	st text check (st in ('s', 'n', 'b', 'u')),
-	-- polymorphic; interpret via st
-	value,
+-- ------------------------------------------------------------
+-- Collections: hashes and arrays.
+-- ------------------------------------------------------------
+
+create table collections (
+	collection_pk integer primary key autoincrement,
+	type text not null check (type in ('h', 'a')),
 	-- Transient GC scratch. Both are strictly null (not marked) or 1
-	-- (marked) — the column-level CHECKs enforce that so an assertion at
-	-- drain end can verify "everything is null" as a proxy for "nothing
-	-- marked." Neither flag is ever meant to be observed as 1 outside a
-	-- transaction: Lua-side drain runs before the outermost atomic()
-	-- releases and clears both. Storing as null-or-1 (rather than 0/1)
-	-- makes the partial index below empty in the resting state, so the
-	-- seed-lookup query touches ≈zero index rows on the common no-orphan
-	-- path.
+	-- (marked); partial indexes below make the resting state cheap.
 	needs_trace integer check (needs_trace is null or needs_trace = 1),
-	in_trace    integer check (in_trace    is null or in_trace    = 1),
-	-- st is required for scalars, forbidden for hashes and arrays.
-	check (
-		(type = 's' and st is not null) or
-		(type in ('h', 'a') and st is null)
-	),
-	-- boolean scalars store value as 0 or 1. Uses `is` (not `in`) so that
-	-- value=null cleanly evaluates to false — the `in` form would give
-	-- null, which SQLite's CHECK accepts as passing.
-	check (st != 'b' or value is 0 or value is 1),
-	-- null scalars store value as null.
-	check (st != 'u' or value is null),
-	-- number scalars store value as an integer or float (either sign).
-	check (st != 'n' or typeof(value) in ('integer', 'real')),
-	-- string scalars store value as text.
-	check (st != 's' or typeof(value) = 'text'),
-	-- hash and array rows have no scalar value; structure lives in relationships.
-	check (type = 's' or value is null)
+	in_trace    integer check (in_trace    is null or in_trace    = 1)
 );
 
--- Partial indexes for the seed-lookup and bulk-clear queries the Lua
--- drain does. Both indexes are empty when nothing is marked, so
--- maintenance cost tracks the mark/clear volume, not the hsa row count.
-create index hsa_needs_trace on hsa(needs_trace) where needs_trace = 1;
-create index hsa_in_trace    on hsa(in_trace)    where in_trace    = 1;
+create index collections_needs_trace on collections(needs_trace) where needs_trace = 1;
+create index collections_in_trace    on collections(in_trace)    where in_trace    = 1;
 
--- Identity (hsa_pk, type) is immutable; everything else is content and
--- follows the CHECK constraints on the columns. In practice that means
--- scalars can freely UPDATE their st/value (change a counter, retype a
--- number to a string) but hashes and arrays can't grow st/value because
--- the CHECKs above forbid non-null st or value for type in ('h','a').
-create trigger hsa_no_update
-before update on hsa
+-- Identity (collection_pk, type) is immutable. needs_trace / in_trace
+-- are the only mutable columns.
+create trigger collections_no_update
+before update on collections
 begin
 	select case
-		when new.hsa_pk is not old.hsa_pk
-			then raise(abort, 'hsa.hsa_pk is immutable')
+		when new.collection_pk is not old.collection_pk
+			then raise(abort, 'collections.collection_pk is immutable')
 		when new.type is not old.type
-			then raise(abort, 'hsa.type is immutable')
+			then raise(abort, 'collections.type is immutable')
 	end;
 end;
 
--- the root hash cannot be deleted. it's always hsa_pk = 1 because it's
--- the first row inserted below.
-create trigger hsa_no_delete_root
-before delete on hsa
-when old.hsa_pk = 1
+-- Root is always collection_pk = 1 — seeded below. It cannot be
+-- deleted. It can be updated only for in_trace: the drain's
+-- propagation UPDATE walks upward and lands in_trace on root, and
+-- the alive check reads root's in_trace directly. needs_trace on
+-- root is never valid — root can never be a legitimate seed, so
+-- letting it get marked would cause the drain to spin.
+create trigger collections_no_delete_root
+before delete on collections
+when old.collection_pk = 1
 begin
-	select raise(abort, 'the root hsa row cannot be deleted');
+	select raise(abort, 'the root collection cannot be deleted');
 end;
 
--- Root is also never updateable. It's the anchor of the reachability
--- model — the drain must not mark it (needs_trace or in_trace), and its
--- identity/scalar fields already have nothing to change (root is a
--- hash, so st/value are null by construction). This trigger is the
--- belt-and-suspenders enforcement: any code path that tries to update
--- row 1 for any reason fails loudly, catching drain bugs that would
--- otherwise leave root wrongly marked at commit.
-create trigger hsa_no_update_root
-before update on hsa
-when old.hsa_pk = 1
+create trigger collections_root_no_needs_trace
+before update on collections
+when old.collection_pk = 1 and new.needs_trace
 begin
-	select raise(abort, 'the root hsa row cannot be updated');
+	select raise(abort, 'the root collection cannot have needs_trace set');
 end;
 
--- Seed the root hash. Every Fiona database starts with this row.
-insert into hsa (type) values ('h');
+-- Seed root. Every Fiona database starts with this row.
+insert into collections (type) values ('h');
+
+-- ------------------------------------------------------------
+-- Relationships: parent-to-either-a-child-collection-or-a-scalar edges.
+-- Exactly one of `child` (collection reference) or `st` (scalar-type
+-- discriminator) must be set. The `(child xor st)` invariant is
+-- enforced by CHECK below; per-st scalar-shape rules follow.
+-- ------------------------------------------------------------
 
 create table relationships (
-	rel_pk integer primary key autoincrement,
-	-- on delete cascade so the purge trigger (below) can delete an hsa row
-	-- and have its remaining relationships drop with it. Cascade also means
-	-- a direct `delete from hsa where hsa_pk = X` silently removes X's
-	-- edges instead of raising — direct hsa deletion isn't a supported user
-	-- op (users delete relationships, GC handles hsa), so this is fine.
-	parent integer not null references hsa(hsa_pk) on delete cascade,
-	child integer not null references hsa(hsa_pk) on delete cascade,
-	-- key is set for hash parents (Ruby-style ordered hashes: each entry
-	-- is both keyed AND ordered), null for array parents. `index` is a
-	-- SQL keyword, hence `idx`. `idx` is left untyped (BLOB affinity, no
-	-- coercion) so `typeof(idx)` accurately reflects the caller's input
-	-- when we enforce it via CHECK — integer-affinity would silently
-	-- coerce '42' to 42, defeating the type guard.
-	key text,
-	-- idx is required for every relationship: arrays use it as position,
-	-- hashes use it as insertion order (Ruby/Caspian semantics).
-	idx not null,
-	-- idx must be a non-negative integer. The shift triggers below use an
-	-- arithmetic hop of OFFSET = 10^18 to avoid unique-constraint collisions
-	-- while shifting a range; that only works if legitimate idx values stay
-	-- well below OFFSET. There is deliberately no upper-bound CHECK because
-	-- the parking step in the UPDATE-shift trigger transiently sets idx to
-	-- (real + OFFSET), and a CHECK would fire against the trigger itself.
+	rel_pk  integer primary key autoincrement,
+	parent  integer not null references collections(collection_pk) on delete cascade,
+	-- Collection-edge slot: populated iff this row anchors a child
+	-- collection. Nullable because scalar-carrying rows don't use it.
+	-- FK cascade fires on collection delete during the drain's bulk
+	-- DELETE, which in turn fires the mark trigger below.
+	child   integer references collections(collection_pk) on delete cascade,
+	-- Hash-parented relationships require key; array-parented forbid
+	-- it. Enforced by the relationships_check_types trigger since
+	-- CHECK can't reach across tables.
+	key     text,
+	-- idx is required for every row: arrays use it as position, hashes
+	-- use it as insertion order.
+	idx     not null,
+	-- Scalar-carrying slot: `st` is the scalar-type discriminator
+	-- ('s' string, 'n' number, 'b' boolean, 'u' null/undefined), and
+	-- `scalar` is the polymorphic value. Both null means this row is a
+	-- collection-edge; both set means a scalar row.
+	st      text check (st in ('s', 'n', 'b', 'u')),
+	scalar,
+
+	-- Exactly one of {child} or {st + scalar}. Never both, never neither.
+	-- The "both null" case is the classic bug this catches: a row with
+	-- no destination at all is meaningless.
+	check (
+		(child is not null and st is null and scalar is null) or
+		(child is null and st is not null)
+	),
+
+	-- Per-st scalar shape. These use `is` (not `in`) so null cleanly
+	-- evaluates to false — the `in` form would give NULL which SQLite's
+	-- CHECK accepts as passing, silently letting null booleans through.
+	check (st is null or st != 'b' or scalar is 0 or scalar is 1),
+	check (st is null or st != 'u' or scalar is null),
+	check (st is null or st != 'n' or typeof(scalar) in ('integer', 'real')),
+	check (st is null or st != 's' or typeof(scalar) = 'text'),
+
+	-- idx must be a non-negative integer. The shift triggers park rows
+	-- above 10^18 during range shifts, so legitimate idx values must
+	-- stay well below OFFSET. Deliberately no upper-bound CHECK because
+	-- the parking step transiently violates it and CHECK fires on
+	-- trigger-initiated writes too.
 	check (typeof(idx) = 'integer'),
 	check (idx >= 0),
-	-- no two relationships from the same parent share a key or an idx.
+
+	-- No two relationships from the same parent share a key or idx.
 	unique (parent, key),
 	unique (parent, idx)
 );
 
--- Indexes for the common lookup directions: children of a parent, and
--- parents of a child (multiple-parent case per Fiona's graph semantics).
-create index relationships_parent on relationships (parent);
-create index relationships_child on relationships (child);
+-- Lookup indexes. relationships_child is partial — scalar-carrying
+-- rows have child = null and don't need to appear in the reverse
+-- (child → parents) walk the trace does.
+create index relationships_parent on relationships(parent);
+create index relationships_child  on relationships(child) where child is not null;
 
--- Enforce that parent references a hash or array (not a scalar) and that
--- `key` matches the parent's type: hashes require key, arrays forbid it.
--- `idx` is required for both and enforced via the NOT NULL column
--- constraint, which fires whether or not this trigger runs. SQLite CHECK
--- constraints can't do subqueries; cross-table rules go in a trigger.
+-- Enforce hash/array key rule via trigger (CHECK can't do subqueries).
 create trigger relationships_check_types
 before insert on relationships
 begin
 	select case
-		when (select type from hsa where hsa_pk = new.parent) not in ('h', 'a')
-			then raise(abort, 'relationships.parent must reference a hash or array')
-		when (select type from hsa where hsa_pk = new.parent) = 'h' and new.key is null
+		when (select type from collections where collection_pk = new.parent) = 'h' and new.key is null
 			then raise(abort, 'hash-parented relationships must set key')
-		when (select type from hsa where hsa_pk = new.parent) = 'a' and new.key is not null
+		when (select type from collections where collection_pk = new.parent) = 'a' and new.key is not null
 			then raise(abort, 'array-parented relationships must not set key')
 	end;
 end;
 
--- Identity is (rel_pk, parent, key) — those spell out "which slot this
--- edge is." child is content (what the slot holds) and can change in
--- place; idx is position and is managed by the shift triggers below.
--- The purge_after_update_of_child trigger downstream keeps GC firing
--- when child changes so orphaned rows still get collected.
+-- Identity is (rel_pk, parent, key). Content — child, idx, st, scalar
+-- — is mutable, including swinging a row between collection-edge and
+-- scalar shape (update child from set to null while setting st, or
+-- vice versa). The CHECK constraints enforce validity of any state,
+-- and the mark trigger below catches the collection-edge-severed case.
 create trigger relationships_no_update
 before update on relationships
 begin
@@ -181,12 +168,11 @@ begin
 	end;
 end;
 
--- Idx-shift on INSERT. If the incoming row's idx collides with an existing
--- sibling, shift the sibling (and everything at higher idx) up by 1 to make
--- room. Uses a two-phase arithmetic hop through the safe range (idx +
--- 10^18) so the intermediate state never violates the unique constraint.
--- New record: no parking needed (the row doesn't exist yet), so this
--- trigger is simpler than its UPDATE counterpart.
+-- ------------------------------------------------------------
+-- Idx-shift triggers. Both use the 10^18 arithmetic-hop pattern;
+-- neither depends on planner row-processing order.
+-- ------------------------------------------------------------
+
 create trigger relationships_shift_on_insert
 before insert on relationships
 when exists (
@@ -194,21 +180,13 @@ when exists (
 	where parent = new.parent and idx = new.idx
 )
 begin
-	-- Phase 1: hop the colliding + subsequent rows into the safe range.
 	update relationships set idx = idx + 1000000000000000000
 	where parent = new.parent and idx >= new.idx;
-	-- Phase 2: hop them back, offset by +1. Net effect: shifted up by 1.
+
 	update relationships set idx = idx - 999999999999999999
 	where parent = new.parent and idx >= 1000000000000000000;
 end;
 
--- Idx-shift on UPDATE OF idx (move an existing record). The moved row
--- currently sits at OLD.idx, which is inside the range that needs to shift
--- — so we first PARK the moved row at (OLD.idx + 10^18), out of the way,
--- then do a direction-aware range shift of the siblings between OLD.idx
--- and NEW.idx, and finally the outer UPDATE overwrites the parked row's
--- idx with NEW.idx. Direction-aware so density is preserved (siblings
--- outside the [OLD.idx, NEW.idx] range are untouched).
 create trigger relationships_shift_on_update
 before update of idx on relationships
 when new.idx <> old.idx and exists (
@@ -216,10 +194,9 @@ when new.idx <> old.idx and exists (
 	where parent = old.parent and idx = new.idx and rel_pk <> old.rel_pk
 )
 begin
-	-- Park the moved row.
 	update relationships set idx = old.idx + 1000000000000000000
 	where rel_pk = old.rel_pk;
-	-- Hop the intervening siblings into the safe range.
+
 	update relationships set idx = idx + 1000000000000000000
 	where parent = old.parent
 		and rel_pk <> old.rel_pk
@@ -227,61 +204,40 @@ begin
 			(new.idx < old.idx and idx between new.idx and old.idx - 1)
 			or (new.idx > old.idx and idx between old.idx + 1 and new.idx)
 		);
-	-- Hop back with direction-aware offset: +1 for up-move (shift siblings
-	-- up by 1), -1 for down-move (shift siblings down by 1).
+
 	update relationships set idx =
 		idx - 1000000000000000000 + case when new.idx < old.idx then 1 else -1 end
 	where parent = old.parent
 		and idx >= 1000000000000000000
 		and rel_pk <> old.rel_pk;
-	-- The moved row stays parked; the outer UPDATE overwrites it to NEW.idx.
 end;
 
--- Shift-down on explicit `delete_array_element` lives in Lua now
--- (Db:delete_array_element → Db:_shift_down_array), using the same
--- two-phase 10^18 hop the shift-on-update trigger uses so no
--- dependency on the SQLite planner's UPDATE-row-processing order is
--- involved. Cascade deletes from the drain (removing an hsa row that
--- was a child of a surviving array parent) deliberately leave gaps
--- in that parent's idx values — sparse arrays are a valid Fiona
--- state, and the shift semantic ("arr.delete_at" behavior) belongs
--- to the explicit delete call, not to garbage-collection-triggered
--- cleanup.
+-- Shift-down on explicit `delete_array_element` lives in Lua
+-- (Db:_shift_down_array) using the two-phase 10^18 hop, not a trigger.
 
--- GC dispatch — lightweight mark triggers. When a relationship is
--- deleted (or its child is swapped in place), mark the row's old child
--- as needs_trace = 1. The heavy lifting — walking the reference graph,
--- deciding what's reachable, and deleting the unreachable — lives in
--- the Lua drain (Db:_drain_needs_trace in fiona.lua), which runs before
--- the outermost atomic() releases its savepoint. That keeps trigger
--- depth constant (mark is a single UPDATE, no cascade) regardless of
--- how deep the resulting cleanup goes.
---
--- On cascade-deletes triggered by the drain's DELETE from hsa, these
--- same triggers fire (via pragma recursive_triggers = on) and add the
--- cascade-orphaned children to the needs_trace worklist. Depth stays
--- bounded because the mark trigger's action is a plain UPDATE with no
--- further cascade.
---
--- The root (hsa_pk = 1) is never a valid needs_trace target — the
--- delete of a relationship whose child is the root can only happen
--- inside root-anchoring restructuring, and the root always trivially
--- reaches itself. Skipping the mark on old.child = 1 keeps the drain
--- from spinning on a no-op seed.
+-- ------------------------------------------------------------
+-- Mark triggers — the trace's worklist populator.
+-- ------------------------------------------------------------
+
+-- On DELETE of a collection-edge relationship: mark the old child
+-- collection as needs_trace. Skip if the old child was root (never a
+-- valid mark target) or if the row was scalar-carrying (no collection
+-- to mark).
 create trigger relationships_mark_needs_trace_after_delete
 after delete on relationships
-when old.child <> 1
+when old.child is not null and old.child <> 1
 begin
-	update hsa set needs_trace = 1 where hsa_pk = old.child;
+	update collections set needs_trace = 1 where collection_pk = old.child;
 end;
 
--- Same mark on child-swap. set_hash_element / set_array_element use
--- update rather than delete+insert for content changes, so the update
--- path needs its own trigger. new.child is safe (the row now points at
--- it — trivially reachable via this edge), so we only mark old.child.
+-- On UPDATE OF child: mark the OLD collection when child is swung
+-- away, including the case where the row transitions from
+-- collection-edge to scalar-carrying (new.child becomes null). The
+-- `is not` operator handles null-vs-null and null-vs-value correctly
+-- where `<>` would silently no-op on null.
 create trigger relationships_mark_needs_trace_after_update_of_child
 after update of child on relationships
-when old.child <> 1 and old.child <> new.child
+when old.child is not null and old.child <> 1 and old.child is not new.child
 begin
-	update hsa set needs_trace = 1 where hsa_pk = old.child;
+	update collections set needs_trace = 1 where collection_pk = old.child;
 end;
