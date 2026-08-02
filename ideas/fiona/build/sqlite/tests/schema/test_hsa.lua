@@ -352,10 +352,18 @@ h.test("update on scalar still enforced by CHECK — bad st/value combo rejected
 	end, "CHECK", "st='n' but value is text")
 end)
 
-h.test("reject update of the root row's type", function()
+h.test("reject any update on the root row", function()
+	-- hsa_no_update_root fires before update on hsa_pk = 1 and rejects
+	-- unconditionally. This is a stronger guarantee than hsa_no_update
+	-- (which only freezes hsa_pk and type) — root is entirely
+	-- unupdateable so the drain's propagation cannot ever land marks on it.
 	local db = h.fresh_db()
 	h.assert_raises(function() exec(db, "update hsa set type = 'a' where hsa_pk = 1") end,
-		"immutable", "update root row's type")
+		"root", "update root row's type")
+	h.assert_raises(function() exec(db, "update hsa set needs_trace = 1 where hsa_pk = 1") end,
+		"root", "update root row's needs_trace")
+	h.assert_raises(function() exec(db, "update hsa set in_trace = 1 where hsa_pk = 1") end,
+		"root", "update root row's in_trace")
 end)
 
 -- ------------------------------------------------------------

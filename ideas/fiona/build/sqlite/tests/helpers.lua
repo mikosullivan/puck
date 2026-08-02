@@ -18,9 +18,11 @@ local home = os.getenv("HOME") or "."
 package.cpath = home .. "/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 package.path  = home .. "/.luarocks/share/lua/5.4/?.lua;" .. package.path
 
--- Add the sibling src/ dir to package.path so tests can require("fiona").
+-- Add the fiona src/ dir to package.path so tests can require("fiona").
+-- Callers run from tests/lua/, so from that cwd the source is two dirs
+-- up: tests/lua/../../lua/src/ → lua/src/.
 local script_dir = arg[0] and arg[0]:match("(.*/)") or "./"
-package.path = script_dir .. "../src/?.lua;" .. package.path
+package.path = script_dir .. "../../lua/src/?.lua;" .. package.path
 
 local H = {}
 

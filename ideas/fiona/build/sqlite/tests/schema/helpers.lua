@@ -29,7 +29,7 @@ local H = {}
 
 -- Locate the schema relative to this file.
 local script_dir = arg[0] and arg[0]:match("(.*/)") or "./"
-local SCHEMA_PATH = script_dir .. "../lua/src/fiona.sql"
+local SCHEMA_PATH = script_dir .. "../../lua/src/fiona.sql"
 
 local function read_file(path)
 	local f, err = io.open(path, "r")

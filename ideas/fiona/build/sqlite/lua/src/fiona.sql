@@ -6,9 +6,11 @@
 -- set it again themselves.
 pragma foreign_keys = on;
 
--- Recursive triggers are off by default. Turn them on so the purge trigger
--- can fire again on the cascade-deletes it itself causes, letting cleanup
--- propagate through the affected subgraph. Per-connection setting.
+-- Recursive triggers are off by default. Turn them on so that the mark
+-- triggers below fire on the cascade-deletes produced by the drain step
+-- of the Lua-side GC — that's what lets a bulk delete of the in_trace
+-- set feed the next round of needs_trace candidates. Per-connection
+-- setting.
 pragma recursive_triggers = on;
 
 -- Meta table: key/value settings about the database itself. For V1 the
@@ -28,6 +30,17 @@ create table hsa (
 	st text check (st in ('s', 'n', 'b', 'u')),
 	-- polymorphic; interpret via st
 	value,
+	-- Transient GC scratch. Both are strictly null (not marked) or 1
+	-- (marked) — the column-level CHECKs enforce that so an assertion at
+	-- drain end can verify "everything is null" as a proxy for "nothing
+	-- marked." Neither flag is ever meant to be observed as 1 outside a
+	-- transaction: Lua-side drain runs before the outermost atomic()
+	-- releases and clears both. Storing as null-or-1 (rather than 0/1)
+	-- makes the partial index below empty in the resting state, so the
+	-- seed-lookup query touches ≈zero index rows on the common no-orphan
+	-- path.
+	needs_trace integer check (needs_trace is null or needs_trace = 1),
+	in_trace    integer check (in_trace    is null or in_trace    = 1),
 	-- st is required for scalars, forbidden for hashes and arrays.
 	check (
 		(type = 's' and st is not null) or
@@ -35,7 +48,7 @@ create table hsa (
 	),
 	-- boolean scalars store value as 0 or 1. Uses `is` (not `in`) so that
 	-- value=null cleanly evaluates to false — the `in` form would give
-	-- NULL, which SQLite's CHECK accepts as passing.
+	-- null, which SQLite's CHECK accepts as passing.
 	check (st != 'b' or value is 0 or value is 1),
 	-- null scalars store value as null.
 	check (st != 'u' or value is null),
@@ -46,6 +59,12 @@ create table hsa (
 	-- hash and array rows have no scalar value; structure lives in relationships.
 	check (type = 's' or value is null)
 );
+
+-- Partial indexes for the seed-lookup and bulk-clear queries the Lua
+-- drain does. Both indexes are empty when nothing is marked, so
+-- maintenance cost tracks the mark/clear volume, not the hsa row count.
+create index hsa_needs_trace on hsa(needs_trace) where needs_trace = 1;
+create index hsa_in_trace    on hsa(in_trace)    where in_trace    = 1;
 
 -- Identity (hsa_pk, type) is immutable; everything else is content and
 -- follows the CHECK constraints on the columns. In practice that means
@@ -70,6 +89,20 @@ before delete on hsa
 when old.hsa_pk = 1
 begin
 	select raise(abort, 'the root hsa row cannot be deleted');
+end;
+
+-- Root is also never updateable. It's the anchor of the reachability
+-- model — the drain must not mark it (needs_trace or in_trace), and its
+-- identity/scalar fields already have nothing to change (root is a
+-- hash, so st/value are null by construction). This trigger is the
+-- belt-and-suspenders enforcement: any code path that tries to update
+-- row 1 for any reason fails loudly, catching drain bugs that would
+-- otherwise leave root wrongly marked at commit.
+create trigger hsa_no_update_root
+before update on hsa
+when old.hsa_pk = 1
+begin
+	select raise(abort, 'the root hsa row cannot be updated');
 end;
 
 -- Seed the root hash. Every Fiona database starts with this row.
@@ -204,87 +237,51 @@ begin
 	-- The moved row stays parked; the outer UPDATE overwrites it to NEW.idx.
 end;
 
--- Shift-down on array-parented DELETE. Every sibling with a higher idx
--- moves down by 1 to close the gap. Ruby-array semantics for
--- arr.delete_at(N). Preserves sparseness: [a=0, b=1000] with delete idx 0
--- yields [b=999], not [b=0]. Array-only; hash-parented deletes leave a
--- gap (users don't observe hash idx directly).
+-- Shift-down on explicit `delete_array_element` lives in Lua now
+-- (Db:delete_array_element → Db:_shift_down_array), using the same
+-- two-phase 10^18 hop the shift-on-update trigger uses so no
+-- dependency on the SQLite planner's UPDATE-row-processing order is
+-- involved. Cascade deletes from the drain (removing an hsa row that
+-- was a child of a surviving array parent) deliberately leave gaps
+-- in that parent's idx values — sparse arrays are a valid Fiona
+-- state, and the shift semantic ("arr.delete_at" behavior) belongs
+-- to the explicit delete call, not to garbage-collection-triggered
+-- cleanup.
+
+-- GC dispatch — lightweight mark triggers. When a relationship is
+-- deleted (or its child is swapped in place), mark the row's old child
+-- as needs_trace = 1. The heavy lifting — walking the reference graph,
+-- deciding what's reachable, and deleting the unreachable — lives in
+-- the Lua drain (Db:_drain_needs_trace in fiona.lua), which runs before
+-- the outermost atomic() releases its savepoint. That keeps trigger
+-- depth constant (mark is a single UPDATE, no cascade) regardless of
+-- how deep the resulting cleanup goes.
 --
--- UNDOCUMENTED-BEHAVIOR NOTICE: this trigger relies on SQLite processing
--- UPDATE rows in ASCENDING idx order for the pattern `WHERE parent = ?
--- AND idx > ?`, because that's what avoids intermediate unique-constraint
--- violations mid-shift (each row's target slot is one that was just
--- vacated by the row below it). The ordering is empirically stable — the
--- planner uses the (parent, idx) unique index and scans ascending — but
--- is NOT a written API contract as of SQLite 3.45.1. A feature request
--- to document this guarantee is pending upstream. If a future SQLite
--- version chose descending scan or a different plan, this trigger would
--- fail loudly with unique-constraint violations, and the shift tests in
--- test_relationships.lua would catch it immediately.
-create trigger relationships_shift_down_on_array_delete
+-- On cascade-deletes triggered by the drain's DELETE from hsa, these
+-- same triggers fire (via pragma recursive_triggers = on) and add the
+-- cascade-orphaned children to the needs_trace worklist. Depth stays
+-- bounded because the mark trigger's action is a plain UPDATE with no
+-- further cascade.
+--
+-- The root (hsa_pk = 1) is never a valid needs_trace target — the
+-- delete of a relationship whose child is the root can only happen
+-- inside root-anchoring restructuring, and the root always trivially
+-- reaches itself. Skipping the mark on old.child = 1 keeps the drain
+-- from spinning on a no-op seed.
+create trigger relationships_mark_needs_trace_after_delete
 after delete on relationships
-when (select type from hsa where hsa_pk = old.parent) = 'a'
+when old.child <> 1
 begin
-	update relationships set idx = idx - 1
-	where parent = old.parent and idx > old.idx;
+	update hsa set needs_trace = 1 where hsa_pk = old.child;
 end;
 
--- Garbage collection: Bacon-Rajan-style upward reachability check.
--- After a relationship is deleted, walk upward from the removed edge's
--- old child through its remaining incoming relationships. If root
--- (hsa_pk = 1) shows up in the walk, the child is still anchored — do
--- nothing. Otherwise the child is orphaned and gets deleted; the delete
--- cascades to its outgoing relationships, each re-firing this trigger
--- for the next level down (requires pragma recursive_triggers = on).
---
--- The recursive CTE is the "temp-table upward walk" approach: seed with
--- the deleted child, extend by adding every parent of a current member,
--- terminate when nothing new can be added or root shows up. SQLite runs
--- that iteration internally.
---
--- Cycles handled: an unanchored cycle traversed from any member converges
--- to just the cycle's nodes, without root, so all members get purged one
--- by one via the cascade + retrigger loop.
---
--- Trade-off vs. full-sweep-from-root: this doesn't clean up subgraphs
--- that were already unreachable before the current delete (e.g., a
--- pre-existing detached cycle that no delete has touched). Callers who
--- need that guarantee invoke full_sweep().
-create trigger relationships_purge_after_delete
-after delete on relationships
-begin
-	delete from hsa
-	where hsa_pk = old.child
-		and hsa_pk <> 1
-		and not exists (
-			with recursive ancestors(pk) as (
-				select old.child
-				union
-				select r.parent from relationships r
-				join ancestors on r.child = ancestors.pk
-			)
-			select 1 from ancestors where pk = 1
-		);
-end;
-
--- Same GC walk on child-swap. When set_hash_element / set_array_element
--- change a relationship's child in place (the mutable-child path), the
--- OLD child might no longer be reachable — same ancestor walk decides.
--- NEW.child is safe because the row still points at it, so the walk
--- from NEW.child would find root; we only check OLD.child.
-create trigger relationships_purge_after_update_of_child
+-- Same mark on child-swap. set_hash_element / set_array_element use
+-- update rather than delete+insert for content changes, so the update
+-- path needs its own trigger. new.child is safe (the row now points at
+-- it — trivially reachable via this edge), so we only mark old.child.
+create trigger relationships_mark_needs_trace_after_update_of_child
 after update of child on relationships
+when old.child <> 1 and old.child <> new.child
 begin
-	delete from hsa
-	where hsa_pk = old.child
-		and hsa_pk <> 1
-		and not exists (
-			with recursive ancestors(pk) as (
-				select old.child
-				union
-				select r.parent from relationships r
-				join ancestors on r.child = ancestors.pk
-			)
-			select 1 from ancestors where pk = 1
-		);
+	update hsa set needs_trace = 1 where hsa_pk = old.child;
 end;

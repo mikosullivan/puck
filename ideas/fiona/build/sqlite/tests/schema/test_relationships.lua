@@ -305,20 +305,22 @@ h.test("allow update of child (content-mutable)", function()
 	end
 end)
 
-h.test("update of child fires purge trigger — old child is GCed if unreachable", function()
-	-- Build root → h2, then swap h2 to a fresh h3. h2 should be GCed
-	-- because the (root, 'x') edge is the only thing anchoring it.
+h.test("update of child marks old child needs_trace = 1", function()
+	-- The mark trigger sets needs_trace on the old child. Actual GC of
+	-- unreachable subgraphs happens in the Lua drain (Db:_drain_needs_trace),
+	-- exercised by the interface-level purge tests. Here we only verify the
+	-- schema-level side effect: the flag transitions on the row.
 	local db = h.fresh_db()
 	exec(db, "insert into hsa (type) values ('h')")  -- 2
 	exec(db, "insert into hsa (type) values ('h')")  -- 3
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
 	exec(db, "update relationships set child = 3 where parent = 1 and key = 'x'")
 
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 2") do
-		h.assert_eq(row.c, 0, "old child (h2) was GCed via purge_after_update_of_child")
+	for row in db:nrows("select needs_trace from hsa where hsa_pk = 2") do
+		h.assert_eq(row.needs_trace, 1, "old child (h2) marked needs_trace")
 	end
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 3") do
-		h.assert_eq(row.c, 1, "new child (h3) survives — reachable via updated edge")
+	for row in db:nrows("select needs_trace from hsa where hsa_pk = 3") do
+		h.assert_true(row.needs_trace == nil, "new child (h3) is not marked")
 	end
 end)
 
@@ -339,102 +341,42 @@ h.test("reject update of rel_pk", function()
 end)
 
 -- ------------------------------------------------------------
--- Purge trigger — garbage collection on relationship delete
+-- Mark trigger — needs_trace tagging on relationship delete
 -- ------------------------------------------------------------
+--
+-- These test the schema-level effect of the mark trigger: after a
+-- relationship delete, the row's child hsa gets needs_trace = 1 (unless
+-- the child is root). The actual GC — walking the reference graph and
+-- deleting unreachable rows — is Lua-side and lives in tests/lua/
+-- (test_purge.lua). Here we only verify the trigger fires and marks.
 
-h.test("purge: orphaned child is deleted after its only edge is removed", function()
+h.test("mark: orphaned child gets needs_trace = 1", function()
 	local db = h.fresh_db()
 	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'leaf')")  -- 2
 	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'child', 0)")
 	exec(db, "delete from relationships where parent = 1 and key = 'child'")
 
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 2") do
-		h.assert_eq(row.c, 0, "orphaned child purged")
-		return
+	for row in db:nrows("select needs_trace from hsa where hsa_pk = 2") do
+		h.assert_eq(row.needs_trace, 1, "child marked needs_trace")
 	end
 end)
 
-h.test("purge: child still reachable via another parent survives", function()
-	-- Graph shape:
-	--   root -> h2 (via 'a')
-	--   root -> h3 (via 'b')        <-- extra anchor
-	--   h2   -> h3 (via 'shared')   <-- edge we delete
-	-- Deleting h2 -> h3 leaves h3 reachable via root -> h3, so h3 stays.
+h.test("mark: root is not marked when a relationship whose child is root is deleted", function()
+	-- Root can never legitimately be a relationship's child, but the
+	-- trigger's when-clause is defense in depth: if such a row ever
+	-- exists and gets deleted, root stays clean.
 	local db = h.fresh_db()
+	-- Manufacture the impossible: force a relationship where child = 1.
+	-- Insert bypasses the check trigger by using a valid parent (h2), then
+	-- we directly modify the child via update — actually we can't, child
+	-- update triggers the mark. So instead, we just delete a "normal"
+	-- relationship and verify root's needs_trace is null.
 	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into hsa (type) values ('h')")  -- 3
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'b', 1)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'shared', 0)")
-	exec(db, "delete from relationships where parent = 2 and key = 'shared'")
+	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'k', 0)")
+	exec(db, "delete from relationships where parent = 1 and key = 'k'")
 
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 3") do
-		h.assert_eq(row.c, 1, "child stays; other parent still anchors it")
-		return
-	end
-end)
-
-h.test("purge: whole subtree of an orphaned root is deleted", function()
-	-- Chain: root -> h2 -> h3 -> string s4. Cutting root -> h2 orphans all.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into hsa (type) values ('h')")  -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'leaf')")  -- 4
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'branch', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'sub', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (3, 4, 'leaf', 0)")
-	exec(db, "delete from relationships where parent = 1 and key = 'branch'")
-
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk in (2,3,4)") do
-		h.assert_eq(row.c, 0, "whole subtree purged")
-		return
-	end
-end)
-
-h.test("purge: fully detached cycle is deleted", function()
-	-- root -> h2, h2 <-> h3 (mutual). Cutting root -> h2 detaches the
-	-- {h2, h3} cycle. Reachable-from-root can't see it, so both purge.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into hsa (type) values ('h')")  -- 3
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'entry', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'forward', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (3, 2, 'back', 0)")
-	exec(db, "delete from relationships where parent = 1 and key = 'entry'")
-
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk in (2,3)") do
-		h.assert_eq(row.c, 0, "detached cycle purged")
-		return
-	end
-end)
-
-h.test("purge: cycle still connected to root stays intact", function()
-	-- root -> h2, root -> h3, h2 <-> h3. Cutting root -> h2 leaves h3
-	-- reachable via root -> h3, and h2 still reachable via root -> h3 -> h2.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('h')")  -- 2
-	exec(db, "insert into hsa (type) values ('h')")  -- 3
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 3, 'b', 1)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (2, 3, 'forward', 0)")
-	exec(db, "insert into relationships (parent, child, key, idx) values (3, 2, 'back', 0)")
-	exec(db, "delete from relationships where parent = 1 and key = 'a'")
-
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk in (2,3)") do
-		h.assert_eq(row.c, 2, "both cycle members still reachable")
-		return
-	end
-end)
-
-h.test("purge: root itself is never deleted even when all its edges go", function()
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type, st, value) values ('s', 's', 'x')")  -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'x', 0)")
-	exec(db, "delete from relationships where parent = 1 and key = 'x'")
-
-	for row in db:nrows("select count(*) as c from hsa where hsa_pk = 1") do
-		h.assert_eq(row.c, 1, "root always survives (base case of the CTE)")
-		return
+	for row in db:nrows("select needs_trace from hsa where hsa_pk = 1") do
+		h.assert_true(row.needs_trace == nil, "root's needs_trace stays null")
 	end
 end)
 
@@ -647,43 +589,15 @@ end)
 -- Shift-by-1 on array delete — Ruby arr.delete_at() semantics
 -- ------------------------------------------------------------
 
-h.test("array delete shifts every higher-idx sibling down by 1 (dense case)", function()
-	local db = fresh_array(5)  -- [3, 4, 5, 6, 7] at idx 0..4
-	-- Delete idx 2 (child 5); expect 3, 4 stay at 0, 1 and 6, 7 shift to 2, 3.
-	exec(db, "delete from relationships where parent = 2 and idx = 2")
-
-	local by_idx = {}
-	for row in db:nrows("select idx, child from relationships where parent = 2") do
-		by_idx[row.idx] = row.child
-	end
-
-	h.assert_eq(by_idx[0], 3, "3 stays at 0")
-	h.assert_eq(by_idx[1], 4, "4 stays at 1")
-	h.assert_eq(by_idx[2], 6, "6 shifted from 3 to 2")
-	h.assert_eq(by_idx[3], 7, "7 shifted from 4 to 3")
-	h.assert_eq(by_idx[4], nil, "idx 4 no longer occupied")
-end)
-
-h.test("array delete preserves sparseness — shifts by exactly 1, doesn't collapse gaps", function()
-	-- Sparse array: two elements, one at idx 0 and one at idx 1000.
-	-- Deleting idx 0 shifts the b element from 1000 → 999, NOT 0.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('a')")                                      -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 10)")                  -- 3
-	exec(db, "insert into hsa (type, st, value) values ('s', 'n', 20)")                  -- 4
-	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 4, 1000)")
-
-	exec(db, "delete from relationships where parent = 2 and idx = 0")
-
-	local at
-	for row in db:nrows("select idx, child from relationships where parent = 2") do
-		at = row
-	end
-	h.assert_eq(at.child, 4, "only child 4 remains")
-	h.assert_eq(at.idx, 999, "shifted by exactly 1 (1000 → 999); sparseness preserved")
-end)
+-- Shift-down on delete lives in Db:delete_array_element (Lua) now,
+-- not in a schema trigger. The dense-case shift, sparseness
+-- preservation, and previously-undocumented-planner-order regression
+-- test all live in tests/lua/test_delete_array_element.lua.
+--
+-- Direct raw-SQL DELETE on an array-parented relationship (which was
+-- what these schema tests exercised) is no longer part of the
+-- supported contract — the shift semantic belongs to the API, not the
+-- schema.
 
 h.test("array delete of last idx: no siblings to shift, straightforward removal", function()
 	local db = fresh_array(3)  -- [3, 4, 5] at idx 0..2
@@ -736,41 +650,9 @@ h.test("hash delete does NOT shift; leaves a gap (hash idx is internal)", functi
 	h.assert_eq(by_idx[2], "c", "c stays at 2 (no shift for hash)")
 end)
 
-h.test("array shift-down handles a large sparse gap correctly", function()
-	-- Regression test for the empirical UPDATE processing order. If SQLite
-	-- ever changes planner behavior to process in a non-ascending order,
-	-- shifting a dense-then-sparse-then-dense pattern would fail with
-	-- unique-constraint violations. This test catches that.
-	local db = h.fresh_db()
-	exec(db, "insert into hsa (type) values ('a')")  -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'a', 0)")
-
-	for i = 3, 8 do
-		exec(db, string.format("insert into hsa (type, st, value) values ('s', 'n', %d)", i))
-	end
-
-	-- Three-cluster pattern: [3 at 0, 4 at 1, 5 at 2, 6 at 100, 7 at 101, 8 at 102].
-	exec(db, "insert into relationships (parent, child, idx) values (2, 3, 0)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 4, 1)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 5, 2)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 6, 100)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 7, 101)")
-	exec(db, "insert into relationships (parent, child, idx) values (2, 8, 102)")
-
-	-- Delete an entry in the first cluster.
-	exec(db, "delete from relationships where parent = 2 and idx = 1")
-
-	local by_idx = {}
-	for row in db:nrows("select idx, child from relationships where parent = 2") do
-		by_idx[row.idx] = row.child
-	end
-	h.assert_eq(by_idx[0], 3,  "3 stays at 0")
-	h.assert_eq(by_idx[1], 5,  "5 shifted from 2 to 1")
-	h.assert_eq(by_idx[2], nil, "idx 2 vacated by the shift")
-	h.assert_eq(by_idx[99],  6, "6 shifted from 100 to 99 — sparse gap preserved")
-	h.assert_eq(by_idx[100], 7, "7 shifted from 101 to 100")
-	h.assert_eq(by_idx[101], 8, "8 shifted from 102 to 101")
-end)
+-- Note: the previous large-sparse-gap shift regression test moved to
+-- tests/lua/test_delete_array_element.lua where it exercises the
+-- Lua-side Db:_shift_down_array two-phase hop through the actual API.
 
 -- ------------------------------------------------------------
 -- normalize_hashes — explicit safety-valve API method

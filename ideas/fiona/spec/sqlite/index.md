@@ -197,6 +197,8 @@ Secondary reason: on cosmological timescales of insert/delete churn, drift could
 
 **Arrays are deliberately untouched.** Users control array idx directly (including sparse patterns like `$arr[100_000] = 'b'`), and auto-normalization would collapse those deliberate layouts. If a specific array needs its idx values reset, the caller does it manually.
 
+**Same undocumented-planner-order dependency as `delete_array_element`.** The natural implementation of `normalize_hashes` is a single per-parent `update relationships set idx = row_number() over (order by idx) - 1 where parent = ?` — which relies on the planner processing rows in ascending idx order so each row's new slot is one that was just vacated by the row below it. Same empirically-stable, not-a-written-contract behavior noted under [`delete_array_element`](#delete_array_element). Any regression fires as unique-constraint violations in the normalize_hashes tests; the fix would be a two-phase hop through the 10^18 safe range, matching what the shift-on-update trigger does.
+
 ### `meta`
 
 Return every row of the meta table as a flat hash keyed by the row's `key` column.

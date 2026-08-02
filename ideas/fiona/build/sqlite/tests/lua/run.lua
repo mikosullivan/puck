@@ -5,7 +5,9 @@
 -- totals and exits non-zero on any failure.
 
 local script_dir = arg[0]:match("(.*/)") or "./"
-package.path = script_dir .. "?.lua;" .. package.path
+-- Look for helpers next to run.lua AND one dir up (helpers.lua lives at
+-- tests/ after the tests/ reorg, not at tests/lua/).
+package.path = script_dir .. "?.lua;" .. script_dir .. "../?.lua;" .. package.path
 
 local h = require("helpers")
 
