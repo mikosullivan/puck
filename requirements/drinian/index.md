@@ -45,6 +45,18 @@ Drinian's rule is about **what persists**, not about **what's referenced at runt
 
 The persistence boundary is "walk from the root hash." Ordinary Lua references on either side of that boundary don't violate anything — they just don't survive save/load. In V1 there is no save/load, so nothing is observable from this rule; it's still the right shape to hold to.
 
+## The AST lives in Drinian
+
+The parsed AST of the running program — the CaspM the interpreter walks to execute code — lives inside the Drinian hash. Not on the side as engine-private state, not held only by the transpiler that produced it. Inside Drinian, with everything else.
+
+**Why:** a snapshot of Drinian has to be enough to resume execution on a fresh host. If the host has to reload source from disk and re-transpile before it can pick up where the previous host left off, the snapshot isn't self-contained. Worse: if the source changed between snapshot and revive, the running program would resume against a different program body than the one it was executing. Keeping the AST in Drinian makes the snapshot a complete record of what's running, and makes revive a matter of unpacking the hash — not a fresh compile.
+
+**What "AST in Drinian" means concretely:** function bodies, closure bodies, method bodies, class-definition bodies, top-level program body, loaded-library bodies — the CaspM trees for all of them — live under some top-level field (name TBD; a natural companion to the existing `srcs` registry that maps short keys to source paths). Values inside frame locals that reference a function body do so through the same short-key mechanism `srcs` already uses. On revive, the interpreter picks up executing the AST from Drinian; it doesn't need `src` files on disk anywhere.
+
+**V1 vs later.** V1 doesn't ship snapshot/revive, so the AST-in-Drinian rule has no observable teeth yet. It's still the right discipline for V1 to hold to — a runtime that keeps its AST engine-private will need restructuring when persistence lands. Landing the discipline now costs almost nothing (the transpiler already produces CaspM; parking it in Drinian is a matter of choosing where in the hash it lives) and saves a rewrite later.
+
+<!-- SPEC CONFLICT: This rule ("AST is in Drinian") interacts with the § "Classes are NOT in Drinian" section below, which states class registries live as engine-private state. Class definitions come FROM the AST, so if the AST is in Drinian, the raw class-definition bodies are in Drinian too, even if the resolved / registered class registry (with dispatch caches, inverse index, etc.) stays engine-private. Two ways to reconcile: (a) keep the class-registry-is-engine-private rule and treat it as "the resolved dispatch structure isn't in Drinian; the AST it was built from is" — engine rebuilds the registry on revive by re-walking the AST; (b) move classes into Drinian outright since their definitions are already there. Needs Miko decision. -->
+
 ## Worked example: Drinian mid-execution
 
 **Note on representation.** The JSON snippets in this doc use a **simplified inline-value shorthand** for readability — locals carry their values directly as `{"value": "Aslan", "src": ["a", 6]}` rather than as references into separate `references` and `objects` tables. The full canonical form (with per-object `role` field, sequence-keyed platters in an `objects` table, `references` mapping ref-IDs to target-IDs, top-level `sequence` counter, etc.) lives in [examples/mid-execution](https://puck.uno/requirements/drinian/examples/mid-execution). Treat that example as authoritative for representation; this doc focuses on the structural concepts and uses lighter snippets to keep the prose moving.
