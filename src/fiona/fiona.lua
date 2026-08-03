@@ -891,6 +891,14 @@ function Db:_iterator(parent_pk, kind, label)
 					return value
 				end
 
+				if kind == "handle_pairs" then
+					if row.child ~= nil then
+						return key, db:collection(row.child)
+					end
+
+					return key, value
+				end
+
 				return key, value
 			end
 
@@ -961,25 +969,70 @@ function Db:_collection_handle(collection_pk)
 		"select type from collections where collection_pk = :pk",
 		{pk = collection_pk})
 
+	if coll_type == nil then
+		error("collection: no collection with collection_pk = " .. tostring(collection_pk))
+	end
+
 	local db = self
-	local handle = {
-		pk = collection_pk,
-		type = coll_type,
-		is_hash  = function() return coll_type == "h" end,
-		is_array = function() return coll_type == "a" end,
-	}
+	local RESERVED = {pk = true, type = true, is_hash = true, is_array = true}
+	local is_hash_fn  = function() return coll_type == "h" end
+	local is_array_fn = function() return coll_type == "a" end
+
+	-- Raw table is empty on purpose. Every read routes through __index
+	-- (including the reserved names pk / type / is_hash / is_array),
+	-- and every write routes through __newindex (which rejects the
+	-- reserved names). Storing pk/type/is_hash/is_array as raw fields
+	-- would let a user overwrite them via direct assignment — Lua's
+	-- __newindex only fires for missing keys.
+	local handle = {}
 
 	setmetatable(handle, {
 		__index = function(_, k)
+			if k == "pk"       then return collection_pk end
+			if k == "type"     then return coll_type end
+			if k == "is_hash"  then return is_hash_fn end
+			if k == "is_array" then return is_array_fn end
+
 			local kt = type(k)
 
 			if kt == "string" then
-				return db:get_hash_element(collection_pk, k)
+				local child, st, scalar = db:_row_shape_hash_full(collection_pk, k)
+
+				if child ~= nil then
+					return db:collection(child)
+				end
+
+				return decode_scalar(st, scalar)
 			end
 
 			if kt == "number" then
-				return db:get_array_element(collection_pk, k)
+				local child, st, scalar = db:_row_shape_array_full(collection_pk, k)
+
+				if child ~= nil then
+					return db:collection(child)
+				end
+
+				return decode_scalar(st, scalar)
 			end
+		end,
+		__newindex = function(_, k, v)
+			if RESERVED[k] then
+				error("collection handle: '" .. tostring(k) .. "' is a reserved handle field — use the underlying db API to write a hash key of that name")
+			end
+
+			local kt = type(k)
+
+			if kt == "string" then
+				db:_handle_set_hash(collection_pk, k, v)
+				return
+			end
+
+			if kt == "number" then
+				db:_handle_set_array(collection_pk, k, v)
+				return
+			end
+
+			error("collection handle: key must be string (hash) or number (array); got " .. kt)
 		end,
 		__len = function()
 			if coll_type == "h" then
@@ -989,11 +1042,57 @@ function Db:_collection_handle(collection_pk)
 			return db:get_array_length(collection_pk)
 		end,
 		__pairs = function()
-			return db:pairs(collection_pk)
+			return db:_iterator(collection_pk, "handle_pairs", "pairs")
+		end,
+		__eq = function(a, b)
+			return a.pk == b.pk
+		end,
+		__tostring = function()
+			return string.format("fiona.collection(pk=%d, type=%s)", collection_pk, coll_type)
 		end,
 	})
 
 	return handle
+end
+
+--[[ {"in": {"collection_pk": "integer"}, "out": "handle for the collection — see _collection_handle for the metatable surface"} ]]
+function Db:collection(collection_pk)
+	return self:_collection_handle(collection_pk)
+end
+
+-- Write dispatcher for hash keys through a handle's __newindex. Handles
+-- the three cases: nil deletes, another handle sets a ref, a Lua scalar
+-- sets a scalar. Any other Lua type raises.
+--[[ {"in": {"parent_pk": "integer", "key": "string", "value": "nil | handle | boolean | number | string"}, "out": "nil"} ]]
+function Db:_handle_set_hash(parent_pk, key, value)
+	if value == nil then
+		self:delete_hash_element(parent_pk, key)
+		return
+	end
+
+	if type(value) == "table" and type(value.pk) == "number" and type(value.type) == "string" then
+		self:set_hash_ref(parent_pk, key, value.pk)
+		return
+	end
+
+	self:set_hash_scalar(parent_pk, key, value)
+end
+
+-- Write dispatcher for array indexes through a handle's __newindex.
+-- Same three cases as _handle_set_hash.
+--[[ {"in": {"parent_pk": "integer", "idx": "integer >= 0", "value": "nil | handle | boolean | number | string"}, "out": "nil"} ]]
+function Db:_handle_set_array(parent_pk, idx, value)
+	if value == nil then
+		self:delete_array_element(parent_pk, idx)
+		return
+	end
+
+	if type(value) == "table" and type(value.pk) == "number" and type(value.type) == "string" then
+		self:set_array_ref(parent_pk, idx, value.pk)
+		return
+	end
+
+	self:set_array_scalar(parent_pk, idx, value)
 end
 
 -- Fire the on_gc callback for one collection. No-op if no callback is

@@ -299,6 +299,32 @@ The callback receives a proxy handle: `.pk` and `.type` are direct fields; `hand
 
 Returns the accumulator of errors raised by the callback during the most recent drain. Each entry is `{collection_pk, message, trace_order}`. The list clears at the start of every drain — a long list is a smell, and programs that snapshot at shutdown can check this before committing.
 
+### Handles
+
+The raw db API is method-based: `db.set_hash_scalar(t, "foo", "bar")`, `db.get_hash_element(t, "foo")`. Handles wrap a `collection_pk` in a Lua table with metatable magic so a collection looks like a regular Lua hash or array.
+
+`db.collection(pk) → handle`
+
+Returns a handle for the collection at `pk`. Raises if `pk` doesn't exist.
+
+The handle supports the natural Lua idioms:
+
+- `handle.foo` — reads a hash element. Scalars come back as raw Lua values (string, number, boolean). Refs come back as a fresh handle, so `handle.child.foo` chains naturally through nested structure.
+- `handle.foo = "bar"` — writes a hash scalar.
+- `handle.foo = other_handle` — writes a hash ref (extracts the target `pk` from the given handle).
+- `handle.foo = nil` — deletes the hash key.
+- `handle[3]` / `handle[3] = "x"` — same three cases for arrays. Indexes are 0-based, matching the rest of the Fiona API.
+- `#handle` — length. `get_hash_length` for hashes, `get_array_length` for arrays.
+- `pairs(handle)` — iterates entries; refs come back wrapped.
+- `handle.pk`, `handle.type` — direct accessors for the underlying `collection_pk` and type string (`'h'` or `'a'`).
+- `handle:is_hash()`, `handle:is_array()` — type predicates.
+- `handle1 == handle2` — true iff both wrap the same `collection_pk`.
+- `tostring(handle)` — debug form: `"fiona.collection(pk=…, type=…)"`.
+
+**Reserved fields.** `pk`, `type`, `is_hash`, `is_array` are handle-owned names. Reads return the handle's own value; writes raise (they can't accidentally overwrite the underlying pk or class). A hash key that happens to collide with one of these — a user hash that legitimately wants a key called `"pk"` — must be reached via the raw db API: `db.get_hash_element(handle.pk, "pk")` reads it, `db.set_hash_scalar(handle.pk, "pk", value)` writes it.
+
+**When to use handles vs the raw API.** Handles are ergonomic for code that reads and writes named fields naturally (`handle.name`, `handle.child.id`). The raw API stays useful for bulk operations, code that already has the `pk` in hand, and situations where handle allocation per read would show up as pressure.
+
 ## Aspirational — not implemented yet
 
 The following methods are spec'd but not present in the current interface. Landing them is a straightforward addition when demand shows up.

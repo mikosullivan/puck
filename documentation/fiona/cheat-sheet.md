@@ -18,6 +18,7 @@ Quick reference for Fiona's public API. See [index](./) for detailed semantics o
 | `db:add_hash()` | `collection_pk` |
 | `db:atomic(fn)` | whatever `fn` returns |
 | `db:close()` | — |
+| `db:collection(pk)` | handle — table-style access to a collection (see [Handles](#handles)) |
 | `db:delete_array_element(parent, idx)` | `boolean` — shifts sibling idxs down |
 | `db:delete_hash_element(parent, key)` | `boolean` |
 | `db:gc_errors()` | list of `{collection_pk, message, trace_order}` from the last drain |
@@ -60,3 +61,25 @@ Once you have a `db` handle, the natural Lua idioms map to Fiona calls like this
 | `for _, v in pairs(t) do ... end` | `for v in db:values(t) do ... end` |
 | `for k, v in pairs(t) do ... end` | `for k, v in db:pairs(t) do ... end` |
 | `for i, v in ipairs(arr) do ... end` | `for i, v in db:pairs(arr) do ... end` (yields 0-based idxs) |
+
+## Handles
+
+`db:collection(pk)` returns a handle that makes the collection look like a regular Lua hash or array. Every metatable operation routes through the underlying db:
+
+| Lua idiom on handle | What Fiona does |
+| --- | --- |
+| `h = db:collection(pk)` | wraps `pk` in a handle |
+| `h.foo` | reads a hash element; refs return a fresh handle so `h.child.foo` chains |
+| `h.foo = "bar"` | writes a scalar |
+| `h.foo = other_handle` | writes a ref |
+| `h.foo = nil` | deletes the key |
+| `h[3]` | reads an array element (0-indexed to match Fiona) |
+| `h[3] = "x"` | writes an array scalar |
+| `#h` | length (`get_hash_length` or `get_array_length` depending on type) |
+| `for k, v in pairs(h) do ... end` | walks entries; refs come back as handles |
+| `h.pk`, `h.type` | direct accessors — `collection_pk` and `'h'`/`'a'` |
+| `h:is_hash()`, `h:is_array()` | type predicates |
+| `h1 == h2` | true iff both wrap the same `collection_pk` |
+| `tostring(h)` | `"fiona.collection(pk=…, type=…)"` |
+
+Reserved handle fields — `pk`, `type`, `is_hash`, `is_array` — are read-only; writing to them raises. A hash key that happens to collide with one of those names has to be reached via the raw db API (`db:get_hash_element(h.pk, "pk")`).
