@@ -55,7 +55,7 @@ No default. Callers must specify explicitly — makes intent visible at every ca
 Concretely:
 
 1. Open (or create) the SQLite file via lsqlite3. In `'rw'` / `'wr'` modes, SQLite creates the file if absent (matching its own default). In `'r'` mode, a missing file raises.
-2. Inspect the schema — check whether `collections`, `relationships`, and `meta` tables are present. All three present → case 1. None present → case 2, apply the schema at [../build/lua/src/fiona.sql](../build/lua/src/fiona.sql). Any other combination → case 3, raise.
+2. Inspect the schema — check whether `collections`, `relationships`, and `meta` tables are present. All three present → case 1. None present → case 2, apply the schema at [../../../src/fiona/fiona.sql](../../../src/fiona/fiona.sql). Any other combination → case 3, raise.
 3. Set the required per-connection pragmas: `foreign_keys = on`, `recursive_triggers = on`.
 4. Return the handle, tagged with the mode so its methods can enforce read/write restrictions.
 

@@ -21,9 +21,11 @@ local home = os.getenv("HOME") or "."
 package.cpath = home .. "/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 package.path  = home .. "/.luarocks/share/lua/5.4/?.lua;" .. package.path
 
--- Add the fiona src/ dir to package.path so bench scenarios can require("fiona").
+-- Add src/fiona/ to package.path so bench scenarios can require("fiona").
+-- From tests/benchmarks/fiona/ (depth 3), three ups land at repo root,
+-- then into src/fiona/.
 local script_dir = arg[0] and arg[0]:match("(.*/)") or "./"
-package.path = script_dir .. "../lua/src/?.lua;" .. package.path
+package.path = script_dir .. "../../../src/fiona/?.lua;" .. package.path
 
 local fiona = require("fiona")
 

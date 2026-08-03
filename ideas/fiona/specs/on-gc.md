@@ -255,4 +255,4 @@ If the logger's designer wanted a persistent shutdown message, the correct patte
 - `on_gc` on the Db class — Fiona API surface.
 - `in_trace` column semantics and the drain algorithm — see [schema](./schema/) for the persistent + temp table structure.
 - Drinian's `on_close` and `gc_errors` — the Caspian-side layer this hook feeds into.
-- The `process` temp table is defined in [fiona-temp.sql](../build/lua/src/fiona-temp.sql) once implemented; its only current consumer is the GC flag.
+- The `process` temp table is defined in [fiona-temp.sql](../../../src/fiona/fiona-temp.sql) once implemented; its only current consumer is the GC flag.

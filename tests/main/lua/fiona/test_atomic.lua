@@ -5,7 +5,7 @@
 -- boundary also runs Db:_drain_needs_trace before release.
 
 local script_dir = arg[0]:match("(.*/)") or "./"
-package.path = script_dir .. "?.lua;" .. script_dir .. "../?.lua;" .. package.path
+package.path = script_dir .. "?.lua;" .. package.path
 
 local h = require("helpers")
 local fiona = require("fiona")
