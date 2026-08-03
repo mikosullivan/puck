@@ -279,5 +279,98 @@ print(string.format("%-65s %10d", "TOTAL", total))
 print()
 print(string.format("Total vs floppy budget: %d / %d bytes (%d%%)",
 	total, FLOPPY_TARGET, math.floor(total * 100 / FLOPPY_TARGET)))
+-- ------------------------------------------------------------
+-- Regenerate the floppy-budget pie chart from the actual bytes.
+-- Four wedges: caspian binary, caspian.lua, wiggle room, free.
+-- External isn't in the pie — it's third-party, sized by upstream,
+-- outside the budget Caspian directly controls.
+-- ------------------------------------------------------------
+print()
+print("==> Regenerating requirements/core/budget/floppy-budget.svg")
+
+local WIGGLE_BYTES = 100 * 1024
+local binary_bytes      = file_size(BUILD .. "/bin/caspian")
+local caspian_lua_bytes = file_size(BUILD .. "/caspian/caspian.lua")
+local free_bytes        = FLOPPY_TARGET - binary_bytes - caspian_lua_bytes - WIGGLE_BYTES
+
+if free_bytes < 0 then
+	print(string.format("    WARNING: %d bytes over budget — pie will clamp free to 0",
+		-free_bytes))
+	free_bytes = 0
+end
+
+local slices = {
+	{name = "caspian binary", bytes = binary_bytes,      color = "#ba68c8"},
+	{name = "caspian.lua",    bytes = caspian_lua_bytes, color = "#81c784"},
+	{name = "wiggle room",    bytes = WIGGLE_BYTES,      color = "#fff176"},
+	{name = "free",           bytes = free_bytes,        color = "#81d4fa"},
+}
+
+local pie_total = 0
+for _, s in ipairs(slices) do pie_total = pie_total + s.bytes end
+
+-- Wedge geometry.
+local paths, legend_rows, alt_parts = {}, {}, {}
+local start_angle = 0
+for i, s in ipairs(slices) do
+	local share = s.bytes / pie_total
+	local end_angle = start_angle + share * 2 * math.pi
+
+	local x1 = math.sin(start_angle) * 60
+	local y1 = -math.cos(start_angle) * 60
+	local x2 = math.sin(end_angle) * 60
+	local y2 = -math.cos(end_angle) * 60
+	local large_arc = share > 0.5 and 1 or 0
+
+	-- SVG arc: `A rx,ry x-rotation large-arc-flag sweep-flag x,y`.
+	-- large_arc = 1 iff the wedge spans more than 180°; sweep = 1 for
+	-- clockwise, which is what the pie walks starting from top.
+	paths[#paths + 1] = string.format(
+		'\t\t<path d="M %.1f,%.1f A 60,60 0 %d,1 %.1f,%.1f L 0,0 Z" fill="%s"/>',
+		x1, y1, large_arc, x2, y2, s.color)
+
+	local y = 45 + (i - 1) * 30
+	local kb = math.floor(s.bytes / 1024)
+	local pct = math.floor(share * 100 + 0.5)
+	legend_rows[#legend_rows + 1] = string.format(
+		'\t\t<rect x="240" y="%d" width="16" height="16" fill="%s"/>\n' ..
+		'\t\t<text x="264" y="%d">%s: %d kb (%d%%)</text>',
+		y, s.color, y + 13, s.name, kb, pct)
+
+	alt_parts[#alt_parts + 1] = string.format("%s %d kb", s.name, kb)
+	start_angle = end_angle
+end
+
+local svg = string.format([[
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="468" role="img" aria-label="Caspian floppy budget: %s, of %d kb total">
+	<title>Caspian floppy budget</title>
+	<g transform="rotate(180 110 120)">
+		<rect x="5" y="10" width="210" height="220" rx="6" fill="#29b6f6"/>
+		<rect x="40" y="20" width="150" height="50" rx="3" fill="#b0bec5"/>
+		<rect x="120" y="28" width="25" height="34" rx="1" fill="#455a64"/>
+		<rect x="20" y="85" width="180" height="135" rx="3" fill="#fafafa"/>
+	</g>
+	<g transform="translate(110 87.5)">
+%s
+	</g>
+	<g font-family="sans-serif" font-size="14" fill="currentColor">
+%s
+		<text x="240" y="215" font-weight="bold">Total: %d kb</text>
+	</g>
+</svg>
+]],
+	table.concat(alt_parts, ", "),
+	math.floor(pie_total / 1024),
+	table.concat(paths, "\n"),
+	table.concat(legend_rows, "\n"),
+	math.floor(pie_total / 1024))
+
+write_file(repo .. "requirements/core/budget/floppy-budget.svg", svg)
+
+for _, s in ipairs(slices) do
+	print(string.format("    %-15s %d kb (%d%%)",
+		s.name, math.floor(s.bytes / 1024), math.floor(s.bytes / pie_total * 100 + 0.5)))
+end
+
 print()
 print("Build complete: " .. BUILD)

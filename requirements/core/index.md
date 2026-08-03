@@ -75,6 +75,50 @@ All sizes approximate, in kb.
 </tbody>
 
 <tbody>
+<tr><th colspan="3">Cache</th></tr>
+<tr>
+	<td>luaexpat (Lua helpers)</td>
+	<td class="align-right">23</td>
+	<td>Pure-Lua helpers from the <code>luaexpat</code> distribution — <code>lom.lua</code> (DOM builder), <code>totable.lua</code> (SAX-to-table), <code>threat.lua</code> (billion-laughs protection). Bundled into <code>caspian.lua</code> at build time via <code>tools/bundle-caspian.lua</code>, so <code>require("lxp.lom")</code> etc. resolves from memory without any filesystem hit. The C parser it sits on top of — <code>lxp.so</code> — ships as its own file under <code>external/lib/</code> and stays in the External tier.</td>
+</tr>
+<tr>
+	<td>pegasus</td>
+	<td class="align-right">45</td>
+	<td>Pure-Lua HTTP/1.x server (main module plus plugins for compress / downloads / files / router / tls). Fully bundled into <code>caspian.lua</code> at build time — no on-disk footprint. <code>require("pegasus")</code> resolves from memory. The engine's IPC layer sits on top of this; version-locked via the bundle.</td>
+</tr>
+<tr>
+	<td>luasocket (Lua wrappers)</td>
+	<td class="align-right">60</td>
+	<td>Pure-Lua half of luasocket: <code>socket.lua</code> entry point, HTTP / FTP / SMTP / URL / headers / tp / ltn12 / mime.lua wrappers. Bundled into <code>caspian.lua</code> at build time. The C cores (<code>socket/core.so</code>, <code>mime/core.so</code>, <code>socket/serial.so</code>, <code>socket/unix.so</code>) stay in External.</td>
+</tr>
+<tr>
+	<td>dkjson</td>
+	<td class="align-right">25</td>
+	<td>Pure-Lua JSON parser/encoder. Bundled into <code>caspian.lua</code>. The transpiler's current JSON dep — <code>lua-cjson</code> is the intended eventual replacement for its C speed.</td>
+</tr>
+<tr>
+	<td>mimetypes</td>
+	<td class="align-right">55</td>
+	<td>Pure-Lua MIME-type lookup table (extensions, filenames, and a generated big-table module). Pegasus dep. Bundled into <code>caspian.lua</code>.</td>
+</tr>
+<tr>
+	<td>re.lua (LPeg helper)</td>
+	<td class="align-right">7</td>
+	<td>Pure-Lua regex-like DSL built on top of LPeg. Bundled into <code>caspian.lua</code>. The LPeg C engine it drives — <code>lpeg.so</code> — stays in External.</td>
+</tr>
+<tr>
+	<td>cjson.util</td>
+	<td class="align-right">8</td>
+	<td>Pure-Lua utility helpers for lua-cjson (sort-json, pretty-printer). Bundled into <code>caspian.lua</code>. The C parser — <code>cjson.so</code> — stays in External.</td>
+</tr>
+<tr>
+	<td>gzip.lua</td>
+	<td class="align-right">2</td>
+	<td>Pure-Lua gzip stream helper. Bundled into <code>caspian.lua</code>. Sits on top of the C zlib binding under External.</td>
+</tr>
+</tbody>
+
+<tbody>
 <tr><th colspan="3">External</th></tr>
 <tr>
 	<td>libsodium-minimal</td>
@@ -130,8 +174,8 @@ All sizes approximate, in kb.
 <tfoot>
 <tr>
 	<td><strong>Total</strong></td>
-	<td class="align-right"><strong>1180</strong></td>
-	<td>Against the 1.44 MB floppy target — leaves 260 kb of headroom.</td>
+	<td class="align-right"><strong>1405</strong></td>
+	<td>Against the 1.44 MB floppy target — leaves 35 kb of headroom. Cache-tier bytes ride inside <code>caspian.lua</code>, so at delivery time they sum with the Caspian tier under the pie's <code>caspian.lua</code> slice, not a separate wedge.</td>
 </tr>
 </tfoot>
 </table>
@@ -140,6 +184,7 @@ Tiers:
 
 - **CLI** — statically linked into the `bin/caspian` binary. The binary is a thin embedder: just the Lua 5.4 interpreter, musl libc, and the CLI shim that loads the engine. Specific to running the CLI; non-Lua embedders (Ruby, Python, other host languages) bring their own Lua interpreter and load the engine directly, so they don't need this binary at all.
 - **Caspian** — everything Caspian-authored: the engine (`caspian.lua` bundle with Fiona and the Lua binding wrapper inlined), the vibecode JSON blob, and `lua-confstr`. Ships under `caspian/`. Loaded via `require()` by whatever host is embedding Caspian — the CLI, a Ruby program, a Python program. Same files, any host.
+- **Cache** — external libraries whose pure-Lua portion is bundled into `caspian.lua` at build time. Downloaded from luarocks during the build, then folded into the bundle by `tools/bundle-caspian.lua` — `require("pegasus")`, `require("dkjson")`, `require("lxp.lom")`, etc. resolve from memory with no filesystem hit. Their C halves (where they have one) live in the External tier.
 - **External** — third-party libraries the engine depends on. `.so` binaries per arch and their `.lua` wrappers where applicable, shipped under `external/`. Loaded via `require()` the same way — a host that adds `external/` to its `package.cpath` gets the whole engine's C surface for free. Bundled at exact versions rather than fetched from system packages because the engine's coupling to each lib's API is tight enough that version drift silently breaks assumptions.
 - **wiggle room** — reserved slack, unassigned to any specific tier because surprise growth can happen anywhere.
 
