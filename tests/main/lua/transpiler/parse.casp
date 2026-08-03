@@ -3,7 +3,7 @@
 vibecode <<EOF
 {
 	"doc": "test_cases_parsing_parse",
-	"role": "test bed for the Caspian to CaspianJ transpiler — exercises syntactic constructs and asserts each one's CaspianJ shape. Test-case format: each fixture is boxed by `#===...` outer borders around a `# name: LABEL` header, then two inner sections `#--- code ---` (the Caspian source) and `#--- full ---` (the expected full-format CaspianJ, pretty-printed — JSON is itself valid Caspian). Each section ends at a bare `#-----...` closer. The extractor at tests/lua/transpiler/parse_extract.lua reads these and hands them to busted; anything outside a fixture (section dividers, prose, `# deferred: ...` blocks) is documentation and never reaches the transpiler.",
+	"role": "test bed for the Caspian to CaspianJ transpiler — exercises syntactic constructs and asserts each one's CaspianJ shape. Test-case format: each fixture is boxed by `#===...` outer borders around a `# name: LABEL` header, then two inner sections `#--- code ---` (the Caspian source) and `#--- full ---` (the expected full-format CaspianJ, pretty-printed — JSON is itself valid Caspian). Each section ends at a bare `#-----...` closer. The extractor at tests/main/lua/transpiler/parse_extract.lua reads these and hands them to busted; anything outside a fixture (section dividers, prose, `# deferred: ...` blocks) is documentation and never reaches the transpiler.",
 	"status": "growing; language surveys get promoted to fixtures as their CaspianJ shapes are settled"
 }
 EOF

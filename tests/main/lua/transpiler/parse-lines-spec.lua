@@ -2,7 +2,7 @@
 {
 	"spec":  "parse-lines-spec",
 	"role":  "Exercises the opt-in line-annotation mode of the transpiler (transpile(source, {lines = true})). Confirms that (a) atom-objects carry a `line` field, (b) statement rows get a trailing `{line: N}` meta-atom, and (c) line numbers reflect the actual source-line each construct appeared on.",
-	"run":   "busted tests/lua/transpiler/parse_lines_spec.lua (from repo root)"
+	"run":   "busted tests/main/lua/transpiler/parse_lines_spec.lua (from repo root)"
 }
 ]]
 
