@@ -1025,7 +1025,7 @@ end
 -- Db:_drain_needs_trace() — Drinian-style backward-trace GC.
 --
 -- Runs to fix-point on the needs_trace / in_trace flags. The full
--- algorithm is spec'd in ideas/fiona/specs/on-gc.md; this docstring
+-- algorithm is spec'd in documentation/fiona/on-gc.md; this docstring
 -- summarizes the pieces.
 --
 -- Outer loop: while any collections row has needs_trace = 1, pick a

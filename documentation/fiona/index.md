@@ -1,14 +1,14 @@
-# SQLite implementation
+# Fiona
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_fiona_spec_sqlite",
-	"role": "SQLite implementation of Fiona — the on-disk layer and the callable method surface on a Fiona db handle. The [schema](./schema/) is the source of truth for tables, constraints, and triggers; this page catalogs the methods. Conceptual model lives at ../.",
-	"status": "stub"
+	"doc": "documentation_fiona",
+	"role": "Fiona — the SQLite-backed graph store that is Caspian's storage substrate. This page catalogs the callable method surface on a db handle; the [schema](./schema/) is the source of truth for tables, constraints, and triggers.",
+	"status": "live spec"
 }}
 ~~~
 
-SQLite implementation of Fiona — the concrete DBMS layer under Fiona's conceptual model at [../](../).
+Fiona is Caspian's storage substrate — a SQLite-backed graph store where collections (hashes and arrays) live in the `collections` table and scalars live inline in the `relationships` table.
 
 ## Storage shape
 
@@ -55,7 +55,7 @@ No default. Callers must specify explicitly — makes intent visible at every ca
 Concretely:
 
 1. Open (or create) the SQLite file via lsqlite3. In `'rw'` / `'wr'` modes, SQLite creates the file if absent (matching its own default). In `'r'` mode, a missing file raises.
-2. Inspect the schema — check whether `collections`, `relationships`, and `meta` tables are present. All three present → case 1. None present → case 2, apply the schema at [../../../src/fiona/fiona.sql](../../../src/fiona/fiona.sql). Any other combination → case 3, raise.
+2. Inspect the schema — check whether `collections`, `relationships`, and `meta` tables are present. All three present → case 1. None present → case 2, apply the schema at [../../src/fiona/fiona.sql](../../src/fiona/fiona.sql). Any other combination → case 3, raise.
 3. Set the required per-connection pragmas: `foreign_keys = on`, `recursive_triggers = on`.
 4. Return the handle, tagged with the mode so its methods can enforce read/write restrictions.
 

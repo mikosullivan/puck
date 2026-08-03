@@ -2,7 +2,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_fiona_specs_on_gc",
+	"doc": "documentation_fiona_on_gc",
 	"role": "Design spec for Fiona's GC callback mechanism. Covers the per-db on_gc callback, the process temp table that gates callback-phase behavior, the auto-mark trigger that keeps new collections from surviving close hooks, and the in_trace numbering that gives parent-first callback ordering.",
 	"status": "design — mechanism settled; ready to implement when the surrounding drain rework lands"
 }}
@@ -255,4 +255,4 @@ If the logger's designer wanted a persistent shutdown message, the correct patte
 - `on_gc` on the Db class — Fiona API surface.
 - `in_trace` column semantics and the drain algorithm — see [schema](./schema/) for the persistent + temp table structure.
 - Drinian's `on_close` and `gc_errors` — the Caspian-side layer this hook feeds into.
-- The `process` temp table is defined in [fiona-temp.sql](../../../src/fiona/fiona-temp.sql) once implemented; its only current consumer is the GC flag.
+- The `process` temp table is defined in [fiona-temp.sql](../../src/fiona/fiona-temp.sql) once implemented; its only current consumer is the GC flag.

@@ -2,8 +2,8 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "fiona",
-	"role": "historical notes on Fiona, a DBMS Miko once designed around strict object immutability and relationship-as-record modeling; not in use in mikobase but its ideas may inform future design",
+	"doc": "ideas_fiona_historical",
+	"role": "historical notes on an earlier DBMS Miko once designed around strict row-level immutability and relationship-as-record modeling. Shares the name Fiona with the current SQLite-backed graph store at [documentation/fiona/](../documentation/fiona/) but diverges on several design points (that Fiona is mutable at the collection level; scalars live inline in relationships, not in a shared hsa table). Kept for the ideas it may still inform.",
 	"key_concepts": ["fiona_dbms", "object_immutability", "relationships_as_records",
 		"value_semantics_for_objects", "historical_design_influence"],
 	"status": "historical"

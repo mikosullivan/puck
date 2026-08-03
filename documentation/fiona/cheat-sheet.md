@@ -2,7 +2,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_fiona_specs_cheat_sheet",
+	"doc": "documentation_fiona_cheat_sheet",
 	"role": "One-page reference of Fiona's public surface — signatures and one-line summaries. Detailed semantics live in the sibling index.md.",
 	"status": "living reference"
 }}
