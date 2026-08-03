@@ -297,43 +297,46 @@ print()
 print(string.format("Total vs floppy budget: %d / %d bytes (%d%%)",
 	total, FLOPPY_TARGET, math.floor(total * 100 / FLOPPY_TARGET)))
 -- ------------------------------------------------------------
--- Regenerate the floppy-budget pie chart from the actual bytes.
--- Four wedges: caspian binary, caspian.lua, wiggle room, free.
--- External isn't in the pie — it's third-party, sized by upstream,
--- outside the budget Caspian directly controls.
+-- Regenerate the pie chart from what's actually in build/.
+-- Three slices: caspian binary, caspian.lua, external files (union
+-- of build/external/ + build/cache/). Total = sum of the three.
+--
+-- Earlier version was target-based: it added `wiggle room` (100 kb
+-- reserved) + `free` (floppy target minus everything) as their own
+-- wedges, so the pie visualized headroom against the 1.44 MB target.
+-- Miko dropped that when the external wedge landed and made the "free"
+-- number honest at 0 — the pie became mostly about the overrun. When
+-- we resume tracking headroom visually, the slice composition to
+-- revive is:
+--
+--   {caspian binary, caspian.lua, cache, external, wiggle room, free}
+--
+-- with wiggle at 100 * 1024 bytes and free = FLOPPY_TARGET minus the
+-- rest (clamped to 0 on overrun). See git log for the full generator.
 -- ------------------------------------------------------------
 print()
 print("==> Regenerating requirements/core/budget/floppy-budget.svg")
 
-local WIGGLE_BYTES = 100 * 1024
 local binary_bytes      = file_size(BUILD .. "/bin/caspian")
 local caspian_lua_bytes = file_size(BUILD .. "/caspian/caspian.lua")
 
--- cache slice: every file that shipped under build/cache/ — on-demand
--- libraries downloaded but not bundled into caspian.lua (currently the
--- luaexpat XML stack).
-local cache_bytes = 0
-do
-	local list = popen_read("find " .. BUILD .. "/cache -type f 2>/dev/null")
+-- Sum every file under a build subdir — used for cache/ and external/
+-- which have multi-file subtrees rather than a single measurable file.
+local function subtree_bytes(subdir)
+	local total = 0
+	local list = popen_read("find " .. BUILD .. "/" .. subdir .. " -type f 2>/dev/null")
 	for path in list:gmatch("[^\n]+") do
-		cache_bytes = cache_bytes + file_size(path)
+		total = total + file_size(path)
 	end
+	return total
 end
 
-local free_bytes = FLOPPY_TARGET - binary_bytes - caspian_lua_bytes - cache_bytes - WIGGLE_BYTES
-
-if free_bytes < 0 then
-	print(string.format("    WARNING: %d bytes over budget — pie will clamp free to 0",
-		-free_bytes))
-	free_bytes = 0
-end
+local external_files_bytes = subtree_bytes("external") + subtree_bytes("cache")
 
 local slices = {
-	{name = "caspian binary", bytes = binary_bytes,      color = "#ba68c8"},
-	{name = "caspian.lua",    bytes = caspian_lua_bytes, color = "#81c784"},
-	{name = "cache",          bytes = cache_bytes,       color = "#ffb74d"},
-	{name = "wiggle room",    bytes = WIGGLE_BYTES,      color = "#fff176"},
-	{name = "free",           bytes = free_bytes,        color = "#81d4fa"},
+	{name = "caspian binary", bytes = binary_bytes,         color = "#ba68c8"},
+	{name = "caspian.lua",    bytes = caspian_lua_bytes,    color = "#81c784"},
+	{name = "external files", bytes = external_files_bytes, color = "#ffb74d"},
 }
 
 local pie_total = 0
@@ -371,8 +374,10 @@ for i, s in ipairs(slices) do
 	start_angle = end_angle
 end
 
+local total_label = string.format("Total: %d kb", math.floor(pie_total / 1024))
+
 local svg = string.format([[
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="468" role="img" aria-label="Caspian floppy budget: %s, of %d kb total">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="468" role="img" aria-label="Caspian floppy budget: %s. %s.">
 	<title>Caspian floppy budget</title>
 	<g transform="rotate(180 110 120)">
 		<rect x="5" y="10" width="210" height="220" rx="6" fill="#29b6f6"/>
@@ -385,15 +390,15 @@ local svg = string.format([[
 	</g>
 	<g font-family="sans-serif" font-size="14" fill="currentColor">
 %s
-		<text x="240" y="215" font-weight="bold">Total: %d kb</text>
+		<text x="240" y="215" font-weight="bold">%s</text>
 	</g>
 </svg>
 ]],
 	table.concat(alt_parts, ", "),
-	math.floor(pie_total / 1024),
+	total_label,
 	table.concat(paths, "\n"),
 	table.concat(legend_rows, "\n"),
-	math.floor(pie_total / 1024))
+	total_label)
 
 write_file(repo .. "requirements/core/budget/floppy-budget.svg", svg)
 
