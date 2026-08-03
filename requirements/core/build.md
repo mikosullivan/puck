@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_core_build",
-	"role": "spec for tools/build.sh — the script that produces the complete Caspian distribution at ecoverse/build/ (bin/caspian + caspian/ + external/). Consumers: release maintainers and anyone who wants to reproduce the shipped bytes locally. This spec settles WHAT the script does; the script itself lives at tools/build.sh (once landed).",
+	"role": "spec for tools/build.lua — the script that produces the complete Caspian distribution at ecoverse/build/ (bin/caspian + caspian/ + external/). Consumers: release maintainers and anyone who wants to reproduce the shipped bytes locally. This spec settles WHAT the script does; the script itself lives at tools/build.lua (once landed).",
 	"status": "starting — sections stubbed for spec-out",
 	"audience": "release maintainers and anyone reproducing the shipped bytes"
 }}
@@ -13,8 +13,8 @@ The build script produces the complete Caspian distribution in one directory tre
 
 ## Location and invocation
 
-- Script lives at `tools/build.sh`.
-- Invoked from the repo root: `tools/build.sh`.
+- Script lives at `tools/build.lua`.
+- Invoked from the repo root: `tools/build.lua`.
 - Writes to `/home/miko/projects/puck/ecoverse/build/` — a sibling of the repo, deliberately outside it so the repo stays free of shipping artifacts.
 - Idempotent: rerunning wipes the target directory and rebuilds from scratch.
 

@@ -2,8 +2,11 @@
 --[[
 {
 	"module": "build-fiona",
-	"role": "Phase-1 of the build. Produces a self-contained fiona.lua on stdout: minifies fiona.sql and fiona-temp.sql via tools/sql-minify.lua, inlines them as string constants at the top of fiona.lua, and rewrites the file-reading block so the resulting module has no filesystem dependency for its schema. Consumers: tools/build.sh (writes stdout to a temp file that phase-2 then bundles into caspian.lua) and the eventual standalone Fiona release build.",
-	"usage": "lua5.4 tools/build-fiona.lua > /tmp/fiona.lua"
+	"role": "Phase-1 of the build. Produces a self-contained fiona.lua source string: minifies fiona.sql and fiona-temp.sql via tools/sql-minify.lua, inlines them as string constants at the top of fiona.lua, and rewrites the file-reading block so the resulting module has no filesystem dependency for its schema. Consumers: tools/build.lua (calls .build() directly and hands the result to bundle-caspian) and the eventual standalone Fiona release build.",
+	"exports": {
+		"build": "() -> bundled fiona.lua source (string)"
+	},
+	"cli": "lua5.4 tools/build-fiona.lua > /tmp/fiona.lua — same output as .build(), written to stdout"
 }
 ]]
 
@@ -21,22 +24,21 @@ local function slurp(path)
 	return s
 end
 
-local fiona_sql       = sql_minify.minify(slurp(repo .. "src/fiona/fiona.sql"))
-local fiona_temp_sql  = sql_minify.minify(slurp(repo .. "src/fiona/fiona-temp.sql"))
-local fiona_lua       = slurp(repo .. "src/fiona/fiona.lua")
+local M = {}
 
--- Delimiter choice for the heredoc string. The minified SQL contains no
--- `]==]`, so `[==[...]==]` is safe. If a future SQL edit adds `]==]`
--- somehow, this assertion catches it before the shipped file breaks.
-for _, sql in ipairs({fiona_sql, fiona_temp_sql}) do
-	assert(not sql:find("]==]"), "build-fiona: SQL contains ']==]' — bump heredoc delimiter")
-end
+--[[ {"in": {}, "out": "self-contained fiona.lua source (string)"} ]]
+function M.build()
+	local fiona_sql      = sql_minify.minify(slurp(repo .. "src/fiona/fiona.sql"))
+	local fiona_temp_sql = sql_minify.minify(slurp(repo .. "src/fiona/fiona-temp.sql"))
+	local fiona_lua      = slurp(repo .. "src/fiona/fiona.lua")
 
--- Replacement for the "Locate fiona.sql" block. The original derives
--- SCHEMA_PATH / TEMP_SCHEMA_PATH from the on-disk source location and
--- defines read_file() to slurp them. In the bundled build, we inline
--- the minified SQL directly and shim read_file() so callers still work.
-local inlined_block = [[
+	-- Delimiter choice for the heredoc. Minified SQL contains no `]==]`;
+	-- assert catches a future edit that would break the heredoc.
+	for _, sql in ipairs({fiona_sql, fiona_temp_sql}) do
+		assert(not sql:find("]==]"), "build-fiona: SQL contains ']==]' — bump heredoc delimiter")
+	end
+
+	local inlined = [[
 ------------------------------------------------------------
 -- Bundled schemas — inlined by tools/build-fiona.lua at build time.
 -- The source-tree fiona.lua reads these from sibling .sql files; the
@@ -58,22 +60,25 @@ local function read_file(path)
 end
 ]]
 
--- Locate and replace the "Locate fiona.sql" block in the source. The
--- start anchor is the section-header comment that opens the block; the
--- end anchor is read_file's closing `end`. Both are matched as plain
--- (non-pattern) strings on distinctive lines that only appear once.
-local start_anchor = "------------------------------------------------------------\n-- Locate fiona.sql"
-local end_anchor   = "\treturn content\nend"
+	-- Locate and replace the "Locate fiona.sql" block. Start = the
+	-- section-header comment; end = read_file's closing `end`.
+	local start_anchor = "------------------------------------------------------------\n-- Locate fiona.sql"
+	local end_anchor   = "\treturn content\nend"
 
-local block_start = fiona_lua:find(start_anchor, 1, true)
-if not block_start then error("build-fiona: could not locate start anchor in fiona.lua") end
+	local block_start = fiona_lua:find(start_anchor, 1, true)
+	if not block_start then error("build-fiona: could not locate start anchor in fiona.lua") end
 
-local end_pos = fiona_lua:find(end_anchor, block_start, true)
-if not end_pos then error("build-fiona: could not locate end anchor in fiona.lua") end
+	local end_pos = fiona_lua:find(end_anchor, block_start, true)
+	if not end_pos then error("build-fiona: could not locate end anchor in fiona.lua") end
 
-local block_end = end_pos + #end_anchor
+	local block_end = end_pos + #end_anchor
 
--- Emit: everything before the block, the inlined replacement, everything after.
-io.write(fiona_lua:sub(1, block_start - 1))
-io.write(inlined_block)
-io.write(fiona_lua:sub(block_end + 1))
+	return fiona_lua:sub(1, block_start - 1) .. inlined .. fiona_lua:sub(block_end + 1)
+end
+
+-- CLI shim: writes M.build() to stdout when invoked directly.
+if arg and arg[0] and arg[0]:match("build%-fiona%.lua$") then
+	io.write(M.build())
+end
+
+return M
