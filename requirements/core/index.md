@@ -75,12 +75,7 @@ All sizes approximate, in kb.
 </tbody>
 
 <tbody>
-<tr><th colspan="3">Cache</th></tr>
-<tr>
-	<td>luaexpat (Lua helpers)</td>
-	<td class="align-right">23</td>
-	<td>Pure-Lua helpers from the <code>luaexpat</code> distribution — <code>lom.lua</code> (DOM builder), <code>totable.lua</code> (SAX-to-table), <code>threat.lua</code> (billion-laughs protection). Bundled into <code>caspian.lua</code> at build time via <code>tools/bundle-caspian.lua</code>, so <code>require("lxp.lom")</code> etc. resolves from memory without any filesystem hit. The C parser it sits on top of — <code>lxp.so</code> — ships as its own file under <code>external/lib/</code> and stays in the External tier.</td>
-</tr>
+<tr><th colspan="3">Bundled</th></tr>
 <tr>
 	<td>pegasus</td>
 	<td class="align-right">45</td>
@@ -155,10 +150,14 @@ All sizes approximate, in kb.
 	<td class="align-right">55</td>
 	<td>Lua binding to SQLite — the disk layer Fiona sits on. Ships as <code>lsqlite3.so</code> under <code>external/</code>. Dynamic-link build stripped ≈55 kb; the <code>libsqlite3.so.0</code> it links against is a documented prerequisite in the same posture as <code>libexpat.so.1</code>, <code>luarocks</code>, <code>openssl</code>, and <code>tar</code> (universally present on target platforms).</td>
 </tr>
+</tbody>
+
+<tbody>
+<tr><th colspan="3">Cache</th></tr>
 <tr>
 	<td>luaexpat</td>
-	<td class="align-right">63</td>
-	<td>Lua binding to libexpat (C-native SAX parser) — backs out-of-box XML support. ≈40 kb for the <code>lxp.so</code> binding (per arch) + Lua helpers ≈23 kb (<code>lom.lua</code> DOM, <code>totable.lua</code>, <code>threat.lua</code> billion-laughs protection). Ships under <code>external/</code>. The <code>.so</code>-only minimum-viable install is ≈40 kb if the Lua-side helpers are dropped. The <code>libexpat.so.1</code> it links against is a documented prerequisite in the same posture as <code>libsqlite3.so.0</code>. C-native SAX parse is ≈100× faster than pure-Lua alternatives, with correct namespaces, entity handling, and encoding auto-detect.</td>
+	<td class="align-right">69</td>
+	<td>Lua binding to libexpat (C-native SAX parser) for XML support — <code>lxp.so</code> C binding (≈46 kb) + Lua helpers (<code>lom.lua</code> DOM builder, <code>totable.lua</code> SAX-to-table, <code>threat.lua</code> billion-laughs protection, ≈23 kb combined). Ships under <code>build/cache/</code> — downloaded as part of the distribution but not bundled into <code>caspian.lua</code>. Most Caspian programs don't touch XML, so paying the parse / memory cost at every startup would be waste; <code>require("lxp")</code> pulls it from cache on demand instead. C-native SAX parse is ≈100× faster than pure-Lua alternatives, with correct namespaces, entity handling, and encoding auto-detect.</td>
 </tr>
 </tbody>
 
@@ -174,8 +173,8 @@ All sizes approximate, in kb.
 <tfoot>
 <tr>
 	<td><strong>Total</strong></td>
-	<td class="align-right"><strong>1405</strong></td>
-	<td>Against the 1.44 MB floppy target — leaves 35 kb of headroom. Cache-tier bytes ride inside <code>caspian.lua</code>, so at delivery time they sum with the Caspian tier under the pie's <code>caspian.lua</code> slice, not a separate wedge.</td>
+	<td class="align-right"><strong>1388</strong></td>
+	<td>Against the 1.44 MB floppy target — leaves 52 kb of headroom. Bundled-tier bytes ride inside <code>caspian.lua</code>, so at delivery time they sum with the Caspian tier under the pie's <code>caspian.lua</code> slice, not a separate wedge. Cache-tier bytes ship as their own <code>build/cache/</code> subtree with their own pie slice.</td>
 </tr>
 </tfoot>
 </table>
@@ -184,8 +183,9 @@ Tiers:
 
 - **CLI** — statically linked into the `bin/caspian` binary. The binary is a thin embedder: just the Lua 5.4 interpreter, musl libc, and the CLI shim that loads the engine. Specific to running the CLI; non-Lua embedders (Ruby, Python, other host languages) bring their own Lua interpreter and load the engine directly, so they don't need this binary at all.
 - **Caspian** — everything Caspian-authored: the engine (`caspian.lua` bundle with Fiona and the Lua binding wrapper inlined), the vibecode JSON blob, and `lua-confstr`. Ships under `caspian/`. Loaded via `require()` by whatever host is embedding Caspian — the CLI, a Ruby program, a Python program. Same files, any host.
-- **Cache** — external libraries whose pure-Lua portion is bundled into `caspian.lua` at build time. Downloaded from luarocks during the build, then folded into the bundle by `tools/bundle-caspian.lua` — `require("pegasus")`, `require("dkjson")`, `require("lxp.lom")`, etc. resolve from memory with no filesystem hit. Their C halves (where they have one) live in the External tier.
-- **External** — third-party libraries the engine depends on. `.so` binaries per arch and their `.lua` wrappers where applicable, shipped under `external/`. Loaded via `require()` the same way — a host that adds `external/` to its `package.cpath` gets the whole engine's C surface for free. Bundled at exact versions rather than fetched from system packages because the engine's coupling to each lib's API is tight enough that version drift silently breaks assumptions.
+- **Bundled** — external libraries whose pure-Lua portion is folded into `caspian.lua` at build time by `tools/bundle-caspian.lua`. Downloaded from luarocks during the build, then inlined into the bundle — `require("pegasus")`, `require("dkjson")`, etc. resolve from memory with no filesystem hit. Their C halves (where they have one) live in the External tier.
+- **External** — third-party libraries the engine depends on at every load. `.so` binaries per arch and their `.lua` wrappers where applicable, shipped under `external/`. Loaded via `require()` — a host that adds `external/` to its `package.cpath` gets the engine's C surface for free. Bundled at exact versions rather than fetched from system packages because the engine's coupling to each lib's API is tight enough that version drift silently breaks assumptions.
+- **Cache** — external libraries downloaded and shipped under `build/cache/` but NOT bundled into `caspian.lua`. Loaded only when a program actually needs them, so the parse / memory cost isn't paid on every Caspian startup. XML lives here because most Caspian programs won't touch it — see the [floppy budget page](https://puck.uno/requirements/core/budget/) for how the pie carves out a dedicated wedge for cache-tier bytes.
 - **wiggle room** — reserved slack, unassigned to any specific tier because surprise growth can happen anywhere.
 
 

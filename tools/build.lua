@@ -82,7 +82,7 @@ _ = temp_guard  -- avoid "unused variable" warning
 -- ------------------------------------------------------------
 print("==> Wiping and recreating " .. BUILD)
 run("rm -rf " .. BUILD)
-run("mkdir -p " .. BUILD .. "/bin " .. BUILD .. "/caspian " .. BUILD .. "/external")
+run("mkdir -p " .. BUILD .. "/bin " .. BUILD .. "/caspian " .. BUILD .. "/external " .. BUILD .. "/cache")
 
 -- ------------------------------------------------------------
 -- Compile the caspian binary.
@@ -102,27 +102,41 @@ run(string.format(
 print("==> Downloading external libraries into build/external/")
 
 local EXTERNAL_ROCKS = {
-	"lsqlite3", "luaexpat", "luasocket", "lpeg",
+	"lsqlite3", "luasocket", "lpeg",
 	"lua-cjson", "pegasus", "luasodium", "dkjson",
 }
 
+-- Cache-tier rocks: downloaded and shipped under build/cache/ but NOT
+-- bundled into caspian.lua. On-demand loading only — parsing / memory
+-- cost paid only if the running program actually requires them. XML
+-- lives here because most Caspian programs won't touch it.
+local CACHE_ROCKS = {
+	"luaexpat",
+}
+
 local failed = {}
-for _, rock in ipairs(EXTERNAL_ROCKS) do
-	local log = TMP .. "/rock-" .. rock .. ".log"
-	local cmd = string.format(
-		"luarocks install --tree=%s/external --lua-version 5.4 %s",
-		BUILD, rock)
-	if try_run(cmd, log) then
-		local list = popen_read(string.format(
-			"luarocks list --tree=%s/external --lua-version 5.4 --porcelain 2>/dev/null",
-			BUILD))
-		local version = list:match(rock .. "\t([^\t]+)") or "?"
-		print(string.format("    OK  %-15s %s", rock, version))
-	else
-		print(string.format("    FAIL %-15s (log: %s)", rock, log))
-		failed[#failed + 1] = rock
+
+local function install_rocks(rocks, tree_subdir, label)
+	for _, rock in ipairs(rocks) do
+		local log = TMP .. "/rock-" .. rock .. ".log"
+		local cmd = string.format(
+			"luarocks install --tree=%s/%s --lua-version 5.4 %s",
+			BUILD, tree_subdir, rock)
+		if try_run(cmd, log) then
+			local list = popen_read(string.format(
+				"luarocks list --tree=%s/%s --lua-version 5.4 --porcelain 2>/dev/null",
+				BUILD, tree_subdir))
+			local version = list:match(rock .. "\t([^\t]+)") or "?"
+			print(string.format("    OK  %-15s %s (%s)", rock, version, label))
+		else
+			print(string.format("    FAIL %-15s (log: %s)", rock, log))
+			failed[#failed + 1] = rock
+		end
 	end
 end
+
+install_rocks(EXTERNAL_ROCKS, "external", "external")
+install_rocks(CACHE_ROCKS,    "cache",    "cache")
 
 -- libsodium is a system C library, not a luarocks rock. Copy the
 -- runtime .so from the system into build/external/lib/. Per-arch — this
@@ -150,8 +164,11 @@ end
 
 -- Strip everything luarocks landed that isn't runtime: rock metadata
 -- under lib/luarocks and utility executables under bin/. What remains
--- is exactly what `require` reaches for at runtime.
-run("rm -rf " .. BUILD .. "/external/lib/luarocks " .. BUILD .. "/external/bin")
+-- is exactly what `require` reaches for at runtime. Applies to both
+-- external/ (always-loadable) and cache/ (on-demand).
+run("rm -rf " ..
+	BUILD .. "/external/lib/luarocks " .. BUILD .. "/external/bin " ..
+	BUILD .. "/cache/lib/luarocks "    .. BUILD .. "/cache/bin")
 
 -- ------------------------------------------------------------
 -- Collect external pure-Lua modules for folding into caspian.lua.
@@ -291,7 +308,19 @@ print("==> Regenerating requirements/core/budget/floppy-budget.svg")
 local WIGGLE_BYTES = 100 * 1024
 local binary_bytes      = file_size(BUILD .. "/bin/caspian")
 local caspian_lua_bytes = file_size(BUILD .. "/caspian/caspian.lua")
-local free_bytes        = FLOPPY_TARGET - binary_bytes - caspian_lua_bytes - WIGGLE_BYTES
+
+-- cache slice: every file that shipped under build/cache/ — on-demand
+-- libraries downloaded but not bundled into caspian.lua (currently the
+-- luaexpat XML stack).
+local cache_bytes = 0
+do
+	local list = popen_read("find " .. BUILD .. "/cache -type f 2>/dev/null")
+	for path in list:gmatch("[^\n]+") do
+		cache_bytes = cache_bytes + file_size(path)
+	end
+end
+
+local free_bytes = FLOPPY_TARGET - binary_bytes - caspian_lua_bytes - cache_bytes - WIGGLE_BYTES
 
 if free_bytes < 0 then
 	print(string.format("    WARNING: %d bytes over budget — pie will clamp free to 0",
@@ -302,6 +331,7 @@ end
 local slices = {
 	{name = "caspian binary", bytes = binary_bytes,      color = "#ba68c8"},
 	{name = "caspian.lua",    bytes = caspian_lua_bytes, color = "#81c784"},
+	{name = "cache",          bytes = cache_bytes,       color = "#ffb74d"},
 	{name = "wiggle room",    bytes = WIGGLE_BYTES,      color = "#fff176"},
 	{name = "free",           bytes = free_bytes,        color = "#81d4fa"},
 }
