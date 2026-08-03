@@ -23,25 +23,29 @@ end
 
 local M = {}
 
---[[ {"in": {"fiona_src": "string — phase-1 fiona.lua source (from build-fiona.build())"}, "out": "bundled caspian.lua source (string)"} ]]
-function M.bundle(fiona_src)
+--[[ {"in": {"fiona_src": "string — phase-1 fiona.lua source (from build-fiona.build())", "external_modules": "optional list of {name, src} tuples — pure-Lua modules from external libs to fold into the same bundle"}, "out": "bundled caspian.lua source (string)"} ]]
+function M.bundle(fiona_src, external_modules)
 	local modules = {
-		{name = "trivet",     src = slurp(repo .. "src/engine/trivet.lua")},
-		{name = "normalize",  src = slurp(repo .. "src/engine/normalize.lua")},
-		{name = "transpiler", src = slurp(repo .. "src/engine/transpiler.lua")},
-		{name = "fiona",      src = fiona_src},
+		{name = "trivet",     src = slurp(repo .. "src/engine/trivet.lua"), from = "caspian-authored"},
+		{name = "normalize",  src = slurp(repo .. "src/engine/normalize.lua"), from = "caspian-authored"},
+		{name = "transpiler", src = slurp(repo .. "src/engine/transpiler.lua"), from = "caspian-authored"},
+		{name = "fiona",      src = fiona_src, from = "caspian-authored (schemas inlined)"},
 	}
+
+	for _, mod in ipairs(external_modules or {}) do
+		modules[#modules + 1] = {name = mod.name, src = mod.src, from = "external"}
+	end
 
 	local parts = {[[
 -- caspian.lua — bundled Caspian distribution.
 -- Assembled by tools/bundle-caspian.lua at build time. Each source
 -- module is wrapped in `package.preload[name] = function() ... end`
--- so `require("trivet")`, `require("fiona")`, etc. resolve from
--- memory rather than hitting the filesystem. Sourced from:
---   src/engine/trivet.lua
---   src/engine/normalize.lua
---   src/engine/transpiler.lua
---   src/fiona/fiona.lua (schemas inlined by tools/build-fiona.lua)
+-- so `require("trivet")`, `require("fiona")`, `require("socket.http")`,
+-- etc. resolve from memory rather than hitting the filesystem. Includes
+-- Caspian's own engine modules (trivet, normalize, transpiler, fiona
+-- with schemas inlined) plus every pure-Lua wrapper from the External
+-- tier — pegasus, luasocket's Lua side, luaexpat's Lua helpers,
+-- dkjson, etc. C bindings (.so) stay on disk under external/lib/.
 
 ]]}
 

@@ -85,31 +85,10 @@ run(string.format(
 	BUILD, repo))
 
 -- ------------------------------------------------------------
--- Phase 1 + Phase 2: build fiona.lua standalone, then bundle it +
--- engine sources into caspian.lua. No temp file for the intermediate
--- fiona.lua — it lives as a string, handed straight to phase 2.
--- ------------------------------------------------------------
-print("==> Phase 1: building standalone fiona.lua")
-local fiona_src = build_fiona.build()
-
-print("==> Phase 2: bundling caspian.lua")
-local caspian_src = bundle_caspian.bundle(fiona_src)
-write_file(BUILD .. "/caspian/caspian.lua", caspian_src)
-
--- Sanity check: the bundled caspian.lua should parse and populate preload.
-do
-	local chunk = assert(loadfile(BUILD .. "/caspian/caspian.lua"))
-	chunk()
-	for _, name in ipairs({"trivet", "normalize", "transpiler", "fiona"}) do
-		assert(package.preload[name], "preload missing for " .. name)
-		package.preload[name] = nil  -- clean up so build.lua's own state stays clean
-	end
-end
-
--- ------------------------------------------------------------
 -- External libs: download via luarocks. Rocks that fail (missing system
 -- headers etc.) are logged and skipped so the build produces a partial
--- picture rather than aborting.
+-- picture rather than aborting. Runs before phase 2 so the bundler can
+-- fold the pure-Lua wrappers from external/share into caspian.lua.
 -- ------------------------------------------------------------
 print("==> Downloading external libraries into build/external/")
 
@@ -164,6 +143,68 @@ end
 -- under lib/luarocks and utility executables under bin/. What remains
 -- is exactly what `require` reaches for at runtime.
 run("rm -rf " .. BUILD .. "/external/lib/luarocks " .. BUILD .. "/external/bin")
+
+-- ------------------------------------------------------------
+-- Collect external pure-Lua modules for folding into caspian.lua.
+-- Walks external/share/lua/5.4/, converts each path to a module name
+-- (foo/bar.lua → foo.bar; foo/init.lua → foo), and reads the source.
+-- json2lua.lua / lua2json.lua are CLI utility scripts that landed in
+-- share by luarocks — filtered out here rather than bundled.
+-- ------------------------------------------------------------
+local external_share = BUILD .. "/external/share/lua/5.4"
+local excluded_modules = {["json2lua"] = true, ["lua2json"] = true}
+local external_modules = {}
+
+local pipe = io.popen("find " .. external_share .. " -type f -name '*.lua' 2>/dev/null | sort")
+if pipe then
+	for path in pipe:lines() do
+		local rel = path:sub(#external_share + 2):sub(1, -5)  -- strip prefix + ".lua"
+		rel = rel:gsub("/init$", "")
+		local module_name = rel:gsub("/", ".")
+		if not excluded_modules[module_name] then
+			local f = io.open(path, "r")
+			local src = f:read("*a")
+			f:close()
+			external_modules[#external_modules + 1] = {name = module_name, src = src}
+		end
+	end
+	pipe:close()
+end
+
+print(string.format("==> Collected %d external Lua modules for bundling", #external_modules))
+
+-- ------------------------------------------------------------
+-- Phase 1: build fiona.lua standalone. Phase 2: bundle it + engine
+-- sources + external pure-Lua modules into caspian.lua. No temp file
+-- for the intermediate fiona.lua — it lives as a string, handed
+-- straight to phase 2.
+-- ------------------------------------------------------------
+print("==> Phase 1: building standalone fiona.lua")
+local fiona_src = build_fiona.build()
+
+print("==> Phase 2: bundling caspian.lua")
+local caspian_src = bundle_caspian.bundle(fiona_src, external_modules)
+write_file(BUILD .. "/caspian/caspian.lua", caspian_src)
+
+-- Sanity check: the bundled caspian.lua should parse and populate preload.
+do
+	local chunk = assert(loadfile(BUILD .. "/caspian/caspian.lua"))
+	chunk()
+	for _, name in ipairs({"trivet", "normalize", "transpiler", "fiona"}) do
+		assert(package.preload[name], "preload missing for " .. name)
+	end
+	-- Clean up so build.lua's own state stays clean.
+	for _, mod in ipairs(external_modules) do
+		package.preload[mod.name] = nil
+	end
+	for _, name in ipairs({"trivet", "normalize", "transpiler", "fiona"}) do
+		package.preload[name] = nil
+	end
+end
+
+-- Every pure-Lua external module is now inside caspian.lua's preload —
+-- external/share/ has no runtime role and gets removed.
+run("rm -rf " .. BUILD .. "/external/share")
 
 -- ------------------------------------------------------------
 -- Repoint the shell symlink.
