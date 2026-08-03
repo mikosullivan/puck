@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "fiona",
-	"role": "Fiona's Lua interface for the SQLite backend. Exposes get_db(path, mode) which returns a Db object. Collections (hashes and arrays) live in the collections table; scalars live inline in the relationships table via st + scalar columns. There is no add_scalar — scalars are set directly via set_hash_scalar / set_array_scalar.",
+	"role": "Fiona's Lua interface for the SQLite backend. Exposes get_db(path, mode) which returns a Db object. Collections (hashes and arrays) live in the collections table; scalars live inline in the relationships table via st + scalar columns. There is no add_scalar — scalars are set directly via set_hash_scalar / set_array_scalar. Also exposes iterator methods (keys/values/pairs), point-lookup readers (get_hash_element/get_array_element and their length counterparts), type probes (is_hash/is_array), and a GC callback surface (on_gc/gc_errors) — see specs/on-gc.md.",
 	"exports": {
 		"get_db": "path, mode -> Db (opens or creates the DB, applies schema if fresh, returns handle)",
 		"Db":     "class — the database handle"
@@ -81,6 +81,10 @@ function Db.new(conn, mode, path)
 		-- inside the outer atomic just before it releases, so no
 		-- committed state ever has needs_trace or in_trace set.
 		_atomic_depth = 0,
+		-- on_gc callback (nil until registered) and error accumulator.
+		-- See specs/on-gc.md for the mechanism.
+		_on_gc_callback = nil,
+		_gc_errors = {},
 	}, Db)
 end
 
@@ -151,6 +155,37 @@ function Db:_exec(sql, binds, label)
 	if rc ~= sqlite3.DONE then
 		error(label .. " failed — " .. self._conn:errmsg())
 	end
+end
+
+-- is_hash / is_array — cheap parent-type probes for a given
+-- collection_pk. Returns true if the row exists and matches the
+-- requested type, false otherwise (including nonexistent pk).
+-- Callers use these to disambiguate what a bare collection_pk refers
+-- to without having to hand-write the SELECT.
+--[[ {"in": {"collection_pk": "integer"}, "out": "boolean"} ]]
+function Db:is_hash(collection_pk)
+	if type(collection_pk) ~= "number" then
+		error("is_hash: collection_pk must be a number; got " .. type(collection_pk))
+	end
+
+	local t = self:_query_one(
+		"select type from collections where collection_pk = :pk",
+		{pk = collection_pk})
+
+	return t == "h"
+end
+
+--[[ {"in": {"collection_pk": "integer"}, "out": "boolean"} ]]
+function Db:is_array(collection_pk)
+	if type(collection_pk) ~= "number" then
+		error("is_array: collection_pk must be a number; got " .. type(collection_pk))
+	end
+
+	local t = self:_query_one(
+		"select type from collections where collection_pk = :pk",
+		{pk = collection_pk})
+
+	return t == "a"
 end
 
 --[[ {"in": {}, "out": "table — every row in the meta table as {[key] = value}"} ]]
@@ -728,56 +763,330 @@ function Db:atomic(fn)
 	local packed = table.pack(pcall(fn))
 	local ok = packed[1]
 
-	if ok then
-		-- Drain runs INSIDE the savepoint, BEFORE release, and ONLY at
-		-- the outermost boundary. Nested atomic() calls stack their
-		-- own savepoints and defer to the outer for drain.
-		if self._atomic_depth == 1 then
-			self:_drain_needs_trace()
-		end
+	-- Drain runs INSIDE the savepoint, BEFORE release, and ONLY at
+	-- the outermost boundary. Nested atomic() calls stack their own
+	-- savepoints and defer to the outer for drain. pcall so a raised
+	-- drain error triggers rollback below rather than leaking through
+	-- with the savepoint still open.
+	local drain_ok, drain_err = true, nil
 
-		self._atomic_depth = self._atomic_depth - 1
+	if ok and self._atomic_depth == 1 then
+		drain_ok, drain_err = pcall(Db._drain_needs_trace, self)
+	end
+
+	self._atomic_depth = self._atomic_depth - 1
+
+	if ok and drain_ok then
 		self._conn:exec("release sp")
 		return table.unpack(packed, 2, packed.n)
 	end
 
-	self._atomic_depth = self._atomic_depth - 1
 	self._conn:exec("rollback to sp")
 	self._conn:exec("release sp")
-	error(packed[2], 0)
+
+	if not ok then
+		error(packed[2], 0)
+	end
+
+	error(drain_err, 0)
+end
+
+------------------------------------------------------------
+-- Iterators. keys/values/pairs snapshot the collection's relationships
+-- into per-connection temp scratch (iterators + iterator_elements),
+-- then walk that snapshot with a stateful closure. Snapshotting first
+-- means the iterator is decoupled from concurrent writes: adding to
+-- or removing from the collection during iteration doesn't disturb the
+-- walk. The iterator row is deleted when the walk exhausts naturally;
+-- a walk that breaks early leaves its row behind, which the caller can
+-- clean up by exhausting the closure or by calling db:close() (which
+-- takes the connection with it).
+------------------------------------------------------------
+
+-- Build an iterator over a collection's entries. `kind` decides what
+-- the closure yields per row: "keys" yields the key/idx, "values"
+-- yields the value, "pairs" yields both. Snapshot semantics: the
+-- relationships in scope are captured at call time.
+--[[ {"in": {"parent_pk": "integer", "kind": "string — 'keys'|'values'|'pairs'", "label": "string — error prefix"}, "out": "iterator function"} ]]
+function Db:_iterator(parent_pk, kind, label)
+	if type(parent_pk) ~= "number" then
+		error(label .. ": parent_pk must be a number; got " .. type(parent_pk))
+	end
+
+	local parent_type = self:_query_one(
+		"select type from collections where collection_pk = :p",
+		{p = parent_pk})
+
+	if parent_type == nil then
+		error(label .. ": no collection with collection_pk = " .. parent_pk)
+	end
+
+	-- Snapshot: create an iterator row and populate iterator_elements
+	-- with one row per (rel_pk) in the current parent's relationships,
+	-- ordered by idx. Position 0..N-1 gives us an indexable snapshot.
+	self:_exec(
+		"insert into iterators (kind, source_parent) values (:k, :p)",
+		{k = kind, p = parent_pk},
+		label .. ": create iterator row")
+
+	local iterator_pk = self._conn:last_insert_rowid()
+
+	self:_exec(
+		"insert into iterator_elements (iterator_pk, position, rel_pk) " ..
+		"select :ipk, row_number() over (order by idx) - 1, rel_pk " ..
+		"from relationships where parent = :p",
+		{ipk = iterator_pk, p = parent_pk},
+		label .. ": populate elements")
+
+	local db = self
+	local position = 0
+
+	return function()
+		-- Loop over positions to skip any whose relationships row was
+		-- deleted since the snapshot was taken (the join returns no
+		-- row, but iterator_elements still has an entry at that
+		-- position). Cleanup fires when we run past the last position.
+		while true do
+			local row
+			local stmt = db:_stmt(
+				"select r.key, r.idx, r.child, r.st, r.scalar " ..
+				"from iterator_elements ie join relationships r on ie.rel_pk = r.rel_pk " ..
+				"where ie.iterator_pk = :ipk and ie.position = :pos")
+			stmt:bind_names({ipk = iterator_pk, pos = position})
+
+			if stmt:step() == sqlite3.ROW then
+				row = {
+					key    = stmt:get_value(0),
+					idx    = stmt:get_value(1),
+					child  = stmt:get_value(2),
+					st     = stmt:get_value(3),
+					scalar = stmt:get_value(4),
+				}
+			end
+
+			stmt:reset()
+
+			if row then
+				position = position + 1
+
+				local value
+				if row.child ~= nil then
+					value = row.child
+				else
+					value = decode_scalar(row.st, row.scalar)
+				end
+
+				local key
+				if parent_type == "h" then
+					key = row.key
+				else
+					key = row.idx
+				end
+
+				if kind == "keys" then
+					return key
+				end
+
+				if kind == "values" then
+					return value
+				end
+
+				return key, value
+			end
+
+			-- No join hit. Distinguish "position was snapshotted but
+			-- relationships row is gone" from "position past the end."
+			local still_exists = db:_query_one(
+				"select 1 from iterator_elements where iterator_pk = :ipk and position = :pos",
+				{ipk = iterator_pk, pos = position})
+
+			if not still_exists then
+				-- Truly exhausted.
+				db._conn:exec("delete from iterators where iterator_pk = " .. iterator_pk)
+				return nil
+			end
+
+			-- Snapshot slot exists but its relationships row has been
+			-- deleted since. Skip and try the next position.
+			position = position + 1
+		end
+	end
+end
+
+--[[ {"in": {"parent_pk": "integer"}, "out": "iterator function — yields keys (hashes) or idxs (arrays) one per call"} ]]
+function Db:keys(parent_pk)
+	return self:_iterator(parent_pk, "keys", "keys")
+end
+
+--[[ {"in": {"parent_pk": "integer"}, "out": "iterator function — yields values one per call (collection_pk for refs, Lua scalar for scalars)"} ]]
+function Db:values(parent_pk)
+	return self:_iterator(parent_pk, "values", "values")
+end
+
+--[[ {"in": {"parent_pk": "integer"}, "out": "iterator function — yields (key/idx, value) per call"} ]]
+function Db:pairs(parent_pk)
+	return self:_iterator(parent_pk, "pairs", "pairs")
+end
+
+------------------------------------------------------------
+-- on_gc — caller-registered close hook.
+--
+-- Registers a single function that fires once per collection about to
+-- be deleted by the drain. Re-registering replaces; passing nil clears.
+-- Errors from the callback are caught and accumulated in _gc_errors;
+-- see gc_errors() and specs/on-gc.md for the full mechanism.
+------------------------------------------------------------
+
+--[[ {"in": {"fn": "function | nil — receives a collection handle each time a collection is about to be deleted"}, "out": "nil"} ]]
+function Db:on_gc(fn)
+	if fn ~= nil and type(fn) ~= "function" then
+		error("on_gc: argument must be a function or nil; got " .. type(fn))
+	end
+
+	self._on_gc_callback = fn
+end
+
+--[[ {"in": {}, "out": "table — list of {collection_pk, message, trace_order} entries accumulated during the most recent drain"} ]]
+function Db:gc_errors()
+	return self._gc_errors
+end
+
+-- Build a proxy handle for a collection passed to the on_gc callback.
+-- The handle carries {pk, type} as direct fields; metatable magic makes
+-- handle[key], handle[idx], #handle, and pairs(handle) work the same
+-- way a caller would use the raw Db API.
+--[[ {"in": {"collection_pk": "integer"}, "out": "handle table"} ]]
+function Db:_collection_handle(collection_pk)
+	local coll_type = self:_query_one(
+		"select type from collections where collection_pk = :pk",
+		{pk = collection_pk})
+
+	local db = self
+	local handle = {
+		pk = collection_pk,
+		type = coll_type,
+		is_hash  = function() return coll_type == "h" end,
+		is_array = function() return coll_type == "a" end,
+	}
+
+	setmetatable(handle, {
+		__index = function(_, k)
+			local kt = type(k)
+
+			if kt == "string" then
+				return db:get_hash_element(collection_pk, k)
+			end
+
+			if kt == "number" then
+				return db:get_array_element(collection_pk, k)
+			end
+		end,
+		__len = function()
+			if coll_type == "h" then
+				return db:get_hash_length(collection_pk)
+			end
+
+			return db:get_array_length(collection_pk)
+		end,
+		__pairs = function()
+			return db:pairs(collection_pk)
+		end,
+	})
+
+	return handle
+end
+
+-- Fire the on_gc callback for one collection. No-op if no callback is
+-- registered. Errors from the callback go into _gc_errors and do NOT
+-- interrupt the drain — one bad handler doesn't break GC for the rest.
+--[[ {"in": {"collection_pk": "integer"}, "out": "nil"} ]]
+function Db:_fire_gc_callback(collection_pk)
+	if not self._on_gc_callback then
+		return
+	end
+
+	local handle = self:_collection_handle(collection_pk)
+	local ok, err = pcall(self._on_gc_callback, handle)
+
+	if not ok then
+		local trace_order = self:_query_one(
+			"select in_trace from collections where collection_pk = :pk",
+			{pk = collection_pk})
+
+		table.insert(self._gc_errors, {
+			collection_pk = collection_pk,
+			message = tostring(err),
+			trace_order = trace_order,
+		})
+	end
 end
 
 ------------------------------------------------------------
 -- Db:_drain_needs_trace() — Drinian-style backward-trace GC.
 --
--- While any collections row has needs_trace = 1:
---   1. Pick one such row (the seed). Partial index collections_needs_trace
---      makes this a near-zero lookup.
---   2. Mark the seed in_trace = 1.
---   3. Propagate in_trace upward via a single recursive-CTE UPDATE:
---      every collection with a relationship pointing to something already
---      in_trace becomes in_trace itself. Fix-point in one statement.
---      Root can be marked here — the alive check reads root's in_trace
---      directly, and the collections_root_no_needs_trace trigger
---      guards the flag that must never touch root (needs_trace),
---      leaving in_trace free.
---   4. Alive check: read root's in_trace. If set, one of root's
---      descendants sits in the closure — seed is anchored. Clear the
---      closure (including root's in_trace), clear seed's needs_trace,
---      loop.
---   5. Dead: bulk DELETE FROM collections WHERE in_trace = 1. Cascade
---      FKs remove their relationships; the mark trigger on
---      relationships fires per cascade-delete and adds cascade-orphaned
---      collections to needs_trace. Loop picks up the next seed.
+-- Runs to fix-point on the needs_trace / in_trace flags. The full
+-- algorithm is spec'd in ideas/fiona/specs/on-gc.md; this docstring
+-- summarizes the pieces.
 --
--- Final assertion: no row has needs_trace = 1 or in_trace = 1 at exit.
--- This is what "no saved state has the flags set" comes down to — if
--- the assertion trips, we have a drain bug and the transaction should
--- fail loudly rather than commit with lingering marks.
+-- Outer loop: while any collections row has needs_trace = 1, pick a
+-- seed, trace its backward closure, alive-check root, then either
+-- clear the closure (alive branch) or fire callbacks and delete
+-- (dead branch).
+--
+-- Trace propagation uses a monotonic counter from the `process` temp
+-- table (`in_trace_counter`). Each newly-marked node gets the next
+-- counter value, ordered by depth from seed. Callbacks fire in
+-- ascending in_trace order — parent-first — via the delete-as-you-go
+-- loop that re-queries every pass so auto-marked new collections
+-- (created during a callback and stamped via the auto-mark trigger)
+-- join the same drain rather than sneaking out.
+--
+-- Drain-scope process rows (in_gc_callback_phase + in_trace_counter)
+-- are inserted on entry when a callback is registered and deleted on
+-- exit — including on error, via pcall + finally-style cleanup. The
+-- drain runs inside atomic()'s savepoint, so a raised error rolls
+-- back the whole transaction. Assertion at exit checks no flag was
+-- left set.
 ------------------------------------------------------------
 
 --[[ {"in": {}, "out": "nil — mutates collections"} ]]
 function Db:_drain_needs_trace()
+	-- Reset the gc_errors accumulator for this drain — the list
+	-- reflects what happened during the most recent run.
+	self._gc_errors = {}
+
+	local use_callback_phase = self._on_gc_callback ~= nil
+
+	if use_callback_phase then
+		self._conn:exec(
+			"insert into process (key, details) " ..
+			"values ('in_gc_callback_phase', null), ('in_trace_counter', 0)")
+	end
+
+	local body_ok, body_err = pcall(Db._drain_body, self, use_callback_phase)
+
+	if use_callback_phase then
+		self._conn:exec(
+			"delete from process where key in ('in_gc_callback_phase', 'in_trace_counter')")
+	end
+
+	if not body_ok then
+		error(body_err, 0)
+	end
+
+	-- Assertion — no flag should be set at drain exit.
+	local leftover = self:_query_one(
+		"select count(*) from collections where needs_trace = 1 or in_trace is not null")
+
+	if leftover ~= 0 then
+		error(string.format(
+			"_drain_needs_trace: %d rows still marked at drain exit — this is a bug",
+			leftover))
+	end
+end
+
+--[[ {"in": {"use_callback_phase": "boolean"}, "out": "nil — the drain body, called under pcall from _drain_needs_trace"} ]]
+function Db:_drain_body(use_callback_phase)
 	while true do
 		local seed = self:_query_one(
 			"select collection_pk from collections where needs_trace = 1 limit 1")
@@ -786,27 +1095,62 @@ function Db:_drain_needs_trace()
 			break
 		end
 
-		-- Mark seed and propagate upward to fix-point in a single
-		-- recursive-CTE UPDATE. The CTE seeds from :seed directly (rather
-		-- than reading `where in_trace = 1`) so we don't need a separate
-		-- pre-mark UPDATE. Root is included in the closure — the
-		-- collections_root_no_needs_trace trigger only blocks needs_trace,
-		-- not in_trace, precisely so this UPDATE can land the mark on
-		-- root and the alive check can be a single primary-key read.
-		-- Statement is cached via _exec across drain iterations.
-		self:_exec([[
-			update collections set in_trace = 1
-			where in_trace is null
-				and collection_pk in (
+		-- Trace: mark seed and propagate upward. The recursive CTE walks
+		-- via `child = upward.pk` (backward — who points at me), UNION-
+		-- deduped on pk so cycles terminate.
+		--
+		-- Callback phase: assign sequential in_trace values (base+1,
+		-- base+2, ...) so callbacks fire parent-first. Seed is forced
+		-- to base+1 via the `case when pk = :seed then 0 else 1`
+		-- ordering hack, so it always fires first even when its raw pk
+		-- is larger than a cycle member's.
+		--
+		-- No callback phase: all reached collections get in_trace = 1 —
+		-- the bulk-delete path doesn't need ordering.
+		if use_callback_phase then
+			local base = tonumber(self:_query_one(
+				"select details from process where key = 'in_trace_counter'"))
+
+			self:_exec([[
+				update collections set in_trace = t.new_num
+				from (
 					with recursive upward(pk) as (
 						select :seed
 						union
 						select r.parent from relationships r
 						join upward on r.child = upward.pk
 					)
-					select pk from upward
-				)
-		]], {seed = seed}, "drain: seed + propagate in_trace")
+					select
+						pk,
+						(:base + row_number() over (order by
+							case when pk = :seed then 0 else 1 end, pk
+						)) as new_num
+					from upward
+				) as t
+				where collections.collection_pk = t.pk
+			]], {seed = seed, base = base}, "drain: propagate in_trace with counter")
+
+			-- Bump counter to the new max. One SQL round-trip.
+			self:_exec([[
+				update process set details = (
+					select coalesce(max(in_trace), 0) from collections where in_trace is not null
+				) where key = 'in_trace_counter'
+			]], nil, "drain: bump counter to max in_trace")
+		else
+			self:_exec([[
+				update collections set in_trace = 1
+				where in_trace is null
+					and collection_pk in (
+						with recursive upward(pk) as (
+							select :seed
+							union
+							select r.parent from relationships r
+							join upward on r.child = upward.pk
+						)
+						select pk from upward
+					)
+			]], {seed = seed}, "drain: propagate in_trace (bulk)")
+		end
 
 		-- Alive iff root ended up in_trace after propagation.
 		local alive = self:_query_one(
@@ -814,36 +1158,49 @@ function Db:_drain_needs_trace()
 
 		if alive then
 			-- Seed and its trace are anchored via root. Clear the flags
-			-- and move on to the next needs_trace row (if any).
+			-- and move on to the next needs_trace row (if any). The
+			-- counter is deliberately NOT reset — subsequent traces
+			-- continue from where it left off, keeping in_trace values
+			-- globally unique for the drain.
 			self:_exec(
-				"update collections set in_trace = null where in_trace = 1",
+				"update collections set in_trace = null where in_trace is not null",
 				nil,
 				"drain: clear in_trace on alive branch")
 			self:_exec(
 				"update collections set needs_trace = null where collection_pk = :pk",
 				{pk = seed},
 				"drain: clear needs_trace on alive seed")
+		elseif use_callback_phase then
+			-- Dead branch, callback-firing path. Re-query the current
+			-- lowest-in-trace row every pass so new collections
+			-- auto-marked during a callback join this same loop rather
+			-- than sneaking out.
+			while true do
+				local next_pk = self:_query_one(
+					"select collection_pk from collections where in_trace is not null " ..
+					"order by in_trace limit 1")
+
+				if not next_pk then
+					break
+				end
+
+				self:_fire_gc_callback(next_pk)
+				self:_exec(
+					"delete from collections where collection_pk = :pk",
+					{pk = next_pk},
+					"drain: delete after callback")
+			end
 		else
-			-- The whole in_trace closure is unreachable. Delete. Root is
-			-- not in this set (if it were, we'd be in the alive branch).
-			-- FK cascade drops their relationships; the mark trigger fires
-			-- on each cascade-delete and populates needs_trace for the
-			-- next iteration.
+			-- Dead branch, no-callback path. Bulk delete is safe when
+			-- no callback can insert new collections mid-loop; FK
+			-- cascade drops outgoing rels and the mark trigger repopulates
+			-- needs_trace for downstream orphans, picked up next outer
+			-- iteration.
 			self:_exec(
-				"delete from collections where in_trace = 1",
+				"delete from collections where in_trace is not null",
 				nil,
-				"drain: dead-set delete")
+				"drain: dead-set bulk delete")
 		end
-	end
-
-	-- Assertion — no flag should be set at drain exit.
-	local leftover = self:_query_one(
-		"select count(*) from collections where needs_trace = 1 or in_trace = 1")
-
-	if leftover ~= 0 then
-		error(string.format(
-			"_drain_needs_trace: %d rows still marked at drain exit — this is a bug",
-			leftover))
 	end
 end
 

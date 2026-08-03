@@ -20,13 +20,17 @@ Quick reference for Fiona's public API. See [index](./) for detailed semantics o
 | `db:close()` | — |
 | `db:delete_array_element(parent, idx)` | `boolean` — shifts sibling idxs down |
 | `db:delete_hash_element(parent, key)` | `boolean` |
+| `db:gc_errors()` | list of `{collection_pk, message, trace_order}` from the last drain |
 | `db:get_array_element(parent, idx)` | `collection_pk \| scalar \| nil` |
 | `db:get_array_length(parent)` | `integer` — max idx + 1 |
 | `fiona.get_db(path, mode)` | `db` handle |
 | `db:get_hash_element(parent, key)` | `collection_pk \| scalar \| nil` |
 | `db:get_hash_length(parent)` | `integer` — count of entries |
+| `db:is_array(pk)` | `boolean` — true iff row exists AND is an array |
+| `db:is_hash(pk)` | `boolean` — true iff row exists AND is a hash |
 | `db:keys(parent)` | for-loop iterator over keys / idxs |
 | `db:meta()` | hash of the meta table |
+| `db:on_gc(fn)` | — register close hook; `nil` clears |
 | `db:pairs(parent)` | for-loop iterator over (key/idx, value) |
 | `db:set_array_ref(parent, idx, ref_pk)` | — |
 | `db:set_array_scalar(parent, idx, value)` | — |

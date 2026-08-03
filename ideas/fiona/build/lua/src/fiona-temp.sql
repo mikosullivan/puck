@@ -1,12 +1,16 @@
--- Per-connection temp tables for Fiona's iterator support. Applied by
--- fiona.lua's get_db every time a connection opens — temp tables live
--- in the connection's temp schema and don't survive close, so this
--- can't go in fiona.sql (which is applied once at fresh-DB creation).
+-- Per-connection temp tables for Fiona's iterator support and the
+-- drain's GC-callback machinery. Applied by fiona.lua's get_db every
+-- time a connection opens — temp tables live in the connection's temp
+-- schema and don't survive close, so this can't go in fiona.sql
+-- (which is applied once at fresh-DB creation).
 --
 -- `iterators` is the roster of active iterator handles.
 -- `iterator_elements` holds one row per element in each iterator's
 -- snapshot; the FK cascade means deleting one row from `iterators`
 -- drops that iterator's whole payload in one shot.
+-- `process` holds runtime-mode flags (`in_gc_callback_phase`) and the
+-- drain's monotonic counter (`in_trace_counter`); the auto-mark trigger
+-- below reads from it. See specs/on-gc.md for the full mechanism.
 
 create temp table if not exists iterators (
 	iterator_pk integer primary key autoincrement,
@@ -47,4 +51,28 @@ when new.rel_pk is not null and not exists (
 )
 begin
 	select raise(abort, 'iterator_elements.rel_pk must reference an existing relationships row');
+end;
+
+-- ------------------------------------------------------------
+-- Process table + auto-mark trigger — the drain's runtime-mode plumbing.
+-- ------------------------------------------------------------
+
+create temp table if not exists process (
+	key text primary key,
+	details
+);
+
+-- While the drain is firing its GC callbacks (marked by presence of
+-- the `in_gc_callback_phase` row), any newly-inserted collection is
+-- auto-marked in_trace using the next value vended by the
+-- `in_trace_counter` row. Two primary-key hits, no aggregates.
+create temp trigger if not exists collections_auto_mark_during_gc
+after insert on collections
+when exists (select 1 from process where key = 'in_gc_callback_phase')
+begin
+	update process set details = details + 1
+		where key = 'in_trace_counter';
+	update collections set in_trace = (
+		select details from process where key = 'in_trace_counter'
+	) where collection_pk = new.collection_pk;
 end;

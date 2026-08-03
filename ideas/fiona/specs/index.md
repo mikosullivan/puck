@@ -245,13 +245,15 @@ Every mutating public method already wraps itself in an implicit `atomic`, so ba
 
 Fiona collects orphaned collections via a Drinian-style backward trace, driven in Lua at the outermost `atomic` boundary. Not directly callable — GC runs automatically.
 
-**How it works.** On every relationship delete or child-swap, a mark trigger sets `needs_trace = 1` on the collection whose incoming edge just went away (root skipped — never a valid seed). The drain then loops: pick a seed via the partial index, mark it and every collection that reaches it (via a recursive-CTE UPDATE that walks upward through `relationships.parent`), and check whether root ended up marked. Root marked → seed is anchored, clear the flags. Root not marked → the whole closure is unreachable, bulk-delete; FK cascade drops their outgoing edges, the mark trigger fires on each cascade delete, and the loop picks up the next seed.
+**How it works.** On every relationship delete or child-swap, a mark trigger sets `needs_trace = 1` on the collection whose incoming edge just went away (root skipped — never a valid seed). The drain then loops: pick a seed via the partial index, mark it and every collection that reaches it (via a recursive-CTE UPDATE that walks upward through `relationships.parent`), and check whether root ended up marked. Root marked → seed is anchored, clear the flags. Root not marked → the whole closure is unreachable, either bulk-deleted (no callback registered) or processed one-at-a-time by the delete-as-you-go loop (callback registered). FK cascade drops outgoing edges; the mark trigger fires on each cascade delete and the outer loop picks up the next seed.
 
 **No depth cap.** The Lua loop iterates rather than recurses, so `SQLITE_LIMIT_TRIGGER_DEPTH` (default 1000) doesn't apply. Chains millions deep are collectible in principle; the practical bound is memory for the CTE's worklist and Lua-loop time per collected collection.
 
-**Cycles.** A fully-detached cycle collects in one drain pass: propagation from any cycle member marks the whole cycle, root is not in the closure, bulk-delete removes all of them.
+**Cycles.** A fully-detached cycle collects in one drain pass: propagation from any cycle member marks the whole cycle, root is not in the closure, everything in the closure is deleted.
 
-**Assertion on exit.** After the loop, the drain asserts `select count(*) from collections where needs_trace = 1 or in_trace = 1` is 0. This is what "no committed state ever carries a mark" comes down to — the transaction commits with the flags clean or raises loudly.
+**Callbacks.** A caller can register a per-db close hook via `db:on_gc(fn)` — see [on-gc](./on-gc) for the full mechanism (parent-first ordering via the `in_trace_counter`, the auto-mark trigger that keeps callback-created collections in-trace, and the `db:gc_errors()` accumulator).
+
+**Assertion on exit.** After the loop, the drain asserts `select count(*) from collections where needs_trace = 1 or in_trace is not null` is 0. This is what "no committed state ever carries a mark" comes down to — the transaction commits with the flags clean or raises loudly.
 
 ### Introspection
 
@@ -270,6 +272,32 @@ Fresh DB carries one row:
 The method is a thin projection over the meta table, not a hand-maintained list of fields.
 
 **Why just the meta table, not runtime / DBMS info too.** Runtime info (the mode string, the file path) lives on the handle itself and doesn't belong in a method whose name suggests "stored metadata." DBMS info is trivial to query directly from SQLite when needed. If a grouped summary earns its keep later, it can land as a separate method with a name that says so.
+
+#### `is_hash` / `is_array`
+
+Cheap type probes for a given `collection_pk`. Return `true` iff the row exists and matches the requested type; return `false` for both a wrong-type row and a nonexistent pk.
+
+`db.is_hash(pk) → boolean`
+
+`db.is_array(pk) → boolean`
+
+Callers use these to disambiguate what a bare `collection_pk` refers to — most useful inside an `on_gc` callback where the handle's origin varies. The mirror methods on the callback's handle (`handle:is_hash()` / `handle:is_array()`) close over the type field so no extra query fires.
+
+### GC callbacks
+
+#### `on_gc`
+
+Register a per-db close hook. The function fires once per collection about to be deleted by the drain, in parent-first order.
+
+`db.on_gc(fn)` — one at a time; re-registering replaces. `db.on_gc(nil)` clears.
+
+The callback receives a proxy handle: `.pk` and `.type` are direct fields; `handle[key]` and `handle[idx]` read the collection's entries; `#handle` is its length; `pairs(handle)` walks its entries. See [on-gc](./on-gc) for the full mechanism (parent-first ordering, auto-mark trigger for callback-created collections, and the "no resurrection" semantic).
+
+#### `gc_errors`
+
+`db.gc_errors() → list`
+
+Returns the accumulator of errors raised by the callback during the most recent drain. Each entry is `{collection_pk, message, trace_order}`. The list clears at the start of every drain — a long list is a smell, and programs that snapshot at shutdown can check this before committing.
 
 ## Aspirational — not implemented yet
 

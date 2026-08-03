@@ -29,14 +29,16 @@ insert into meta (key, value) values ('schema', '2.0');
 create table collections (
 	collection_pk integer primary key autoincrement,
 	type text not null check (type in ('h', 'a')),
-	-- Transient GC scratch. Both are strictly null (not marked) or 1
-	-- (marked); partial indexes below make the resting state cheap.
+	-- Transient GC scratch. needs_trace is null (unset) or 1 (marked as
+	-- a candidate seed). in_trace is null (not currently traced) or a
+	-- positive integer that gives the order the drain's callback loop
+	-- fires against this row — see specs/on-gc.md.
 	needs_trace integer check (needs_trace is null or needs_trace = 1),
-	in_trace    integer check (in_trace    is null or in_trace    = 1)
+	in_trace    integer check (in_trace    is null or in_trace     > 0)
 );
 
 create index collections_needs_trace on collections(needs_trace) where needs_trace = 1;
-create index collections_in_trace    on collections(in_trace)    where in_trace    = 1;
+create index collections_in_trace    on collections(in_trace)    where in_trace   is not null;
 
 -- Identity (collection_pk, type) is immutable. needs_trace / in_trace
 -- are the only mutable columns.
