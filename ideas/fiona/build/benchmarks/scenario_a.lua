@@ -1,12 +1,12 @@
 --[[
 {
 	"module": "scenario_a",
-	"role": "Wide-flat hash stress test. Builds one hash with N fresh scalar children via set_hash_element, measuring per-bucket throughput. Isolates: (parent, key) unique-index insert cost, the coalesce(max(idx) + 1, 0) scan the max-idx lookup does, hsa autoincrement contention as the hsa PK B-tree grows, and per-insert CHECK/trigger cost. The per-bucket throughput curve is the point — flat curve means indexes hold; degrading curve means something is scanning.",
+	"role": "Wide-flat hash stress test. Builds one hash with N inline scalar values via set_hash_scalar, measuring per-bucket throughput. Isolates: (parent, key) unique-index insert cost, the coalesce(max(idx) + 1, 0) scan the max-idx lookup does, per-insert CHECK cost. The per-bucket throughput curve is the point — flat curve means indexes hold; degrading curve means something is scanning.",
 	"transaction_model": "Default: one SQLite transaction wraps every BATCH ops (bench measures index/CHECK/trigger cost, not fsync throughput). AUTOCOMMIT=1: skip all wrapping, so each API call autocommits and fsync-per-op governs throughput — the durable-write mode a real user gets without ceremony.",
 	"knobs": {
-		"N":          "total ops (default 100_000; via env var N)",
-		"BUCKET":     "throughput-curve bucket size (default 5_000; via env var BUCKET)",
-		"BATCH":      "transaction chunk size (default 10_000; via env var BATCH; ignored when AUTOCOMMIT=1)",
+		"N":          "total ops (default 10_000; via env var N)",
+		"BUCKET":     "throughput-curve bucket size (default 1_000; via env var BUCKET)",
+		"BATCH":      "transaction chunk size (default 2_000; via env var BATCH; ignored when AUTOCOMMIT=1)",
 		"AUTOCOMMIT": "if set (any non-empty value), skip the transaction wrapping; each op autocommits"
 	}
 }
@@ -17,12 +17,12 @@ package.path = script_dir .. "?.lua;" .. package.path
 
 local h = require("helpers")
 
-local N = tonumber(os.getenv("N")) or 100000
-local BUCKET = tonumber(os.getenv("BUCKET")) or 5000
-local BATCH = tonumber(os.getenv("BATCH")) or 10000
+local N = tonumber(os.getenv("N")) or 10000
+local BUCKET = tonumber(os.getenv("BUCKET")) or 1000
+local BATCH = tonumber(os.getenv("BATCH")) or 2000
 local AUTOCOMMIT = os.getenv("AUTOCOMMIT") ~= nil and os.getenv("AUTOCOMMIT") ~= ""
 
-print(string.format("Scenario A — wide-flat hash"))
+print(string.format("Scenario A — wide-flat hash of inline scalars"))
 print(string.format("  N      = %s ops", h.fmt_int(N)))
 print(string.format("  bucket = %s ops", h.fmt_int(BUCKET)))
 
@@ -44,20 +44,20 @@ local parent = db:add_hash()
 
 ------------------------------------------------------------
 -- Preflight — EXPLAIN QUERY PLAN on the three hot statements
--- set_hash_element runs per op. If any of these SCAN, throughput
+-- set_hash_scalar runs per op. If any of these SCAN, throughput
 -- will degrade with N and we want to see it in the plan first.
 ------------------------------------------------------------
 
-print("Preflight — EXPLAIN QUERY PLAN on set_hash_element's hot statements:")
+print("Preflight — EXPLAIN QUERY PLAN on set_hash_scalar's hot statements:")
 print()
 h.explain(db._conn,
-	"select child from relationships where parent = 1 and key = 'foo'",
-	"[existing-child lookup]")
+	"select child, st, scalar from relationships where parent = 1 and key = 'foo'",
+	"[existing-row lookup]")
 h.explain(db._conn,
 	"select coalesce(max(idx) + 1, 0) from relationships where parent = 1",
 	"[max-idx lookup]")
 h.explain(db._conn,
-	"insert into relationships (parent, child, key, idx) values (1, 2, 'foo', 0)",
+	"insert into relationships (parent, key, idx, st, scalar) values (1, 'foo', 0, 'n', 42)",
 	"[relationships insert]")
 print()
 
@@ -77,8 +77,7 @@ local total_start = h.now()
 local bucket_start = total_start
 
 for i = 1, N do
-	local scalar = db:add_scalar(i)
-	db:set_hash_element(parent, "k_" .. i, scalar)
+	db:set_hash_scalar(parent, "k_" .. i, i)
 
 	if not AUTOCOMMIT and i % BATCH == 0 then
 		db._conn:exec("commit")
@@ -119,22 +118,19 @@ print("Overall rate:   " .. h.fmt_int(math.floor(N / math.max(total_secs, 0.0000
 print("Final DB size:  " .. h.fmt_bytes(h.file_size(path)))
 print()
 
--- Quick sanity checks on the resulting DB — spend a couple seconds
--- confirming the shape actually is what we asked for, so a degraded
--- run can't silently pass.
 local rel_count
 for row in db._conn:nrows("select count(*) as c from relationships") do
 	rel_count = row.c
 end
 
-local hsa_count
-for row in db._conn:nrows("select count(*) as c from hsa") do
-	hsa_count = row.c
+local coll_count
+for row in db._conn:nrows("select count(*) as c from collections") do
+	coll_count = row.c
 end
 
 print("Post-run row counts:")
 print("  relationships: " .. h.fmt_int(rel_count))
-print("  hsa:           " .. h.fmt_int(hsa_count))
+print("  collections:   " .. h.fmt_int(coll_count))
 print()
 
 if rel_count ~= N then
@@ -142,12 +138,10 @@ if rel_count ~= N then
 		h.fmt_int(N), h.fmt_int(rel_count)))
 end
 
--- Root + parent hash + N scalars = N + 2 hsa rows.
-local expected_hsa = N + 2
-
-if hsa_count ~= expected_hsa then
-	print(string.format("WARNING: expected %s hsa rows, got %s",
-		h.fmt_int(expected_hsa), h.fmt_int(hsa_count)))
+-- Root + parent hash = 2 collection rows (scalars now inline in relationships).
+if coll_count ~= 2 then
+	print(string.format("WARNING: expected 2 collections (root + parent), got %s",
+		h.fmt_int(coll_count)))
 end
 
 h.cleanup_db(path)

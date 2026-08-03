@@ -179,14 +179,16 @@ h.test("shift-down: three-cluster sparse pattern", function()
 end)
 
 -- ------------------------------------------------------------
--- GC integration — cascade deletes leave gaps, explicit shifts
+-- GC integration — explicit delete shifts the array AND collects the
+-- orphaned child in the same atomic
 -- ------------------------------------------------------------
 
-h.test("cascade delete from drain leaves a gap in a surviving array parent", function()
+h.test("delete_array_element shifts the array and GCs the orphaned child in one atomic", function()
 	-- arr = [x, shared, z] where shared is a collection with a second
 	-- anchor from root. Delete the second anchor — shared stays. Then
-	-- delete arr[1] via delete_array_element (which shifts) — shared has
-	-- no anchor and gets GC'd. arr should now be [x, z].
+	-- delete arr[1] via delete_array_element — shared loses its last
+	-- anchor and gets GC'd by the drain; Lua shifts arr's remaining
+	-- elements. arr should now be [x, z] with no gap.
 	local db = fiona.get_db(":memory:", "rw")
 
 	local arr, shared = db:atomic(function()

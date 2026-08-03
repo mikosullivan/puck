@@ -11,7 +11,7 @@
 
 ## Context
 
-Fiona's `relationships_shift_down_on_array_delete` trigger uses the naive `UPDATE ... SET idx = idx - 1 WHERE parent = ? AND idx > ?` pattern to close the gap after an array delete. The trigger works because SQLite processes matching rows in ascending idx order (its planner uses the `(parent, idx)` unique index and scans ascending) — but this ordering is not documented as a guarantee, only observed. See `ideas/fiona/build/sqlite/lua/src/fiona.sql` for the trigger and its comment describing the reliance.
+Fiona's `relationships_shift_down_on_array_delete` trigger uses the naive `UPDATE ... SET idx = idx - 1 WHERE parent = ? AND idx > ?` pattern to close the gap after an array delete. The trigger works because SQLite processes matching rows in ascending idx order (its planner uses the `(parent, idx)` unique index and scans ascending) — but this ordering is not documented as a guarantee, only observed. See `ideas/fiona/build/lua/src/fiona.sql` for the trigger and its comment describing the reliance.
 
 Getting SQLite to formally document the guarantee removes the "empirical, not documented" caveat and lets Fiona (and every other SQL codebase using this common pattern) drop the defensive hedging.
 

@@ -25,6 +25,7 @@ end
 
 local this_dir = this_file:match("(.*/)") or "./"
 local SCHEMA_PATH = this_dir .. "fiona.sql"
+local TEMP_SCHEMA_PATH = this_dir .. "fiona-temp.sql"
 
 local function read_file(path)
 	local f, err = io.open(path, "r")
@@ -536,6 +537,137 @@ function Db:delete_array_element(parent_pk, idx)
 end
 
 -- Two-phase 10^18 hop that shifts every sibling with idx > deleted_idx
+------------------------------------------------------------
+-- Reading elements. Point-lookup navigation, not queries. Returns the
+-- value at a slot (collection_pk if the row holds a reference, scalar
+-- if it holds an inline value, nil if the slot is empty). No parent-
+-- existence check on get_element — nonexistent parent implies no
+-- matching row implies nil, same as an empty slot on a real parent.
+-- The get_length methods do check parent type since the count vs
+-- max(idx)+1 semantic is method-specific.
+------------------------------------------------------------
+
+-- Interpret a scalar row's (st, scalar) columns as a Lua value. Boolean
+-- storage is 0/1 in the scalar column; everything else is what it looks
+-- like. Null-scalar (st = 'u') returns Lua nil, indistinguishable from
+-- "no row" — per spec, V1 collapses those cases.
+--[[ {"in": {"st": "string — 's'/'n'/'b'/'u'", "scalar": "any"}, "out": "any — Lua-typed value"} ]]
+local function decode_scalar(st, scalar)
+	if st == "b" then
+		return scalar == 1
+	end
+
+	return scalar
+end
+
+--[[ {"in": {"parent_pk": "integer", "key": "string"}, "out": "collection_pk (integer) | scalar (Lua value) | nil"} ]]
+function Db:get_hash_element(parent_pk, key)
+	if type(parent_pk) ~= "number" then
+		error("get_hash_element: parent_pk must be a number; got " .. type(parent_pk))
+	end
+
+	if type(key) ~= "string" then
+		error("get_hash_element: key must be a string; got " .. type(key))
+	end
+
+	local stmt = self:_stmt(
+		"select child, st, scalar from relationships where parent = :p and key = :k")
+	stmt:bind_names({p = parent_pk, k = key})
+
+	local child, st, scalar
+
+	if stmt:step() == sqlite3.ROW then
+		child = stmt:get_value(0)
+		st = stmt:get_value(1)
+		scalar = stmt:get_value(2)
+	end
+
+	stmt:reset()
+
+	if child ~= nil then
+		return child
+	end
+
+	return decode_scalar(st, scalar)
+end
+
+--[[ {"in": {"parent_pk": "integer", "idx": "integer >= 0"}, "out": "collection_pk (integer) | scalar (Lua value) | nil"} ]]
+function Db:get_array_element(parent_pk, idx)
+	if type(parent_pk) ~= "number" then
+		error("get_array_element: parent_pk must be a number; got " .. type(parent_pk))
+	end
+
+	if type(idx) ~= "number" or idx < 0 or math.floor(idx) ~= idx then
+		error("get_array_element: idx must be a non-negative integer; got " .. tostring(idx))
+	end
+
+	local stmt = self:_stmt(
+		"select child, st, scalar from relationships where parent = :p and idx = :i")
+	stmt:bind_names({p = parent_pk, i = idx})
+
+	local child, st, scalar
+
+	if stmt:step() == sqlite3.ROW then
+		child = stmt:get_value(0)
+		st = stmt:get_value(1)
+		scalar = stmt:get_value(2)
+	end
+
+	stmt:reset()
+
+	if child ~= nil then
+		return child
+	end
+
+	return decode_scalar(st, scalar)
+end
+
+--[[ {"in": {"parent_pk": "integer"}, "out": "integer — count of entries"} ]]
+function Db:get_hash_length(parent_pk)
+	if type(parent_pk) ~= "number" then
+		error("get_hash_length: parent_pk must be a number; got " .. type(parent_pk))
+	end
+
+	local parent_type = self:_query_one(
+		"select type from collections where collection_pk = :p",
+		{p = parent_pk})
+
+	if parent_type == nil then
+		error("get_hash_length: no collection with collection_pk = " .. parent_pk)
+	end
+
+	if parent_type ~= "h" then
+		error("get_hash_length: parent " .. parent_pk .. " must be a hash; got type '" .. parent_type .. "'")
+	end
+
+	return self:_query_one(
+		"select count(*) from relationships where parent = :p",
+		{p = parent_pk}) or 0
+end
+
+--[[ {"in": {"parent_pk": "integer"}, "out": "integer — max(idx) + 1 (Ruby-array semantic)"} ]]
+function Db:get_array_length(parent_pk)
+	if type(parent_pk) ~= "number" then
+		error("get_array_length: parent_pk must be a number; got " .. type(parent_pk))
+	end
+
+	local parent_type = self:_query_one(
+		"select type from collections where collection_pk = :p",
+		{p = parent_pk})
+
+	if parent_type == nil then
+		error("get_array_length: no collection with collection_pk = " .. parent_pk)
+	end
+
+	if parent_type ~= "a" then
+		error("get_array_length: parent " .. parent_pk .. " must be an array; got type '" .. parent_type .. "'")
+	end
+
+	return self:_query_one(
+		"select coalesce(max(idx) + 1, 0) from relationships where parent = :p",
+		{p = parent_pk}) or 0
+end
+
 -- down by 1. Same safe-range pattern the shift-on-update trigger uses:
 -- phase 1 moves each row into the 10^18 range at (old_idx - 1 + 10^18),
 -- phase 2 subtracts 10^18 to land at (old_idx - 1). All target slots are
@@ -654,30 +786,27 @@ function Db:_drain_needs_trace()
 			break
 		end
 
-		-- Seed enters in_trace. Root can never be a seed (mark triggers
-		-- gate on old.child <> 1) so we don't need to guard here.
-		self:_exec(
-			"update collections set in_trace = 1 where collection_pk = :pk",
-			{pk = seed},
-			"drain: mark seed in_trace")
-
-		-- Propagate upward to fix-point. Root is included — the
+		-- Mark seed and propagate upward to fix-point in a single
+		-- recursive-CTE UPDATE. The CTE seeds from :seed directly (rather
+		-- than reading `where in_trace = 1`) so we don't need a separate
+		-- pre-mark UPDATE. Root is included in the closure — the
 		-- collections_root_no_needs_trace trigger only blocks needs_trace,
 		-- not in_trace, precisely so this UPDATE can land the mark on
 		-- root and the alive check can be a single primary-key read.
-		self._conn:exec([[
+		-- Statement is cached via _exec across drain iterations.
+		self:_exec([[
 			update collections set in_trace = 1
 			where in_trace is null
 				and collection_pk in (
 					with recursive upward(pk) as (
-						select collection_pk from collections where in_trace = 1
+						select :seed
 						union
 						select r.parent from relationships r
 						join upward on r.child = upward.pk
 					)
 					select pk from upward
 				)
-		]])
+		]], {seed = seed}, "drain: seed + propagate in_trace")
 
 		-- Alive iff root ended up in_trace after propagation.
 		local alive = self:_query_one(
@@ -686,7 +815,10 @@ function Db:_drain_needs_trace()
 		if alive then
 			-- Seed and its trace are anchored via root. Clear the flags
 			-- and move on to the next needs_trace row (if any).
-			self._conn:exec("update collections set in_trace = null where in_trace = 1")
+			self:_exec(
+				"update collections set in_trace = null where in_trace = 1",
+				nil,
+				"drain: clear in_trace on alive branch")
 			self:_exec(
 				"update collections set needs_trace = null where collection_pk = :pk",
 				{pk = seed},
@@ -697,7 +829,10 @@ function Db:_drain_needs_trace()
 			-- FK cascade drops their relationships; the mark trigger fires
 			-- on each cascade-delete and populates needs_trace for the
 			-- next iteration.
-			self._conn:exec("delete from collections where in_trace = 1")
+			self:_exec(
+				"delete from collections where in_trace = 1",
+				nil,
+				"drain: dead-set delete")
 		end
 	end
 
@@ -748,7 +883,7 @@ Db.__gc = Db.close
 -- 'w' is deliberately excluded — every Fiona write reads the root
 -- collection first, so a strict write-only handle can't perform any
 -- operation Fiona exposes. Documented as a conscious V1 choice in the
--- spec (see fiona/spec/sqlite/index.md, "No write-only mode in V1").
+-- spec (see fiona/specs/index.md, "No write-only mode in V1").
 -- If a real append-only use case surfaces, 'w' can be reinstated with
 -- the root-read exception carved out.
 local VALID_MODES = {r = true, rw = true, wr = true}
@@ -806,6 +941,16 @@ local function get_db(path, mode)
 	-- Set per-connection pragmas. Required by the schema's triggers.
 	conn:exec("pragma foreign_keys = on")
 	conn:exec("pragma recursive_triggers = on")
+
+	-- Per-connection iterator scratch tables — applied every open, since
+	-- temp tables live in the connection's temp schema and don't survive
+	-- close. Schema definition lives at fiona-temp.sql alongside fiona.sql.
+	local temp_schema = read_file(TEMP_SCHEMA_PATH)
+	local temp_ok = conn:exec(temp_schema)
+
+	if temp_ok ~= sqlite3.OK then
+		error("get_db: temp schema apply failed — " .. conn:errmsg())
+	end
 
 	return Db.new(conn, mode, path)
 end

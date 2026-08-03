@@ -168,52 +168,13 @@ begin
 	end;
 end;
 
--- ------------------------------------------------------------
--- Idx-shift triggers. Both use the 10^18 arithmetic-hop pattern;
--- neither depends on planner row-processing order.
--- ------------------------------------------------------------
-
-create trigger relationships_shift_on_insert
-before insert on relationships
-when exists (
-	select 1 from relationships
-	where parent = new.parent and idx = new.idx
-)
-begin
-	update relationships set idx = idx + 1000000000000000000
-	where parent = new.parent and idx >= new.idx;
-
-	update relationships set idx = idx - 999999999999999999
-	where parent = new.parent and idx >= 1000000000000000000;
-end;
-
-create trigger relationships_shift_on_update
-before update of idx on relationships
-when new.idx <> old.idx and exists (
-	select 1 from relationships
-	where parent = old.parent and idx = new.idx and rel_pk <> old.rel_pk
-)
-begin
-	update relationships set idx = old.idx + 1000000000000000000
-	where rel_pk = old.rel_pk;
-
-	update relationships set idx = idx + 1000000000000000000
-	where parent = old.parent
-		and rel_pk <> old.rel_pk
-		and (
-			(new.idx < old.idx and idx between new.idx and old.idx - 1)
-			or (new.idx > old.idx and idx between old.idx + 1 and new.idx)
-		);
-
-	update relationships set idx =
-		idx - 1000000000000000000 + case when new.idx < old.idx then 1 else -1 end
-	where parent = old.parent
-		and idx >= 1000000000000000000
-		and rel_pk <> old.rel_pk;
-end;
-
--- Shift-down on explicit `delete_array_element` lives in Lua
--- (Db:_shift_down_array) using the two-phase 10^18 hop, not a trigger.
+-- Idx collisions from raw SQL INSERT / UPDATE OF idx fail with a
+-- UNIQUE constraint error. The Lua API doesn't collide (set_hash_ref /
+-- set_hash_scalar use max(idx) + 1 on insert; set_array_ref / set_array_scalar
+-- UPDATE the row when the slot is occupied) so no shift-on-collision
+-- machinery is needed at the schema level. Shift-down on explicit
+-- delete_array_element lives in Lua as Db:_shift_down_array (two-phase
+-- 10^18 hop, not a trigger).
 
 -- ------------------------------------------------------------
 -- Mark triggers — the trace's worklist populator.

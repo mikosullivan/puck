@@ -584,44 +584,27 @@ local function read_array(db)
 	return out
 end
 
-h.test("shift on insert: collision at existing idx bumps sibling up", function()
+-- ------------------------------------------------------------
+-- Idx collisions raise UNIQUE (no shift triggers at the schema level).
+-- The Lua API's set_* methods use max(idx) + 1 on insert and UPDATE on
+-- collision, so this only bites callers who bypass the API via raw SQL.
+-- ------------------------------------------------------------
+
+h.test("raw INSERT at an occupied idx raises UNIQUE", function()
 	local db = fresh_array(2)  -- [10, 20] at idx 0, 1
-	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 0, 'n', 999)")
-
-	local values = read_array(db)
-	h.assert_eq(values[1], 999, "new value at idx 0")
-	h.assert_eq(values[2], 10,  "old idx 0 shifted to 1")
-	h.assert_eq(values[3], 20,  "old idx 1 shifted to 2")
+	h.assert_raises(function()
+		exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 0, 'n', 999)")
+	end, "UNIQUE", "collision at idx 0 rejected")
 end)
 
-h.test("shift on insert: cascade — insert at 0 in a 5-item array", function()
-	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
-	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 0, 'n', 999)")
-
-	local values = read_array(db)
-	h.assert_eq(values[1], 999)
-	h.assert_eq(values[2], 10)
-	h.assert_eq(values[3], 20)
-	h.assert_eq(values[4], 30)
-	h.assert_eq(values[5], 40)
-	h.assert_eq(values[6], 50)
+h.test("raw UPDATE OF idx to an occupied idx raises UNIQUE", function()
+	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
+	h.assert_raises(function()
+		exec(db, "update relationships set idx = 1 where parent = 2 and idx = 0")
+	end, "UNIQUE", "collision when moving idx 0 → 1 rejected")
 end)
 
-h.test("shift on insert: insert in the middle shifts only rows at or above", function()
-	local db = fresh_array(5)  -- [10, 20, 30, 40, 50]
-	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 2, 'n', 999)")
-
-	local values = read_array(db)
-	-- Expected: [10, 20, 999, 30, 40, 50]
-	h.assert_eq(values[1], 10)
-	h.assert_eq(values[2], 20)
-	h.assert_eq(values[3], 999)
-	h.assert_eq(values[4], 30)
-	h.assert_eq(values[5], 40)
-	h.assert_eq(values[6], 50)
-end)
-
-h.test("shift on insert: sparse insert (no collision) is a no-op", function()
+h.test("raw INSERT into a sparse slot succeeds (no collision)", function()
 	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
 	exec(db, "insert into relationships (parent, idx, st, scalar) values (2, 100, 'n', 999)")
 
@@ -629,110 +612,21 @@ h.test("shift on insert: sparse insert (no collision) is a no-op", function()
 	for row in db:nrows("select scalar from relationships where parent = 2 and idx = 100") do
 		at_100 = row.scalar
 	end
-	h.assert_eq(at_100, 999, "sparse insert lands at 100 with no shift")
-
-	for row in db:nrows("select count(*) as c from relationships where parent = 2 and idx in (0,1,2)") do
-		h.assert_eq(row.c, 3, "originals still at 0..2")
-	end
+	h.assert_eq(at_100, 999, "sparse insert lands at 100 fine")
 end)
 
-h.test("shift on insert: hash collision at (parent, idx) shifts, key uniqueness still enforced", function()
-	local db = h.fresh_db()
-	exec(db, "insert into collections (type) values ('h')")  -- 2
-	exec(db, "insert into relationships (parent, child, key, idx) values (1, 2, 'h', 0)")
-	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 0, 'n', 10)")
-	-- New entry with different key + same idx: shift lets it in.
-	exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'b', 0, 'n', 20)")
-
-	local at_0, at_1
-	for row in db:nrows("select idx, key from relationships where parent = 2 order by idx") do
-		if row.idx == 0 then at_0 = row.key
-		elseif row.idx == 1 then at_1 = row.key end
-	end
-	h.assert_eq(at_0, "b", "new key 'b' at idx 0")
-	h.assert_eq(at_1, "a", "key 'a' shifted to idx 1")
-
-	-- Same key as existing entry still raises regardless of idx.
-	h.assert_raises(function()
-		exec(db, "insert into relationships (parent, key, idx, st, scalar) values (2, 'a', 5, 'n', 30)")
-	end, "UNIQUE", "duplicate key under hash still rejected")
-end)
-
--- ------------------------------------------------------------
--- Shift triggers — moving an existing record via UPDATE OF idx
--- ------------------------------------------------------------
-
-h.test("shift on move: up-move shifts intervening siblings up by 1", function()
-	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
-	-- Move value 40 (currently at idx 3) to idx 1.
-	exec(db, "update relationships set idx = 1 where parent = 2 and scalar = 40")
-
-	local values = read_array(db)
-	-- Expected: [10, 40, 20, 30, 50]
-	h.assert_eq(values[1], 10)
-	h.assert_eq(values[2], 40)
-	h.assert_eq(values[3], 20)
-	h.assert_eq(values[4], 30)
-	h.assert_eq(values[5], 50)
-end)
-
-h.test("shift on move: down-move shifts intervening siblings down by 1", function()
-	local db = fresh_array(5)  -- [10, 20, 30, 40, 50] at idx 0..4
-	-- Move value 20 (currently at idx 1) to idx 3.
-	exec(db, "update relationships set idx = 3 where parent = 2 and scalar = 20")
-
-	local values = read_array(db)
-	-- Expected: [10, 30, 40, 20, 50]
-	h.assert_eq(values[1], 10)
-	h.assert_eq(values[2], 30)
-	h.assert_eq(values[3], 40)
-	h.assert_eq(values[4], 20)
-	h.assert_eq(values[5], 50)
-end)
-
-h.test("shift on move: no collision means no shift", function()
+h.test("raw UPDATE OF idx to a fresh slot succeeds (no collision)", function()
 	local db = fresh_array(3)  -- [10, 20, 30] at idx 0..2
-	-- Move value 10 (idx 0) to idx 100 (fresh position).
-	exec(db, "update relationships set idx = 100 where parent = 2 and scalar = 10")
+	exec(db, "update relationships set idx = 100 where parent = 2 and idx = 0")
 
 	local at_100
 	for row in db:nrows("select scalar from relationships where parent = 2 and idx = 100") do
 		at_100 = row.scalar
 	end
-	h.assert_eq(at_100, 10, "10 landed at 100")
-
-	local at_1, at_2
-	for row in db:nrows("select idx, scalar from relationships where parent = 2 order by idx") do
-		if row.idx == 1 then at_1 = row.scalar
-		elseif row.idx == 2 then at_2 = row.scalar end
-	end
-	h.assert_eq(at_1, 20, "20 unchanged at 1")
-	h.assert_eq(at_2, 30, "30 unchanged at 2")
+	h.assert_eq(at_100, 10, "10 moved to 100 fine")
 end)
 
-h.test("shift on move: density preserved for both directions", function()
-	local db = fresh_array(6)  -- [10, 20, 30, 40, 50, 60]
-
-	-- Up-move: 60 (idx 5) to idx 0.
-	exec(db, "update relationships set idx = 0 where parent = 2 and scalar = 60")
-
-	local max_idx_up
-	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
-		max_idx_up = row.m
-	end
-	h.assert_eq(max_idx_up, 5, "max idx still 5 — dense after up-move")
-
-	-- Down-move: 10 (currently at idx 1) to idx 5.
-	exec(db, "update relationships set idx = 5 where parent = 2 and scalar = 10")
-
-	local max_idx_down
-	for row in db:nrows("select max(idx) as m from relationships where parent = 2") do
-		max_idx_down = row.m
-	end
-	h.assert_eq(max_idx_down, 5, "max idx still 5 — dense after down-move")
-end)
-
-h.test("shift on move: identity update (NEW.idx = OLD.idx) is a no-op", function()
+h.test("identity UPDATE OF idx (new == old) is a no-op", function()
 	local db = fresh_array(3)
 	exec(db, "update relationships set idx = 1 where parent = 2 and idx = 1")
 

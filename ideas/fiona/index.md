@@ -10,10 +10,6 @@
 }}
 ~~~
 
-**Status:** notes on a data structure Miko once invented. **Not in use
-in mikobase.** Recorded here because some of its ideas may still
-inform future design decisions.
-
 ---
 
 ## Overview
@@ -123,12 +119,6 @@ wiggle-room decision noted above: the strict rule (delete-and-add)
 means scalar changes rewire the parent's relationship without
 touching the shared row, so co-parents don't see the change;
 UPDATE-in-place means they do.
-
----
-
-## Why It's Not Used in Mikobase
-
-(To be filled in.)
 
 ---
 
