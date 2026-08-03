@@ -153,15 +153,6 @@ All sizes approximate, in kb.
 </tbody>
 
 <tbody>
-<tr><th colspan="3">Cache</th></tr>
-<tr>
-	<td>luaexpat</td>
-	<td class="align-right">69</td>
-	<td>Lua binding to libexpat (C-native SAX parser) for XML support — <code>lxp.so</code> C binding (≈46 kb) + Lua helpers (<code>lom.lua</code> DOM builder, <code>totable.lua</code> SAX-to-table, <code>threat.lua</code> billion-laughs protection, ≈23 kb combined). Ships under <code>build/cache/</code> — downloaded as part of the distribution but not bundled into <code>caspian.lua</code>. Most Caspian programs don't touch XML, so paying the parse / memory cost at every startup would be waste; <code>require("lxp")</code> pulls it from cache on demand instead. C-native SAX parse is ≈100× faster than pure-Lua alternatives, with correct namespaces, entity handling, and encoding auto-detect.</td>
-</tr>
-</tbody>
-
-<tbody>
 <tr><th colspan="3">wiggle room</th></tr>
 <tr>
 	<td>wiggle room</td>
@@ -173,8 +164,8 @@ All sizes approximate, in kb.
 <tfoot>
 <tr>
 	<td><strong>Total</strong></td>
-	<td class="align-right"><strong>1388</strong></td>
-	<td>Against the 1.44 MB floppy target — leaves 52 kb of headroom. Bundled-tier bytes ride inside <code>caspian.lua</code>, so at delivery time they sum with the Caspian tier under the pie's <code>caspian.lua</code> slice, not a separate wedge. Cache-tier bytes ship as their own <code>build/cache/</code> subtree with their own pie slice.</td>
+	<td class="align-right"><strong>1319</strong></td>
+	<td>Against the 1.44 MB floppy target — leaves 121 kb of headroom. Bundled-tier bytes ride inside <code>caspian.lua</code>, so at delivery time they sum with the Caspian tier under the pie's <code>caspian.lua</code> slice, not a separate wedge. Cache tier is currently empty — luaexpat used to live there but XML was pulled from the distribution; users who need XML install <code>luaexpat</code> separately via luarocks.</td>
 </tr>
 </tfoot>
 </table>
@@ -185,7 +176,7 @@ Tiers:
 - **Caspian** — everything Caspian-authored: the engine (`caspian.lua` bundle with Fiona and the Lua binding wrapper inlined), the vibecode JSON blob, and `lua-confstr`. Ships under `caspian/`. Loaded via `require()` by whatever host is embedding Caspian — the CLI, a Ruby program, a Python program. Same files, any host.
 - **Bundled** — external libraries whose pure-Lua portion is folded into `caspian.lua` at build time by `tools/bundle-caspian.lua`. Downloaded from luarocks during the build, then inlined into the bundle — `require("pegasus")`, `require("dkjson")`, etc. resolve from memory with no filesystem hit. Their C halves (where they have one) live in the External tier.
 - **External** — third-party libraries the engine depends on at every load. `.so` binaries per arch and their `.lua` wrappers where applicable, shipped under `external/`. Loaded via `require()` — a host that adds `external/` to its `package.cpath` gets the engine's C surface for free. Bundled at exact versions rather than fetched from system packages because the engine's coupling to each lib's API is tight enough that version drift silently breaks assumptions.
-- **Cache** — external libraries downloaded and shipped under `build/cache/` but NOT bundled into `caspian.lua`. Loaded only when a program actually needs them, so the parse / memory cost isn't paid on every Caspian startup. XML lives here because most Caspian programs won't touch it — see the [floppy budget page](https://puck.uno/requirements/core/budget/) for how the pie carves out a dedicated wedge for cache-tier bytes.
+- **Cache** — external libraries downloaded and shipped under `build/cache/` but NOT bundled into `caspian.lua`. Loaded only when a program actually needs them, so the parse / memory cost isn't paid on every Caspian startup. Currently empty — luaexpat used to live here but XML support was pulled from the distribution; users who need XML install `luaexpat` themselves via luarocks. Kept as a documented tier for future on-demand libraries.
 - **wiggle room** — reserved slack, unassigned to any specific tier because surprise growth can happen anywhere.
 
 

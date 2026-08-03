@@ -108,11 +108,12 @@ local EXTERNAL_ROCKS = {
 
 -- Cache-tier rocks: downloaded and shipped under build/cache/ but NOT
 -- bundled into caspian.lua. On-demand loading only — parsing / memory
--- cost paid only if the running program actually requires them. XML
--- lives here because most Caspian programs won't touch it.
-local CACHE_ROCKS = {
-	"luaexpat",
-}
+-- cost paid only if the running program actually requires them.
+-- Currently empty. XML support (luaexpat) used to live here but Miko
+-- took it out — users who need XML install it separately via luarocks.
+-- Kept the list-and-tier infrastructure so a future on-demand library
+-- lands cleanly.
+local CACHE_ROCKS = {}
 
 local failed = {}
 

@@ -17,7 +17,11 @@ Caspian targets a 1.44 MB floppy — **1,474,560 bytes**. The pie below shows wh
 
 - **caspian binary** — the compiled `bin/caspian`: Lua 5.4 interpreter (statically linked), musl libc, and the CLI shim (`caspian.c`). Measured directly from the built binary.
 - **caspian.lua** — the bundled runtime at `caspian/caspian.lua`: Caspian-authored code (engine, Fiona with SQL inlined, Lua binding wrapper) plus every pure-Lua wrapper from the always-loaded external libraries (pegasus, luasocket's Lua side, dkjson, etc.). Measured directly.
-- **external files** — every file under `build/external/` and `build/cache/`. The always-loaded C bindings (libsodium, LPeg, cjson, lsqlite3, socket cores, zlib, luafilesystem, mime core) live under `external/`; the on-demand libraries (currently just luaexpat for XML) live under `cache/`. Summed as one slice since they all count against the same total.
+- **external files** — every file under `build/external/` (and `build/cache/` when it has anything in it — currently empty). The always-loaded C bindings live here: libsodium, LPeg, cjson, lsqlite3, socket cores, zlib, luafilesystem, mime core.
+
+## Not shipped
+
+XML (`luaexpat`) used to ride under `build/cache/` as an on-demand library. Miko took it out — users who need XML install `luaexpat` themselves via luarocks. The `cache/` tier and its build wiring stay in place so a future on-demand library lands cleanly.
 
 ## Against the target
 
