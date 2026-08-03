@@ -16,7 +16,7 @@ Caspian targets a 1.44 MB floppy — **1,474,560 bytes**. The pie below shows wh
 ## Slices
 
 - **caspian binary** — the compiled `bin/caspian`: Lua 5.4 interpreter (statically linked), musl libc, and the CLI shim (`caspian.c`). Measured directly from the built binary.
-- **caspian.lua** — the bundled runtime at `caspian/caspian.lua`: Caspian-authored code (engine, Fiona with SQL inlined, Lua binding wrapper) plus every pure-Lua wrapper from the always-loaded external libraries (pegasus, luasocket's Lua side, dkjson, etc.). Measured directly.
+- **caspian.lua** — the bundled runtime at `caspian/caspian.lua`: Caspian-authored code (engine, Lua binding wrapper) plus every pure-Lua wrapper from the always-loaded external libraries (pegasus, luasocket's Lua side, dkjson, etc.). Measured directly.
 - **external files** — every file under `build/external/` (and `build/cache/` when it has anything in it — currently empty). The always-loaded C bindings live here: libsodium, LPeg, cjson, lsqlite3, socket cores, zlib, luafilesystem, mime core.
 
 ## Not shipped

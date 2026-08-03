@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_core",
-	"role": "index for requirements/core/ — everything downloaded at Caspian install time. Covers the caspian binary (a thin embedder: Lua 5.4 interpreter, musl libc, CLI shim), Caspian-authored code (engine bundle, Fiona, vibecode blob), and the external libraries the engine loads via require. Every entry counts against the floppy budget, spec'd separately at requirements/core/budget/. Separate from caspian/installation/, which specs the install PROCESS (prompts, flow, setup).",
+	"role": "index for requirements/core/ — everything downloaded at Caspian install time. Covers the caspian binary (a thin embedder: Lua 5.4 interpreter, musl libc, CLI shim), Caspian-authored code (engine bundle, vibecode blob), and the external libraries the engine loads via require. Every entry counts against the floppy budget, spec'd separately at requirements/core/budget/. Separate from caspian/installation/, which specs the install PROCESS (prompts, flow, setup).",
 	"status": "spec — inventory of what's downloaded settled; individual detail pages live in this directory",
 	"audience": "release maintainers building the caspian distribution; developers checking what's available at runtime without installing anything themselves"
 }}
@@ -50,17 +50,12 @@ All sizes approximate, in kb.
 <tr>
 	<td>Engine</td>
 	<td class="align-right">84</td>
-	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction). Bundled into <code>caspian.lua</code> at build time along with Fiona and the Lua binding wrapper. Ships on disk under <code>caspian/</code>; any host embedding Caspian — the CLI, a Ruby host, a Python host — loads it via <code>require("caspian")</code>. Grows as the stdlib grows.</td>
-</tr>
-<tr>
-	<td>Fiona</td>
-	<td class="align-right">33</td>
-	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's Lua source under <code>src/fiona/</code> + <strong>45% × total bytes</strong> of the SQL there. Currently ≈44 kb of Lua (<code>fiona.lua</code>) → ≈27 kb shipped, plus ≈12 kb of SQL (<code>fiona.sql</code>, <code>fiona-temp.sql</code>) → ≈6 kb shipped after whitespace / comment strip (45% is Miko's empirical ratio). Caspian's storage substrate — bundled into <code>caspian.lua</code> at build time with the SQL inlined as string constants, since Fiona is integral (there's no Caspian mode without it) and the shipping surface should stay minimal.</td>
+	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction). Bundled into <code>caspian.lua</code> at build time along with the Lua binding wrapper. Ships on disk under <code>caspian/</code>; any host embedding Caspian — the CLI, a Ruby host, a Python host — loads it via <code>require("caspian")</code>. Grows as the stdlib grows.</td>
 </tr>
 <tr>
 	<td>Lua binding wrapper</td>
 	<td class="align-right">20</td>
-	<td>Generic wrapper for accessing Lua libraries from Caspian code via <code>%lua['name']</code>. Pure Lua, part of the engine's stdlib — bundled into <code>caspian.lua</code> at build time along with Engine and Fiona.</td>
+	<td>Generic wrapper for accessing Lua libraries from Caspian code via <code>%lua['name']</code>. Pure Lua, part of the engine's stdlib — bundled into <code>caspian.lua</code> at build time along with the Engine.</td>
 </tr>
 <tr>
 	<td>Vibecode</td>
@@ -145,11 +140,6 @@ All sizes approximate, in kb.
 	<td class="align-right">35</td>
 	<td>C-native JSON parser/encoder. JSON parsing is critical path — CaspianJ IS JSON, and the engine reads/writes it on every run. Ships as <code>cjson.so</code> under <code>external/</code>. Handles null (via <code>cjson.null</code>), 64-bit integers on Lua 5.3+, Unicode escapes including surrogate pairs, and duplicate keys correctly.</td>
 </tr>
-<tr>
-	<td>lsqlite3</td>
-	<td class="align-right">55</td>
-	<td>Lua binding to SQLite — the disk layer Fiona sits on. Ships as <code>lsqlite3.so</code> under <code>external/</code>. Dynamic-link build stripped ≈55 kb; the <code>libsqlite3.so.0</code> it links against is a documented prerequisite in the same posture as <code>libexpat.so.1</code>, <code>luarocks</code>, <code>openssl</code>, and <code>tar</code> (universally present on target platforms).</td>
-</tr>
 </tbody>
 
 <tbody>
@@ -173,7 +163,7 @@ All sizes approximate, in kb.
 Tiers:
 
 - **CLI** — statically linked into the `bin/caspian` binary. The binary is a thin embedder: just the Lua 5.4 interpreter, musl libc, and the CLI shim that loads the engine. Specific to running the CLI; non-Lua embedders (Ruby, Python, other host languages) bring their own Lua interpreter and load the engine directly, so they don't need this binary at all.
-- **Caspian** — everything Caspian-authored: the engine (`caspian.lua` bundle with Fiona and the Lua binding wrapper inlined), the vibecode JSON blob, and `lua-confstr`. Ships under `caspian/`. Loaded via `require()` by whatever host is embedding Caspian — the CLI, a Ruby program, a Python program. Same files, any host.
+- **Caspian** — everything Caspian-authored: the engine (`caspian.lua` bundle with the Lua binding wrapper inlined), the vibecode JSON blob, and `lua-confstr`. Ships under `caspian/`. Loaded via `require()` by whatever host is embedding Caspian — the CLI, a Ruby program, a Python program. Same files, any host.
 - **Bundled** — external libraries whose pure-Lua portion is folded into `caspian.lua` at build time by `tools/bundle-caspian.lua`. Downloaded from luarocks during the build, then inlined into the bundle — `require("pegasus")`, `require("dkjson")`, etc. resolve from memory with no filesystem hit. Their C halves (where they have one) live in the External tier.
 - **External** — third-party libraries the engine depends on at every load. `.so` binaries per arch and their `.lua` wrappers where applicable, shipped under `external/`. Loaded via `require()` — a host that adds `external/` to its `package.cpath` gets the engine's C surface for free. Bundled at exact versions rather than fetched from system packages because the engine's coupling to each lib's API is tight enough that version drift silently breaks assumptions.
 - **Cache** — external libraries downloaded and shipped under `build/cache/` but NOT bundled into `caspian.lua`. Loaded only when a program actually needs them, so the parse / memory cost isn't paid on every Caspian startup. Currently empty — luaexpat used to live here but XML support was pulled from the distribution; users who need XML install `luaexpat` themselves via luarocks. Kept as a documented tier for future on-demand libraries.

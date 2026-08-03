@@ -10,7 +10,6 @@
 local script_dir = arg[0]:match("(.*/)")
 package.path = script_dir .. "?.lua;" .. package.path
 
-local build_fiona    = require("build-fiona")
 local bundle_caspian = require("bundle-caspian")
 local minify_lua     = require("minify-lua")
 
@@ -102,7 +101,7 @@ run(string.format(
 print("==> Downloading external libraries into build/external/")
 
 local EXTERNAL_ROCKS = {
-	"lsqlite3", "luasocket", "lpeg",
+	"luasocket", "lpeg",
 	"lua-cjson", "pegasus", "luasodium", "dkjson",
 }
 
@@ -201,17 +200,9 @@ end
 print(string.format("==> Collected %d external Lua modules for bundling", #external_modules))
 
 -- ------------------------------------------------------------
--- Phase 1: build fiona.lua standalone (with SQL inlined). No temp file
--- for the intermediate — it lives as a string, handed straight to
--- phase 2.
--- ------------------------------------------------------------
-print("==> Phase 1: building standalone fiona.lua")
-local fiona_src = build_fiona.build()
-
--- ------------------------------------------------------------
 -- Minify Caspian-authored code. LuaSrcDiet on the engine modules
--- and Fiona takes them from ≈182 kb of source down to ≈100 kb.
--- Externals stay raw — see requirements/core/build.md.
+-- takes them from ≈143 kb of source down to ≈52 kb. Externals stay
+-- raw — see requirements/core/build.md.
 -- ------------------------------------------------------------
 print("==> Minifying Caspian-authored code (LuaSrcDiet)")
 
@@ -226,15 +217,14 @@ local caspian_modules = {
 	{name = "trivet",     src = minify_with_size("trivet",     slurp(repo .. "src/engine/trivet.lua"))},
 	{name = "normalize",  src = minify_with_size("normalize",  slurp(repo .. "src/engine/normalize.lua"))},
 	{name = "transpiler", src = minify_with_size("transpiler", slurp(repo .. "src/engine/transpiler.lua"))},
-	{name = "fiona",      src = minify_with_size("fiona",      fiona_src)},
 }
 
 -- ------------------------------------------------------------
--- Phase 2: bundle Caspian-authored + external Lua into caspian.lua.
+-- Bundle Caspian-authored + external Lua into caspian.lua.
 -- Order: our own modules first (deterministic ordering), external
 -- modules after (from luarocks tree walk in sorted order).
 -- ------------------------------------------------------------
-print("==> Phase 2: bundling caspian.lua")
+print("==> Bundling caspian.lua")
 
 local all_modules = {}
 for _, mod in ipairs(caspian_modules) do
@@ -251,14 +241,14 @@ write_file(BUILD .. "/caspian/caspian.lua", caspian_src)
 do
 	local chunk = assert(loadfile(BUILD .. "/caspian/caspian.lua"))
 	chunk()
-	for _, name in ipairs({"trivet", "normalize", "transpiler", "fiona"}) do
+	for _, name in ipairs({"trivet", "normalize", "transpiler"}) do
 		assert(package.preload[name], "preload missing for " .. name)
 	end
 	-- Clean up so build.lua's own state stays clean.
 	for _, mod in ipairs(external_modules) do
 		package.preload[mod.name] = nil
 	end
-	for _, name in ipairs({"trivet", "normalize", "transpiler", "fiona"}) do
+	for _, name in ipairs({"trivet", "normalize", "transpiler"}) do
 		package.preload[name] = nil
 	end
 end

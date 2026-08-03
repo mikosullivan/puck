@@ -27,7 +27,7 @@ build/
 ├── bin/
 │   └── caspian
 ├── caspian/
-│   ├── caspian.lua      (engine bundle — Engine + Fiona + Lua binding wrapper)
+│   ├── caspian.lua      (engine bundle — Engine + Lua binding wrapper)
 │   ├── vibecode.json
 │   └── lua-confstr.so
 └── external/
@@ -49,7 +49,7 @@ Sketch — flesh out during spec-out:
 
 1. **Wipe and recreate the tree.** Delete `build/`; recreate the `bin/`, `caspian/`, `external/` skeleton.
 2. **Compile the binary.** `gcc` on `src/cli/caspian.c` with the static-link flags into `build/bin/caspian`.
-3. **Bundle Caspian's Lua source into `caspian.lua`.** Concatenate the engine (currently `src/engine/*.lua`) + Fiona (currently `src/fiona/fiona.lua` with `fiona.sql` and `fiona-temp.sql` inlined as string constants) + the Lua binding wrapper. Write to `build/caspian/caspian.lua`.
+3. **Bundle Caspian's Lua source into `caspian.lua`.** Concatenate the engine (currently `src/engine/*.lua`) + the Lua binding wrapper. Write to `build/caspian/caspian.lua`.
 4. **Emit vibecode.json.** Serialize the current vibecode blob to `build/caspian/vibecode.json`.
 5. **Copy `lua-confstr.so`** to `build/caspian/`.
 6. **Assemble external libs** into `build/external/` — from wherever they're staged (fetched via luarocks, checked in as prebuilt binaries, etc.). Per-arch selection.
@@ -62,7 +62,7 @@ To flesh out: `gcc`, `luac`, `LuaSrcDiet` for minification, whatever fetches ext
 
 ## Minification
 
-To flesh out: at what step does each minification lever from [core § minification levers](https://puck.uno/requirements/core/#core-caspian-code-storage) get applied. LuaSrcDiet + `luac -s` + module concatenation + gzip/brotli, plus SQL comment/whitespace strip for the Fiona SQL inlined into `caspian.lua`.
+To flesh out: at what step does each minification lever from [core § minification levers](https://puck.uno/requirements/core/#core-caspian-code-storage) get applied. LuaSrcDiet + `luac -s` + module concatenation + gzip/brotli.
 
 ## Reproducibility
 
