@@ -13,7 +13,7 @@ Everything downloaded at Caspian install time — the runtime binary itself and 
 
 ## Floppy budget
 
-![Caspian floppy budget: CLI 450 kb, Engine 84 kb, everything else 513 kb, wiggle room 100 kb, free 293 kb, of 1440 kb total](./floppy-budget.svg)
+![Caspian floppy budget: CLI 450 kb, Caspian code 117 kb, everything else 513 kb, wiggle room 100 kb, free 260 kb, of 1440 kb total](./floppy-budget.svg)
 
 All sizes approximate, in kb.
 
@@ -51,6 +51,11 @@ All sizes approximate, in kb.
 	<td>Engine</td>
 	<td class="align-right">84</td>
 	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction). Ships as <code>engine.lua</code> (+ stdlib .lua files) on disk at <code>~/.local/share/caspian/lua/</code>; the caspian CLI and any non-Lua host embedding Caspian both load from this one canonical on-disk location. Grows as the stdlib grows.</td>
+</tr>
+<tr>
+	<td>Fiona</td>
+	<td class="align-right">33</td>
+	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's Lua source under <code>src/fiona/</code> + <strong>45% × total bytes</strong> of the SQL there. Currently ≈44 kb of Lua (<code>fiona.lua</code>) → ≈27 kb shipped, plus ≈12 kb of SQL (<code>fiona.sql</code>, <code>fiona-temp.sql</code>) → ≈6 kb shipped after whitespace / comment strip (45% was the empirical ratio Miko settled on). Ships as <code>fiona.lua</code> + the two <code>.sql</code> files on disk alongside <code>engine.lua</code>. Caspian's storage substrate — tight coupling to the SQLite feature set (recursive triggers, UPDATE FROM, partial indexes) keeps it in the Engine tier rather than Cache.</td>
 </tr>
 <tr>
 	<td>libsodium-minimal</td>
@@ -125,8 +130,8 @@ All sizes approximate, in kb.
 <tfoot>
 <tr>
 	<td><strong>Total</strong></td>
-	<td class="align-right"><strong>1147</strong></td>
-	<td>Against the 1.44 MB floppy target — leaves 293 kb of headroom.</td>
+	<td class="align-right"><strong>1180</strong></td>
+	<td>Against the 1.44 MB floppy target — leaves 260 kb of headroom.</td>
 </tr>
 </tfoot>
 </table>
@@ -142,7 +147,7 @@ Tiers:
 
 Caspian code that ships in the core binary — the stdlib written above the primitive line, per [concepts § Caspian is written in Caspian](../concepts#caspian-is-written-in-caspian) — is stored as **minified CaspM** (the [AST format](../caspianj)). The transpiler runs at build time; the Caspian source doesn't ship in the binary. This is the V1 storage strategy for the floppy budget.
 
-**Line info kept during V1.** Core CaspM is built with line info intact — every value atom carries `l:` and multi-line statements carry the trailing meta. The originally-planned `normalize(caspj, {lines: false})` strip is deferred until the stdlib is stable enough that mystery bugs inside it are rare. During the harden-and-stabilize phase, tracing a stdlib runtime error to a specific source line matters more than the ≈11 KB of budget that line info costs (against ≈200 KB of free headroom in the current build). The strip opt itself stays in the spec; see [caspianj § Stripping line info from CaspM](../caspianj#stripping-line-info-from-caspm) for the trigger criterion. User-provided code (application source, downloaded classes) has always kept line info.
+**Line info kept during V1.** Core CaspM is built with line info intact — every value atom carries `l:` and multi-line statements carry the trailing meta. The originally-planned `normalize(caspj, {lines: false})` strip is deferred until the stdlib is stable enough that mystery bugs inside it are rare. During the harden-and-stabilize phase, tracing a stdlib runtime error to a specific source line matters more than the ≈11 KB of budget that line info costs (against ≈260 KB of free headroom in the current build). The strip opt itself stays in the spec; see [caspianj § Stripping line info from CaspM](../caspianj#stripping-line-info-from-caspm) for the trigger criterion. User-provided code (application source, downloaded classes) has always kept line info.
 
 To hit the 377 kb Caspian-itself target, we use every minification lever below. Ordered by engineering cost (cheapest first):
 
