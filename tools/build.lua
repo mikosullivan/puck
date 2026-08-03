@@ -379,12 +379,6 @@ local total_label = string.format("Total: %d kb", math.floor(pie_total / 1024))
 local svg = string.format([[
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="468" role="img" aria-label="Caspian floppy budget: %s. %s.">
 	<title>Caspian floppy budget</title>
-	<g transform="rotate(180 110 120)">
-		<rect x="5" y="10" width="210" height="220" rx="6" fill="#29b6f6"/>
-		<rect x="40" y="20" width="150" height="50" rx="3" fill="#b0bec5"/>
-		<rect x="120" y="28" width="25" height="34" rx="1" fill="#455a64"/>
-		<rect x="20" y="85" width="180" height="135" rx="3" fill="#fafafa"/>
-	</g>
 	<g transform="translate(110 87.5)">
 %s
 	</g>
