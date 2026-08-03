@@ -2,11 +2,11 @@
 --[[
 {
 	"module": "bundle-caspian",
-	"role": "Phase-2 of the build. Concatenates the Caspian-authored Lua modules into one caspian.lua by wrapping each in a `package.preload[name] = function() ... end` block. Consumers do require('trivet') / require('fiona') / etc. and Lua finds each in package.preload without touching the filesystem. Takes the phase-1 fiona.lua source string (from tools/build-fiona.lua) directly.",
+	"role": "Phase-2 of the build. Wraps each module in the input list inside a `package.preload[name] = function() ... end` block and concatenates them into a single caspian.lua source string. Callers compose the module list — that's where minification / Caspian-vs-external decisions live. Consumers of the output do `require('trivet')` / `require('fiona')` / `require('socket.http')` etc. and Lua finds each in preload without touching the filesystem.",
 	"exports": {
-		"bundle": "fiona_src (string) -> caspian.lua source (string)"
+		"bundle": "modules (list of {name, src}) -> caspian.lua source (string)"
 	},
-	"cli": "lua5.4 tools/bundle-caspian.lua <path-to-phase-1-fiona.lua> > caspian.lua — same output as .bundle(), written to stdout"
+	"cli": "lua5.4 tools/bundle-caspian.lua <path-to-phase-1-fiona.lua> > caspian.lua — reads engine sources from src/engine/, bundles them with the given fiona, writes to stdout. No minification. Used by the Fiona-standalone release build."
 }
 ]]
 
@@ -23,19 +23,8 @@ end
 
 local M = {}
 
---[[ {"in": {"fiona_src": "string — phase-1 fiona.lua source (from build-fiona.build())", "external_modules": "optional list of {name, src} tuples — pure-Lua modules from external libs to fold into the same bundle"}, "out": "bundled caspian.lua source (string)"} ]]
-function M.bundle(fiona_src, external_modules)
-	local modules = {
-		{name = "trivet",     src = slurp(repo .. "src/engine/trivet.lua"), from = "caspian-authored"},
-		{name = "normalize",  src = slurp(repo .. "src/engine/normalize.lua"), from = "caspian-authored"},
-		{name = "transpiler", src = slurp(repo .. "src/engine/transpiler.lua"), from = "caspian-authored"},
-		{name = "fiona",      src = fiona_src, from = "caspian-authored (schemas inlined)"},
-	}
-
-	for _, mod in ipairs(external_modules or {}) do
-		modules[#modules + 1] = {name = mod.name, src = mod.src, from = "external"}
-	end
-
+--[[ {"in": {"modules": "list of {name, src} tuples — every module to bundle (Caspian-authored + external), in the order they should appear in caspian.lua"}, "out": "bundled caspian.lua source (string)"} ]]
+function M.bundle(modules)
 	local parts = {[[
 -- caspian.lua — bundled Caspian distribution.
 -- Assembled by tools/bundle-caspian.lua at build time. Each source
@@ -63,15 +52,22 @@ function M.bundle(fiona_src, external_modules)
 	return table.concat(parts)
 end
 
--- CLI shim: takes a path to phase-1 fiona.lua, calls .bundle() on it,
--- writes to stdout.
+-- CLI shim: takes a path to phase-1 fiona.lua, reads engine sources
+-- from src/engine/, composes the module list, calls .bundle(), writes
+-- to stdout. No minification (that's build.lua's job).
 if arg and arg[0] and arg[0]:match("bundle%-caspian%.lua$") then
 	local path = arg[1]
 	if not path then
 		io.stderr:write("bundle-caspian: missing argument (path to phase-1 fiona.lua)\n")
 		os.exit(1)
 	end
-	io.write(M.bundle(slurp(path)))
+	local modules = {
+		{name = "trivet",     src = slurp(repo .. "src/engine/trivet.lua")},
+		{name = "normalize",  src = slurp(repo .. "src/engine/normalize.lua")},
+		{name = "transpiler", src = slurp(repo .. "src/engine/transpiler.lua")},
+		{name = "fiona",      src = slurp(path)},
+	}
+	io.write(M.bundle(modules))
 end
 
 return M

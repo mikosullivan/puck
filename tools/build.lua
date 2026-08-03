@@ -12,6 +12,7 @@ package.path = script_dir .. "?.lua;" .. package.path
 
 local build_fiona    = require("build-fiona")
 local bundle_caspian = require("bundle-caspian")
+local minify_lua     = require("minify-lua")
 
 local repo    = script_dir .. "../"
 local BUILD   = os.getenv("HOME") .. "/projects/puck/ecoverse/build"
@@ -49,6 +50,14 @@ local function write_file(path, content)
 	local f = assert(io.open(path, "w"))
 	f:write(content)
 	f:close()
+end
+
+local function slurp(path)
+	local f, err = io.open(path, "r")
+	if not f then error("cannot open " .. path .. ": " .. tostring(err)) end
+	local s = f:read("*a")
+	f:close()
+	return s
 end
 
 local function file_size(path)
@@ -174,16 +183,50 @@ end
 print(string.format("==> Collected %d external Lua modules for bundling", #external_modules))
 
 -- ------------------------------------------------------------
--- Phase 1: build fiona.lua standalone. Phase 2: bundle it + engine
--- sources + external pure-Lua modules into caspian.lua. No temp file
--- for the intermediate fiona.lua — it lives as a string, handed
--- straight to phase 2.
+-- Phase 1: build fiona.lua standalone (with SQL inlined). No temp file
+-- for the intermediate — it lives as a string, handed straight to
+-- phase 2.
 -- ------------------------------------------------------------
 print("==> Phase 1: building standalone fiona.lua")
 local fiona_src = build_fiona.build()
 
+-- ------------------------------------------------------------
+-- Minify Caspian-authored code. LuaSrcDiet on the engine modules
+-- and Fiona takes them from ≈182 kb of source down to ≈100 kb.
+-- Externals stay raw — see requirements/core/build.md.
+-- ------------------------------------------------------------
+print("==> Minifying Caspian-authored code (LuaSrcDiet)")
+
+local function minify_with_size(label, src)
+	local mini = minify_lua.minify(src)
+	print(string.format("    %-15s %d → %d (%d%%)",
+		label, #src, #mini, math.floor(#mini * 100 / #src)))
+	return mini
+end
+
+local caspian_modules = {
+	{name = "trivet",     src = minify_with_size("trivet",     slurp(repo .. "src/engine/trivet.lua"))},
+	{name = "normalize",  src = minify_with_size("normalize",  slurp(repo .. "src/engine/normalize.lua"))},
+	{name = "transpiler", src = minify_with_size("transpiler", slurp(repo .. "src/engine/transpiler.lua"))},
+	{name = "fiona",      src = minify_with_size("fiona",      fiona_src)},
+}
+
+-- ------------------------------------------------------------
+-- Phase 2: bundle Caspian-authored + external Lua into caspian.lua.
+-- Order: our own modules first (deterministic ordering), external
+-- modules after (from luarocks tree walk in sorted order).
+-- ------------------------------------------------------------
 print("==> Phase 2: bundling caspian.lua")
-local caspian_src = bundle_caspian.bundle(fiona_src, external_modules)
+
+local all_modules = {}
+for _, mod in ipairs(caspian_modules) do
+	all_modules[#all_modules + 1] = mod
+end
+for _, mod in ipairs(external_modules) do
+	all_modules[#all_modules + 1] = mod
+end
+
+local caspian_src = bundle_caspian.bundle(all_modules)
 write_file(BUILD .. "/caspian/caspian.lua", caspian_src)
 
 -- Sanity check: the bundled caspian.lua should parse and populate preload.
