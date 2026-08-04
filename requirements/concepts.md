@@ -158,7 +158,7 @@ Failure modes if the check is skipped:
 - **Cognitive load for developers.** N ways to do slightly-different things when one general way would do.
 - **Divergent behavior.** Each specialized primitive develops its own edge cases; the general primitive gets one set of edge cases everyone shares.
 
-**Not a suicide pact.** Force-fitting a primitive to a wrong shape is worse than adding a new one. The check is "does it fit?" — not "how can I make it fit?" When exceptions started serving return and exit alongside raise, that was a natural extension of one control-flow mechanism. Trying to fit something structurally different — cross-thread message passing, for example — onto exceptions would be forcing the shape; a different primitive would be right.
+**Sometimes it's a bad idea.** Force-fitting a primitive to a wrong shape is worse than adding a new one. The check is "does it fit?" — not "how can I make it fit?" When exceptions started serving return and exit alongside raise, that was a natural extension of one control-flow mechanism. Trying to fit something structurally different — cross-thread message passing, for example — onto exceptions would be forcing the shape; a different primitive would be right.
 
 ## Cost if you don't use it
 
