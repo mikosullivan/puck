@@ -22,9 +22,8 @@ This section covers Caspian's surface syntax — what a programmer actually type
 - [Operators](https://puck.uno/requirements/syntax/operators) — arithmetic, comparison, logical, ternary. No precedence table.
 - [Truthy and falsy](https://puck.uno/requirements/syntax/truthy-and-falsy) — only `null` and `false` are falsy.
 - [if and unless](https://puck.uno/requirements/syntax/if-unless) — `if`/`elsif`/`else`, `unless`, and the `as $conditional` chain-exit binding.
-- [Loops](https://puck.uno/requirements/syntax/loops) — `while`, `until`, `begin ... while` / `begin ... until`, `.each`, numeric helpers, `as $loop`, `break` / `break N`, and the four attached hook blocks (`~before` / `~between` / `~after` / `~noloop`).
-- [Bare blocks](https://puck.uno/requirements/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`.
-- [Attached blocks and `ensure`](https://www.puck.uno/requirements/syntax/clause-slots) — the two block-attachment shapes: `do` / `dofunc` / `~name` attached blocks that follow any call (with the four built-in loop-hook names `~before` / `~between` / `~after` / `~noloop`), and the `ensure` in-body clause exclusive to bare `begin ... end`.
+- [Loops](https://puck.uno/requirements/syntax/loops) — `while`, `until`, `begin ... while` / `begin ... until`, `.each`, numeric helpers, `as $loop`, `break` / `break N`.
+- [Bare blocks](https://puck.uno/requirements/syntax/bare-blocks) — `begin ... end` for grouping and scoping; `as $block` controller with `.return`; `ensure` clause for guaranteed cleanup.
 - [Classes](https://puck.uno/requirements/syntax/classes) — nameless `class`, inline `# label` convention, `&init`, instantiation.
 - [System-method sigils](https://puck.uno/requirements/syntax/system-method-sigils) — `%self`, `%call`, `%engine`, and the six bare-`%X` shortcuts.
 - [Pipes](https://puck.uno/requirements/syntax/pipes) — `|` passes the left result as the first arg to the right; `|&` adds sticky null-propagation.

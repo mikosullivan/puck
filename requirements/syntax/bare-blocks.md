@@ -126,8 +126,6 @@ end
 
 `ensure` is exclusive to `begin ... end`; using the keyword anywhere else raises at parse time.
 
-**No attached hook blocks on `begin`.** The `~before` / `~between` / `~after` / `~noloop` [attached blocks](https://www.puck.uno/requirements/syntax/clause-slots#the-four-built-in-loop-hook-names) are iteration-lifecycle hooks the built-in loop constructs recognize. `begin ... end` runs its body exactly once, so those blocks have no meaning here and the loop dispatchers that would fire them never come into play. If you want "before" / "after" semantics around a `begin` body, put the code inline before / after the block.
-
 ## Use cases
 
 - **Bounded local scope.** Introduce a few temporary bindings, do some work, and let them fall out of scope cleanly — no need to structure that as a function.
@@ -167,4 +165,3 @@ end
 
 - [Loops](https://puck.uno/requirements/syntax/loops) — the `begin ... while` and `begin ... until` loop forms, which reuse the `begin` keyword but close with a trailing condition.
 - [if and unless](https://puck.uno/requirements/syntax/if-unless) — the conditional chains, which follow the same `as $conditional` / `.return` pattern.
-- [Attached blocks and `ensure`](https://www.puck.uno/requirements/syntax/clause-slots) — the shared spec: `~name` sigil-prefix attached blocks (`do`, `dofunc`, and any `~name`) that follow calls, and the `ensure` in-body clause exclusive to bare `begin ... end`.

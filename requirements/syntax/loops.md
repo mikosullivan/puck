@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_loops",
-	"role": "spec for every loop construct in Caspian in one place — the condition-driven `while` and `until` (both in the pre-body form and the post-body `begin ... while` / `begin ... until` loop-at-least-once form), block-driven `.each` on collections, and the numeric-helper trio `.times` / `.upto` / `.downto` on numbers. Also covers the loop-object binding via `as $loop`, its state and control methods, the prefix-free `break` / `break N` exit form, the four structural blocks (`before`, `between`, `after`, `noloop`), and the constructs that were considered and rejected (`for X in Y`, `redo`/`retry`, function-return-from-loop specials).",
-	"status": "draft — main forms, loop-object binding, break with level count, and structural blocks spec'd; a couple of open questions noted (named-loop targeting for break, structural-block interactions)",
+	"role": "spec for every loop construct in Caspian in one place — the condition-driven `while` and `until` (both in the pre-body form and the post-body `begin ... while` / `begin ... until` loop-at-least-once form), block-driven `.each` on collections, and the numeric-helper trio `.times` / `.upto` / `.downto` on numbers. Also covers the loop-object binding via `as $loop`, its state and control methods, the prefix-free `break` / `break N` exit form, and the constructs that were considered and rejected (`for X in Y`, `redo`/`retry`, function-return-from-loop specials).",
+	"status": "draft — main forms, loop-object binding, and break with level count spec'd; open question noted (named-loop targeting for break)",
 	"audience": "developers writing Caspian; parser implementers; anyone porting loop-heavy code from another language"
 }}
 ~~~
@@ -89,7 +89,7 @@ $items.each do ($item)
 end
 ~~~
 
-This doc focuses on the loop-specific behavior — the `as $loop` binding, break, structural blocks — and the block-parameter syntax the iteration methods use.
+This doc focuses on the loop-specific behavior — the `as $loop` binding, `break` — and the block-parameter syntax the iteration methods use.
 
 ## Numeric helpers: `.times`, `.upto`, `.downto`
 
@@ -388,70 +388,6 @@ end
 - `break N` where N exceeds the number of enclosing loops raises `invalid_argument`. Use [named-loop targeting](#named-loop-objects-outer_loopbreak) when the depth might vary.
 - The level argument is evaluated as a normal integer expression; `break $depth` works with a variable. If the runtime value is not a positive integer, the same `invalid_argument` is raised.
 
-### Interaction with attached blocks
-
-If `break` (or `break N`) exits a loop, the loop's `~after` attached block does **not** run — `~after` only runs after a complete iteration sweep. The `~between` block does not run on the iteration that breaks. The `~noloop` block remains a no-op (it only runs when the loop body didn't run at all).
-
-## Attached hook blocks
-
-Every loop construct accepts four named attached blocks — `~before`, `~between`, `~after`, `~noloop` — invoked at the loop's structural phases, not inside the iteration. None of them have access to the iteration variable:
-
-~~~caspian
-$people.each do($person)
-	puts $person.name
-end
-
-~before
-	puts '--- START ---'
-end
-
-~between
-	puts '-------------'
-end
-
-~after
-	puts '--- END -----'
-end
-
-~noloop
-	puts '--- NO PEOPLE ---'
-end
-~~~
-
-Same on `while` and `until`:
-
-~~~caspian
-$i = 0
-
-while $i < $limit
-	puts $i
-	$i = $i + 1
-end
-
-~before
-	puts "starting from #{$i}"
-end
-
-~noloop
-	puts "already at #{$i} — nothing to do"
-end
-~~~
-
-Each attached block is its own construct — it follows the loop, opens with `~name`, and closes with its own `end`. The rules for attaching blocks (immediately-preceding-call rule, at-most-one-per-name, sigil-prefix form) are spec'd once in [clause-slots](https://www.puck.uno/requirements/syntax/clause-slots).
-
-| Block | When it runs |
-|---|---|
-| `~before` | Once before the first iteration. |
-| `~between` | Between each pair of iterations — runs N−1 times when the body runs N times. Doesn't run when the body runs zero or one time. |
-| `~after` | Once after the last iteration, only on the normal-completion path. |
-| `~noloop` | Only when the collection is empty (no iterations ran). |
-
-`~before` and `~after` run whenever the body would run at least once. **`~between` runs between iterations**, so it needs at least two iterations to run at all — one iteration produces zero betweens; two iterations produce one; three iterations produce two; and so on. `~noloop` runs exactly when the loop body would not run at all — useful for "nothing matched" messages without an extra emptiness check around the loop.
-
-**No `ensure` on a loop.** Guaranteed-run cleanup (on exceptions, on `break`, on controller `.return`) is the domain of the `ensure` clause on bare `begin ... end`. When a loop needs that behavior, wrap it in a `begin ... ensure ... end`.
-
-**Scope.** Each attached block runs in its own fresh frame. Variables set inside the loop body are not visible in `~before` / `~between` / `~after` / `~noloop`. Attached blocks capture the enclosing scope, so passing state between them goes through variables declared in that outer scope. Full rules in [clause-slots § Scope](https://www.puck.uno/requirements/syntax/clause-slots#scope).
-
 ## Deliberately out of scope
 
 These were considered and explicitly excluded:
@@ -500,13 +436,6 @@ These were considered and explicitly excluded:
 - **Bare `next` skips to next iteration of innermost loop** — statements after `next` do not run that iteration.
 - **`break` does not cross function boundaries** — a `break` inside a function called from a loop does not exit the caller's loop; instead it exits or raises depending on inner scope.
 - **`break` flows through `do ... end` blocks passed as arguments** — a `break` inside `.each`'s block exits the loop that owns `.each`.
-- **`before` structural block runs once before first iteration** — with three iterations, `before` runs once.
-- **`after` structural block runs once after last iteration** — with three iterations, `after` runs once.
-- **`after` does not run when loop is exited by `break`** — a `break` mid-iteration causes `after` to be skipped.
-- **`between` runs N-1 times when body runs N times** — three iterations produce two `between` runs.
-- **`between` runs zero times when body runs once** — a single-iteration loop produces no `between`.
-- **`noloop` runs only when body would not run at all** — `.each` on an empty array runs `noloop` once.
-- **`noloop` does not run when at least one iteration ran** — a loop with one iteration does not run `noloop`.
 - **Loop return value is last expression of last iteration** — `[1,2,3].each do ($v); $v * 10; end` returns `30`.
 - **Zero-iteration loop returns null** — `[].each do ($v); $v; end` returns `null`.
 - **Loop ending with valueless statement returns null** — an `.each` whose body's last line is `puts $v` returns `null`.

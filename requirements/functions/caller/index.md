@@ -136,14 +136,14 @@ Setting `.controller` on a caller whose target did NOT declare `as $name` **rais
 Constructs that accept `as $name` — `while`, `until`, `begin`, `begin ... while` / `begin ... until`, `if`, `unless`, and callable definitions (`function`, `closure`, `method`, `do`) — carry the binding on their atom as a **dedicated `as` field** (Option B: field appears only when declared, no empty-slot padding):
 
 ~~~
-{begin_end: {as: "block", body: [...]}}
-{if_end:    {as: "conditional", branches: [...]}}
-{while_end: {as: "loop", cond, body, ...clauses}}
-{closure:   {as: "loop", params, body}}
-{begin_while: {as: "block", cond, body, ...clauses}}
+{begin_end:   {as: "block",       body: [...]}}
+{if_end:      {as: "conditional", branches: [...]}}
+{while_end:   {as: "loop",        cond, body}}
+{closure:     {as: "loop",        params, body}}
+{begin_while: {as: "block",       cond, body}}
 ~~~
 
-Without a declared `as`, the field simply isn't present — same principle the clause slots use. The runtime dispatch (through the caller pattern above) sees the field's presence via `.wants_controller?` and provides the controller object accordingly.
+Without a declared `as`, the field simply isn't present — declared-only, no empty-slot padding. The runtime dispatch (through the caller pattern above) sees the field's presence via `.wants_controller?` and provides the controller object accordingly.
 
 ## DSL wiring
 
