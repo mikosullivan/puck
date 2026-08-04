@@ -388,48 +388,69 @@ end
 - `break N` where N exceeds the number of enclosing loops raises `invalid_argument`. Use [named-loop targeting](#named-loop-objects-outer_loopbreak) when the depth might vary.
 - The level argument is evaluated as a normal integer expression; `break $depth` works with a variable. If the runtime value is not a positive integer, the same `invalid_argument` is raised.
 
-### Interaction with structural blocks
+### Interaction with attached blocks
 
-If `break` (or `break N`) exits a loop, the loop's `after` structural block does **not** run — `after` only runs after a complete iteration sweep. The `between` block does not run on the iteration that breaks. The `noloop` block remains a no-op (it only runs when the loop body didn't run at all).
+If `break` (or `break N`) exits a loop, the loop's `~after` attached block does **not** run — `~after` only runs after a complete iteration sweep. The `~between` block does not run on the iteration that breaks. The `~noloop` block remains a no-op (it only runs when the loop body didn't run at all).
 
-## Structural clauses
+## Attached hook blocks
 
-Loops support optional structural clauses: `before`, `between`, `after`, `noloop`, and `ensure`. None of them have access to the iteration variable — they run at the loop's structural phases, not inside the iteration:
+Every loop construct accepts four named attached blocks — `~before`, `~between`, `~after`, `~noloop` — invoked at the loop's structural phases, not inside the iteration. None of them have access to the iteration variable:
 
 ~~~caspian
-$people.each do ($person)
+$people.each do($person)
 	puts $person.name
+end
 
-before
+~before
 	puts '--- START ---'
+end
 
-between
+~between
 	puts '-------------'
+end
 
-after
+~after
 	puts '--- END -----'
+end
 
-noloop
+~noloop
 	puts '--- NO PEOPLE ---'
-
-ensure
-	puts '(always runs, even on exception or break)'
 end
 ~~~
 
-| Clause | When it runs |
+Same on `while` and `until`:
+
+~~~caspian
+$i = 0
+
+while $i < $limit
+	puts $i
+	$i = $i + 1
+end
+
+~before
+	puts "starting from #{$i}"
+end
+
+~noloop
+	puts "already at #{$i} — nothing to do"
+end
+~~~
+
+Each attached block is its own construct — it follows the loop, opens with `~name`, and closes with its own `end`. The rules for attaching blocks (immediately-preceding-call rule, at-most-one-per-name, sigil-prefix form) are spec'd once in [clause-slots](https://www.puck.uno/requirements/syntax/clause-slots).
+
+| Block | When it runs |
 |---|---|
-| `before` | Once before the first iteration. |
-| `between` | Between each pair of iterations — runs N-1 times when the body runs N times. Doesn't run when the body runs zero or one time. |
-| `after` | Once after the last iteration, only on the normal-completion path. |
-| `noloop` | Only when the collection is empty (no iterations ran). |
-| `ensure` | Always runs — normal completion, exception, `break`, controller `.return`. Parallel to Ruby's `ensure` / Python's `finally`. |
+| `~before` | Once before the first iteration. |
+| `~between` | Between each pair of iterations — runs N−1 times when the body runs N times. Doesn't run when the body runs zero or one time. |
+| `~after` | Once after the last iteration, only on the normal-completion path. |
+| `~noloop` | Only when the collection is empty (no iterations ran). |
 
-`before` and `after` run whenever the body would run at least once. **`between` runs between iterations**, so it needs at least two iterations to run at all — one iteration produces zero betweens; two iterations produce one; three iterations produce two; and so on. `noloop` runs exactly when the loop body would not run at all — useful for "nothing matched" messages without an extra emptiness check around the loop. `ensure` runs on every exit path, guaranteed — use it for cleanup that must not be skipped (releasing a resource, closing a handle) whether the loop finished normally or raised.
+`~before` and `~after` run whenever the body would run at least once. **`~between` runs between iterations**, so it needs at least two iterations to run at all — one iteration produces zero betweens; two iterations produce one; three iterations produce two; and so on. `~noloop` runs exactly when the loop body would not run at all — useful for "nothing matched" messages without an extra emptiness check around the loop.
 
-**Scope.** Each clause runs in its own fresh scope. Variables set inside `body` are not visible in `before` / `between` / `after` / `noloop` / `ensure`. To share state across clauses, use a variable declared in the enclosing scope. Full rules in [clause-slots § Scope](https://puck.uno/requirements/syntax/clause-slots#scope-each-clause-is-its-own-scope).
+**No `ensure` on a loop.** Guaranteed-run cleanup (on exceptions, on `break`, on controller `.return`) is the domain of the `ensure` clause on bare `begin ... end`. When a loop needs that behavior, wrap it in a `begin ... ensure ... end`.
 
-**These clauses are not loop-specific.** Same set applies to `begin ... end` (single-shot forms), `function` / `closure` / `method` / `do` (any callable can carry them), spec'd once in [clause-slots](https://puck.uno/requirements/syntax/clause-slots).
+**Scope.** Each attached block runs in its own fresh frame. Variables set inside the loop body are not visible in `~before` / `~between` / `~after` / `~noloop`. Attached blocks capture the enclosing scope, so passing state between them goes through variables declared in that outer scope. Full rules in [clause-slots § Scope](https://www.puck.uno/requirements/syntax/clause-slots#scope).
 
 ## Deliberately out of scope
 

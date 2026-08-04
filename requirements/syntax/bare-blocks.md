@@ -112,23 +112,21 @@ The parser distinguishes the two by what terminates the block. If the `begin` cl
 
 Every construct inside a bare block (loops, conditionals, function calls, other bare blocks) closes with its own terminator as usual.
 
-## Clause slots
+## The `ensure` clause
 
-A `begin ... end` can carry the same clause slots any other block-carrying construct supports — `body` plus optional `before`, `after`, and `ensure`:
+A `begin ... end` accepts one in-body clause: `ensure`. It runs on every exit path — normal completion, exception, controller `.return`, `break` — parallel to Ruby's `ensure` / Python's `finally`.
 
 ~~~caspian
 begin
 	# ... body ...
-before
-	# runs once, before body
-after
-	# runs once, after body completes normally
 ensure
 	# always runs — normal completion, exception, controller `.return`
 end
 ~~~
 
-**`between` and `noloop` are not accepted on a bare `begin`.** Those clauses have no meaning on a single-shot block (no "between iterations", no "collection was empty" state); declaring them on a bare `begin` raises. They apply only to loops. The full clause vocabulary and rules — including scope semantics and the `after` vs `ensure` distinction — are spec'd once in [clause-slots](https://puck.uno/requirements/syntax/clause-slots).
+`ensure` is exclusive to `begin ... end`; using the keyword anywhere else raises at parse time.
+
+**No attached hook blocks on `begin`.** The `~before` / `~between` / `~after` / `~noloop` [attached blocks](https://www.puck.uno/requirements/syntax/clause-slots#the-four-built-in-loop-hook-names) are iteration-lifecycle hooks the built-in loop constructs recognize. `begin ... end` runs its body exactly once, so those blocks have no meaning here and the loop dispatchers that would fire them never come into play. If you want "before" / "after" semantics around a `begin` body, put the code inline before / after the block.
 
 ## Use cases
 
@@ -169,4 +167,4 @@ end
 
 - [Loops](https://puck.uno/requirements/syntax/loops) — the `begin ... while` and `begin ... until` loop forms, which reuse the `begin` keyword but close with a trailing condition.
 - [if and unless](https://puck.uno/requirements/syntax/if-unless) — the conditional chains, which follow the same `as $conditional` / `.return` pattern.
-- [Clause slots](https://puck.uno/requirements/syntax/clause-slots) — the `body` / `before` / `between` / `after` / `noloop` / `ensure` vocabulary, applied uniformly to bare blocks, loops, and callables.
+- [Attached blocks and `ensure`](https://www.puck.uno/requirements/syntax/clause-slots) — the shared spec: `~name` sigil-prefix attached blocks (`do`, `dofunc`, and any `~name`) that follow calls, and the `ensure` in-body clause exclusive to bare `begin ... end`.

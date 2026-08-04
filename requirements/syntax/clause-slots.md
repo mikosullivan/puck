@@ -1,83 +1,106 @@
-# Clause slots on block-carrying constructs
+# Attached blocks and the `ensure` clause
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_clause_slots",
-	"role": "spec for the multi-clause structure block-carrying constructs can have in Caspian. Two disjoint sets: `ensure` is exclusively for bare `begin ... end` (single-shot cleanup); the iteration-lifecycle set `before / between / after / noloop` applies to callable-shaped constructs (function / closure / method / do / dofunc) and to loops (while / until / begin-while / begin-until / .each / .times / .upto / .downto). Loop bodies are conceptually closures — the engine may realize them as closures — so they share the callable-clause set. Wrong-context clause markers raise at parse time with a specific error steering to the right construct. Undeclared clauses do not appear in the atom (Option B — no empty-slot padding).",
-	"status": "spec — the two clause sets and their runtime meaning are settled; the CaspJ shape (declared-only slots) is settled; parser rejects wrong-clause-in-wrong-construct at transpile time",
-	"audience": "developers writing block-carrying code; developers writing iterator methods that need to invoke clauses; transpiler / engine implementers realizing the parse and dispatch shapes; anyone reasoning about scope semantics across clauses"
+	"role": "spec for the two block-attachment shapes in Caspian. Attached blocks — `do`, `dofunc`, and any sigil'd `~name` — hang off the immediately preceding call and fill a slot on that call: anonymous-positional for `do` / `dofunc`, name-keyed for `~name`. `ensure` is the one remaining in-body clause, exclusive to bare `begin ... end`.",
+	"status": "spec — the mechanism is settled: `~name` sigil-prefix block-openers fill same-named slots on the immediately preceding call, at most one per name per call; `do` / `dofunc` are unchanged; `ensure` remains an in-body clause on `begin ... end` only; the parser makes no allowlist of `~name` identifiers — any bareword after `~` is accepted, and DSL methods decide at runtime which names they recognize",
+	"audience": "developers writing loop hooks and DSL block-openers; DSL authors defining which `~name` blocks their construct accepts; transpiler / engine implementers realizing the attached-block and `ensure`-clause shapes; anyone reasoning about scope semantics across attached blocks"
 }}
 ~~~
 
-Caspian has **five reserved clause markers** — `before`, `between`, `after`, `noloop`, `ensure`. They split into two disjoint sets based on which construct owns them:
+Caspian has two disjoint block-attachment mechanisms:
 
-| Clause set | Belongs to | Constructs |
+| Mechanism | Shape | Constructs |
 |---|---|---|
-| `ensure` | single-shot cleanup | bare `begin ... end` |
-| `before` / `between` / `after` / `noloop` | iteration lifecycle | functions, closures, methods, `do` / `dofunc` blocks, `while` / `until`, `begin ... while` / `begin ... until`, `.each` / `.times` / `.upto` / `.downto` |
+| Attached blocks | Follow a call, each opens its own body and closes with its own `end` | `do`, `dofunc`, `~name` for any bareword `name` |
+| The `ensure` clause | In-body clause | bare `begin ... end` only |
 
-`body` is the main clause and is present on every block-carrying construct. It's not a marker keyword — it's implicit (everything before the first clause marker).
+## Attached blocks
 
-## Why the split
+Any call can be followed by one or more attached blocks. Each attached block hangs off the immediately preceding call — the transpiler folds it into the call's `blocks` slot at parse time.
 
-**`begin ... end` is a single-shot block.** It runs once. `before` / `between` / `after` / `noloop` are lifecycle hooks that only make sense across multiple invocations, so they'd be dead weight there. What `begin ... end` genuinely needs is a **cleanup hook that always runs** — that's `ensure`, paralleling Ruby's `ensure` / Python's `finally`.
+Three attachment forms:
 
-**Loop bodies and callable bodies are the same thing** from the parser's perspective — a body invoked N times. The engine may in fact realize a loop body as a closure. That's why the iteration-lifecycle set is shared between them.
+| Form | Slot | Notes |
+|---|---|---|
+| `do (params) ... end` | positional | anonymous closure; captures the enclosing scope; multiple `do`s allowed per call |
+| `dofunc (params) ... end` | positional | anonymous function; sealed scope; multiple `dofunc`s allowed per call |
+| `~name (params) ... end` | name-keyed | anonymous closure; captures the enclosing scope; **at most one per `name` per call** |
 
-**`ensure` on a callable would be ambiguous** — callables aren't tied to a single invocation the way `begin` is, so "always runs" has no clear anchor. Reach for `begin ... ensure ... end` inside the callable if you need that semantic.
+`~name` is the sigil-prefix block form. The identifier after `~` becomes the slot name on the call. Any bareword may appear after `~`; the parser makes no allowlist. The four names the built-in loop constructs recognize (`~before`, `~between`, `~after`, `~noloop`) are just the ones the loop dispatchers look for. Any DSL method is free to accept its own set of `~name` slots.
 
-## What each clause means
+### The four built-in loop-hook names
 
-| Clause | Runs when |
+The built-in loop constructs (`while`, `until`, `.each`, `.times`, `.upto`, `.downto`, `begin ... while`, `begin ... until`) recognize four `~name` blocks and invoke them at the corresponding points in the iteration:
+
+| Block | Runs when |
 |---|---|
-| `body` | The main content. Runs on invocation. |
-| `before` | Once, before the first `body` invocation. |
-| `between` | Between each pair of `body` invocations — N-1 times when body runs N times. Skipped when body runs 0 or 1 times. |
-| `after` | Once, after the last `body` invocation, on the normal-completion path only. |
-| `noloop` | When `body` never ran (empty iteration source). |
-| `ensure` | Always — normal completion, exception, controller `.return`, `break`. Parallel to Ruby's `ensure` / Python's `finally`. |
+| `~before` | Once, before the first body invocation. |
+| `~between` | Between each pair of body invocations — N−1 times when body runs N times. Skipped when body runs 0 or 1 times. |
+| `~after` | Once, after the last body invocation, on the normal-completion path only. |
+| `~noloop` | When body never ran (loop condition already false at entry, empty iterated collection, etc.). |
 
-## Callable bodies
-
-Any `function`, `closure`, `method`, `do`, or `dofunc` can declare `before` / `between` / `after` / `noloop`:
+Example — `.each` with all four hooks:
 
 ~~~caspian
-$foo = closure($idx)
-	puts $idx
-before
-	puts '--- START ---'
-between
+$total = 0
+$items = [1, 2, 3, 4]
+
+$items.each do($item)
+	$total = $total + $item
+end
+
+~before
+	puts '--- summing ---'
+end
+
+~between
 	puts '---'
-after
-	puts '--- END ---'
-noloop
-	puts '--- (nothing to iterate) ---'
+end
+
+~after
+	puts "total: #{$total}"
+end
+
+~noloop
+	puts '(nothing to sum)'
 end
 ~~~
 
-The clauses become accessible as methods on the callable object: `$foo.body`, `$foo.before`, `$foo.between`, `$foo.after`, `$foo.noloop`. `$foo.call($arg)` remains the invocation shortcut — equivalent to `$foo.body($arg)`.
+The five constructs above are one bwc call: `.each` with its `do` body and four `~name` attachments. Each block ends with its own `end`.
 
-## Loop bodies
+### Attachment rule
 
-`while`, `until`, `.each`, `.times`, `.upto`, `.downto`, and the `begin ... while` / `begin ... until` post-loop forms all accept the same four clauses:
+An attached block attaches to the immediately preceding call in the current scope, skipping intervening comment lines. If the preceding element is not a call — a bare literal, an assignment target, nothing at all — the parser raises.
+
+### At most one per `~name`
+
+The parser rejects two `~name` blocks with the same name attached to the same call:
 
 ~~~caspian
-$clock = %('core:now')
+$items.each do($x)
+	puts $x
+end
 
-while $x < 100
-	$x = $x + 1
-before
-	$started_at = $clock.stamp
-after
-	puts "elapsed: #{$clock.stamp - $started_at}"
-noloop
-	puts "already >= 100 at entry"
+~before
+	puts 'one'
+end
+
+~before                             # RAISES: `~before` already attached to `.each` above
+	puts 'two'
 end
 ~~~
 
-## Bare `begin ... end` and `ensure`
+Positional `do` / `dofunc` are unaffected — they may repeat on the same call.
 
-`begin ... end` accepts only `ensure`:
+### DSL methods and unknown `~name`s
+
+A DSL method receives its attached blocks as data on the call. It decides at runtime which `~name` slots it accepts; unknown names raise from the receiving method, not from the parser. The parser's job is only to bind each attached block to the preceding call and enforce the at-most-one-per-name rule; it never validates which names a given call should accept.
+
+## The `ensure` clause on `begin ... end`
+
+`begin ... end` accepts one in-body clause: `ensure`. It runs on every exit path — normal completion, exception, controller `.return`, `break` — parallel to Ruby's `ensure` / Python's `finally`.
 
 ~~~caspian
 begin
@@ -88,158 +111,70 @@ ensure
 end
 ~~~
 
-## How iterator methods use the clauses
+`begin ... end` runs its body exactly once, so the iteration-lifecycle blocks (`~before` / `~between` / `~after` / `~noloop`) would be dead weight. `ensure` is the only in-body clause it accepts.
 
-Iterator methods (`.each`, `.times`, `.upto`, `.downto`, and any user-written iterator that opts in) invoke the clause slots at the right times. A minimal skeleton:
+`ensure` in any other position — inside a `function` body, following a call as an attached block, on a `while` loop — raises at parse time. The word is reserved for this one construct.
 
-~~~caspian
-method &times($block)
-	$block.before        # once, before any body call
+## Scope
 
-	$count.iterate do ($i)
-		$block.body $i   # each iteration
-
-		# between runs N-1 times — after every body call except the last
-		$block.between if not_last_iteration
-	end
-
-	$block.after         # once, after normal completion
-end
-~~~
-
-### Providing a loop controller (`as $name` targets)
-
-When the block's `body` was declared with an `as $name` binding — e.g. `do($idx) as $loop` — the iterator method uses a [caller object](https://puck.uno/requirements/functions/caller/) to inject the loop-controller object into `$name`:
-
-~~~caspian
-method &times($block)
-	$count.iterate do ($i)
-		$caller = $block.body.caller.new
-
-		if $caller.wants_controller?
-			$caller.controller = LoopController.new(index: $i, count: $count)
-		end
-
-		$caller.call $i
-	end
-end
-~~~
-
-`$block.body.caller.new` builds a fresh caller for the body clause; `.wants_controller?` skips controller construction for blocks that didn't declare `as $name`; `.controller = ...` sets the object that binds to the target's `$name`.
-
-The `noloop` clause runs only when `body` was never invoked — the iterator method decides that condition based on its own knowledge (e.g., empty collection).
-
-## Where clause validation happens: parse time vs. runtime
-
-Two layers of validation, chosen by what each layer can see:
-
-**Parse time** handles cases where the parser has enough context to decide. That covers:
-
-- **Wrong construct entirely** (e.g., `ensure` inside a function body, `before` inside a bare `begin ... end`). The parser knows the enclosing frame type and the accepted set per type; wrong-set is caught at the clause line.
-- **Dead-code cases on trailing-cond loops** (e.g., `noloop` inside `begin ... while COND` — the body runs at least once by construction, so `noloop` could never fire). Rejected at the `while` / `until` transition.
-- **`if` / `unless` branches.** The parser knows statically that the branch-body closure has exactly one invocation site — the `if` construct itself — and no iterator will ever call `.before` / `.after` / etc. on it. So iteration clauses on an `if` branch are dead code and get rejected at the clause line.
-
-**Runtime** handles callable-shaped constructs where the parser CAN'T predict who will invoke the callable or how. When a user writes:
-
-~~~caspian
-$foo = closure($idx)
-	puts $idx
-before
-	puts '---'
-end
-~~~
-
-the callable atom just carries `before: [...]` as a field on the closure. Whoever eventually calls `$foo` — an iterator like `.each` that invokes `.before` at the right time, a plain `$foo.call()` that doesn't, some third-party class that inspects `$foo.before` and does its own thing — decides what the slot means. The parser can't reject "unused `before`" because it can't see the future call sites.
-
-The general rule: **push the check as early as possible.** When the parser has enough context (`if` branches, wrong-construct, dead-code loop hooks), reject there. Otherwise, the callable carries its slots and the runtime caller does whatever validation it needs.
-
-## Wrong-context clause markers raise at parse time
-
-Every clause marker is a reserved word tied to a specific construct set. Using one in the wrong place is a parser error, not a runtime "no such command":
-
-~~~caspian
-$foo = closure($idx)          # RAISES:
-	puts $idx                     # `ensure` is only valid inside a bare
-ensure                            # `begin ... end`; closure bodies use
-	puts 'done'                   # `before` / `between` / `after` / `noloop`
-end
-~~~
-
-~~~caspian
-begin                         # RAISES:
-	puts 1                        # `before` is not valid inside a bare
-before                            # `begin ... end`; use it on a loop
-	puts '---'                    # (`while` / `until` / `.each` / ...) or a
-end                               # callable body (function / closure / method / do)
-~~~
-
-`begin ... while COND` (a begin-while loop) is a loop, so it follows the iteration-clause rule — `ensure` there raises `\`ensure\` is not valid on a \`begin ... while\` loop`. Additionally, `noloop` on `begin ... while` or `begin ... until` raises — those trailing-cond forms run the body at least once by construction, so a "body-never-ran" hook would be dead code. Use the leading-cond `while COND ... noloop ... end` if you genuinely need it.
-
-## Always safe to call — undeclared clauses are no-ops
-
-**A callable's clause methods are always safe to invoke, whether or not the source declared that clause.** Calling `$foo.before` on a plain-body closure does nothing and raises nothing — the runtime treats an undeclared clause as a no-op.
-
-This lets iterator methods stay branch-free: they can invoke `$block.before` unconditionally, and it will only produce visible behavior when the caller declared a `before` clause.
-
-## Scope: each clause is its own scope
-
-**Each clause runs in its own fresh frame.** Variables declared inside `body` are not visible in `before`, `between`, `after`, or `noloop`, and vice versa. Every `body` invocation gets a fresh frame too — iteration locals re-init each time.
-
-To share state across clauses, declare it in the **enclosing scope** — the scope where the closure / function / block was defined. The closure captures the enclosing scope; every clause has read/write access to it through the capture:
+Each attached block runs in its own fresh frame per invocation, and each captures the scope in which the attachment was written. Sibling attached blocks share that same enclosing scope, so they can pass state through captured variables:
 
 ~~~caspian
 $sum = 0
 
-$foo = closure($idx)
-	puts $idx
-	$sum += $idx        # writes the enclosing-scope $sum
-after
-	puts "sum: #{$sum}" # reads the enclosing-scope $sum
+$items.each do($item)
+	$sum = $sum + $item
+end
+
+~after
+	puts "sum: #{$sum}"
 end
 ~~~
 
-The `body` clause's local `$idx` is invisible to `after`; both clauses see `$sum` because it lives in the enclosing scope.
+`~after` reads the `$sum` written by the `do` body — both captured the same enclosing scope. Iteration-local variables declared inside the body (like `$item`) are not visible from `~after`, since they live in the body-invocation frame that ended before `~after` fired.
 
-## `before` / `after` vs the `body` param
+`dofunc` follows the sealed-scope rule instead of capturing; that's the entire distinction between `do` and `dofunc`.
 
-Structural clauses **do not receive the iteration variable.** In an iterator like `.each do ($item)`, `$item` binds inside `body` only; `before`, `between`, `after`, and `noloop` don't have access to it.
+## CaspJ shape
 
-The distinction is deliberate: structural clauses are lifecycle hooks, not per-iteration work. If a structural clause needs to reference iteration state, the block should capture from the enclosing scope (as with `$sum` above).
+The transpiler emits attached blocks in the existing `{blocks: [...]}` envelope on the call. Each entry is a `{<KIND>: {...}}` object; the outer key names the slot:
 
-## CaspJ shape (Option B — declared-only)
+- `do` → `{closure: {params, body}}`
+- `dofunc` → `{function: {params, body}}`
+- `~name` → `{<name>: {params, body}}` — atom key is the sigil-stripped identifier
 
-Full CaspJ preserves ONLY the clauses that the source declared. Undeclared slots do not appear in the atom.
+Example — the `.each` above (body payloads elided):
 
 ~~~json
 {
-	"closure": {
-		"params": ["idx"],
-		"body":    [ /* main clause */ ],
-		"before":  [ /* declared */ ],
-		"between": [ /* declared */ ],
-		"after":   [ /* declared */ ],
-		"noloop":  [ /* declared */ ]
-	}
+	"call": ".each",
+	"receiver": {"var": "items"},
+	"blocks": [
+		{"closure": {"params": ["item"], "body": [ /* $total = $total + $item */ ]}},
+		{"before":  {"params": [], "body": [ /* ... */ ]}},
+		{"between": {"params": [], "body": [ /* ... */ ]}},
+		{"after":   {"params": [], "body": [ /* ... */ ]}},
+		{"noloop":  {"params": [], "body": [ /* ... */ ]}}
+	]
 }
 ~~~
 
-A closure with only a body (the common case) transpiles to `{closure: {params, body}}` — no empty-slot padding. Same rule applies to `function`, `method`, `do`, `dofunc`, `while_end`, `until_end`, `begin_while`, `begin_until`, and `begin_end` atoms.
+Ordering in `blocks` follows source order. The at-most-one-per-name rule is a parse-time check; CaspJ never carries duplicates.
 
-`begin_end` uses the same shape for its (sole) `ensure` slot:
+`begin ... end` with an `ensure` clause carries the ensure as an in-body `ensure` field on the `begin_end` atom, not in `blocks`:
 
 ~~~json
 {
 	"begin_end": {
 		"body":   [ /* main clause */ ],
-		"ensure": [ /* declared — the only clause bare begin admits */ ]
+		"ensure": [ /* ensure clause */ ]
 	}
 }
 ~~~
 
-Norm preserves the same shape — the runtime handles the "missing slot = no-op" dispatch, so the CaspJ layer stays source-fidelity.
+`ensure` is not an attached block — it lives in the same atom as its body.
 
 ## Related
 
-- [bare-blocks](https://puck.uno/requirements/syntax/bare-blocks) — the `begin ... end` construct and its `as $block` controller.
-- [loops](https://puck.uno/requirements/syntax/loops) — where the iteration-clause set originated.
-- [functions](https://puck.uno/requirements/functions/) — the `function`, `closure`, `method` constructs and their runtime surface.
+- [bare-blocks](https://www.puck.uno/requirements/syntax/bare-blocks) — the `begin ... end` construct.
+- [loops](https://www.puck.uno/requirements/syntax/loops) — where the four built-in loop-hook names are dispatched from.

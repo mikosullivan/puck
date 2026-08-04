@@ -40,7 +40,7 @@ Each construct that runs code has its own Module subclass. The subclass tags wha
 
 - **`Script`** — the frame for a `.casp` source file's top-level code. Created when the file loads, persists as long as the file's definitions are alive.
 - **`Function`** — the frame for a bare function's body. Created fresh **on each invocation** of the function.
-- **`Closure`** — the frame for a closure's body. Created fresh on each invocation. Also the frame for an `if` / `unless` branch body and for a `while` / `until` / `.each` / `.times` loop body — those are closures per [clause-slots](https://puck.uno/requirements/syntax/clause-slots) and [functions/closure](https://puck.uno/requirements/functions/closure).
+- **`Closure`** — the frame for a closure's body. Created fresh on each invocation. Also the frame for an `if` / `unless` branch body, for a `while` / `until` / `.each` / `.times` loop body (loop bodies are attached `do` closures), and for every attached `~name` hook block ([clause-slots](https://www.puck.uno/requirements/syntax/clause-slots), [functions/closure](https://www.puck.uno/requirements/functions/closure)).
 - **`Method`** — the frame for a method body. Created fresh on each invocation.
 - **`Begin`** — the frame for a bare block. Created fresh each time the block runs.
 - **`ClassBody`** — the frame for a class body during the definition pass. Runs once, when the `class ... end` construct executes; populates the resulting class object with the definition's fields / methods / inheritance and then discards.
@@ -227,4 +227,4 @@ Each subclass's page is (or will be) the authoritative spec for its specifics. T
 - [functions/bare](https://puck.uno/requirements/functions/bare) — the two declaration forms of a bare function; how `function &name` interacts with the Module.
 - [global-methods/module](https://puck.uno/requirements/global-methods/module/) — the `%module` global and its full surface.
 - [classes](https://puck.uno/requirements/classes/) — the class construct, which was already Module-shaped before the base class was named.
-- [syntax/clause-slots](https://puck.uno/requirements/syntax/clause-slots) — clause bodies are closures, and therefore Modules.
+- [syntax/clause-slots](https://www.puck.uno/requirements/syntax/clause-slots) — attached `do` / `~name` blocks are closures, and therefore Modules.
