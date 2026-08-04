@@ -1,0 +1,45 @@
+local script_dir = arg[0]:match('(.*/)') or './'
+package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
+
+local h = require('helpers')
+local engine = require('engine')
+
+h.test('engine.new requires opts.stdout', function()
+	h.assert_raises(function()
+		engine.new({})
+	end, 'stdout is required')
+end)
+
+h.test('engine.new returns an instance with the wired stdout', function()
+	local stdout = h.FakeStdout.new()
+	local e = engine.new({stdout = stdout})
+	h.assert_true(e ~= nil, 'engine instance created')
+	h.assert_true(e.stdout == stdout, 'stdout field is the one we passed')
+end)
+
+h.test('engine:hi() writes "hi" to the wired stdout', function()
+	local stdout = h.FakeStdout.new()
+	local e = engine.new({stdout = stdout})
+	e:hi()
+	h.assert_eq(stdout:get_all(), 'hi\n', 'stdout received "hi\\n"')
+end)
+
+h.test('engine:load(source) accepts a Caspian source string', function()
+	local stdout = h.FakeStdout.new()
+	local e = engine.new({stdout = stdout})
+	e:load('$x = 1 + 2')
+	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed on engine')
+	h.assert_eq(stdout:get_all(), '', 'load() writes nothing to stdout yet')
+end)
+
+h.test('two engines with different stdouts stay independent', function()
+	local s1 = h.FakeStdout.new()
+	local s2 = h.FakeStdout.new()
+	local e1 = engine.new({stdout = s1})
+	local e2 = engine.new({stdout = s2})
+	e1:hi()
+	e1:hi()
+	e2:hi()
+	h.assert_eq(s1:get_all(), 'hi\nhi\n', 'e1 wrote to s1 only')
+	h.assert_eq(s2:get_all(), 'hi\n', 'e2 wrote to s2 only')
+end)
