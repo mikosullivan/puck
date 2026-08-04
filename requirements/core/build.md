@@ -17,6 +17,7 @@ The build script produces the complete Caspian distribution in one directory tre
 - Invoked from the repo root: `tools/build.lua`.
 - Writes to `/home/miko/projects/puck/ecoverse/build/` — a sibling of the repo, deliberately outside it so the repo stays free of shipping artifacts.
 - Idempotent: rerunning wipes the target directory and rebuilds from scratch.
+- Externals cached at `~/.cache/caspian-build/externals/<hash>/`, keyed by the rock lists. Unchanged lists → cache hit → no luarocks downloads on rerun. Change a rock list → new hash → fresh fetch. A run with any luarocks failure does NOT populate the cache, so the next run retries the failing rock rather than shipping the partial state.
 
 ## Output layout
 

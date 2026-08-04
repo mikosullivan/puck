@@ -2,7 +2,7 @@
 --[[
 {
 	"module": "build",
-	"role": "Orchestrator for the Caspian build. Produces the complete distribution at /home/miko/projects/puck/ecoverse/build/. Idempotent (wipes and recreates on every run). Calls sibling tools directly via require() rather than spawning subprocesses. See requirements/core/build.md for the spec.",
+	"role": "Orchestrator for the Caspian build. Produces the complete distribution at /home/miko/projects/puck/ecoverse/build/. Idempotent (wipes the build dir and recreates on every run). External libraries fetched via luarocks are cached at ~/.cache/caspian-build/externals/<hash>/, keyed by the rock lists — unchanged lists mean no downloads next run. Calls sibling tools directly via require() rather than spawning subprocesses. See requirements/core/build.md for the spec.",
 	"invocation": "tools/build.lua (from the repo root or anywhere)"
 }
 ]]
@@ -17,6 +17,11 @@ local repo    = script_dir .. "../"
 local BUILD   = os.getenv("HOME") .. "/projects/puck/ecoverse/build"
 local SYMLINK = os.getenv("HOME") .. "/.local/bin/caspian"
 local FLOPPY_TARGET = 1474560
+
+-- Persistent cache for luarocks-fetched externals. Content-addressed by the
+-- rock lists — change EXTERNAL_ROCKS or CACHE_ROCKS below and the next build
+-- misses the cache and re-fetches. Nothing changed → cache hit → no downloads.
+local EXTERNAL_CACHE = os.getenv("HOME") .. "/.cache/caspian-build/externals"
 
 -- ------------------------------------------------------------
 -- Helpers
@@ -93,12 +98,15 @@ run(string.format(
 	BUILD, repo))
 
 -- ------------------------------------------------------------
--- External libs: download via luarocks. Rocks that fail (missing system
--- headers etc.) are logged and skipped so the build produces a partial
--- picture rather than aborting. Runs before phase 2 so the bundler can
--- fold the pure-Lua wrappers from external/share into caspian.lua.
+-- External libs: download via luarocks OR restore from the persistent
+-- cache (whichever fits). The cache is content-addressed by the rock
+-- lists — same lists as last successful build means a cache hit and no
+-- luarocks calls. Rocks that fail (missing system headers etc.) are
+-- logged and skipped so the build produces a partial picture rather
+-- than aborting; a failed run does NOT populate the cache, so the next
+-- run retries the failing rock instead of shipping the partial state
+-- forever.
 -- ------------------------------------------------------------
-print("==> Downloading external libraries into build/external/")
 
 local EXTERNAL_ROCKS = {
 	"luasocket", "lpeg",
@@ -135,12 +143,65 @@ local function install_rocks(rocks, tree_subdir, label)
 	end
 end
 
-install_rocks(EXTERNAL_ROCKS, "external", "external")
-install_rocks(CACHE_ROCKS,    "cache",    "cache")
+-- Cache key: sha256 of the joined rock lists. Uses the TMP scratch dir
+-- to avoid shell-quoting the rock names.
+local function rock_cache_key()
+	local joined = table.concat(EXTERNAL_ROCKS, ",") .. "|" .. table.concat(CACHE_ROCKS, ",")
+	local keyfile = TMP .. "/rock-key.txt"
+	write_file(keyfile, joined)
+	return (popen_read("sha256sum " .. keyfile):match("^(%x+)"))
+end
+
+local cache_key = rock_cache_key()
+local cache_dir = EXTERNAL_CACHE .. "/" .. cache_key
+
+if io.open(cache_dir .. "/.complete") then
+	print("==> Restoring external libraries from cache (" .. cache_key:sub(1, 12) .. ")")
+	run("cp -a " .. cache_dir .. "/external " .. BUILD .. "/")
+	if #CACHE_ROCKS > 0 then
+		run("cp -a " .. cache_dir .. "/cache " .. BUILD .. "/")
+	end
+	for _, rock in ipairs(EXTERNAL_ROCKS) do
+		print(string.format("    OK  %-15s (cached)", rock))
+	end
+	for _, rock in ipairs(CACHE_ROCKS) do
+		print(string.format("    OK  %-15s (cached)", rock))
+	end
+else
+	print("==> Downloading external libraries into build/external/")
+	install_rocks(EXTERNAL_ROCKS, "external", "external")
+	install_rocks(CACHE_ROCKS,    "cache",    "cache")
+
+	-- Strip everything luarocks landed that isn't runtime: rock metadata
+	-- under lib/luarocks and utility executables under bin/. What remains
+	-- is exactly what `require` reaches for at runtime. Applies to both
+	-- external/ (always-loadable) and cache/ (on-demand). Runs BEFORE the
+	-- cache populate so the cache holds a runtime-only tree.
+	run("rm -rf " ..
+		BUILD .. "/external/lib/luarocks " .. BUILD .. "/external/bin " ..
+		BUILD .. "/cache/lib/luarocks "    .. BUILD .. "/cache/bin")
+
+	-- Populate the cache ONLY when every luarocks-fetched rock succeeded.
+	-- A partial download would poison the cache; a failed rock stays out
+	-- of the cache so the next build retries it. libsodium (system lib,
+	-- copied after this) is not part of the cache — always fresh from
+	-- the local disk.
+	if #failed == 0 then
+		print("==> Populating external cache at " .. cache_dir)
+		run("rm -rf " .. cache_dir)
+		run("mkdir -p " .. cache_dir)
+		run("cp -a " .. BUILD .. "/external " .. cache_dir .. "/")
+		if #CACHE_ROCKS > 0 then
+			run("cp -a " .. BUILD .. "/cache " .. cache_dir .. "/")
+		end
+		run("touch " .. cache_dir .. "/.complete")
+	end
+end
 
 -- libsodium is a system C library, not a luarocks rock. Copy the
 -- runtime .so from the system into build/external/lib/. Per-arch — this
--- grabs the current build host's copy.
+-- grabs the current build host's copy. Runs on every build (cache-hit
+-- or fresh) so a system libsodium update takes effect next run.
 local libsodium_path = popen_read(
 	"ldconfig -p 2>/dev/null | awk '/libsodium\\.so\\.[0-9]/ {print $NF; exit}'"
 ):gsub("%s+$", "")
@@ -161,14 +222,6 @@ if #failed > 0 then
 		#failed, table.concat(failed, ", ")))
 	print("          Install prerequisite headers/dev packages and rerun to complete.")
 end
-
--- Strip everything luarocks landed that isn't runtime: rock metadata
--- under lib/luarocks and utility executables under bin/. What remains
--- is exactly what `require` reaches for at runtime. Applies to both
--- external/ (always-loadable) and cache/ (on-demand).
-run("rm -rf " ..
-	BUILD .. "/external/lib/luarocks " .. BUILD .. "/external/bin " ..
-	BUILD .. "/cache/lib/luarocks "    .. BUILD .. "/cache/bin")
 
 -- ------------------------------------------------------------
 -- Collect external pure-Lua modules for folding into caspian.lua.
