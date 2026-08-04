@@ -17,49 +17,28 @@ h.test('engine.stdout = X wires the stdout; engine.stdout reads it back', functi
 	h.assert_true(e.stdout == stdout, 'engine.stdout returns the object we assigned')
 end)
 
-h.test('engine:hi() writes "hi" to the wired stdout', function()
-	local stdout = h.FakeStdout.new()
+h.test('engine.stdout can be reassigned', function()
+	local s1 = h.FakeStdout.new()
+	local s2 = h.FakeStdout.new()
 	local e = engine.new()
-	e.stdout = stdout
-	e:hi()
-	h.assert_eq(stdout:get_all(), 'hi\n', 'stdout received "hi\\n"')
+	e.stdout = s1
+	e.stdout = s2
+	h.assert_true(e.stdout == s2, 'engine.stdout reflects the last assignment')
 end)
 
-h.test('engine:hi() raises if no stdout has been wired', function()
-	local e = engine.new()
-	h.assert_raises(function()
-		e:hi()
-	end, 'no stdout is wired')
-end)
-
-h.test('engine:load(source) accepts a Caspian source string without needing stdout', function()
-	local e = engine.new()
-	e:load('$x = 1 + 2')
-	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed on engine')
-end)
-
-h.test('two engines with different stdouts stay independent', function()
+h.test('two engines have independent stdout state', function()
 	local s1 = h.FakeStdout.new()
 	local s2 = h.FakeStdout.new()
 	local e1 = engine.new()
 	local e2 = engine.new()
 	e1.stdout = s1
 	e2.stdout = s2
-	e1:hi()
-	e1:hi()
-	e2:hi()
-	h.assert_eq(s1:get_all(), 'hi\nhi\n', 'e1 wrote to s1 only')
-	h.assert_eq(s2:get_all(), 'hi\n', 'e2 wrote to s2 only')
+	h.assert_true(e1.stdout == s1, 'e1.stdout is s1')
+	h.assert_true(e2.stdout == s2, 'e2.stdout is s2')
 end)
 
-h.test('engine.stdout can be rewired mid-run', function()
-	local s1 = h.FakeStdout.new()
-	local s2 = h.FakeStdout.new()
+h.test('engine:load(source) accepts a Caspian source string', function()
 	local e = engine.new()
-	e.stdout = s1
-	e:hi()
-	e.stdout = s2
-	e:hi()
-	h.assert_eq(s1:get_all(), 'hi\n', 'first hi went to s1')
-	h.assert_eq(s2:get_all(), 'hi\n', 'second hi went to s2')
+	e:load('$x = 1 + 2')
+	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed on engine')
 end)
