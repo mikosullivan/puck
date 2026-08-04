@@ -15,7 +15,7 @@ The `references` hash is the structural foundation that makes Drinian's **determ
 
 ## Shape
 
-The `references` hash is a top-level field in the Drinian hash. Keys are reference IDs; values are object IDs:
+The `references` hash is a top-level field in the Drinian hash. Keys are reference IDs; values are object IDs (each of which must resolve to an entry in [`objects`](https://puck.uno/requirements/drinian/objects) — the companion top-level hash holding per-object records):
 
 ~~~json
 "references": {
@@ -164,4 +164,5 @@ The `references` hash is the **structure**; the objects' `to_json` outputs are t
 ## Related docs
 
 - [drinian](https://puck.uno/requirements/drinian/) — the overall Drinian state hash, of which `references` is a part.
+- [drinian/objects](https://puck.uno/requirements/drinian/objects) — the companion `objects` hash whose keys the target values in this hash resolve to.
 - [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure) — object bucket / stack / platter model, the user-facing surface that `references` implements under the hood.

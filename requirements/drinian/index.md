@@ -51,7 +51,7 @@ Concretely: function bodies, closure bodies, method bodies, class-definition bod
 
 ## Worked example: Drinian mid-execution
 
-**Note on representation.** The JSON snippets in this doc use a **simplified inline-value shorthand** for readability — locals carry their values directly as `{"value": "Aslan", "src": ["a", 6]}` rather than as references into separate `references` and `objects` tables. The full canonical form (with per-object `role` field, sequence-keyed platters in an `objects` table, `references` mapping ref-IDs to target-IDs, top-level `sequence` counter, etc.) lives in [examples/mid-execution](https://puck.uno/requirements/drinian/examples/mid-execution). Treat that example as authoritative for representation; this doc focuses on the structural concepts and uses lighter snippets to keep the prose moving.
+**Note on representation.** The JSON snippets in this doc use a **simplified inline-value shorthand** for readability — locals carry their values directly as `{"value": "Aslan", "src": ["a", 6]}` rather than as references into separate `references` and `objects` tables. The full canonical form (with per-object `role` field, sequence-keyed platters in an `objects` table, `references` mapping ref-IDs to target-IDs, top-level `sequence` counter, etc.) lives in [examples/mid-execution](https://puck.uno/requirements/drinian/examples/mid-execution). The `objects` table's shape — per-object fields, ID scheme, class / variable / hash-element records — is spec'd at [objects](https://puck.uno/requirements/drinian/objects). Treat that example as authoritative for representation; this doc focuses on the structural concepts and uses lighter snippets to keep the prose moving.
 
 V1 ships the minimum Drinian footprint — a single-field hash, `call_stack`, holding one `top_level` frame whose `role` and `chain` are the program's starting role and an empty chain. Later slices grow the hash (deeper stacks, iterator state, pending exceptions, etc.) without changing the shape. This section illustrates what a fuller hash looks like for a realistic nested execution moment.
 
@@ -280,7 +280,7 @@ If the same program had nested `delegate_to` blocks, additional `delegations`-be
 
 ### Object ownership
 
-Every entry in `state.objects` carries a top-level `role` field naming the role that owns the object. The value is one of the strings in `state.roles` — `"user"`, `"engine"`, `"agent"`, or whatever roles the program has.
+Every entry in `state.objects` (see [objects](https://puck.uno/requirements/drinian/objects) for the hash's per-object shape and ID scheme) carries a top-level `role` field naming the role that owns the object. The value is one of the strings in `state.roles` — `"user"`, `"engine"`, `"agent"`, or whatever roles the program has.
 
 ~~~json
 "objects": {
