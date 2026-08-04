@@ -11,9 +11,9 @@
 
 `objects` is a top-level field in the [Drinian](https://puck.uno/requirements/drinian/) hash. It holds every live object's record — variables, hashes, arrays, strings, numbers, class instances, and classes themselves — keyed by object ID. Everything the [`references`](https://puck.uno/requirements/drinian/references) hash points at resolves through here.
 
-This page is the Drinian-internal companion to [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure). That page describes what an object IS from the language's perspective (the bucket / stack / shadow / platter / nested-object model developers and class authors reason about). This page describes how that structure is **represented** inside the Drinian hash — the field names, the ID scheme, the platter-keyed stack encoding, and the discipline the engine uses to keep both hashes in sync as the program runs.
+This page is the Drinian-internal companion to [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure). That page describes what an object IS from the language's perspective (the bucket / stack / shadow / platter / nested-object model developers and class authors reason about). This page describes how that structure is **represented** inside the Drinian hash — the field names, the ID scheme, and the discipline the engine uses to keep both hashes in sync as the program runs.
 
-<!-- SPEC CONFLICT: this page's canonical shape follows requirements/drinian/examples/mid-execution.md and requirements/drinian/examples/references.md, which the drinian/index.md worked example points to as authoritative. Several fields in that shape disagree with the serialized form spec'd in requirements/built-in-classes/object/structure/index.md — notably (1) stack is a platter-ID-keyed hash here vs an ordered array there, (2) the shadow lives under a reserved "shadow" key here vs a platter with `shadow: true` there, (3) `class` is a string identifier in these examples vs a full class-object inline in the object/structure spec vs an object-ID reference in drinian/index.md § Classes are in Drinian. Each of the three is flagged individually at its section; the top-level flag records that the disagreements share a root cause — Drinian-internal representation and language-facing serialization have drifted apart, and a decision on which shape is canonical (or how they map) is needed. -->
+<!-- SPEC CONFLICT (`class` field shape only — the other two shape questions this section previously flagged are now settled): `class` on a platter is a string identifier in the drinian examples, a full class-object hash inline in requirements/built-in-classes/object/structure/index.md § class, and an object-ID reference through the normal reference mechanism per drinian/index.md § Classes are in Drinian. Each of the three is a directly-opposite shape for the same field. Flagged in detail at the [class objects](#class-objects) section below. Needs Miko decision. -->
 
 ## Top-level shape
 
@@ -25,19 +25,17 @@ This page is the Drinian-internal companion to [built-in-classes/object/structur
 		"role": "user",
 		"src": ["a", 6],
 		"bucket": {"0": "7", "1": "8"},
-		"stack": {
-			"shadow": {},
-			"23": {"class": "core:array"}
-		}
+		"stack": [
+			{"class": "core:array"}
+		]
 	},
 	"10": {
 		"role": "user",
 		"src": ["a", 6],
 		"bucket": {"value": "Aslan"},
-		"stack": {
-			"shadow": {},
-			"24": {"class": "core:string"}
-		}
+		"stack": [
+			{"class": "core:string"}
+		]
 	}
 }
 ~~~
@@ -46,17 +44,11 @@ Every live object in the program has exactly one entry. When the engine collects
 
 ## Object IDs
 
-Object IDs are integer-strings drawn from a single program-wide counter — the same counter that mints reference IDs, hash-element IDs, and (per the drinian examples) platter IDs. See [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids) for the counter's properties (stable within a run; not stable across runs; not designed for cross-process merging; no sigil).
+Object IDs are integer-strings drawn from a single program-wide counter — the same counter that mints reference IDs and hash-element IDs. See [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids) for the counter's properties (stable within a run; not stable across runs; not designed for cross-process merging; no sigil).
 
 A reference is itself an object (an instance of `core:reference` or one of its subclasses), so the same ID appears once as a key in `references` (where the value is the reference's target ID) and once as a key in `objects` (where the value is the reference's own record — its bucket, stack, and other per-object state). The two hashes work together: `references` holds bare pointers; `objects` holds the object records.
 
-**Object IDs vs platter IDs.** The [references spec](https://puck.uno/requirements/drinian/references#object-ids) states:
-
-> Platter IDs are different: they're UUIDs, not from this counter. The reason: platter IDs appear as keys inside user buckets (per the object-structure serialization), where integer-strings could collide with user-chosen field names.
-
-But the [mid-execution example](https://puck.uno/requirements/drinian/examples/mid-execution) and [references example](https://puck.uno/requirements/drinian/examples/references) use **integer-string platter IDs from the same sequence counter** — object `"9"`'s stack in the mid-execution snapshot has a platter keyed `"23"`, and the accompanying prose explains that "every object AND every non-shadow platter" draws from the shared sequence.
-
-<!-- SPEC CONFLICT: references.md says platter IDs are UUIDs. drinian/examples/mid-execution.md and drinian/examples/references.md use sequence-counter integer-strings for platter IDs. The two collision-avoidance domains may be different — the UUID discipline may apply only to nested-object marker keys inside user buckets (per built-in-classes/object/structure § Nested objects), while Drinian-internal stack-hash keys can be from the sequence counter without exposure to user field names. But references.md's wording is general ("platter IDs are UUIDs") and the two examples directly contradict it. Needs Miko decision: keep sequence counter for Drinian-internal platter keys and restrict "UUID" to nested-marker UUIDs, OR switch the examples to UUIDs for all platter keys, OR carve out a hybrid where Drinian-internal keys are sequence-based but the serialized form uses UUIDs. -->
+**Platter IDs are UUIDs, but most platters have no ID.** Only platters that carry a nested-object marker (`nested: <UUID>` per [built-in-classes/object/structure § Nested objects](https://puck.uno/requirements/built-in-classes/object/structure#nested-objects)) carry an ID — the UUID that links the platter to its matching bucket entry. Regular class platters are anonymous elements of the [stack array](#stack); they have no identity because they don't need one — their position in the stack is their identity. The UUID discipline exists specifically to avoid collisions with user-chosen field names inside the bucket, and the discipline is only load-bearing where a bucket entry has to point at a specific platter — the nested-object case.
 
 ## Per-object fields
 
@@ -71,7 +63,7 @@ The role that owns this object — one of the string keys in [`state.roles`](htt
 	"role": "user",
 	"src": ["a", 6],
 	"bucket": {"value": "Aslan"},
-	"stack": {"shadow": {}, "24": {"class": "core:string"}}
+	"stack": [{"class": "core:string"}]
 }
 ~~~
 
@@ -145,48 +137,45 @@ When a bucket entry is a reference to another object, the entry's value is the *
 
 ### stack
 
-The stack in Drinian is a **hash keyed by platter identifier**, with one reserved key — `"shadow"` — for the shadow platter:
+The stack in Drinian is an **ordered array of platters**. The platter at index 0 is the top; method dispatch walks from top to bottom. Same shape as the language-facing spec at [built-in-classes/object/structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure#stack).
 
 ~~~json
 "14": {
 	"bucket": {"value": "hello, Aslan"},
-	"stack": {
-		"shadow": {},
-		"28": {"class": "core:string"}
-	}
+	"stack": [
+		{"class": "core:string"}
+	]
 }
 ~~~
 
-- **`"shadow"`** — the shadow platter. Value is a hash of the same shape as any other platter's value (currently `{}` when the shadow carries no singleton methods). Present on every object in the drinian examples, always at this literal key.
-- **Other keys** — sequence-based platter IDs (per [Object IDs vs platter IDs](#object-ids) above), values are platter hashes.
+Each element is a platter — a hash holding some subset of the engine-recognized platter fields. Most platters just carry a `class` (see the [class field](#class-objects) below for the still-open question of the class value's shape). Two special platter kinds:
 
-Method dispatch order (the "top of the stack" the [built-in-classes/object/structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure) spec describes) is: shadow first, then non-shadow platters. The relative order among non-shadow platters — which one wins when multiple contribute the same method — is not visible in a hash's key set. See the SPEC CONFLICT below on how this reconciles with the language-facing ordered-array spec.
+- **Shadow.** A platter carrying `shadow: true` marks the object's shadow — the home for singleton methods on this one object. Optional; conventionally at index 0 when it exists. See [built-in-classes/object/structure § Shadow](https://puck.uno/requirements/built-in-classes/object/structure#shadow).
+- **Nested-object marker.** A platter carrying `nested: "<UUID>"` links this platter to a nested object whose data sits at the matching UUID-keyed entry in the parent's bucket. This is the ONLY platter kind that carries an ID (a UUID) — regular class platters are anonymous positional entries. See [built-in-classes/object/structure § Nested objects](https://puck.uno/requirements/built-in-classes/object/structure#nested-objects).
 
-<!-- SPEC CONFLICT: built-in-classes/object/structure/index.md § Stack says stack is "an ordered array. Each element is a platter — a hash holding some subset of the engine-recognized fields below. The platter at index 0 is the top; method dispatch walks from top to bottom." That shape is:
+A composite example — a text object with a foreground color as a nested object, a shadow with a singleton method, and a warning:
 
+~~~json
+"14": {
+	"role": "user",
+	"src": ["a", 6],
+	"bucket": {
+		"content":                              "hello, Aslan",
+		"9c440335-a5fa-406a-8676-1da39a1a4617": {"r": 255, "g": 0, "b": 0}
+	},
 	"stack": [
 		{"shadow": true, "class": {}},
-		{"class": text-class-object},
-		{"warning": "…"},
-		{"nested": "…UUID…", "class": color-class-object}
+		{"class": "core:text"},
+		{"warning": "deprecated: use `format` instead"},
+		{
+			"nested": "9c440335-a5fa-406a-8676-1da39a1a4617",
+			"class":  "core:color"
+		}
 	]
+}
+~~~
 
-The drinian examples (mid-execution.md, examples/references.md) use a hash keyed by platter ID with a reserved "shadow" key:
-
-	"stack": {
-		"shadow": {},
-		"23": {"class": "core:array"}
-	}
-
-Three material differences:
-
-1. Array vs hash. Ordering (which the object/structure spec makes load-bearing for dispatch) is inherent in the array form and lost in the hash form unless dispatch order is derived some other way (e.g., a separate ordering field, or the platter-ID sequence, or a convention that "shadow always beats anything else and non-shadow platters are unordered because there's no shipping case with multiple non-shadow class platters yet").
-
-2. Shadow encoding. object/structure spec's `{shadow: true, class: {}}` platter vs the drinian examples' reserved `"shadow"` key. The two encode the same thing — this one object's per-instance class — but at different levels of the shape.
-
-3. Platter identity. object/structure spec's platters are anonymous elements of an array; drinian examples' platters carry an identity (the sequence-counter key) which drives the [Object IDs](#object-ids) count. Platter identity in the drinian form is stable across snapshot round-trips and appears in the shared sequence counter; in the object/structure form it's positional and not addressable.
-
-Needs Miko decision: which encoding is canonical? If the drinian form wins, built-in-classes/object/structure needs to be rewritten and dispatch order needs its own field or convention. If the object/structure form wins, mid-execution.md, examples/references.md, and this spec need to be rewritten to use an ordered array (and the sequence-counter platter-ID scheme dropped). If both are legitimate (Drinian-internal vs serialized-for-wire), the mapping between them needs to be spec'd. -->
+Reading the stack top-to-bottom: shadow first (owns any singleton methods; class is `{}` when empty), then the text class (dispatched by default), a warning-only platter (`class` absent, dispatch skips it), and finally the nested-color platter (the UUID marker links to the bucket entry holding the color's data).
 
 ### comment
 
@@ -205,10 +194,9 @@ That means every class has an entry in `objects` keyed by its object ID, with th
 **But the drinian examples don't yet show a class-object entry.** They show class references at the point of use:
 
 ~~~json
-"stack": {
-	"shadow": {},
-	"24": {"class": "core:string"}
-}
+"stack": [
+	{"class": "core:string"}
+]
 ~~~
 
 The `"core:string"` value here is a **string identifier**, not an object ID and not an inline class-object hash.
@@ -237,10 +225,9 @@ A [variable object](https://puck.uno/requirements/built-in-classes/variable-obje
 "1": {
 	"role": "user",
 	"bucket": {},
-	"stack": {
-		"shadow": {},
-		"15": {"class": "core:variable", "bucket": {}}
-	}
+	"stack": [
+		{"class": "core:variable", "bucket": {}}
+	]
 }
 ~~~
 
@@ -266,10 +253,9 @@ A `core:hash_element` is a reference-class object that represents a single key i
 "7": {
 	"role": "user",
 	"bucket": {},
-	"stack": {
-		"shadow": {},
-		"21": {"class": "core:hash_element", "bucket": {"parent": "9", "key": 0}}
-	}
+	"stack": [
+		{"class": "core:hash_element", "bucket": {"parent": "9", "key": 0}}
+	]
 }
 ~~~
 
@@ -334,9 +320,16 @@ Redaction of sensitive fields happens at that per-object serialization step thro
 
 V1.0 does not ship snapshot serialization; the objects hash exists in memory only. But the shape is fixed with serialization in mind: every field is representable in JSON without further encoding, integer-string keys round-trip losslessly, and no reference to a raw native handle appears at this level (native handles belong on the engine sidecar; see [ideas/drinian § Everything in Drinian is serializable](https://puck.uno/ideas/drinian/#everything-in-drinian-is-serializable) for the post-V1.0 direction). <!-- outbound-link-allowed - this is the design-brainstorm doc for the serialization discipline; the requirements tree does not yet own the serialization spec. Miko: replace with a requirements/ link once the serialization spec lands. -->
 
+## Settled since first draft
+
+- **Stack encoding: array.** Objects store platters in an ordered array, not a hash. Position 0 is the top; dispatch walks top-to-bottom. Matches [built-in-classes/object/structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure#stack).
+- **Platter IDs: UUIDs, but only for nested-object platters.** Regular class platters are anonymous positional entries with no ID. The UUID discipline exists specifically to link a nested-object platter to its matching bucket entry ([built-in-classes/object/structure § Nested objects](https://puck.uno/requirements/built-in-classes/object/structure#nested-objects)); it does not apply to stack platters generally.
+
+Both decisions from Miko, 2026-08-04. The examples under [drinian/examples/](https://puck.uno/requirements/drinian/examples/) that predate this decision still show the older hash-shape stack — they need a sweep to catch up.
+
 ## Open questions
 
-- **The three SPEC CONFLICTs called out above.** Stack encoding (hash-vs-array), platter-ID scheme (sequence-counter-vs-UUID), and `class` field shape (string-vs-object-ID-vs-inline-object) are the three material shape questions this spec cannot answer without deciding which existing spec wins. Each is a separate decision; each affects a different downstream reader.
+- **The `class`-field-shape SPEC CONFLICT called out above.** String-vs-object-ID-vs-inline-object is the one material shape question this spec cannot answer without deciding which existing spec wins.
 
 - **Where the primitive value actually lives.** [built-in-classes/object/structure § Primitive field](https://puck.uno/requirements/built-in-classes/object/structure#primitive-field) says the primitive field is "engine-managed" and "not exposed at the Caspian level," living "alongside the bucket, not inside it." The drinian examples put it inside the bucket under the key `"value"`. If the Drinian representation genuinely stores the primitive in the bucket, the no-reserved-keys guarantee for primitive-carrying classes needs revision. If the examples are using shorthand for a slot the engine stores outside the visible bucket, the shorthand should be spec'd out and the examples rewritten to show the real shape.
 

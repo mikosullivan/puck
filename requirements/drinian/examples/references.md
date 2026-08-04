@@ -19,7 +19,7 @@ $count = 1
 # CAPTURED HERE
 ~~~
 
-Paused at the comment line. Three variables bound, one hash with one element, and `$alias` aliasing `$shared`. Every object AND every non-shadow platter draws an ID from the same global sequence (see [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids)) — objects `"1"`–`"7"` plus platters `"8"`–`"14"`, with `sequence: 15` recording the next allocation. Shadow platters keep the literal key `"shadow"` (the platter at position 1 is always named that); every other platter's key is its sequence ID.
+Paused at the comment line. Three variables bound, one hash with one element, and `$alias` aliasing `$shared`. Every object draws an ID from the same global sequence (see [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids)) — objects `"1"`–`"7"`, with `sequence: 8` recording the next allocation. Regular class platters have no ID under the array-shape stack (see [objects § stack](https://puck.uno/requirements/drinian/objects#stack)); nested-object platters would use UUIDs (none in this example).
 
 ~~~json
 {
@@ -43,7 +43,7 @@ Paused at the comment line. Three variables bound, one hash with one element, an
 			}
 		}
 	],
-	"sequence": 15,
+	"sequence": 8,
 	"references": {
 		"1": "2",
 		"5": "2",
@@ -53,52 +53,45 @@ Paused at the comment line. Three variables bound, one hash with one element, an
 	"objects": {
 		"1": {
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"8": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"2": {
 			"bucket": {"name": "3"},
-			"stack": {
-				"shadow": {},
-				"9": {"class": "core:hash"}
-			}
+			"stack": [
+				{"class": "core:hash"}
+			]
 		},
 		"3": {
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"10": {"class": "core:hash_element", "bucket": {"parent": "2", "key": "name"}}
-			}
+			"stack": [
+				{"class": "core:hash_element", "bucket": {"parent": "2", "key": "name"}}
+			]
 		},
 		"4": {
 			"bucket": {"value": "Picard"},
-			"stack": {
-				"shadow": {},
-				"11": {"class": "core:string"}
-			}
+			"stack": [
+				{"class": "core:string"}
+			]
 		},
 		"5": {
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"12": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"6": {
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"13": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"7": {
 			"bucket": {"value": 1},
-			"stack": {
-				"shadow": {},
-				"14": {"class": "core:number"}
-			}
+			"stack": [
+				{"class": "core:number"}
+			]
 		}
 	},
 	"gc_errors": []
@@ -117,7 +110,7 @@ ID legend, to read the `objects` hash above:
 | `"6"` | variable `$count` (`core:variable`) | named via frame 0's `locals` key |
 | `"7"` | the number `1` (`core:number`) | top-level bucket carries the value |
 
-Both object IDs and non-shadow platter keys are sequential from the same global sequencer. Within an object's `stack`, `shadow` is the literal key for the shadow platter; every other platter's key is its sequence ID.
+Object IDs are sequential from the global sequencer. Platters inside an object's `stack` are anonymous positional entries in an ordered array (see [objects § stack](https://puck.uno/requirements/drinian/objects#stack)); only nested-object platters carry an ID (a UUID linking the platter to its bucket entry, per [built-in-classes/object/structure § Nested objects](https://puck.uno/requirements/built-in-classes/object/structure#nested-objects)). None of the objects in this example have a nested-object platter.
 
 The frame's `locals` doesn't store the bound objects directly — each entry is a **reference object ID** (`"1"`, `"5"`, `"6"`); resolve it through `objects` for the object's structure and through `references` for what it points at. Same for hash internals: `"3"` is the reference object representing the `name` key inside the hash; it points at `"4"`, the `"Picard"` string object.
 

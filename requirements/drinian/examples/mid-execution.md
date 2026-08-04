@@ -42,7 +42,7 @@ Paused inside `greet` on the first iteration, after `$msg` has been computed but
 		"user": {"bucket": {}},
 		"engine": {"bucket": {}}
 	},
-	"sequence": 29,
+	"sequence": 15,
 	"references": {
 		"1": "9",
 		"2": "12",
@@ -57,120 +57,106 @@ Paused inside `greet` on the first iteration, after `$msg` has been computed but
 		"1": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"15": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"2": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"16": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"3": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"17": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"4": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"18": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"5": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"19": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"6": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"20": {"class": "core:variable", "bucket": {}}
-			}
+			"stack": [
+				{"class": "core:variable", "bucket": {}}
+			]
 		},
 		"7": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"21": {"class": "core:hash_element", "bucket": {"parent": "9", "key": 0}}
-			}
+			"stack": [
+				{"class": "core:hash_element", "bucket": {"parent": "9", "key": 0}}
+			]
 		},
 		"8": {
 			"role": "user",
 			"bucket": {},
-			"stack": {
-				"shadow": {},
-				"22": {"class": "core:hash_element", "bucket": {"parent": "9", "key": 1}}
-			}
+			"stack": [
+				{"class": "core:hash_element", "bucket": {"parent": "9", "key": 1}}
+			]
 		},
 		"9": {
 			"role": "user",
 			"src": ["a", 6],
 			"bucket": {"0": "7", "1": "8"},
-			"stack": {
-				"shadow": {},
-				"23": {"class": "core:array"}
-			}
+			"stack": [
+				{"class": "core:array"}
+			]
 		},
 		"10": {
 			"role": "user",
 			"src": ["a", 6],
 			"bucket": {"value": "Aslan"},
-			"stack": {
-				"shadow": {},
-				"24": {"class": "core:string"}
-			}
+			"stack": [
+				{"class": "core:string"}
+			]
 		},
 		"11": {
 			"role": "user",
 			"src": ["a", 6],
 			"bucket": {"value": "Bree"},
-			"stack": {
-				"shadow": {},
-				"25": {"class": "core:string"}
-			}
+			"stack": [
+				{"class": "core:string"}
+			]
 		},
 		"12": {
 			"role": "user",
 			"src": ["a", 11],
 			"bucket": {"value": 1},
-			"stack": {
-				"shadow": {},
-				"26": {"class": "core:number"}
-			}
+			"stack": [
+				{"class": "core:number"}
+			]
 		},
 		"13": {
 			"role": "user",
 			"src": ["a", 12],
 			"bucket": {"value": "Lord "},
-			"stack": {
-				"shadow": {},
-				"27": {"class": "core:string"}
-			}
+			"stack": [
+				{"class": "core:string"}
+			]
 		},
 		"14": {
 			"role": "user",
 			"src": ["a", 2],
 			"bucket": {"value": "hello, Aslan"},
-			"stack": {
-				"shadow": {},
-				"28": {"class": "core:string"}
-			}
+			"stack": [
+				{"class": "core:string"}
+			]
 		}
 	},
 	"call_stack": [
@@ -254,5 +240,5 @@ What to notice:
 - **Object `"14"` (`$msg`'s value) carries `src: ["a", 2]`** because the `+` operator on line 2 produced the value. Operator location, not operand birth.
 - **Uspace roots are the variable objects.** `core:variable` declares `uspace: true` (per [references § Uspace](https://puck.uno/requirements/drinian/references#uspace-a-class-level-property)), so objects `"1"`–`"6"` ground the program's reachability graph. `core:hash_element` declares `uspace: false`, so `"7"` and `"8"` aren't roots in their own right — they're reachable only because the array (`"9"`) is held by a variable root.
 - **Every object record carries `role`** identifying the role that owns it. All 14 objects in this example are user-owned because user code created them. Cross-role allocations (e.g., an engine-role method returning a new object) would carry the allocating role.
-- **`sequence` is `29`.** The global object-ID counter (see [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids)) exposed at the top level so snapshots can resume allocation from the right place. A bare integer starting at `0` at boot and incremented for each object AND each non-shadow platter allocated. Fourteen objects exist (with IDs `"1"`–`"14"`) plus fourteen non-shadow platters (IDs `"15"`–`"28"`); the next allocation will take ID `"29"`.
+- **`sequence` is `15`.** The global object-ID counter (see [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids)) exposed at the top level so snapshots can resume allocation from the right place. A bare integer starting at `0` at boot and incremented for each object allocated (not for platters — regular platters have no ID, and nested-object platters draw from a separate UUID scheme per [objects § Object IDs](https://puck.uno/requirements/drinian/objects#object-ids)). Fourteen objects exist (with IDs `"1"`–`"14"`); the next allocation will take ID `"15"`.
 - **Roles' buckets are empty here.** Elided for focus; see [bootstrap](https://puck.uno/requirements/drinian/examples/bootstrap) for the standard registry with the engine role and stdin/stdout/stderr.

@@ -288,10 +288,9 @@ Every entry in `state.objects` (see [objects](https://puck.uno/requirements/drin
 		"role": "user",
 		"src": ["a", 6],
 		"bucket": {"value": "Aslan"},
-		"stack": {
-			"shadow": {},
-			"24": {"class": "core:string"}
-		}
+		"stack": [
+			{"class": "core:string"}
+		]
 	}
 }
 ~~~
