@@ -13,9 +13,9 @@
 Before any Caspian code runs, a host program has to get the engine loaded into memory, hand it the capabilities it needs (stdout, filesystem, network, etc.), and give it the program to execute. The minimal shape:
 
 ~~~lua
-local engine = require('engine')                  -- load
-engine.stdout = function(s) io.write(s) end       -- wire capabilities
-engine.caspianj = engine.parse_caspian(source)    -- stage the program
+local engine = require('engine')                                       -- load
+engine.stdout = { print = function(self, s) io.write(s) end }          -- wire capabilities
+engine.caspianj = engine.parse_caspian(source)                         -- stage the program
 -- engine.run() comes later; that's execution, spec'd separately.
 ~~~
 
@@ -35,8 +35,8 @@ Two things worth internalizing:
 The engine table has empty slots for the host to fill:
 
 ~~~lua
-engine.stdout = function(s) io.write(s) end
-engine.stderr = function(s) io.stderr:write(s) end
+engine.stdout = { print = function(self, s) io.write(s)        end }
+engine.stderr = { print = function(self, s) io.stderr:write(s) end }
 engine.stdin  = function() return io.read('*l') end
 engine.argv   = {'first-arg', 'second-arg'}
 -- ...more as the surface grows: engine.fs, engine.net, engine.env, engine.forks, ...
@@ -44,7 +44,7 @@ engine.argv   = {'first-arg', 'second-arg'}
 
 Each slot is a plain Lua table key. There is no setter ceremony, no event firing, no validation at write time. Assignment order does not matter. If a slot is left unset, the corresponding capability is **withheld** — user code that tries to reach for it raises when it does.
 
-The host is the OS-aware layer. It knows how to reach real files and real sockets. It hands the engine those OS handles wrapped as Lua functions (or as tables of Lua functions, for compound capabilities like `%fs`). The engine holds them opaquely — it never looks at `io.write` directly.
+Slot shapes vary. `stdin` is a plain callable — the engine invokes it to read a line. `stdout` and `stderr` are compound capabilities: Lua tables with method fields (`{ print = function(self, s) ... end }`, invoked as `stdout:print(bytes)`). The Caspian-side sink surface (`.puts`, `.print`, jails, attribution, etc.) is layered inside the engine on top of the host's `:print`. Compound capabilities like `%fs` follow the same table-of-methods pattern. The engine holds every wired value opaquely — it never looks at `io.write` directly.
 
 ### Stage the program — `engine.caspianj = ...`
 
@@ -61,7 +61,7 @@ The CLI (`src/engine/cli.lua`, not yet written) is a Lua host like any other, bu
 
 - **Parses `argv` itself first** — figures out which source file to load, which flags to interpret. The CLI receives argv from Lua's global `arg` table.
 - **Reads the source file** — `io.open(path):read('*a')`.
-- **Wires real OS streams** — `engine.stdout = function(s) io.write(s) end` is the canonical shape; nothing fancier.
+- **Wires real OS streams** — `engine.stdout = { print = function(self, s) io.write(s) end }` is the canonical shape; nothing fancier.
 - **Passes through remaining argv** — anything after the source-file argument becomes the program's own argv (`engine.argv = ...`).
 - **Handles errors** — wraps `engine.run()` in `pcall`, decides the process exit code.
 

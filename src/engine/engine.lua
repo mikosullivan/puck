@@ -5,8 +5,8 @@
 	"exports": {
 		"new": "() -> Engine"
 	},
-	"stdout_contract": "The wired stdout must be an object supporting :puts(text). Not called from anywhere yet — the eventual execution path will use it. Tests wire a FakeStdout; the eventual CLI wires an object over io.stdout.",
-	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Development-only: features attach a debugger while they're being built, inspect it in tests to confirm internal behavior, and remove the attachment (or ignore the log) once the feature is solid. Coders patching Caspian can attach any sequence and read it back."
+	"stdout_contract": "The wired stdout must be an object supporting :print(text) — the raw byte-writer, no newline. Caspian-side :puts (adds newline) and everything else the sink surface exposes layer inside the engine on top of the host's :print. Not called from anywhere yet — the eventual execution path will use it. Tests wire a FakeStdout; the eventual CLI wires an object over io.stdout.",
+	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface."
 }
 ]=]
 
