@@ -1,7 +1,7 @@
 --[=[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. Constructed with no required params — host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(), will eventually execute it. Right now the tiniest possible thing: empty constructor, `stdout` and `debugger` fields, load(source) that stashes a source string and logs an entry to the debugger when one is attached.",
+	"role": "Caspian's runtime. Constructed with no required params — host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source), which transpiles + normalizes it into a CaspM tree ready for run() to walk. Right now the tiniest thing that has a program in it: empty constructor, `stdout` / `debugger` / `source` / `caspj` / `caspm` fields, load(source) that runs the parse pipeline and logs a 'loaded' entry to the debugger.",
 	"exports": {
 		"new": "() -> Engine"
 	},
@@ -10,21 +10,28 @@
 }
 ]=]
 
+local transpiler = require('transpiler')
+local normalize  = require('normalize')
+
 local M = {}
 M.__index = M
 
---[[ {"in": {}, "out": "Engine instance — no wiring attached yet"} ]]
+--[[ {"in": {}, "out": "Engine instance — no wiring attached, no program loaded"} ]]
 function M.new()
 	return setmetatable({
 		stdout   = nil,
 		debugger = nil,
 		source   = nil,
+		caspj    = nil,
+		caspm    = nil,
 	}, M)
 end
 
---[[ {"in": {"source": "Caspian source string"}, "out": "nil — stashes the source and logs a 'loaded' entry to the debugger if one is attached"} ]]
+--[[ {"in": {"source": "Caspian source string"}, "out": "nil — transpiles source into CaspJ, normalizes into CaspM, stashes source / caspj / caspm on self, and logs a 'loaded' entry to the debugger if one is attached"} ]]
 function M:load(source)
 	self.source = source
+	self.caspj  = transpiler.transpile(source)
+	self.caspm  = normalize.normalize(self.caspj)
 
 	if self.debugger then
 		table.insert(self.debugger, {kind = 'loaded', source_length = #source})

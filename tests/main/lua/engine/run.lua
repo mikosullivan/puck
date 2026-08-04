@@ -1,7 +1,11 @@
 #!/usr/bin/env lua5.4
 
 local script_dir = arg[0]:match('(.*/)') or './'
-package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
+local home = os.getenv('HOME') or ''
+package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'
+	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
+	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
+	.. package.path
 
 local h = require('helpers')
 

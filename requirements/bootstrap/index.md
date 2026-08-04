@@ -15,7 +15,7 @@ Before any Caspian code runs, a host program has to get the engine loaded into m
 ~~~lua
 local engine = require('engine')                                       -- load
 engine.stdout = { print = function(self, s) io.write(s) end }          -- wire capabilities
-engine.caspianj = engine.parse_caspian(source)                         -- stage the program
+engine:load(source)                                                    -- stage the program
 -- engine.run() comes later; that's execution, spec'd separately.
 ~~~
 
@@ -46,14 +46,16 @@ Each slot is a plain Lua table key. There is no setter ceremony, no event firing
 
 Slot shapes vary. `stdin` is a plain callable — the engine invokes it to read a line. `stdout` and `stderr` are compound capabilities: Lua tables with method fields (`{ print = function(self, s) ... end }`, invoked as `stdout:print(bytes)`). The Caspian-side sink surface (`.puts`, `.print`, jails, attribution, etc.) is layered inside the engine on top of the host's `:print`. Compound capabilities like `%fs` follow the same table-of-methods pattern. The engine holds every wired value opaquely — it never looks at `io.write` directly.
 
-### Stage the program — `engine.caspianj = ...`
+### Stage the program — `engine:load(source)`
 
-The engine needs the program it will execute. Two paths land in the same slot:
+The engine needs the program it will execute. `engine:load(source)` takes a Caspian source string, transpiles it into CaspJ, normalizes into CaspM, and stashes both trees on the engine (`engine.caspj`, `engine.caspm`) ready for `engine:run()` to walk. Source is also retained on `engine.source` for diagnostics.
 
-- **From source text** — `engine.caspianj = engine.parse_caspian('puts hi\n$x = 42\n...')`. The engine's parser produces a CaspianJ tree from Caspian source.
-- **From a pre-built tree** — `engine.caspianj = my_hand_authored_tree`. This is the shape a test harness typically uses; it skips the parser entirely.
+~~~lua
+engine:load('puts hi\n$x = 42\n...')
+-- engine.source, engine.caspj, engine.caspm now populated
+~~~
 
-Everything after the tree lands in `engine.caspianj` is execution, which this section deliberately doesn't cover.
+Everything after `load()` returns is execution, which this section deliberately doesn't cover.
 
 ## The CLI as a host
 

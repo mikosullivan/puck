@@ -25,9 +25,9 @@ describe("infrastructure", function()
 		assert.is_function(mod.transpile)
 	end)
 
-	it("parse_extract loads and exposes extract", function()
-		local ok, mod = pcall(require, "parse_extract")
-		assert.is_true(ok, "parse_extract failed to load: " .. tostring(mod))
+	it("parse-extract loads and exposes extract", function()
+		local ok, mod = pcall(require, "parse-extract")
+		assert.is_true(ok, "parse-extract failed to load: " .. tostring(mod))
 		assert.is_function(mod.extract)
 	end)
 

@@ -1,5 +1,9 @@
 local script_dir = arg[0]:match('(.*/)') or './'
-package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
+local home = os.getenv('HOME') or ''
+package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'
+	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
+	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
+	.. package.path
 
 local h = require('helpers')
 local engine = require('engine')
@@ -42,6 +46,26 @@ h.test('engine:load(source) accepts a Caspian source string', function()
 	local e = engine.new()
 	e:load('$x = 1 + 2')
 	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed on engine')
+end)
+
+h.test('engine:load(source) populates caspj by running the transpiler', function()
+	local e = engine.new()
+	e:load('$x = 1 + 2')
+	h.assert_true(type(e.caspj) == 'table', 'caspj is a Lua table')
+	h.assert_true(#e.caspj > 0,             'caspj has at least one statement row')
+end)
+
+h.test('engine:load(source) populates caspm by normalizing caspj', function()
+	local e = engine.new()
+	e:load('$x = 1 + 2')
+	h.assert_true(type(e.caspm) == 'table', 'caspm is a Lua table')
+	h.assert_true(#e.caspm > 0,             'caspm has at least one statement row')
+end)
+
+h.test('engine:load(source) populates caspj and caspm as independent tables', function()
+	local e = engine.new()
+	e:load('$x = 1 + 2')
+	h.assert_true(e.caspj ~= e.caspm, 'caspj and caspm are separate table objects')
 end)
 
 h.test('engine.debugger = X wires the debugger; engine.debugger reads it back', function()
