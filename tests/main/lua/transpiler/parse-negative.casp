@@ -264,11 +264,13 @@ cannot parse
 
 
 #====================================================================
-# name: method-call dot with no method name (parens directly after dot)
+# name: method-call dot with empty parens directly after dot
+# `.(EXPR)` is a valid method-position form when EXPR is any
+# expression; empty parens with no EXPR is not.
 #
 
 #--- code -----------------------------------------------------------
-$obj.(1)
+$obj.()
 #--------------------------------------------------------------------
 
 #--- raises ---------------------------------------------------------
@@ -276,7 +278,7 @@ cannot parse
 #--------------------------------------------------------------------
 
 #
-# name: method-call dot with no method name (parens directly after dot)
+# name: method-call dot with empty parens directly after dot
 #====================================================================
 
 

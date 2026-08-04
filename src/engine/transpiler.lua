@@ -518,10 +518,11 @@ end
 --[[
 {
 	"in":  "string — a Caspian expression",
-	"out": "receiver_expr, s_after — consuming a leading $$name, $name, or %name receiver-atom. nil, nil if no such prefix.",
+	"out": "receiver_expr, s_after — consuming a leading $$name, $name, @name, or %name receiver-atom. nil, nil if no such prefix.",
 	"shapes": {
 		"$$name": "{varobj = name} — the variable-object of `name`, not its value",
 		"$name":  "{var = name} — the variable's value",
+		"@name":  "{at = name} — an at-sigil field on the current object (sugar for %bucket[name]); norm expands the sugar",
 		"%name":  "{sys = name} — the system-method sigil"
 	},
 	"note": "$$ is tried FIRST so it wins over $name against a `$$foo` input"
@@ -538,6 +539,12 @@ local function consume_receiver(s)
 
 	if d then
 		return attach_line({var = d}), s:sub(2 + #d)
+	end
+
+	local a = s:match("^@([%w_]+)")
+
+	if a then
+		return attach_line({at = a}), s:sub(2 + #a)
 	end
 
 	-- Fetch lookup — two source forms, one atom.
@@ -616,6 +623,25 @@ local function consume_dot_segments(s)
 	end
 
 	return segments, rest
+end
+
+--[[
+{
+	"in":  "recv (receiver value-atom or nested atom), method (bareword string or an atom for dynamic / quoted-string dispatch), envelope (optional {args?, kw?, blocks?, line?})",
+	"out": "a `{op: \".\", left: recv, right: method, args?, kw?, blocks?, line?}` binop atom — the CaspianJ form of every dot-method call. `right` is a bare string when the source used a bareword method name (`.foo`), a value atom `{v: X}` when the source used a string literal (`.'foo'` / `.\"foo\"`), or a var / at / other atom when the source used dynamic dispatch (`.$var`, `.@field`)."
+}
+]]
+local function dot_atom(recv, method, envelope)
+	local atom = {op = ".", left = recv, right = method}
+
+	if envelope then
+		if envelope.args ~= nil then atom.args = envelope.args end
+		if envelope.kw ~= nil then atom.kw = envelope.kw end
+		if envelope.blocks ~= nil then atom.blocks = envelope.blocks end
+		if envelope.line ~= nil then atom.line = envelope.line end
+	end
+
+	return atom
 end
 
 --[[
@@ -1046,11 +1072,17 @@ parse_expression = function(s)
 	end
 
 	-- Generalized `&(EXPR)` — the ampersand invokes any expression that produces
-	-- a callable. Three atom-shape variants:
-	--   * bareword name (`&foo`) — `{amp: "foo"}` (existing sugar shape)
-	--   * anything else (`&(EXPR)`) — `{amp: <expr-atom>}`
-	--   * variable shorthand (`&$var`) — sugar for `&($var)`, same `{amp: {var}}`
-	-- All three shapes act as a callable atom at position 1 of a call array.
+	-- a callable. Atom-shape variants:
+	--   * bareword name (`&foo`) — `{amp: "foo"}` (existing sugar shape, handled below)
+	--   * `&(EXPR)` — `{amp: <expr-atom>}` — arbitrary expression as callable
+	--   * `&$var` — sugar for `&($var)`, same `{amp: {var}}`
+	--   * `&@field` — sugar for `&(@field)`, same `{amp: {at}}`
+	--
+	-- After the atom, chain segments (`.method`, `.'name'`, `[key]`) extend the
+	-- callable target under the dot-binds-tighter rule: `&$var.method` means
+	-- `&($var.method)` — take .method of $var, call the result. To insulate
+	-- the amp-call from a following dot chain, wrap the target in parens:
+	-- `(&$var).method` calls $var first, then dots the result.
 	do
 		local callable_atom, amp_rest
 
@@ -1066,15 +1098,131 @@ parse_expression = function(s)
 			callable_atom = parse_expression(inner)
 			amp_rest = paren_rest
 		else
-			-- `&$name` (paren-less variable-form generalized amp). Emitted as
-			-- `{amp: {var: name}}` — same shape as `&($name)`. Held out of the
-			-- bwc-name branch below so `&foo` (bareword) stays distinct in full
-			-- CaspJ; normalize collapses both to the method-call shape.
+			-- `&$name` or `&@name` — sigil-atom callables.
 			local var_name, var_rest = s:match("^&%$([%w_]+)(.*)$")
 
 			if var_name then
 				callable_atom = attach_line({var = var_name})
 				amp_rest = var_rest
+			else
+				local at_name, at_rest = s:match("^&@([%w_]+)(.*)$")
+
+				if at_name then
+					callable_atom = attach_line({at = at_name})
+					amp_rest = at_rest
+				else
+					-- `&foo.chain` — bareword amp with chain. Only fires when
+					-- a chain (`.` or `[`) actually follows. Plain `&foo`
+					-- (no chain) falls through to the bareword-amp path
+					-- below, which emits the string-amp shape `{amp: "foo"}`.
+					local bw_name, bw_rest = s:match("^&([%a_][%w_]*)(.*)$")
+
+					if bw_name then
+						local first = bw_rest:sub(1, 1)
+
+						if first == "." or first == "[" then
+							callable_atom = attach_line({bwc = bw_name})
+							amp_rest = bw_rest
+						end
+					end
+				end
+			end
+		end
+
+		-- Extend the callable target with chain segments (dot access, subscript)
+		-- if any follow. Under dot-binds-tighter, these bind to the target
+		-- expression, not to the outer amp-call.
+		if callable_atom and amp_rest then
+			local extended_atom, extended_rest = callable_atom, amp_rest
+			local walked = false
+
+			while extended_rest ~= "" do
+				local trimmed = extended_rest
+				-- `.name(args)` — dot-method call with envelope.
+				local m_name, m_paren, m_rest =
+					trimmed:match("^%.([%w_]+%??)%s*(%b())(.*)$")
+
+				if m_name then
+					local envelope = build_call_envelope(
+						trim(m_paren:sub(2, -2)), m_name, true)
+					extended_atom = attach_line(dot_atom(
+						extended_atom, m_name, envelope))
+					extended_rest = m_rest
+					walked = true
+					goto continue_amp_chain
+				end
+
+				-- `.'name'(args)` — quoted-string method name with envelope.
+				local qm_open, qm_body, qm_close, qm_paren, qm_rest =
+					trimmed:match("^%.(['\"])(.-)(['\"])%s*(%b())(.*)$")
+
+				if qm_open and qm_open == qm_close then
+					local envelope = build_call_envelope(
+						trim(qm_paren:sub(2, -2)), qm_body, true)
+					extended_atom = attach_line(dot_atom(
+						extended_atom, attach_line({v = qm_body}), envelope))
+					extended_rest = qm_rest
+					walked = true
+					goto continue_amp_chain
+				end
+
+				-- `.'name'` — bare quoted-string method access.
+				local qb_open, qb_body, qb_close, qb_rest =
+					trimmed:match("^%.(['\"])(.-)(['\"])(.*)$")
+
+				if qb_open and qb_open == qb_close then
+					extended_atom = attach_line(dot_atom(
+						extended_atom, attach_line({v = qb_body})))
+					extended_rest = qb_rest
+					walked = true
+					goto continue_amp_chain
+				end
+
+				-- `[key]` or `[key]?` — subscript. Stays row form.
+				local sub_b, sub_q, sub_rest =
+					trimmed:match("^(%b[])(%??)(.*)$")
+
+				if sub_b then
+					local inner = trim(sub_b:sub(2, -2))
+					local method = (sub_q == "?") and "[]?" or "[]"
+					local args_ast = {}
+
+					if inner ~= "" then
+						for _, arg in ipairs(split_top_level(inner, ",")) do
+							local at = trim(arg)
+
+							if at ~= "" then
+								table.insert(args_ast, parse_expression(at))
+							end
+						end
+					end
+
+					extended_atom = {extended_atom, method,
+						attach_line({args = args_ast})}
+					extended_rest = sub_rest
+					walked = true
+					goto continue_amp_chain
+				end
+
+				-- `.name` — bare dot-method access.
+				local a_name, a_rest =
+					trimmed:match("^%.([%w_]+%??)(.*)$")
+
+				if a_name then
+					extended_atom = attach_line(dot_atom(extended_atom, a_name))
+					extended_rest = a_rest
+					walked = true
+					goto continue_amp_chain
+				end
+
+				break
+
+				::continue_amp_chain::
+			end
+
+			if walked then
+				callable_atom = extended_atom
+				amp_rest = extended_rest
 			end
 		end
 
@@ -1233,13 +1381,13 @@ parse_expression = function(s)
 			end
 
 			if ok then
-				local envelope = {args = positionals}
+				local envelope = attach_line({args = positionals})
 
 				if #kwargs > 0 then
 					envelope.kw = kwargs
 				end
 
-				return {ec_recv, ec_pl_method, attach_line(envelope)}
+				return attach_line(dot_atom(ec_recv, ec_pl_method, envelope))
 			end
 		end
 	end
@@ -1254,18 +1402,15 @@ parse_expression = function(s)
 			local args_str = trim(ec_svar_paren:sub(2, -2))
 			local envelope = build_call_envelope(args_str, ec_svar, true)
 
-			if envelope then
-				return {ec_recv, attach_line({var = ec_svar}), attach_line(envelope)}
-			end
-
-			return {ec_recv, attach_line({var = ec_svar})}
+			return attach_line(dot_atom(
+				ec_recv, attach_line({var = ec_svar}), envelope))
 		end
 	end
 
 	-- Chained attribute access as expression: recv(.name)+ with any number of
 	-- segments. Single-segment ($obj.name) and multi-segment ($obj.a.b.c) both
-	-- lower to a nested [recv, name] list. No args form; parens fall through to
-	-- the method-call-as-expression path above.
+	-- lower to a nested `.` binop-atom chain. No args form; parens fall
+	-- through to the method-call-as-expression path above.
 	if ec_recv then
 		local segments, after = consume_dot_segments(ec_after)
 
@@ -1273,7 +1418,7 @@ parse_expression = function(s)
 			local chain = ec_recv
 
 			for _, name in ipairs(segments) do
-				chain = {chain, name}
+				chain = attach_line(dot_atom(chain, name))
 			end
 
 			return chain
@@ -1298,6 +1443,122 @@ parse_expression = function(s)
 			end
 
 			return {ec_recv, method, attach_line({args = args_ast})}
+		end
+	end
+
+	-- If nothing else matched a sigil-based receiver, try a bareword receiver
+	-- for the chain fallback below. `foo.bar` — `foo` is a bwc atom (a DSL may
+	-- have defined `foo` as a method resolved at runtime); `.bar` chains on the
+	-- returned value. Same rule for `foo['key']` and every other segment shape.
+	-- Only kicks in when the tail actually starts a chain (`.` or `[`) — bare
+	-- `foo` alone still goes through the plain-bareword atom path above.
+	if not ec_recv then
+		-- Match a proper identifier (first char letter or underscore, not a
+		-- digit) so `3.14.15` doesn't get read as a bwc chain of `3`.
+		local bw_name, bw_rest = s:match("^([%a_][%w_]*)(.*)$")
+
+		if bw_name and not RESERVED_FOR_BWC_EXPR[bw_name] then
+			local first = bw_rest:sub(1, 1)
+
+			if first == "." or first == "[" then
+				ec_recv = attach_line({bwc = bw_name})
+				ec_after = bw_rest
+			end
+		end
+	end
+
+	-- Receiver-tail fallback for expressions: mixed `.name`, `.name(args)`,
+	-- `.'name'`, `."name"`, and `[key]` segments after a receiver. Handles
+	-- forms the specific patterns above don't cover (e.g. `@foo['bar'].length`
+	-- — subscript followed by dot-method).
+	if ec_recv then
+		local current = ec_recv
+		local tail = trim(ec_after)
+		local walked = false
+
+		while tail ~= "" do
+			-- `.name(args)` — dot-method call with envelope.
+			local m_name, m_paren, m_rest =
+				tail:match("^%.([%w_]+%??)%s*(%b())(.*)$")
+
+			if m_name then
+				local envelope = build_call_envelope(
+					trim(m_paren:sub(2, -2)), m_name, true)
+
+				current = attach_line(dot_atom(current, m_name, envelope))
+				tail = trim(m_rest)
+				walked = true
+				goto continue_expr_chain
+			end
+
+			-- `.'name'(args)` — string-literal method name with envelope.
+			local qm_open, qm_body, qm_close, qm_paren, qm_rest =
+				tail:match("^%.(['\"])(.-)(['\"])%s*(%b())(.*)$")
+
+			if qm_open and qm_open == qm_close then
+				local envelope = build_call_envelope(
+					trim(qm_paren:sub(2, -2)), qm_body, true)
+
+				current = attach_line(dot_atom(current,
+					attach_line({v = qm_body}), envelope))
+				tail = trim(qm_rest)
+				walked = true
+				goto continue_expr_chain
+			end
+
+			-- `.'name'` — bare string-literal method access.
+			local qb_open, qb_body, qb_close, qb_rest =
+				tail:match("^%.(['\"])(.-)(['\"])(.*)$")
+
+			if qb_open and qb_open == qb_close then
+				current = attach_line(dot_atom(current,
+					attach_line({v = qb_body})))
+				tail = trim(qb_rest)
+				walked = true
+				goto continue_expr_chain
+			end
+
+			-- `[key]` or `[key]?` — subscript.
+			local sub_b, sub_q, sub_rest = tail:match("^(%b[])(%??)(.*)$")
+
+			if sub_b then
+				local inner = trim(sub_b:sub(2, -2))
+				local method = (sub_q == "?") and "[]?" or "[]"
+				local args_ast = {}
+
+				if inner ~= "" then
+					for _, arg in ipairs(split_top_level(inner, ",")) do
+						local at = trim(arg)
+
+						if at ~= "" then
+							table.insert(args_ast, parse_expression(at))
+						end
+					end
+				end
+
+				current = {current, method, attach_line({args = args_ast})}
+				tail = trim(sub_rest)
+				walked = true
+				goto continue_expr_chain
+			end
+
+			-- `.name` — bare dot-method access.
+			local a_name, a_rest = tail:match("^%.([%w_]+%??)(.*)$")
+
+			if a_name then
+				current = attach_line(dot_atom(current, a_name))
+				tail = trim(a_rest)
+				walked = true
+				goto continue_expr_chain
+			end
+
+			break
+
+			::continue_expr_chain::
+		end
+
+		if walked and tail == "" then
+			return current
 		end
 	end
 
@@ -1479,46 +1740,15 @@ local COMPOUND_OPS = {
 	"rhs_forms_and_shapes": [
 		"LHS | &fn                  -> right: [{amp: fn}]                          — bwc call, LHS prepends as first positional",
 		"LHS | &fn(args)            -> right: [{amp: fn}, arg1, ..., {kw?}]        — bwc call with extras, LHS prepends",
-		"LHS | .method              -> right: {method: \"method\"}                 — receiverless method reference, LHS becomes receiver",
-		"LHS | .method(args)        -> right: {method: \"method\", args: [...], kw?} — receiverless method call, LHS becomes receiver",
 		"LHS | $obj.method          -> right: [{var: obj}, method]                 — method call, LHS prepends as first positional",
 		"LHS | $obj.method(args)    -> right: [{var: obj}, method, envelope]       — method call with args, LHS prepends"
 	],
-	"runtime_rule": "if right is a `{method: ...}` atom, LHS becomes the receiver; otherwise LHS prepends as the first positional arg of the call in right.",
+	"runtime_rule": "LHS prepends as the first positional arg of the call in right.",
 	"note": "only expression-level pipes come through here — statement-leading `| bwc` is handled separately in Section 17."
 }
 ]]
 desugar_pipe = function(lhs_atom, rhs_str, op)
 	op = op or "|"
-	-- LHS | .method(args) — receiverless method call. Runtime uses LHS as receiver.
-	local m_name, m_paren = rhs_str:match("^%.([%w_]+%??)%s*(%b())$")
-
-	if m_name then
-		local rhs_atom = {method = m_name}
-		local args_str = trim(m_paren:sub(2, -2))
-
-		if args_str ~= "" then
-			local positionals, kwargs = parse_call_args(args_str, m_name, true)
-
-			if #positionals > 0 then
-				rhs_atom.args = positionals
-			end
-
-			if #kwargs > 0 then
-				rhs_atom.kw = kwargs
-			end
-		end
-
-		return {op = op, left = lhs_atom, right = rhs_atom}
-	end
-
-	-- LHS | .method (no parens) — receiverless bare method reference.
-	local a_name = rhs_str:match("^%.([%w_]+%??)$")
-
-	if a_name then
-		return {op = op, left = lhs_atom, right = {method = a_name}}
-	end
-
 	-- LHS | &fn(args) — bwc call. Runtime prepends LHS as first positional.
 	local bwc_p_name, bwc_p_paren = rhs_str:match("^&([%w_]+)%s*(%b())$")
 
@@ -1641,15 +1871,9 @@ desugar_pipe = function(lhs_atom, rhs_str, op)
 		local recv_atom = (recv_sig == "$") and {var = recv_name}
 			or {sys = recv_name}
 		local envelope = build_call_envelope(trim(recv_paren:sub(2, -2)), recv_meth, true)
-		local rhs_call
 
-		if envelope then
-			rhs_call = {recv_atom, recv_meth, envelope}
-		else
-			rhs_call = {recv_atom, recv_meth}
-		end
-
-		return {op = op, left = lhs_atom, right = rhs_call}
+		return {op = op, left = lhs_atom,
+			right = dot_atom(recv_atom, recv_meth, envelope)}
 	end
 
 	-- LHS | $obj.method (bare) — bare method access.
@@ -1659,7 +1883,8 @@ desugar_pipe = function(lhs_atom, rhs_str, op)
 	if recv_sig2 then
 		local recv_atom2 = (recv_sig2 == "$") and {var = recv_name2}
 			or {sys = recv_name2}
-		return {op = op, left = lhs_atom, right = {recv_atom2, recv_meth2}}
+		return {op = op, left = lhs_atom,
+			right = dot_atom(recv_atom2, recv_meth2)}
 	end
 
 	error("transpile: pipe RHS must be a call — got: " .. rhs_str)
@@ -1784,24 +2009,35 @@ local function transpile_statement(stmt)
 					local chain = caa_recv
 
 					for i = 1, #caa_segments - 1 do
-						chain = {chain, caa_segments[i]}
+						chain = attach_line(dot_atom(chain, caa_segments[i]))
 					end
 
-					return {chain, last .. "=",
-						{args = {parse_expression(caa_rhs)}}}
+					local last_name
+					if type(last) == "string" then
+						last_name = last .. "="
+					else
+						-- last is an atom (from `.$var`) — the setter method
+						-- name lives inside its value. Attribute assignment
+						-- via dynamic dispatch is rare; use the atom as-is.
+						last_name = last
+					end
+
+					return {attach_line(dot_atom(chain, last_name,
+						attach_line({args = {parse_expression(caa_rhs)}})))}
 				end
 			end
 		end
 	end
 
 	local idx_sig, idx_recv, idx_key, idx_q, idx_val = stmt:match(
-		"^([%$%%])([%w_]+)%[(.-)%](%??)%s*=%s*(.-)$")
+		"^([%$%%@])([%w_]+)%[(.-)%](%??)%s*=%s*(.-)$")
 
 	if idx_sig and idx_recv and idx_val and idx_val ~= "" then
-		-- Multi-key subscript: `$foo['a', 2, $x] = value` or `%bucket['k'] = v` —
-		-- all key expressions come first, value last. All go into one args list.
-		-- A trailing `?` on the closing bracket switches to the null-safe method
-		-- name. Receiver sigil dispatches: `$` → var atom, `%` → sys atom.
+		-- Multi-key subscript: `$foo['a', 2, $x] = value` or `%bucket['k'] = v`
+		-- or `@field['k'] = v` — all key expressions come first, value last.
+		-- All go into one args list. A trailing `?` on the closing bracket
+		-- switches to the null-safe method name. Receiver sigil dispatches:
+		-- `$` → var atom, `%` → sys atom, `@` → at atom.
 		local args_ast = {}
 		local key_trimmed = trim(idx_key)
 
@@ -1818,7 +2054,14 @@ local function transpile_statement(stmt)
 		table.insert(args_ast, parse_expression(idx_val))
 
 		local method = (idx_q == "?") and "[]?=" or "[]="
-		local recv = (idx_sig == "$") and {var = idx_recv} or {sys = idx_recv}
+		local recv
+		if idx_sig == "$" then
+			recv = {var = idx_recv}
+		elseif idx_sig == "%" then
+			recv = {sys = idx_recv}
+		else
+			recv = {at = idx_recv}
+		end
 
 		return {recv, method, {args = args_ast}}
 	end
@@ -1892,7 +2135,9 @@ local function transpile_statement(stmt)
 
 	-- Generalized `&(EXPR)` at statement position — call the callable produced
 	-- by EXPR. Mirrors the parse_expression branch. Args (parens or paren-less)
-	-- may follow. Also handles `&$var args` variable shorthand.
+	-- may follow. Also handles `&$var args` and `&@field args`. Chain segments
+	-- (`.method`, `[key]`, etc.) after the atom bind to the target under the
+	-- dot-binds-tighter rule.
 	do
 		local callable_atom, amp_rest
 
@@ -1911,6 +2156,119 @@ local function transpile_statement(stmt)
 			if var_name then
 				callable_atom = attach_line({var = var_name})
 				amp_rest = var_rest
+			else
+				local at_name, at_rest = stmt:match("^&@([%w_]+)(.*)$")
+
+				if at_name then
+					callable_atom = attach_line({at = at_name})
+					amp_rest = at_rest
+				else
+					-- `&foo.chain` at statement position — bareword amp with
+					-- chain. Only fires when a chain follows; plain `&foo`
+					-- (no chain) falls through to the bareword-amp path
+					-- below.
+					local bw_name, bw_rest = stmt:match("^&([%a_][%w_]*)(.*)$")
+
+					if bw_name then
+						local first = bw_rest:sub(1, 1)
+
+						if first == "." or first == "[" then
+							callable_atom = attach_line({bwc = bw_name})
+							amp_rest = bw_rest
+						end
+					end
+				end
+			end
+		end
+
+		-- Extend the callable target with chain segments (dot access, subscript)
+		-- if any follow. Under dot-binds-tighter, these bind to the target
+		-- expression, not to the outer amp-call.
+		if callable_atom and amp_rest and amp_rest ~= "" then
+			local extended_atom, extended_rest = callable_atom, amp_rest
+			local walked = false
+
+			while extended_rest ~= "" do
+				local m_name, m_paren, m_rest =
+					extended_rest:match("^%.([%w_]+%??)%s*(%b())(.*)$")
+
+				if m_name then
+					local envelope = build_call_envelope(
+						trim(m_paren:sub(2, -2)), m_name, true)
+					extended_atom = attach_line(dot_atom(
+						extended_atom, m_name, envelope))
+					extended_rest = m_rest
+					walked = true
+					goto continue_amp_stmt_chain
+				end
+
+				local qm_open, qm_body, qm_close, qm_paren, qm_rest =
+					extended_rest:match("^%.(['\"])(.-)(['\"])%s*(%b())(.*)$")
+
+				if qm_open and qm_open == qm_close then
+					local envelope = build_call_envelope(
+						trim(qm_paren:sub(2, -2)), qm_body, true)
+					extended_atom = attach_line(dot_atom(
+						extended_atom, attach_line({v = qm_body}), envelope))
+					extended_rest = qm_rest
+					walked = true
+					goto continue_amp_stmt_chain
+				end
+
+				local qb_open, qb_body, qb_close, qb_rest =
+					extended_rest:match("^%.(['\"])(.-)(['\"])(.*)$")
+
+				if qb_open and qb_open == qb_close then
+					extended_atom = attach_line(dot_atom(
+						extended_atom, attach_line({v = qb_body})))
+					extended_rest = qb_rest
+					walked = true
+					goto continue_amp_stmt_chain
+				end
+
+				local sub_b, sub_q, sub_rest =
+					extended_rest:match("^(%b[])(%??)(.*)$")
+
+				if sub_b then
+					local inner = trim(sub_b:sub(2, -2))
+					local method = (sub_q == "?") and "[]?" or "[]"
+					local args_ast = {}
+
+					if inner ~= "" then
+						for _, arg in ipairs(split_top_level(inner, ",")) do
+							local at = trim(arg)
+
+							if at ~= "" then
+								table.insert(args_ast, parse_expression(at))
+							end
+						end
+					end
+
+					extended_atom = {extended_atom, method,
+						attach_line({args = args_ast})}
+					extended_rest = sub_rest
+					walked = true
+					goto continue_amp_stmt_chain
+				end
+
+				local a_name, a_rest =
+					extended_rest:match("^%.([%w_]+%??)(.*)$")
+
+				if a_name then
+					extended_atom = attach_line(dot_atom(extended_atom, a_name))
+					extended_rest = a_rest
+					walked = true
+					goto continue_amp_stmt_chain
+				end
+
+				break
+
+				::continue_amp_stmt_chain::
+			end
+
+			if walked then
+				callable_atom = extended_atom
+				amp_rest = extended_rest
 			end
 		end
 
@@ -2010,11 +2368,7 @@ local function transpile_statement(stmt)
 		local recv_expr = (mc_sig == "$") and {var = mc_recv} or {sys = mc_recv}
 		local envelope = build_call_envelope(trim(mc_paren:sub(2, -2)), mc_method, true)
 
-		if envelope then
-			return {recv_expr, mc_method, envelope}
-		end
-
-		return {recv_expr, mc_method}
+		return {attach_line(dot_atom(recv_expr, mc_method, envelope))}
 	end
 
 	-- Object-as-method call, parens form: recv.$callable_var(args). Method
@@ -2026,11 +2380,8 @@ local function transpile_statement(stmt)
 		local recv_expr = (sv_sig == "$") and {var = sv_recv} or {sys = sv_recv}
 		local envelope = build_call_envelope(trim(sv_paren:sub(2, -2)), sv_var, true)
 
-		if envelope then
-			return {recv_expr, {var = sv_var}, envelope}
-		end
-
-		return {recv_expr, {var = sv_var}}
+		return {attach_line(dot_atom(recv_expr,
+			attach_line({var = sv_var}), envelope))}
 	end
 
 	local mc2_sig, mc2_recv, mc2_method, mc2_tail = stmt:match(
@@ -2040,11 +2391,7 @@ local function transpile_statement(stmt)
 		local recv_expr = (mc2_sig == "$") and {var = mc2_recv} or {sys = mc2_recv}
 		local envelope = build_call_envelope(trim(mc2_tail), mc2_method, false)
 
-		if envelope then
-			return {recv_expr, mc2_method, envelope}
-		end
-
-		return {recv_expr, mc2_method}
+		return {attach_line(dot_atom(recv_expr, mc2_method, envelope))}
 	end
 
 	-- Object-as-method call, paren-less form: recv.$callable_var arg1, arg2.
@@ -2055,17 +2402,16 @@ local function transpile_statement(stmt)
 		local recv_expr = (sv2_sig == "$") and {var = sv2_recv} or {sys = sv2_recv}
 		local envelope = build_call_envelope(trim(sv2_tail), sv2_var, false)
 
-		if envelope then
-			return {recv_expr, {var = sv2_var}, envelope}
-		end
-
-		return {recv_expr, {var = sv2_var}}
+		return {attach_line(dot_atom(recv_expr,
+			attach_line({var = sv2_var}), envelope))}
 	end
 
 	-- Chained attribute access / bare method access as statement:
-	-- recv(.name)+ with no args, no parens, no assignment. Handles single-segment
-	-- ($obj.name) and multi-segment ($obj.a.b.c). Also allows $$foo.value as a
-	-- statement (a chain rooted at a varobj receiver).
+	-- recv(.name)+ with no args, no parens, no assignment. Handles
+	-- single-segment ($obj.name) and multi-segment ($obj.a.b.c). Also
+	-- allows $$foo.value as a statement (a chain rooted at a varobj
+	-- receiver). Emits a nested `.` binop-atom chain wrapped in a
+	-- statement row.
 	do
 		local cba_recv, cba_after = consume_receiver(stmt)
 
@@ -2076,10 +2422,14 @@ local function transpile_statement(stmt)
 				local chain = cba_recv
 
 				for _, name in ipairs(cba_segments) do
-					chain = {chain, name}
+					chain = attach_line(dot_atom(chain, name))
 				end
 
-				return chain
+				if chain == cba_recv then
+					return chain
+				end
+
+				return {chain}
 			end
 		end
 	end
@@ -2115,6 +2465,18 @@ local function transpile_statement(stmt)
 		return stmt_ast
 	end
 
+	-- Bareword setter call: `foo = 'bar'` is a BWC named `foo=` with one arg.
+	-- Symmetric with `.name = X` becoming a `.name=` method call. What the DSL
+	-- does with it (attribute set, config binding, etc.) is a runtime concern;
+	-- the parser just records the BWC. `==` in the tail does NOT match (that's
+	-- the equality operator).
+	local bwc_set_name, bwc_set_rhs = stmt:match("^([%a_][%w_]*)%s*=%s*([^=].*)$")
+
+	if bwc_set_name and not RESERVED_FOR_BWC_EXPR[bwc_set_name] then
+		local rhs_atom = parse_expression(trim(bwc_set_rhs))
+		return {attach_line({bwc = bwc_set_name .. "="}), rhs_atom}
+	end
+
 	local bwc_stmt_name, bwc_stmt_tail = stmt:match("^([%w_]+)%s+(.+)$")
 
 	if bwc_stmt_name and bwc_stmt_tail and not bwc_stmt_tail:match("^=[^=]") then
@@ -2146,8 +2508,26 @@ local function transpile_statement(stmt)
 	-- envelope), `.name` (bare attribute), `[key]` (subscript). Leading
 	-- whitespace between segments is trimmed, so multi-line chains
 	-- (`.gup()` on a fresh line) work the same as single-line.
+	--
+	-- Bareword-then-chain (`foo.bar`, `foo['k']`, ...) also enters here: `foo`
+	-- is a bwc atom (a DSL may resolve it at runtime); the chain segments then
+	-- act on the returned value. Only kicks in when the tail actually starts a
+	-- chain — bare `foo` alone stays a plain bwc call handled above.
 	do
 		local rt_recv, rt_after = consume_receiver(stmt)
+
+		if not rt_recv then
+			local bw_name, bw_rest = stmt:match("^([%a_][%w_]*)(.*)$")
+
+			if bw_name and not RESERVED_FOR_BWC_EXPR[bw_name] then
+				local first = bw_rest:sub(1, 1)
+
+				if first == "." or first == "[" then
+					rt_recv = attach_line({bwc = bw_name})
+					rt_after = bw_rest
+				end
+			end
+		end
 
 		if rt_recv then
 			local current = rt_recv
@@ -2155,7 +2535,133 @@ local function transpile_statement(stmt)
 			local parsed_ok = true
 
 			while tail ~= "" do
-				-- Method call: `.name(args)` — envelope carries kwargs / splats.
+				-- Method-position amp-call: `.&NAME(inner_args) [outer_args?]`.
+				-- The amp-call row becomes `right:` of the dot binop; any args
+				-- after become the outer dot's `args:` — parens form
+				-- `.&NAME(inner)(outer)` or paren-less `.&NAME(inner) outer`.
+				local dot_amp_name, dot_amp_paren, dot_amp_rest =
+					tail:match("^%.&([%a_][%w_]*)%s*(%b())(.*)$")
+
+				if dot_amp_name then
+					local amp_row = {attach_line({amp = dot_amp_name})}
+					local inner = trim(dot_amp_paren:sub(2, -2))
+
+					if inner ~= "" then
+						local positionals, kwargs = parse_call_args(
+							inner, dot_amp_name, true)
+
+						for _, p in ipairs(positionals) do
+							table.insert(amp_row, p)
+						end
+
+						if #kwargs > 0 then
+							table.insert(amp_row, {kw = kwargs})
+						end
+					end
+
+					-- Peek for outer args after the amp-call.
+					local outer_env, outer_rest = nil, dot_amp_rest
+					local outer_trim = trim(dot_amp_rest)
+					local outer_paren, outer_paren_rest =
+						outer_trim:match("^(%b())(.*)$")
+
+					if outer_paren then
+						local outer_inner = trim(outer_paren:sub(2, -2))
+
+						if outer_inner == "" then
+							outer_env = attach_line({args = {}})
+						else
+							local positionals, kwargs = parse_call_args(
+								outer_inner, "outer", true)
+							outer_env = attach_line({args = positionals})
+
+							if #kwargs > 0 then
+								outer_env.kw = kwargs
+							end
+						end
+
+						outer_rest = outer_paren_rest
+					elseif outer_trim ~= "" and outer_trim:sub(1, 1) ~= "."
+							and outer_trim:sub(1, 1) ~= "[" then
+						-- Paren-less outer args: `.&NAME(inner) 1, 2, 3` at
+						-- statement position. pcall to fall through if the
+						-- tail isn't actually args.
+						local ok, positionals, kwargs = pcall(parse_call_args,
+							outer_trim, "outer", false)
+
+						if ok then
+							outer_env = attach_line({args = positionals})
+
+							if #kwargs > 0 then
+								outer_env.kw = kwargs
+							end
+
+							outer_rest = ""
+						end
+					end
+
+					current = attach_line(dot_atom(current, amp_row, outer_env))
+					tail = trim(outer_rest)
+					goto continue_chain
+				end
+
+				-- Method-position parenthesized expression:
+				-- `.(EXPR) [outer_args?]`. Same shape as `.&NAME(inner)` but
+				-- with an arbitrary expression as `right:`. Distinguished
+				-- from subscript (`[key]`) by matching `.(` first.
+				local dot_paren_expr, dot_paren_rest =
+					tail:match("^%.(%b())(.*)$")
+
+				if dot_paren_expr then
+					local inner = trim(dot_paren_expr:sub(2, -2))
+
+					if inner ~= "" then
+						local right_expr = parse_expression(inner)
+						local outer_env, outer_rest = nil, dot_paren_rest
+						local outer_trim = trim(dot_paren_rest)
+						local outer_paren, outer_paren_rest =
+							outer_trim:match("^(%b())(.*)$")
+
+						if outer_paren then
+							local outer_inner = trim(outer_paren:sub(2, -2))
+
+							if outer_inner == "" then
+								outer_env = attach_line({args = {}})
+							else
+								local positionals, kwargs = parse_call_args(
+									outer_inner, "outer", true)
+								outer_env = attach_line({args = positionals})
+
+								if #kwargs > 0 then
+									outer_env.kw = kwargs
+								end
+							end
+
+							outer_rest = outer_paren_rest
+						elseif outer_trim ~= "" and outer_trim:sub(1, 1) ~= "."
+								and outer_trim:sub(1, 1) ~= "[" then
+							local ok, positionals, kwargs = pcall(parse_call_args,
+								outer_trim, "outer", false)
+
+							if ok then
+								outer_env = attach_line({args = positionals})
+
+								if #kwargs > 0 then
+									outer_env.kw = kwargs
+								end
+
+								outer_rest = ""
+							end
+						end
+
+						current = attach_line(dot_atom(current, right_expr, outer_env))
+						tail = trim(outer_rest)
+						goto continue_chain
+					end
+				end
+
+				-- Method call: `.name(args)` — envelope carries kwargs /
+				-- splats. Emits a `.` binop atom.
 				local m_name, m_paren, m_rest =
 					tail:match("^%.([%w_]+%??)%s*(%b())(.*)$")
 
@@ -2163,19 +2669,43 @@ local function transpile_statement(stmt)
 					local envelope = build_call_envelope(
 						trim(m_paren:sub(2, -2)), m_name, true)
 
-					if envelope then
-						current = {current, m_name, envelope}
-					else
-						current = {current, m_name}
-					end
-
+					current = attach_line(dot_atom(current, m_name, envelope))
 					tail = trim(m_rest)
 					goto continue_chain
 				end
 
+				-- Method call with quoted-string method name: `.'name'(args)`
+				-- or `."name"(args)`. `right` is a `{v: NAME}` value atom.
+				-- Bareword-after-dot and quoted-string-after-dot normalize
+				-- to the same shape.
+				local qm_open, qm_body, qm_close, qm_paren, qm_rest =
+					tail:match("^%.(['\"])(.-)(['\"])%s*(%b())(.*)$")
+
+				if qm_open and qm_open == qm_close then
+					local envelope = build_call_envelope(
+						trim(qm_paren:sub(2, -2)), qm_body, true)
+					local right_atom = attach_line({v = qm_body})
+
+					current = attach_line(dot_atom(current, right_atom, envelope))
+					tail = trim(qm_rest)
+					goto continue_chain
+				end
+
+				-- Bare quoted-string method access: `.'name'` (no parens).
+				local qb_open, qb_body, qb_close, qb_rest =
+					tail:match("^%.(['\"])(.-)(['\"])(.*)$")
+
+				if qb_open and qb_open == qb_close then
+					local right_atom = attach_line({v = qb_body})
+
+					current = attach_line(dot_atom(current, right_atom))
+					tail = trim(qb_rest)
+					goto continue_chain
+				end
+
 				-- Subscript: `[key]` — positional-only (data-access shape,
-				-- not a call). Same treatment as the existing subscript-set
-				-- variants.
+				-- not a call). Kept in row form because the source doesn't
+				-- use dot syntax.
 				local sub_b, sub_rest = tail:match("^(%b[])(.*)$")
 
 				if sub_b then
@@ -2201,7 +2731,7 @@ local function transpile_statement(stmt)
 				local a_name, a_rest = tail:match("^%.([%w_]+%??)(.*)$")
 
 				if a_name then
-					current = {current, a_name}
+					current = attach_line(dot_atom(current, a_name))
 					tail = trim(a_rest)
 					goto continue_chain
 				end
@@ -2217,6 +2747,12 @@ local function transpile_statement(stmt)
 			if parsed_ok then
 				if current == rt_recv then
 					return {rt_recv}
+				end
+
+				-- The chain became a `.` binop atom (or a row-form
+				-- subscript). If it's an atom, wrap in a statement row.
+				if type(current) == "table" and current[1] == nil then
+					return {current}
 				end
 
 				return current

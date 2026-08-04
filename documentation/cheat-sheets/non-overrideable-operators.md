@@ -20,11 +20,29 @@ All operators NOT on this list are method-ops (`+`, `-`, `*`, `/`, `%`, `**`, `=
 
 The evaluate-only-what's-needed operators. A method call can't be short-circuit because its args evaluate before dispatch.
 
+`&&` and `||` are **value-preserving**: the return value is the actual left or right operand that decided the result, not a coerced `true` / `false`. That's what makes idioms like `$user && $user.name || 'anonymous'` work — the whole expression yields the user's name if the user exists, otherwise the string `'anonymous'`.
+
 | Operator | Alias | Purpose |
 |---|---|---|
-| <code>&#124;&#124;</code> | `or` | Logical OR. Evaluates left; if truthy, returns it without evaluating right. |
-| `&&` | `and` | Logical AND. Evaluates left; if falsy, returns it without evaluating right. |
-| `!` | `not` | Logical NOT (unary). Returns `false` for truthy input, `true` for falsy. |
+| <code>&#124;&#124;</code> | `or` | Logical OR. Evaluates left; if truthy, returns it and does NOT evaluate right. If left is falsy, evaluates right and returns it (whatever its truthiness). |
+| `&&` | `and` | Logical AND. Evaluates left; if falsy, returns it and does NOT evaluate right. If left is truthy, evaluates right and returns it (whatever its truthiness). |
+| `!` | `not` | Logical NOT (unary). Returns `false` for truthy input, `true` for falsy. Coerces to boolean; the only op in this section that does. |
+
+Concrete cases for `$foo && $bar`:
+
+| `$foo` | `$bar` | Result |
+|---|---|---|
+| truthy | truthy | `$bar` |
+| truthy | falsy | `$bar` (still — `&&` returns the right operand once it evaluates it) |
+| falsy | (not evaluated) | `$foo` |
+
+And for `$foo || $bar`:
+
+| `$foo` | `$bar` | Result |
+|---|---|---|
+| truthy | (not evaluated) | `$foo` |
+| falsy | truthy | `$bar` |
+| falsy | falsy | `$bar` |
 
 Falsy values in Caspian are strictly `false` and `null`. Everything else is truthy. See [built-in-classes/primitives/boolean](https://puck.uno/requirements/built-in-classes/primitives/boolean).
 
