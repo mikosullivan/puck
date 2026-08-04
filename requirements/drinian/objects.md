@@ -4,7 +4,7 @@
 {"vibecode": {
 	"doc": "requirements_drinian_objects",
 	"role": "spec for the objects hash inside Drinian — the top-level table that holds every live object's record, keyed by object ID from the global sequencer; complements built-in-classes/object/structure (which spec's what an object IS from the language surface) by describing how that structure is REPRESENTED inside the Drinian hash",
-	"status": "draft — top-level shape, per-object fields (role / src / bucket / stack), the platter-keyed stack encoding used by the drinian examples, the sequence-counter ID scheme, class / variable / hash_element records, and object lifecycle. Several material shape disagreements with built-in-classes/object/structure/ are flagged inline as SPEC CONFLICTs — Miko decides which side of each wins",
+	"status": "draft — top-level shape, per-object fields (role / src / bucket / stack), the array-shape stack encoding, the sequence-counter ID scheme (with UUIDs for nested-object platters), class / variable / hash_element records, and object lifecycle. The three big shape questions (stack encoding, platter IDs, class-field value) are settled per Miko 2026-08-04; see Settled since first draft. Remaining open items are smaller (primitive-slot location, src on identity objects, stale on_close cross-ref)",
 	"audience": "Caspian engine implementers building the object runtime and GC; tooling authors (inspectors, debuggers, snapshot readers) consuming Drinian snapshots"
 }}
 ~~~
@@ -13,7 +13,6 @@
 
 This page is the Drinian-internal companion to [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure). That page describes what an object IS from the language's perspective (the bucket / stack / shadow / platter / nested-object model developers and class authors reason about). This page describes how that structure is **represented** inside the Drinian hash — the field names, the ID scheme, and the discipline the engine uses to keep both hashes in sync as the program runs.
 
-<!-- SPEC CONFLICT (`class` field shape only — the other two shape questions this section previously flagged are now settled): `class` on a platter is a string identifier in the drinian examples, a full class-object hash inline in requirements/built-in-classes/object/structure/index.md § class, and an object-ID reference through the normal reference mechanism per drinian/index.md § Classes are in Drinian. Each of the three is a directly-opposite shape for the same field. Flagged in detail at the [class objects](#class-objects) section below. Needs Miko decision. -->
 
 ## Top-level shape
 
@@ -191,31 +190,27 @@ Per [drinian § Classes are in Drinian](https://puck.uno/requirements/drinian/#c
 
 That means every class has an entry in `objects` keyed by its object ID, with the same per-object fields (`role`, `bucket`, `stack`) as every other entry. The class's methods (the CaspM AST for each method body) live inside that record — see [drinian § The AST lives in Drinian](https://puck.uno/requirements/drinian/#the-ast-lives-in-drinian).
 
-**But the drinian examples don't yet show a class-object entry.** They show class references at the point of use:
+### The value of a platter's `class` field IS the class object
 
-~~~json
-"stack": [
-	{"class": "core:string"}
-]
-~~~
+Not an ID, not a hash, not a string. The **actual class object** — the same one every instance of that class shares. All three of the notations that appear across the specs are just different ways to *write down* that in-memory pointer in a documentation format where you can't literally embed a running object:
 
-The `"core:string"` value here is a **string identifier**, not an object ID and not an inline class-object hash.
+| Notation | Where it's used | What it means |
+|---|---|---|
+| `"class": "core:string"` | Drinian examples (mid-execution, references, this page) | Shorthand label. Not a string primitive; not an ID; not a lookup key — a stand-in for "the actual `core:string` class object" that keeps the JSON readable. |
+| `"class": <full class-object hash>` | `built-in-classes/object/structure` § class | The canonical serialized form. When a snapshot writes the platter out, this is what lands on disk. |
+| `"class": <object-ID reference>` | `drinian/index.md` § Classes are in Drinian describes it in reference terms | The in-memory shape. The platter holds a reference to the class object living elsewhere in `objects`. |
 
-<!-- SPEC CONFLICT: three different specs for what the `class` field on a platter holds:
+All three describe the same thing at different levels. The Drinian examples use the short label form because writing every class-object hash inline would make the examples unreadable, but readers should understand that when they see `"class": "core:string"`, the platter holds the class object itself (not a string; not something waiting to be resolved).
 
-1. drinian/index.md § Classes are in Drinian: "Class references inside Drinian (e.g., `receiver_type` on a `method_call` frame, or `class_ref` on a value) point at the class object through the normal reference mechanism — same shape as any other object reference." → so class references should be object IDs routed through the references hash.
+### Convention in the examples on this page and under `drinian/examples/`
 
-2. built-in-classes/object/structure/index.md § class: "when present, `class` is always a class object — a runtime instance with its own methods, fields, and identity. There is no other form: not a URL, not a string identifier, not an inline hash-of-fields waiting to be resolved into a class. If the platter carries `class`, that value is a full class object, serialized inline in the JSON." → so class references should be full inline class-object hashes.
+Class values are written as short identifiers (`"core:string"`, `"core:array"`, `"core:hash"`, `"core:hash_element"`, `"core:variable"`, `"core:number"`, and so on). Treat the identifier as an alias for the class object it names; the object itself lives elsewhere in `objects` — the class entry that identifier resolves to has the same per-object shape as any other entry (its `bucket` carries the class's own state, its `stack` carries whatever platters the class itself sits on, and its `bucket` also holds the CaspM AST for each method body).
 
-3. drinian/examples/mid-execution.md and drinian/examples/references.md: `"class": "core:string"` — a bare string identifier.
+The [snapshot serialization](#snapshot-serialization) rule — every object serialized through its class's `to_json` — applies to class objects too. So a snapshot that reaches a class through some platter's `class` field serializes the class inline the first time it's seen; subsequent uses in that same snapshot reuse the earlier entry by reference. Details of that serialization discipline are the serializer's business, not this spec's.
 
-All three are direct-opposite shapes for the same field. Needs Miko decision: which of the three wins, and does the answer differ between Drinian-internal representation and serialized (wire / snapshot / Puck-message) representation? Consequences for this spec: if #1 wins, class references route through `references` and every class has an entry in `objects` reachable via that route. If #2 wins, class references embed the whole class inline in each use, which multiplies the class-object hash across every platter that uses it. If #3 wins, dispatch resolves the string identifier through some registry not yet spec'd — and drinian/index.md § Classes are in Drinian needs a carve-out (or reversal) for that registry to exist somewhere other than in the objects hash. -->
+### Stale cross-reference
 
-Also related — the [on_close example](https://puck.uno/requirements/drinian/examples/on-close) still refers to a section titled "Classes are NOT in Drinian" (the archive's old wording) that no longer exists in the current spec. The current section title is "Classes are in Drinian" (positive), so that example's cross-reference is stale and its prose ("Built-in classes are loaded into engine-private state during bootstrap") disagrees with the current spec's position.
-
-<!-- SPEC CONFLICT: examples/on-close.md links to drinian/#classes-are-not-in-drinian and asserts classes live in engine-private state, not Drinian. Current drinian/index.md § Classes are in Drinian says the opposite. The example is stale relative to the current spec. Needs Miko decision — likely just an example rewrite once the class-representation question above is settled. -->
-
-Until the class-representation question is settled, this spec describes classes as **live entries in `objects` in principle** (per drinian/index.md), and notes that the examples currently render class references as string identifiers for readability rather than as full object IDs.
+The [on_close example](https://puck.uno/requirements/drinian/examples/on-close) still links to a section titled "Classes are NOT in Drinian" — the archive's old wording that no longer matches the current spec. That example's prose also asserts "Built-in classes are loaded into engine-private state during bootstrap," which disagrees with `drinian/index.md § Classes are in Drinian`. The example needs a rewrite pass to catch up. Filed at [Open questions](#open-questions).
 
 ## Variable objects
 
@@ -324,18 +319,19 @@ V1.0 does not ship snapshot serialization; the objects hash exists in memory onl
 
 - **Stack encoding: array.** Objects store platters in an ordered array, not a hash. Position 0 is the top; dispatch walks top-to-bottom. Matches [built-in-classes/object/structure § Stack](https://puck.uno/requirements/built-in-classes/object/structure#stack).
 - **Platter IDs: UUIDs, but only for nested-object platters.** Regular class platters are anonymous positional entries with no ID. The UUID discipline exists specifically to link a nested-object platter to its matching bucket entry ([built-in-classes/object/structure § Nested objects](https://puck.uno/requirements/built-in-classes/object/structure#nested-objects)); it does not apply to stack platters generally.
+- **`class` field on a platter: the actual class object.** Not a string, not an ID, not a hash — the class object itself. The three notations that appear across the specs (short identifier like `"core:string"`, full inline class-object hash, object-ID reference) are all different ways to write down the same in-memory pointer for a documentation format that can't literally embed a running object. See [Class objects](#class-objects) above.
 
-Both decisions from Miko, 2026-08-04. The examples under [drinian/examples/](https://puck.uno/requirements/drinian/examples/) that predate this decision still show the older hash-shape stack — they need a sweep to catch up.
+All three decisions from Miko, 2026-08-04.
 
 ## Open questions
-
-- **The `class`-field-shape SPEC CONFLICT called out above.** String-vs-object-ID-vs-inline-object is the one material shape question this spec cannot answer without deciding which existing spec wins.
 
 - **Where the primitive value actually lives.** [built-in-classes/object/structure § Primitive field](https://puck.uno/requirements/built-in-classes/object/structure#primitive-field) says the primitive field is "engine-managed" and "not exposed at the Caspian level," living "alongside the bucket, not inside it." The drinian examples put it inside the bucket under the key `"value"`. If the Drinian representation genuinely stores the primitive in the bucket, the no-reserved-keys guarantee for primitive-carrying classes needs revision. If the examples are using shorthand for a slot the engine stores outside the visible bucket, the shorthand should be spec'd out and the examples rewritten to show the real shape.
 
 - **`src` on variable and hash-element objects.** The drinian examples currently show these without `src`. That may be because they're engine-managed identity objects born through the reference machinery rather than through a Caspian-source expression, in which case omission is correct. Or it may just be an oversight in the current examples. Needs a settled rule (probably: variable objects born from `$foo = X` on line N carry `src: ["file", N]`; anonymous engine-created reference objects do not).
 
-- **Whether classes have `objects` entries in practice.** Per drinian/index.md § Classes are in Drinian they must. Per the examples they don't yet appear. The class-representation SPEC CONFLICT above resolves this.
+- **The examples don't yet show class-object entries.** Per [drinian § Classes are in Drinian](https://puck.uno/requirements/drinian/#classes-are-in-drinian) every class has an `objects` entry; per the [class-field decision](#class-objects) above, the `"core:string"` label on a platter is shorthand for the actual class object. But the examples elide the class entries themselves — every `"core:string"` etc. in the current examples "resolves" to a class entry that doesn't appear in the JSON alongside the regular objects. Rewriting the examples to include even one class entry inline would make the shape concrete, at the cost of blowing up the example's size. Deferred until Miko wants the example to teach class-object structure explicitly.
+
+- **The stale on_close.md cross-reference.** `examples/on-close.md` still links to the archive's "Classes are NOT in Drinian" section and asserts classes live in engine-private state. Neither matches the current spec. Needs a rewrite pass.
 
 - **Object equality across snapshots.** Object IDs are not stable across runs (per [references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids)). If a snapshot survives across runs (post-V1.0 revive), the ID scheme survives with it because it's part of the snapshot; but two independent snapshots from different processes have colliding IDs. Not solved at the engine level.
 
@@ -345,5 +341,5 @@ Both decisions from Miko, 2026-08-04. The examples under [drinian/examples/](htt
 - [drinian/references](https://puck.uno/requirements/drinian/references) — the references hash that points into `objects` and grounds GC.
 - [drinian/examples/mid-execution](https://puck.uno/requirements/drinian/examples/mid-execution) — the fullest worked example of the `objects` hash in use.
 - [drinian/examples/references](https://puck.uno/requirements/drinian/examples/references) — smaller worked example focusing on how `references` and `objects` interlock.
-- [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure) — the language-facing spec for what an object IS (bucket / stack / platter model). This page's Drinian-internal shape descends from that spec; the SPEC CONFLICTs above are where the two have drifted apart.
+- [built-in-classes/object/structure](https://puck.uno/requirements/built-in-classes/object/structure) — the language-facing spec for what an object IS (bucket / stack / platter model). This page's Drinian-internal shape aligns with that spec after the 2026-08-04 decisions on stack encoding, platter IDs, and the class-field value; the one remaining shape disagreement is the primitive-slot location, still flagged inline.
 - [built-in-classes/variable-object](https://puck.uno/requirements/built-in-classes/variable-object/) — the Caspian-level spec for the variable class whose instances appear in `objects` as GC roots.
