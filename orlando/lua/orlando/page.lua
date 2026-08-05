@@ -787,13 +787,19 @@ local function chip_group(chips)
     return ' <span class="nowrap">' .. chips .. '</span>'
 end
 
-local function inject_issue_links(body_html, md_path, client_ip, original_heading_ids)
+local function inject_issue_links(body_html, md_path, client_ip, original_heading_ids, opts)
     -- Both Quick add and Edit are gated on the same IP allowlist —
     -- Quick add was previously open to anyone, but bulk-spam from
     -- public IPs (e.g., the 122 "katana" issues) prompted closing it.
     -- See config.ip_can_edit and ~/.orlando/config.json.
+    --
+    -- opts.no_edit = true suppresses the Edit chip + form on every
+    -- heading. Used for .lua pages where Miko doesn't edit source
+    -- through the browser.
     local privileged = config.ip_can_edit(client_ip)
     original_heading_ids = original_heading_ids or {}
+    opts = opts or {}
+    local include_edit = privileged and not opts.no_edit
 
     -- Page H1: github-page link, issue link, (Quick add if allowed),
     -- (Edit if allowed) — then checkbox + form blocks after.
@@ -804,17 +810,19 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
             .. " " .. issue_link(md_path)
 
         if privileged then
-            chips = chips
-                .. " " .. quick_add_label(qa_id)
-                .. " " .. edit_label(edit_id)
+            chips = chips .. " " .. quick_add_label(qa_id)
+        end
+        if include_edit then
+            chips = chips .. " " .. edit_label(edit_id)
         end
 
         local tail = open .. inner .. chip_group(chips) .. close
 
         if privileged then
-            tail = tail
-                .. quick_add_block(md_path, nil, nil, qa_id)
-                .. edit_block(md_path, nil, nil, edit_id)
+            tail = tail .. quick_add_block(md_path, nil, nil, qa_id)
+        end
+        if include_edit then
+            tail = tail .. edit_block(md_path, nil, nil, edit_id)
         end
 
         return tail
@@ -850,17 +858,19 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
 
             local chips = issue_link(md_path, text, id)
             if privileged then
-                chips = chips
-                    .. " " .. quick_add_label(qa_id)
-                    .. " " .. edit_label(edit_id)
+                chips = chips .. " " .. quick_add_label(qa_id)
+            end
+            if include_edit then
+                chips = chips .. " " .. edit_label(edit_id)
             end
 
             local tail = open .. inner .. chip_group(chips) .. close
 
             if privileged then
-                tail = tail
-                    .. quick_add_block(md_path, text, id, qa_id)
-                    .. edit_block(md_path, text, id, edit_id)
+                tail = tail .. quick_add_block(md_path, text, id, qa_id)
+            end
+            if include_edit then
+                tail = tail .. edit_block(md_path, text, id, edit_id)
             end
 
             tail = tail .. render_section_issues_panel(md_path, id, client_ip)
@@ -1607,6 +1617,76 @@ function M.render_request(ctx)
         -- load events.
         b:tag("iframe", function(f)
             f:attr("name",   "edit-target")
+            f:attr("class",  "quick-add-iframe")
+            f:attr("hidden", "")
+            f:text("")
+        end)
+        b:tag("hr", function(_) end)
+        b:tag("span", function(s)
+            s:attr("class", "about")
+            s:text("© 2026 Puck.uno")
+        end)
+    end)
+
+    return "<!DOCTYPE html>\n" .. html:render()
+end
+
+--[[ {
+    "in":  {"ctx": "table { path = string (fs path to .lua file), title = string?, client_ip = string? }"},
+    "out": "string (full HTML page, ready to send over HTTP)",
+    "note": "Renders a .lua source file with vibecode / markdown / code chunks interleaved. See orlando.lua_page for the chunking rules. Uses the same page shell as render_request (sidebar, breadcrumb, footer)."
+} ]]
+function M.render_lua_annotated(ctx)
+    local f, err = io.open(ctx.path, "r")
+    if not f then
+        error("orlando.page: cannot open " .. tostring(ctx.path) .. ": " .. tostring(err))
+    end
+    local source = f:read("*a")
+    f:close()
+
+    local lua_page = require("orlando.lua_page")
+    local body = lua_page.render_body(source)
+
+    -- Apply the same issue-chip pipeline used for markdown pages.
+    -- ensure_heading_ids adds id="..." to every h2-h6; every heading id
+    -- present after that step is "original" (author-written markdown),
+    -- so inject_issue_links treats them all as issue-chip-eligible.
+    body = ensure_heading_ids(body)
+    local original_heading_ids = {}
+    for id in body:gmatch('<h[2-6][^>]*id="([^"]+)"') do
+        original_heading_ids[id] = true
+    end
+    body = inject_issues_panel(body, ctx.path, ctx.client_ip)
+    body = inject_issue_links(body, ctx.path, ctx.client_ip, original_heading_ids, {no_edit = true})
+
+    local html = quick_builder.new("html")
+    html:attr("lang", "en")
+    add_head(html, ctx.title)
+    html:tag("body", function(b)
+        b:tag("div", function(layout)
+            layout:attr("class", "layout")
+            layout:tag("button", function(btn)
+                btn:attr("class",      "sidebar-show-btn")
+                btn:attr("type",       "button")
+                btn:attr("aria-label", "Show sidebar")
+                btn:text("»")
+            end)
+            layout:tag("nav", function(n)
+                n:attr("class", "sidebar")
+                add_sidebar(n, ctx.path)
+            end)
+            layout:tag("main", function(m)
+                m:attr("class", "content")
+                add_breadcrumb(m, ctx.path)
+                m:raw(body)
+            end)
+        end)
+        -- Hidden iframe target for Quick-add form submissions. Without
+        -- this, the browser navigates to /api/quick-add-issue's response
+        -- page instead of updating the form's status area in place.
+        -- No edit-target iframe: Lua pages don't render Edit forms.
+        b:tag("iframe", function(f)
+            f:attr("name",   "qa-target")
             f:attr("class",  "quick-add-iframe")
             f:attr("hidden", "")
             f:text("")

@@ -3,7 +3,7 @@
   "module": "orlando.route",
   "role": "Resolve an incoming URL path to either a markdown file (to be rendered), a directory listing (for dirs without an index.md), a static file (to be served verbatim), or a 301 redirect target. The entire repo is the doc root — any URL path /foo/bar maps to <repo-root>/foo/bar (with .md rendering, dir-index / dir-listing conventions, and static fallback). No caching, no I/O retries; one lookup per call.",
   "exports": {
-    "resolve": "url_path -> { kind = 'markdown'|'dir_listing'|'static'|'redirect'|'not_found', path? = '...', location? = '...' }"
+    "resolve": "url_path -> { kind = 'markdown'|'dir_listing'|'static'|'lua_annotated'|'redirect'|'not_found', path? = '...', location? = '...' }"
   },
   "rules": {
     "site_root":     "GET / serves orlando/static/index.html — a hand-editable landing page",
@@ -132,6 +132,13 @@ function M.resolve(url_path)
 
     -- Repo-root serving. `rel` is the URL path with slashes trimmed and IS
     -- the filesystem path from the repo root.
+
+    -- .lua files get the vibecode / markdown / code annotator rather
+    -- than raw static. Applies to every .lua in the repo — files with
+    -- no annotations still render as pretty syntax-highlighted Lua.
+    if rel:match("%.lua$") and file_exists(rel) and not dir_exists(rel) then
+        return { kind = "lua_annotated", path = rel }
+    end
 
     -- If the literal URL points at a real non-markdown file, serve as static
     -- BEFORE the .html strip and markdown lookups. Without this, foo.html →

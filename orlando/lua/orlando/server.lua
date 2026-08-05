@@ -225,6 +225,17 @@ local function respond(client, request_line)
         return
     end
 
+    if r.kind == "lua_annotated" then
+        local title = r.path:match("([^/]+)$") or r.path
+        local html = page.render_lua_annotated({
+            path      = r.path,
+            title     = title,
+            client_ip = client_ip,
+        })
+        client:send(build_response("200 OK", html, content_type.for_ext("html")))
+        return
+    end
+
     -- not_found
     client:send(build_response("404 Not Found", NOT_FOUND_BODY, content_type.for_ext("html")))
 end

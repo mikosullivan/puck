@@ -13,7 +13,7 @@
 
 DSLs (domain-specific languages) are a **first-class developer feature** in Caspian. Any function that wants to run a passed block under a custom vocabulary builds a caller for that block, wires bare-word commands on `.dsl`, and invokes `.call`. Library authors use this to give their callers small focused vocabularies — a transaction's `commit` / `rollback`, a test runner's `pass` / `fail`, a builder's `step` / `cache`, a config block's `host` / `port` getter/setter pairs.
 
-Caspian itself uses the same machinery for almost every construct that **looks** like syntax. Words like `field`, `inherits`, `return`, `break` are not parser keywords — they're bare-word commands resolved through a caller's DSL at runtime, exactly the same way a library author's DSL works. The parser only handles what genuinely requires structural parsing. That dogfooding is the proof the mechanism is good enough for any developer to reach for.
+Caspian itself uses the same machinery for almost every construct that **looks** like syntax. Words like `field`, `inherits`, `return` are not parser keywords — they're bare-word commands resolved through a caller's DSL at runtime, exactly the same way a library author's DSL works. The parser only handles what genuinely requires structural parsing. That dogfooding is the proof the mechanism is good enough for any developer to reach for.
 
 The caller-object surface itself — construction, param setting, `.call`, reuse semantics — is spec'd on [caller](tag:caller). This page owns everything DSL-specific.
 
@@ -132,10 +132,8 @@ Canonical members:
 | `yield` | `%call.blocks[0].call` |
 | `raise` | the raise primitive |
 | `catch` / `heed` | the catch primitive |
-| `break` | `$loop.break` (registered by the enclosing loop) |
-| `next` / `continue` | `$loop.next` (registered by the enclosing loop) |
 
-`break` and `next` are loop-scoped — each loop type registers them on its caller's DSL before invoking the body. Outside any loop they have no binding and raise.
+`break` and `next` are **deferred** — see [loops § Deliberately out of scope](https://www.puck.uno/requirements/syntax/loops#deliberately-out-of-scope). The dispatch mechanism for loop-control bwcs is being figured out in [ideas/nested-dsls](https://www.puck.uno/ideas/nested-dsls); when it lands, these names will appear in this table with whatever routing the design settles on.
 
 Specific scopes can override. A test runner can rebind `return` to "add to test report"; a transaction block can rebind `raise` to "rollback and rethrow." The override applies only inside the directly running block.
 
@@ -190,15 +188,9 @@ The implication: there's one shared DSL implementation — the class-body DSL �
 
 ### Loops are DSL bodies
 
-`each`, `while`, the eventual `times`, `repeat`, and any user-defined iterator are functions that take a block and wire loop-control bwcs on the caller's DSL before invoking it:
+`each`, `while`, the eventual `times`, `repeat`, and any user-defined iterator are functions that take a block and invoke it once per iteration.
 
-| Bwc | Routes to |
-|---|---|
-| `break` | `$loop.break` |
-| `next` / `continue` | `$loop.next` |
-| `before` / `between` / `after` / `noloop` | `$loop` (structural lifecycle hooks) |
-
-Custom loops add their own bwcs. A test runner registers `pass` / `fail` / `skip`; a transaction registers `commit` / `rollback`; a builder registers `step` / `cache`. The structural lifecycle hooks (`before` / `between` / `after`) are themselves bwcs the loop's DSL provides — not parser keywords.
+Loop-control bwcs (`break`, `next`, and any structural lifecycle hooks) are **deferred** — see [loops § Deliberately out of scope](https://www.puck.uno/requirements/syntax/loops#deliberately-out-of-scope). Custom loop-shaped constructs can still wire their own bwcs on the caller's DSL — a test runner registers `pass` / `fail` / `skip`; a transaction registers `commit` / `rollback`; a builder registers `step` / `cache`. What's held is specifically the loop-control routing mechanism, not the general "custom construct wires its own bwcs" pattern.
 
 ## Patterns
 
@@ -267,7 +259,7 @@ Roughly the order this lands in the engine:
 1. **Caller objects.** The base caller class carries `.call`, `.dsl`, and the param-subscript surface. Each callable's `.caller` accessor returns a specialized subclass. Spec'd on [caller](tag:caller).
 2. **Resolution chain.** When a bare word is evaluated inside a block, the engine resolves it in order: reserved bwcs (tier 1, tier 2) → DSL entries from the currently active caller → scope variables. Get this right once; everything else rides on it.
 3. **Tier 3 default bindings.** `return`, `yield`, `raise`, `catch` ship as default bindings in an ambient core DSL that every scope inherits.
-4. **Loop-control wiring.** Each loop type (`each`, `while`, etc.) wires `break`, `next`, and any structural-hook bwcs on the caller for its body before invoking. The shared wiring helper is worth pulling out so loop authors don't write the same boilerplate.
+4. **Loop-control wiring.** Deferred — see [loops § Deliberately out of scope](https://www.puck.uno/requirements/syntax/loops#deliberately-out-of-scope). When the routing mechanism for `break` and `next` is figured out, each loop type will wire the appropriate bwcs on the caller for its body before invoking.
 5. **Class-body DSL.** The class definer wires `field`, `method`, `private`, `inherits`, `abstract` onto the class-builder receiver and invokes the body. `instance` reuses the same DSL — no additional bwcs; the `autorun` convention on `instance` is name-based (see [classes/instance § autorun](https://puck.uno/requirements/classes/instance#autorun)).
 6. **Refactor any V0.01 cheats.** Class-body bwcs that were parser-baked move into the DSL receiver. The construct's surface behavior is unchanged; the implementation path is what shifts.
 
@@ -278,8 +270,6 @@ Roughly the order this lands in the engine:
 - **Sugar for single-receiver DSLs.** The long-form ceremony is fine for the general case but verbose when the DSL just wires every entry to one receiver. A compact form for "DSL with N entries all pointing at receiver R" would clean up common cases. Concrete syntax TBD.
 
 - **DSL-stacking with collisions.** When a loop body opens another loop, the inner loop's DSL entries shadow the outer's for any name collision. Documented; worth a worked example with intentional collision so the semantics are concrete.
-
-- **Loop-helper extraction.** Loop authors currently re-wire `break` and `next` themselves. A shared helper (a `loop_control` class or free-standing helper function) so each loop type doesn't redo the same boilerplate would be ergonomically nice; needs design.
 
 - **Parser-refactor schedule.** Which V0.01 parser shortcuts get refactored to pure-DSL handling, and when? Class-body bwcs are the prime candidate; the answer is V0.02 or later, but a target milestone helps.
 
@@ -319,9 +309,6 @@ Roughly the order this lands in the engine:
 - **`yield` bwc default binding** — a block using `yield X` (with no override) invokes `%call.blocks[0].call X`.
 - **`raise` bwc default binding** — a block using `raise X` triggers the raise primitive.
 - **Tier 3 bwc override** — a caller setting `dsl[:return] = $recv` diverts `return` inside the block to `$recv.return`.
-- **`break` outside any loop raises** — `break` in a block with no enclosing loop has no binding and errors.
-- **`next` outside any loop raises** — same.
-- **Loop wires `break` and `next` on its caller** — inside an `each ... end` block, `break` and `next` are bound.
 - **Tier 2 rebind blocked** — attempting to set `dsl[:true] = $x` (or evaluating a block that would rebind `true`/`false`/`null`) raises.
 - **Tier 1 rebind blocked** — attempting to route `if` or `class` through DSL raises.
 
