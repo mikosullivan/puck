@@ -10,6 +10,19 @@
 
 An alternative to `ideas/fiona-as-drinian/`. Instead of routing Drinian through Fiona's generic object-store schema, model each Drinian field as a table directly. Shape the schema around Drinian's needs.
 
+## The Lua-owner contract
+
+Drinian's SQLite database is **always owned by a Lua process** (the engine) and never runs standalone. That's a load-bearing assumption throughout the design:
+
+- **Lua UDFs are always available.** The engine registers UDFs on startup; triggers use them freely. Anything that needs to reach into app logic (fire `on_close`, dispatch a Caspian method, invalidate a cache, walk custom state, check a semantic invariant) becomes a UDF the engine registers.
+- **Triggers can invoke app logic.** No need to express everything purely in SQL. GC drain callbacks, reactive propagation, cross-table cascades, semantic checks — all doable via triggers that call UDFs.
+- **UDF hops break trigger recursion chains.** SQLite caps trigger recursion at `SQLITE_MAX_TRIGGER_DEPTH` (default 1000). A meaningful propagation chain — cascade delete triggering a mark triggering further cascades — can hit the ceiling on its own. Routing a step through a UDF resets the counter: writes the UDF issues run as fresh top-level statements, not nested inside the original trigger chain. That lets us build genuinely reactive state machines without stack limits. Discipline required: UDF hops must terminate. No unbounded UDF → trigger → UDF → trigger loops. Design each hop as a clear step in a finite propagation.
+- **The DB can query the app.** UDFs can be registered as scalar or aggregate functions usable inside `select`, in trigger `when` clauses, and in `check` constraints if the semantic warrants it.
+- **Big-Process revive rebuilds the connection deterministically.** Pause = close the file. Later revive = new Lua host opens the file, re-registers the same UDF set, rebuilds any in-memory Lua-side registry (e.g., the `handle_key` → native-handle map), resumes. The database doesn't survive without the Lua owner, but the pause/revive cycle is deterministic because every host reinstalls the same UDFs by the same protocol.
+- **The database isn't portable to non-Lua contexts.** A bare `sqlite3` CLI can inspect Drinian for reads that don't hit a UDF, but anything mutating (which will always fire triggers, which will always call UDFs) needs the Lua host attached. That's the trade — SQLite storage plus Lua host is the contract, not SQLite alone.
+
+Every design choice below leans on this. If a decision seems like "how do we express X in SQL alone?", the actual answer is "we don't — the trigger calls a UDF."
+
 ## Design principles
 
 1. **Everything is an object; ID space is shared.** `objects` is the identity table for the whole runtime. Things that used to want their own top-level namespace (srcs, asts, roles, refs, primitives) become sidecars — a table keyed by `objects(id)` carrying whatever extra columns the class needs. One ID scheme, one autoincrement.

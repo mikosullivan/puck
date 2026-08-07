@@ -3,207 +3,303 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_drinian_with_sqlite_schema",
-	"role": "the SQLite schema for the Drinian-with-SQLite design. Split out from index.md so the tables can be read (and eventually run through sqlite3) without scrolling past all the surrounding design prose. Companion to ideas/drinian-with-sqlite/ — see there for the framing, design decisions, and features the schema enables.",
-	"status": "sketching 2026-08-07 — table shapes proposed; not committed"
+	"role": "Drinian's SQLite schema. `objects` table holds row shapes discriminated by a single `primitive` column — false (full object), 'h' (HashPrimitive), 'a' (ArrayPrimitive). Scalars are a variant of `primitive = false` distinguished by `st` (scalar type). HashPrimitives serving as buckets carry `bucket_for` back-pointing at their owner; ArrayPrimitives serving as stacks carry `stack_for`. Only container primitives can be parents in `relationships`. GC uses three-column scratch (needs_trace / in_trace / del).",
+	"status": "iterating 2026-08-07 — separate bucket_for / stack_for columns naming role explicitly"
 }}
 ~~~
 
-The SQLite schema for Drinian, extracted from [ideas/drinian-with-sqlite](https://www.puck.uno/ideas/drinian-with-sqlite/) for readability. Comments inline; see the companion page for the rationale, feature list, and trade-offs.
+Started 2026-08-07 from Fiona's current schema. Adapting as design decisions land.
 
-## Tables
+## Design summary
+
+Every Drinian row falls into one of these shapes, discriminated by `primitive`, `st`, `bucket_for`, and `stack_for`:
+
+| Row shape | primitive | st | sv | bucket_for | stack_for |
+|-----------|-----------|-----|-----|------------|-----------|
+| HashPrimitive (standalone / root / internal) | `'h'` | null | null | null | null |
+| HashPrimitive serving as a bucket | `'h'` | null | null | set | null |
+| ArrayPrimitive (standalone / internal) | `'a'` | null | null | null | null |
+| ArrayPrimitive serving as a stack | `'a'` | null | null | null | set |
+| Plain full object (Hash, Array, MyClass, …) | `false` | null | null | null | null |
+| StringPrimitive | `false` | `'s'` | text | null | null |
+| NumberPrimitive | `false` | `'n'` | integer/real | null | null |
+| BooleanPrimitive | `false` | `'b'` | 0/1 | null | null |
+| NullPrimitive | `false` | `'u'` | null | null | null |
+
+Rules baked into the schema:
+
+- `primitive` is NOT NULL and has no default — every insert names the kind at creation time.
+- Only container primitives (`primitive in ('h', 'a')`) can be parents in `relationships` — full objects and scalars can't have references directly; full objects reach their contents through their bucket / stack.
+- **Role-shape alignment.** A row with `bucket_for` set must be a HashPrimitive (`primitive = 'h'`); a row with `stack_for` set must be an ArrayPrimitive (`primitive = 'a'`). An array can't be a bucket; a hash can't be a stack.
+- **At most one role per row.** At most one of `bucket_for` / `stack_for` may be set on any given row. A row can't be both a bucket and a stack — enforced by `check (bucket_for is null or stack_for is null)`.
+- **At most one bucket and one stack per owner.** `bucket_for` and `stack_for` are each `UNIQUE` — no two rows can be a bucket for the same owner (or a stack for the same owner). Null-null pairs don't collide because SQLite treats null as distinct in UNIQUE.
+- Plain full objects auto-provision a bucket (HashPrimitive with `bucket_for` set) and stack (ArrayPrimitive with `stack_for` set) via an INSERT trigger.
+- Deleting a full object cascades via FK to delete its bucket + stack (`bucket_for` and `stack_for` FKs have ON DELETE CASCADE). No cleanup trigger.
+- **`objects` is effectively immutable.** All identity columns (`object_pk`, `primitive`, `st`, `sv`, `bucket_for`, `stack_for`) can never change. The only freely-mutable state is GC scratch (`needs_trace`, `in_trace`, `del`). Enforced by `objects_no_update`.
+- Scalars are single-row leaves — a StringPrimitive is one row with `primitive = false`, `st = 's'`, `sv = <text>`.
+
+## Schema
 
 ~~~sql
--- Objects. One row per live object. Includes primitives (strings,
--- numbers), reference-class instances (variables, hash_elements),
--- user-class instances, classes, roles — and srcs, asts, and everything
--- else that used to want its own ID space. Regular autoincrement
--- primary key; no shared string-counter table.
-create table objects (
-    id       integer primary key autoincrement,
-    role_pk  integer not null references objects(id),   -- owner role (itself an object)
-    src_pk   integer references objects(id),            -- src entry (itself an object; see srcs sidecar)
-    src_line integer,
-
-    -- Native-handle escape hatch. Non-null for objects that carry an
-    -- opaque host resource (file descriptor, socket, coroutine, C
-    -- userdata) that can't be represented as an SQLite scalar. The
-    -- content is a Lua-side reference key that resolves through the
-    -- engine's handle registry; the schema doesn't inspect it, just
-    -- keeps it alive alongside the object.
-    handle_key text,
-
-    -- Primitive slot. Two columns:
-    --   pr_type — null for non-primitive objects; one of
-    --             's' (string), 'n' (number), 'b' (boolean), 'u' (null)
-    --             for primitive objects.
-    --   pr_val  — the primitive value; polymorphic (SQLite typeless column).
-    -- Both fields are immutable after insert (enforced by a BEFORE UPDATE
-    -- trigger, not shown here).
-    pr_type  text check (pr_type is null or pr_type in ('s', 'n', 'b', 'u')),
-    pr_val,
-
-    -- Per-pr_type shape checks. `is` (not `in`) so null cleanly evaluates
-    -- to false — the `in` form would give NULL which SQLite's CHECK
-    -- accepts as passing, silently letting bad values through.
-    check (pr_type is null     or pr_val is not null or pr_type = 'u'),
-    check (pr_type is not 'u'  or pr_val is null),
-    check (pr_type is not 'b'  or pr_val is 0 or pr_val is 1),
-    check (pr_type is not 'n'  or typeof(pr_val) in ('integer', 'real')),
-    check (pr_type is not 's'  or typeof(pr_val) = 'text'),
-    check (pr_type is not null or pr_val is null)   -- non-primitive → pr_val must be null too
-);
-
--- Index on role_pk: "everything owned by X" — one lookup.
-create index objects_role on objects(role_pk);
-
--- Per-object bucket. Key-value hash. Values are always object IDs
--- (buckets never inline primitives — primitives get their own object
--- row via objects.pr_type + objects.pr_val).
-create table buckets (
-    object_pk       integer not null references objects(id) on delete cascade,
-    key             text    not null,
-    value_object_pk integer not null references objects(id),
-    primary key (object_pk, key)
-);
-
--- Reverse index on value_object_pk: "who holds this object in their
--- bucket?" — one lookup instead of a whole-buckets scan. Used by GC
--- and by inspector queries.
-create index buckets_value on buckets(value_object_pk);
-
--- Per-object stack. Ordered array of platters, position 0 at the top.
-create table platters (
-    object_pk   integer not null references objects(id) on delete cascade,
-    position    integer not null,          -- 0 = top of stack
-    class_pk    integer not null references objects(id),   -- the class object
-    is_shadow   integer not null default 0 check (is_shadow in (0, 1)),
-    nested_uuid text,                       -- non-null iff nested-object platter
-    warning     text,                       -- optional annotation
-    primary key (object_pk, position)
-);
-
--- Reverse index on class_pk: "all instances of class X" — one lookup.
--- Enables introspection like "how many closures are alive?" without
--- a full-table scan.
-create index platters_class on platters(class_pk);
-
--- References. Sidecar for reference-class objects (core:variable,
--- core:hash_element, ...). The row's id IS the reference-object's id;
--- target_pk points at what it currently resolves to.
+-- Drinian database design. One `objects` table holds row shapes
+-- discriminated by the `primitive` column:
+--   'h'   → HashPrimitive (hash-shaped primitive container)
+--   'a'   → ArrayPrimitive (array-shaped primitive container)
+--   false → not a primitive collection. Either a plain full object
+--           (with an auto-provisioned bucket + stack) or a scalar
+--           primitive (with a scalar type in `st` and value in `sv`).
 --
--- Three GC-scratch columns route rows through the mark-and-drain
--- collector. Normal state: all three null. See index.md § GC for the
--- state machine and drain flow.
-create table refs (
-    id          integer primary key references objects(id) on delete cascade,
-    target_pk   integer not null references objects(id),
-    needs_trace integer check (needs_trace = 1),
-    in_trace    integer check (in_trace    > 0),
-    del         integer check (del         = 1)
+-- A HashPrimitive serving as a bucket carries `bucket_for` pointing
+-- at its owner; an ArrayPrimitive serving as a stack carries
+-- `stack_for`. Standard SQL "child references parent" idiom — ON
+-- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
+-- cleanup trigger needed.
+--
+-- Only container primitives can be parents in the `relationships`
+-- table. Full objects hold their contents in their bucket + stack;
+-- scalars have no contents at all.
+
+pragma foreign_keys = on;
+
+-- Recursive triggers are on so mark triggers fire on FK
+-- cascade-deletes during the drain's bulk DELETE FROM objects. Depth
+-- stays bounded because the mark triggers' action is a plain UPDATE
+-- with no cascade.
+pragma recursive_triggers = on;
+
+-- ------------------------------------------------------------
+-- Meta table
+-- ------------------------------------------------------------
+
+create table meta (
+	key text primary key,
+	value text
 );
 
--- Reverse index on target_pk: "who references this object?" is now a
--- single-index lookup. Orphan detection becomes a set-difference query.
-create index refs_target on refs(target_pk);
+insert into meta (key, value) values ('schema', '6.0');
 
--- Partial indexes so the drain's per-state queries hit only marked
--- rows rather than the whole refs table.
-create index refs_needs_trace on refs(needs_trace) where needs_trace = 1;
-create index refs_in_trace    on refs(in_trace)    where in_trace    is not null;
-create index refs_del         on refs(del)         where del         = 1;
+-- ------------------------------------------------------------
+-- Objects: primitive containers, plain full objects, scalars.
+-- ------------------------------------------------------------
 
--- Roles. Sidecar for role-class objects. Trivet-style tree via
--- self-referencing parent_pk, plus the Trivet locks.
-create table roles (
-    id                  integer primary key references objects(id) on delete cascade,
-    parent_pk           integer references roles(id),           -- null for root
-    -- Materialized ancestor path — dot-separated IDs of ancestors,
-    -- e.g., '.1.5.7.' for a role two hops under the root chain 1→5→7.
-    -- Maintained by triggers on parent_pk changes. Enables O(1)
-    -- ancestor/descendant queries via LIKE prefix matching.
-    path                text    not null default '',
-    -- Trivet-style tree locks. All boolean, all mutable in one
-    -- direction only (enforced by triggers not shown here).
-    root_locked         integer not null default 0 check (root_locked         in (0, 1)),
-    moves_prohibited    integer not null default 0 check (moves_prohibited    in (0, 1)),
-    allow_new_children  integer not null default 1 check (allow_new_children  in (0, 1))
+create table objects (
+	object_pk integer primary key autoincrement,
+
+	-- Row-kind discriminator. NOT NULL, no default: Drinian's write
+	-- code names the row kind at INSERT time. SQLite treats `false`
+	-- as an alias for 0.
+	--   false → full object (not a primitive collection)
+	--   'h'   → HashPrimitive
+	--   'a'   → ArrayPrimitive
+	primitive not null check (primitive in (false, 'h', 'a')),
+
+	-- Scalar type. Only meaningful when primitive = false. When set,
+	-- this row is a scalar primitive; when null on a primitive =
+	-- false row, this row is a plain full object with a bucket +
+	-- stack.
+	--   's' string, 'n' number, 'b' boolean, 'u' null
+	st text check (st in ('s', 'n', 'b', 'u')),
+	check (primitive = false or st is null),
+
+	-- Scalar value. Meaningful only when `st` is set. Per-st shape
+	-- checks use `is` (not `in`) so null cleanly evaluates to false
+	-- — the `in` form would give NULL which SQLite's CHECK accepts
+	-- as passing, silently letting null booleans through.
+	sv,
+	check (st is null or st != 'b' or sv is 0 or sv is 1),
+	check (st is null or st != 'u' or sv is null),
+	check (st is null or st != 'n' or typeof(sv) in ('integer', 'real')),
+	check (st is null or st != 's' or typeof(sv) = 'text'),
+	check (st is not null or sv is null),
+
+	-- Role back-references. If bucket_for is set, this row is the
+	-- bucket of the referenced full object; it must be a
+	-- HashPrimitive. If stack_for is set, this row is the stack of
+	-- the referenced full object; it must be an ArrayPrimitive. At
+	-- most one may be set (a row can't be both a bucket and a
+	-- stack). Full objects, scalars, and standalone container
+	-- primitives (root, internal storage) leave both null.
+	--
+	-- FKs use ON DELETE CASCADE: deleting the owner deletes its
+	-- bucket and stack in one shot via FK, no trigger required.
+	--
+	-- UNIQUE on each column: each owner has at most one bucket and
+	-- one stack. SQLite treats null as distinct in UNIQUE, so many
+	-- rows with these columns null don't collide.
+	bucket_for integer unique references objects(object_pk) on delete cascade,
+	stack_for  integer unique references objects(object_pk) on delete cascade,
+	check (bucket_for is null or primitive = 'h'),
+	check (stack_for  is null or primitive = 'a'),
+	check (bucket_for is null or stack_for is null),
+
+	-- Transient GC scratch. All three are 1 or null — CHECK doesn't
+	-- fire on null, so no `X is null or` guard is needed.
+	--
+	-- needs_trace: 1 means this row is a candidate seed the drain
+	-- should trace from. in_trace: positive integer giving the order
+	-- the drain's callback loop fires against this row (see
+	-- specs/on-gc.md). del: 1 means the drain has determined this
+	-- row is dead and it will be removed by the bulk DELETE at the
+	-- end of the GC pass.
+	needs_trace integer check (needs_trace = 1),
+	in_trace    integer check (in_trace > 0),
+	del         integer check (del = 1)
 );
 
--- Path index for ancestor/descendant queries.
-create index roles_path on roles(path);
+create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
+create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
+create index objects_del         on objects(del)         where del = 1;
 
--- Source-file registry. Sidecar for src-entry objects. Every value
--- that carries a src stamp points its src_pk at an object with a row
--- here.
-create table srcs (
-    id   integer primary key references objects(id) on delete cascade,
-    kind text    not null check (kind in ('file', 'uns')),
-    path text    not null
+-- All identity columns are immutable from INSERT: object_pk,
+-- primitive, st, sv, bucket_for, stack_for. The only freely-mutable
+-- columns are the GC scratch trio (needs_trace, in_trace, del).
+create trigger objects_no_update
+before update on objects
+begin
+	select case
+		when new.object_pk is not old.object_pk
+			then raise(abort, 'objects_pk_immutable: objects.object_pk is immutable')
+		when new.primitive is not old.primitive
+			then raise(abort, 'objects_primitive_immutable: objects.primitive is immutable')
+		when new.st is not old.st
+			then raise(abort, 'objects_st_immutable: objects.st is immutable')
+		when new.sv is not old.sv
+			then raise(abort, 'objects_sv_immutable: objects.sv is immutable')
+		when new.bucket_for is not old.bucket_for
+			then raise(abort, 'objects_bucket_for_immutable: objects.bucket_for is immutable')
+		when new.stack_for is not old.stack_for
+			then raise(abort, 'objects_stack_for_immutable: objects.stack_for is immutable')
+	end;
+end;
+
+-- Root is always object_pk = 1 — seeded below. It cannot be deleted.
+-- It can be updated only for in_trace: the drain's propagation walk
+-- lands in_trace on root, and the alive check reads root's in_trace
+-- directly. needs_trace on root is never valid — root can never be a
+-- legitimate seed, so letting it get marked would cause the drain to
+-- spin. (Deferred: the uspace question — currently root is a single
+-- pk=1 anchor; will be replaced by a uspace-flag mechanism later.)
+create trigger objects_no_delete_root
+before delete on objects
+when old.object_pk = 1
+begin
+	select raise(abort, 'root_cannot_be_deleted: the root object cannot be deleted');
+end;
+
+create trigger objects_root_no_needs_trace
+before update on objects
+when old.object_pk = 1 and new.needs_trace
+begin
+	select raise(abort, 'root_cannot_be_marked: the root object cannot have needs_trace set');
+end;
+
+-- Seed root: a standalone HashPrimitive at object_pk = 1 with
+-- bucket_for / stack_for null. Every Drinian database starts with
+-- this row. Root is not a full object so it doesn't auto-provision
+-- a bucket + stack.
+insert into objects (primitive) values ('h');
+
+-- ------------------------------------------------------------
+-- Auto-provision buckets and stacks for plain full objects.
+-- ------------------------------------------------------------
+
+-- On INSERT of a plain full object (primitive = false AND st null),
+-- create its bucket (HashPrimitive with bucket_for = new.object_pk)
+-- and its stack (ArrayPrimitive with stack_for = new.object_pk).
+-- The bucket and stack rows themselves don't fire this trigger —
+-- their primitive is 'h' / 'a', which the WHEN clause excludes — so
+-- no recursion. The owner row is not touched after its INSERT: the
+-- FK direction (bucket/stack point at owner) means all linkage
+-- lives on the newly-inserted rows.
+create trigger objects_auto_provision_bucket_and_stack
+after insert on objects
+when new.primitive = false and new.st is null
+begin
+	insert into objects (primitive, bucket_for) values ('h', new.object_pk);
+	insert into objects (primitive, stack_for)  values ('a', new.object_pk);
+end;
+
+-- ------------------------------------------------------------
+-- Relationships: parent-to-child object edges.
+-- ------------------------------------------------------------
+-- Every row is an object-to-object edge. The parent must be a
+-- container primitive ('h' or 'a') — full objects and scalars
+-- cannot be parents. Enforced by trigger below.
+
+create table relationships (
+	rel_pk  integer primary key autoincrement,
+
+	parent  integer not null references objects(object_pk) on delete cascade,
+	child   integer not null references objects(object_pk) on delete cascade,
+
+	-- Hash-style entries store a text `key`. Array-style entries
+	-- leave key null and use idx as position. Class-level dispatch
+	-- (HashPrimitive vs ArrayPrimitive) interprets which is which;
+	-- storage does not care.
+	key     text,
+
+	-- idx is required for every row: array-style entries use it as
+	-- position, hash-style entries use it as insertion order for
+	-- iteration.
+	idx     integer not null check (idx >= 0),
+
+	-- No two relationships from the same parent share a key or idx.
+	-- Null-key rows (array-style) don't collide on the (parent, key)
+	-- constraint because SQLite treats null as distinct in UNIQUE.
+	unique (parent, key),
+	unique (parent, idx)
 );
 
--- ASTs. Sidecar for AST objects (top-level programs, function bodies,
--- method bodies, closure bodies). Body is a JSON blob — CaspM doesn't
--- need row-level SQL access, but the JSON1 extension can query into it.
-create table asts (
-    id     integer primary key references objects(id) on delete cascade,
-    src_pk integer not null references objects(id),        -- src object
-    body   text    not null                                -- CaspM tree as JSON
-);
+create index relationships_parent on relationships(parent);
+create index relationships_child  on relationships(child);
 
--- Call stack. Position 0 = bottom (root frame); top of array = the
--- currently-executing frame. In-flight exceptions live here too, with
--- action = 'exception' — they slot alongside frames as they unwind.
-create table call_stack (
-    position       integer primary key,
-    action         text    not null check (action in (
-        'top_level', 'function_call', 'function_invocation', 'method_call',
-        'block', 'if_block', 'delegate_to', 'exception', 'on_close'
-    )),
-    role_pk        integer not null references objects(id),
-    lexical_parent integer references call_stack(position),  -- null for root frame
-    src_pk         integer references objects(id),
-    src_line       integer,
-    callable_pk    integer references objects(id),          -- Function/Method/Closure object
-    receiver_pk    integer references objects(id),          -- %self for methods; null otherwise
-    iterator_state text,                                    -- JSON: {"position": N, "of": M}
-    delegations    text                                    -- JSON: {"agent": {}, ...}
-);
+-- Only container primitives ('h' or 'a') can be parents. Full
+-- objects (primitive = false) and scalar primitives cannot appear
+-- as parent — they don't have references. Full objects route
+-- through their bucket / stack.
+create trigger relationships_parent_must_be_primitive_container
+before insert on relationships
+when (select primitive from objects where object_pk = new.parent) not in ('h', 'a')
+begin
+	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in relationships');
+end;
 
--- Frame locals. Every variable binding in every frame. Cascade-drops
--- when its frame pops.
-create table frame_locals (
-    frame_position integer not null references call_stack(position) on delete cascade,
-    name           text    not null,
-    variable_pk    integer not null references objects(id),   -- the core:variable object
-    primary key (frame_position, name)
-);
+-- Identity is (rel_pk, parent, key). Content — child, idx — is
+-- mutable. Swinging child from one object to another is legal; the
+-- mark trigger below catches the object-edge-severed case.
+create trigger relationships_no_update
+before update on relationships
+begin
+	select case
+		when new.rel_pk is not old.rel_pk
+			then raise(abort, 'relationships_pk_immutable: relationships.rel_pk is immutable')
+		when new.parent is not old.parent
+			then raise(abort, 'relationships_parent_immutable: relationships.parent is immutable')
+		when new.key is not old.key
+			then raise(abort, 'relationships_key_immutable: relationships.key is immutable')
+	end;
+end;
 
--- GC error log. Records on_close handler failures. Small in healthy
--- programs; long list is a smell.
-create table gc_errors (
-    position  integer primary key autoincrement,
-    class_pk  integer not null references objects(id),
-    message   text    not null,
-    src_pk    integer references objects(id),
-    src_line  integer
-);
+-- ------------------------------------------------------------
+-- Mark triggers — the trace's worklist populator.
+-- ------------------------------------------------------------
 
--- Mutation history. Every insert / update / delete on the runtime
--- state gets a row here, maintained by triggers. Enables time-travel
--- debugging: "what was the state at time T?" replays from a snapshot.
--- Also: cheap "what changed between checkpoint A and B?" as a range
--- query. Kept as a separate concern — engines that don't want the
--- overhead skip installing the mutation-log triggers.
-create table mutations (
-    seq        integer primary key autoincrement,
-    at         datetime not null default current_timestamp,
-    kind       text not null check (kind in ('insert', 'update', 'delete')),
-    table_name text not null,
-    row_pk     text not null,     -- text so it can hold any table's PK
-    before_row text,               -- JSON of the row before the change (null on insert)
-    after_row  text                -- JSON of the row after the change (null on delete)
-);
+-- On DELETE of a relationship: mark the old child as needs_trace.
+-- Skip if the old child was root (never a valid mark target).
+create trigger relationships_mark_needs_trace_after_delete
+after delete on relationships
+when old.child <> 1
+begin
+	update objects set needs_trace = 1 where object_pk = old.child;
+end;
 
-create index mutations_at         on mutations(at);
-create index mutations_table_row  on mutations(table_name, row_pk);
+-- On UPDATE OF child: mark the OLD child when the slot is swung
+-- to a different object. `is not` handles null-vs-value correctly
+-- where `<>` would silently no-op on null.
+create trigger relationships_mark_needs_trace_after_update_of_child
+after update of child on relationships
+when old.child <> 1 and old.child is not new.child
+begin
+	update objects set needs_trace = 1 where object_pk = old.child;
+end;
 ~~~
