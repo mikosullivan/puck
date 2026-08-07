@@ -148,17 +148,6 @@ Every reachability question — the heart of GC and debugging — becomes a set 
 
 Replaces walking parent pointers with prefix-indexed lookups.
 
-### Time-travel debugging via the mutations log
-
-Triggers on every table push a row to `mutations` for every insert / update / delete. Then:
-
-- **"What did state look like at time T?"** — apply the log up to T against a snapshot.
-- **"What changed between A and B?"** — `select * from mutations where seq between A and B`.
-- **"Who wrote to this row?"** — filter by `table_name` + `row_pk`.
-- **Replay a bug** — restore from snapshot, replay mutations until the bug reproduces, inspect.
-
-The log is opt-in — engines that want the overhead install the triggers; engines that don't skip them.
-
 ### Rich introspection as SQL
 
 Every engine invariant is a query. Every runtime metric is a `select count`. No new engine code, no instrumentation pass — the schema IS the observability surface:
@@ -253,6 +242,59 @@ Use cases this unlocks:
 
 This is one of those features that would be genuinely hard to build against an in-memory hash — you'd need shadow-state tracking or an undo log that the engine maintains itself. Under SQLite, it's `begin` / `rollback`. First-class support for "just kidding, back that out" as a Caspian language primitive.
 
+#### Building fault-tolerant scripts
+
+The transaction feature extends into a fault-protection primitive via the `catch: true` keyword (see [transactions](https://www.puck.uno/ideas/transactions/)). When a `catch: true` transaction encounters an uncaught exception, it captures the exception on the transaction object, rolls back the database, and lets execution continue past the block instead of unwinding. Combined with full-process rollback, this becomes the building block for fail-safe scripts:
+
+~~~caspian
+loop &request in $request_queue
+	$tr = transaction(catch: true) as $transaction
+		&process_request $request
+	end
+
+	if not $tr.committed?
+		&log_failure $request, $tr.exception
+		# state was rolled back cleanly; move on to the next request
+	end
+end
+~~~
+
+A single request that raises doesn't corrupt process state or crash the loop. Each iteration gets:
+
+- **DB rollback.** Every object created, role added, ref repointed during the failed request reverts.
+- **Exception containment.** The exception doesn't unwind past the transaction; the block returns a data-typed outcome the caller inspects.
+- **Continuation.** The next iteration starts with clean state.
+
+The pattern generalizes to any long-running loop, batch processor, event dispatcher, or supervisor. One transaction primitive; three benefits.
+
+**Retry-with-backoff** falls out naturally:
+
+~~~caspian
+$attempt = 0
+
+loop
+	$tr = transaction(catch: true) as $t
+		&risky_operation
+	end
+
+	if $tr.committed?
+		break
+	end
+
+	$attempt = $attempt + 1
+
+	if $attempt >= $max_attempts
+		raise 'gave up after %$attempt attempts: %$tr.exception'
+	end
+
+	&sleep(backoff($attempt))
+end
+~~~
+
+**Supervisor patterns** — the "keep this thing running no matter what" logic Erlang bakes into its runtime — become straightforward Caspian code, because the pieces already compose. Circuit breakers, bulkheads, and other resilience patterns build on the same substrate.
+
+The design goal: make it easy to write Caspian scripts that ride out unexpected errors without leaving the DB in a partial state. Full-process rollback + `catch: true` covers the primitive; higher-level patterns become library concerns rather than language ones.
+
 ### Snapshot diffing
 
 Two SQLite snapshots of the same runtime can be diffed at the row level:
@@ -266,9 +308,52 @@ except select * from before.objects;
 
 Attach two snapshots side-by-side and answer "what did this program actually do?" in one query. Useful for reproducing bugs against a known-good snapshot.
 
-### Debugger is a SQL client
+### The debugger is a SQL client
 
-No custom debugger protocol. Any SQLite tool — CLI, DB Browser, custom Orlando pages — is a valid debugger. Reads are just queries; the runtime doesn't have to expose new endpoints for each new inspector.
+Drinian's state lives entirely in a SQLite file. That file *is* the runtime — objects, frames, variable bindings, roles, listener registrations, GC scratch. Any tool that can open SQLite can inspect the runtime.
+
+**Traditional debuggers ship a wire protocol.** Chrome DevTools Protocol, Debug Adapter Protocol, GDB's remote protocol — each is a versioned interface between the runtime and inspector tools. Every new debugger tool has to implement it. The runtime has to add endpoints for each new query pattern the ecosystem invents.
+
+Under Drinian the "protocol" is SQL — a standard thousands of tools already speak. The runtime doesn't expose new endpoints for each new inspector; the schema IS the read endpoint. Adding a new dimension to inspect is a schema addition, not a protocol version bump.
+
+**Live inspection while the process runs.** SQLite's WAL mode lets readers open the database concurrently with the writer, and readers see a consistent snapshot at their transaction's start. Point `sqlite3` at a running Caspian process's DB file, query state, get answers. No pause, no ptrace, no attach.
+
+**Same interface for post-mortem.** A paused Big Process is a file on disk. Open it, run the same queries you'd run live, get the same shape of answer. No separate "core dump" format to design.
+
+Tools that already work, no configuration needed:
+
+- **`sqlite3` CLI.** Ships with every Linux distro. Ad-hoc queries against live or paused state, from any shell.
+- **DB Browser for SQLite** and similar GUIs. Schema browser, table viewer, query builder — repurposed as a debugger with zero code.
+- **Orlando pages.** The docs server can render SQL query results as pages — a custom dashboard is one Lua handler + one query.
+- **Any language's SQLite bindings.** Automated tooling in Python, Lua, Rust — pick your language, all of them have well-worn SQLite libraries.
+
+Examples of what each would be a custom debug-protocol endpoint in a traditional runtime:
+
+~~~sql
+-- The current call stack with variable bindings
+select cs.position, cs.method, fl.name, fl.value_object_pk
+from call_stack cs
+left join frame_locals fl on fl.frame_pk = cs.rowid
+order by cs.position;
+
+-- Every listener registered on a specific broadcaster
+select event_name, listener_pk, method_name
+from instance_listeners
+where broadcaster_pk = ?;
+
+-- Objects marked for garbage collection right now
+select object_pk, primitive from objects where del = 1;
+
+-- Instances of a specific class
+select object_pk from platters where class_pk = ?;
+
+-- Roles owned by a specific user
+select * from roles where path like ? || '.%';
+~~~
+
+Each of those is one query. No protocol design work. No wire format. Custom inspectors — watch-this-object dashboards, "surviving N GC cycles" alerts, invariant-check runners — are all "one query + a rendering layer."
+
+Instrumentation flows the same way. If a debugger needs a piece of state the runtime doesn't expose yet, the fix is a new column or a new table (plus the engine writes that populate it). Existing debug tools automatically pick up the new field on the next query. No versioned protocol to negotiate, no client-side upgrade cycle.
 
 ### JSON queries into CaspM
 
