@@ -1,7 +1,7 @@
---[=[
+--[[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. Constructed with no required params — host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
+	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to construct a fresh Drinian state hash (via state.lua) and stash it as engine.state, so the sequence counter and every other Drinian slot are live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
 	"exports": {
 		"new": "() -> Engine"
 	},
@@ -9,16 +9,44 @@
 	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface.",
 	"dispatch_contract": "Three raise sites, all with `unrecognized_` prefix so grep finds them: `unrecognized_row_head` (statement-position atom the row dispatcher doesn't know), `unrecognized_bwc` (bareword-command name with no handler registered), `unrecognized_atom_kind` (value-producing atom whose kind key isn't in the value dispatcher). Adding a new construct = registering one handler and re-running the failing program."
 }
-]=]
+]]
+
+--[[
+# Engine
+
+Caspian's runtime. A host constructs an engine with `engine.new()` — which
+in turn constructs a fresh [Drinian](https://www.puck.uno/requirements/drinian/)
+state hash and stashes it as `engine.state`. From that moment on, every
+allocation draws IDs from `engine.state.sequence:next()`, roles live under
+`engine.state.roles`, and execution state (objects, references, call stack,
+...) accumulates in the corresponding Drinian fields.
+
+The host then wires whatever capabilities the program needs
+(`engine.stdout = ...`, `engine.debugger = ...`), feeds the program source
+through `engine:load(source)` — which transpiles + normalizes it into a
+CaspM tree — and walks that tree with `engine:run()`.
+
+Built iteratively. Any atom kind, bareword command, or row-head shape the
+dispatcher doesn't recognize raises a specific `unrecognized_*` error
+naming the missing piece, so the walking-skeleton iteration loop always
+has a clear signal about what to build next.
+]]
 
 local transpiler = require('transpiler')
 local normalize  = require('normalize')
+local state      = require('state')
 
 local M = {}
 M.__index = M
 
--- Renders an atom's key set for error messages. Deterministic
--- ordering so tests can pattern-match without sorting.
+--[[
+## Rendering an atom's key set
+
+`atom_keys(atom)` renders an atom's key set as a deterministic
+comma-separated string for use in error messages. Keys are sorted so the
+`unrecognized_*` raises match across runs regardless of hash iteration
+order — tests can pattern-match on the raise text without pre-sorting.
+]]
 local function atom_keys(atom)
 	local keys = {}
 
@@ -30,21 +58,45 @@ local function atom_keys(atom)
 	return table.concat(keys, ', ')
 end
 
--- ------------------------------------------------------------
--- Handlers for bareword commands. `bwc_handlers[name]` receives
--- (engine, row) where row[1] is the bwc marker and row[2..] are
--- the arg atoms (unevaluated — the handler calls engine:eval on
--- each). Missing name -> unrecognized_bwc raise.
--- ------------------------------------------------------------
+--[[
+## The bwc handler table
+
+`bwc_handlers` is a table keyed by bareword-command name. Each handler
+takes `(engine, row)` where `row[1]` is the bwc marker atom and
+`row[2..]` are the arg atoms (unevaluated — the handler calls
+`engine:eval` on each). A bwc name with no matching entry raises
+`unrecognized_bwc` from `engine:run_bwc`.
+
+This table is walking-skeleton scaffolding. In the target design bwcs
+resolve through a DSL chain per [nested-dsls](https://www.puck.uno/ideas/nested-dsls);
+this direct-lookup shape is a stand-in until that lands. Anything added
+here should survive the eventual refactor cleanly — no per-handler
+features that duplicate what the DSL chain will handle.
+]]
 local bwc_handlers = {}
 
+--[[
+## The puts handler
+
+`bwc_handlers.puts` writes each argument to the wired stdout followed by
+a trailing newline — `puts 'a', 'b'` writes `a\nb\n` (one newline per
+arg, no joining separator, no single trailing newline covering all args
+together). Each arg atom is evaluated via `engine:eval` before being
+written.
+
+Requires `engine.stdout` to be an object with a `:print(text)` method;
+if stdout isn't wired, raises `puts: no stdout wired` at the moment
+`puts` fires.
+
+Placeholder: currently a direct top-level bwc handler. In the target
+design `puts` is sugar for `%stdout.puts` routed through the DSL chain,
+and this handler goes away.
+]]
 function bwc_handlers.puts(engine, row)
 	if not engine.stdout then
 		error("puts: no stdout wired — set engine.stdout before running programs that write output")
 	end
 
-	-- Multi-arg puts: each arg gets its own trailing newline.
-	-- `puts 'a', 'b'` writes `a\nb\n`.
 	for i = 2, #row do
 		local value = engine:eval(row[i])
 		engine.stdout:print(tostring(value) .. '\n')
@@ -53,19 +105,54 @@ function bwc_handlers.puts(engine, row)
 	return
 end
 
--- ------------------------------------------------------------
--- Debugger helper. No-op when no debugger is attached, so the
--- rest of the engine stays free of `if self.debugger` fences.
--- ------------------------------------------------------------
-local function log(engine, entry)
+--[[
+## Debug logging
+
+`debug_log(engine, entry)` appends `entry` to `engine.debugger` if one
+is attached; no-op otherwise. Every raise path and every dispatch
+appends an entry so a coder attaching a Lua sequence to
+`engine.debugger` can trace exactly what the engine did in what order.
+
+Named `debug_log` rather than `debug` to avoid shadowing Lua's standard
+`debug` table.
+
+Each entry is a plain hash of whatever the call site chose to record —
+`{kind = ..., source_length = ..., ...}` — no required fields, no
+growing method surface. The array shape is the whole contract.
+]]
+local function debug_log(engine, entry)
 	if engine.debugger then
 		table.insert(engine.debugger, entry)
 	end
 end
 
---[[ {"in": {}, "out": "Engine instance — no wiring attached, no program loaded"} ]]
+--[[
+## Constructor
+
+`engine.new()` is the boot entry point. Its first act is to construct a
+fresh Drinian state hash (via `state.new()`) and stash it as
+`engine.state`, so the ID sequence, the roles tree, and every other
+Drinian slot are live from the moment the engine exists. Host wiring
+slots and walking-skeleton load-artifact slots start nil:
+
+- **`state`** — the Drinian state hash. See [state.lua](../engine/state.lua).
+  Every allocation from here on draws IDs via `engine.state.sequence:next()`.
+- **`stdout`, `debugger`** — nil at construction. The host attaches
+  capabilities by plain field assignment before or after loading, in any
+  order.
+- **`source`, `caspj`, `caspm`** — nil at construction. Populated by
+  `engine:load`. Vestigial: these are walking-skeleton fields; as the
+  Drinian discipline tightens, `source` folds into `state.srcs` and the
+  loaded CaspM tree lands in `state.asts`.
+
+No required constructor params. A program that doesn't need a given
+capability doesn't force its host to provide one; reaching for an
+unwired capability raises at the fire site (see § The puts handler for
+the pattern).
+]]
 function M.new()
 	return setmetatable({
+		state    = state.new(),
 		stdout   = nil,
 		debugger = nil,
 		source   = nil,
@@ -74,18 +161,43 @@ function M.new()
 	}, M)
 end
 
---[[ {"in": {"source": "Caspian source string"}, "out": "nil — transpiles source into CaspJ, normalizes into CaspM, stashes source / caspj / caspm on self, and logs a 'loaded' entry to the debugger if one is attached"} ]]
+--[[
+## Loading source
+
+`engine:load(source)` takes a Caspian source string, transpiles it into
+CaspJ, normalizes that into CaspM, and stashes all three (`source`,
+`caspj`, `caspm`) on the engine. Appends a `{kind = 'loaded',
+source_length = N}` entry to the debugger if one is attached.
+
+Must be called before `run()`; calling `run()` on an engine that hasn't
+loaded anything raises `engine:run() called before engine:load()`. The
+three intermediate representations remain readable on the engine after
+load — useful for inspecting what the transpiler and normalizer
+produced.
+]]
 function M:load(source)
 	self.source = source
 	self.caspj  = transpiler.transpile(source)
 	self.caspm  = normalize.normalize(self.caspj)
 
-	log(self, {kind = 'loaded', source_length = #source})
+	debug_log(self, {kind = 'loaded', source_length = #source})
 
 	return
 end
 
---[[ {"in": {}, "out": "nil — walks self.caspm and executes each statement row; raises 'engine:run() called before engine:load()' if caspm is unset"} ]]
+--[[
+## Running the program
+
+`engine:run()` walks the loaded CaspM tree and dispatches each statement
+row via `run_row`. Raises `engine:run() called before engine:load()`
+when the engine hasn't loaded anything — prevents a silent no-op that
+would look like a working program.
+
+Currently top-level only: there's no call stack yet, so `run` is the
+only entry point and each row runs in the same implicit root frame.
+When Drinian and the call stack land, this grows into the root frame's
+execution loop.
+]]
 function M:run()
 	if not self.caspm then
 		error("engine:run() called before engine:load(); no program to execute")
@@ -98,7 +210,20 @@ function M:run()
 	return
 end
 
---[[ {"in": {"row": "one CaspM statement row — array of atoms"}, "out": "nil — dispatches the row based on its head atom; raises unrecognized_row_head if the head doesn't match any recognized dispatch shape"} ]]
+--[[
+## Dispatching a row
+
+`engine:run_row(row)` dispatches one CaspM statement row based on its
+head atom. Currently handles one shape — `{bwc: name}` rows route to
+`run_bwc`; anything else appends a `raised` entry to the debugger and
+raises `unrecognized_row_head` with the head's key set in the message
+so the walking-skeleton iteration knows what row shape to add support
+for next.
+
+New row-head shapes land as additional `elseif head.<key> then ...`
+branches here, each with a corresponding sub-dispatcher (mirroring
+the bwc case's `run_bwc`).
+]]
 function M:run_row(row)
 	local head = row[1]
 
@@ -106,31 +231,55 @@ function M:run_row(row)
 		return self:run_bwc(head.bwc, row)
 	end
 
-	log(self, {kind = 'raised', reason = 'unrecognized_row_head', head = head})
+	debug_log(self, {kind = 'raised', reason = 'unrecognized_row_head', head = head})
 	error("unrecognized_row_head: cannot dispatch statement — no rule handles a row starting with an atom whose keys are {" .. atom_keys(head) .. "}")
 end
 
---[[ {"in": {"name": "bwc name (string)", "row": "the CaspM row whose head is this bwc"}, "out": "whatever the handler returns; raises unrecognized_bwc when name has no handler"} ]]
+--[[
+## Dispatching a bwc
+
+`engine:run_bwc(name, row)` looks up `name` in `bwc_handlers` and
+invokes the found handler. On success, appends `{kind = 'bwc', name =
+name}` to the debugger and returns whatever the handler returned. On
+failure — no registered handler for the name — appends `{kind =
+'raised', reason = 'unrecognized_bwc', name = name}` and raises
+`unrecognized_bwc: no handler registered for bareword command
+'<name>'`.
+
+The debugger entry lands before the raise so the diagnostic trail
+survives the error path.
+]]
 function M:run_bwc(name, row)
 	local handler = bwc_handlers[name]
 
 	if not handler then
-		log(self, {kind = 'raised', reason = 'unrecognized_bwc', name = name})
+		debug_log(self, {kind = 'raised', reason = 'unrecognized_bwc', name = name})
 		error("unrecognized_bwc: no handler registered for bareword command '" .. name .. "'")
 	end
 
-	log(self, {kind = 'bwc', name = name})
+	debug_log(self, {kind = 'bwc', name = name})
 	return handler(self, row)
 end
 
---[[ {"in": {"atom": "a value-producing atom"}, "out": "the Caspian value the atom evaluates to; raises unrecognized_atom_kind when the atom's key isn't one the value dispatcher handles"} ]]
+--[[
+## Evaluating an atom
+
+`engine:eval(atom)` evaluates a value-producing atom to a Caspian
+value. Currently handles one atom shape — `{v: value}` (the normalized
+string / number literal shape) — and returns the value directly.
+
+Anything else appends a `raised` entry to the debugger and raises
+`unrecognized_atom_kind` with the atom's key set in the message so the
+walking-skeleton iteration knows what atom kind to add support for
+next.
+]]
 function M:eval(atom)
 	if atom.v ~= nil then
 		return atom.v
 	end
 
 	local keys = atom_keys(atom)
-	log(self, {kind = 'raised', reason = 'unrecognized_atom_kind', keys = keys})
+	debug_log(self, {kind = 'raised', reason = 'unrecognized_atom_kind', keys = keys})
 	error("unrecognized_atom_kind: cannot evaluate atom — no rule handles atoms with keys {" .. keys .. "}")
 end
 

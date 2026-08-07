@@ -30,22 +30,22 @@ function Repeatable:get_next()
 end
 ~~~
 
-Loop-control exception classes — raised by the iterator's `.break` / `.next` methods, caught by the looper. `LoopBreak` carries an optional value so `break VALUE` can return that value from the loop:
+Loop-control exception classes — raised by the iterator's `.break(n)` / `.next(n)` methods, caught by the looper. Both carry `n`, the count of loop levels to jump; each looper the exception passes through decrements `n` and reraises if still `> 0`, absorbs at `0`. `LoopBreak` also carries an optional value so `break VALUE` can return that value from the loop that absorbs it. `n` handling is uniform across `break` and `next`; the two differ only in what the absorbing looper does with the exception (`break` exits, `next` advances).
 
 ~~~lua
 LoopBreak = {}
 LoopBreak.__index = LoopBreak
 
-function LoopBreak.new(value)
-	local self = setmetatable({value = value}, LoopBreak)
+function LoopBreak.new(n, value)
+	local self = setmetatable({n = n, value = value}, LoopBreak)
 	return self
 end
 
 LoopNext = {}
 LoopNext.__index = LoopNext
 
-function LoopNext.new()
-	local self = setmetatable({}, LoopNext)
+function LoopNext.new(n)
+	local self = setmetatable({n = n}, LoopNext)
 	return self
 end
 ~~~
@@ -84,9 +84,17 @@ function looper(self, call)
 
 		if not ok then
 			if getmetatable(err) == LoopNext then
-				-- do nothing; continue to next iteration
+				if err.n > 0 then
+					err.n = err.n - 1
+					error(err)              -- reraise; outer looper catches and advances
+				end
+				-- n == 0: continue to next iteration of this loop
 			elseif getmetatable(err) == LoopBreak then
-				return err.value           -- break's value becomes the loop's return
+				if err.n > 0 then
+					err.n = err.n - 1
+					error(err)              -- reraise; outer looper catches and exits
+				end
+				return err.value            -- n == 0: this loop absorbs; break's value is the loop's return
 			else
 				error(err)                  -- propagate other exceptions
 			end

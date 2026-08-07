@@ -4,8 +4,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_syntax_loops",
-	"role": "spec for every loop construct in Caspian in one place — the condition-driven `while` and `until` (both in the pre-body form and the post-body `begin ... while` / `begin ... until` loop-at-least-once form), block-driven `.each` on collections, and the numeric-helper trio `.times` / `.upto` / `.downto` on numbers. Loop controllers, `break`, `next`, and the `as $loop` binding are deferred — see the Deliberately out of scope section.",
-	"status": "draft — main forms spec'd; loop controllers (break / next / as $loop) deferred until the routing question is resolved",
+	"role": "spec for every loop construct in Caspian in one place — the condition-driven `while` and `until` (both in the pre-body form and the post-body `begin ... while` / `begin ... until` loop-at-least-once form), block-driven `.each` on collections, and the numeric-helper trio `.times` / `.upto` / `.downto` on numbers. Iterator objects, `break`, `next`, `break N`, and the `as $loop` binding are spec'd in [iterators](tag:iterators).",
+	"status": "draft — main forms spec'd; iterator surface (break / next / break N / as $loop) lives in the iterators doc",
 	"audience": "developers writing Caspian; parser implementers; anyone porting loop-heavy code from another language"
 }}
 ~~~
@@ -16,7 +16,7 @@ Caspian has three ways to loop:
 - **`.each`** — iterate over a collection's elements.
 - **Numeric helpers** on Number — `.times`, `.upto`, `.downto`.
 
-Loops run to their natural termination condition. Early exit and iteration-skipping (`break`, `next`, loop controllers) are deferred; see [Deliberately out of scope](#deliberately-out-of-scope) below for the current alternatives.
+Every primitive loop produces an iterator. Early exit (`break`, `break N`, break-with-value), iteration-skipping (`next`, `next N`), and binding the iterator to a name via `as $loop` are spec'd in [iterators](tag:iterators); this doc covers the surface loop constructs themselves.
 
 ## Condition-driven loops: `while` and `until`
 
@@ -108,19 +108,7 @@ These are sugar over the underlying iteration machinery — internally they beha
 
 ## Deliberately out of scope
 
-Two categories: **deferred** (planned but held until dependent design settles) and **rejected** (considered and permanently excluded).
-
-### Deferred
-
-Held until the dispatch mechanism for loop controls is figured out. Design work happens in [ideas/nested-dsls](https://www.puck.uno/ideas/nested-dsls). These features WILL land eventually; the language is being shaped without them for now so the DSL / bwc-routing decisions have room to settle.
-
-- **`break`, `next`, and `break N`** — early loop exit and iteration-skipping.
-- **Loop controllers via `as $name`** — no `$loop` / `$whiler` / named-loop binding, no `.count` / `.index` / `.active?` state readers, no `.break` / `.next` / `.return` control methods.
-- **Named-loop targeting** — no `$outer_loop.break` cross-nesting control.
-
-Alternatives that work today: flip a variable the loop condition tests to end iteration early; wrap the loop in a function and `return` from the function to exit; restructure so iteration reaches its natural termination.
-
-### Rejected
+Considered and permanently excluded from Caspian's loop syntax:
 
 - **`for X in Y` form.** Caspian uses `.each` for iteration. No parallel `for ... in ...` block form. Every iteration is a method call on the receiver, which keeps the parser rules uniform and makes the receiver explicit at the call site.
 - **`redo` / `retry`.** Ruby-style restart of the current iteration is not part of Caspian.
@@ -154,6 +142,7 @@ Alternatives that work today: flip a variable the loop condition tests to end it
 
 ## Related
 
+- [iterators](tag:iterators) — the iterator surface produced by every primitive loop: `break`, `next`, `break N`, break-with-value, the `as $loop` binding, `iterate` and `yield`, and passing iterators to other functions.
 - [if-unless](https://puck.uno/requirements/syntax/if-unless) — the sibling conditional keywords `if`/`elsif`/`else` and `unless`, plus the `as $conditional` chain-exit binding.
 - [bare-blocks](https://puck.uno/requirements/syntax/bare-blocks) — the `begin ... end` bare-block construct, which reuses the `begin` keyword this doc's loop-at-least-once forms also use.
 - [array § method surface](https://puck.uno/requirements/built-in-classes/primitives/array/#method-surface) — `.each` and the other array methods that take blocks.

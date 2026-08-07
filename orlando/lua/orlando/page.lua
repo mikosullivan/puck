@@ -1647,6 +1647,26 @@ function M.render_lua_annotated(ctx)
     local lua_page = require("orlando.lua_page")
     local body = lua_page.render_body(source)
 
+    -- Auto-inject a "file: /path" line so every rendered Lua page shows
+    -- the file's own path. ctx.path is the repo-relative fs path (e.g.
+    -- "src/engine/sequence.lua"); we prefix "/" for readability. The
+    -- path text itself is wrapped in an <a href="?raw=1" target="_blank">
+    -- so clicking it opens the same URL with ?raw=1 in a new tab — the
+    -- server detects that param and returns the file's raw source
+    -- instead of the annotated view. The "file: " prefix stays plain.
+    -- If the body has an H1, the file line lands right after </h1>;
+    -- otherwise it prepends the body.
+    local file_line = '<p class="lua-file-path"><code>file: '
+        .. '<a href="?raw=1" target="_blank">/'
+        .. ctx.path
+        .. '</a></code></p>'
+    local h1_end_start, h1_end_stop = body:find("</h1>", 1, true)
+    if h1_end_start then
+        body = body:sub(1, h1_end_stop) .. file_line .. body:sub(h1_end_stop + 1)
+    else
+        body = file_line .. body
+    end
+
     -- Apply the same issue-chip pipeline used for markdown pages.
     -- ensure_heading_ids adds id="..." to every h2-h6; every heading id
     -- present after that step is "original" (author-written markdown),

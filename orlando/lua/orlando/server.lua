@@ -161,7 +161,13 @@ local function respond(client, request_line)
         return
     end
 
-    local r = route.resolve(path or "/")
+    -- Split the request path into url_path + query. route.resolve only
+    -- understands filesystem-mapped URL paths; downstream code that
+    -- cares about query params (e.g. ?raw=1 on .lua pages) reads
+    -- `query` directly.
+    local url_path, query = (path or "/"):match("^([^?]*)%??(.*)$")
+
+    local r = route.resolve(url_path or "/")
 
     if r.kind == "redirect" then
         local body = '<!DOCTYPE html><html><body>Moved to <a href="'
@@ -226,6 +232,21 @@ local function respond(client, request_line)
     end
 
     if r.kind == "lua_annotated" then
+        -- ?raw=1 bypasses the annotator and returns the file's raw
+        -- source as text/plain so the browser displays it inline.
+        -- The file-line link on annotated pages targets this.
+        if query and query:find("raw=1", 1, true) then
+            local data, read_err = read_file(r.path)
+            if not data then
+                client:send(build_response("500 Internal Server Error",
+                    "Failed to read Lua file: " .. tostring(read_err) .. "\n",
+                    "text/plain; charset=utf-8"))
+                return
+            end
+            client:send(build_response("200 OK", data, "text/plain; charset=utf-8"))
+            return
+        end
+
         local title = r.path:match("([^/]+)$") or r.path
         local html = page.render_lua_annotated({
             path      = r.path,

@@ -35,11 +35,11 @@ Not every callable declares `as $name`. Callables that don't declare one don't r
 
 ## Iterators as a kind of controller
 
-Primitive loop constructs (`while`, `until`, `.each`, `.times`, `.upto`, `.downto`, `begin ... while`, `begin ... until`) produce a specific kind of controller called an **iterator** — a controller with loop-control methods (`.break`, `.next`, and whatever else the loop chooses to expose). See [iterators](https://www.puck.uno/ideas/controllers/iterators) for the iterator surface and the sugar bwcs (`iterate`, `break`, `next`) that layer on top of it. The iterator spec is currently in `ideas/` and will move to `requirements/` alongside a canonical tag.
+Primitive loop constructs (`while`, `until`, `.each`, `.times`, `.upto`, `.downto`, `begin ... while`, `begin ... until`) produce a specific kind of controller called an **iterator** — a controller with loop-control methods (`.break`, `.next`, and whatever else the loop chooses to expose). See [iterators](tag:iterators) for the iterator surface and the sugar bwcs (`iterate`, `break`, `next`) that layer on top of it.
 
 Other kinds of controllers may exist as new callables invent uses for the `as` slot. The doc for each specific controller type describes what methods it carries and how it's meant to be used.
 
 ## Related
 
 - [caller](tag:caller) — the mechanism that places objects into the `.controller` slot at invocation time.
-- [iterators](https://www.puck.uno/ideas/controllers/iterators) — the iterator specialization.
+- [iterators](tag:iterators) — the iterator specialization.

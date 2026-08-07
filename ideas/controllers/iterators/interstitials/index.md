@@ -104,7 +104,7 @@ Trace with the target-shape example:
 
 The exact API for step 3 (how `while` hands the block to the iterator) is an implementation detail — could be `.on(:name, block)`, typed slots like `.before_block = ...`, or an internal hooks hash. The design at this level works regardless.
 
-For nested / user-method cases, the interstitial only fires for the iterator whose primitive loop was directly attached. If the user wants an interstitial to reach a deeper iterator (like the one inside a `.records` method that internally wraps a while), the receiving method has to explicitly forward — matching the "controller must be explicitly passed down the call stack" principle in the iterators doc.
+For nested / user-method cases, the interstitial only fires for the iterator whose primitive loop was directly attached. If the user wants an interstitial to reach a deeper iterator (like the one inside a `.records` method that internally wraps a while), the receiving method has to explicitly forward — matching the "controller must be explicitly passed down the call stack" principle in [iterators](https://www.puck.uno/requirements/controllers/iterators).
 
 ### Working example
 
