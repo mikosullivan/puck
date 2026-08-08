@@ -3,8 +3,8 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_drinian_with_sqlite_schema",
-	"role": "Drinian's SQLite schema. `objects` table holds row shapes discriminated by a single `primitive` column — false (full object), 'h' (HashPrimitive), 'a' (ArrayPrimitive). Scalars are a variant of `primitive = false` distinguished by `st` (scalar type). HashPrimitives serving as buckets carry `bucket_for` back-pointing at their owner; ArrayPrimitives serving as stacks carry `stack_for`. Only container primitives can be parents in `relationships`. Buckets and stacks are both lazy — Lua write layer creates them on demand. Scalars with no bucket/stack take a fast dispatch path through the built-in class for their `st` type. Every row carries a `uspace` NOT NULL boolean marking whether it's currently held in user space (provisional GC-anchor concept). GC uses two-column scratch (needs_trace / in_trace) — the drain deletes directly, and RESTRICT on relationships.child raises loudly if incoming references remain at delete time. Event registrations live in dedicated `instance_listeners` / `class_listeners` tables outside `relationships` — bookkeeping, not graph — with weak-ref lifetime via FK cascade.",
-	"status": "iterating — GC drain algorithm documented, dropped del column, relationships.child RESTRICT (loud fail)"
+	"role": "Drinian's SQLite schema. `objects` table holds row shapes discriminated by a single `primitive` column — 'o' (object), 'h' (HashPrimitive), 'a' (ArrayPrimitive). Scalars are a variant of `primitive = 'o'` distinguished by `scalar_type` (scalar type). HashPrimitives serving as buckets carry `bucket_for` back-pointing at their owner; ArrayPrimitives serving as stacks carry `stack_for`. Only container primitives can be parents in `relationships`. Buckets and stacks are both lazy — Lua write layer creates them on demand. Scalars with no bucket/stack take a fast dispatch path through the built-in class for their `scalar_type` type. Uspace membership is derived dynamically from the `uspace` view over the anchor tables (locals, frame_amber, frame_delegations, frame columns) — no stored flag. GC uses two-column scratch (needs_trace / in_trace) — the drain deletes directly, and RESTRICT on relationships.child raises loudly if incoming references remain at delete time. Event registrations live in dedicated `instance_listeners` / `class_listeners` tables outside `relationships` — bookkeeping, not graph — with weak-ref lifetime via FK cascade.",
+	"status": "iterating — st/sv renamed to scalar_type/scalar_value; scalar_value now blob-typed; inter-column table-level CHECK constraints moved inline to preceding columns to satisfy SQLite's grammar (all-column-defs-before-any-table-constraint)"
 }}
 ~~~
 
@@ -12,24 +12,23 @@ Started 2026-08-07 from Fiona's current schema. Adapting as design decisions lan
 
 ## Design summary
 
-Every Drinian row falls into one of these shapes, discriminated by `primitive`, `st`, `bucket_for`, and `stack_for`. Several orthogonal fields sit alongside every row — omitted from the table for readability:
+Every Drinian row falls into one of these shapes, discriminated by `primitive`, `scalar_type`, `bucket_for`, and `stack_for`. One orthogonal pair sits alongside every row — omitted from the table for readability:
 
-- **`uspace`** flag (0 or 1) — whether the row is currently held in user space.
-- **`role_pk`** (NOT NULL FK) — every object's owner role. Set at INSERT, immutable. Roles own themselves; non-roles point at their owning role.
-- **`role_parent`** (nullable FK) — set on role objects; points at the parent role in the tree. Null on non-role objects and on the root role (engine).
 - **`source_pk` + `line`** (nullable pair) — the value's birth line in source. `source_pk` FKs a row in the `sources` registry. Both fields together or both null; immutable after INSERT (birth line doesn't change when the value moves).
 
-| Row shape | primitive | st | sv | bucket_for | stack_for |
+Uspace membership is derived by the `uspace` view — a global UNION over anchor sources (root role, locals, frame_amber, frame_delegations, frame columns) across all frames in all processes. Not a stored column; always reflects current state.
+
+| Row shape | primitive | scalar_type | scalar_value | bucket_for | stack_for |
 |-----------|-----------|-----|-----|------------|-----------|
 | HashPrimitive (standalone / root / internal) | `'h'` | null | null | null | null |
 | HashPrimitive serving as a bucket | `'h'` | null | null | set | null |
 | ArrayPrimitive (standalone / internal) | `'a'` | null | null | null | null |
 | ArrayPrimitive serving as a stack | `'a'` | null | null | null | set |
-| Plain full object (Hash, Array, MyClass, …) | `false` | null | null | null | null |
-| StringPrimitive | `false` | `'s'` | text | null | null |
-| NumberPrimitive | `false` | `'n'` | integer/real | null | null |
-| BooleanPrimitive | `false` | `'b'` | 0/1 | null | null |
-| NullPrimitive | `false` | `'u'` | null | null | null |
+| Plain full object (Hash, Array, MyClass, …) | `'o'` | null | null | null | null |
+| StringPrimitive | `'o'` | `'s'` | text | null | null |
+| NumberPrimitive | `'o'` | `'n'` | integer/real | null | null |
+| BooleanPrimitive | `'o'` | `'b'` | 0/1 | null | null |
+| NullPrimitive | `'o'` | `'u'` | null | null | null |
 
 Rules baked into the schema:
 
@@ -39,31 +38,31 @@ Rules baked into the schema:
 - **At most one role per row.** At most one of `bucket_for` / `stack_for` may be set on any given row. A row can't be both a bucket and a stack — enforced by `check (bucket_for is null or stack_for is null)`.
 - **At most one bucket and one stack per owner.** `bucket_for` and `stack_for` are each `UNIQUE` — no two rows can be a bucket for the same owner (or a stack for the same owner). Rows where these columns are null don't collide because SQLite doesn't consider nulls in UNIQUE constraints.
 - **Buckets and stacks are both lazy.** A plain full object gets neither at creation time. The Lua write layer creates them on demand — `ensure_bucket(obj_pk)` on the first field write, `ensure_stack(obj_pk)` on the first class-extension or shadow. Objects that live briefly and never need either save the row + constraint cost entirely. (Class dispatch for stack-less full objects is a design question we're deferring; probably a `class_pk` column when we get to it.)
-- **Scalar fast path.** A scalar row (`primitive = false, st IS NOT NULL`) that has no bucket and no stack — no other row references it via `bucket_for` or `stack_for` — dispatches through the built-in class for its `st` type (StringPrimitive for `'s'`, NumberPrimitive for `'n'`, BooleanPrimitive for `'b'`, NullPrimitive for `'u'`). Scalars never auto-provision anything, so the fast path is the common case. Scalars that get extended (shadow methods, nested markers) fall back to full dispatch.
+- **Scalar fast path.** A scalar row (`primitive = 'o', scalar_type IS NOT NULL`) that has no bucket and no stack — no other row references it via `bucket_for` or `stack_for` — dispatches through the built-in class for its `scalar_type` type (StringPrimitive for `'s'`, NumberPrimitive for `'n'`, BooleanPrimitive for `'b'`, NullPrimitive for `'u'`). Scalars never auto-provision anything, so the fast path is the common case. Scalars that get extended (shadow methods, nested markers) fall back to full dispatch.
 - Deleting a full object cascades via FK to delete its bucket (if present) + stack (`bucket_for` and `stack_for` FKs have ON DELETE CASCADE). No cleanup trigger.
 - **Bucket / stack denormalization.** Owner rows also carry `bucket_pk` and `stack_pk` columns mirroring the collection-side `bucket_for` / `stack_for`. Redundant data — populated set-once by `objects_denormalize_bucket` / `_stack` triggers when the collection is inserted, then locked. Lets queries and dispatch skip a join.
-- **`objects` is effectively immutable.** Identity columns (`object_pk`, `primitive`, `st`, `sv`, `bucket_for`, `stack_for`) can never change. Denormalization columns (`bucket_pk`, `stack_pk`) are write-once. The only freely-mutable state is `uspace` and GC scratch (`needs_trace`, `in_trace`). Enforced by `objects_no_update`.
-- Scalars are single-row leaves — a StringPrimitive is one row with `primitive = false`, `st = 's'`, `sv = <text>`.
+- **`objects` is effectively immutable.** Identity columns (`object_pk`, `primitive`, `scalar_type`, `scalar_value`, `bucket_for`, `stack_for`) can never change. Denormalization columns (`bucket_pk`, `stack_pk`) are write-once. The only freely-mutable state is GC scratch (`needs_trace`, `in_trace`). Enforced by `objects_no_update`.
+- Scalars are single-row leaves — a StringPrimitive is one row with `primitive = 'o'`, `scalar_type = 's'`, `scalar_value = <text>`.
 - **Event listeners are bookkeeping, not graph.** Two dedicated tables — `instance_listeners` (for `.listen_to` registrations) and `class_listeners` (for `.listen_to_class`) — hold registration tuples. They live outside `relationships` so GC does NOT count them as reachability edges. Weak-ref lifetime falls out of `ON DELETE CASCADE`: when the broadcaster, class, or listener object is deleted, the registration cascade-deletes with it. Registration order is `reg_pk` (autoincrement). Composite `UNIQUE` on the tuple gives idempotent `.listen_to`.
-- **Uspace flag.** Every row carries a `uspace` column, strict NOT NULL boolean (0 or 1), marking whether the object is currently held in user space (a variable, a collection element, or otherwise anchored). Uspace rows are the GC's anchor set — the trace terminates as soon as any uspace row appears in `in_trace`, and the mark triggers skip uspace rows entirely (a known-alive row is never a garbage candidate). Provisional shape — the final uspace mechanism may look different, but this gives a place to reason about GC anchors.
-- **Object ownership (`role_pk`).** Every object carries a NOT NULL `role_pk` FK naming the role that owns it — set at INSERT, immutable, cascade-deletes with the owning role. Roles own themselves (engine's role_pk = 1, user's role_pk = 2). Ownership is the role of the code that conceptually created the object, not necessarily the runtime frame's role; see requirements/drinian/objects.
+- **Uspace is a global derived view, not a stored column.** `uspace` (view) unions the row-level anchor sources: root role (the user row), `locals.value_object_pk`, `frame_amber.namespace_hash_pk`, `frames.method_pk` / `method_class_pk` / `exception_class_pk`, and `frame_delegations.target_role_pk`. Any frame in any process contributes — shared object graph, so a reference from anywhere keeps the object alive. Membership is always current: when a frame pops and its anchor rows cascade, the previously-anchored objects drop out of the view automatically and become GC candidates. Roles (children of user in the tree) aren't a special case — they're regular objects reachable via relationships from user's bucket → 'children' array. Buckets and stacks aren't in the union either — they live inside their owner via bucket_for/stack_for cascade, and nothing normally makes them relationship children so they never become GC candidates. Listener registrations are NOT in the union — those are weak-ref by design.
 - **Source-location tagging (`sources` + `source_pk` / `line`).** A dedicated `sources` table registers each file / URL that produces values or frames. Object rows and frame rows carry a `(source_pk, line)` pair back-pointing to their origin — the value's birth line, the frame's current line. Both null together when the source is unknown (engine internals, hand-written CaspM, source-less metaprogramming). On objects the pair is immutable; on frames the `line` advances as the frame executes.
 - **AST storage on callables (`ast` column).** Function / method / closure objects carry their CaspM body in an `ast` blob column on `objects`, encoded as SQLite JSONB. The engine reads the current value on each call, thaws it to Lua-native form, and attaches the parsed tree to the frame executing it — no long-lived cache, no invalidation dance. Hot-patching an `ast` takes effect on the next call.
-- **Role tree (`role_parent`).** Roles form a tree rooted at engine (seeded at object_pk = 1). Engine's only child is user (seeded at object_pk = 2). All other roles descend from user. Cycles are impossible by construction — `role_parent` is immutable and FK-enforced, so a back edge can only be set at INSERT when the descendant doesn't yet exist. Seeded engine and user cannot be deleted; cascade delete on `role_parent` means any legitimately-deleted role takes its whole subtree with it.
-- **Call stack lives in dedicated tables.** Runtime frames don't fit the objects shape (no class dispatch, no bucket, no stack-of-platters), so they live in purpose-built tables: `call_stacks` (plural), `frames`, `locals`, plus sidecars `frame_delegations` (role permission grants from `delegate_to` blocks), `frame_amber` (per-frame `%amber` namespace layer — init / remove / grant entries; `amber_cleared` on the frame is the full-surface walk-stop), and `captured_frames` (snapshot-by-reference of the frames below an in-flight exception).
-- **Frame-anchored objects join uspace on attach; engine releases them.** Objects referenced from a frame's sidecar tables (currently `frame_amber` amber-namespace hashes) aren't reachable through the `relationships` graph the GC trace walks — they'd look orphan without help. A trigger marks the referenced hash `uspace = 1` on INSERT into `frame_amber`, keeping it out of GC's candidate set. The engine's Lua layer explicitly clears `uspace = 0` when the amber lifecycle ends (typically just before dropping the init'ing frame), after which the hash rejoins normal GC. Split trigger/engine responsibility on purpose: attachment is a schema fact (set at write time), release is engine policy (knows when the amber is really done). The same pattern will apply to other frame-anchor tables (`locals`, `frame_delegations`) when we close those anchoring gaps. The plural `call_stacks` accommodates future features — coroutines, fork, multiple paused processes coexisting in one file, and **multiple concurrent instances of the same machine running over one shared object graph** — where each execution context is its own `call_stacks` row. Concurrency semantics for the shared-graph case are language-level work; the storage substrate is ready. For now, Caspian runs exclusively in the seeded main stack at `cs_pk = 1`.
-- **Rich frame kinds.** `frames.kind` covers the full set of requirements' frame `action` values: `top_level`, `method_call`, `function_call`, `function_invocation`, `block`, `if_block`, `delegate_to`, `exception`, `on_close`, `pause`. Fields on `frames` are conditionally meaningful per kind (`method_pk` / `method_class_pk` on call frames, `iterator_position` / `iterator_of` on iteration frames, `exception_class_pk` / `exception_message` on exception frames, `pause_reason` / `revival_payload_pk` on pause frames). `lexical_parent_pk` on any frame links its scope's defining frame — variable lookup walks this chain, not the physical call stack.
+- **Roles are regular objects.** No schema-level role machinery — no `role_pk`, no `role_parent`, no dedicated triggers. User is seeded at pk = 1 (undeletable, intrinsic uspace root). Other roles are just objects held in user's role tree via bucket entries — each role carries a `'children'` array in its bucket pointing at its child roles. Tree invariants (single root, cycle prevention, ownership tracking) are enforced by engine-side code, not by the schema.
+- **Call stack lives in dedicated tables.** Runtime frames don't fit the objects shape (no class dispatch, no bucket, no stack-of-platters), so they live in purpose-built tables: `processes` (plural), `frames`, `locals`, plus sidecars `frame_delegations` (role permission grants from `delegate_to` blocks), `frame_amber` (per-frame `%amber` namespace layer — init / remove / grant entries; `amber_cleared` on the frame is the full-surface walk-stop), and `captured_frames` (snapshot-by-reference of the frames below an in-flight exception).
+- **Frame anchors are automatic via `uspace`.** Every frame-attached table (locals, frame_amber, frame_delegations, etc.) contributes to the uspace view. When a frame pops and its anchor rows cascade, the previously-anchored objects drop out of uspace automatically — no trigger to maintain, no engine-side release. The plural `processes` accommodates future features — coroutines, fork, multiple paused processes coexisting in one file, and **multiple concurrent instances of the same machine running over one shared object graph** — where each execution context is its own `processes` row. Concurrency semantics for the shared-graph case are language-level work; the storage substrate is ready. There's no seeded process — every engine creates its own `processes` row at startup and records the pk in the temp `current_process` table.
+- **Rich frame kinds.** `frames.kind` covers the requirements' frame `action` values that we've settled on: `top_level`, `method_call`, `function_call`, `function_invocation`, `block`, `if_block`, `delegate_to`, `exception`, `on_close`. (Pause / revival isn't yet designed — no `'pause'` kind or pause-frame columns until it is.) Fields on `frames` are conditionally meaningful per kind (`method_pk` / `method_class_pk` on call frames, `iterator_position` / `iterator_of` on iteration frames, `exception_class_pk` / `exception_message` on exception frames). `lexical_parent_pk` on any frame links its scope's defining frame — variable lookup walks this chain, not the physical call stack.
 
 ## Schema
 
 ~~~sql
 -- Drinian database design. One `objects` table holds row shapes
 -- discriminated by the `primitive` column:
---   'h'   → HashPrimitive (hash-shaped primitive container)
---   'a'   → ArrayPrimitive (array-shaped primitive container)
---   false → not a primitive collection. Either a plain full object
---           (with an auto-provisioned bucket + stack) or a scalar
---           primitive (with a scalar type in `st` and value in `sv`).
+--   'h' → HashPrimitive (hash-shaped primitive container)
+--   'a' → ArrayPrimitive (array-shaped primitive container)
+--   'o' → object. Either a plain full object (with bucket + stack
+--         reachable via bucket_for / stack_for on separate rows)
+--         or a scalar primitive (with a scalar type in `scalar_type` and
+--         value in `scalar_value`).
 --
 -- A HashPrimitive serving as a bucket carries `bucket_for` pointing
 -- at its owner; an ArrayPrimitive serving as a stack carries
@@ -146,54 +145,123 @@ begin
 end;
 
 -- ------------------------------------------------------------
--- Process: runtime state flags.
+-- current_process: per-connection runtime state (TEMP table).
 -- ------------------------------------------------------------
--- Simple key/value pairs of strings marking transient runtime
--- state. Rows come and go as the engine transitions between
--- phases. For flag-style entries the mere PRESENCE of the key is
--- enough — a row keyed 'in_gc' (value can be null or anything)
--- marks that a GC sweep is in progress. Other entries might
--- carry meaningful values. Triggers and UDFs subquery this table
--- to discover what phase the runtime is in.
-
-create table process (
-	key text primary key,
-	value text
-);
-
--- ------------------------------------------------------------
--- Objects: primitive containers, plain full objects, scalars.
--- ------------------------------------------------------------
+-- Simple key/value store for per-connection process state. TEMP
+-- table: created fresh with each connection open, disappears
+-- cleanly when the connection closes. Matches "one running
+-- process per connection" — pause = close = current_process
+-- vanishes; revive = new connection = fresh current_process
+-- populated from persistent state in `main`.
+--
+-- Currently expected keys:
+--   'current_process_pk' → integer, the active call stack's process_pk
+--
+-- More keys land as the engine grows to need them.
+--
+-- Because this is a TEMP table, the main schema file (run once
+-- at DB creation) can't define it — it needs to be created every
+-- time a connection opens. Companion setup file or engine-side
+-- code applies this DDL:
+--
+--     create temp table current_process (
+--         key text primary key,
+--         value
+--     );
 
 create table objects (
-	object_pk integer primary key autoincrement,
+	-- Primary key is a UUID4-shaped hex string generated at INSERT
+	-- time from SQLite's ChaCha20-backed randomblob(). Built
+	-- manually (the uuid() extension isn't compiled into stock
+	-- SQLite builds); the expression yields a 36-char hyphenated
+	-- lowercase string like 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'
+	-- — cryptographically random 128 bits with the standard
+	-- UUID hyphen positions. See the "Design consideration:
+	-- UUIDs as primary keys?" section for the trade-offs
+	-- accepted.
+	object_pk text primary key default (
+		lower(
+			substr(hex(randomblob(4)), 1, 8) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(6)), 1, 12)
+		)
+	),
+
+	-- User marker. Exactly one row across the whole table can
+	-- carry `user = 1` (enforced by UNIQUE + CHECK). Every other
+	-- row leaves it null. Set at INSERT and immutable — the seed
+	-- creates the user row with this set, nothing else ever gets
+	-- it. Finding the user row is `select object_pk from objects
+	-- where user` (truthy check; only user is non-null so the
+	-- UNIQUE index picks it up directly).
+	user integer unique check (user = 1),
+
+	-- Persistent flag. If set (`persistent = 1`), the object is
+	-- unconditionally in uspace — GC leaves it alone regardless of
+	-- whether anything else anchors it. Null (the default) means
+	-- normal reachability rules apply. Freely mutable via
+	-- ordinary UPDATE (subject to the CHECK); an object can be
+	-- pinned and later unpinned. Provisional shape — see where it
+	-- goes.
+	persistent integer check (persistent = 1),
+
+	-- Role parentage. If set, this row is a role and role_parent
+	-- points at its parent role. Null on the root role (user row)
+	-- and on every non-role object. Immutable at INSERT — a role
+	-- can't be reparented; that's what buys the schema-level
+	-- cycle-freeness (a row can only reference a row that already
+	-- exists, and no existing row can be repointed at a newer row).
+	--
+	-- Combined with the FK's `on delete cascade`, this column
+	-- gives the role tree its own self-maintaining subsystem:
+	-- single parent (one column, one value), cycle-free
+	-- (immutability + insert-order), cascade cleanup (parent
+	-- delete drops the subtree), and root-safety (the existing
+	-- objects_no_delete_root_role trigger keeps user undeletable).
+	--
+	-- Roles are anchored in uspace via the uspace view's
+	-- `where role_parent is not null` branch — the tree's rows
+	-- are structurally pinned by the FK, not by general
+	-- reachability. Role bucket contents still trace normally.
+	--
+	-- The schema does NOT enforce "role_parent must point at a
+	-- role"; that stays a Lua-layer check. Cycle-freeness and
+	-- single-parent-ness are the cheap wins the schema takes.
+	role_parent text references objects(object_pk) on delete cascade,
 
 	-- Row-kind discriminator. NOT NULL, no default: Drinian's write
-	-- code names the row kind at INSERT time. SQLite treats `false`
-	-- as an alias for 0.
-	--   false → full object (not a primitive collection)
-	--   'h'   → HashPrimitive
-	--   'a'   → ArrayPrimitive
-	primitive not null check (primitive in (false, 'h', 'a')),
+	-- code names the row kind at INSERT time. Exactly one of:
+	--   'o' → object (full object, or scalar primitive if scalar_type is set)
+	--   'h' → HashPrimitive
+	--   'a' → ArrayPrimitive
+	primitive text not null check (primitive in ('o', 'h', 'a')),
 
-	-- Scalar type. Only meaningful when primitive = false. When set,
+	-- Scalar type. Only meaningful when primitive = 'o'. When set,
 	-- this row is a scalar primitive; when null on a primitive =
-	-- false row, this row is a plain full object with a bucket +
+	-- 'o' row, this row is a plain full object with a bucket +
 	-- stack.
 	--   's' string, 'n' number, 'b' boolean, 'u' null
-	st text check (st in ('s', 'n', 'b', 'u')),
-	check (primitive = false or st is null),
+	scalar_type text
+		check (scalar_type in ('s', 'n', 'b', 'u'))
+		check (primitive = 'o' or scalar_type is null),
 
-	-- Scalar value. Meaningful only when `st` is set. Per-st shape
-	-- checks use `is` (not `in`) so null cleanly evaluates to false
-	-- — the `in` form would give NULL which SQLite's CHECK accepts
-	-- as passing, silently letting null booleans through.
-	sv,
-	check (st is null or st != 'b' or sv is 0 or sv is 1),
-	check (st is null or st != 'u' or sv is null),
-	check (st is null or st != 'n' or typeof(sv) in ('integer', 'real')),
-	check (st is null or st != 's' or typeof(sv) = 'text'),
-	check (st is not null or sv is null),
+	-- Scalar value. Meaningful only when `scalar_type` is set.
+	-- Declared `blob` for no-affinity storage — SQLite doesn't
+	-- coerce values in blob-affinity columns, so integers, reals,
+	-- text, and null land in the row as their native type. The
+	-- per-scalar-type shape checks below enforce the actual
+	-- type-per-scalar_type rule. Checks use `is` (not `in`) so
+	-- null cleanly evaluates to false — the `in` form would give
+	-- NULL which SQLite's CHECK accepts as passing, silently
+	-- letting null booleans through.
+	scalar_value blob
+		check (scalar_type is null or scalar_type != 'b' or scalar_value is 0 or scalar_value is 1)
+		check (scalar_type is null or scalar_type != 'u' or scalar_value is null)
+		check (scalar_type is null or scalar_type != 'n' or typeof(scalar_value) in ('integer', 'real'))
+		check (scalar_type is null or scalar_type != 's' or typeof(scalar_value) = 'text')
+		check (scalar_type is not null or scalar_value is null),
 
 	-- Role back-references. If bucket_for is set, this row is the
 	-- bucket of the referenced full object; it must be a
@@ -210,11 +278,11 @@ create table objects (
 	-- one stack. SQLite doesn't consider nulls in UNIQUE
 	-- constraints, so many rows with these columns null don't
 	-- collide.
-	bucket_for integer unique references objects(object_pk) on delete cascade,
-	stack_for  integer unique references objects(object_pk) on delete cascade,
-	check (bucket_for is null or primitive = 'h'),
-	check (stack_for  is null or primitive = 'a'),
-	check (bucket_for is null or stack_for is null),
+	bucket_for text unique references objects(object_pk) on delete cascade
+		check (bucket_for is null or primitive = 'h'),
+	stack_for  text unique references objects(object_pk) on delete cascade
+		check (stack_for  is null or primitive = 'a')
+		check (bucket_for is null or stack_for is null),
 
 	-- Denormalized owner-side back-links to the bucket and stack.
 	-- Redundant with the bucket_for / stack_for columns on the
@@ -231,57 +299,15 @@ create table objects (
 	-- reverse direction of bucket_for would fight the cascade we
 	-- already have.
 	--
-	-- CHECK: only plain full objects (primitive = false AND st null)
+	-- CHECK: only plain full objects (primitive = 'o' AND scalar_type null)
 	-- can carry these columns.
 	-- UNIQUE: no two owners share a bucket or stack — redundant with
 	-- the bucket_for / stack_for UNIQUE, but a good safety net for
 	-- the denormalization.
-	bucket_pk integer unique,
-	stack_pk  integer unique,
-	check (bucket_pk is null or (primitive = false and st is null)),
-	check (stack_pk  is null or (primitive = false and st is null)),
-
-	-- Uspace flag. 1 → this object is in "uspace" (probably a
-	-- variable or a collection element — held in user space). 0 →
-	-- it isn't. Strict boolean: NOT NULL with no default, so
-	-- Drinian's write code names the value at every INSERT.
-	-- Provisional shape — the final design may look different, but
-	-- this gives us a place to reason about the uspace anchor
-	-- concept for GC.
-	uspace integer not null check (uspace in (0, 1)),
-
-	-- Owner role. Every object has a role that owns it — set at
-	-- INSERT and immutable. Points at the role object that
-	-- conceptually created this object (the expression-evaluator's
-	-- role, not necessarily the runtime frame's role). See
-	-- requirements/drinian/objects for the ownership semantics.
-	-- Roles own themselves — engine's role_pk = 1, user's role_pk
-	-- = 2. Non-role objects point at whichever role owns them. FK
-	-- cascade: deleting a role sweeps its owned objects along with
-	-- it.
-	role_pk integer not null references objects(object_pk) on delete cascade,
-
-	-- Role tree back-pointer. Null on non-role objects and on the
-	-- root role (engine, pk=1). Set on every other role, pointing
-	-- at that role's parent role in the tree.
-	--
-	-- The tree is enforced simply: role_parent is immutable (see
-	-- objects_no_update), and ON DELETE CASCADE means deleting a
-	-- role deletes its whole subtree. Cycles are impossible by
-	-- construction — a back edge would require a role_parent
-	-- pointing at a descendant, but role_parent is set at INSERT
-	-- and the descendant doesn't exist yet at that moment (FK
-	-- would fail). Once set, the parent is locked, so no legal
-	-- write can close a cycle.
-	--
-	-- CHECK enforces the structural rule: engine (pk=1) has one
-	-- child, user (pk=2); all other roles descend from user. Legal
-	-- role_parent values are:
-	--   null                — non-role objects and the engine root
-	--   > 1                 — user (pk=2) or any of its descendants
-	--   1 for object_pk = 2 — user's grandfathered seed row
-	role_parent integer references objects(object_pk) on delete cascade,
-	check (role_parent is null or role_parent > 1 or object_pk = 2),
+	bucket_pk integer unique
+		check (bucket_pk is null or (primitive = 'o' and scalar_type is null)),
+	stack_pk  integer unique
+		check (stack_pk  is null or (primitive = 'o' and scalar_type is null)),
 
 	-- Source-location tagging. Per requirements/drinian §
 	-- Source-location tagging: a value's src is its birth line.
@@ -293,8 +319,9 @@ create table objects (
 	-- value's birth line doesn't change when the value moves
 	-- through assignments or calls.
 	source_pk integer references sources(source_pk) on delete restrict,
-	line integer check (line is null or line > 0),
-	check ((source_pk is null and line is null) or (source_pk is not null and line is not null)),
+	line integer
+		check (line is null or line > 0)
+		check ((source_pk is null and line is null) or (source_pk is not null and line is not null)),
 
 	-- AST body (function / method / closure). CaspM tree serialized
 	-- as SQLite JSONB — the binary JSON format introduced in SQLite
@@ -327,13 +354,16 @@ create table objects (
 
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
 create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
-create index objects_uspace      on objects(uspace)      where uspace = 1;
+-- Role tree: partial index over just the role rows. The uspace
+-- view's `where role_parent is not null` branch walks this;
+-- role-tree traversal queries (find children of X) use it too.
+create index objects_role_parent on objects(role_parent) where role_parent is not null;
 
 -- Immutability rules:
---   Fully immutable from INSERT: object_pk, primitive, st, sv,
---   bucket_for, stack_for, role_pk, role_parent, source_pk, line.
+--   Fully immutable from INSERT: object_pk, primitive, scalar_type, scalar_value,
+--   bucket_for, stack_for, user, role_parent, source_pk, line.
 --   Write-once (null → value, then locked): bucket_pk, stack_pk.
---   Freely mutable: uspace, and GC scratch (needs_trace, in_trace).
+--   Freely mutable: persistent, GC scratch (needs_trace, in_trace).
 create trigger objects_no_update
 before update on objects
 begin
@@ -342,18 +372,18 @@ begin
 			then raise(abort, 'objects_pk_immutable: objects.object_pk is immutable')
 		when new.primitive is not old.primitive
 			then raise(abort, 'objects_primitive_immutable: objects.primitive is immutable')
-		when new.st is not old.st
-			then raise(abort, 'objects_st_immutable: objects.st is immutable')
-		when new.sv is not old.sv
-			then raise(abort, 'objects_sv_immutable: objects.sv is immutable')
+		when new.scalar_type is not old.scalar_type
+			then raise(abort, 'objects_scalar_type_immutable: objects.scalar_type is immutable')
+		when new.scalar_value is not old.scalar_value
+			then raise(abort, 'objects_scalar_value_immutable: objects.scalar_value is immutable')
 		when new.bucket_for is not old.bucket_for
 			then raise(abort, 'objects_bucket_for_immutable: objects.bucket_for is immutable')
 		when new.stack_for is not old.stack_for
 			then raise(abort, 'objects_stack_for_immutable: objects.stack_for is immutable')
-		when new.role_pk is not old.role_pk
-			then raise(abort, 'objects_role_pk_immutable: objects.role_pk is immutable')
+		when new.user is not old.user
+			then raise(abort, 'objects_user_immutable: objects.user is immutable')
 		when new.role_parent is not old.role_parent
-			then raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable')
+			then raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)')
 		when new.source_pk is not old.source_pk
 			then raise(abort, 'objects_source_pk_immutable: objects.source_pk is immutable')
 		when new.line is not old.line
@@ -365,119 +395,51 @@ begin
 	end;
 end;
 
--- Engine (object_pk = 1) and user (object_pk = 2) are the root
--- roles and cannot be deleted. Every Drinian database starts with
--- both seeded, and nothing above the language layer can remove
--- either. Non-root uspace anchors are freely deletable (that's how
--- an object leaves user space in the first place). Note that
--- role_parent uses ON DELETE CASCADE, so protecting engine and user
--- from direct deletion also protects the whole role tree from
--- accidental sweep.
-create trigger objects_no_delete_root_roles
+-- The user row (marked `user = 1`) is the root role and cannot
+-- be deleted. Every Drinian database starts with user seeded,
+-- and nothing above the language layer can remove it. Non-root
+-- uspace anchors are freely deletable (that's how an object
+-- leaves user space in the first place). The role tree is
+-- expressed as bucket contents rooted at user; the tree's
+-- integrity is engine-side code, not schema-level enforcement.
+create trigger objects_no_delete_root_role
 before delete on objects
-when old.object_pk in (1, 2)
+when old.user
 begin
-	select raise(abort, 'root_role_cannot_be_deleted: engine (pk=1) and user (pk=2) cannot be deleted');
+	select raise(abort, 'root_role_cannot_be_deleted: the user row cannot be deleted');
 end;
 
--- ============================================================
--- UDF hook: on_delete — the object-deletion callback surface.
--- ============================================================
--- Fires on non-GC deletes (explicit user code, FK cascade during
--- normal operation, direct DELETE). Invokes the
--- drinian_udf_on_delete Lua UDF, which handles all Caspian-level
--- cleanup:
---
---   * Walks the object's stack looking for an on_close method and
---     invokes it if defined (see requirements/drinian/objects for
---     the on_close spec).
---   * Releases any native handles the object owns.
---   * Fires internal engine events — "object deleted",
---     listener-registration removal, cache invalidations, etc.
---
--- Suppressed during GC. The WHEN clause skips this trigger
--- whenever the process table has an 'in_gc' key — GC runs
--- on_close in its own callback phase before the bulk DELETE, and
--- firing the UDF again during the delete would double-invoke
--- handlers. Non-GC deletes still go through the UDF because they
--- don't get GC's callback-phase treatment.
---
--- Exceptions from on_close are treated as normal Caspian
--- exceptions — no swallow-and-log. If a handler raises, the UDF
--- raises, the trigger raises, the DELETE aborts, and the
--- exception propagates to whatever transaction wraps the
--- operation. The program either catches it (via
--- transaction(catch: true) or explicit try/catch) or the process
--- ends. Loud beats silent.
---
--- The Lua engine registers drinian_udf_on_delete before opening
--- the database (per the Lua-owner contract in
--- ideas/drinian-with-sqlite/), so by the time any DELETE fires
--- this trigger, the UDF exists. Running this schema against a
--- SQLite that hasn't registered the UDF will fail on first
--- non-GC object delete.
-create trigger objects_on_delete_hook
-before delete on objects
-when not exists (select 1 from process where key = 'in_gc')
-begin
-	select drinian_udf_on_delete(old.object_pk);
-end;
+-- Deletion callback machinery (on_close / on_delete UDF hook)
+-- deferred. When the engine needs to invoke Caspian-level cleanup
+-- on object delete, a trigger + UDF will land here.
 
--- Uspace rows (uspace = 1) are always alive by definition — the
--- drain treats them as anchors. Marking one as needs_trace is a
--- category error (we're claiming a known-alive row might be
--- garbage) and would make the drain spin. Belt-and-suspenders check
--- catching any accidental mark; the mark triggers themselves filter
--- uspace rows out of their UPDATE targets.
-create trigger objects_uspace_no_needs_trace
-before update on objects
-when old.uspace = 1 and new.needs_trace
-begin
-	select raise(abort, 'uspace_cannot_be_marked: uspace rows cannot have needs_trace set');
-end;
+-- Role tree lives in the `role_parent` column. A row IS a role
+-- iff it has role_parent set (non-root) or user = 1 (root). The
+-- schema enforces:
+--   Single parent — one column, one value.
+--   Cycle-free — role_parent is immutable and INSERT requires
+--     the target row to exist, so cycles are structurally
+--     impossible.
+--   Cascade cleanup — FK on delete cascade drops the subtree.
+--   Root safety — objects_no_delete_root_role keeps user
+--     undeletable.
+-- What the schema does NOT check: that role_parent points at a
+-- row that's itself a role (Lua-layer check on INSERT). Also
+-- naming, uniqueness of role names, class-ownership rules — all
+-- Lua.
+--
+-- Roles still live in the object graph as ordinary rows with
+-- their own bucket and stack. role_parent is an additional
+-- pointer, not a replacement for bucket/stack — it's what makes
+-- role lifetime independent of bucket-graph reachability.
 
--- Role tree structural rule is enforced by the CHECK on
--- role_parent (see objects table). No trigger needed here — the
--- CHECK catches every attempt to make a role a direct child of
--- engine (only user's grandfathered seed row is exempt). User and
--- everything under user (pk > 1) are legal role_parent targets.
-
--- role_pk must reference an actual role — either engine (pk = 1)
--- or any object with role_parent set (which the role_parent CHECK
--- guarantees puts it in user's subtree). Self-reference is allowed
--- when the row being inserted itself qualifies as a role: engine
--- (pk = 1 and role_parent null) or any new role (role_parent set).
-create trigger objects_role_pk_must_reference_role
-before insert on objects
-when
-	-- Case 1: role_pk points at another row that is not a role
-	(new.role_pk != new.object_pk
-	 and not exists (
-		select 1 from objects
-		where object_pk = new.role_pk
-		  and (object_pk = 1 or role_parent is not null)
-	 ))
-	or
-	-- Case 2: self-reference but the new row is not a role itself
-	-- (engine's self-ref is exempt; every other self-ref requires
-	-- role_parent to be set)
-	(new.role_pk = new.object_pk
-	 and new.object_pk != 1
-	 and new.role_parent is null)
-begin
-	select raise(abort, 'role_pk_must_reference_role: objects.role_pk must reference a role (engine, user, or a descendant of user)');
-end;
-
--- Seed the two root roles. Engine at object_pk = 1 with
--- role_parent null (it's the top of the tree). User at object_pk =
--- 2 with role_parent = 1. Roles own themselves — engine's role_pk
--- = 1, user's role_pk = 2. Both are HashPrimitives (containers)
--- and uspace = 1 (permanent anchors). Both explicitly name their
--- object_pk so the self-referencing role_pk resolves against the
--- row being inserted (SQLite deferred-FK check at end of
--- statement).
-insert into objects (object_pk, primitive, uspace, role_pk) values (1, 'h', 1, 1);
-insert into objects (object_pk, primitive, uspace, role_pk, role_parent) values (2, 'h', 1, 2, 1);
+-- Seed the root role. User is the root role: primitive = 'h'
+-- for now (kept as a HashPrimitive per current design), user =
+-- 1 marks it as root, persistent = 1 for consistency (the row
+-- persists anyway via `where user`), role_parent = null (root
+-- has no parent). Its object_pk is a fresh UUID from the
+-- default.
+insert into objects (primitive, user, persistent) values ('h', 1, 1);
 
 -- ------------------------------------------------------------
 -- Bucket + stack: lazily created by the Lua write layer.
@@ -524,7 +486,7 @@ end;
 create table relationships (
 	rel_pk  integer primary key autoincrement,
 
-	parent  integer not null references objects(object_pk) on delete cascade,
+	parent  text not null references objects(object_pk) on delete cascade,
 	-- child uses ON DELETE RESTRICT so deleting an object with
 	-- incoming references raises rather than silently nulling those
 	-- references. Loud beats silent. If the trace was accurate and
@@ -533,7 +495,7 @@ create table relationships (
 	-- incoming reference between mark and sweep, the delete raises
 	-- and the exception propagates to whatever transaction wraps
 	-- the operation.
-	child   integer not null references objects(object_pk) on delete restrict,
+	child   text not null references objects(object_pk) on delete restrict,
 
 	-- Hash-style entries store a text `key`. Array-style entries
 	-- leave key null and use idx as position. Class-level dispatch
@@ -558,7 +520,7 @@ create index relationships_parent on relationships(parent);
 create index relationships_child  on relationships(child);
 
 -- Only container primitives ('h' or 'a') can be parents. Full
--- objects (primitive = false) and scalar primitives cannot appear
+-- objects (primitive = 'o') and scalar primitives cannot appear
 -- as parent — they don't have references. Full objects route
 -- through their bucket / stack.
 create trigger relationships_parent_must_be_primitive_container
@@ -589,28 +551,24 @@ end;
 -- ------------------------------------------------------------
 
 -- On DELETE of a relationship: mark the old child as needs_trace.
--- The `where ... and uspace = 0` filter on the UPDATE naturally
--- skips uspace anchors (already known alive, no need to trace) —
--- if the old child is a uspace row, the UPDATE matches zero rows
--- and is a silent no-op, no separate WHEN guard needed.
+-- No uspace filter — the drain's trace handles uspace membership
+-- via the uspace view (uspace rows terminate the trace
+-- immediately as alive, a cheap wasted iteration compared to a
+-- subquery on every mark-trigger fire).
 create trigger relationships_mark_needs_trace_after_delete
 after delete on relationships
 begin
-	update objects set needs_trace = 1
-		where object_pk = old.child and uspace = 0;
+	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
 -- On UPDATE OF child: mark the OLD child when the slot is swung to
--- a different object. Same uspace filter — the mark is a no-op if
--- the old child is a uspace anchor. `is not` handles null-vs-value
--- correctly in the WHEN clause where `<>` would silently no-op on
--- null.
+-- a different object. `is not` handles null-vs-value correctly in
+-- the WHEN clause where `<>` would silently no-op on null.
 create trigger relationships_mark_needs_trace_after_update_of_child
 after update of child on relationships
 when old.child is not new.child
 begin
-	update objects set needs_trace = 1
-		where object_pk = old.child and uspace = 0;
+	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
 -- ------------------------------------------------------------
@@ -628,8 +586,8 @@ end;
 create table instance_listeners (
 	reg_pk integer primary key autoincrement,
 
-	broadcaster_pk integer not null references objects(object_pk) on delete cascade,
-	listener_pk    integer not null references objects(object_pk) on delete cascade,
+	broadcaster_pk text not null references objects(object_pk) on delete cascade,
+	listener_pk    text not null references objects(object_pk) on delete cascade,
 
 	-- event and method names are inline text, not references to
 	-- StringPrimitive objects. Interning is an engine-layer
@@ -672,8 +630,8 @@ end;
 create table class_listeners (
 	reg_pk integer primary key autoincrement,
 
-	class_pk    integer not null references objects(object_pk) on delete cascade,
-	listener_pk integer not null references objects(object_pk) on delete cascade,
+	class_pk    text not null references objects(object_pk) on delete cascade,
+	listener_pk text not null references objects(object_pk) on delete cascade,
 
 	event_name  text not null,
 	method_name text not null,
@@ -698,7 +656,7 @@ end;
 -- no bucket, no stack-of-platters) — they're highly structured
 -- engine bookkeeping and get a purpose-built shape.
 --
--- `call_stacks` is plural: the schema accommodates multiple
+-- `processes` is plural: the schema accommodates multiple
 -- execution contexts coexisting in one Drinian file. Cases the
 -- plural is ready for:
 --   * Coroutines — cooperative yield / resume, each their own stack.
@@ -711,29 +669,34 @@ end;
 --     isolation, coordination) to work out but the storage
 --     substrate ready.
 --
--- For now Caspian runs exclusively in the seeded main stack at
--- cs_pk = 1; the multi-stack features will create additional rows
--- here when they land.
+-- No seed row — each engine creates its own processes row on
+-- startup and records its pk in current_process. Multi-process
+-- features will create additional rows here at runtime.
 
-create table call_stacks (
-	cs_pk integer primary key autoincrement
+create table processes (
+	process_pk integer primary key autoincrement
 );
 
--- Seed the main call stack. cs_pk = 1 is the default context every
--- current Caspian program runs in.
-insert into call_stacks default values;
+-- No seed row. Every engine that opens a Drinian file creates
+-- its own row here at startup and records the pk in
+-- current_process; on the very first run against a fresh DB
+-- that pk will be 1 (autoincrement), but nothing pins it — a
+-- reviving process picks up the pk from persistent state or
+-- allocates a fresh one as appropriate.
 
 create table frames (
 	frame_pk integer primary key autoincrement,
 
 	-- Which call stack this frame belongs to.
-	cs_pk integer not null references call_stacks(cs_pk) on delete cascade,
+	process_pk integer not null references processes(process_pk) on delete cascade,
 
-	-- Position within cs_pk's stack. Top = MAX(idx) for that cs_pk.
-	-- Non-negative; strictly monotonic per cs_pk (push assigns
-	-- idx = MAX(idx)+1; pop removes the MAX row).
+	-- Position within process_pk's stack. Top = MAX(idx) for that process_pk.
+	-- Non-negative; strictly monotonic per process_pk (push assigns
+	-- idx = MAX(idx)+1; pop removes the MAX row). Composite
+	-- uniqueness on (process_pk, idx) is declared at the end of
+	-- this table — SQLite's grammar requires table-level
+	-- constraints after all column definitions.
 	idx integer not null check (idx >= 0),
-	unique (cs_pk, idx),
 
 	-- Frame kind — the `action` field from requirements/drinian.
 	-- Each value maps to a different structural role a frame can
@@ -751,17 +714,16 @@ create table frames (
 	--   delegate_to        — a %role.delegate_to block (carries delegations)
 	--   exception          — an in-flight raised exception
 	--   on_close           — an engine-pushed on_close handler
-	--   pause              — a pause-resume marker (see pause-resume idea)
 	kind text not null check (kind in (
 		'top_level', 'method_call', 'function_call', 'function_invocation',
 		'block', 'if_block',
-		'delegate_to', 'exception', 'on_close', 'pause'
+		'delegate_to', 'exception', 'on_close'
 	)),
 
 	-- Method dispatch info — meaningful on method_call,
 	-- function_call, function_invocation, on_close frames.
-	method_pk       integer references objects(object_pk),
-	method_class_pk integer references objects(object_pk),
+	method_pk       text references objects(object_pk),
+	method_class_pk text references objects(object_pk),
 
 	-- Lexical parent link — the frame that owned the scope where
 	-- THIS frame's code was DEFINED. Variable lookup walks this
@@ -773,25 +735,20 @@ create table frames (
 	lexical_parent_pk integer references frames(frame_pk) on delete set null,
 
 	-- Iterator state — meaningful on method_call frames for
-	-- iteration methods (each, map, etc.). Together let the
-	-- iteration resume across pause/revive.
+	-- iteration methods (each, map, etc.). Together record where
+	-- the iteration is so a suspended frame can resume from the
+	-- right position.
 	iterator_position integer check (iterator_position is null or iterator_position >= 0),
-	iterator_of       integer check (iterator_of is null or iterator_of > 0),
-	check ((iterator_position is null and iterator_of is null)
-		or (iterator_position is not null and iterator_of is not null)),
+	iterator_of       integer
+		check (iterator_of is null or iterator_of > 0)
+		check ((iterator_position is null and iterator_of is null)
+			or (iterator_position is not null and iterator_of is not null)),
 
 	-- Exception details — meaningful on 'exception' frames only.
 	-- exception_class_pk points at the exception's class object;
 	-- exception_message is human-readable text carried alongside.
-	exception_class_pk integer references objects(object_pk),
+	exception_class_pk text references objects(object_pk),
 	exception_message  text,
-
-	-- Pause-frame extras — meaningful on 'pause' frames. See
-	-- ideas/drinian-with-sqlite/pause-resume for the semantics.
-	-- pause_reason is developer context; revival_payload_pk points
-	-- at the hash object populated by whoever resumes.
-	pause_reason        text,
-	revival_payload_pk  integer references objects(object_pk),
 
 	-- Amber full-walk-stop marker. 1 → this frame called
 	-- %amber.clear (or entered a %amber.clear do end block), so
@@ -806,11 +763,18 @@ create table frames (
 	-- as the frame executes (the one column on `frames` where
 	-- mutation is expected during a frame's lifetime).
 	source_pk integer references sources(source_pk) on delete restrict,
-	line      integer check (line is null or line > 0),
-	check ((source_pk is null and line is null) or (source_pk is not null and line is not null))
+	line      integer
+		check (line is null or line > 0)
+		check ((source_pk is null and line is null) or (source_pk is not null and line is not null)),
+
+	-- Composite uniqueness — one frame per (process_pk, idx) slot.
+	-- Table-level because it spans two columns; sits here to
+	-- satisfy SQLite's grammar (table constraints after column
+	-- definitions).
+	unique (process_pk, idx)
 );
 
-create index frames_cs_pk on frames(cs_pk);
+create index frames_process_pk on frames(process_pk);
 
 create table locals (
 	-- Local variable bindings for a specific frame. Cascade-deletes
@@ -823,10 +787,12 @@ create table locals (
 	-- The object bound to this name. Plain reference: deleting a
 	-- frame shouldn't delete objects the frame referenced, since
 	-- they may be alive elsewhere.
-	value_object_pk integer not null references objects(object_pk),
+	value_object_pk text not null references objects(object_pk),
 
 	primary key (frame_pk, name)
 );
+
+create index locals_value on locals(value_object_pk);
 
 -- ------------------------------------------------------------
 -- Frame delegations — role permission grants.
@@ -839,7 +805,7 @@ create table locals (
 -- the grant is gone without a separate cleanup step.
 create table frame_delegations (
 	frame_pk       integer not null references frames(frame_pk) on delete cascade,
-	target_role_pk integer not null references objects(object_pk) on delete cascade,
+	target_role_pk text not null references objects(object_pk) on delete cascade,
 	primary key (frame_pk, target_role_pk)
 );
 
@@ -889,7 +855,7 @@ create table frame_amber (
 
 	-- For 'init' entries: the HashPrimitive object that backs this
 	-- namespace. Null otherwise.
-	namespace_hash_pk integer references objects(object_pk),
+	namespace_hash_pk text references objects(object_pk),
 
 	-- For 'grant' entries: the read / write permissions the callee
 	-- receives across the role boundary. Both are 0 or 1.
@@ -901,25 +867,11 @@ create index frame_amber_frame_pk  on frame_amber(frame_pk);
 create index frame_amber_namespace on frame_amber(namespace);
 create index frame_amber_hash_pk   on frame_amber(namespace_hash_pk) where namespace_hash_pk is not null;
 
--- ------------------------------------------------------------
--- Frame-anchor GC integration for amber hashes.
--- ------------------------------------------------------------
--- Amber namespace hashes are regular objects but the reference
--- from a frame lives in frame_amber, NOT in the relationships
--- table the GC trace walks. Without help, an amber hash held only
--- by frame_amber would look orphan and get swept.
---
--- Solution: mark the hash as uspace = 1 when it enters frame_amber
--- via an 'init' or 'grant' row. It stays uspace until the engine
--- (Lua layer) explicitly clears the flag when the amber lifecycle
--- ends — usually just before dropping the init'ing frame.
-
-create trigger frame_amber_anchor_hash_on_insert
-after insert on frame_amber
-when new.namespace_hash_pk is not null
-begin
-	update objects set uspace = 1 where object_pk = new.namespace_hash_pk;
-end;
+-- Amber namespace hashes are held in uspace by the uspace
+-- view (which unions frame_amber.namespace_hash_pk into the
+-- membership set). No trigger needed to anchor them; when the
+-- frame_amber row cascades away on frame pop, the hash drops out
+-- of the view naturally and rejoins the GC candidate pool.
 
 -- ------------------------------------------------------------
 -- Captured stack — snapshot-by-reference for exception frames.
@@ -945,15 +897,81 @@ create table captured_frames (
 );
 
 create index captured_frames_referenced on captured_frames(referenced_frame_pk);
+
+-- ------------------------------------------------------------
+-- uspace — derived view of GC anchor set.
+-- ------------------------------------------------------------
+-- Membership in "uspace" is computed dynamically from actual
+-- anchoring rather than stored as a column. Uspace is GLOBAL: an
+-- object is in uspace if it's anchored by ANY frame in ANY
+-- process. Under the shared-object-graph model, references from
+-- any process count — GC sweeps only objects that no process
+-- anchors.
+--
+-- An object is in uspace when it's:
+--
+--   * The root role (user, pk = 1).
+--   * Held as a variable binding in any frame's locals.
+--   * A namespace hash held in any frame's amber layer.
+--   * The method being executed by some frame, or that method's
+--     defining class.
+--   * The exception class of an in-flight exception.
+--   * The target of a role delegation on some frame.
+--
+-- Buckets and stacks are NOT in this list. They live inside their
+-- owner via bucket_for / stack_for (ON DELETE CASCADE handles
+-- owner-goes-so-bucket-goes at the FK level). Under normal
+-- Drinian ops nothing puts a bucket or stack row as a child in
+-- the relationships table, so mark triggers never fire on them —
+-- they never become GC candidates.
+--
+-- Roles (children of user in the role tree) aren't a special
+-- case — they're regular objects reachable via relationships from
+-- user's bucket → 'children' array → child roles. Standard trace
+-- reaches them from user (which IS in uspace).
+--
+-- The listener registration tables (instance_listeners,
+-- class_listeners) are deliberately NOT in the union — their FK
+-- cascade is documented as weak-ref lifetime, so a listener
+-- registration is not enough to keep either party alive.
+--
+-- Cost per check: one indexed lookup per union branch. Anchor
+-- tables have small row counts in typical programs; the UNION is
+-- cheap in practice.
+
+create view uspace as
+	-- Root role (the user row) is intrinsically uspace.
+	select object_pk from objects where user
+	union
+	-- Objects flagged persistent — pinned regardless of other anchors.
+	select object_pk from objects where persistent
+	union
+	-- Role tree: every non-root role. Combined with the `where user`
+	-- branch above (which picks up the root), this covers every
+	-- role. Uses the objects_role_parent partial index.
+	select object_pk from objects where role_parent is not null
+	union
+	-- Frame variable bindings.
+	select value_object_pk from locals
+	union
+	-- Amber namespace hashes referenced from a frame.
+	select namespace_hash_pk from frame_amber where namespace_hash_pk is not null
+	union
+	-- Method being called + defining class, for every live frame.
+	select method_pk from frames where method_pk is not null
+	union
+	select method_class_pk from frames where method_class_pk is not null
+	union
+	-- Exception class while an exception is in flight.
+	select exception_class_pk from frames where exception_class_pk is not null
+	union
+	-- Roles being granted permissions via delegate_to blocks.
+	select target_role_pk from frame_delegations;
 ~~~
 
 ## GC drain algorithm
 
-The drain runs on the Lua side, driven by the engine when memory pressure or an explicit trigger fires. It reads and mutates the GC scratch columns (`needs_trace`, `in_trace`) on `objects` and drives deletion via SQL. The whole pass wraps in a transaction so any raise from `on_close` or a RESTRICT FK violation rolls back atomically; the drain re-runs when conditions permit.
-
-### Setup
-
-Insert a row `('in_gc', anything)` into `process`. That row gates the `objects_on_delete_hook` UDF, so it doesn't double-invoke `on_close` during the drain's own callback phase.
+The drain runs on the Lua side, driven by the engine when memory pressure or an explicit trigger fires. It reads and mutates the GC scratch columns (`needs_trace`, `in_trace`) on `objects` and drives deletion via SQL. The whole pass wraps in a transaction so any RESTRICT FK violation rolls back atomically; the drain re-runs when conditions permit.
 
 ### Main loop — trace and sweep interleaved per candidate
 
@@ -969,27 +987,92 @@ end
 
 1. Stamp `in_trace = counter++` on the candidate.
 2. Walk upward — `SELECT parent FROM relationships WHERE child = current_pk` — and stamp `in_trace` on each parent (skipping already-stamped rows — visited set).
-3. **If any visited row has `uspace = 1`**, the component is reachable. Clear `in_trace` across the component, clear `needs_trace` on any marked rows. Everything survives.
+3. **If any visited row is in `uspace`** (`SELECT 1 FROM uspace WHERE object_pk = ?`), the component is reachable. Clear `in_trace` across the component, clear `needs_trace` on any marked rows. Everything survives.
 4. **Otherwise**, the component is dead. Delete in `in_trace` order:
    - Sever relationships first (parent OR child in the dead component). Required because `relationships.child` is `ON DELETE RESTRICT` — cyclic references would otherwise block deletion.
-   - Fire `on_close` via `drinian_udf_on_delete` on each row in `in_trace` order.
    - DELETE the object rows. Outgoing relationships cascade via `ON DELETE CASCADE` on parent.
 
-### Ordering guarantee
-
-`on_close` handlers fire in `in_trace` order — deterministic cleanup direction is available if handlers need to depend on it. Matches the earlier design decision that on_close order IS defined (not a "no_cleanup_order_dependency" rule).
+Callback machinery (on_close and other per-delete engine hooks) is deferred — this section is a "loud + simple" drain today; callbacks will land alongside a new on-delete trigger when the design settles.
 
 ### Termination
 
 Each iteration either clears `needs_trace` on the candidate (found alive) or deletes it (found dead). The count of `needs_trace = 1` rows strictly decreases per iteration. Cascade effects (deletes triggering the mark triggers on severed relationships) add more candidates, but the object graph is finite so the loop terminates.
 
-### Cleanup
-
-Delete the `'in_gc'` row from `process`. Commit the transaction.
-
 ### Failure modes
 
-- **`on_close` raises.** Exception propagates through the UDF; the transaction rolls back atomically. Whole GC pass is undone. Whatever wrapper transaction (or catching mechanism) sits above the drain handles the exception.
-- **RESTRICT fires on delete.** Same shape — some row still has incoming references at delete time (typically an `on_close` created a fresh edge). Transaction rolls back. Handled the same way.
-- **Runaway allocation.** An `on_close` that allocates and stores objects reachable from uspace produces persistent state that survives the drain. That's fine — the objects were legitimately created. If it allocates unreachable objects, the next drain picks them up as needs_trace candidates.
+- **RESTRICT fires on delete.** Some row still has incoming references at delete time — trace missed something, or code between mark and sweep created a new edge. Transaction rolls back atomically. Whole GC pass undone. Whatever wrapper transaction (or catching mechanism) sits above the drain handles the exception.
+
+## Design consideration: UUIDs as primary keys?
+
+Currently every table uses `integer primary key autoincrement` for its pks — small sequential integers. Would switching to UUIDs earn its keep?
+
+### What UUIDs would buy
+
+- **Cross-database uniqueness.** Two independent Drinian databases could be merged without pk collision. Currently a snapshot from Process A and Process B both start at pk = 1; merging is a manual reconciliation task.
+- **Distributed generation.** Multiple writers could allocate pks without coordinating. `autoincrement` is a single-writer-per-connection concept.
+- **External reference stability.** An external system holding "object 42" as a reference to a specific Drinian object relies on that pk. Under integers, pks are stable within a single DB but not across DBs; UUIDs are stable everywhere.
+- **Debugging trace disambiguation.** A log entry mentioning object 42 could mean many different objects across runs. A UUID is unambiguous.
+
+Generation cost isn't the issue — SQLite ships a `uuid()` extension function (`ext/misc/uuid.c`) that generates UUID4 values directly. Not compiled into every SQLite build by default, but trivially includable, and roughly equivalent to a plain `randomblob(16)` in cost.
+
+### What UUIDs would cost — even if we don't use their uniqueness features
+
+Every table would pay:
+
+- **Storage.** Sequential integers are 1–4 bytes each; UUIDs are 16 bytes (as blob) or 36 bytes (as text). Every FK column, every index, every `relationships` row (parent + child = two pk columns) roughly 5x its pk-related storage. Rough estimate for a 100K-object program: ~1–2 MB integer pks → ~5–10 MB UUID pks. Whole database roughly doubles or triples in size.
+- **Index performance.** B-tree indexes hold fewer entries per page with larger keys. More page reads per lookup, more page faults for large scans.
+- **B-tree write locality.** Sequential integers append to the end of the B-tree — a hot handful of pages. Random UUIDs scatter across the whole tree, dirtying many pages per write. Real-world write throughput drops noticeably (2–3x slower for insert-heavy workloads).
+- **Rowid alias loss.** With `INTEGER PRIMARY KEY`, SQLite makes the pk column an alias for the internal rowid — zero storage overhead. With a UUID pk, either the table is `WITHOUT ROWID` (works but has other constraints and quirks) or the table carries both a rowid AND the pk (extra storage plus an extra lookup layer).
+- **Human readability.** `role_pk = 1` scans instantly; `role_pk = '9c440335-a5fa-406a-8676-1da39a1a4617'` doesn't. All debugging output, snapshot inspection, and SQL prompts pay this cost forever.
+- **JSON payload size.** Anywhere pks appear in JSON (the `ast` blob's structure, snapshot serialization), UUIDs make the payload larger.
+
+### When UUIDs would earn their keep
+
+- Merging Drinian files from different processes — multi-agent coordination, sync patterns.
+- Long-lived external references to specific objects across DB lifetimes (bookmarks, permalinks, cross-system audit trails).
+- Multi-writer scenarios without coordinated pk allocation — cross-process concurrent writes to one shared DB (a scenario the current design doesn't have and would need substantial other work to support).
+
+### When they wouldn't
+
+- V1 single-process, single-writer Drinian.
+- Pause/resume within a single DB file lineage (the file survives — pks survive with it).
+- Every scenario the current schema serves.
+
+### The "cost if you don't use it" test
+
+Feature tax is real and unrewarded for the common case. The scenarios where UUIDs help are outside V1 scope; the scenarios where they hurt are every read, every write, every trace, every scan.
+
+### If we ever need cross-DB uniqueness
+
+The cheapest way to add it later is an **optional UUID sidecar column** on `objects` (or a sidecar table keyed `object_pk → uuid`) — set on the specific objects that need cross-DB identity, null everywhere else. Pay per-use; keep the integer pk fast path for everything else.
+
+### Randomness source: OS entropy vs SQLite's internal PRNG
+
+Even if we accepted the storage / performance costs above, there's a policy question: **Caspian requires random-value generation (UUIDs, session tokens, etc.) to use OS-supplied entropy.** The Lua-side UUID library we already rely on calls the OS's random device (`/dev/urandom` on Linux) on every generation, for regulatory compliance and to keep predictable-PRNG bugs out of the security surface.
+
+If we adopted UUIDs, we'd need to know: does SQLite's `uuid()` extension (or `randomblob()`) satisfy that constraint?
+
+**What SQLite actually does.** SQLite's `sqlite3_randomness()` API — which backs `randomblob(N)`, `random()`, and (indirectly) the `uuid` extension — uses a ChaCha20 stream cipher as its internal PRNG. On the first call after library load, SQLite seeds the generator by reading bytes from `/dev/urandom` (or the platform equivalent). Subsequent calls generate bytes from the ChaCha20 stream — no further syscall.
+
+So SQLite's generator is:
+
+- **Cryptographically strong** — ChaCha20 is a modern crypto primitive.
+- **OS-seeded** — the initial state comes from OS entropy.
+- **Not "per-byte from OS entropy"** — generation runs from the internal cipher stream after the initial seeding.
+
+**Whether that satisfies Caspian's requirement is interpretive.** Two readings:
+
+- **Strict.** "Every random byte comes fresh from OS entropy." SQLite fails this — we'd need a Lua UDF that reads `/dev/urandom` per generation.
+- **Pragmatic.** "The entropy source is OS-provided; generation is cryptographically strong." SQLite passes — its built-in is fine.
+
+**Cost comparison:**
+
+- **SQLite native** (`uuid()` or `randomblob(16)`): microseconds per generation, in-process ChaCha20, no syscall after startup seeding.
+- **Lua UDF calling `/dev/urandom` per UUID:** syscall + Lua-callback overhead per generation. Order of magnitude slower than the SQLite native path (still fast in absolute terms, but noticeable at scale).
+
+If we ever adopted UUIDs and interpreted the requirement strictly, the total UUID cost stacks: storage overhead (previous subsection) + slower generation (this one). If we interpret it pragmatically, only the storage overhead remains.
+
+### Recommendation
+
+Stay with integer pks. Feature tax is 2–3x storage and comparable performance overhead; the randomness-policy question adds another decision to resolve; benefit is a scenario we don't have yet. Revisit only if concrete workloads require it, and even then prefer a per-object opt-in via the sidecar approach.
 
