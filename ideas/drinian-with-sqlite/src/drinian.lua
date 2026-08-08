@@ -1,9 +1,9 @@
 --[[ {
 	"vibecode": {
 		"module": "drinian",
-		"role": "Drinian entry point (ideas/-scoped prototype): opens a SQLite connection (in-memory or file), applies the schema from the sibling schema.md, enables FKs, and creates the per-connection current_process TEMP table. Lives under ideas/drinian-with-sqlite/ because the spec is still in ideas/, not requirements/ — per the spec-before-implementation rule.",
+		"role": "Drinian entry point (ideas/-scoped prototype): opens a SQLite connection (in-memory or file), applies the schema from the sibling drinian.sql file, enables FKs, and creates the per-connection current_process TEMP table. Lives under ideas/drinian-with-sqlite/ because the spec is still in ideas/, not requirements/ — per the spec-before-implementation rule.",
 		"status": "walking-skeleton — open + apply schema + verify seed",
-		"exports": ["open", "load_schema_from_md"],
+		"exports": ["open", "load_schema"],
 		"depends_on": ["lsqlite3"]
 	}
 } ]]
@@ -12,18 +12,19 @@ local sqlite = require('lsqlite3')
 
 local M = {}
 
--- Default path to the schema.md file. drinian.lua lives at
--- ideas/drinian-with-sqlite/src/drinian.lua; schema.md is the
--- sibling one directory up.
-local function default_schema_md_path()
+-- Default path to the schema. drinian.lua and drinian.sql are siblings
+-- under ideas/drinian-with-sqlite/src/. The .sql file is authoritative;
+-- ideas/drinian-with-sqlite/sql.md pulls it in for display via Orlando's
+-- file: directive.
+local function default_schema_path()
 	local this_file = debug.getinfo(1, 'S').source:sub(2)
 	local this_dir = this_file:match('(.*/)') or './'
-	return this_dir .. '../schema.md'
+	return this_dir .. 'drinian.sql'
 end
 
---[[ {"in": "path to a schema.md file", "out": "the SQL text extracted from the first ~~~sql fenced block", "note": "single-source-of-truth: the .md is authoritative; we extract at runtime rather than duplicating into a .sql file"} ]]
-function M.load_schema_from_md(path)
-	path = path or default_schema_md_path()
+--[[ {"in": "path to a .sql file", "out": "the SQL text", "note": "single-source-of-truth: the .sql file is authoritative"} ]]
+function M.load_schema(path)
+	path = path or default_schema_path()
 
 	local file, err = io.open(path, 'r')
 
@@ -34,24 +35,15 @@ function M.load_schema_from_md(path)
 	local text = file:read('*a')
 	file:close()
 
-	-- Find the first ~~~sql ... ~~~ block. The schema is a single
-	-- contiguous fenced block; if that ever changes we'll need to
-	-- concatenate all sql blocks in order.
-	local sql = text:match('~~~sql\n(.-)\n~~~')
-
-	if not sql then
-		error('drinian_schema_block_missing: no ~~~sql fenced block found in ' .. tostring(path))
-	end
-
-	return sql
+	return text
 end
 
---[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_md_path = <path to schema.md>}", "out": "an lsqlite3 db handle with schema applied, foreign keys on, and current_process temp table created", "note": "one connection = one process context — the current_process TEMP table dies with the connection"} ]]
+--[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to drinian.sql>}", "out": "an lsqlite3 db handle with schema applied, foreign keys on, and current_process temp table created", "note": "one connection = one process context — the current_process TEMP table dies with the connection"} ]]
 function M.open(opts)
 	opts = opts or {}
 
 	local path = opts.path or ':memory:'
-	local schema = opts.schema or M.load_schema_from_md(opts.schema_md_path)
+	local schema = opts.schema or M.load_schema(opts.schema_path)
 
 	local db, err_code, err_msg = sqlite.open(path)
 

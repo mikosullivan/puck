@@ -244,8 +244,8 @@ end)
 -- Schema extraction sanity
 ------------------------------------------------------------
 
-h.test('load_schema_from_md returns non-empty SQL', function()
-	local sql = drinian.load_schema_from_md()
+h.test('load_schema returns non-empty SQL', function()
+	local sql = drinian.load_schema()
 	h.assert_true(type(sql) == 'string', 'schema is not a string')
 	h.assert_true(#sql > 100, 'schema suspiciously short: ' .. #sql .. ' chars')
 	h.assert_true(sql:find('create table objects', 1, true) ~= nil, 'schema does not contain "create table objects"')

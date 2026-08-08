@@ -801,16 +801,23 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
     opts = opts or {}
     local include_edit = privileged and not opts.no_edit
 
-    -- Page H1: github-page link, issue link, (Quick add if allowed),
-    -- (Edit if allowed) — then checkbox + form blocks after.
+    -- Page H1: github-page link, (Quick add if allowed OR GitHub-issue
+    -- link if not), (Edit if allowed) — then checkbox + form blocks
+    -- after. Quick add and the GitHub-issue chip are mutually exclusive:
+    -- Quick add files an issue via Orlando's /api/quick-add-issue
+    -- endpoint, GitHub-issue link opens GitHub's create-issue page in a
+    -- new tab. When Quick add is available (privileged), it supersedes
+    -- the GitHub-issue chip — no reason to show both paths to the same
+    -- outcome.
     body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
         local qa_id   = "qa-h1"
         local edit_id = "edit-h1"
         local chips = github_page_link(md_path)
-            .. " " .. issue_link(md_path)
 
         if privileged then
             chips = chips .. " " .. quick_add_label(qa_id)
+        else
+            chips = chips .. " " .. issue_link(md_path)
         end
         if include_edit then
             chips = chips .. " " .. edit_label(edit_id)
@@ -856,9 +863,14 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
             local qa_id   = "qa-" .. slug
             local edit_id = "edit-" .. slug
 
-            local chips = issue_link(md_path, text, id)
+            -- Quick add and GitHub-issue chip are mutually exclusive
+            -- (same reasoning as the H1 block above): when Quick add is
+            -- available, it supersedes the GitHub-issue link.
+            local chips
             if privileged then
-                chips = chips .. " " .. quick_add_label(qa_id)
+                chips = quick_add_label(qa_id)
+            else
+                chips = issue_link(md_path, text, id)
             end
             if include_edit then
                 chips = chips .. " " .. edit_label(edit_id)
