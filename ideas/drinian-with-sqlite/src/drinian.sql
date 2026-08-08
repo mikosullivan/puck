@@ -63,29 +63,27 @@ end;
 insert into drinian (key, value) values ('schema', '6.0');
 
 -- ------------------------------------------------------------
--- Sources: file / URL registry for source-location tagging.
+-- Sources: source-location registry.
 -- ------------------------------------------------------------
 -- Per requirements/drinian § Source-location tagging: every value
 -- and every frame can carry a back-pointer to where it came from
--- in source. The registry sits here, one row per distinct source
--- (file path or URL). Value rows and frame rows carry a
--- source_pk + line pair pointing back.
+-- in source. The registry sits here, one row per distinct source.
+-- Value rows and frame rows carry a source_pk + line pair pointing
+-- back.
 --
--- Rows are add-or-remove-only — sources register on first
--- encounter and never mutate. `kind` extends when new source
--- shapes land (git URL, blob, etc.).
+-- Loose on purpose. `type` is a free-form discriminator (currently
+-- expected values include 'file' and 'url', more as they come up)
+-- with no schema-enforced enum — new source shapes land without
+-- schema change. `path` is free-form text. No UNIQUE, no
+-- immutability trigger; duplicates and updates are permitted while
+-- we're still working out what wants pinning down. Constraints
+-- tighten as the semantics settle.
 
 create table sources (
 	source_pk integer primary key autoincrement,
-	kind text not null check (kind in ('file', 'url')),
+	type text not null,
 	path text not null
 );
-
-create trigger sources_no_update
-before update on sources
-begin
-	select raise(abort, 'sources_no_update: sources rows are immutable; register a new row rather than mutating an existing one');
-end;
 
 -- ------------------------------------------------------------
 -- current_process: per-connection runtime state (TEMP table).

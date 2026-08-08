@@ -85,6 +85,78 @@ Under SQLite Drinian this comes essentially for free:
 
 Big Processes were Drinian's original vision (the whole post-V1 snapshot / revive story). Under SQLite the mechanics collapse to open / close / copy. Nothing exotic left to design.
 
+## Transferring consciousness
+
+Moving a running Caspian process from one host to another is `cp`. The .sqlite file is the entire mind — every object, every reference, every frame, every variable binding, every role grant, every pending exception, every in-flight iterator. Copy the file, open it on the other side, resume. The process wakes up on the new substrate with continuity: it has no way to notice the switch, because nothing in its own state records where it was running.
+
+That's not a metaphor stretched thin. It's what falls out of "all state in one file." Traditional runtimes distribute their state across host memory (the interpreter's structures), OS resources (file descriptors, sockets, threads), and language-level heap (whatever the program built up). Migrating a process means designing a serialization protocol for each of those layers, freezing atomically, transporting, and re-materializing on the other side. Every runtime attempts it eventually; none makes it easy. Under Drinian, the layers collapse — there's only the file.
+
+What that unlocks:
+
+- **Migrate for infrastructure reasons.** Drain a host for maintenance? Copy its live processes to another host. No process notices.
+- **Migrate for performance reasons.** A Big Process that's outgrown its current host — memory pressure, disk I/O contention, geographic latency to its users — moves to a bigger host by file copy.
+- **Migrate for cost reasons.** Cheap warehouse-tier hardware for cold processes, hot hardware for active ones. Reclassification is a file move.
+- **Fork consciousness.** Copy the file twice; open both. Now the process is running in parallel on two hosts, each unaware of the other, each free to diverge. Reconcile later (or not).
+- **Time-travel consciousness.** Keep periodic snapshots of the file. Revive an old snapshot on any host to explore what the process "would have done" from that point forward. The old copy is a live, mutable process — not a read-only replay.
+- **Cross-language consciousness.** Any host that can register the engine's UDF set (see the [Lua-owner contract](index#the-lua-owner-contract)) can revive the file. That's currently Lua, but the boundary is "opens SQLite, registers UDFs," not "same Lua version."
+- **Preserve consciousness across engine upgrades.** New engine version reads the same file, resumes execution against the same graph. As long as the schema is compatible (or has a migration path), the process outlives the software running it.
+
+The one caveat: **`handle_key` state doesn't cross the wire.** Objects wrapping native resources — open sockets, file descriptors, allocated buffers, subprocess pids — carry a `handle_key` pointing at host-local state that lives outside the file. On migration, the receiving host either reconstitutes the underlying resource (reconnect the socket, reopen the file) or the object surfaces "handle unavailable" per its class's contract. The runtime plumbing is: same file, same objects, but the native-resource-backed slots need re-binding on wake. Pure-Caspian state — every hash, every array, every closure, every string, every role, every frame — transfers with zero loss.
+
+The framing: the SQLite file is the process's mind; hosts are interchangeable bodies. Consciousness travels with the file.
+
+### `%engine.transfer_mind()`
+
+The engine talks to Drinian through a defined API — a consistent surface that any Drinian backend must implement. SQLite is one implementation; others can follow (in-memory, other embedded databases, distributed formats, network-backed) and be Drinians as long as they satisfy the same API.
+
+That premise is what lets `%engine.transfer_mind()` sit at the language level: it moves a process's state between any two Drinians, not between two SQLite files specifically. Same-backend transfers (SQLite → SQLite) collapse to `cp` because the format is byte-identical, but the operation itself is defined against the API, not the file format. Different-backend transfers (SQLite → in-memory for testing; in-memory → SQLite to persist; anywhere → anywhere as backends multiply) work by construction.
+
+**Mechanism.** Mid-execution, when a process calls `%engine.transfer_mind`: (1) spin up (or connect to) a destination — commonly a small microserver holding an empty SQLite database, reachable over a Unix domain socket for local transfers or HTTP for remote; (2) port state using SQLite's own export formats (`sqlite3_backup` API for live copy, `.dump` for SQL-textual) — no per-class serialization, no `to_json`, no snapshot format design; SQLite's machinery handles arbitrary schema, and every future addition to Drinian transfers for free; (3) swap the backend — the engine drops its local implementation and picks up the client backend pointed at the destination; (4) release the local Drinian — file closed, in-memory structures freed. Expensive in wall-clock time and IO, but no feature tax — nothing in the engine grows to accommodate transfer.
+
+**Cost profile.** Only the porting step is expensive; the rest is trivial. Spinning up a destination microserver is O(schema size) — the microserver spawns, opens `:memory:`, applies the schema (kilobytes of DDL), starts listening. Milliseconds. Swapping backends is a pointer change. Releasing the local Drinian is a `close`. The irreducible cost is copying live state across the transport, proportional to how big the mind is. That decoupling means microservers can be pre-warmed — a supervisor pool keeps empty seeded microservers idle, eliminating even the spin-up cost — but that's an optimization, not a requirement.
+
+**Handoff, not replication.** There is only ever one authoritative Drinian. `transfer_mind` doesn't duplicate the mind — it moves it. The source's local state goes away; the destination holds the only living copy. No two-copies-diverging problem, no reconciliation semantics, no consistency protocol to design. Consistent with the parent section's framing: `transfer_mind` moves the mind off this host. What stays here is the body (the engine process, still executing); what leaves is the mind (the Drinian).
+
+**Why transfer-first-then-fork.** Fork alone against an in-memory Drinian gives each process its own independent copy of the state at fork time — parent and child can't coordinate through the object graph because they're touching two separate copies from then on. The concurrency story requires the state to live off-process first. Once the mind is in a microserver, forked children inherit the socket (not the database bytes), and every engine op travels to the single authoritative store. Shared object graph, no per-process divergence.
+
+**After transfer, forking multiplies bodies against one mind.** With the mind moved to a microserver, forking the process becomes the concurrency story. Children inherit the socket file descriptor. Every forked engine is already configured to talk to the same Drinian.
+
+~~~caspian
+# Startup work runs against the default in-memory Drinian.
+# ... whatever the process needs to prepare ...
+
+# Set up a Unix-socket Drinian microserver and hand off state to it.
+%engine.transfer_mind 'memory-server'
+
+# Every engine op now travels over the socket. Local Drinian is gone.
+
+# Fork ten workers. They inherit the socket automatically.
+10.times do
+	%forks.fork
+end
+
+# One process → eleven engines against one Drinian. Everything each
+# of them touches through the object graph is visible to the others.
+~~~
+
+What falls out of that composition:
+
+- **No mutex primitive at the Caspian level.** SQLite's transaction serialization is the concurrency primitive. `BEGIN IMMEDIATE` gives critical sections; regular transactions give optimistic concurrency. The [transaction feature](#full-process-rollback-via-transactions) doubles as the concurrency primitive.
+- **Coordination is just objects.** Shared queue = a Caspian array in shared Drinian. Shared counter = a NumberPrimitive updated inside a transaction. Barrier = a shared hash with waiters incrementing a field. Idiomatic Caspian code, no concurrency-specific surface.
+- **Fan-out patterns become natural.** Workers pop from a shared work queue, write results to a shared results hash, coordinate through shared listener registrations. No concurrency-library scaffolding.
+- **Actor semantics without actors.** Processes communicate via shared state instead of message passing. Simpler mental model when sharing is what you want.
+
+**Two realms per process.** Each engine now sees state in two places. The **shared realm** is everything in Drinian — every hash, every array, every closure's bucket, every role, every frame reachable through Drinian. All engines see the same values. The **host-local realm** is native resources referenced via `handle_key` — open sockets, file descriptors, subprocess pids, allocated buffers. Those live outside Drinian, in host memory. A file descriptor opened by process A isn't accessible to process B, even though the Caspian object wrapping it IS reachable through the shared Drinian. Reading such an object from any process gets you the object; using its methods to touch the underlying resource works only in the process that owns it. Same rule as `transfer_mind`'s own caveat — "shared object" doesn't imply "shared native resource."
+
+**The socket is portable.** `transfer_mind` returns a handle to the socket it created (or connected to). That handle is a Caspian value: pass it as a method argument, store it in a bucket, write it to a file, send it over a Puck channel. Any process that receives the handle can attach to the same Drinian via the corresponding engine call, becoming another engine against the same shared state. Multi-stage patterns compose from that:
+
+- **Late unification.** Parent forks children (each with its own independent copy of the state at fork-time). Later, parent transfers to a microserver and passes the socket back to the children; they attach and the family joins one shared Drinian, discarding their per-process copies.
+- **Transfer, fork, re-transfer.** Process transfers its mind to microserver A, forks workers, one worker escalates and transfers to microserver B, forks a further set of workers. Multi-level trees of shared-state cohorts, each rooted at its own microserver.
+- **Ad-hoc reconnection.** Restart a worker in a shared cohort: new process opens the socket handle from wherever it was persisted, attaches, rejoins the graph. No re-transfer needed.
+- **Handoff without fork.** Process A transfers to microserver, hands the socket to process B, exits. Process B picks up where A left off — different host, different engine process, same Drinian.
+
+The consistent-API premise makes all of that true by construction. The engine doesn't know or care what's on the other side of the API — Unix socket, HTTP, something else. Same calls, different backend.
+
 ## Full-process rollback via transactions
 
 Because the entire Drinian state lives in one SQLite database, a SQL transaction spans everything — every object, every frame, every role, every ref. When the transaction rolls back, the whole process reverts to the state it had at `BEGIN`. No undo tracking. No shadow-state machinery. SQLite gives it to us free.
