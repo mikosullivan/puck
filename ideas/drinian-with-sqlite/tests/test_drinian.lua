@@ -128,14 +128,89 @@ h.test('cannot insert a second user = 1 row (unique)', function()
 	db:close()
 end)
 
-h.test('cannot insert a role_parent pointing at a nonexistent row (FK)', function()
+h.test('cannot insert a role_parent pointing at a nonexistent row', function()
 	local db = drinian.open()
 
 	local rc = db:exec("insert into objects (primitive, role_parent) values ('h', 'no-such-uuid-0000-0000-000000000000');")
 	local msg = db:errmsg()
 
+	-- Either error is acceptable: the FK would fire for a nonexistent
+	-- target, but the objects_role_parent_must_be_role trigger runs
+	-- first (BEFORE INSERT) and its SELECT returns nothing for the
+	-- missing row, so `role_parent_must_be_role` gets raised before
+	-- SQLite reaches FK enforcement. Both mean "invalid role_parent."
 	h.assert_true(rc ~= 0, 'insert with dangling role_parent should have failed but rc = ' .. tostring(rc))
-	h.assert_true(msg:find('FOREIGN KEY', 1, true) ~= nil or msg:find('foreign key', 1, true) ~= nil, 'expected FOREIGN KEY violation, got: ' .. tostring(msg))
+	h.assert_true(
+		msg:find('FOREIGN KEY', 1, true) ~= nil
+			or msg:find('foreign key', 1, true) ~= nil
+			or msg:find('role_parent_must_be_role', 1, true) ~= nil,
+		'expected FOREIGN KEY violation or role_parent_must_be_role, got: ' .. tostring(msg)
+	)
+
+	db:close()
+end)
+
+h.test('cannot insert with role_parent pointing at a non-role row', function()
+	local db = drinian.open()
+
+	-- Insert an ordinary HashPrimitive (not a role — no user=1, no role_parent).
+	local stmt = db:prepare("insert into objects (primitive) values ('h');")
+	stmt:step()
+	stmt:finalize()
+
+	local non_role_pk = nil
+
+	for row in db:nrows("select object_pk from objects where user is null and role_parent is null and primitive = 'h' order by rowid desc limit 1") do
+		non_role_pk = row.object_pk
+	end
+
+	h.assert_true(non_role_pk ~= nil, 'setup failed: no non-role row present')
+
+	-- Try to make it a parent of a new role.
+	stmt = db:prepare("insert into objects (primitive, role_parent) values ('h', ?);")
+	stmt:bind_values(non_role_pk)
+	local rc = stmt:step()
+	local msg = db:errmsg()
+	stmt:finalize()
+
+	h.assert_true(rc ~= 101, 'insert with non-role role_parent should have failed but succeeded (rc = ' .. tostring(rc) .. ')')
+	h.assert_true(msg:find('role_parent_must_be_role', 1, true) ~= nil, 'expected role_parent_must_be_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('can insert with role_parent pointing at a role (root or non-root)', function()
+	local db = drinian.open()
+
+	-- Insert child of root — should succeed.
+	local user_pk = nil
+
+	for row in db:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+
+	local stmt = db:prepare("insert into objects (primitive, role_parent) values ('h', ?);")
+	stmt:bind_values(user_pk)
+	stmt:step()
+	stmt:finalize()
+
+	local msg = db:errmsg()
+	h.assert_eq(msg, 'not an error', 'insert of child role failed: ' .. tostring(msg))
+
+	-- Insert grandchild of root — parent is a non-root role, should also succeed.
+	local child_pk = nil
+
+	for row in db:nrows('select object_pk from objects where role_parent is not null order by rowid desc limit 1') do
+		child_pk = row.object_pk
+	end
+
+	stmt = db:prepare("insert into objects (primitive, role_parent) values ('h', ?);")
+	stmt:bind_values(child_pk)
+	stmt:step()
+	stmt:finalize()
+
+	msg = db:errmsg()
+	h.assert_eq(msg, 'not an error', 'insert of grandchild role failed: ' .. tostring(msg))
 
 	db:close()
 end)

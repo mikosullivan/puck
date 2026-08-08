@@ -4,7 +4,7 @@
 {"vibecode": {
 	"doc": "ideas_drinian_with_sqlite_schema",
 	"role": "Drinian's SQLite schema. `objects` table holds row shapes discriminated by a single `primitive` column — 'o' (object), 'h' (HashPrimitive), 'a' (ArrayPrimitive). Scalars are a variant of `primitive = 'o'` distinguished by `scalar_type` (scalar type). HashPrimitives serving as buckets carry `bucket_for` back-pointing at their owner; ArrayPrimitives serving as stacks carry `stack_for`. Only container primitives can be parents in `relationships`. Buckets and stacks are both lazy — Lua write layer creates them on demand. Scalars with no bucket/stack take a fast dispatch path through the built-in class for their `scalar_type` type. Uspace membership is derived dynamically from the `uspace` view over the anchor tables (locals, frame_amber, frame_delegations, frame columns) — no stored flag. GC uses two-column scratch (needs_trace / in_trace) — the drain deletes directly, and RESTRICT on relationships.child raises loudly if incoming references remain at delete time. Event registrations live in dedicated `instance_listeners` / `class_listeners` tables outside `relationships` — bookkeeping, not graph — with weak-ref lifetime via FK cascade.",
-	"status": "iterating — st/sv renamed to scalar_type/scalar_value; scalar_value now blob-typed; inter-column table-level CHECK constraints moved inline to preceding columns to satisfy SQLite's grammar (all-column-defs-before-any-table-constraint)"
+	"status": "iterating — added objects_role_parent_must_be_role trigger; the schema now enforces every part of the role-tree invariant except naming (single parent, cycle-free, cascade cleanup, root safety, parent-is-a-role)"
 }}
 ~~~
 
@@ -226,9 +226,12 @@ create table objects (
 	-- are structurally pinned by the FK, not by general
 	-- reachability. Role bucket contents still trace normally.
 	--
-	-- The schema does NOT enforce "role_parent must point at a
-	-- role"; that stays a Lua-layer check. Cycle-freeness and
-	-- single-parent-ness are the cheap wins the schema takes.
+	-- The schema also enforces "role_parent must point at a row
+	-- that is itself a role" via the objects_role_parent_must_be_role
+	-- BEFORE INSERT trigger below. INSERT-only (role_parent is
+	-- immutable, so once a row is validated as a role at insert
+	-- time, it stays a role for its lifetime). One indexed lookup
+	-- per role insertion; roles are rare, so cost is negligible.
 	role_parent text references objects(object_pk) on delete cascade,
 
 	-- Row-kind discriminator. NOT NULL, no default: Drinian's write
@@ -409,6 +412,27 @@ begin
 	select raise(abort, 'root_role_cannot_be_deleted: the user row cannot be deleted');
 end;
 
+-- Every non-root role must name a parent that is itself a role.
+-- "Is a role" = has user = 1 (root) OR has role_parent set
+-- (non-root). BEFORE INSERT only — role_parent is immutable via
+-- objects_no_update, so a row's role-ness is determined at insert
+-- time and can't be silently stripped afterward. The WHEN clause
+-- skips inserts with role_parent null (the common case). When it
+-- does fire, one indexed lookup by pk verifies the target row.
+create trigger objects_role_parent_must_be_role
+before insert on objects
+when new.role_parent is not null
+begin
+	select case
+		when (
+			select 1 from objects
+			where object_pk = new.role_parent
+				and (user = 1 or role_parent is not null)
+		) is null
+		then raise(abort, 'role_parent_must_be_role: role_parent must reference a row that is itself a role (root user row or a row with role_parent set)')
+	end;
+end;
+
 -- Deletion callback machinery (on_close / on_delete UDF hook)
 -- deferred. When the engine needs to invoke Caspian-level cleanup
 -- on object delete, a trigger + UDF will land here.
@@ -423,10 +447,10 @@ end;
 --   Cascade cleanup — FK on delete cascade drops the subtree.
 --   Root safety — objects_no_delete_root_role keeps user
 --     undeletable.
--- What the schema does NOT check: that role_parent points at a
--- row that's itself a role (Lua-layer check on INSERT). Also
--- naming, uniqueness of role names, class-ownership rules — all
--- Lua.
+--   Parent-is-a-role — objects_role_parent_must_be_role rejects
+--     any insert whose role_parent points at a non-role row.
+-- What the schema does NOT check: naming, uniqueness of role
+-- names, class-ownership rules — all Lua.
 --
 -- Roles still live in the object graph as ordinary rows with
 -- their own bucket and stack. role_parent is an additional
