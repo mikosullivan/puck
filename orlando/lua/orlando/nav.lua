@@ -94,9 +94,20 @@ local function render_ul(parent, tree, fs_prefix, url_prefix, current_md_path)
     -- index.md itself never appears as a sibling entry — pull_index_file
     -- has already removed it; the directory it lives in carries its
     -- ordering instead.
+    --
+    -- Same-name-file-and-dir collision: when a file `foo.md` sits next
+    -- to a directory `foo/`, hide the file from the sidebar. Otherwise
+    -- both render as sibling entries labeled "foo" and "foo/", which is
+    -- visually indistinguishable and confusing. The file stays reachable
+    -- at its URL; only the sidebar entry is suppressed. The directory
+    -- entry represents the concept in the sidebar.
     local entries = {}
     for _, name in ipairs(tree.files) do
-        entries[#entries + 1] = { name = name, kind = "file" }
+        local bare = name:sub(-3) == ".md" and name:sub(1, -4) or nil
+        local shadowed = bare and tree.subdirs[bare] ~= nil
+        if not shadowed then
+            entries[#entries + 1] = { name = name, kind = "file" }
+        end
     end
     for name, _ in pairs(tree.subdirs) do
         entries[#entries + 1] = { name = name, kind = "dir" }

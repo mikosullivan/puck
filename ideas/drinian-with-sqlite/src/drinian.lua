@@ -60,7 +60,7 @@ function M.open(opts)
 		error('drinian_pragma_fk_failed: ' .. tostring(msg))
 	end
 
-	-- Apply the main schema. This is the DDL from schema.md.
+	-- Apply the main schema. This is the DDL from drinian.sql.
 	ok = db:exec(schema)
 
 	if ok ~= sqlite.OK then
@@ -70,8 +70,9 @@ function M.open(opts)
 	end
 
 	-- Per-connection state. TEMP table: dies with this connection.
-	-- Documented in schema.md but not in the main DDL because temp
-	-- tables can't be defined by the once-per-DB main schema.
+	-- Noted in the drinian.sql intro comments but not in the main
+	-- DDL because temp tables can't be defined by the once-per-DB
+	-- main schema.
 	ok = db:exec([[
 		create temp table current_process (
 			key text primary key,
