@@ -1734,6 +1734,84 @@ function M.render_lua_annotated(ctx)
 end
 
 --[[ {
+    "in":  {"ctx": "table { path = string (fs path to .sql file), title = string?, client_ip = string? }"},
+    "out": "string (full HTML page, ready to send over HTTP)",
+    "note": "Renders a .sql source file as one syntax-highlighted <pre><code> block via orlando.sql_page. Uses the same page shell (sidebar, breadcrumb, file-path link, Quick-add / issue-chip pipeline) as render_lua_annotated."
+} ]]
+function M.render_sql_annotated(ctx)
+    local f, err = io.open(ctx.path, "r")
+    if not f then
+        error("orlando.page: cannot open " .. tostring(ctx.path) .. ": " .. tostring(err))
+    end
+    local source = f:read("*a")
+    f:close()
+
+    local sql_page = require("orlando.sql_page")
+    local body = sql_page.render_body(source)
+
+    -- Auto-inject a "file: /path" line — same shape as
+    -- render_lua_annotated. ?raw=1 returns the raw source; the link
+    -- on the page targets that.
+    local file_line = '<p class="lua-file-path"><code>file: '
+        .. '<a href="?raw=1" target="_blank">/'
+        .. ctx.path
+        .. '</a></code></p>'
+    local h1_end_start, h1_end_stop = body:find("</h1>", 1, true)
+    if h1_end_start then
+        body = body:sub(1, h1_end_stop) .. file_line .. body:sub(h1_end_stop + 1)
+    else
+        body = file_line .. body
+    end
+
+    -- Same issue-chip pipeline as markdown / lua pages.
+    body = ensure_heading_ids(body)
+    local original_heading_ids = {}
+    for id in body:gmatch('<h[2-6][^>]*id="([^"]+)"') do
+        original_heading_ids[id] = true
+    end
+    body = inject_issues_panel(body, ctx.path, ctx.client_ip)
+    body = inject_issue_links(body, ctx.path, ctx.client_ip, original_heading_ids, {no_edit = true})
+
+    local html = quick_builder.new("html")
+    html:attr("lang", "en")
+    add_head(html, ctx.title)
+    html:tag("body", function(b)
+        b:tag("div", function(layout)
+            layout:attr("class", "layout")
+            layout:tag("button", function(btn)
+                btn:attr("class",      "sidebar-show-btn")
+                btn:attr("type",       "button")
+                btn:attr("aria-label", "Show sidebar")
+                btn:text("»")
+            end)
+            layout:tag("nav", function(n)
+                n:attr("class", "sidebar")
+                add_sidebar(n, ctx.path)
+            end)
+            layout:tag("main", function(m)
+                m:attr("class", "content")
+                add_breadcrumb(m, ctx.path)
+                m:raw(body)
+            end)
+        end)
+        -- Hidden iframe target for Quick-add form submissions.
+        b:tag("iframe", function(f)
+            f:attr("name",   "qa-target")
+            f:attr("class",  "quick-add-iframe")
+            f:attr("hidden", "")
+            f:text("")
+        end)
+        b:tag("hr", function(_) end)
+        b:tag("span", function(s)
+            s:attr("class", "about")
+            s:text("© 2026 Puck.uno")
+        end)
+    end)
+
+    return "<!DOCTYPE html>\n" .. html:render()
+end
+
+--[[ {
     "in":  {"ctx": "table { fs_path = string, url_path = string, title = string?, client_ip = string? }"},
     "out": "string (full HTML page, ready to send over HTTP)",
     "note": "Renders a directory listing for directories that have no index.md. Shows subdirs and md/asset files as a simple list, with the standard site chrome."

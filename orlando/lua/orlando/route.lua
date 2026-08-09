@@ -140,6 +140,13 @@ function M.resolve(url_path)
         return { kind = "lua_annotated", path = rel }
     end
 
+    -- .sql files get the markdown / code annotator (see orlando.sql_page).
+    -- Same shape as the .lua treatment; simpler classifier (/* */ → markdown,
+    -- else → syntax-highlighted SQL).
+    if rel:match("%.sql$") and file_exists(rel) and not dir_exists(rel) then
+        return { kind = "sql_annotated", path = rel }
+    end
+
     -- If the literal URL points at a real non-markdown file, serve as static
     -- BEFORE the .html strip and markdown lookups. Without this, foo.html →
     -- foo would rewrite to foo.md and silently serve foo.md if it exists.
