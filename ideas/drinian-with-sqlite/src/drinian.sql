@@ -12,33 +12,8 @@ pragma foreign_keys = on;
 pragma recursive_triggers = on;
 
 -- ############################################################################
--- Mikobase
+-- # Mikobase                                                                 #
 -- ############################################################################
-
-
-
--- ------------------------------------------------------------
--- Sources: source-location registry.
--- ------------------------------------------------------------
--- Per requirements/drinian § Source-location tagging: every value
--- and every frame can carry a back-pointer to where it came from
--- in source. The registry sits here, one row per distinct source.
--- Value rows and frame rows carry a source_pk + line pair pointing
--- back.
---
--- Loose on purpose. `type` is a free-form discriminator (currently
--- expected values include 'file' and 'url', more as they come up)
--- with no schema-enforced enum — new source shapes land without
--- schema change. `path` is free-form text. No UNIQUE, no
--- immutability trigger; duplicates and updates are permitted while
--- we're still working out what wants pinning down. Constraints
--- tighten as the semantics settle.
-
-create table sources (
-	source_pk integer primary key autoincrement,
-	type text not null,
-	path text not null
-);
 
 -- ------------------------------------------------------------
 -- current_process: per-connection runtime state (TEMP table).
@@ -93,15 +68,6 @@ create table objects (
 	-- where user` (truthy check; only user is non-null so the
 	-- UNIQUE index picks it up directly).
 	user integer unique check (user = 1),
-
-	-- Persistent flag. If set (`persistent = 1`), the object is
-	-- unconditionally in uspace — GC leaves it alone regardless of
-	-- whether anything else anchors it. Null (the default) means
-	-- normal reachability rules apply. Freely mutable via
-	-- ordinary UPDATE (subject to the CHECK); an object can be
-	-- pinned and later unpinned. Provisional shape — see where it
-	-- goes.
-	persistent integer check (persistent = 1),
 
 	-- Role parentage. If set, this row is a role and role_parent
 	-- points at its parent role. Null on the root role (user row)
@@ -206,53 +172,9 @@ create table objects (
 	bucket_pk integer unique
 		check (bucket_pk is null or (primitive = 'o' and scalar_type is null)),
 	stack_pk  integer unique
-		check (stack_pk  is null or (primitive = 'o' and scalar_type is null)),
-
-	-- Source-location tagging. Per requirements/drinian §
-	-- Source-location tagging: a value's src is its birth line.
-	-- source_pk names the file / URL in the sources table; line is
-	-- the 1-based line number. Both nullable and omitted together
-	-- for values with no source line — engine internals,
-	-- hand-written CaspM fixtures, truly source-less
-	-- metaprogramming output. Both immutable after INSERT: a
-	-- value's birth line doesn't change when the value moves
-	-- through assignments or calls.
-	source_pk integer references sources(source_pk) on delete restrict,
-	line integer
-		check (line is null or line > 0)
-		check ((source_pk is null and line is null) or (source_pk is not null and line is not null)),
-
-	-- AST body (function / method / closure). CaspM tree serialized
-	-- as SQLite JSONB — the binary JSON format introduced in SQLite
-	-- 3.45.0. JSON1 functions query into it transparently
-	-- (json_extract, etc.) without full parse. Null on objects that
-	-- aren't callables. Mutable — the engine reads the current
-	-- value on each call and thaws it into Lua-native form
-	-- attached to the frame, so an update to `ast` takes effect on
-	-- the next call (hot-patch / metaprogramming friendly, no
-	-- cache-invalidation dance).
-	ast blob,
-
-	-- Transient GC scratch. Both are 1 or null — CHECK doesn't
-	-- fire on null, so no `X is null or` guard is needed.
-	--
-	-- needs_trace: 1 means this row is a candidate seed the drain
-	-- should trace from. in_trace: positive integer giving the order
-	-- the drain's callback loop fires against this row (see
-	-- specs/on-gc.md).
-	--
-	-- No `del` column — the drain deletes objects directly instead
-	-- of a mark-then-bulk-delete pattern. If an object still has
-	-- incoming references at delete time (e.g., an on_close created
-	-- a new one), the RESTRICT FK on relationships.child raises,
-	-- and the exception propagates like any other. Loud beats
-	-- silent.
-	needs_trace integer check (needs_trace = 1),
-	in_trace    integer check (in_trace > 0)
+		check (stack_pk  is null or (primitive = 'o' and scalar_type is null))
 );
 
-create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
-create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
 -- Role tree: partial index over just the role rows. The uspace
 -- view's `where role_parent is not null` branch walks this;
 -- role-tree traversal queries (find children of X) use it too.
@@ -260,7 +182,7 @@ create index objects_role_parent on objects(role_parent) where role_parent is no
 
 -- Immutability rules:
 --   Fully immutable from INSERT: object_pk, primitive, scalar_type, scalar_value,
---   bucket_for, stack_for, user, role_parent, source_pk, line.
+--   bucket_for, stack_for, user, role_parent.
 --   Write-once (null → value, then locked): bucket_pk, stack_pk.
 --   Freely mutable: persistent, GC scratch (needs_trace, in_trace).
 create trigger objects_no_update
@@ -283,10 +205,6 @@ begin
 			then raise(abort, 'objects_user_immutable: objects.user is immutable')
 		when new.role_parent is not old.role_parent
 			then raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)')
-		when new.source_pk is not old.source_pk
-			then raise(abort, 'objects_source_pk_immutable: objects.source_pk is immutable')
-		when new.line is not old.line
-			then raise(abort, 'objects_line_immutable: objects.line is immutable')
 		when old.bucket_pk is not null and new.bucket_pk is not old.bucket_pk
 			then raise(abort, 'objects_bucket_pk_write_once: objects.bucket_pk is write-once')
 		when old.stack_pk is not null and new.stack_pk is not old.stack_pk
@@ -352,14 +270,6 @@ end;
 -- their own bucket and stack. role_parent is an additional
 -- pointer, not a replacement for bucket/stack — it's what makes
 -- role lifetime independent of bucket-graph reachability.
-
--- Seed the root role. User is the root role: primitive = 'h'
--- for now (kept as a HashPrimitive per current design), user =
--- 1 marks it as root, persistent = 1 for consistency (the row
--- persists anyway via `where user`), role_parent = null (root
--- has no parent). Its object_pk is a fresh UUID from the
--- default.
-insert into objects (primitive, user, persistent) values ('h', 1, 1);
 
 -- ------------------------------------------------------------
 -- Bucket + stack: lazily created by the Lua write layer.
@@ -494,6 +404,55 @@ end;
 -- Only container primitives can be parents in the `relationships`
 -- table. Full objects hold their contents in their bucket + stack;
 -- scalars have no contents at all.
+
+-- ------------------------------------------------------------
+-- Drinian's additions to the Mikobase `objects` table.
+-- ------------------------------------------------------------
+-- The base `objects` table is defined in the Mikobase section
+-- above. Drinian layers on the columns it needs by ALTER TABLE:
+--
+--   persistent  — pin flag for the uspace view (see below). If
+--                 set, the object is unconditionally in uspace
+--                 regardless of any other anchoring. Nullable and
+--                 freely mutable — an object can be pinned and
+--                 later unpinned.
+--
+--   ast         — CaspM tree for callables (function / method /
+--                 closure), serialized as SQLite JSONB. Null on
+--                 non-callables. Mutable — the engine reads the
+--                 current value on each call and thaws it into
+--                 Lua-native form attached to the frame, so an
+--                 update takes effect on the next call (hot-patch
+--                 / metaprogramming friendly).
+--
+--   needs_trace — GC scratch: 1 means this row is a candidate the
+--                 drain should trace from. Null in the common case.
+--   in_trace    — GC scratch: positive integer giving the order
+--                 the drain's callback loop fires against this row.
+--                 Null in the common case. Both are 1-or-null / >0-
+--                 or-null; CHECK doesn't fire on null so no `is
+--                 null or` guard is needed.
+
+alter table objects add column persistent integer
+	check (persistent = 1);
+
+alter table objects add column ast blob;
+
+alter table objects add column needs_trace integer
+	check (needs_trace = 1);
+
+alter table objects add column in_trace integer
+	check (in_trace > 0);
+
+create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
+create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
+
+-- Seed the root role. User is the root role: primitive = 'h'
+-- (a HashPrimitive per current design), user = 1 marks it as root,
+-- persistent = 1 for consistency (the row persists anyway via
+-- `where user`), role_parent = null (root has no parent). Its
+-- object_pk is a fresh UUID from the default.
+insert into objects (primitive, user, persistent) values ('h', 1, 1);
 
 
 -- ------------------------------------------------------------
@@ -735,15 +694,6 @@ create table frames (
 	-- with .clear. Domain-specific hides live as tombstone rows in
 	-- frame_ambers; this flag is the whole-surface stop.
 	amber_cleared integer check (amber_cleared is null or amber_cleared = 1),
-
-	-- Source-location for this frame — where in source the frame
-	-- currently is. source_pk names the file / URL; line advances
-	-- as the frame executes (the one column on `frames` where
-	-- mutation is expected during a frame's lifetime).
-	source_pk integer references sources(source_pk) on delete restrict,
-	line      integer
-		check (line is null or line > 0)
-		check ((source_pk is null and line is null) or (source_pk is not null and line is not null)),
 
 	-- Composite uniqueness — one frame per (process_pk, idx) slot.
 	-- Table-level because it spans two columns; sits here to
