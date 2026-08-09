@@ -3,12 +3,20 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_drinian_with_sqlite",
-	"role": "brainstorm space for using SQLite directly as Drinian's storage layer — a purpose-built schema shaped around Drinian's fields.",
-	"status": "sketching 2026-08-07 — table shapes proposed; not committed"
+	"role": "Drinian implemented as a SQLite database — the authoritative schema (src/drinian.sql), per-subsystem specs (garbage-collection, pause-resume, api), the features the SQLite substrate unlocks, and walking-skeleton Lua+tests that exercise the schema. Two-layer split: Mikobase (general-purpose DBMS pieces) + Drinian (Caspian-specific runtime layer added via ALTER TABLE).",
+	"status": "stable — pre-promotion review; tree ready to move to requirements/drinian/ + src/engine/"
 }}
 ~~~
 
 Purpose-built SQLite schema for Drinian — every field of the runtime state hash maps to a table directly shaped around what Drinian actually needs, rather than being layered on top of a generic object store.
+
+- [sql](sql)
+- [api](api/)
+- [garbage-collection](garbage-collection/)
+- [features](features)
+- [pause-resume](pause-resume/)
+- [src](src/)
+- [tests](tests/)
 
 ## The Lua-owner contract
 

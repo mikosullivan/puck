@@ -70,7 +70,7 @@ That removes a category of design work that plagues the in-memory model — the 
 
 ## Big Processes
 
-Long-term Caspian goal: processes that outlive their host. A Caspian program pauses across a blocking call (HTTP promise, agent yield, human approval), releases its host process entirely, and revives — potentially days later, potentially on a different host — with state exactly where it left off. See [requirements/drinian/#future-snapshot-and-revive-post-v1-0](https://www.puck.uno/requirements/drinian/#future-snapshot-and-revive-post-v1-0) for the aspirational shape.
+Long-term Caspian goal: processes that outlive their host. A Caspian program pauses across a blocking call (HTTP promise, agent yield, human approval), releases its host process entirely, and revives — potentially days later, potentially on a different host — with state exactly where it left off.
 
 Under SQLite Drinian this comes essentially for free:
 

@@ -8,7 +8,7 @@
 }}
 ~~~
 
-GC is done by Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row where `needs_trace = 1`, determines its reachability with respect to the `uspace` view (defined in [drinian.sql](../sql)), and either clears the row's mark (if it's still alive) or deletes it (if it's genuinely orphaned).
+GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row where `needs_trace = 1`, determines its reachability with respect to the `uspace` view (defined in [drinian.sql](../sql)), and either clears the row's mark (if it's still alive) or deletes it (if it's genuinely orphaned).
 
 ## Mark triggers
 

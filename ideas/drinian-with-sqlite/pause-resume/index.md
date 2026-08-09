@@ -8,7 +8,7 @@
 	"key_concepts": ["pause_frame_on_stack", "close_is_commit",
 		"sql_edit_resumes", "revival_with_payload", "engine_minimalism",
 		"cross_host_resume", "delimited_continuations_persisted"],
-	"status": "sketch 2026-08-07"
+	"status": "design settled — pause/resume mechanics, revival-with-payload, use cases; a few open questions remain on transaction interaction and payload shape"
 }}
 ~~~
 
@@ -71,7 +71,7 @@ The payload can be null or an empty hash when the resumer has nothing to say —
 ## Properties
 
 - **Atomic pause.** The pause frame lands as part of a SQL transaction; closing the DB commits. WAL mode guarantees no half-paused state.
-- **Durability for free.** The database file IS the paused state. No serialization pass, no snapshot format, no marshaling. Same design as Big Processes ([drinian-with-sqlite § Big Processes](https://www.puck.uno/ideas/drinian-with-sqlite/#big-processes)).
+- **Durability for free.** The database file IS the paused state. No serialization pass, no snapshot format, no marshaling. Same design as Big Processes ([features § Big Processes](https://www.puck.uno/ideas/drinian-with-sqlite/features#big-processes)).
 - **Cross-host resume.** Pause on host A, copy the file, resume on host B. The Drinian file is portable across any host that can open SQLite.
 - **Duration unbounded.** A file paused today can revive next year. Filesystem-lifetime, not process-lifetime.
 - **Engine minimalism.** The engine doesn't grow special "waiting for X" primitives. Its main loop reads and executes frames. Pause is one frame that causes the loop to exit; revival is the same frame being gone.
