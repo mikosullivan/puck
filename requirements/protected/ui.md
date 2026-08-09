@@ -6,7 +6,7 @@
 {"vibecode": {
 	"doc": "requirements_protected_memory_ui",
 	"role": "spec for the Caspian-code developer interface to the protected-memory subsystem — the code a developer actually writes to hold, verify, and manage secrets. Covers the Password class API (constructor, verify, hash, needs_rehash?, destroy), declaring password/passkey fields in HTTP route schemas so Touchstone's protected-mode pre-pass kicks in, engine-config entries for process-security settings, anti-patterns and what you deliberately cannot do, and a worked login-route example. The vault (storage) and process-security (OS hardening) primitives are spec'd in the sibling pages; this file is the surface a developer touches.",
-	"status": "spec — API surface and configuration surface settled; specific Drinian on_snapshot behavior for handles and full sidecar-map wiring pending",
+	"status": "spec — API surface and configuration surface settled; snapshot-erasure behavior for handles and full sidecar-map wiring pending",
 	"audience": "Caspian developers writing code that handles passwords, passkeys, or other secrets; anyone reviewing the developer-visible surface of the protected-memory subsystem"
 }}
 ~~~
@@ -136,7 +136,7 @@ The following are absent by design. Attempts to work around them are code smells
 
 - **No `.plaintext` accessor.** A `Password` cannot yield its plaintext to user code. If you need to run a cryptographic operation on the bytes, add a `vault.*` gateway operation for it (engine change, deliberate review) — don't try to export.
 - **No string coercion.** `Password` doesn't respond to `.to_string` or automatic string interpolation. Attempts print as `<Password>`.
-- **No serialization.** Drinian's `on_snapshot` hook for `Password` erases the handle rather than emit anything to the snapshot. A snapshot with a `Password`-holding object surfaces as a handle whose vault entry is gone; the receiver has to re-acquire (re-prompt, re-fetch) to use it again.
+- **No serialization.** `Password` handles are erased on snapshot rather than serialized. A snapshot with a `Password`-holding object surfaces as a handle whose vault entry is gone; the receiver has to re-acquire (re-prompt, re-fetch) to use it again.
 - **No logging.** Standard logging paths recognize `Password` and redact. Custom loggers that stringify objects will still just see `<Password>`.
 - **No copy-out.** `$new = Password.new plaintext: $pw.something` doesn't compile if `$pw.something` is trying to reach the underlying bytes. The only way to make a new `Password` is to construct from plaintext arriving from an approved engine path.
 

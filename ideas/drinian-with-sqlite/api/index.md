@@ -90,7 +90,7 @@ New row in `processes`. Called at engine startup and per fork/coroutine.
 
 ### `push_frame`
 
-Add a frame to a process's stack. Caller supplies `kind`, `lexical_parent_pk`, `method_pk` / `method_class_pk`, iterator state, source position — whatever the frame kind requires.
+Add a frame to a process's stack. Caller supplies `type`, `lexical_parent_pk`, `method_pk` / `method_class_pk`, iterator state, source position — whatever the frame type requires.
 
 ### `pop_frame`
 
@@ -106,11 +106,11 @@ Look up a name in a frame (single frame; lexical-chain walk is a higher-level op
 
 ### `push_amber`
 
-Add a per-frame amber layer (a namespace init, remove marker, or grant entry).
+Add a per-frame amber layer (a domain init, remove marker, or grant entry).
 
 ### `read_amber`
 
-Look up a namespaced amber value for a frame. Walks the amber stack; `amber_cleared` on any frame ends the walk with an empty result.
+Look up a domain-scoped amber value for a frame. Walks the amber stack; `amber_cleared` on any frame ends the walk with an empty result.
 
 ### `clear_amber`
 

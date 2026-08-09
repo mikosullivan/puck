@@ -1,22 +1,3 @@
--- Drinian database design. One `objects` table holds row shapes
--- discriminated by the `primitive` column:
---   'h' → HashPrimitive (hash-shaped primitive container)
---   'a' → ArrayPrimitive (array-shaped primitive container)
---   'o' → object. Either a plain full object (with bucket + stack
---         reachable via bucket_for / stack_for on separate rows)
---         or a scalar primitive (with a scalar type in `scalar_type` and
---         value in `scalar_value`).
---
--- A HashPrimitive serving as a bucket carries `bucket_for` pointing
--- at its owner; an ArrayPrimitive serving as a stack carries
--- `stack_for`. Standard SQL "child references parent" idiom — ON
--- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
--- cleanup trigger needed.
---
--- Only container primitives can be parents in the `relationships`
--- table. Full objects hold their contents in their bucket + stack;
--- scalars have no contents at all.
-
 pragma foreign_keys = on;
 
 -- Recursive triggers are ON. SQLite permits a manual trigger's
@@ -30,37 +11,11 @@ pragma foreign_keys = on;
 -- relationships continue to fire during bulk DELETEs.
 pragma recursive_triggers = on;
 
--- ------------------------------------------------------------
--- Drinian marker table
--- ------------------------------------------------------------
--- The presence of this table signals "this database can be used as
--- Drinian." A generic SQLite file has no `drinian` table; a Drinian
--- database always does. Any Drinian tool can check for this table's
--- existence before treating the file as a Drinian store, and any
--- database that carries it is committing to the Drinian schema.
---
--- Append-only: once a row is inserted, it cannot be updated or
--- deleted. Every entry is a permanent birth-record. If we ever need
--- something mutable, it goes in a different table.
+-- ############################################################################
+-- Mikobase
+-- ############################################################################
 
-create table drinian (
-	key text primary key,
-	value text
-);
 
-create trigger drinian_no_update
-before update on drinian
-begin
-	select raise(abort, 'drinian_append_only: drinian is append-only; no updates allowed');
-end;
-
-create trigger drinian_no_delete
-before delete on drinian
-begin
-	select raise(abort, 'drinian_append_only: drinian is append-only; no deletes allowed');
-end;
-
-insert into drinian (key, value) values ('schema', '6.0');
 
 -- ------------------------------------------------------------
 -- Sources: source-location registry.
@@ -495,9 +450,11 @@ begin
 	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in relationships');
 end;
 
--- Identity is (rel_pk, parent, key). Content — child, idx — is
--- mutable. Swinging child from one object to another is legal; the
--- mark trigger below catches the object-edge-severed case.
+-- All identity + content columns are immutable. Rebinding an edge
+-- (swinging child from one object to another, moving to a different
+-- key, whatever) is expressed as delete + insert, not in-place update.
+-- Immutability means the mark trigger only needs to fire on DELETE —
+-- there's no in-place UPDATE OF child to cover.
 create trigger relationships_no_update
 before update on relationships
 begin
@@ -506,32 +463,89 @@ begin
 			then raise(abort, 'relationships_pk_immutable: relationships.rel_pk is immutable')
 		when new.parent is not old.parent
 			then raise(abort, 'relationships_parent_immutable: relationships.parent is immutable')
+		when new.child is not old.child
+			then raise(abort, 'relationships_child_immutable: relationships.child is immutable')
 		when new.key is not old.key
 			then raise(abort, 'relationships_key_immutable: relationships.key is immutable')
+		when new.idx is not old.idx
+			then raise(abort, 'relationships_idx_immutable: relationships.idx is immutable')
 	end;
 end;
+
+-- ############################################################################
+-- Drinian
+-- ############################################################################
+
+-- Drinian database design. One `objects` table holds row shapes
+-- discriminated by the `primitive` column:
+--   'h' → HashPrimitive (hash-shaped primitive container)
+--   'a' → ArrayPrimitive (array-shaped primitive container)
+--   'o' → object. Either a plain full object (with bucket + stack
+--         reachable via bucket_for / stack_for on separate rows)
+--         or a scalar primitive (with a scalar type in `scalar_type` and
+--         value in `scalar_value`).
+--
+-- A HashPrimitive serving as a bucket carries `bucket_for` pointing
+-- at its owner; an ArrayPrimitive serving as a stack carries
+-- `stack_for`. Standard SQL "child references parent" idiom — ON
+-- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
+-- cleanup trigger needed.
+--
+-- Only container primitives can be parents in the `relationships`
+-- table. Full objects hold their contents in their bucket + stack;
+-- scalars have no contents at all.
+
+
+-- ------------------------------------------------------------
+-- Drinian marker table
+-- The presence of this table signals "this database can be used as
+-- Drinian." A generic SQLite file has no `drinian` table; a Drinian
+-- database always does. Any Drinian tool can check for this table's
+-- existence before treating the file as a Drinian store, and any
+-- database that carries it is committing to the Drinian schema.
+--
+-- Append-only: once a row is inserted, it cannot be updated or
+-- deleted. Every entry is a permanent birth-record. If we ever need
+-- something mutable, it goes in a different table.
+--
+create table drinian (
+	key text primary key,
+	value text
+);
+
+create trigger drinian_no_update
+before update on drinian
+begin
+	select raise(abort, 'drinian_append_only: drinian is append-only; no updates allowed');
+end;
+
+create trigger drinian_no_delete
+before delete on drinian
+begin
+	select raise(abort, 'drinian_append_only: drinian is append-only; no deletes allowed');
+end;
+
+insert into drinian (key, value) values ('schema', '6.0');
+---
+-- Drinian marker table
+-- ------------------------------------------------------------
+
 
 -- ------------------------------------------------------------
 -- Mark triggers — the trace's worklist populator.
 -- ------------------------------------------------------------
 
--- On DELETE of a relationship: mark the old child as needs_trace.
+-- [set-needs-trace] On DELETE of a relationship: mark the old child.
 -- No uspace filter — the drain's trace handles uspace membership
--- via the uspace view (uspace rows terminate the trace
--- immediately as alive, a cheap wasted iteration compared to a
--- subquery on every mark-trigger fire).
+-- via the uspace view (uspace rows terminate the trace immediately
+-- as alive, a cheap wasted iteration compared to a subquery on
+-- every mark-trigger fire).
+--
+-- No corresponding UPDATE trigger — relationships.child is immutable
+-- (see relationships_no_update). Rebinding an edge is expressed as
+-- delete + insert; the delete fires this trigger.
 create trigger relationships_mark_needs_trace_after_delete
 after delete on relationships
-begin
-	update objects set needs_trace = 1 where object_pk = old.child;
-end;
-
--- On UPDATE OF child: mark the OLD child when the slot is swung to
--- a different object. `is not` handles null-vs-value correctly in
--- the WHEN clause where `<>` would silently no-op on null.
-create trigger relationships_mark_needs_trace_after_update_of_child
-after update of child on relationships
-when old.child is not new.child
 begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
@@ -642,6 +656,15 @@ create table processes (
 	process_pk integer primary key autoincrement
 );
 
+-- processes rows are immutable — once a process is created its
+-- process_pk is fixed for the row's lifetime. Ending a process is
+-- a DELETE, not an UPDATE.
+create trigger processes_no_update
+before update on processes
+begin
+	select raise(abort, 'processes_no_update: processes rows are immutable');
+end;
+
 -- No seed row. Every engine that opens a Drinian file creates
 -- its own row here at startup and records the pk in
 -- current_process; on the very first run against a fresh DB
@@ -663,27 +686,17 @@ create table frames (
 	-- constraints after all column definitions.
 	idx integer not null check (idx >= 0),
 
-	-- Frame kind — the `action` field from requirements/drinian.
-	-- Each value maps to a different structural role a frame can
-	-- play. Fields below are conditionally meaningful per kind
-	-- (documented inline); the engine's write layer enforces the
-	-- kind → field discipline. Schema stays loose on cross-kind
-	-- CHECK constraints to keep things simple.
+	-- Frame type. Deliberately narrow — this is a fundamental part
+	-- of the runtime and each new value is a real design decision
+	-- that changes what frames the engine has to reason about. Start
+	-- with the one we're sure about (function_call, which covers
+	-- source-level calls, method dispatch, closure invocation, and
+	-- engine-invoked callables per CaspianJ § function_call) and
+	-- add more values as concrete needs arise. Every addition goes
+	-- through deliberate review; no ad-hoc extensions.
 	--
-	--   top_level          — the outermost frame of a call stack
-	--   method_call        — a dispatch into a method
-	--   function_call      — a Caspian-source function call
-	--   function_invocation — an engine invocation of a callable
-	--   block              — a do-block scope
-	--   if_block           — an if-body scope
-	--   delegate_to        — a %role.delegate_to block (carries delegations)
-	--   exception          — an in-flight raised exception
-	--   on_close           — an engine-pushed on_close handler
-	kind text not null check (kind in (
-		'top_level', 'method_call', 'function_call', 'function_invocation',
-		'block', 'if_block',
-		'delegate_to', 'exception', 'on_close'
-	)),
+	--   function_call — the invocation of a callable
+	type text not null check (type in ('function_call')),
 
 	-- Method dispatch info — meaningful on method_call,
 	-- function_call, function_invocation, on_close frames.
@@ -719,8 +732,8 @@ create table frames (
 	-- %amber.clear (or entered a %amber.clear do end block), so
 	-- descendants see empty amber until the frame exits. null →
 	-- this frame did not clear. See requirements/amber § Clear
-	-- with .clear. Namespace-specific hides live in frame_amber
-	-- with kind = 'remove'; this flag is the whole-surface stop.
+	-- with .clear. Domain-specific hides live as tombstone rows in
+	-- frame_ambers; this flag is the whole-surface stop.
 	amber_cleared integer check (amber_cleared is null or amber_cleared = 1),
 
 	-- Source-location for this frame — where in source the frame
@@ -741,6 +754,45 @@ create table frames (
 
 create index frames_process_pk on frames(process_pk);
 
+-- [set-needs-trace] On DELETE of a frame: mark the three object
+-- pointers it carried (method_pk, method_class_pk, exception_class_pk).
+-- Frame pop cascades locals / frame_delegations / frame_ambers
+-- automatically, and those cascades fire their own mark triggers; this
+-- trigger handles the object-pointer columns that live directly on
+-- the frame.
+create trigger frames_mark_needs_trace_after_delete
+after delete on frames
+begin
+	update objects set needs_trace = 1
+	where object_pk in (
+		old.method_pk, old.method_class_pk, old.exception_class_pk
+	) and object_pk is not null;
+end;
+
+-- [set-needs-trace] On UPDATE OF method_pk: mark the OLD pointer.
+create trigger frames_mark_needs_trace_after_update_method_pk
+after update of method_pk on frames
+when old.method_pk is not new.method_pk and old.method_pk is not null
+begin
+	update objects set needs_trace = 1 where object_pk = old.method_pk;
+end;
+
+-- [set-needs-trace] On UPDATE OF method_class_pk: mark the OLD pointer.
+create trigger frames_mark_needs_trace_after_update_method_class_pk
+after update of method_class_pk on frames
+when old.method_class_pk is not new.method_class_pk and old.method_class_pk is not null
+begin
+	update objects set needs_trace = 1 where object_pk = old.method_class_pk;
+end;
+
+-- [set-needs-trace] On UPDATE OF exception_class_pk: mark the OLD pointer.
+create trigger frames_mark_needs_trace_after_update_exception_class_pk
+after update of exception_class_pk on frames
+when old.exception_class_pk is not new.exception_class_pk and old.exception_class_pk is not null
+begin
+	update objects set needs_trace = 1 where object_pk = old.exception_class_pk;
+end;
+
 create table locals (
 	-- Local variable bindings for a specific frame. Cascade-deletes
 	-- with the frame — locals live and die with their frame.
@@ -759,6 +811,23 @@ create table locals (
 
 create index locals_value on locals(value_object_pk);
 
+-- [set-needs-trace] On DELETE of a locals row (frame pop cascade or
+-- explicit unbind): mark the object the local was pointing at.
+create trigger locals_mark_needs_trace_after_delete
+after delete on locals
+begin
+	update objects set needs_trace = 1 where object_pk = old.value_object_pk;
+end;
+
+-- [set-needs-trace] On UPDATE OF value_object_pk (variable rebinding
+-- like `$foo = something_else`): mark the OLD target.
+create trigger locals_mark_needs_trace_after_update
+after update of value_object_pk on locals
+when old.value_object_pk is not new.value_object_pk
+begin
+	update objects set needs_trace = 1 where object_pk = old.value_object_pk;
+end;
+
 -- ------------------------------------------------------------
 -- Frame delegations — role permission grants.
 -- ------------------------------------------------------------
@@ -776,67 +845,73 @@ create table frame_delegations (
 
 create index frame_delegations_target_role on frame_delegations(target_role_pk);
 
--- ------------------------------------------------------------
--- Frame amber — ambient per-frame namespaced context.
--- ------------------------------------------------------------
--- Backs the %amber surface (requirements/amber). Each row is one
--- namespace-specific entry in a frame's amber layer:
---
---   'init'   — frame init'd this namespace; namespace_hash_pk
---              points at the HashPrimitive that IS the namespace.
---              Reads in this frame and its descendants resolve to
---              that hash via the aggregate-hash walk.
---   'remove' — frame hid this namespace from its own view
---              downward (tombstone). Ancestor's namespace is
---              invisible from this frame until it exits.
---   'grant'  — frame granted this namespace across a role-boundary
---              call, with grant_read / grant_write permission
---              flags. Callee in the other role sees the namespace
---              via the grant during a single hop.
---
--- The full-surface walk-stop (%amber.clear) lives as the
--- amber_cleared column on `frames`, not in this table — .clear is
--- a frame-level state, not a namespace-specific entry.
---
--- The engine's amber resolver walks a frame's ancestors: it stops
--- at any frame with amber_cleared = 1, otherwise scans this table
--- for the requested namespace, honoring 'remove' tombstones,
--- 'init' hits, and 'grant' cross-boundary permissions.
---
--- Cascade-deletes with the frame — when the frame that added the
--- entry pops, the entry is gone. Block-form scopes (.init do end,
--- .grant do end) get their own transient frame that carries these
--- entries and pops at block exit.
+-- [set-needs-trace] On DELETE of a frame_delegations row (frame pop
+-- cascade): mark the target role.
+create trigger frame_delegations_mark_needs_trace_after_delete
+after delete on frame_delegations
+begin
+	update objects set needs_trace = 1 where object_pk = old.target_role_pk;
+end;
 
-create table frame_amber (
-	entry_pk integer primary key autoincrement,
+-- [set-needs-trace] On UPDATE OF target_role_pk: mark the OLD target.
+-- In current use frame_delegations rows aren't rebound (the row is
+-- inserted at delegate_to entry and cascades on frame pop), but the
+-- trigger covers any future path that would repoint a row.
+create trigger frame_delegations_mark_needs_trace_after_update
+after update of target_role_pk on frame_delegations
+when old.target_role_pk is not new.target_role_pk
+begin
+	update objects set needs_trace = 1 where object_pk = old.target_role_pk;
+end;
 
+-- ------------------------------------------------------------
+-- Frame ambers — the frame-to-amber-instance bridge.
+-- ------------------------------------------------------------
+-- Each frame can hold any number of amber instances (each of which
+-- is what the amber spec calls a "domain"). Every instance is a
+-- regular row in `objects` — nothing amber-specific about its
+-- shape; it's just a HashPrimitive holding whatever amber content
+-- the developer put there. The instances don't carry their own
+-- domain names — the name lives in this bridge as the key,
+-- allowing the same instance to appear under different names in
+-- different frames if the engine ever wants that.
+--
+-- One row per (frame_pk, domain) — a frame's amber for a given
+-- domain is either present (this row exists) or not (no row).
+-- Init/remove/grant semantics live above this level in the Lua
+-- write layer; from the schema's perspective, this is a plain
+-- keyed reference from frames to amber-instance objects.
+--
+-- The engine's amber resolver walks the frame stack in Lua,
+-- consulting frame_ambers for the requested domain at each frame,
+-- honoring `frames.amber_cleared` as the walk-stop and stopping
+-- at role boundaries absent an explicit grant (grant mechanics
+-- TBD; also Lua-side).
+create table frame_ambers (
 	frame_pk integer not null references frames(frame_pk) on delete cascade,
-
-	-- Namespace identifier (domain-shaped per amber spec).
-	namespace text not null,
-
-	kind text not null check (kind in ('init', 'remove', 'grant')),
-
-	-- For 'init' entries: the HashPrimitive object that backs this
-	-- namespace. Null otherwise.
-	namespace_hash_pk text references objects(object_pk),
-
-	-- For 'grant' entries: the read / write permissions the callee
-	-- receives across the role boundary. Both are 0 or 1.
-	grant_read  integer check (grant_read is null or grant_read in (0, 1)),
-	grant_write integer check (grant_write is null or grant_write in (0, 1))
+	domain text not null,
+	amber_pk text not null references objects(object_pk),
+	primary key (frame_pk, domain)
 );
 
-create index frame_amber_frame_pk  on frame_amber(frame_pk);
-create index frame_amber_namespace on frame_amber(namespace);
-create index frame_amber_hash_pk   on frame_amber(namespace_hash_pk) where namespace_hash_pk is not null;
+create index frame_ambers_amber_pk on frame_ambers(amber_pk);
 
--- Amber namespace hashes are held in uspace by the uspace
--- view (which unions frame_amber.namespace_hash_pk into the
--- membership set). No trigger needed to anchor them; when the
--- frame_amber row cascades away on frame pop, the hash drops out
--- of the view naturally and rejoins the GC candidate pool.
+-- [set-needs-trace] On DELETE of a frame_ambers row (frame pop
+-- cascade or explicit removal): mark the amber instance the row
+-- pointed at.
+create trigger frame_ambers_mark_needs_trace_after_delete
+after delete on frame_ambers
+begin
+	update objects set needs_trace = 1 where object_pk = old.amber_pk;
+end;
+
+-- [set-needs-trace] On UPDATE OF amber_pk: mark the OLD instance.
+create trigger frame_ambers_mark_needs_trace_after_update
+after update of amber_pk on frame_ambers
+when old.amber_pk is not new.amber_pk
+begin
+	update objects set needs_trace = 1 where object_pk = old.amber_pk;
+end;
 
 -- ------------------------------------------------------------
 -- Captured stack — snapshot-by-reference for exception frames.
@@ -877,7 +952,7 @@ create index captured_frames_referenced on captured_frames(referenced_frame_pk);
 --
 --   * The root role (user, pk = 1).
 --   * Held as a variable binding in any frame's locals.
---   * A namespace hash held in any frame's amber layer.
+--   * A domain hash held in any frame's amber layer.
 --   * The method being executed by some frame, or that method's
 --     defining class.
 --   * The exception class of an in-flight exception.
@@ -919,8 +994,9 @@ create view uspace as
 	-- Frame variable bindings.
 	select value_object_pk from locals
 	union
-	-- Amber namespace hashes referenced from a frame.
-	select namespace_hash_pk from frame_amber where namespace_hash_pk is not null
+	-- Amber instances (domains) referenced from a frame via the
+	-- frame_ambers bridge. Each row's amber_pk is one instance.
+	select amber_pk from frame_ambers
 	union
 	-- Method being called + defining class, for every live frame.
 	select method_pk from frames where method_pk is not null

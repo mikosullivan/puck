@@ -87,7 +87,7 @@ Passing a Password around, storing it in fields, copying it to other variables i
 
 ### Serialization
 
-Drinian's `on_snapshot` hook for Password erases the handle rather than emit anything to the snapshot. See [ui § What you deliberately cannot do](tag:ui-cannot-do). A snapshot containing a Password-holding object surfaces post-revival as a handle whose underlying `core:protected/hash` is gone; the receiver has to re-acquire (re-prompt, re-fetch) to use it again.
+Password handles are erased on snapshot rather than serialized. See [ui § What you deliberately cannot do](tag:ui-cannot-do). A snapshot containing a Password-holding object surfaces post-revival as a handle whose underlying `core:protected/hash` is gone; the receiver has to re-acquire (re-prompt, re-fetch) to use it again.
 
 ## Related
 
