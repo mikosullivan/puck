@@ -1,7 +1,7 @@
 --[[ {
 	"vibecode": {
 		"module": "drinian",
-		"role": "Drinian entry point (ideas/-scoped prototype): opens a SQLite connection (in-memory or file), applies the schema from the sibling drinian.sql file, enables FKs, and creates the per-connection current_process TEMP table. Lives under ideas/drinian-with-sqlite/ because the spec is still in ideas/, not requirements/ — per the spec-before-implementation rule.",
+		"role": "Drinian engine entry point: opens a SQLite connection (in-memory or file), applies the schema from the sibling drinian.sql file, enables FKs, and creates the per-connection current_process TEMP table.",
 		"status": "walking-skeleton — open + apply schema + verify seed",
 		"exports": ["open", "load_schema"],
 		"depends_on": ["lsqlite3"]
@@ -13,9 +13,9 @@ local sqlite = require('lsqlite3')
 local M = {}
 
 -- Default path to the schema. drinian.lua and drinian.sql are siblings
--- under ideas/drinian-with-sqlite/src/. The .sql file is authoritative;
--- ideas/drinian-with-sqlite/sql.md pulls it in for display via Orlando's
--- file: directive.
+-- under src/engine/. The .sql file is authoritative; the display page
+-- at requirements/drinian/sql.md pulls it in for rendering via
+-- Orlando's file: directive.
 local function default_schema_path()
 	local this_file = debug.getinfo(1, 'S').source:sub(2)
 	local this_dir = this_file:match('(.*/)') or './'

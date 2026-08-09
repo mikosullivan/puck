@@ -4,7 +4,7 @@
 {"vibecode": {
 	"doc": "ideas_drinian_with_sqlite_features",
 	"role": "concrete wins the SQLite-based Drinian schema unlocks that a generic object store or in-memory hash cannot: bidirectional lookups, materialized ancestor paths, rich introspection via SQL, snapshot-as-database, Big Processes, full-process rollback, snapshot diffing, SQL-as-debugger-protocol, JSON queries into CaspM, FTS5, schema-enforced invariants, and event-driven propagation via UDFs",
-	"status": "extracted from ideas/drinian-with-sqlite/index.md § Features the custom schema enables per issue #1459"
+	"status": "in flux — features the SQLite substrate unlocks; some content still speculative"
 }}
 ~~~
 

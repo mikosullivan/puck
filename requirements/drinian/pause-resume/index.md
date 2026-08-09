@@ -2,7 +2,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_drinian_with_sqlite_pause_resume",
+	"doc": "requirements_drinian_pause_resume",
 	"role": "sketch for Caspian's pause / resume primitive. %engine.pause writes a pause frame at the top of the stack and closes the Drinian database. The database file IS the paused state — no serialization pass, no snapshot format. Resume: any writer edits call_stack to remove the pause frame and optionally populate a payload hash. Engine reopens, execution continues, %engine.pause returns the payload. Structurally this is delimited continuations with argument, persisted in a database. Composes with Big Processes and cross-host revive.",
 	"audience": "Caspian programmers writing pause-resume patterns; engine implementers building pause frame handling; external processes (HTTP handlers, agents, schedulers, humans) triggering resumes",
 	"key_concepts": ["pause_frame_on_stack", "close_is_commit",

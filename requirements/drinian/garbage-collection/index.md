@@ -2,7 +2,7 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_drinian_with_sqlite_garbage_collection",
+	"doc": "requirements_drinian_garbage_collection",
 	"role": "Drinian's garbage collection — the schema-level mark triggers that set needs_trace = 1 as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
 	"status": "in progress — mark trigger inventory + outer/inner loop skeleton drafted; drain-loop details and cleanup still to come"
 }}

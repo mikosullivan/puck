@@ -6,6 +6,7 @@ package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?
 	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
 	.. package.path
+package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local h = require('helpers')
 
