@@ -69,4 +69,4 @@ Some questions apply across every flavor above; a coherent "Caspian-SVG" needs a
 ## Where this connects
 
 - The bootstrap diagrams ([overview](https://www.puck.uno/requirements/bootstrap/), [initialize-vm](https://www.puck.uno/requirements/bootstrap/initialize-vm/)) are the immediate motivator — they show the exact pattern the library flavor would automate.
-- The MVM's structured runtime state (objects, frames, locals, relationships, uspace) is what the live-inspector flavor would visualize. That data is already there in Drinian's schema; the question is only how to render it.
+- The MVM's structured runtime state (objects, frames, locals, relationships, uspace) is what the live-inspector flavor would visualize. That data is already there in MVM's schema; the question is only how to render it.

@@ -8,12 +8,12 @@
 }}
 ~~~
 
-The fifth and final sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). `drinian.open()` returns the live SQLite handle. The engine stashes it as `engine.mvm` — the field the rest of the engine reads and writes runtime state through.
+The fifth and final sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). `mvm.open()` returns the live SQLite handle. The engine stashes it as `engine.mvm` — the field the rest of the engine reads and writes runtime state through.
 
 At this point:
 
 - Foreign keys are enforced on the connection.
-- The full Drinian schema is in place, including the seed user row.
+- The full MVM schema is in place, including the seed user row.
 - A fresh `processes` row exists, its pk recorded in the `current_process` TEMP table.
 - The MVM is ready for the [Stage](https://www.puck.uno/requirements/bootstrap/stage/) step to write CaspM into it.
 

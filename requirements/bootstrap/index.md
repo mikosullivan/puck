@@ -41,7 +41,7 @@ See [Wire capabilities](https://www.puck.uno/requirements/bootstrap/wire/) for t
 
 ### ✅ Initialize VM
 
-The engine opens its runtime state store (the MVM — Drinian in V1). Schema applied on fresh files, seed row verified, per-connection state prepared. Distinct from Wire: the engine sets this up for itself; no host input needed.
+The engine opens its runtime state store (the MVM — MVM in V1). Schema applied on fresh files, seed row verified, per-connection state prepared. Distinct from Wire: the engine sets this up for itself; no host input needed.
 
 See [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/) for the full step.
 
@@ -58,4 +58,4 @@ After Stage, the MVM holds a seeded runtime state store plus a fully-loaded Casp
 ## Where to go for details
 
 - [execution](https://www.puck.uno/requirements/execution/) — the operational phase that follows bootstrap.
-- [drinian](https://www.puck.uno/requirements/drinian/) — the MVM's V1 implementation.
+- [mvm](https://www.puck.uno/requirements/mvm/) — the MVM's V1 implementation.

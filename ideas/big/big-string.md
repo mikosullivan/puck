@@ -187,7 +187,7 @@ These aren't answered yet — just flagging what will need to be decided if this
 2. **Substrings.** `.substring(a, b)` — new small in-memory string? Another bigstring pointing at a subrange of the same file? A rope-like structure combining the two?
 3. **Concatenation.** `bigstring + short_string`, or `bigstring + bigstring` — where does the result live? Materialize? Rope? Third temp file?
 4. **Comparison.** `==` between a bigstring and a small string — read the file to check? Bail out quickly on length mismatch?
-5. **Snapshot / revive.** How does a bigstring survive a Drinian snapshot? The referenced file exists in the host filesystem, not the runtime's own memory. Snapshot the file path? Snapshot the whole file? Fail on serialization?
+5. **Snapshot / revive.** How does a bigstring survive a MVM snapshot? The referenced file exists in the host filesystem, not the runtime's own memory. Snapshot the file path? Snapshot the whole file? Fail on serialization?
 6. **Encoding.** UTF-8 is Caspian's default. Does bigstring assume UTF-8, or does it take an encoding parameter? What about a file that turns out to be malformed UTF-8?
 7. **Non-text files.** Is bigstring text-only, or is there a `bigbytes` companion for binary data?
 8. **Construction.** How do you get one? `%('core:bigstring')(path)`? `Bigstring.new(file)`? A method on a dir-jail file handle: `$file.as_bigstring`?

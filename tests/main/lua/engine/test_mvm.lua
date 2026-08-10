@@ -1,25 +1,25 @@
 --[[ {
 	"vibecode": {
-		"role": "walking-skeleton tests for src/drinian.lua: open an in-memory DB, install the infrastructure, verify the seed exists and a couple of schema-level guarantees fire",
+		"role": "walking-skeleton tests for src/mvm.lua: open an in-memory DB, install the infrastructure, verify the seed exists and a couple of schema-level guarantees fire",
 		"status": "walking-skeleton — proves the DB opens and the schema loads without error"
 	}
 } ]]
 
 local h = require('helpers')
-local drinian = require('drinian')
+local mvm = require('mvm')
 
 ------------------------------------------------------------
 -- open + apply schema
 ------------------------------------------------------------
 
 h.test('open returns a usable db handle', function()
-	local db = drinian.open()
+	local db = mvm.open()
 	h.assert_true(db ~= nil, 'db handle is nil')
 	db:close()
 end)
 
 h.test('foreign keys pragma is on after open', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local fk_on = nil
 
@@ -32,7 +32,7 @@ h.test('foreign keys pragma is on after open', function()
 end)
 
 h.test('schema seeds the user row', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local count = nil
 
@@ -45,7 +45,7 @@ h.test('schema seeds the user row', function()
 end)
 
 h.test('user row has a UUID-shaped object_pk', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local pk = nil
 
@@ -60,7 +60,7 @@ h.test('user row has a UUID-shaped object_pk', function()
 end)
 
 h.test('user row has persistent = 1', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local persistent = nil
 
@@ -73,7 +73,7 @@ h.test('user row has persistent = 1', function()
 end)
 
 h.test('user row has role_parent = null (root)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local role_parent = 'not-null-sentinel'
 
@@ -90,9 +90,9 @@ end)
 ------------------------------------------------------------
 
 h.test('current_process temp table exists after open and accepts caller writes', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
-	-- Pick a key drinian.open didn't already populate. current_process_pk
+	-- Pick a key mvm.open didn't already populate. current_process_pk
 	-- is filled by open (see the process-record test); an arbitrary
 	-- caller-owned key exercises the "TEMP table is writable" property
 	-- without colliding with the seeded row.
@@ -109,7 +109,7 @@ end)
 ------------------------------------------------------------
 
 h.test('cannot delete the user row (root role trigger)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local rc = db:exec('delete from objects where user;')
 	local msg = db:errmsg()
@@ -121,7 +121,7 @@ h.test('cannot delete the user row (root role trigger)', function()
 end)
 
 h.test('cannot insert a second user = 1 row (unique)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local rc = db:exec("insert into objects (primitive, user) values ('h', 1);")
 	local msg = db:errmsg()
@@ -133,7 +133,7 @@ h.test('cannot insert a second user = 1 row (unique)', function()
 end)
 
 h.test('cannot insert a role_parent pointing at a nonexistent row', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local rc = db:exec("insert into objects (primitive, role_parent) values ('h', 'no-such-uuid-0000-0000-000000000000');")
 	local msg = db:errmsg()
@@ -155,7 +155,7 @@ h.test('cannot insert a role_parent pointing at a nonexistent row', function()
 end)
 
 h.test('cannot insert with role_parent pointing at a non-role row', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	-- Insert an ordinary HashPrimitive (not a role — no user=1, no role_parent).
 	local stmt = db:prepare("insert into objects (primitive) values ('h');")
@@ -184,7 +184,7 @@ h.test('cannot insert with role_parent pointing at a non-role row', function()
 end)
 
 h.test('can insert with role_parent pointing at a role (root or non-root)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	-- Insert child of root — should succeed.
 	local user_pk = nil
@@ -220,7 +220,7 @@ h.test('can insert with role_parent pointing at a role (root or non-root)', func
 end)
 
 h.test('cannot update role_parent on an existing row (immutable)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	-- Insert a role as a child of user.
 	local user_pk = nil
@@ -249,7 +249,7 @@ end)
 ------------------------------------------------------------
 
 h.test('processes table has a row after open (process record initialized)', function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local count
 
@@ -262,7 +262,7 @@ h.test('processes table has a row after open (process record initialized)', func
 end)
 
 h.test("current_process has 'current_process_pk' populated with the processes row's pk", function()
-	local db = drinian.open()
+	local db = mvm.open()
 
 	local cp_value
 
@@ -286,16 +286,16 @@ end)
 -- Install-infrastructure gate (idempotent open)
 ------------------------------------------------------------
 
-h.test('drinian marker table is present after a fresh install', function()
-	local db = drinian.open()
+h.test('mvm marker table is present after a fresh install', function()
+	local db = mvm.open()
 
 	local present = false
 
-	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'drinian'") do
+	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'mvm'") do
 		present = true
 	end
 
-	h.assert_true(present, 'drinian marker table should exist after install')
+	h.assert_true(present, 'mvm marker table should exist after install')
 	db:close()
 end)
 
@@ -303,11 +303,11 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 	-- Temp file so state survives close/reopen. os.tmpname on Linux
 	-- creates an empty file; SQLite is happy to treat that as an empty
 	-- database (no tables) on first open, so the install runs. Second
-	-- open finds the drinian marker table and skips.
+	-- open finds the mvm marker table and skips.
 	local tmp = os.tmpname()
 
 	-- First open: fresh install.
-	local db1 = drinian.open({path = tmp})
+	local db1 = mvm.open({path = tmp})
 
 	local first_pk
 
@@ -320,8 +320,8 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 
 	-- Second open: install should be skipped. If the gate didn't work,
 	-- the install would re-run and raise "table objects already exists"
-	-- from drinian.open — the test would fail with an uncaught error.
-	local db2 = drinian.open({path = tmp})
+	-- from mvm.open — the test would fail with an uncaught error.
+	local db2 = mvm.open({path = tmp})
 
 	-- Sanity: exactly one user row (not two).
 	local count
@@ -350,7 +350,7 @@ end)
 ------------------------------------------------------------
 
 h.test('load_schema returns non-empty SQL', function()
-	local sql = drinian.load_schema()
+	local sql = mvm.load_schema()
 	h.assert_true(type(sql) == 'string', 'schema is not a string')
 	h.assert_true(#sql > 100, 'schema suspiciously short: ' .. #sql .. ' chars')
 	h.assert_true(sql:find('create table objects', 1, true) ~= nil, 'schema does not contain "create table objects"')

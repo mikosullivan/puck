@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.33529865"
-     inkscape:cx="557.71176"
-     inkscape:cy="260.96138"
+     inkscape:zoom="0.6705973"
+     inkscape:cx="718.76221"
+     inkscape:cy="361.61792"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
@@ -276,10 +276,23 @@
          class="fk-arrow"
          d="M 596.27168,797.06484 V 696.26998"
          id="path-relationships-objects-2" />
-      <g transform="translate(544.32,755.81) rotate(-90)" id="fk-label-parent">
-        <rect x="-33" y="-11" width="66" height="22" rx="4" ry="4"
-              class="fk-label-rect" id="rect-fk-label-parent"/>
-        <text x="0" y="5" class="fk-label-text" id="text-fk-label-parent">parent</text>
+      <g
+         transform="translate(544.32,755.81) rotate(-90)"
+         id="fk-label-parent">
+        <rect
+           x="-33"
+           y="-11"
+           width="66"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect-fk-label-parent" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text-fk-label-parent">parent</text>
       </g>
       <g
          transform="translate(596.27,755.81) rotate(-90)"
@@ -372,27 +385,62 @@
          id="text11569">listener_pk</text>
     </g>
     <g
-       id="g5498"
-       transform="translate(44.113446,303.47817)">
+       transform="translate(118.0823,235.073)"
+       id="g529"
+       style="font-family:'Helvetica Neue', Arial, sans-serif">
+      <rect
+         x="0"
+         y="0"
+         width="180"
+         height="52"
+         rx="6"
+         ry="6"
+         fill="#ffffff"
+         stroke="#9e9e9e"
+         stroke-width="1.5"
+         id="rect521" />
+      <path
+         d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+         fill="#9e9e9e"
+         id="path523" />
+      <text
+         x="90"
+         y="18"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text525">MVM</text>
+      <text
+         x="10"
+         y="44"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text527">PK: key</text>
+    </g>
+    <g
+       id="g3183"
+       transform="translate(78.888735,258.75788)">
       <g
-         transform="translate(73.968854,19.477592)"
-         id="g529"
+         transform="translate(39.193566,157.31778)"
+         id="g543"
          style="font-family:'Helvetica Neue', Arial, sans-serif">
         <rect
            x="0"
            y="0"
            width="180"
-           height="52"
+           height="80"
            rx="6"
            ry="6"
            fill="#ffffff"
-           stroke="#9e9e9e"
+           stroke="#9575cd"
            stroke-width="1.5"
-           id="rect521" />
+           id="rect531" />
         <path
            d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
-           fill="#9e9e9e"
-           id="path523" />
+           fill="#9575cd"
+           id="path533" />
         <text
            x="90"
            y="18"
@@ -400,112 +448,73 @@
            font-size="13px"
            font-weight="700"
            fill="#ffffff"
-           id="text525">MVM</text>
+           id="text535">instance_listeners</text>
         <text
            x="10"
            y="44"
            font-size="11px"
            font-weight="700"
            fill="#212121"
-           id="text527">PK: key</text>
+           id="text537">PK: reg_pk</text>
+        <text
+           x="10"
+           y="60"
+           font-size="11px"
+           fill="#616161"
+           id="text539">FK: broadcaster_pk</text>
+        <text
+           x="10"
+           y="74"
+           font-size="11px"
+           fill="#616161"
+           id="text541">FK: listener_pk</text>
       </g>
       <g
-         id="g3183"
-         transform="translate(34.775289,-44.720294)">
-        <g
-           transform="translate(39.193566,157.31778)"
-           id="g543"
-           style="font-family:'Helvetica Neue', Arial, sans-serif">
-          <rect
-             x="0"
-             y="0"
-             width="180"
-             height="80"
-             rx="6"
-             ry="6"
-             fill="#ffffff"
-             stroke="#9575cd"
-             stroke-width="1.5"
-             id="rect531" />
-          <path
-             d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
-             fill="#9575cd"
-             id="path533" />
-          <text
-             x="90"
-             y="18"
-             text-anchor="middle"
-             font-size="13px"
-             font-weight="700"
-             fill="#ffffff"
-             id="text535">instance_listeners</text>
-          <text
-             x="10"
-             y="44"
-             font-size="11px"
-             font-weight="700"
-             fill="#212121"
-             id="text537">PK: reg_pk</text>
-          <text
-             x="10"
-             y="60"
-             font-size="11px"
-             fill="#616161"
-             id="text539">FK: broadcaster_pk</text>
-          <text
-             x="10"
-             y="74"
-             font-size="11px"
-             fill="#616161"
-             id="text541">FK: listener_pk</text>
-        </g>
-        <g
-           transform="translate(39.193566,250.02964)"
-           id="g557"
-           style="font-family:'Helvetica Neue', Arial, sans-serif">
-          <rect
-             x="0"
-             y="0"
-             width="180"
-             height="80"
-             rx="6"
-             ry="6"
-             fill="#ffffff"
-             stroke="#9575cd"
-             stroke-width="1.5"
-             id="rect545" />
-          <path
-             d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
-             fill="#9575cd"
-             id="path547" />
-          <text
-             x="90"
-             y="18"
-             text-anchor="middle"
-             font-size="13px"
-             font-weight="700"
-             fill="#ffffff"
-             id="text549">class_listeners</text>
-          <text
-             x="10"
-             y="44"
-             font-size="11px"
-             font-weight="700"
-             fill="#212121"
-             id="text551">PK: reg_pk</text>
-          <text
-             x="10"
-             y="60"
-             font-size="11px"
-             fill="#616161"
-             id="text553">FK: class_pk</text>
-          <text
-             x="10"
-             y="74"
-             font-size="11px"
-             fill="#616161"
-             id="text555">FK: listener_pk</text>
-        </g>
+         transform="translate(39.193566,250.02964)"
+         id="g557"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="180"
+           height="80"
+           rx="6"
+           ry="6"
+           fill="#ffffff"
+           stroke="#9575cd"
+           stroke-width="1.5"
+           id="rect545" />
+        <path
+           d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+           fill="#9575cd"
+           id="path547" />
+        <text
+           x="90"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text549">class_listeners</text>
+        <text
+           x="10"
+           y="44"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text551">PK: reg_pk</text>
+        <text
+           x="10"
+           y="60"
+           font-size="11px"
+           fill="#616161"
+           id="text553">FK: class_pk</text>
+        <text
+           x="10"
+           y="74"
+           font-size="11px"
+           fill="#616161"
+           id="text555">FK: listener_pk</text>
       </g>
     </g>
     <g

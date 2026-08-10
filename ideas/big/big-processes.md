@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_big_processes",
-	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, drinian-sqlite, %amber) and what would need to be added to complete the picture.",
+	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, mvm-sqlite, %amber) and what would need to be added to complete the picture.",
 	"status": "idea — spitball only. NOT V1 scope; nothing here has a promotion path to requirements/ implied."
 }}
 ~~~
@@ -25,7 +25,7 @@ Small language, big process. Not a contradiction — a consequence of separating
 Three of the recent idea threads are secretly building toward this:
 
 - **[bigstring](big-string)** — strings that live on disk but act like values. `$doc.length`, `$doc.split("\n")`, `$doc.match(regex)` all work regardless of whether the string is 200 bytes or 200 GB. Backing is file-or-DB, transparent.
-- **[drinian-sqlite](drinian-sqlite)** — runtime state itself becomes pluggable. Drinian defines an abstract storage interface; a Lua-table driver ships for V1; a SQLite driver arrives when snapshot-and-revive or huge state calls for it.
+- **[mvm-sqlite](mvm-sqlite)** — runtime state itself becomes pluggable. MVM defines an abstract storage interface; a Lua-table driver ships for V1; a SQLite driver arrives when snapshot-and-revive or huge state calls for it.
 - **[%amber](https://puck.uno/requirements/amber)** — ambient hash built on the aggregate-hash primitive. Same "composable storage tiers behind a value-shaped surface" pattern.
 
 Each piece independently makes something small into something scalable-without-touching-the-language. Together they suggest a broader move: **every collection primitive gets pluggable backing.**
@@ -60,13 +60,13 @@ Related prior art: DuckDB and Polars both do this well; ORMs (ActiveRecord, SQLA
 
 ### Distributed state
 
-Drinian on Redis / Postgres / CockroachDB. Multiple Caspian processes sharing state via a common backing. [Puck](puck-object) is already the piece for remote-reference semantics (an object reference works even when the object lives on another host); distributed Drinian is the piece for shared-state semantics (many processes read/write the same state).
+MVM on Redis / Postgres / CockroachDB. Multiple Caspian processes sharing state via a common backing. [Puck](puck-object) is already the piece for remote-reference semantics (an object reference works even when the object lives on another host); distributed MVM is the piece for shared-state semantics (many processes read/write the same state).
 
 Composition: a Caspian process running on machine A might have `$sensors` backed by a shared Postgres, with individual sensor objects reached through Puck references to their owning processes on machines B, C, D.
 
 ### Transactions
 
-Factory operations often need "all or nothing" — a workflow updates 12 machines; if one fails, rollback all. The Drinian-on-SQLite ACID story is directly relevant. Would want a `%transaction do ... end` block that wraps state mutations in a single commit/rollback boundary.
+Factory operations often need "all or nothing" — a workflow updates 12 machines; if one fails, rollback all. The MVM-on-SQLite ACID story is directly relevant. Would want a `%transaction do ... end` block that wraps state mutations in a single commit/rollback boundary.
 
 ### Coherence model
 
@@ -170,12 +170,12 @@ If V1's `.each`, `.map`, `.filter`, `.reduce` materialize their inputs before it
 - **V1 cost:** small design discipline. `.each` still works the same way on `{a: 1, b: 2}`; the stdlib just doesn't ASSUME the collection fits in memory anywhere in its implementation.
 - **Cost to skip now:** every stdlib collection method has to be rewritten when BigHash / BigArray land.
 
-### 2. Storage-abstraction discipline in Drinian
+### 2. Storage-abstraction discipline in MVM
 
-Cross-references [drinian-sqlite § Middle-ground shapes](drinian-sqlite#middle-ground-shapes-worth-considering) — even if V1 ships the Lua-table driver, write Drinian's spec against the abstract storage interface. Every consumer of runtime state reaches through the interface, not into Lua tables directly.
+Cross-references [mvm-sqlite § Middle-ground shapes](mvm-sqlite#middle-ground-shapes-worth-considering) — even if V1 ships the Lua-table driver, write MVM's spec against the abstract storage interface. Every consumer of runtime state reaches through the interface, not into Lua tables directly.
 
 - **V1 cost:** design work up front — name the interface, draw the boundary. No runtime cost; the Lua-table driver still runs at full speed.
-- **Cost to skip now:** every consumer of Drinian state has to be untangled from Lua-table assumptions before any alternate backing (SQLite, distributed, tiered) can be added.
+- **Cost to skip now:** every consumer of MVM state has to be untangled from Lua-table assumptions before any alternate backing (SQLite, distributed, tiered) can be added.
 
 ### 3. Serialization protocol on class definitions
 
@@ -188,7 +188,7 @@ Even if V1 never serializes anything, define the shape now. Class DSL supports `
 
 Every object gets a unique ID at construction, guaranteed stable for the object's lifetime. Enables snapshot-and-revive (identity survives), distributed reference (multiple hosts agree on which object is which), dedup (same-object equality is cheap), and debugging (this ID is that entry in the log).
 
-Drinian already specifies this — a single program-wide counter minting integer-as-string IDs, drawn from the same pool for objects, platter markers, and src-registry keys. See [drinian/references § Object IDs](https://puck.uno/requirements/drinian/references#object-ids). V1's job is just to actually use it uniformly: every object gets its ID from the sequencer at construction, no ad-hoc `id_of(obj)` schemes that would need reconciling later.
+MVM already specifies this — a single program-wide counter minting integer-as-string IDs, drawn from the same pool for objects, platter markers, and src-registry keys. See [mvm/references § Object IDs](https://puck.uno/requirements/mvm/references#object-ids). V1's job is just to actually use it uniformly: every object gets its ID from the sequencer at construction, no ad-hoc `id_of(obj)` schemes that would need reconciling later.
 
 - **V1 cost:** the counter and its increment routine (already spec'd). One field per object; a few bytes.
 - **Cost to skip now:** any big-process feature that needs object identity — distribution, snapshotting, cross-host reference — has to bolt on IDs across every existing object, and reason about pre-ID objects specially.
@@ -227,5 +227,5 @@ Not answered — flagged for future thinking:
 - **Where does the RAM/disk boundary get decided?** Per-value at construction (developer chooses)? Per-workload via a runtime hint? Automatic based on size?
 - **What's the escape hatch when abstraction leaks?** Every "value that lives somewhere else" system eventually needs a way to force materialization, or force a specific driver, or drop to the underlying storage's native API. What's Caspian's version?
 - **How does GC work across backing tiers?** A reference from an in-memory object to a DB-backed one — does the GC walk into the DB? Or does DB-backed state have its own lifecycle rules?
-- **What's the story for cross-process references?** Puck handles remote objects. Does it compose cleanly with distributed Drinian, or are they different mechanisms that overlap awkwardly?
+- **What's the story for cross-process references?** Puck handles remote objects. Does it compose cleanly with distributed MVM, or are they different mechanisms that overlap awkwardly?
 - **Debugging.** How does a developer inspect a state where "the object is over there" and "the value is in this DB" and "the log is on that host"? Debugger surface for the pluggable-storage world.

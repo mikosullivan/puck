@@ -26,7 +26,7 @@ Fiona's shape is essentially a (subject, predicate, object) triple store — par
 
 The simplest option isn't a graph DB at all: SQLite with the Fiona schema (`hsa` + `relationships`) laid over it. SQLite is embedded, sub-MB, ubiquitous, single-file. Recursive CTEs handle graph walks (mark-and-sweep, reachability queries) natively. Fiona's two-table decomposition is straight-line SQL; the driver is a few hundred lines.
 
-Not a graph DB per se — it's SQL underneath — but arguably the strongest candidate on Mighty Mouse grounds. Caspian is likely to depend on SQLite for other things already ([drinian-sqlite](drinian-sqlite) explores it as Drinian's backing store), so this adds no new dependency.
+Not a graph DB per se — it's SQL underneath — but arguably the strongest candidate on Mighty Mouse grounds. Caspian is likely to depend on SQLite for other things already ([mvm-sqlite](mvm-sqlite) explores it as MVM's backing store), so this adds no new dependency.
 
 ### Embedded triple stores
 
@@ -175,11 +175,11 @@ The discipline: writes have to keep auxiliary tables consistent with the canonic
 - **Which immutability stance** (structural sharing vs mutable relationships). Both viable; each carries a different developer story.
 - **Indexes and query patterns.** Reading `$bh['key']` is a keyed lookup — cheap. Reading "all bighashes where `.status == 'active'`" is a query against value-typed relationships and needs indexes designed for it.
 - **Backing store.** Fiona is described abstractly (two tables). The actual store could be SQLite (single-file, familiar), Postgres (server-based, indexed), an mmap'd custom format, or something else. Same schema; different substrates.
-- **How this composes with [drinian-sqlite](drinian-sqlite).** Both propose an abstract-storage layer; Fiona could be one driver in that shape, or Drinian could be built on top of Fiona. Worth a design pass to see which subsumes which.
+- **How this composes with [mvm-sqlite](mvm-sqlite).** Both propose an abstract-storage layer; Fiona could be one driver in that shape, or MVM could be built on top of Fiona. Worth a design pass to see which subsumes which.
 
 ## The non-serializable-reference question
 
-If Drinian ever becomes Fiona-backed (or any-DB-backed), every value it holds has to be serializable — either directly (scalars, hashes, arrays, refs to other things in Drinian) or via some convention that keeps non-serializable state elsewhere. The current spec is silent on the specifics. This is an open design question that has to get answered before the Fiona swap can happen. Spitballing.
+If MVM ever becomes Fiona-backed (or any-DB-backed), every value it holds has to be serializable — either directly (scalars, hashes, arrays, refs to other things in MVM) or via some convention that keeps non-serializable state elsewhere. The current spec is silent on the specifics. This is an open design question that has to get answered before the Fiona swap can happen. Spitballing.
 
 ### The scenario
 
@@ -206,21 +206,21 @@ What happens when the serializer finds an unserializable value?
 
 ### The prevention alternative
 
-A different shape from the previous conversation: **never let a non-serializable value into Drinian in the first place.**
+A different shape from the previous conversation: **never let a non-serializable value into MVM in the first place.**
 
 Under this model:
 
-- Every value that lives in Drinian is serializable, by construction. No exceptions.
+- Every value that lives in MVM is serializable, by construction. No exceptions.
 - Native resources live in a host-engine sidecar (a Lua-side table, or wherever the host keeps its own state) keyed by IDs.
-- Caspian classes that need a native resource hold an ID into the sidecar, not the raw resource. The ID is a plain string; the sidecar isn't in Drinian.
+- Caspian classes that need a native resource hold an ID into the sidecar, not the raw resource. The ID is a plain string; the sidecar isn't in MVM.
 - The methods that create native resources (`%net.tcp_connect`, `%fs.open`, etc.) return wrapper objects that ARE serializable — they hold IDs, not handles.
 
 The discipline is enforced at the engine boundary: the API surface makes it impossible to accidentally get a raw handle back. If it always comes wrapped, it always stays serializable.
 
 Consequences:
 
-- **Serialization becomes trivial.** Every value already IS serializable; the serializer never encounters a non-serializable thing because none exist in Drinian.
-- **Revive is harder.** The IDs in the revived Drinian point at sidecar entries that don't exist yet. Either the class's `on_revive` hook re-establishes the sidecar entry from a stored spec, or the wrapper raises on first use ("this handle didn't survive revival — reconnect explicitly").
+- **Serialization becomes trivial.** Every value already IS serializable; the serializer never encounters a non-serializable thing because none exist in MVM.
+- **Revive is harder.** The IDs in the revived MVM point at sidecar entries that don't exist yet. Either the class's `on_revive` hook re-establishes the sidecar entry from a stored spec, or the wrapper raises on first use ("this handle didn't survive revival — reconnect explicitly").
 - **The wrapper-class boundary is a real API surface.** Every native-resource-returning method has to be spec'd this way. Retroactively wrapping is painful; getting it right from the start is fine.
 
 ### Contexts matter
@@ -228,7 +228,7 @@ Consequences:
 Not every "serialize" is the same, and the right default may vary by context:
 
 - **Snapshot-and-revive** (process pauses, resumes elsewhere later). Reconstructibility matters — the resource has to come back or the program breaks. Loud refuse is probably right.
-- **Swap-to-Fiona-backing** (in-process, live migration). References to raw handles might still be reachable from Lua-side code that manages them; the Drinian-visible state is what changes storage. Silent placeholder plus a sidecar mapping might be acceptable.
+- **Swap-to-Fiona-backing** (in-process, live migration). References to raw handles might still be reachable from Lua-side code that manages them; the MVM-visible state is what changes storage. Silent placeholder plus a sidecar mapping might be acceptable.
 - **Snapshot for debugging** (dump state to inspect). Reconstructibility doesn't matter; you want to see what was there. Silent placeholder is fine; loud refuse would be annoying.
 - **Cross-process message** (Puck). The peer doesn't have the sidecar. Loud refuse or spec-based reconstruction; silent placeholder would silently break the peer.
 - **Big-process overflow** (evict cold state to disk). The state comes back; the resource might not. Deferred / on-revive-check pattern fits.
@@ -239,11 +239,11 @@ A single global default might not be right. A per-context policy — the runtime
 
 Not decided. What seems to fit best across the axes:
 
-- **Prevention as the primary discipline.** Native resources always come wrapped; IDs live in Drinian; raw handles never do. This makes the common case invisible — Drinian is trivially serializable because it never holds a raw handle to begin with.
+- **Prevention as the primary discipline.** Native resources always come wrapped; IDs live in MVM; raw handles never do. This makes the common case invisible — MVM is trivially serializable because it never holds a raw handle to begin with.
 - **Loud refuse as escape-hatch enforcement.** For the case that slips through (someone writes a class holding Lua-userdata directly, or a class holding a wrapper but assuming the wrapper's cached state matters), the serializer raises at snapshot time. Points at the exact mistake; matches the fail-loudly-early principle.
 - **`on_revive` for reconstruction.** Class-level hook, revised from the current spec's redaction-only framing to include "re-establish sidecar entry from stored spec." Same hook; broader use.
 
-The wrapper discipline is the load-bearing part. Get it right at the API boundary and the rest is small. Get it wrong and every future context (snapshot, Fiona swap, distributed Drinian, big-process overflow) has to reinvent the escape hatch.
+The wrapper discipline is the load-bearing part. Get it right at the API boundary and the rest is small. Get it wrong and every future context (snapshot, Fiona swap, distributed MVM, big-process overflow) has to reinvent the escape hatch.
 
 Worth arguing.
 

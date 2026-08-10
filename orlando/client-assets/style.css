@@ -336,6 +336,7 @@ body.home .content h1 .hero-logo {
 	margin-bottom: 0.5em;
 }
 .content > :first-child {margin-top: 0}
+.content img {max-width: 100%; height: auto}
 .content h1 {
 	border-bottom: 1px solid #d8dee4;
 	padding-bottom: 0.3em;

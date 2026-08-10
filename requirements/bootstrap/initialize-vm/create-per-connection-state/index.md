@@ -8,8 +8,8 @@
 }}
 ~~~
 
-The fourth sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). Creates the `current_process` TEMP table (schema per [drinian.sql § current_process](https://www.puck.uno/src/engine/drinian.sql#current-process-per-connection-runtime-state)) and writes `('current_process_pk', <pk>)` into it — where `<pk>` is the process pk that [Initialize the process record](https://www.puck.uno/requirements/bootstrap/initialize-vm/initialize-process-record/) allocated.
+The fourth sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). Creates the `current_process` TEMP table (schema per [mvm.sql § current_process](https://www.puck.uno/src/engine/mvm.sql#current-process-per-connection-runtime-state)) and writes `('current_process_pk', <pk>)` into it — where `<pk>` is the process pk that [Initialize the process record](https://www.puck.uno/requirements/bootstrap/initialize-vm/initialize-process-record/) allocated.
 
 **Why TEMP.** SQLite TEMP tables are per-connection: created fresh with each connection open, gone when the connection closes. That matches "one running process per connection" — pause = close the connection = `current_process` vanishes; revive = new connection = fresh `current_process` populated from persistent state in `main`.
 
-**Why it can't be in the main schema.** The `create table` statements in `drinian.sql` run once at DB creation. A TEMP table has to be created every connection open, so it lives in `drinian.lua`'s open path instead.
+**Why it can't be in the main schema.** The `create table` statements in `mvm.sql` run once at DB creation. A TEMP table has to be created every connection open, so it lives in `mvm.lua`'s open path instead.

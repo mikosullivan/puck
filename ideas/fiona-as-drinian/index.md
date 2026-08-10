@@ -1,9 +1,9 @@
-# Fiona as Drinian
+# Fiona as MVM
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_fiona_as_drinian",
-	"role": "spitball space for using Fiona (SQLite-backed object store, split out to mikosullivan/fiona 2026-08-03) as the storage layer for all of Drinian — Caspian's runtime state. Not committed to; V1 Drinian is the in-memory hash approach per requirements/drinian/. This directory is a reference for Fiona's current table shapes so we can brainstorm without opening the other repo every time.",
+	"doc": "ideas_fiona_as_mvm",
+	"role": "spitball space for using Fiona (SQLite-backed object store, split out to mikosullivan/fiona 2026-08-03) as the storage layer for all of MVM — Caspian's runtime state. Not committed to; V1 MVM is the in-memory hash approach per requirements/mvm/. This directory is a reference for Fiona's current table shapes so we can brainstorm without opening the other repo every time.",
 	"status": "brainstorm 2026-08-07 — table shapes only"
 }}
 ~~~
@@ -94,7 +94,7 @@ When the gate opens, `check_all_trees()` — a Lua UDF called from SQL:
 ### Cost
 
 - **No trees present.** Gate short-circuits every trigger. Per-write cost is one index probe. Feature tax is negligible.
-- **Trees present.** Cost per write is O(sum of tree sizes). For Drinian's roles tree (10-50 nodes, one tree), microseconds per write.
+- **Trees present.** Cost per write is O(sum of tree sizes). For MVM's roles tree (10-50 nodes, one tree), microseconds per write.
 
 ### Why this shape
 
@@ -111,5 +111,5 @@ Pure performance work with no correctness impact — defer until profile says ne
 - **Incremental invariant checks.** Verify only the delta introduced by the current write instead of re-walking from scratch.
 - **Per-node cached tree membership.** A `tree_members` materialized table updated on tree ops; membership becomes O(1) lookup instead of a walk.
 
-None of these are needed for Drinian's scale. The starting shape above is good enough; the room for a much better plan is real but not the current priority.
+None of these are needed for MVM's scale. The starting shape above is good enough; the room for a much better plan is real but not the current priority.
 

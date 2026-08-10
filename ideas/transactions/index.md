@@ -117,9 +117,9 @@ The exact set of "user exceptions vs. fatal-level" awaits the exceptions system 
 
 ## Overlap with Mikobase
 
-Transactions with fault protection start to look like the primitives Mikobase would need for durable session semantics — atomic writes, rollback on failure, data-typed outcomes to inspect. If Drinian and Mikobase share the storage substrate (per [[project_caspian_mikobase_shared_class_definitions]]), transactions here may become transactions there.
+Transactions with fault protection start to look like the primitives Mikobase would need for durable session semantics — atomic writes, rollback on failure, data-typed outcomes to inspect. If MVM and Mikobase share the storage substrate (per [[project_caspian_mikobase_shared_class_definitions]]), transactions here may become transactions there.
 
-For now: track this as a Drinian-runtime feature. Note the overlap; consolidate when the Mikobase spec gets serious.
+For now: track this as a MVM-runtime feature. Note the overlap; consolidate when the Mikobase spec gets serious.
 
 ## Open questions
 

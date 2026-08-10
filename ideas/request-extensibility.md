@@ -113,7 +113,7 @@ Promoted to requirements. See [`caspian.uno/helpers.casp`](tag:helpers) for the 
 
 Open questions still on the table (not yet addressed in the spec):
 
-- **Serialization.** How do helpers interact with Drinian snapshots? Re-instantiated on revival, or preserved with their internal state? What if the helper's class URL isn't reachable at revival time?
+- **Serialization.** How do helpers interact with MVM snapshots? Re-instantiated on revival, or preserved with their internal state? What if the helper's class URL isn't reachable at revival time?
 - **Standard hook names.** Should there be a `caspian.uno/` convention for common hook names (`.set_header`, `.format_body`, `.on_snapshot`, `.render`), or does each parent class name its own without shared conventions?
 
 ## Request helpers

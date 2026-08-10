@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_bootstrap_initialize_vm",
-	"role": "canonical spec for the Initialize VM step in Caspian's bootstrap sequence — the engine's setup of its runtime state store (the MVM, Drinian in V1). Diagram plus brief sections per sub-step, each linking to its own main page.",
+	"role": "canonical spec for the Initialize VM step in Caspian's bootstrap sequence — the engine's setup of its runtime state store (the MVM, MVM in V1). Diagram plus brief sections per sub-step, each linking to its own main page.",
 	"status": "V1 spec — most details deferred while the step's design lands"
 }}
 ~~~
@@ -20,7 +20,7 @@ See [Open the DB](https://www.puck.uno/requirements/bootstrap/initialize-vm/open
 
 ## Install infrastructure
 
-`db:exec(schema)` executes the schema text. Creates every table, trigger, index, and view; seeds the user row. Gated on the `drinian` marker table — skipped on already-installed DBs.
+`db:exec(schema)` executes the schema text. Creates every table, trigger, index, and view; seeds the user row. Gated on the `mvm` marker table — skipped on already-installed DBs.
 
 See [Install infrastructure](https://www.puck.uno/requirements/bootstrap/initialize-vm/install-infrastructure/) for the full sub-step.
 
@@ -38,6 +38,6 @@ See [Create per-connection state](https://www.puck.uno/requirements/bootstrap/in
 
 ## Return the MVM handle
 
-`drinian.open()` returns the SQLite handle; the engine stashes it as `engine.mvm`. Everything downstream reads and writes runtime state through that handle.
+`mvm.open()` returns the SQLite handle; the engine stashes it as `engine.mvm`. Everything downstream reads and writes runtime state through that handle.
 
 See [Return the MVM handle](https://www.puck.uno/requirements/bootstrap/initialize-vm/return-mvm-handle/) for the full sub-step.

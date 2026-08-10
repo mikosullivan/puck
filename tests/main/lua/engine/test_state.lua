@@ -11,7 +11,7 @@ local state = require('state')
 --[[
 ## Constructor shape
 
-`state.new()` returns a hash with every top-level Drinian field present
+`state.new()` returns a hash with every top-level MVM field present
 at its empty representation, plus a fresh Sequence and the roles tree
 bootstrapped with `engine` at the root and `user` as its only child.
 ]]

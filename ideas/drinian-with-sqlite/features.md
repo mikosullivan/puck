@@ -2,13 +2,13 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "ideas_drinian_with_sqlite_features",
-	"role": "concrete wins the SQLite-based Drinian schema unlocks that a generic object store or in-memory hash cannot: bidirectional lookups, materialized ancestor paths, rich introspection via SQL, snapshot-as-database, Big Processes, full-process rollback, snapshot diffing, SQL-as-debugger-protocol, JSON queries into CaspM, FTS5, schema-enforced invariants, and event-driven propagation via UDFs",
+	"doc": "ideas_mvm_with_sqlite_features",
+	"role": "concrete wins the SQLite-based MVM schema unlocks that a generic object store or in-memory hash cannot: bidirectional lookups, materialized ancestor paths, rich introspection via SQL, snapshot-as-database, Big Processes, full-process rollback, snapshot diffing, SQL-as-debugger-protocol, JSON queries into CaspM, FTS5, schema-enforced invariants, and event-driven propagation via UDFs",
 	"status": "in flux — features the SQLite substrate unlocks; some content still speculative"
 }}
 ~~~
 
-The point of doing a custom schema (vs. layering on Fiona) is that we can shape SQLite around Drinian's specific needs and pick up features that a generic object store can't. Concrete wins:
+The point of doing a custom schema (vs. layering on Fiona) is that we can shape SQLite around MVM's specific needs and pick up features that a generic object store can't. Concrete wins:
 
 ## Bidirectional lookup on every relationship
 
@@ -62,17 +62,17 @@ Anyone with a SQLite client can inspect any live runtime. No debugging protocol 
 
 ## The database IS the snapshot
 
-Because Drinian's state lives entirely in SQLite, snapshots are trivial: the database file itself is the snapshot. No JSON export, no format spec, no `to_json` on every class, no reserialization pass at snapshot time.
+Because MVM's state lives entirely in SQLite, snapshots are trivial: the database file itself is the snapshot. No JSON export, no format spec, no `to_json` on every class, no reserialization pass at snapshot time.
 
 To snapshot mid-execution: `.backup` the SQLite file (or copy it while WAL mode holds a consistent read). To revive: open the file. The file IS the state; the runtime picks up where it left off (once the engine's Lua-side handle registry is rebuilt from the `handle_key` slots, for objects that carry native resources).
 
-That removes a category of design work that plagues the in-memory model — the snapshot / revive protocol Drinian's requirements spec calls out as post-V1 (`requirements/drinian/#future-snapshot-and-revive-post-v1-0`). Under SQLite, it's free.
+That removes a category of design work that plagues the in-memory model — the snapshot / revive protocol MVM's requirements spec calls out as post-V1 (`requirements/mvm/#future-snapshot-and-revive-post-v1-0`). Under SQLite, it's free.
 
 ## Big Processes
 
 Long-term Caspian goal: processes that outlive their host. A Caspian program pauses across a blocking call (HTTP promise, agent yield, human approval), releases its host process entirely, and revives — potentially days later, potentially on a different host — with state exactly where it left off.
 
-Under SQLite Drinian this comes essentially for free:
+Under SQLite MVM this comes essentially for free:
 
 - **Pause = close the database.** The file IS the process state. No serialization pass.
 - **Revive = open the database.** Attach to the file, rebuild the Lua-side handle registry for any objects with `handle_key` set, resume execution.
@@ -83,13 +83,13 @@ Under SQLite Drinian this comes essentially for free:
 - **Interruption is safe.** WAL mode means a host crashing mid-pause doesn't corrupt state; the process revives from the last committed transaction.
 - **Migration is trivial.** Copy the file to another host. Revive there. Same process.
 
-Big Processes were Drinian's original vision (the whole post-V1 snapshot / revive story). Under SQLite the mechanics collapse to open / close / copy. Nothing exotic left to design.
+Big Processes were MVM's original vision (the whole post-V1 snapshot / revive story). Under SQLite the mechanics collapse to open / close / copy. Nothing exotic left to design.
 
 ## Transferring consciousness
 
 Moving a running Caspian process from one host to another is `cp`. The .sqlite file is the entire mind — every object, every reference, every frame, every variable binding, every role grant, every pending exception, every in-flight iterator. Copy the file, open it on the other side, resume. The process wakes up on the new substrate with continuity: it has no way to notice the switch, because nothing in its own state records where it was running.
 
-That's not a metaphor stretched thin. It's what falls out of "all state in one file." Traditional runtimes distribute their state across host memory (the interpreter's structures), OS resources (file descriptors, sockets, threads), and language-level heap (whatever the program built up). Migrating a process means designing a serialization protocol for each of those layers, freezing atomically, transporting, and re-materializing on the other side. Every runtime attempts it eventually; none makes it easy. Under Drinian, the layers collapse — there's only the file.
+That's not a metaphor stretched thin. It's what falls out of "all state in one file." Traditional runtimes distribute their state across host memory (the interpreter's structures), OS resources (file descriptors, sockets, threads), and language-level heap (whatever the program built up). Migrating a process means designing a serialization protocol for each of those layers, freezing atomically, transporting, and re-materializing on the other side. Every runtime attempts it eventually; none makes it easy. Under MVM, the layers collapse — there's only the file.
 
 What that unlocks:
 
@@ -107,59 +107,59 @@ The framing: the SQLite file is the process's mind; hosts are interchangeable bo
 
 ### `%engine.transfer_mind()`
 
-The engine talks to Drinian through a defined API — a consistent surface that any Drinian backend must implement. SQLite is one implementation; others can follow (in-memory, other embedded databases, distributed formats, network-backed) and be Drinians as long as they satisfy the same API.
+The engine talks to MVM through a defined API — a consistent surface that any MVM backend must implement. SQLite is one implementation; others can follow (in-memory, other embedded databases, distributed formats, network-backed) and be MVMs as long as they satisfy the same API.
 
-That premise is what lets `%engine.transfer_mind()` sit at the language level: it moves a process's state between any two Drinians, not between two SQLite files specifically. Same-backend transfers (SQLite → SQLite) collapse to `cp` because the format is byte-identical, but the operation itself is defined against the API, not the file format. Different-backend transfers (SQLite → in-memory for testing; in-memory → SQLite to persist; anywhere → anywhere as backends multiply) work by construction.
+That premise is what lets `%engine.transfer_mind()` sit at the language level: it moves a process's state between any two MVMs, not between two SQLite files specifically. Same-backend transfers (SQLite → SQLite) collapse to `cp` because the format is byte-identical, but the operation itself is defined against the API, not the file format. Different-backend transfers (SQLite → in-memory for testing; in-memory → SQLite to persist; anywhere → anywhere as backends multiply) work by construction.
 
-**Mechanism.** Mid-execution, when a process calls `%engine.transfer_mind`: (1) spin up (or connect to) a destination — commonly a small microserver holding an empty SQLite database, reachable over a Unix domain socket for local transfers or HTTP for remote; (2) port state using SQLite's own export formats (`sqlite3_backup` API for live copy, `.dump` for SQL-textual) — no per-class serialization, no `to_json`, no snapshot format design; SQLite's machinery handles arbitrary schema, and every future addition to Drinian transfers for free; (3) swap the backend — the engine drops its local implementation and picks up the client backend pointed at the destination; (4) release the local Drinian — file closed, in-memory structures freed. Expensive in wall-clock time and IO, but no feature tax — nothing in the engine grows to accommodate transfer.
+**Mechanism.** Mid-execution, when a process calls `%engine.transfer_mind`: (1) spin up (or connect to) a destination — commonly a small microserver holding an empty SQLite database, reachable over a Unix domain socket for local transfers or HTTP for remote; (2) port state using SQLite's own export formats (`sqlite3_backup` API for live copy, `.dump` for SQL-textual) — no per-class serialization, no `to_json`, no snapshot format design; SQLite's machinery handles arbitrary schema, and every future addition to MVM transfers for free; (3) swap the backend — the engine drops its local implementation and picks up the client backend pointed at the destination; (4) release the local MVM — file closed, in-memory structures freed. Expensive in wall-clock time and IO, but no feature tax — nothing in the engine grows to accommodate transfer.
 
-**Cost profile.** Only the porting step is expensive; the rest is trivial. Spinning up a destination microserver is O(schema size) — the microserver spawns, opens `:memory:`, applies the schema (kilobytes of DDL), starts listening. Milliseconds. Swapping backends is a pointer change. Releasing the local Drinian is a `close`. The irreducible cost is copying live state across the transport, proportional to how big the mind is. That decoupling means microservers can be pre-warmed — a supervisor pool keeps empty seeded microservers idle, eliminating even the spin-up cost — but that's an optimization, not a requirement.
+**Cost profile.** Only the porting step is expensive; the rest is trivial. Spinning up a destination microserver is O(schema size) — the microserver spawns, opens `:memory:`, applies the schema (kilobytes of DDL), starts listening. Milliseconds. Swapping backends is a pointer change. Releasing the local MVM is a `close`. The irreducible cost is copying live state across the transport, proportional to how big the mind is. That decoupling means microservers can be pre-warmed — a supervisor pool keeps empty seeded microservers idle, eliminating even the spin-up cost — but that's an optimization, not a requirement.
 
-**Handoff, not replication.** There is only ever one authoritative Drinian. `transfer_mind` doesn't duplicate the mind — it moves it. The source's local state goes away; the destination holds the only living copy. No two-copies-diverging problem, no reconciliation semantics, no consistency protocol to design. Consistent with the parent section's framing: `transfer_mind` moves the mind off this host. What stays here is the body (the engine process, still executing); what leaves is the mind (the Drinian).
+**Handoff, not replication.** There is only ever one authoritative MVM. `transfer_mind` doesn't duplicate the mind — it moves it. The source's local state goes away; the destination holds the only living copy. No two-copies-diverging problem, no reconciliation semantics, no consistency protocol to design. Consistent with the parent section's framing: `transfer_mind` moves the mind off this host. What stays here is the body (the engine process, still executing); what leaves is the mind (the MVM).
 
-**Why transfer-first-then-fork.** Fork alone against an in-memory Drinian gives each process its own independent copy of the state at fork time — parent and child can't coordinate through the object graph because they're touching two separate copies from then on. The concurrency story requires the state to live off-process first. Once the mind is in a microserver, forked children inherit the socket (not the database bytes), and every engine op travels to the single authoritative store. Shared object graph, no per-process divergence.
+**Why transfer-first-then-fork.** Fork alone against an in-memory MVM gives each process its own independent copy of the state at fork time — parent and child can't coordinate through the object graph because they're touching two separate copies from then on. The concurrency story requires the state to live off-process first. Once the mind is in a microserver, forked children inherit the socket (not the database bytes), and every engine op travels to the single authoritative store. Shared object graph, no per-process divergence.
 
-**After transfer, forking multiplies bodies against one mind.** With the mind moved to a microserver, forking the process becomes the concurrency story. Children inherit the socket file descriptor. Every forked engine is already configured to talk to the same Drinian.
+**After transfer, forking multiplies bodies against one mind.** With the mind moved to a microserver, forking the process becomes the concurrency story. Children inherit the socket file descriptor. Every forked engine is already configured to talk to the same MVM.
 
 ~~~caspian
-# Startup work runs against the default in-memory Drinian.
+# Startup work runs against the default in-memory MVM.
 # ... whatever the process needs to prepare ...
 
-# Set up a Unix-socket Drinian microserver and hand off state to it.
+# Set up a Unix-socket MVM microserver and hand off state to it.
 %engine.transfer_mind 'memory-server'
 
-# Every engine op now travels over the socket. Local Drinian is gone.
+# Every engine op now travels over the socket. Local MVM is gone.
 
 # Fork ten workers. They inherit the socket automatically.
 10.times do
 	%forks.fork
 end
 
-# One process → eleven engines against one Drinian. Everything each
+# One process → eleven engines against one MVM. Everything each
 # of them touches through the object graph is visible to the others.
 ~~~
 
 What falls out of that composition:
 
 - **No mutex primitive at the Caspian level.** SQLite's transaction serialization is the concurrency primitive. `BEGIN IMMEDIATE` gives critical sections; regular transactions give optimistic concurrency. The [transaction feature](#full-process-rollback-via-transactions) doubles as the concurrency primitive.
-- **Coordination is just objects.** Shared queue = a Caspian array in shared Drinian. Shared counter = a NumberPrimitive updated inside a transaction. Barrier = a shared hash with waiters incrementing a field. Idiomatic Caspian code, no concurrency-specific surface.
+- **Coordination is just objects.** Shared queue = a Caspian array in shared MVM. Shared counter = a NumberPrimitive updated inside a transaction. Barrier = a shared hash with waiters incrementing a field. Idiomatic Caspian code, no concurrency-specific surface.
 - **Fan-out patterns become natural.** Workers pop from a shared work queue, write results to a shared results hash, coordinate through shared listener registrations. No concurrency-library scaffolding.
 - **Actor semantics without actors.** Processes communicate via shared state instead of message passing. Simpler mental model when sharing is what you want.
 
-**Two realms per process.** Each engine now sees state in two places. The **shared realm** is everything in Drinian — every hash, every array, every closure's bucket, every role, every frame reachable through Drinian. All engines see the same values. The **host-local realm** is native resources referenced via `handle_key` — open sockets, file descriptors, subprocess pids, allocated buffers. Those live outside Drinian, in host memory. A file descriptor opened by process A isn't accessible to process B, even though the Caspian object wrapping it IS reachable through the shared Drinian. Reading such an object from any process gets you the object; using its methods to touch the underlying resource works only in the process that owns it. Same rule as `transfer_mind`'s own caveat — "shared object" doesn't imply "shared native resource."
+**Two realms per process.** Each engine now sees state in two places. The **shared realm** is everything in MVM — every hash, every array, every closure's bucket, every role, every frame reachable through MVM. All engines see the same values. The **host-local realm** is native resources referenced via `handle_key` — open sockets, file descriptors, subprocess pids, allocated buffers. Those live outside MVM, in host memory. A file descriptor opened by process A isn't accessible to process B, even though the Caspian object wrapping it IS reachable through the shared MVM. Reading such an object from any process gets you the object; using its methods to touch the underlying resource works only in the process that owns it. Same rule as `transfer_mind`'s own caveat — "shared object" doesn't imply "shared native resource."
 
-**The socket is portable.** `transfer_mind` returns a handle to the socket it created (or connected to). That handle is a Caspian value: pass it as a method argument, store it in a bucket, write it to a file, send it over a Puck channel. Any process that receives the handle can attach to the same Drinian via the corresponding engine call, becoming another engine against the same shared state. Multi-stage patterns compose from that:
+**The socket is portable.** `transfer_mind` returns a handle to the socket it created (or connected to). That handle is a Caspian value: pass it as a method argument, store it in a bucket, write it to a file, send it over a Puck channel. Any process that receives the handle can attach to the same MVM via the corresponding engine call, becoming another engine against the same shared state. Multi-stage patterns compose from that:
 
-- **Late unification.** Parent forks children (each with its own independent copy of the state at fork-time). Later, parent transfers to a microserver and passes the socket back to the children; they attach and the family joins one shared Drinian, discarding their per-process copies.
+- **Late unification.** Parent forks children (each with its own independent copy of the state at fork-time). Later, parent transfers to a microserver and passes the socket back to the children; they attach and the family joins one shared MVM, discarding their per-process copies.
 - **Transfer, fork, re-transfer.** Process transfers its mind to microserver A, forks workers, one worker escalates and transfers to microserver B, forks a further set of workers. Multi-level trees of shared-state cohorts, each rooted at its own microserver.
 - **Ad-hoc reconnection.** Restart a worker in a shared cohort: new process opens the socket handle from wherever it was persisted, attaches, rejoins the graph. No re-transfer needed.
-- **Handoff without fork.** Process A transfers to microserver, hands the socket to process B, exits. Process B picks up where A left off — different host, different engine process, same Drinian.
+- **Handoff without fork.** Process A transfers to microserver, hands the socket to process B, exits. Process B picks up where A left off — different host, different engine process, same MVM.
 
 The consistent-API premise makes all of that true by construction. The engine doesn't know or care what's on the other side of the API — Unix socket, HTTP, something else. Same calls, different backend.
 
 ## Full-process rollback via transactions
 
-Because the entire Drinian state lives in one SQLite database, a SQL transaction spans everything — every object, every frame, every role, every ref. When the transaction rolls back, the whole process reverts to the state it had at `BEGIN`. No undo tracking. No shadow-state machinery. SQLite gives it to us free.
+Because the entire MVM state lives in one SQLite database, a SQL transaction spans everything — every object, every frame, every role, every ref. When the transaction rolls back, the whole process reverts to the state it had at `BEGIN`. No undo tracking. No shadow-state machinery. SQLite gives it to us free.
 
 At the Caspian level this becomes a natural block construct:
 
@@ -265,11 +265,11 @@ Attach two snapshots side-by-side and answer "what did this program actually do?
 
 ## The debugger is a SQL client
 
-Drinian's state lives entirely in a SQLite file. That file *is* the runtime — objects, frames, variable bindings, roles, listener registrations, GC scratch. Any tool that can open SQLite can inspect the runtime.
+MVM's state lives entirely in a SQLite file. That file *is* the runtime — objects, frames, variable bindings, roles, listener registrations, GC scratch. Any tool that can open SQLite can inspect the runtime.
 
 **Traditional debuggers ship a wire protocol.** Chrome DevTools Protocol, Debug Adapter Protocol, GDB's remote protocol — each is a versioned interface between the runtime and inspector tools. Every new debugger tool has to implement it. The runtime has to add endpoints for each new query pattern the ecosystem invents.
 
-Under Drinian the "protocol" is SQL — a standard thousands of tools already speak. The runtime doesn't expose new endpoints for each new inspector; the schema IS the read endpoint. Adding a new dimension to inspect is a schema addition, not a protocol version bump.
+Under MVM the "protocol" is SQL — a standard thousands of tools already speak. The runtime doesn't expose new endpoints for each new inspector; the schema IS the read endpoint. Adding a new dimension to inspect is a schema addition, not a protocol version bump.
 
 **Live inspection while the process runs.** SQLite's WAL mode lets readers open the database concurrently with the writer, and readers see a consistent snapshot at their transaction's start. Point `sqlite3` at a running Caspian process's DB file, query state, get answers. No pause, no ptrace, no attach.
 
@@ -340,7 +340,7 @@ Every invariant we expressed as a `check` constraint or foreign key becomes DB-e
 
 ## Event-driven propagation via Lua UDFs
 
-Triggers can call Lua UDFs. That turns Drinian from a passive state store into a reactive system: state changes fire callbacks that update dependent state, invalidate caches, or dispatch Caspian-level logic. The engine's "next state" logic isn't imperative code that runs the transition — it's the DB itself reacting to the write.
+Triggers can call Lua UDFs. That turns MVM from a passive state store into a reactive system: state changes fire callbacks that update dependent state, invalidate caches, or dispatch Caspian-level logic. The engine's "next state" logic isn't imperative code that runs the transition — it's the DB itself reacting to the write.
 
 Concrete cases:
 

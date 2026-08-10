@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_inverted_index",
-	"role": "brainstorm doc for a general-purpose hash subclass that maintains an inverse index — 'given this value, what keys map to it?' — as a first-class O(1) query. Motivated by the Drinian reference table (which needs the who-points-at-this-target query for incremental GC) but useful as a standalone primitive for many programs. Will be populated iteratively; promotes to requirements/ once the shape settles.",
+	"role": "brainstorm doc for a general-purpose hash subclass that maintains an inverse index — 'given this value, what keys map to it?' — as a first-class O(1) query. Motivated by the MVM reference table (which needs the who-points-at-this-target query for incremental GC) but useful as a standalone primitive for many programs. Will be populated iteratively; promotes to requirements/ once the shape settles.",
 	"status": "stub — populate iteratively"
 }}
 ~~~
@@ -61,7 +61,7 @@ One extra O(1) read per set. Acceptable cost.
 - `%('core:invin').new` — empty.
 - `%('core:invin').from_hash($h)` — take an existing hash, build the inverse from it in one pass. Useful for migration or one-shot indexing of pre-existing data.
 
-**Serialization overrides.** `.serialize` outputs the forward hash's content only; `.reconstruct` rebuilds the inverse by walking the reconstructed forward hash. The inverse is a runtime cache, not wire format — consistent with the Drinian rule that internal indexes don't need to survive the wire.
+**Serialization overrides.** `.serialize` outputs the forward hash's content only; `.reconstruct` rebuilds the inverse by walking the reconstructed forward hash. The inverse is a runtime cache, not wire format — consistent with the MVM rule that internal indexes don't need to survive the wire.
 
 **Discipline the base Hash class has to hold up.** For this pattern to work, the base Hash's public mutation API must be the ONLY way to change its contents. Any "internal fast-path" that mutates the hash without going through an overridable method lets updates slip past the invin's hooks and desyncs the inverse. Worth stating as an invariant: the base's mutation surface has to be complete and overridable.
 

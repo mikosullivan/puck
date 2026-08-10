@@ -96,7 +96,7 @@ create table objects (
 	-- per role insertion; roles are rare, so cost is negligible.
 	role_parent text references objects(object_pk) on delete cascade,
 
-	-- Row-kind discriminator. NOT NULL, no default: Drinian's write
+	-- Row-kind discriminator. NOT NULL, no default: MVM's write
 	-- code names the row kind at INSERT time. Exactly one of:
 	--   'o' → object (full object, or scalar primitive if scalar_type is set)
 	--   'h' → HashPrimitive
@@ -213,7 +213,7 @@ begin
 end;
 
 -- The user row (marked `user = 1`) is the root role and cannot
--- be deleted. Every Drinian database starts with user seeded,
+-- be deleted. Every MVM database starts with user seeded,
 -- and nothing above the language layer can remove it. Non-root
 -- uspace anchors are freely deletable (that's how an object
 -- leaves user space in the first place). The role tree is
@@ -383,10 +383,10 @@ begin
 end;
 
 -- ############################################################################
--- Drinian
+-- MVM
 -- ############################################################################
 
--- Drinian database design. One `objects` table holds row shapes
+-- MVM database design. One `objects` table holds row shapes
 -- discriminated by the `primitive` column:
 --   'h' → HashPrimitive (hash-shaped primitive container)
 --   'a' → ArrayPrimitive (array-shaped primitive container)
@@ -406,10 +406,10 @@ end;
 -- scalars have no contents at all.
 
 -- ------------------------------------------------------------
--- Drinian's additions to the Mikobase `objects` table.
+-- MVM's additions to the Mikobase `objects` table.
 -- ------------------------------------------------------------
 -- The base `objects` table is defined in the Mikobase section
--- above. Drinian layers on the columns it needs by ALTER TABLE:
+-- above. MVM layers on the columns it needs by ALTER TABLE:
 --
 --   persistent  — pin flag for the uspace view (see below). If
 --                 set, the object is unconditionally in uspace
@@ -456,37 +456,37 @@ insert into objects (primitive, user, persistent) values ('h', 1, 1);
 
 
 -- ------------------------------------------------------------
--- Drinian marker table
+-- MVM marker table
 -- The presence of this table signals "this database can be used as
--- Drinian." A generic SQLite file has no `drinian` table; a Drinian
--- database always does. Any Drinian tool can check for this table's
--- existence before treating the file as a Drinian store, and any
--- database that carries it is committing to the Drinian schema.
+-- MVM." A generic SQLite file has no `mvm` table; a MVM
+-- database always does. Any MVM tool can check for this table's
+-- existence before treating the file as a MVM store, and any
+-- database that carries it is committing to the MVM schema.
 --
 -- Append-only: once a row is inserted, it cannot be updated or
 -- deleted. Every entry is a permanent birth-record. If we ever need
 -- something mutable, it goes in a different table.
 --
-create table drinian (
+create table mvm (
 	key text primary key,
 	value text
 );
 
-create trigger drinian_no_update
-before update on drinian
+create trigger mvm_no_update
+before update on mvm
 begin
-	select raise(abort, 'drinian_append_only: drinian is append-only; no updates allowed');
+	select raise(abort, 'mvm_append_only: mvm is append-only; no updates allowed');
 end;
 
-create trigger drinian_no_delete
-before delete on drinian
+create trigger mvm_no_delete
+before delete on mvm
 begin
-	select raise(abort, 'drinian_append_only: drinian is append-only; no deletes allowed');
+	select raise(abort, 'mvm_append_only: mvm is append-only; no deletes allowed');
 end;
 
-insert into drinian (key, value) values ('schema', '6.0');
+insert into mvm (key, value) values ('schema', '6.0');
 ---
--- Drinian marker table
+-- MVM marker table
 -- ------------------------------------------------------------
 
 
@@ -595,7 +595,7 @@ end;
 -- engine bookkeeping and get a purpose-built shape.
 --
 -- `processes` is plural: the schema accommodates multiple
--- execution contexts coexisting in one Drinian file. Cases the
+-- execution contexts coexisting in one MVM file. Cases the
 -- plural is ready for:
 --   * Coroutines — cooperative yield / resume, each their own stack.
 --   * Fork children — engine-granted opt-in concurrency.
@@ -603,7 +603,7 @@ end;
 --     signal, coexisting in one file.
 --   * Multiple concurrent instances of the same machine running
 --     over one shared object graph — a real concurrency model
---     within one Drinian, with semantics (row contention,
+--     within one MVM, with semantics (row contention,
 --     isolation, coordination) to work out but the storage
 --     substrate ready.
 --
@@ -624,7 +624,7 @@ begin
 	select raise(abort, 'processes_no_update: processes rows are immutable');
 end;
 
--- No seed row. Every engine that opens a Drinian file creates
+-- No seed row. Every engine that opens a MVM file creates
 -- its own row here at startup and records the pk in
 -- current_process; on the very first run against a fresh DB
 -- that pk will be 1 (autoincrement), but nothing pins it — a
@@ -891,7 +891,7 @@ end;
 -- Buckets and stacks are NOT in this list. They live inside their
 -- owner via bucket_for / stack_for (ON DELETE CASCADE handles
 -- owner-goes-so-bucket-goes at the FK level). Under normal
--- Drinian ops nothing puts a bucket or stack row as a child in
+-- MVM ops nothing puts a bucket or stack row as a child in
 -- the relationships table, so mark triggers never fire on them —
 -- they never become GC candidates.
 --

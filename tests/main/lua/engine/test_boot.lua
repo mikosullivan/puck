@@ -13,7 +13,7 @@ local engine = require('engine')
 ## The MVM is opened on boot
 
 `engine.new()` is the boot entry point; its first act is to open an
-MVM (via `drinian.open()`) and stash the resulting SQLite handle as
+MVM (via `mvm.open()`) and stash the resulting SQLite handle as
 `engine.mvm`. Everything downstream in the engine reads and writes
 runtime state through that handle.
 ]]

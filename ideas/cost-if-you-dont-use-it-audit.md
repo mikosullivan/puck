@@ -21,10 +21,10 @@ Applies the check from [concepts § Cost if you don't use it](https://puck.uno/r
 - **Alternative:** lazy list — a string starts with `contributors: null` (meaning "same as owner role"); the array is only materialized on first cross-role composition. Programs that never mix roles across a string boundary bear zero cost.
 - **Suggested action:** redesign to lazy shape.
 
-### Per-value `src` birth-line tagging in Drinian
+### Per-value `src` birth-line tagging in MVM
 
-- **Spec:** [drinian § Source-location tagging](https://puck.uno/requirements/drinian/#source-location-tagging).
-- **Cost:** every value in Drinian (locals, chain entries, hash values, array elements) can carry a `src` tuple. The transpiler populates `line` on every CaspJ node; propagation is "copy the line during materialization" — one helper applied at every value birth. Snapshot growth estimated at 5-10%.
+- **Spec:** [mvm § Source-location tagging](https://puck.uno/requirements/mvm/#source-location-tagging).
+- **Cost:** every value in MVM (locals, chain entries, hash values, array elements) can carry a `src` tuple. The transpiler populates `line` on every CaspJ node; propagation is "copy the line during materialization" — one helper applied at every value birth. Snapshot growth estimated at 5-10%.
 - **Non-users pay:** programs that never inspect stack traces or use a debugger still pay the per-value tuple allocation and the per-op line-copy on every value birth (arithmetic result, function return, literal materialization).
 - **Alternative:** the spec already contemplates `normalize(caspj, {lines: false})` for stripping — extend the strip opt to a runtime engine-mode "cheap mode" that omits `src` on ordinary value births and reconstructs only for the frame carrying the exception. Debug-mode engines keep the current shape.
 - **Suggested action:** engine-mode selection; the machinery is already there, wire the toggle.
@@ -39,7 +39,7 @@ Applies the check from [concepts § Cost if you don't use it](https://puck.uno/r
 
 ### Reference-table + back-refs double-bookkeeping
 
-- **Spec:** [drinian/references](https://puck.uno/requirements/drinian/references) and [ideas/drinian § The reference table](https://puck.uno/ideas/drinian/#the-reference-table).
+- **Spec:** [mvm/references](https://puck.uno/requirements/mvm/references) and [ideas/drinian § The reference table](https://puck.uno/ideas/drinian/#the-reference-table).
 - **Cost:** every reference (variable, hash element) has an entry in `references`. The idea doc adds a mandatory inverse `back_refs` index. Every assignment is a delete+add pair; every mutation cascades through triggers.
 - **Non-users pay:** programs that never trigger GC (short-lived scripts) and programs that never form cycles still pay per-mutation back-refs maintenance. It's the same tax whether the program allocates one cycle or none.
 - **Alternative:** the trace design pays for itself only when cycles form. Refcount-first with cycle-detection-on-suspicion (Python's approach) skips back-refs maintenance in the common case.
@@ -73,7 +73,7 @@ Applies the check from [concepts § Cost if you don't use it](https://puck.uno/r
 
 ### Frame `lexical_parent` field on every frame push
 
-- **Spec:** [drinian § lexical_parent is the scope chain](https://puck.uno/requirements/drinian/#worked-example-drinian-mid-execution).
+- **Spec:** [mvm § lexical_parent is the scope chain](https://puck.uno/requirements/mvm/#worked-example-mvm-mid-execution).
 - **Cost:** every frame carries `lexical_parent`. For if/for/while/do frames it's the enclosing frame (redundant); for function_call it's the definition-site frame.
 - **Non-users pay:** every block-frame push writes a lexical_parent that equals "the frame below." Redundant per-push cost.
 - **Alternative:** omit lexical_parent when it equals `call_stack.length - 1` (implicit-parent optimization). Only function_call frames whose lexical parent differs from the physical parent carry it.
@@ -91,7 +91,7 @@ Applies the check from [concepts § Cost if you don't use it](https://puck.uno/r
 
 ### Captured stack O(depth) on every exception raise
 
-- **Spec:** [drinian § Capture-by-reference: the cost model](https://puck.uno/requirements/drinian/#capture-by-reference-the-cost-model).
+- **Spec:** [mvm § Capture-by-reference: the cost model](https://puck.uno/requirements/mvm/#capture-by-reference-the-cost-model).
 - **Cost:** every exception raise allocates `O(stack_depth)` pointers into `captured_stack`. Typical depths are 5-50 frames.
 - **Non-users pay:** programs that raise without inspecting the captured stack still pay the pointer array.
 - **Alternative:** capture on first access to `.captured_stack` rather than at raise time — the frames haven't popped yet, so a lazy capture works.
