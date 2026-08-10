@@ -1,2 +1,0 @@
-#!/usr/bin/env caspian
-puts 'shebang ok'

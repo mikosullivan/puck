@@ -1,1 +1,0 @@
-{name: 'Picard', rank: 'Captain'}.to_json

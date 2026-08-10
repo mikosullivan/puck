@@ -10,6 +10,8 @@
 
 Purpose-built SQLite schema for Drinian — every field of the runtime state hash maps to a table directly shaped around what Drinian actually needs, rather than being layered on top of a generic object store.
 
+![Drinian entity-relationship diagram: eleven tables in five color-coded clusters (drinian marker in gray, object graph in teal, listeners in purple, execution stack in blue, frame-attached tables in orange), each showing its primary key and foreign keys, with curved gray lines drawn for cross-table foreign keys.](./schema.svg)
+
 - [sql](https://www.puck.uno/requirements/drinian/sql) — display of the schema DDL
 - [garbage-collection](https://www.puck.uno/requirements/drinian/garbage-collection/) — mark triggers + the trace routine
 - [pause-resume](https://www.puck.uno/requirements/drinian/pause-resume/) — pause via top-of-stack frame + DB close, resume via SQL edit + optional payload

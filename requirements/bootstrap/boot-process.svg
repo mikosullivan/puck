@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 560" width="500" role="img" aria-label="Caspian bootstrap process, top to bottom: host launches (implemented), load — require engine (implemented), wire capabilities (implemented), initialize VM (implemented), stage — engine:load source (current work), then bootstrap ends and an arrow points to the execution phase.">
+	<title>Caspian bootstrap process</title>
+
+	<defs>
+		<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+			markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+		</marker>
+
+		<!-- Reusable "implemented" checkmark: green disc + white check.
+		     Reference with <use href="#done-check" x="..." y="..."/> where
+		     (x, y) is the desired center. -->
+		<g id="done-check">
+			<circle r="13" fill="#4caf50"/>
+			<path d="M -5 0 L -1 4 L 6 -4" fill="none" stroke="#ffffff"
+				stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+		</g>
+	</defs>
+
+	<g fill="currentColor" font-family="sans-serif">
+
+		<!-- Step 1: Host launches -->
+		<use href="#done-check" x="30" y="55"/>
+		<rect x="60" y="20" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="20" width="6" height="70" fill="#ba68c8"/>
+		<text x="80" y="48" font-size="15" font-weight="bold">Host launches</text>
+		<text x="80" y="70" font-size="11" opacity="0.75">Lua VM boots. CLI parses argv, reads the source file.</text>
+
+		<line x1="250" y1="90" x2="250" y2="110"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 2: Load -->
+		<use href="#done-check" x="30" y="145"/>
+		<rect x="60" y="110" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="110" width="6" height="70" fill="#81c784"/>
+		<text x="80" y="138" font-size="15" font-weight="bold">Load — <tspan font-family="monospace">require('engine')</tspan></text>
+		<text x="80" y="160" font-size="11" opacity="0.75">Lua reads src/engine/engine.lua, returns the engine table.</text>
+
+		<line x1="250" y1="180" x2="250" y2="200"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 3: Wire -->
+		<use href="#done-check" x="30" y="235"/>
+		<rect x="60" y="200" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="200" width="6" height="70" fill="#ffb74d"/>
+		<text x="80" y="228" font-size="15" font-weight="bold">Wire capabilities</text>
+		<text x="80" y="250" font-size="11" opacity="0.75">Host assigns engine.stdout, .stderr, .stdin, .argv, …</text>
+
+		<line x1="250" y1="270" x2="250" y2="290"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 4: Initialize VM -->
+		<use href="#done-check" x="30" y="325"/>
+		<rect x="60" y="290" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="290" width="6" height="70" fill="#4db6ac"/>
+		<text x="80" y="318" font-size="15" font-weight="bold">Initialize VM</text>
+		<text x="80" y="340" font-size="11" opacity="0.75">Engine brings up its runtime — Drinian opens, per-connection state ready.</text>
+
+		<line x1="250" y1="360" x2="250" y2="380"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 5: Stage (currently under active development) -->
+		<rect x="60" y="380" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="380" width="6" height="70" fill="#64b5f6"/>
+		<text x="80" y="408" font-size="15" font-weight="bold">Stage — <tspan font-family="monospace">engine:load(source)</tspan></text>
+		<text x="80" y="430" font-size="11" opacity="0.75">Caspian source → CaspJ → CaspM. CaspM lands in the MVM.</text>
+		<!-- Current-work pill -->
+		<rect x="373" y="389" width="60" height="18" rx="9" ry="9"
+			fill="#64b5f6" stroke="none"/>
+		<text x="403" y="402" font-size="10" text-anchor="middle" fill="#ffffff" font-weight="bold">current work</text>
+
+		<!-- Phase boundary: bootstrap ends, execution begins -->
+		<line x1="250" y1="450" x2="250" y2="495"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+		<line x1="100" y1="475" x2="400" y2="475"
+			stroke="currentColor" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+		<text x="415" y="479" font-size="10" font-style="italic" opacity="0.6">bootstrap ends</text>
+		<text x="250" y="518" font-size="12" font-style="italic" text-anchor="middle" opacity="0.8">execution phase</text>
+
+		<!-- Legend -->
+		<text x="60" y="548" font-size="10" opacity="0.6" font-style="italic">Green check: implemented in code. Pill on the box: current work. Dashed line: phase boundary.</text>
+
+	</g>
+</svg>

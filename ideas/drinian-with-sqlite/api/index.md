@@ -122,7 +122,7 @@ Grant a target role at the current frame.
 
 ### `capture_frames`
 
-Snapshot the frames-below-me into `captured_frames` for an in-flight exception.
+*(removed — exception design deferred / dropped from MVM)*
 
 ## Source registry
 

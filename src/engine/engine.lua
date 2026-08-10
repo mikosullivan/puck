@@ -1,9 +1,9 @@
 --[[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to construct a fresh Drinian state hash (via state.lua) and stash it as engine.state, so the sequence counter and every other Drinian slot are live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
+	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an MVM (via drinian.open()) and stash the SQLite handle as engine.mvm, so the runtime state store (Drinian in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
 	"exports": {
-		"new": "() -> Engine"
+		"new": "(opts?) -> Engine — opts.mvm is passed through to drinian.open() for the underlying MVM connection"
 	},
 	"stdout_contract": "The wired stdout must be an object supporting :print(text) — the raw byte-writer, no newline. Caspian-side :puts (adds newline) and everything else the sink surface exposes layer inside the engine on top of the host's :print. Tests wire a FakeStdout; the eventual CLI wires an object over io.stdout.",
 	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface.",
@@ -15,11 +15,16 @@
 # Engine
 
 Caspian's runtime. A host constructs an engine with `engine.new()` — which
-in turn constructs a fresh [Drinian](https://www.puck.uno/requirements/drinian/)
-state hash and stashes it as `engine.state`. From that moment on, every
-allocation draws IDs from `engine.state.sequence:next()`, roles live under
-`engine.state.roles`, and execution state (objects, references, call stack,
-...) accumulates in the corresponding Drinian fields.
+opens an MVM (the runtime state store — Drinian in V1; see
+[drinian](https://www.puck.uno/requirements/drinian/)) via `drinian.open()`
+and stashes the SQLite handle as `engine.mvm`. From that moment on, every
+runtime state read or write goes through that handle: objects, frames,
+locals, roles, listeners — everything the MVM schema tracks.
+
+The MVM defaults to `:memory:` — pass `opts.mvm = {path = '/some/file.db'}`
+to `engine.new()` to open a file-backed one, or `opts.mvm = {path = ...,
+schema = ...}` to override the schema (see [drinian.lua](../engine/drinian.lua)
+for the full option set).
 
 The host then wires whatever capabilities the program needs
 (`engine.stdout = ...`, `engine.debugger = ...`), feeds the program source
@@ -34,7 +39,7 @@ has a clear signal about what to build next.
 
 local transpiler = require('transpiler')
 local normalize  = require('normalize')
-local state      = require('state')
+local drinian    = require('drinian')
 
 local M = {}
 M.__index = M
@@ -76,36 +81,6 @@ features that duplicate what the DSL chain will handle.
 local bwc_handlers = {}
 
 --[[
-## The puts handler
-
-`bwc_handlers.puts` writes each argument to the wired stdout followed by
-a trailing newline — `puts 'a', 'b'` writes `a\nb\n` (one newline per
-arg, no joining separator, no single trailing newline covering all args
-together). Each arg atom is evaluated via `engine:eval` before being
-written.
-
-Requires `engine.stdout` to be an object with a `:print(text)` method;
-if stdout isn't wired, raises `puts: no stdout wired` at the moment
-`puts` fires.
-
-Placeholder: currently a direct top-level bwc handler. In the target
-design `puts` is sugar for `%stdout.puts` routed through the DSL chain,
-and this handler goes away.
-]]
-function bwc_handlers.puts(engine, row)
-	if not engine.stdout then
-		error("puts: no stdout wired — set engine.stdout before running programs that write output")
-	end
-
-	for i = 2, #row do
-		local value = engine:eval(row[i])
-		engine.stdout:print(tostring(value) .. '\n')
-	end
-
-	return
-end
-
---[[
 ## Debug logging
 
 `debug_log(engine, entry)` appends `entry` to `engine.debugger` if one
@@ -129,30 +104,36 @@ end
 --[[
 ## Constructor
 
-`engine.new()` is the boot entry point. Its first act is to construct a
-fresh Drinian state hash (via `state.new()`) and stash it as
-`engine.state`, so the ID sequence, the roles tree, and every other
-Drinian slot are live from the moment the engine exists. Host wiring
-slots and walking-skeleton load-artifact slots start nil:
+`engine.new(opts?)` is the boot entry point. Its first act is to open
+an MVM (via `drinian.open(opts and opts.mvm)`) and stash the returned
+SQLite handle as `engine.mvm`, so the runtime state store is live from
+the moment the engine exists. Host wiring slots and walking-skeleton
+load-artifact slots start nil:
 
-- **`state`** — the Drinian state hash. See [state.lua](../engine/state.lua).
-  Every allocation from here on draws IDs via `engine.state.sequence:next()`.
+- **`mvm`** — the open SQLite handle for Miko's Virtual Machine — the
+  runtime state store. See [drinian.lua](../engine/drinian.lua) for the
+  open API and [drinian.sql](../engine/drinian.sql) for the schema.
+  Every runtime state read or write goes through this handle.
 - **`stdout`, `debugger`** — nil at construction. The host attaches
   capabilities by plain field assignment before or after loading, in any
   order.
 - **`source`, `caspj`, `caspm`** — nil at construction. Populated by
-  `engine:load`. Vestigial: these are walking-skeleton fields; as the
-  Drinian discipline tightens, `source` folds into `state.srcs` and the
-  loaded CaspM tree lands in `state.asts`.
+  `engine:load`. Vestigial: these are walking-skeleton fields; when the
+  spec'd schema slot for CaspM-in-the-MVM lands, `load` will write into
+  the MVM instead and these fields go away.
 
-No required constructor params. A program that doesn't need a given
-capability doesn't force its host to provide one; reaching for an
-unwired capability raises at the fire site (see § The puts handler for
-the pattern).
+`opts.mvm` (when supplied) is passed through to `drinian.open()` — see
+that function's signature for the fields (`path`, `schema`, `schema_path`).
+Omit `opts` entirely for the common case: a fresh in-memory MVM. A
+program that doesn't need a given host capability doesn't force its host
+to provide one; reaching for an unwired capability raises at the fire
+site.
 ]]
-function M.new()
+function M.new(opts)
+	opts = opts or {}
+
 	return setmetatable({
-		state    = state.new(),
+		mvm      = drinian.open(opts.mvm),
 		stdout   = nil,
 		debugger = nil,
 		source   = nil,

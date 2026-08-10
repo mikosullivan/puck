@@ -4,69 +4,86 @@ package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?
 	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
 	.. package.path
+package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local h      = require('helpers')
 local engine = require('engine')
 
 --[[
-## Drinian is created on boot
+## The MVM is opened on boot
 
-`engine.new()` is the boot entry point; its first act is to construct
-a fresh Drinian state hash (via `state.new()`) and stash it as
-`engine.state`. Everything downstream in the engine reads and writes
-through that hash.
+`engine.new()` is the boot entry point; its first act is to open an
+MVM (via `drinian.open()`) and stash the resulting SQLite handle as
+`engine.mvm`. Everything downstream in the engine reads and writes
+runtime state through that handle.
 ]]
 
-h.test("engine.new() creates a state hash on boot", function()
+h.test("engine.new() opens an MVM on boot", function()
 	local e = engine.new()
-	h.assert_true(e.state ~= nil, "engine.state is populated at construction")
+	h.assert_true(e.mvm ~= nil, "engine.mvm is populated at construction")
 end)
 
-h.test("engine.new()'s state has every top-level Drinian field", function()
+h.test("engine.new()'s MVM is a functional SQLite handle", function()
 	local e = engine.new()
-	h.assert_true(e.state.roles      ~= nil, "roles present")
-	h.assert_true(e.state.srcs       ~= nil, "srcs present")
-	h.assert_true(e.state.objects    ~= nil, "objects present")
-	h.assert_true(e.state.references ~= nil, "references present")
-	h.assert_true(e.state.call_stack ~= nil, "call_stack present")
-	h.assert_true(e.state.gc_errors  ~= nil, "gc_errors present")
-	h.assert_true(e.state.asts       ~= nil, "asts present")
-	h.assert_true(e.state.sequence   ~= nil, "sequence present")
+	local n = nil
+
+	for row in e.mvm:nrows('select count(*) as n from objects') do
+		n = row.n
+	end
+
+	h.assert_true(n ~= nil, 'query returned a row')
+	h.assert_eq(n, 1, 'seed row is present (one row in objects after open)')
 end)
 
-h.test("engine.new()'s state bootstraps roles with engine at root and user as child", function()
+h.test("engine.new()'s MVM has the user seed row", function()
 	local e = engine.new()
-	h.assert_eq(e.state.roles.value.name, 'engine',        "root role is engine")
-	h.assert_eq(e.state.roles.child_count, 1,              "engine has one child")
-	h.assert_eq(e.state.roles:child(1).value.name, 'user', "child is user")
+	local count = nil
+
+	for row in e.mvm:nrows('select count(*) as n from objects where user') do
+		count = row.n
+	end
+
+	h.assert_eq(count, 1, 'exactly one user row after boot')
+end)
+
+h.test("engine.new()'s MVM has foreign keys enabled", function()
+	local e = engine.new()
+	local fk = nil
+
+	for row in e.mvm:nrows('pragma foreign_keys') do
+		fk = row.foreign_keys
+	end
+
+	h.assert_eq(fk, 1, 'foreign_keys pragma is on')
 end)
 
 --[[
-## The sequence system works via engine.state
+## Each engine gets its own MVM
 
-Every allocation in the engine goes through
-`engine.state.sequence:next()`. First call after boot returns `"1"`;
-each subsequent call advances by one; two engines get independent
-sequences.
+Two `engine.new()` calls return engines with independent in-memory
+MVMs; writes to one don't touch the other. This is the property that
+lets a host run multiple programs in one Lua VM without cross-talk.
 ]]
 
-h.test("engine.state.sequence:next() returns '1' on the first call after boot", function()
-	local e = engine.new()
-	h.assert_eq(e.state.sequence:next(), '1', "first ID via engine.state.sequence")
-end)
-
-h.test("engine.state.sequence:next() hands out sequential IDs", function()
-	local e = engine.new()
-	h.assert_eq(e.state.sequence:next(), '1', "first ID")
-	h.assert_eq(e.state.sequence:next(), '2', "second ID")
-	h.assert_eq(e.state.sequence:next(), '3', "third ID")
-end)
-
-h.test("each engine.new() gets its own state and its own sequence", function()
+h.test("each engine.new() gets its own MVM", function()
 	local e1 = engine.new()
 	local e2 = engine.new()
-	e1.state.sequence:next()
-	e1.state.sequence:next()
-	h.assert_eq(e1.state.sequence:next(), '3', "e1 is on its third handout")
-	h.assert_eq(e2.state.sequence:next(), '1', "e2 is still on its first — independent state")
+	h.assert_true(e1.mvm ~= e2.mvm, 'the two mvm handles are distinct')
+
+	-- Insert a plain HashPrimitive into e1's MVM and verify e2 doesn't see it.
+	local ok = e1.mvm:exec("insert into objects (primitive) values ('h')")
+	h.assert_true(ok == 0, 'insert succeeded on e1 (lsqlite3 exec returns 0 on OK)')
+
+	local n1, n2
+
+	for row in e1.mvm:nrows('select count(*) as n from objects') do
+		n1 = row.n
+	end
+
+	for row in e2.mvm:nrows('select count(*) as n from objects') do
+		n2 = row.n
+	end
+
+	h.assert_eq(n1, 2, 'e1 sees seed + new insert')
+	h.assert_eq(n2, 1, 'e2 sees only the seed — its MVM is independent')
 end)

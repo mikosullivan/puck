@@ -657,9 +657,26 @@ create table frames (
 	--   function_call — the invocation of a callable
 	type text not null check (type in ('function_call')),
 
-	-- Method dispatch info — meaningful on method_call,
-	-- function_call, function_invocation, on_close frames.
+	-- method_pk — the callable being invoked: a function, a method,
+	-- a closure, or any other invokable object. Set on every
+	-- function_call frame (which is currently every frame — the
+	-- other frame types the earlier draft anticipated were deferred).
+	-- Nullable to leave room for future frame types that don't
+	-- represent a call. Plain FK reference (no cascade); anchored in
+	-- uspace via the uspace view's `select method_pk from frames`
+	-- branch so the callable can't be collected while its frame is
+	-- live.
 	method_pk       text references objects(object_pk),
+
+	-- method_class_pk — the class the callable was resolved from,
+	-- when there is one. Not necessarily the receiver's own class:
+	-- dispatch may walk role or inheritance chains to reach the
+	-- defining class, and this column records where the walk landed.
+	-- Null when the callable has no defining class (a plain function
+	-- with no class attachment). The engine reads this on entry to
+	-- establish the method's home-class context (e.g., what `%self`'s
+	-- class is for the duration of the frame). Plain FK reference
+	-- like method_pk; anchored in uspace by the same mechanism.
 	method_class_pk text references objects(object_pk),
 
 	-- Lexical parent link — the frame that owned the scope where
@@ -671,21 +688,11 @@ create table frames (
 	-- goes stale (an engine-side concern, not a corruption).
 	lexical_parent_pk integer references frames(frame_pk) on delete set null,
 
-	-- Iterator state — meaningful on method_call frames for
-	-- iteration methods (each, map, etc.). Together record where
-	-- the iteration is so a suspended frame can resume from the
-	-- right position.
-	iterator_position integer check (iterator_position is null or iterator_position >= 0),
-	iterator_of       integer
-		check (iterator_of is null or iterator_of > 0)
-		check ((iterator_position is null and iterator_of is null)
-			or (iterator_position is not null and iterator_of is not null)),
-
-	-- Exception details — meaningful on 'exception' frames only.
-	-- exception_class_pk points at the exception's class object;
-	-- exception_message is human-readable text carried alongside.
-	exception_class_pk text references objects(object_pk),
-	exception_message  text,
+	-- Loop / iteration state — deferred. Loops aren't designed yet
+	-- (we haven't even gotten a script to frame 0), so nothing in
+	-- the schema tracks iterator position or length. Whatever fields
+	-- resumable iteration ends up needing get added when the loop
+	-- design lands.
 
 	-- Amber full-walk-stop marker. 1 → this frame called
 	-- %amber.clear (or entered a %amber.clear do end block), so
@@ -702,20 +709,27 @@ create table frames (
 	unique (process_pk, idx)
 );
 
+-- Accelerates process-scoped queries: the FK cascade path
+-- (deleting a `processes` row drops its frames) and every "all
+-- frames for this process" walk (stack traversal, top-of-stack
+-- lookup, pause serialization). Note: the `unique (process_pk,
+-- idx)` above indexes process_pk as its leftmost column, so this
+-- standalone index may be redundant for planning — kept as an
+-- explicit declaration of the FK-cascade path until we've measured
+-- whether the composite alone is enough.
 create index frames_process_pk on frames(process_pk);
 
--- [set-needs-trace] On DELETE of a frame: mark the three object
--- pointers it carried (method_pk, method_class_pk, exception_class_pk).
--- Frame pop cascades locals / frame_delegations / frame_ambers
--- automatically, and those cascades fire their own mark triggers; this
--- trigger handles the object-pointer columns that live directly on
--- the frame.
+-- [set-needs-trace] On DELETE of a frame: mark the two object
+-- pointers it carried (method_pk, method_class_pk). Frame pop
+-- cascades locals / frame_delegations / frame_ambers automatically,
+-- and those cascades fire their own mark triggers; this trigger
+-- handles the object-pointer columns that live directly on the frame.
 create trigger frames_mark_needs_trace_after_delete
 after delete on frames
 begin
 	update objects set needs_trace = 1
 	where object_pk in (
-		old.method_pk, old.method_class_pk, old.exception_class_pk
+		old.method_pk, old.method_class_pk
 	) and object_pk is not null;
 end;
 
@@ -733,14 +747,6 @@ after update of method_class_pk on frames
 when old.method_class_pk is not new.method_class_pk and old.method_class_pk is not null
 begin
 	update objects set needs_trace = 1 where object_pk = old.method_class_pk;
-end;
-
--- [set-needs-trace] On UPDATE OF exception_class_pk: mark the OLD pointer.
-create trigger frames_mark_needs_trace_after_update_exception_class_pk
-after update of exception_class_pk on frames
-when old.exception_class_pk is not new.exception_class_pk and old.exception_class_pk is not null
-begin
-	update objects set needs_trace = 1 where object_pk = old.exception_class_pk;
 end;
 
 create table locals (
@@ -864,31 +870,6 @@ begin
 end;
 
 -- ------------------------------------------------------------
--- Captured stack — snapshot-by-reference for exception frames.
--- ------------------------------------------------------------
--- When an exception is raised, the engine snapshots the frames
--- below it into this table by reference (not by copy). The
--- captured references let a debugger or uncaught-error handler
--- see the stack that led to the raise, even after the frames
--- have popped during unwinding. See requirements/drinian §
--- Capture-by-reference for the cost model.
---
--- Cascade behavior: if the exception frame is deleted (exception
--- caught, or the whole call stack collapses), the captures go
--- with it. If a referenced frame is deleted (unwound past),
--- the row goes too — the capture becomes partial rather than
--- broken. That matches "point-in-time snapshot" semantics: what
--- survives is what's still there.
-create table captured_frames (
-	exception_frame_pk  integer not null references frames(frame_pk) on delete cascade,
-	position            integer not null check (position >= 0),
-	referenced_frame_pk integer not null references frames(frame_pk) on delete cascade,
-	primary key (exception_frame_pk, position)
-);
-
-create index captured_frames_referenced on captured_frames(referenced_frame_pk);
-
--- ------------------------------------------------------------
 -- uspace — derived view of GC anchor set.
 -- ------------------------------------------------------------
 -- Membership in "uspace" is computed dynamically from actual
@@ -905,7 +886,6 @@ create index captured_frames_referenced on captured_frames(referenced_frame_pk);
 --   * A domain hash held in any frame's amber layer.
 --   * The method being executed by some frame, or that method's
 --     defining class.
---   * The exception class of an in-flight exception.
 --   * The target of a role delegation on some frame.
 --
 -- Buckets and stacks are NOT in this list. They live inside their
@@ -952,9 +932,6 @@ create view uspace as
 	select method_pk from frames where method_pk is not null
 	union
 	select method_class_pk from frames where method_class_pk is not null
-	union
-	-- Exception class while an exception is in flight.
-	select exception_class_pk from frames where exception_class_pk is not null
 	union
 	-- Roles being granted permissions via delegate_to blocks.
 	select target_role_pk from frame_delegations;

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 490" width="500" role="img" aria-label="Initialize VM sub-process, top to bottom, all five sub-steps implemented: open the DB, install infrastructure, initialize the process record, create per-connection state, return the MVM handle.">
+	<title>Initialize VM sub-process</title>
+
+	<defs>
+		<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+			markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+		</marker>
+
+		<!-- Reusable "implemented" checkmark: green disc + white check. -->
+		<g id="done-check">
+			<circle r="13" fill="#4caf50"/>
+			<path d="M -5 0 L -1 4 L 6 -4" fill="none" stroke="#ffffff"
+				stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+		</g>
+	</defs>
+
+	<g fill="currentColor" font-family="sans-serif">
+
+		<!-- Step 1: Open the DB -->
+		<use href="#done-check" x="30" y="55"/>
+		<rect x="60" y="20" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="20" width="6" height="70" fill="#ffb74d"/>
+		<text x="80" y="48" font-size="15" font-weight="bold">Open the DB</text>
+		<text x="80" y="70" font-size="11" opacity="0.75"><tspan font-family="monospace">sqlite.open(path)</tspan>; foreign_keys pragma on. Default <tspan font-family="monospace">:memory:</tspan>.</text>
+
+		<line x1="250" y1="90" x2="250" y2="110"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 2: Install infrastructure -->
+		<use href="#done-check" x="30" y="145"/>
+		<rect x="60" y="110" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="110" width="6" height="70" fill="#4db6ac"/>
+		<text x="80" y="138" font-size="15" font-weight="bold">Install infrastructure</text>
+		<text x="80" y="160" font-size="11" opacity="0.75">Creates tables, triggers, indexes, view; seeds the user row.</text>
+
+		<line x1="250" y1="180" x2="250" y2="200"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 3: Initialize the process record -->
+		<use href="#done-check" x="30" y="235"/>
+		<rect x="60" y="200" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="200" width="6" height="70" fill="#64b5f6"/>
+		<text x="80" y="228" font-size="15" font-weight="bold">Initialize the process record</text>
+		<text x="80" y="250" font-size="11" opacity="0.75">Insert a row into <tspan font-family="monospace">processes</tspan> and hold onto the fresh pk.</text>
+
+		<line x1="250" y1="270" x2="250" y2="290"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 4: Create per-connection state -->
+		<use href="#done-check" x="30" y="325"/>
+		<rect x="60" y="290" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="290" width="6" height="70" fill="#7986cb"/>
+		<text x="80" y="318" font-size="15" font-weight="bold">Create per-connection state</text>
+		<text x="80" y="340" font-size="11" opacity="0.75"><tspan font-family="monospace">current_process</tspan> TEMP table; write the process pk into it.</text>
+
+		<line x1="250" y1="360" x2="250" y2="380"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 5: Return the MVM handle -->
+		<use href="#done-check" x="30" y="415"/>
+		<rect x="60" y="380" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="380" width="6" height="70" fill="#f06292"/>
+		<text x="80" y="408" font-size="15" font-weight="bold">Return the MVM handle</text>
+		<text x="80" y="430" font-size="11" opacity="0.75">Handle returned; the engine stashes it as <tspan font-family="monospace">engine.mvm</tspan>.</text>
+
+		<!-- Legend -->
+		<text x="60" y="475" font-size="10" opacity="0.6" font-style="italic">Sub-process of the Initialize VM step in the bootstrap sequence. Green check: implemented in code.</text>
+
+	</g>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 310" width="500" role="img" aria-label="Stage sub-process, top to bottom: transpile Caspian to CaspM (implemented), install CaspM plus metadata into the MVM (not yet implemented), set up frame 0 (not yet implemented).">
+	<title>Stage sub-process</title>
+
+	<defs>
+		<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+			markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+		</marker>
+
+		<!-- Reusable "implemented" checkmark: green disc + white check. -->
+		<g id="done-check">
+			<circle r="13" fill="#4caf50"/>
+			<path d="M -5 0 L -1 4 L 6 -4" fill="none" stroke="#ffffff"
+				stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+		</g>
+	</defs>
+
+	<g fill="currentColor" font-family="sans-serif">
+
+		<!-- Step 1: Transpile (parse + normalize under the hood) -->
+		<use href="#done-check" x="30" y="55"/>
+		<rect x="60" y="20" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="20" width="6" height="70" fill="#81c784"/>
+		<text x="80" y="48" font-size="15" font-weight="bold">Transpile — Caspian → CaspM</text>
+		<text x="80" y="70" font-size="11" opacity="0.75">Parse Caspian source; produce the dispatch-ready CaspM tree.</text>
+
+		<line x1="250" y1="90" x2="250" y2="110"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 2: Install CaspM into the MVM -->
+		<rect x="60" y="110" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="110" width="6" height="70" fill="#4db6ac"/>
+		<text x="80" y="138" font-size="15" font-weight="bold">Install CaspM into the MVM</text>
+		<text x="80" y="160" font-size="11" opacity="0.75">Write CaspM + metadata (origin, hash, version) into the MVM.</text>
+
+		<line x1="250" y1="180" x2="250" y2="200"
+			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+		<!-- Step 3: Set up frame 0 -->
+		<rect x="60" y="200" width="380" height="70" rx="6" ry="6"
+			fill="none" stroke="currentColor" stroke-width="1.5"/>
+		<rect x="60" y="200" width="6" height="70" fill="#64b5f6"/>
+		<text x="80" y="228" font-size="15" font-weight="bold">Set up frame 0</text>
+		<text x="80" y="250" font-size="11" opacity="0.75">Insert the top-level frame into <tspan font-family="monospace">frames</tspan>; stack ready to walk.</text>
+
+		<!-- Legend -->
+		<text x="60" y="295" font-size="10" opacity="0.6" font-style="italic">Sub-process of the Stage step in the bootstrap sequence. Green check: implemented in code.</text>
+
+	</g>
+</svg>

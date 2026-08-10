@@ -1,0 +1,974 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1469.063 784.02905"
+   width="1469.063"
+   role="img"
+   aria-label="MVM entity-relationship diagram. Ten tables grouped into: MVM marker (gray), object graph (objects and relationships, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
+   version="1.1"
+   id="svg707"
+   sodipodi:docname="schema.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   height="784.02899"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview709"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.33529865"
+     inkscape:cx="557.71176"
+     inkscape:cy="260.96138"
+     inkscape:window-width="1600"
+     inkscape:window-height="824"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <title
+     id="title473">MVM schema — entity-relationship diagram</title>
+  <defs
+     id="defs493">
+    <rect
+       x="156.76198"
+       y="337.25397"
+       width="302.73758"
+       height="112.1783"
+       id="rect10718" />
+    <marker
+       id="fk-arrow"
+       viewBox="0 0 10 10"
+       refX="6"
+       refY="5"
+       markerWidth="4"
+       markerHeight="4"
+       orient="auto">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="context-stroke"
+         id="path13238" />
+    </marker>
+    <style
+       type="text/css"
+       id="style14617">
+      .fk-arrow {
+        fill: none;
+        stroke: #000000;
+        stroke-width: 6.73455;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        marker-end: url(#fk-arrow);
+        paint-order: stroke fill markers;
+      }
+      .fk-label-rect {
+        fill: #c7e2e4;
+        stroke: none;
+      }
+      .fk-label-text {
+        font-family: 'DejaVu Sans Mono', monospace;
+        font-size: 14px;
+        fill: #000000;
+        stroke: #ffffff;
+        stroke-width: 2.5;
+        paint-order: stroke fill markers;
+        stroke-linejoin: round;
+        text-anchor: middle;
+      }
+    </style>
+  </defs>
+  <!-- Page background -->
+  <metadata
+     id="metadata3507">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>MVM schema — entity-relationship diagram</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <!-- Missing FK arrows: frames → objects (collapses method_pk + method_class_pk to one line) and frame_delegations → objects (target_role_pk). Maroon per user request. -->
+  <!-- FK-name labels for every cross-table arrow, matching the style of the manually-drawn 'parent' label. -->
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="majors"
+     transform="translate(-53.843901,-181.95075)" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="diagram"
+     transform="translate(-53.843901,-181.95075)">
+    <path
+       class="fk-arrow"
+       d="M 284.03271,567.82865 H 463.9892"
+       id="path6519" />
+    <path
+       class="fk-arrow"
+       d="M 284.03271,535.78808 H 463.9892"
+       id="path6521" />
+    <g
+       transform="translate(517.27178,828.81643)"
+       id="g589"
+       style="font-family:'Helvetica Neue', Arial, sans-serif">
+      <rect
+         x="0"
+         y="0"
+         width="180"
+         height="80"
+         rx="6"
+         ry="6"
+         fill="#ffffff"
+         stroke="#26a69a"
+         stroke-width="1.5"
+         id="rect577" />
+      <path
+         d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+         fill="#26a69a"
+         id="path579" />
+      <text
+         x="90"
+         y="18"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text581">relationships</text>
+      <text
+         x="10"
+         y="44"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text583">PK: rel_pk</text>
+      <text
+         x="10"
+         y="60"
+         font-size="11px"
+         fill="#616161"
+         id="text585">FK: parent</text>
+      <text
+         x="10"
+         y="74"
+         font-size="11px"
+         fill="#616161"
+         id="text587">FK: child</text>
+    </g>
+    <g
+       transform="matrix(1.4457791,0,0,1.4474001,477.15166,340.48615)"
+       id="g575"
+       style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-width:0.691281">
+      <rect
+         x="0.19493902"
+         y="0.19495994"
+         width="179.61012"
+         height="253.12419"
+         rx="5.9870038"
+         ry="9.1195784"
+         fill="#ffffff"
+         stroke="#26a69a"
+         stroke-width="1.42658"
+         id="rect559" />
+      <path
+         d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+         fill="#26a69a"
+         id="path561"
+         style="stroke-width:0.47787" />
+      <text
+         x="90"
+         y="18"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text563"
+         style="stroke-width:0.47787">objects</text>
+      <text
+         x="10"
+         y="44"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text565"
+         style="stroke-width:0.47787">PK: object_pk (uuid)</text>
+      <text
+         x="10"
+         y="62"
+         font-size="11px"
+         fill="#616161"
+         id="text567"
+         style="stroke-width:0.47787">FK: role_parent (self)</text>
+      <text
+         x="10"
+         y="78"
+         font-size="11px"
+         fill="#616161"
+         id="text569"
+         style="stroke-width:0.47787">FK: bucket_for (self)</text>
+      <text
+         x="10"
+         y="94"
+         font-size="11px"
+         fill="#616161"
+         id="text571"
+         style="stroke-width:0.47787">FK: stack_for (self)</text>
+      <text
+         x="10"
+         y="110"
+         font-size="11px"
+         fill="#616161"
+         id="text-ast"
+         style="stroke-width:0.47787">col: ast (blob CaspM)</text>
+    </g>
+    <g
+       transform="translate(377.16586,531.44724)"
+       id="fk-label-2">
+      <rect
+         x="-41"
+         y="-11"
+         width="82"
+         height="22"
+         rx="4"
+         ry="4"
+         class="fk-label-rect"
+         id="rect11562" />
+      <text
+         x="0"
+         y="5"
+         class="fk-label-text"
+         id="text11564">class_pk</text>
+    </g>
+    <g
+       transform="translate(377.16586,570.19055)"
+       id="fk-label-5">
+      <rect
+         x="-53"
+         y="-11"
+         width="106"
+         height="22"
+         rx="4"
+         ry="4"
+         class="fk-label-rect"
+         id="rect11577" />
+      <text
+         x="0"
+         y="5"
+         class="fk-label-text"
+         id="text11579">listener_pk</text>
+    </g>
+    <g
+       id="g1371"
+       transform="translate(36.977388,24.523703)">
+      <path
+         class="fk-arrow"
+         d="M 544.3171,797.06484 V 696.26998"
+         id="path2135" />
+      <path
+         class="fk-arrow"
+         d="M 596.27168,797.06484 V 696.26998"
+         id="path-relationships-objects-2" />
+      <g transform="translate(544.32,755.81) rotate(-90)" id="fk-label-parent">
+        <rect x="-33" y="-11" width="66" height="22" rx="4" ry="4"
+              class="fk-label-rect" id="rect-fk-label-parent"/>
+        <text x="0" y="5" class="fk-label-text" id="text-fk-label-parent">parent</text>
+      </g>
+      <g
+         transform="translate(596.27,755.81) rotate(-90)"
+         id="fk-label-9">
+        <rect
+           x="-29"
+           y="-11"
+           width="58"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11597" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11599">child</text>
+      </g>
+    </g>
+    <g
+       id="g1581"
+       transform="translate(27.000086,56.523703)">
+      <path
+         class="fk-arrow"
+         d="M 1264.0673,335.98538 H 729.22523"
+         id="path-frames-objects" />
+      <g
+         id="g964"
+         transform="translate(45.758854,71.723509)">
+        <rect
+           x="891.54907"
+           y="253.26187"
+           width="145.27313"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11622"
+           style="stroke-width:1" />
+        <text
+           x="964.18561"
+           y="269.26187"
+           class="fk-label-text"
+           id="text11624">method_pk</text>
+      </g>
+    </g>
+    <path
+       class="fk-arrow"
+       d="M 284.03271,482.9992 H 463.9892"
+       id="path14365" />
+    <path
+       class="fk-arrow"
+       d="M 284.03271,450.95863 H 463.9892"
+       id="path14367" />
+    <g
+       transform="translate(377.16586,448.84231)"
+       id="fk-label-4">
+      <rect
+         x="-65"
+         y="-11"
+         width="130"
+         height="22"
+         rx="4"
+         ry="4"
+         class="fk-label-rect"
+         id="rect11572" />
+      <text
+         x="0"
+         y="5"
+         class="fk-label-text"
+         id="text11574">broadcaster_pk</text>
+    </g>
+    <g
+       transform="translate(377.16586,483.38627)"
+       id="fk-label-3">
+      <rect
+         x="-53"
+         y="-11"
+         width="106"
+         height="22"
+         rx="4"
+         ry="4"
+         class="fk-label-rect"
+         id="rect11567" />
+      <text
+         x="0"
+         y="5"
+         class="fk-label-text"
+         id="text11569">listener_pk</text>
+    </g>
+    <g
+       id="g5498"
+       transform="translate(44.113446,303.47817)">
+      <g
+         transform="translate(73.968854,19.477592)"
+         id="g529"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="180"
+           height="52"
+           rx="6"
+           ry="6"
+           fill="#ffffff"
+           stroke="#9e9e9e"
+           stroke-width="1.5"
+           id="rect521" />
+        <path
+           d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+           fill="#9e9e9e"
+           id="path523" />
+        <text
+           x="90"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text525">MVM</text>
+        <text
+           x="10"
+           y="44"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text527">PK: key</text>
+      </g>
+      <g
+         id="g3183"
+         transform="translate(34.775289,-44.720294)">
+        <g
+           transform="translate(39.193566,157.31778)"
+           id="g543"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">
+          <rect
+             x="0"
+             y="0"
+             width="180"
+             height="80"
+             rx="6"
+             ry="6"
+             fill="#ffffff"
+             stroke="#9575cd"
+             stroke-width="1.5"
+             id="rect531" />
+          <path
+             d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+             fill="#9575cd"
+             id="path533" />
+          <text
+             x="90"
+             y="18"
+             text-anchor="middle"
+             font-size="13px"
+             font-weight="700"
+             fill="#ffffff"
+             id="text535">instance_listeners</text>
+          <text
+             x="10"
+             y="44"
+             font-size="11px"
+             font-weight="700"
+             fill="#212121"
+             id="text537">PK: reg_pk</text>
+          <text
+             x="10"
+             y="60"
+             font-size="11px"
+             fill="#616161"
+             id="text539">FK: broadcaster_pk</text>
+          <text
+             x="10"
+             y="74"
+             font-size="11px"
+             fill="#616161"
+             id="text541">FK: listener_pk</text>
+        </g>
+        <g
+           transform="translate(39.193566,250.02964)"
+           id="g557"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">
+          <rect
+             x="0"
+             y="0"
+             width="180"
+             height="80"
+             rx="6"
+             ry="6"
+             fill="#ffffff"
+             stroke="#9575cd"
+             stroke-width="1.5"
+             id="rect545" />
+          <path
+             d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+             fill="#9575cd"
+             id="path547" />
+          <text
+             x="90"
+             y="18"
+             text-anchor="middle"
+             font-size="13px"
+             font-weight="700"
+             fill="#ffffff"
+             id="text549">class_listeners</text>
+          <text
+             x="10"
+             y="44"
+             font-size="11px"
+             font-weight="700"
+             fill="#212121"
+             id="text551">PK: reg_pk</text>
+          <text
+             x="10"
+             y="60"
+             font-size="11px"
+             fill="#616161"
+             id="text553">FK: class_pk</text>
+          <text
+             x="10"
+             y="74"
+             font-size="11px"
+             fill="#616161"
+             id="text555">FK: listener_pk</text>
+        </g>
+      </g>
+    </g>
+    <g
+       id="g1124"
+       transform="translate(27.000086,56.523703)">
+      <g
+         id="g614"
+         transform="translate(0,48.557913)">
+        <path
+           class="fk-arrow"
+           d="M 926.06241,580.16377 H 724.81677"
+           id="path14787" />
+        <g
+           transform="translate(824.76913,580.16377)"
+           id="fk-label-8">
+          <rect
+             x="-65"
+             y="-11"
+             width="130"
+             height="22"
+             rx="4"
+             ry="4"
+             class="fk-label-rect"
+             id="rect11592" />
+          <text
+             x="0"
+             y="5"
+             class="fk-label-text"
+             id="text11594">target_role_pk</text>
+        </g>
+      </g>
+      <g
+         id="g620"
+         transform="translate(0,48.557913)">
+        <path
+           class="fk-arrow"
+           d="m 1089.1901,580.16377 h 147.7877"
+           id="path14843" />
+        <g
+           transform="translate(1165.4887,580.16377)"
+           id="fk-label-7">
+          <rect
+             x="-41"
+             y="-11"
+             width="82"
+             height="22"
+             rx="4"
+             ry="4"
+             class="fk-label-rect"
+             id="rect11587" />
+          <text
+             x="0"
+             y="5"
+             class="fk-label-text"
+             id="text11589"
+             style="stroke-linejoin:round">frame_pk</text>
+        </g>
+      </g>
+      <g
+         transform="translate(909.94449,587.56784)"
+         id="g647"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="200"
+           height="80"
+           rx="6"
+           ry="6"
+           fill="#ffffff"
+           stroke="#ff9800"
+           stroke-width="1.5"
+           id="rect635" />
+        <path
+           d="M 0,6 Q 0,0 6,0 h 188 q 6,0 6,6 V 26 H 0 Z"
+           fill="#ff9800"
+           id="path637" />
+        <text
+           x="100"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text639">frame_delegations</text>
+        <text
+           x="10"
+           y="44"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text641">PK: (frame_pk, target)</text>
+        <text
+           x="10"
+           y="60"
+           font-size="11px"
+           fill="#616161"
+           id="text643">FK: frame_pk</text>
+        <text
+           x="10"
+           y="74"
+           font-size="11px"
+           fill="#616161"
+           id="text645">FK: target_role_pk</text>
+      </g>
+    </g>
+    <g
+       id="g568"
+       transform="translate(27.000086,87.306119)">
+      <path
+         class="fk-arrow"
+         d="M 926.06241,400.00554 H 724.81677"
+         id="path2135-5" />
+      <g
+         transform="translate(824.76913,400.00079)"
+         id="fk-label-10">
+        <rect
+           x="-69"
+           y="-11"
+           width="138"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11602" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11604">value_object_pk</text>
+      </g>
+    </g>
+    <g
+       id="g586"
+       transform="translate(27.000086,85.272229)">
+      <path
+         class="fk-arrow"
+         d="m 1089.1901,402.03943 h 147.7877"
+         id="path4851" />
+      <g
+         transform="translate(1165.4887,403.09523)"
+         id="fk-label-12">
+        <rect
+           x="-41"
+           y="-11"
+           width="82"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11612" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11614">frame_pk</text>
+      </g>
+    </g>
+    <g
+       transform="translate(936.94458,446.15781)"
+       id="g633"
+       style="font-family:'Helvetica Neue', Arial, sans-serif">
+      <rect
+         x="0"
+         y="0"
+         width="200"
+         height="80"
+         rx="6"
+         ry="6"
+         fill="#ffffff"
+         stroke="#ff9800"
+         stroke-width="1.5"
+         id="rect621" />
+      <path
+         d="M 0,6 Q 0,0 6,0 h 188 q 6,0 6,6 V 26 H 0 Z"
+         fill="#ff9800"
+         id="path623" />
+      <text
+         x="100"
+         y="18"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text625">locals</text>
+      <text
+         x="10"
+         y="44"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text627">PK: (frame_pk, name)</text>
+      <text
+         x="10"
+         y="60"
+         font-size="11px"
+         fill="#616161"
+         id="text629">FK: frame_pk</text>
+      <text
+         x="10"
+         y="74"
+         font-size="11px"
+         fill="#616161"
+         id="text631">FK: value_object_pk</text>
+    </g>
+    <g
+       id="g1105"
+       transform="translate(27.000086,47.88603)">
+      <g
+         id="g592"
+         transform="translate(0,69.286493)">
+        <path
+           class="fk-arrow"
+           d="M 926.06241,469.106 H 724.81677"
+           id="path4710" />
+        <g
+           transform="translate(824.76913,471.21968)"
+           id="fk-label-11">
+          <rect
+             x="-41"
+             y="-11"
+             width="82"
+             height="22"
+             rx="4"
+             ry="4"
+             class="fk-label-rect"
+             id="rect11607" />
+          <text
+             x="0"
+             y="5"
+             class="fk-label-text"
+             id="text11609">amber_pk</text>
+        </g>
+      </g>
+      <g
+         id="g598"
+         transform="translate(0,57.187373)">
+        <path
+           class="fk-arrow"
+           d="m 1089.1901,481.20512 h 147.7877"
+           id="path4877" />
+        <g
+           transform="translate(1165.4887,482.25957)"
+           id="fk-label-13">
+          <rect
+             x="-41"
+             y="-11"
+             width="82"
+             height="22"
+             rx="4"
+             ry="4"
+             class="fk-label-rect"
+             id="rect11617" />
+          <text
+             x="0"
+             y="5"
+             class="fk-label-text"
+             id="text11619">frame_pk</text>
+        </g>
+      </g>
+      <g
+         transform="translate(909.94449,497.23865)"
+         id="g661"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="200"
+           height="80"
+           rx="6"
+           ry="6"
+           fill="#ffffff"
+           stroke="#ff9800"
+           stroke-width="1.5"
+           id="rect649" />
+        <path
+           d="M 0,6 Q 0,0 6,0 h 188 q 6,0 6,6 V 26 H 0 Z"
+           fill="#ff9800"
+           id="path651" />
+        <text
+           x="100"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text653">frame_ambers</text>
+        <text
+           x="10"
+           y="44"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text655">PK: (frame_pk, domain)</text>
+        <text
+           x="10"
+           y="60"
+           font-size="11px"
+           fill="#616161"
+           id="text657">FK: frame_pk</text>
+        <text
+           x="10"
+           y="74"
+           font-size="11px"
+           fill="#616161"
+           id="text659">FK: amber_pk</text>
+      </g>
+    </g>
+    <g
+       id="g1587"
+       transform="translate(27.000086,56.523703)">
+      <path
+         class="fk-arrow"
+         d="M 1264.0673,366.19814 H 729.22523"
+         id="path848" />
+      <g
+         id="g968"
+         transform="translate(45.758854,68.011284)">
+        <rect
+           x="891.54907"
+           y="287.18686"
+           width="145.27313"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect850"
+           style="stroke-width:1" />
+        <text
+           x="964.18561"
+           y="303.18686"
+           class="fk-label-text"
+           id="text852">method_class_pk</text>
+      </g>
+    </g>
+    <path
+       class="fk-arrow"
+       d="M 1366.7629,365.64152 V 300.82698"
+       id="path5982" />
+    <g
+       id="g5101"
+       transform="translate(27.000086,24.523703)">
+      <rect
+         x="1249.7628"
+         y="210.5493"
+         width="180"
+         height="52"
+         rx="6"
+         ry="6"
+         fill="#ffffff"
+         stroke="#42a5f5"
+         stroke-width="1.5"
+         id="rect591"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;stroke:#426320;stroke-opacity:1" />
+      <path
+         d="m 1249.7628,215.7993 q 0,-6 6,-6 h 168 q 6,0 6,6 v 20 h -180 z"
+         fill="#42a5f5"
+         id="path593"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;fill:#426320;fill-opacity:1" />
+      <text
+         x="1339.7628"
+         y="227.7993"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text595"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">processes</text>
+      <text
+         x="1259.7628"
+         y="253.7993"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text597"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">PK: process_pk</text>
+    </g>
+    <g
+       id="g4526"
+       transform="translate(27.000086,24.523703)">
+      <rect
+         x="1249.9937"
+         y="336.66953"
+         width="179.53824"
+         height="369.6821"
+         ry="5.7994375"
+         fill="#ffffff"
+         stroke="#42a5f5"
+         stroke-width="1.96177"
+         id="rect601"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;font-variation-settings:normal;vector-effect:none;fill:#fffffe;fill-opacity:1;stroke:#3f611c;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000"
+         rx="5.7994375" />
+      <path
+         d="m 1249.7628,342.43863 q 0,-6 6,-6 h 168 q 6,0 6,6 v 20 h -180 z"
+         fill="#42a5f5"
+         id="path603"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;fill:#426320;fill-opacity:1" />
+      <text
+         x="1339.7628"
+         y="354.43863"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text605"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">frames</text>
+      <g
+         id="g4509">
+        <text
+           x="1259.7628"
+           y="380.43863"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text607"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">PK: frame_pk</text>
+        <text
+           x="1259.7628"
+           y="396.43863"
+           font-size="11px"
+           fill="#616161"
+           id="text609"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: process_pk</text>
+        <text
+           x="1260.1356"
+           y="408.38821"
+           font-size="11px"
+           fill="#616161"
+           id="text611"
+           style="font-family:'Helvetica Neue', Arial, sans-serif;mix-blend-mode:normal">FK: method_pk</text>
+        <text
+           x="1259.7628"
+           y="424.43863"
+           font-size="11px"
+           fill="#616161"
+           id="text613"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: method_class_pk</text>
+        <text
+           x="1259.7628"
+           y="438.43863"
+           font-size="11px"
+           fill="#616161"
+           id="text615"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: lexical_parent_pk (self)</text>
+      </g>
+    </g>
+    <g
+       transform="translate(1366.7629,336.79997)"
+       id="fk-label-6">
+      <rect
+         x="-49"
+         y="-11"
+         width="98"
+         height="22"
+         rx="4"
+         ry="4"
+         class="fk-label-rect"
+         id="rect11582" />
+      <text
+         x="0"
+         y="5"
+         class="fk-label-text"
+         id="text11584">process_pk</text>
+    </g>
+  </g>
+</svg>
