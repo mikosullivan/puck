@@ -346,34 +346,34 @@ normalize_atom = function(v)
 
 			-- if / elsif / else collapse from the transpiler's
 			-- `["scope", "if_end", {branches: [{cond, body}, ...]}, {line}?]`
-			-- into the spec's `[{if: {conditions: [{test, action}], else}}, {l}?]`
-			-- shape (caspianj § If). Each branch with a non-null `cond` becomes
-			-- a `{test, action}` entry in `conditions`; the null-cond branch
-			-- (at most one, the trailing else clause) becomes the top-level
-			-- `else` field, omitted when absent. Each branch's body is a
-			-- closure envelope in the transpiler output; we unwrap and use
-			-- the statement list directly as `action` / `else` — the spec's
-			-- shape is a plain body, not a closure.
+			-- into `[{if: {conditions: [{test, action}], else}}, {l}?]`.
+			-- Each branch with a non-null `cond` becomes a `{test, action}`
+			-- entry in `conditions`; the null-cond branch (at most one, the
+			-- trailing else clause) becomes the top-level `else` field,
+			-- omitted when absent.
+			--
+			-- `action` and `else` carry the branch's closure envelope
+			-- `{cl: {pm, bd}}` (params + body). Blocks are closures — at
+			-- execution time the engine invokes the closure with a fresh
+			-- frame whose `lexical_parent` is the enclosing frame, so
+			-- variables assigned inside the block don't leak into the
+			-- enclosing scope. Structural closure envelope stays intact;
+			-- normalize just recurses inside it.
 			--
 			-- Unless flows through here after unless_end's cond-negation
 			-- rewrite below, so both if and unless emit the same shape.
-			-- Matches ternary's `{if: {conditions, else}}` output — one atom
-			-- for all three source forms.
 			if v[2] == "if_end" then
 				local wrapper = v[3]
 				if type(wrapper) == "table" and type(wrapper.branches) == "table" then
 					local conditions = {}
-					local else_stmts = nil
+					local else_action = nil
 
 					for _, br in ipairs(wrapper.branches) do
-						local action_stmts = {}
-						if type(br.body) == "table"
-								and type(br.body.closure) == "table"
-								and type(br.body.closure.body) == "table" then
-							for _, s in ipairs(br.body.closure.body) do
-								table.insert(action_stmts, norm_sub(s))
-							end
-						end
+						-- br.body is a `{closure: {params, body}}` envelope.
+						-- Normalize it (produces `{cl: {pm, bd}}` after
+						-- key-shortening) and use the whole envelope as the
+						-- action — engine treats it as a callable.
+						local action_atom = norm_sub(br.body)
 
 						-- br.cond is `nil` (Lua-level nil) or the dkjson.null
 						-- sentinel (empty table with metatable) for the else
@@ -384,18 +384,18 @@ normalize_atom = function(v)
 									and getmetatable(br.cond) ~= nil)
 
 						if is_else then
-							else_stmts = action_stmts
+							else_action = action_atom
 						else
 							table.insert(conditions, {
 								test = norm_sub(br.cond),
-								action = action_stmts,
+								action = action_atom,
 							})
 						end
 					end
 
 					local if_atom = {conditions = conditions}
-					if else_stmts ~= nil then
-						if_atom["else"] = else_stmts
+					if else_action ~= nil then
+						if_atom["else"] = else_action
 					end
 
 					local out = {{["if"] = if_atom}}

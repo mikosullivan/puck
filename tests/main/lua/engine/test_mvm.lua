@@ -158,7 +158,15 @@ h.test('cannot insert with role_parent pointing at a non-role row', function()
 	local db = mvm.open()
 
 	-- Insert an ordinary HashPrimitive (not a role — no user=1, no role_parent).
-	local stmt = db:prepare("insert into objects (primitive) values ('h');")
+	-- Under the ownership rule, non-role objects must have owner_role set;
+	-- point it at the user row (the only role that exists at test start).
+	local user_pk = nil
+	for row in db:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+
+	local stmt = db:prepare("insert into objects (primitive, owner_role) values ('h', ?);")
+	stmt:bind_values(user_pk)
 	stmt:step()
 	stmt:finalize()
 
@@ -240,6 +248,180 @@ h.test('cannot update role_parent on an existing row (immutable)', function()
 
 	h.assert_true(rc ~= 0, 'update of role_parent should have failed but rc = ' .. tostring(rc))
 	h.assert_true(msg:find('role_parent_immutable', 1, true) ~= nil, 'expected role_parent_immutable, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+------------------------------------------------------------
+-- Ownership rule: role_parent XOR owner_role
+------------------------------------------------------------
+
+h.test('non-role insert without owner_role raises objects_role_or_owner_role', function()
+	local db = mvm.open()
+
+	local rc = db:exec("insert into objects (primitive) values ('h');")
+	local msg = db:errmsg()
+
+	h.assert_true(rc ~= 0, 'insert without owner_role should have failed but rc = ' .. tostring(rc))
+	h.assert_true(msg:find('objects_role_or_owner_role', 1, true) ~= nil,
+		'expected objects_role_or_owner_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('role insert with owner_role raises objects_role_or_owner_role', function()
+	local db = mvm.open()
+
+	local user_pk
+	for row in db:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+
+	local stmt = db:prepare(
+		"insert into objects (primitive, role_parent, owner_role) values ('h', ?, ?);"
+	)
+	stmt:bind_values(user_pk, user_pk)
+	local rc = stmt:step()
+	local msg = db:errmsg()
+	stmt:finalize()
+
+	h.assert_true(rc ~= 101, 'insert with both role_parent + owner_role should have failed but rc = ' .. tostring(rc))
+	h.assert_true(msg:find('objects_role_or_owner_role', 1, true) ~= nil,
+		'expected objects_role_or_owner_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('owner_role pointing at a non-role raises owner_role_must_be_role', function()
+	local db = mvm.open()
+
+	local user_pk
+	for row in db:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+
+	-- Insert a non-role first (owned by user).
+	local stmt = db:prepare(
+		"insert into objects (primitive, owner_role) values ('h', ?);"
+	)
+	stmt:bind_values(user_pk)
+	stmt:step()
+	stmt:finalize()
+
+	local non_role_pk
+	for row in db:nrows(
+			"select object_pk from objects where user is null and role_parent is null "
+			.. "and primitive = 'h' order by rowid desc limit 1") do
+		non_role_pk = row.object_pk
+	end
+
+	-- Now try to insert a non-role owned by that non-role.
+	stmt = db:prepare("insert into objects (primitive, owner_role) values ('h', ?);")
+	stmt:bind_values(non_role_pk)
+	local rc = stmt:step()
+	local msg = db:errmsg()
+	stmt:finalize()
+
+	h.assert_true(rc ~= 101, 'insert with non-role owner_role should have failed but rc = ' .. tostring(rc))
+	h.assert_true(msg:find('owner_role_must_be_role', 1, true) ~= nil,
+		'expected owner_role_must_be_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('owner_role is immutable — update raises objects_owner_role_immutable', function()
+	local db = mvm.open()
+
+	local user_pk
+	for row in db:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+
+	-- Insert a role and a non-role owned by user.
+	local stmt = db:prepare(
+		"insert into objects (primitive, role_parent) values ('h', ?);"
+	)
+	stmt:bind_values(user_pk)
+	stmt:step()
+	stmt:finalize()
+
+	local role_pk
+	for row in db:nrows("select object_pk from objects where role_parent is not null order by rowid desc limit 1") do
+		role_pk = row.object_pk
+	end
+
+	stmt = db:prepare("insert into objects (primitive, owner_role) values ('h', ?);")
+	stmt:bind_values(user_pk)
+	stmt:step()
+	stmt:finalize()
+
+	-- Try to reparent it.
+	local rc = db:exec("update objects set owner_role = '" .. role_pk .. "' where owner_role is not null;")
+	local msg = db:errmsg()
+
+	h.assert_true(rc ~= 0, 'update of owner_role should have failed but rc = ' .. tostring(rc))
+	h.assert_true(msg:find('objects_owner_role_immutable', 1, true) ~= nil,
+		'expected objects_owner_role_immutable, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('role_parent = object_pk raises objects_role_parent_not_self', function()
+	local db = mvm.open()
+
+	-- Try to insert a role whose role_parent equals its own object_pk.
+	-- Both the explicit not-self trigger and the "must be role" trigger
+	-- would catch it; the not-self trigger has WHEN new.role_parent =
+	-- new.object_pk so it fires first when both apply.
+	local self_pk = '11111111-1111-4111-8111-111111111111'
+	local rc = db:exec(
+		"insert into objects (object_pk, primitive, role_parent) values ('"
+		.. self_pk .. "', 'h', '" .. self_pk .. "');"
+	)
+	local msg = db:errmsg()
+
+	h.assert_true(rc ~= 0, 'insert with self role_parent should have failed but rc = ' .. tostring(rc))
+	h.assert_true(
+		msg:find('objects_role_parent_not_self', 1, true) ~= nil
+			or msg:find('role_parent_must_be_role', 1, true) ~= nil,
+		'expected objects_role_parent_not_self or role_parent_must_be_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('owner_role = object_pk raises objects_owner_role_not_self', function()
+	local db = mvm.open()
+
+	-- Same shape as above but for owner_role. Both the explicit not-self
+	-- trigger and owner_role_must_be_role would catch it; the not-self
+	-- trigger's WHEN clause pins it to the exact self-link case.
+	local self_pk = '22222222-2222-4222-8222-222222222222'
+	local rc = db:exec(
+		"insert into objects (object_pk, primitive, owner_role) values ('"
+		.. self_pk .. "', 'h', '" .. self_pk .. "');"
+	)
+	local msg = db:errmsg()
+
+	h.assert_true(rc ~= 0, 'insert with self owner_role should have failed but rc = ' .. tostring(rc))
+	h.assert_true(
+		msg:find('objects_owner_role_not_self', 1, true) ~= nil
+			or msg:find('owner_role_must_be_role', 1, true) ~= nil,
+		'expected objects_owner_role_not_self or owner_role_must_be_role, got: ' .. tostring(msg))
+
+	db:close()
+end)
+
+h.test('user seed is grandfathered — role_parent and owner_role both null', function()
+	local db = mvm.open()
+
+	local rp, ow
+	for row in db:nrows('select role_parent, owner_role from objects where user') do
+		rp = row.role_parent
+		ow = row.owner_role
+	end
+
+	h.assert_true(rp == nil, 'user seed role_parent should be null, got: ' .. tostring(rp))
+	h.assert_true(ow == nil, 'user seed owner_role should be null, got: ' .. tostring(ow))
 
 	db:close()
 end)

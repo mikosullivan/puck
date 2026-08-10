@@ -337,9 +337,14 @@ body.home .content h1 .hero-logo {
 }
 .content > :first-child {margin-top: 0}
 .content img {max-width: 100%; height: auto}
-.content th.pk-th {background: #26a69a; color: #fff}
-.content th.pk-th-frames {background: #426320; color: #fff}
-.content th.pk-th-relationships {background: #d4a017; color: #fff}
+.content th.tbl-title-objects,
+.content th.tbl-title-frames,
+.content th.tbl-title-relationships,
+.content th.tbl-title-frame-locals {text-align: center; color: #fff}
+.content th.tbl-title-objects {background: #26a69a}
+.content th.tbl-title-frames {background: #426320}
+.content th.tbl-title-relationships {background: #d4a017}
+.content th.tbl-title-frame-locals {background: #ff9800}
 .content h1 {
 	border-bottom: 1px solid #d8dee4;
 	padding-bottom: 0.3em;

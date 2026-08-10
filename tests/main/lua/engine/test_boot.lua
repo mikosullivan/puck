@@ -71,7 +71,14 @@ h.test("each engine.new() gets its own MVM", function()
 	h.assert_true(e1.mvm ~= e2.mvm, 'the two mvm handles are distinct')
 
 	-- Insert a plain HashPrimitive into e1's MVM and verify e2 doesn't see it.
-	local ok = e1.mvm:exec("insert into objects (primitive) values ('h')")
+	-- Non-role inserts need owner_role set; use the user seed as owner.
+	local user_pk
+	for row in e1.mvm:nrows('select object_pk from objects where user') do
+		user_pk = row.object_pk
+	end
+	local ok = e1.mvm:exec(
+		"insert into objects (primitive, owner_role) values ('h', '" .. user_pk .. "')"
+	)
 	h.assert_true(ok == 0, 'insert succeeded on e1 (lsqlite3 exec returns 0 on OK)')
 
 	local n1, n2

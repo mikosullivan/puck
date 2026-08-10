@@ -5671,113 +5671,133 @@ end
 #--- norm -----------------------------------------------------------
 [[{
 			"if":{
+				"else":{
+					"cl":{
+						"bd":[[{
+									"in":"fc"
+								},{
+									"a":[{
+											"v":"adult",
+											"l":8
+										}],
+									"fn":"call",
+									"rc":{
+										"var":"label"
+									}
+								}]],
+						"pm":[]
+					}
+				},
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"a":[{
+													"v":"child",
+													"l":2
+												}],
+											"fn":"call",
+											"rc":{
+												"var":"label"
+											}
+										}]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"<",
 								"a":[{
 										"v":13,
 										"l":1
 									}],
+								"fn":"<",
 								"rc":{
 									"var":"whole",
 									"l":1
 								}
-							}],
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"a":[{
-											"v":"child",
-											"l":2
-										}],
-									"rc":{
-										"var":"label"
-									}
-								}]]
+							}]
 					},{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"a":[{
+													"v":"teen",
+													"l":4
+												}],
+											"fn":"call",
+											"rc":{
+												"var":"label"
+											}
+										}]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"<",
 								"a":[{
 										"v":20,
 										"l":3
 									}],
+								"fn":"<",
 								"rc":{
 									"var":"whole",
 									"l":3
 								}
-							}],
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"a":[{
-											"v":"teen",
-											"l":4
-										}],
-									"rc":{
-										"var":"label"
-									}
-								}]]
+							}]
 					},{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"a":[{
+													"v":"twentysomething",
+													"l":6
+												}],
+											"fn":"call",
+											"rc":{
+												"var":"label"
+											}
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
-							"right":[{
-									"in":"fc"
-								},{
-									"fn":"<",
-									"a":[{
-											"v":30,
-											"l":5
-										}],
-									"rc":{
-										"var":"whole",
-										"l":5
-									}
-								}],
+							"op":"and",
 							"left":[{
 									"in":"fc"
 								},{
-									"fn":">=",
 									"a":[{
 											"v":18,
 											"l":5
 										}],
+									"fn":">=",
 									"rc":{
 										"var":"whole",
 										"l":5
 									}
 								}],
-							"op":"and"
-						},
-						"action":[[{
+							"right":[{
 									"in":"fc"
 								},{
-									"fn":"call",
 									"a":[{
-											"v":"twentysomething",
-											"l":6
+											"v":30,
+											"l":5
 										}],
+									"fn":"<",
 									"rc":{
-										"var":"label"
+										"var":"whole",
+										"l":5
 									}
-								}]]
-					}],
-				"else":[[{
-							"in":"fc"
-						},{
-							"fn":"call",
-							"a":[{
-									"v":"adult",
-									"l":8
-								}],
-							"rc":{
-								"var":"label"
-							}
-						}]]
+								}]
+						}
+					}]
 			}
 		},{
 			"l":9
@@ -5879,51 +5899,61 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"primary",
+												"l":2
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"==",
 								"a":[{
 										"v":42,
 										"l":1
 									}],
+								"fn":"==",
 								"rc":{
 									"var":"whole",
 									"l":1
 								}
-							}],
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"primary",
-										"l":2
-									}
-								}]]
+							}]
 					},{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"secondary",
+												"l":4
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"==",
 								"a":[{
 										"v":43,
 										"l":3
 									}],
+								"fn":"==",
 								"rc":{
 									"var":"whole",
 									"l":3
 								}
-							}],
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"secondary",
-										"l":4
-									}
-								}]]
+							}]
 					}]
 			}
 		},{
@@ -5985,22 +6015,27 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"denied",
+												"l":2
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
 							"op":"!",
 							"operand":{
 								"var":"yes",
 								"l":1
 							}
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"denied",
-										"l":2
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6067,22 +6102,27 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"denied",
+												"l":3
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
 							"op":"!",
 							"operand":{
 								"var":"yes",
 								"l":1
 							}
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"denied",
-										"l":3
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6152,23 +6192,28 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"denied",
+												"l":3
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
+							"op":"!",
 							"operand":{
 								"var":"yes",
 								"l":1
 							},
-							"op":"!",
 							"l":1
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"denied",
-										"l":3
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6238,23 +6283,28 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"denied",
+												"l":3
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
+							"op":"!",
 							"operand":{
 								"var":"yes",
 								"l":1
 							},
-							"op":"!",
 							"l":1
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"denied",
-										"l":3
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6324,23 +6374,28 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"denied",
+												"l":3
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
+							"op":"!",
 							"operand":{
 								"var":"yes",
 								"l":1
 							},
-							"op":"!",
 							"l":1
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"denied",
-										"l":3
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6403,19 +6458,24 @@ end
 [[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"proceed",
+												"l":2
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":{
 							"var":"ready",
 							"l":1
-						},
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"proceed",
-										"l":2
-									}
-								}]]
+						}
 					}]
 			}
 		},{
@@ -6493,35 +6553,45 @@ if &ok &yay else &nay end
 #--- norm -----------------------------------------------------------
 [[{
 			"if":{
+				"else":{
+					"cl":{
+						"bd":[[{
+									"in":"fc"
+								},{
+									"rc":{
+										"var":"nay",
+										"l":1
+									},
+									"fn":"call"
+								}]],
+						"pm":[]
+					}
+				},
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[{
+											"in":"fc"
+										},{
+											"rc":{
+												"var":"yay",
+												"l":1
+											},
+											"fn":"call"
+										}]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"call",
 								"rc":{
 									"var":"ok",
 									"l":1
-								}
-							}],
-						"action":[[{
-									"in":"fc"
-								},{
-									"fn":"call",
-									"rc":{
-										"var":"yay",
-										"l":1
-									}
-								}]]
-					}],
-				"else":[[{
-							"in":"fc"
-						},{
-							"fn":"call",
-							"rc":{
-								"var":"nay",
-								"l":1
-							}
-						}]]
+								},
+								"fn":"call"
+							}]
+					}]
 			}
 		},{
 			"l":1
@@ -8084,52 +8154,58 @@ end
 [[[{
 				"in":"fc"
 			},{
-				"fn":"each",
 				"rc":{
 					"var":"people",
 					"l":1
-				}
+				},
+				"fn":"each"
 			}],{
 			"blocks":[{
 					"cl":{
+						"as":"person_loop",
 						"bd":[[[{
 										"in":"fc"
 									},{
-										"fn":"each",
 										"rc":[{
 												"in":"fc"
 											},{
-												"fn":"addresses",
 												"rc":{
 													"var":"person",
 													"l":2
-												}
-											}]
+												},
+												"fn":"addresses"
+											}],
+										"fn":"each"
 									}],{
 									"blocks":[{
 											"cl":{
 												"bd":[[{
 															"if":{
 																"conditions":[{
+																		"action":{
+																			"cl":{
+																				"bd":[[{
+																							"bwc":"break"
+																						},{
+																							"v":2,
+																							"l":4
+																						}]],
+																				"pm":[]
+																			}
+																		},
 																		"test":[{
 																				"in":"fc"
 																			},{
-																				"fn":"matches",
 																				"a":[{
 																						"var":"target",
 																						"l":3
 																					}],
+																				"fn":"matches",
 																				"rc":{
 																					"var":"address",
 																					"l":3
 																				}
-																			}],
-																		"action":[[{
-																					"bwc":"break"
-																				},{
-																					"v":2,
-																					"l":4
-																				}]]
+																			}]
 																	}]
 															}
 														},{
@@ -8139,7 +8215,6 @@ end
 											}
 										}]
 								}]],
-						"as":"person_loop",
 						"pm":["person"]
 					}
 				}]
@@ -14738,27 +14813,34 @@ end
 
 #--- norm -----------------------------------------------------------
 [[{
+			"l":7,
 			"fn":{
+				"name":"early_exit",
 				"bd":[[{
 							"if":{
 								"conditions":[{
+										"action":{
+											"cl":{
+												"bd":[["scope","return",{
+															"v":null,
+															"l":3
+														}]],
+												"pm":[]
+											}
+										},
 										"test":[{
 												"in":"fc"
 											},{
-												"fn":"<",
 												"a":[{
 														"v":0,
 														"l":2
 													}],
+												"fn":"<",
 												"rc":{
 													"var":"x",
 													"l":2
 												}
-											}],
-										"action":[["scope","return",{
-													"v":null,
-													"l":3
-												}]]
+											}]
 									}]
 							}
 						},{
@@ -14766,20 +14848,18 @@ end
 						}],["scope","return",[{
 								"in":"fc"
 							},{
-								"fn":"*",
 								"a":[{
 										"v":2,
 										"l":6
 									}],
+								"fn":"*",
 								"rc":{
 									"var":"x",
 									"l":6
 								}
 							}]]],
-				"name":"early_exit",
 				"pm":["x"]
-			},
-			"l":7
+			}
 		}]]
 #--------------------------------------------------------------------
 
@@ -26826,41 +26906,46 @@ $caller.call 1
 		},"caller",[{
 				"in":"fc"
 			},{
-				"fn":"new",
 				"rc":[{
 						"in":"fc"
 					},{
-						"fn":"caller",
 						"rc":{
 							"var":"foo",
 							"l":1
-						}
-					}]
+						},
+						"fn":"caller"
+					}],
+				"fn":"new"
 			}]],[{
 			"if":{
 				"conditions":[{
+						"action":{
+							"cl":{
+								"bd":[[[{
+												"in":"fc"
+											},{
+												"a":[{
+														"var":"ctrl",
+														"l":3
+													}],
+												"fn":"controller=",
+												"rc":{
+													"var":"caller",
+													"l":3
+												}
+											}]]],
+								"pm":[]
+							}
+						},
 						"test":[{
 								"in":"fc"
 							},{
-								"fn":"wants_controller?",
 								"rc":{
 									"var":"caller",
 									"l":2
-								}
-							}],
-						"action":[[[{
-										"in":"fc"
-									},{
-										"fn":"controller=",
-										"a":[{
-												"var":"ctrl",
-												"l":3
-											}],
-										"rc":{
-											"var":"caller",
-											"l":3
-										}
-									}]]]
+								},
+								"fn":"wants_controller?"
+							}]
 					}]
 			}
 		},{
@@ -26868,11 +26953,11 @@ $caller.call 1
 		}],[[{
 				"in":"fc"
 			},{
-				"fn":"call",
 				"a":[{
 						"v":1,
 						"l":5
 					}],
+				"fn":"call",
 				"rc":{
 					"var":"caller"
 				}

@@ -19,7 +19,7 @@ opens an MVM (the runtime state store — MVM in V1; see
 [mvm](https://www.puck.uno/requirements/mvm/)) via `mvm.open()`
 and stashes the SQLite handle as `engine.mvm`. From that moment on, every
 runtime state read or write goes through that handle: objects, frames,
-locals, roles, listeners — everything the MVM schema tracks.
+frame_locals, roles, listeners — everything the MVM schema tracks.
 
 The MVM defaults to `:memory:` — pass `opts.mvm = {path = '/some/file.db'}`
 to `engine.new()` to open a file-backed one, or `opts.mvm = {path = ...,

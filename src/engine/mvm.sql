@@ -247,6 +247,23 @@ begin
 	end;
 end;
 
+-- A role cannot be its own parent. The must_be_role trigger above
+-- already blocks this indirectly at INSERT — the referenced row
+-- doesn't exist yet, so the SELECT for "is this a role" returns
+-- nothing. But an explicit self-reference check is defense-in-depth
+-- with a specific error ID for the diagnostic, and guards against
+-- any future path that would allow the target row to be present at
+-- check time (e.g., a bulk insert where the row lands first).
+--
+-- INSERT-only: role_parent is immutable via objects_no_update, so
+-- the not-self invariant is set at creation and can't be broken.
+create trigger objects_role_parent_not_self
+before insert on objects
+when new.role_parent is not null and new.role_parent = new.object_pk
+begin
+	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk (a role cannot be its own parent)');
+end;
+
 -- Deletion callback machinery (on_close / on_delete UDF hook)
 -- deferred. When the engine needs to invoke Caspian-level cleanup
 -- on object delete, a trigger + UDF will land here.
@@ -444,15 +461,96 @@ alter table objects add column needs_trace integer
 alter table objects add column in_trace integer
 	check (in_trace > 0);
 
+-- Ownership. Every non-role object carries owner_role pointing at the
+-- role that created it. The rule is XOR with role_parent: a row is
+-- EITHER a role (role_parent set — the role tree case) OR owned by
+-- one (owner_role set — every other object) — never both, never
+-- neither, except the grandfathered user seed inserted just below
+-- (BEFORE the enforcement triggers exist, so its role_parent = null,
+-- owner_role = null state is preserved).
+--
+-- No `on delete cascade`: role deletion doesn't take its owned objects
+-- with it. Deletion of a role that still owns things is a load-bearing
+-- event and should be either restricted or explicitly handled by the
+-- engine; the FK stays plain until that policy is spec'd.
+alter table objects add column owner_role text references objects(object_pk);
+
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
 create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
+create index objects_owner_role  on objects(owner_role)  where owner_role is not null;
 
 -- Seed the root role. User is the root role: primitive = 'h'
 -- (a HashPrimitive per current design), user = 1 marks it as root,
 -- persistent = 1 for consistency (the row persists anyway via
--- `where user`), role_parent = null (root has no parent). Its
--- object_pk is a fresh UUID from the default.
+-- `where user`), role_parent = null (root has no parent),
+-- owner_role = null (grandfathered — this seed exists before the
+-- ownership triggers below are created, so nothing checks it).
+-- Its object_pk is a fresh UUID from the default.
 insert into objects (primitive, user, persistent) values ('h', 1, 1);
+
+-- ownership triggers — created AFTER the seed so the user row is
+-- grandfathered. Every non-seed insert into objects must have
+-- exactly one of role_parent / owner_role set.
+
+-- XOR rule: a role cannot have an owner, and a non-role must have one.
+-- "Is a role" uses the same definition as elsewhere in this schema:
+-- `role_parent is not null OR user = 1`. Rows attempting to set
+-- user = 1 are treated as roles for this check (the UNIQUE constraint
+-- separately enforces "at most one user row").
+create trigger objects_role_or_owner_role
+before insert on objects
+begin
+	select case
+		when (new.role_parent is not null or new.user = 1)
+				and new.owner_role is not null
+			then raise(abort, 'objects_role_or_owner_role: a role cannot have owner_role — roles have role_parent, other objects have owner_role, never both')
+		when new.role_parent is null and new.user is null
+				and new.owner_role is null
+			then raise(abort, 'objects_role_or_owner_role: a non-role must have owner_role set — every non-role object must reference the role that created it')
+	end;
+end;
+
+-- owner_role, when set, must reference an actual role (a row with
+-- user = 1 or with role_parent set). Same shape as the existing
+-- objects_role_parent_must_be_role trigger. INSERT-only — owner_role
+-- is immutable at INSERT via the trigger below, so a row's owner
+-- can't be silently repointed at a non-role after the fact.
+create trigger objects_owner_role_must_be_role
+before insert on objects
+when new.owner_role is not null
+begin
+	select case
+		when (
+			select 1 from objects
+			where object_pk = new.owner_role
+				and (user = 1 or role_parent is not null)
+		) is null
+		then raise(abort, 'owner_role_must_be_role: owner_role must reference a row that is itself a role (root user row or a row with role_parent set)')
+	end;
+end;
+
+-- owner_role is immutable at INSERT — no reparenting an object between
+-- roles at runtime. Matches how role_parent is immutable via the
+-- objects_no_update trigger; owner_role gets its own guard here
+-- because that trigger lives in the Mikobase section (before this
+-- column existed) and MVM layers additions on top.
+create trigger objects_owner_role_immutable
+before update of owner_role on objects
+when new.owner_role is not old.owner_role
+begin
+	select raise(abort, 'objects_owner_role_immutable: owner_role is immutable (no reparenting an object to a different role)');
+end;
+
+-- An object cannot be its own owner. Same class of check as
+-- objects_role_parent_not_self above; explicit defense-in-depth with
+-- a specific error ID, and structurally: an object owning itself
+-- would be a cycle in the ownership graph.
+create trigger objects_owner_role_not_self
+before insert on objects
+when new.owner_role is not null and new.owner_role = new.object_pk
+begin
+	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk (an object cannot be its own owner)');
+end;
 
 
 -- ------------------------------------------------------------
@@ -484,7 +582,7 @@ begin
 	select raise(abort, 'mvm_append_only: mvm is append-only; no deletes allowed');
 end;
 
-insert into mvm (key, value) values ('schema', '6.0');
+insert into mvm (key, value) values ('schema', '7.0');
 ---
 -- MVM marker table
 -- ------------------------------------------------------------
@@ -524,8 +622,8 @@ end;
 create table instance_listeners (
 	reg_pk integer primary key autoincrement,
 
-	broadcaster_pk text not null references objects(object_pk) on delete cascade,
-	listener_pk    text not null references objects(object_pk) on delete cascade,
+	broadcaster text not null references objects(object_pk) on delete cascade,
+	listener    text not null references objects(object_pk) on delete cascade,
 
 	-- event and method names are inline text, not references to
 	-- StringPrimitive objects. Interning is an engine-layer
@@ -537,14 +635,14 @@ create table instance_listeners (
 	-- Idempotent: `.listen_to` called twice with the same combo is
 	-- one registration, not two. The Lua write API uses INSERT OR
 	-- IGNORE to swallow the collision silently.
-	unique (broadcaster_pk, event_name, listener_pk, method_name)
+	unique (broadcaster, event_name, listener, method_name)
 );
 
 -- Dispatch lookup: given a broadcaster + event, find its listeners.
-create index instance_listeners_broadcaster on instance_listeners(broadcaster_pk, event_name);
+create index instance_listeners_broadcaster on instance_listeners(broadcaster, event_name);
 
 -- Unlisten-all lookup: given a listener, find all its rows.
-create index instance_listeners_listener on instance_listeners(listener_pk);
+create index instance_listeners_listener on instance_listeners(listener);
 
 -- Registrations are add-or-remove-only. Every field is immutable
 -- after INSERT; to change a registration, DELETE and INSERT.
@@ -561,24 +659,24 @@ end;
 -- specific broadcaster instance. When any instance of the class
 -- (or a descendant, via the engine's ancestor-chain walk)
 -- broadcasts the event, dispatch fires this registration. Classes
--- in Caspian are ordinary objects, so `class_pk` targets `objects`
+-- in Caspian are ordinary objects, so `class` targets `objects`
 -- like any other reference. Spec:
 -- requirements/events/listen-to-class.
 
 create table class_listeners (
 	reg_pk integer primary key autoincrement,
 
-	class_pk    text not null references objects(object_pk) on delete cascade,
-	listener_pk text not null references objects(object_pk) on delete cascade,
+	class    text not null references objects(object_pk) on delete cascade,
+	listener text not null references objects(object_pk) on delete cascade,
 
 	event_name  text not null,
 	method_name text not null,
 
-	unique (class_pk, event_name, listener_pk, method_name)
+	unique (class, event_name, listener, method_name)
 );
 
-create index class_listeners_class    on class_listeners(class_pk, event_name);
-create index class_listeners_listener on class_listeners(listener_pk);
+create index class_listeners_class    on class_listeners(class, event_name);
+create index class_listeners_listener on class_listeners(listener);
 
 create trigger class_listeners_no_update
 before update on class_listeners
@@ -657,18 +755,18 @@ create table frames (
 	--   function_call — the invocation of a callable
 	type text not null check (type in ('function_call')),
 
-	-- method_pk — the callable being invoked: a function, a method,
+	-- method — the callable being invoked: a function, a method,
 	-- a closure, or any other invokable object. Set on every
 	-- function_call frame (which is currently every frame — the
 	-- other frame types the earlier draft anticipated were deferred).
 	-- Nullable to leave room for future frame types that don't
 	-- represent a call. Plain FK reference (no cascade); anchored in
-	-- uspace via the uspace view's `select method_pk from frames`
+	-- uspace via the uspace view's `select method from frames`
 	-- branch so the callable can't be collected while its frame is
 	-- live.
-	method_pk       text references objects(object_pk),
+	method       text references objects(object_pk),
 
-	-- method_class_pk — the class the callable was resolved from,
+	-- method_class — the class the callable was resolved from,
 	-- when there is one. Not necessarily the receiver's own class:
 	-- dispatch may walk role or inheritance chains to reach the
 	-- defining class, and this column records where the walk landed.
@@ -676,8 +774,8 @@ create table frames (
 	-- with no class attachment). The engine reads this on entry to
 	-- establish the method's home-class context (e.g., what `%self`'s
 	-- class is for the duration of the frame). Plain FK reference
-	-- like method_pk; anchored in uspace by the same mechanism.
-	method_class_pk text references objects(object_pk),
+	-- like method; anchored in uspace by the same mechanism.
+	method_class text references objects(object_pk),
 
 	-- Lexical parent link — the frame that owned the scope where
 	-- THIS frame's code was DEFINED. Variable lookup walks this
@@ -686,7 +784,7 @@ create table frames (
 	-- Null on top_level and engine-pushed frames. ON DELETE SET
 	-- NULL: if the defining frame is popped and gone, the link
 	-- goes stale (an engine-side concern, not a corruption).
-	lexical_parent_pk integer references frames(frame_pk) on delete set null,
+	lexical_parent integer references frames(frame_pk) on delete set null,
 
 	-- Loop / iteration state — deferred. Loops aren't designed yet
 	-- (we haven't even gotten a script to frame 0), so nothing in
@@ -720,8 +818,8 @@ create table frames (
 create index frames_process_pk on frames(process_pk);
 
 -- [set-needs-trace] On DELETE of a frame: mark the two object
--- pointers it carried (method_pk, method_class_pk). Frame pop
--- cascades locals / frame_delegations / frame_ambers automatically,
+-- pointers it carried (method, method_class). Frame pop
+-- cascades frame_locals / frame_delegations / frame_ambers automatically,
 -- and those cascades fire their own mark triggers; this trigger
 -- handles the object-pointer columns that live directly on the frame.
 create trigger frames_mark_needs_trace_after_delete
@@ -729,29 +827,29 @@ after delete on frames
 begin
 	update objects set needs_trace = 1
 	where object_pk in (
-		old.method_pk, old.method_class_pk
+		old.method, old.method_class
 	) and object_pk is not null;
 end;
 
--- [set-needs-trace] On UPDATE OF method_pk: mark the OLD pointer.
-create trigger frames_mark_needs_trace_after_update_method_pk
-after update of method_pk on frames
-when old.method_pk is not new.method_pk and old.method_pk is not null
+-- [set-needs-trace] On UPDATE OF method: mark the OLD pointer.
+create trigger frames_mark_needs_trace_after_update_method
+after update of method on frames
+when old.method is not new.method and old.method is not null
 begin
-	update objects set needs_trace = 1 where object_pk = old.method_pk;
+	update objects set needs_trace = 1 where object_pk = old.method;
 end;
 
--- [set-needs-trace] On UPDATE OF method_class_pk: mark the OLD pointer.
-create trigger frames_mark_needs_trace_after_update_method_class_pk
-after update of method_class_pk on frames
-when old.method_class_pk is not new.method_class_pk and old.method_class_pk is not null
+-- [set-needs-trace] On UPDATE OF method_class: mark the OLD pointer.
+create trigger frames_mark_needs_trace_after_update_method_class
+after update of method_class on frames
+when old.method_class is not new.method_class and old.method_class is not null
 begin
-	update objects set needs_trace = 1 where object_pk = old.method_class_pk;
+	update objects set needs_trace = 1 where object_pk = old.method_class;
 end;
 
-create table locals (
+create table frame_locals (
 	-- Local variable bindings for a specific frame. Cascade-deletes
-	-- with the frame — locals live and die with their frame.
+	-- with the frame — bindings live and die with their frame.
 	frame_pk integer not null references frames(frame_pk) on delete cascade,
 
 	-- Variable name — inline text (no interning at storage level).
@@ -760,28 +858,28 @@ create table locals (
 	-- The object bound to this name. Plain reference: deleting a
 	-- frame shouldn't delete objects the frame referenced, since
 	-- they may be alive elsewhere.
-	value_object_pk text not null references objects(object_pk),
+	value_object text not null references objects(object_pk),
 
 	primary key (frame_pk, name)
 );
 
-create index locals_value on locals(value_object_pk);
+create index frame_locals_value on frame_locals(value_object);
 
--- [set-needs-trace] On DELETE of a locals row (frame pop cascade or
--- explicit unbind): mark the object the local was pointing at.
-create trigger locals_mark_needs_trace_after_delete
-after delete on locals
+-- [set-needs-trace] On DELETE of a frame_locals row (frame pop cascade
+-- or explicit unbind): mark the object the local was pointing at.
+create trigger frame_locals_mark_needs_trace_after_delete
+after delete on frame_locals
 begin
-	update objects set needs_trace = 1 where object_pk = old.value_object_pk;
+	update objects set needs_trace = 1 where object_pk = old.value_object;
 end;
 
--- [set-needs-trace] On UPDATE OF value_object_pk (variable rebinding
+-- [set-needs-trace] On UPDATE OF value_object (variable rebinding
 -- like `$foo = something_else`): mark the OLD target.
-create trigger locals_mark_needs_trace_after_update
-after update of value_object_pk on locals
-when old.value_object_pk is not new.value_object_pk
+create trigger frame_locals_mark_needs_trace_after_update
+after update of value_object on frame_locals
+when old.value_object is not new.value_object
 begin
-	update objects set needs_trace = 1 where object_pk = old.value_object_pk;
+	update objects set needs_trace = 1 where object_pk = old.value_object;
 end;
 
 -- ------------------------------------------------------------
@@ -790,34 +888,34 @@ end;
 -- A %role.delegate_to(X) do ... end block pushes a frame with
 -- kind = 'delegate_to' and one row here per target role receiving
 -- the elevation. Permission resolution walks the call stack
--- looking for matching (target_role_pk == current_role_pk)
+-- looking for matching (target_role == current_role_pk)
 -- delegations. When the frame pops, the rows cascade with it —
 -- the grant is gone without a separate cleanup step.
 create table frame_delegations (
 	frame_pk       integer not null references frames(frame_pk) on delete cascade,
-	target_role_pk text not null references objects(object_pk) on delete cascade,
-	primary key (frame_pk, target_role_pk)
+	target_role text not null references objects(object_pk) on delete cascade,
+	primary key (frame_pk, target_role)
 );
 
-create index frame_delegations_target_role on frame_delegations(target_role_pk);
+create index frame_delegations_target_role on frame_delegations(target_role);
 
 -- [set-needs-trace] On DELETE of a frame_delegations row (frame pop
 -- cascade): mark the target role.
 create trigger frame_delegations_mark_needs_trace_after_delete
 after delete on frame_delegations
 begin
-	update objects set needs_trace = 1 where object_pk = old.target_role_pk;
+	update objects set needs_trace = 1 where object_pk = old.target_role;
 end;
 
--- [set-needs-trace] On UPDATE OF target_role_pk: mark the OLD target.
+-- [set-needs-trace] On UPDATE OF target_role: mark the OLD target.
 -- In current use frame_delegations rows aren't rebound (the row is
 -- inserted at delegate_to entry and cascades on frame pop), but the
 -- trigger covers any future path that would repoint a row.
 create trigger frame_delegations_mark_needs_trace_after_update
-after update of target_role_pk on frame_delegations
-when old.target_role_pk is not new.target_role_pk
+after update of target_role on frame_delegations
+when old.target_role is not new.target_role
 begin
-	update objects set needs_trace = 1 where object_pk = old.target_role_pk;
+	update objects set needs_trace = 1 where object_pk = old.target_role;
 end;
 
 -- ------------------------------------------------------------
@@ -846,11 +944,11 @@ end;
 create table frame_ambers (
 	frame_pk integer not null references frames(frame_pk) on delete cascade,
 	domain text not null,
-	amber_pk text not null references objects(object_pk),
+	amber text not null references objects(object_pk),
 	primary key (frame_pk, domain)
 );
 
-create index frame_ambers_amber_pk on frame_ambers(amber_pk);
+create index frame_ambers_amber on frame_ambers(amber);
 
 -- [set-needs-trace] On DELETE of a frame_ambers row (frame pop
 -- cascade or explicit removal): mark the amber instance the row
@@ -858,15 +956,15 @@ create index frame_ambers_amber_pk on frame_ambers(amber_pk);
 create trigger frame_ambers_mark_needs_trace_after_delete
 after delete on frame_ambers
 begin
-	update objects set needs_trace = 1 where object_pk = old.amber_pk;
+	update objects set needs_trace = 1 where object_pk = old.amber;
 end;
 
--- [set-needs-trace] On UPDATE OF amber_pk: mark the OLD instance.
+-- [set-needs-trace] On UPDATE OF amber: mark the OLD instance.
 create trigger frame_ambers_mark_needs_trace_after_update
-after update of amber_pk on frame_ambers
-when old.amber_pk is not new.amber_pk
+after update of amber on frame_ambers
+when old.amber is not new.amber
 begin
-	update objects set needs_trace = 1 where object_pk = old.amber_pk;
+	update objects set needs_trace = 1 where object_pk = old.amber;
 end;
 
 -- ------------------------------------------------------------
@@ -882,7 +980,7 @@ end;
 -- An object is in uspace when it's:
 --
 --   * The root role (user, pk = 1).
---   * Held as a variable binding in any frame's locals.
+--   * Held as a variable binding in any frame's frame_locals.
 --   * A domain hash held in any frame's amber layer.
 --   * The method being executed by some frame, or that method's
 --     defining class.
@@ -922,16 +1020,16 @@ create view uspace as
 	select object_pk from objects where role_parent is not null
 	union
 	-- Frame variable bindings.
-	select value_object_pk from locals
+	select value_object from frame_locals
 	union
 	-- Amber instances (domains) referenced from a frame via the
-	-- frame_ambers bridge. Each row's amber_pk is one instance.
-	select amber_pk from frame_ambers
+	-- frame_ambers bridge. Each row's amber is one instance.
+	select amber from frame_ambers
 	union
 	-- Method being called + defining class, for every live frame.
-	select method_pk from frames where method_pk is not null
+	select method from frames where method is not null
 	union
-	select method_class_pk from frames where method_class_pk is not null
+	select method_class from frames where method_class is not null
 	union
 	-- Roles being granted permissions via delegate_to blocks.
-	select target_role_pk from frame_delegations;
+	select target_role from frame_delegations;

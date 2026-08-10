@@ -3,7 +3,7 @@
    viewBox="0 0 1469.063 784.02905"
    width="1469.063"
    role="img"
-   aria-label="MVM entity-relationship diagram. Ten tables grouped into: MVM marker (gray), object graph (objects and relationships, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
+   aria-label="MVM entity-relationship diagram. Ten tables grouped into: MVM marker (gray), object graph (objects and relationships, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
    version="1.1"
    id="svg707"
    sodipodi:docname="schema.svg"
@@ -26,15 +26,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.6705973"
-     inkscape:cx="718.76221"
-     inkscape:cy="361.61792"
+     inkscape:zoom="10.729557"
+     inkscape:cx="464.51127"
+     inkscape:cy="385.98985"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g575" />
   <title
      id="title473">MVM schema — entity-relationship diagram</title>
   <defs
@@ -50,9 +50,10 @@
        viewBox="0 0 10 10"
        refX="6"
        refY="5"
-       markerWidth="4"
-       markerHeight="4"
-       orient="auto">
+       markerWidth="3"
+       markerHeight="3"
+       orient="auto"
+       preserveAspectRatio="xMidYMid">
       <path
          d="M 0,0 10,5 0,10 Z"
          fill="context-stroke"
@@ -85,6 +86,20 @@
         text-anchor: middle;
       }
     </style>
+    <marker
+       id="fk-arrow-3"
+       viewBox="0 0 10 10"
+       refX="4"
+       refY="5"
+       markerWidth="2"
+       markerHeight="2"
+       orient="auto"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="context-stroke"
+         id="path13238-6" />
+    </marker>
   </defs>
   <!-- Page background -->
   <metadata
@@ -96,7 +111,7 @@
       </cc:Work>
     </rdf:RDF>
   </metadata>
-  <!-- Missing FK arrows: frames → objects (collapses method_pk + method_class_pk to one line) and frame_delegations → objects (target_role_pk). Maroon per user request. -->
+  <!-- Missing FK arrows: frames → objects (collapses method + method_class to one line) and frame_delegations → objects (target_role). Maroon per user request. -->
   <!-- FK-name labels for every cross-table arrow, matching the style of the manually-drawn 'parent' label. -->
   <g
      inkscape:groupmode="layer"
@@ -212,22 +227,42 @@
          y="78"
          font-size="11px"
          fill="#616161"
+         id="text-owner-role"
+         style="stroke-width:0.47787">FK: owner_role (self)</text>
+      <text
+         x="10"
+         y="94"
+         font-size="11px"
+         fill="#616161"
          id="text569"
          style="stroke-width:0.47787">FK: bucket_for (self)</text>
       <text
          x="10"
-         y="94"
+         y="110"
          font-size="11px"
          fill="#616161"
          id="text571"
          style="stroke-width:0.47787">FK: stack_for (self)</text>
       <text
          x="10"
-         y="110"
+         y="126"
          font-size="11px"
          fill="#616161"
          id="text-ast"
          style="stroke-width:0.47787">col: ast (blob CaspM)</text>
+      <path
+         id="path314"
+         style="fill:none;stroke:#000001;stroke-width:3.87118;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 25.763883,165.95286 c -4.097568,-2.31076 -5.709132,-6.32581 -4.052866,-10.75202 1.656267,-4.42623 6.276136,-6.96793 10.86851,-5.97952 4.592384,0.98842 7.77752,5.20999 7.493237,9.9315 -0.284291,4.72152 -3.952595,8.52442 -8.629905,8.94656"
+         sodipodi:nodetypes="csssc" />
+      <text
+         x="55.947491"
+         y="163.83965"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text2608"
+         style="stroke-width:0.47787">self references</text>
     </g>
     <g
        transform="translate(377.16586,531.44724)"
@@ -245,7 +280,7 @@
          x="0"
          y="5"
          class="fk-label-text"
-         id="text11564">class_pk</text>
+         id="text11564">class</text>
     </g>
     <g
        transform="translate(377.16586,570.19055)"
@@ -263,7 +298,7 @@
          x="0"
          y="5"
          class="fk-label-text"
-         id="text11579">listener_pk</text>
+         id="text11579">listener</text>
     </g>
     <g
        id="g1371"
@@ -337,7 +372,7 @@
            x="964.18561"
            y="269.26187"
            class="fk-label-text"
-           id="text11624">method_pk</text>
+           id="text11624">method</text>
       </g>
     </g>
     <path
@@ -364,7 +399,7 @@
          x="0"
          y="5"
          class="fk-label-text"
-         id="text11574">broadcaster_pk</text>
+         id="text11574">broadcaster</text>
     </g>
     <g
        transform="translate(377.16586,483.38627)"
@@ -382,7 +417,7 @@
          x="0"
          y="5"
          class="fk-label-text"
-         id="text11569">listener_pk</text>
+         id="text11569">listener</text>
     </g>
     <g
        transform="translate(118.0823,235.073)"
@@ -461,13 +496,13 @@
            y="60"
            font-size="11px"
            fill="#616161"
-           id="text539">FK: broadcaster_pk</text>
+           id="text539">FK: broadcaster</text>
         <text
            x="10"
            y="74"
            font-size="11px"
            fill="#616161"
-           id="text541">FK: listener_pk</text>
+           id="text541">FK: listener</text>
       </g>
       <g
          transform="translate(39.193566,250.02964)"
@@ -508,13 +543,13 @@
            y="60"
            font-size="11px"
            fill="#616161"
-           id="text553">FK: class_pk</text>
+           id="text553">FK: class</text>
         <text
            x="10"
            y="74"
            font-size="11px"
            fill="#616161"
-           id="text555">FK: listener_pk</text>
+           id="text555">FK: listener</text>
       </g>
     </g>
     <g
@@ -543,7 +578,7 @@
              x="0"
              y="5"
              class="fk-label-text"
-             id="text11594">target_role_pk</text>
+             id="text11594">target_role</text>
         </g>
       </g>
       <g
@@ -618,7 +653,7 @@
            y="74"
            font-size="11px"
            fill="#616161"
-           id="text645">FK: target_role_pk</text>
+           id="text645">FK: target_role</text>
       </g>
     </g>
     <g
@@ -644,7 +679,7 @@
            x="0"
            y="5"
            class="fk-label-text"
-           id="text11604">value_object_pk</text>
+           id="text11604">value_object</text>
       </g>
     </g>
     <g
@@ -699,7 +734,7 @@
          font-size="13px"
          font-weight="700"
          fill="#ffffff"
-         id="text625">locals</text>
+         id="text625">frame_locals</text>
       <text
          x="10"
          y="44"
@@ -718,7 +753,7 @@
          y="74"
          font-size="11px"
          fill="#616161"
-         id="text631">FK: value_object_pk</text>
+         id="text631">FK: value_object</text>
     </g>
     <g
        id="g1105"
@@ -746,7 +781,7 @@
              x="0"
              y="5"
              class="fk-label-text"
-             id="text11609">amber_pk</text>
+             id="text11609">amber</text>
         </g>
       </g>
       <g
@@ -820,7 +855,7 @@
            y="74"
            font-size="11px"
            fill="#616161"
-           id="text659">FK: amber_pk</text>
+           id="text659">FK: amber</text>
       </g>
     </g>
     <g
@@ -847,7 +882,7 @@
            x="964.18561"
            y="303.18686"
            class="fk-label-text"
-           id="text852">method_class_pk</text>
+           id="text852">method_class</text>
       </g>
     </g>
     <path
@@ -944,21 +979,28 @@
            font-size="11px"
            fill="#616161"
            id="text611"
-           style="font-family:'Helvetica Neue', Arial, sans-serif;mix-blend-mode:normal">FK: method_pk</text>
+           style="font-family:'Helvetica Neue', Arial, sans-serif;mix-blend-mode:normal">FK: method</text>
         <text
            x="1259.7628"
            y="424.43863"
            font-size="11px"
            fill="#616161"
            id="text613"
-           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: method_class_pk</text>
+           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: method_class</text>
         <text
            x="1259.7628"
            y="438.43863"
            font-size="11px"
            fill="#616161"
            id="text615"
-           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: lexical_parent_pk (self)</text>
+           style="font-family:'Helvetica Neue', Arial, sans-serif">FK: lexical_parent (self)</text>
+        <text
+           x="1259.7628"
+           y="454.43863"
+           font-size="11px"
+           fill="#616161"
+           id="text-next-stmt-idx"
+           style="font-family:'Helvetica Neue', Arial, sans-serif">col: next_stmt_idx</text>
       </g>
     </g>
     <g
