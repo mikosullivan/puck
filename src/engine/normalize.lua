@@ -344,6 +344,74 @@ normalize_atom = function(v)
 				}
 			end
 
+			-- if / elsif / else collapse from the transpiler's
+			-- `["scope", "if_end", {branches: [{cond, body}, ...]}, {line}?]`
+			-- into the spec's `[{if: {conditions: [{test, action}], else}}, {l}?]`
+			-- shape (caspianj § If). Each branch with a non-null `cond` becomes
+			-- a `{test, action}` entry in `conditions`; the null-cond branch
+			-- (at most one, the trailing else clause) becomes the top-level
+			-- `else` field, omitted when absent. Each branch's body is a
+			-- closure envelope in the transpiler output; we unwrap and use
+			-- the statement list directly as `action` / `else` — the spec's
+			-- shape is a plain body, not a closure.
+			--
+			-- Unless flows through here after unless_end's cond-negation
+			-- rewrite below, so both if and unless emit the same shape.
+			-- Matches ternary's `{if: {conditions, else}}` output — one atom
+			-- for all three source forms.
+			if v[2] == "if_end" then
+				local wrapper = v[3]
+				if type(wrapper) == "table" and type(wrapper.branches) == "table" then
+					local conditions = {}
+					local else_stmts = nil
+
+					for _, br in ipairs(wrapper.branches) do
+						local action_stmts = {}
+						if type(br.body) == "table"
+								and type(br.body.closure) == "table"
+								and type(br.body.closure.body) == "table" then
+							for _, s in ipairs(br.body.closure.body) do
+								table.insert(action_stmts, norm_sub(s))
+							end
+						end
+
+						-- br.cond is `nil` (Lua-level nil) or the dkjson.null
+						-- sentinel (empty table with metatable) for the else
+						-- branch. Both mean "no condition — this is the else."
+						local is_else = br.cond == nil
+								or (type(br.cond) == "table"
+									and next(br.cond) == nil
+									and getmetatable(br.cond) ~= nil)
+
+						if is_else then
+							else_stmts = action_stmts
+						else
+							table.insert(conditions, {
+								test = norm_sub(br.cond),
+								action = action_stmts,
+							})
+						end
+					end
+
+					local if_atom = {conditions = conditions}
+					if else_stmts ~= nil then
+						if_atom["else"] = else_stmts
+					end
+
+					local out = {{["if"] = if_atom}}
+
+					-- Preserve trailing line meta if present (multi-line if
+					-- statements carry it; the rewrite keeps it on the outer
+					-- row for stack-frame reporting).
+					local trailing = v[#v]
+					if #v >= 4 and is_line_meta(trailing) then
+						table.insert(out, {["l"] = trailing.line})
+					end
+
+					return out
+				end
+			end
+
 			-- unless / until desugar to negated-condition if / while.
 			if v[2] == "unless_end" then
 				local rewritten = {"scope", "if_end"}

@@ -13,4 +13,5 @@ Quick-reference pages for parts of the Caspian ecosystem.
 - [Core classes](./core-classes) — the built-in class catalog at a glance.
 - [Global methods](./global-methods) — the `%name` system-method surface.
 - [Non-overrideable operators](./non-overrideable-operators) — operators the language handles directly, not dispatched to methods.
+- [CaspM commands](./caspm) — the two atom kinds the spec labels "command": internal primitives (`{in: SHORT}` closed registry) and bareword commands (`{bwc: NAME}` source-writable).
 - [Code tree](./code) — **live-generated.** Walks `src/` and `build/` on every request and shows each file's current size. Regenerated per hit.
