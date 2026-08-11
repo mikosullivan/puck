@@ -10,8 +10,6 @@
 
 Umbrella page for a brainstorm exploring folding frames into the object table. Substantive content — motivation, table changes, walkthroughs, schema sketch, Lua source — lives inside the individual quests below.
 
-> **Housecleaning coming.** This brainstorm has grown a lot of pages, sidequests, walkthroughs, and Lua source over its exploration life. A pass to consolidate, tidy stale prose, and align section structure is queued before this idea gets promoted to `requirements/`.
-
 ## Quests
 
 Every parallel workstream inside this brainstorm. `main` is the primary folding; the sidequests are design changes riding along that will promote to `requirements/` at the same time. See [quests/](https://www.puck.uno/ideas/frames-as-objects/quests/) for the promotion coordination rule that applies to each:
