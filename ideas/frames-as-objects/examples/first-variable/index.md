@@ -75,6 +75,24 @@ The exit condition doubles as the terminal check. When `frame.run` returns nothi
 
 Statement 0 is a bareword call to `=` with two argument atoms — the LHS `{"v": "x"}` and the RHS `{"v": 1}`. The RHS is a primitive scalar; its value sits right there in the atom, so no nested frame is needed to evaluate it. The whole assignment fits in one atomic step of `frame.run`.
 
+### Picking the routine
+
+`frame.run` reads `self.ast[self.stmt_idx]` — the statement it's about to execute — and pattern-matches on shape. This one:
+
+~~~json
+[{"bwc": "="}, {"v": "x"}, {"v": 1}]
+~~~
+
+matches three things at once:
+
+- Head is `{"bwc": "="}` — a bareword call to `=`. That narrows dispatch to the assignment family.
+- First arg is `{"v": <string>}` — a plain-name LHS. Not `{"c": [...]}` (a nested call for an attribute-target like `$obj.field`), not anything with dot-access.
+- Second arg is `{"v": <literal>}` where `<literal>` is a primitive value — number, string, boolean, or null. Not a name reference like `{"v": "y"}` (would need a lookup), not `{"c": [...]}` (would need a nested frame to evaluate).
+
+All three together identify the "scalar-RHS local assignment" shape. `frame.run` routes to [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) and calls it with `name='x'`, `scalar_type='n'`, `scalar_value=1`.
+
+If any of those checks fail, a different specialized routine takes over. The RHS being a name reference goes to a name-lookup routine (not yet written). The LHS being an attribute-target goes to a bucket-write routine (not yet written). Each Caspian assignment shape gets its own compiled path — no generic `set_variable` that pays a runtime dispatch cost per assignment.
+
 ### Overview
 
 The whole write block, `begin` to `commit`:
