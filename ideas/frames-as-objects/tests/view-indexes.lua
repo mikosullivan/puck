@@ -103,8 +103,8 @@ test("roles: full listing uses the user + role_parent indexes, no full scan", fu
 	-- The user-branch of the UNION should hit the UNIQUE-on-user autoindex,
 	-- and the role_parent branch should hit the partial index. Neither
 	-- should scan.
-	assert_plan_contains(p, "USING INDEX sqlite_autoindex_objects_2 (user=?)",
-		"user branch should use the UNIQUE-on-user autoindex")
+	assert_plan_contains(p, "USING INDEX objects_user (user=?)",
+		"user branch should use the objects_user partial unique index")
 	assert_plan_contains(p, "USING INDEX objects_role_parent",
 		"role_parent branch should use the partial index")
 	assert_plan_lacks(p, "SCAN objects",
@@ -130,8 +130,8 @@ end)
 test("uspace: full listing uses user + role_parent + persistent indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
-	assert_plan_contains(p, "USING INDEX sqlite_autoindex_objects_2 (user=?)",
-		"user branch of roles → uspace should use the UNIQUE-on-user autoindex")
+	assert_plan_contains(p, "USING INDEX objects_user (user=?)",
+		"user branch of roles → uspace should use the objects_user partial unique index")
 	assert_plan_contains(p, "USING INDEX objects_role_parent",
 		"role_parent branch should use the partial index")
 	assert_plan_contains(p, "USING INDEX objects_persistent",
@@ -180,12 +180,14 @@ test("`where persistent = 1` uses the objects_persistent partial index", functio
 	db:close()
 end)
 
-test("`where user = 1` uses the UNIQUE-on-user autoindex", function()
+test("`where user = 1` uses the objects_user partial unique index", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from objects where user = 1")
-	-- The user column is `integer unique`, giving it the second
-	-- autoindex (PK is the first).
-	assert_plan_contains(p, "USING INDEX sqlite_autoindex_objects_2 (user=?)")
+	-- The user column's UNIQUE lives in the objects_user partial
+	-- index (`where user = 1`) — SQLite ALTER TABLE ADD COLUMN
+	-- doesn't accept inline UNIQUE, so the constraint moves to
+	-- an explicit index in the CVM section.
+	assert_plan_contains(p, "USING INDEX objects_user (user=?)")
 	db:close()
 end)
 

@@ -26,15 +26,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.61988531"
-     inkscape:cx="497.6727"
-     inkscape:cy="387.97499"
+     inkscape:zoom="1.2397706"
+     inkscape:cx="620.27603"
+     inkscape:cy="553.73146"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g575" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
@@ -198,14 +198,6 @@
          fill="#616161"
          id="text-view-uspace-cols">col: object_pk</text>
     </g>
-    <path
-       class="fk-arrow"
-       d="M 360.88235,837.16441 H 540.83884"
-       id="path6519" />
-    <path
-       class="fk-arrow"
-       d="M 360.88235,805.12384 H 540.83884"
-       id="path6521" />
     <g
        transform="matrix(1.4457791,0,0,1.4474001,554.0013,609.82192)"
        id="g575"
@@ -236,227 +228,255 @@
          id="text563"
          style="stroke-width:0.47787">objects</text>
       <text
-         x="9.7314453"
+         x="48.776554"
          y="44"
          font-size="11px"
          font-weight="700"
          fill="#212121"
          id="text565"
-         style="stroke-width:0.47787">PK: object_pk (uuid)</text>
+         style="stroke-width:0.47787">object_pk (uuid)</text>
+      <!-- Mikobase columns -->
       <text
-         x="10"
-         y="62.354256"
+         x="8.616663"
+         y="62.349998"
          font-size="11px"
-         fill="#616161"
-         id="text-user"
-         style="stroke-width:0.47787">col: user</text>
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text281">M</text>
       <text
-         x="10"
-         y="147.59966"
-         font-size="11px"
-         fill="#616161"
-         id="text-primitive"
-         style="stroke-width:0.47787">col: primitive</text>
-      <text
-         x="10"
-         y="165.9539"
-         font-size="11px"
-         fill="#616161"
-         id="text-ast"
-         style="stroke-width:0.47787">col: ast</text>
-      <text
-         x="10"
-         y="182.13286"
-         font-size="11px"
-         fill="#616161"
-         id="text-scalar-type"
-         style="stroke-width:0.47787">col: scalar_type</text>
-      <text
-         x="10"
-         y="199.44781"
-         font-size="11px"
-         fill="#616161"
-         id="text-scalar-value"
-         style="stroke-width:0.47787">col: scalar_value</text>
-      <text
-         x="10"
-         y="216.66608"
-         font-size="11px"
-         fill="#616161"
-         id="text-bucket-pk"
-         style="stroke-width:0.47787">col: bucket_pk</text>
-      <text
-         x="10"
-         y="233.93269"
-         font-size="11px"
-         fill="#616161"
-         id="text-stack-pk"
-         style="stroke-width:0.47787">col: stack_pk</text>
-      <text
-         x="10"
-         y="251.1993"
+         x="48.497257"
+         y="62.349998"
          font-size="11px"
          fill="#616161"
          id="text-persistent"
-         style="stroke-width:0.47787">col: persistent</text>
+         style="stroke-width:0.47787">persistent</text>
       <text
-         x="10"
-         y="268.51425"
+         x="8.616663"
+         y="79.650002"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text284">M</text>
+      <text
+         x="48.497257"
+         y="79.650002"
+         font-size="11px"
+         fill="#616161"
+         id="text-primitive"
+         style="stroke-width:0.47787">primitive</text>
+      <text
+         x="8.616663"
+         y="96.949997"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text287">M</text>
+      <text
+         x="48.900089"
+         y="96.949997"
+         font-size="11px"
+         fill="#616161"
+         id="text-scalar-type"
+         style="stroke-width:0.47787">scalar_type</text>
+      <text
+         x="8.616663"
+         y="114.25"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text290">M</text>
+      <text
+         x="48.900089"
+         y="114.25"
+         font-size="11px"
+         fill="#616161"
+         id="text-scalar-value"
+         style="stroke-width:0.47787">scalar_value</text>
+      <text
+         x="8.616663"
+         y="131.55"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text293">M</text>
+      <text
+         x="48.497257"
+         y="131.55"
+         font-size="11px"
+         fill="#616161"
+         id="text569"
+         style="stroke-width:0.47787">bucket_for</text>
+      <path
+         id="path595"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,132.54926 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         sodipodi:nodetypes="csssc" />
+      <text
+         x="8.616663"
+         y="148.85001"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text298">M</text>
+      <text
+         x="48.900089"
+         y="148.85001"
+         font-size="11px"
+         fill="#616161"
+         id="text571"
+         style="stroke-width:0.47787">stack_for</text>
+      <path
+         id="path609"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,149.84927 c -2.424482,-1.36725 -3.378025,-3.74291 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12285 6.430767,-3.53802 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29358"
+         sodipodi:nodetypes="csssc" />
+      <text
+         x="8.616663"
+         y="166.14999"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text303">M</text>
+      <text
+         x="48.497257"
+         y="166.14999"
+         font-size="11px"
+         fill="#616161"
+         id="text-bucket-pk"
+         style="stroke-width:0.47787">bucket_pk</text>
+      <text
+         x="8.616663"
+         y="183.45"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text306">M</text>
+      <text
+         x="48.900089"
+         y="183.45"
+         font-size="11px"
+         fill="#616161"
+         id="text-stack-pk"
+         style="stroke-width:0.47787">stack_pk</text>
+      <text
+         x="8.616663"
+         y="200.75"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text309">M</text>
+      <text
+         x="48.475773"
+         y="200.75"
          font-size="11px"
          fill="#616161"
          id="text-needs-trace"
-         style="stroke-width:0.47787">col: needs_trace</text>
+         style="stroke-width:0.47787">needs_trace</text>
       <text
-         x="10"
-         y="285.78085"
+         x="8.616663"
+         y="218.05"
+         font-size="11px"
+         font-weight="700"
+         fill="#1976d2"
+         style="stroke-width:0.47787"
+         id="text312">M</text>
+      <text
+         x="48.470402"
+         y="218.05"
          font-size="11px"
          fill="#616161"
          id="text-in-trace"
-         style="stroke-width:0.47787">col: in_trace</text>
-      <g
-         id="g1282"
-         transform="translate(-1.7531578,16.533216)">
-        <text
-           x="32.133392"
-           y="62"
-           font-size="11px"
-           fill="#616161"
-           id="text567"
-           style="stroke-width:0.47787">role_parent</text>
-        <path
-           id="path314"
-           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 16.114545,63.047604 c -2.424482,-1.367249 -3.378025,-3.742906 -2.398032,-6.361841 0.979993,-2.618948 3.713515,-4.122841 6.430767,-3.538011 2.717259,0.584836 4.601866,3.082689 4.433659,5.87635 -0.168212,2.793667 -2.338703,5.043797 -5.106211,5.293572"
-           sodipodi:nodetypes="csssc" />
-      </g>
-      <g
-         id="g1322"
-         transform="translate(-1.7531578,17.848164)">
-        <text
-           x="32.133392"
-           y="78"
-           font-size="11px"
-           fill="#616161"
-           id="text-owner-role"
-           style="stroke-width:0.47787">owner_role</text>
-        <path
-           id="path581"
-           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 16.114545,78.999264 c -2.424482,-1.367249 -3.378025,-3.742906 -2.398032,-6.361841 0.979993,-2.618948 3.713515,-4.122841 6.430767,-3.538011 2.717259,0.584836 4.601866,3.082689 4.433659,5.87635 -0.168212,2.793667 -2.338703,5.043797 -5.106211,5.293572"
-           sodipodi:nodetypes="csssc" />
-      </g>
-      <g
-         id="g1362"
-         transform="translate(-1.7531578,19.114772)">
-        <text
-           x="32.133392"
-           y="94"
-           font-size="11px"
-           fill="#616161"
-           id="text569"
-           style="stroke-width:0.47787">bucket_for</text>
-        <path
-           id="path595"
-           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 16.114545,94.999264 c -2.424482,-1.367249 -3.378025,-3.742906 -2.398032,-6.361841 0.979993,-2.618948 3.713515,-4.122841 6.430767,-3.538011 2.717259,0.584836 4.601866,3.082689 4.433659,5.87635 -0.168212,2.793667 -2.338703,5.043797 -5.106211,5.293572"
-           sodipodi:nodetypes="csssc" />
-      </g>
-      <g
-         id="g1402"
-         transform="translate(-1.7531576,20.38138)">
-        <text
-           x="32.133392"
-           y="110"
-           font-size="11px"
-           fill="#616161"
-           id="text571"
-           style="stroke-width:0.47787">stack_for</text>
-        <path
-           id="path609"
-           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 16.114545,110.99927 c -2.424482,-1.36725 -3.378025,-3.74291 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12285 6.430767,-3.53802 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29358"
-           sodipodi:nodetypes="csssc" />
-      </g>
-    </g>
-    <g
-       transform="translate(454.0155,800.783)"
-       id="fk-label-2">
-      <rect
-         x="-41"
-         y="-11"
-         width="82"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect11562" />
+         style="stroke-width:0.47787">in_trace</text>
+      <!-- CVM columns -->
       <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text11564">class</text>
-    </g>
-    <g
-       transform="translate(454.0155,839.52631)"
-       id="fk-label-5">
-      <rect
-         x="-53"
-         y="-11"
-         width="106"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect11577" />
+         x="8.616663"
+         y="235.35001"
+         font-size="11px"
+         font-weight="700"
+         fill="#ff9800"
+         style="stroke-width:0.47787"
+         id="text315">C</text>
       <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text11579">listener</text>
-    </g>
-    <path
-       class="fk-arrow"
-       d="M 360.88235,752.33496 H 540.83884"
-       id="path14365" />
-    <path
-       class="fk-arrow"
-       d="M 360.88235,720.2944 H 540.83884"
-       id="path14367" />
-    <g
-       transform="translate(454.0155,718.17807)"
-       id="fk-label-4">
-      <rect
-         x="-65"
-         y="-11"
-         width="130"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect11572" />
+         x="48.491886"
+         y="235.35001"
+         font-size="11px"
+         fill="#616161"
+         id="text-user"
+         style="stroke-width:0.47787">user</text>
       <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text11574">broadcaster</text>
-    </g>
-    <g
-       transform="translate(454.0155,752.72204)"
-       id="fk-label-3">
-      <rect
-         x="-53"
-         y="-11"
-         width="106"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect11567" />
+         x="8.616663"
+         y="252.64999"
+         font-size="11px"
+         font-weight="700"
+         fill="#ff9800"
+         style="stroke-width:0.47787"
+         id="text318">C</text>
       <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text11569">listener</text>
+         x="48.475773"
+         y="252.64999"
+         font-size="11px"
+         fill="#616161"
+         id="text567"
+         style="stroke-width:0.47787">role_parent</text>
+      <path
+         id="path314"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,253.6976 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         sodipodi:nodetypes="csssc" />
+      <text
+         x="8.616663"
+         y="269.95001"
+         font-size="11px"
+         font-weight="700"
+         fill="#ff9800"
+         style="stroke-width:0.47787"
+         id="text323">C</text>
+      <text
+         x="48.744328"
+         y="269.95001"
+         font-size="11px"
+         fill="#616161"
+         id="text-owner-role"
+         style="stroke-width:0.47787">owner_role</text>
+      <path
+         id="path581"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,270.94926 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         sodipodi:nodetypes="csssc" />
+      <text
+         x="8.616663"
+         y="287.25"
+         font-size="11px"
+         font-weight="700"
+         fill="#ff9800"
+         style="stroke-width:0.47787"
+         id="text328">C</text>
+      <text
+         x="48.738956"
+         y="287.25"
+         font-size="11px"
+         fill="#616161"
+         id="text-ast"
+         style="stroke-width:0.47787">ast</text>
+      <path
+         id="path1065"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,167.09401 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         sodipodi:nodetypes="csssc" />
+      <path
+         id="path1067"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,184.39402 c -2.424482,-1.36725 -3.378025,-3.74291 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12285 6.430767,-3.53802 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29358"
+         sodipodi:nodetypes="csssc" />
     </g>
     <g
        transform="translate(194.93194,504.40876)"
@@ -500,10 +520,53 @@
          id="text-cvm-value">col: value (any)</text>
     </g>
     <g
-       id="g3183"
-       transform="translate(155.73837,528.09365)">
+       id="g508">
+      <path
+         class="fk-arrow"
+         d="M 360.88235,752.33496 H 540.83884"
+         id="path14365" />
+      <path
+         class="fk-arrow"
+         d="M 360.88235,720.2944 H 540.83884"
+         id="path14367" />
       <g
-         transform="translate(39.193566,157.31778)"
+         transform="translate(454.0155,718.17807)"
+         id="fk-label-4">
+        <rect
+           x="-65"
+           y="-11"
+           width="130"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11572" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11574">broadcaster</text>
+      </g>
+      <g
+         transform="translate(454.0155,752.72204)"
+         id="fk-label-3">
+        <rect
+           x="-53"
+           y="-11"
+           width="106"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11567" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11569">listener</text>
+      </g>
+      <g
+         transform="translate(194.93194,685.41143)"
          id="g543"
          style="font-family:'Helvetica Neue', Arial, sans-serif">
         <rect
@@ -561,8 +624,55 @@
            fill="#616161"
            id="text-il-method-name">col: method_name</text>
       </g>
+    </g>
+    <g
+       id="g489">
+      <path
+         class="fk-arrow"
+         d="M 360.88235,879.16441 H 540.83884"
+         id="path6519" />
+      <path
+         class="fk-arrow"
+         d="M 360.88235,847.12384 H 540.83884"
+         id="path6521" />
       <g
-         transform="translate(39.193566,250.02964)"
+         transform="translate(454.0155,842.783)"
+         id="fk-label-2">
+        <rect
+           x="-41"
+           y="-11"
+           width="82"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11562" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11564">class</text>
+      </g>
+      <g
+         transform="translate(454.0155,881.52631)"
+         id="fk-label-5">
+        <rect
+           x="-53"
+           y="-11"
+           width="106"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11577" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11579">listener</text>
+      </g>
+      <g
+         transform="translate(194.93194,820.12329)"
          id="g557"
          style="font-family:'Helvetica Neue', Arial, sans-serif">
         <rect
@@ -666,7 +776,7 @@
        style="font-size:42.6667px;font-family:FreeSerif;-inkscape-font-specification:FreeSerif;text-align:center;white-space:pre;shape-inside:url(#rect396);display:inline;fill:#fffffe;fill-opacity:1;stroke:#000001;stroke-width:3.2195;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:stroke fill markers;stop-color:#000000"><tspan
          x="244.56266"
          y="64.072165"
-         id="tspan2872">Tables</tspan></text>
+         id="tspan1475">Tables</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(1.733676,0,0,1.8727282,807.69803,275.47581)"
@@ -674,7 +784,7 @@
        style="font-size:42.6667px;font-family:FreeSerif;-inkscape-font-specification:FreeSerif;text-align:center;white-space:pre;shape-inside:url(#rect1117);display:inline;fill:#fffffe;fill-opacity:1;stroke:#000001;stroke-width:3.2195;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:stroke fill markers;stop-color:#000000"><tspan
          x="253.8512"
          y="64.072165"
-         id="tspan2874">Views</tspan></text>
+         id="tspan1477">Views</tspan></text>
     <g
        id="g2386"
        transform="translate(0,-20.963845)">

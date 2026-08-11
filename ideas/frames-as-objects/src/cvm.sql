@@ -1,5 +1,18 @@
--- Add an explanation of why foreign_keys must be set at
--- the start of a connection. [ghi]
+-- Every connection to a CVM database must run these two pragmas
+-- immediately after opening. Both are per-connection settings in
+-- SQLite (default OFF, not persisted with the DB file) — the pragmas
+-- below only take effect on the connection that applies the schema.
+-- Every subsequent connection opens with both OFF and has to enable
+-- them again, or the CVM's FK constraints and trigger design are
+-- dead letters at runtime.
+--
+-- Any tool opening a CVM file — the engine, the sqlite3 CLI, another
+-- host reading the file — runs these two pragmas as its first act.
+-- See src/engine/mvm.lua for the reference implementation:
+-- mvm.open() sets both with specific error ids
+-- (mvm_pragma_fk_failed, mvm_pragma_recursive_triggers_failed) on
+-- failure. Any CVM tool without an equivalent pair of pragma calls
+-- is broken by construction. [ghi]
 pragma foreign_keys = on;
 
 -- Recursive triggers are ON. SQLite permits a manual trigger's
@@ -63,43 +76,16 @@ create table objects (
 		)
 	),
 
-	-- User marker. Exactly one row across the whole table can
-	-- carry `user = 1` (enforced by UNIQUE + CHECK). Every other
-	-- row leaves it null. Set at INSERT and immutable — the seed
-	-- creates the user row with this set, nothing else ever gets
-	-- it. Finding the user row is `select object_pk from objects
-	-- where user` (truthy check; only user is non-null so the
-	-- UNIQUE index picks it up directly). [ghi]
-	user integer unique check (user = 1),
-
-	-- Role parentage. If set, this row is a role and role_parent
-	-- points at its parent role. Null on the root role (user row)
-	-- and on every non-role object. Immutable at INSERT — a role
-	-- can't be reparented; that's what buys the schema-level
-	-- cycle-freeness (a row can only reference a row that already
-	-- exists, and no existing row can be repointed at a newer row).
-	--
-	-- Combined with the FK's `on delete cascade`, this column
-	-- gives the role tree its own self-maintaining subsystem:
-	-- single parent (one column, one value), cycle-free
-	-- (immutability + insert-order), cascade cleanup (parent
-	-- delete drops the subtree), and root-safety (the existing
-	-- objects_no_delete_root_role trigger keeps user undeletable).
-	--
-	-- Roles are anchored in uspace via the uspace view's
-	-- `where role_parent is not null` branch — the tree's rows
-	-- are structurally pinned by the FK, not by general
-	-- reachability. Role bucket contents still trace normally.
-	--
-	-- The schema also enforces "role_parent must point at a row
-	-- that is itself a role" via the objects_role_parent_must_be_role
-	-- BEFORE INSERT trigger below. INSERT-only (role_parent is
-	-- immutable, so once a row is validated as a role at insert
-	-- time, it stays a role for its lifetime). One indexed lookup
-	-- per role insertion; roles are rare, so cost is negligible.
-	-- [ghi]
-	role_parent text references objects(object_pk) on delete cascade,
-
+	-- Persistence pin. Rows with `persistent = 1` are kept alive by
+	-- whatever reachability system the host layers on top; CVM's
+	-- uspace view unconditionally includes them, and any future host
+	-- with its own uspace-equivalent should honor the same flag.
+	-- Nullable and freely mutable — a row can be pinned and later
+	-- unpinned. CHECK restricts the value to 1 (truthy) or null; the
+	-- partial index below only holds the pinned rows, so lookups over
+	-- pinned objects touch just the entries that matter. [ghi]
+	persistent integer check (persistent = 1),
+	
 	-- Row-kind discriminator. NOT NULL, no default: CVM's write
 	-- code names the row kind at INSERT time. Exactly one of:
 	--   'o' → object (full object, or scalar primitive if scalar_type is set)
@@ -193,43 +179,43 @@ create table objects (
 	bucket_pk integer unique
 		check (bucket_pk is null or (primitive = 'o' and scalar_type is null)),
 	stack_pk  integer unique
-		check (stack_pk  is null or (primitive = 'o' and scalar_type is null))
+		check (stack_pk  is null or (primitive = 'o' and scalar_type is null)),
+
+	-- GC scratch: 1 means this row is a candidate the drain should
+	-- trace from. Null in the common case. Hosts that layer a
+	-- garbage-collection pass on top of Mikobase set this to mark
+	-- rows for retracing; CVM's mark trigger writes it after
+	-- relationship deletes. 1-or-null; CHECK doesn't fire on null so
+	-- no `is null or` guard is needed. [ghi]
+	needs_trace integer check (needs_trace = 1),
+
+	-- GC scratch: positive integer giving the order the drain's
+	-- callback loop fires against this row. Null in the common case.
+	-- Written by the host's GC pass; CVM stamps it inside the drain
+	-- to sequence callbacks. >0-or-null; CHECK doesn't fire on null
+	-- so no `is null or` guard is needed. [ghi]
+	in_trace integer check (in_trace > 0)
 );
 
--- Role tree: partial index over just the role rows. The uspace
--- view's `where role_parent is not null` branch walks this;
--- role-tree traversal queries (find children of X) use it too. [ghi]
-create index objects_role_parent on objects(role_parent) where role_parent is not null;
+-- Partial index over just the pinned rows. Reachability queries
+-- like uspace's `where persistent = 1` branch hit this directly. [ghi]
+create index objects_persistent on objects(persistent) where persistent = 1;
 
--- Single source of truth for "what is a role." A row is a role iff
--- `user = 1` (the root role — the seed) OR `role_parent is not null`
--- (a non-role in the tree). Two triggers below check this condition
--- when validating role_parent / owner_role FK targets, and the
--- uspace view unions from this view — the definition factors out
--- here so all three touch one source.
---
--- Written as UNION rather than `... where user = 1 or role_parent is
--- not null` because the OR form defeats index selection — SQLite's
--- planner can't split an OR across two different indexes, so it
--- would fall back to a full table scan for `select * from roles`.
--- UNION lets each branch use its own index: `user = 1` hits the
--- UNIQUE-on-user autoindex, `role_parent is not null` hits the
--- objects_role_parent partial index above. Verified by
--- tests/view-indexes.lua.
---
--- Trigger-time pk lookups (`select 1 from roles where object_pk = X`)
--- still short-circuit to the PK index inside each branch — SQLite
--- flattens the view query and pushes the pk predicate down. [ghi]
-create view roles as
-	select object_pk from objects where user = 1
-	union
-	select object_pk from objects where role_parent is not null;
+-- Partial indexes over the GC-scratch columns. The drain's worklist
+-- walks needs_trace; the callback-order pass walks in_trace. Both
+-- are almost always empty at rest — the partial predicate keeps the
+-- indexes tiny. [ghi]
+create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
+create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
 
 -- Immutability rules:
---   Fully immutable from INSERT: object_pk, primitive, scalar_type, scalar_value,
---   bucket_for, stack_for, user, role_parent.
+--   Fully immutable from INSERT: object_pk, primitive, scalar_type,
+--     scalar_value, bucket_for, stack_for.
 --   Write-once (null → value, then locked): bucket_pk, stack_pk.
---   Freely mutable: persistent, GC scratch (needs_trace, in_trace). [ghi]
+--   Freely mutable: persistent, needs_trace, in_trace.
+-- CVM adds more columns (user, role_parent, ast, owner_role) with
+-- their own immutability / mutability rules; CVM installs its own
+-- triggers over there. [ghi]
 create trigger objects_no_update
 before update on objects
 begin
@@ -246,10 +232,6 @@ begin
 			then raise(abort, 'objects_bucket_for_immutable: objects.bucket_for is immutable')
 		when new.stack_for is not old.stack_for
 			then raise(abort, 'objects_stack_for_immutable: objects.stack_for is immutable')
-		when new.user is not old.user
-			then raise(abort, 'objects_user_immutable: objects.user is immutable')
-		when new.role_parent is not old.role_parent
-			then raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)')
 		when old.bucket_pk is not null and new.bucket_pk is not old.bucket_pk
 			then raise(abort, 'objects_bucket_pk_write_once: objects.bucket_pk is write-once')
 		when old.stack_pk is not null and new.stack_pk is not old.stack_pk
@@ -257,78 +239,9 @@ begin
 	end;
 end;
 
--- The user row (marked `user = 1`) is the root role and cannot
--- be deleted. Every CVM database starts with user seeded,
--- and nothing above the language layer can remove it. Non-root
--- uspace anchors are freely deletable (that's how an object
--- leaves user space in the first place). The role tree is
--- expressed as bucket contents rooted at user; the tree's
--- integrity is engine-side code, not schema-level enforcement. [ghi]
-create trigger objects_no_delete_root_role
-before delete on objects
-when old.user
-begin
-	select raise(abort, 'root_role_cannot_be_deleted: the user row cannot be deleted');
-end;
-
--- Every non-root role must name a parent that is itself a role.
--- "Is a role" is defined by the `roles` view above (user = 1 or
--- role_parent set). BEFORE INSERT only — role_parent is immutable
--- via objects_no_update, so a row's role-ness is determined at
--- insert time and can't be silently stripped afterward. The WHEN
--- clause skips inserts with role_parent null (the common case).
--- When it does fire, one pk-indexed lookup via the roles view
--- verifies the target row. [ghi]
-create trigger objects_role_parent_must_be_role
-before insert on objects
-when new.role_parent is not null
-begin
-	select case
-		when (select 1 from roles where object_pk = new.role_parent) is null
-		then raise(abort, 'role_parent_must_be_role: role_parent must reference a row that is itself a role (root user row or a row with role_parent set)')
-	end;
-end;
-
--- A role cannot be its own parent. The must_be_role trigger above
--- already blocks this indirectly at INSERT — the referenced row
--- doesn't exist yet, so the SELECT for "is this a role" returns
--- nothing. But an explicit self-reference check is defense-in-depth
--- with a specific error ID for the diagnostic, and guards against
--- any future path that would allow the target row to be present at
--- check time (e.g., a bulk insert where the row lands first).
---
--- INSERT-only: role_parent is immutable via objects_no_update, so
--- the not-self invariant is set at creation and can't be broken. [ghi]
-create trigger objects_role_parent_not_self
-before insert on objects
-when new.role_parent is not null and new.role_parent = new.object_pk
-begin
-	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk (a role cannot be its own parent)');
-end;
-
 -- Deletion callback machinery (on_close / on_delete UDF hook)
 -- deferred. When the engine needs to invoke Caspian-level cleanup
 -- on object delete, a trigger + UDF will land here. [ghi]
-
--- Role tree lives in the `role_parent` column. A row IS a role
--- iff it has role_parent set (non-root) or user = 1 (root). The
--- schema enforces:
---   Single parent — one column, one value.
---   Cycle-free — role_parent is immutable and INSERT requires
---     the target row to exist, so cycles are structurally
---     impossible.
---   Cascade cleanup — FK on delete cascade drops the subtree.
---   Root safety — objects_no_delete_root_role keeps user
---     undeletable.
---   Parent-is-a-role — objects_role_parent_must_be_role rejects
---     any insert whose role_parent points at a non-role row.
--- What the schema does NOT check: naming, uniqueness of role
--- names, class-ownership rules — all Lua.
---
--- Roles still live in the object graph as ordinary rows with
--- their own bucket and stack. role_parent is an additional
--- pointer, not a replacement for bucket/stack — it's what makes
--- role lifetime independent of bucket-graph reachability. [ghi]
 
 -- ------------------------------------------------------------
 -- Bucket + stack: lazily created by the Lua write layer.
@@ -419,30 +332,44 @@ begin
 	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in relationships');
 end;
 
--- All identity + content columns are immutable. Rebinding an edge
+-- The whole relationships row is immutable. Rebinding an edge
 -- (swinging child from one object to another, moving to a different
--- key, whatever) is expressed as delete + insert, not in-place update.
--- Immutability means the mark trigger only needs to fire on DELETE —
--- there's no in-place UPDATE OF child to cover. [ghi]
+-- key, whatever) is expressed as delete + insert, not in-place
+-- update. Immutability means the mark trigger only needs to fire on
+-- DELETE — there's no in-place UPDATE OF child to cover. [ghi]
 create trigger relationships_no_update
 before update on relationships
 begin
-	select case
-		when new.rel_pk is not old.rel_pk
-			then raise(abort, 'relationships_pk_immutable: relationships.rel_pk is immutable')
-		when new.parent is not old.parent
-			then raise(abort, 'relationships_parent_immutable: relationships.parent is immutable')
-		when new.child is not old.child
-			then raise(abort, 'relationships_child_immutable: relationships.child is immutable')
-		when new.key is not old.key
-			then raise(abort, 'relationships_key_immutable: relationships.key is immutable')
-		when new.idx is not old.idx
-			then raise(abort, 'relationships_idx_immutable: relationships.idx is immutable')
-	end;
+	select raise(abort, 'relationships_immutable: relationships rows are immutable');
+end;
+
+-- ------------------------------------------------------------
+-- Mark trigger — the trace's worklist populator. [ghi]
+-- ------------------------------------------------------------
+
+-- [set-needs-trace] On DELETE of a relationship: mark the old child.
+-- Hosts that layer a garbage-collection pass on top of Mikobase read
+-- objects.needs_trace to find rows to retrace after edge deletion;
+-- this trigger keeps that scratch column populated as edges churn.
+-- Hosts without a GC pass ignore the column — the write is cheap and
+-- the partial objects_needs_trace index stays empty of consequence.
+--
+-- No filter on which parent-side space the row belongs to — the host's
+-- drain decides membership (CVM's uspace view, another host's
+-- equivalent). Terminating the trace on an alive row is a cheaper
+-- wasted iteration than gating every mark-trigger fire on a subquery.
+--
+-- No corresponding UPDATE trigger — relationships.child is immutable
+-- (see relationships_no_update). Rebinding an edge is expressed as
+-- delete + insert; the delete fires this trigger. [ghi]
+create trigger relationships_mark_needs_trace_after_delete
+after delete on relationships
+begin
+	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
 -- ############################################################################
--- CVM [ghi]
+-- CVM
 -- ############################################################################
 
 -- CVM database design. One `objects` table holds row shapes
@@ -468,50 +395,45 @@ end;
 -- CVM's additions to the Mikobase `objects` table.
 -- ------------------------------------------------------------
 -- The base `objects` table is defined in the Mikobase section
--- above. CVM layers on the columns it needs by ALTER TABLE:
---
---   persistent  — pin flag for the uspace view (see below). If
---                 set, the object is unconditionally in uspace
---                 regardless of any other anchoring. Nullable and
---                 freely mutable — an object can be pinned and
---                 later unpinned.
---
---   ast         — CaspM tree for callables (function / method /
---                 closure), serialized as JSON text. Null on
---                 non-callables. Mutable — the engine reads the
---                 current value on each call and thaws it into
---                 Lua-native form attached to the frame, so an
---                 update takes effect on the next call (hot-patch
---                 / metaprogramming friendly). See the "AST storage:
---                 JSON, not JSONB" design note in requirements/cvm/
---                 for the rationale.
---
---   needs_trace — GC scratch: 1 means this row is a candidate the
---                 drain should trace from. Null in the common case.
---   in_trace    — GC scratch: positive integer giving the order
---                 the drain's callback loop fires against this row.
---                 Null in the common case. Both are 1-or-null / >0-
---                 or-null; CHECK doesn't fire on null so no `is
---                 null or` guard is needed. [ghi]
+-- above. CVM layers on the columns it needs by ALTER TABLE;
+-- each column's rationale sits with the statement below.
 
-alter table objects add column persistent integer
-	check (persistent = 1);
+-- user: root-role marker. Exactly one row across the whole table
+-- carries `user = 1`; every other row leaves it null. Set at INSERT
+-- and immutable via objects_user_immutable below. The seed insert
+-- further down creates the user row. Enforcement of "at most one"
+-- is a partial unique index (inline UNIQUE isn't available on ALTER
+-- TABLE ADD COLUMN in SQLite). [ghi]
+alter table objects add column user integer
+	check (user = 1);
 
+-- role_parent: role-tree parentage. If set, this row is a non-root
+-- role and role_parent points at its parent role. Null on the root
+-- role (user row) and on every non-role object. Immutable via
+-- objects_role_parent_immutable below — a role can't be reparented;
+-- that's what buys the schema-level cycle-freeness (a row can only
+-- reference a row that already exists, and no existing row can be
+-- repointed at a newer row). [ghi]
+alter table objects add column role_parent text
+	references objects(object_pk) on delete cascade;
+
+-- ast: CaspM tree for callables (function / method / closure),
+-- serialized as JSON text. Null on non-callables. Mutable — the
+-- engine reads the current value on each call and thaws it into
+-- Lua-native form attached to the frame, so an update takes effect
+-- on the next call (hot-patch / metaprogramming friendly). See the
+-- "AST storage: JSON, not JSONB" design note in requirements/cvm/
+-- for the rationale. [ghi]
 alter table objects add column ast text;
 
-alter table objects add column needs_trace integer
-	check (needs_trace = 1);
-
-alter table objects add column in_trace integer
-	check (in_trace > 0);
-
--- Ownership. Every non-role object carries owner_role pointing at the
--- role that created it. The rule is XOR with role_parent: a row is
--- EITHER a role (role_parent set — the role tree case) OR owned by
--- one (owner_role set — every other object) — never both, never
--- neither, except the grandfathered user seed inserted just below
--- (BEFORE the enforcement triggers exist, so its role_parent = null,
--- owner_role = null state is preserved).
+-- owner_role: ownership pointer for non-role objects. Every non-role
+-- object carries owner_role pointing at the role that created it.
+-- The rule is XOR with role_parent: a row is EITHER a role
+-- (role_parent set — the role tree case) OR owned by one (owner_role
+-- set — every other object) — never both, never neither, except the
+-- grandfathered user seed inserted just below (BEFORE the enforcement
+-- triggers exist, so its role_parent = null, owner_role = null state
+-- is preserved).
 --
 -- No `on delete cascade`: role deletion doesn't take its owned objects
 -- with it. Deletion of a role that still owns things is a load-bearing
@@ -519,10 +441,78 @@ alter table objects add column in_trace integer
 -- engine; the FK stays plain until that policy is spec'd. [ghi]
 alter table objects add column owner_role text references objects(object_pk);
 
-create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
-create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
+-- ------------------------------------------------------------
+-- Indexes for CVM's added columns.
+-- ------------------------------------------------------------
+
+-- User marker: partial unique index enforces "at most one user row"
+-- (inline UNIQUE isn't available on ALTER TABLE ADD COLUMN in SQLite,
+-- so the constraint moves to a partial index). `where user = 1` keeps
+-- the index empty on the null rows — the index only ever has one
+-- entry, which is what makes `select object_pk from objects where user`
+-- (or `= 1`) a direct hit. [ghi]
+create unique index objects_user on objects(user) where user = 1;
+
+-- Role tree: partial index over just the non-root role rows. The
+-- uspace view's `where role_parent is not null` branch walks this;
+-- role-tree traversal queries (find children of X) use it too. [ghi]
+create index objects_role_parent on objects(role_parent) where role_parent is not null;
+
 create index objects_owner_role  on objects(owner_role)  where owner_role is not null;
-create index objects_persistent  on objects(persistent)  where persistent = 1;
+
+-- ------------------------------------------------------------
+-- Roles view — single source of truth for "what is a role."
+-- ------------------------------------------------------------
+-- A row is a role iff `user = 1` (the root role — the seed) OR
+-- `role_parent is not null` (a non-root role in the tree). Two
+-- triggers below check this condition when validating role_parent /
+-- owner_role FK targets, and the uspace view unions from this view —
+-- the definition factors out here so all three touch one source.
+--
+-- Written as UNION rather than `... where user = 1 or role_parent is
+-- not null` because the OR form defeats index selection — SQLite's
+-- planner can't split an OR across two different indexes, so it
+-- would fall back to a full table scan for `select * from roles`.
+-- UNION lets each branch use its own index: `user = 1` hits the
+-- objects_user partial index, `role_parent is not null` hits the
+-- objects_role_parent partial index. Verified by
+-- tests/view-indexes.lua.
+--
+-- Trigger-time pk lookups (`select 1 from roles where object_pk = X`)
+-- still short-circuit to the PK index inside each branch — SQLite
+-- flattens the view query and pushes the pk predicate down. [ghi]
+create view roles as
+	select object_pk from objects where user = 1
+	union
+	select object_pk from objects where role_parent is not null;
+
+-- ------------------------------------------------------------
+-- Immutability triggers for the CVM-added role columns. Mikobase's
+-- objects_no_update covers the base columns; user and role_parent
+-- get their own guards here because those columns don't exist yet
+-- when objects_no_update is created. Same pattern as
+-- objects_owner_role_immutable further below.
+-- ------------------------------------------------------------
+
+-- User marker is set at INSERT (on the seed) and never changes. [ghi]
+create trigger objects_user_immutable
+before update of user on objects
+when new.user is not old.user
+begin
+	select raise(abort, 'objects_user_immutable: objects.user is immutable');
+end;
+
+-- role_parent is set at INSERT and never changes — no role
+-- reparenting. This immutability is load-bearing: it's what makes
+-- the role tree cycle-free (a row can only reference a row that
+-- already exists, and no existing row can be repointed at a newer
+-- row). [ghi]
+create trigger objects_role_parent_immutable
+before update of role_parent on objects
+when new.role_parent is not old.role_parent
+begin
+	select raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)');
+end;
 
 -- Seed the root role. User is the root role: primitive = 'h'
 -- (a HashPrimitive per current design), user = 1 marks it as root,
@@ -540,8 +530,8 @@ insert into objects (primitive, user, persistent) values ('h', 1, 1);
 -- XOR rule: a role cannot have an owner, and a non-role must have one.
 -- "Is a role" uses the same definition as elsewhere in this schema:
 -- `role_parent is not null OR user = 1`. Rows attempting to set
--- user = 1 are treated as roles for this check (the UNIQUE constraint
--- separately enforces "at most one user row"). [ghi]
+-- user = 1 are treated as roles for this check (the objects_user
+-- unique index separately enforces "at most one user row"). [ghi]
 create trigger objects_role_or_owner_role
 before insert on objects
 begin
@@ -555,12 +545,47 @@ begin
 	end;
 end;
 
+-- Every non-root role must name a parent that is itself a role.
+-- "Is a role" is defined by the `roles` view above (user = 1 or
+-- role_parent set). BEFORE INSERT only — role_parent is immutable
+-- via objects_role_parent_immutable above, so a row's role-ness is
+-- determined at insert time and can't be silently stripped
+-- afterward. The WHEN clause skips inserts with role_parent null
+-- (the common case). When it does fire, one pk-indexed lookup via
+-- the roles view verifies the target row. [ghi]
+create trigger objects_role_parent_must_be_role
+before insert on objects
+when new.role_parent is not null
+begin
+	select case
+		when (select 1 from roles where object_pk = new.role_parent) is null
+		then raise(abort, 'role_parent_must_be_role: role_parent must reference a row that is itself a role (root user row or a row with role_parent set)')
+	end;
+end;
+
+-- A role cannot be its own parent. The must_be_role trigger above
+-- already blocks this indirectly at INSERT — the referenced row
+-- doesn't exist yet, so the SELECT for "is this a role" returns
+-- nothing. But an explicit self-reference check is defense-in-depth
+-- with a specific error ID for the diagnostic, and guards against
+-- any future path that would allow the target row to be present at
+-- check time (e.g., a bulk insert where the row lands first).
+--
+-- INSERT-only: role_parent is immutable via objects_role_parent_immutable,
+-- so the not-self invariant is set at creation and can't be broken. [ghi]
+create trigger objects_role_parent_not_self
+before insert on objects
+when new.role_parent is not null and new.role_parent = new.object_pk
+begin
+	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk (a role cannot be its own parent)');
+end;
+
 -- owner_role, when set, must reference an actual role. Uses the
--- `roles` view (defined in the Mikobase section) as the single
--- source of truth for role-ness. Same shape as the existing
--- objects_role_parent_must_be_role trigger. INSERT-only — owner_role
--- is immutable at INSERT via the trigger below, so a row's owner
--- can't be silently repointed at a non-role after the fact. [ghi]
+-- `roles` view (defined above) as the single source of truth for
+-- role-ness. Same shape as objects_role_parent_must_be_role.
+-- INSERT-only — owner_role is immutable at INSERT via the trigger
+-- below, so a row's owner can't be silently repointed at a non-role
+-- after the fact. [ghi]
 create trigger objects_owner_role_must_be_role
 before insert on objects
 when new.owner_role is not null
@@ -571,11 +596,11 @@ begin
 	end;
 end;
 
--- owner_role is immutable at INSERT — no reparenting an object between
--- roles at runtime. Matches how role_parent is immutable via the
--- objects_no_update trigger; owner_role gets its own guard here
--- because that trigger lives in the Mikobase section (before this
--- column existed) and CVM layers additions on top. [ghi]
+-- owner_role is immutable at INSERT — no reparenting an object
+-- between roles at runtime. Matches how role_parent is immutable
+-- via objects_role_parent_immutable above; owner_role gets its own
+-- guard the same way, one column per trigger, since both columns
+-- are CVM additions the Mikobase objects_no_update can't reach. [ghi]
 create trigger objects_owner_role_immutable
 before update of owner_role on objects
 when new.owner_role is not old.owner_role
@@ -594,25 +619,53 @@ begin
 	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk (an object cannot be its own owner)');
 end;
 
-
--- ------------------------------------------------------------
--- Mark triggers — the trace's worklist populator. [ghi]
--- ------------------------------------------------------------
-
--- [set-needs-trace] On DELETE of a relationship: mark the old child.
--- No uspace filter — the drain's trace handles uspace membership
--- via the uspace view (uspace rows terminate the trace immediately
--- as alive, a cheap wasted iteration compared to a subquery on
--- every mark-trigger fire).
---
--- No corresponding UPDATE trigger — relationships.child is immutable
--- (see relationships_no_update). Rebinding an edge is expressed as
--- delete + insert; the delete fires this trigger. [ghi]
-create trigger relationships_mark_needs_trace_after_delete
-after delete on relationships
+-- The user row (marked `user = 1`) is the root role and cannot
+-- be deleted. Every CVM database starts with user seeded, and
+-- nothing above the language layer can remove it. Non-root uspace
+-- anchors are freely deletable (that's how an object leaves user
+-- space in the first place). [ghi]
+create trigger objects_no_delete_root_role
+before delete on objects
+when old.user
 begin
-	update objects set needs_trace = 1 where object_pk = old.child;
+	select raise(abort, 'root_role_cannot_be_deleted: the user row cannot be deleted');
 end;
+
+-- Symmetric with the delete guard above. The per-column immutability
+-- triggers already cover most of the user row's fields (object_pk,
+-- primitive, scalars, bucket_for/stack_for from Mikobase's
+-- objects_no_update, plus user, role_parent, owner_role from the CVM
+-- guards above). This trigger closes the small remaining gap
+-- (persistent, ast, needs_trace, in_trace on the user row) — no
+-- caller should ever be flipping the root role's pin off, attaching
+-- an ast to it, or marking it for trace. If a mark trigger ever
+-- fires against the user row, that's the bug worth catching: the
+-- user row shouldn't be appearing as a child of another container. [ghi]
+create trigger objects_no_update_root_role
+before update on objects
+when old.user
+begin
+	select raise(abort, 'root_role_cannot_be_updated: the user row cannot be updated');
+end;
+
+-- Role tree summary. A row IS a role iff it has role_parent set
+-- (non-root) or user = 1 (root). The schema enforces:
+--   Single parent — one column, one value.
+--   Cycle-free — role_parent is immutable and INSERT requires
+--     the target row to exist, so cycles are structurally
+--     impossible.
+--   Cascade cleanup — FK on delete cascade drops the subtree.
+--   Root safety — objects_no_delete_root_role + objects_no_update_root_role
+--     keep the user row undeletable and unmutable.
+--   Parent-is-a-role — objects_role_parent_must_be_role rejects
+--     any insert whose role_parent points at a non-role row.
+-- What the schema does NOT check: naming, uniqueness of role
+-- names, class-ownership rules — all Lua.
+--
+-- Roles are anchored in uspace via the uspace view's role branch —
+-- the tree's rows are structurally pinned by the FK, not by general
+-- reachability. Role bucket contents still trace normally. [ghi]
+
 
 -- ------------------------------------------------------------
 -- Instance-level event listeners.

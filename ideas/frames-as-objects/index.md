@@ -10,6 +10,8 @@
 
 Exploring folding frames into the object table.
 
+![CVM ER diagram — objects with Mikobase and CVM columns tagged, relationships, instance_listeners, class_listeners, processes, plus roles and uspace views.](./documentation/frames-as-objects.svg)
+
 ## Overview
 
 The primary reason to do this is **closure lifetime**: a closure that outlives its defining frame must keep the captured scope alive, and the current schema has no mechanism to do that. Under the frames-as-objects model, a closure holds an ordinary object-graph reference to its enclosing frame; that reference makes the frame uspace-anchored; the frame lives as long as any closure (or anything else) points at it. GC collects it only when the last reference goes, and its captured locals — living in its bucket — go with it. That's exactly what real closure semantics require.
@@ -26,7 +28,7 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 - **`processes` stays** as call-stack roots (one row per stack).
 - `objects`, `relationships`, `instance_listeners`, `class_listeners` unchanged in role.
 
-Ten tables → six. See [frames-as-objects.svg](./documentation/frames-as-objects.svg) for the target layout and [cvm.sql](./src/cvm.sql) for the working schema sketch.
+Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](./src/cvm.sql) for the working schema sketch.
 
 ## Consequences (nice, but not the point)
 
