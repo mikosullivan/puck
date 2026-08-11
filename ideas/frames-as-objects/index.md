@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_as_objects",
-	"role": "brainstorm exploring folding the four frame-attached tables (frames, frame_locals, frame_delegations, frame_ambers) into the objects table. A frame becomes just another objects row so the object-graph GC keeps captured scope alive for closures that outlive their defining frame. Working sketch of the resulting schema lives at src/cvm.sql, ER diagram at documentation/frames-as-objects.svg, and worked-through walkthroughs (closure, end-of-bootstrap, …) at examples/. Not spec — exploration.",
+	"role": "brainstorm exploring folding the four frame-attached tables (frames, frame_locals, frame_delegations, frame_ambers) into the objects table. A frame becomes just another objects row so the object-graph GC keeps captured scope alive for closures that outlive their defining frame. Working sketch of the resulting schema lives at quests/main/src/cvm.sql, ER diagram at quests/main/documentation/frames-as-objects.svg (kept current — read directly in Inkscape, not embedded here), and worked-through walkthroughs (closure, end-of-bootstrap, …) at quests/main/examples/. Not spec — exploration.",
 	"status": "brainstorm"
 }}
 ~~~
@@ -11,8 +11,6 @@
 Exploring folding frames into the object table.
 
 > **Housecleaning coming.** This brainstorm has grown a lot of pages, sidequests, walkthroughs, and Lua source over its exploration life. A pass to consolidate, tidy stale prose, and align section structure is queued before this idea gets promoted to `requirements/`.
-
-![CVM ER diagram — objects with Mikobase and CVM columns tagged, refs, instance_listeners, class_listeners, processes, plus roles and uspace views.](./documentation/frames-as-objects.svg)
 
 ## Overview
 
@@ -30,7 +28,7 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 - **`processes` stays** as call-stack roots (one row per stack).
 - `objects`, `refs`, `instance_listeners`, `class_listeners` unchanged in role.
 
-Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/cvm.sql) for the working schema sketch.
+Ten tables → six. [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/cvm.sql) has the working schema sketch.
 
 ## Sidequests
 
