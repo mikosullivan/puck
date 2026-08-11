@@ -8,6 +8,7 @@
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
 		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
 		"add_hash":      "(owner_role_pk) -> new HashPrimitive's object_pk — plain hash, no bucket_for set",
+		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key"
 	},
@@ -82,6 +83,10 @@ function engine.new(db)
 
 	self.stmt_add_hash = db:prepare(
 		"insert into objects (primitive, owner_role) values ('h', ?) returning object_pk"
+	)
+
+	self.stmt_add_array = db:prepare(
+		"insert into objects (primitive, owner_role) values ('a', ?) returning object_pk"
 	)
 
 	self.stmt_add_ref = db:prepare(
@@ -214,6 +219,28 @@ function engine:add_hash(owner_role_pk)
 
 	stmt:reset()
 	return hash_pk
+end
+
+--[[
+## `add_array` — INSERT a standalone ArrayPrimitive, return its pk
+
+Parallel to `add_hash`, on the array side. Creates a plain
+ArrayPrimitive (`primitive = 'a'`) owned by the given role, with no
+`stack_for` set — a standalone array, not any object's stack.
+
+Same shape as `add_hash`: one INSERT with `RETURNING object_pk`.
+]]
+function engine:add_array(owner_role_pk)
+	local stmt = self.stmt_add_array
+	stmt:bind_values(owner_role_pk)
+	local array_pk
+
+	for r in stmt:nrows() do
+		array_pk = r.object_pk
+	end
+
+	stmt:reset()
+	return array_pk
 end
 
 --[[

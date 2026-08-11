@@ -482,6 +482,45 @@ test("add_hash's prepared statement is cached at construction", function()
 end)
 
 -- ==============================================================
+-- engine:add_array
+-- ==============================================================
+
+test("add_array writes primitive='a' with the given owner_role and no stack_for", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	local pk = e:add_array(user)
+
+	local row
+	local sql = string.format(
+		"select primitive, owner_role, stack_for, bucket_for from objects where object_pk = '%s'",
+		pk
+	)
+
+	for r in db:nrows(sql) do
+		row = r
+	end
+
+	assert_not_nil(row, "row exists")
+	assert_eq(row.primitive, "a", "primitive is ArrayPrimitive")
+	assert_eq(row.owner_role, user, "owner_role set")
+	assert_nil(row.stack_for, "stack_for is null — this is a plain array, not anyone's stack")
+	assert_nil(row.bucket_for, "bucket_for is null too — the row is not any kind of container-owner")
+
+	db:close()
+end)
+
+test("add_array's prepared statement is cached at construction", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+
+	assert_not_nil(e.stmt_add_array, "cache populated at construction")
+
+	db:close()
+end)
+
+-- ==============================================================
 -- engine:add_ref
 -- ==============================================================
 
