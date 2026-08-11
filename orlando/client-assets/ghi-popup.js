@@ -6,7 +6,12 @@
 // up).
 
 (function () {
-	var DOC = "File: ideas/caspian/stdlib-suggestions-review.md — ";
+	// Esc closes the popup — matches typical dialog affordance.
+	document.addEventListener("keydown", function (e) {
+		if (e.key === "Escape") {
+			window.close();
+		}
+	});
 
 	function htmlEscape(s) {
 		return String(s == null ? "" : s)
@@ -23,28 +28,54 @@
 	}
 
 	// Prefill from query params.
-	var params = new URLSearchParams(window.location.search);
-	var url    = params.get("url")    || "";
-	var ships  = params.get("ships")  || "";
-	var day1   = params.get("day1")   || "";
-	var desc   = params.get("desc")   || "";
+	var params  = new URLSearchParams(window.location.search);
+	var doc     = params.get("doc")     || "";
+	var line    = params.get("line")    || "";
+	var context = params.get("context") || "";
+	var url     = params.get("url")     || "";
+	var ships   = params.get("ships")   || "";
+	var day1    = params.get("day1")    || "";
+	var desc    = params.get("desc")    || "";
 
-	var heading = document.getElementById("ghi-heading");
-	if (heading && url) {
-		heading.textContent = "File issue: " + url;
-		document.title = "File issue: " + url;
-	}
+	// Generic mode: `doc` is present (source file the issue is against).
+	// Legacy stdlib-review mode: no `doc`, hard-code the review doc + use
+	// the ships / day1 body template.
+	var titlePrefix, bodyText;
 
-	var titleInput = document.getElementById("ghi-title");
-	if (titleInput) titleInput.value = DOC + url;
-
-	var bodyInput = document.getElementById("ghi-body");
-	if (bodyInput) {
-		bodyInput.value =
+	if (doc) {
+		// Title format: `File: <path>[:<line>][ — <context>]`
+		titlePrefix = "File: " + doc;
+		if (line) titlePrefix += ":" + line;
+		if (context) titlePrefix += " — " + context;
+		else if (url) titlePrefix += " — " + url;
+		bodyText = desc;
+	} else {
+		titlePrefix = "File: ideas/caspian/stdlib-suggestions-review.md — " + url;
+		bodyText =
 			"URL: " + url + "\n" +
 			"Ships: " + ships + "\n" +
 			"Day 1: " + day1 + "\n\n" +
 			desc;
+	}
+
+	var heading = document.getElementById("ghi-heading");
+	if (heading) {
+		var headingText;
+		if (doc) {
+			headingText = "File issue: " + doc + (line ? (":" + line) : "");
+		} else {
+			headingText = "File issue: " + url;
+		}
+		heading.textContent = headingText;
+		document.title = headingText;
+	}
+
+	var titleInput = document.getElementById("ghi-title");
+	if (titleInput) titleInput.value = titlePrefix;
+
+	var bodyInput = document.getElementById("ghi-body");
+	if (bodyInput) {
+		bodyInput.value = bodyText;
 		bodyInput.focus();
 		var end = bodyInput.value.length;
 		bodyInput.setSelectionRange(end, end);

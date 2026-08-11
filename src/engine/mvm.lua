@@ -60,6 +60,17 @@ function M.open(opts)
 		error('mvm_pragma_fk_failed: ' .. tostring(msg))
 	end
 
+	-- Recursive triggers are OFF by default in SQLite; enable per-connection.
+	-- The schema's opening comment declares them ON as a design principle
+	-- (see mvm.sql), so every connection has to set it to match.
+	ok = db:exec('pragma recursive_triggers = on;')
+
+	if ok ~= sqlite.OK then
+		local msg = db:errmsg()
+		db:close()
+		error('mvm_pragma_recursive_triggers_failed: ' .. tostring(msg))
+	end
+
 	-- Install-infrastructure gate: presence of the mvm marker table
 	-- is the "already installed" flag. No mvm table means this is a
 	-- fresh DB and the DDL from mvm.sql needs to run; mvm table

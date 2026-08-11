@@ -31,6 +31,19 @@ h.test('foreign keys pragma is on after open', function()
 	db:close()
 end)
 
+h.test('recursive triggers pragma is on after open', function()
+	local db = mvm.open()
+
+	local rt_on = nil
+
+	for row in db:nrows('pragma recursive_triggers') do
+		rt_on = row.recursive_triggers
+	end
+
+	h.assert_eq(rt_on, 1, 'recursive_triggers pragma should be 1 (on)')
+	db:close()
+end)
+
 h.test('schema seeds the user row', function()
 	local db = mvm.open()
 

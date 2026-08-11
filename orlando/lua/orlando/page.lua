@@ -1747,7 +1747,7 @@ function M.render_sql_annotated(ctx)
     f:close()
 
     local sql_page = require("orlando.sql_page")
-    local body = sql_page.render_body(source)
+    local body = sql_page.render_body(source, {doc_path = ctx.path})
 
     -- Auto-inject a "file: /path" line — same shape as
     -- render_lua_annotated. ?raw=1 returns the raw source; the link

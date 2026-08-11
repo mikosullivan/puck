@@ -236,17 +236,18 @@ body.home .content h1 .hero-logo {
 .tag-duplicate {background: #ffebe9; border-color: #ff8182; color: #82071e}
 
 .ghi-btn {
-	background: #ddf4ff;
-	border: 1px solid #b6e3ff;
-	color: #0550ae;
+	background: #ff9800;
+	border: 1px solid #e08600;
+	color: #ffffff;
 	padding: 2px 10px;
+	margin-left: 4px;
 	border-radius: 10px;
 	font-size: 11px;
 	font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 	cursor: pointer;
 }
 
-.ghi-btn:hover {background: #b6e3ff}
+.ghi-btn:hover {background: #e08600}
 .search-form {
 	margin: 0 0 16px;
 	display: flex;
