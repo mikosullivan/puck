@@ -33,8 +33,8 @@ Snapshot at the boundary between [Initialize VM](https://www.puck.uno/requiremen
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
 </tbody>
@@ -151,11 +151,11 @@ After [Stage → Install CaspM](https://www.puck.uno/requirements/bootstrap/stag
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5</code></td><td>null</td><td>null</td><td><code>0</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>0</code></td></tr>
 </tbody>
 </table>
 
@@ -168,11 +168,11 @@ After [Stage → Install CaspM](https://www.puck.uno/requirements/bootstrap/stag
 </tbody>
 </table>
 
-One new `objects` row for the outer-script callable — `primitive: 'o'` (full object), `role_parent: null` (not a role), `owner_role` pointing at the user seed row (Install CaspM runs in the user role — the only role that exists at bootstrap), `ast` holding the CaspM tree exactly as `transpile + normalize` produced it, closure envelope on `action` and all. One new `frames` row for frame 0 — `idx: 0` (bottom of the stack), `method` pointing at the outer-script object, `method_class: null` (bare function, not a method), `lexical_parent: null` (nothing encloses frame 0), `next_stmt_idx: 0` (about to dispatch row 0 of the callable's ast). `relationships` and `frame_locals` are empty — the script hasn't run yet, so no bindings and no object-graph edges.
+One new `objects` row for the outer-script callable — `primitive: 'o'` (full object), `role_parent: null` (not a role), `owner_role` pointing at the user seed row (Install CaspM runs in the user role — the only role that exists at bootstrap), `ast` holding the CaspM tree exactly as `transpile + normalize` produced it, closure envelope on `action` and all. One new `frames` row for frame 0 — `idx: 0` (bottom of the stack), `ast` = a copy of the outer-script's CaspM (the frame owns its ast; no FK back to the callable's row), `lexical_parent: null` (nothing encloses frame 0), `next_stmt_idx: 0` (about to dispatch row 0 of the frame's ast). `relationships` and `frame_locals` are empty — the script hasn't run yet, so no bindings and no object-graph edges.
 
 **Ownership rule:** every non-role object carries `owner_role` pointing at the role that created it. The engine reads the current frame's role at each `insert into objects` and writes it into the new row. A row is EITHER a role (`role_parent` set — points to its parent role) OR owned by one (`owner_role` set) — never both. The user seed row is grandfathered: it exists before the enforcement trigger lands, so `role_parent` and `owner_role` are both null on that one row only. Every other object henceforth is anchored to some role.
 
-**The if-branch closure is not yet an object.** The `{cl: {pm, bd}}` envelope for the block is structural data sitting inside the outer script's ast; it hasn't been instantiated as a live callable. That happens at execution time — when frame 0 runs, dispatches the if atom, evaluates `$x > 0` as truthy, and reaches the branch's `action`, the engine creates a fresh closure object at that moment, then invokes it. Same shape you sketched informally as `closure ... end.run`: create, then run. Nothing about the block exists in `objects` until then.
+**The if-branch closure never becomes an object.** The `{cl: {pm, bd}}` envelope sits inside the outer script's ast at load time. When execution reaches it, the engine pulls the closure's body subtree out and copies it directly into a new frame's `ast` column — no `objects` row for the closure, ever. The block's ast lives inside its frame and disappears when the frame pops.
 
 ## MVM state after the first statement runs
 
@@ -201,11 +201,11 @@ The engine starts walking frame 0's ast, dispatches the first row `[{"in": "as"}
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5</code></td><td>null</td><td>null</td><td><code>1</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>1</code></td></tr>
 </tbody>
 </table>
 
@@ -259,12 +259,11 @@ Two lasting objects rows land — the literal `0` and the boolean result `true`.
 
 `frames` and `frame_locals` unchanged from the previous snapshot.
 
-### Materialize the block closure and push its frame
+### Push a frame for the block
 
-The condition is truthy, so evaluate `action` — a `{cl: {pm: [], bd: [<statements>]}}` closure envelope. Two writes to the DB:
+The condition is truthy, so evaluate `action` — a `{cl: {pm: [], bd: [<statements>]}}` closure envelope embedded in the outer-script's ast. **The block does not become an `objects` row.** The engine pulls the closure's body subtree straight out of the enclosing ast and copies it into a new frame's `ast` column.
 
-1. **New `objects` row for the closure.** Its `ast` is the closure envelope (params + body). `primitive: 'o'`, no `scalar_value`.
-2. **New `frames` row** for the closure invocation. `frame_pk: 2`, `idx: 1` (next up the stack), `method` = the new closure's pk, `method_class: null` (bare closure, no defining class), `lexical_parent: 1` (the outer frame — this is what gives the block its lexical scope), `next_stmt_idx: 0` (about to dispatch the closure's first row).
+One write to the DB — a **new `frames` row** for the block invocation. `frame_pk: 2`, `idx: 1` (next up the stack), `ast` = the block's CaspM (copied from the if-atom's `action.cl.bd` subtree), `lexical_parent: 1` (the outer frame — this is what gives the block its lexical scope), `next_stmt_idx: 0` (about to dispatch the block's first row).
 
 <table>
 <thead>
@@ -277,18 +276,19 @@ The condition is truthy, so evaluate `action` — a `{cl: {pm: [], bd: [<stateme
 <tr><td><code>c3d4e5f6-…</code></td><td>null</td><td><code>o</code></td><td><code>100</code></td><td>null</td><td><code>8d46aade-…</code></td><td>null</td><td>number 100 — bound to $x in frame 0</td></tr>
 <tr><td><code>d4e5f6a7-…</code></td><td>null</td><td><code>o</code></td><td><code>0</code></td><td>null</td><td><code>8d46aade-…</code></td><td>null</td><td>number 0 — literal from the condition $x > 0</td></tr>
 <tr><td><code>e5f6a7b8-…</code></td><td>null</td><td><code>o</code></td><td><code>true</code></td><td>null</td><td><code>8d46aade-…</code></td><td>null</td><td>boolean true — result of $x > 0</td></tr>
-<tr><td><code>f6a7b8c9-…</code></td><td>null</td><td><code>o</code></td><td>null</td><td>null</td><td><code>8d46aade-…</code></td><td><em>closure envelope</em></td><td>if-branch closure — materialized when the branch fired</td></tr>
 </tbody>
 </table>
 
+Note that `objects` picked up no new row — the block isn't a callable object under this design. Its ast lives inside frame 2 (below) and nowhere else.
+
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-…</code></td><td>null</td><td>null</td><td><code>1</code></td></tr>
-<tr><td><code>2</code></td><td><code>1</code></td><td><code>1</code></td><td><code>function_call</code></td><td><code>f6a7b8c9-…</code></td><td>null</td><td><code>1</code></td><td><code>0</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>1</code></td></tr>
+<tr><td><code>2</code></td><td><code>1</code></td><td><code>1</code></td><td><code>function_call</code></td><td><em>block-body CaspM</em></td><td><code>1</code></td><td><code>0</code></td></tr>
 </tbody>
 </table>
 
@@ -304,19 +304,19 @@ The dispatcher moves to frame 2 (top of stack), reads its callable's ast row 0 �
 <tr><th>object pk</th><th>user</th><th>primitive</th><th>scalar value</th><th>role parent</th><th>owner role</th><th>ast</th><th>comments</th></tr>
 </thead>
 <tbody>
-<tr><td colspan="8"><em>… previous 6 rows …</em></td></tr>
+<tr><td colspan="8"><em>… previous 5 rows …</em></td></tr>
 <tr><td><code>a7b8c9d0-…</code></td><td>null</td><td><code>o</code></td><td><code>'positive'</code></td><td>null</td><td><code>8d46aade-…</code></td><td>null</td><td>string 'positive' — bound to $y in frame 2</td></tr>
 </tbody>
 </table>
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-…</code></td><td>null</td><td>null</td><td><code>1</code></td></tr>
-<tr><td><code>2</code></td><td><code>1</code></td><td><code>1</code></td><td><code>function_call</code></td><td><code>f6a7b8c9-…</code></td><td>null</td><td><code>1</code></td><td><code>1</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>1</code></td></tr>
+<tr><td><code>2</code></td><td><code>1</code></td><td><code>1</code></td><td><code>function_call</code></td><td><em>block-body CaspM</em></td><td><code>1</code></td><td><code>1</code></td></tr>
 </tbody>
 </table>
 
@@ -350,7 +350,7 @@ Frame 2's `next_stmt_idx` advances to 2 (past the last row of its body — it's 
 <tr><th>object pk</th><th>user</th><th>primitive</th><th>scalar value</th><th>role parent</th><th>owner role</th><th>ast</th><th>comments</th></tr>
 </thead>
 <tbody>
-<tr><td colspan="8"><em>… previous 7 rows …</em></td></tr>
+<tr><td colspan="8"><em>… previous 6 rows …</em></td></tr>
 <tr><td><code>b8c9d0e1-…</code></td><td>null</td><td><code>o</code></td><td><code>'POSITIVE'</code></td><td>null</td><td><code>8d46aade-…</code></td><td>null</td><td>string 'POSITIVE' — result of $y.upper</td></tr>
 </tbody>
 </table>
@@ -364,17 +364,17 @@ Side effect not in the DB: **`POSITIVE\n` written to `%stdout`.**
 Frame 2's body is done (`next_stmt_idx: 2`, past the last row). The engine pops it. Two cascades fire:
 
 - Frame 2's `frame_locals` row (the `y` binding) cascade-deletes. GC's mark-on-delete triggers fire on the `'positive'` string it pointed at.
-- The closure object frame 2's `method` pointed at is no longer referenced from any live frame's `method`. It also gets marked for tracing.
+- Frame 2's own `ast` blob (the block's CaspM) is text stored on the frame row, not a reference to any `objects` row — nothing to mark for GC, it just disappears with the frame.
 
 Control returns to the if-handler in frame 0, which finishes and returns the block's last value (null, since `puts` returned null). Frame 0's `next_stmt_idx` advances to `2`.
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-…</code></td><td>null</td><td>null</td><td><code>2</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>2</code></td></tr>
 </tbody>
 </table>
 
@@ -388,7 +388,7 @@ Control returns to the if-handler in frame 0, which finishes and returns the blo
 </tbody>
 </table>
 
-Objects unchanged at this instant — the GC candidates (the closure envelope object, the `'positive'` string, the temporary `0` and `true` and `'POSITIVE'` objects) are all marked but not yet swept. Whenever the collector runs, they go.
+Objects unchanged at this instant — the GC candidates (the `'positive'` string, the temporary `0` and `true` and `'POSITIVE'` objects) are all marked but not yet swept. Whenever the collector runs, they go.
 
 ### Outer frame completes
 

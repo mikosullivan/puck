@@ -13,6 +13,7 @@ Purpose-built SQLite schema for MVM — every field of the runtime state hash ma
 ![MVM entity-relationship diagram: ten tables in five color-coded clusters (mvm marker in gray, object graph in teal, listeners in purple, execution stack in green, frame-attached tables in orange), each showing its primary key and foreign keys, with curved lines drawn for cross-table foreign keys.](./schema.svg)
 
 - [sql](https://www.puck.uno/requirements/mvm/sql) — display of the schema DDL
+- [ast-storage](https://www.puck.uno/requirements/mvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB
 - [garbage-collection](https://www.puck.uno/requirements/mvm/garbage-collection/) — mark triggers + the trace routine
 - [pause-resume](https://www.puck.uno/requirements/mvm/pause-resume/) — pause via top-of-stack frame + DB close, resume via SQL edit + optional payload
 

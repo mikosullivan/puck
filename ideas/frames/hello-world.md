@@ -54,8 +54,8 @@ Snapshot at the boundary between [Initialize VM](https://www.puck.uno/requiremen
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
 </tbody>
@@ -89,15 +89,15 @@ After Install CaspM writes the outer-script callable and Set up frame 0 pushes t
 
 <table>
 <thead>
-<tr><th class="tbl-title-frames" colspan="8">frames</th></tr>
-<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>method</th><th>method class</th><th>lexical parent</th><th>next stmt idx</th></tr>
+<tr><th class="tbl-title-frames" colspan="7">frames</th></tr>
+<tr><th>frame pk</th><th>process pk</th><th>idx</th><th>type</th><th>ast</th><th>lexical parent</th><th>next stmt idx</th></tr>
 </thead>
 <tbody>
-<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><code>a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5</code></td><td>null</td><td>null</td><td><code>0</code></td></tr>
+<tr><td><code>1</code></td><td><code>1</code></td><td><code>0</code></td><td><code>function_call</code></td><td><em>outer-script CaspM</em></td><td>null</td><td><code>0</code></td></tr>
 </tbody>
 </table>
 
-One new `objects` row for the outer-script callable — the entire program is one row with the CaspM in its `ast` blob and `owner_role` pointing at the user seed (Install CaspM runs in the user role). One new `frames` row for frame 0, pointing `method` at that callable, with `next_stmt_idx: 0` (about to dispatch row 0 of the ast — the `puts` call). `relationships` stays empty — nothing about `puts 'hello world'` implies a parent/child link between objects.
+One new `objects` row for the outer-script callable — the entire program is one row with the CaspM in its `ast` blob and `owner_role` pointing at the user seed (Install CaspM runs in the user role). One new `frames` row for frame 0, with `ast` = the outer script's CaspM (copied into the frame at push time) and `next_stmt_idx: 0` (about to dispatch row 0 of that ast — the `puts` call). The frame owns its ast — no FK back to the callable's `objects` row. `relationships` stays empty — nothing about `puts 'hello world'` implies a parent/child link between objects.
 
 **Ownership rule:** every non-role object carries `owner_role` pointing at the role that created it. A row is EITHER a role (`role_parent` set) OR owned by one (`owner_role` set) — never both. The user seed is the one grandfathered exception (both null) because it exists before the enforcement trigger.
 
