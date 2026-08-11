@@ -1,7 +1,7 @@
--- Verify the views defined in src/cvm.sql use the intended indexes.
+-- Verify the views defined in quests/main/src/cvm.sql use the intended indexes.
 -- Standalone test — run with:
 --
---     lua5.4 ideas/frames-as-objects/tests/view-indexes.lua
+--     lua5.4 ideas/frames-as-objects/quests/main/tests/view-indexes.lua
 --
 -- Each test loads the schema into an in-memory SQLite, runs
 -- EXPLAIN QUERY PLAN on a target query, and checks the plan text
@@ -12,7 +12,7 @@ package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "ideas/frames-as-objects/quests/main/src/cvm.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

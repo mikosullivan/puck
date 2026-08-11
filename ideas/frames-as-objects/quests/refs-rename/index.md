@@ -18,7 +18,7 @@ The schema table `relationships` is renamed to `refs`. The primary key column `r
 - **Indexes:** `refs_parent`, `refs_child`
 - **Error id:** `refs_immutable`
 
-Every place the schema at [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql), the ER diagram, or the walkthroughs mentioned `relationships` or `rel_pk` now uses the new names.
+Every place the schema at [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/cvm.sql), the ER diagram, or the walkthroughs mentioned `relationships` or `rel_pk` now uses the new names.
 
 ## What was NOT touched
 

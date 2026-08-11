@@ -30,14 +30,14 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 - **`processes` stays** as call-stack roots (one row per stack).
 - `objects`, `refs`, `instance_listeners`, `class_listeners` unchanged in role.
 
-Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql) for the working schema sketch.
+Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/cvm.sql) for the working schema sketch.
 
 ## Sidequests
 
-Two design changes are being carried alongside this brainstorm. See [sidequests/](https://www.puck.uno/ideas/frames-as-objects/sidequests/) for what each does and the promotion coordination rule that applies when frames-as-objects gets promoted to `requirements/`:
+Two design changes are being carried alongside this brainstorm. See [quests/](https://www.puck.uno/ideas/frames-as-objects/quests/) for what each does and the promotion coordination rule that applies when frames-as-objects gets promoted to `requirements/`:
 
-- [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/sidequests/refs-rename) — schema rename affecting the table, column, triggers, indexes, and error ids
-- [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/sidequests/debug-column) — permanent human-readable row-label field on both tables
+- [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/quests/refs-rename/) — schema rename affecting the table, column, triggers, indexes, and error ids
+- [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables
 
 ## Consequences (nice, but not the point)
 
