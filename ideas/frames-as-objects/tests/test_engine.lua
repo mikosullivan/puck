@@ -118,10 +118,11 @@ test("engine.new produces independent instances", function()
 	local e1 = engine.new(db1)
 	local e2 = engine.new(db2)
 
-	-- Populate e1's cache via a call; e2's cache should be untouched.
-	e1:object_by_pk("nope")
+	-- Both instances have every statement prepped at construction;
+	-- the important property is that the two engines own distinct handles.
 	assert_not_nil(e1.stmt_object_by_pk, "e1 has cached statement")
-	assert_nil(e2.stmt_object_by_pk, "e2 cache is independent")
+	assert_not_nil(e2.stmt_object_by_pk, "e2 has cached statement")
+	assert(e1.stmt_object_by_pk ~= e2.stmt_object_by_pk, "instances have distinct statement handles")
 
 	db1:close()
 	db2:close()
@@ -157,15 +158,12 @@ test("object_by_pk returns an object with the row's columns for an existing pk",
 	db:close()
 end)
 
-test("object_by_pk lazily caches its prepared statement", function()
+test("object_by_pk's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
 
-	assert_nil(e.stmt_object_by_pk, "no cache before first call")
-
-	e:object_by_pk("nope")
-
-	assert_not_nil(e.stmt_object_by_pk, "cache populated after first call")
+	-- No call needed — engine.new prepped it upfront.
+	assert_not_nil(e.stmt_object_by_pk, "cache populated at construction")
 
 	db:close()
 end)
@@ -359,17 +357,11 @@ test("add_bucket returns the new bucket's own object_pk", function()
 	db:close()
 end)
 
-test("add_bucket lazily caches its prepared statement", function()
+test("add_bucket's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
-	local user = user_pk(db)
-	local target = insert_target(db, user)
 
-	assert_nil(e.stmt_add_bucket, "no cache before first call")
-
-	e:add_bucket(target)
-
-	assert_not_nil(e.stmt_add_bucket, "cache populated after first call")
+	assert_not_nil(e.stmt_add_bucket, "cache populated at construction")
 
 	db:close()
 end)
@@ -442,16 +434,11 @@ test("add_scalar returns the pk of the newly inserted row", function()
 	db:close()
 end)
 
-test("add_scalar lazily caches its prepared statement", function()
+test("add_scalar's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
-	local user = user_pk(db)
 
-	assert_nil(e.stmt_add_scalar, "no cache before first call")
-
-	e:add_scalar("n", 1, user)
-
-	assert_not_nil(e.stmt_add_scalar, "cache populated after first call")
+	assert_not_nil(e.stmt_add_scalar, "cache populated at construction")
 
 	db:close()
 end)
@@ -485,16 +472,11 @@ test("add_hash writes primitive='h' with the given owner_role and no bucket_for"
 	db:close()
 end)
 
-test("add_hash lazily caches its prepared statement", function()
+test("add_hash's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
-	local user = user_pk(db)
 
-	assert_nil(e.stmt_add_hash, "no cache before first call")
-
-	e:add_hash(user)
-
-	assert_not_nil(e.stmt_add_hash, "cache populated after first call")
+	assert_not_nil(e.stmt_add_hash, "cache populated at construction")
 
 	db:close()
 end)
@@ -565,18 +547,11 @@ test("add_ref auto-increments idx per parent", function()
 	db:close()
 end)
 
-test("add_ref lazily caches its prepared statement", function()
+test("add_ref's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
-	local user = user_pk(db)
-	local parent = e:add_hash(user)
-	local child = e:add_scalar("n", 1, user)
 
-	assert_nil(e.stmt_add_ref, "no cache before first call")
-
-	e:add_ref(parent, "x", child)
-
-	assert_not_nil(e.stmt_add_ref, "cache populated after first call")
+	assert_not_nil(e.stmt_add_ref, "cache populated at construction")
 
 	db:close()
 end)
@@ -613,17 +588,11 @@ test("get_ref_child returns the child's pk for an existing (parent, key)", funct
 	db:close()
 end)
 
-test("get_ref_child lazily caches its prepared statement", function()
+test("get_ref_child's prepared statement is cached at construction", function()
 	local db = fresh_db()
 	local e = engine.new(db)
-	local user = user_pk(db)
-	local parent = e:add_hash(user)
 
-	assert_nil(e.stmt_get_ref_child, "no cache before first call")
-
-	e:get_ref_child(parent, "x")
-
-	assert_not_nil(e.stmt_get_ref_child, "cache populated after first call")
+	assert_not_nil(e.stmt_get_ref_child, "cache populated at construction")
 
 	db:close()
 end)
