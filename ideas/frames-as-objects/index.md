@@ -38,15 +38,6 @@ Every parallel workstream inside this brainstorm. `main` is the primary folding;
 - [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/quests/refs-rename/) — schema rename affecting the table, column, triggers, indexes, and error ids
 - [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables
 
-## Consequences (nice, but not the point)
-
-Once frames-as-objects is on the table for the closure reason, some downstream wins fall out:
-
-- **Reflection is free.** `%process.frames` is an ordinary array of ordinary objects. Walking the call stack, filtering it, mapping over it — all use the language's existing hash and array primitives.
-- **Uniform GC.** No special uspace anchors for frames; frames participate in mark-sweep like anything else.
-- **"Caspian all the way down."** The runtime call stack is objects, not a parallel structure hiding in special tables.
-- **Simpler schema surface.** Fewer specialized triggers, fewer cross-table cascade paths.
-
 ## Trade-offs the exploration will need to work out
 
 - **Constraints frames currently enforce at the schema level** — `unique (process_pk, idx)` on the stack, `check type in ('function_call')` on frame kind, immutability triggers — become harder to express when frames are just object rows. Either CHECK conditions gated on "is this row a frame?" or move to engine-side enforcement.
