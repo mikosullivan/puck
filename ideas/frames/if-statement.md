@@ -3,12 +3,12 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_if_statement",
-	"role": "walkthrough of loading a Caspian script with if / elsif / else control flow into the MVM — source, CaspM, before-loading tables, after-loading tables. Sibling to ideas/hello-world (simpler on-ramp). Lives under ideas/frames/ as one of a series of increasingly rich load-example walkthroughs.",
+	"role": "walkthrough of loading a Caspian script with if / elsif / else control flow into the CVM — source, CaspM, before-loading tables, after-loading tables. Sibling to ideas/hello-world (simpler on-ramp). Lives under ideas/frames/ as one of a series of increasingly rich load-example walkthroughs.",
 	"status": "sketch"
 }}
 ~~~
 
-## MVM state just before code lands
+## CVM state just before code lands
 
 Snapshot at the boundary between [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/) and [Stage → Install CaspM](https://www.puck.uno/requirements/bootstrap/stage/install-caspm/). Only the tables that matter for adding code; only the fields relevant to that.
 
@@ -125,7 +125,7 @@ Inside the closure's body (`bd`), two statement rows:
 
 Short keys throughout: `v` for value, `rc` for receiver, `fn` for function, `a` for args, `cl` for closure, `pm` for params, `bd` for body.
 
-## MVM state after the code is loaded
+## CVM state after the code is loaded
 
 After [Stage → Install CaspM](https://www.puck.uno/requirements/bootstrap/stage/install-caspm/) writes the outer-script callable and [Set up frame 0](https://www.puck.uno/requirements/bootstrap/stage/set-up-frame-0/) pushes the top-level frame:
 
@@ -174,7 +174,7 @@ One new `objects` row for the outer-script callable — `primitive: 'o'` (full o
 
 **The if-branch closure never becomes an object.** The `{cl: {pm, bd}}` envelope sits inside the outer script's ast at load time. When execution reaches it, the engine pulls the closure's body subtree out and copies it directly into a new frame's `ast` column — no `objects` row for the closure, ever. The block's ast lives inside its frame and disappears when the frame pops.
 
-## MVM state after the first statement runs
+## CVM state after the first statement runs
 
 The engine starts walking frame 0's ast, dispatches the first row `[{"in": "as"}, "x", {"v": 100}]`, and returns. The assignment ran; the number `100` came into existence as an object; `$x` is bound to it in frame 0's `frame_locals`. The engine's cursor into the ast now sits just before the second row (the if), waiting to be dispatched.
 

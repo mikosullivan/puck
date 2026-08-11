@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_hello_world",
-	"role": "the smallest possible walkthrough of loading a Caspian program — a single `puts 'hello world'` line — showing the source, the CaspM, and the MVM tables before and after Install CaspM. Sibling to ideas/frames/if-statement (adds if / elsif / else control flow). Intended as the first thing to read when learning how source lands in the MVM.",
+	"role": "the smallest possible walkthrough of loading a Caspian program — a single `puts 'hello world'` line — showing the source, the CaspM, and the CVM tables before and after Install CaspM. Sibling to ideas/frames/if-statement (adds if / elsif / else control flow). Intended as the first thing to read when learning how source lands in the CVM.",
 	"status": "sketch"
 }}
 ~~~
@@ -29,7 +29,7 @@ Running the source through `transpile` + `normalize` produces:
 
 One top-level statement row containing two atoms: `{bwc: "puts"}` (the bareword call) and `{v: "hello world"}` (the string literal argument). No calls collapse to `{in: "fc"}` here because `puts` at statement position is a bareword-command call, which the normalizer passes through unchanged in V1.
 
-## MVM state just before code lands
+## CVM state just before code lands
 
 Snapshot at the boundary between [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/) and [Stage → Install CaspM](https://www.puck.uno/requirements/bootstrap/stage/install-caspm/).
 
@@ -63,7 +63,7 @@ Snapshot at the boundary between [Initialize VM](https://www.puck.uno/requiremen
 
 `objects` has the seeded user/root role. `relationships` and `frames` are empty.
 
-## MVM state after the code is loaded
+## CVM state after the code is loaded
 
 After Install CaspM writes the outer-script callable and Set up frame 0 pushes the first frame:
 

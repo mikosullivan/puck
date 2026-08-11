@@ -12,7 +12,7 @@
 	"distinct_from": ["puckai_worldlet_exchange_between_agents", "static_codegen_at_edit_time", "callout_to_oracle_service"],
 	"related": ["requirements/ecoverse/puckai/ (worldlet format for inter-agent collaboration)",
 		"ideas/puckai/skills/ (skill definitions)",
-		"requirements/mvm/ (process introspection state the agent could read)"]
+		"requirements/cvm/ (process introspection state the agent could read)"]
 }}
 ~~~
 
@@ -196,7 +196,7 @@ Agent-yield is an unusually strong fit for **runtime security auditing**. An aud
 
 Via the worldlet handshake (and the agent's ability to call back for more):
 
-- **The full call stack** (potentially all of [MVM](https://puck.uno/requirements/mvm/)) — every frame, every owning role, every local variable, every cross-role transition.
+- **The full call stack** (potentially all of [CVM](https://puck.uno/requirements/cvm/)) — every frame, every owning role, every local variable, every cross-role transition.
 - **The owning role of every reachable object** — lets the agent reason about which role boundaries were actually crossed and which weren't.
 - **The faucet provenance of every value** — where each piece of data entered the process. Taint tracking at the language level, not at the type level.
 - **The dirjail and capability state** — what file paths, network endpoints, and other constrained surfaces are currently reachable from this scope.
@@ -212,7 +212,7 @@ Things static tools and signature scanners can't do equivalently:
 
 ### Default role fits naturally
 
-The audit agent's default sandboxed role is sufficient for inspection: it gets read-only access to introspection surfaces (`%role.current`, MVM snapshots, the manifest, faucet provenance). No write permissions, no Puck calls, no faucet access — just looking.
+The audit agent's default sandboxed role is sufficient for inspection: it gets read-only access to introspection surfaces (`%role.current`, CVM snapshots, the manifest, faucet provenance). No write permissions, no Puck calls, no faucet access — just looking.
 
 If the agent wants to **actively probe** attack paths (try to do something a real attacker would, to confirm whether it would succeed), that requires explicit [`%role.delegate_to`](https://puck.uno/requirements/roles#role-delegate_to). The developer has to opt in deliberately — active probing IS a real action against the running process, and the framework makes that an intentional choice.
 
@@ -241,4 +241,4 @@ This is one of the strongest forcing functions for getting agent-yield's design 
 
 - [Puckai worldlet format](https://puck.uno/requirements/ecoverse/puckai/) — the persistent inter-agent record. `$agent.yield` is the in-process analog, not a replacement.
 - [Puckai skills](https://puck.uno/ideas/puckai/skills/) — task-shaped instructions that a yielded agent could consult before acting.
-- [MVM](https://puck.uno/requirements/mvm/) — the process-state introspection format the agent would presumably read to understand the live context.
+- [CVM](https://puck.uno/requirements/cvm/) — the process-state introspection format the agent would presumably read to understand the live context.

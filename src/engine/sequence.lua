@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "sequence",
-	"role": "A monotonically incrementing string-integer counter. Every allocation in MVM (object IDs, reference IDs, hash-element IDs, src keys, ast keys) draws from a shared Sequence stashed on the state hash. Encapsulates the counter's value + the increment algorithm so callers just say `:next()` at the allocation site.",
+	"role": "A monotonically incrementing string-integer counter. Every allocation in CVM (object IDs, reference IDs, hash-element IDs, src keys, ast keys) draws from a shared Sequence stashed on the state hash. Encapsulates the counter's value + the increment algorithm so callers just say `:next()` at the allocation site.",
 	"exports": {
 		"new": "(start?: string-integer, default '1') -> Sequence"
 	},
@@ -24,7 +24,7 @@ without ever repeating within a program's lifetime.
 Nested-object platter IDs are the one exception — they use UUIDs
 because they appear as keys inside user buckets where integer-strings
 could collide with user-chosen field names. See
-[mvm/objects § Object IDs](https://www.puck.uno/requirements/mvm/objects#object-ids).
+[cvm/objects § Object IDs](https://www.puck.uno/requirements/cvm/objects#object-ids).
 ]]
 
 local M = {}
@@ -36,7 +36,7 @@ Sequence.__index = Sequence
 ## The Sequence constructor
 
 `sequence.new()` creates a fresh Sequence — the small counter object,
-NOT the MVM state hash. State creation goes through `state.new()`
+NOT the CVM state hash. State creation goes through `state.new()`
 in [state.lua](../engine/state.lua), which calls `sequence.new()`
 internally as one of its first acts and stashes the returned Sequence
 as `state.sequence`. Called on its own, `sequence.new()` just mints a

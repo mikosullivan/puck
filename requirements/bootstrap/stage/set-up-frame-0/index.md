@@ -8,7 +8,7 @@
 }}
 ~~~
 
-The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). After the CaspM is in the MVM, the stack is empty. This sub-step pushes the top-level frame — the frame that represents "the entry program is about to run."
+The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). After the CaspM is in the CVM, the stack is empty. This sub-step pushes the top-level frame — the frame that represents "the entry program is about to run."
 
 **The insert:**
 
@@ -22,4 +22,4 @@ The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootst
 - **If yes** — some synthesized "top-level program" callable object goes in `method_pk`, and probably a matching class in `method_class_pk`. Simplifies dispatch (frame 0 looks like every other frame), at the cost of forcing the engine to synthesize a callable it will never dispatch through a normal call site.
 - **If no** — `method_pk` / `method_class_pk` stay null. Frame 0 is a special-shape frame; dispatch code has to know about the null case.
 
-After this sub-step returns, the MVM holds a seeded runtime state store, a loaded program, and a stack with one frame ready to be walked. Bootstrap is done; execution walks frame 0 as its first act.
+After this sub-step returns, the CVM holds a seeded runtime state store, a loaded program, and a stack with one frame ready to be walked. Bootstrap is done; execution walks frame 0 as its first act.

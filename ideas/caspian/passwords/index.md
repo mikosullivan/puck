@@ -42,7 +42,7 @@ Other algorithms (bcrypt, scrypt, etc.) plug in as additional internal handlers 
 
 ### The vault
 
-The vault is an engine-managed storage region for sensitive bytes — separate from MVM's `objects` hash, invisible to anything reachable from user code. Each vault entry is keyed by an internal vault ID and holds raw bytes inside a sodium_malloc'd buffer. The vault is accessed only through a narrow gateway whose methods are **operation-oriented** — never a `vault.get(id)` that returns bytes:
+The vault is an engine-managed storage region for sensitive bytes — separate from CVM's `objects` hash, invisible to anything reachable from user code. Each vault entry is keyed by an internal vault ID and holds raw bytes inside a sodium_malloc'd buffer. The vault is accessed only through a narrow gateway whose methods are **operation-oriented** — never a `vault.get(id)` that returns bytes:
 
 ~~~
 vault.store(bytes) → vault_id          # writes bytes; returns the handle

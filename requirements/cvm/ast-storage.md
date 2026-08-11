@@ -8,7 +8,7 @@
 }}
 ~~~
 
-MVM stores CaspM ASTs as **JSON text**, not SQLite's binary [JSONB](https://sqlite.org/jsonb.html) format.
+CVM stores CaspM ASTs as **JSON text**, not SQLite's binary [JSONB](https://sqlite.org/jsonb.html) format.
 
 ## Access pattern
 

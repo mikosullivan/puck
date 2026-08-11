@@ -3,24 +3,24 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_object_class",
-	"role": "working notes for the Lua engine's Object class — the type that represents every Caspian object during execution. Covers the field shape (id, role, src, bucket, stack — matching the JSON serialization directly so post-V1 export is a plain walk), the constructor/factory split, registration in state.objects, and how first-class Caspian citizens like Roles are built on top of it. Companion to ideas/drinian-spec for the surrounding state hash and to requirements/mvm/objects for the Caspian-facing shape this Lua class implements.",
+	"role": "working notes for the Lua engine's Object class — the type that represents every Caspian object during execution. Covers the field shape (id, role, src, bucket, stack — matching the JSON serialization directly so post-V1 export is a plain walk), the constructor/factory split, registration in state.objects, and how first-class Caspian citizens like Roles are built on top of it. Companion to ideas/drinian-spec for the surrounding state hash and to requirements/cvm/objects for the Caspian-facing shape this Lua class implements.",
 	"status": "spitballing 2026-08-07 — field shape and creation pattern proposed; not yet in code"
 }}
 ~~~
 
-Companion to [drinian-spec](https://www.puck.uno/ideas/drinian-spec/). The Caspian-facing spec at [mvm/objects](https://www.puck.uno/requirements/mvm/objects) describes what an object IS from the developer's perspective (bucket / stack / platter / role / src). This doc covers how the Lua engine REPRESENTS one during execution: the class, the factory, the mutation surface.
+Companion to [drinian-spec](https://www.puck.uno/ideas/drinian-spec/). The Caspian-facing spec at [mvm/objects](https://www.puck.uno/requirements/cvm/objects) describes what an object IS from the developer's perspective (bucket / stack / platter / role / src). This doc covers how the Lua engine REPRESENTS one during execution: the class, the factory, the mutation surface.
 
 ## What every Caspian object carries
 
-Per [mvm/objects](https://www.puck.uno/requirements/mvm/objects), every live Caspian object has:
+Per [mvm/objects](https://www.puck.uno/requirements/cvm/objects), every live Caspian object has:
 
 - **`id`** — string from `state.sequence` (e.g., `"7"`, `"42"`)
-- **`role`** — **role ID** (a string from `state.sequence`) identifying the role that owns this object. Roles don't inherently have names — `"engine"` and `"user"` are just human labels on the role's `.bucket.name`; the role's IDENTITY is its ID. The `role` field on any object holds another object's ID (the role's), just like every other cross-object reference in MVM.
+- **`role`** — **role ID** (a string from `state.sequence`) identifying the role that owns this object. Roles don't inherently have names — `"engine"` and `"user"` are just human labels on the role's `.bucket.name`; the role's IDENTITY is its ID. The `role` field on any object holds another object's ID (the role's), just like every other cross-object reference in CVM.
 - **`src`** — optional `[src_key, line]` tuple for the birth site
 - **`bucket`** — hash of user-facing key-value pairs
 - **`stack`** — ordered array of platters (each a hash carrying `class` + optional flags)
 
-**Divergence from the current requirements/mvm/objects examples.** Those examples show `"role": "user"` — the role's name string. Under the design here that becomes `"role": "<id-of-the-user-role-object>"` — the ID. Names on roles are for inspection and diagnostics; identity is by ID everywhere else in MVM, and role ownership should be no different. Requirements/mvm/objects needs a sweep to match.
+**Divergence from the current requirements/cvm/objects examples.** Those examples show `"role": "user"` — the role's name string. Under the design here that becomes `"role": "<id-of-the-user-role-object>"` — the ID. Names on roles are for inspection and diagnostics; identity is by ID everywhere else in CVM, and role ownership should be no different. Requirements/cvm/objects needs a sweep to match.
 
 ## The Lua Object class
 
@@ -78,7 +78,7 @@ Every Role gets a sequence-allocated `.id`, an entry in `state.objects`, and a `
 
 ## The engine role's own role
 
-Every object entry in `state.objects` carries a `role` field holding its owner's role ID (see [Object ownership](https://www.puck.uno/requirements/mvm/#object-ownership)). So does the engine role itself, which is the very first Object created during boot — and has no pre-existing role to point at. Two ways to resolve the chicken-and-egg:
+Every object entry in `state.objects` carries a `role` field holding its owner's role ID (see [Object ownership](https://www.puck.uno/requirements/cvm/#object-ownership)). So does the engine role itself, which is the very first Object created during boot — and has no pre-existing role to point at. Two ways to resolve the chicken-and-egg:
 
 - **Self-owned.** The engine role's `role` field holds its OWN ID. Bootstrap allocates the ID from the sequence, constructs the Object with `role = <that same ID>`, and inserts it in `state.objects`. Subsequent roles get owned by whichever role loaded / spawned them (user by engine, libraries by whoever loaded them).
 - **A synthetic bootstrap role.** Introduce an extra `'bootstrap'` role that owns the engine role, then engine role owns everything else. Adds a role.

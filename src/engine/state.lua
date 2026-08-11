@@ -1,16 +1,16 @@
 --[[
 {
 	"module": "state",
-	"role": "Constructor for the MVM state hash — the single top-level table every field of Caspian's execution state lives inside. Builds an empty-but-shaped hash with all fields present at their empty representation, so downstream modules can populate slots without checking for existence. Roles are held as a Trivet tree (n-ary via trivet.lua); the shared ID counter is a Sequence object (sequence.lua); every other field starts as an empty hash / array. Bootstraps the roles tree with `engine` at the root and `user` as engine's child — the two roles V1 always starts with.",
+	"role": "Constructor for the CVM state hash — the single top-level table every field of Caspian's execution state lives inside. Builds an empty-but-shaped hash with all fields present at their empty representation, so downstream modules can populate slots without checking for existence. Roles are held as a Trivet tree (n-ary via trivet.lua); the shared ID counter is a Sequence object (sequence.lua); every other field starts as an empty hash / array. Bootstraps the roles tree with `engine` at the root and `user` as engine's child — the two roles V1 always starts with.",
 	"exports": {
 		"new": "() -> state hash"
 	},
-	"related_specs": "requirements/mvm/ for the state hash's purpose and V1.0 scope; requirements/mvm/objects for the objects hash's per-object shape; requirements/mvm/references for the reference / GC model; ideas/drinian-spec/ for design questions surfaced during implementation before promotion to requirements."
+	"related_specs": "requirements/cvm/ for the state hash's purpose and V1.0 scope; requirements/cvm/objects for the objects hash's per-object shape; requirements/cvm/references for the reference / GC model; ideas/drinian-spec/ for design questions surfaced during implementation before promotion to requirements."
 }
 ]]
 
 --[[
-# MVM state
+# CVM state
 
 Every field the Caspian runtime tracks lives inside the state hash this
 module constructs. `state.new()` returns a fresh, empty-but-shaped hash;
@@ -20,7 +20,7 @@ the engine.
 The interpreter reads and writes runtime state only through this hash's
 interface. Working state — intermediate expression results, arguments
 being marshaled, return values in flight — stays outside. See
-[MVM § V1.0 scope](https://www.puck.uno/requirements/mvm/#v1-0-scope)
+[CVM § V1.0 scope](https://www.puck.uno/requirements/cvm/#v1-0-scope)
 for the discipline this module enforces at the structural level.
 
 V1.0 is in-memory only. No export API, no snapshot/revive, no HTTP
@@ -37,7 +37,7 @@ local M = {}
 --[[
 ## State constructor
 
-`state.new()` returns a fresh MVM state hash. Every top-level field is
+`state.new()` returns a fresh CVM state hash. Every top-level field is
 present with its empty representation, so downstream code can insert / walk
 / read without existence checks. Bootstrap details:
 
@@ -52,11 +52,11 @@ present with its empty representation, so downstream code can insert / walk
   and URL-loaded libraries are registered.
 - **`objects`** — empty hash. Every live object's record lives here,
   keyed by object ID from the shared sequence counter. See
-  [MVM § Objects](https://www.puck.uno/requirements/mvm/objects).
+  [CVM § Objects](https://www.puck.uno/requirements/cvm/objects).
 - **`references`** — empty hash. Every reference-class object's pointer
   lives here (bare `ref_id → target_id` pairs). GC traces from uspace
   roots through this hash. See
-  [MVM § References](https://www.puck.uno/requirements/mvm/references).
+  [CVM § References](https://www.puck.uno/requirements/cvm/references).
 - **`call_stack`** — empty array. `engine:run` pushes the root
   `top_level` frame here as the first act of execution. In-flight
   exceptions land as elements with `action: "exception"` alongside

@@ -65,7 +65,7 @@ Two ways in: loops and recursion. Caspian has both.
 
 - **`while`.** A condition-driven loop, documented in [caspianj.md § While](../requirements/caspianj.md#while). The condition is re-evaluated each iteration; the loop runs until it goes falsy. The number of iterations is not bounded by the language.
 - **`each`.** Collection iteration documented in [caspianj.md] and used throughout the standard examples. Less general than `while` (it has to terminate when the collection runs out) but useful and present.
-- **Recursion.** Functions and methods can call themselves or each other. The dispatch model in [mvm.md](../requirements/mvm/index.md) imposes no fixed recursion depth — every call pushes a frame onto `engine.state.call_stack`, and the stack grows until something terminates the program (an exception, a `%timeout`, or running out of host process memory). That is exactly the unboundedness the requirement asks for.
+- **Recursion.** Functions and methods can call themselves or each other. The dispatch model in [mvm.md](../requirements/cvm/index.md) imposes no fixed recursion depth — every call pushes a frame onto `engine.state.call_stack`, and the stack grows until something terminates the program (an exception, a `%timeout`, or running out of host process memory). That is exactly the unboundedness the requirement asks for.
 
 `while` alone is enough; recursion is enough independently. Caspian has both, so this requirement is satisfied twice over.
 

@@ -15,4 +15,3 @@ Umbrella page for a brainstorm exploring folding frames into the object table. S
 Every parallel workstream inside this brainstorm. `main` is the primary folding; the sidequests are design changes riding along that will promote to `requirements/` at the same time. See [quests/](https://www.puck.uno/ideas/frames-as-objects/quests/) for the promotion coordination rule that applies to each:
 
 - [main](https://www.puck.uno/ideas/frames-as-objects/quests/main/) — the primary folding: motivation, table-level changes, and the working artifacts at `main/src/`, `main/examples/`, `main/tests/`
-- [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables

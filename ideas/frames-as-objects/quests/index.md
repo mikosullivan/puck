@@ -13,14 +13,13 @@ Parallel workstreams inside the frames-as-objects brainstorm. `main` is the prim
 ## Current quests
 
 - [main](https://www.puck.uno/ideas/frames-as-objects/quests/main/) — the primary folding: schema at `main/src/cvm.sql`, Lua source at `main/src/`, worked walkthroughs at `main/examples/`, tests at `main/tests/`
-- [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables
 
 ## Promotion order
 
 Every quest here carries the same coordination rule. When frames-as-objects promotes to `requirements/`, apply the quest in this order:
 
 1. **Update `requirements/` docs first** — every doc that mentions the affected surface.
-2. **Update the reference implementation** at `src/engine/mvm.sql`.
+2. **Update the reference implementation** at `src/engine/cvm.sql`.
 3. **Update the engine tests** at `tests/main/lua/engine/`.
 4. **Run all tests** (engine tier + trivet tier + brainstorm `view-indexes.lua`) and confirm each passes.
 

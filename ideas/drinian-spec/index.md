@@ -1,18 +1,18 @@
-# MVM spec
+# CVM spec
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_mvm_spec",
-	"role": "working notes for the MVM state hash's exact shape as we build it out — companion to requirements/mvm/ which owns the settled spec. Landing pad for design questions surfaced during implementation (roles-tree bootstrap, ast referencing, sequence-counter starting value, primitive-slot location, src on identity objects, etc.) before they get promoted to requirements.",
+	"role": "working notes for the CVM state hash's exact shape as we build it out — companion to requirements/cvm/ which owns the settled spec. Landing pad for design questions surfaced during implementation (roles-tree bootstrap, ast referencing, sequence-counter starting value, primitive-slot location, src on identity objects, etc.) before they get promoted to requirements.",
 	"status": "landing initial state-hash shape 2026-08-06 — roles bootstrap + field roster + AST access model captured; parent-child edge semantics for the roles tree still open"
 }}
 ~~~
 
-Companion to [requirements/mvm/](https://www.puck.uno/requirements/mvm/). Captures the design decisions we're making as we build the MVM machinery, before they're settled enough to move into `requirements/`.
+Companion to [requirements/cvm/](https://www.puck.uno/requirements/cvm/). Captures the design decisions we're making as we build the CVM machinery, before they're settled enough to move into `requirements/`.
 
 ## The state hash
 
-`state.new()` (in [src/engine/state.lua](../../src/engine/state.lua)) returns the MVM state hash — the single top-level table every field of Caspian's execution state lives inside. V1.0 in-memory shape:
+`state.new()` (in [src/engine/state.lua](../../src/engine/state.lua)) returns the CVM state hash — the single top-level table every field of Caspian's execution state lives inside. V1.0 in-memory shape:
 
 ~~~lua
 {
@@ -48,7 +48,7 @@ Every additional role (loaded library, faucet, delegation target) becomes a chil
 
 ## AST storage and access
 
-The `asts` field is the top-level hash the [requirements § The AST lives in MVM](https://www.puck.uno/requirements/mvm/#the-ast-lives-in-mvm) section left TBD-named. Named `asts` here — plural of ast, matches the `srcs` naming pattern.
+The `asts` field is the top-level hash the [requirements § The AST lives in CVM](https://www.puck.uno/requirements/cvm/#the-ast-lives-in-cvm) section left TBD-named. Named `asts` here — plural of ast, matches the `srcs` naming pattern.
 
 Each entry pairs the CaspM tree with the src_key for the file it came from:
 
@@ -66,7 +66,7 @@ Each entry pairs the CaspM tree with the src_key for the file it came from:
 
 **Uniform across first-file and library.** Top-level code from `main.casp` and function bodies from a loaded library both live in `asts`, each carrying the src_key of their originating file. Frames don't distinguish "user code" from "library code" via the ast field — they just point at the ast_id.
 
-**Note on the requirements examples.** The mid-execution walkthrough at [requirements/mvm/](https://www.puck.uno/requirements/mvm/#worked-example-mvm-mid-execution) shows frames carrying `"function": "greet"` — a name string — rather than a callable object ID. Read as a readable-snapshot shorthand rather than the real runtime shape (dispatch by walking the lexical chain and re-resolving the name at every step would be expensive; caching the resolved callable ID on the frame at call time is essentially free and matches the object-and-reference pattern used everywhere else).
+**Note on the requirements examples.** The mid-execution walkthrough at [requirements/cvm/](https://www.puck.uno/requirements/cvm/#worked-example-cvm-mid-execution) shows frames carrying `"function": "greet"` — a name string — rather than a callable object ID. Read as a readable-snapshot shorthand rather than the real runtime shape (dispatch by walking the lexical chain and re-resolving the name at every step would be expensive; caching the resolved callable ID on the frame at call time is essentially free and matches the object-and-reference pattern used everywhere else).
 
 ## The Sequence
 
@@ -74,9 +74,9 @@ Each entry pairs the CaspM tree with the src_key for the file it came from:
 
 Explicit `state` at each allocation site gets tiring fast; wrapping the counter as an object keeps the call site to `state.sequence:next()` (the caller already has state in hand as a property access, not a re-threaded arg).
 
-The counter is stored as a decimal string so it grows indefinitely without bigint machinery, per [references § Object IDs](https://www.puck.uno/requirements/mvm/references#object-ids). The internal increment routine walks digits right-to-left, carries on 9s, and grows the string when the whole thing was 9s — no `tonumber` / `tostring` round-trip, so the counter grows past `2^53` (Lua 5.4's integer-vs-float boundary) with no precision loss.
+The counter is stored as a decimal string so it grows indefinitely without bigint machinery, per [references § Object IDs](https://www.puck.uno/requirements/cvm/references#object-ids). The internal increment routine walks digits right-to-left, carries on 9s, and grows the string when the whole thing was 9s — no `tonumber` / `tostring` round-trip, so the counter grows past `2^53` (Lua 5.4's integer-vs-float boundary) with no precision loss.
 
-Nested-object platter IDs use UUIDs instead ([objects § Object IDs](https://www.puck.uno/requirements/mvm/objects#object-ids)) — the Sequence is only for slots where the ID isn't user-visible.
+Nested-object platter IDs use UUIDs instead ([objects § Object IDs](https://www.puck.uno/requirements/cvm/objects#object-ids)) — the Sequence is only for slots where the ID isn't user-visible.
 
 ## Field summary
 

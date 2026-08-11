@@ -3,12 +3,12 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_mvm_with_sqlite_api",
-	"role": "landing page for the MVM API — the surface the engine calls to read and write state. Everything that lives here specifies that API.",
+	"role": "landing page for the CVM API — the surface the engine calls to read and write state. Everything that lives here specifies that API.",
 	"status": "first-pass method sketch — candidates to react to, not settled surface"
 }}
 ~~~
 
-The engine talks to MVM through a defined API — the calls the engine makes to read and write state. This subdirectory spec's that API.
+The engine talks to CVM through a defined API — the calls the engine makes to read and write state. This subdirectory spec's that API.
 
 Method names are placeholder; grouping matters more than naming at this stage. Each group is a category of operation the engine needs. Nothing here is settled — the point is to see the shape.
 
@@ -122,7 +122,7 @@ Grant a target role at the current frame.
 
 ### `capture_frames`
 
-*(removed — exception design deferred / dropped from MVM)*
+*(removed — exception design deferred / dropped from CVM)*
 
 ## Source registry
 
@@ -192,7 +192,7 @@ The connection lifecycle and per-connection state.
 
 ### `open`
 
-Connect to a MVM (file path, `:memory:`, socket path, HTTP URL). Applies schema if fresh; creates `current_process` TEMP table.
+Connect to a CVM (file path, `:memory:`, socket path, HTTP URL). Applies schema if fresh; creates `current_process` TEMP table.
 
 ### `close`
 

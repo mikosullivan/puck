@@ -8,9 +8,9 @@
 --
 -- Any tool opening a CVM file — the engine, the sqlite3 CLI, another
 -- host reading the file — runs these two pragmas as its first act.
--- See src/engine/mvm.lua for the reference implementation:
+-- See src/engine/cvm.lua for the reference implementation:
 -- mvm.open() sets both with specific error ids
--- (mvm_pragma_fk_failed, mvm_pragma_recursive_triggers_failed) on
+-- (cvm_pragma_fk_failed, cvm_pragma_recursive_triggers_failed) on
 -- failure. Any CVM tool without an equivalent pair of pragma calls
 -- is broken by construction. [ghi]
 pragma foreign_keys = on;

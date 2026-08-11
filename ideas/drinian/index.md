@@ -1,42 +1,42 @@
-# MVM redesign
+# CVM redesign
 
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_mvm",
-	"role": "brainstorm doc for reorganizing the MVM spec (requirements/mvm/). Current spec feels disorganized — this page collects the problems, floats structural ideas, and settles into a plan before edits touch the live spec. Will be populated iteratively; promotes to requirements/ once the shape settles.",
+	"role": "brainstorm doc for reorganizing the CVM spec (requirements/cvm/). Current spec feels disorganized — this page collects the problems, floats structural ideas, and settles into a plan before edits touch the live spec. Will be populated iteratively; promotes to requirements/ once the shape settles.",
 	"status": "stub — populate iteratively"
 }}
 ~~~
 
-**Not V1 spec change.** Placeholder for design work; the live spec at [requirements/mvm](https://puck.uno/requirements/mvm) stays as-is until this page's plan is settled.
+**Not V1 spec change.** Placeholder for design work; the live spec at [requirements/cvm](https://puck.uno/requirements/cvm) stays as-is until this page's plan is settled.
 
 ## Overview
 
 ### Everything is in one hash
 
-MVM is a **single hash** that contains every piece of the Caspian process's execution state. Objects, references, the call stack (with each frame's locals, source position, iterator state, role, and chain), pending exceptions — all of it lives inside that one hash. The interpreter never reaches around MVM to access execution state; every read and every write goes through the hash's interface.
+CVM is a **single hash** that contains every piece of the Caspian process's execution state. Objects, references, the call stack (with each frame's locals, source position, iterator state, role, and chain), pending exceptions — all of it lives inside that one hash. The interpreter never reaches around CVM to access execution state; every read and every write goes through the hash's interface.
 
 The single-hash organization is the foundation everything else in the runtime builds on. Snapshotting the process is snapshotting the hash. Reviving is reviving the hash. Deterministic garbage collection walks the reference graph inside the hash. Runtime inspection reads the hash. Because there's exactly one place where execution state lives, "what is the process doing right now?" always has one answer.
 
-### Everything in MVM is serializable
+### Everything in CVM is serializable
 
-Every value that lives in MVM must be serializable. This is a hard constraint, not a preference: it's what enables snapshot-and-revive, cold restart, distributed MVM across hosts, and alternative backing stores (SQLite, Fiona, whatever comes next). If a value cannot be represented as bytes, it cannot live in MVM.
+Every value that lives in CVM must be serializable. This is a hard constraint, not a preference: it's what enables snapshot-and-revive, cold restart, distributed CVM across hosts, and alternative backing stores (SQLite, Fiona, whatever comes next). If a value cannot be represented as bytes, it cannot live in CVM.
 
-Native resources that cannot be serialized (file descriptors, open sockets, timer handles, foreign-library pointers, callbacks registered with the OS, protected memory) do NOT live in MVM. They live in a host-engine sidecar — a Lua-side table (in Lucy) or its equivalent — keyed by an ID. The Caspian-side wrapper object that a program interacts with (the file object, the socket object, the timer object) DOES live in MVM and IS serializable — it holds the sidecar ID as a plain string, plus whatever spec is needed to re-establish the underlying resource on revive. The wrapper is the Caspian-visible object; the sidecar is the host-engine implementation detail.
+Native resources that cannot be serialized (file descriptors, open sockets, timer handles, foreign-library pointers, callbacks registered with the OS, protected memory) do NOT live in CVM. They live in a host-engine sidecar — a Lua-side table (in Lucy) or its equivalent — keyed by an ID. The Caspian-side wrapper object that a program interacts with (the file object, the socket object, the timer object) DOES live in CVM and IS serializable — it holds the sidecar ID as a plain string, plus whatever spec is needed to re-establish the underlying resource on revive. The wrapper is the Caspian-visible object; the sidecar is the host-engine implementation detail.
 
-The wrapper discipline is enforced at the API boundary. Methods that would return a raw native handle (`%fs.open`, `%net.tcp_connect`, etc.) return wrapper objects instead. If it always comes wrapped, it always stays serializable, and MVM never sees a value it can't snapshot.
+The wrapper discipline is enforced at the API boundary. Methods that would return a raw native handle (`%fs.open`, `%net.tcp_connect`, etc.) return wrapper objects instead. If it always comes wrapped, it always stays serializable, and CVM never sees a value it can't snapshot.
 
 #### Serialization is a contract, not an implementation restriction
 
-"Serializable" means the value can produce a serializable representation on demand and can be revived from that representation. It does NOT mean the value must literally be a plain hash or array under the hood. Values in MVM can be dynamic objects — their own class, their own methods, their own internal invariants — as long as they honor the serialization contract when asked.
+"Serializable" means the value can produce a serializable representation on demand and can be revived from that representation. It does NOT mean the value must literally be a plain hash or array under the hood. Values in CVM can be dynamic objects — their own class, their own methods, their own internal invariants — as long as they honor the serialization contract when asked.
 
 The **reference table** is the load-bearing example. From outside it looks and serializes like an array (indexed access, iteration, JSON-shape output). Under the hood it can carry whatever machinery makes reference operations efficient — probably an inverse index for O(1) "who references this object?" lookups, capacity management, cached counts. The snapshot serializer calls the object's serialize hook and gets back the array shape; the reviver hands the array to the class's reconstruct hook and gets back a fully-populated dynamic object with its indexes rebuilt. Same value from Caspian's perspective; different memory shape while running.
 
-Same pattern applies to any other MVM-native structure that benefits from being smarter than a plain hash — cached lookups, secondary indexes, watch-set tracking, whatever. As long as the serialize hook produces something the reconstruct hook can rebuild losslessly, the object is MVM-legal.
+Same pattern applies to any other CVM-native structure that benefits from being smarter than a plain hash — cached lookups, secondary indexes, watch-set tracking, whatever. As long as the serialize hook produces something the reconstruct hook can rebuild losslessly, the object is CVM-legal.
 
 ## The reference table
 
-The reference table is MVM's foundation for deterministic GC without reference counting. It carries every current reference-to-object edge in the process, structured so that dropping a reference immediately answers the question "did that just orphan anyone?"
+The reference table is CVM's foundation for deterministic GC without reference counting. It carries every current reference-to-object edge in the process, structured so that dropping a reference immediately answers the question "did that just orphan anyone?"
 
 Both the reference table and its inverse index are **engine-internal** — Lua tables in Lucy, or whatever host-language storage a future engine uses. User Caspian code never sees them directly; the engine maintains them as a side effect of ordinary reference operations (variable assignment, hash mutation, scope entry / exit, exception unwind).
 
@@ -153,7 +153,7 @@ Under the trace model, the second `$b = null` fires a trace from object 101. The
 
 ### Cascade discipline
 
-**Atomicity.** Each cascade (ref change → back-refs update → trace → potential collection → outgoing-ref deletions that cascade again) must complete as a unit. Partial completion would leave MVM inconsistent (back-refs out of sync with ref table, or an orphaned object visible while it's mid-collection). The engine wraps each cascade in whatever transactional discipline the host offers; each step is idempotent so partial completion is safe.
+**Atomicity.** Each cascade (ref change → back-refs update → trace → potential collection → outgoing-ref deletions that cascade again) must complete as a unit. Partial completion would leave CVM inconsistent (back-refs out of sync with ref table, or an orphaned object visible while it's mid-collection). The engine wraps each cascade in whatever transactional discipline the host offers; each step is idempotent so partial completion is safe.
 
 **Cascade depth.** Collecting a large orphan subgraph fires deletion events for every ref the collected objects held, each potentially triggering its own trace. Recursion-based implementation could blow the Lua stack on deep graphs. When cascade depth becomes a concern, turn recursion into iteration with a work queue — same algorithm, bounded stack.
 

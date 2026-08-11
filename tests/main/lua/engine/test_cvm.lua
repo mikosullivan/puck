@@ -1,25 +1,25 @@
 --[[ {
 	"vibecode": {
-		"role": "walking-skeleton tests for src/mvm.lua: open an in-memory DB, install the infrastructure, verify the seed exists and a couple of schema-level guarantees fire",
+		"role": "walking-skeleton tests for src/cvm.lua: open an in-memory DB, install the infrastructure, verify the seed exists and a couple of schema-level guarantees fire",
 		"status": "walking-skeleton — proves the DB opens and the schema loads without error"
 	}
 } ]]
 
 local h = require('helpers')
-local mvm = require('mvm')
+local cvm = require('cvm')
 
 ------------------------------------------------------------
 -- open + apply schema
 ------------------------------------------------------------
 
 h.test('open returns a usable db handle', function()
-	local db = mvm.open()
+	local db = cvm.open()
 	h.assert_true(db ~= nil, 'db handle is nil')
 	db:close()
 end)
 
 h.test('foreign keys pragma is on after open', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local fk_on = nil
 
@@ -32,7 +32,7 @@ h.test('foreign keys pragma is on after open', function()
 end)
 
 h.test('recursive triggers pragma is on after open', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rt_on = nil
 
@@ -45,7 +45,7 @@ h.test('recursive triggers pragma is on after open', function()
 end)
 
 h.test('schema seeds the user row', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local count = nil
 
@@ -58,7 +58,7 @@ h.test('schema seeds the user row', function()
 end)
 
 h.test('user row has a UUID-shaped object_pk', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local pk = nil
 
@@ -73,7 +73,7 @@ h.test('user row has a UUID-shaped object_pk', function()
 end)
 
 h.test('user row has persistent = 1', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local persistent = nil
 
@@ -86,7 +86,7 @@ h.test('user row has persistent = 1', function()
 end)
 
 h.test('user row has role_parent = null (root)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local role_parent = 'not-null-sentinel'
 
@@ -103,9 +103,9 @@ end)
 ------------------------------------------------------------
 
 h.test('current_process temp table exists after open and accepts caller writes', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
-	-- Pick a key mvm.open didn't already populate. current_process_pk
+	-- Pick a key cvm.open didn't already populate. current_process_pk
 	-- is filled by open (see the process-record test); an arbitrary
 	-- caller-owned key exercises the "TEMP table is writable" property
 	-- without colliding with the seeded row.
@@ -122,7 +122,7 @@ end)
 ------------------------------------------------------------
 
 h.test('cannot delete the user row (root role trigger)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rc = db:exec('delete from objects where user;')
 	local msg = db:errmsg()
@@ -134,7 +134,7 @@ h.test('cannot delete the user row (root role trigger)', function()
 end)
 
 h.test('cannot insert a second user = 1 row (unique)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rc = db:exec("insert into objects (primitive, user) values ('h', 1);")
 	local msg = db:errmsg()
@@ -146,7 +146,7 @@ h.test('cannot insert a second user = 1 row (unique)', function()
 end)
 
 h.test('cannot insert a role_parent pointing at a nonexistent row', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rc = db:exec("insert into objects (primitive, role_parent) values ('h', 'no-such-uuid-0000-0000-000000000000');")
 	local msg = db:errmsg()
@@ -168,7 +168,7 @@ h.test('cannot insert a role_parent pointing at a nonexistent row', function()
 end)
 
 h.test('cannot insert with role_parent pointing at a non-role row', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	-- Insert an ordinary HashPrimitive (not a role — no user=1, no role_parent).
 	-- Under the ownership rule, non-role objects must have owner_role set;
@@ -205,7 +205,7 @@ h.test('cannot insert with role_parent pointing at a non-role row', function()
 end)
 
 h.test('can insert with role_parent pointing at a role (root or non-root)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	-- Insert child of root — should succeed.
 	local user_pk = nil
@@ -241,7 +241,7 @@ h.test('can insert with role_parent pointing at a role (root or non-root)', func
 end)
 
 h.test('cannot update role_parent on an existing row (immutable)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	-- Insert a role as a child of user.
 	local user_pk = nil
@@ -270,7 +270,7 @@ end)
 ------------------------------------------------------------
 
 h.test('non-role insert without owner_role raises objects_role_or_owner_role', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rc = db:exec("insert into objects (primitive) values ('h');")
 	local msg = db:errmsg()
@@ -283,7 +283,7 @@ h.test('non-role insert without owner_role raises objects_role_or_owner_role', f
 end)
 
 h.test('role insert with owner_role raises objects_role_or_owner_role', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local user_pk
 	for row in db:nrows('select object_pk from objects where user') do
@@ -306,7 +306,7 @@ h.test('role insert with owner_role raises objects_role_or_owner_role', function
 end)
 
 h.test('owner_role pointing at a non-role raises owner_role_must_be_role', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local user_pk
 	for row in db:nrows('select object_pk from objects where user') do
@@ -343,7 +343,7 @@ h.test('owner_role pointing at a non-role raises owner_role_must_be_role', funct
 end)
 
 h.test('owner_role is immutable — update raises objects_owner_role_immutable', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local user_pk
 	for row in db:nrows('select object_pk from objects where user') do
@@ -380,7 +380,7 @@ h.test('owner_role is immutable — update raises objects_owner_role_immutable',
 end)
 
 h.test('role_parent = object_pk raises objects_role_parent_not_self', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	-- Try to insert a role whose role_parent equals its own object_pk.
 	-- Both the explicit not-self trigger and the "must be role" trigger
@@ -403,7 +403,7 @@ h.test('role_parent = object_pk raises objects_role_parent_not_self', function()
 end)
 
 h.test('owner_role = object_pk raises objects_owner_role_not_self', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	-- Same shape as above but for owner_role. Both the explicit not-self
 	-- trigger and owner_role_must_be_role would catch it; the not-self
@@ -425,7 +425,7 @@ h.test('owner_role = object_pk raises objects_owner_role_not_self', function()
 end)
 
 h.test('user seed is grandfathered — role_parent and owner_role both null', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local rp, ow
 	for row in db:nrows('select role_parent, owner_role from objects where user') do
@@ -444,7 +444,7 @@ end)
 ------------------------------------------------------------
 
 h.test('processes table has a row after open (process record initialized)', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local count
 
@@ -457,7 +457,7 @@ h.test('processes table has a row after open (process record initialized)', func
 end)
 
 h.test("current_process has 'current_process_pk' populated with the processes row's pk", function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local cp_value
 
@@ -482,7 +482,7 @@ end)
 ------------------------------------------------------------
 
 h.test('mvm marker table is present after a fresh install', function()
-	local db = mvm.open()
+	local db = cvm.open()
 
 	local present = false
 
@@ -502,7 +502,7 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 	local tmp = os.tmpname()
 
 	-- First open: fresh install.
-	local db1 = mvm.open({path = tmp})
+	local db1 = cvm.open({path = tmp})
 
 	local first_pk
 
@@ -515,8 +515,8 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 
 	-- Second open: install should be skipped. If the gate didn't work,
 	-- the install would re-run and raise "table objects already exists"
-	-- from mvm.open — the test would fail with an uncaught error.
-	local db2 = mvm.open({path = tmp})
+	-- from cvm.open — the test would fail with an uncaught error.
+	local db2 = cvm.open({path = tmp})
 
 	-- Sanity: exactly one user row (not two).
 	local count
@@ -545,7 +545,7 @@ end)
 ------------------------------------------------------------
 
 h.test('load_schema returns non-empty SQL', function()
-	local sql = mvm.load_schema()
+	local sql = cvm.load_schema()
 	h.assert_true(type(sql) == 'string', 'schema is not a string')
 	h.assert_true(#sql > 100, 'schema suspiciously short: ' .. #sql .. ' chars')
 	h.assert_true(sql:find('create table objects', 1, true) ~= nil, 'schema does not contain "create table objects"')

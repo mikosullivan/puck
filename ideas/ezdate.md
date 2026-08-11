@@ -440,10 +440,10 @@ Should the time class be extensible (via a `calendar` parameter) or
 Gregorian-only with separate classes for other systems? Defer until a real
 use case appears.
 
-### Relationship with MVM
+### Relationship with CVM
 
 Time objects are small, immutable, and pure data — perfectly serializable.
 They'd live in the runtime hash with zero special handling.
-[MVM](mvm.md) doesn't need any time-class-specific machinery; the
+[CVM](mvm.md) doesn't need any time-class-specific machinery; the
 class just has to round-trip via its standard JSON serialization (probably
 ISO 8601 + zone).

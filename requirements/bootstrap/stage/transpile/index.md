@@ -17,4 +17,4 @@ Internally two passes:
 
 The engine treats these as one step; the split into two modules is implementation detail. Callers of Stage get CaspM back either way.
 
-Raises on parse errors (from transpile) or normalization errors (from normalize), which aborts Stage before anything is written to the MVM.
+Raises on parse errors (from transpile) or normalization errors (from normalize), which aborts Stage before anything is written to the CVM.

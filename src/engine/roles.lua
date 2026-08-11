@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "roles",
-	"role": "Role class + creation for MVM. A Role is a small object with a name, held as a value on a node in state.roles' Trivet tree. Roles identify who owns currently-executing code; every frame on state.call_stack carries a role reference, and every entry in state.objects carries a role recording who owns it. `roles.new(name)` mints a fresh Role; state.new() calls it during bootstrap to seed the initial tree with engine + user.",
+	"role": "Role class + creation for CVM. A Role is a small object with a name, held as a value on a node in state.roles' Trivet tree. Roles identify who owns currently-executing code; every frame on state.call_stack carries a role reference, and every entry in state.objects carries a role recording who owns it. `roles.new(name)` mints a fresh Role; state.new() calls it during bootstrap to seed the initial tree with engine + user.",
 	"exports": {
 		"new": "(name: string) -> Role"
 	}

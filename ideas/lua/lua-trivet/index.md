@@ -108,7 +108,7 @@ Predicates use the Lua-idiomatic `is_X` / `has_X` prefix — Lua identifiers can
 
 ### Serialization is not core
 
-Trivet doesn't ship `to_json` / `from_json`. Not every node value is serializable (closures, file handles, values with identity), and consumers want different formats (MVM snapshots, debug dumps, HTTP responses). Serialization is a per-consumer concern — walk the tree with the existing traversals (`node:descendants()`, `node:subtree()`, `node:walk(fn)`) and produce whatever output shape is wanted.
+Trivet doesn't ship `to_json` / `from_json`. Not every node value is serializable (closures, file handles, values with identity), and consumers want different formats (CVM snapshots, debug dumps, HTTP responses). Serialization is a per-consumer concern — walk the tree with the existing traversals (`node:descendants()`, `node:subtree()`, `node:walk(fn)`) and produce whatever output shape is wanted.
 
 Trivet's job is the walk; the shape of the output is not.
 
@@ -465,7 +465,7 @@ end
 - **Descendant walk** — `%role.run_as` (target must be a descendant of current), `%role.delegate_to` scope checks.
 - **Path from root** — the "who owns this?" trace shown in error messages.
 - **Lookup by identifier** — the engine maintains its own `{role_id -> node}` hash alongside the Trivet, updated on every add/remove. Trivet itself doesn't do lookup.
-- **Serialization** — MVM snapshots include the role tree; MVM walks the tree with `node:descendants()` (or its own recursive walk) and produces its snapshot format. Trivet doesn't own the format.
+- **Serialization** — CVM snapshots include the role tree; CVM walks the tree with `node:descendants()` (or its own recursive walk) and produces its snapshot format. Trivet doesn't own the format.
 
 ### Which operations roles don't use
 

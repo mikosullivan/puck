@@ -3,14 +3,14 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_bootstrap_stage",
-	"role": "canonical page for the Stage step in Caspian's bootstrap sequence — how the engine takes the Caspian source string, produces the CaspM tree, writes it into the MVM, and sets up frame 0 so execution has a stack to walk. Diagram plus brief sections per sub-step, each linking to its own main page.",
+	"role": "canonical page for the Stage step in Caspian's bootstrap sequence — how the engine takes the Caspian source string, produces the CaspM tree, writes it into the CVM, and sets up frame 0 so execution has a stack to walk. Diagram plus brief sections per sub-step, each linking to its own main page.",
 	"status": "V1 spec in progress — three sub-steps spec'd at per-sub-step pages under stage/; the Install-CaspM and Set-up-frame-0 sub-steps have open design questions"
 }}
 ~~~
 
-The fifth step in the bootstrap sequence. `engine:load(source)` takes a Caspian source string and gets it ready for execution: parses, writes the resulting CaspM into the MVM, and sets up the top-level frame. After Stage returns, the stack has one frame waiting to be walked; bootstrap ends here.
+The fifth step in the bootstrap sequence. `engine:load(source)` takes a Caspian source string and gets it ready for execution: parses, writes the resulting CaspM into the CVM, and sets up the top-level frame. After Stage returns, the stack has one frame waiting to be walked; bootstrap ends here.
 
-![Stage sub-process, top to bottom: transpile Caspian to CaspM (implemented), install CaspM plus metadata into the MVM (not yet implemented), set up frame 0 (not yet implemented).](./stage-process.svg)
+![Stage sub-process, top to bottom: transpile Caspian to CaspM (implemented), install CaspM plus metadata into the CVM (not yet implemented), set up frame 0 (not yet implemented).](./stage-process.svg)
 
 ## Transpile — Caspian → CaspM
 
@@ -18,11 +18,11 @@ Parse the Caspian source string and produce the dispatch-ready CaspM tree. Two i
 
 See [Transpile](https://www.puck.uno/requirements/bootstrap/stage/transpile/) for the full sub-step.
 
-## Install CaspM into the MVM
+## Install CaspM into the CVM
 
-Write CaspM plus metadata (origin, hash, transpiler-version tag) into the MVM so the engine can retrieve it during dispatch. Storage shape not yet settled — blob, decomposed rows, or object-graph.
+Write CaspM plus metadata (origin, hash, transpiler-version tag) into the CVM so the engine can retrieve it during dispatch. Storage shape not yet settled — blob, decomposed rows, or object-graph.
 
-See [Install CaspM into the MVM](https://www.puck.uno/requirements/bootstrap/stage/install-caspm/) for the full sub-step.
+See [Install CaspM into the CVM](https://www.puck.uno/requirements/bootstrap/stage/install-caspm/) for the full sub-step.
 
 ## Set up frame 0
 

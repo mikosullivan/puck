@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_bootstrap",
-	"role": "canonical page for Caspian's bootstrap area — how the engine gets prepared to run, from host process startup through the loaded program sitting in the MVM ready to be walked. Vertical step-by-step diagram inside the steps section. Bootstrap ends when the engine is ready; the operational phase (running) is spec'd separately at execution/.",
+	"role": "canonical page for Caspian's bootstrap area — how the engine gets prepared to run, from host process startup through the loaded program sitting in the CVM ready to be walked. Vertical step-by-step diagram inside the steps section. Bootstrap ends when the engine is ready; the operational phase (running) is spec'd separately at execution/.",
 	"status": "in progress — five steps spec'd at per-step pages under bootstrap/; the execution phase that follows bootstrap lives at execution/"
 }}
 ~~~
@@ -41,21 +41,21 @@ See [Wire capabilities](https://www.puck.uno/requirements/bootstrap/wire/) for t
 
 ### ✅ Initialize VM
 
-The engine opens its runtime state store (the MVM — MVM in V1). Schema applied on fresh files, seed row verified, per-connection state prepared. Distinct from Wire: the engine sets this up for itself; no host input needed.
+The engine opens its runtime state store (the CVM — CVM in V1). Schema applied on fresh files, seed row verified, per-connection state prepared. Distinct from Wire: the engine sets this up for itself; no host input needed.
 
 See [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/) for the full step.
 
 ### Stage — `engine:load(source)`
 
-The engine takes a Caspian source string, transpiles it into CaspJ, normalizes into CaspM, and writes the CaspM tree into the MVM. Program and runtime state live together, which is what makes pause / resume trivial.
+The engine takes a Caspian source string, transpiles it into CaspJ, normalizes into CaspM, and writes the CaspM tree into the CVM. Program and runtime state live together, which is what makes pause / resume trivial.
 
 See [Stage](https://www.puck.uno/requirements/bootstrap/stage/) for the full step.
 
 ## Where bootstrap ends
 
-After Stage, the MVM holds a seeded runtime state store plus a fully-loaded CaspM tree, and the engine is a fully-formed object with its host capabilities wired. Bootstrap is done. The next thing that happens — walking the CaspM, dispatching statements, running the loaded program — is the **execution phase**, spec'd separately at [execution](https://www.puck.uno/requirements/execution/).
+After Stage, the CVM holds a seeded runtime state store plus a fully-loaded CaspM tree, and the engine is a fully-formed object with its host capabilities wired. Bootstrap is done. The next thing that happens — walking the CaspM, dispatching statements, running the loaded program — is the **execution phase**, spec'd separately at [execution](https://www.puck.uno/requirements/execution/).
 
 ## Where to go for details
 
 - [execution](https://www.puck.uno/requirements/execution/) — the operational phase that follows bootstrap.
-- [mvm](https://www.puck.uno/requirements/mvm/) — the MVM's V1 implementation.
+- [cvm](https://www.puck.uno/requirements/cvm/) — the CVM's V1 implementation.

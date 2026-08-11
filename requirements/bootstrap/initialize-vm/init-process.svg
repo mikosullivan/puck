@@ -67,7 +67,7 @@
 			fill="none" stroke="currentColor" stroke-width="1.5"/>
 		<rect x="60" y="380" width="6" height="70" fill="#f06292"/>
 		<text x="80" y="408" font-size="15" font-weight="bold">Return the MVM handle</text>
-		<text x="80" y="430" font-size="11" opacity="0.75">Handle returned; the engine stashes it as <tspan font-family="monospace">engine.mvm</tspan>.</text>
+		<text x="80" y="430" font-size="11" opacity="0.75">Handle returned; the engine stashes it as <tspan font-family="monospace">engine.cvm</tspan>.</text>
 
 		<!-- Legend -->
 		<text x="60" y="475" font-size="10" opacity="0.6" font-style="italic">Sub-process of the Initialize VM step in the bootstrap sequence. Green check: implemented in code.</text>

@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_mvm_pause_resume",
-	"role": "sketch for Caspian's pause / resume primitive. %engine.pause writes a pause frame at the top of the stack and closes the MVM database. The database file IS the paused state — no serialization pass, no snapshot format. Resume: any writer edits call_stack to remove the pause frame and optionally populate a payload hash. Engine reopens, execution continues, %engine.pause returns the payload. Structurally this is delimited continuations with argument, persisted in a database. Composes with Big Processes and cross-host revive.",
+	"role": "sketch for Caspian's pause / resume primitive. %engine.pause writes a pause frame at the top of the stack and closes the CVM database. The database file IS the paused state — no serialization pass, no snapshot format. Resume: any writer edits call_stack to remove the pause frame and optionally populate a payload hash. Engine reopens, execution continues, %engine.pause returns the payload. Structurally this is delimited continuations with argument, persisted in a database. Composes with Big Processes and cross-host revive.",
 	"audience": "Caspian programmers writing pause-resume patterns; engine implementers building pause frame handling; external processes (HTTP handlers, agents, schedulers, humans) triggering resumes",
 	"key_concepts": ["pause_frame_on_stack", "close_is_commit",
 		"sql_edit_resumes", "revival_with_payload", "engine_minimalism",
@@ -14,9 +14,9 @@
 
 Caspian's pause primitive freezes a running program in place, closes the runtime, and lets any external process resume it later — potentially minutes, days, or months later, potentially on a different host, potentially with data attached that describes what happened while the process was paused.
 
-The mechanism is a single stack frame. When code calls `%engine.pause`, the engine writes a "pause" frame at the top of the call stack in MVM, then closes the database file. The process is gone. The state persists.
+The mechanism is a single stack frame. When code calls `%engine.pause`, the engine writes a "pause" frame at the top of the call stack in CVM, then closes the database file. The process is gone. The state persists.
 
-Resume is symmetric: any writer that can edit the MVM file — an HTTP handler, an agent, a scheduled callback, a human tapping "approve" — removes the pause frame and optionally attaches a payload hash. When an engine reopens the database, execution picks up where it left off, and `%engine.pause` returns whatever payload the resumer wrote.
+Resume is symmetric: any writer that can edit the CVM file — an HTTP handler, an agent, a scheduled callback, a human tapping "approve" — removes the pause frame and optionally attaches a payload hash. When an engine reopens the database, execution picks up where it left off, and `%engine.pause` returns whatever payload the resumer wrote.
 
 ## The pause primitive
 
@@ -38,7 +38,7 @@ Nothing else. There's no separate "paused" flag, no state-machine state, no sche
 
 ## Resume by SQL edit
 
-To resume a paused process, some other code opens the MVM file and edits `call_stack`:
+To resume a paused process, some other code opens the CVM file and edits `call_stack`:
 
 1. Remove the pause frame (or mark it as revived — the exact shape is an implementation detail of the pause frame schema).
 2. Optionally populate a payload hash — key-value pairs describing what happened during the pause.
@@ -72,7 +72,7 @@ The payload can be null or an empty hash when the resumer has nothing to say —
 
 - **Atomic pause.** The pause frame lands as part of a SQL transaction; closing the DB commits. WAL mode guarantees no half-paused state.
 - **Durability for free.** The database file IS the paused state. No serialization pass, no snapshot format, no marshaling. Same design as Big Processes ([features § Big Processes](https://www.puck.uno/ideas/drinian-with-sqlite/features#big-processes)).
-- **Cross-host resume.** Pause on host A, copy the file, resume on host B. The MVM file is portable across any host that can open SQLite.
+- **Cross-host resume.** Pause on host A, copy the file, resume on host B. The CVM file is portable across any host that can open SQLite.
 - **Duration unbounded.** A file paused today can revive next year. Filesystem-lifetime, not process-lifetime.
 - **Engine minimalism.** The engine doesn't grow special "waiting for X" primitives. Its main loop reads and executes frames. Pause is one frame that causes the loop to exit; revival is the same frame being gone.
 - **Cause travels in the payload.** Whoever resumed tells the resumed code what happened. No polling, no persistent connections, no handoff protocol needed.
@@ -81,7 +81,7 @@ The payload can be null or an empty hash when the resumer has nothing to say —
 ## Use cases
 
 - **HTTP request handling.** A web handler starts a script; the script processes a form; then calls `%engine.pause` to wait for the user to click "confirm." When they do, an HTTP handler writes the payload and closes the file. The script resumes with the confirmation.
-- **Agent coordination.** A supervisor agent pauses when it delegates a subtask. The subordinate agent completes the work, writes the result to the supervisor's MVM file, resumes it. Multi-step agent flows without polling.
+- **Agent coordination.** A supervisor agent pauses when it delegates a subtask. The subordinate agent completes the work, writes the result to the supervisor's CVM file, resumes it. Multi-step agent flows without polling.
 - **Human-in-the-loop.** An automated workflow pauses at a decision point requiring human judgment. Whoever monitors reads the paused state, decides, writes the decision to the file, workflow continues.
 - **Scheduled callbacks.** A script pauses with an expected resume time. A cron job checks periodically for files with matching expected-resume-times and revives them at the right moment.
 - **Long-running external operations.** A script kicks off a hours-long external job. It pauses. When the job's done, its completion callback writes the result to the paused script and resumes it.

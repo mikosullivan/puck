@@ -1,9 +1,9 @@
 --[[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an MVM (via mvm.open()) and stash the SQLite handle as engine.mvm, so the runtime state store (MVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
+	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an CVM (via cvm.open()) and stash the SQLite handle as engine.cvm, so the runtime state store (CVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
 	"exports": {
-		"new": "(opts?) -> Engine — opts.mvm is passed through to mvm.open() for the underlying MVM connection"
+		"new": "(opts?) -> Engine — opts.cvm is passed through to cvm.open() for the underlying CVM connection"
 	},
 	"stdout_contract": "The wired stdout must be an object supporting :print(text) — the raw byte-writer, no newline. Caspian-side :puts (adds newline) and everything else the sink surface exposes layer inside the engine on top of the host's :print. Tests wire a FakeStdout; the eventual CLI wires an object over io.stdout.",
 	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface.",
@@ -15,15 +15,15 @@
 # Engine
 
 Caspian's runtime. A host constructs an engine with `engine.new()` — which
-opens an MVM (the runtime state store — MVM in V1; see
-[mvm](https://www.puck.uno/requirements/mvm/)) via `mvm.open()`
-and stashes the SQLite handle as `engine.mvm`. From that moment on, every
+opens an CVM (the runtime state store — CVM in V1; see
+[cvm](https://www.puck.uno/requirements/cvm/)) via `cvm.open()`
+and stashes the SQLite handle as `engine.cvm`. From that moment on, every
 runtime state read or write goes through that handle: objects, frames,
-frame_locals, roles, listeners — everything the MVM schema tracks.
+frame_locals, roles, listeners — everything the CVM schema tracks.
 
-The MVM defaults to `:memory:` — pass `opts.mvm = {path = '/some/file.db'}`
-to `engine.new()` to open a file-backed one, or `opts.mvm = {path = ...,
-schema = ...}` to override the schema (see [mvm.lua](../engine/mvm.lua)
+The CVM defaults to `:memory:` — pass `opts.cvm = {path = '/some/file.db'}`
+to `engine.new()` to open a file-backed one, or `opts.cvm = {path = ...,
+schema = ...}` to override the schema (see [cvm.lua](../engine/cvm.lua)
 for the full option set).
 
 The host then wires whatever capabilities the program needs
@@ -39,7 +39,7 @@ has a clear signal about what to build next.
 
 local transpiler = require('transpiler')
 local normalize  = require('normalize')
-local mvm    = require('mvm')
+local cvm    = require('cvm')
 
 local M = {}
 M.__index = M
@@ -105,26 +105,26 @@ end
 ## Constructor
 
 `engine.new(opts?)` is the boot entry point. Its first act is to open
-an MVM (via `mvm.open(opts and opts.mvm)`) and stash the returned
-SQLite handle as `engine.mvm`, so the runtime state store is live from
+an CVM (via `cvm.open(opts and opts.cvm)`) and stash the returned
+SQLite handle as `engine.cvm`, so the runtime state store is live from
 the moment the engine exists. Host wiring slots and walking-skeleton
 load-artifact slots start nil:
 
-- **`mvm`** — the open SQLite handle for Miko's Virtual Machine — the
-  runtime state store. See [mvm.lua](../engine/mvm.lua) for the
-  open API and [mvm.sql](../engine/mvm.sql) for the schema.
+- **`cvm`** — the open SQLite handle for the CVM — the
+  runtime state store. See [cvm.lua](../engine/cvm.lua) for the
+  open API and [cvm.sql](../engine/cvm.sql) for the schema.
   Every runtime state read or write goes through this handle.
 - **`stdout`, `debugger`** — nil at construction. The host attaches
   capabilities by plain field assignment before or after loading, in any
   order.
 - **`source`, `caspj`, `caspm`** — nil at construction. Populated by
   `engine:load`. Vestigial: these are walking-skeleton fields; when the
-  spec'd schema slot for CaspM-in-the-MVM lands, `load` will write into
-  the MVM instead and these fields go away.
+  spec'd schema slot for CaspM-in-the-CVM lands, `load` will write into
+  the CVM instead and these fields go away.
 
-`opts.mvm` (when supplied) is passed through to `mvm.open()` — see
+`opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
-Omit `opts` entirely for the common case: a fresh in-memory MVM. A
+Omit `opts` entirely for the common case: a fresh in-memory CVM. A
 program that doesn't need a given host capability doesn't force its host
 to provide one; reaching for an unwired capability raises at the fire
 site.
@@ -133,7 +133,7 @@ function M.new(opts)
 	opts = opts or {}
 
 	return setmetatable({
-		mvm      = mvm.open(opts.mvm),
+		cvm      = cvm.open(opts.cvm),
 		stdout   = nil,
 		debugger = nil,
 		source   = nil,
@@ -176,7 +176,7 @@ would look like a working program.
 
 Currently top-level only: there's no call stack yet, so `run` is the
 only entry point and each row runs in the same implicit root frame.
-When MVM and the call stack land, this grows into the root frame's
+When CVM and the call stack land, this grows into the root frame's
 execution loop.
 ]]
 function M:run()

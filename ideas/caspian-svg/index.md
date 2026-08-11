@@ -44,7 +44,7 @@ Interesting because Caspian is already a block-shaped language — `class`, `fun
 
 ## The live-inspector flavor
 
-**An SVG canvas that renders a running Caspian program's state.** MVM tables materialized as boxes; call stack as a strip; object graph as connected nodes; roles as a tree. As the program runs, boxes update. As you step through, arrows highlight.
+**An SVG canvas that renders a running Caspian program's state.** CVM tables materialized as boxes; call stack as a strip; object graph as connected nodes; roles as a tree. As the program runs, boxes update. As you step through, arrows highlight.
 
 Doesn't ask you to author anything visually — the SVG is a debugger surface, not a source of truth. Caspian source stays text; the SVG just shows what's happening at runtime.
 
@@ -69,4 +69,4 @@ Some questions apply across every flavor above; a coherent "Caspian-SVG" needs a
 ## Where this connects
 
 - The bootstrap diagrams ([overview](https://www.puck.uno/requirements/bootstrap/), [initialize-vm](https://www.puck.uno/requirements/bootstrap/initialize-vm/)) are the immediate motivator — they show the exact pattern the library flavor would automate.
-- The MVM's structured runtime state (objects, frames, locals, relationships, uspace) is what the live-inspector flavor would visualize. That data is already there in MVM's schema; the question is only how to render it.
+- The CVM's structured runtime state (objects, frames, locals, relationships, uspace) is what the live-inspector flavor would visualize. That data is already there in CVM's schema; the question is only how to render it.

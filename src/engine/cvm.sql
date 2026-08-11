@@ -96,7 +96,7 @@ create table objects (
 	-- per role insertion; roles are rare, so cost is negligible.
 	role_parent text references objects(object_pk) on delete cascade,
 
-	-- Row-kind discriminator. NOT NULL, no default: MVM's write
+	-- Row-kind discriminator. NOT NULL, no default: CVM's write
 	-- code names the row kind at INSERT time. Exactly one of:
 	--   'o' → object (full object, or scalar primitive if scalar_type is set)
 	--   'h' → HashPrimitive
@@ -172,7 +172,15 @@ create table objects (
 	bucket_pk integer unique
 		check (bucket_pk is null or (primitive = 'o' and scalar_type is null)),
 	stack_pk  integer unique
-		check (stack_pk  is null or (primitive = 'o' and scalar_type is null))
+		check (stack_pk  is null or (primitive = 'o' and scalar_type is null)),
+
+	-- Human-readable label for the row. Populated by the engine
+	-- (or by hand during debugging) so a state snapshot self-describes
+	-- what each row is meant to be. Purely informational — no query
+	-- path reads it. Nullable text; no constraints. Rendered as
+	-- "comment" in walkthrough tables for readability, but the
+	-- storage-level name is `debug`.
+	debug text
 );
 
 -- Role tree: partial index over just the role rows. The uspace
@@ -213,7 +221,7 @@ begin
 end;
 
 -- The user row (marked `user = 1`) is the root role and cannot
--- be deleted. Every MVM database starts with user seeded,
+-- be deleted. Every CVM database starts with user seeded,
 -- and nothing above the language layer can remove it. Non-root
 -- uspace anchors are freely deletable (that's how an object
 -- leaves user space in the first place). The role tree is
@@ -355,6 +363,13 @@ create table refs (
 	-- iteration.
 	idx     integer not null check (idx >= 0),
 
+	-- Human-readable label for the row. Same treatment as
+	-- objects.debug — populated by the engine (or by hand during
+	-- debugging) so a state snapshot self-describes what each ref
+	-- is meant to be. Purely informational, nullable text, no
+	-- constraints, no query path reads it.
+	debug text,
+
 	-- No two refs from the same parent share a key or idx.
 	-- Null-key rows (array-style) don't collide on the (parent, key)
 	-- constraint because SQLite doesn't consider nulls in UNIQUE
@@ -400,10 +415,10 @@ begin
 end;
 
 -- ############################################################################
--- MVM
+-- CVM
 -- ############################################################################
 
--- MVM database design. One `objects` table holds row shapes
+-- CVM database design. One `objects` table holds row shapes
 -- discriminated by the `primitive` column:
 --   'h' → HashPrimitive (hash-shaped primitive container)
 --   'a' → ArrayPrimitive (array-shaped primitive container)
@@ -423,10 +438,10 @@ end;
 -- scalars have no contents at all.
 
 -- ------------------------------------------------------------
--- MVM's additions to the Mikobase `objects` table.
+-- CVM's additions to the Mikobase `objects` table.
 -- ------------------------------------------------------------
 -- The base `objects` table is defined in the Mikobase section
--- above. MVM layers on the columns it needs by ALTER TABLE:
+-- above. CVM layers on the columns it needs by ALTER TABLE:
 --
 --   persistent  — pin flag for the uspace view (see below). If
 --                 set, the object is unconditionally in uspace
@@ -441,7 +456,7 @@ end;
 --                 Lua-native form attached to the frame, so an
 --                 update takes effect on the next call (hot-patch
 --                 / metaprogramming friendly). See the "AST storage:
---                 JSON, not JSONB" design note in requirements/mvm/
+--                 JSON, not JSONB" design note in requirements/cvm/
 --                 for the rationale.
 --
 --   needs_trace — GC scratch: 1 means this row is a candidate the
@@ -535,7 +550,7 @@ end;
 -- roles at runtime. Matches how role_parent is immutable via the
 -- objects_no_update trigger; owner_role gets its own guard here
 -- because that trigger lives in the Mikobase section (before this
--- column existed) and MVM layers additions on top.
+-- column existed) and CVM layers additions on top.
 create trigger objects_owner_role_immutable
 before update of owner_role on objects
 when new.owner_role is not old.owner_role
@@ -556,12 +571,12 @@ end;
 
 
 -- ------------------------------------------------------------
--- MVM marker table
+-- CVM marker table
 -- The presence of this table signals "this database can be used as
--- MVM." A generic SQLite file has no `mvm` table; a MVM
--- database always does. Any MVM tool can check for this table's
--- existence before treating the file as a MVM store, and any
--- database that carries it is committing to the MVM schema.
+-- CVM." A generic SQLite file has no `mvm` table; a CVM
+-- database always does. Any CVM tool can check for this table's
+-- existence before treating the file as a CVM store, and any
+-- database that carries it is committing to the CVM schema.
 --
 -- Append-only: once a row is inserted, it cannot be updated or
 -- deleted. Every entry is a permanent birth-record. If we ever need
@@ -586,7 +601,7 @@ end;
 
 insert into mvm (key, value) values ('schema', '9.0');
 ---
--- MVM marker table
+-- CVM marker table
 -- ------------------------------------------------------------
 
 
@@ -695,7 +710,7 @@ end;
 -- engine bookkeeping and get a purpose-built shape.
 --
 -- `processes` is plural: the schema accommodates multiple
--- execution contexts coexisting in one MVM file. Cases the
+-- execution contexts coexisting in one CVM file. Cases the
 -- plural is ready for:
 --   * Coroutines — cooperative yield / resume, each their own stack.
 --   * Fork children — engine-granted opt-in concurrency.
@@ -703,7 +718,7 @@ end;
 --     signal, coexisting in one file.
 --   * Multiple concurrent instances of the same machine running
 --     over one shared object graph — a real concurrency model
---     within one MVM, with semantics (row contention,
+--     within one CVM, with semantics (row contention,
 --     isolation, coordination) to work out but the storage
 --     substrate ready.
 --
@@ -724,7 +739,7 @@ begin
 	select raise(abort, 'processes_no_update: processes rows are immutable');
 end;
 
--- No seed row. Every engine that opens a MVM file creates
+-- No seed row. Every engine that opens a CVM file creates
 -- its own row here at startup and records the pk in
 -- current_process; on the very first run against a fresh DB
 -- that pk will be 1 (autoincrement), but nothing pins it — a
@@ -758,7 +773,7 @@ create table frames (
 	type text not null check (type in ('function_call')),
 
 	-- ast — the CaspM tree this frame is currently executing,
-	-- as JSON text (see requirements/mvm/ast-storage for the JSON /
+	-- as JSON text (see requirements/cvm/ast-storage for the JSON /
 	-- JSONB rationale). Copied into the frame at push time from
 	-- whatever produced it — objects.ast for a call to a named
 	-- callable, an if-atom's `action` subtree for a block invocation,
@@ -959,7 +974,7 @@ end;
 -- Buckets and stacks are NOT in this list. They live inside their
 -- owner via bucket_for / stack_for (ON DELETE CASCADE handles
 -- owner-goes-so-bucket-goes at the FK level). Under normal
--- MVM ops nothing puts a bucket or stack row as a child in
+-- CVM ops nothing puts a bucket or stack row as a child in
 -- the refs table, so mark triggers never fire on them —
 -- they never become GC candidates.
 --

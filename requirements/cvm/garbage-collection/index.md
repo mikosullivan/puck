@@ -2,19 +2,19 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_mvm_garbage_collection",
-	"role": "MVM's garbage collection — the schema-level mark triggers that set needs_trace = 1 as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
+	"doc": "requirements_cvm_garbage_collection",
+	"role": "CVM's garbage collection — the schema-level mark triggers that set needs_trace = 1 as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
 	"status": "in progress — mark trigger inventory + outer/inner loop skeleton drafted; drain-loop details and cleanup still to come"
 }}
 ~~~
 
-GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row where `needs_trace = 1`, determines its reachability with respect to the `uspace` view (defined in [mvm.sql](../sql)), and either clears the row's mark (if it's still alive) or deletes it (if it's genuinely orphaned).
+GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row where `needs_trace = 1`, determines its reachability with respect to the `uspace` view (defined in [cvm.sql](../sql)), and either clears the row's mark (if it's still alive) or deletes it (if it's genuinely orphaned).
 
 ## Mark triggers
 
 Every table in the schema that holds a pointer to an `objects` row is a potential source of orphaning — when the pointer changes or the row holding it goes away, the previously-pointed-at object might have just lost its last incoming reference. The schema attaches a mark trigger to each such source. Each trigger does one thing: set `needs_trace = 1` on the row that just lost the incoming pointer. That's the trigger's entire job — no trace call, no re-entry check, no other logic. Marking is schema-enforced; the actual drain is scheduled by the Lua write layer.
 
-Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already marked is a harmless no-op. Each trigger in the schema is annotated with a `[set-needs-trace]` comment prefix so `grep [set-needs-trace] src/mvm.sql` enumerates the whole inventory.
+Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already marked is a harmless no-op. Each trigger in the schema is annotated with a `[set-needs-trace]` comment prefix so `grep [set-needs-trace] src/cvm.sql` enumerates the whole inventory.
 
 The current inventory, one entry per source column:
 
