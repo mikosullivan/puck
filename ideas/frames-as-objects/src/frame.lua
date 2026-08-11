@@ -101,7 +101,7 @@ Composes on three engine methods:
 The write path (`set_local_to_scalar`, and any other future write
 routine) calls this before adding the actual variable binding. The
 first-variable walkthrough spells it out step by step —
-[frame.locals ensure the locals hash](https://www.puck.uno/ideas/frames-as-objects/quests/main/examples/first-variable/#framelocals-ensure-the-locals-hash).
+[frame.locals ensure the locals hash](https://www.puck.uno/ideas/frames-as-objects/examples/first-variable/#framelocals-ensure-the-locals-hash).
 ]]
 function frame:ensure_locals()
 	local bucket = self:bucket()

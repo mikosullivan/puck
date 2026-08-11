@@ -1,19 +1,19 @@
--- Tests for ideas/frames-as-objects/quests/main/src/engine.lua
+-- Tests for ideas/frames-as-objects/src/engine.lua
 --
 -- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/quests/main/tests/test_engine.lua
+--     lua5.4 ideas/frames-as-objects/tests/test_engine.lua
 --
 -- Each test loads the CVM schema into an in-memory SQLite, constructs
 -- an engine bound to that handle, exercises the method under test,
 -- and asserts on the result.
 
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/quests/main/src/?.lua;" .. package.path
+package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
 package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
 local engine = require("engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/quests/main/src/cvm.sql"
+local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

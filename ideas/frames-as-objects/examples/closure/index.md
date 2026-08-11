@@ -37,7 +37,7 @@ Approximate CaspM (transpile + normalize):
 
 ## Code loaded into frame 0
 
-Snapshot after bootstrap finishes — schema installed, user seeded, `processes` seeded with the bootstrap process, frame 0 pushed with the CaspM in its `ast`. `stmt_idx = 0` — about to dispatch statement 0 (the `$fn = function()…` assignment). No bucket yet — no locals have landed. Same structure as [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/quests/main/examples/end-of-bootstrap/), just with different source.
+Snapshot after bootstrap finishes — schema installed, user seeded, `processes` seeded with the bootstrap process, frame 0 pushed with the CaspM in its `ast`. `stmt_idx = 0` — about to dispatch statement 0 (the `$fn = function()…` assignment). No bucket yet — no locals have landed. Same structure as [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/examples/end-of-bootstrap/), just with different source.
 
 <table class="tbl-mvm">
 <thead>

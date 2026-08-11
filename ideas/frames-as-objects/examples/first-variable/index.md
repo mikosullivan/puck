@@ -14,7 +14,7 @@ The smallest program that changes state:
 $x = 1
 ~~~
 
-Picks up where [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/quests/main/examples/end-of-bootstrap/) leaves off and walks through the execution of this one assignment. Written slowly to surface which multi-write operations naturally wrap in a transaction and which stand as observable checkpoints between them.
+Picks up where [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/examples/end-of-bootstrap/) leaves off and walks through the execution of this one assignment. Written slowly to surface which multi-write operations naturally wrap in a transaction and which stand as observable checkpoints between them.
 
 Approximate CaspM (transpile + normalize):
 
@@ -65,7 +65,7 @@ end
 shut_down
 ~~~
 
-Each iteration is one atomic step. `frame.run` does whatever it does inside its own write-block and hands back the next frame to run — matching the "endpoints are snapshottable, the interval is opaque" model established at [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/quests/main/examples/end-of-bootstrap/#whats-on-that-frame). One loop turn = one transition between two "about to start" snapshots.
+Each iteration is one atomic step. `frame.run` does whatever it does inside its own write-block and hands back the next frame to run — matching the "endpoints are snapshottable, the interval is opaque" model established at [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/examples/end-of-bootstrap/#whats-on-that-frame). One loop turn = one transition between two "about to start" snapshots.
 
 The exit condition doubles as the terminal check. When `frame.run` returns nothing, the loop ends and `shut_down` runs. That aligns with the terminal invariant: no frames left = program done.
 
@@ -89,7 +89,7 @@ matches three things at once:
 - First arg is `{"v": <string>}` — a plain-name LHS. Not `{"c": [...]}` (a nested call for an attribute-target like `$obj.field`), not anything with dot-access.
 - Second arg is `{"v": <literal>}` where `<literal>` is a primitive value — number, string, boolean, or null. Not a name reference like `{"v": "y"}` (would need a lookup), not `{"c": [...]}` (would need a nested frame to evaluate).
 
-All three together identify the "scalar-RHS local assignment" shape. `frame.run` routes to [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) and calls it with `name='x'`, `scalar_type='n'`, `scalar_value=1`.
+All three together identify the "scalar-RHS local assignment" shape. `frame.run` routes to [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) and calls it with `name='x'`, `scalar_type='n'`, `scalar_value=1`.
 
 If any of those checks fail, a different specialized routine takes over. The RHS being a name reference goes to a name-lookup routine (not yet written). The LHS being an attribute-target goes to a bucket-write routine (not yet written). Each Caspian assignment shape gets its own compiled path — no generic `set_variable` that pays a runtime dispatch cost per assignment.
 
@@ -135,7 +135,7 @@ begin;
 
 ## Create the number
 
-The engine evaluates the RHS first. The RHS is the literal `1` — a primitive scalar. [`engine:add_scalar`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/engine.lua#add-scalar-insert-a-scalar-objects-row-return-its-pk) materializes it as an objects row:
+The engine evaluates the RHS first. The RHS is the literal `1` — a primitive scalar. [`engine:add_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-scalar-insert-a-scalar-objects-row-return-its-pk) materializes it as an objects row:
 
 ~~~sql
 insert into objects (primitive, scalar_type, scalar_value, owner_role)
@@ -175,7 +175,7 @@ The engine writes the scalar's pk into the frame's locals under key `x`. On the 
 frame.locals['x'] = <scalar_pk>
 ~~~
 
-The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. Its three composed calls line up with the three subsections below (`frame.bucket`, `frame.locals`, `add_ref`).
+The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. Its three composed calls line up with the three subsections below (`frame.bucket`, `frame.locals`, `add_ref`).
 
 Underneath, that composes into a tree of get-or-create operations. Each "ensure" branch is idempotent: does nothing if the target already exists, otherwise materializes it and writes to the DB. On a fresh frame — like this one — none of the targets exist, so every branch runs:
 
@@ -194,7 +194,7 @@ Walked left-to-right, that's four DB writes across three call layers. Each is sh
 
 ### `frame.bucket` — ensure the bucket
 
-Frame 0's `bucket_pk` is null, so the branch runs. [`object:bucket`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/object.lua#bucket-the-object-s-bucket-lazily-created) (inherited by frame) calls [`engine:add_bucket`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/engine.lua#add-bucket-insert-a-bucket-return-its-pk). One INSERT creates the HashPrimitive; the `objects_denormalize_bucket` trigger updates frame 0's `bucket_pk` inside the same statement — atomic at the SQL layer.
+Frame 0's `bucket_pk` is null, so the branch runs. [`object:bucket`](https://www.puck.uno/ideas/frames-as-objects/src/object.lua#bucket-the-object-s-bucket-lazily-created) (inherited by frame) calls [`engine:add_bucket`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-bucket-insert-a-bucket-return-its-pk). One INSERT creates the HashPrimitive; the `objects_denormalize_bucket` trigger updates frame 0's `bucket_pk` inside the same statement — atomic at the SQL layer.
 
 ~~~sql
 insert into objects (primitive, bucket_for, owner_role)
@@ -229,7 +229,7 @@ values ('h', <frame_0_pk>, <user_pk>);
 
 ### `frame.locals` — ensure the locals hash
 
-The bucket has no entry under key `locals`, so this branch runs. [`frame:ensure_locals`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/frame.lua#ensure-locals-get-or-create-the-frame-s-locals-hash) does two writes via [`engine:add_hash`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/engine.lua#add-hash-insert-a-standalone-hashprimitive-return-its-pk) and [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk): the HashPrimitive that will be the locals hash, and the ref that stores it in the bucket under `locals`.
+The bucket has no entry under key `locals`, so this branch runs. [`frame:ensure_locals`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#ensure-locals-get-or-create-the-frame-s-locals-hash) does two writes via [`engine:add_hash`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-hash-insert-a-standalone-hashprimitive-return-its-pk) and [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk): the HashPrimitive that will be the locals hash, and the ref that stores it in the bucket under `locals`.
 
 ~~~sql
 insert into objects (primitive, owner_role)
@@ -272,7 +272,7 @@ After the first INSERT the row exists but is orphan; after the second it's reach
 
 ### `['x'] = <scalar_pk>` — bind the key
 
-The last write: [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk) inserts a ref from the locals hash to the scalar under key `x`.
+The last write: [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk) inserts a ref from the locals hash to the scalar under key `x`.
 
 ~~~sql
 insert into refs (parent, child, key, idx)
