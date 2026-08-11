@@ -117,7 +117,7 @@ begin;
 
 ## Create the number
 
-The engine evaluates the RHS first. The RHS is the literal `1` — a primitive scalar. One INSERT materializes it as an objects row:
+The engine evaluates the RHS first. The RHS is the literal `1` — a primitive scalar. [`engine:add_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-scalar-insert-a-scalar-objects-row-return-its-pk) materializes it as an objects row:
 
 ~~~sql
 insert into objects (primitive, scalar_type, scalar_value, owner_role)
@@ -157,6 +157,8 @@ The engine writes the scalar's pk into the frame's locals under key `x`. On the 
 frame.locals['x'] = <scalar_pk>
 ~~~
 
+The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. Its three composed calls line up with the three subsections below (`frame.bucket`, `frame.locals`, `add_ref`).
+
 Underneath, that composes into a tree of get-or-create operations. Each "ensure" branch is idempotent: does nothing if the target already exists, otherwise materializes it and writes to the DB. On a fresh frame — like this one — none of the targets exist, so every branch runs:
 
 ~~~
@@ -174,7 +176,7 @@ Walked left-to-right, that's four DB writes across three call layers. Each is sh
 
 ### `frame.bucket` — ensure the bucket
 
-Frame 0's `bucket_pk` is null, so the branch runs. One INSERT creates the HashPrimitive; the `objects_denormalize_bucket` trigger updates frame 0's `bucket_pk` inside the same statement — atomic at the SQL layer.
+Frame 0's `bucket_pk` is null, so the branch runs. [`object:bucket`](https://www.puck.uno/ideas/frames-as-objects/src/object.lua#bucket-the-object-s-bucket-lazily-created) (inherited by frame) calls [`engine:add_bucket`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-bucket-insert-a-bucket-return-its-pk). One INSERT creates the HashPrimitive; the `objects_denormalize_bucket` trigger updates frame 0's `bucket_pk` inside the same statement — atomic at the SQL layer.
 
 ~~~sql
 insert into objects (primitive, bucket_for, owner_role)
@@ -209,7 +211,7 @@ values ('h', <frame_0_pk>, <user_pk>);
 
 ### `frame.locals` — ensure the locals hash
 
-The bucket has no entry under key `locals`, so this branch runs. Two writes: the HashPrimitive that will be the locals hash, and the ref that stores it in the bucket under `locals`.
+The bucket has no entry under key `locals`, so this branch runs. [`frame:ensure_locals`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#ensure-locals-get-or-create-the-frame-s-locals-hash) does two writes via [`engine:add_hash`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-hash-insert-a-standalone-hashprimitive-return-its-pk) and [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk): the HashPrimitive that will be the locals hash, and the ref that stores it in the bucket under `locals`.
 
 ~~~sql
 insert into objects (primitive, owner_role)
@@ -252,7 +254,7 @@ After the first INSERT the row exists but is orphan; after the second it's reach
 
 ### `['x'] = <scalar_pk>` — bind the key
 
-The last write: insert a ref from the locals hash to the scalar under key `x`.
+The last write: [`engine:add_ref`](https://www.puck.uno/ideas/frames-as-objects/src/engine.lua#add-ref-insert-a-ref-row-return-its-ref-pk) inserts a ref from the locals hash to the scalar under key `x`.
 
 ~~~sql
 insert into refs (parent, child, key, idx)

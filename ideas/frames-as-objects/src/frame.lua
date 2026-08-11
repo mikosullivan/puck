@@ -18,15 +18,25 @@
 
 A class representing a call frame under the frames-as-objects design.
 Inherits from `object`, so it picks up the `bucket` accessor for free.
-Adds one method — `locals` — that returns the frame's locals hash: a
-HashPrimitive stored inside the frame's bucket under the key `locals`.
-Every local variable in the frame is a key in that hash.
+Adds `locals` (read-only), `ensure_locals` (get-or-create), and
+`set_local_to_scalar` (the specialized write path for scalar-RHS
+assignments like `$x = 1`). Every local variable in the frame is a
+key in the locals hash — a HashPrimitive stored inside the frame's
+bucket under the key `locals`.
 ]]
 
+--[[
+## Inheriting from `object`
+
+Single inheritance via Lua's metatable chain. `frame` starts as an
+empty table whose metatable delegates lookups to `object` — that's
+what `setmetatable({}, {__index = object})` sets up. Any method not
+defined directly on `frame` (like `bucket`) resolves via `object`.
+`frame.__index = frame` then makes `frame` itself the index for its
+own instances, so `frame:locals()` and friends resolve on the wrapper.
+]]
 local object = require("object")
 
--- Single inheritance via metatable chain: frame inherits object's
--- methods (bucket, ...); frame's own methods override or extend.
 local frame = setmetatable({}, {__index = object})
 frame.__index = frame
 
