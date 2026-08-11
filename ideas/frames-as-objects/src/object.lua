@@ -4,7 +4,8 @@
 	"role": "Root class in the frames-as-objects design. Anything that participates in the object graph — hash primitives, array primitives, scalars, frames — inherits from `object`. Provides the `bucket` accessor that lazily materializes an owner's bucket on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
 	"exports": {
 		"new":    "(engine, row) -> object — constructor; lifts row columns onto self",
-		"bucket": "() -> object — the object's bucket, lazily created on first call"
+		"bucket": "() -> object — the object's bucket, lazily created on first call",
+		"stack":  "() -> object — the object's stack, lazily created on first call"
 	},
 	"status": "sketch — walking-skeleton, first pass at Lua-native class file"
 }
@@ -108,6 +109,39 @@ function object:bucket()
 	end
 
 	return self.engine:object_by_pk(self.bucket_pk)
+end
+
+--[[
+## `stack` — the object's stack, lazily created
+
+Parallel to `bucket`, on the array side. Returns the object's stack —
+an ArrayPrimitive with `stack_for` pointing at this object — wrapped
+as an object. Creates the stack on first call; returns the cached one
+thereafter.
+
+Same composition as `bucket`:
+
+- `engine:add_stack(self.object_pk)` — INSERTs the ArrayPrimitive with
+  `stack_for = self.object_pk`, returning the new stack's `object_pk`.
+  The stack's `owner_role` is derived from `self`'s row by the engine
+  method. The `objects_denormalize_stack` trigger fires inside the same
+  statement and sets `self`'s `stack_pk`.
+- `engine:object_by_pk(self.stack_pk)` — wraps the row as an
+  ArrayPrimitive object.
+
+**Idempotent by design.** After the first call materializes the
+stack, `self.stack_pk` is set, so subsequent calls skip the
+`if not self.stack_pk` block. No wasted writes.
+
+**Access is gated elsewhere.** Same discipline as `bucket` — this
+method assumes permission has already been granted.
+]]
+function object:stack()
+	if not self.stack_pk then
+		self.stack_pk = self.engine:add_stack(self.object_pk)
+	end
+
+	return self.engine:object_by_pk(self.stack_pk)
 end
 
 return object

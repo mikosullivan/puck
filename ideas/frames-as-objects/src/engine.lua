@@ -6,6 +6,7 @@
 		"new":           "(db) -> engine — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
+		"add_stack":     "(for_object_pk) -> new stack's object_pk — INSERTs an ArrayPrimitive owned by the target's owner_role",
 		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
 		"add_hash":      "(owner_role_pk) -> new HashPrimitive's object_pk — plain hash, no bucket_for set",
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
@@ -73,6 +74,12 @@ function engine.new(db)
 	self.stmt_add_bucket = db:prepare(
 		"insert into objects (primitive, bucket_for, owner_role) " ..
 		"select 'h', ?1, owner_role from objects where object_pk = ?1 " ..
+		"returning object_pk"
+	)
+
+	self.stmt_add_stack = db:prepare(
+		"insert into objects (primitive, stack_for, owner_role) " ..
+		"select 'a', ?1, owner_role from objects where object_pk = ?1 " ..
 		"returning object_pk"
 	)
 
@@ -172,6 +179,33 @@ function engine:add_bucket(for_object_pk)
 
 	stmt:reset()
 	return bucket_pk
+end
+
+--[[
+## `add_stack` — INSERT a stack, return its pk
+
+Parallel to `add_bucket`, on the array side. INSERTs an ArrayPrimitive
+as the stack for a given owner and returns the new stack's `object_pk`.
+Used by `object:stack` as the lazy-create branch of the stack accessor.
+
+Same shape as `add_bucket`:
+
+- `insert ... select` reads `owner_role` off the target row.
+- `RETURNING object_pk` hands the new pk back in the same round trip.
+- The `objects_denormalize_stack` trigger fires inside the same
+  statement and sets the target row's `stack_pk` column.
+]]
+function engine:add_stack(for_object_pk)
+	local stmt = self.stmt_add_stack
+	stmt:bind_values(for_object_pk)
+	local stack_pk
+
+	for r in stmt:nrows() do
+		stack_pk = r.object_pk
+	end
+
+	stmt:reset()
+	return stack_pk
 end
 
 --[[

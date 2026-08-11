@@ -384,6 +384,92 @@ test("add_bucket reuses the same prepared statement across calls", function()
 end)
 
 -- ==============================================================
+-- engine:add_stack
+-- ==============================================================
+
+test("add_stack creates an ArrayPrimitive row with stack_for pointing at the target", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local target = insert_target(db, user)
+
+	local stack_pk = e:add_stack(target)
+
+	assert_not_nil(stack_pk, "returned pk")
+
+	local primitive, stack_for
+	local sql = string.format(
+		"select primitive, stack_for from objects where object_pk = '%s'",
+		stack_pk
+	)
+
+	for row in db:nrows(sql) do
+		primitive = row.primitive
+		stack_for = row.stack_for
+	end
+
+	assert_eq(primitive, "a", "new stack is an ArrayPrimitive")
+	assert_eq(stack_for, target, "stack_for points at the target")
+
+	db:close()
+end)
+
+test("add_stack derives the new stack's owner_role from the target", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local target = insert_target(db, user)
+
+	local stack_pk = e:add_stack(target)
+
+	local stack_owner
+	local sql = string.format(
+		"select owner_role from objects where object_pk = '%s'",
+		stack_pk
+	)
+
+	for row in db:nrows(sql) do
+		stack_owner = row.owner_role
+	end
+
+	assert_eq(stack_owner, user, "stack inherits target's owner_role")
+
+	db:close()
+end)
+
+test("add_stack triggers denormalization of the target's stack_pk", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local target = insert_target(db, user)
+
+	local stack_pk = e:add_stack(target)
+
+	local denormalized
+	local sql = string.format(
+		"select stack_pk from objects where object_pk = '%s'",
+		target
+	)
+
+	for row in db:nrows(sql) do
+		denormalized = row.stack_pk
+	end
+
+	assert_eq(denormalized, stack_pk, "target.stack_pk = new stack's object_pk")
+
+	db:close()
+end)
+
+test("add_stack's prepared statement is cached at construction", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+
+	assert_not_nil(e.stmt_add_stack, "cache populated at construction")
+
+	db:close()
+end)
+
+-- ==============================================================
 -- engine:add_scalar
 -- ==============================================================
 
