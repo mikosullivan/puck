@@ -23,7 +23,7 @@ pragma foreign_keys = on;
 -- to happen across rows or tables, do it explicitly in Lua rather
 -- than lean on trigger chains. FK cascades are a separate mechanism
 -- and their after-triggers fire regardless — mark triggers on
--- relationships continue to fire during bulk DELETEs. [ghi]
+-- refs continue to fire during bulk DELETEs. [ghi]
 pragma recursive_triggers = on;
 
 -- ############################################################################
@@ -194,7 +194,15 @@ create table objects (
 	-- Written by the host's GC pass; CVM stamps it inside the drain
 	-- to sequence callbacks. >0-or-null; CHECK doesn't fire on null
 	-- so no `is null or` guard is needed. [ghi]
-	in_trace integer check (in_trace > 0)
+	in_trace integer check (in_trace > 0),
+
+	-- Human-readable label for the row. Populated by the engine
+	-- (or by hand during debugging) so a state snapshot self-describes
+	-- what each row is meant to be. Purely informational — no query
+	-- path reads it. Permanent feature of the schema. Rendered as
+	-- "comment" in walkthrough tables for readability. See the
+	-- ideas/frames-as-objects root page for the design rationale. [ghi]
+	debug text
 );
 
 -- Partial index over just the pinned rows. Reachability queries
@@ -285,8 +293,8 @@ end;
 -- container primitive ('h' or 'a') — full objects and scalars
 -- cannot be parents. Enforced by trigger below. [ghi]
 
-create table relationships (
-	rel_pk  integer primary key autoincrement,
+create table refs (
+	ref_pk  integer primary key autoincrement,
 
 	parent  text not null references objects(object_pk) on delete cascade,
 	-- child uses ON DELETE RESTRICT so deleting an object with
@@ -310,7 +318,16 @@ create table relationships (
 	-- iteration. [ghi]
 	idx     integer not null check (idx >= 0),
 
-	-- No two relationships from the same parent share a key or idx.
+	-- Human-readable label for the row. Populated by the engine
+	-- (or by hand during debugging) so a state snapshot self-describes
+	-- what each relationship is meant to be. Purely informational —
+	-- no query path reads it. Permanent feature of the schema.
+	-- Rendered as "comment" in walkthrough tables for readability.
+	-- Same treatment as objects.debug — see the ideas/frames-as-objects
+	-- root page for the design rationale. [ghi]
+	debug text,
+
+	-- No two refs from the same parent share a key or idx.
 	-- Null-key rows (array-style) don't collide on the (parent, key)
 	-- constraint because SQLite doesn't consider nulls in UNIQUE
 	-- constraints. [ghi]
@@ -318,29 +335,29 @@ create table relationships (
 	unique (parent, idx)
 );
 
-create index relationships_parent on relationships(parent);
-create index relationships_child  on relationships(child);
+create index refs_parent on refs(parent);
+create index refs_child  on refs(child);
 
 -- Only container primitives ('h' or 'a') can be parents. Full
 -- objects (primitive = 'o') and scalar primitives cannot appear
 -- as parent — they don't have references. Full objects route
 -- through their bucket / stack. [ghi]
-create trigger relationships_parent_must_be_primitive_container
-before insert on relationships
+create trigger refs_parent_must_be_primitive_container
+before insert on refs
 when (select primitive from objects where object_pk = new.parent) not in ('h', 'a')
 begin
-	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in relationships');
+	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in refs');
 end;
 
--- The whole relationships row is immutable. Rebinding an edge
+-- The whole refs row is immutable. Rebinding an edge
 -- (swinging child from one object to another, moving to a different
 -- key, whatever) is expressed as delete + insert, not in-place
 -- update. Immutability means the mark trigger only needs to fire on
 -- DELETE — there's no in-place UPDATE OF child to cover. [ghi]
-create trigger relationships_no_update
-before update on relationships
+create trigger refs_no_update
+before update on refs
 begin
-	select raise(abort, 'relationships_immutable: relationships rows are immutable');
+	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
 
 -- ------------------------------------------------------------
@@ -359,11 +376,11 @@ end;
 -- equivalent). Terminating the trace on an alive row is a cheaper
 -- wasted iteration than gating every mark-trigger fire on a subquery.
 --
--- No corresponding UPDATE trigger — relationships.child is immutable
--- (see relationships_no_update). Rebinding an edge is expressed as
+-- No corresponding UPDATE trigger — refs.child is immutable
+-- (see refs_no_update). Rebinding an edge is expressed as
 -- delete + insert; the delete fires this trigger. [ghi]
-create trigger relationships_mark_needs_trace_after_delete
-after delete on relationships
+create trigger refs_mark_needs_trace_after_delete
+after delete on refs
 begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
@@ -387,7 +404,7 @@ end;
 -- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
 -- cleanup trigger needed.
 --
--- Only container primitives can be parents in the `relationships`
+-- Only container primitives can be parents in the `refs`
 -- table. Full objects hold their contents in their bucket + stack;
 -- scalars have no contents at all. [ghi]
 
@@ -425,6 +442,60 @@ alter table objects add column role_parent text
 -- "AST storage: JSON, not JSONB" design note in requirements/cvm/
 -- for the rationale. [ghi]
 alter table objects add column ast text;
+
+-- lexical_parent: the enclosing scope for closures and their
+-- invocation frames. On a closure-object: points at the frame
+-- (objects row) the closure was defined in — that's what the
+-- closure captured. On an invocation frame pushed from a closure
+-- call: points at the closure's captured frame, so variable lookup
+-- for names not in the frame's own bucket walks the chain up. On
+-- non-scope-carrying rows (plain objects, frame 0, non-closure
+-- function frames): null.
+--
+-- This is the field that makes closures work under frames-as-objects.
+-- Because a closure holds an ordinary object-graph reference to its
+-- captured frame, GC keeps that frame alive as long as the closure
+-- does. When the defining function returns and its frame is popped
+-- off the call stack, the frame ROW stays in the objects table —
+-- unreachable from `processes`, but reachable from the closure,
+-- and that's what ordinary reachability wants. See the closure
+-- walkthrough at ideas/frames-as-objects/examples/closure/ for the
+-- table snapshots that make this concrete.
+--
+-- Immutable at INSERT for a given row — the captured scope is set
+-- at creation and never rebound. [ghi]
+alter table objects add column lexical_parent text references objects(object_pk);
+
+-- stmt_idx: current position within the row's `ast`. Frame-objects
+-- use this to track which top-level statement they're about to
+-- dispatch — 0 at push, incremented after each dispatch, back to
+-- null (or unused) after the frame finishes. Non-frame objects
+-- leave it null. Mutable — advances during execution. Non-negative
+-- integer; null passes the CHECK unmarked.
+--
+-- Bookkeeping like this used to live in the frame's bucket as a
+-- scalar entry hung off a refs row. Promoting stmt_idx
+-- to a column saves three rows per frame (the scalar row, its
+-- refs link, and the bucket entry) at the cost of one
+-- column on every objects row — a good trade when frames are
+-- pushed and popped often. [ghi]
+alter table objects add column stmt_idx integer check (stmt_idx >= 0);
+
+-- idx: stack position of this frame within its process. 0 for the
+-- outermost frame; incremented for each nested call. Frame-objects
+-- only; non-frame objects leave it null. Immutable at INSERT for a
+-- given frame — a frame's stack position is fixed at push time.
+-- Same trade as stmt_idx: promoting the idx reference out of a
+-- bucket entry saves three rows per frame. Non-negative integer;
+-- null passes the CHECK unmarked. [ghi]
+alter table objects add column idx integer check (idx >= 0);
+
+-- process: FK to the processes table for frame-objects. Declared
+-- further down in this section, immediately after `create table
+-- processes`, because SQLite validates FK targets at insert time
+-- and the alter-table statement would fail here before processes
+-- exists. See the block after `create table processes` for the
+-- actual DDL and the design rationale. [ghi]
 
 -- owner_role: ownership pointer for non-role objects. Every non-role
 -- object carries owner_role pointing at the role that created it.
@@ -674,7 +745,7 @@ end;
 -- emits a specific event. Spec: requirements/events/index.
 --
 -- Registrations are bookkeeping, not graph edges — they live
--- outside `relationships` so GC does NOT count them as reachability.
+-- outside `refs` so GC does NOT count them as reachability.
 -- Weak-ref lifetime falls out of ON DELETE CASCADE: when either
 -- party's `objects` row is deleted (typically because GC decided it
 -- was unreachable), the registration cascade-deletes. [ghi]
@@ -776,6 +847,23 @@ begin
 	select raise(abort, 'processes_no_update: processes rows are immutable');
 end;
 
+-- ------------------------------------------------------------
+-- objects.process — frame → process FK, deferred to here.
+-- ------------------------------------------------------------
+-- Declared after `create table processes` so SQLite can resolve the
+-- FK target. Every frame-object carries this pointing at its own
+-- process row; non-frame objects leave it null. Immutable at INSERT
+-- for a given frame — a frame doesn't migrate between processes.
+--
+-- Same trade as stmt_idx above: promoting the process reference out
+-- of a bucket entry saves three rows per frame (the number-scalar
+-- objects row, its refs link, and the bucket entry).
+-- SQLite skips FK checks on null values, so a null on non-frame
+-- rows costs nothing.
+--
+-- No cascade on delete — process teardown policy is a Caspian-level
+-- concern to be spec'd. [ghi]
+alter table objects add column process integer references processes(process_pk);
 
 -- ------------------------------------------------------------
 -- uspace — derived view of GC anchor set.
@@ -804,11 +892,11 @@ end;
 -- owner via bucket_for / stack_for (ON DELETE CASCADE handles
 -- owner-goes-so-bucket-goes at the FK level). Under normal
 -- CVM ops nothing puts a bucket or stack row as a child in
--- the relationships table, so mark triggers never fire on them —
+-- the refs table, so mark triggers never fire on them —
 -- they never become GC candidates.
 --
 -- Roles (children of user in the role tree) aren't a special
--- case — they're regular objects reachable via relationships from
+-- case — they're regular objects reachable via refs from
 -- user's bucket → 'children' array → child roles. Standard trace
 -- reaches them from user (which IS in uspace).
 --

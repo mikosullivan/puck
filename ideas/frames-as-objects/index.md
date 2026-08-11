@@ -10,7 +10,7 @@
 
 Exploring folding frames into the object table.
 
-![CVM ER diagram — objects with Mikobase and CVM columns tagged, relationships, instance_listeners, class_listeners, processes, plus roles and uspace views.](./documentation/frames-as-objects.svg)
+![CVM ER diagram — objects with Mikobase and CVM columns tagged, refs, instance_listeners, class_listeners, processes, plus roles and uspace views.](./documentation/frames-as-objects.svg)
 
 ## Overview
 
@@ -26,9 +26,15 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 - `frame_locals` — gone. Locals become bucket entries on the frame-object.
 - `frame_delegations`, `frame_ambers` — gone. Same treatment.
 - **`processes` stays** as call-stack roots (one row per stack).
-- `objects`, `relationships`, `instance_listeners`, `class_listeners` unchanged in role.
+- `objects`, `refs`, `instance_listeners`, `class_listeners` unchanged in role.
 
-Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](./src/cvm.sql) for the working schema sketch.
+Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql) for the working schema sketch.
+
+## The `debug` column
+
+Both `objects` and `refs` carry a `debug` column — nullable text, populated by the engine or by hand so a state snapshot self-describes what each row is meant to be. Purely informational — no query path reads it. Permanent feature of the schema, not scaffolding. Rendered as "comment" in walkthrough tables for readability, but the storage-level name is `debug`.
+
+On `objects` the column labels rows: "user seed", "frame 0", "frame 0's bucket", "scalar 42". On `refs` it labels edges: which callable owns the edge, which language feature the edge implements, whatever the writer wants a reader to know at a glance.
 
 ## Consequences (nice, but not the point)
 

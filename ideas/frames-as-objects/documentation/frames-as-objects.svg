@@ -3,7 +3,7 @@
    viewBox="0 0 1500 1000"
    width="1500"
    role="img"
-   aria-label="CVM entity-relationship diagram. Ten tables grouped into: CVM marker (gray), object graph (objects and relationships, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
+   aria-label="CVM entity-relationship diagram. Ten tables grouped into: CVM marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
    version="1.1"
    id="svg707"
    sodipodi:docname="frames-as-objects.svg"
@@ -206,7 +206,7 @@
          x="0.16671056"
          y="0.16673484"
          width="179.66658"
-         height="292.46176"
+         height="382"
          rx="5.9888859"
          ry="8.4097929"
          fill="#ffffff"
@@ -396,10 +396,12 @@
          fill="#616161"
          id="text-in-trace"
          style="stroke-width:0.47787">in_trace</text>
+      <text x="8.616663" y="235.35001" font-size="11px" font-weight="700" fill="#1976d2" style="stroke-width:0.47787">M</text>
+      <text x="48.491886" y="235.35001" font-size="11px" fill="#616161" id="text-comment" style="stroke-width:0.47787">comment</text>
       <!-- CVM columns -->
       <text
          x="8.616663"
-         y="235.35001"
+         y="252.64999"
          font-size="11px"
          font-weight="700"
          fill="#ff9800"
@@ -407,14 +409,14 @@
          id="text315">C</text>
       <text
          x="48.491886"
-         y="235.35001"
+         y="252.64999"
          font-size="11px"
          fill="#616161"
          id="text-user"
          style="stroke-width:0.47787">user</text>
       <text
          x="8.616663"
-         y="252.64999"
+         y="269.95001"
          font-size="11px"
          font-weight="700"
          fill="#ff9800"
@@ -422,7 +424,7 @@
          id="text318">C</text>
       <text
          x="48.475773"
-         y="252.64999"
+         y="269.95001"
          font-size="11px"
          fill="#616161"
          id="text567"
@@ -430,11 +432,11 @@
       <path
          id="path314"
          style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 29.578096,253.6976 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         d="m 29.578096,270.9976 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
          sodipodi:nodetypes="csssc" />
       <text
          x="8.616663"
-         y="269.95001"
+         y="287.25"
          font-size="11px"
          font-weight="700"
          fill="#ff9800"
@@ -442,7 +444,7 @@
          id="text323">C</text>
       <text
          x="48.744328"
-         y="269.95001"
+         y="287.25"
          font-size="11px"
          fill="#616161"
          id="text-owner-role"
@@ -450,11 +452,11 @@
       <path
          id="path581"
          style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 29.578096,270.94926 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+         d="m 29.578096,288.24926 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
          sodipodi:nodetypes="csssc" />
       <text
          x="8.616663"
-         y="287.25"
+         y="304.55"
          font-size="11px"
          font-weight="700"
          fill="#ff9800"
@@ -462,7 +464,7 @@
          id="text328">C</text>
       <text
          x="48.738956"
-         y="287.25"
+         y="304.55"
          font-size="11px"
          fill="#616161"
          id="text-ast"
@@ -476,6 +478,19 @@
          id="path1067"
          style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
          d="m 29.578096,184.39402 c -2.424482,-1.36725 -3.378025,-3.74291 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12285 6.430767,-3.53802 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29358"
+         sodipodi:nodetypes="csssc" />
+      <text x="8.616663" y="321.85" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
+      <text x="48.738956" y="321.85" font-size="11px" fill="#616161" id="text-stmt-idx" style="stroke-width:0.47787">stmt_idx</text>
+      <text x="8.616663" y="339.15" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
+      <text x="48.738956" y="339.15" font-size="11px" fill="#616161" id="text-idx" style="stroke-width:0.47787">idx</text>
+      <text x="8.616663" y="356.45" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
+      <text x="48.738956" y="356.45" font-size="11px" fill="#616161" id="text-process" style="stroke-width:0.47787">process</text>
+      <text x="8.616663" y="373.75" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
+      <text x="48.738956" y="373.75" font-size="11px" fill="#616161" id="text-lexical-parent" style="stroke-width:0.47787">lexical_parent</text>
+      <path
+         id="path-lexical-parent-loop"
+         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+         d="m 29.578096,374.80 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
          sodipodi:nodetypes="csssc" />
     </g>
     <g
@@ -791,7 +806,7 @@
       <path
          class="fk-arrow"
          d="M 944.74918,739.57883 H 824.27384"
-         id="path-relationships-objects-2" />
+         id="path-refs-objects-2" />
       <path
          class="fk-arrow"
          d="M 944.74918,784.47947 H 824.27384"
@@ -859,14 +874,14 @@
          font-size="13px"
          font-weight="700"
          fill="#ffffff"
-         id="text581">relationships</text>
+         id="text581">refs</text>
       <text
          x="10"
          y="44"
          font-size="11px"
          font-weight="700"
          fill="#212121"
-         id="text583">PK: rel_pk</text>
+         id="text583">PK: ref_pk</text>
       <text
          x="10"
          y="60"
