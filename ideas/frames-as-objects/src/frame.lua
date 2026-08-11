@@ -31,14 +31,15 @@ frame.__index = frame
 --[[
 ## Constructing a frame
 
-`frame.new(engine, row)` builds an ordinary object first (so column
-fields get lifted onto self by the inherited constructor), then
-re-parents `self`'s metatable to `frame` so frame's own methods
-(`locals`, ...) resolve on lookup.
+`frame.new(engine, row)` uses `object._wrap` — the shared
+metatable-set-and-lift-columns helper — with `frame` as the metatable.
+Going through `_wrap` (rather than calling `object.new`) skips
+`object.new`'s ast-based dispatch branch, so a frame row loaded via
+`engine:object_by_pk` doesn't recurse into `object.new → frame.new
+→ object.new → …`.
 ]]
 function frame.new(engine, row)
-	local self = object.new(engine, row)
-	return setmetatable(self, frame)
+	return object._wrap(frame, engine, row)
 end
 
 --[[

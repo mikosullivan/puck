@@ -197,6 +197,67 @@ test("object_by_pk carries a reference to its engine on the returned object", fu
 end)
 
 -- ==============================================================
+-- object_by_pk class dispatch (frame vs plain object)
+-- ==============================================================
+
+-- Insert a frame-shaped row (has `ast`, owned by user). Returns pk.
+local function insert_frame(db, user)
+	local pk
+
+	local sql = string.format(
+		"insert into objects (primitive, ast, owner_role) values ('o', '[[]]', '%s') returning object_pk",
+		user
+	)
+
+	for row in db:nrows(sql) do
+		pk = row.object_pk
+	end
+
+	return pk
+end
+
+test("object_by_pk dispatches an ast-having row to the frame class", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+
+	local obj = e:object_by_pk(frame_pk)
+
+	assert_not_nil(obj, "row returned")
+	assert_eq(type(obj.locals), "function", "frame's :locals method is on the wrapper")
+
+	db:close()
+end)
+
+test("object_by_pk keeps ast-less rows as plain objects", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local plain_pk = insert_target(db, user)
+
+	local obj = e:object_by_pk(plain_pk)
+
+	assert_not_nil(obj, "row returned")
+	assert_nil(obj.locals, "plain object doesn't have :locals")
+
+	db:close()
+end)
+
+test("frame wrapper inherits :bucket from the object class", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+
+	local obj = e:object_by_pk(frame_pk)
+
+	assert_eq(type(obj.bucket), "function", "inherited :bucket resolves on the frame wrapper")
+
+	db:close()
+end)
+
+-- ==============================================================
 -- engine:add_bucket
 -- ==============================================================
 

@@ -36,13 +36,20 @@ lifts every column onto `self` so method bodies read them as
 and so on.
 
 Callers get one via `engine:object_by_pk(pk)`, which fetches the row
-and passes it here. Dispatching to a specific subclass (HashPrimitive,
-ArrayPrimitive, scalar, frame) based on `row.primitive` — and any
-per-pk caching so mutations propagate — lives inside this constructor
-too, though that piece isn't spec'd yet.
+and passes it here.
+
+**Class dispatch is on `row.ast`.** Under the frames-as-objects design
+a frame is any objects row with a non-null `ast` — there's no separate
+callable/frame split. If `row.ast` is present, `object.new` hands off
+to `frame.new` so the returned wrapper carries the frame class's
+methods (`locals`, ...). Otherwise it wraps as a plain `object`.
+
+The internal `_wrap` helper does the actual metatable set + column
+lift. `frame.new` reuses it to avoid re-entering `object.new` (which
+would loop forever on any frame row).
 ]]
-function object.new(engine, row)
-	local self = setmetatable({}, object)
+local function _wrap(mt, engine, row)
+	local self = setmetatable({}, mt)
 	self.engine = engine
 
 	for k, v in pairs(row) do
@@ -51,6 +58,20 @@ function object.new(engine, row)
 
 	return self
 end
+
+function object.new(engine, row)
+	if row.ast ~= nil then
+		local frame = require("frame")
+		return frame.new(engine, row)
+	end
+
+	return _wrap(object, engine, row)
+end
+
+-- Expose the internal helper so `frame.new` (and any future subclass)
+-- can build the wrapped object without re-entering `object.new`'s
+-- dispatch branch.
+object._wrap = _wrap
 
 --[[
 ## `bucket` — the object's bucket, lazily created
