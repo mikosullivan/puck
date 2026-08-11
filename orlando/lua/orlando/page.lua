@@ -1657,7 +1657,7 @@ function M.render_lua_annotated(ctx)
     f:close()
 
     local lua_page = require("orlando.lua_page")
-    local body = lua_page.render_body(source)
+    local body = lua_page.render_body(source, {doc_path = ctx.path})
 
     -- Auto-inject a "file: /path" line so every rendered Lua page shows
     -- the file's own path. ctx.path is the repo-relative fs path (e.g.

@@ -30,11 +30,12 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 
 Ten tables → six. See the diagram at the top of this page for the target layout and [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql) for the working schema sketch.
 
-## The `debug` column
+## Sidequests
 
-Both `objects` and `refs` carry a `debug` column — nullable text, populated by the engine or by hand so a state snapshot self-describes what each row is meant to be. Purely informational — no query path reads it. Permanent feature of the schema, not scaffolding. Rendered as "comment" in walkthrough tables for readability, but the storage-level name is `debug`.
+Two design changes are being carried alongside this brainstorm. See [sidequests/](https://www.puck.uno/ideas/frames-as-objects/sidequests/) for what each does and the promotion coordination rule that applies when frames-as-objects gets promoted to `requirements/`:
 
-On `objects` the column labels rows: "user seed", "frame 0", "frame 0's bucket", "scalar 42". On `refs` it labels edges: which callable owns the edge, which language feature the edge implements, whatever the writer wants a reader to know at a glance.
+- [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/sidequests/refs-rename) — schema rename affecting the table, column, triggers, indexes, and error ids
+- [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/sidequests/debug-column) — permanent human-readable row-label field on both tables
 
 ## Consequences (nice, but not the point)
 

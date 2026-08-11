@@ -201,7 +201,8 @@ create table objects (
 	-- what each row is meant to be. Purely informational — no query
 	-- path reads it. Permanent feature of the schema. Rendered as
 	-- "comment" in walkthrough tables for readability. See the
-	-- ideas/frames-as-objects root page for the design rationale. [ghi]
+	-- ideas/frames-as-objects/sidequests/debug-column page for the
+	-- design rationale and promotion coordination rule. [ghi]
 	debug text
 );
 
@@ -323,8 +324,9 @@ create table refs (
 	-- what each relationship is meant to be. Purely informational —
 	-- no query path reads it. Permanent feature of the schema.
 	-- Rendered as "comment" in walkthrough tables for readability.
-	-- Same treatment as objects.debug — see the ideas/frames-as-objects
-	-- root page for the design rationale. [ghi]
+	-- Same treatment as objects.debug — see the
+	-- ideas/frames-as-objects/sidequests/debug-column page for the
+	-- design rationale and promotion coordination rule. [ghi]
 	debug text,
 
 	-- No two refs from the same parent share a key or idx.

@@ -1,10 +1,10 @@
 --[=[
 {
 	"module": "orlando.lua_page",
-	"role": "Render a .lua source file as an annotated HTML body. Splits the source at every `--[[ ... ]]` block, classifies each block (JSON-parseable -> vibecode, `#`-prefixed content -> markdown, anything else -> plain Lua comment left in the code stream), and interleaves rendered vibecode blocks + rendered markdown + syntax-highlighted Lua code chunks. Every byte of the input source appears in the output; the difference is only visual treatment.",
+	"role": "Render a .lua source file as an annotated HTML body. Splits the source at every `--[[ ... ]]` block, classifies each block (JSON-parseable -> vibecode, `#`-prefixed content -> markdown, anything else -> plain Lua comment left in the code stream), and interleaves rendered vibecode blocks + rendered markdown + syntax-highlighted Lua code chunks. Rewrites `[ghi]` markers inside comments to `.ghi-btn` buttons when opts.doc_path is set — same treatment as sql_page. Every byte of the input source appears in the output; the difference is only visual treatment.",
 	"exports": {
 		"chunk": "source string -> array of {kind, body} chunks (kind = 'vibecode' | 'markdown' | 'code')",
-		"render_body": "source string -> HTML body string (no page shell, no <html>/<body>); combines chunk() with the per-kind renderers"
+		"render_body": "(source, opts?) -> HTML body string (no page shell, no <html>/<body>). opts.doc_path (optional): when set, `[ghi]` markers get replaced with .ghi-btn buttons carrying data-doc = doc_path, data-line = 1-indexed source line, data-context = trimmed comment text."
 	}
 }
 ]=]
@@ -18,6 +18,10 @@ local M = {}
 -- Strip leading and trailing whitespace (spaces + newlines).
 local function trim(s)
 	return (s:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+local function attr_escape(s)
+	return (s:gsub("&", "&amp;"):gsub('"', "&quot;"))
 end
 
 -- Decide which flavor a --[[ ... ]] block is. Vibecode is anything
@@ -130,12 +134,89 @@ local function render_code(body)
 	return '<pre class="highlight lua"><code>' .. highlighted .. '</code></pre>'
 end
 
+-- [ghi] preprocessing — same shape as sql_page's. Walk the source
+-- line by line, number every [ghi] occurrence as [ghi:N], and capture
+-- (line, context) into a parallel table. Context is the marker line's
+-- comment text with the marker itself stripped; standalone `-- [ghi]`
+-- lines walk back to find the last content-carrying comment. Line
+-- comment syntax is `--` (same as SQL — the character-class doesn't
+-- change between the two languages).
+local function preprocess_ghi(source)
+	local lines = {}
+	for line in (source .. "\n"):gmatch("([^\n]*)\n") do
+		table.insert(lines, line)
+	end
+	if lines[#lines] == "" then table.remove(lines) end
+
+	local function is_comment(l) return l and l:match("^%s*%-%-") ~= nil end
+	local function comment_content(l)
+		local body = l:match("^%s*%-%-%s*(.-)%s*$") or ""
+		return (body:gsub("%[ghi%]", ""):gsub("^%s+", ""):gsub("%s+$", ""))
+	end
+
+	local function context_for(i)
+		local own = comment_content(lines[i])
+		if own ~= "" then return own end
+
+		local j = i - 1
+		while j >= 1 and is_comment(lines[j]) do
+			local c = comment_content(lines[j])
+			if c ~= "" then return c end
+			j = j - 1
+		end
+
+		return ""
+	end
+
+	local contexts = {}
+	local next_idx = 1
+
+	for i, line in ipairs(lines) do
+		if line:find("%[ghi%]", 1) then
+			local ctx = context_for(i)
+			lines[i] = line:gsub("%[ghi%]", function()
+				local idx = next_idx
+				next_idx = next_idx + 1
+				contexts[idx] = {line = i, text = ctx}
+				return "[ghi:" .. idx .. "]"
+			end)
+		end
+	end
+
+	return table.concat(lines, "\n"), contexts
+end
+
+-- Post-process the concatenated HTML: replace every [ghi:N] with a
+-- fully-annotated .ghi-btn. Contexts come from preprocess_ghi.
+local function inject_ghi_buttons(html, contexts, doc_path)
+	local doc = attr_escape(doc_path)
+	return (html:gsub("%[ghi:(%d+)%]", function(n)
+		local ctx = contexts[tonumber(n)] or {}
+		local line = tostring(ctx.line or 0)
+		local text = attr_escape(ctx.text or "")
+		return '<button type="button" class="ghi-btn"'
+			.. ' data-doc="' .. doc .. '"'
+			.. ' data-line="' .. line .. '"'
+			.. ' data-context="' .. text .. '"'
+			.. '>ghi</button>'
+	end))
+end
+
 --[[ {
-	"in": {"source": "Lua source string"},
+	"in": {"source": "Lua source string", "opts": "optional table; opts.doc_path = repo-relative file path for the file-issue button's data-doc attribute"},
 	"out": "HTML body string (no <html>/<body> shell) with vibecode / markdown / code chunks rendered in source order"
 } ]]
-function M.render_body(source)
-	local chunks = M.chunk(source)
+function M.render_body(source, opts)
+	opts = opts or {}
+
+	local contexts
+	local processed_source = source
+
+	if opts.doc_path and opts.doc_path ~= "" then
+		processed_source, contexts = preprocess_ghi(source)
+	end
+
+	local chunks = M.chunk(processed_source)
 	local parts = {}
 
 	for _, chunk in ipairs(chunks) do
@@ -148,7 +229,13 @@ function M.render_body(source)
 		end
 	end
 
-	return table.concat(parts, "\n")
+	local html = table.concat(parts, "\n")
+
+	if contexts then
+		html = inject_ghi_buttons(html, contexts, opts.doc_path)
+	end
+
+	return html
 end
 
 return M

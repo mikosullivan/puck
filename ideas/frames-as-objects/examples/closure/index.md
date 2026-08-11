@@ -52,8 +52,8 @@ Snapshot after bootstrap finishes — schema installed, user seeded, `processes`
 
 <table class="tbl-mvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="5">refs</th></tr>
-<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th></tr>
+<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 </tbody>
