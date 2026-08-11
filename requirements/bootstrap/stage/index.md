@@ -4,9 +4,11 @@
 {"vibecode": {
 	"doc": "requirements_bootstrap_stage",
 	"role": "canonical page for the Stage step in Caspian's bootstrap sequence — how the engine takes the Caspian source string, produces the CaspM tree, writes it into the CVM, and sets up frame 0 so execution has a stack to walk. Diagram plus brief sections per sub-step, each linking to its own main page.",
-	"status": "V1 spec in progress — three sub-steps spec'd at per-sub-step pages under stage/; the Install-CaspM and Set-up-frame-0 sub-steps have open design questions"
+	"status": "V1 spec in progress — SLATED FOR COMPLETE OVERWRITE when frames-as-objects promotes to requirements/; structure, sub-step count, and per-page content will all change"
 }}
 ~~~
+
+> **Overwrite pending.** This entire Stage section — this page and every sub-step under it — will be rewritten when [frames-as-objects](https://www.puck.uno/ideas/frames-as-objects/) promotes to `requirements/`. Structure, sub-step count, and per-page content are all expected to change (Install CaspM collapses into Set up frame 0; the frame lands as an `objects` row, not a `frames` row). Read anything below as pre-integration state.
 
 The fifth step in the bootstrap sequence. `engine:load(source)` takes a Caspian source string and gets it ready for execution: parses, writes the resulting CaspM into the CVM, and sets up the top-level frame. After Stage returns, the stack has one frame waiting to be walked; bootstrap ends here.
 

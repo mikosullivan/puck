@@ -4,9 +4,11 @@
 {"vibecode": {
 	"doc": "requirements_bootstrap_stage_set_up_frame_0",
 	"role": "canonical spec for the third and final sub-step of Stage — inserting the top-level frame into the frames table so the stack has an entry ready to be walked when execution begins. Frame 0's shape (callable? class?) is open design work.",
-	"status": "V1 spec — brief; frame 0's shape is open design work"
+	"status": "V1 spec — brief; frame 0's shape is open design work. SLATED FOR REWRITE when frames-as-objects promotes to requirements/ — frame 0 lands as an objects row (not a frames row), the CaspM travels on its ast column (absorbing Install CaspM), and the sub-step count for Stage drops from three to two."
 }}
 ~~~
+
+> **Rewrite pending.** Under [frames-as-objects](https://www.puck.uno/ideas/frames-as-objects/), frame 0 is an `objects` row rather than a `frames` row. The CaspM lives on that row's `ast` column, which means this sub-step also absorbs the old Install CaspM step — one INSERT writes the frame and installs the CaspM at the same time. The "does frame 0 have a callable?" question below dissolves under the folding (there's no `method_pk` — ast lives on the frame). Read the rest of this page as pre-integration state.
 
 The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). After the CaspM is in the CVM, the stack is empty. This sub-step pushes the top-level frame — the frame that represents "the entry program is about to run."
 
