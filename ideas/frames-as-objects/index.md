@@ -30,10 +30,11 @@ The primary reason to do this is **closure lifetime**: a closure that outlives i
 
 Ten tables → six. [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/quests/main/src/cvm.sql) has the working schema sketch.
 
-## Sidequests
+## Quests
 
-Two design changes are being carried alongside this brainstorm. See [quests/](https://www.puck.uno/ideas/frames-as-objects/quests/) for what each does and the promotion coordination rule that applies when frames-as-objects gets promoted to `requirements/`:
+Every parallel workstream inside this brainstorm. `main` is the primary folding; the sidequests are design changes riding along that will promote to `requirements/` at the same time. See [quests/](https://www.puck.uno/ideas/frames-as-objects/quests/) for the promotion coordination rule that applies to each:
 
+- [main](https://www.puck.uno/ideas/frames-as-objects/quests/main/) — the primary folding: schema at `main/src/cvm.sql`, Lua source at `main/src/`, worked walkthroughs at `main/examples/`, tests at `main/tests/`
 - [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/quests/refs-rename/) — schema rename affecting the table, column, triggers, indexes, and error ids
 - [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables
 
