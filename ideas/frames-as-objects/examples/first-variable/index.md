@@ -191,8 +191,8 @@ values ('h', <frame_0_pk>, <user_pk>);
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
 <tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — <code>bucket_pk</code> is now <code>b00d...</code> (denormalized by trigger)</td></tr>
-<tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket; <code>bucket_for</code> = <code>f00d...</code></td></tr>
 <tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — still orphan</td></tr>
+<tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket; <code>bucket_for</code> = <code>f00d...</code></td></tr>
 </tbody>
 </table>
 
@@ -232,9 +232,9 @@ After the first INSERT the row exists but is orphan; after the second it's reach
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
 <tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
+<tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — still orphan</td></tr>
 <tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket</td></tr>
 <tr><td><code>10ca0000-0001-4000-8000-000000000003</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">locals hash — reachable via frame 0's bucket under key <code>locals</code></td></tr>
-<tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — still orphan</td></tr>
 </tbody>
 </table>
 
@@ -271,9 +271,9 @@ The scalar is no longer orphan. Looking up `$x` in frame 0 walks: frame 0 → it
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
 <tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
+<tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — bound to name <code>x</code> in the locals hash</td></tr>
 <tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket</td></tr>
 <tr><td><code>10ca0000-0001-4000-8000-000000000003</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">locals hash</td></tr>
-<tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — bound to name <code>x</code> in the locals hash</td></tr>
 </tbody>
 </table>
 

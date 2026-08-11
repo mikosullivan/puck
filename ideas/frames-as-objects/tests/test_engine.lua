@@ -392,6 +392,454 @@ test("add_bucket reuses the same prepared statement across calls", function()
 end)
 
 -- ==============================================================
+-- engine:add_scalar
+-- ==============================================================
+
+test("add_scalar writes primitive='o' with the given scalar_type/scalar_value/owner_role", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	local pk = e:add_scalar("n", 42, user)
+
+	local row
+	local sql = string.format(
+		"select primitive, scalar_type, scalar_value, owner_role from objects where object_pk = '%s'",
+		pk
+	)
+
+	for r in db:nrows(sql) do
+		row = r
+	end
+
+	assert_not_nil(row, "row exists")
+	assert_eq(row.primitive, "o", "primitive is scalar")
+	assert_eq(row.scalar_type, "n", "scalar_type set")
+	assert_eq(row.scalar_value, 42, "scalar_value set")
+	assert_eq(row.owner_role, user, "owner_role set to given role")
+
+	db:close()
+end)
+
+test("add_scalar returns the pk of the newly inserted row", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	local returned = e:add_scalar("s", "hi", user)
+
+	local via_query
+	local sql = string.format(
+		"select object_pk from objects where scalar_value = 'hi'"
+	)
+
+	for r in db:nrows(sql) do
+		via_query = r.object_pk
+	end
+
+	assert_eq(returned, via_query, "returned pk matches the row's object_pk")
+
+	db:close()
+end)
+
+test("add_scalar lazily caches its prepared statement", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	assert_nil(e.stmt_add_scalar, "no cache before first call")
+
+	e:add_scalar("n", 1, user)
+
+	assert_not_nil(e.stmt_add_scalar, "cache populated after first call")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- engine:add_hash
+-- ==============================================================
+
+test("add_hash writes primitive='h' with the given owner_role and no bucket_for", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	local pk = e:add_hash(user)
+
+	local row
+	local sql = string.format(
+		"select primitive, owner_role, bucket_for from objects where object_pk = '%s'",
+		pk
+	)
+
+	for r in db:nrows(sql) do
+		row = r
+	end
+
+	assert_not_nil(row, "row exists")
+	assert_eq(row.primitive, "h", "primitive is HashPrimitive")
+	assert_eq(row.owner_role, user, "owner_role set")
+	assert_nil(row.bucket_for, "bucket_for is null — this is a plain hash, not anyone's bucket")
+
+	db:close()
+end)
+
+test("add_hash lazily caches its prepared statement", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	assert_nil(e.stmt_add_hash, "no cache before first call")
+
+	e:add_hash(user)
+
+	assert_not_nil(e.stmt_add_hash, "cache populated after first call")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- engine:add_ref
+-- ==============================================================
+
+test("add_ref inserts a row into refs with the given parent, child, and key", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+	local child = e:add_scalar("n", 7, user)
+
+	local ref_pk = e:add_ref(parent, "x", child)
+
+	assert_not_nil(ref_pk, "returned ref_pk")
+
+	local row
+	local sql = string.format(
+		"select parent, child, key, idx from refs where ref_pk = %d",
+		ref_pk
+	)
+
+	for r in db:nrows(sql) do
+		row = r
+	end
+
+	assert_eq(row.parent, parent, "parent set")
+	assert_eq(row.child, child, "child set")
+	assert_eq(row.key, "x", "key set")
+	assert_eq(row.idx, 0, "first ref for parent gets idx 0")
+
+	db:close()
+end)
+
+test("add_ref auto-increments idx per parent", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+	local c1 = e:add_scalar("n", 1, user)
+	local c2 = e:add_scalar("n", 2, user)
+	local c3 = e:add_scalar("n", 3, user)
+
+	e:add_ref(parent, "a", c1)
+	e:add_ref(parent, "b", c2)
+	e:add_ref(parent, "c", c3)
+
+	local idxs = {}
+	local sql = string.format(
+		"select key, idx from refs where parent = '%s' order by idx",
+		parent
+	)
+
+	for r in db:nrows(sql) do
+		table.insert(idxs, {key = r.key, idx = r.idx})
+	end
+
+	assert_eq(idxs[1].key, "a", "first insert stays first")
+	assert_eq(idxs[1].idx, 0, "first insert idx=0")
+	assert_eq(idxs[2].key, "b", "second insert stays second")
+	assert_eq(idxs[2].idx, 1, "second insert idx=1")
+	assert_eq(idxs[3].key, "c", "third insert stays third")
+	assert_eq(idxs[3].idx, 2, "third insert idx=2")
+
+	db:close()
+end)
+
+test("add_ref lazily caches its prepared statement", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+	local child = e:add_scalar("n", 1, user)
+
+	assert_nil(e.stmt_add_ref, "no cache before first call")
+
+	e:add_ref(parent, "x", child)
+
+	assert_not_nil(e.stmt_add_ref, "cache populated after first call")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- engine:get_ref_child
+-- ==============================================================
+
+test("get_ref_child returns nil for a missing (parent, key)", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+
+	local child_pk = e:get_ref_child(parent, "does_not_exist")
+
+	assert_nil(child_pk, "no ref → nil")
+
+	db:close()
+end)
+
+test("get_ref_child returns the child's pk for an existing (parent, key)", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+	local child = e:add_scalar("n", 99, user)
+	e:add_ref(parent, "answer", child)
+
+	local looked_up = e:get_ref_child(parent, "answer")
+
+	assert_eq(looked_up, child, "returned pk matches child")
+
+	db:close()
+end)
+
+test("get_ref_child lazily caches its prepared statement", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local parent = e:add_hash(user)
+
+	assert_nil(e.stmt_get_ref_child, "no cache before first call")
+
+	e:get_ref_child(parent, "x")
+
+	assert_not_nil(e.stmt_get_ref_child, "cache populated after first call")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- frame:ensure_locals
+-- ==============================================================
+
+test("frame:ensure_locals materializes the locals hash on first call", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	local locals = frame:ensure_locals()
+
+	assert_not_nil(locals, "returned an object")
+	assert_eq(locals.primitive, "h", "locals is a HashPrimitive")
+	assert_eq(locals.owner_role, user, "locals owned by the frame's owner_role")
+	assert_nil(locals.bucket_for, "locals is a plain hash, not a bucket_for anyone")
+
+	db:close()
+end)
+
+test("frame:ensure_locals binds the locals hash under bucket['locals']", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	local locals = frame:ensure_locals()
+	local bucket = frame:bucket()
+	local via_lookup = e:get_ref_child(bucket.object_pk, "locals")
+
+	assert_eq(via_lookup, locals.object_pk, "bucket['locals'] resolves to the returned hash")
+
+	db:close()
+end)
+
+test("frame:ensure_locals is idempotent — same hash returned across calls", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	local first = frame:ensure_locals()
+	local second = frame:ensure_locals()
+
+	assert_eq(first.object_pk, second.object_pk, "second call returns the same hash pk")
+
+	-- Only one 'locals' ref should exist in the frame's bucket.
+	local count
+	local sql = string.format(
+		"select count(*) as n from refs where parent = '%s' and key = 'locals'",
+		frame:bucket().object_pk
+	)
+
+	for r in db:nrows(sql) do
+		count = r.n
+	end
+
+	assert_eq(count, 1, "exactly one locals ref, no duplicates")
+
+	db:close()
+end)
+
+test("frame:locals returns nil on a fresh frame (no locals hash yet)", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	local locals = frame:locals()
+
+	assert_nil(locals, "fresh frame has no locals hash yet")
+
+	db:close()
+end)
+
+test("frame:locals returns the hash once it's been materialized", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	local ensured = frame:ensure_locals()
+	local read = frame:locals()
+
+	assert_not_nil(read, "read returns something")
+	assert_eq(read.object_pk, ensured.object_pk, "read pk matches ensured pk")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- frame:set_local_to_scalar
+-- ==============================================================
+
+test("set_local_to_scalar creates the scalar with correct columns", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	frame:set_local_to_scalar("x", "n", 1)
+
+	-- The scalar exists as an objects row.
+	local row
+	local sql = "select object_pk, primitive, scalar_type, scalar_value, owner_role " ..
+		"from objects where scalar_value = 1 and scalar_type = 'n'"
+
+	for r in db:nrows(sql) do
+		row = r
+	end
+
+	assert_not_nil(row, "scalar row exists")
+	assert_eq(row.primitive, "o", "primitive is scalar")
+	assert_eq(row.scalar_type, "n", "scalar_type=n")
+	assert_eq(row.scalar_value, 1, "scalar_value=1")
+	assert_eq(row.owner_role, user, "owner_role matches frame's owner_role")
+
+	db:close()
+end)
+
+test("set_local_to_scalar wires the binding through bucket → locals → key", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	frame:set_local_to_scalar("x", "n", 1)
+
+	local bucket = frame:bucket()
+	local locals_pk = e:get_ref_child(bucket.object_pk, "locals")
+	assert_not_nil(locals_pk, "bucket['locals'] exists")
+
+	local scalar_pk = e:get_ref_child(locals_pk, "x")
+	assert_not_nil(scalar_pk, "locals['x'] exists")
+
+	-- The child under locals['x'] is the scalar we wrote.
+	local scalar_value
+	local sql = string.format(
+		"select scalar_value from objects where object_pk = '%s'",
+		scalar_pk
+	)
+
+	for r in db:nrows(sql) do
+		scalar_value = r.scalar_value
+	end
+
+	assert_eq(scalar_value, 1, "locals['x'] holds the scalar with value 1")
+
+	db:close()
+end)
+
+test("set_local_to_scalar handles multiple bindings in the same frame", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	frame:set_local_to_scalar("x", "n", 1)
+	frame:set_local_to_scalar("y", "n", 2)
+	frame:set_local_to_scalar("name", "s", "alice")
+
+	local locals = frame:locals()
+
+	local x_pk = e:get_ref_child(locals.object_pk, "x")
+	local y_pk = e:get_ref_child(locals.object_pk, "y")
+	local name_pk = e:get_ref_child(locals.object_pk, "name")
+
+	assert_not_nil(x_pk, "locals['x'] bound")
+	assert_not_nil(y_pk, "locals['y'] bound")
+	assert_not_nil(name_pk, "locals['name'] bound")
+
+	-- Distinct scalars for each.
+	assert(x_pk ~= y_pk, "x and y point at different scalars")
+	assert(x_pk ~= name_pk, "x and name point at different scalars")
+
+	db:close()
+end)
+
+test("set_local_to_scalar reuses the locals hash across bindings (no duplicate 'locals' refs)", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+	local frame = e:object_by_pk(frame_pk)
+
+	frame:set_local_to_scalar("x", "n", 1)
+	frame:set_local_to_scalar("y", "n", 2)
+
+	local count
+	local sql = string.format(
+		"select count(*) as n from refs where parent = '%s' and key = 'locals'",
+		frame:bucket().object_pk
+	)
+
+	for r in db:nrows(sql) do
+		count = r.n
+	end
+
+	assert_eq(count, 1, "exactly one locals ref, reused across bindings")
+
+	db:close()
+end)
+
+-- ==============================================================
 -- Summary
 -- ==============================================================
 
