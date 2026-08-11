@@ -13,7 +13,6 @@ Parallel workstreams inside the frames-as-objects brainstorm. `main` is the prim
 ## Current quests
 
 - [main](https://www.puck.uno/ideas/frames-as-objects/quests/main/) — the primary folding: schema at `main/src/cvm.sql`, Lua source at `main/src/`, worked walkthroughs at `main/examples/`, tests at `main/tests/`
-- [refs — renamed from relationships](https://www.puck.uno/ideas/frames-as-objects/quests/refs-rename/) — schema rename affecting the table, column, triggers, indexes, and error ids
 - [debug column on objects and refs](https://www.puck.uno/ideas/frames-as-objects/quests/debug-columns/) — permanent human-readable row-label field on both tables
 
 ## Promotion order

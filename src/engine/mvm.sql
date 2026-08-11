@@ -8,7 +8,7 @@ pragma foreign_keys = on;
 -- to happen across rows or tables, do it explicitly in Lua rather
 -- than lean on trigger chains. FK cascades are a separate mechanism
 -- and their after-triggers fire regardless — mark triggers on
--- relationships continue to fire during bulk DELETEs.
+-- refs continue to fire during bulk DELETEs.
 pragma recursive_triggers = on;
 
 -- ############################################################################
@@ -330,8 +330,8 @@ end;
 -- container primitive ('h' or 'a') — full objects and scalars
 -- cannot be parents. Enforced by trigger below.
 
-create table relationships (
-	rel_pk  integer primary key autoincrement,
+create table refs (
+	ref_pk  integer primary key autoincrement,
 
 	parent  text not null references objects(object_pk) on delete cascade,
 	-- child uses ON DELETE RESTRICT so deleting an object with
@@ -355,7 +355,7 @@ create table relationships (
 	-- iteration.
 	idx     integer not null check (idx >= 0),
 
-	-- No two relationships from the same parent share a key or idx.
+	-- No two refs from the same parent share a key or idx.
 	-- Null-key rows (array-style) don't collide on the (parent, key)
 	-- constraint because SQLite doesn't consider nulls in UNIQUE
 	-- constraints.
@@ -363,18 +363,18 @@ create table relationships (
 	unique (parent, idx)
 );
 
-create index relationships_parent on relationships(parent);
-create index relationships_child  on relationships(child);
+create index refs_parent on refs(parent);
+create index refs_child  on refs(child);
 
 -- Only container primitives ('h' or 'a') can be parents. Full
 -- objects (primitive = 'o') and scalar primitives cannot appear
 -- as parent — they don't have references. Full objects route
 -- through their bucket / stack.
-create trigger relationships_parent_must_be_primitive_container
-before insert on relationships
+create trigger refs_parent_must_be_primitive_container
+before insert on refs
 when (select primitive from objects where object_pk = new.parent) not in ('h', 'a')
 begin
-	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in relationships');
+	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in refs');
 end;
 
 -- All identity + content columns are immutable. Rebinding an edge
@@ -382,20 +382,20 @@ end;
 -- key, whatever) is expressed as delete + insert, not in-place update.
 -- Immutability means the mark trigger only needs to fire on DELETE —
 -- there's no in-place UPDATE OF child to cover.
-create trigger relationships_no_update
-before update on relationships
+create trigger refs_no_update
+before update on refs
 begin
 	select case
-		when new.rel_pk is not old.rel_pk
-			then raise(abort, 'relationships_pk_immutable: relationships.rel_pk is immutable')
+		when new.ref_pk is not old.ref_pk
+			then raise(abort, 'refs_pk_immutable: refs.ref_pk is immutable')
 		when new.parent is not old.parent
-			then raise(abort, 'relationships_parent_immutable: relationships.parent is immutable')
+			then raise(abort, 'refs_parent_immutable: refs.parent is immutable')
 		when new.child is not old.child
-			then raise(abort, 'relationships_child_immutable: relationships.child is immutable')
+			then raise(abort, 'refs_child_immutable: refs.child is immutable')
 		when new.key is not old.key
-			then raise(abort, 'relationships_key_immutable: relationships.key is immutable')
+			then raise(abort, 'refs_key_immutable: refs.key is immutable')
 		when new.idx is not old.idx
-			then raise(abort, 'relationships_idx_immutable: relationships.idx is immutable')
+			then raise(abort, 'refs_idx_immutable: refs.idx is immutable')
 	end;
 end;
 
@@ -418,7 +418,7 @@ end;
 -- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
 -- cleanup trigger needed.
 --
--- Only container primitives can be parents in the `relationships`
+-- Only container primitives can be parents in the `refs`
 -- table. Full objects hold their contents in their bucket + stack;
 -- scalars have no contents at all.
 
@@ -600,11 +600,11 @@ insert into mvm (key, value) values ('schema', '9.0');
 -- as alive, a cheap wasted iteration compared to a subquery on
 -- every mark-trigger fire).
 --
--- No corresponding UPDATE trigger — relationships.child is immutable
--- (see relationships_no_update). Rebinding an edge is expressed as
+-- No corresponding UPDATE trigger — refs.child is immutable
+-- (see refs_no_update). Rebinding an edge is expressed as
 -- delete + insert; the delete fires this trigger.
-create trigger relationships_mark_needs_trace_after_delete
-after delete on relationships
+create trigger refs_mark_needs_trace_after_delete
+after delete on refs
 begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
@@ -616,7 +616,7 @@ end;
 -- emits a specific event. Spec: requirements/events/index.
 --
 -- Registrations are bookkeeping, not graph edges — they live
--- outside `relationships` so GC does NOT count them as reachability.
+-- outside `refs` so GC does NOT count them as reachability.
 -- Weak-ref lifetime falls out of ON DELETE CASCADE: when either
 -- party's `objects` row is deleted (typically because GC decided it
 -- was unreachable), the registration cascade-deletes.
@@ -960,11 +960,11 @@ end;
 -- owner via bucket_for / stack_for (ON DELETE CASCADE handles
 -- owner-goes-so-bucket-goes at the FK level). Under normal
 -- MVM ops nothing puts a bucket or stack row as a child in
--- the relationships table, so mark triggers never fire on them —
+-- the refs table, so mark triggers never fire on them —
 -- they never become GC candidates.
 --
 -- Roles (children of user in the role tree) aren't a special
--- case — they're regular objects reachable via relationships from
+-- case — they're regular objects reachable via refs from
 -- user's bucket → 'children' array → child roles. Standard trace
 -- reaches them from user (which IS in uspace).
 --

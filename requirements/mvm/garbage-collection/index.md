@@ -18,7 +18,7 @@ Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already 
 
 The current inventory, one entry per source column:
 
-- **`relationships.child`.** `after delete` only — mark `old.child`. `relationships.child` is immutable per the schema (see `relationships_no_update`), so no update-time mark is needed; rebinding an edge is expressed as delete + insert, and the delete fires the mark.
+- **`refs.child`.** `after delete` only — mark `old.child`. `refs.child` is immutable per the schema (see `refs_no_update`), so no update-time mark is needed; rebinding an edge is expressed as delete + insert, and the delete fires the mark.
 - **`frame_locals.value_object`.** `after delete` and `after update of value_object` — mark `old.value_object`. Delete-time fires on frame pop via cascade; update-time fires on `$foo = something_else`.
 - **`frame_ambers.amber`.** `after delete` and `after update of amber` — mark `old.amber`. Delete-time fires on frame pop via cascade; update-time fires when a frame's domain gets rebound to a different amber instance. Amber instances themselves are ordinary objects; this bridge is where the reachability edge lives.
 - **`frame_delegations.target_role`.** `after delete` and `after update of target_role` — mark `old.target_role`. Deletes fire on frame pop via cascade.
@@ -57,13 +57,13 @@ That row is now the starting point of the visited set. Subsequent expansion step
 
 The inner loop's core step: every object that references any row currently marked `in_trace` also becomes `in_trace`. Grow the visited set by one hop of parents.
 
-Concretely — find every row in `relationships` whose `child` is currently in the `in_trace` set, and mark those rows' `parent` objects with the next `in_trace` counter value:
+Concretely — find every row in `refs` whose `child` is currently in the `in_trace` set, and mark those rows' `parent` objects with the next `in_trace` counter value:
 
 ~~~sql
 update objects set in_trace = <next_counter>
 where in_trace is null
     and object_pk in (
-        select parent from relationships
+        select parent from refs
         where child in (select object_pk from objects where in_trace is not null)
     );
 ~~~

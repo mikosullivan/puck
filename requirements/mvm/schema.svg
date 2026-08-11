@@ -3,7 +3,7 @@
    viewBox="0 0 1370 600.00004"
    width="1370"
    role="img"
-   aria-label="MVM entity-relationship diagram. Ten tables grouped into: MVM marker (gray), object graph (objects and relationships, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
+   aria-label="MVM entity-relationship diagram. Ten tables grouped into: MVM marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
    version="1.1"
    id="svg707"
    sodipodi:docname="schema.svg"
@@ -321,7 +321,7 @@
         <path
            class="fk-arrow"
            d="M 636.24846,821.58854 V 720.79368"
-           id="path-relationships-objects-2" />
+           id="path-refs-objects-2" />
         <g
            transform="translate(650.24678,752.33371)"
            id="fk-label-9">
@@ -984,14 +984,14 @@
            font-size="13px"
            font-weight="700"
            fill="#ffffff"
-           id="text581">relationships</text>
+           id="text581">refs</text>
         <text
            x="10"
            y="44"
            font-size="11px"
            font-weight="700"
            fill="#212121"
-           id="text583">PK: rel_pk</text>
+           id="text583">PK: ref_pk</text>
         <text
            x="10"
            y="60"
