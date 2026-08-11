@@ -10,6 +10,8 @@
 
 Exploring folding frames into the object table.
 
+> **Housecleaning coming.** This brainstorm has grown a lot of pages, sidequests, walkthroughs, and Lua source over its exploration life. A pass to consolidate, tidy stale prose, and align section structure is queued before this idea gets promoted to `requirements/`.
+
 ![CVM ER diagram — objects with Mikobase and CVM columns tagged, refs, instance_listeners, class_listeners, processes, plus roles and uspace views.](./documentation/frames-as-objects.svg)
 
 ## Overview
