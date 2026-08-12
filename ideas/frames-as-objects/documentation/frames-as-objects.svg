@@ -117,7 +117,6 @@
       </cc:Work>
     </rdf:RDF>
   </metadata>
-  <!-- Missing FK arrows: frame_delegations → objects (target_role). Maroon per user request. -->
   <!-- FK-name labels for every cross-table arrow, matching the style of the manually-drawn 'parent' label. -->
   <g
      inkscape:groupmode="layer"

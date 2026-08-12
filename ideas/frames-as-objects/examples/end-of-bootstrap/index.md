@@ -175,7 +175,7 @@ Knowing which frame is current isn't enough — the engine still needs the ast i
 
 It also reads the frame's `stmt_idx` — the position in the ast where dispatch picks up. At end-of-bootstrap it's 0 (bootstrap just pushed frame 0), but in general it can be any non-negative integer: a frame resumed mid-execution carries whatever `stmt_idx` was persisted at the last snapshot.
 
-The rule generalizes past bootstrap: **whenever a frame becomes the current frame, load its ast and note its `stmt_idx`.** Bootstrap does it here for frame 0; later, when a `frame.run` call pushes a new frame, the same load-ast + read-stmt_idx routine runs for the new frame. Same operation, two triggers.
+The rule generalizes past bootstrap: **whenever a frame becomes the current frame, load its ast and note its `stmt_idx`.** Bootstrap does it here for frame 0; later, when a `frame:run` call pushes a new frame, the same load-ast + read-stmt_idx routine runs for the new frame. Same operation, two triggers.
 
 ## Bootstrap ends here
 

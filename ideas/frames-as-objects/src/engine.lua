@@ -1,11 +1,11 @@
 --[[
 {
 	"module": "engine",
-	"role": "Data-access layer for a CVM connection — the walking-skeleton shape of what will eventually be the top-level runtime. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the engine constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring).",
+	"role": "Data-access layer for a CVM connection — the walking-skeleton shape of what will eventually be the top-level runtime. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk, frame_by_pk, plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the engine constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring).",
 	"exports": {
 		"new":           "(db) -> engine — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
-		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts primitive='f'; raises frame_by_pk_not_a_frame if it isn't",
+		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts primitive='f'; raises frame_by_pk_not_found if no such row, frame_by_pk_not_a_frame if the row isn't a frame",
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
 		"add_stack":     "(for_object_pk) -> new stack's object_pk — INSERTs an ArrayPrimitive owned by the target's owner_role",
 		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
@@ -176,9 +176,12 @@ Caller-side:
 prepared statements; without it the next `bind_values` on the same
 handle raises.
 
-`object.new(self, row)` wraps the row as an object instance —
-dispatch to the right class (HashPrimitive, ArrayPrimitive, scalar)
-and any per-pk caching live inside `object.new` itself.
+`object.new(self, row)` wraps the row as an object instance. Class
+dispatch is primitive-based: `row.primitive == 'f'` wraps as `frame`;
+every other primitive wraps as a plain `object`. No per-pk cache — a
+fresh wrapper is built each call. Per-instance memoization for the
+`bucket`, `stack`, and `locals` accessors lives on the wrappers
+themselves (`self._bucket`, `self._stack`, `self._locals`).
 ]]
 function engine:object_by_pk(pk)
 	local stmt = self.stmt_object_by_pk

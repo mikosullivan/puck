@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "object",
-	"role": "Root class in the frames-as-objects design. Anything that participates in the object graph — hash primitives, array primitives, scalars, frames — inherits from `object`. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
+	"role": "Root wrapper class in the frames-as-objects design. Every `objects` row loaded via engine:object_by_pk gets wrapped through here: `primitive = 'f'` rows wrap as `frame` (which inherits from `object`); every other primitive wraps as `object` itself. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
 	"exports": {
 		"new":    "(engine, row) -> object — constructor; stamps the metatable on the row table itself (row-as-instance)",
 		"bucket": "() -> object — the object's bucket, lazily created on first call",

@@ -217,7 +217,7 @@ local function insert_frame(db, user)
 	return pk
 end
 
-test("object_by_pk dispatches an ast-having row to the frame class", function()
+test("object_by_pk dispatches a primitive='f' row to the frame class", function()
 	local db = fresh_db()
 	local e = engine.new(db)
 	local user = user_pk(db)
@@ -231,7 +231,7 @@ test("object_by_pk dispatches an ast-having row to the frame class", function()
 	db:close()
 end)
 
-test("object_by_pk keeps ast-less rows as plain objects", function()
+test("object_by_pk wraps non-'f' primitive rows as plain objects", function()
 	local db = fresh_db()
 	local e = engine.new(db)
 	local user = user_pk(db)

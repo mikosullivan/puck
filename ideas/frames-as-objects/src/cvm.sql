@@ -172,9 +172,9 @@ create table objects (
 	-- UNIQUE: no two owners share a bucket or stack — redundant with
 	-- the bucket_for / stack_for UNIQUE, but a good safety net for
 	-- the denormalization. [ghi]
-	bucket_pk integer unique
+	bucket_pk text unique
 		check (bucket_pk is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
-	stack_pk  integer unique
+	stack_pk  text unique
 		check (stack_pk  is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 
 	-- GC scratch: 1 means this row is a candidate the drain should

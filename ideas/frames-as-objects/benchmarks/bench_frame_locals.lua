@@ -5,9 +5,11 @@
 -- Run from the repo root:
 --     lua5.4 ideas/frames-as-objects/benchmarks/bench_frame_locals.lua
 --
--- Setup: each iteration needs a fresh frame-object (primitive = 'o',
--- ast set to something non-null, owner_role = user). Bulk-created in
--- a transaction OUTSIDE the timed region.
+-- Setup: each iteration needs a fresh frame-object (primitive = 'f',
+-- ast set to a non-null CaspM literal, owner_role = user). The `ast`
+-- column is biconditional with `primitive = 'f'`, so both must be
+-- set together. Bulk-created in a transaction OUTSIDE the timed
+-- region.
 --
 -- Not a test. Not run by tests/main/lua/engine/run.lua.
 --
@@ -55,12 +57,14 @@ local function user_pk(db)
 	end
 end
 
--- A frame is any objects row with ast set. Content of ast doesn't
--- matter for this benchmark — object.new routes on the presence of
--- the field, not its shape.
+-- A frame is an objects row with `primitive = 'f'` (biconditional
+-- with a non-null `ast`). Content of ast doesn't matter for this
+-- benchmark — object.new routes on `row.primitive`, not on ast
+-- content. Detached shape (no process / idx / stmt_idx), which is
+-- legal for tests that only exercise the wrapper and its accessors.
 local function insert_frame(db, user)
 	local sql = string.format(
-		"insert into objects (primitive, ast, owner_role) values ('o', '[]', '%s') returning object_pk",
+		"insert into objects (primitive, ast, owner_role) values ('f', '[]', '%s') returning object_pk",
 		user
 	)
 

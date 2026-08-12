@@ -31,6 +31,8 @@ Approximate CaspM (transpile + normalize):
 
 Same shape as the end-of-bootstrap snapshot, just with `$x = 1`'s CaspM in frame 0's `ast`. User seed in place, `processes` seeded, frame 0 pushed with `stmt_idx = 0` — about to dispatch the assignment. No bucket yet.
 
+**Reading the pks.** The pks below use mnemonic prefixes for readability — `f00d…` for frame 0, `ca7e…` for the scalar (as in "cache"), `b00d…` for the bucket, `10ca…` for the locals hash. The trailing `-000N` suffixes are stable identifiers, not creation-order counters (the scalar happens to be created before the bucket, so its `-4` predates the bucket's `-2`).
+
 <table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
@@ -58,25 +60,24 @@ Once the engine knows the frame about to start, it enters its main loop. Concept
 ~~~
 frame = [engine provided]
 
-while next_frame(frame.run)
+while frame do
+    frame = frame:run()
 end
 
 shut_down
 ~~~
 
-Each iteration is one atomic step. `frame.run` does whatever it does inside its own write-block and hands back the next frame to run — matching the "endpoints are snapshottable, the interval is opaque" model established at [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/examples/end-of-bootstrap/#whats-on-that-frame). One loop turn = one transition between two "about to start" snapshots.
+Each iteration is one atomic step. `frame:run` does whatever it does inside its own write-block and returns the next frame to run — matching the "endpoints are snapshottable, the interval is opaque" model established at [end-of-bootstrap](https://www.puck.uno/ideas/frames-as-objects/examples/end-of-bootstrap/#whats-on-that-frame). One loop turn = one transition between two "about to start" snapshots.
 
-The exit condition doubles as the terminal check. When `frame.run` returns nothing, the loop ends and `shut_down` runs. That aligns with the terminal invariant: no frames left = program done.
-
-`next_frame(...)` compresses "assign this to `frame` and tell me if the loop should keep going" into one call — cleaner than the more verbose `while (frame = frame.run()) do end` pattern.
+The exit condition doubles as the terminal check. When `frame:run` returns nil, the loop ends and `shut_down` runs. That aligns with the terminal invariant: no frames left = program done.
 
 ## Dispatch statement 0
 
-Statement 0 is a bareword call to `=` with two argument atoms — the LHS `{"v": "x"}` and the RHS `{"v": 1}`. The RHS is a primitive scalar; its value sits right there in the atom, so no nested frame is needed to evaluate it. The whole assignment fits in one atomic step of `frame.run`.
+Statement 0 is a bareword call to `=` with two argument atoms — the LHS `{"v": "x"}` and the RHS `{"v": 1}`. The RHS is a primitive scalar; its value sits right there in the atom, so no nested frame is needed to evaluate it. The whole assignment fits in one atomic step of `frame:run`.
 
 ### Picking the routine
 
-`frame.run` reads `self.ast[self.stmt_idx]` — the statement it's about to execute — and pattern-matches on shape. This one:
+`frame:run` reads `self.ast[self.stmt_idx]` — the statement it's about to execute — and pattern-matches on shape. This one:
 
 ~~~json
 [{"bwc": "="}, {"v": "x"}, {"v": 1}]
@@ -88,39 +89,44 @@ matches three things at once:
 - First arg is `{"v": <string>}` — a plain-name LHS. Not `{"c": [...]}` (a nested call for an attribute-target like `$obj.field`), not anything with dot-access.
 - Second arg is `{"v": <literal>}` where `<literal>` is a primitive value — number, string, boolean, or null. Not a name reference like `{"v": "y"}` (would need a lookup), not `{"c": [...]}` (would need a nested frame to evaluate).
 
-All three together identify the "scalar-RHS local assignment" shape. `frame.run` routes to [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) and calls it with `name='x'`, `scalar_type='n'`, `scalar_value=1`.
+All three together identify the "scalar-RHS local assignment" shape. `frame:run` routes to [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) and calls it with `name='x'`, `scalar_type='n'`, `scalar_value=1`.
 
 If any of those checks fail, a different specialized routine takes over. The RHS being a name reference goes to a name-lookup routine (not yet written). The LHS being an attribute-target goes to a bucket-write routine (not yet written). Each Caspian assignment shape gets its own compiled path — no generic `set_variable` that pays a runtime dispatch cost per assignment.
 
 ### Overview
 
-The whole write block, `begin` to `commit`:
+The write block covered by `frame:set_local_to_scalar` — every write triggered by the assignment, in order:
 
 ~~~sql
-begin;
-
--- Create the scalar.
+-- 1. Create the scalar.
 insert into objects (primitive, scalar_type, scalar_value, owner_role)
 values ('o', 'n', 1, <user_pk>);
 -- returns the scalar's object_pk
 
--- Ensure frame 0's bucket exists (lazy).
--- Check frame 0's bucket_pk. If null, one INSERT creates it:
---   insert into objects (primitive, bucket_for, owner_role)
---   values ('h', <frame_0_pk>, <user_pk>);
--- The objects_denormalize_bucket trigger updates frame 0's bucket_pk
--- in the same statement — bucket creation is atomic at the SQL layer,
--- no engine-side wrapping needed. Returns the bucket's object_pk.
+-- 2. Ensure frame 0's bucket exists (lazy). If frame 0's bucket_pk
+--    is null, one INSERT creates it. The engine's cached statement
+--    derives `owner_role` from the target row via `insert…select`
+--    rather than passing it in:
+--      insert into objects (primitive, bucket_for, owner_role)
+--      select 'h', <frame_0_pk>, owner_role from objects
+--      where object_pk = <frame_0_pk>;
+--    The objects_denormalize_bucket trigger updates frame 0's
+--    bucket_pk in the same statement — bucket creation is atomic
+--    at the SQL layer, no engine-side wrapping needed.
 
--- Bind the name.
+-- 3. Ensure the locals hash exists inside the bucket (lazy). If
+--    bucket['locals'] isn't already bound, two INSERTs create it:
+--      insert into objects (primitive, owner_role)
+--      values ('h', <user_pk>);
+--      insert into refs (parent, child, key, idx)
+--      values (<bucket_pk>, <new_hash_pk>, 'locals', 0);
+
+-- 4. Bind the name inside the locals hash.
 insert into refs (parent, child, key, idx)
-values (<bucket_pk>, <scalar_pk>, 'x', 0);
-
--- Advance the dispatch pointer.
-update objects set stmt_idx = 1 where object_pk = <frame_0_pk>;
-
-commit;
+values (<locals_pk>, <scalar_pk>, 'x', 0);
 ~~~
+
+The transaction boundary and `stmt_idx` advance aren't `set_local_to_scalar`'s concern — the dispatcher (`frame:run`, not yet written) wraps each dispatch step in its own `begin`/`commit` and advances `stmt_idx` after the routine returns. `set_local_to_scalar` just does the four writes above.
 
 The "ensure the bucket exists" step is one lookup plus at most one INSERT. There is no Lua-side transaction or helper wrapping bucket creation — SQLite handles the atomicity via the `objects_denormalize_bucket` trigger. Inserting a HashPrimitive with `bucket_for` set is a single statement; the trigger updates the owner's `bucket_pk` in the same write.
 
@@ -176,7 +182,9 @@ frame.locals['x'] = <scalar_pk>
 
 The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. The scalar itself was materialized above in [Create the number](#create-the-number); the three subsections here walk the ensures and the bind that plant it into the frame's local scope. `set_local_to_scalar` composes `add_scalar` + `ensure_locals` + `add_ref` at the top level, and `ensure_locals` decomposes further into `frame.bucket` + `frame.locals` — that's why the subsections read as `frame.bucket`, `frame.locals`, `['x'] = <scalar_pk>` rather than the top-level three-call list.
 
-Underneath, that composes into a tree of get-or-create operations. Each "ensure" branch is idempotent: does nothing if the target already exists, otherwise materializes it and writes to the DB. On a fresh frame — like this one — none of the targets exist, so every branch runs:
+Underneath, that composes into a tree of get-or-create operations. Each "ensure" branch is idempotent: does nothing if the target already exists, otherwise materializes it and writes to the DB. On a fresh frame — like this one — none of the targets exist, so every branch runs.
+
+Two notations in the tree below refer to the same locals hash: `frame.locals` (the method that returns it) and `bucket['locals']` (the ref that stores it under the key `locals` inside the frame's bucket). One reads it, the other holds it.
 
 ~~~
 frame.locals['x'] = <scalar_pk>
