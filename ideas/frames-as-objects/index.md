@@ -3,8 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_as_objects",
-	"role": "brainstorm exploring folding the four frame-attached tables (frames, frame_locals, frame_delegations, frame_ambers) into the objects table. A frame becomes just another objects row so the object-graph GC keeps captured scope alive for closures that outlive their defining frame. Motivation, the table-level changes, and the downstream consequences all live on this page. Working artifacts: schema + Lua source at `src/`, walkthroughs at `examples/`, tests at `tests/`, ER diagram at `documentation/`. Not spec — exploration.",
-	"status": "brainstorm"
+	"role": "folds the four frame-attached tables (frames, frame_locals, frame_delegations, frame_ambers) into the objects table. A frame becomes an objects row with `primitive = 'f'`, so the object-graph GC keeps captured scope alive for closures that outlive their defining frame. Motivation, the table-level changes, and the downstream consequences all live on this page. Working artifacts: schema + Lua source at `src/`, walkthroughs at `examples/`, tests at `tests/`, ER diagram at `documentation/`."
 }}
 ~~~
 
@@ -14,19 +13,23 @@ Exploring folding frames into the object table. Working artifacts around this pa
 
 The primary reason to do this is **closure lifetime**: a closure that outlives its defining frame must keep the captured scope alive, and the current schema has no mechanism to do that. Under the frames-as-objects model, a closure holds an ordinary object-graph reference to its enclosing frame; that reference makes the frame uspace-anchored; the frame lives as long as any closure (or anything else) points at it. GC collects it only when the last reference goes, and its captured locals — living in its bucket — go with it. That's exactly what real closure semantics require.
 
-**What breaks in the current CVM.** Frames are a dedicated table. `frame_locals` cascades on frame delete. `lexical_parent` is `ON DELETE SET NULL` — a spec-level admission the link can go stale (the schema comment: "engine-side concern, not a corruption"). Fine for a walking skeleton with no escaping closures. The moment a closure returns from its defining function and gets called later, its captured `$x` is gone.
+**What breaks in the current CVM.** Frames are a dedicated table. `frame_locals` cascades on frame delete. The link that would let a returned-and-later-called closure reach its captured scope is `ON DELETE SET NULL` — a spec-level admission the link can go stale. Fine for a walking skeleton with no escaping closures. The moment a closure returns from its defining function and gets called later, its captured `$x` is gone.
 
-**What folding into `objects` fixes.** Frames become ordinary objects. Locals become bucket entries. `lexical_parent` becomes a plain object reference. The whole thing participates in the standard object-graph mark-sweep — no special-case cascade rule, no "SET NULL" resignation. Reference → alive. No reference → collected.
+**What folding into `objects` fixes.** Frames become ordinary objects. Locals live in a `locals` hash inside each frame's bucket. A closure that captures a frame will hold a plain object-graph reference to it (mechanism TBD — see the [closure walkthrough](https://www.puck.uno/ideas/frames-as-objects/examples/closure/); `requirements/lua/scope.md` also has an existing proposal that needs to be reconciled). The whole thing participates in the standard object-graph mark-sweep — no special-case cascade rule, no "SET NULL" resignation. Reference → alive. No reference → collected.
 
 ## What changes
 
-- `frames` — gone as a table. Each frame becomes an `objects` row (ast in `objects.ast`, other frame fields — process, idx, lexical_parent, next_stmt_idx — either become columns on `objects` or entries in the frame-object's bucket).
-- `frame_locals` — gone. Locals become bucket entries on the frame-object.
+- `frames` — gone as a table. A frame becomes an `objects` row with a new fourth primitive kind, `primitive = 'f'`. The `ast` column is biconditional with it: every frame row carries the code it's executing; no non-frame row carries an ast. The former-`frames` fields (`process`, `idx`, `stmt_idx`) become nullable columns on `objects`, constrained to only appear on `primitive = 'f'` rows. All three go null on pop, so a frame that survives past its pop (kept alive by a closure ref) carries `primitive = 'f'` with null stack coordinates.
+- `frame_locals` — gone. Each frame's locals live in a HashPrimitive stored under `bucket['locals']` on the frame-object; each variable is a key in that hash. So the read chain for `$x` is `frame → bucket → 'locals' hash → 'x' → scalar`.
 - `frame_delegations`, `frame_ambers` — gone. Same treatment.
 - **`processes` stays** as call-stack roots (one row per stack).
 - `objects`, `refs`, `instance_listeners`, `class_listeners` unchanged in role.
 
-Ten tables → six. [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql) has the working schema sketch.
+Nine tables → five. [cvm.sql](https://www.puck.uno/ideas/frames-as-objects/src/cvm.sql) has the working schema sketch.
+
+**Functions and closures are not frames.** A function is a plain `primitive = 'o'` object; its CaspM lives in the function's bucket. Calling one creates a fresh `primitive = 'f'` row and copies the function's CaspM into the frame's `ast`. The function stays where it is; the frame is a separate row with the code it's actually running.
+
+**Uspace closes over live frames the same way it closes over anything else.** A frame currently on a stack (`primitive = 'f'` AND `process is not null`) is uspace-anchored; everything the frame holds — its locals, and eventually its ambers, delegations, and the closure capture link — is reachable via the standard `refs` walk from the frame row. Popped-but-captured frames aren't uspace themselves; the closure that captured them is, and standard mark-sweep keeps the frame alive via the incoming ref.
 
 ## Consequences (nice, but not the point)
 

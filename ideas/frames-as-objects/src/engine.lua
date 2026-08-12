@@ -1,20 +1,22 @@
 --[[
 {
 	"module": "engine",
-	"role": "Top-level runtime that drives a CVM. One engine per open DB connection. Owns the SQLite handle, tracks the current process, dispatches frames on that process's stack, and shuts down when nothing is left to run. Sits above `object` and `frame` — the engine constructs them and calls their methods rather than being one itself.",
+	"role": "Data-access layer for a CVM connection — the walking-skeleton shape of what will eventually be the top-level runtime. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the engine constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring).",
 	"exports": {
 		"new":           "(db) -> engine — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
+		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts primitive='f'; raises frame_by_pk_not_a_frame if it isn't",
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
 		"add_stack":     "(for_object_pk) -> new stack's object_pk — INSERTs an ArrayPrimitive owned by the target's owner_role",
 		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
 		"add_hash":      "(owner_role_pk) -> new HashPrimitive's object_pk — plain hash, no bucket_for set",
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
+		"add_frame":     "(ast, process_pk, idx, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key"
 	},
 	"policy": "Engine DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the engine class. Every statement the engine uses is prepared upfront in engine.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
-	"performance": "Every method on this class runs on hot paths — most fire on every statement dispatch — and any cycle saved multiplies across the whole running program.",
+	"performance": "Every method on this class is on a hot path. Once the dispatch loop lands (see the open questions in the docstring), most will fire on every statement dispatch; any cycle saved multiplies across the whole running program.",
 	"status": "sketch — walking-skeleton, first pass at Lua-native class file"
 }
 ]]
@@ -22,11 +24,40 @@
 --[[
 # Engine
 
-The top-level runtime that drives a CVM. One engine per open DB
-connection. Owns the SQLite handle, tracks the current process,
-dispatches frames on that process's stack, and shuts down when nothing
-is left to run. Sits above `object` and `frame` — constructs them and
-calls their methods rather than being one of them.
+The data-access layer for a CVM connection. Owns the SQLite handle,
+preps every statement upfront, and exposes cached-statement methods
+(object_by_pk, add_bucket, add_stack, add_scalar, add_hash, add_array,
+add_ref, get_ref_child). Sits above `object` and `frame` — the engine
+constructs them today via `object_by_pk`.
+
+This is the walking-skeleton shape of what the "engine" will
+eventually grow into. The runtime pieces below are NOT built yet and
+are left as open questions the design still has to answer.
+
+## Open questions — not yet built
+
+- **Current-process tracking.** How does the engine know which
+  process's frames it's advancing? The `processes` table exists in
+  the schema (`cvm.sql`), but nothing here reads or writes it. The
+  active pk will live in Lua-side state (a field on the engine
+  instance) and be bound into queries at the call site; where exactly
+  it lands on the engine, who sets it, and how forking / pausing
+  changes it are all unsettled.
+- **Frame dispatch.** How does a frame-object's `ast` advance
+  statement by statement? What's the loop shape — engine-owned, frame-
+  owned, or trampoline? What pushes a new frame onto the stack; what
+  pops one when it finishes; what marks a frame "done"?
+- **Shutdown.** When does the engine decide there's nothing left to
+  run and stop? Empty stack on the current process? All processes
+  drained? Explicit engine.close call?
+- **Direction of composition.** The current class only *provides*
+  methods for object/frame to call. Any runtime that dispatches will
+  need the engine to *call into* frame methods too — whether that
+  reverses the composition, adds a separate driver class, or lives as
+  a top-level loop outside the engine class is open.
+
+Each of the four lands as its own slice. Until they do, "engine" in
+this file means "the accessor surface below," not "the CVM runtime."
 
 **Policy: DB access via cached-statement methods only.** No ad-hoc
 `db:exec`, no inline `db:nrows`, no `db:prepare` scattered through
@@ -46,9 +77,10 @@ like `object_by_pk` stay on `nrows()` because the wrapper wants every
 column at once and the row table becomes the wrapper's own storage
 via `object._wrap`.
 
-**Every method on this page must be as efficient as possible** — these
-are hot paths, most run on every statement dispatch, and any cycle
-saved multiplies out across the whole running program.
+**Every method on this page must be as efficient as possible.** Once
+the dispatch loop lands (see the open questions above), most of
+these fire on every statement dispatch; any cycle saved multiplies
+out across the whole running program.
 ]]
 
 local sqlite = require("lsqlite3")
@@ -112,6 +144,11 @@ function engine.new(db)
 		"insert into objects (primitive, owner_role) values ('a', ?) returning object_pk"
 	)
 
+	self.stmt_add_frame = db:prepare(
+		"insert into objects (primitive, ast, process, idx, stmt_idx, owner_role) " ..
+		"values ('f', ?, ?, ?, 0, ?) returning object_pk"
+	)
+
 	self.stmt_add_ref = db:prepare(
 		"insert into refs (parent, child, key, idx) " ..
 		"values (?1, ?2, ?3, coalesce((select max(idx) + 1 from refs where parent = ?1), 0)) " ..
@@ -159,6 +196,42 @@ function engine:object_by_pk(pk)
 	end
 
 	return object.new(self, row)
+end
+
+--[[
+## `frame_by_pk` — retrieve and assert primitive='f'
+
+Retrieval-with-check for callers that expect a frame. Composes on
+`object_by_pk` for the fetch, then asserts `primitive == 'f'` before
+returning. Raises specific errors if the row doesn't exist or isn't
+a frame.
+
+**Why an assertion, not just a call.** During the walking-skeleton
+phase, "the engine has a pk it believes is a frame" is a load-bearing
+assumption that isn't yet backed by a type system. Any code path that
+retrieves what it expects to be a frame should call `frame_by_pk`
+rather than `object_by_pk` — the extra CPU cycles (one comparison + a
+branch) are cheap insurance against a mis-typed pk silently wrapping
+as a plain object and then failing cryptically on a `:locals()` call.
+
+Once the design settles and the callers are all provably-correct,
+this can be relaxed. Not yet.
+]]
+function engine:frame_by_pk(pk)
+	local obj = self:object_by_pk(pk)
+
+	if obj == nil then
+		error("frame_by_pk_not_found: no objects row with pk " .. tostring(pk))
+	end
+
+	if obj.primitive ~= 'f' then
+		error(
+			"frame_by_pk_not_a_frame: pk " .. tostring(pk) ..
+			" has primitive '" .. tostring(obj.primitive) .. "', expected 'f'"
+		)
+	end
+
+	return obj
 end
 
 --[[
@@ -271,6 +344,33 @@ function engine:add_array(owner_role_pk)
 	local array_pk = stmt:get_value(0)
 	stmt:reset()
 	return array_pk
+end
+
+--[[
+## `add_frame` — INSERT a frame row, return its pk
+
+INSERTs an `objects` row with `primitive = 'f'` and the frame's stack
+coordinates: `ast` (the CaspM tree the frame will dispatch), `process`
+(the process pk this frame belongs to), `idx` (stack position), and
+`stmt_idx = 0` (starting at the first statement). Owner_role is
+caller-supplied.
+
+Caller computes `idx` (typically MAX(idx)+1 for the target process,
+or 0 for frame 0). Splitting that computation out of this method
+keeps `add_frame` a plain INSERT — push-a-frame semantics belong in
+the (not-yet-built) runtime layer that reads the current stack top.
+
+**Set by the write path elsewhere.** `bucket_pk` and `stack_pk` are
+not set here — a frame that ends up needing locals materializes its
+bucket lazily via `object:bucket`, same as any other bucket owner.
+]]
+function engine:add_frame(ast, process_pk, idx, owner_role_pk)
+	local stmt = self.stmt_add_frame
+	stmt:bind_values(ast, process_pk, idx, owner_role_pk)
+	stmt:step()
+	local frame_pk = stmt:get_value(0)
+	stmt:reset()
+	return frame_pk
 end
 
 --[[

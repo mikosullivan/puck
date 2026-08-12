@@ -1,8 +1,8 @@
 --[[ {
 	"vibecode": {
 		"module": "cvm",
-		"role": "CVM engine entry point: opens a SQLite connection (in-memory or file), enables FKs, installs the CVM infrastructure from the sibling cvm.sql file if this is a fresh DB (skips the install if the mvm marker table is already present so revive-open on a persisted file is idempotent), inserts a fresh processes row and captures its pk, and creates the per-connection current_process TEMP table populated with that pk.",
-		"status": "walking-skeleton — open + gated install + process record + populated current_process",
+		"role": "CVM engine entry point: opens a SQLite connection (in-memory or file), enables FKs and recursive triggers, installs the CVM infrastructure from the sibling cvm.sql file if this is a fresh DB (skips the install if the mvm marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh processes row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
+		"status": "walking-skeleton — open + gated install + process record",
 		"exports": ["open", "load_schema"],
 		"depends_on": ["lsqlite3"]
 	}
@@ -38,7 +38,7 @@ function M.load_schema(path)
 	return text
 end
 
---[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to cvm.sql>}", "out": "an lsqlite3 db handle with schema applied, foreign keys on, and current_process temp table created", "note": "one connection = one process context — the current_process TEMP table dies with the connection"} ]]
+--[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to cvm.sql>}", "out": "two values: an lsqlite3 db handle with schema applied and pragmas set, and the fresh process pk from the processes row this open inserted", "note": "one connection = one process context — the caller is expected to hold the returned pk in Lua-side state and bind it into queries at the call site"} ]]
 function M.open(opts)
 	opts = opts or {}
 
@@ -111,28 +111,7 @@ function M.open(opts)
 
 	local process_pk = db:last_insert_rowid()
 
-	-- Per-connection state. TEMP table: dies with this connection.
-	-- Noted in the cvm.sql intro comments but not in the main
-	-- DDL because temp tables can't be defined by the once-per-DB
-	-- main schema. Populated with the process pk so the rest of the
-	-- engine knows which process this connection is running.
-	ok = db:exec(string.format([[
-		create temp table current_process (
-			key text primary key,
-			value
-		);
-
-		insert into current_process (key, value)
-			values ('current_process_pk', %d);
-	]], process_pk))
-
-	if ok ~= sqlite.OK then
-		local msg = db:errmsg()
-		db:close()
-		error('mvm_temp_table_failed: ' .. tostring(msg))
-	end
-
-	return db
+	return db, process_pk
 end
 
 return M

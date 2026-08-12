@@ -8,7 +8,7 @@
 }}
 ~~~
 
-The third sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). `insert into processes default values` allocates a fresh `process_pk` (autoincrement). The engine holds that pk in a local variable for the next sub-step ([Create per-connection state](https://www.puck.uno/requirements/bootstrap/initialize-vm/create-per-connection-state/)) to write into the `current_process` TEMP table.
+The third sub-step of [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/). `insert into processes default values` allocates a fresh `process_pk` (autoincrement). The engine holds that pk in Lua-side state — surfaced back to the caller via [Return the CVM handle](https://www.puck.uno/requirements/bootstrap/initialize-vm/return-cvm-handle/) — and binds it into queries at the call site. Nothing about the pk is persisted to a per-connection scratchpad.
 
 `processes` is a persistent table — rows survive across engine restarts. That's what enables pause / resume: when an engine reopens a CVM file, it can either allocate a fresh `processes` row (new run) or look up the pk of a previously-suspended process and revive it.
 

@@ -3,7 +3,7 @@
    viewBox="0 0 1500 1000"
    width="1500"
    role="img"
-   aria-label="CVM entity-relationship diagram. Ten tables grouped into: CVM marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes and frames, green), and frame-attached (frame_locals, frame_delegations, frame_ambers, orange). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
+   aria-label="CVM entity-relationship diagram under the frames-as-objects design. Five permanent tables grouped into: CVM marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are noted with (self) inside the table."
    version="1.1"
    id="svg707"
    sodipodi:docname="frames-as-objects.svg"
@@ -485,13 +485,6 @@
       <text x="48.738956" y="339.15" font-size="11px" fill="#616161" id="text-idx" style="stroke-width:0.47787">idx</text>
       <text x="8.616663" y="356.45" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
       <text x="48.738956" y="356.45" font-size="11px" fill="#616161" id="text-process" style="stroke-width:0.47787">process</text>
-      <text x="8.616663" y="373.75" font-size="11px" font-weight="700" fill="#ff9800" style="stroke-width:0.47787">C</text>
-      <text x="48.738956" y="373.75" font-size="11px" fill="#616161" id="text-lexical-parent" style="stroke-width:0.47787">lexical_parent</text>
-      <path
-         id="path-lexical-parent-loop"
-         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 29.578096,374.80 c -2.424482,-1.36725 -3.378025,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
-         sodipodi:nodetypes="csssc" />
     </g>
     <g
        transform="translate(194.93194,504.40876)"

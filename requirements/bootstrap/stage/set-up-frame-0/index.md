@@ -14,7 +14,7 @@ The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootst
 
 **The insert:**
 
-- `process_pk` — from the current process (looked up in `current_process`; populated during Initialize VM).
+- `process_pk` — from the current process (held by the engine in Lua-side state; populated during Initialize VM).
 - `idx` — 0 (this is the first frame; the stack starts here).
 - `type` — `'function_call'` (currently the only valid frame type).
 - `lexical_parent_pk` — null (there is no enclosing scope; frame 0 is the root).

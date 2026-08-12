@@ -191,6 +191,17 @@ test("`where user = 1` uses the objects_user partial unique index", function()
 	db:close()
 end)
 
+test("uspace's frame-anchor branch uses the objects_frame_on_stack partial index", function()
+	local db = fresh_db()
+	-- uspace's third branch is `where primitive = 'f' and process is not null`.
+	-- Test that predicate directly against objects so the plan
+	-- output surfaces the specific index; the same predicate inside
+	-- the view flattens to it.
+	local p = plan(db, "select object_pk from objects where primitive = 'f' and process is not null")
+	assert_plan_contains(p, "USING INDEX objects_frame_on_stack")
+	db:close()
+end)
+
 -- =============================================================================
 -- Summary
 -- =============================================================================

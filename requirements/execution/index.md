@@ -25,6 +25,6 @@ Almost everything else about this phase is open design work:
 - **Frame 0** — the shape of the initial frame pushed onto the stack. Does it have a callable? What class dispatches it? What locals does it start with?
 - **First-dispatch mechanics** — how the engine transitions from "CVM has CaspM" to "the first statement executed."
 - **The invocation shape** — explicit `engine:run()`, implicit on first use, coroutine-based, event-loop-driven — all open.
-- **Runtime state initialization for the running program** — creating a `processes` row, populating `current_process`, seeding whatever else needs to exist before frame 0 executes.
+- **Runtime state initialization for the running program** — creating a `processes` row and holding its pk in engine state, seeding whatever else needs to exist before frame 0 executes.
 
 This page is a placeholder until those decisions land. Details will migrate here as the design settles.

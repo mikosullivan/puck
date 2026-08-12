@@ -52,6 +52,26 @@ There is no such thing as an "edge case" in Caspian. What people commonly label 
 
 If a section needs to describe an unusual situation, use language like "the case where X happens during Y" or "the failure mode when Z is absent." Never reach for "edge case" — the label itself signals that a situation has been noticed and then categorized as unimportant enough to skip, which is where bugs live.
 
+## Invariant violations crash the program
+
+**When the engine detects an invariant violation, the whole program terminates immediately.** No cleanup, no rollback, no attempt to recover — the OS process dies where the check fired, with the error message emitted on the way out.
+
+Invariants are the schema-level and engine-level claims the runtime treats as always true. Under the SQLite-backed reference implementation, they're expressed as `CHECK` constraints, foreign keys, and triggers that `raise(abort, '<snake_id>: <message>')` — for example, `role_parent_must_be_role` when a non-role is proposed as a role's parent, `parent_must_be_primitive_container` when something tries to hang a ref off a non-container row, `objects_no_update` when an immutable column is mutated. Any check with an equivalent contract in the engine's own Lua code counts the same way.
+
+When one fires, the runtime is in a state its authors didn't anticipate. Continuing — running cleanup, popping the call stack, rolling back a partial transaction, handing control back to user code — risks compounding the damage or hiding the underlying bug. So we don't.
+
+**Not a catchable exception.** User code can't `rescue` an invariant violation. Engine code doesn't try to unwind. The failing computation stops immediately, and so does the OS process running it. This is different from ordinary application errors (network timeout, file not found, user-code raise) which propagate through the normal exception mechanism and are catchable in their usual scope.
+
+**Persistent databases stay frozen at the moment of failure.** SQLite's own transaction semantics compose with this cleanly: any writes inside an uncommitted transaction are discarded on next open; any writes already committed are visible. Either way, no engine-side code mutated the file after the abort. The `.cvm` file becomes a debug artifact — open it in the `sqlite3` CLI, inspect the rows, reconstruct exactly what state triggered the check. A cleanup path would erase this evidence.
+
+**Why crash rather than "try harder":**
+
+- **The bug is real.** An invariant violation means engine code or user code broke a rule the schema was designed to enforce. Silent recovery hides the bug; forceful termination surfaces it.
+- **Post-crash state is trustworthy.** Nothing ran after the failure, so debugging can trust what it sees. Recovery paths that succeed some of the time leave debug state fuzzy.
+- **Simpler code path.** No cleanup-on-failure branches, no partial-rollback bookkeeping, no "are we consistent again?" audits. The engine doesn't grow error-recovery code that itself has to be correct.
+
+**The line between invariant and application error.** If a check exists to catch a bug the language wants a developer to fix, it's an invariant — fatal. If it exists to inform code about a runtime condition it might reasonably handle, it's an application error — catchable. A network fetch failing is application; a `role_parent` pointing at something that isn't a role is invariant.
+
 ## Long descriptive names for rarely-used surfaces
 
 Method names, field names, chain-mediated permissions, and other surfaces balance two forces: **brevity for common use** (typing cost, visual noise in hot code) and **clarity for rare use** (a reader doesn't have to remember what a cryptic short name means in code they touch once a year).

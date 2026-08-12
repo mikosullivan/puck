@@ -3,12 +3,12 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_as_objects_end_of_bootstrap",
-	"role": "walkthrough of the CVM tables at the boundary between bootstrap and execution under the frames-as-objects sketch. Same 'puts hello world' source as ideas/frames/hello-world so the two can be diffed side by side; here the frame is an objects row and its bookkeeping (process, idx, next_stmt_idx) lives as scalar entries in the frame-object's bucket. Sibling to ideas/frames-as-objects/examples/closure/.",
+	"role": "walkthrough of the CVM tables at the boundary between bootstrap and execution under the frames-as-objects sketch. Same 'puts hello world' source as ideas/frames/hello-world so the two can be diffed side by side; here the frame is an objects row and its bookkeeping (stmt_idx, idx, process) lives as columns on that row rather than as scalar entries in the frame's bucket. Sibling to ideas/frames-as-objects/examples/closure/.",
 	"status": "sketch"
 }}
 ~~~
 
-Under the frames-as-objects sketch, frame 0 is an `objects` row instead of a `frames` row. The bookkeeping that used to live in `frames` columns — process, idx, next_stmt_idx — lives as scalar entries in the frame-object's bucket. This walkthrough shows the CVM tables at the boundary between bootstrap and execution.
+Under the frames-as-objects sketch, frame 0 is an `objects` row instead of a `frames` row. The bookkeeping that used to live in dedicated `frames` columns — `stmt_idx`, `idx`, `process` — becomes columns on the shared `objects` row. This walkthrough shows the CVM tables at the boundary between bootstrap and execution.
 
 Same source as [hello-world](https://www.puck.uno/ideas/frames/hello-world):
 
@@ -27,13 +27,13 @@ Same CaspM after transpile + normalize:
 ]
 ~~~
 
-**Note on the `comment` column.** The last column in the `objects` tables is a real schema field (declared as `debug`; shown as "comment" here for readability). See the [Frames as objects root page](https://www.puck.uno/ideas/frames-as-objects/#the-debug-column) for what it holds and why.
+**Note on the `comment` column.** The last column in the `objects` tables is a real schema field (declared as `debug`; shown as "comment" here for readability). Purely informational — no query path reads it.
 
 ## After Initialize VM
 
-Schema installed, pragmas set, user seed written, `processes` seeded with the bootstrap process. `current_process` (temp) records the active process_pk. `refs` is empty.
+Schema installed, pragmas set, user seed written, `processes` seeded with the bootstrap process. The engine holds the active process's pk in Lua-side state; nothing about it is persisted or lives in a per-connection TEMP table. `refs` is empty.
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
@@ -43,16 +43,16 @@ Schema installed, pragmas set, user seed written, `processes` seeded with the bo
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-processes" colspan="1">processes</th></tr>
 <tr><th>process pk</th></tr>
@@ -64,31 +64,31 @@ Schema installed, pragmas set, user seed written, `processes` seeded with the bo
 
 ## After Set up frame 0
 
-Frame 0 lands as an `objects` row: `primitive = 'o'`, `ast` holds the CaspM tree directly, `stmt_idx = 0` (about to dispatch row 0 of the ast), `idx = 0` (stack position 0), `process = 1` (the bootstrap process), `owner_role` points at the user seed.
+Frame 0 lands as an `objects` row: `primitive = 'f'` (the frame primitive; distinct from plain objects, hashes, arrays), `ast` holds the CaspM tree directly, `stmt_idx = 0` (about to dispatch row 0 of the ast), `idx = 0` (stack position 0), `process = 1` (the bootstrap process), `owner_role` points at the user seed.
 
-No bucket is created — this frame has no locals to hold. `lexical_parent` is absent (root scope, no enclosing frame). `stmt_idx`, `idx`, and `process` all used to sit as bucket entries; promoting each to a column on `objects` saves three rows per bucket entry. For a frame with no locals, that means no bucket row at all, no scalar rows, no `refs` rows.
+No bucket is created — this frame has no locals to hold. `stmt_idx`, `idx`, and `process` all used to sit as bucket entries; promoting each to a column on `objects` saves three rows per bucket entry. For a frame with no locals, that means no bucket row at all, no scalar rows, no `refs` rows.
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>CaspM above</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — folded frame</td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>CaspM above</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — folded frame</td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-processes" colspan="1">processes</th></tr>
 <tr><th>process pk</th></tr>
@@ -106,12 +106,12 @@ Bootstrap has laid down the state. Before the engine can run anything, it has to
 
 There could be frames in the database from other processes — paused stacks, coroutines, whatever else shares the CVM file. The engine needs the frame that belongs to *its* process.
 
-It knows its current process's pk — bootstrap wrote it into the `current_process` TEMP table. From there, finding frame 0 for that process is one query:
+It knows its current process's pk — bootstrap allocated it (Initialize the process record) and the engine holds it in Lua-side state. Finding frame 0 for that process is one query, with the pk bound from the engine:
 
 ~~~sql
 select object_pk
 from objects
-where process = (select value from current_process where key = 'current_process_pk')
+where process = ?
   and idx = 0;
 ~~~
 
@@ -179,6 +179,6 @@ The rule generalizes past bootstrap: **whenever a frame becomes the current fram
 
 ## Bootstrap ends here
 
-Frame 0 is an ordinary object in the graph, and the engine knows it as the resume point. If a closure inside the loaded program later captures frame 0's scope, the closure holds an object-graph reference to the bucket, and everything reachable from the bucket stays alive as long as the closure does. No special-case cascade rule for frames, no "lexical_parent SET NULL" resignation — the design motivation is exactly that this fall-out of the object-graph GC is what closures need.
+Frame 0 is an ordinary object in the graph, and the engine knows it as the resume point. When the closure walkthrough lands, it will show a captured frame staying alive via an ordinary object-graph reference from the closure — no special-case cascade rule, no "SET NULL" resignation. The design motivation is exactly that this fall-out of the object-graph GC is what closures need; the specific column that carries the capture link is deferred until the closure walkthrough earns it.
 
 The next step — walking frame 0's ast, dispatching the `puts` call, actually writing "hello world" to stdout — is execution.

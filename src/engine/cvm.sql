@@ -15,30 +15,12 @@ pragma recursive_triggers = on;
 -- # Mikobase                                                                 #
 -- ############################################################################
 
--- ------------------------------------------------------------
--- current_process: per-connection runtime state (TEMP table).
--- ------------------------------------------------------------
--- Simple key/value store for per-connection process state. TEMP
--- table: created fresh with each connection open, disappears
--- cleanly when the connection closes. Matches "one running
--- process per connection" — pause = close = current_process
--- vanishes; revive = new connection = fresh current_process
--- populated from persistent state in `main`.
---
--- Currently expected keys:
---   'current_process_pk' → integer, the active call stack's process_pk
---
--- More keys land as the engine grows to need them.
---
--- Because this is a TEMP table, the main schema file (run once
--- at DB creation) can't define it — it needs to be created every
--- time a connection opens. Companion setup file or engine-side
--- code applies this DDL:
---
---     create temp table current_process (
---         key text primary key,
---         value
---     );
+-- No per-connection TEMP table in this design. The engine tracks the
+-- active process pk in Lua-side state and binds it into queries at
+-- the call site; the schema is silent about it. If a per-connection
+-- scratchpad ever earns its keep for reasons SQL callers can point
+-- at (views, ad-hoc debugger queries, triggers that need process
+-- context), it will land as a TEMP table named `connection`.
 
 create table objects (
 	-- Primary key is a UUID4-shaped hex string generated at INSERT
@@ -723,8 +705,9 @@ end;
 --     substrate ready.
 --
 -- No seed row — each engine creates its own processes row on
--- startup and records its pk in current_process. Multi-process
--- features will create additional rows here at runtime.
+-- startup and holds its pk in Lua-side state (the engine instance
+-- carries it and binds it into queries at the call site). Multi-
+-- process features will create additional rows here at runtime.
 
 create table processes (
 	process_pk integer primary key autoincrement
@@ -739,12 +722,11 @@ begin
 	select raise(abort, 'processes_no_update: processes rows are immutable');
 end;
 
--- No seed row. Every engine that opens a CVM file creates
--- its own row here at startup and records the pk in
--- current_process; on the very first run against a fresh DB
--- that pk will be 1 (autoincrement), but nothing pins it — a
--- reviving process picks up the pk from persistent state or
--- allocates a fresh one as appropriate.
+-- No seed row. Every engine that opens a CVM file creates its own
+-- row here at startup and holds the pk in Lua-side state; on the
+-- very first run against a fresh DB that pk will be 1 (autoincrement),
+-- but nothing pins it — a reviving process picks up the pk from
+-- persistent state or allocates a fresh one as appropriate.
 
 create table frames (
 	frame_pk integer primary key autoincrement,

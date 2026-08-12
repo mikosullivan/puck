@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "frame",
-	"role": "Class representing a call frame under the frames-as-objects design. Inherits from `object` — picks up the `bucket` accessor for free. Adds `locals` (read-only accessor), `ensure_locals` (get-or-create), and `set_local_to_scalar` (specialized write path for scalar-RHS assignments like `$x = 1`).",
+	"role": "Class attached to every `objects` row with `primitive = 'f'` — a frame, an instance of a call. Distinct from a function or closure, which is a plain `primitive = 'o'` object storing its CaspM in a bucket entry; calling a function creates a fresh frame row and copies the function's CaspM into the frame's `ast`. Covers two runtime states: on-stack (stack coordinates set) and popped-but-captured (stack coordinates null, kept alive by an incoming ref). Inherits from `object` — picks up the `bucket` and `stack` accessors for free. Adds `locals` (read-only accessor), `ensure_locals` (get-or-create), and `set_local_to_scalar` (specialized write path for scalar-RHS assignments like `$x = 1`).",
 	"inherits_from": "object",
 	"exports": {
 		"new":                 "(engine, row) -> frame — constructor",
@@ -16,13 +16,36 @@
 --[[
 # Frame
 
-A class representing a call frame under the frames-as-objects design.
-Inherits from `object`, so it picks up the `bucket` accessor for free.
-Adds `locals` (read-only), `ensure_locals` (get-or-create), and
-`set_local_to_scalar` (the specialized write path for scalar-RHS
-assignments like `$x = 1`). Every local variable in the frame is a
-key in the locals hash — a HashPrimitive stored inside the frame's
-bucket under the key `locals`.
+The class attached to every `objects` row with `primitive = 'f'` —
+an instance of a call. Distinct from a function or closure: those
+are plain `primitive = 'o'` objects that store their CaspM in a
+bucket entry. When one is called, the engine creates a fresh
+`primitive = 'f'` row and copies the CaspM into its `ast` column.
+The function object stays where it is; the frame is a separate row
+with the code it's actually running.
+
+The schema's `ast` column is biconditional with `primitive = 'f'`,
+so "is this a frame?" and "does this row carry code being executed?"
+are the same question — answered structurally at row-write time.
+
+Two runtime states:
+
+- **On-stack.** A frame currently pushed onto some process's call
+  stack. `process`, `idx`, `stmt_idx` all set.
+- **Popped-but-captured.** A frame that returned but is kept alive
+  by an incoming ref (a closure captured it). Same row; stack
+  coordinates go null on pop. GC decides its fate through normal
+  reachability.
+
+Class methods (`locals`, `ensure_locals`, `set_local_to_scalar`) work
+against the frame's bucket regardless — a bucket is a bucket. Runtime
+paths that care about on-stack-ness read the stack coordinates
+directly.
+
+Inherits from `object`, so it picks up the `bucket` and `stack`
+accessors for free. Every local variable in the frame is a key in
+the locals hash — a HashPrimitive stored inside the frame's bucket
+under the key `locals`.
 ]]
 
 --[[
@@ -44,13 +67,29 @@ frame.__index = frame
 ## Constructing a frame
 
 `frame.new(engine, row)` uses `object._wrap` — the shared
-metatable-set-and-lift-columns helper — with `frame` as the metatable.
-Going through `_wrap` (rather than calling `object.new`) skips
-`object.new`'s ast-based dispatch branch, so a frame row loaded via
-`engine:object_by_pk` doesn't recurse into `object.new → frame.new
-→ object.new → …`.
+row-as-instance helper — with `frame` as the metatable. Going through
+`_wrap` (rather than calling `object.new`) skips `object.new`'s
+primitive-based dispatch, so a frame row loaded via
+`engine:object_by_pk` doesn't recurse into `object.new → frame.new →
+object.new → …`.
+
+**Defense-in-depth check.** Asserts `row.primitive == 'f'` before
+wrapping. `object.new` already dispatches on that, so any correct
+call site can't hit this branch — but the check catches any direct
+caller that bypasses the dispatch and hands frame.new a non-frame
+row. During the walking-skeleton phase the extra cycles are cheap
+insurance; once the callers are provably-correct this can be
+relaxed.
 ]]
 function frame.new(engine, row)
+	if row.primitive ~= 'f' then
+		error(
+			"frame_new_not_a_frame_row: expected primitive='f', got '" ..
+			tostring(row.primitive) .. "' (pk " ..
+			tostring(row.object_pk) .. ")"
+		)
+	end
+
 	return object._wrap(frame, engine, row)
 end
 

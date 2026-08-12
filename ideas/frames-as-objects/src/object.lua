@@ -1,9 +1,9 @@
 --[[
 {
 	"module": "object",
-	"role": "Root class in the frames-as-objects design. Anything that participates in the object graph — hash primitives, array primitives, scalars, frames — inherits from `object`. Provides the `bucket` accessor that lazily materializes an owner's bucket on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
+	"role": "Root class in the frames-as-objects design. Anything that participates in the object graph — hash primitives, array primitives, scalars, frames — inherits from `object`. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
 	"exports": {
-		"new":    "(engine, row) -> object — constructor; lifts row columns onto self",
+		"new":    "(engine, row) -> object — constructor; stamps the metatable on the row table itself (row-as-instance)",
 		"bucket": "() -> object — the object's bucket, lazily created on first call",
 		"stack":  "() -> object — the object's stack, lazily created on first call"
 	},
@@ -31,19 +31,25 @@ object.__index = object
 ## Constructing an object
 
 `object.new(engine, row)` takes the engine that owns this object and
-the `objects` row it wraps (a Lua table with columns as fields). It
-lifts every column onto `self` so method bodies read them as
-`self.<column>` — `self.object_pk`, `self.bucket_pk`, `self.owner_role`,
-and so on.
+the `objects` row it wraps (a Lua table with columns as fields). The
+row table itself becomes the instance — `_wrap` stamps the metatable
+directly on it — so every column is reachable as `self.<column>`
+(`self.object_pk`, `self.bucket_pk`, `self.owner_role`, and so on)
+without a separate copy step.
 
 Callers get one via `engine:object_by_pk(pk)`, which fetches the row
 and passes it here.
 
-**Class dispatch is on `row.ast`.** Under the frames-as-objects design
-a frame is any objects row with a non-null `ast` — there's no separate
-callable/frame split. If `row.ast` is present, `object.new` hands off
-to `frame.new` so the returned wrapper carries the frame class's
-methods (`locals`, ...). Otherwise it wraps as a plain `object`.
+**Class dispatch is on `row.primitive`.** `primitive = 'f'` wraps as
+`frame`; every other primitive (including functions and closures,
+which are plain `'o'` objects with their CaspM in the bucket) wraps
+as a plain `object`. The schema's `ast` column is biconditional with
+`primitive = 'f'`, so "is this a frame?" and "does this row carry
+executable code" are the same structural question — answered at
+row-write time, not inferred by the wrapper. What distinguishes an
+on-stack frame from a popped-but-captured one is whether the stack
+coordinates (`process`, `idx`, `stmt_idx`) are set — a runtime
+question the class answers with its methods, not class dispatch.
 
 The internal `_wrap` helper does the actual metatable set + engine
 lift, reusing the row table itself as the instance. `frame.new`
@@ -64,7 +70,7 @@ local function _wrap(mt, engine, row)
 end
 
 function object.new(engine, row)
-	if row.ast ~= nil then
+	if row.primitive == 'f' then
 		local frame = require("frame")
 		return frame.new(engine, row)
 	end

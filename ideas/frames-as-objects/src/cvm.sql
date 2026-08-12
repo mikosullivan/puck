@@ -7,12 +7,14 @@
 -- dead letters at runtime.
 --
 -- Any tool opening a CVM file — the engine, the sqlite3 CLI, another
--- host reading the file — runs these two pragmas as its first act.
--- See src/engine/cvm.lua for the reference implementation:
--- mvm.open() sets both with specific error ids
--- (cvm_pragma_fk_failed, cvm_pragma_recursive_triggers_failed) on
--- failure. Any CVM tool without an equivalent pair of pragma calls
--- is broken by construction. [ghi]
+-- host reading the file — runs these two pragmas as its first act,
+-- raising specific error ids on failure (`cvm_pragma_fk_failed`,
+-- `cvm_pragma_recursive_triggers_failed`). Any CVM tool without an
+-- equivalent pair of pragma calls is broken by construction. Under
+-- this sketch, `engine.new(db)` at `src/engine.lua` assumes the
+-- caller has already set both — the pragma calls live one layer up,
+-- to be spec'd when the runtime entry point (see engine.lua's Open
+-- questions block) lands. [ghi]
 pragma foreign_keys = on;
 
 -- Recursive triggers are ON. SQLite permits a manual trigger's
@@ -30,31 +32,12 @@ pragma recursive_triggers = on;
 -- # Mikobase                                                                 #
 -- ############################################################################
 
--- ------------------------------------------------------------
--- current_process: per-connection runtime state (TEMP table).
--- ------------------------------------------------------------
--- Simple key/value store for per-connection process state. TEMP
--- table: created fresh with each connection open, disappears
--- cleanly when the connection closes. Matches "one running
--- process per connection" — pause = close = current_process
--- vanishes; revive = new connection = fresh current_process
--- populated from persistent state in `main`.
---
--- Currently expected keys:
---   'current_process_pk' → integer, the active call stack's process_pk
---
--- More keys land as the engine grows to need them.
---
--- Because this is a TEMP table, the main schema file (run once
--- at DB creation) can't define it — it needs to be created every
--- time a connection opens. Companion setup file or engine-side
--- code applies this DDL:
---
---     create temp table current_process (
---         key text primary key,
---         value
---     );
---  [ghi]
+-- No per-connection TEMP table in this design. The engine tracks the
+-- active process pk in Lua-side state and binds it into queries at the
+-- call site; the schema is silent about it. If a per-connection
+-- scratchpad later earns its keep for reasons SQL callers can point
+-- at (views, ad-hoc debugger queries, triggers that need process
+-- context), it will land as a TEMP table named `connection`. [ghi]
 
 create table objects (
 	-- Primary key is a UUID4-shaped hex string generated at INSERT
@@ -88,11 +71,21 @@ create table objects (
 	
 	-- Row-kind discriminator. NOT NULL, no default: CVM's write
 	-- code names the row kind at INSERT time. Exactly one of:
-	--   'o' → object (full object, or scalar primitive if scalar_type is set)
+	--   'o' → object (a full object, or a scalar primitive if
+	--         scalar_type is set). Includes functions and closures —
+	--         a function is a plain `'o'` object with its CaspM
+	--         stored in its bucket. Never carries an `ast` column
+	--         itself.
 	--   'h' → HashPrimitive
 	--   'a' → ArrayPrimitive
+	--   'f' → frame — an instance of a call in progress or a popped-
+	--         but-captured shell of one. Carries `ast` (the code
+	--         currently executing, copied in from the called
+	--         function's bucket) and, while on-stack, its stack
+	--         coordinates (`process`, `idx`, `stmt_idx`). "Is this a
+	--         frame?" is a structural question: `primitive = 'f'`.
 	-- [ghi]
-	primitive text not null check (primitive in ('o', 'h', 'a')),
+	primitive text not null check (primitive in ('o', 'h', 'a', 'f')),
 
 	-- Scalar type. Only meaningful when primitive = 'o'. When set,
 	-- this row is a scalar primitive; when null on a primitive =
@@ -171,15 +164,18 @@ create table objects (
 	-- reverse direction of bucket_for would fight the cascade we
 	-- already have.
 	--
-	-- CHECK: only plain full objects (primitive = 'o' AND scalar_type null)
-	-- can carry these columns.
+	-- CHECK: only bucket / stack owners can carry these columns.
+	-- Owners are plain full objects (primitive = 'o' AND scalar_type
+	-- null) or frames (primitive = 'f') — both have buckets (frames
+	-- hold their locals under bucket['locals']) and both can gain a
+	-- stack.
 	-- UNIQUE: no two owners share a bucket or stack — redundant with
 	-- the bucket_for / stack_for UNIQUE, but a good safety net for
 	-- the denormalization. [ghi]
 	bucket_pk integer unique
-		check (bucket_pk is null or (primitive = 'o' and scalar_type is null)),
+		check (bucket_pk is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 	stack_pk  integer unique
-		check (stack_pk  is null or (primitive = 'o' and scalar_type is null)),
+		check (stack_pk  is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 
 	-- GC scratch: 1 means this row is a candidate the drain should
 	-- trace from. Null in the common case. Hosts that layer a
@@ -200,9 +196,7 @@ create table objects (
 	-- (or by hand during debugging) so a state snapshot self-describes
 	-- what each row is meant to be. Purely informational — no query
 	-- path reads it. Permanent feature of the schema. Rendered as
-	-- "comment" in walkthrough tables for readability. See the
-	-- ideas/frames-as-objects/debug-columns page for the
-	-- design rationale and promotion coordination rule. [ghi]
+	-- "comment" in walkthrough tables for readability. [ghi]
 	debug text
 );
 
@@ -288,7 +282,7 @@ begin
 end;
 
 -- ------------------------------------------------------------
--- Relationships: parent-to-child object edges.
+-- Refs: parent-to-child object edges.
 -- ------------------------------------------------------------
 -- Every row is an object-to-object edge. The parent must be a
 -- container primitive ('h' or 'a') — full objects and scalars
@@ -324,9 +318,7 @@ create table refs (
 	-- what each relationship is meant to be. Purely informational —
 	-- no query path reads it. Permanent feature of the schema.
 	-- Rendered as "comment" in walkthrough tables for readability.
-	-- Same treatment as objects.debug — see the
-	-- ideas/frames-as-objects/debug-columns page for the
-	-- design rationale and promotion coordination rule. [ghi]
+	-- Same treatment as objects.debug. [ghi]
 	debug text,
 
 	-- No two refs from the same parent share a key or idx.
@@ -436,44 +428,43 @@ alter table objects add column user integer
 alter table objects add column role_parent text
 	references objects(object_pk) on delete cascade;
 
--- ast: CaspM tree for callables (function / method / closure),
--- serialized as JSON text. Null on non-callables. Mutable — the
--- engine reads the current value on each call and thaws it into
--- Lua-native form attached to the frame, so an update takes effect
--- on the next call (hot-patch / metaprogramming friendly). See the
--- "AST storage: JSON, not JSONB" design note in requirements/cvm/
--- for the rationale. [ghi]
-alter table objects add column ast text;
+-- ast: CaspM tree serialized as JSON text — the code a frame is
+-- currently executing. Biconditional with `primitive = 'f'`: every
+-- frame row carries an ast; no non-frame row does.
+--
+-- Functions and closures are NOT frames. A function is a plain
+-- `primitive = 'o'` object; its CaspM lives in its bucket (as a
+-- bucket entry — see the callable's own spec for the key). When a
+-- function is called, the engine creates a fresh `primitive = 'f'`
+-- row and populates its `ast` from the function's stored CaspM. The
+-- function object stays where it is; the frame is a distinct row
+-- with the code copied in for execution.
+--
+-- Mutable — the engine reads the current value on each dispatch
+-- step and thaws it into Lua-native form attached to the frame. See
+-- the "AST storage: JSON, not JSONB" design note in
+-- requirements/cvm/ for the rationale. [ghi]
+alter table objects add column ast text
+	check ((primitive = 'f' and ast is not null)
+		or (primitive != 'f' and ast is null));
 
--- lexical_parent: the enclosing scope for closures and their
--- invocation frames. On a closure-object: points at the frame
--- (objects row) the closure was defined in — that's what the
--- closure captured. On an invocation frame pushed from a closure
--- call: points at the closure's captured frame, so variable lookup
--- for names not in the frame's own bucket walks the chain up. On
--- non-scope-carrying rows (plain objects, frame 0, non-closure
--- function frames): null.
---
--- This is the field that makes closures work under frames-as-objects.
--- Because a closure holds an ordinary object-graph reference to its
--- captured frame, GC keeps that frame alive as long as the closure
--- does. When the defining function returns and its frame is popped
--- off the call stack, the frame ROW stays in the objects table —
--- unreachable from `processes`, but reachable from the closure,
--- and that's what ordinary reachability wants. See the closure
--- walkthrough at ideas/frames-as-objects/examples/closure/ for the
--- table snapshots that make this concrete.
---
--- Immutable at INSERT for a given row — the captured scope is set
--- at creation and never rebound. [ghi]
-alter table objects add column lexical_parent text references objects(object_pk);
+-- Closure capture (the mechanism that lets a closure keep its
+-- defining frame alive after the frame is popped off the call stack)
+-- is the design's stated motivation but is NOT yet implemented in
+-- this sketch. The column that will carry the capture link —
+-- provisionally `lexical_parent` — lands when the closure walkthrough
+-- earns it. Deliberately not pre-provisioned; nothing in the current
+-- schema, code, or tests uses it, and requirements/lua/scope.md
+-- describes a different capture model (scope aggs) that has to be
+-- reconciled with this design before the column shape is settled.
+-- See ideas/frames-as-objects/examples/closure/ for the walkthrough
+-- placeholder. [ghi]
 
 -- stmt_idx: current position within the row's `ast`. Frame-objects
 -- use this to track which top-level statement they're about to
--- dispatch — 0 at push, incremented after each dispatch, back to
--- null (or unused) after the frame finishes. Non-frame objects
--- leave it null. Mutable — advances during execution. Non-negative
--- integer; null passes the CHECK unmarked.
+-- dispatch — 0 at push, incremented after each dispatch, set back to
+-- null on pop. Mutable — advances during execution. Non-negative
+-- integer. CHECK forbids setting it on any row that isn't a frame.
 --
 -- Bookkeeping like this used to live in the frame's bucket as a
 -- scalar entry hung off a refs row. Promoting stmt_idx
@@ -481,23 +472,26 @@ alter table objects add column lexical_parent text references objects(object_pk)
 -- refs link, and the bucket entry) at the cost of one
 -- column on every objects row — a good trade when frames are
 -- pushed and popped often. [ghi]
-alter table objects add column stmt_idx integer check (stmt_idx >= 0);
+alter table objects add column stmt_idx integer
+	check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f'));
 
 -- idx: stack position of this frame within its process. 0 for the
 -- outermost frame; incremented for each nested call. Frame-objects
--- only; non-frame objects leave it null. Immutable at INSERT for a
--- given frame — a frame's stack position is fixed at push time.
+-- only. Set to null on pop, along with `process` and `stmt_idx`, so
+-- a frame that survives past its pop (kept alive by a closure ref)
+-- carries `primitive = 'f'` but no stack coordinates. Non-negative
+-- integer. CHECK forbids setting it on any row that isn't a frame.
 -- Same trade as stmt_idx: promoting the idx reference out of a
--- bucket entry saves three rows per frame. Non-negative integer;
--- null passes the CHECK unmarked. [ghi]
-alter table objects add column idx integer check (idx >= 0);
+-- bucket entry saves three rows per frame. [ghi]
+alter table objects add column idx integer
+	check (idx is null or (idx >= 0 and primitive = 'f'));
 
 -- process: FK to the processes table for frame-objects. Declared
 -- further down in this section, immediately after `create table
 -- processes`, because SQLite validates FK targets at insert time
 -- and the alter-table statement would fail here before processes
 -- exists. See the block after `create table processes` for the
--- actual DDL and the design rationale. [ghi]
+-- actual DDL, the CHECK constraint, and the design rationale. [ghi]
 
 -- owner_role: ownership pointer for non-role objects. Every non-role
 -- object carries owner_role pointing at the role that created it.
@@ -833,8 +827,9 @@ end;
 -- multiple paused processes, or shared-object-graph concurrency.
 --
 -- No seed row — each engine creates its own processes row on
--- startup and records its pk in current_process. Multi-process
--- features will create additional rows here at runtime.
+-- startup and holds its pk in Lua-side state (see engine.lua's Open
+-- questions block). Multi-process features will create additional
+-- rows here at runtime.
 
 create table processes (
 	process_pk integer primary key autoincrement
@@ -853,9 +848,19 @@ end;
 -- objects.process — frame → process FK, deferred to here.
 -- ------------------------------------------------------------
 -- Declared after `create table processes` so SQLite can resolve the
--- FK target. Every frame-object carries this pointing at its own
--- process row; non-frame objects leave it null. Immutable at INSERT
--- for a given frame — a frame doesn't migrate between processes.
+-- FK target. Set on a frame while it's on a process's stack. Set to
+-- null on pop, along with `idx` and `stmt_idx`, so a frame that
+-- survives past its pop (kept alive by a closure ref, for example)
+-- carries `primitive = 'f'` but no stack coordinates. The row's own
+-- lifetime is governed by the standard object-graph mark-sweep from
+-- that point on.
+--
+-- Free to change value → null (pop) or null → value (an as-yet-
+-- unspec'd "revive a detached frame" flow); doesn't migrate a live
+-- frame between processes. Explicit anti-migration enforcement isn't
+-- written down yet.
+--
+-- CHECK: only frames (primitive = 'f') carry this column.
 --
 -- Same trade as stmt_idx above: promoting the process reference out
 -- of a bucket entry saves three rows per frame (the number-scalar
@@ -865,7 +870,15 @@ end;
 --
 -- No cascade on delete — process teardown policy is a Caspian-level
 -- concern to be spec'd. [ghi]
-alter table objects add column process integer references processes(process_pk);
+alter table objects add column process integer
+	references processes(process_pk)
+	check (process is null or primitive = 'f');
+
+-- Partial index over frames currently on a stack (uspace's frame
+-- anchor branch). `where primitive = 'f' and process is not null`
+-- makes the anchor query index-only. [ghi]
+create index objects_frame_on_stack on objects(process)
+	where primitive = 'f' and process is not null;
 
 -- ------------------------------------------------------------
 -- uspace — derived view of GC anchor set.
@@ -882,13 +895,18 @@ alter table objects add column process integer references processes(process_pk);
 --   * The root role (user, pk = 1).
 --   * Explicitly pinned via `persistent = 1`.
 --   * A role (via the role_parent chain rooted at user).
+--   * A frame currently on a process's stack (`primitive = 'f'` AND
+--     `process is not null`). Everything the frame anchors — its
+--     locals, and eventually its ambers, delegations, and the closure
+--     capture link — is reachable from the frame row via the standard
+--     `refs` walk, so one uspace branch per frame is enough to bring
+--     the whole live-execution subgraph in.
 --
--- Frame-object anchors — locals, ambers, delegations, lexical_parent
--- links reaching from live frame-objects — TBD. Under the
--- frames-as-objects model, frames are ordinary objects living in
--- `objects` and their reachability likely folds into the standard
--- object-graph trace rather than needing separate uspace branches.
--- [ghi]
+-- A frame that's been popped but survives (a closure captured it)
+-- carries `primitive = 'f'` with null stack coordinates. It's not
+-- uspace itself — the closure that captured it IS uspace-reachable,
+-- and the frame stays alive because that closure holds a ref to it.
+-- Standard mark-sweep does the work.
 --
 -- Buckets and stacks are NOT in this list. They live inside their
 -- owner via bucket_for / stack_for (ON DELETE CASCADE handles
@@ -919,11 +937,11 @@ create view uspace as
 	union
 	-- Objects flagged persistent — pinned regardless of other anchors.
 	-- `= 1` (rather than truthy `where persistent`) so the
-	-- objects_persistent partial index applies.  [ghi]
-	select object_pk from objects where persistent = 1;
-
--- TODO: frame-object anchors — under the frames-as-objects model, live
--- frames anchor whatever their frame-bucket fields point at (locals,
--- ambers, delegations, lexical_parent). Shape TBD as this design
--- shakes out; expect additional UNION branches or a single "reachable
--- from processes via frame-chains" branch. [ghi]
+	-- objects_persistent partial index applies. [ghi]
+	select object_pk from objects where persistent = 1
+	union
+	-- Frames currently on a process's stack. The partial index
+	-- `objects_frame_on_stack` makes this branch index-only. Everything
+	-- the frame anchors reaches uspace via the standard `refs` walk
+	-- from the frame row. [ghi]
+	select object_pk from objects where primitive = 'f' and process is not null;

@@ -198,12 +198,15 @@ end)
 -- object_by_pk class dispatch (frame vs plain object)
 -- ==============================================================
 
--- Insert a frame-shaped row (has `ast`, owned by user). Returns pk.
+-- Insert a frame-shaped row (primitive = 'f' with `ast`, owned by
+-- user). Uses a detached shape — process / idx / stmt_idx are null,
+-- which is legal (a frame that isn't currently on any stack). Tests
+-- that need an on-stack frame set those columns explicitly.
 local function insert_frame(db, user)
 	local pk
 
 	local sql = string.format(
-		"insert into objects (primitive, ast, owner_role) values ('o', '[[]]', '%s') returning object_pk",
+		"insert into objects (primitive, ast, owner_role) values ('f', '[[]]', '%s') returning object_pk",
 		user
 	)
 
@@ -930,6 +933,227 @@ test("set_local_to_scalar reuses the locals hash across bindings (no duplicate '
 
 	assert_eq(count, 1, "exactly one locals ref, reused across bindings")
 
+	db:close()
+end)
+
+-- ==============================================================
+-- add_frame
+-- ==============================================================
+
+test("add_frame inserts a primitive='f' row with ast, process, idx, stmt_idx=0, owner_role", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+
+	-- Need a processes row for the FK.
+	db:exec("insert into processes default values;")
+	local process_pk
+
+	for row in db:nrows("select process_pk from processes") do
+		process_pk = row.process_pk
+	end
+
+	local frame_pk = e:add_frame('[[]]', process_pk, 0, user)
+	assert_not_nil(frame_pk, "add_frame returned nil")
+
+	local row
+
+	for r in db:nrows("select * from objects where object_pk = '" .. frame_pk .. "'") do
+		row = r
+	end
+
+	assert_eq(row.primitive, 'f',              "primitive should be 'f'")
+	assert_eq(row.ast,       '[[]]',           "ast should be the passed value")
+	assert_eq(row.process,   process_pk,       "process should be the passed pk")
+	assert_eq(row.idx,       0,                "idx should be the passed value")
+	assert_eq(row.stmt_idx,  0,                "stmt_idx should be 0 at push")
+	assert_eq(row.owner_role, user,            "owner_role should be the passed pk")
+
+	db:close()
+end)
+
+test("add_frame's prepared statement is cached at construction", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	assert_not_nil(e.stmt_add_frame, "expected engine.new to prep stmt_add_frame")
+	db:close()
+end)
+
+-- ==============================================================
+-- frame_by_pk
+-- ==============================================================
+
+test("frame_by_pk returns the wrapper for a frame row", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)
+
+	local frame = e:frame_by_pk(frame_pk)
+	assert_not_nil(frame,             "frame_by_pk returned nil")
+	assert_eq(frame.primitive, 'f',   "wrapper primitive should be 'f'")
+	assert_eq(frame.object_pk, frame_pk, "wrapper pk mismatch")
+
+	db:close()
+end)
+
+test("frame_by_pk raises frame_by_pk_not_found when the pk doesn't exist", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+
+	local ok, err = pcall(function() e:frame_by_pk("00000000-0000-4000-8000-000000000000") end)
+	assert_eq(ok, false, "expected pcall to fail")
+
+	if not string.find(err, "frame_by_pk_not_found:", 1, true) then
+		error("expected frame_by_pk_not_found error, got: " .. tostring(err))
+	end
+
+	db:close()
+end)
+
+test("frame_by_pk raises frame_by_pk_not_a_frame when the pk points at a non-frame row", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local non_frame = insert_target(db, user)   -- primitive = 'o'
+
+	local ok, err = pcall(function() e:frame_by_pk(non_frame) end)
+	assert_eq(ok, false, "expected pcall to fail")
+
+	if not string.find(err, "frame_by_pk_not_a_frame:", 1, true) then
+		error("expected frame_by_pk_not_a_frame error, got: " .. tostring(err))
+	end
+
+	if not string.find(err, "primitive 'o'", 1, true) then
+		error("expected the error to name the actual primitive, got: " .. tostring(err))
+	end
+
+	db:close()
+end)
+
+test("frame.new raises frame_new_not_a_frame_row when handed a non-frame row directly", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	local non_frame = insert_target(db, user)
+
+	-- Simulate a direct caller that skips object.new's dispatch: fetch
+	-- a non-frame row and hand it to frame.new.
+	local frame_mod = require("frame")
+	local row
+
+	for r in db:nrows("select * from objects where object_pk = '" .. non_frame .. "'") do
+		row = r
+	end
+
+	local ok, err = pcall(function() frame_mod.new(e, row) end)
+	assert_eq(ok, false, "expected pcall to fail")
+
+	if not string.find(err, "frame_new_not_a_frame_row:", 1, true) then
+		error("expected frame_new_not_a_frame_row error, got: " .. tostring(err))
+	end
+
+	db:close()
+end)
+
+-- ==============================================================
+-- Schema-level constraints on the new frame columns
+-- ==============================================================
+
+test("primitive = 'f' requires ast to be non-null (biconditional CHECK)", function()
+	local db = fresh_db()
+	local user = user_pk(db)
+
+	local sql = string.format(
+		"insert into objects (primitive, owner_role) values ('f', '%s')",
+		user
+	)
+	local rc = db:exec(sql)
+
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject 'f' without ast")
+	db:close()
+end)
+
+test("non-frame rows may not carry ast (biconditional CHECK)", function()
+	local db = fresh_db()
+	local user = user_pk(db)
+
+	local sql = string.format(
+		"insert into objects (primitive, ast, owner_role) values ('o', '[[]]', '%s')",
+		user
+	)
+	local rc = db:exec(sql)
+
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject 'o' with ast")
+	db:close()
+end)
+
+test("stmt_idx / idx / process rejected on non-frame rows", function()
+	local db = fresh_db()
+	local user = user_pk(db)
+	db:exec("insert into processes default values;")
+
+	-- stmt_idx on 'o'
+	local rc = db:exec(string.format(
+		"insert into objects (primitive, stmt_idx, owner_role) values ('o', 0, '%s')", user
+	))
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject stmt_idx on 'o'")
+
+	-- idx on 'o'
+	rc = db:exec(string.format(
+		"insert into objects (primitive, idx, owner_role) values ('o', 0, '%s')", user
+	))
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject idx on 'o'")
+
+	-- process on 'o'
+	rc = db:exec(string.format(
+		"insert into objects (primitive, process, owner_role) values ('o', 1, '%s')", user
+	))
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject process on 'o'")
+
+	db:close()
+end)
+
+-- ==============================================================
+-- uspace view — frame anchor branch
+-- ==============================================================
+
+test("uspace includes frames currently on a stack", function()
+	local db = fresh_db()
+	local e = engine.new(db)
+	local user = user_pk(db)
+	db:exec("insert into processes default values;")
+
+	local process_pk
+
+	for row in db:nrows("select process_pk from processes") do
+		process_pk = row.process_pk
+	end
+
+	local frame_pk = e:add_frame('[[]]', process_pk, 0, user)
+
+	local found = false
+
+	for row in db:nrows("select object_pk from uspace where object_pk = '" .. frame_pk .. "'") do
+		found = true
+	end
+
+	assert_eq(found, true, "expected the on-stack frame to be in uspace")
+	db:close()
+end)
+
+test("uspace excludes frames with null stack coordinates (popped-but-captured shape)", function()
+	local db = fresh_db()
+	local user = user_pk(db)
+	local frame_pk = insert_frame(db, user)   -- 'f' with null process/idx/stmt_idx
+
+	local found = false
+
+	for row in db:nrows("select object_pk from uspace where object_pk = '" .. frame_pk .. "'") do
+		found = true
+	end
+
+	assert_eq(found, false, "expected a frame with null process to NOT be in uspace")
 	db:close()
 end)
 

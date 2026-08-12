@@ -99,25 +99,6 @@ h.test('user row has role_parent = null (root)', function()
 end)
 
 ------------------------------------------------------------
--- current_process TEMP table
-------------------------------------------------------------
-
-h.test('current_process temp table exists after open and accepts caller writes', function()
-	local db = cvm.open()
-
-	-- Pick a key cvm.open didn't already populate. current_process_pk
-	-- is filled by open (see the process-record test); an arbitrary
-	-- caller-owned key exercises the "TEMP table is writable" property
-	-- without colliding with the seeded row.
-	db:exec("insert into current_process (key, value) values ('test_marker', 42);")
-
-	local msg = db:errmsg()
-	h.assert_eq(msg, 'not an error', 'insert into current_process failed: ' .. tostring(msg))
-
-	db:close()
-end)
-
-------------------------------------------------------------
 -- Schema-level guarantees
 ------------------------------------------------------------
 
@@ -440,7 +421,7 @@ h.test('user seed is grandfathered — role_parent and owner_role both null', fu
 end)
 
 ------------------------------------------------------------
--- Process record + current_process population
+-- Process record
 ------------------------------------------------------------
 
 h.test('processes table has a row after open (process record initialized)', function()
@@ -456,24 +437,18 @@ h.test('processes table has a row after open (process record initialized)', func
 	db:close()
 end)
 
-h.test("current_process has 'current_process_pk' populated with the processes row's pk", function()
-	local db = cvm.open()
+h.test('cvm.open returns the process pk as its second value', function()
+	local db, process_pk = cvm.open()
 
-	local cp_value
+	h.assert_true(process_pk ~= nil, 'expected cvm.open to return a process pk as its second value')
 
-	for row in db:nrows("select value from current_process where key = 'current_process_pk'") do
-		cp_value = row.value
-	end
-
-	h.assert_true(cp_value ~= nil, 'current_process is missing the current_process_pk row')
-
-	local process_pk
+	local expected
 
 	for row in db:nrows('select process_pk from processes') do
-		process_pk = row.process_pk
+		expected = row.process_pk
 	end
 
-	h.assert_eq(cp_value, process_pk, 'current_process.value should equal processes.process_pk')
+	h.assert_eq(process_pk, expected, "returned pk should equal the processes row's process_pk")
 	db:close()
 end)
 

@@ -3,8 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_frames_as_objects_first_variable",
-	"role": "walkthrough of the CVM tables as the first variable assignment in a program executes. Sits between end-of-bootstrap (code loaded, nothing run) and later examples (closure, function call). Written to surface the granularity of the CVM's preserved state — where a step decomposes into finer snapshots, and where a Lua block runs atomically and the state jumps from one coherent moment to the next.",
-	"status": "stub"
+	"role": "walkthrough of the CVM tables as the first variable assignment in a program executes. Sits between end-of-bootstrap (code loaded, nothing run) and later examples (closure, function call). Written to surface the granularity of the CVM's preserved state — where a step decomposes into finer snapshots, and where a Lua block runs atomically and the state jumps from one coherent moment to the next."
 }}
 ~~~
 
@@ -32,20 +31,20 @@ Approximate CaspM (transpile + normalize):
 
 Same shape as the end-of-bootstrap snapshot, just with `$x = 1`'s CaspM in frame 0's `ast`. User seed in place, `processes` seeded, frame 0 pushed with `stmt_idx = 0` — about to dispatch the assignment. No bucket yet.
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment"><code>[[{"bwc": "="}, {"v": "x"}, {"v": 1}]]</code></td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment"><code>[[{"bwc": "="}, {"v": "x"}, {"v": 1}]]</code></td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
@@ -146,21 +145,21 @@ values ('o', 'n', 1, <user_pk>);
 
 ### State after
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — <code>bucket_pk</code> still null</td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — <code>bucket_pk</code> still null</td></tr>
 <tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — orphan</td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
@@ -175,7 +174,7 @@ The engine writes the scalar's pk into the frame's locals under key `x`. On the 
 frame.locals['x'] = <scalar_pk>
 ~~~
 
-The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. Its three composed calls line up with the three subsections below (`frame.bucket`, `frame.locals`, `add_ref`).
+The whole subtree below is what [`frame:set_local_to_scalar`](https://www.puck.uno/ideas/frames-as-objects/src/frame.lua#set-local-to-scalar-specialized-routine-for-name-scalar) does — the one specialized routine for the scalar-RHS case. The scalar itself was materialized above in [Create the number](#create-the-number); the three subsections here walk the ensures and the bind that plant it into the frame's local scope. `set_local_to_scalar` composes `add_scalar` + `ensure_locals` + `add_ref` at the top level, and `ensure_locals` decomposes further into `frame.bucket` + `frame.locals` — that's why the subsections read as `frame.bucket`, `frame.locals`, `['x'] = <scalar_pk>` rather than the top-level three-call list.
 
 Underneath, that composes into a tree of get-or-create operations. Each "ensure" branch is idempotent: does nothing if the target already exists, otherwise materializes it and writes to the DB. On a fresh frame — like this one — none of the targets exist, so every branch runs:
 
@@ -203,22 +202,22 @@ values ('h', <frame_0_pk>, <user_pk>);
 
 #### State after
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — <code>bucket_pk</code> is now <code>b00d...</code> (denormalized by trigger)</td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0 — <code>bucket_pk</code> is now <code>b00d...</code> (denormalized by trigger)</td></tr>
 <tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — still orphan</td></tr>
 <tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket; <code>bucket_for</code> = <code>f00d...</code></td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
@@ -244,23 +243,23 @@ After the first INSERT the row exists but is orphan; after the second it's reach
 
 #### State after
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
 <tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — still orphan</td></tr>
 <tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket</td></tr>
 <tr><td><code>10ca0000-0001-4000-8000-000000000003</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">locals hash — reachable via frame 0's bucket under key <code>locals</code></td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
@@ -283,23 +282,23 @@ The scalar is no longer orphan. Looking up `$x` in frame 0 walks: frame 0 → it
 
 #### State after
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="9">objects</th></tr>
 <tr><th>object pk</th><th>primitive</th><th>scalar</th><th>ast</th><th>stmt_idx</th><th>idx</th><th>process</th><th>owner role</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>8d46aade-8e8d-dbd7-bee2-e23414e35fa5</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>o</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
+<tr><td><code>f00d0000-0001-4000-8000-000000000001</code></td><td><code>f</code></td><td>—</td><td><em>see comment</em></td><td><code>0</code></td><td><code>0</code></td><td><code>1</code></td><td>user</td><td class="col-comment">frame 0</td></tr>
 <tr><td><code>ca7e0000-0001-4000-8000-000000000004</code></td><td><code>o</code></td><td><code>n</code> / <code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">scalar 1 — bound to name <code>x</code> in the locals hash</td></tr>
 <tr><td><code>b00d0000-0001-4000-8000-000000000002</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">frame 0's bucket</td></tr>
 <tr><td><code>10ca0000-0001-4000-8000-000000000003</code></td><td><code>h</code></td><td>—</td><td>null</td><td>null</td><td>null</td><td>null</td><td>user</td><td class="col-comment">locals hash</td></tr>
 </tbody>
 </table>
 
-<table class="tbl-mvm">
+<table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-relationships" colspan="6">refs</th></tr>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
 <tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
