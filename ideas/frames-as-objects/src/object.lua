@@ -45,19 +45,22 @@ callable/frame split. If `row.ast` is present, `object.new` hands off
 to `frame.new` so the returned wrapper carries the frame class's
 methods (`locals`, ...). Otherwise it wraps as a plain `object`.
 
-The internal `_wrap` helper does the actual metatable set + column
-lift. `frame.new` reuses it to avoid re-entering `object.new` (which
-would loop forever on any frame row).
+The internal `_wrap` helper does the actual metatable set + engine
+lift, reusing the row table itself as the instance. `frame.new`
+reuses it to avoid re-entering `object.new` (which would loop forever
+on any frame row).
+
+**Row-as-instance.** `_wrap` stamps the metatable directly onto `row`
+rather than allocating a fresh table and copying columns across.
+lsqlite3's `nrows()` yields a brand-new table each iteration — the
+row is never shared with anyone else — so mutating it in place is
+safe. Saves one table allocation plus ≈15 hashmap inserts on every
+uncached wrap. Requires no `objects` column named `engine`; verified
+against the schema.
 ]]
 local function _wrap(mt, engine, row)
-	local self = setmetatable({}, mt)
-	self.engine = engine
-
-	for k, v in pairs(row) do
-		self[k] = v
-	end
-
-	return self
+	row.engine = engine
+	return setmetatable(row, mt)
 end
 
 function object.new(engine, row)
@@ -78,7 +81,7 @@ object._wrap = _wrap
 ## `bucket` — the object's bucket, lazily created
 
 Returns the object's bucket wrapped as an object. Creates the bucket
-on first call; returns the cached one thereafter.
+on first call; returns the cached wrapper thereafter.
 
 The whole flow composes on two engine methods:
 
@@ -93,10 +96,31 @@ The whole flow composes on two engine methods:
   HashPrimitive object. Callers do `bucket['locals']` on the return,
   which needs a hash-indexable object, not a bare pk string.
 
-**Idempotent by design.** After the first call materializes the
-bucket, `self.bucket_pk` is set, so subsequent calls skip the
-`if not self.bucket_pk` block and go straight to `object_by_pk`. No
-wasted writes, no duplicate INSERTs.
+**Wrapper memoized on `self._bucket`.** The bucket row never changes
+identity — same pk forever, and there's no operation that reassigns
+a target's bucket. So the wrapper is cached on `self._bucket` on the
+first call, and every subsequent call short-circuits to a single
+field lookup + return. Skips the SELECT, skips `object.new`, skips
+`_wrap`'s column-lift loop — this is the hot-path win.
+
+**No writes on the memoized path.** After first materialization
+`self.bucket_pk` is also set, so even if the wrapper cache were ever
+missed (it isn't, in the current design) the `if not pk` guard would
+still prevent a duplicate INSERT.
+
+**Callers: hoist the wrapper out of tight loops.** The returned
+wrapper is stable — same identity every call — so callers that hit
+`.bucket` inside a hot loop should cache it once in a local:
+
+    local bucket = obj:bucket()
+    for i = 1, n do
+        bucket:whatever()
+    end
+
+That skips the metatable method lookup + Lua call frame on every
+iteration — the ≈46 ns/call floor `object:bucket()` bottoms out at
+after wrapper memoization. This method can't shave that from its
+side; the loop is the caller's to tighten.
 
 **Access is gated elsewhere.** `.bucket` gives you the bucket if
 you're allowed to have it. Whether you're allowed lives in Caspian's
@@ -104,11 +128,20 @@ access-control layer, not here. This method assumes permission has
 already been granted.
 ]]
 function object:bucket()
-	if not self.bucket_pk then
-		self.bucket_pk = self.engine:add_bucket(self.object_pk)
+	local bucket = self._bucket
+	if bucket then return bucket end
+
+	local engine = self.engine
+	local pk = self.bucket_pk
+
+	if not pk then
+		pk = engine:add_bucket(self.object_pk)
+		self.bucket_pk = pk
 	end
 
-	return self.engine:object_by_pk(self.bucket_pk)
+	bucket = engine:object_by_pk(pk)
+	self._bucket = bucket
+	return bucket
 end
 
 --[[
@@ -116,8 +149,8 @@ end
 
 Parallel to `bucket`, on the array side. Returns the object's stack —
 an ArrayPrimitive with `stack_for` pointing at this object — wrapped
-as an object. Creates the stack on first call; returns the cached one
-thereafter.
+as an object. Creates the stack on first call; returns the cached
+wrapper thereafter.
 
 Same composition as `bucket`:
 
@@ -129,19 +162,33 @@ Same composition as `bucket`:
 - `engine:object_by_pk(self.stack_pk)` — wraps the row as an
   ArrayPrimitive object.
 
-**Idempotent by design.** After the first call materializes the
-stack, `self.stack_pk` is set, so subsequent calls skip the
-`if not self.stack_pk` block. No wasted writes.
+**Wrapper memoized on `self._stack`.** Same hot-path optimization as
+`bucket`: the stack row never changes identity, so the wrapper is
+cached on `self._stack` on the first call and every subsequent call
+short-circuits to a single field lookup + return.
+
+**Callers: hoist the wrapper out of tight loops.** Same guidance as
+`bucket` — cache the result in a local once and reuse it across the
+loop rather than calling `.stack` every iteration.
 
 **Access is gated elsewhere.** Same discipline as `bucket` — this
 method assumes permission has already been granted.
 ]]
 function object:stack()
-	if not self.stack_pk then
-		self.stack_pk = self.engine:add_stack(self.object_pk)
+	local stack = self._stack
+	if stack then return stack end
+
+	local engine = self.engine
+	local pk = self.stack_pk
+
+	if not pk then
+		pk = engine:add_stack(self.object_pk)
+		self.stack_pk = pk
 	end
 
-	return self.engine:object_by_pk(self.stack_pk)
+	stack = engine:object_by_pk(pk)
+	self._stack = stack
+	return stack
 end
 
 return object

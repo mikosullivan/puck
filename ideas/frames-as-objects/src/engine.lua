@@ -13,7 +13,7 @@
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key"
 	},
-	"policy": "Engine DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the engine class. Every statement the engine uses is prepared upfront in engine.new(); methods just fetch the cached handle, bind, iterate, reset.",
+	"policy": "Engine DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the engine class. Every statement the engine uses is prepared upfront in engine.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
 	"performance": "Every method on this class runs on hot paths — most fire on every statement dispatch — and any cycle saved multiplies across the whole running program.",
 	"status": "sketch — walking-skeleton, first pass at Lua-native class file"
 }
@@ -33,16 +33,32 @@ calls their methods rather than being one of them.
 engine code. Each SQL the engine needs is its own method on the engine
 class, and every one of those statements is prepared upfront in
 `engine.new()`. Method bodies are just fetch-cached-handle + bind +
-iterate + reset — no per-call check for "is it prepared yet." A
+execute + reset — no per-call check for "is it prepared yet." A
 prepare-time error (typo, schema mismatch) surfaces at engine
 construction, not later when the affected method first fires.
+
+**Read shape drives the API.** Single-column reads — the six
+`add_*` methods that RETURNING one pk, plus `get_ref_child` — use
+`stmt:step()` + `stmt:get_value(0)` to fetch the one value they
+need. That skips the per-row table lsqlite3's `nrows()` allocates,
+plus the string-keyed column lookup, on every call. Full-row reads
+like `object_by_pk` stay on `nrows()` because the wrapper wants every
+column at once and the row table becomes the wrapper's own storage
+via `object._wrap`.
 
 **Every method on this page must be as efficient as possible** — these
 are hot paths, most run on every statement dispatch, and any cycle
 saved multiplies out across the whole running program.
 ]]
 
+local sqlite = require("lsqlite3")
 local object = require("object")
+
+-- Cache the ROW status constant into a local. Compared against
+-- inside every single-column read path (`stmt:step()` returns
+-- `sqlite.ROW` or `sqlite.DONE`); reading it once at module load
+-- beats a `sqlite.ROW` global lookup on every hit.
+local SQLITE_ROW = sqlite.ROW
 
 local engine = {}
 engine.__index = engine
@@ -171,12 +187,8 @@ to re-read the target row to learn its new `bucket_pk`.
 function engine:add_bucket(for_object_pk)
 	local stmt = self.stmt_add_bucket
 	stmt:bind_values(for_object_pk)
-	local bucket_pk
-
-	for r in stmt:nrows() do
-		bucket_pk = r.object_pk
-	end
-
+	stmt:step()
+	local bucket_pk = stmt:get_value(0)
 	stmt:reset()
 	return bucket_pk
 end
@@ -198,12 +210,8 @@ Same shape as `add_bucket`:
 function engine:add_stack(for_object_pk)
 	local stmt = self.stmt_add_stack
 	stmt:bind_values(for_object_pk)
-	local stack_pk
-
-	for r in stmt:nrows() do
-		stack_pk = r.object_pk
-	end
-
+	stmt:step()
+	local stack_pk = stmt:get_value(0)
 	stmt:reset()
 	return stack_pk
 end
@@ -221,12 +229,8 @@ materializes a primitive value inside the object graph.
 function engine:add_scalar(scalar_type, scalar_value, owner_role_pk)
 	local stmt = self.stmt_add_scalar
 	stmt:bind_values(scalar_type, scalar_value, owner_role_pk)
-	local scalar_pk
-
-	for r in stmt:nrows() do
-		scalar_pk = r.object_pk
-	end
-
+	stmt:step()
+	local scalar_pk = stmt:get_value(0)
 	stmt:reset()
 	return scalar_pk
 end
@@ -245,12 +249,8 @@ materialized on first assignment.
 function engine:add_hash(owner_role_pk)
 	local stmt = self.stmt_add_hash
 	stmt:bind_values(owner_role_pk)
-	local hash_pk
-
-	for r in stmt:nrows() do
-		hash_pk = r.object_pk
-	end
-
+	stmt:step()
+	local hash_pk = stmt:get_value(0)
 	stmt:reset()
 	return hash_pk
 end
@@ -267,12 +267,8 @@ Same shape as `add_hash`: one INSERT with `RETURNING object_pk`.
 function engine:add_array(owner_role_pk)
 	local stmt = self.stmt_add_array
 	stmt:bind_values(owner_role_pk)
-	local array_pk
-
-	for r in stmt:nrows() do
-		array_pk = r.object_pk
-	end
-
+	stmt:step()
+	local array_pk = stmt:get_value(0)
 	stmt:reset()
 	return array_pk
 end
@@ -291,12 +287,8 @@ the same round trip.
 function engine:add_ref(parent_pk, key, child_pk)
 	local stmt = self.stmt_add_ref
 	stmt:bind_values(parent_pk, child_pk, key)
-	local ref_pk
-
-	for r in stmt:nrows() do
-		ref_pk = r.ref_pk
-	end
-
+	stmt:step()
+	local ref_pk = stmt:get_value(0)
 	stmt:reset()
 	return ref_pk
 end
@@ -317,8 +309,8 @@ function engine:get_ref_child(parent_pk, key)
 	stmt:bind_values(parent_pk, key)
 	local child_pk
 
-	for r in stmt:nrows() do
-		child_pk = r.child
+	if stmt:step() == SQLITE_ROW then
+		child_pk = stmt:get_value(0)
 	end
 
 	stmt:reset()

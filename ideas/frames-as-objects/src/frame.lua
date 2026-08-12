@@ -70,16 +70,33 @@ access), then look up the child of the ref where `parent = bucket` and
 returns whatever's stored under `bucket['locals']`. On a fresh frame,
 before anything has been assigned, that entry doesn't exist yet and
 this returns `nil`. For the get-or-create variant, see `ensure_locals`.
+
+**Wrapper memoized on `self._locals`.** Same treatment as
+`object:bucket`. The locals hash's identity never changes once it
+exists — the ref planted under `bucket['locals']` is immutable and
+points at one specific hash forever — so the wrapper is cached on
+`self._locals` on the first successful return and every subsequent
+call short-circuits to a single field lookup. `ensure_locals` writes
+into the same cache field, so calling one after the other doesn't
+re-run the fetch. **Negative results are not cached** — on a fresh
+frame `locals()` returns nil without setting `_locals`, so a later
+call after `ensure_locals` populates it will still see the new hash.
 ]]
 function frame:locals()
+	local locals = self._locals
+	if locals then return locals end
+
+	local engine = self.engine
 	local bucket = self:bucket()
-	local locals_pk = self.engine:get_ref_child(bucket.object_pk, 'locals')
+	local locals_pk = engine:get_ref_child(bucket.object_pk, 'locals')
 
 	if not locals_pk then
 		return nil
 	end
 
-	return self.engine:object_by_pk(locals_pk)
+	locals = engine:object_by_pk(locals_pk)
+	self._locals = locals
+	return locals
 end
 
 --[[
@@ -102,17 +119,30 @@ The write path (`set_local_to_scalar`, and any other future write
 routine) calls this before adding the actual variable binding. The
 first-variable walkthrough spells it out step by step —
 [frame.locals ensure the locals hash](https://www.puck.uno/ideas/frames-as-objects/examples/first-variable/#framelocals-ensure-the-locals-hash).
+
+**Wrapper memoized on `self._locals`** — shared with `frame:locals`.
+Once the hash exists, both accessors short-circuit through the same
+cache field. `set_local_to_scalar` calls `ensure_locals` for every
+binding; after the first, the whole `bucket + get_ref_child + wrap`
+chain collapses to one field lookup.
 ]]
 function frame:ensure_locals()
+	local locals = self._locals
+	if locals then return locals end
+
+	local engine = self.engine
 	local bucket = self:bucket()
-	local locals_pk = self.engine:get_ref_child(bucket.object_pk, 'locals')
+	local bucket_pk = bucket.object_pk
+	local locals_pk = engine:get_ref_child(bucket_pk, 'locals')
 
 	if not locals_pk then
-		locals_pk = self.engine:add_hash(self.owner_role)
-		self.engine:add_ref(bucket.object_pk, 'locals', locals_pk)
+		locals_pk = engine:add_hash(self.owner_role)
+		engine:add_ref(bucket_pk, 'locals', locals_pk)
 	end
 
-	return self.engine:object_by_pk(locals_pk)
+	locals = engine:object_by_pk(locals_pk)
+	self._locals = locals
+	return locals
 end
 
 --[[
