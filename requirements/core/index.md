@@ -50,7 +50,7 @@ All sizes approximate, in kb.
 <tr>
 	<td>Engine</td>
 	<td class="align-right">84</td>
-	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (trivet.lua, normalize.lua, transpiler.lua); 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction). Bundled into <code>caspian.lua</code> at build time along with the Lua binding wrapper. Ships on disk under <code>caspian/</code>; any host embedding Caspian — the CLI, a Ruby host, a Python host — loads it via <code>require("caspian")</code>. Grows as the stdlib grows.</td>
+	<td>Live measurement: <strong>60% × total bytes</strong> of Caspian's own Lua source under <code>src/engine/</code>. Currently ≈140 kb of source (normalize.lua, transpiler.lua, and the CVM data-access layer under <code>src/engine/cvm/</code>). 60% is the expected shipped size after the minification levers below (empirically confirmed on Trivet at 56% reduction; Trivet itself has since moved to <a href="https://puck.uno/ideas/trivet/">ideas/trivet/</a> as it isn't currently used by shipping). Bundled into <code>caspian.lua</code> at build time along with the Lua binding wrapper. Ships on disk under <code>caspian/</code>; any host embedding Caspian — the CLI, a Ruby host, a Python host — loads it via <code>require("caspian")</code>. Grows as the stdlib grows.</td>
 </tr>
 <tr>
 	<td>Lua binding wrapper</td>
