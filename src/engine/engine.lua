@@ -1,13 +1,13 @@
 --[[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an CVM (via cvm.open()) and stash the SQLite handle as engine.cvm, so the runtime state store (CVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via a table-driven dispatcher. Iteratively extended one construct at a time: any atom kind / bwc / row-head shape the dispatcher doesn't have a handler for raises a specific unrecognized_* error that names the missing piece.",
+	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an CVM (via cvm.open()) and stash the SQLite handle as engine.cvm, so the runtime state store (CVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via the row_handlers chain-of-responsibility. Iteratively extended by registering Handler subclasses into row_handlers — no if/elseif branching in run_row.",
 	"exports": {
 		"new": "(opts?) -> Engine — opts.cvm is passed through to cvm.open() for the underlying CVM connection"
 	},
 	"stdout_contract": "The wired stdout must be an object supporting :print(text) — the raw byte-writer, no newline. Caspian-side :puts (adds newline) and everything else the sink surface exposes layer inside the engine on top of the host's :print. Tests wire a FakeStdout; the eventual CLI wires an object over io.stdout.",
 	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface.",
-	"dispatch_contract": "Three raise sites, all with `unrecognized_` prefix so grep finds them: `unrecognized_row_head` (statement-position atom the row dispatcher doesn't know), `unrecognized_bwc` (bareword-command name with no handler registered), `unrecognized_atom_kind` (value-producing atom whose kind key isn't in the value dispatcher). Adding a new construct = registering one handler and re-running the failing program."
+	"dispatch_contract": "Two raise sites, both with `unrecognized_` prefix so grep finds them: `unrecognized_row_head` (statement row that no registered Handler in row_handlers claimed — surfaced by run_row with the row-head atom's key set appended for diagnostic detail), `unrecognized_atom_kind` (value-producing atom whose kind key isn't in the value dispatcher). Adding a new construct = registering a Handler subclass into row_handlers and re-running the failing program."
 }
 ]]
 
@@ -43,6 +43,7 @@ local normalize          = require('normalize')
 local cvm                = require('cvm.open')
 local create_frame_0     = require('cvm.create_frame_0')
 local get_latest_frame   = require('cvm.get_latest_frame')
+local dispatch           = require('dispatch')
 
 local M = {}
 M.__index = M
@@ -65,23 +66,6 @@ local function atom_keys(atom)
 	table.sort(keys)
 	return table.concat(keys, ', ')
 end
-
---[[
-## The bwc handler table
-
-`bwc_handlers` is a table keyed by bareword-command name. Each handler
-takes `(engine, row)` where `row[1]` is the bwc marker atom and
-`row[2..]` are the arg atoms (unevaluated — the handler calls
-`engine:eval` on each). A bwc name with no matching entry raises
-`unrecognized_bwc` from `engine:run_bwc`.
-
-This table is walking-skeleton scaffolding. In the target design bwcs
-resolve through a DSL chain per [nested-dsls](https://www.puck.uno/ideas/nested-dsls);
-this direct-lookup shape is a stand-in until that lands. Anything added
-here should survive the eventual refactor cleanly — no per-handler
-features that duplicate what the DSL chain will handle.
-]]
-local bwc_handlers = {}
 
 --[[
 ## Debug logging
@@ -139,6 +123,11 @@ load-artifact slots start nil:
   and JSON-encodes it into the DB frame, then `run()` nils it out so
   the loaded program has one source of truth (the DB frame's ast), not
   two. Not populated on revival runs.
+- **`row_handlers`** — empty array at construction. The row-head dispatch
+  chain — instances of `handler.Handler` subclasses that `M:run_row`
+  offers each row to. `table.insert(engine.row_handlers, MyHandler.new())`
+  registers a handler. Empty means every row raises `unrecognized_row_head`
+  from dispatch's fallback (walking-skeleton state).
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -151,12 +140,13 @@ function M.new(opts)
 	opts = opts or {}
 
 	return setmetatable({
-		cvm        = cvm.open(opts.cvm),
-		stdout     = nil,
-		debugger   = nil,
-		transpiler = transpiler,
-		process_pk = nil,
-		caspm      = nil,
+		cvm          = cvm.open(opts.cvm),
+		stdout       = nil,
+		debugger     = nil,
+		transpiler   = transpiler,
+		process_pk   = nil,
+		caspm        = nil,
+		row_handlers = {},
 	}, M)
 end
 
@@ -268,52 +258,27 @@ end
 --[[
 ## Dispatching a row
 
-`engine:run_row(row)` dispatches one CaspM statement row based on its
-head atom. Currently handles one shape — `{bwc: name}` rows route to
-`run_bwc`; anything else appends a `raised` entry to the debugger and
-raises `unrecognized_row_head` with the head's key set in the message
-so the walking-skeleton iteration knows what row shape to add support
-for next.
+`engine:run_row(row)` offers the row to each Handler in `self.row_handlers` via the shared [dispatch](../engine/dispatch.lua) function. First handler to return `true` wins; if none does, dispatch raises `unrecognized_row_head`. Handler raises propagate through — dispatch doesn't catch.
 
-New row-head shapes land as additional `elseif head.<key> then ...`
-branches here, each with a corresponding sub-dispatcher (mirroring
-the bwc case's `run_bwc`).
+This method wraps dispatch's raise with a more diagnostic message: if dispatch raises `unrecognized_row_head`, `run_row` catches and re-raises with the row-head atom's key set appended, so the walking-skeleton iteration knows what row shape to add support for next. A handler's own raise (anything other than `unrecognized_row_head`) propagates as-is.
+
+New row-head shapes land as new Handler subclasses registered into `self.row_handlers` — no if/elseif branches to grow here.
 ]]
 function M:run_row(row)
-	local head = row[1]
+	local ok, err = pcall(dispatch, self.row_handlers, self, row)
 
-	if head.bwc then
-		return self:run_bwc(head.bwc, row)
+	if ok then
+		return
 	end
 
-	debug_log(self, {kind = 'raised', reason = 'unrecognized_row_head', head = head})
-	error("unrecognized_row_head: cannot dispatch statement — no rule handles a row starting with an atom whose keys are {" .. atom_keys(head) .. "}")
-end
-
---[[
-## Dispatching a bwc
-
-`engine:run_bwc(name, row)` looks up `name` in `bwc_handlers` and
-invokes the found handler. On success, appends `{kind = 'bwc', name =
-name}` to the debugger and returns whatever the handler returned. On
-failure — no registered handler for the name — appends `{kind =
-'raised', reason = 'unrecognized_bwc', name = name}` and raises
-`unrecognized_bwc: no handler registered for bareword command
-'<name>'`.
-
-The debugger entry lands before the raise so the diagnostic trail
-survives the error path.
-]]
-function M:run_bwc(name, row)
-	local handler = bwc_handlers[name]
-
-	if not handler then
-		debug_log(self, {kind = 'raised', reason = 'unrecognized_bwc', name = name})
-		error("unrecognized_bwc: no handler registered for bareword command '" .. name .. "'")
+	-- Reshape the fallback raise with atom-keys diagnostic; propagate
+	-- everything else as-is (handler raises, other errors).
+	if type(err) == 'string' and err:find('unrecognized_row_head', 1, true) then
+		debug_log(self, {kind = 'raised', reason = 'unrecognized_row_head', head = row[1]})
+		error("unrecognized_row_head: cannot dispatch statement — no rule handles a row starting with an atom whose keys are {" .. atom_keys(row[1]) .. "}")
 	end
 
-	debug_log(self, {kind = 'bwc', name = name})
-	return handler(self, row)
+	error(err, 0)
 end
 
 --[[
