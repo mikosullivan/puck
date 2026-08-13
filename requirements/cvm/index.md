@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_cvm",
-	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm.sql), per-subsystem specs (garbage-collection, pause-resume), and the walking-skeleton Lua engine + tests. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
+	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm/schema.sql), per-subsystem specs (garbage-collection, pause-resume), and the CVM's data-access layer at src/engine/cvm/. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
 	"status": "V1 spec"
 }}
 ~~~
@@ -21,7 +21,7 @@ Frames are not a separate table. A frame is an `objects` row with `primitive = '
 
 Code and tests live outside the doc tree:
 
-- Schema and engine entry point: [src/engine/cvm.sql](../../src/engine/cvm.sql), [src/engine/cvm.lua](../../src/engine/cvm.lua)
+- Schema, connection-open, and CVM's data-access layer: [src/engine/cvm/](../../src/engine/cvm/) — `schema.sql`, `open.lua`, `engine.lua`, `object.lua`, `frame.lua`
 - Tests: [tests/main/lua/engine/test_cvm.lua](../../tests/main/lua/engine/test_cvm.lua)
 
 Still in flux (in ideas/):

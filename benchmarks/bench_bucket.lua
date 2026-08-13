@@ -2,7 +2,7 @@
 -- optimization work.
 --
 -- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/benchmarks/bench_bucket.lua
+--     lua5.4 benchmarks/bench_bucket.lua
 --
 -- Two paths measured:
 --   * Hot  — same wrapped object, bucket_pk memoized; every call goes
@@ -46,13 +46,13 @@
 -- shape of work, not something object:bucket() can shave without
 -- changing the storage model.
 
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
+package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./src/engine/?.lua;" .. package.path
 package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
-local engine = require("engine")
+local engine = require("cvm.engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

@@ -38,7 +38,7 @@ are left as open questions the design still has to answer.
 
 - **Current-process tracking.** How does the engine know which
   process's frames it's advancing? The `processes` table exists in
-  the schema (`cvm.sql`), but nothing here reads or writes it. The
+  the schema (`schema.sql`), but nothing here reads or writes it. The
   active pk will live in Lua-side state (a field on the engine
   instance) and be bound into queries at the call site; where exactly
   it lands on the engine, who sets it, and how forking / pausing
@@ -84,7 +84,7 @@ out across the whole running program.
 ]]
 
 local sqlite = require("lsqlite3")
-local object = require("object")
+local object = require("cvm.object")
 
 -- Cache the ROW status constant into a local. Compared against
 -- inside every single-column read path (`stmt:step()` returns

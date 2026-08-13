@@ -1,7 +1,7 @@
 --[[ {
 	"vibecode": {
 		"module": "cvm",
-		"role": "CVM engine entry point: opens a SQLite connection (in-memory or file), enables FKs and recursive triggers, installs the CVM infrastructure from the sibling cvm.sql file if this is a fresh DB (skips the install if the mvm marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh processes row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
+		"role": "CVM engine entry point: opens a SQLite connection (in-memory or file), enables FKs and recursive triggers, installs the CVM infrastructure from the sibling schema.sql file if this is a fresh DB (skips the install if the mvm marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh processes row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
 		"status": "walking-skeleton — open + gated install + process record",
 		"exports": ["open", "load_schema"],
 		"depends_on": ["lsqlite3"]
@@ -12,14 +12,14 @@ local sqlite = require('lsqlite3')
 
 local M = {}
 
--- Default path to the schema. cvm.lua and cvm.sql are siblings
--- under src/engine/. The .sql file is authoritative; the display page
--- at requirements/cvm/sql.md pulls it in for rendering via
+-- Default path to the schema. open.lua and schema.sql are siblings
+-- under src/engine/cvm/. The .sql file is authoritative; the display
+-- page at requirements/cvm/sql.md pulls it in for rendering via
 -- Orlando's file: directive.
 local function default_schema_path()
 	local this_file = debug.getinfo(1, 'S').source:sub(2)
 	local this_dir = this_file:match('(.*/)') or './'
-	return this_dir .. 'cvm.sql'
+	return this_dir .. 'schema.sql'
 end
 
 --[[ {"in": "path to a .sql file", "out": "the SQL text", "note": "single-source-of-truth: the .sql file is authoritative"} ]]
@@ -38,7 +38,7 @@ function M.load_schema(path)
 	return text
 end
 
---[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to cvm.sql>}", "out": "two values: an lsqlite3 db handle with schema applied and pragmas set, and the fresh process pk from the processes row this open inserted", "note": "one connection = one process context — the caller is expected to hold the returned pk in Lua-side state and bind it into queries at the call site"} ]]
+--[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to schema.sql>}", "out": "two values: an lsqlite3 db handle with schema applied and pragmas set, and the fresh process pk from the processes row this open inserted", "note": "one connection = one process context — the caller is expected to hold the returned pk in Lua-side state and bind it into queries at the call site"} ]]
 function M.open(opts)
 	opts = opts or {}
 
@@ -62,7 +62,7 @@ function M.open(opts)
 
 	-- Recursive triggers are OFF by default in SQLite; enable per-connection.
 	-- The schema's opening comment declares them ON as a design principle
-	-- (see cvm.sql), so every connection has to set it to match.
+	-- (see schema.sql), so every connection has to set it to match.
 	ok = db:exec('pragma recursive_triggers = on;')
 
 	if ok ~= sqlite.OK then
@@ -73,7 +73,7 @@ function M.open(opts)
 
 	-- Install-infrastructure gate: presence of the mvm marker table
 	-- is the "already installed" flag. No mvm table means this is a
-	-- fresh DB and the DDL from cvm.sql needs to run; mvm table
+	-- fresh DB and the DDL from schema.sql needs to run; mvm table
 	-- present means the DB is a revive of an already-installed file and
 	-- re-running the install would fail on "table objects already exists."
 	-- Same code path for fresh and revive; the check is what makes open
@@ -85,7 +85,7 @@ function M.open(opts)
 	end
 
 	if not mvm_installed then
-		-- Apply the main schema. This is the DDL from cvm.sql: creates
+		-- Apply the main schema. This is the DDL from schema.sql: creates
 		-- every table / trigger / index / view, seeds the user row, inserts
 		-- the mvm marker row.
 		ok = db:exec(schema)

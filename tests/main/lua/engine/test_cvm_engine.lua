@@ -1,19 +1,19 @@
--- Tests for ideas/frames-as-objects/src/engine.lua
+-- Tests for src/engine/cvm/engine.lua (the CVM's data-access engine)
+-- plus the wrapper classes at src/engine/cvm/object.lua and
+-- src/engine/cvm/frame.lua.
 --
--- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/tests/test_engine.lua
+-- Run via the shared runner:
+--     lua5.4 tests/main/lua/engine/run.lua
 --
 -- Each test loads the CVM schema into an in-memory SQLite, constructs
 -- an engine bound to that handle, exercises the method under test,
--- and asserts on the result.
-
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
-package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
+-- and asserts on the result. The runner sets package.path so that
+-- `require("cvm.engine")` etc. resolve to src/engine/cvm/*.lua.
 
 local sqlite = require("lsqlite3")
-local engine = require("engine")
+local engine = require("cvm.engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)
@@ -63,40 +63,11 @@ local function insert_target(db, user)
 	return pk
 end
 
-local pass_count, fail_count = 0, 0
-local failures = {}
-
-local function test(name, fn)
-	local ok, err = pcall(fn)
-
-	if ok then
-		pass_count = pass_count + 1
-		print("  PASS " .. name)
-	else
-		fail_count = fail_count + 1
-		table.insert(failures, {name = name, err = err})
-		print("  FAIL " .. name)
-		print("       " .. tostring(err))
-	end
-end
-
-local function assert_eq(actual, expected, msg)
-	if actual == expected then return end
-	error((msg or "not equal") .. "\n  actual:   " .. tostring(actual) .. "\n  expected: " .. tostring(expected), 2)
-end
-
-local function assert_nil(actual, msg)
-	if actual == nil then return end
-	error((msg or "expected nil") .. "\n  actual: " .. tostring(actual), 2)
-end
-
-local function assert_not_nil(actual, msg)
-	if actual ~= nil then return end
-	error((msg or "expected non-nil"), 2)
-end
-
-print("test_engine.lua — engine class tests")
-print("--------------------------------------------------------")
+local h = require('helpers')
+local test           = h.test
+local assert_eq      = h.assert_eq
+local assert_nil     = h.assert_nil
+local assert_not_nil = h.assert_not_nil
 
 -- ==============================================================
 -- engine.new
@@ -1039,7 +1010,7 @@ test("frame.new raises frame_new_not_a_frame_row when handed a non-frame row dir
 
 	-- Simulate a direct caller that skips object.new's dispatch: fetch
 	-- a non-frame row and hand it to frame.new.
-	local frame_mod = require("frame")
+	local frame_mod = require("cvm.frame")
 	local row
 
 	for r in db:nrows("select * from objects where object_pk = '" .. non_frame .. "'") do
@@ -1156,14 +1127,3 @@ test("uspace excludes frames with null stack coordinates (popped-but-captured sh
 	assert_eq(found, false, "expected a frame with null process to NOT be in uspace")
 	db:close()
 end)
-
--- ==============================================================
--- Summary
--- ==============================================================
-
-print("--------------------------------------------------------")
-print(string.format("%d passed, %d failed", pass_count, fail_count))
-
-if fail_count > 0 then
-	os.exit(1)
-end

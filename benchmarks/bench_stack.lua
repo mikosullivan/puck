@@ -2,7 +2,7 @@
 -- object:bucket(). Same shape, same measurement discipline.
 --
 -- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/benchmarks/bench_stack.lua
+--     lua5.4 benchmarks/bench_stack.lua
 --
 -- Two paths measured:
 --   * Hot  — same wrapped object, stack_pk memoized; every call goes
@@ -30,13 +30,13 @@
 --   Hot  (memoized):  1,000,000 iters in  0.056s →   0.056 µs/call  (17,720,128 calls/s)  ≈unchanged
 --   Cold (fresh):        10,000 iters in  7.632s → 763.213 µs/call  (     1,310 calls/s)  ≈2.7× faster
 
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
+package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./src/engine/?.lua;" .. package.path
 package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
-local engine = require("engine")
+local engine = require("cvm.engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

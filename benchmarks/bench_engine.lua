@@ -14,7 +14,7 @@
 --   * get_ref_child — SELECT via the unique(parent, key) index.
 --
 -- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/benchmarks/bench_engine.lua
+--     lua5.4 benchmarks/bench_engine.lua
 --
 -- Setup (creating targets / seeding refs) happens OUTSIDE the timed
 -- region and is wrapped in a transaction so setup fsync cost doesn't
@@ -48,13 +48,13 @@
 --   opt is real; the "4× faster" for add_stack is partly measurement
 --   normalization on top of the real win.
 
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
+package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./src/engine/?.lua;" .. package.path
 package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
-local engine = require("engine")
+local engine = require("cvm.engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

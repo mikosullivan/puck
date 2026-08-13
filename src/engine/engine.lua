@@ -39,7 +39,7 @@ has a clear signal about what to build next.
 
 local transpiler = require('transpiler')
 local normalize  = require('normalize')
-local cvm    = require('cvm')
+local cvm    = require('cvm.open')
 
 local M = {}
 M.__index = M

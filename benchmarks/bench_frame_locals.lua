@@ -3,7 +3,7 @@
 -- wrapper each iter) for each method.
 --
 -- Run from the repo root:
---     lua5.4 ideas/frames-as-objects/benchmarks/bench_frame_locals.lua
+--     lua5.4 benchmarks/bench_frame_locals.lua
 --
 -- Setup: each iteration needs a fresh frame-object (primitive = 'f',
 -- ast set to a non-null CaspM literal, owner_role = user). The `ast`
@@ -27,13 +27,13 @@
 -- after its wrapper-cache pass — one metatable method lookup + one
 -- instance-field read + a branch + a return.
 
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./ideas/frames-as-objects/src/?.lua;" .. package.path
+package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;./src/engine/?.lua;" .. package.path
 package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
 
 local sqlite = require("lsqlite3")
-local engine = require("engine")
+local engine = require("cvm.engine")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

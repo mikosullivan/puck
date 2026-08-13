@@ -36,6 +36,22 @@ function M.assert_true(cond, msg)
 	return
 end
 
+function M.assert_nil(actual, msg)
+	if actual ~= nil then
+		error(tostring(msg or 'assert_nil') .. ': expected nil, got ' .. tostring(actual), 2)
+	end
+
+	return
+end
+
+function M.assert_not_nil(actual, msg)
+	if actual == nil then
+		error(tostring(msg or 'assert_not_nil') .. ': expected non-nil, got nil', 2)
+	end
+
+	return
+end
+
 function M.assert_raises(fn, pattern, msg)
 	local ok, err = pcall(fn)
 

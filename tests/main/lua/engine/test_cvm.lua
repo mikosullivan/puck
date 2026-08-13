@@ -6,7 +6,7 @@
 } ]]
 
 local h = require('helpers')
-local cvm = require('cvm')
+local cvm = require('cvm.open')
 
 ------------------------------------------------------------
 -- open + apply schema

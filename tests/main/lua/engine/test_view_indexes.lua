@@ -1,18 +1,16 @@
--- Verify the views defined in src/cvm.sql use the intended indexes.
--- Standalone test — run with:
+-- Verify the views defined in src/engine/cvm/schema.sql use the
+-- intended indexes.
 --
---     lua5.4 ideas/frames-as-objects/tests/view-indexes.lua
+-- Run via the shared runner:
+--     lua5.4 tests/main/lua/engine/run.lua
 --
 -- Each test loads the schema into an in-memory SQLite, runs
 -- EXPLAIN QUERY PLAN on a target query, and checks the plan text
--- for the expected access strategy. Exits non-zero if any test fails.
-
-package.path  = "/home/miko/.luarocks/share/lua/5.4/?.lua;" .. package.path
-package.cpath = "/home/miko/.luarocks/lib/lua/5.4/?.so;" .. package.cpath
+-- for the expected access strategy.
 
 local sqlite = require("lsqlite3")
 
-local SCHEMA_PATH = "ideas/frames-as-objects/src/cvm.sql"
+local SCHEMA_PATH = "src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)
@@ -38,23 +36,11 @@ local function plan(db, sql)
 	return table.concat(rows, "\n")
 end
 
--- Results.
-local pass_count, fail_count = 0, 0
-local failures = {}
+local h = require('helpers')
+local test = h.test
 
-local function test(name, fn)
-	local ok, err = pcall(fn)
-	if ok then
-		pass_count = pass_count + 1
-		print("  PASS " .. name)
-	else
-		fail_count = fail_count + 1
-		table.insert(failures, {name = name, err = err})
-		print("  FAIL " .. name)
-		print("       " .. tostring(err))
-	end
-end
-
+-- Local plan-shape asserts — specific to this file's EXPLAIN QUERY
+-- PLAN output inspection; not general enough to promote to helpers.
 local function assert_plan_contains(actual, expected, note)
 	if actual:find(expected, 1, true) then return end
 	error(
@@ -74,9 +60,6 @@ local function assert_plan_lacks(actual, forbidden, note)
 		2
 	)
 end
-
-print("view-indexes.lua — verify views use the intended indexes")
-print("--------------------------------------------------------")
 
 -- =============================================================================
 -- roles view
@@ -201,14 +184,3 @@ test("uspace's frame-anchor branch uses the objects_frame_on_stack partial index
 	assert_plan_contains(p, "USING INDEX objects_frame_on_stack")
 	db:close()
 end)
-
--- =============================================================================
--- Summary
--- =============================================================================
-
-print("--------------------------------------------------------")
-print(string.format("%d passed, %d failed", pass_count, fail_count))
-
-if fail_count > 0 then
-	os.exit(1)
-end

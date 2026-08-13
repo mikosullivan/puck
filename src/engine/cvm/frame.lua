@@ -58,7 +58,7 @@ defined directly on `frame` (like `bucket`) resolves via `object`.
 `frame.__index = frame` then makes `frame` itself the index for its
 own instances, so `frame:locals()` and friends resolve on the wrapper.
 ]]
-local object = require("object")
+local object = require("cvm.object")
 
 local frame = setmetatable({}, {__index = object})
 frame.__index = frame
