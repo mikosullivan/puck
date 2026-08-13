@@ -11,7 +11,7 @@
 		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
 		"add_hash":      "(owner_role_pk) -> new HashPrimitive's object_pk — plain hash, no bucket_for set",
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
-		"add_frame":     "(ast, process_pk, idx, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
+		"add_frame":     "(ast, process_pk, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key"
 	},
@@ -145,8 +145,8 @@ function engine.new(db)
 	)
 
 	self.stmt_add_frame = db:prepare(
-		"insert into objects (primitive, ast, process, idx, stmt_idx, owner_role) " ..
-		"values ('f', ?, ?, ?, 0, ?) returning object_pk"
+		"insert into objects (primitive, ast, process, stmt_idx, owner_role) " ..
+		"values ('f', ?, ?, 0, ?) returning object_pk"
 	)
 
 	self.stmt_add_ref = db:prepare(
@@ -354,22 +354,22 @@ end
 
 INSERTs an `objects` row with `primitive = 'f'` and the frame's stack
 coordinates: `ast` (the CaspM tree the frame will dispatch), `process`
-(the process pk this frame belongs to), `idx` (stack position), and
-`stmt_idx = 0` (starting at the first statement). Owner_role is
-caller-supplied.
+(the process pk this frame belongs to, if it's frame 0 — sub-frames
+carry `frame_parent` instead), and `stmt_idx = 0` (starting at the
+first statement). `owner_role` is caller-supplied.
 
-Caller computes `idx` (typically MAX(idx)+1 for the target process,
-or 0 for frame 0). Splitting that computation out of this method
-keeps `add_frame` a plain INSERT — push-a-frame semantics belong in
-the (not-yet-built) runtime layer that reads the current stack top.
+Push-a-frame semantics (which pk goes in `process` vs `frame_parent`,
+transaction wrapping, etc.) belong in the runtime layer above this
+method — `create_frame_0.lua` for the fresh-case flow, similar for
+sub-frame pushes when those land.
 
 **Set by the write path elsewhere.** `bucket_pk` and `stack_pk` are
 not set here — a frame that ends up needing locals materializes its
 bucket lazily via `object:bucket`, same as any other bucket owner.
 ]]
-function engine:add_frame(ast, process_pk, idx, owner_role_pk)
+function engine:add_frame(ast, process_pk, owner_role_pk)
 	local stmt = self.stmt_add_frame
-	stmt:bind_values(ast, process_pk, idx, owner_role_pk)
+	stmt:bind_values(ast, process_pk, owner_role_pk)
 	stmt:step()
 	local frame_pk = stmt:get_value(0)
 	stmt:reset()

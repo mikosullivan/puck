@@ -29,7 +29,7 @@ Reads: "pause execution here; when resumed, `$result` holds whatever the resumer
 
 ## What pause does mechanically
 
-1. The engine writes a pause frame to `objects` — a single `primitive = 'f'` row marked as the pause frame, at the top of the current process's stack (`process = <current process pk>`, `idx = MAX(idx) + 1`).
+1. The engine writes a pause frame to `objects` — a single `primitive = 'f'` row marked as the pause frame, chained under the current top-of-stack frame (`frame_parent = <current top frame pk>`).
 2. The write happens inside a SQL transaction.
 3. The engine closes the SQLite connection. Closing commits the transaction atomically — WAL mode ensures either the pause frame lands cleanly or the whole transaction rolls back, never a half-paused state.
 4. The engine process exits. The database file remains on disk with the paused state fully persisted.

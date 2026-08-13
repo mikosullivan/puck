@@ -37,9 +37,12 @@ naming the missing piece, so the walking-skeleton iteration loop always
 has a clear signal about what to build next.
 ]]
 
-local transpiler = require('transpiler')
-local normalize  = require('normalize')
-local cvm    = require('cvm.open')
+local cjson              = require('cjson')
+local transpiler         = require('transpiler')
+local normalize          = require('normalize')
+local cvm                = require('cvm.open')
+local create_frame_0     = require('cvm.create_frame_0')
+local get_latest_frame   = require('cvm.get_latest_frame')
 
 local M = {}
 M.__index = M
@@ -125,10 +128,15 @@ load-artifact slots start nil:
   transpiler module directly. Reassigning the slot doesn't yet change
   behavior. Added ahead of the wiring so downstream sprints can rely on
   the field's presence.
+- **`process_pk`** — nil at construction. Fresh vs revival signal for
+  `run()`. Host sets it to an existing process pk before calling
+  `run()` to revive that process (dispatch resumes from the process's
+  deepest live frame). Leaves it nil for a fresh run (dispatch pushes
+  frame 0 into a new process). Consulted only by `run()`.
 - **`caspm`** — nil at construction. Populated by `engine:load` with the
-  normalized program the dispatch loop walks. Vestigial: goes away once
-  the spec'd schema slot for CaspM-in-the-CVM lands and `load` writes
-  the program into the CVM instead of onto the engine table.
+  normalized program that gets stashed into frame 0's `ast` on push.
+  Input-staging slot: `create_frame_0` reads it and JSON-encodes it
+  into the DB frame; dispatch reads from the DB frame, not this slot.
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -145,6 +153,7 @@ function M.new(opts)
 		stdout     = nil,
 		debugger   = nil,
 		transpiler = transpiler,
+		process_pk = nil,
 		caspm      = nil,
 	}, M)
 end
@@ -175,21 +184,28 @@ end
 --[[
 ## Running the program
 
-`engine:run()` walks the loaded CaspM tree and dispatches each statement
-row via `run_row`. Raises `engine:run() called before engine:load()`
-when the engine hasn't loaded anything — prevents a silent no-op that
-would look like a working program.
+`engine:run()` sets up frame 0 (fresh or revival, per the `process_pk`
+slot) and then dispatches statement rows from the frame's `ast` via
+`run_row`. Raises `engine:run() called before engine:load()` when the
+engine hasn't loaded anything — prevents a silent no-op that would look
+like a working program.
 
-Currently top-level only: there's no call stack yet, so `run` is the
-only entry point and each row runs in the same implicit root frame.
-When CVM and the call stack land, this grows into the root frame's
-execution loop.
+**Fresh vs revival.** If `self.process_pk` is nil, `run` treats the run
+as fresh: it invokes `create_frame_0` to invent a new process and push
+frame 0. If `self.process_pk` is set, `run` treats the run as revival:
+it invokes `get_latest_frame` to find the deepest live frame in that
+process. Either way, dispatch reads from the resulting frame's `ast`
+column in the CVM.
+
+**Empty-process revival.** If `get_latest_frame` returns nil (the
+process exists but has no frames — done), dispatch is skipped entirely.
+Naturally a no-op; not a special case.
 
 **Return value:** a fresh Lua table, created at the top of `run` and
-returned at the end. Empty today — reserves the return-value surface
-so callers can start writing against it before specific keys are
-decided; keys get added as follow-on work lands. Exceptions still
-bubble up — this table is only the clean-return path.
+returned at the end. Empty today — reserves the return-value surface so
+callers can start writing against it before specific keys are decided;
+keys get added as follow-on work lands. Exceptions still bubble up —
+this table is only the clean-return path.
 ]]
 function M:run()
 	if not self.caspm then
@@ -198,8 +214,35 @@ function M:run()
 
 	local result = {}
 
-	for _, row in ipairs(self.caspm) do
-		self:run_row(row)
+	-- Fresh vs revival. Set up frame 0's resume pk.
+	local frame_pk
+
+	if self.process_pk then
+		frame_pk = get_latest_frame(self.cvm, self.process_pk)
+	else
+		frame_pk = create_frame_0(self.cvm, self)
+	end
+
+	-- If frame_pk is nil, the process is done — dispatch has nothing to
+	-- walk. Naturally a no-op.
+	if frame_pk then
+		-- Fetch the frame's ast from the DB and dispatch from it.
+		local ast_stmt = self.cvm:prepare(
+			"select ast from objects where object_pk = ?"
+		)
+		ast_stmt:bind_values(frame_pk)
+
+		local ast_json
+
+		for row in ast_stmt:nrows() do
+			ast_json = row.ast
+		end
+
+		ast_stmt:reset()
+
+		for _, row in ipairs(cjson.decode(ast_json)) do
+			self:run_row(row)
+		end
 	end
 
 	-- Last chance to read from the database before the connection scope ends.

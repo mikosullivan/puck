@@ -437,10 +437,10 @@ h.test('user seed is grandfathered — role_parent and owner_role both null', fu
 end)
 
 ------------------------------------------------------------
--- Process record
+-- Process record — NOT auto-created at open time
 ------------------------------------------------------------
 
-h.test('processes table has a row after open (process record initialized)', function()
+h.test('processes table is empty after open (no auto-creation)', function()
 	local db = cvm.open()
 
 	local count
@@ -449,22 +449,14 @@ h.test('processes table has a row after open (process record initialized)', func
 		count = row.n
 	end
 
-	h.assert_eq(count, 1, 'expected exactly one processes row after open')
+	h.assert_eq(count, 0, 'expected zero processes rows after open — process rows are created per-run, not at open time')
 	db:close()
 end)
 
-h.test('cvm.open returns the process pk as its second value', function()
-	local db, process_pk = cvm.open()
+h.test('cvm.open returns only the db handle (no second return value)', function()
+	local db, second = cvm.open()
 
-	h.assert_true(process_pk ~= nil, 'expected cvm.open to return a process pk as its second value')
-
-	local expected
-
-	for row in db:nrows('select process_pk from processes') do
-		expected = row.process_pk
-	end
-
-	h.assert_eq(process_pk, expected, "returned pk should equal the processes row's process_pk")
+	h.assert_true(second == nil, 'expected cvm.open to return nil as its second value; got: ' .. tostring(second))
 	db:close()
 end)
 

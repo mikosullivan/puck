@@ -14,6 +14,8 @@ Frames are not a separate table. A frame is an `objects` row with `primitive = '
 
 ![CVM entity-relationship diagram: six tables in color-coded clusters — cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive='f'.](./schema.svg)
 
+**Diagram staleness note.** The rendered SVG above still shows an `idx` column on `objects` and doesn't yet show `frame_parent`. Post frame-0 integration, the actual schema drops `idx` (stack ordering is derived from the `frame_parent` chain) and adds `frame_parent` (sub-frames chain to their pusher via this column; only frame 0 binds to `processes` directly). Regenerating the SVG is a follow-on to this integration.
+
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL
 - [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB
 - [garbage-collection](https://www.puck.uno/requirements/cvm/garbage-collection/) — mark triggers + the trace routine

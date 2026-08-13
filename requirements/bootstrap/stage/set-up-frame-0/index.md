@@ -13,18 +13,26 @@ The second and final sub-step of [Stage](https://www.puck.uno/requirements/boots
 ## The insert
 
 ~~~sql
-insert into objects (primitive, ast, process, idx, stmt_idx, owner_role)
-values ('f', <caspm_json>, <bootstrap_process_pk>, 0, 0, <user_pk>);
+insert into objects (primitive, ast, process, stmt_idx, owner_role)
+values ('f', <caspm_json>, <bootstrap_process_pk>, 0, <user_pk>);
 ~~~
 
 Column by column:
 
 - `primitive = 'f'` — this row is a frame. The `ast` column is biconditional with this primitive; every frame row carries the code it's executing.
 - `ast` — the CaspM tree produced by Transpile, serialized as JSON text (see [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage)).
-- `process` — the bootstrap process's pk. Populated during [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/); held by the engine in Lua-side state.
-- `idx = 0` — stack position. This is the outermost frame; the stack starts here.
+- `process` — the fresh process's pk, created by this sub-step (see [Fresh vs revival](#fresh-vs-revival) below). Only frame 0 binds to `processes` via this column; sub-frames (frames 1, 2, ...) chain via `frame_parent` and leave `process` null. Under the fan-in-friendly design, this leaves the door open for multiple processes to share the tail of a call chain.
 - `stmt_idx = 0` — dispatch position within `ast`. Frame 0 is about to execute the first top-level statement.
 - `owner_role` — the user seed's pk. Frame 0 runs as the user role.
+
+## Fresh vs revival
+
+Two entry paths land in this sub-step:
+
+- **Fresh run.** No process yet exists. Set up frame 0 creates one (via `initialize_process`) and then inserts frame 0 as above. Both writes wrap in a savepoint so a mid-flight crash can't leave a process row with no frame.
+- **Revival run.** The caller already has a process pk (from a paused earlier session, from a coordinator, from a revive-a-specific-process signal). Set up frame 0 finds the process's deepest live frame instead of creating a new one — the walk starts at frame 0 (the one with `process` set) and follows `frame_parent`-inverse links down to the deepest.
+
+The engine reads `engine.process_pk` to distinguish: nil means fresh, non-nil means revival. Same sub-step, two branches.
 
 ## This is where transpilation happens
 

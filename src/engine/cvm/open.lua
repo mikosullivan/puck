@@ -1,12 +1,12 @@
 --[[
 {
 	"module": "cvm.open",
-	"role": "CVM connection entry point: opens a SQLite connection (in-memory or file), enables `foreign_keys` and `recursive_triggers` pragmas per the CVM's per-connection rules, installs the CVM infrastructure from the sibling `schema.sql` file if this is a fresh DB (skips the install if the `cvm` marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh `processes` row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
+	"role": "CVM connection entry point: opens a SQLite connection (in-memory or file), enables `foreign_keys` and `recursive_triggers` pragmas per the CVM's per-connection rules, and installs the CVM infrastructure from the sibling `schema.sql` file if this is a fresh DB (skips the install if the `cvm` marker table is already present so revive-open on a persisted file is idempotent). Returns just the db handle. Process rows are created per-run by `create_frame_0` (fresh case) or handed in by the caller (revival case) — no auto-creation at open time.",
 	"exports": {
-		"open":        "(opts?) -> (db, process_pk) — opts.path (default ':memory:'), opts.schema (SQL text override), opts.schema_path (path to schema.sql)",
+		"open":        "(opts?) -> db — opts.path (default ':memory:'), opts.schema (SQL text override), opts.schema_path (path to schema.sql)",
 		"load_schema": "(path?) -> SQL text — path defaults to the sibling schema.sql"
 	},
-	"status": "walking-skeleton — open + gated install + process record",
+	"status": "walking-skeleton — open + gated install",
 	"depends_on": ["lsqlite3"]
 }
 ]]
@@ -31,12 +31,11 @@ are OFF by default in SQLite and reset per connection. `open` sets
 both before returning; a caller that opens the DB by other means
 needs to set them itself.
 
-**One connection = one process context.** Every `open` inserts a
-fresh row into the persistent `processes` table and returns its
-autoincrement pk alongside the db handle. Callers hold that pk in
-Lua-side state and bind it into every query. A revive path that
-looks up an existing process pk instead of allocating a new one is
-not yet spec'd.
+**No process auto-creation.** `open` returns just the db handle. Under
+frames-as-objects, process rows are created per-run by `create_frame_0`
+(fresh case) or handed in by the caller (revival case) — not at open
+time. Auto-creating a process here would allocate one nobody asked
+for and force one-process-per-open assumptions on the caller.
 ]]
 
 local sqlite = require('lsqlite3')
@@ -96,10 +95,9 @@ end
 
 Opens a SQLite connection (in-memory by default, file-backed if
 `opts.path` is set), enables the `foreign_keys` and
-`recursive_triggers` pragmas, installs the CVM DDL from
-`schema.sql` if the `cvm` marker table isn't already present, and
-inserts a fresh row into the `processes` table. Returns two
-values: the lsqlite3 db handle and the new `process_pk`.
+`recursive_triggers` pragmas, and installs the CVM DDL from
+`schema.sql` if the `cvm` marker table isn't already present. Returns
+the lsqlite3 db handle.
 
 **Options** (all optional):
 
@@ -114,14 +112,12 @@ values: the lsqlite3 db handle and the new `process_pk`.
 error id so `grep` finds the site: `cvm_open_failed` (sqlite.open
 failed), `cvm_pragma_fk_failed` / `cvm_pragma_recursive_triggers_failed`
 (pragma set failed), `cvm_schema_apply_failed` (DDL apply failed on a
-fresh DB), and `cvm_process_insert_failed` (initial `processes`
-insert failed). The db handle is closed on every raise path so an
-error doesn't leak a half-open connection.
+fresh DB). The db handle is closed on every raise path so an error
+doesn't leak a half-open connection.
 
-**One connection = one process context.** Callers hold the returned
-`process_pk` in Lua-side state and bind it into every query. A
-revive path that reuses an existing process pk instead of allocating
-a new one is not yet spec'd.
+**No process auto-creation.** Process rows are created per-run by
+`create_frame_0` (fresh case) or handed in by the caller (revival
+case) — not at open time.
 ]]
 function M.open(opts)
 	opts = opts or {}
@@ -181,21 +177,12 @@ function M.open(opts)
 		end
 	end
 
-	-- Initialize the process record. Insert a fresh row into the
-	-- persistent processes table and capture its autoincrement pk.
-	-- Fresh insert only — a revive path that looks up an existing
-	-- process pk instead of allocating a new one isn't yet spec'd.
-	ok = db:exec('insert into processes default values;')
-
-	if ok ~= sqlite.OK then
-		local msg = db:errmsg()
-		db:close()
-		error('cvm_process_insert_failed: ' .. tostring(msg))
-	end
-
-	local process_pk = db:last_insert_rowid()
-
-	return db, process_pk
+	-- Process rows are NOT created here. Under frames-as-objects, each
+	-- run either creates its process via `create_frame_0` (fresh case)
+	-- or is handed a process pk by its caller (revival case). Auto-
+	-- creating a process at open time would allocate one nobody asked
+	-- for and force one-process-per-open assumptions on the caller.
+	return db
 end
 
 return M

@@ -922,7 +922,7 @@ end)
 -- add_frame
 -- ==============================================================
 
-test("add_frame inserts a primitive='f' row with ast, process, idx, stmt_idx=0, owner_role", function()
+test("add_frame inserts a primitive='f' row with ast, process, stmt_idx=0, owner_role", function()
 	local db = fresh_db()
 	local e = engine.new(db)
 	local user = user_pk(db)
@@ -935,7 +935,7 @@ test("add_frame inserts a primitive='f' row with ast, process, idx, stmt_idx=0, 
 		process_pk = row.process_pk
 	end
 
-	local frame_pk = e:add_frame('[[]]', process_pk, 0, user)
+	local frame_pk = e:add_frame('[[]]', process_pk, user)
 	assert_not_nil(frame_pk, "add_frame returned nil")
 
 	local row
@@ -947,7 +947,6 @@ test("add_frame inserts a primitive='f' row with ast, process, idx, stmt_idx=0, 
 	assert_eq(row.primitive, 'f',              "primitive should be 'f'")
 	assert_eq(row.ast,       '[[]]',           "ast should be the passed value")
 	assert_eq(row.process,   process_pk,       "process should be the passed pk")
-	assert_eq(row.idx,       0,                "idx should be the passed value")
 	assert_eq(row.stmt_idx,  0,                "stmt_idx should be 0 at push")
 	assert_eq(row.owner_role, user,            "owner_role should be the passed pk")
 
@@ -1081,17 +1080,18 @@ test("stmt_idx / idx / process rejected on non-frame rows", function()
 	))
 	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject stmt_idx on 'o'")
 
-	-- idx on 'o'
+	-- process on 'o' — use a text UUID-shape value; would fail FK anyway
+	-- but the CHECK should fire on primitive != 'f'.
 	rc = db:exec(string.format(
-		"insert into objects (primitive, idx, owner_role) values ('o', 0, '%s')", user
-	))
-	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject idx on 'o'")
-
-	-- process on 'o'
-	rc = db:exec(string.format(
-		"insert into objects (primitive, process, owner_role) values ('o', 1, '%s')", user
+		"insert into objects (primitive, process, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
 	))
 	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject process on 'o'")
+
+	-- frame_parent on 'o'
+	rc = db:exec(string.format(
+		"insert into objects (primitive, frame_parent, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
+	))
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject frame_parent on 'o'")
 
 	db:close()
 end)
@@ -1112,7 +1112,7 @@ test("uspace includes frames currently on a stack", function()
 		process_pk = row.process_pk
 	end
 
-	local frame_pk = e:add_frame('[[]]', process_pk, 0, user)
+	local frame_pk = e:add_frame('[[]]', process_pk, user)
 
 	local found = false
 

@@ -10,7 +10,7 @@
 
 The fourth step in the bootstrap sequence. The engine brings up its own runtime state — the pieces that must exist before any Caspian code can execute, but that live entirely on the engine side and don't need host input.
 
-![Initialize VM sub-process, top to bottom: open the DB, install infrastructure, initialize the process record, return the CVM handle.](./init-process.svg)
+![Initialize VM sub-process, top to bottom: open the DB, install infrastructure, return the CVM handle.](./init-process.svg)
 
 ## Open the DB
 
@@ -24,14 +24,12 @@ See [Open the DB](https://www.puck.uno/requirements/bootstrap/initialize-vm/open
 
 See [Install infrastructure](https://www.puck.uno/requirements/bootstrap/initialize-vm/install-infrastructure/) for the full sub-step.
 
-## Initialize the process record
-
-Insert a row into `processes` — persistent, autoincrement pk. Engine holds the fresh pk in Lua-side state and binds it into queries at the call site; nothing about it is persisted to a per-connection scratchpad.
-
-See [Initialize the process record](https://www.puck.uno/requirements/bootstrap/initialize-vm/initialize-process-record/) for the full sub-step.
-
 ## Return the CVM handle
 
-`cvm.open()` returns the SQLite handle and the fresh process pk; the engine stashes the handle as `engine.cvm` and holds the pk in its own state. Everything downstream reads and writes runtime state through that handle.
+`cvm.open()` returns the SQLite handle; the engine stashes it as `engine.cvm`. Everything downstream reads and writes runtime state through that handle.
 
 See [Return the CVM handle](https://www.puck.uno/requirements/bootstrap/initialize-vm/return-cvm-handle/) for the full sub-step.
+
+## Deferred: process record creation
+
+Earlier drafts had Initialize VM insert a fresh `processes` row here — one process per open. That's been moved out. Under the frames-as-objects design, process rows are created per-run by [Set up frame 0](https://puck.uno/requirements/bootstrap/stage/set-up-frame-0/)'s fresh branch, or handed in by the caller for revival runs. Auto-creating one at open time would allocate a process nobody asked for and force one-process-per-open assumptions on the caller. The old `initialize-process-record/` sub-step doc is retained for historical context but no longer runs at Initialize VM time.
