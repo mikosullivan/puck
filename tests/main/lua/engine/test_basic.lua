@@ -1,3 +1,23 @@
+--[[
+{
+	"spec": "test_basic",
+	"role": "Smoke tests for `engine.new()` — the boot entry point. Confirms the constructor takes no args, returns an instance with no host wiring pre-populated (`stdout`, `debugger` both `nil`), and that assigning to those fields wires them cleanly (single assignment, reassignment, per-instance isolation)."
+}
+]]
+
+--[[
+# `test_basic`
+
+Boot-shape tests for the engine class. Every case here exercises a
+single wiring / assignment invariant — the constructor gives you a
+bare instance, capabilities attach by plain field assignment, and
+two engine instances never share state through class-level
+accidents.
+
+The tests use `helpers.FakeStdout` as the host-side stdout so the
+`e.stdout = ...` assignments have a concrete object to attach.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'
@@ -42,30 +62,11 @@ h.test('two engines have independent stdout state', function()
 	h.assert_true(e2.stdout == s2, 'e2.stdout is s2')
 end)
 
-h.test('engine:load(source) accepts a Caspian source string', function()
-	local e = engine.new()
-	e:load('$x = 1 + 2')
-	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed on engine')
-end)
-
-h.test('engine:load(source) populates caspj by running the transpiler', function()
-	local e = engine.new()
-	e:load('$x = 1 + 2')
-	h.assert_true(type(e.caspj) == 'table', 'caspj is a Lua table')
-	h.assert_true(#e.caspj > 0,             'caspj has at least one statement row')
-end)
-
-h.test('engine:load(source) populates caspm by normalizing caspj', function()
+h.test('engine:load(source) populates caspm by transpiling + normalizing', function()
 	local e = engine.new()
 	e:load('$x = 1 + 2')
 	h.assert_true(type(e.caspm) == 'table', 'caspm is a Lua table')
 	h.assert_true(#e.caspm > 0,             'caspm has at least one statement row')
-end)
-
-h.test('engine:load(source) populates caspj and caspm as independent tables', function()
-	local e = engine.new()
-	e:load('$x = 1 + 2')
-	h.assert_true(e.caspj ~= e.caspm, 'caspj and caspm are separate table objects')
 end)
 
 h.test('engine.debugger = X wires the debugger; engine.debugger reads it back', function()
@@ -87,7 +88,7 @@ end)
 h.test('engine:load(source) works with no debugger attached', function()
 	local e = engine.new()
 	e:load('$x = 1 + 2')
-	h.assert_eq(e.source, '$x = 1 + 2', 'source stashed without a debugger being required')
+	h.assert_true(type(e.caspm) == 'table', 'load succeeded without a debugger being required')
 end)
 
 h.test('the debugger can be inspected before AND after running load()', function()

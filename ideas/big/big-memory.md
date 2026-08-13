@@ -26,7 +26,7 @@ Fiona's shape is essentially a (subject, predicate, object) triple store — par
 
 The simplest option isn't a graph DB at all: SQLite with the Fiona schema (`hsa` + `relationships`) laid over it. SQLite is embedded, sub-MB, ubiquitous, single-file. Recursive CTEs handle graph walks (mark-and-sweep, reachability queries) natively. Fiona's two-table decomposition is straight-line SQL; the driver is a few hundred lines.
 
-Not a graph DB per se — it's SQL underneath — but arguably the strongest candidate on Mighty Mouse grounds. Caspian is likely to depend on SQLite for other things already ([mvm-sqlite](mvm-sqlite) explores it as CVM's backing store), so this adds no new dependency.
+Not a graph DB per se — it's SQL underneath — but arguably the strongest candidate on Mighty Mouse grounds. Caspian is likely to depend on SQLite for other things already ([cvm-sqlite](cvm-sqlite) explores it as CVM's backing store), so this adds no new dependency.
 
 ### Embedded triple stores
 
@@ -175,7 +175,7 @@ The discipline: writes have to keep auxiliary tables consistent with the canonic
 - **Which immutability stance** (structural sharing vs mutable relationships). Both viable; each carries a different developer story.
 - **Indexes and query patterns.** Reading `$bh['key']` is a keyed lookup — cheap. Reading "all bighashes where `.status == 'active'`" is a query against value-typed relationships and needs indexes designed for it.
 - **Backing store.** Fiona is described abstractly (two tables). The actual store could be SQLite (single-file, familiar), Postgres (server-based, indexed), an mmap'd custom format, or something else. Same schema; different substrates.
-- **How this composes with [mvm-sqlite](mvm-sqlite).** Both propose an abstract-storage layer; Fiona could be one driver in that shape, or CVM could be built on top of Fiona. Worth a design pass to see which subsumes which.
+- **How this composes with [cvm-sqlite](cvm-sqlite).** Both propose an abstract-storage layer; Fiona could be one driver in that shape, or CVM could be built on top of Fiona. Worth a design pass to see which subsumes which.
 
 ## The non-serializable-reference question
 

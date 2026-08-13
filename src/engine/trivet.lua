@@ -3,7 +3,40 @@
 	"module": "trivet",
 	"role": "Generic n-ary tree library for Lua. Wraps arbitrary values in Node objects; enforces single-parent and no-cycle invariants at every mutation. A tree is defined by its root node — there is no container class. trivet.new(value) returns a fresh root Node.",
 	"exports": {
-		"new": "value -> a fresh root Node (parent = nil)"
+		"new": "(value) -> a fresh root Node (parent = nil)"
+	},
+	"node_methods": {
+		"child":           "(index) -> child Node at 1-based position or nil",
+		"children":        "() -> iterator yielding each child in insertion order (snapshot; safe under mutation)",
+		"siblings":        "() -> iterator yielding every sibling except self (snapshot)",
+		"ancestors":       "() -> iterator yielding every ancestor from parent up to the root",
+		"path_from_root":  "() -> iterator yielding every node from root down to self",
+		"descendants":     "(order?: 'pre' | 'post' | 'bfs') -> iterator over the subtree (default 'pre')",
+		"subtree":         "(order?) -> iterator like descendants but also yields self",
+		"walk":            "(fn, order?) — call fn on every descendant; short-circuits on the first non-nil return",
+		"is_ancestor_of":  "(other) -> bool",
+		"is_descendant_of":"(other) -> bool",
+		"create_child":    "(value) -> new child Node appended at the end",
+		"insert_child":    "(index, value) -> new child Node inserted at 1-based `index`",
+		"remove":          "() -> self — detaches from parent (making self a root)",
+		"move_to":         "(new_parent) — reparents self, refusing cycles",
+		"move_before":     "(sibling) — reorders self before `sibling` under the shared parent",
+		"move_after":      "(sibling) — reorders self after `sibling` under the shared parent"
+	},
+	"node_properties": {
+		"value":              "the wrapped value passed at creation; opaque to Trivet",
+		"parent":             "the parent Node or nil for a root",
+		"depth":              "0 for root, N for a node whose path-from-root has N edges",
+		"is_root":            "true iff parent == nil",
+		"is_leaf":            "true iff child_count == 0",
+		"has_children":       "true iff child_count > 0",
+		"first_child":        "shortcut for child(1)",
+		"last_child":         "shortcut for child(child_count)",
+		"child_count":        "number of direct children",
+		"previous_sibling":   "the sibling immediately before self, or nil",
+		"next_sibling":       "the sibling immediately after self, or nil",
+		"sibling_index":      "self's 1-based position in the parent's child list",
+		"descendant_count":   "total descendants under self (does not include self)"
 	},
 	"invariants": {
 		"single_parent": "each node has exactly one parent (or is a root); enforced by construction — every mutation updates node.parent",
@@ -13,6 +46,44 @@
 	"api_shape": "node-wraps-value: tree logic never touches the wrapped value; the value is opaque"
 }
 ]=]
+
+--[[
+# Trivet
+
+Generic n-ary tree library. Every tree is a `Node` whose children
+are Nodes; there is no separate container class. `trivet.new(value)`
+returns a fresh root Node (parent = nil); every other Node comes
+from one of the `create_child` / `insert_child` / `move_to`
+mutations on an existing Node.
+
+**Node-wraps-value.** Tree logic never touches the wrapped value —
+`node.value` is opaque to Trivet. Callers put whatever they want in
+there (a string, a table, a Role instance, a live SQLite cursor);
+Trivet's traversal and mutation code doesn't care.
+
+**Invariants.** Single-parent: every node has exactly one parent
+link, updated atomically by every mutation. No-cycles:
+`create_child` and `insert_child` always allocate fresh nodes so
+they can't form a cycle; `move_to` walks the target's ancestor
+chain and refuses when self appears there. Root-derivation: a node
+is a root iff `node.parent == nil` — no separate `_is_root` field,
+no per-tree container.
+
+**Snapshot iterators.** `children()`, `siblings()`, and
+`descendants('pre')`/`('bfs')` all return iterators that walk a
+snapshot of the child list at call time. Adding, removing, or
+moving nodes mid-iteration is safe — the iterator yields the nodes
+that were there when the iterator was created. `descendants('post')`
+materializes the full post-order list before returning for the same
+reason.
+
+**Property lookup is dispatched.** `Node.__index` is a function that
+first checks `Node_methods` (bound-method table) and then
+`Node_properties` (computed-attribute table). Properties are
+called as functions: `node.depth` triggers `Node_properties.depth(node)`.
+That's how e.g. `depth`, `is_root`, and `descendant_count` stay
+current without a shadow field to keep in sync.
+]]
 
 local M = {}
 

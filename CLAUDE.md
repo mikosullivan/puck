@@ -19,7 +19,7 @@ User-level AI collaboration preferences live in [~/CLAUDE.md](../../../../CLAUDE
 
 **Every** link to a doc file in this repo uses a **puck.uno URL** — in chat replies, commit messages, PR descriptions, GitHub issue text, and inside doc files. Never `requirements/foo/bar.md`. Never a repo-relative path. This **overrides** the VS Code IDE default (which would have you use `[name](relative/path)`) — that default doesn't apply here.
 
-**Doc trees** (top-level directories Orlando renders as docs): `documentation/`, `ideas/`, `requirements/`, `skills/`. Anything under these trees needs the puck.uno form.
+**Doc trees** (top-level directories Orlando renders as docs): `documentation/`, `ideas/`, `requirements/`, `skills/`, `sprints/`. Anything under these trees needs the puck.uno form.
 
 Translation rule (the URL path is the filesystem path — no `documentation/` prefix wrapping the whole thing):
 

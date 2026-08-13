@@ -1,3 +1,25 @@
+--[[
+{
+	"spec": "test_ancestors_descendants",
+	"role": "Tests for `Node:ancestors()` and `Node:descendants()` (pre-order, post-order, and BFS variants) on `src/engine/trivet.lua`. Covers leaf-to-root ancestry walks, subtree traversal in each of the three orderings, and the interaction between the two — a descendants iterator on the root should yield the full subtree, while ancestors on the root should yield nothing."
+}
+]]
+
+--[[
+# `test_ancestors_descendants`
+
+Traversal tests for Trivet. Every case builds a fixed reference tree
+(via the local `build` helper) and asserts on the sequence of
+`.value`s the iterator yields — `h.values_of(iter)` maps
+`node.value` across the iterator so equality checks can use plain
+Lua sequences.
+
+The reference tree lives in the file's top comment: `r` at the root
+with children `a` / `b` / `c`; `a` has two leaves (`a1`, `a2`); `c`
+has a child `c1` which itself has a child `c1a`. All ordering
+assertions are anchored on that shape.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

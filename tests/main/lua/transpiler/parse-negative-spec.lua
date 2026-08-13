@@ -7,6 +7,19 @@
 }
 ]]
 
+--[[
+# `parse-negative-spec`
+
+Runs every fixture in `parse-negative.casp`, all of which are
+declared as `raises` cases. For each case, calls
+`transpile(source)` under `pcall` and asserts that (a) the call
+returns unsuccessfully and (b) the error message contains the
+substring declared in the fixture. Fixtures without a `raises`
+kind trigger a hard `assert` at load time — the file's whole
+purpose is negative coverage, so a non-raises fixture there is a
+fixture-format bug that must be surfaced loudly.
+]]
+
 package.path = "./src/engine/?.lua;./tests/main/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")

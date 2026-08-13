@@ -17,6 +17,16 @@ body {
 
 pre, code, textarea {tab-size: 4}
 
+/* Visited links match unvisited across the site. The site blue
+   (#0969da) is what every content-level, sidebar-file, breadcrumb,
+   and status-message link uses in its unvisited state; this rule
+   applies that same color to :visited so browsers don't recolor
+   history-visited links purple. More-specific rules that already
+   set a link color (e.g. `.sidebar li.file.asset a` at gray) win
+   on their own selectors via specificity, so gray-in-sidebar links
+   stay gray when visited. */
+a:visited {color: #0969da}
+
 .layout {
 	display: flex;
 	min-height: 100vh;
@@ -342,20 +352,18 @@ body.home .content h1 .hero-logo {
 .content th.tbl-title-relationships,
 .content th.tbl-title-refs,
 .content th.tbl-title-frame-locals,
+.content th.tbl-title-cvm,
 .content th.tbl-title-processes {text-align: center; color: #fff}
 .content th.tbl-title-objects {background: #26a69a}
 .content th.tbl-title-frames {background: #426320}
 .content th.tbl-title-relationships,
 .content th.tbl-title-refs {background: #d4a017}
 .content th.tbl-title-frame-locals {background: #ff9800}
+.content th.tbl-title-cvm {background: #9e9e9e}
 .content th.tbl-title-processes {background: #616161}
 .content tr.tbl-row-user td {background: #fff9c4}
-.content table.tbl-mvm th,
-.content table.tbl-mvm td,
 .content table.tbl-cvm th,
 .content table.tbl-cvm td {text-align: center}
-.content table.tbl-mvm th.col-comment,
-.content table.tbl-mvm td.col-comment,
 .content table.tbl-cvm th.col-comment,
 .content table.tbl-cvm td.col-comment {text-align: left}
 .content h1 {
@@ -509,6 +517,20 @@ body.home .content h1 .hero-logo {
 	background: #eaeef2;
 	color: #0969da;
 }
+
+/* Chip strip injected at the top of a page that has no H1. Same chips
+   the H1 line would carry (GitHub-page link, Quick Add, whole-page
+   Edit); this container just gives them a landing spot when there's
+   no heading to attach to. The chips' own left-margin already spaces
+   them from any leftmost sibling, so this wrapper stays visually
+   minimal. */
+.content .page-chips-orphan {
+	margin: 0 0 12px;
+}
+.content .page-chips-orphan .section-issue:first-child {
+	margin-left: 0;
+}
+
 .quick-add-toggle {display: none}
 .quick-add-toggle:not(:checked) + .quick-add-form {display: none}
 .quick-add-form {

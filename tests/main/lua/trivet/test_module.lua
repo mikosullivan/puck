@@ -1,3 +1,20 @@
+--[[
+{
+	"spec": "test_module",
+	"role": "Tests for the module-level shape of `src/engine/trivet.lua` — `trivet.new(value)` returns a fresh root Node, root Nodes report `.is_root == true` and `.parent == nil`, and the depth property increments correctly across parent / child / grandchild chains."
+}
+]]
+
+--[[
+# `test_module`
+
+Baseline shape tests for Trivet — the smallest cases that would
+catch a change to the top-level `trivet.new` signature or the
+root-node property surface. If these fail, the rest of the suite
+almost certainly fails too, so this file is a useful first
+diagnostic when a Trivet change breaks something.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

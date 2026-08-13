@@ -1,5 +1,26 @@
 #!/usr/bin/env lua5.4
 
+--[[
+{
+	"module": "run",
+	"role": "Runner for the Trivet test suite. Discovers every `test_*.lua` file next to itself, sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Sets `package.path` so `require('trivet')` resolves against `src/engine/`.",
+	"run": "lua5.4 tests/main/lua/trivet/run.lua (from repo root)"
+}
+]]
+
+--[[
+# `run`
+
+Discovers and runs every `test_*.lua` file in this directory. Each
+file registers cases via `helpers.test`; `run` calls `helpers.reset`
+before each file so failures aggregate per-file, then prints a final
+summary line and exits 0 on all-pass / 1 on any-failure.
+
+`package.path` is set so `require('trivet')` resolves against
+`src/engine/`. No `package.cpath` because Trivet is pure Lua — no
+C-extension dependencies.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

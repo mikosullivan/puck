@@ -205,6 +205,12 @@ The outer `assign` row spans lines 1-3, so it gets `{"line": 3}`. The inner `&fo
 
 **Why not always strip at the CaspJ level?** Because the same CaspJ may feed multiple downstream consumers — a cache holds one canonical CaspJ, and different builds (test runner needs lines, core-binary embed eventually doesn't) normalize it differently. Stripping at normalize time keeps the CaspJ shape stable and puts the decision at the last step where it matters.
 
+## Reserved passthrough fields
+
+**`misc`** and **`corporate`** are reserved as passthrough field names on any CaspJ or CaspM node. The engine promises never to use those names for anything else. Developer metadata stashed under either name is safe from name collisions when the engine's vocabulary grows.
+
+Same reservation applies to [all Puck hashes](https://puck.uno/requirements/bryton/xeme/) and drives the built-in [Misc / Corporate](https://puck.uno/requirements/built-in-classes/misc-and-corporate) utility classes.
+
 ## Calls
 
 <span class="tag">function-call-bwc</span>

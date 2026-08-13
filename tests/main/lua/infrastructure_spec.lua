@@ -6,6 +6,18 @@
 }
 ]]
 
+--[[
+# `infrastructure_spec`
+
+Sanity check for the busted-based transpiler test suite. Confirms
+that `dkjson` loads and exposes the `decode` / `encode` pair, that
+the transpiler and its supporting modules load without error, and
+that each exposes the entry point the rest of the suite consumes.
+When one of these regresses the transpiler specs surface a
+misleading error at first-`require`; running this file first turns
+that into a clear "which dependency is missing" report.
+]]
+
 -- Wire up bare-name requires against ./src/engine/ and ./tests/main/lua/transpiler/.
 -- Prepending preserves luarocks-provided paths (dkjson, busted itself, etc.).
 package.path = "./src/engine/?.lua;./tests/main/lua/transpiler/?.lua;" .. package.path

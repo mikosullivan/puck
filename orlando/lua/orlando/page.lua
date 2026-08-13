@@ -809,7 +809,12 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
     -- new tab. When Quick add is available (privileged), it supersedes
     -- the GitHub-issue chip — no reason to show both paths to the same
     -- outcome.
-    body_html = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
+    --
+    -- Pages without an H1 fall through to the no-H1 branch below, which
+    -- injects the same chip strip at the top of the body so Quick Add
+    -- and (on markdown pages) whole-page Edit stay reachable.
+    local h1_matched
+    body_html, h1_matched = body_html:gsub("(<h1[^>]*>)(.-)(</h1>)", function(open, inner, close)
         local qa_id   = "qa-h1"
         local edit_id = "edit-h1"
         local chips = github_page_link(md_path)
@@ -834,6 +839,36 @@ local function inject_issue_links(body_html, md_path, client_ip, original_headin
 
         return tail
     end, 1)
+
+    -- No H1 in the rendered body — inject the same chip strip at the
+    -- very top of the body so Quick Add stays reachable and, on markdown
+    -- pages, whole-page Edit stays reachable. The chips act on the whole
+    -- page (nil section — same as the H1 case above).
+    if h1_matched == 0 then
+        local qa_id   = "qa-h1"
+        local edit_id = "edit-h1"
+        local chips   = github_page_link(md_path)
+
+        if privileged then
+            chips = chips .. " " .. quick_add_label(qa_id)
+        else
+            chips = chips .. " " .. issue_link(md_path)
+        end
+        if include_edit then
+            chips = chips .. " " .. edit_label(edit_id)
+        end
+
+        local strip = '<div class="page-chips-orphan">' .. chip_group(chips) .. '</div>'
+
+        if privileged then
+            strip = strip .. quick_add_block(md_path, nil, nil, qa_id)
+        end
+        if include_edit then
+            strip = strip .. edit_block(md_path, nil, nil, edit_id)
+        end
+
+        body_html = strip .. body_html
+    end
 
     -- Each H2 through H6 in the rendered body. The standard chip
     -- group (file-issue, Quick add, Edit) is only injected when the

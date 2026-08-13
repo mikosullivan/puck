@@ -1,3 +1,21 @@
+--[[
+{
+	"spec": "test_invariants",
+	"role": "Tests for the two Trivet invariants declared in `src/engine/trivet.lua`'s module header: single-parent (each Node has exactly one parent link, and moving a node updates both sides atomically) and no-cycles (`move_to` refuses when the target is a descendant of self). Also covers root-derivation — a Node is a root iff `node.parent == nil`, no separate `_is_root` field."
+}
+]]
+
+--[[
+# `test_invariants`
+
+Guards the two structural invariants Trivet declares in its module
+header. Every mutation path (`create_child`, `insert_child`,
+`move_to`, `move_before` / `move_after`, `remove`) should preserve
+single-parent and no-cycles; the cases here spot-check the primary
+mutation shapes and confirm the raise-behaviour when a call would
+violate an invariant.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

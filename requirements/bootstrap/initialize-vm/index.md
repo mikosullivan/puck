@@ -20,7 +20,7 @@ See [Open the DB](https://www.puck.uno/requirements/bootstrap/initialize-vm/open
 
 ## Install infrastructure
 
-`db:exec(schema)` executes the schema text. Creates every table, trigger, index, and view; seeds the user row. Gated on the `mvm` marker table — skipped on already-installed DBs.
+`db:exec(schema)` executes the schema text. Creates every table, trigger, index, and view; seeds the user row. Gated on the `cvm` marker table — skipped on already-installed DBs.
 
 See [Install infrastructure](https://www.puck.uno/requirements/bootstrap/initialize-vm/install-infrastructure/) for the full sub-step.
 

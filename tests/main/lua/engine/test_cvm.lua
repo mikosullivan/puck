@@ -1,9 +1,25 @@
---[[ {
-	"vibecode": {
-		"role": "walking-skeleton tests for src/cvm.lua: open an in-memory DB, install the infrastructure, verify the seed exists and a couple of schema-level guarantees fire",
-		"status": "walking-skeleton — proves the DB opens and the schema loads without error"
-	}
-} ]]
+--[[
+{
+	"spec": "test_cvm",
+	"role": "Walking-skeleton tests for `src/engine/cvm/open.lua`: open an in-memory DB, install the infrastructure via `schema.sql`, verify the seed row exists and a couple of schema-level guarantees fire. Covers the pragmas (`foreign_keys`, `recursive_triggers`), the fresh-vs-revive install gate, the initial `processes` row, and a set of trigger / constraint behaviors that the schema is expected to enforce.",
+	"status": "walking-skeleton — proves the DB opens and the schema loads without error"
+}
+]]
+
+--[[
+# `test_cvm`
+
+Behavioural tests for the CVM open path. Every case starts from a
+fresh in-memory SQLite (`cvm.open()` with no `path`), then either
+introspects the freshly-installed schema (pragma queries, `objects`
+seed lookup, marker-table check) or exercises a schema-level
+guarantee (foreign-key rejection, trigger firing, unique-constraint
+violation).
+
+Kept at the walking-skeleton level: the point is that
+`schema.sql` applies cleanly and its declared invariants are
+actually wired up — not to cover every column on every table.
+]]
 
 local h = require('helpers')
 local cvm = require('cvm.open')
@@ -456,16 +472,16 @@ end)
 -- Install-infrastructure gate (idempotent open)
 ------------------------------------------------------------
 
-h.test('mvm marker table is present after a fresh install', function()
+h.test('cvm marker table is present after a fresh install', function()
 	local db = cvm.open()
 
 	local present = false
 
-	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'mvm'") do
+	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'cvm'") do
 		present = true
 	end
 
-	h.assert_true(present, 'mvm marker table should exist after install')
+	h.assert_true(present, 'cvm marker table should exist after install')
 	db:close()
 end)
 
@@ -473,7 +489,7 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 	-- Temp file so state survives close/reopen. os.tmpname on Linux
 	-- creates an empty file; SQLite is happy to treat that as an empty
 	-- database (no tables) on first open, so the install runs. Second
-	-- open finds the mvm marker table and skips.
+	-- open finds the cvm marker table and skips.
 	local tmp = os.tmpname()
 
 	-- First open: fresh install.

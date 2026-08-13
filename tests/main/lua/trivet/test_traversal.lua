@@ -1,3 +1,21 @@
+--[[
+{
+	"spec": "test_traversal",
+	"role": "Tests for `Node:walk()` and the underlying `Node:descendants(order)` on `src/engine/trivet.lua`. Covers the three orderings (`'pre'` — pre-order depth-first, the default; `'post'` — post-order; `'bfs'` — breadth-first) and confirms `walk`'s short-circuit contract: returning a non-nil value from the visitor halts the walk and propagates that value out."
+}
+]]
+
+--[[
+# `test_traversal`
+
+Ordering tests for Trivet. Every case builds a fixed reference tree
+(`build`) and asserts on the sequence of `.value`s each order
+yields. The reference tree has enough branching to distinguish the
+three orderings clearly — pre-order visits `a` before its children,
+post-order visits `a1` / `a2` before `a`, and BFS visits every
+depth-1 node before any depth-2 node.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

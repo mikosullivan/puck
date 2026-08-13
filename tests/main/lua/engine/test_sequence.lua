@@ -1,3 +1,22 @@
+--[[
+{
+	"spec": "test_sequence",
+	"role": "Tests for `src/engine/sequence.lua` — the string-integer counter. Covers the constructor (`sequence.new()` starts at `\"1\"`; `sequence.new(start)` seeds at any decimal-integer string), per-Sequence independence, and the increment algorithm's carry cases (single-digit bump, all-nines carry, mid-string carries)."
+}
+]]
+
+--[[
+# `test_sequence`
+
+Behavioural tests for the Sequence class. Confirms that `:next()`
+returns the pre-increment value and advances the counter in place,
+that two Sequences never interfere with each other, and that the
+right-to-left digit walk carries correctly through the interesting
+edge cases (`"9"` -> `"10"`, `"99"` -> `"100"`, `"129"` -> `"130"`,
+etc.) — all in string space so the counter grows past `2^53` without
+precision loss.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'

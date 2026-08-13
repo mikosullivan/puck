@@ -39,7 +39,7 @@ Applies the check from [concepts § Cost if you don't use it](https://puck.uno/r
 
 ### Reference-table + back-refs double-bookkeeping
 
-- **Spec:** [mvm/references](https://puck.uno/requirements/cvm/references) and [ideas/drinian § The reference table](https://puck.uno/ideas/drinian/#the-reference-table).
+- **Spec:** [cvm/references](https://puck.uno/requirements/cvm/references) and [ideas/drinian § The reference table](https://puck.uno/ideas/drinian/#the-reference-table).
 - **Cost:** every reference (variable, hash element) has an entry in `references`. The idea doc adds a mandatory inverse `back_refs` index. Every assignment is a delete+add pair; every mutation cascades through triggers.
 - **Non-users pay:** programs that never trigger GC (short-lived scripts) and programs that never form cycles still pay per-mutation back-refs maintenance. It's the same tax whether the program allocates one cycle or none.
 - **Alternative:** the trace design pays for itself only when cycles form. Refcount-first with cycle-detection-on-suspicion (Python's approach) skips back-refs maintenance in the common case.

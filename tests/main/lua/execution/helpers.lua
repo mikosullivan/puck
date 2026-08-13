@@ -1,3 +1,34 @@
+--[[
+{
+	"module": "helpers",
+	"role": "Shared test harness for the execution test suite. Same minimal runner (`test`, `results`, `reset`) and `FakeStdout` as the engine helpers, with a smaller assertion set — the execution tests currently only lean on `assert_eq`, `assert_true`, and `assert_raises`. Loaded via `require('helpers')` from every `test_*.lua` under `tests/main/lua/execution/` and driven by that directory's `run.lua`.",
+	"exports": {
+		"reset":         "() — clears the shared `results` accumulator",
+		"test":          "(name, fn) — runs `fn` under `xpcall`; bumps `results.passed` or `results.failed`",
+		"assert_eq":     "(actual, expected, msg?) — raises when `actual ~= expected`",
+		"assert_true":   "(cond, msg?) — raises when `cond` is falsy",
+		"assert_raises": "(fn, pattern?, msg?) — raises when `fn` does NOT raise, or when `pattern` isn't a substring of the raised error",
+		"FakeStdout":    "class — `.new()` returns an instance supporting `:print` / `:write` / `:puts` / `:get_all` / `:get_lines` / `:clear`"
+	}
+}
+]]
+
+--[[
+# `helpers`
+
+Shared test harness for the execution test suite. Every `test_*.lua`
+file under `tests/main/lua/execution/` starts with `local h =
+require('helpers')` and uses `h.test` to register cases plus the
+`h.assert_*` family to check outcomes. The parent `run.lua` in the
+same directory calls `h.reset` before each file and reads `h.results`
+after to aggregate pass/fail counts.
+
+`FakeStdout` satisfies the host-side stdout contract the engine
+expects: a table with `:print(bytes)` — the raw byte-writer, no
+newline. Tests wire it in place of the CLI's real stdout so
+assertions can look at what the engine actually wrote.
+]]
+
 local M = {}
 
 M.results = {passed = 0, failed = 0, failures = {}}

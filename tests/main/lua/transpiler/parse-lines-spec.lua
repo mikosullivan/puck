@@ -6,6 +6,17 @@
 }
 ]]
 
+--[[
+# `parse-lines-spec`
+
+Focused tests for the line-annotation mode of the transpiler.
+`parse-spec.lua`'s fixtures also cover line-annotation via the
+`{lines = true}` flag, but the mechanics — where `line` fields land
+on atoms vs. rows, whether they survive multi-line constructs
+correctly — are load-bearing enough to justify a small
+dedicated file that reads cleanly without the fixture indirection.
+]]
+
 package.path = "./src/engine/?.lua;" .. package.path
 
 local transpiler = require("transpiler")

@@ -58,7 +58,7 @@
 			fill="none" stroke="currentColor" stroke-width="1.5"/>
 		<rect x="60" y="290" width="6" height="70" fill="#4db6ac"/>
 		<text x="80" y="318" font-size="15" font-weight="bold">Initialize VM</text>
-		<text x="80" y="340" font-size="11" opacity="0.75">Engine brings up its runtime — MVM opens, per-connection state ready.</text>
+		<text x="80" y="340" font-size="11" opacity="0.75">Engine brings up its runtime — CVM opens, per-connection state ready.</text>
 
 		<line x1="250" y1="360" x2="250" y2="380"
 			stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
@@ -68,7 +68,7 @@
 			fill="none" stroke="currentColor" stroke-width="1.5"/>
 		<rect x="60" y="380" width="6" height="70" fill="#64b5f6"/>
 		<text x="80" y="408" font-size="15" font-weight="bold">Stage — <tspan font-family="monospace">engine:load(source)</tspan></text>
-		<text x="80" y="430" font-size="11" opacity="0.75">Caspian source → CaspJ → CaspM. CaspM lands in the MVM.</text>
+		<text x="80" y="430" font-size="11" opacity="0.75">Caspian source → CaspJ → CaspM. CaspM lands in the CVM.</text>
 		<!-- Current-work pill -->
 		<rect x="373" y="389" width="60" height="18" rx="9" ry="9"
 			fill="#64b5f6" stroke="none"/>

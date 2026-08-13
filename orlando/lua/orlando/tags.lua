@@ -13,7 +13,7 @@ local M = {}
 
 -- Directories to search for tag markers. Extendable if new roots ever
 -- carry canonical docs.
-local SEARCH_ROOTS = {"requirements", "ideas", "documentation"}
+local SEARCH_ROOTS = {"requirements", "ideas", "documentation", "skills", "sprints"}
 
 -- Marker pattern for a tag. Exact string form Orlando enforces:
 --   <span class="tag">NAME</span>

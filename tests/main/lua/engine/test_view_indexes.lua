@@ -1,12 +1,22 @@
--- Verify the views defined in src/engine/cvm/schema.sql use the
--- intended indexes.
---
--- Run via the shared runner:
---     lua5.4 tests/main/lua/engine/run.lua
---
--- Each test loads the schema into an in-memory SQLite, runs
--- EXPLAIN QUERY PLAN on a target query, and checks the plan text
--- for the expected access strategy.
+--[[
+{
+	"spec": "test_view_indexes",
+	"role": "Verifies the views defined in `src/engine/cvm/schema.sql` use the intended indexes. Each case loads the schema into an in-memory SQLite, runs `EXPLAIN QUERY PLAN` against a target query, and asserts on the plan text — index-scan hits over full-table scans on the columns the schema declares indexes for.",
+	"run": "lua5.4 tests/main/lua/engine/run.lua (from repo root)"
+}
+]]
+
+--[[
+# `test_view_indexes`
+
+Guards the query-plan side of the CVM schema. Views over `objects`
+/ `refs` that were designed to use an index (e.g. `refs(parent,
+key)`) fall onto a full-table scan silently if the index is dropped
+or renamed. These tests catch that regression by pattern-matching
+against SQLite's `EXPLAIN QUERY PLAN` output — a fragile-looking
+assertion that's genuinely load-bearing because there's no other
+way to check.
+]]
 
 local sqlite = require("lsqlite3")
 

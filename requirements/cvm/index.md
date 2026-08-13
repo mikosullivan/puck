@@ -12,7 +12,7 @@ Purpose-built SQLite schema for CVM — every field of the runtime state hash ma
 
 Frames are not a separate table. A frame is an `objects` row with `primitive = 'f'` — a fourth primitive kind alongside `'o'` (object / scalar), `'h'` (HashPrimitive), and `'a'` (ArrayPrimitive). The `ast` column is biconditional with `primitive = 'f'`: every frame row carries the code it's executing; no non-frame row carries an ast. That fold is what lets the standard object-graph GC keep captured scope alive for closures that outlive their defining frame.
 
-![CVM entity-relationship diagram: six tables in color-coded clusters — mvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive='f'.](./schema.svg)
+![CVM entity-relationship diagram: six tables in color-coded clusters — cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive='f'.](./schema.svg)
 
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL
 - [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB

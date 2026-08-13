@@ -1,14 +1,25 @@
--- Tests for src/engine/cvm/engine.lua (the CVM's data-access engine)
--- plus the wrapper classes at src/engine/cvm/object.lua and
--- src/engine/cvm/frame.lua.
---
--- Run via the shared runner:
---     lua5.4 tests/main/lua/engine/run.lua
---
--- Each test loads the CVM schema into an in-memory SQLite, constructs
--- an engine bound to that handle, exercises the method under test,
--- and asserts on the result. The runner sets package.path so that
--- `require("cvm.engine")` etc. resolve to src/engine/cvm/*.lua.
+--[[
+{
+	"spec": "test_cvm_engine",
+	"role": "Tests for `src/engine/cvm/engine.lua` (the CVM's data-access engine) plus the wrapper classes at `src/engine/cvm/object.lua` and `src/engine/cvm/frame.lua`. Covers `engine.new`, `object_by_pk`, `frame_by_pk`, the `add_*` family (`add_bucket` / `add_stack` / `add_scalar` / `add_hash` / `add_array` / `add_frame` / `add_ref`), `get_ref_child`, and the accessors on `object` / `frame` wrappers (`bucket`, `stack`, `locals`, `ensure_locals`, `set_local_to_scalar`).",
+	"run": "lua5.4 tests/main/lua/engine/run.lua (from repo root)"
+}
+]]
+
+--[[
+# `test_cvm_engine`
+
+End-to-end tests for the CVM data-access layer. Each case loads
+`src/engine/cvm/schema.sql` into a fresh in-memory SQLite via the
+local `fresh_db` helper, constructs an `engine` bound to that
+handle, exercises the method under test, and asserts on the
+resulting row or wrapper.
+
+The runner (`tests/main/lua/engine/run.lua`) sets `package.path` so
+that `require('cvm.engine')`, `require('cvm.object')`, and
+`require('cvm.frame')` resolve to `src/engine/cvm/*.lua`. Running
+this file standalone requires the same `package.path` prefix.
+]]
 
 local sqlite = require("lsqlite3")
 local engine = require("cvm.engine")

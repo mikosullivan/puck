@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "ideas_big_processes",
-	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, mvm-sqlite, %amber) and what would need to be added to complete the picture.",
+	"role": "brainstorm doc for Caspian at the OTHER end of its design range — programs that manage a whole factory, hold billions of records, run for weeks, exceed any single machine's RAM. Frames the design principle (small language + pluggable storage) that ties together the recent pieces (bigstring, cvm-sqlite, %amber) and what would need to be added to complete the picture.",
 	"status": "idea — spitball only. NOT V1 scope; nothing here has a promotion path to requirements/ implied."
 }}
 ~~~
@@ -25,7 +25,7 @@ Small language, big process. Not a contradiction — a consequence of separating
 Three of the recent idea threads are secretly building toward this:
 
 - **[bigstring](big-string)** — strings that live on disk but act like values. `$doc.length`, `$doc.split("\n")`, `$doc.match(regex)` all work regardless of whether the string is 200 bytes or 200 GB. Backing is file-or-DB, transparent.
-- **[mvm-sqlite](mvm-sqlite)** — runtime state itself becomes pluggable. CVM defines an abstract storage interface; a Lua-table driver ships for V1; a SQLite driver arrives when snapshot-and-revive or huge state calls for it.
+- **[cvm-sqlite](cvm-sqlite)** — runtime state itself becomes pluggable. CVM defines an abstract storage interface; a Lua-table driver ships for V1; a SQLite driver arrives when snapshot-and-revive or huge state calls for it.
 - **[%amber](https://puck.uno/requirements/amber)** — ambient hash built on the aggregate-hash primitive. Same "composable storage tiers behind a value-shaped surface" pattern.
 
 Each piece independently makes something small into something scalable-without-touching-the-language. Together they suggest a broader move: **every collection primitive gets pluggable backing.**
@@ -172,7 +172,7 @@ If V1's `.each`, `.map`, `.filter`, `.reduce` materialize their inputs before it
 
 ### 2. Storage-abstraction discipline in CVM
 
-Cross-references [mvm-sqlite § Middle-ground shapes](mvm-sqlite#middle-ground-shapes-worth-considering) — even if V1 ships the Lua-table driver, write CVM's spec against the abstract storage interface. Every consumer of runtime state reaches through the interface, not into Lua tables directly.
+Cross-references [cvm-sqlite § Middle-ground shapes](cvm-sqlite#middle-ground-shapes-worth-considering) — even if V1 ships the Lua-table driver, write CVM's spec against the abstract storage interface. Every consumer of runtime state reaches through the interface, not into Lua tables directly.
 
 - **V1 cost:** design work up front — name the interface, draw the boundary. No runtime cost; the Lua-table driver still runs at full speed.
 - **Cost to skip now:** every consumer of CVM state has to be untangled from Lua-table assumptions before any alternate backing (SQLite, distributed, tiered) can be added.
@@ -188,7 +188,7 @@ Even if V1 never serializes anything, define the shape now. Class DSL supports `
 
 Every object gets a unique ID at construction, guaranteed stable for the object's lifetime. Enables snapshot-and-revive (identity survives), distributed reference (multiple hosts agree on which object is which), dedup (same-object equality is cheap), and debugging (this ID is that entry in the log).
 
-CVM already specifies this — a single program-wide counter minting integer-as-string IDs, drawn from the same pool for objects, platter markers, and src-registry keys. See [mvm/references § Object IDs](https://puck.uno/requirements/cvm/references#object-ids). V1's job is just to actually use it uniformly: every object gets its ID from the sequencer at construction, no ad-hoc `id_of(obj)` schemes that would need reconciling later.
+CVM already specifies this — a single program-wide counter minting integer-as-string IDs, drawn from the same pool for objects, platter markers, and src-registry keys. See [cvm/references § Object IDs](https://puck.uno/requirements/cvm/references#object-ids). V1's job is just to actually use it uniformly: every object gets its ID from the sequencer at construction, no ad-hoc `id_of(obj)` schemes that would need reconciling later.
 
 - **V1 cost:** the counter and its increment routine (already spec'd). One field per object; a few bytes.
 - **Cost to skip now:** any big-process feature that needs object identity — distribution, snapshotting, cross-host reference — has to bolt on IDs across every existing object, and reason about pre-ID objects specially.

@@ -1,3 +1,20 @@
+--[[
+{
+	"spec": "test_mutation",
+	"role": "Tests for the Trivet mutation surface on `src/engine/trivet.lua`: `create_child`, `insert_child` (positional insert, including at position 1 and beyond the current end), `remove`, `move_to`, and the sibling-relative moves (`move_before`, `move_after`). Covers the successful mutation shapes plus the error paths (`insert_child` at an out-of-range index, `move_to` into a descendant, etc.)."
+}
+]]
+
+--[[
+# `test_mutation`
+
+Mutation-shape tests for Trivet. Every case exercises one of the
+mutation methods and asserts on the resulting child order plus the
+parent-link update. Cases that expect a raise (cycle attempts,
+out-of-range indexes) use `h.assert_raises` with a substring of the
+declared error message.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

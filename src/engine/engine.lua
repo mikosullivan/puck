@@ -117,10 +117,18 @@ load-artifact slots start nil:
 - **`stdout`, `debugger`** — nil at construction. The host attaches
   capabilities by plain field assignment before or after loading, in any
   order.
-- **`source`, `caspj`, `caspm`** — nil at construction. Populated by
-  `engine:load`. Vestigial: these are walking-skeleton fields; when the
-  spec'd schema slot for CaspM-in-the-CVM lands, `load` will write into
-  the CVM instead and these fields go away.
+- **`transpiler`** — the canonical Caspian transpiler module, wired at
+  construction. Placeholder for the eventual pluggable-frontend seam
+  the engine will grow when it consults this slot at
+  [Set up frame 0](https://puck.uno/requirements/bootstrap/stage/set-up-frame-0/#this-is-where-transpilation-happens).
+  Today nothing reads this slot; `load()` still reaches for the
+  transpiler module directly. Reassigning the slot doesn't yet change
+  behavior. Added ahead of the wiring so downstream sprints can rely on
+  the field's presence.
+- **`caspm`** — nil at construction. Populated by `engine:load` with the
+  normalized program the dispatch loop walks. Vestigial: goes away once
+  the spec'd schema slot for CaspM-in-the-CVM lands and `load` writes
+  the program into the CVM instead of onto the engine table.
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -133,12 +141,11 @@ function M.new(opts)
 	opts = opts or {}
 
 	return setmetatable({
-		cvm      = cvm.open(opts.cvm),
-		stdout   = nil,
-		debugger = nil,
-		source   = nil,
-		caspj    = nil,
-		caspm    = nil,
+		cvm        = cvm.open(opts.cvm),
+		stdout     = nil,
+		debugger   = nil,
+		transpiler = transpiler,
+		caspm      = nil,
 	}, M)
 end
 
@@ -146,20 +153,19 @@ end
 ## Loading source
 
 `engine:load(source)` takes a Caspian source string, transpiles it into
-CaspJ, normalizes that into CaspM, and stashes all three (`source`,
-`caspj`, `caspm`) on the engine. Appends a `{kind = 'loaded',
-source_length = N}` entry to the debugger if one is attached.
+CaspJ, normalizes that into CaspM, and stashes the resulting CaspM on
+`self.caspm`. The intermediate source and CaspJ are not retained —
+`run()` only needs the normalized form, and any inspector who wants to
+see the earlier representations can call `transpiler.transpile` and
+`normalize.normalize` themselves against the same source. Appends a
+`{kind = 'loaded', source_length = N}` entry to the debugger if one is
+attached.
 
 Must be called before `run()`; calling `run()` on an engine that hasn't
-loaded anything raises `engine:run() called before engine:load()`. The
-three intermediate representations remain readable on the engine after
-load — useful for inspecting what the transpiler and normalizer
-produced.
+loaded anything raises `engine:run() called before engine:load()`.
 ]]
 function M:load(source)
-	self.source = source
-	self.caspj  = transpiler.transpile(source)
-	self.caspm  = normalize.normalize(self.caspj)
+	self.caspm = normalize.normalize(transpiler.transpile(source))
 
 	debug_log(self, {kind = 'loaded', source_length = #source})
 
@@ -178,17 +184,27 @@ Currently top-level only: there's no call stack yet, so `run` is the
 only entry point and each row runs in the same implicit root frame.
 When CVM and the call stack land, this grows into the root frame's
 execution loop.
+
+**Return value:** a fresh Lua table, created at the top of `run` and
+returned at the end. Empty today — reserves the return-value surface
+so callers can start writing against it before specific keys are
+decided; keys get added as follow-on work lands. Exceptions still
+bubble up — this table is only the clean-return path.
 ]]
 function M:run()
 	if not self.caspm then
 		error("engine:run() called before engine:load(); no program to execute")
 	end
 
+	local result = {}
+
 	for _, row in ipairs(self.caspm) do
 		self:run_row(row)
 	end
 
-	return
+	-- Last chance to read from the database before the connection scope ends.
+
+	return result
 end
 
 --[[

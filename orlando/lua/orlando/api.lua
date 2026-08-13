@@ -29,7 +29,7 @@ local GH_REPO = "mikosullivan/puck"
 -- Doc trees the edit endpoints will accept a path inside. Kept in sync
 -- with orlando.search's DOC_ROOTS; excludes `archive/` (read-only
 -- reference material — not editable through the web UI).
-local EDITABLE_ROOTS = {"documentation/", "ideas/", "requirements/", "skills/"}
+local EDITABLE_ROOTS = {"documentation/", "ideas/", "requirements/", "skills/", "sprints/"}
 
 local function is_safe_md_path(path)
     if not path or path == "" then return false end

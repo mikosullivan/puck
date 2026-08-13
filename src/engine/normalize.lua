@@ -8,6 +8,51 @@
 }
 ]]
 
+--[[
+# `normalize`
+
+Second half of the CaspianJ pipeline: takes the self-documenting
+"full" form the transpiler emits and rewrites it into the compact
+"norm" form the engine walks. The two forms carry the same
+information — norm is what you get after stripping every field the
+runtime doesn't actually consume and collapsing the wordy
+statement / call shapes into the terse ones dispatch uses.
+
+The rewrite is a single recursive `normalize_atom` pass. Every
+CaspJ value (row, atom, scalar) enters that function; it dispatches
+on shape (row vs. object atom vs. scalar), applies the appropriate
+rewrite, and recurses into any sub-values. `M.normalize` is a thin
+wrapper that walks a full CaspJ program (a list of statement rows)
+and filters out the `nil`s that normalize_atom returns for
+drop-me values.
+
+**Rewrites in play.**
+
+- **Statement-prefix collapse.** `[scope, setvar, name, RHS]` ->
+  `[{in: 'as'}, name, RHS]`. Amp-call rows and dot-method rows
+  both become `[{in: 'fc'}, {fn, rc, ...}]`. Sugared forms
+  (`unless_end`, `until_end`, postinc, compound-assign, `@name`,
+  `@name = X`) desugar to their standard counterparts here.
+- **Compact-key rename.** `line` -> `l`, `value` -> `v`, `body` ->
+  `bd`, `args` -> `a`, `params` -> `pm`, and so on (full map in
+  `KEY_MAP`). Structural keys keep their names.
+- **Drop cosmetic and metadata atoms.** Comment atoms, docs /
+  vibecode BWC rows, `base` / `dq` flags, trailing sole-line metas
+  on single-line statements — all vanish in norm.
+- **Pipe desugaring.** `A | B` becomes a nested call with `A` as
+  the first positional of `B`. `|&` (null-safe pipe) is currently
+  deferred but the finder recognizes it so the shape doesn't
+  regress silently.
+- **Binops as calls.** `1 + 2` in full is `{op: '+', left, right}`;
+  in norm it's a call row with `fn: '+'`, `rc: left`, `a: [right]`.
+  Short-circuit ops (`and`, `or`, `&&`, `||`) stay in `{op, left,
+  right}` shape because they need runtime short-circuit dispatch.
+
+**Input is not mutated.** Every rewrite builds a fresh table.
+Callers that want the full form after normalizing can hold onto
+their original.
+]]
+
 local M = {}
 
 local normalize_atom

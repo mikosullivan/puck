@@ -1,5 +1,27 @@
 #!/usr/bin/env lua5.4
 
+--[[
+{
+	"module": "run",
+	"role": "Runner for the execution test suite. Discovers every `test_*.lua` file next to itself, sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Sets `package.path` so the fresh engine code under `src/engine/` resolves via bare-name requires.",
+	"run": "lua5.4 tests/main/lua/execution/run.lua (from repo root)"
+}
+]]
+
+--[[
+# `run`
+
+Discovers and runs every `test_*.lua` file in this directory. Each
+file registers cases via `helpers.test`; `run` calls `helpers.reset`
+before each file so failures aggregate per-file, then prints a final
+summary line and exits 0 on all-pass / 1 on any-failure.
+
+`package.path` is set so `require('engine')` and the engine module's
+own requires (`require('transpiler')`, `require('normalize')`,
+`require('cvm.open')`) resolve against `src/engine/`. `package.cpath`
+picks up the system `luarocks` tree for `lsqlite3.so`.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'

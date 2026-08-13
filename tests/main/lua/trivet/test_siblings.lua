@@ -1,3 +1,20 @@
+--[[
+{
+	"spec": "test_siblings",
+	"role": "Tests for `Node:siblings()` plus the sibling-derived properties (`previous_sibling`, `next_sibling`, `sibling_index`) on `src/engine/trivet.lua`. `siblings()` yields every child of the parent that isn't self; the neighbour properties yield the adjacent nodes or `nil` at the boundary."
+}
+]]
+
+--[[
+# `test_siblings`
+
+Sibling-access tests for Trivet. The main invariant is that
+`siblings()` excludes self — every other test in the file is a
+positional-neighbour check at one of the sibling-list edges (first,
+middle, last) so the boundary behaviour (`nil` at either end) is
+covered without duplication.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

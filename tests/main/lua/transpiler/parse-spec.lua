@@ -7,6 +7,23 @@
 }
 ]]
 
+--[[
+# `parse-spec`
+
+Positive-coverage spec for the transpiler. Iterates every fixture
+in `parse.casp` and dispatches on the case kind — `expects` cases
+compare the CaspJ tree against the fixture's declared JSON, and
+`raises` cases confirm the snippet fails with an error message
+containing the expected substring.
+
+The `norm` section is optional on `expects` cases; when it's
+missing, the fixture is declaring that the norm form is identical
+to the full form, and the assertion compares `normalize(full)`
+against `full` itself. That convention keeps the `.casp` file
+readable — most fixtures don't need to spell out identical JSON
+twice.
+]]
+
 -- Wire up bare-name requires against ./src/engine/ and ./tests/main/lua/transpiler/.
 -- Prepending to package.path preserves luarocks-provided paths (dkjson, etc.).
 package.path = "./src/engine/?.lua;./tests/main/lua/transpiler/?.lua;" .. package.path

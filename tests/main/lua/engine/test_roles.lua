@@ -1,3 +1,20 @@
+--[[
+{
+	"spec": "test_roles",
+	"role": "Tests for `src/engine/roles.lua` — the `roles.new(name)` constructor. Confirms that `name` is stored on the returned Role, that arbitrary opaque strings (bareword identifiers, URL-shaped names, short keys) round-trip cleanly, and that each `roles.new` call returns a fresh instance even for the same name."
+}
+]]
+
+--[[
+# `test_roles`
+
+Constructor-shape tests for the Role class. Roles are opaque
+identity objects — the engine never parses their names — so the
+tests focus on the invariants around the `.name` field and the
+per-call freshness of returned instances rather than on any
+semantic interpretation of the name.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'

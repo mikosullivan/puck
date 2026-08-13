@@ -8,11 +8,11 @@
 }}
 ~~~
 
-Companion to [drinian-spec](https://www.puck.uno/ideas/drinian-spec/). The Caspian-facing spec at [mvm/objects](https://www.puck.uno/requirements/cvm/objects) describes what an object IS from the developer's perspective (bucket / stack / platter / role / src). This doc covers how the Lua engine REPRESENTS one during execution: the class, the factory, the mutation surface.
+Companion to [drinian-spec](https://www.puck.uno/ideas/drinian-spec/). The Caspian-facing spec at [cvm/objects](https://www.puck.uno/requirements/cvm/objects) describes what an object IS from the developer's perspective (bucket / stack / platter / role / src). This doc covers how the Lua engine REPRESENTS one during execution: the class, the factory, the mutation surface.
 
 ## What every Caspian object carries
 
-Per [mvm/objects](https://www.puck.uno/requirements/cvm/objects), every live Caspian object has:
+Per [cvm/objects](https://www.puck.uno/requirements/cvm/objects), every live Caspian object has:
 
 - **`id`** — string from `state.sequence` (e.g., `"7"`, `"42"`)
 - **`role`** — **role ID** (a string from `state.sequence`) identifying the role that owns this object. Roles don't inherently have names — `"engine"` and `"user"` are just human labels on the role's `.bucket.name`; the role's IDENTITY is its ID. The `role` field on any object holds another object's ID (the role's), just like every other cross-object reference in CVM.

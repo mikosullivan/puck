@@ -26,9 +26,19 @@ Column by column:
 - `stmt_idx = 0` — dispatch position within `ast`. Frame 0 is about to execute the first top-level statement.
 - `owner_role` — the user seed's pk. Frame 0 runs as the user role.
 
+## This is where transpilation happens
+
+The Caspian source → CaspM conversion is architecturally attached to **this exact sub-step** — the moment the engine reads the CaspM value that becomes frame 0's `ast`. The [Transpile](https://puck.uno/requirements/bootstrap/stage/transpile/) sub-step describes the logical transformation (source in, CaspM out); this sub-step is where it physically fires in the engine's execution.
+
+Concretely: the engine reads `engine.caspm` here. Whatever populates that slot — eager transpile at `engine:load()`, JIT transpile at the moment of this read, a caller who handed in ready CaspM directly — must have run by the time execution reaches this point. Anything earlier is speculative; anything later is too late.
+
+The transpiler that runs is the one in the engine's `transpiler` slot — a pluggable seam so alternate Caspian syntaxes (Python-shaped, Lisp-shaped, whatever) can substitute their own frontend. All such frontends converge on this single point: one code location the engine consults to get CaspM, regardless of which frontend produced it.
+
+When this sub-step's implementation lands, its function-level docstring carries a markdown comment at the exact line where the CaspM is consumed, restating this rule.
+
 ## No bucket, no locals — yet
 
-The frame's bucket, and any locals hash inside it, are created lazily on first write. A program that never touches a local variable never triggers those inserts. See the [first-variable walkthrough](https://www.puck.uno/ideas/frames-as-objects/examples/first-variable/) for what the first `$x = 1` assignment does.
+The frame's bucket, and any locals hash inside it, are created lazily on first write. A program that never touches a local variable never triggers those inserts.
 
 ## No caller — this is the root
 

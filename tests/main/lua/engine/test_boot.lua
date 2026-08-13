@@ -1,3 +1,20 @@
+--[[
+{
+	"spec": "test_boot",
+	"role": "Confirms that `engine.new()`'s first act is opening a CVM connection — the SQLite handle is stashed on `engine.cvm` and downstream code can query it immediately. Also asserts the schema's seed rows are present on a fresh engine (the `user` object in `objects`) so tests that assume boot state don't have to re-check the seed."
+}
+]]
+
+--[[
+# `test_boot`
+
+Boot-order tests for the engine. Every case here confirms one of the
+guarantees `engine.new()` makes about the CVM connection: the
+handle exists, it accepts queries, the schema seed rows are in
+place, and the connection is scoped to the engine (not shared
+globally).
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'

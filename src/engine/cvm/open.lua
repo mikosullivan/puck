@@ -1,28 +1,81 @@
---[[ {
-	"vibecode": {
-		"module": "cvm",
-		"role": "CVM engine entry point: opens a SQLite connection (in-memory or file), enables FKs and recursive triggers, installs the CVM infrastructure from the sibling schema.sql file if this is a fresh DB (skips the install if the mvm marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh processes row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
-		"status": "walking-skeleton — open + gated install + process record",
-		"exports": ["open", "load_schema"],
-		"depends_on": ["lsqlite3"]
-	}
-} ]]
+--[[
+{
+	"module": "cvm.open",
+	"role": "CVM connection entry point: opens a SQLite connection (in-memory or file), enables `foreign_keys` and `recursive_triggers` pragmas per the CVM's per-connection rules, installs the CVM infrastructure from the sibling `schema.sql` file if this is a fresh DB (skips the install if the `cvm` marker table is already present so revive-open on a persisted file is idempotent), and inserts a fresh `processes` row. Returns the db handle and the new process pk; callers hold the pk in Lua-side state and bind it into queries at the call site.",
+	"exports": {
+		"open":        "(opts?) -> (db, process_pk) — opts.path (default ':memory:'), opts.schema (SQL text override), opts.schema_path (path to schema.sql)",
+		"load_schema": "(path?) -> SQL text — path defaults to the sibling schema.sql"
+	},
+	"status": "walking-skeleton — open + gated install + process record",
+	"depends_on": ["lsqlite3"]
+}
+]]
+
+--[[
+# `cvm.open`
+
+Entry point for opening a CVM-shaped SQLite connection. Every
+caller that wants to talk to a CVM starts here — the higher-level
+`engine.lua` calls `cvm.open()` as its first act during
+construction, and tests that need a raw handle can call it directly
+with `path = ':memory:'` for an in-memory DB.
+
+**Idempotent install.** `open` uses the `cvm` marker table's
+presence as the "already installed" flag. On a fresh DB the marker
+is missing, so the full DDL from `schema.sql` runs. On a revive of a
+persisted file the marker is there and the DDL is skipped — same
+code path, no duplicate-object errors.
+
+**Per-connection pragmas.** `foreign_keys` and `recursive_triggers`
+are OFF by default in SQLite and reset per connection. `open` sets
+both before returning; a caller that opens the DB by other means
+needs to set them itself.
+
+**One connection = one process context.** Every `open` inserts a
+fresh row into the persistent `processes` table and returns its
+autoincrement pk alongside the db handle. Callers hold that pk in
+Lua-side state and bind it into every query. A revive path that
+looks up an existing process pk instead of allocating a new one is
+not yet spec'd.
+]]
 
 local sqlite = require('lsqlite3')
 
 local M = {}
 
--- Default path to the schema. open.lua and schema.sql are siblings
--- under src/engine/cvm/. The .sql file is authoritative; the display
--- page at requirements/cvm/sql.md pulls it in for rendering via
--- Orlando's file: directive.
+--[[
+## `default_schema_path` — locate the sibling `schema.sql`
+
+Uses `debug.getinfo` to find this file's own on-disk path, then
+returns the sibling `schema.sql` under the same directory. Falls
+back to `./schema.sql` if `debug.getinfo` can't produce a path.
+
+Called by `M.load_schema` when the caller doesn't supply an explicit
+`path`. Locating the schema relative to the module file rather than
+the current working directory means tests, tools, and the CLI all
+find the same file regardless of `pwd`.
+]]
 local function default_schema_path()
 	local this_file = debug.getinfo(1, 'S').source:sub(2)
 	local this_dir = this_file:match('(.*/)') or './'
 	return this_dir .. 'schema.sql'
 end
 
---[[ {"in": "path to a .sql file", "out": "the SQL text", "note": "single-source-of-truth: the .sql file is authoritative"} ]]
+--[[
+## `M.load_schema` — read the schema SQL text
+
+Reads the CVM schema from disk and returns it as a string. Default
+path is the sibling `schema.sql`; callers can override by passing an
+explicit `path` (tests occasionally point at a stripped-down schema
+to isolate one table's behaviour).
+
+Raises `cvm_schema_read_failed` with the underlying `io.open` error
+message when the file can't be opened.
+
+Kept as a public export so a caller who wants the SQL text without
+opening a connection (e.g. an audit tool that greps the schema) can
+reach it without duplicating the path-resolution.
+]]
 function M.load_schema(path)
 	path = path or default_schema_path()
 
@@ -38,7 +91,38 @@ function M.load_schema(path)
 	return text
 end
 
---[[ {"in": "optional opts table {path = <db path or ':memory:'>, schema = <sql text override>, schema_path = <path to schema.sql>}", "out": "two values: an lsqlite3 db handle with schema applied and pragmas set, and the fresh process pk from the processes row this open inserted", "note": "one connection = one process context — the caller is expected to hold the returned pk in Lua-side state and bind it into queries at the call site"} ]]
+--[[
+## `M.open` — open a CVM-shaped SQLite connection
+
+Opens a SQLite connection (in-memory by default, file-backed if
+`opts.path` is set), enables the `foreign_keys` and
+`recursive_triggers` pragmas, installs the CVM DDL from
+`schema.sql` if the `cvm` marker table isn't already present, and
+inserts a fresh row into the `processes` table. Returns two
+values: the lsqlite3 db handle and the new `process_pk`.
+
+**Options** (all optional):
+
+- `path` — the SQLite path; defaults to `':memory:'` for a fresh
+  in-memory DB.
+- `schema` — SQL text to use in place of the on-disk schema; skips
+  the `load_schema` call.
+- `schema_path` — path to a schema file to load; overrides the
+  default sibling `schema.sql`.
+
+**Error surface.** Every failure raises with an underscore-prefixed
+error id so `grep` finds the site: `cvm_open_failed` (sqlite.open
+failed), `cvm_pragma_fk_failed` / `cvm_pragma_recursive_triggers_failed`
+(pragma set failed), `cvm_schema_apply_failed` (DDL apply failed on a
+fresh DB), and `cvm_process_insert_failed` (initial `processes`
+insert failed). The db handle is closed on every raise path so an
+error doesn't leak a half-open connection.
+
+**One connection = one process context.** Callers hold the returned
+`process_pk` in Lua-side state and bind it into every query. A
+revive path that reuses an existing process pk instead of allocating
+a new one is not yet spec'd.
+]]
 function M.open(opts)
 	opts = opts or {}
 
@@ -71,29 +155,29 @@ function M.open(opts)
 		error('cvm_pragma_recursive_triggers_failed: ' .. tostring(msg))
 	end
 
-	-- Install-infrastructure gate: presence of the mvm marker table
-	-- is the "already installed" flag. No mvm table means this is a
-	-- fresh DB and the DDL from schema.sql needs to run; mvm table
+	-- Install-infrastructure gate: presence of the cvm marker table
+	-- is the "already installed" flag. No cvm table means this is a
+	-- fresh DB and the DDL from schema.sql needs to run; cvm table
 	-- present means the DB is a revive of an already-installed file and
 	-- re-running the install would fail on "table objects already exists."
 	-- Same code path for fresh and revive; the check is what makes open
 	-- idempotent.
-	local mvm_installed = false
+	local cvm_installed = false
 
-	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'mvm'") do
-		mvm_installed = true
+	for _ in db:nrows("select name from sqlite_master where type = 'table' and name = 'cvm'") do
+		cvm_installed = true
 	end
 
-	if not mvm_installed then
+	if not cvm_installed then
 		-- Apply the main schema. This is the DDL from schema.sql: creates
 		-- every table / trigger / index / view, seeds the user row, inserts
-		-- the mvm marker row.
+		-- the cvm marker row.
 		ok = db:exec(schema)
 
 		if ok ~= sqlite.OK then
 			local msg = db:errmsg()
 			db:close()
-			error('mvm_schema_apply_failed: ' .. tostring(msg))
+			error('cvm_schema_apply_failed: ' .. tostring(msg))
 		end
 	end
 
@@ -106,7 +190,7 @@ function M.open(opts)
 	if ok ~= sqlite.OK then
 		local msg = db:errmsg()
 		db:close()
-		error('mvm_process_insert_failed: ' .. tostring(msg))
+		error('cvm_process_insert_failed: ' .. tostring(msg))
 	end
 
 	local process_pk = db:last_insert_rowid()

@@ -122,7 +122,7 @@ The trace walks **backward** through the reference graph: starting from the affe
 - **Cycle detection.** If the trace reaches a node already in the visited set, that path is a cycle — no root can be reached that way; abandon this path.
 - **Bulk collection on failure.** If the trace completes without finding a uspace root, the entire visited set is orphaned. Every node in it was proven unreachable through all its incoming paths; they can be collected together in one pass.
 
-This is the efficiency win: cycles and jointly-unreachable subgraphs are detected and collected in a single trace, not by cascading refcount events. See [mvm.svg](mvm.svg) for a diagram of the trace walking through the classic two-hash cycle.
+This is the efficiency win: cycles and jointly-unreachable subgraphs are detected and collected in a single trace, not by cascading refcount events. See [cvm.svg](cvm.svg) for a diagram of the trace walking through the classic two-hash cycle.
 
 **Cost profile:**
 
@@ -149,7 +149,7 @@ After both `$a = null` and `$b = null`, both hashes still have refcount 1 — ea
 
 Under the trace model, the second `$b = null` fires a trace from object 101. The trace walks: sidecar[101] contains 100's hash element → parent is 100. Is 100 reachable? sidecar[100] contains 101's hash element → parent is 101 → already in visited → cycle. No uspace root anywhere in the trace. Visited = {101, 100}. Both collected in one pass.
 
-[mvm.svg](mvm.svg) diagrams this specific case.
+[cvm.svg](cvm.svg) diagrams this specific case.
 
 ### Cascade discipline
 

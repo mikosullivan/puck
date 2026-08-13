@@ -16,6 +16,26 @@
 }
 ]]
 
+--[[
+# `parse-extract`
+
+Fixture extractor for the transpiler test suite. `parse-spec.lua`
+and `parse-negative-spec.lua` both feed it a `.casp` file whose
+fixtures are delimited by boxed comments (`#=== ... ===`,
+`#--- code ---`, `#--- full ---`, `#--- norm ---`, `#--- raises ---`);
+`extract` walks the file line-by-line and returns a list of case
+tables the spec files iterate through.
+
+Purely regex-based — the transpiler is not in the require chain,
+so this module can be loaded and exercised independently. Its
+`extract` function is one of the surfaces `infrastructure_spec`
+smoke-checks.
+
+The fixture format keeps expected / raised strings visually
+adjacent to the source they belong to, which makes hand-editing the
+`.casp` files tractable — the alternative is a Lua table wall.
+]]
+
 local json = require("dkjson")
 
 local M = {}

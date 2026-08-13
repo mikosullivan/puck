@@ -9,6 +9,40 @@
 }
 ]]
 
+--[[
+# `transpiler`
+
+First half of the CaspianJ pipeline: turns Caspian source into the
+self-documenting "full" CaspJ tree that `normalize.lua` compacts
+before the engine walks it. Standalone module — no knowledge of the
+engine, no shared state with the runtime, no round-trip contract
+beyond the CaspJ shape.
+
+**Two-mode output.** Default `transpile(source)` emits CaspJ with
+no line annotations. `transpile(source, {lines = true})` opts in to
+line-annotated output: every value-atom object carries a `line`
+field and every statement row picks up a trailing `{line: N}`
+meta-atom. The transpiler tests all run in `{lines = true}` mode
+so fixtures pin the source line each construct lands on;
+the engine reads either shape.
+
+**Pipeline shape.** Source is pre-processed line-by-line
+(heredocs are extracted and replaced by placeholder tokens so the
+statement parser sees single-line expressions), then walked
+statement-by-statement. Each statement dispatches through the
+construct table (`if_end`, `while_end`, `function` -at-statement,
+etc.) or falls through to `parse_expression`, which recursively
+handles literals, variable atoms, method calls, operator
+expressions, block-form constructs used as values, and everything
+else. Per-function JSON docstrings sit above each helper so the
+in-file navigation is greppable.
+
+**`null` sentinel.** `M.null` is exposed as `dkjson.null` so test
+assertions that decode expected CaspJ from JSON compare equal to
+the transpiler's outputs. Every CaspJ null the transpiler emits
+uses this same sentinel.
+]]
+
 local json = require("dkjson")
 
 local M = {}

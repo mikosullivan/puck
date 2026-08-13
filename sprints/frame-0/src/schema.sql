@@ -82,7 +82,7 @@ create table objects (
 	--         but-captured shell of one. Carries `ast` (the code
 	--         currently executing, copied in from the called
 	--         function's bucket) and, while on-stack, its stack
-	--         coordinates (`process`, `idx`, `stmt_idx`). "Is this a
+	--         coordinates (`process`, `stmt_idx`). "Is this a
 	--         frame?" is a structural question: `primitive = 'f'`.
 	-- [ghi]
 	primitive text not null check (primitive in ('o', 'h', 'a', 'f')),
@@ -506,17 +506,6 @@ alter table objects add column ast text
 alter table objects add column stmt_idx integer
 	check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f'));
 
--- idx: stack position of this frame within its process. 0 for the
--- outermost frame; incremented for each nested call. Frame-objects
--- only. Set to null on pop, along with `process` and `stmt_idx`, so
--- a frame that survives past its pop (kept alive by a closure ref)
--- carries `primitive = 'f'` but no stack coordinates. Non-negative
--- integer. CHECK forbids setting it on any row that isn't a frame.
--- Same trade as stmt_idx: promoting the idx reference out of a
--- bucket entry saves three rows per frame. [ghi]
-alter table objects add column idx integer
-	check (idx is null or (idx >= 0 and primitive = 'f'));
-
 -- process: FK to the processes table for frame-objects. Declared
 -- further down in this section, immediately after `create table
 -- processes`, because SQLite validates FK targets at insert time
@@ -863,7 +852,20 @@ end;
 -- rows here at runtime.
 
 create table processes (
-	process_pk integer primary key autoincrement
+	-- UUID4-shaped text pk, generated the same way as objects.object_pk
+	-- (hex-encoded randomblob assembled with UUID hyphen positions). Text
+	-- rather than autoincrement integer so two independently-created
+	-- CVM files can be joined without pk collision — matches the
+	-- discipline the object graph already runs on.
+	process_pk text primary key default (
+		lower(
+			substr(hex(randomblob(4)), 1, 8) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(6)), 1, 12)
+		)
+	)
 );
 
 -- processes rows are immutable — once a process is created its
@@ -880,7 +882,7 @@ end;
 -- ------------------------------------------------------------
 -- Declared after `create table processes` so SQLite can resolve the
 -- FK target. Set on a frame while it's on a process's stack. Set to
--- null on pop, along with `idx` and `stmt_idx`, so a frame that
+-- null on pop, along with `stmt_idx`, so a frame that
 -- survives past its pop (kept alive by a closure ref, for example)
 -- carries `primitive = 'f'` but no stack coordinates. The row's own
 -- lifetime is governed by the standard object-graph mark-sweep from
@@ -901,15 +903,49 @@ end;
 --
 -- No cascade on delete — process teardown policy is a Caspian-level
 -- concern to be spec'd. [ghi]
-alter table objects add column process integer
+alter table objects add column process text
 	references processes(process_pk)
 	check (process is null or primitive = 'f');
 
 -- Partial index over frames currently on a stack (uspace's frame
--- anchor branch). `where primitive = 'f' and process is not null`
--- makes the anchor query index-only. [ghi]
+-- anchor branch). Under the sprint's schema only frame 0 carries
+-- `process`; sub-frames chain via `frame_parent` (below). So this
+-- index effectively locates the frame-0 anchor per process; the
+-- rest of the stack is found by walking `frame_parent` from there.
+-- [ghi]
 create index objects_frame_on_stack on objects(process)
 	where primitive = 'f' and process is not null;
+
+-- ------------------------------------------------------------
+-- objects.frame_parent — sub-frame → parent-frame FK. (Sprint frame-0.)
+-- ------------------------------------------------------------
+-- Only frame 0 of a process binds to `processes` via `process`.
+-- Every sub-frame (frame 1, 2, ...) sets `frame_parent` to the pk
+-- of the frame that pushed it and leaves `process` null. The stack
+-- is walked from frame 0 down via `frame_parent`-inverse queries
+-- (see `get_latest_frame`).
+--
+-- Motivation. Binding every frame directly to the process forecloses
+-- future systems where multiple processes share the tail of a call
+-- chain (fan-in). Binding only frame 0 leaves that door open — the
+-- sharing question becomes a matter of how many things can point at
+-- one frame's pk, not "we already committed every frame to one
+-- process". [sha]
+--
+-- CHECK: only frames (primitive = 'f') carry this column.
+-- FK: `frame_parent` points at another `objects` row (its parent
+-- frame). No cascade — pop semantics are engine-managed, not FK-
+-- managed. [sha]
+alter table objects add column frame_parent text
+	references objects(object_pk)
+	check (frame_parent is null or primitive = 'f');
+
+-- Partial index for the child-of-frame walk. Given a frame pk, find
+-- the frame whose `frame_parent` points at it — that's the next
+-- frame down the stack. Under the current push model there's at
+-- most one such child at a time.
+create index objects_frame_by_parent on objects(frame_parent)
+	where primitive = 'f' and frame_parent is not null;
 
 -- ------------------------------------------------------------
 -- uspace — derived view of GC anchor set.

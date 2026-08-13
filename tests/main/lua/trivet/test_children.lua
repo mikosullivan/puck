@@ -1,3 +1,21 @@
+--[[
+{
+	"spec": "test_children",
+	"role": "Tests for `Node:children()`, `Node:child(i)`, and the child-shape properties (`first_child`, `last_child`, `child_count`, `is_leaf`, `has_children`) on `src/engine/trivet.lua`. Confirms insertion-order iteration, empty-iterator behaviour for leaves, and that `children()` returns a snapshot that's safe to walk while mutating the underlying tree."
+}
+]]
+
+--[[
+# `test_children`
+
+Child-access tests for Trivet. The snapshot invariant is
+load-bearing: callers commonly walk children while adding or moving
+them, and Trivet's `_children` mutation-in-iteration would blow up
+if the iterator wasn't a shallow copy. Every case exercises a
+narrow slice of that surface so a change to the snapshot semantics
+lights up in a specific test rather than as a mystery elsewhere.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;' .. package.path
 

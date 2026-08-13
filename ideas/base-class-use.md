@@ -518,7 +518,7 @@ Settled changes that propagate:
 - [lucy.md § %bucket](../requirements/lucy/index.md#bucket) — the `uns`
   bucket-key convention can be retired in favor of per-platter
   buckets.
-- [mvm.md](../requirements/cvm/index.md) — snapshot/revive
+- [cvm.md](../requirements/cvm/index.md) — snapshot/revive
   shape needs to handle the new structure: each platter record
   serializes with its class URL and its bucket.
 - mikobase records — currently `{class, bucket}`. Probably become

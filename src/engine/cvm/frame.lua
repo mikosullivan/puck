@@ -155,9 +155,7 @@ Composes on three engine methods:
   new hash under the key `locals` inside the bucket.
 
 The write path (`set_local_to_scalar`, and any other future write
-routine) calls this before adding the actual variable binding. The
-first-variable walkthrough spells it out step by step —
-[frame.locals ensure the locals hash](https://www.puck.uno/ideas/frames-as-objects/examples/first-variable/#framelocals-ensure-the-locals-hash).
+routine) calls this before adding the actual variable binding.
 
 **Wrapper memoized on `self._locals`** — shared with `frame:locals`.
 Once the hash exists, both accessors short-circuit through the same

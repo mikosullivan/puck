@@ -444,6 +444,6 @@ use case appears.
 
 Time objects are small, immutable, and pure data — perfectly serializable.
 They'd live in the runtime hash with zero special handling.
-[CVM](mvm.md) doesn't need any time-class-specific machinery; the
+[CVM](cvm.md) doesn't need any time-class-specific machinery; the
 class just has to round-trip via its standard JSON serialization (probably
 ISO 8601 + zone).

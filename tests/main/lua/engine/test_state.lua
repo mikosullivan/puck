@@ -1,3 +1,21 @@
+--[[
+{
+	"spec": "test_state",
+	"role": "Tests for `src/engine/state.lua` — the constructor for the CVM state hash. Confirms every top-level field is present at its empty representation on a fresh state, that the `roles` Trivet tree is bootstrapped with `engine` at the root and `user` as its only child, and that the shared `sequence` counter is wired and starts at `\"1\"`."
+}
+]]
+
+--[[
+# `test_state`
+
+Shape-and-bootstrap tests for the CVM state hash. Every case checks
+one of the guarantees `state.new()` makes: the eight top-level
+fields (`roles`, `srcs`, `objects`, `references`, `call_stack`,
+`gc_errors`, `asts`, `sequence`) are present, the roles tree is
+seeded with the two boot roles in the right topology, and the
+sequence hands out `"1"` on its first call.
+]]
+
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
 package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'
