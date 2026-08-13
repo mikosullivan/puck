@@ -135,8 +135,10 @@ load-artifact slots start nil:
   frame 0 into a new process). Consulted only by `run()`.
 - **`caspm`** — nil at construction. Populated by `engine:load` with the
   normalized program that gets stashed into frame 0's `ast` on push.
-  Input-staging slot: `create_frame_0` reads it and JSON-encodes it
-  into the DB frame; dispatch reads from the DB frame, not this slot.
+  Input-staging slot with a short lifetime: `create_frame_0` reads it
+  and JSON-encodes it into the DB frame, then `run()` nils it out so
+  the loaded program has one source of truth (the DB frame's ast), not
+  two. Not populated on revival runs.
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -186,16 +188,21 @@ end
 
 `engine:run()` sets up frame 0 (fresh or revival, per the `process_pk`
 slot) and then dispatches statement rows from the frame's `ast` via
-`run_row`. Raises `engine:run() called before engine:load()` when the
-engine hasn't loaded anything — prevents a silent no-op that would look
-like a working program.
+`run_row`.
 
 **Fresh vs revival.** If `self.process_pk` is nil, `run` treats the run
-as fresh: it invokes `create_frame_0` to invent a new process and push
-frame 0. If `self.process_pk` is set, `run` treats the run as revival:
-it invokes `get_latest_frame` to find the deepest live frame in that
-process. Either way, dispatch reads from the resulting frame's `ast`
-column in the CVM.
+as fresh: `create_frame_0` invents a new process, encodes `self.caspm`
+into frame 0's `ast`, and pushes the frame. `self.caspm` is nil'd
+immediately after — once the CaspM lives in the DB frame, the Lua-side
+staging slot is spent, and keeping it around would give the loaded
+program two sources of truth. If `self.process_pk` is set, `run` treats
+the run as revival: `get_latest_frame` finds the deepest live frame in
+that process; `self.caspm` is not consulted (the program lives in the
+DB frame, not on the engine).
+
+**Precondition.** Fresh runs require `self.caspm` to be set (via
+`engine:load(source)` before `run()`); missing raises `engine:run()
+called before engine:load()`. Revival runs have no such requirement.
 
 **Empty-process revival.** If `get_latest_frame` returns nil (the
 process exists but has no frames — done), dispatch is skipped entirely.
@@ -208,19 +215,27 @@ keys get added as follow-on work lands. Exceptions still bubble up —
 this table is only the clean-return path.
 ]]
 function M:run()
-	if not self.caspm then
-		error("engine:run() called before engine:load(); no program to execute")
-	end
-
 	local result = {}
 
 	-- Fresh vs revival. Set up frame 0's resume pk.
 	local frame_pk
 
 	if self.process_pk then
+		-- Revival: read the deepest live frame from the process.
+		-- self.caspm is not required — the program lives in the DB
+		-- frame's ast, not on the engine.
 		frame_pk = get_latest_frame(self.cvm, self.process_pk)
 	else
+		-- Fresh: create_frame_0 needs self.caspm to stash into the
+		-- new frame's ast. Once that's done, self.caspm is spent —
+		-- nil it out so the loaded program has one source of truth
+		-- (the DB frame) rather than two (Lua slot + DB row).
+		if not self.caspm then
+			error("engine:run() called before engine:load(); no program to execute")
+		end
+
 		frame_pk = create_frame_0(self.cvm, self)
+		self.caspm = nil
 	end
 
 	-- If frame_pk is nil, the process is done — dispatch has nothing to
