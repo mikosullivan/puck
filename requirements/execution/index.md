@@ -22,9 +22,8 @@ The name `engine:run()` (or whatever the invocation ends up being called) is a b
 
 Almost everything else about this phase is open design work:
 
-- **Frame 0** — the shape of the initial frame pushed onto the stack. Does it have a callable? What class dispatches it? What locals does it start with?
+- **Frame 0** — settled at the schema level by [frames-as-objects](https://www.puck.uno/requirements/cvm/): it's an `objects` row with `primitive = 'f'` and the CaspM in its `ast` column, populated by [Set up frame 0](https://www.puck.uno/requirements/bootstrap/stage/set-up-frame-0/). What remains open at the runtime level is how the frame ADVANCES — see the "First-dispatch mechanics" bullet below. Closure-lifetime questions live in the closure-design slice, not here.
 - **First-dispatch mechanics** — how the engine transitions from "CVM has CaspM" to "the first statement executed."
 - **The invocation shape** — explicit `engine:run()`, implicit on first use, coroutine-based, event-loop-driven — all open.
-- **Runtime state initialization for the running program** — creating a `processes` row and holding its pk in engine state, seeding whatever else needs to exist before frame 0 executes.
 
 This page is a placeholder until those decisions land. Details will migrate here as the design settles.

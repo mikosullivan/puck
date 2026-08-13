@@ -4,11 +4,9 @@
 {"vibecode": {
 	"doc": "requirements_bootstrap_stage_transpile",
 	"role": "canonical spec for the first sub-step of Stage — parsing the Caspian source string and producing the CaspM tree the engine will dispatch on. Two internal passes (transpiler.transpile → normalize.normalize) treated as one conceptual step at the spec level.",
-	"status": "V1 spec — brief; both internal passes already implemented and tested. SLATED FOR REWRITE with the rest of the Stage section when frames-as-objects promotes to requirements/ (Transpile's behavior isn't changing, but its home within the restructured Stage flow will)."
+	"status": "V1 spec — brief; both internal passes already implemented and tested."
 }}
 ~~~
-
-> **Overwrite pending.** This page ships with the rest of the [Stage](https://www.puck.uno/requirements/bootstrap/stage/) section when [frames-as-objects](https://www.puck.uno/ideas/frames-as-objects/) promotes. Transpile's actual behavior isn't changing under the folding — but its place in Stage's sub-step structure will.
 
 The first sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). Takes the Caspian source string and produces the dispatch-ready CaspM tree.
 

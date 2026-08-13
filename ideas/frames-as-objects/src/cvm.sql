@@ -383,6 +383,44 @@ end;
 -- CVM
 -- ############################################################################
 
+-- ------------------------------------------------------------
+-- mvm marker table.
+-- ------------------------------------------------------------
+-- The presence of this table signals "this database can be used as
+-- CVM." A generic SQLite file has no `mvm` table; a CVM database
+-- always does. Any CVM tool can check for this table's existence
+-- before treating the file as a CVM store, and any database that
+-- carries it is committing to the CVM schema. `cvm.open`'s install
+-- gate reads it: no `mvm` → fresh DB → run the schema DDL; `mvm`
+-- present → revive-open → skip the DDL.
+--
+-- Append-only: once a row is inserted, it cannot be updated or
+-- deleted. Every entry is a permanent birth-record. If we ever need
+-- something mutable, it goes in a different table.
+--
+-- Named `mvm` (not `cvm`) as a deliberate keep-the-DDL-name
+-- decision — the CVM rename touched terminology across the schema,
+-- but the marker table's on-disk name stays what it was so existing
+-- CVM files continue to identify. [ghi]
+create table mvm (
+	key text primary key,
+	value text
+);
+
+create trigger mvm_no_update
+before update on mvm
+begin
+	select raise(abort, 'mvm_append_only: mvm is append-only; no updates allowed');
+end;
+
+create trigger mvm_no_delete
+before delete on mvm
+begin
+	select raise(abort, 'mvm_append_only: mvm is append-only; no deletes allowed');
+end;
+
+insert into mvm (key, value) values ('schema', '9.0');
+
 -- CVM database design. One `objects` table holds row shapes
 -- discriminated by the `primitive` column:
 --   'h' → HashPrimitive (hash-shaped primitive container)

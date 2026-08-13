@@ -14,18 +14,15 @@ GC is done by a Lua routine that consumes marks set by the mark triggers (see [M
 
 Every table in the schema that holds a pointer to an `objects` row is a potential source of orphaning — when the pointer changes or the row holding it goes away, the previously-pointed-at object might have just lost its last incoming reference. The schema attaches a mark trigger to each such source. Each trigger does one thing: set `needs_trace = 1` on the row that just lost the incoming pointer. That's the trigger's entire job — no trace call, no re-entry check, no other logic. Marking is schema-enforced; the actual drain is scheduled by the Lua write layer.
 
-Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already marked is a harmless no-op. Each trigger in the schema is annotated with a `[set-needs-trace]` comment prefix so `grep [set-needs-trace] src/cvm.sql` enumerates the whole inventory.
+Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already marked is a harmless no-op. Each trigger in the schema is annotated with a `[set-needs-trace]` comment prefix so `grep [set-needs-trace] src/engine/cvm.sql` enumerates the whole inventory.
 
-The current inventory, one entry per source column:
+The current inventory:
 
-- **`refs.child`.** `after delete` only — mark `old.child`. `refs.child` is immutable per the schema (see `refs_no_update`), so no update-time mark is needed; rebinding an edge is expressed as delete + insert, and the delete fires the mark.
-- **`frame_locals.value_object`.** `after delete` and `after update of value_object` — mark `old.value_object`. Delete-time fires on frame pop via cascade; update-time fires on `$foo = something_else`.
-- **`frame_ambers.amber`.** `after delete` and `after update of amber` — mark `old.amber`. Delete-time fires on frame pop via cascade; update-time fires when a frame's domain gets rebound to a different amber instance. Amber instances themselves are ordinary objects; this bridge is where the reachability edge lives.
-- **`frame_delegations.target_role`.** `after delete` and `after update of target_role` — mark `old.target_role`. Deletes fire on frame pop via cascade.
-- **`frames.method` / `method_class`.** These live directly on `frames` and get two coverage paths: `after delete on frames` fires one composite trigger that marks both OLD pointers at once (frame pop is the common case, so batching is worth it), and each column has its own `after update of <col>` trigger for in-place repointing.
-- **`frame_ambers` composite unique on `(frame_pk, domain)`** and **`frames` composite unique on `(process_pk, idx)`** are structural, not pointer-holding — they don't need mark triggers. Only columns that FK to `objects(object_pk)` do.
+- **`refs.child`.** `after delete` only — mark `old.child`. `refs.child` is immutable per the schema (see `refs_no_update`), so no update-time mark is needed; rebinding an edge is expressed as delete + insert, and the delete fires the mark. Under the frames-as-objects design, frames are `objects` rows (`primitive = 'f'`) and everything they anchor (locals, and eventually ambers, delegations, the closure capture link) is reachable through the standard `refs` walk. No separate frame-attached tables carrying their own pointers.
 
 **Invariant to maintain:** every column that FKs to `objects(object_pk)` has a mark trigger covering the paths that can change that pointer — DELETE always, UPDATE OF that column when the column is mutable. A schema-scanning test in the walking-skeleton harness (enumerating FKs against `objects(object_pk)` via `PRAGMA foreign_key_list` and asserting each source column has a matching `[set-needs-trace]`-tagged trigger) will keep the inventory honest as the schema grows.
+
+The current schema has ten FK columns pointing at `objects(object_pk)` — the four self-references on `objects` (`bucket_for`, `stack_for`, `role_parent`, `owner_role`); `refs.parent` and `refs.child`; and four listener columns (`instance_listeners.broadcaster` / `listener`, `class_listeners.class` / `listener`). Only `refs.child` carries a mark trigger. The other nine don't need one because they either (a) cascade-delete the pointing row — the child that triggered the cascade will have been collected by whatever fired that delete, so any downstream marks belong to that trace, not this one — or (b) are documented as weak-ref lifetime, meaning a listener registration does NOT count as a reachability edge (the two parties can be collected without unregistering; the FK cascade then cleans up the registration row on its own).
 
 ## Who calls the trace
 

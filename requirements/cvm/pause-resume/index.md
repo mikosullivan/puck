@@ -2,8 +2,8 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_mvm_pause_resume",
-	"role": "sketch for Caspian's pause / resume primitive. %engine.pause writes a pause frame at the top of the stack and closes the CVM database. The database file IS the paused state — no serialization pass, no snapshot format. Resume: any writer edits call_stack to remove the pause frame and optionally populate a payload hash. Engine reopens, execution continues, %engine.pause returns the payload. Structurally this is delimited continuations with argument, persisted in a database. Composes with Big Processes and cross-host revive.",
+	"doc": "requirements_cvm_pause_resume",
+	"role": "sketch for Caspian's pause / resume primitive. %engine.pause writes a pause frame at the top of the stack and closes the CVM database. The database file IS the paused state — no serialization pass, no snapshot format. Resume: any writer edits the process's frame stack (objects rows with primitive='f') to remove the pause frame and optionally populate a payload hash. Engine reopens, execution continues, %engine.pause returns the payload. Structurally this is delimited continuations with argument, persisted in a database. Composes with Big Processes and cross-host revive.",
 	"audience": "Caspian programmers writing pause-resume patterns; engine implementers building pause frame handling; external processes (HTTP handlers, agents, schedulers, humans) triggering resumes",
 	"key_concepts": ["pause_frame_on_stack", "close_is_commit",
 		"sql_edit_resumes", "revival_with_payload", "engine_minimalism",
@@ -29,7 +29,7 @@ Reads: "pause execution here; when resumed, `$result` holds whatever the resumer
 
 ## What pause does mechanically
 
-1. The engine writes a pause frame to `call_stack` — a single row marked as the pause frame, at the top of the stack.
+1. The engine writes a pause frame to `objects` — a single `primitive = 'f'` row marked as the pause frame, at the top of the current process's stack (`process = <current process pk>`, `idx = MAX(idx) + 1`).
 2. The write happens inside a SQL transaction.
 3. The engine closes the SQLite connection. Closing commits the transaction atomically — WAL mode ensures either the pause frame lands cleanly or the whole transaction rolls back, never a half-paused state.
 4. The engine process exits. The database file remains on disk with the paused state fully persisted.
@@ -38,9 +38,9 @@ Nothing else. There's no separate "paused" flag, no state-machine state, no sche
 
 ## Resume by SQL edit
 
-To resume a paused process, some other code opens the CVM file and edits `call_stack`:
+To resume a paused process, some other code opens the CVM file and edits the process's frame stack in `objects`:
 
-1. Remove the pause frame (or mark it as revived — the exact shape is an implementation detail of the pause frame schema).
+1. Remove the pause frame row (or mark it as revived — the exact shape is an implementation detail of the pause frame schema).
 2. Optionally populate a payload hash — key-value pairs describing what happened during the pause.
 
 The next time an engine opens the database, the pause frame is gone. The engine's main loop reads the top frame, sees a normal frame, and continues execution as if the pause never happened. `%engine.pause`'s return value is the payload the resumer wrote.

@@ -3,25 +3,42 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_bootstrap_stage_set_up_frame_0",
-	"role": "canonical spec for the third and final sub-step of Stage — inserting the top-level frame into the frames table so the stack has an entry ready to be walked when execution begins. Frame 0's shape (callable? class?) is open design work.",
-	"status": "V1 spec — brief; frame 0's shape is open design work. SLATED FOR REWRITE when frames-as-objects promotes to requirements/ — frame 0 lands as an objects row (not a frames row), the CaspM travels on its ast column (absorbing Install CaspM), and the sub-step count for Stage drops from three to two."
+	"role": "canonical spec for the second and final sub-step of Stage — inserting frame 0 as an objects row with primitive='f' and the CaspM in its ast column, so the current process has a stack of one frame ready to walk when execution begins. Under frames-as-objects this single INSERT covers both 'install the CaspM' and 'push the frame' — those two acts are the same row.",
+	"status": "V1 spec"
 }}
 ~~~
 
-> **Rewrite pending.** Under [frames-as-objects](https://www.puck.uno/ideas/frames-as-objects/), frame 0 is an `objects` row rather than a `frames` row. The CaspM lives on that row's `ast` column, which means this sub-step also absorbs the old Install CaspM step — one INSERT writes the frame and installs the CaspM at the same time. The "does frame 0 have a callable?" question below dissolves under the folding (there's no `method_pk` — ast lives on the frame). Read the rest of this page as pre-integration state.
+The second and final sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). After [Transpile](https://www.puck.uno/requirements/bootstrap/stage/transpile/) has produced the CaspM, this sub-step lands frame 0 — an `objects` row with `primitive = 'f'` (the frame primitive) and the CaspM in its `ast` column. One INSERT writes both.
 
-The third and final sub-step of [Stage](https://www.puck.uno/requirements/bootstrap/stage/). After the CaspM is in the CVM, the stack is empty. This sub-step pushes the top-level frame — the frame that represents "the entry program is about to run."
+## The insert
 
-**The insert:**
+~~~sql
+insert into objects (primitive, ast, process, idx, stmt_idx, owner_role)
+values ('f', <caspm_json>, <bootstrap_process_pk>, 0, 0, <user_pk>);
+~~~
 
-- `process_pk` — from the current process (held by the engine in Lua-side state; populated during Initialize VM).
-- `idx` — 0 (this is the first frame; the stack starts here).
-- `type` — `'function_call'` (currently the only valid frame type).
-- `lexical_parent_pk` — null (there is no enclosing scope; frame 0 is the root).
+Column by column:
 
-**Open design question: does frame 0 have a callable?**
+- `primitive = 'f'` — this row is a frame. The `ast` column is biconditional with this primitive; every frame row carries the code it's executing.
+- `ast` — the CaspM tree produced by Transpile, serialized as JSON text (see [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage)).
+- `process` — the bootstrap process's pk. Populated during [Initialize VM](https://www.puck.uno/requirements/bootstrap/initialize-vm/); held by the engine in Lua-side state.
+- `idx = 0` — stack position. This is the outermost frame; the stack starts here.
+- `stmt_idx = 0` — dispatch position within `ast`. Frame 0 is about to execute the first top-level statement.
+- `owner_role` — the user seed's pk. Frame 0 runs as the user role.
 
-- **If yes** — some synthesized "top-level program" callable object goes in `method_pk`, and probably a matching class in `method_class_pk`. Simplifies dispatch (frame 0 looks like every other frame), at the cost of forcing the engine to synthesize a callable it will never dispatch through a normal call site.
-- **If no** — `method_pk` / `method_class_pk` stay null. Frame 0 is a special-shape frame; dispatch code has to know about the null case.
+## No bucket, no locals — yet
 
-After this sub-step returns, the CVM holds a seeded runtime state store, a loaded program, and a stack with one frame ready to be walked. Bootstrap is done; execution walks frame 0 as its first act.
+The frame's bucket, and any locals hash inside it, are created lazily on first write. A program that never touches a local variable never triggers those inserts. See the [first-variable walkthrough](https://www.puck.uno/ideas/frames-as-objects/examples/first-variable/) for what the first `$x = 1` assignment does.
+
+## No caller — this is the root
+
+Frame 0 has no caller in the call stack. The mechanism that will eventually point child frames back at their pusher (a frame-caller pointer, or an equivalent capture link for closures) is deferred to the closure-design slice — see [CVM § Deferred: closure capture reconciliation](https://www.puck.uno/requirements/cvm/#deferred-closure-capture-reconciliation) for the open questions this connects to.
+
+## What's next
+
+After this sub-step returns, the CVM holds:
+
+- The seeded runtime state store (Initialize VM's output).
+- Frame 0 with the loaded program in its `ast`.
+
+Bootstrap is done. The next step is execution: the engine walks frame 0's `ast`, dispatches its first statement, and continues from there.

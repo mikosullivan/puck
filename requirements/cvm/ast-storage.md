@@ -2,8 +2,8 @@
 
 ~~~vibecode
 {"vibecode": {
-	"doc": "requirements_mvm_ast_storage",
-	"role": "design note pinning the ast column's storage format at JSON text rather than SQLite JSONB, with the rationale for that choice given how the engine actually accesses the column. Applies to objects.ast (callable definitions) and to any frame-local ast column the design lands.",
+	"doc": "requirements_cvm_ast_storage",
+	"role": "design note pinning the ast column's storage format at JSON text rather than SQLite JSONB, with the rationale for that choice given how the engine actually accesses the column. Applies to objects.ast — biconditional with primitive = 'f', so every frame row carries the code it's executing.",
 	"status": "V1 spec"
 }}
 ~~~
@@ -14,8 +14,8 @@ CVM stores CaspM ASTs as **JSON text**, not SQLite's binary [JSONB](https://sqli
 
 The engine's access to an ast blob is once-per-frame-lifetime, not query-heavy:
 
-1. Frame is pushed.
-2. Engine reads the ast blob once (`select ast from ...`).
+1. Frame is pushed (an `objects` row with `primitive = 'f'` and `ast` set).
+2. Engine reads the ast blob once (`select ast from objects where object_pk = ?`).
 3. Engine decodes it into a Lua-native representation and walks that representation for the frame's lifetime.
 4. Frame pops.
 
@@ -23,7 +23,7 @@ No SQL-side JSON operations (`json_extract`, `json_type`, etc.) fire against the
 
 ## Where JSON wins under this pattern
 
-- **One fewer decoding hop in Lua.** `select ast from frames` returns text; `dkjson.decode(text)` produces the Lua table. JSONB requires `select json(ast) from frames` to convert to text first, then decode — the SQLite-side conversion is pure overhead when the destination is Lua anyway.
+- **One fewer decoding hop in Lua.** `select ast from objects where object_pk = ?` returns text; `dkjson.decode(text)` produces the Lua table. JSONB requires `select json(ast) from objects ...` to convert to text first, then decode — the SQLite-side conversion is pure overhead when the destination is Lua anyway.
 - **Inspectable via `sqlite3` CLI.** `select ast from objects where …` prints readable JSON directly. With JSONB, the CLI shows a binary blob unless the query wraps in `json(ast)`.
 
 ## Where JSONB would win, but doesn't apply here
@@ -37,7 +37,4 @@ The storage savings are not worth the extra decoding step + loss of CLI inspecta
 
 Declared as `text` in the schema, not `blob`. Both work — SQLite's type affinity accepts JSON either way — but `text` documents intent (this is text-format JSON) and makes SQLite's CLI display readable.
 
-Applies to:
-
-- `objects.ast` — CaspM tree for callables. Nullable (non-callable rows have null).
-- Any future frame-local ast column that lands under this design.
+Applies to `objects.ast` — biconditional with `primitive = 'f'`: every frame row carries the CaspM tree it's executing; every non-frame row leaves it null. Functions and closures store their CaspM in their bucket (as plain `'o'` objects), not in an `ast` column of their own; calling one creates a fresh `primitive = 'f'` row and copies the CaspM into its `ast`.
