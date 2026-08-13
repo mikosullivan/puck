@@ -24,7 +24,9 @@ system `luarocks` tree for `lsqlite3.so`.
 
 local script_dir = arg[0]:match('(.*/)') or './'
 local home = os.getenv('HOME') or ''
-package.path = script_dir .. '../../../../src/engine/?.lua;' .. script_dir .. '?.lua;'
+package.path = script_dir .. '../../../../src/engine/?.lua;'
+	.. script_dir .. '../../../../src/engine/?/init.lua;'
+	.. script_dir .. '?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?.lua;'
 	.. home .. '/.luarocks/share/lua/5.4/?/init.lua;'
 	.. package.path

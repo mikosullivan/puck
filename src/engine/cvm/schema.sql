@@ -11,7 +11,7 @@
 -- raising specific error ids on failure (`cvm_pragma_fk_failed`,
 -- `cvm_pragma_recursive_triggers_failed`). Any CVM tool without an
 -- equivalent pair of pragma calls is broken by construction. Under
--- this sketch, `engine.new(db)` at `src/engine/cvm/engine.lua` assumes the
+-- this sketch, `cvm.new(db)` at `src/engine/cvm/init.lua` assumes the
 -- caller has already set both — the pragma calls live one layer up,
 -- to be spec'd when the runtime entry point (see engine.lua's Open
 -- questions block) lands. [ghi]
