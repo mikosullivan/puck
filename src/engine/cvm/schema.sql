@@ -473,13 +473,59 @@ alter table objects add column role_parent text
 -- function object stays where it is; the frame is a distinct row
 -- with the code copied in for execution.
 --
--- Mutable — the engine reads the current value on each dispatch
--- step and thaws it into Lua-native form attached to the frame. See
--- the "AST storage: JSON, not JSONB" design note in
--- requirements/cvm/ for the rationale. [ghi]
+-- Immutable — a frame's code is fixed at push; the engine only reads
+-- it during dispatch, never writes it back. The `objects_ast_immutable`
+-- trigger below enforces this. See the "AST storage: JSON, not JSONB"
+-- design note in requirements/cvm/ for the rationale on the storage
+-- shape (unchanged). [ghi]
 alter table objects add column ast text
 	check ((primitive = 'f' and ast is not null)
 		or (primitive != 'f' and ast is null));
+
+-- Two triggers guard the shape of a frame's `ast`:
+--
+--   - objects_ast_valid_insert (BEFORE INSERT) — validates that the
+--     new ast is parseable JSON AND a JSON array. Fires only on frame
+--     rows (WHEN new.primitive = 'f'). The CHECK constraint above
+--     enforces "not null when primitive = 'f'"; this trigger adds the
+--     structural check on top so the walker can trust the shape.
+--
+--   - objects_ast_immutable (BEFORE UPDATE OF ast) — rejects any
+--     attempt to change a frame's ast after insert. A frame's code is
+--     fixed at push. [ghi]
+
+create trigger objects_ast_valid_insert
+before insert on objects
+when new.primitive = 'f'
+begin
+	select case
+		when not json_valid(new.ast)
+			then raise(abort, 'ast_not_valid_json: frame ast must be valid JSON')
+		when json_type(new.ast) != 'array'
+			then raise(abort, 'ast_not_array: frame ast must be a JSON array')
+	end;
+end;
+
+create trigger objects_ast_immutable
+before update of ast on objects
+when new.ast is not old.ast
+begin
+	select raise(abort, 'ast_immutable: objects.ast is immutable once set');
+end;
+
+-- Advancing a frame's stmt_idx means "done with the current statement,
+-- moving to the next." A frame with children is mid-execution; once
+-- the parent moves past that statement, any children pushed by it are
+-- stale and must go. Bundling the child delete into the same UPDATE
+-- as the stmt_idx bump makes it atomic at the SQL layer — no savepoint
+-- dance needed on the Lua side, and no way to advance stmt_idx without
+-- clearing children. [ghi]
+create trigger frames_delete_children_after_stmt_idx_update
+after update of stmt_idx on objects
+when new.primitive = 'f'
+begin
+	delete from objects where frame_parent = new.object_pk and primitive = 'f';
+end;
 
 -- Closure capture (the mechanism that lets a closure keep its
 -- defining frame alive after the frame is popped off the call stack)
@@ -865,16 +911,43 @@ create table processes (
 			substr(hex(randomblob(2)), 1, 4) || '-' ||
 			substr(hex(randomblob(6)), 1, 12)
 		)
-	)
+	),
+
+	-- Completion flag. 0 = the process has frames left to execute (or
+	-- can still be resumed); 1 = the process finished. Default 0 —
+	-- fresh processes start incomplete. NOT NULL and CHECK-bounded to
+	-- {0, 1} so the column is a clean boolean the engine can rely on
+	-- without null-checks. Set to 1 by the `processes_complete_after_
+	-- frame_0_delete` trigger when frame 0 is deleted. [ghi]
+	complete integer not null default 0 check (complete in (0, 1)),
+
+	-- Message. Text — free-form; the engine decides the wire form. The
+	-- caller reaps this value into the return hash after run(). Nullable
+	-- and defaults null: a process that never sets a message and a
+	-- process that hasn't finished yet both leave this null. [ghi]
+	message text default null
 );
 
--- processes rows are immutable — once a process is created its
--- process_pk is fixed for the row's lifetime. Ending a process is
--- a DELETE, not an UPDATE. [ghi]
+-- process_pk is immutable. Every other column on `processes` is freely
+-- mutable — `complete` flips 0→1 at shutdown, `message` gets written
+-- by whatever handler produces the process's return value. Ending a
+-- process is a DELETE. [ghi]
 create trigger processes_no_update
 before update on processes
+when new.process_pk is not old.process_pk
 begin
-	select raise(abort, 'processes_no_update: processes rows are immutable');
+	select raise(abort, 'processes_pk_immutable: processes.process_pk is immutable');
+end;
+
+-- When frame 0 of a process is deleted — the terminal act of a
+-- successful run — flip the process's `complete` to 1. Bundles
+-- mark-complete + delete-frame into one atomic SQL operation; the
+-- Lua walker only has to issue the DELETE. [ghi]
+create trigger processes_complete_after_frame_0_delete
+after delete on objects
+when old.primitive = 'f' and old.process is not null
+begin
+	update processes set complete = 1 where process_pk = old.process;
 end;
 
 -- ------------------------------------------------------------

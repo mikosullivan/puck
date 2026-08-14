@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "dispatch",
-	"role": "Row-head dispatch function. Walks an array of Handler instances calling `:handle` on each; stops at the first handler that returns true. Raises `unrecognized_row_head` if no handler claims. Handler raises propagate — dispatch doesn't catch.",
+	"role": "Row-head dispatch function. Walks an array of Handler instances calling `:handle` on each; stops at the first handler that returns true. Raises `unrecognized_caspm` if no handler claims. Handler raises propagate — dispatch doesn't catch.",
 	"exports": {
 		"(function)": "(handlers, ...) -> nil — variadic after handlers; extra args forward to each handler:handle"
 	},
@@ -23,7 +23,7 @@ Row-head dispatch — the function that turns "here's an array of handlers, plea
 - For each handler, call `handler:handle(...)` with whatever extra args dispatch received.
 - If the call returns `true`, dispatch returns.
 - If the call returns `false` (or nil), continue to the next handler.
-- If no handler returns `true`, dispatch raises `unrecognized_row_head`.
+- If no handler returns `true`, dispatch raises `unrecognized_caspm`.
 - If a handler raises, the raise propagates through dispatch to the caller — not caught.
 
 Two-channel contract for handlers is enforced by this loop shape: the boolean return picks whether the loop advances or stops; a raise bypasses the loop entirely. Dispatch never overloads one channel to mean the other.
@@ -37,7 +37,7 @@ local function dispatch(handlers, ...)
 		end
 	end
 
-	error("unrecognized_row_head: no handler in the chain recognized the input")
+	error("unrecognized_caspm: no handler in the chain recognized the input")
 end
 
 return dispatch

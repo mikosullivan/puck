@@ -7,7 +7,7 @@
 
 # first-variable
 
-Close the end-to-end walkthrough for `$x = 1`. Today the runtime bootstraps, loads, pushes frame 0, enters dispatch — and dies on `unrecognized_row_head` because no handler is registered for `{in: 'as'}` (the CaspM assignment head). This sprint adds that one handler.
+Close the end-to-end walkthrough for `$x = 1`. Today the runtime bootstraps, loads, pushes frame 0, enters dispatch — and dies on `unrecognized_caspm` because no handler is registered for `{in: 'as'}` (the CaspM assignment head). This sprint adds that one handler.
 
 **Dispatch mechanism already landed.** The dispatch and dispatch-cutover sprints completed and integrated. Shipping now has an empty handler chain; this sprint registers the first real handler.
 

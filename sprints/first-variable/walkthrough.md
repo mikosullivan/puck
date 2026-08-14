@@ -76,7 +76,7 @@ for _, row in ipairs(cjson.decode(ast_json)) do
 end
 ~~~
 
-Each `run_row` call delegates to the row-head dispatch chain via `dispatch(self.row_handlers, self, row)`. `dispatch` walks the chain — each Handler in `row_handlers` gets offered the row and returns `true` (I claimed it), `false` (not my shape, next handler), or raises (I claimed it and hit a problem). First `true` wins; if no handler returns `true`, dispatch raises `unrecognized_row_head`, which `run_row` reshapes with the atom-keys detail appended before letting it propagate.
+Each `run_row` call delegates to the row-head dispatch chain via `dispatch(self.row_handlers, self, row)`. `dispatch` walks the chain — each Handler in `row_handlers` gets offered the row and returns `true` (I claimed it), `false` (not my shape, next handler), or raises (I claimed it and hit a problem). First `true` wins; if no handler returns `true`, dispatch raises `unrecognized_caspm`, which `run_row` reshapes with the atom-keys detail appended before letting it propagate.
 
 The frame's `ast` is a top-level flat array of statement rows; iterating it is iterating the AST. `stmt_idx` on the frame tracks how far dispatch has advanced (0 at push, incremented after each row), so on resume the loop knows where to pick up. When iteration exhausts the array, the frame is done.
 

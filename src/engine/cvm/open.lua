@@ -39,6 +39,16 @@ for and force one-process-per-open assumptions on the caller.
 ]]
 
 local sqlite = require('lsqlite3')
+local cjson  = require('cjson')
+
+-- Process-wide cjson configuration. Empty Lua tables encode as JSON
+-- arrays (`[]`), not as JSON objects (`{}`). The `objects_ast_valid_
+-- insert` trigger in schema.sql validates that a frame's ast is a JSON
+-- array; without this flip, an empty program's ast would serialize as
+-- `{}` and the trigger would fire on every fresh empty-caspm run.
+-- Setting it here — at the entry point every CVM connection flows
+-- through — puts it in effect before any code path can encode.
+cjson.encode_empty_table_as_object(false)
 
 local M = {}
 

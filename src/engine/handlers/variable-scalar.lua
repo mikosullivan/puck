@@ -17,7 +17,7 @@ Handler subclass for the CaspM assignment pattern that binds a scalar value to a
 
 **Currently a stub.** `:handle` always returns true, regardless of what row it's given. That's a placeholder; the real matching logic (recognize `{"in": "as"}` row heads, unpack the target name and value atom, call the CVM primitives — `add_scalar` + `ensure_locals` + `add_ref` via `set_local_to_scalar`) lands in follow-on work.
 
-**Side effect of always-true:** once registered as a stock handler, every dispatched row gets claimed by this handler — including rows it doesn't actually understand. That masks the `unrecognized_row_head` fallback for other shapes until this handler learns to be picky. Acceptable for the current sprint scope; the real matching logic comes with the actual assignment implementation.
+**Side effect of always-true:** once registered as a stock handler, every dispatched row gets claimed by this handler — including rows it doesn't actually understand. That masks the `unrecognized_caspm` fallback for other shapes until this handler learns to be picky. Acceptable for the current sprint scope; the real matching logic comes with the actual assignment implementation.
 ]]
 local Handler = require('handler')
 

@@ -1,14 +1,13 @@
 ~~~vibecode
-{"doc": "sprint-note", "sprint": "end-to-end",
-	"role": "Step-by-step trace of the CVM state through create_frame_0. First moment: the process row has been inserted, no frame yet. Second moment: frame 0 has also been pushed, sitting at stmt_idx = 0 with an empty ast, waiting for the walker to dispatch."}
+{"doc": "note",
+	"role": "Step-by-step trace of the CVM state through the lifecycle of a process: create_frame_0 pushes the process row and frame 0; the walker advances the frame's stmt_idx through its ast; the frame-0 shutdown deletes the frame (trigger flips processes.complete = 1); the engine's default auto-delete removes the process record. Every state along the way is a valid resume state."}
 ~~~
 
-# Trace
+# Frame lifecycle
 
-Step-by-step CVM state through [`create_frame_0`](https://puck.uno/src/engine/cvm/create_frame_0.lua). 
+Step-by-step CVM state through the lifecycle of a process. Uses an empty program (`caspm = {}`) as the driving example — the ast column shows `[]` throughout, so the walker's while loop exits immediately and shutdown fires on the first iteration. A non-empty program only changes the ast string; the surrounding shape is the same.
 
-Note that each state of the database is a valid resume state. At any
-moment if the database crashes, and it is persistent, the process can be resumed.
+Every state below is a valid resume state. If the database crashes at any moment (and it's persistent), the process can be resumed cleanly.
 
 ## After the process is added to `processes`
 
@@ -61,10 +60,11 @@ The frame INSERT has now landed. `primitive = 'f'`, ast copied in as JSON, `stmt
 
 ## Shutdown
 
-Now that the frame has completed its cycle, it should remove
-itself from the frame stack. It must also set its parent (in this case the process) to a state that marks the completion of the process.
+Now that the frame has completed its cycle, it should remove itself from the frame stack. It must also set its parent (in this case the process) to a state that marks the completion of the process.
 
 These two operations — **deleting the last frame** and **setting `processes.complete = 1`** — *must* be done together in a single transaction. This is not a soft rule; splitting them corrupts the process's observable state.
+
+In the current implementation the atomicity is enforced by the `processes_complete_after_frame_0_delete` trigger: the walker issues one DELETE on the frame row, and the trigger flips `processes.complete = 1` as part of that same DELETE. One SQL statement, one atomic transition.
 
 <table class="tbl-cvm">
 <thead>
@@ -86,12 +86,8 @@ These two operations — **deleting the last frame** and **setting `processes.co
 </tbody>
 </table>
 
-The process is now at a state in which any results from it can
-be reaped or ignored.
+The process is now at a state in which any results from it can be reaped or ignored.
 
-Typically the engine would next delete the process record. By
-default that's what Caspian will do. However, the engine can
-be configured to leave the database at the current state.
+Typically the engine would next delete the process record. By default that's what Caspian will do. However, the engine can be configured (via `engine.auto_delete_process = false`) to leave the database at the current state.
 
-If an attempt is made to run the process again that should raise
-an exception. The process is already completed.
+If an attempt is made to run the process again that should raise an exception. The process is already completed.

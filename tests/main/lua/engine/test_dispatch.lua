@@ -17,7 +17,7 @@ Three groups:
 
 **Dispatch chain tests** — empty handlers array raises; AlwaysTrue alone returns cleanly; AlwaysFalse alone raises (all-declined fallback); AlwaysFalse-then-AlwaysTrue returns cleanly (fall-through); AlwaysRaise alone propagates its raise; AlwaysTrue-then-AlwaysRaise returns cleanly (first-wins, AlwaysRaise never fires).
 
-**Engine integration tests** — verify the shipping engine actually uses dispatch correctly. Constructs a real engine, registers handlers into `engine.row_handlers`, calls `engine:run_row`, asserts on the outcome. Also verifies `M:run_row`'s pcall-wrap logic: dispatch's `unrecognized_row_head` raise gets re-shaped with the row-head atom's key set appended; a handler's own raise propagates unchanged.
+**Engine integration tests** — verify the shipping engine actually uses dispatch correctly. Constructs a real engine, registers handlers into `engine.row_handlers`, calls `engine:run_row`, asserts on the outcome. Also verifies `M:run_row`'s pcall-wrap logic: dispatch's `unrecognized_caspm` raise gets re-shaped with the row-head atom's key set appended; a handler's own raise propagates unchanged.
 ]]
 
 local h        = require('helpers')
@@ -130,11 +130,11 @@ end)
 -- Dispatch chain tests
 -- ==============================================================
 
-h.test("dispatch: empty handlers array raises unrecognized_row_head", function()
+h.test("dispatch: empty handlers array raises unrecognized_caspm", function()
 	assert_raises_matching(
 		function() dispatch({}) end,
-		"unrecognized_row_head",
-		"empty handlers array should raise unrecognized_row_head"
+		"unrecognized_caspm",
+		"empty handlers array should raise unrecognized_caspm"
 	)
 end)
 
@@ -142,10 +142,10 @@ h.test("dispatch: AlwaysTrue alone returns cleanly", function()
 	dispatch({ AlwaysTrue.new() })
 end)
 
-h.test("dispatch: AlwaysFalse alone raises unrecognized_row_head (all-declined fallback)", function()
+h.test("dispatch: AlwaysFalse alone raises unrecognized_caspm (all-declined fallback)", function()
 	assert_raises_matching(
 		function() dispatch({ AlwaysFalse.new() }) end,
-		"unrecognized_row_head",
+		"unrecognized_caspm",
 		"AlwaysFalse alone should trigger the all-declined fallback raise"
 	)
 end)
@@ -188,18 +188,18 @@ h.test("engine:run_row returns cleanly when a handler in row_handlers claims the
 	e:run_row({{bwc = 'anything'}})
 end)
 
-h.test("engine:run_row raises unrecognized_row_head when row_handlers is empty", function()
+h.test("engine:run_row raises unrecognized_caspm when row_handlers is empty", function()
 	local e = engine.new()
 	-- Clear the stock chain to test the empty-chain fallback specifically.
 	e:clear_handlers()
 	assert_raises_matching(
 		function() e:run_row({{['in'] = 'as'}}) end,
-		'unrecognized_row_head',
-		"empty row_handlers should raise unrecognized_row_head"
+		'unrecognized_caspm',
+		"empty row_handlers should raise unrecognized_caspm"
 	)
 end)
 
-h.test("engine:run_row's unrecognized_row_head raise includes the row-head atom-keys", function()
+h.test("engine:run_row's unrecognized_caspm raise includes the row-head atom-keys", function()
 	local e = engine.new()
 	-- Clear the stock chain so the empty-chain fallback fires and its
 	-- reshape logic surfaces the row-head atom-keys.
@@ -218,7 +218,7 @@ h.test("engine:run_row propagates a handler's raise unchanged (no atom-keys re-w
 	-- always-true stub would claim first and AlwaysRaise would never fire.
 	e:clear_handlers():add_handler(AlwaysRaise.new())
 	-- AlwaysRaise's message contains "always_raise_fired". If M:run_row
-	-- accidentally caught it and re-shaped it as unrecognized_row_head,
+	-- accidentally caught it and re-shaped it as unrecognized_caspm,
 	-- the substring below wouldn't match.
 	assert_raises_matching(
 		function() e:run_row({{bwc = 'anything'}}) end,
