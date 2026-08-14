@@ -9,7 +9,9 @@
 
 Close the end-to-end walkthrough for `$x = 1`. Today the runtime bootstraps, loads, pushes frame 0, enters dispatch — and dies on `unrecognized_row_head` because no handler is registered for `{in: 'as'}` (the CaspM assignment head). This sprint adds that one handler.
 
-**Depends on [dispatch](../dispatch/)** — the row-head dispatch table + registration mechanism has to exist before this sprint can register anything into it. This sprint executes after that one.
+**Dispatch mechanism already landed.** The dispatch and dispatch-cutover sprints completed and integrated. Shipping now has an empty handler chain; this sprint registers the first real handler.
+
+**Concrete state contract:** [walkthrough.md](./walkthrough) — restored from the deleted `ideas/frames-as-objects/examples/first-variable/index.md`. Documents CVM state table-by-table as `$x = 1` executes. Has known-stale parts flagged at the top; those get fixed as this sprint gets underway. Once fixed, the sprint's end-to-end test can assert each state table matches after the corresponding step.
 
 ## The pattern being matched
 

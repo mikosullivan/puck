@@ -44,6 +44,7 @@ local cvm                = require('cvm.open')
 local create_frame_0     = require('cvm.create_frame_0')
 local get_latest_frame   = require('cvm.get_latest_frame')
 local dispatch           = require('dispatch')
+local handlers           = require('handlers')
 
 local M = {}
 M.__index = M
@@ -123,11 +124,14 @@ load-artifact slots start nil:
   and JSON-encodes it into the DB frame, then `run()` nils it out so
   the loaded program has one source of truth (the DB frame's ast), not
   two. Not populated on revival runs.
-- **`row_handlers`** — empty array at construction. The row-head dispatch
-  chain — instances of `handler.Handler` subclasses that `M:run_row`
-  offers each row to. `table.insert(engine.row_handlers, MyHandler.new())`
-  registers a handler. Empty means every row raises `unrecognized_row_head`
-  from dispatch's fallback (walking-skeleton state).
+- **`row_handlers`** — the row-head dispatch chain. Populated at
+  construction from `handlers.stock_instances()` — the aggregator at
+  [src/engine/handlers/init.lua](../engine/handlers/init.lua) that
+  hands back a fresh instance of every stock Handler subclass. Hosts
+  can append their own handlers post-construction with
+  `table.insert(engine.row_handlers, MyHandler.new())`. Empty chain
+  (no stock handlers yet + no host additions) means every row raises
+  `unrecognized_row_head` from dispatch's fallback.
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -139,7 +143,7 @@ site.
 function M.new(opts)
 	opts = opts or {}
 
-	return setmetatable({
+	local engine = setmetatable({
 		cvm          = cvm.open(opts.cvm),
 		stdout       = nil,
 		debugger     = nil,
@@ -148,6 +152,13 @@ function M.new(opts)
 		caspm        = nil,
 		row_handlers = {},
 	}, M)
+
+	-- add handlers here
+	for _, handler in ipairs(handlers.stock_instances()) do
+		table.insert(engine.row_handlers, handler)
+	end
+
+	return engine
 end
 
 --[[
