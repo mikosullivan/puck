@@ -14,7 +14,7 @@ bare instance, capabilities attach by plain field assignment, and
 two engine instances never share state through class-level
 accidents.
 
-The tests use `helpers.FakeStdout` as the host-side stdout so the
+The tests use `helpers.FakeOutput` as the host-side stdout so the
 `e.stdout = ...` assignments have a concrete object to attach.
 ]]
 
@@ -36,15 +36,15 @@ h.test('engine.new() takes no args and returns an instance with no wiring', func
 end)
 
 h.test('engine.stdout = X wires the stdout; engine.stdout reads it back', function()
-	local stdout = h.FakeStdout.new()
+	local stdout = h.FakeOutput.new()
 	local e = engine.new()
 	e.stdout = stdout
 	h.assert_true(e.stdout == stdout, 'engine.stdout returns the object we assigned')
 end)
 
 h.test('engine.stdout can be reassigned', function()
-	local s1 = h.FakeStdout.new()
-	local s2 = h.FakeStdout.new()
+	local s1 = h.FakeOutput.new()
+	local s2 = h.FakeOutput.new()
 	local e = engine.new()
 	e.stdout = s1
 	e.stdout = s2
@@ -52,8 +52,8 @@ h.test('engine.stdout can be reassigned', function()
 end)
 
 h.test('two engines have independent stdout state', function()
-	local s1 = h.FakeStdout.new()
-	local s2 = h.FakeStdout.new()
+	local s1 = h.FakeOutput.new()
+	local s2 = h.FakeOutput.new()
 	local e1 = engine.new()
 	local e2 = engine.new()
 	e1.stdout = s1
