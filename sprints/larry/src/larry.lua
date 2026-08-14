@@ -1,23 +1,14 @@
 --[[
 {
 	"module": "larry",
-	"role": "Engine subclass intended for use in tests. Inherits everything from `engine`. Test-scoped conveniences (like FakeOutput wiring) and the prototype row-handler-chain API (add/prepend/remove/clear/handlers) live on Larry until integration promotes them into Engine.",
+	"role": "Engine subclass intended for use in tests. Inherits everything from `engine`, including the row-handler-chain API. Test-scoped conveniences (like FakeOutput wiring) are opt-in via methods on Larry — the constructor doesn't wire anything the plain Engine wouldn't.",
 	"exports": {
 		"new": "(opts?) -> Larry — same signature as Engine.new; opts.cvm passes through to cvm.open",
 		"set_fake_stdout": "() -> FakeOutput — wires a fresh helpers.FakeOutput into self.stdout and returns it for inspection",
-		"set_fake_stderr": "() -> FakeOutput — wires a fresh helpers.FakeOutput into self.stderr and returns it for inspection",
-		"add_handler": "(handler) -> self — appends a handler to the end of self.row_handlers",
-		"prepend_handler": "(handler) -> self — inserts a handler at index 1 of self.row_handlers (front of the chain, wins over stock handlers)",
-		"remove_handler": "(handler) -> self — removes the first occurrence of `handler` by identity; raises `handler_not_found` if not in the chain",
-		"clear_handlers": "() -> self — empties self.row_handlers (including stock handlers); subsequent rows raise unrecognized_row_head until at least one handler is added back",
-		"handlers": "() -> array — returns a shallow copy of self.row_handlers, in chain order (index 1 is checked first at dispatch time)"
+		"set_fake_stderr": "() -> FakeOutput — wires a fresh helpers.FakeOutput into self.stderr and returns it for inspection"
 	},
 	"depends_on": ["engine", "helpers (for FakeOutput)"],
-	"status": "sprint-scoped",
-	"promotion_target": {
-		"issue": "https://github.com/mikosullivan/puck/issues/1622",
-		"note": "add_handler / prepend_handler / remove_handler / clear_handlers / handlers move down to src/engine/engine.lua at integration"
-	}
+	"status": "sprint-scoped"
 }
 ]]
 
@@ -79,71 +70,6 @@ Note that the Engine class doesn't yet formally declare a `stderr` slot (its con
 function Larry:set_fake_stderr()
 	self.stderr = helpers.FakeOutput.new()
 	return self.stderr
-end
-
---[[
-## `Larry:add_handler` — append a handler to the row-handler chain
-
-Appends `handler` to `self.row_handlers`. Chain order matters: handlers are consulted in order at dispatch time, first one to claim the row wins. Appending puts the new handler behind everything already registered (stock handlers included). Returns `self` for chaining.
-
-Prototype surface for [#1622](https://github.com/mikosullivan/puck/issues/1622); moves down to Engine at integration.
-]]
-function Larry:add_handler(handler)
-	table.insert(self.row_handlers, handler)
-	return self
-end
-
---[[
-## `Larry:prepend_handler` — insert a handler at the front of the row-handler chain
-
-Puts `handler` at index 1 of `self.row_handlers`. First handler consulted at dispatch time — wins over anything already registered, including the stock handlers wired at construction. Returns `self` for chaining.
-]]
-function Larry:prepend_handler(handler)
-	table.insert(self.row_handlers, 1, handler)
-	return self
-end
-
---[[
-## `Larry:remove_handler` — remove a handler by identity
-
-Removes the first occurrence of `handler` from `self.row_handlers` by identity (`==`). If `handler` is not in the chain, raises `handler_not_found: handler is not in the chain` — fail loudly rather than silently no-op, so a mistyped reference or double-remove surfaces at the call site. Returns `self` for chaining.
-]]
-function Larry:remove_handler(handler)
-	for i, h in ipairs(self.row_handlers) do
-		if h == handler then
-			table.remove(self.row_handlers, i)
-			return self
-		end
-	end
-
-	error("handler_not_found: handler is not in the chain")
-end
-
---[[
-## `Larry:clear_handlers` — empty the row-handler chain
-
-Removes every handler from `self.row_handlers`, including the stock handlers wired at construction. After a `clear_handlers` every row raises `unrecognized_row_head` at dispatch time until at least one handler is added back. Returns `self` for chaining.
-]]
-function Larry:clear_handlers()
-	self.row_handlers = {}
-	return self
-end
-
---[[
-## `Larry:handlers` — read the current row-handler chain
-
-Returns a shallow copy of `self.row_handlers` as a new array, so inspection doesn't hand out a reference callers could mutate to bypass the public API. Chain order is preserved — index 1 is the first handler consulted at dispatch time.
-
-Callers that want to mutate the chain go through `add_handler`, `prepend_handler`, `remove_handler`, or `clear_handlers`.
-]]
-function Larry:handlers()
-	local copy = {}
-
-	for i, h in ipairs(self.row_handlers) do
-		copy[i] = h
-	end
-
-	return copy
 end
 
 return Larry

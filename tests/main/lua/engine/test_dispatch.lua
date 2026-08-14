@@ -183,7 +183,7 @@ end)
 
 h.test("engine:run_row returns cleanly when a handler in row_handlers claims the row", function()
 	local e = engine.new()
-	table.insert(e.row_handlers, AlwaysTrue.new())
+	e:add_handler(AlwaysTrue.new())
 	-- AlwaysTrue ignores the row content; any row works.
 	e:run_row({{bwc = 'anything'}})
 end)
@@ -191,7 +191,7 @@ end)
 h.test("engine:run_row raises unrecognized_row_head when row_handlers is empty", function()
 	local e = engine.new()
 	-- Clear the stock chain to test the empty-chain fallback specifically.
-	e.row_handlers = {}
+	e:clear_handlers()
 	assert_raises_matching(
 		function() e:run_row({{['in'] = 'as'}}) end,
 		'unrecognized_row_head',
@@ -203,7 +203,7 @@ h.test("engine:run_row's unrecognized_row_head raise includes the row-head atom-
 	local e = engine.new()
 	-- Clear the stock chain so the empty-chain fallback fires and its
 	-- reshape logic surfaces the row-head atom-keys.
-	e.row_handlers = {}
+	e:clear_handlers()
 	assert_raises_matching(
 		function() e:run_row({{['in'] = 'as'}}) end,
 		'in',
@@ -216,7 +216,7 @@ h.test("engine:run_row propagates a handler's raise unchanged (no atom-keys re-w
 	-- Replace the stock chain with just AlwaysRaise so it's the first
 	-- (and only) handler consulted; if we appended, VariableScalar's
 	-- always-true stub would claim first and AlwaysRaise would never fire.
-	e.row_handlers = { AlwaysRaise.new() }
+	e:clear_handlers():add_handler(AlwaysRaise.new())
 	-- AlwaysRaise's message contains "always_raise_fired". If M:run_row
 	-- accidentally caught it and re-shaped it as unrecognized_row_head,
 	-- the substring below wouldn't match.
@@ -259,10 +259,10 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 		counts[name] = 0
 	end
 
-	-- Walk row_handlers. Every instance must (a) actually be a
-	-- Handler-family instance, and (b) be one of the expected
+	-- Walk the chain via the public API. Every instance must (a) actually
+	-- be a Handler-family instance, and (b) be one of the expected
 	-- classes. Fail with a specific position + info message if not.
-	for i, actual_instance in ipairs(e.row_handlers) do
+	for i, actual_instance in ipairs(e:handlers()) do
 		h.assert_true(
 			is_handler_instance(actual_instance),
 			"row_handlers[" .. i .. "] isn't a Handler-family instance — metatable chain doesn't reach Handler"

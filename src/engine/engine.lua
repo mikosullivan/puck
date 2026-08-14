@@ -1,13 +1,18 @@
 --[[
 {
 	"module": "engine",
-	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an CVM (via cvm.open()) and stash the SQLite handle as engine.cvm, so the runtime state store (CVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via the row_handlers chain-of-responsibility. Iteratively extended by registering Handler subclasses into row_handlers — no if/elseif branching in run_row.",
+	"role": "Caspian's runtime. `engine.new()` is the boot entry point — its first act is to open an CVM (via cvm.open()) and stash the SQLite handle as engine.cvm, so the runtime state store (CVM in V1) is live from the moment the engine exists. Host wiring (stdout, debugger, eventually stdin/stderr and whatever else) attaches through plain field assignment on the engine (`engine.stdout = my_stdout`, `engine.debugger = my_array`) so a program that doesn't need a given resource doesn't force its host to provide one. Accepts Caspian source via load(source) which transpiles + normalizes into a CaspM tree; run() walks that tree and dispatches each row via the row-handler chain-of-responsibility. Iteratively extended by registering Handler subclasses via the row-handler-chain API (add_handler / prepend_handler / remove_handler / clear_handlers / handlers) — no if/elseif branching in run_row.",
 	"exports": {
-		"new": "(opts?) -> Engine — opts.cvm is passed through to cvm.open() for the underlying CVM connection"
+		"new": "(opts?) -> Engine — opts.cvm is passed through to cvm.open() for the underlying CVM connection",
+		"add_handler": "(handler) -> self — appends a handler to the end of self.row_handlers",
+		"prepend_handler": "(handler) -> self — inserts a handler at index 1 of self.row_handlers (front of the chain, wins over stock handlers)",
+		"remove_handler": "(handler) -> self — removes the first occurrence of `handler` by identity; raises `handler_not_found` if not in the chain",
+		"clear_handlers": "() -> self — empties self.row_handlers (including stock handlers); subsequent rows raise unrecognized_row_head until at least one handler is added back",
+		"handlers": "() -> array — returns a shallow copy of self.row_handlers, in chain order (index 1 is checked first at dispatch time)"
 	},
 	"stdout_contract": "The wired stdout must be an object supporting :print(text) — the raw byte-writer, no newline. Caspian-side :puts (adds newline) and everything else the sink surface exposes layer inside the engine on top of the host's :print. Tests wire a FakeOutput; the eventual CLI wires an object over io.stdout.",
 	"debugger_contract": "The wired debugger is a Lua sequence — any table into which the engine can table.insert log entries. Each entry is a hash of whatever the engine chose to record at that site (kind, source_length, etc. — no required fields). Permanent slot: coders patching Caspian or diving into engine internals attach any sequence they want and read it back to trace what the engine did. Not spec'd to grow methods — the array shape is the whole surface.",
-	"dispatch_contract": "Two raise sites, both with `unrecognized_` prefix so grep finds them: `unrecognized_row_head` (statement row that no registered Handler in row_handlers claimed — surfaced by run_row with the row-head atom's key set appended for diagnostic detail), `unrecognized_atom_kind` (value-producing atom whose kind key isn't in the value dispatcher). Adding a new construct = registering a Handler subclass into row_handlers and re-running the failing program."
+	"dispatch_contract": "Two raise sites, both with `unrecognized_` prefix so grep finds them: `unrecognized_row_head` (statement row that no registered Handler in row_handlers claimed — surfaced by run_row with the row-head atom's key set appended for diagnostic detail), `unrecognized_atom_kind` (value-producing atom whose kind key isn't in the value dispatcher). Adding a new construct = registering a Handler subclass via engine:add_handler and re-running the failing program."
 }
 ]]
 
@@ -128,10 +133,13 @@ load-artifact slots start nil:
   construction from `handlers.stock_instances()` — the aggregator at
   [src/engine/handlers/init.lua](../engine/handlers/init.lua) that
   hands back a fresh instance of every stock Handler subclass. Hosts
-  can append their own handlers post-construction with
-  `table.insert(engine.row_handlers, MyHandler.new())`. Empty chain
-  (no stock handlers yet + no host additions) means every row raises
-  `unrecognized_row_head` from dispatch's fallback.
+  extend the chain via `engine:add_handler(h)`, `engine:prepend_handler(h)`,
+  `engine:remove_handler(h)`, `engine:clear_handlers()`, and inspect it
+  via `engine:handlers()`. Direct mutation of the underlying array is
+  not the sanctioned surface — the engine reserves the right to change
+  the internal representation. Empty chain (no stock handlers yet + no
+  host additions) means every row raises `unrecognized_row_head` from
+  dispatch's fallback.
 
 `opts.cvm` (when supplied) is passed through to `cvm.open()` — see
 that function's signature for the fields (`path`, `schema`, `schema_path`).
@@ -153,9 +161,10 @@ function M.new(opts)
 		row_handlers = {},
 	}, M)
 
-	-- add handlers here
+	-- Wire the stock handler roster through the public API so even the
+	-- engine's own constructor self-hosts on add_handler.
 	for _, handler in ipairs(handlers.stock_instances()) do
-		table.insert(engine.row_handlers, handler)
+		engine:add_handler(handler)
 	end
 
 	return engine
@@ -290,6 +299,69 @@ function M:run_row(row)
 	end
 
 	error(err, 0)
+end
+
+--[[
+## `engine:add_handler` — append a handler to the row-handler chain
+
+Appends `handler` to `self.row_handlers`. Chain order matters: handlers are consulted in order at dispatch time, first one to claim the row wins. Appending puts the new handler behind everything already registered (stock handlers included). Returns `self` for chaining.
+]]
+function M:add_handler(handler)
+	table.insert(self.row_handlers, handler)
+	return self
+end
+
+--[[
+## `engine:prepend_handler` — insert a handler at the front of the row-handler chain
+
+Puts `handler` at index 1 of `self.row_handlers`. First handler consulted at dispatch time — wins over anything already registered, including the stock handlers wired at construction. Returns `self` for chaining.
+]]
+function M:prepend_handler(handler)
+	table.insert(self.row_handlers, 1, handler)
+	return self
+end
+
+--[[
+## `engine:remove_handler` — remove a handler by identity
+
+Removes the first occurrence of `handler` from `self.row_handlers` by identity (`==`). If `handler` is not in the chain, raises `handler_not_found: handler is not in the chain` — fail loudly rather than silently no-op, so a mistyped reference or double-remove surfaces at the call site. Returns `self` for chaining.
+]]
+function M:remove_handler(handler)
+	for i, h in ipairs(self.row_handlers) do
+		if h == handler then
+			table.remove(self.row_handlers, i)
+			return self
+		end
+	end
+
+	error("handler_not_found: handler is not in the chain")
+end
+
+--[[
+## `engine:clear_handlers` — empty the row-handler chain
+
+Removes every handler from `self.row_handlers`, including the stock handlers wired at construction. After a `clear_handlers` every row raises `unrecognized_row_head` at dispatch time until at least one handler is added back. Returns `self` for chaining.
+]]
+function M:clear_handlers()
+	self.row_handlers = {}
+	return self
+end
+
+--[[
+## `engine:handlers` — read the current row-handler chain
+
+Returns a shallow copy of `self.row_handlers` as a new array, so inspection doesn't hand out a reference callers could mutate to bypass the public API. Chain order is preserved — index 1 is the first handler consulted at dispatch time.
+
+Callers that want to mutate the chain go through `add_handler`, `prepend_handler`, `remove_handler`, or `clear_handlers`.
+]]
+function M:handlers()
+	local copy = {}
+
+	for i, h in ipairs(self.row_handlers) do
+		copy[i] = h
+	end
+
+	return copy
 end
 
 --[[
