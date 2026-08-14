@@ -55,7 +55,7 @@ local M = {}
 M.__index = M
 
 --[[
-## Rendering an atom's key set
+## `atom_keys`
 
 `atom_keys(atom)` renders an atom's key set as a deterministic
 comma-separated string for use in error messages. Keys are sorted so the
@@ -74,7 +74,7 @@ local function atom_keys(atom)
 end
 
 --[[
-## Debug logging
+## `debug_log`
 
 `debug_log(engine, entry)` appends `entry` to `engine.debugger` if one
 is attached; no-op otherwise. Every raise path and every dispatch
@@ -95,7 +95,7 @@ local function debug_log(engine, entry)
 end
 
 --[[
-## Constructor
+## `new`
 
 `engine.new(opts?)` is the boot entry point. Its first act is to open
 an CVM (via `cvm.open(opts and opts.cvm)`) and stash the returned
@@ -171,7 +171,7 @@ function M.new(opts)
 end
 
 --[[
-## Loading source
+## `load`
 
 `engine:load(source)` takes a Caspian source string, transpiles it into
 CaspJ, normalizes that into CaspM, and stashes the resulting CaspM on
@@ -194,7 +194,7 @@ function M:load(source)
 end
 
 --[[
-## Running the program
+## `run`
 
 `engine:run()` sets up frame 0 (fresh or revival, per the `process_pk`
 slot) and then dispatches statement rows from the frame's `ast` via
@@ -276,7 +276,7 @@ function M:run()
 end
 
 --[[
-## Dispatching a row
+## `run_row`
 
 `engine:run_row(row)` offers the row to each Handler in `self.row_handlers` via the shared [dispatch](../engine/dispatch.lua) function. First handler to return `true` wins; if none does, dispatch raises `unrecognized_row_head`. Handler raises propagate through — dispatch doesn't catch.
 
@@ -365,7 +365,7 @@ function M:handlers()
 end
 
 --[[
-## Evaluating an atom
+## `eval`
 
 `engine:eval(atom)` evaluates a value-producing atom to a Caspian
 value. Currently handles one atom shape — `{v: value}` (the normalized

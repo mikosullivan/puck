@@ -7,8 +7,7 @@
 		"set_fake_stdout": "() -> FakeOutput — wires a fresh helpers.FakeOutput into self.stdout and returns it for inspection",
 		"set_fake_stderr": "() -> FakeOutput — wires a fresh helpers.FakeOutput into self.stderr and returns it for inspection"
 	},
-	"depends_on": ["engine", "helpers (for FakeOutput)"],
-	"status": "sprint-scoped"
+	"depends_on": ["engine", "helpers (for FakeOutput)"]
 }
 ]]
 
