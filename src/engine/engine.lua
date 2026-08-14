@@ -170,7 +170,7 @@ function M.new(opts)
 		get_ast          = engine.cvm:prepare('select ast from objects where object_pk = ?'),
 		get_stmt_idx     = engine.cvm:prepare('select stmt_idx from objects where object_pk = ?'),
 		advance_stmt_idx = engine.cvm:prepare('update objects set stmt_idx = stmt_idx + 1 where object_pk = ?'),
-		get_process      = engine.cvm:prepare('select process from objects where object_pk = ?'),
+		get_process      = engine.cvm:prepare('select process_pk from objects where object_pk = ?'),
 		delete_frame     = engine.cvm:prepare('delete from objects where object_pk = ?'),
 		reap_process     = engine.cvm:prepare('select complete, message from processes where process_pk = ?'),
 		delete_process   = engine.cvm:prepare('delete from processes where process_pk = ?'),
@@ -341,7 +341,7 @@ function M:run_frame(frame_pk)
 	stmts.get_process:bind_values(frame_pk)
 
 	for row in stmts.get_process:nrows() do
-		process_pk = row.process
+		process_pk = row.process_pk
 	end
 
 	stmts.get_process:reset()

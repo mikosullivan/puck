@@ -1,54 +1,48 @@
 -- Every connection to a CVM database must run these two pragmas
--- immediately after opening. Both are per-connection settings in
--- SQLite (default OFF, not persisted with the DB file) — the pragmas
--- below only take effect on the connection that applies the schema.
--- Every subsequent connection opens with both OFF and has to enable
--- them again, or the CVM's FK constraints and trigger design are
--- dead letters at runtime.
---
--- Any tool opening a CVM file — the engine, the sqlite3 CLI, another
--- host reading the file — runs these two pragmas as its first act,
--- raising specific error ids on failure (`cvm_pragma_fk_failed`,
--- `cvm_pragma_recursive_triggers_failed`). Any CVM tool without an
--- equivalent pair of pragma calls is broken by construction. Under
--- this sketch, `cvm.new(db)` at `src/engine/cvm/init.lua` assumes the
--- caller has already set both — the pragma calls live one layer up,
--- to be spec'd when the runtime entry point (see engine.lua's Open
--- questions block) lands. [ghi]
+-- immediately after opening. [ghi]
 pragma foreign_keys = on;
-
--- Recursive triggers are ON. SQLite permits a manual trigger's
--- INSERT / UPDATE / DELETE to fire further manual triggers, and
--- turning OFF just to enforce non-recursion turned out to be more
--- work than the discipline it saved. We accept the setting but
--- treat non-recursion as a design principle: if propagation needs
--- to happen across rows or tables, do it explicitly in Lua rather
--- than lean on trigger chains. FK cascades are a separate mechanism
--- and their after-triggers fire regardless — mark triggers on
--- refs continue to fire during bulk DELETEs. [ghi]
 pragma recursive_triggers = on;
 
--- ############################################################################
--- # Mikobase                                                                 #
--- ############################################################################
 
--- No per-connection TEMP table in this design. The engine tracks the
--- active process pk in Lua-side state and binds it into queries at the
--- call site; the schema is silent about it. If a per-connection
--- scratchpad later earns its keep for reasons SQL callers can point
--- at (views, ad-hoc debugger queries, triggers that need process
--- context), it will land as a TEMP table named `connection`. [ghi]
+-- ------------------------------------------------------------
+-- Processes — call stack roots.
+-- ------------------------------------------------------------
+
+-- Holds the list of currently running processes.
+
+create table processes (
+	process_pk text primary key default (
+		lower(
+			substr(hex(randomblob(4)), 1, 8) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(2)), 1, 4) || '-' ||
+			substr(hex(randomblob(6)), 1, 12)
+		)
+	),
+
+	-- Completion flag. 0 = has frames left; 1 = finished. Default 0. [ghi]
+	complete integer not null default 0 check (complete in (0, 1)),
+
+	-- Message. Text. The caller reaps this into the return hash after run(). [ghi]
+	message text default null
+);
+
+-- process_pk is immutable. [ghi]
+create trigger processes_no_update
+before update on processes
+when new.process_pk is not old.process_pk
+begin
+	select raise(abort, 'processes_pk_immutable: processes.process_pk is immutable');
+end;
+
+
+-- ------------------------------------------------------------
+-- Objects.
+-- ------------------------------------------------------------
 
 create table objects (
-	-- Primary key is a UUID4-shaped hex string generated at INSERT
-	-- time from SQLite's ChaCha20-backed randomblob(). Built
-	-- manually (the uuid() extension isn't compiled into stock
-	-- SQLite builds); the expression yields a 36-char hyphenated
-	-- lowercase string like 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5'
-	-- — cryptographically random 128 bits with the standard
-	-- UUID hyphen positions. See the "Design consideration:
-	-- UUIDs as primary keys?" section for the trade-offs
-	-- accepted. [ghi]
+	-- UUID4-shaped hex string via SQLite's randomblob(). [ghi]
 	object_pk text primary key default (
 		lower(
 			substr(hex(randomblob(4)), 1, 8) || '-' ||
@@ -59,166 +53,101 @@ create table objects (
 		)
 	),
 
-	-- Persistence pin. Rows with `persistent = 1` are kept alive by
-	-- whatever reachability system the host layers on top; CVM's
-	-- uspace view unconditionally includes them, and any future host
-	-- with its own uspace-equivalent should honor the same flag.
-	-- Nullable and freely mutable — a row can be pinned and later
-	-- unpinned. CHECK restricts the value to 1 (truthy) or null; the
-	-- partial index below only holds the pinned rows, so lookups over
-	-- pinned objects touch just the entries that matter. [ghi]
-	persistent integer check (persistent = 1),
-	
-	-- Row-kind discriminator. NOT NULL, no default: CVM's write
-	-- code names the row kind at INSERT time. Exactly one of:
-	--   'o' → object (a full object, or a scalar primitive if
-	--         scalar_type is set). Includes functions and closures —
-	--         a function is a plain `'o'` object with its CaspM
-	--         stored in its bucket. Never carries an `ast` column
-	--         itself.
+	-- Row-kind discriminator:
+	--   'o' → object
 	--   'h' → HashPrimitive
 	--   'a' → ArrayPrimitive
-	--   'f' → frame — an instance of a call in progress or a popped-
-	--         but-captured shell of one. Carries `ast` (the code
-	--         currently executing, copied in from the called
-	--         function's bucket) and, while on-stack, its stack
-	--         coordinates (`process`, `idx`, `stmt_idx`). "Is this a
-	--         frame?" is a structural question: `primitive = 'f'`.
+	--   'f' → frame
 	-- [ghi]
 	primitive text not null check (primitive in ('o', 'h', 'a', 'f')),
 
-	-- Scalar type. Only meaningful when primitive = 'o'. When set,
-	-- this row is a scalar primitive; when null on a primitive =
-	-- 'o' row, this row is a plain full object with a bucket +
-	-- stack.
-	--   's' string, 'n' number, 'b' boolean, 'u' null
-	-- [ghi]
+	-- Scalar type. Only meaningful when primitive = 'o'. [ghi]
 	scalar_type text
 		check (scalar_type in ('s', 'n', 'b', 'u'))
 		check (primitive = 'o' or scalar_type is null),
 
-	-- Scalar value. Meaningful only when `scalar_type` is set.
-	-- Declared `blob` for no-affinity storage — SQLite doesn't
-	-- coerce values in blob-affinity columns, so integers, reals,
-	-- text, and null land in the row as their native type. The
-	-- per-scalar-type shape checks below enforce the actual
-	-- type-per-scalar_type rule. Checks use `is` (not `in`) so
-	-- null cleanly evaluates to false — the `in` form would give
-	-- NULL which SQLite's CHECK accepts as passing, silently
-	-- letting null booleans through.
-	-- [ghi]
+	-- Scalar value. Meaningful only when `scalar_type` is set. Declared
+	-- `blob` for no-affinity storage. [ghi]
 	scalar_value blob
-		-- Booleans ('b'): value must be exactly 0 (false) or 1 (true).
-		-- No other integers, no reals, no strings. `is` (not `=`)
-		-- avoids null-value quirks. [ghi]
 		check (scalar_type is null or scalar_type != 'b' or scalar_value is 0 or scalar_value is 1)
-		-- Nulls ('u'): value must itself be SQL null. A scalar-null
-		-- object exists as a row; its "value" isn't stored as
-		-- anything, it's null-in-the-database. [ghi]
 		check (scalar_type is null or scalar_type != 'u' or scalar_value is null)
-		-- Numbers ('n'): value must be a SQLite integer or real. Both
-		-- flavors count as "number" at the Caspian level; the runtime
-		-- distinguishes as needed via typeof(scalar_value). [ghi]
 		check (scalar_type is null or scalar_type != 'n' or typeof(scalar_value) in ('integer', 'real'))
-		-- Strings ('s'): value must be SQLite text. No blobs disguised
-		-- as strings, no numeric values that happen to stringify. [ghi]
 		check (scalar_type is null or scalar_type != 's' or typeof(scalar_value) = 'text')
-		-- Non-scalars: if scalar_type is null (this row isn't a scalar
-		-- at all), scalar_value must also be null. Prevents leftover
-		-- values on non-scalar rows. [ghi]
 		check (scalar_type is not null or scalar_value is null),
 
-	-- Role back-references. If bucket_for is set, this row is the
-	-- bucket of the referenced full object; it must be a
-	-- HashPrimitive. If stack_for is set, this row is the stack of
-	-- the referenced full object; it must be an ArrayPrimitive. At
-	-- most one may be set (a row can't be both a bucket and a
-	-- stack). Full objects, scalars, and standalone container
-	-- primitives (root, internal storage) leave both null.
-	--
-	-- FKs use ON DELETE CASCADE: deleting the owner deletes its
-	-- bucket and stack in one shot via FK, no trigger required.
-	--
-	-- UNIQUE on each column: each owner has at most one bucket and
-	-- one stack. SQLite doesn't consider nulls in UNIQUE
-	-- constraints, so many rows with these columns null don't
-	-- collide. [ghi]
+	-- Core-role marker: 'e' (engine), 'c' (cache), 'u' (user). Nullable
+	-- — most rows aren't core roles. Unique per value via the partial
+	-- index below. [ghi]
+	core_role text check (core_role in ('e', 'c', 'u')),
+
+	-- Role-tree parentage. Non-root roles set this. Immutable via
+	-- objects_role_parent_immutable. [ghi]
+	role_parent text references objects(object_pk) on delete cascade,
+
+	-- Pointer to the role that created this row. Required for non-role
+	-- rows (see objects_owner_role_required_on_non_roles). Roles may
+	-- also carry it (cache and user are owned by engine). No cascade. [ghi]
+	owner_role text references objects(object_pk),
+
+	-- CaspM tree as JSON text. Biconditional with primitive='f'.
+	-- Immutable once set (objects_ast_immutable). [ghi]
+	ast text
+		check ((primitive = 'f' and ast is not null)
+			or (primitive != 'f' and ast is null)),
+
+	-- Current position within the frame's ast. Frame-only. Mutable. [ghi]
+	stmt_idx integer
+		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f')),
+
+	-- FK to processes for frame 0. Set on push, nulled on pop. Sub-frames
+	-- leave this null and use frame_parent instead. Frame-only. [ghi]
+	process_pk text
+		references processes(process_pk)
+		check (process_pk is null or primitive = 'f'),
+
+	-- Sub-frame → parent-frame FK. Frame-only. No cascade. [ghi]
+	frame_parent text
+		references objects(object_pk)
+		check (frame_parent is null or primitive = 'f'),
+
+	-- Bucket / stack back-refs on collection rows. If set, this row is
+	-- the bucket / stack for the referenced full object. At most one
+	-- per collection. Cascades on owner delete. [ghi]
 	bucket_for text unique references objects(object_pk) on delete cascade
 		check (bucket_for is null or primitive = 'h'),
 	stack_for  text unique references objects(object_pk) on delete cascade
 		check (stack_for  is null or primitive = 'a')
 		check (bucket_for is null or stack_for is null),
 
-	-- Denormalized owner-side back-links to the bucket and stack.
-	-- Redundant with the bucket_for / stack_for columns on the
-	-- collection rows (looking up a bucket via bucket_for is already
-	-- indexed), but having the link directly on the owner row lets
-	-- queries and dispatch paths skip a join. Nullable — plain full
-	-- objects that don't yet have their bucket / stack lazily
-	-- created leave these null.
-	--
-	-- Set-once by the objects_denormalize_bucket / _stack triggers
-	-- when the corresponding collection is inserted; immutable
-	-- afterward via objects_no_update. No FK — the trigger keeps
-	-- the denormalization in sync, and adding FK cascade in the
-	-- reverse direction of bucket_for would fight the cascade we
-	-- already have.
-	--
-	-- CHECK: only bucket / stack owners can carry these columns.
-	-- Owners are plain full objects (primitive = 'o' AND scalar_type
-	-- null) or frames (primitive = 'f') — both have buckets (frames
-	-- hold their locals under bucket['locals']) and both can gain a
-	-- stack.
-	-- UNIQUE: no two owners share a bucket or stack — redundant with
-	-- the bucket_for / stack_for UNIQUE, but a good safety net for
-	-- the denormalization. [ghi]
+	-- Owner-side denormalization of bucket_for / stack_for. Set once by
+	-- the denormalize triggers below; then immutable via objects_no_update. [ghi]
 	bucket_pk text unique
 		check (bucket_pk is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 	stack_pk  text unique
 		check (stack_pk  is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 
-	-- GC scratch: 1 means this row is a candidate the drain should
-	-- trace from. Null in the common case. Hosts that layer a
-	-- garbage-collection pass on top of Mikobase set this to mark
-	-- rows for retracing; CVM's mark trigger writes it after
-	-- relationship deletes. 1-or-null; CHECK doesn't fire on null so
-	-- no `is null or` guard is needed. [ghi]
+	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
+	persistent integer check (persistent = 1),
+
+	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
 	needs_trace integer check (needs_trace = 1),
 
-	-- GC scratch: positive integer giving the order the drain's
-	-- callback loop fires against this row. Null in the common case.
-	-- Written by the host's GC pass; CVM stamps it inside the drain
-	-- to sequence callbacks. >0-or-null; CHECK doesn't fire on null
-	-- so no `is null or` guard is needed. [ghi]
+	-- GC scratch: callback-order index. Null in the common case. [ghi]
 	in_trace integer check (in_trace > 0),
 
-	-- Human-readable label for the row. Populated by the engine
-	-- (or by hand during debugging) so a state snapshot self-describes
-	-- what each row is meant to be. Purely informational — no query
-	-- path reads it. Permanent feature of the schema. Rendered as
-	-- "comment" in walkthrough tables for readability. [ghi]
+	-- Human-readable label. Informational; no query path reads it. [ghi]
 	debug text
 );
 
--- Partial index over just the pinned rows. Reachability queries
--- like uspace's `where persistent = 1` branch hit this directly. [ghi]
+-- Partial index for reachability queries over pinned rows. [ghi]
 create index objects_persistent on objects(persistent) where persistent = 1;
 
--- Partial indexes over the GC-scratch columns. The drain's worklist
--- walks needs_trace; the callback-order pass walks in_trace. Both
--- are almost always empty at rest — the partial predicate keeps the
--- indexes tiny. [ghi]
+-- Partial indexes for the drain's worklist / callback-order walks. [ghi]
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
 create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
 
--- Immutability rules:
---   Fully immutable from INSERT: object_pk, primitive, scalar_type,
---     scalar_value, bucket_for, stack_for.
---   Write-once (null → value, then locked): bucket_pk, stack_pk.
---   Freely mutable: persistent, needs_trace, in_trace.
--- CVM adds more columns (user, role_parent, ast, owner_role) with
--- their own immutability / mutability rules; CVM installs its own
--- triggers over there. [ghi]
+-- Base immutability for objects. Per-column triggers below handle
+-- core_role, role_parent, owner_role, and ast. [ghi]
 create trigger objects_no_update
 before update on objects
 begin
@@ -242,30 +171,14 @@ begin
 	end;
 end;
 
--- Deletion callback machinery (on_close / on_delete UDF hook)
--- deferred. When the engine needs to invoke Caspian-level cleanup
--- on object delete, a trigger + UDF will land here. [ghi]
-
--- ------------------------------------------------------------
--- Bucket + stack: lazily created by the Lua write layer.
--- ------------------------------------------------------------
--- Neither bucket nor stack is auto-provisioned by trigger. The Lua
--- write API creates them on demand via ensure_bucket(obj_pk) and
--- ensure_stack(obj_pk) — the first field write creates the bucket,
--- the first class-extension or shadow creates the stack. Objects
--- that live briefly and touch neither save the row + constraint
--- cost entirely. [ghi]
+-- Bucket / stack are lazily created by the Lua write layer (no auto-provision). [ghi]
 
 -- ------------------------------------------------------------
 -- Denormalization triggers — keep owner-side bucket_pk / stack_pk
 -- in sync with collection-side bucket_for / stack_for. [ghi]
 -- ------------------------------------------------------------
 
--- When a bucket is inserted (HashPrimitive with bucket_for set),
--- write the new bucket's object_pk into the owner's bucket_pk. The
--- owner's bucket_pk was null; this null→value transition is
--- allowed by objects_no_update, and after it lands the field is
--- locked. [ghi]
+-- On bucket INSERT: write the new bucket's pk into the owner's bucket_pk. [ghi]
 create trigger objects_denormalize_bucket
 after insert on objects
 when new.bucket_for is not null
@@ -282,49 +195,27 @@ begin
 end;
 
 -- ------------------------------------------------------------
--- Refs: parent-to-child object edges.
+-- Refs: parent-to-child object edges. Parents must be container
+-- primitives ('h' or 'a'). [ghi]
 -- ------------------------------------------------------------
--- Every row is an object-to-object edge. The parent must be a
--- container primitive ('h' or 'a') — full objects and scalars
--- cannot be parents. Enforced by trigger below. [ghi]
 
 create table refs (
 	ref_pk  integer primary key autoincrement,
 
 	parent  text not null references objects(object_pk) on delete cascade,
-	-- child uses ON DELETE RESTRICT so deleting an object with
-	-- incoming references raises rather than silently nulling those
-	-- references. Loud beats silent. If the trace was accurate and
-	-- an object is unreferenced, the RESTRICT check passes; if
-	-- something (typically an on_close-created edge) added a new
-	-- incoming reference between mark and sweep, the delete raises
-	-- and the exception propagates to whatever transaction wraps
-	-- the operation. [ghi]
+	-- ON DELETE RESTRICT so a delete with incoming refs raises loudly. [ghi]
 	child   text not null references objects(object_pk) on delete restrict,
 
-	-- Hash-style entries store a text `key`. Array-style entries
-	-- leave key null and use idx as position. Class-level dispatch
-	-- (HashPrimitive vs ArrayPrimitive) interprets which is which;
-	-- storage does not care. [ghi]
+	-- Hash entries use `key`; array entries leave key null and use idx. [ghi]
 	key     text,
 
-	-- idx is required for every row: array-style entries use it as
-	-- position, hash-style entries use it as insertion order for
-	-- iteration. [ghi]
+	-- Position for arrays; insertion order for hashes. [ghi]
 	idx     integer not null check (idx >= 0),
 
-	-- Human-readable label for the row. Populated by the engine
-	-- (or by hand during debugging) so a state snapshot self-describes
-	-- what each relationship is meant to be. Purely informational —
-	-- no query path reads it. Permanent feature of the schema.
-	-- Rendered as "comment" in walkthrough tables for readability.
-	-- Same treatment as objects.debug. [ghi]
+	-- Human-readable label. Informational. [ghi]
 	debug text,
 
-	-- No two refs from the same parent share a key or idx.
-	-- Null-key rows (array-style) don't collide on the (parent, key)
-	-- constraint because SQLite doesn't consider nulls in UNIQUE
-	-- constraints. [ghi]
+	-- No two refs from the same parent share a key or idx. [ghi]
 	unique (parent, key),
 	unique (parent, idx)
 );
@@ -332,71 +223,32 @@ create table refs (
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
--- Only container primitives ('h' or 'a') can be parents. Full
--- objects (primitive = 'o') and scalar primitives cannot appear
--- as parent — they don't have references. Full objects route
--- through their bucket / stack. [ghi]
+-- Only container primitives can be parents in refs. [ghi]
 create trigger refs_parent_must_be_primitive_container
 before insert on refs
 when (select primitive from objects where object_pk = new.parent) not in ('h', 'a')
 begin
-	select raise(abort, 'parent_must_be_primitive_container: only HashPrimitives and ArrayPrimitives can be parents in refs');
+	select raise(abort, 'parent_must_be_primitive_container: only container primitives can be parents');
 end;
 
--- The whole refs row is immutable. Rebinding an edge
--- (swinging child from one object to another, moving to a different
--- key, whatever) is expressed as delete + insert, not in-place
--- update. Immutability means the mark trigger only needs to fire on
--- DELETE — there's no in-place UPDATE OF child to cover. [ghi]
+-- refs rows are immutable; rebind is delete + insert. [ghi]
 create trigger refs_no_update
 before update on refs
 begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
 
--- ------------------------------------------------------------
--- Mark trigger — the trace's worklist populator. [ghi]
--- ------------------------------------------------------------
-
--- [set-needs-trace] On DELETE of a relationship: mark the old child.
--- Hosts that layer a garbage-collection pass on top of Mikobase read
--- objects.needs_trace to find rows to retrace after edge deletion;
--- this trigger keeps that scratch column populated as edges churn.
--- Hosts without a GC pass ignore the column — the write is cheap and
--- the partial objects_needs_trace index stays empty of consequence.
---
--- No filter on which parent-side space the row belongs to — the host's
--- drain decides membership (CVM's uspace view, another host's
--- equivalent). Terminating the trace on an alive row is a cheaper
--- wasted iteration than gating every mark-trigger fire on a subquery.
---
--- No corresponding UPDATE trigger — refs.child is immutable
--- (see refs_no_update). Rebinding an edge is expressed as
--- delete + insert; the delete fires this trigger. [ghi]
+-- On refs DELETE: mark the old child for retrace. [ghi]
 create trigger refs_mark_needs_trace_after_delete
 after delete on refs
 begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
--- ############################################################################
--- CVM
--- ############################################################################
-
 -- ------------------------------------------------------------
--- cvm marker table.
+-- cvm marker table — presence signals "this DB is a CVM." [ghi]
+-- Append-only.
 -- ------------------------------------------------------------
--- The presence of this table signals "this database can be used as
--- CVM." A generic SQLite file has no `cvm` table; a CVM database
--- always does. Any CVM tool can check for this table's existence
--- before treating the file as a CVM store, and any database that
--- carries it is committing to the CVM schema. `cvm.open`'s install
--- gate reads it: no `cvm` → fresh DB → run the schema DDL; `cvm`
--- present → revive-open → skip the DDL.
---
--- Append-only: once a row is inserted, it cannot be updated or
--- deleted. Every entry is a permanent birth-record. If we ever need
--- something mutable, it goes in a different table. [ghi]
 create table cvm (
 	key text primary key,
 	value text
@@ -416,84 +268,12 @@ end;
 
 insert into cvm (key, value) values ('schema', '9.0');
 
--- CVM database design. One `objects` table holds row shapes
--- discriminated by the `primitive` column:
---   'h' → HashPrimitive (hash-shaped primitive container)
---   'a' → ArrayPrimitive (array-shaped primitive container)
---   'o' → object. Either a plain full object (with bucket + stack
---         reachable via bucket_for / stack_for on separate rows)
---         or a scalar primitive (with a scalar type in `scalar_type` and
---         value in `scalar_value`).
---
--- A HashPrimitive serving as a bucket carries `bucket_for` pointing
--- at its owner; an ArrayPrimitive serving as a stack carries
--- `stack_for`. Standard SQL "child references parent" idiom — ON
--- DELETE CASCADE from the owner cleans up bucket + stack via FK; no
--- cleanup trigger needed.
---
--- Only container primitives can be parents in the `refs`
--- table. Full objects hold their contents in their bucket + stack;
--- scalars have no contents at all. [ghi]
 
 -- ------------------------------------------------------------
--- CVM's additions to the Mikobase `objects` table.
+-- Frame ast validation triggers.
 -- ------------------------------------------------------------
--- The base `objects` table is defined in the Mikobase section
--- above. CVM layers on the columns it needs by ALTER TABLE;
--- each column's rationale sits with the statement below.
 
--- user: root-role marker. Exactly one row across the whole table
--- carries `user = 1`; every other row leaves it null. Set at INSERT
--- and immutable via objects_user_immutable below. The seed insert
--- further down creates the user row. Enforcement of "at most one"
--- is a partial unique index (inline UNIQUE isn't available on ALTER
--- TABLE ADD COLUMN in SQLite). [ghi]
-alter table objects add column user integer
-	check (user = 1);
-
--- role_parent: role-tree parentage. If set, this row is a non-root
--- role and role_parent points at its parent role. Null on the root
--- role (user row) and on every non-role object. Immutable via
--- objects_role_parent_immutable below — a role can't be reparented;
--- that's what buys the schema-level cycle-freeness (a row can only
--- reference a row that already exists, and no existing row can be
--- repointed at a newer row). [ghi]
-alter table objects add column role_parent text
-	references objects(object_pk) on delete cascade;
-
--- ast: CaspM tree serialized as JSON text — the code a frame is
--- currently executing. Biconditional with `primitive = 'f'`: every
--- frame row carries an ast; no non-frame row does.
---
--- Functions and closures are NOT frames. A function is a plain
--- `primitive = 'o'` object; its CaspM lives in its bucket (as a
--- bucket entry — see the callable's own spec for the key). When a
--- function is called, the engine creates a fresh `primitive = 'f'`
--- row and populates its `ast` from the function's stored CaspM. The
--- function object stays where it is; the frame is a distinct row
--- with the code copied in for execution.
---
--- Immutable — a frame's code is fixed at push; the engine only reads
--- it during dispatch, never writes it back. The `objects_ast_immutable`
--- trigger below enforces this. See the "AST storage: JSON, not JSONB"
--- design note in requirements/cvm/ for the rationale on the storage
--- shape (unchanged). [ghi]
-alter table objects add column ast text
-	check ((primitive = 'f' and ast is not null)
-		or (primitive != 'f' and ast is null));
-
--- Two triggers guard the shape of a frame's `ast`:
---
---   - objects_ast_valid_insert (BEFORE INSERT) — validates that the
---     new ast is parseable JSON AND a JSON array. Fires only on frame
---     rows (WHEN new.primitive = 'f'). The CHECK constraint above
---     enforces "not null when primitive = 'f'"; this trigger adds the
---     structural check on top so the walker can trust the shape.
---
---   - objects_ast_immutable (BEFORE UPDATE OF ast) — rejects any
---     attempt to change a frame's ast after insert. A frame's code is
---     fixed at push. [ghi]
-
+-- BEFORE INSERT: reject non-array or non-JSON ast on frame rows. [ghi]
 create trigger objects_ast_valid_insert
 before insert on objects
 when new.primitive = 'f'
@@ -506,6 +286,7 @@ begin
 	end;
 end;
 
+-- ast is immutable once set. [ghi]
 create trigger objects_ast_immutable
 before update of ast on objects
 when new.ast is not old.ast
@@ -513,13 +294,8 @@ begin
 	select raise(abort, 'ast_immutable: objects.ast is immutable once set');
 end;
 
--- Advancing a frame's stmt_idx means "done with the current statement,
--- moving to the next." A frame with children is mid-execution; once
--- the parent moves past that statement, any children pushed by it are
--- stale and must go. Bundling the child delete into the same UPDATE
--- as the stmt_idx bump makes it atomic at the SQL layer — no savepoint
--- dance needed on the Lua side, and no way to advance stmt_idx without
--- clearing children. [ghi]
+-- Advancing a frame's stmt_idx clears any child frames it pushed —
+-- atomic at the SQL layer, no Lua-side savepoint needed. [ghi]
 create trigger frames_delete_children_after_stmt_idx_update
 after update of stmt_idx on objects
 when new.primitive = 'f'
@@ -527,119 +303,54 @@ begin
 	delete from objects where frame_parent = new.object_pk and primitive = 'f';
 end;
 
--- Closure capture (the mechanism that lets a closure keep its
--- defining frame alive after the frame is popped off the call stack)
--- is the design's stated motivation but is NOT yet implemented in
--- this sketch. The column that will carry the capture link —
--- provisionally `lexical_parent` — lands when the dedicated closure
--- design slice earns it. Deliberately not pre-provisioned; nothing
--- in the current schema, code, or tests uses it, and requirements/
--- lua/scope.md describes a different capture model (scope aggs)
--- that has to be reconciled before the column shape is settled. [ghi]
-
--- stmt_idx: current position within the row's `ast`. Frame-objects
--- use this to track which top-level statement they're about to
--- dispatch — 0 at push, incremented after each dispatch, set back to
--- null on pop. Mutable — advances during execution. Non-negative
--- integer. CHECK forbids setting it on any row that isn't a frame.
---
--- Bookkeeping like this used to live in the frame's bucket as a
--- scalar entry hung off a refs row. Promoting stmt_idx
--- to a column saves three rows per frame (the scalar row, its
--- refs link, and the bucket entry) at the cost of one
--- column on every objects row — a good trade when frames are
--- pushed and popped often. [ghi]
-alter table objects add column stmt_idx integer
-	check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f'));
-
--- process: FK to the processes table for frame-objects. Declared
--- further down in this section, immediately after `create table
--- processes`, because SQLite validates FK targets at insert time
--- and the alter-table statement would fail here before processes
--- exists. See the block after `create table processes` for the
--- actual DDL, the CHECK constraint, and the design rationale. [ghi]
-
--- owner_role: ownership pointer for non-role objects. Every non-role
--- object carries owner_role pointing at the role that created it.
--- The rule is XOR with role_parent: a row is EITHER a role
--- (role_parent set — the role tree case) OR owned by one (owner_role
--- set — every other object) — never both, never neither, except the
--- grandfathered user seed inserted just below (BEFORE the enforcement
--- triggers exist, so its role_parent = null, owner_role = null state
--- is preserved).
---
--- No `on delete cascade`: role deletion doesn't take its owned objects
--- with it. Deletion of a role that still owns things is a load-bearing
--- event and should be either restricted or explicitly handled by the
--- engine; the FK stays plain until that policy is spec'd. [ghi]
-alter table objects add column owner_role text references objects(object_pk);
 
 -- ------------------------------------------------------------
--- Indexes for CVM's added columns.
+-- Indexes for the role / ownership / frame columns.
 -- ------------------------------------------------------------
 
--- User marker: partial unique index enforces "at most one user row"
--- (inline UNIQUE isn't available on ALTER TABLE ADD COLUMN in SQLite,
--- so the constraint moves to a partial index). `where user = 1` keeps
--- the index empty on the null rows — the index only ever has one
--- entry, which is what makes `select object_pk from objects where user`
--- (or `= 1`) a direct hit. [ghi]
-create unique index objects_user on objects(user) where user = 1;
+-- Unique per core_role value ('e', 'c', 'u'); partial keeps it empty of nulls. [ghi]
+create unique index objects_core_role on objects(core_role)
+	where core_role is not null;
 
--- Role tree: partial index over just the non-root role rows. The
--- uspace view's `where role_parent is not null` branch walks this;
--- role-tree traversal queries (find children of X) use it too. [ghi]
+-- Partial index on role_parent for role-tree traversal. [ghi]
 create index objects_role_parent on objects(role_parent) where role_parent is not null;
 
 create index objects_owner_role  on objects(owner_role)  where owner_role is not null;
 
+
 -- ------------------------------------------------------------
 -- Roles view — single source of truth for "what is a role."
 -- ------------------------------------------------------------
--- A row is a role iff `user = 1` (the root role — the seed) OR
--- `role_parent is not null` (a non-root role in the tree). Two
--- triggers below check this condition when validating role_parent /
--- owner_role FK targets, and the uspace view unions from this view —
--- the definition factors out here so all three touch one source.
---
--- Written as UNION rather than `... where user = 1 or role_parent is
--- not null` because the OR form defeats index selection — SQLite's
--- planner can't split an OR across two different indexes, so it
--- would fall back to a full table scan for `select * from roles`.
--- UNION lets each branch use its own index: `user = 1` hits the
--- objects_user partial index, `role_parent is not null` hits the
--- objects_role_parent partial index. Verified by
--- tests/view-indexes.lua.
---
--- Trigger-time pk lookups (`select 1 from roles where object_pk = X`)
--- still short-circuit to the PK index inside each branch — SQLite
--- flattens the view query and pushes the pk predicate down. [ghi]
+-- Written as UNION rather than `where core_role = 'e' or role_parent
+-- is not null` because the OR form defeats index selection — the
+-- planner can't split an OR across two indexes. UNION lets each
+-- branch use its own partial index. Verified by tests/view-indexes.lua. [ghi]
+
+-- First branch matches only the engine (core_role = 'e', root of the
+-- core-role tree). Cache, user, and every runtime-added role reach the
+-- view via the second branch (they all have role_parent set). [ghi]
 create view roles as
-	select object_pk from objects where user = 1
+	select object_pk from objects where core_role = 'e'
 	union
 	select object_pk from objects where role_parent is not null;
 
+
 -- ------------------------------------------------------------
--- Immutability triggers for the CVM-added role columns. Mikobase's
--- objects_no_update covers the base columns; user and role_parent
--- get their own guards here because those columns don't exist yet
--- when objects_no_update is created. Same pattern as
--- objects_owner_role_immutable further below.
+-- Immutability triggers for the role columns (core_role,
+-- role_parent, owner_role). Below the roles view because they
+-- reference role concepts. [ghi]
 -- ------------------------------------------------------------
 
--- User marker is set at INSERT (on the seed) and never changes. [ghi]
-create trigger objects_user_immutable
-before update of user on objects
-when new.user is not old.user
+-- core_role is set at INSERT and never changes. [ghi]
+create trigger objects_core_role_immutable
+before update of core_role on objects
+when new.core_role is not old.core_role
 begin
-	select raise(abort, 'objects_user_immutable: objects.user is immutable');
+	select raise(abort, 'objects_core_role_immutable: objects.core_role is immutable');
 end;
 
--- role_parent is set at INSERT and never changes — no role
--- reparenting. This immutability is load-bearing: it's what makes
--- the role tree cycle-free (a row can only reference a row that
--- already exists, and no existing row can be repointed at a newer
--- row). [ghi]
+-- role_parent is set at INSERT and never changes. Load-bearing: this
+-- immutability is what makes the role tree cycle-free. [ghi]
 create trigger objects_role_parent_immutable
 before update of role_parent on objects
 when new.role_parent is not old.role_parent
@@ -647,170 +358,110 @@ begin
 	select raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)');
 end;
 
--- Seed the root role. User is the root role: primitive = 'h'
--- (a HashPrimitive per current design), user = 1 marks it as root,
--- persistent = 1 for consistency (the row persists anyway via
--- `where user`), role_parent = null (root has no parent),
--- owner_role = null (grandfathered — this seed exists before the
--- ownership triggers below are created, so nothing checks it).
--- Its object_pk is a fresh UUID from the default. [ghi]
-insert into objects (primitive, user, persistent) values ('h', 1, 1);
+-- Seeds three core-role rows: engine (root), cache, user (both children
+-- of engine via role_parent, owned by engine via owner_role). All three
+-- are HashPrimitives and pinned. Seeded before the ownership triggers
+-- below, so any grandfathering is transparent. [ghi]
 
--- ownership triggers — created AFTER the seed so the user row is
--- grandfathered. Every non-seed insert into objects must have
--- exactly one of role_parent / owner_role set. [ghi]
+-- Engine — root of the core-role tree.
+insert into objects (primitive, core_role, persistent)
+	values ('h', 'e', 1);
 
--- XOR rule: a role cannot have an owner, and a non-role must have one.
--- "Is a role" uses the same definition as elsewhere in this schema:
--- `role_parent is not null OR user = 1`. Rows attempting to set
--- user = 1 are treated as roles for this check (the objects_user
--- unique index separately enforces "at most one user row"). [ghi]
-create trigger objects_role_or_owner_role
+-- Cache — child of engine, owned by engine.
+insert into objects (primitive, core_role, role_parent, owner_role, persistent)
+	values ('h', 'c',
+		(select object_pk from objects where core_role = 'e'),
+		(select object_pk from objects where core_role = 'e'),
+		1);
+
+-- User — child of engine, owned by engine.
+insert into objects (primitive, core_role, role_parent, owner_role, persistent)
+	values ('h', 'u',
+		(select object_pk from objects where core_role = 'e'),
+		(select object_pk from objects where core_role = 'e'),
+		1);
+
+-- Roles may carry owner_role (cache and user are owned by engine).
+-- Non-role rows must have owner_role set. [ghi]
+create trigger objects_owner_role_required_on_non_roles
 before insert on objects
 begin
 	select case
-		when (new.role_parent is not null or new.user = 1)
-				and new.owner_role is not null
-			then raise(abort, 'objects_role_or_owner_role: a role cannot have owner_role — roles have role_parent, other objects have owner_role, never both')
-		when new.role_parent is null and new.user is null
+		when new.role_parent is null and new.core_role is null
 				and new.owner_role is null
-			then raise(abort, 'objects_role_or_owner_role: a non-role must have owner_role set — every non-role object must reference the role that created it')
+			then raise(abort, 'objects_owner_role_required: a non-role must have owner_role set')
 	end;
 end;
 
--- Every non-root role must name a parent that is itself a role.
--- "Is a role" is defined by the `roles` view above (user = 1 or
--- role_parent set). BEFORE INSERT only — role_parent is immutable
--- via objects_role_parent_immutable above, so a row's role-ness is
--- determined at insert time and can't be silently stripped
--- afterward. The WHEN clause skips inserts with role_parent null
--- (the common case). When it does fire, one pk-indexed lookup via
--- the roles view verifies the target row. [ghi]
+-- Every non-root role's role_parent must point at an existing role. [ghi]
 create trigger objects_role_parent_must_be_role
 before insert on objects
 when new.role_parent is not null
 begin
 	select case
 		when (select 1 from roles where object_pk = new.role_parent) is null
-		then raise(abort, 'role_parent_must_be_role: role_parent must reference a row that is itself a role (root user row or a row with role_parent set)')
+		then raise(abort, 'role_parent_must_be_role: role_parent must reference a role')
 	end;
 end;
 
--- A role cannot be its own parent. The must_be_role trigger above
--- already blocks this indirectly at INSERT — the referenced row
--- doesn't exist yet, so the SELECT for "is this a role" returns
--- nothing. But an explicit self-reference check is defense-in-depth
--- with a specific error ID for the diagnostic, and guards against
--- any future path that would allow the target row to be present at
--- check time (e.g., a bulk insert where the row lands first).
---
--- INSERT-only: role_parent is immutable via objects_role_parent_immutable,
--- so the not-self invariant is set at creation and can't be broken. [ghi]
+-- role_parent cannot be self. Defense-in-depth with a specific error ID. [ghi]
 create trigger objects_role_parent_not_self
 before insert on objects
 when new.role_parent is not null and new.role_parent = new.object_pk
 begin
-	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk (a role cannot be its own parent)');
+	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk');
 end;
 
--- owner_role, when set, must reference an actual role. Uses the
--- `roles` view (defined above) as the single source of truth for
--- role-ness. Same shape as objects_role_parent_must_be_role.
--- INSERT-only — owner_role is immutable at INSERT via the trigger
--- below, so a row's owner can't be silently repointed at a non-role
--- after the fact. [ghi]
+-- owner_role, if set, must point at an existing role. [ghi]
 create trigger objects_owner_role_must_be_role
 before insert on objects
 when new.owner_role is not null
 begin
 	select case
 		when (select 1 from roles where object_pk = new.owner_role) is null
-		then raise(abort, 'owner_role_must_be_role: owner_role must reference a row that is itself a role (root user row or a row with role_parent set)')
+		then raise(abort, 'owner_role_must_be_role: owner_role must reference a role')
 	end;
 end;
 
--- owner_role is immutable at INSERT — no reparenting an object
--- between roles at runtime. Matches how role_parent is immutable
--- via objects_role_parent_immutable above; owner_role gets its own
--- guard the same way, one column per trigger, since both columns
--- are CVM additions the Mikobase objects_no_update can't reach. [ghi]
+-- owner_role is immutable at INSERT — no reparenting. [ghi]
 create trigger objects_owner_role_immutable
 before update of owner_role on objects
 when new.owner_role is not old.owner_role
 begin
-	select raise(abort, 'objects_owner_role_immutable: owner_role is immutable (no reparenting an object to a different role)');
+	select raise(abort, 'objects_owner_role_immutable: owner_role is immutable');
 end;
 
--- An object cannot be its own owner. Same class of check as
--- objects_role_parent_not_self above; explicit defense-in-depth with
--- a specific error ID, and structurally: an object owning itself
--- would be a cycle in the ownership graph. [ghi]
+-- owner_role cannot be self. [ghi]
 create trigger objects_owner_role_not_self
 before insert on objects
 when new.owner_role is not null and new.owner_role = new.object_pk
 begin
-	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk (an object cannot be its own owner)');
+	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk');
 end;
 
--- The user row (marked `user = 1`) is the root role and cannot
--- be deleted. Every CVM database starts with user seeded, and
--- nothing above the language layer can remove it. Non-root uspace
--- anchors are freely deletable (that's how an object leaves user
--- space in the first place). [ghi]
+-- Guards any core-role row. [ghi]
 create trigger objects_no_delete_root_role
 before delete on objects
-when old.user
+when old.core_role is not null
 begin
-	select raise(abort, 'root_role_cannot_be_deleted: the user row cannot be deleted');
+	select raise(abort, 'root_role_cannot_be_deleted: core-role rows cannot be deleted');
 end;
 
--- Symmetric with the delete guard above. The per-column immutability
--- triggers already cover most of the user row's fields (object_pk,
--- primitive, scalars, bucket_for/stack_for from Mikobase's
--- objects_no_update, plus user, role_parent, owner_role from the CVM
--- guards above). This trigger closes the small remaining gap
--- (persistent, ast, needs_trace, in_trace on the user row) — no
--- caller should ever be flipping the root role's pin off, attaching
--- an ast to it, or marking it for trace. If a mark trigger ever
--- fires against the user row, that's the bug worth catching: the
--- user row shouldn't be appearing as a child of another container. [ghi]
+-- Guards any core-role row (symmetric with the delete version). [ghi]
 create trigger objects_no_update_root_role
 before update on objects
-when old.user
+when old.core_role is not null
 begin
-	select raise(abort, 'root_role_cannot_be_updated: the user row cannot be updated');
+	select raise(abort, 'root_role_cannot_be_updated: core-role rows cannot be updated');
 end;
 
--- Role tree summary. A row IS a role iff it has role_parent set
--- (non-root) or user = 1 (root). The schema enforces:
---   Single parent — one column, one value.
---   Cycle-free — role_parent is immutable and INSERT requires
---     the target row to exist, so cycles are structurally
---     impossible.
---   Cascade cleanup — FK on delete cascade drops the subtree.
---   Root safety — objects_no_delete_root_role + objects_no_update_root_role
---     keep the user row undeletable and unmutable.
---   Parent-is-a-role — objects_role_parent_must_be_role rejects
---     any insert whose role_parent points at a non-role row.
--- What the schema does NOT check: naming, uniqueness of role
--- names, class-ownership rules — all Lua.
---
--- Roles are anchored in uspace via the uspace view's role branch —
--- the tree's rows are structurally pinned by the FK, not by general
--- reachability. Role bucket contents still trace normally. [ghi]
-
 
 -- ------------------------------------------------------------
--- Instance-level event listeners.
+-- Instance-level event listeners. Registrations are bookkeeping,
+-- not graph edges — GC does NOT count them as reachability. Weak-ref
+-- lifetime via ON DELETE CASCADE on either party. Spec:
+-- requirements/events/index. [ghi]
 -- ------------------------------------------------------------
--- A listener registers to be called when a specific broadcaster
--- emits a specific event. Spec: requirements/events/index.
---
--- Registrations are bookkeeping, not graph edges — they live
--- outside `refs` so GC does NOT count them as reachability.
--- Weak-ref lifetime falls out of ON DELETE CASCADE: when either
--- party's `objects` row is deleted (typically because GC decided it
--- was unreachable), the registration cascade-deletes. [ghi]
 
 create table instance_listeners (
 	reg_pk integer primary key autoincrement,
@@ -818,43 +469,32 @@ create table instance_listeners (
 	broadcaster text not null references objects(object_pk) on delete cascade,
 	listener    text not null references objects(object_pk) on delete cascade,
 
-	-- event and method names are inline text, not references to
-	-- StringPrimitive objects. Interning is an engine-layer
-	-- optimization if it turns out to matter; storage keeps it
-	-- simple. [ghi]
+	-- event / method names are inline text (interning can come later). [ghi]
 	event_name  text not null,
 	method_name text not null,
 
-	-- Idempotent: `.listen_to` called twice with the same combo is
-	-- one registration, not two. The Lua write API uses INSERT OR
-	-- IGNORE to swallow the collision silently. [ghi]
+	-- Idempotent: dup .listen_to is one registration, not two. [ghi]
 	unique (broadcaster, event_name, listener, method_name)
 );
 
--- Dispatch lookup: given a broadcaster + event, find its listeners. [ghi]
+-- Dispatch lookup. [ghi]
 create index instance_listeners_broadcaster on instance_listeners(broadcaster, event_name);
 
--- Unlisten-all lookup: given a listener, find all its rows. [ghi]
+-- Unlisten-all lookup. [ghi]
 create index instance_listeners_listener on instance_listeners(listener);
 
--- Registrations are add-or-remove-only. Every field is immutable
--- after INSERT; to change a registration, DELETE and INSERT. [ghi]
+-- Registrations are immutable; change = delete + insert. [ghi]
 create trigger instance_listeners_no_update
 before update on instance_listeners
 begin
-	select raise(abort, 'instance_listeners_no_update: instance_listeners rows are immutable; delete and re-insert to change');
+	select raise(abort, 'instance_listeners_no_update: rows are immutable');
 end;
 
+
 -- ------------------------------------------------------------
--- Class-level event listeners.
+-- Class-level event listeners. Same shape as instance_listeners
+-- but keyed by class. Spec: requirements/events/listen-to-class. [ghi]
 -- ------------------------------------------------------------
--- Same shape as instance_listeners but keyed by class rather than a
--- specific broadcaster instance. When any instance of the class
--- (or a descendant, via the engine's ancestor-chain walk)
--- broadcasts the event, dispatch fires this registration. Classes
--- in Caspian are ordinary objects, so `class` targets `objects`
--- like any other reference. Spec:
--- requirements/events/listen-to-class. [ghi]
 
 create table class_listeners (
 	reg_pk integer primary key autoincrement,
@@ -874,220 +514,45 @@ create index class_listeners_listener on class_listeners(listener);
 create trigger class_listeners_no_update
 before update on class_listeners
 begin
-	select raise(abort, 'class_listeners_no_update: class_listeners rows are immutable; delete and re-insert to change');
+	select raise(abort, 'class_listeners_no_update: rows are immutable');
 end;
 
 
--- ------------------------------------------------------------
--- Processes — call stack roots.
--- ------------------------------------------------------------
--- Runtime execution state under the frames-as-objects model lives
--- as regular rows in `objects` (see the frame-shaped objects branch
--- of the objects table). The `processes` table stays as a small,
--- purpose-built root — each row is one call stack. Frames themselves
--- are ordinary objects that reference their process via a bucket
--- field or a dedicated FK (still to be worked out below). [ghi]
---
--- `processes` is plural: the schema accommodates multiple execution
--- contexts coexisting in one CVM file — coroutines, fork children,
--- multiple paused processes, or shared-object-graph concurrency.
---
--- No seed row — each engine creates its own processes row on
--- startup and holds its pk in Lua-side state (see engine.lua's Open
--- questions block). Multi-process features will create additional
--- rows here at runtime.
-
-create table processes (
-	-- UUID4-shaped text pk, generated the same way as objects.object_pk
-	-- (hex-encoded randomblob assembled with UUID hyphen positions). Text
-	-- rather than autoincrement integer so two independently-created
-	-- CVM files can be joined without pk collision — matches the
-	-- discipline the object graph already runs on.
-	process_pk text primary key default (
-		lower(
-			substr(hex(randomblob(4)), 1, 8) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(6)), 1, 12)
-		)
-	),
-
-	-- Completion flag. 0 = the process has frames left to execute (or
-	-- can still be resumed); 1 = the process finished. Default 0 —
-	-- fresh processes start incomplete. NOT NULL and CHECK-bounded to
-	-- {0, 1} so the column is a clean boolean the engine can rely on
-	-- without null-checks. Set to 1 by the `processes_complete_after_
-	-- frame_0_delete` trigger when frame 0 is deleted. [ghi]
-	complete integer not null default 0 check (complete in (0, 1)),
-
-	-- Message. Text — free-form; the engine decides the wire form. The
-	-- caller reaps this value into the return hash after run(). Nullable
-	-- and defaults null: a process that never sets a message and a
-	-- process that hasn't finished yet both leave this null. [ghi]
-	message text default null
-);
-
--- process_pk is immutable. Every other column on `processes` is freely
--- mutable — `complete` flips 0→1 at shutdown, `message` gets written
--- by whatever handler produces the process's return value. Ending a
--- process is a DELETE. [ghi]
-create trigger processes_no_update
-before update on processes
-when new.process_pk is not old.process_pk
-begin
-	select raise(abort, 'processes_pk_immutable: processes.process_pk is immutable');
-end;
-
--- When frame 0 of a process is deleted — the terminal act of a
--- successful run — flip the process's `complete` to 1. Bundles
--- mark-complete + delete-frame into one atomic SQL operation; the
--- Lua walker only has to issue the DELETE. [ghi]
+-- When frame 0 of a process is deleted, flip processes.complete = 1.
+-- Bundles mark-complete + delete-frame into one atomic SQL operation. [ghi]
 create trigger processes_complete_after_frame_0_delete
 after delete on objects
-when old.primitive = 'f' and old.process is not null
+when old.primitive = 'f' and old.process_pk is not null
 begin
-	update processes set complete = 1 where process_pk = old.process;
+	update processes set complete = 1 where process_pk = old.process_pk;
 end;
 
--- ------------------------------------------------------------
--- objects.process — frame → process FK, deferred to here.
--- ------------------------------------------------------------
--- Declared after `create table processes` so SQLite can resolve the
--- FK target. Set on a frame while it's on a process's stack. Set to
--- null on pop, along with `stmt_idx`, so a frame that survives past
--- its pop (kept alive by a closure ref, for example) carries
--- `primitive = 'f'` but no stack coordinates. The row's own lifetime
--- is governed by the standard object-graph mark-sweep from that
--- point on.
---
--- Under the frames-as-objects design, only frame 0 of a process
--- binds directly to `processes` via this column; every sub-frame
--- (frame 1, 2, ...) sets `frame_parent` instead and leaves `process`
--- null. The stack walks from frame 0 down via `frame_parent`-inverse
--- lookups. See `frame_parent` below.
---
--- Free to change value → null (pop) or null → value (an as-yet-
--- unspec'd "revive a detached frame" flow); doesn't migrate a live
--- frame between processes. Explicit anti-migration enforcement isn't
--- written down yet.
---
--- CHECK: only frames (primitive = 'f') carry this column.
---
--- Same trade as stmt_idx above: promoting the process reference out
--- of a bucket entry saves three rows per frame (the number-scalar
--- objects row, its refs link, and the bucket entry).
--- SQLite skips FK checks on null values, so a null on non-frame
--- rows costs nothing.
---
--- No cascade on delete — process teardown policy is a Caspian-level
--- concern to be spec'd. [ghi]
-alter table objects add column process text
-	references processes(process_pk)
-	check (process is null or primitive = 'f');
-
--- Partial index over frames currently on a stack (uspace's frame
--- anchor branch). Under frames-as-objects only frame 0 carries
--- `process`; sub-frames chain via `frame_parent` (below). So this
--- index effectively locates the frame-0 anchor per process; the
--- rest of the stack is found by walking `frame_parent` from there.
--- [ghi]
-create index objects_frame_on_stack on objects(process)
-	where primitive = 'f' and process is not null;
 
 -- ------------------------------------------------------------
--- objects.frame_parent — sub-frame → parent-frame FK.
+-- Frame-column indexes.
 -- ------------------------------------------------------------
--- Only frame 0 of a process binds to `processes` via `process`.
--- Every sub-frame (frame 1, 2, ...) sets `frame_parent` to the pk
--- of the frame that pushed it and leaves `process` null. The stack
--- is walked from frame 0 down via `frame_parent`-inverse queries
--- (see `cvm/get_latest_frame.lua`).
---
--- Motivation. Binding every frame directly to the process forecloses
--- future systems where multiple processes share the tail of a call
--- chain (fan-in). Binding only frame 0 leaves that door open — the
--- sharing question becomes a matter of how many things can point at
--- one frame's pk, not "we already committed every frame to one
--- process". [ghi]
---
--- CHECK: only frames (primitive = 'f') carry this column.
--- FK: `frame_parent` points at another `objects` row (its parent
--- frame). No cascade — pop semantics are engine-managed, not FK-
--- managed. [ghi]
-alter table objects add column frame_parent text
-	references objects(object_pk)
-	check (frame_parent is null or primitive = 'f');
 
--- Partial index for the child-of-frame walk. Given a frame pk, find
--- the frame whose `frame_parent` points at it — that's the next
--- frame down the stack. Under the current push model there's at
--- most one such child at a time.
+-- Frames currently on a stack. Only frame 0 carries process_pk;
+-- sub-frames chain via frame_parent. [ghi]
+create index objects_frame_on_stack on objects(process_pk)
+	where primitive = 'f' and process_pk is not null;
+
+-- Child-of-frame walk: given a frame pk, find its child sub-frame. [ghi]
 create index objects_frame_by_parent on objects(frame_parent)
 	where primitive = 'f' and frame_parent is not null;
 
+
 -- ------------------------------------------------------------
--- uspace — derived view of GC anchor set.
+-- uspace — derived view of GC anchor set. Cost per check: one
+-- indexed lookup per union branch. [ghi]
 -- ------------------------------------------------------------
--- Membership in "uspace" is computed dynamically from actual
--- anchoring rather than stored as a column. Uspace is GLOBAL: an
--- object is in uspace if it's anchored by ANY frame in ANY
--- process. Under the shared-object-graph model, references from
--- any process count — GC sweeps only objects that no process
--- anchors.
---
--- An object is in uspace when it's:
---
---   * The root role (user, pk = 1).
---   * Explicitly pinned via `persistent = 1`.
---   * A role (via the role_parent chain rooted at user).
---   * A frame currently on a process's stack (`primitive = 'f'` AND
---     `process is not null`). Everything the frame anchors — its
---     locals, and eventually its ambers, delegations, and the closure
---     capture link — is reachable from the frame row via the standard
---     `refs` walk, so one uspace branch per frame is enough to bring
---     the whole live-execution subgraph in.
---
--- A frame that's been popped but survives (a closure captured it)
--- carries `primitive = 'f'` with null stack coordinates. It's not
--- uspace itself — the closure that captured it IS uspace-reachable,
--- and the frame stays alive because that closure holds a ref to it.
--- Standard mark-sweep does the work.
---
--- Buckets and stacks are NOT in this list. They live inside their
--- owner via bucket_for / stack_for (ON DELETE CASCADE handles
--- owner-goes-so-bucket-goes at the FK level). Under normal
--- CVM ops nothing puts a bucket or stack row as a child in
--- the refs table, so mark triggers never fire on them —
--- they never become GC candidates.
---
--- Roles (children of user in the role tree) aren't a special
--- case — they're regular objects reachable via refs from
--- user's bucket → 'children' array → child roles. Standard trace
--- reaches them from user (which IS in uspace).
---
--- The listener registration tables (instance_listeners,
--- class_listeners) are deliberately NOT in the union — their FK
--- cascade is documented as weak-ref lifetime, so a listener
--- registration is not enough to keep either party alive.
---
--- Cost per check: one indexed lookup per union branch. Anchor
--- tables have small row counts in typical programs; the UNION is
--- cheap in practice. [ghi]
 
 create view uspace as
-	-- Every role (root + non-root) — pulled from the `roles` view
-	-- so uspace and the trigger-time role checks share one
-	-- definition of role-ness. [ghi]
+	-- Every role (root + non-root) — pulled from the roles view. [ghi]
 	select object_pk from roles
 	union
-	-- Objects flagged persistent — pinned regardless of other anchors.
-	-- `= 1` (rather than truthy `where persistent`) so the
-	-- objects_persistent partial index applies. [ghi]
+	-- Objects flagged persistent. [ghi]
 	select object_pk from objects where persistent = 1
 	union
-	-- Frames currently on a process's stack. The partial index
-	-- `objects_frame_on_stack` makes this branch index-only. Everything
-	-- the frame anchors reaches uspace via the standard `refs` walk
-	-- from the frame row. [ghi]
-	select object_pk from objects where primitive = 'f' and process is not null;
+	-- Frames currently on a process's stack. [ghi]
+	select object_pk from objects where primitive = 'f' and process_pk is not null;

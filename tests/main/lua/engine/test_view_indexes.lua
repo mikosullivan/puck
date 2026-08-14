@@ -90,14 +90,14 @@ test("roles: pk lookup does not fall back to a full scan", function()
 	db:close()
 end)
 
-test("roles: full listing uses the user + role_parent indexes, no full scan", function()
+test("roles: full listing uses the core_role + role_parent indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from roles")
-	-- The user-branch of the UNION should hit the UNIQUE-on-user autoindex,
-	-- and the role_parent branch should hit the partial index. Neither
-	-- should scan.
-	assert_plan_contains(p, "USING INDEX objects_user (user=?)",
-		"user branch should use the objects_user partial unique index")
+	-- The core_role='e' branch should hit the objects_core_role partial
+	-- unique index; the role_parent branch should hit its partial index.
+	-- Neither should scan.
+	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)",
+		"engine branch should use the objects_core_role partial unique index")
 	assert_plan_contains(p, "USING INDEX objects_role_parent",
 		"role_parent branch should use the partial index")
 	assert_plan_lacks(p, "SCAN objects",
@@ -120,11 +120,11 @@ test("uspace: pk lookup uses the PK index in each union branch", function()
 	db:close()
 end)
 
-test("uspace: full listing uses user + role_parent + persistent indexes, no full scan", function()
+test("uspace: full listing uses core_role + role_parent + persistent indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
-	assert_plan_contains(p, "USING INDEX objects_user (user=?)",
-		"user branch of roles → uspace should use the objects_user partial unique index")
+	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)",
+		"engine branch of roles → uspace should use the objects_core_role partial unique index")
 	assert_plan_contains(p, "USING INDEX objects_role_parent",
 		"role_parent branch should use the partial index")
 	assert_plan_contains(p, "USING INDEX objects_persistent",
@@ -173,24 +173,22 @@ test("`where persistent = 1` uses the objects_persistent partial index", functio
 	db:close()
 end)
 
-test("`where user = 1` uses the objects_user partial unique index", function()
+test("`where core_role = 'e'` uses the objects_core_role partial unique index", function()
 	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where user = 1")
-	-- The user column's UNIQUE lives in the objects_user partial
-	-- index (`where user = 1`) — SQLite ALTER TABLE ADD COLUMN
-	-- doesn't accept inline UNIQUE, so the constraint moves to
-	-- an explicit index in the CVM section.
-	assert_plan_contains(p, "USING INDEX objects_user (user=?)")
+	local p = plan(db, "select object_pk from objects where core_role = 'e'")
+	-- The core_role column's UNIQUE lives in the objects_core_role
+	-- partial index (`where core_role is not null`).
+	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)")
 	db:close()
 end)
 
 test("uspace's frame-anchor branch uses the objects_frame_on_stack partial index", function()
 	local db = fresh_db()
-	-- uspace's third branch is `where primitive = 'f' and process is not null`.
+	-- uspace's third branch is `where primitive = 'f' and process_pk is not null`.
 	-- Test that predicate directly against objects so the plan
 	-- output surfaces the specific index; the same predicate inside
 	-- the view flattens to it.
-	local p = plan(db, "select object_pk from objects where primitive = 'f' and process is not null")
+	local p = plan(db, "select object_pk from objects where primitive = 'f' and process_pk is not null")
 	assert_plan_contains(p, "USING INDEX objects_frame_on_stack")
 	db:close()
 end)

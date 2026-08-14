@@ -138,7 +138,7 @@ function cvm.new(db)
 	)
 
 	self.stmt_add_frame = db:prepare(
-		"insert into objects (primitive, ast, process, stmt_idx, owner_role) " ..
+		"insert into objects (primitive, ast, process_pk, stmt_idx, owner_role) " ..
 		"values ('f', ?, ?, 0, ?) returning object_pk"
 	)
 

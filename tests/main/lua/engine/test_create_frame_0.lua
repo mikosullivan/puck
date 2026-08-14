@@ -85,7 +85,7 @@ h.test("create_frame_0 creates exactly one 'f' frame row", function()
 	db:close()
 end)
 
-h.test('create_frame_0 — frame binds to the just-created process via `process` column', function()
+h.test('create_frame_0 — frame binds to the just-created process via `process_pk` column', function()
 	local db = cvm.open()
 	local frame_pk = create_frame_0(db, fake_engine(sample_caspm()))
 
@@ -98,10 +98,10 @@ h.test('create_frame_0 — frame binds to the just-created process via `process`
 	local frame_process
 
 	for row in db:nrows(string.format(
-		"select process from objects where object_pk = '%s'",
+		"select process_pk from objects where object_pk = '%s'",
 		frame_pk
 	)) do
-		frame_process = row.process
+		frame_process = row.process_pk
 	end
 
 	h.assert_eq(frame_process, process_pk_from_row, "frame's process column should point at the created process")
@@ -131,7 +131,7 @@ h.test("create_frame_0 — frame's owner_role is the user seed", function()
 
 	local user_pk
 
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 

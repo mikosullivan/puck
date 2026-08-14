@@ -67,16 +67,16 @@ h.test('after empty run, the frame row is gone from objects', function()
 	h.assert_eq(frame_count, 0, 'expected zero frame rows after shutdown')
 end)
 
-h.test('after empty run, only the user seed remains in objects', function()
+h.test('after empty run, only the three core-role seeds remain in objects', function()
 	local e = engine.new()
 	e.caspm = {}
 	e:run()
 
 	local total = scalar(e.cvm, 'select count(*) from objects')
-	h.assert_eq(total, 1, 'expected one object row (the user seed) after shutdown')
+	h.assert_eq(total, 3, 'expected three object rows (engine, cache, user seeds) after shutdown')
 
-	local user_count = scalar(e.cvm, 'select count(*) from objects where user = 1')
-	h.assert_eq(user_count, 1, 'expected the surviving row to be the user seed')
+	local core_role_count = scalar(e.cvm, 'select count(*) from objects where core_role is not null')
+	h.assert_eq(core_role_count, 3, 'expected all three surviving rows to be core-role seeds')
 end)
 
 h.test('after empty run, refs is still empty', function()

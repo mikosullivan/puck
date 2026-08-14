@@ -49,14 +49,14 @@ h.test("engine.new()'s CVM is a functional SQLite handle", function()
 	end
 
 	h.assert_true(n ~= nil, 'query returned a row')
-	h.assert_eq(n, 1, 'seed row is present (one row in objects after open)')
+	h.assert_eq(n, 3, 'three seed rows present after open (engine, cache, user)')
 end)
 
 h.test("engine.new()'s CVM has the user seed row", function()
 	local e = engine.new()
 	local count = nil
 
-	for row in e.cvm:nrows('select count(*) as n from objects where user') do
+	for row in e.cvm:nrows("select count(*) as n from objects where core_role = 'u'") do
 		count = row.n
 	end
 
@@ -90,7 +90,7 @@ h.test("each engine.new() gets its own CVM", function()
 	-- Insert a plain HashPrimitive into e1's CVM and verify e2 doesn't see it.
 	-- Non-role inserts need owner_role set; use the user seed as owner.
 	local user_pk
-	for row in e1.cvm:nrows('select object_pk from objects where user') do
+	for row in e1.cvm:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 	local ok = e1.cvm:exec(
@@ -108,6 +108,6 @@ h.test("each engine.new() gets its own CVM", function()
 		n2 = row.n
 	end
 
-	h.assert_eq(n1, 2, 'e1 sees seed + new insert')
-	h.assert_eq(n2, 1, 'e2 sees only the seed — its CVM is independent')
+	h.assert_eq(n1, 4, 'e1 sees three seeds + new insert')
+	h.assert_eq(n2, 3, 'e2 sees only the three seeds — its CVM is independent')
 end)

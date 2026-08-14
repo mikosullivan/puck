@@ -1,13 +1,9 @@
 ~~~vibecode
-{"doc": "sprint-note", "sprint": "cache",
-	"role": "CVM state at the moment the engine is constructed but hasn't yet started running a process. Under the cache-sprint design, the schema seeds three core-role rows: engine (root), cache (child of engine), user (child of engine)."}
+{"doc": "note",
+	"role": "CVM state at the moment the engine is constructed but hasn't yet started running a process. The schema seeds three core-role rows: engine (root), cache (child of engine), user (child of engine)."}
 ~~~
 
-# Multiple roles
-
-This process explores how we might add two more roles to the CVM.
-
-## Pre-run state
+# Pre-run state
 
 The CVM state right after `engine.new()` returns and before any process is run. `cvm.open()` has installed the schema and seeded the three core-role rows; nothing else has happened yet. This is the baseline the cache design starts from — the "empty ready-to-go" state.
 

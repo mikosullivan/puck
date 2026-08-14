@@ -17,7 +17,7 @@ local cvm              = require('cvm.open')
 local get_latest_frame = require('cvm.get_latest_frame')
 
 local function user_pk(db)
-	for row in db:nrows("select object_pk from objects where user") do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		return row.object_pk
 	end
 end
@@ -30,7 +30,7 @@ end
 
 local function push_frame_0(db, process_pk, user)
 	local sql = string.format(
-		"insert into objects (primitive, ast, process, stmt_idx, owner_role) " ..
+		"insert into objects (primitive, ast, process_pk, stmt_idx, owner_role) " ..
 		"values ('f', '[[]]', '%s', 0, '%s') returning object_pk",
 		process_pk, user
 	)
@@ -64,7 +64,7 @@ h.test('get_latest_frame — three-deep stack returns the deepest frame', functi
 	local frame_0_count
 
 	for row in db:nrows(string.format(
-		"select count(*) as n from objects where primitive = 'f' and process = '%s'",
+		"select count(*) as n from objects where primitive = 'f' and process_pk = '%s'",
 		process_pk
 	)) do
 		frame_0_count = row.n

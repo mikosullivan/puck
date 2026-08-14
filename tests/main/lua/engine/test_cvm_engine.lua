@@ -48,7 +48,7 @@ end
 local function user_pk(db)
 	local pk
 
-	for row in db:nrows("select object_pk from objects where user") do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		pk = row.object_pk
 	end
 
@@ -135,7 +135,7 @@ test("object_by_pk returns an object with the row's columns for an existing pk",
 	assert_not_nil(obj, "object returned")
 	assert_eq(obj.object_pk, user, "object_pk column lifted onto self")
 	assert_eq(obj.primitive, "h", "user seed primitive is 'h'")
-	assert_eq(obj.user, 1, "user seed's user column is 1")
+	assert_eq(obj.core_role, "u", "user seed's core_role column is 'u'")
 
 	db:close()
 end)
@@ -922,7 +922,7 @@ end)
 -- add_frame
 -- ==============================================================
 
-test("add_frame inserts a primitive='f' row with ast, process, stmt_idx=0, owner_role", function()
+test("add_frame inserts a primitive='f' row with ast, process_pk, stmt_idx=0, owner_role", function()
 	local db = fresh_db()
 	local e = engine.new(db)
 	local user = user_pk(db)
@@ -946,7 +946,7 @@ test("add_frame inserts a primitive='f' row with ast, process, stmt_idx=0, owner
 
 	assert_eq(row.primitive, 'f',              "primitive should be 'f'")
 	assert_eq(row.ast,       '[[]]',           "ast should be the passed value")
-	assert_eq(row.process,   process_pk,       "process should be the passed pk")
+	assert_eq(row.process_pk,   process_pk,       "process should be the passed pk")
 	assert_eq(row.stmt_idx,  0,                "stmt_idx should be 0 at push")
 	assert_eq(row.owner_role, user,            "owner_role should be the passed pk")
 
@@ -1083,7 +1083,7 @@ test("stmt_idx / idx / process rejected on non-frame rows", function()
 	-- process on 'o' — use a text UUID-shape value; would fail FK anyway
 	-- but the CHECK should fire on primitive != 'f'.
 	rc = db:exec(string.format(
-		"insert into objects (primitive, process, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
+		"insert into objects (primitive, process_pk, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
 	))
 	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject process on 'o'")
 

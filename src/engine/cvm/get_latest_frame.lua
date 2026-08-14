@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "get_latest_frame",
-	"role": "Sprint frame-0 routine: returns the deepest on-stack frame in the given process. Read-only. Only frame 0 binds to `processes` via `process`; sub-frames chain via `frame_parent`. The routine finds frame 0 with one indexed lookup, then walks the parent-inverse chain in a Lua loop, one indexed hop per step. Raises get_latest_frame_process_not_found if the process pk isn't in the processes table. Returns nil if the process exists but has no frames.",
+	"role": "Sprint frame-0 routine: returns the deepest on-stack frame in the given process. Read-only. Only frame 0 binds to `processes` via `process_pk`; sub-frames chain via `frame_parent`. The routine finds frame 0 with one indexed lookup, then walks the parent-inverse chain in a Lua loop, one indexed hop per step. Raises get_latest_frame_process_not_found if the process pk isn't in the processes table. Returns nil if the process exists but has no frames.",
 	"exports": {
 		"(function)": "(db, process_pk) -> frame_pk | nil"
 	},
@@ -20,9 +20,9 @@ Given a CVM db handle and a process pk, returns the deepest on-stack frame in th
 - Process exists, 0 on-stack frames → `nil`. Cleanup of empty processes is done later, not by this routine.
 - Process doesn't exist → raises `get_latest_frame_process_not_found` naming the pk the caller passed. A caller told to look inside a process that isn't in the DB has a bug — fail loudly at the earliest layer that can detect it (per [invariant violations](https://puck.uno/requirements/concepts#invariant-violations-crash-the-program)).
 
-**How the deepest frame is found.** Only frame 0 of a process carries `process`; every sub-frame carries `frame_parent` pointing at the frame that pushed it. So the walk is:
+**How the deepest frame is found.** Only frame 0 of a process carries `process_pk`; every sub-frame carries `frame_parent` pointing at the frame that pushed it. So the walk is:
 
-1. `select object_pk from objects where primitive = 'f' and process = ?` — one indexed lookup, returns frame 0 (or nothing if the process is empty).
+1. `select object_pk from objects where primitive = 'f' and process_pk = ?` — one indexed lookup, returns frame 0 (or nothing if the process is empty).
 2. Loop: `select object_pk from objects where primitive = 'f' and frame_parent = ?` — one indexed lookup per hop, taking `object_pk` from the previous step as the parent. Under the current push model there's at most one such child per frame.
 3. Terminate when the child query returns nothing — the last frame with no child is the deepest.
 
@@ -60,12 +60,12 @@ local function get_latest_frame(db, process_pk)
 
 	-- 2. Find frame 0 — the one frame in this process that binds to
 	--    `processes` directly. At most one row can match under the
-	--    convention (only frame 0 sets `process`).
+	--    convention (only frame 0 sets `process_pk`).
 	local frame_0_pk
 
 	local frame_0_stmt = db:prepare(
 		"select object_pk from objects " ..
-		"where primitive = 'f' and process = ?"
+		"where primitive = 'f' and process_pk = ?"
 	)
 	frame_0_stmt:bind_values(process_pk)
 

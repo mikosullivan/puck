@@ -65,7 +65,7 @@ h.test('schema seeds the user row', function()
 
 	local count = nil
 
-	for row in db:nrows('select count(*) as n from objects where user') do
+	for row in db:nrows("select count(*) as n from objects where core_role = 'u'") do
 		count = row.n
 	end
 
@@ -78,7 +78,7 @@ h.test('user row has a UUID-shaped object_pk', function()
 
 	local pk = nil
 
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		pk = row.object_pk
 	end
 
@@ -93,7 +93,7 @@ h.test('user row has persistent = 1', function()
 
 	local persistent = nil
 
-	for row in db:nrows('select persistent from objects where user') do
+	for row in db:nrows("select persistent from objects where core_role = 'u'") do
 		persistent = row.persistent
 	end
 
@@ -101,16 +101,35 @@ h.test('user row has persistent = 1', function()
 	db:close()
 end)
 
-h.test('user row has role_parent = null (root)', function()
+h.test('engine row has role_parent = null (root of the core-role tree)', function()
 	local db = cvm.open()
 
 	local role_parent = 'not-null-sentinel'
 
-	for row in db:nrows('select role_parent from objects where user') do
+	for row in db:nrows("select role_parent from objects where core_role = 'e'") do
 		role_parent = row.role_parent
 	end
 
-	h.assert_true(role_parent == nil, 'root role should have role_parent = null, got ' .. tostring(role_parent))
+	h.assert_true(role_parent == nil, 'engine (root of the tree) should have role_parent = null, got ' .. tostring(role_parent))
+	db:close()
+end)
+
+h.test('cache and user rows have role_parent set to engine', function()
+	local db = cvm.open()
+
+	local engine_pk
+	for row in db:nrows("select object_pk from objects where core_role = 'e'") do
+		engine_pk = row.object_pk
+	end
+
+	for _, role in ipairs({'c', 'u'}) do
+		local role_parent
+		for row in db:nrows(string.format("select role_parent from objects where core_role = '%s'", role)) do
+			role_parent = row.role_parent
+		end
+		h.assert_eq(role_parent, engine_pk, "core role '" .. role .. "' should have role_parent = engine's pk")
+	end
+
 	db:close()
 end)
 
@@ -121,7 +140,7 @@ end)
 h.test('cannot delete the user row (root role trigger)', function()
 	local db = cvm.open()
 
-	local rc = db:exec('delete from objects where user;')
+	local rc = db:exec("delete from objects where core_role = 'u';")
 	local msg = db:errmsg()
 
 	h.assert_true(rc ~= 0, 'delete should have failed but rc = ' .. tostring(rc))
@@ -130,13 +149,22 @@ h.test('cannot delete the user row (root role trigger)', function()
 	db:close()
 end)
 
-h.test('cannot insert a second user = 1 row (unique)', function()
+h.test("cannot insert a second row with core_role = 'u' (unique)", function()
 	local db = cvm.open()
 
-	local rc = db:exec("insert into objects (primitive, user) values ('h', 1);")
+	-- Second user-role insert must satisfy other invariants first
+	-- (owner_role required on non-roles; role_parent must exist). Give
+	-- it engine as both owner and parent, then let the UNIQUE fire on
+	-- core_role.
+	local rc = db:exec([[
+		insert into objects (primitive, core_role, role_parent, owner_role)
+		values ('h', 'u',
+			(select object_pk from objects where core_role = 'e'),
+			(select object_pk from objects where core_role = 'e'));
+	]])
 	local msg = db:errmsg()
 
-	h.assert_true(rc ~= 0, 'second user insert should have failed but rc = ' .. tostring(rc))
+	h.assert_true(rc ~= 0, 'second core_role=u insert should have failed but rc = ' .. tostring(rc))
 	h.assert_true(msg:find('UNIQUE', 1, true) ~= nil or msg:find('unique', 1, true) ~= nil, 'expected UNIQUE violation, got: ' .. tostring(msg))
 
 	db:close()
@@ -171,7 +199,7 @@ h.test('cannot insert with role_parent pointing at a non-role row', function()
 	-- Under the ownership rule, non-role objects must have owner_role set;
 	-- point it at the user row (the only role that exists at test start).
 	local user_pk = nil
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
@@ -182,7 +210,7 @@ h.test('cannot insert with role_parent pointing at a non-role row', function()
 
 	local non_role_pk = nil
 
-	for row in db:nrows("select object_pk from objects where user is null and role_parent is null and primitive = 'h' order by rowid desc limit 1") do
+	for row in db:nrows("select object_pk from objects where core_role = 'u' is null and role_parent is null and primitive = 'h' order by rowid desc limit 1") do
 		non_role_pk = row.object_pk
 	end
 
@@ -207,7 +235,7 @@ h.test('can insert with role_parent pointing at a role (root or non-root)', func
 	-- Insert child of root — should succeed.
 	local user_pk = nil
 
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
@@ -243,7 +271,7 @@ h.test('cannot update role_parent on an existing row (immutable)', function()
 	-- Insert a role as a child of user.
 	local user_pk = nil
 
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
@@ -252,8 +280,10 @@ h.test('cannot update role_parent on an existing row (immutable)', function()
 	stmt:step()
 	stmt:finalize()
 
-	-- Try to null out role_parent.
-	local rc = db:exec('update objects set role_parent = null where role_parent is not null;')
+	-- Try to null out role_parent on the just-inserted non-core-role
+	-- child (predicate excludes the seeded core-role rows so the
+	-- core-role guard doesn't fire first).
+	local rc = db:exec('update objects set role_parent = null where role_parent is not null and core_role is null;')
 	local msg = db:errmsg()
 
 	h.assert_true(rc ~= 0, 'update of role_parent should have failed but rc = ' .. tostring(rc))
@@ -263,30 +293,36 @@ h.test('cannot update role_parent on an existing row (immutable)', function()
 end)
 
 ------------------------------------------------------------
--- Ownership rule: role_parent XOR owner_role
+-- Ownership rule: non-role rows must have owner_role set.
+-- (The old XOR rule "roles cannot have owner_role" was dropped
+-- under the cache design — cache and user are both roles AND
+-- owned by engine.)
 ------------------------------------------------------------
 
-h.test('non-role insert without owner_role raises objects_role_or_owner_role', function()
+h.test('non-role insert without owner_role raises objects_owner_role_required', function()
 	local db = cvm.open()
 
 	local rc = db:exec("insert into objects (primitive) values ('h');")
 	local msg = db:errmsg()
 
 	h.assert_true(rc ~= 0, 'insert without owner_role should have failed but rc = ' .. tostring(rc))
-	h.assert_true(msg:find('objects_role_or_owner_role', 1, true) ~= nil,
-		'expected objects_role_or_owner_role, got: ' .. tostring(msg))
+	h.assert_true(msg:find('objects_owner_role_required', 1, true) ~= nil,
+		'expected objects_owner_role_required, got: ' .. tostring(msg))
 
 	db:close()
 end)
 
-h.test('role insert with owner_role raises objects_role_or_owner_role', function()
+h.test('role insert with owner_role is allowed (XOR rule dropped)', function()
 	local db = cvm.open()
 
 	local user_pk
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
+	-- Insert a role (role_parent set) that also has owner_role set —
+	-- allowed under the new design (cache and user are seeded exactly
+	-- like this).
 	local stmt = db:prepare(
 		"insert into objects (primitive, role_parent, owner_role) values ('h', ?, ?);"
 	)
@@ -295,9 +331,7 @@ h.test('role insert with owner_role raises objects_role_or_owner_role', function
 	local msg = db:errmsg()
 	stmt:finalize()
 
-	h.assert_true(rc ~= 101, 'insert with both role_parent + owner_role should have failed but rc = ' .. tostring(rc))
-	h.assert_true(msg:find('objects_role_or_owner_role', 1, true) ~= nil,
-		'expected objects_role_or_owner_role, got: ' .. tostring(msg))
+	h.assert_true(rc == 101, 'insert with both role_parent + owner_role should have succeeded, got rc = ' .. tostring(rc) .. ', msg: ' .. tostring(msg))
 
 	db:close()
 end)
@@ -306,7 +340,7 @@ h.test('owner_role pointing at a non-role raises owner_role_must_be_role', funct
 	local db = cvm.open()
 
 	local user_pk
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
@@ -320,7 +354,7 @@ h.test('owner_role pointing at a non-role raises owner_role_must_be_role', funct
 
 	local non_role_pk
 	for row in db:nrows(
-			"select object_pk from objects where user is null and role_parent is null "
+			"select object_pk from objects where core_role = 'u' is null and role_parent is null "
 			.. "and primitive = 'h' order by rowid desc limit 1") do
 		non_role_pk = row.object_pk
 	end
@@ -343,7 +377,7 @@ h.test('owner_role is immutable — update raises objects_owner_role_immutable',
 	local db = cvm.open()
 
 	local user_pk
-	for row in db:nrows('select object_pk from objects where user') do
+	for row in db:nrows("select object_pk from objects where core_role = 'u'") do
 		user_pk = row.object_pk
 	end
 
@@ -365,8 +399,10 @@ h.test('owner_role is immutable — update raises objects_owner_role_immutable',
 	stmt:step()
 	stmt:finalize()
 
-	-- Try to reparent it.
-	local rc = db:exec("update objects set owner_role = '" .. role_pk .. "' where owner_role is not null;")
+	-- Try to reparent the non-role we just inserted. Predicate excludes
+	-- the seeded core-role rows (which also have owner_role set) so the
+	-- core-role guard doesn't fire first.
+	local rc = db:exec("update objects set owner_role = '" .. role_pk .. "' where owner_role is not null and core_role is null;")
 	local msg = db:errmsg()
 
 	h.assert_true(rc ~= 0, 'update of owner_role should have failed but rc = ' .. tostring(rc))
@@ -421,17 +457,17 @@ h.test('owner_role = object_pk raises objects_owner_role_not_self', function()
 	db:close()
 end)
 
-h.test('user seed is grandfathered — role_parent and owner_role both null', function()
+h.test("engine seed has role_parent and owner_role both null (root of the core-role tree)", function()
 	local db = cvm.open()
 
 	local rp, ow
-	for row in db:nrows('select role_parent, owner_role from objects where user') do
+	for row in db:nrows("select role_parent, owner_role from objects where core_role = 'e'") do
 		rp = row.role_parent
 		ow = row.owner_role
 	end
 
-	h.assert_true(rp == nil, 'user seed role_parent should be null, got: ' .. tostring(rp))
-	h.assert_true(ow == nil, 'user seed owner_role should be null, got: ' .. tostring(ow))
+	h.assert_true(rp == nil, 'engine seed role_parent should be null, got: ' .. tostring(rp))
+	h.assert_true(ow == nil, 'engine seed owner_role should be null, got: ' .. tostring(ow))
 
 	db:close()
 end)
@@ -489,7 +525,7 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 
 	local first_pk
 
-	for row in db1:nrows('select object_pk from objects where user') do
+	for row in db1:nrows("select object_pk from objects where core_role = 'u'") do
 		first_pk = row.object_pk
 	end
 
@@ -504,7 +540,7 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 	-- Sanity: exactly one user row (not two).
 	local count
 
-	for row in db2:nrows('select count(*) as n from objects where user') do
+	for row in db2:nrows("select count(*) as n from objects where core_role = 'u'") do
 		count = row.n
 	end
 
@@ -513,7 +549,7 @@ h.test('opening an already-installed DB is idempotent (skips the install)', func
 	-- Sanity: same user pk as first open (state preserved across reopen).
 	local second_pk
 
-	for row in db2:nrows('select object_pk from objects where user') do
+	for row in db2:nrows("select object_pk from objects where core_role = 'u'") do
 		second_pk = row.object_pk
 	end
 
