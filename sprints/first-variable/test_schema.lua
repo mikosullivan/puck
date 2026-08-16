@@ -527,6 +527,16 @@ test('a frame at INSERT must have stmt_idx = 0', function()
 	db:close()
 end)
 
+--[[
+Walker's canonical advance shape — coupled stmt_idx increment + dcok = 1.
+Wrapped so tests read at the intent level, not the mechanism.
+]]
+local function walker_advance(db, parent_pk, new_stmt_idx)
+	local sql = "update objects set stmt_idx = " .. new_stmt_idx
+		.. ", dcok = 1 where object_pk = '" .. parent_pk .. "'"
+	return db:exec(sql)
+end
+
 test('stmt_idx can advance by +1 (with a marker child to sweep)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
@@ -534,7 +544,7 @@ test('stmt_idx can advance by +1 (with a marker child to sweep)', function()
 	local parent_pk = insert_frame_0(db, process_pk, user_pk)
 	push_marker(db, parent_pk, user_pk)
 
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"), db)
+	assert_ok(walker_advance(db, parent_pk, 1), db)
 	db:close()
 end)
 
@@ -543,11 +553,10 @@ test('stmt_idx skip (0 → 5) is rejected', function()
 	local user_pk = seed_user(db)
 	local process_pk = insert_process(db)
 	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+	push_marker(db, parent_pk, user_pk)
 
-	-- Either the +1 rule or the marker-child rule can raise; both
-	-- correctly abort the update. Match the shared error-id prefix.
 	assert_fails_with(
-		db:exec("update objects set stmt_idx = 5 where object_pk = '" .. parent_pk .. "';"),
+		walker_advance(db, parent_pk, 5),
 		db,
 		'frames_stmt_idx_',
 		'skipping stmt_idx should be rejected')
@@ -562,9 +571,10 @@ test('stmt_idx rewind is rejected', function()
 	push_marker(db, parent_pk, user_pk)
 
 	-- advance to 1 legitimately (sweeps the marker), then try to rewind
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"), db)
+	assert_ok(walker_advance(db, parent_pk, 1), db)
+	push_marker(db, parent_pk, user_pk)  -- push a new marker so the rewind attempt gets to the +1 rule, not marker-required
 	assert_fails_with(
-		db:exec("update objects set stmt_idx = 0 where object_pk = '" .. parent_pk .. "';"),
+		walker_advance(db, parent_pk, 0),
 		db,
 		'frames_stmt_idx_',
 		'rewinding stmt_idx should be rejected')
@@ -613,12 +623,10 @@ test('advancing stmt_idx deletes the marker child in the same op', function()
 	local process_pk = insert_process(db)
 	local parent_pk = insert_frame_0(db, process_pk, user_pk)
 
-	-- Push a marker child.
 	push_marker(db, parent_pk, user_pk)
 	local marker_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
 
-	-- Advance parent's stmt_idx.
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"), db)
+	assert_ok(walker_advance(db, parent_pk, 1), db)
 
 	-- Marker should be gone; no replacement (marker drops are terminal).
 	local count_row = first(db, "select count(*) as n from objects where object_pk = '" .. marker_pk .. "'")
@@ -626,13 +634,14 @@ test('advancing stmt_idx deletes the marker child in the same op', function()
 
 	local child_row = first(db, "select count(*) as n from objects where parent_frame = '" .. parent_pk .. "'")
 	assert(tonumber(child_row.n) == 0, 'no child should remain; got ' .. tostring(child_row.n))
+
+	-- dcok reset to null by the AFTER-DELETE trigger.
+	local parent_row = first(db, "select dcok from objects where object_pk = '" .. parent_pk .. "'")
+	assert(parent_row.dcok == nil, 'parent.dcok should be reset to null after the sweep')
 	db:close()
 end)
 
 test('advancing stmt_idx with a real (non-marker) child is rejected', function()
-	-- A real child means a nested call is mid-execution. Advancing the
-	-- parent's stmt_idx in that state is a caller bug; the constraint
-	-- rejects the update outright.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local process_pk = insert_process(db)
@@ -644,12 +653,11 @@ test('advancing stmt_idx with a real (non-marker) child is rejected', function()
 	local child_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
 
 	assert_fails_with(
-		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"),
+		walker_advance(db, parent_pk, 1),
 		db,
 		'frames_stmt_idx_requires_marker_child',
 		'advancing over a real child should be rejected')
 
-	-- Child still exactly as it was.
 	local still_there = first(db, "select gc from objects where object_pk = '" .. child_pk .. "'")
 	assert(still_there ~= nil, 'real child should still be present')
 	assert(still_there.gc == nil, 'child should still be a real frame')
@@ -662,9 +670,8 @@ test('advancing stmt_idx with no child at all is rejected', function()
 	local process_pk = insert_process(db)
 	local parent_pk = insert_frame_0(db, process_pk, user_pk)
 
-	-- No child pushed; try to advance.
 	assert_fails_with(
-		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"),
+		walker_advance(db, parent_pk, 1),
 		db,
 		'frames_stmt_idx_requires_marker_child',
 		'advancing without a child should be rejected')
@@ -782,6 +789,215 @@ test('deleting a nested frame does NOT flip complete (parent still live)', funct
 	local proc = first(db, "select complete from processes where process_pk = '" .. process_pk .. "'")
 	assert(tonumber(proc.complete) == 0,
 		'expected complete = 0 (frame 0 still live); got ' .. tostring(proc.complete))
+	db:close()
+end)
+
+
+-- ============================================================
+-- dcok — nested-marker-delete authorization
+-- ============================================================
+
+test('dcok column exists on objects', function()
+	local db = fresh_db()
+	local found = false
+	for row in db:nrows("pragma table_info(objects)") do
+		if row.name == 'dcok' then found = true; break end
+	end
+	assert(found, 'objects should have a dcok column')
+	db:close()
+end)
+
+test('dcok defaults to null on a fresh frame', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local frame_pk = insert_frame_0(db, process_pk, user_pk)
+
+	local row = first(db, "select dcok from objects where object_pk = '" .. frame_pk .. "'")
+	assert(row.dcok == nil, 'expected dcok null; got ' .. tostring(row.dcok))
+	db:close()
+end)
+
+test('dcok = 0 is rejected (only 1 or null)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+
+	local sql = "insert into objects (primitive, ast, stmt_idx, dcok, process_pk, owner_role) "
+		.. "values ('f', '[]', 0, 0, '" .. process_pk .. "', '" .. user_pk .. "');"
+	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
+		'dcok = 0 should be rejected')
+	db:close()
+end)
+
+test('dcok on a non-frame is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	local sql = "insert into objects (primitive, dcok, owner_role) "
+		.. "values ('h', 1, '" .. user_pk .. "');"
+	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
+		'dcok on a hash row should be rejected')
+	db:close()
+end)
+
+test('dcok on a marker is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+
+	local sql = "insert into objects (primitive, gc, dcok, process_pk, owner_role) "
+		.. "values ('f', 1, 1, '" .. process_pk .. "', '" .. user_pk .. "');"
+	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
+		'dcok on a marker should be rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- dcok coupling with stmt_idx advance
+-- ============================================================
+
+test('advance without dcok is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+	push_marker(db, parent_pk, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"),
+		db, 'frames_advance_requires_dcok',
+		'advance without dcok=1 should be rejected')
+	db:close()
+end)
+
+test('advance with dcok explicitly null is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+	push_marker(db, parent_pk, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set stmt_idx = 1, dcok = null where object_pk = '" .. parent_pk .. "';"),
+		db, 'frames_advance_requires_dcok',
+		'advance with explicit dcok=null should be rejected')
+	db:close()
+end)
+
+test('setting dcok=1 alone (no stmt_idx change) is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set dcok = 1 where object_pk = '" .. parent_pk .. "';"),
+		db, 'frames_dcok_only_with_advance',
+		'setting dcok=1 without stmt_idx change should be rejected')
+	db:close()
+end)
+
+test('setting dcok=1 with stmt_idx = stmt_idx (no-op mention) is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set stmt_idx = stmt_idx, dcok = 1 where object_pk = '" .. parent_pk .. "';"),
+		db, 'frames_dcok_only_with_advance',
+		'setting dcok=1 with stmt_idx unchanged should be rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- dcok gate on nested marker deletion
+-- ============================================================
+
+test('direct DELETE of a nested marker is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+	push_marker(db, parent_pk, user_pk)
+
+	local marker_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
+
+	assert_fails_with(
+		db:exec("delete from objects where object_pk = '" .. marker_pk .. "';"),
+		db, 'markers_no_direct_delete',
+		'direct nested-marker DELETE should be rejected')
+
+	-- Marker still there.
+	local still = first(db, "select object_pk from objects where object_pk = '" .. marker_pk .. "'")
+	assert(still ~= nil, 'nested marker should still exist after rejected delete')
+	db:close()
+end)
+
+test('direct DELETE of a ROOT marker is still allowed (process-completion path)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+
+	-- Insert a root marker directly.
+	local sql = "insert into objects (primitive, gc, process_pk, owner_role) "
+		.. "values ('f', 1, '" .. process_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(sql), db, 'root marker insert')
+	local marker_pk = first(db, "select object_pk from objects where gc = 1").object_pk
+
+	assert_ok(db:exec("delete from objects where object_pk = '" .. marker_pk .. "';"), db,
+		'root marker delete should be allowed')
+
+	-- And the completion trigger flipped complete=1.
+	local proc = first(db, "select complete from processes where process_pk = '" .. process_pk .. "'")
+	assert(tonumber(proc.complete) == 1, 'root marker delete should complete the process')
+	db:close()
+end)
+
+
+-- ============================================================
+-- dcok lifecycle
+-- ============================================================
+
+test('dcok is null at rest before AND after a legitimate advance', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+	push_marker(db, parent_pk, user_pk)
+
+	local before = first(db, "select dcok from objects where object_pk = '" .. parent_pk .. "'")
+	assert(before.dcok == nil, 'dcok should be null before advance')
+
+	assert_ok(walker_advance(db, parent_pk, 1), db)
+
+	local after = first(db, "select dcok from objects where object_pk = '" .. parent_pk .. "'")
+	assert(after.dcok == nil, 'dcok should be null after the sweep completes')
+	db:close()
+end)
+
+test('two full advance cycles work in sequence', function()
+	-- Verifies dcok reset doesn't leave the parent stuck for the next cycle.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local process_pk = insert_process(db)
+	local parent_pk = insert_frame_0(db, process_pk, user_pk)
+
+	push_marker(db, parent_pk, user_pk)
+	assert_ok(walker_advance(db, parent_pk, 1), db)
+
+	push_marker(db, parent_pk, user_pk)
+	assert_ok(walker_advance(db, parent_pk, 2), db)
+
+	-- No children, dcok null.
+	local n = first(db, "select count(*) as n from objects where parent_frame = '" .. parent_pk .. "'")
+	assert(tonumber(n.n) == 0, 'no children after both cycles')
+	local p = first(db, "select dcok, stmt_idx from objects where object_pk = '" .. parent_pk .. "'")
+	assert(p.dcok == nil, 'dcok should be null')
+	assert(tonumber(p.stmt_idx) == 2, 'stmt_idx should be 2 after two advances')
 	db:close()
 end)
 

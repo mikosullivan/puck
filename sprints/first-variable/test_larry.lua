@@ -191,7 +191,7 @@ test('advancing the frame stmt_idx sweeps the marker (atomic in one UPDATE)', fu
 	-- Walker's advance: stmt_idx = 1 (+1 from 0). Under the sprint schema,
 	-- the marker-required trigger passes (marker exists), and the after-
 	-- update trigger deletes the marker in the same op.
-	larry.cvm:exec("update objects set stmt_idx = 1 where object_pk = '" .. frame.object_pk .. "';")
+	larry.cvm:exec("update objects set stmt_idx = 1, dcok = 1 where object_pk = '" .. frame.object_pk .. "';")
 
 	assert(count(larry.cvm, "select count(*) as n from objects where parent_frame = '" .. frame.object_pk .. "'") == 0,
 		'marker should be gone after stmt_idx advance')

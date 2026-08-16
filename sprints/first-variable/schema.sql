@@ -169,6 +169,18 @@ create table objects (
 		check (gc is null or bucket_pk is null)
 		check (gc is null or stack_pk is null),
 
+	-- Delete-child-ok flag. Set to 1 in the same UPDATE that advances
+	-- stmt_idx; the sweep trigger reads it to authorize the child-
+	-- marker DELETE; the AFTER-DELETE trigger resets it. Between
+	-- cycles, always null. Real-frame-only (a marker has no children).
+	-- Enforcement lives across four triggers (advance_requires_dcok,
+	-- dcok_only_with_advance, sweep_child_when_dcok_set, and
+	-- markers_no_direct_delete) that together make the walker's
+	-- `SET stmt_idx = +1, dcok = 1` the only path to a marker delete. [ghi]
+	dcok integer
+		check (dcok = 1)
+		check (dcok is null or (primitive = 'f' and gc is null)),
+
 	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
 	needs_trace integer check (needs_trace = 1),
 
@@ -384,15 +396,55 @@ begin
 	select raise(abort, 'frames_stmt_idx_requires_marker_child: stmt_idx can only advance when a GC marker child is present to sweep');
 end;
 
--- Advancing a frame's stmt_idx deletes its GC marker child in the same
--- SQL operation. WHEN gates on actual change — a no-op re-write MUST
--- NOT delete a marker (it would be an observable side effect from a
--- write that changed no data). [ghi]
-create trigger frames_delete_marker_after_stmt_idx_update
-after update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx
+-- dcok-based marker sweep. The walker's advance is `UPDATE parent SET
+-- stmt_idx = stmt_idx + 1, dcok = 1` — one statement, both fields.
+-- Five triggers together enforce that a nested marker can be deleted
+-- ONLY via this exact operation:
+--
+--   1. frames_advance_requires_dcok — reject stmt_idx change without dcok=1
+--   2. frames_dcok_only_with_advance — reject dcok=1 without stmt_idx change
+--   3. frames_sweep_child_when_dcok_set — AFTER dcok=1, DELETE marker child
+--   4. markers_no_direct_delete — reject direct nested-marker DELETE
+--   5. frames_reset_dcok_after_sweep — AFTER marker DELETE, reset dcok
+--
+-- Together: any bypass path other than the walker's exact UPDATE is
+-- rejected. Between cycles, dcok is always null. [ghi]
+
+create trigger frames_advance_requires_dcok
+before update of stmt_idx on objects
+when new.stmt_idx is not old.stmt_idx and new.dcok is not 1
+begin
+	select raise(abort, 'frames_advance_requires_dcok: advancing stmt_idx requires dcok=1 in the same UPDATE');
+end;
+
+create trigger frames_dcok_only_with_advance
+before update of dcok on objects
+when new.dcok = 1 and new.stmt_idx is old.stmt_idx
+begin
+	select raise(abort, 'frames_dcok_only_with_advance: dcok=1 can only be set when stmt_idx is also advancing');
+end;
+
+create trigger frames_sweep_child_when_dcok_set
+after update of dcok on objects
+when new.dcok = 1
 begin
 	delete from objects where parent_frame = new.object_pk and gc = 1;
+end;
+
+create trigger markers_no_direct_delete
+before delete on objects
+when old.gc = 1
+	and old.parent_frame is not null
+	and (select dcok from objects where object_pk = old.parent_frame) is not 1
+begin
+	select raise(abort, 'markers_no_direct_delete: a nested marker can only be deleted via a stmt_idx advance (with dcok=1)');
+end;
+
+create trigger frames_reset_dcok_after_sweep
+after delete on objects
+when old.gc = 1 and old.parent_frame is not null
+begin
+	update objects set dcok = null where object_pk = old.parent_frame;
 end;
 
 -- `gc` is immutable. A row's marker-vs-real identity is set at INSERT
