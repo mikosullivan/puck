@@ -348,10 +348,10 @@ end
 INSERTs an `objects` row with `primitive = 'f'` and the frame's stack
 coordinates: `ast` (the CaspM tree the frame will dispatch), `process`
 (the process pk this frame belongs to, if it's frame 0 — sub-frames
-carry `frame_parent` instead), and `stmt_idx = 0` (starting at the
+carry `parent_frame` instead), and `stmt_idx = 0` (starting at the
 first statement). `owner_role` is caller-supplied.
 
-Push-a-frame semantics (which pk goes in `process` vs `frame_parent`,
+Push-a-frame semantics (which pk goes in `process` vs `parent_frame`,
 transaction wrapping, etc.) belong in the runtime layer above this
 method — `create_frame_0.lua` for the fresh-case flow, similar for
 sub-frame pushes when those land.

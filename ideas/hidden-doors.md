@@ -12,7 +12,7 @@ Does Caspian have features, or just a lot of hidden doors?
 
 A **feature** is something a user can invoke today. `transpile(source)` produces CaspJ. `cvm.open()` returns a working handle. Trivet builds n-ary trees. These are features — code paths a user reaches through documented entry points and gets a defined outcome from.
 
-A **hidden door** is a structural provision that no current code path opens. The `transpiler` slot on the engine, added last week, is a door: it exists, nothing reads it, reassigning it changes nothing. The reserved `misc` and `corporate` field names in CaspJ/CaspM: doors. The `frame_parent` column on `objects`: technically a door until sub-frames get pushed. `engine:run()` returning an empty Lua table: reserving a surface for keys that don't exist yet — a door with a doorframe.
+A **hidden door** is a structural provision that no current code path opens. The `transpiler` slot on the engine, added last week, is a door: it exists, nothing reads it, reassigning it changes nothing. The reserved `misc` and `corporate` field names in CaspJ/CaspM: doors. The `parent_frame` column on `objects`: technically a door until sub-frames get pushed. `engine:run()` returning an empty Lua table: reserving a surface for keys that don't exist yet — a door with a doorframe.
 
 Every hidden door is a bet that some future work will open it. Some bets are cheap and obviously correct. Some are speculative and may never pay out.
 
@@ -68,7 +68,7 @@ The ratio is stark: roughly one working feature per fifty hidden doors.
 
 Not all hidden doors are equal. A useful taxonomy:
 
-- **Load-bearing doors** — doors that a specific near-term feature will demonstrably open. The `caspm` slot is load-bearing: the sprint that just closed uses it. The `frame_parent` column is load-bearing: sub-frames will land soon and use it. These are cheap and correct.
+- **Load-bearing doors** — doors that a specific near-term feature will demonstrably open. The `caspm` slot is load-bearing: the sprint that just closed uses it. The `parent_frame` column is load-bearing: sub-frames will land soon and use it. These are cheap and correct.
 
 - **Design-coherence doors** — doors whose value is making the story consistent, not enabling a specific feature. `misc`/`corporate` as a Puck-wide reservation fits here. Value is real but harder to point at.
 
@@ -86,6 +86,6 @@ Answering that honestly, per door, is the discipline. Caspian's recent history h
 
 Both. Caspian has real features (the transpiler pipeline, the CVM data-access layer, bootstrap through frame-0 push). It has an unusually high ratio of hidden doors to features for its stage. The doors are mostly justified today because the substrate hasn't ossified — cheap to build now, expensive to add later.
 
-The question that matters isn't "features or hidden doors" but "which of these doors will actually open." The honest answer today: too early to tell. Some obviously will (dispatch handlers land next; sub-frames chain via frame_parent soon; more of the CVM schema comes into use as classes and controllers land). Others may not (alternate transpilers, the full misc/corporate ecosystem, some of the pause/resume protocol).
+The question that matters isn't "features or hidden doors" but "which of these doors will actually open." The honest answer today: too early to tell. Some obviously will (dispatch handlers land next; sub-frames chain via parent_frame soon; more of the CVM schema comes into use as classes and controllers land). Others may not (alternate transpilers, the full misc/corporate ecosystem, some of the pause/resume protocol).
 
 The trap to avoid isn't building doors — it's building them faster than they open. If V1 ships with more dormant doors than active features, "features" was never the right frame for the answer to what Caspian is.

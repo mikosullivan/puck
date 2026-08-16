@@ -213,10 +213,39 @@ primitive scalar. `set_local_to_scalar` signals the specialization at
 the point of use.
 ]]
 function frame:set_local_to_scalar(name, scalar_type, scalar_value)
-	local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
-	local locals = self:ensure_locals()
+	local db = self.engine.db
 
-	self.engine:add_ref(locals.object_pk, name, scalar_pk)
+	db:exec('savepoint set_local_to_scalar;')
+
+	local ok, err = pcall(function()
+		-- Push an empty sub-frame BEFORE doing the assignment writes,
+		-- inside the same savepoint. Its presence marks this frame as
+		-- mid-dispatch — the invariant "frame with children = mid-
+		-- execution" applies. On crash between this savepoint's release
+		-- and the walker's per-statement stmt_idx UPDATE, the sub-frame
+		-- is what tells the walker "the row at stmt_idx has already been
+		-- dispatched; don't re-run its handler." The walker's UPDATE
+		-- deletes the sub-frame via the child-cleanup trigger.
+		local push_sub = db:prepare(
+			"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) " ..
+			"values ('f', '[]', 0, ?, ?)"
+		)
+		push_sub:bind_values(self.object_pk, self.owner_role)
+		push_sub:step()
+		push_sub:finalize()
+
+		local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
+		local locals = self:ensure_locals()
+		self.engine:add_ref(locals.object_pk, name, scalar_pk)
+	end)
+
+	if not ok then
+		db:exec('rollback to savepoint set_local_to_scalar;')
+		db:exec('release savepoint set_local_to_scalar;')
+		error(err)
+	end
+
+	db:exec('release savepoint set_local_to_scalar;')
 end
 
 return frame

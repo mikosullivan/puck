@@ -9,7 +9,7 @@
 --[[
 # `test_get_latest_frame`
 
-Behavioural tests for the `get_latest_frame(db, process_pk) -> frame_pk | nil` routine at [src/engine/cvm/get_latest_frame.lua](https://puck.uno/src/engine/cvm/get_latest_frame.lua). Finds frame 0 via `process`, walks the `frame_parent` chain down to the deepest live frame.
+Behavioural tests for the `get_latest_frame(db, process_pk) -> frame_pk | nil` routine at [src/engine/cvm/get_latest_frame.lua](https://puck.uno/src/engine/cvm/get_latest_frame.lua). Finds frame 0 via `process`, walks the `parent_frame` chain down to the deepest live frame.
 ]]
 
 local h                = require('helpers')
@@ -42,7 +42,7 @@ end
 
 local function push_child_frame(db, parent_pk, user)
 	local sql = string.format(
-		"insert into objects (primitive, ast, frame_parent, stmt_idx, owner_role) " ..
+		"insert into objects (primitive, ast, parent_frame, stmt_idx, owner_role) " ..
 		"values ('f', '[[]]', '%s', 0, '%s') returning object_pk",
 		parent_pk, user
 	)
@@ -74,11 +74,11 @@ h.test('get_latest_frame — three-deep stack returns the deepest frame', functi
 
 	local sub_frame_count
 
-	for row in db:nrows("select count(*) as n from objects where primitive = 'f' and frame_parent is not null") do
+	for row in db:nrows("select count(*) as n from objects where primitive = 'f' and parent_frame is not null") do
 		sub_frame_count = row.n
 	end
 
-	h.assert_eq(sub_frame_count, 2, 'two sub-frames should chain via frame_parent')
+	h.assert_eq(sub_frame_count, 2, 'two sub-frames should chain via parent_frame')
 
 	local pk = get_latest_frame(db, process_pk)
 	h.assert_eq(pk, frame_2, 'should return the deepest (last-chained) frame')
@@ -196,7 +196,7 @@ h.test('get_latest_frame — unknown process pk raises get_latest_frame_process_
 	db:close()
 end)
 
-h.test('get_latest_frame — excludes popped frames (process and frame_parent both null)', function()
+h.test('get_latest_frame — excludes popped frames (process and parent_frame both null)', function()
 	local db = cvm.open()
 	local user = user_pk(db)
 	local process_pk = insert_process(db)

@@ -1087,11 +1087,11 @@ test("stmt_idx / idx / process rejected on non-frame rows", function()
 	))
 	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject process on 'o'")
 
-	-- frame_parent on 'o'
+	-- parent_frame on 'o'
 	rc = db:exec(string.format(
-		"insert into objects (primitive, frame_parent, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
+		"insert into objects (primitive, parent_frame, owner_role) values ('o', '00000000-0000-4000-8000-000000000000', '%s')", user
 	))
-	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject frame_parent on 'o'")
+	assert_eq(rc == sqlite.OK, false, "expected CHECK to reject parent_frame on 'o'")
 
 	db:close()
 end)

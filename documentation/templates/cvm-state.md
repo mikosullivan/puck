@@ -84,14 +84,14 @@ Copy from between the fence below into a fresh doc. Update the intro prose, the 
 
 The template above shows the columns that appear most. Adjust `colspan` on the title row if you add or remove columns.
 
-**`objects` — expanded set** (when the state depends on columns not in the basic set, e.g., `frame_parent`, `bucket_pk`, `stack_pk`, `role_parent`):
+**`objects` — expanded set** (when the state depends on columns not in the basic set, e.g., `parent_frame`, `bucket_pk`, `stack_pk`, `role_parent`):
 
 ~~~html
 <tr><th class="tbl-title-objects" colspan="11">objects</th></tr>
 <tr>
 	<th>object pk</th><th>primitive</th><th>scalar</th><th>user</th>
 	<th>role_parent</th><th>owner_role</th><th>ast</th><th>stmt_idx</th>
-	<th>process</th><th>frame_parent</th><th class="col-comment">comment</th>
+	<th>process</th><th>parent_frame</th><th class="col-comment">comment</th>
 </tr>
 ~~~
 

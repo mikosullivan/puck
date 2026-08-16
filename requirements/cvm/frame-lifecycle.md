@@ -35,7 +35,7 @@ Every state below is a valid resume state. If the database crashes at any moment
 
 ## After frame 0 is pushed to `objects`
 
-The frame INSERT has now landed. `primitive = 'f'`, ast copied in as JSON, `stmt_idx = 0`, `process` set to the process pk from the previous step, `owner_role` set to the user seed. `frame_parent` is null (frame 0 has no parent frame). `bucket_pk` and `stack_pk` are null — the frame hasn't touched anything that would need a bucket or stack yet.
+The frame INSERT has now landed. `primitive = 'f'`, ast copied in as JSON, `stmt_idx = 0`, `process` set to the process pk from the previous step, `owner_role` set to the user seed. `parent_frame` is null (frame 0 has no parent frame). `bucket_pk` and `stack_pk` are null — the frame hasn't touched anything that would need a bucket or stack yet.
 
 <table class="tbl-cvm">
 <thead>

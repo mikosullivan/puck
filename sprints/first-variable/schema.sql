@@ -99,26 +99,47 @@ create table objects (
 	-- also carry it (cache and user are owned by engine). No cascade. [ghi]
 	owner_role text references objects(object_pk),
 
-	-- CaspM tree as JSON text. Biconditional with primitive='f'.
-	-- Immutable once set (objects_ast_immutable). [ghi]
+	-- CaspM tree as JSON text. Set on real frames (primitive='f',
+	-- gc null), null on everything else — markers (primitive='f',
+	-- gc=1) and non-frames. A marker carries no code; it's a
+	-- bookkeeping row that the walker dispatches to the GC routine,
+	-- not to ast-walking. Immutable once set (objects_ast_immutable). [ghi]
 	ast text
-		check ((primitive = 'f' and ast is not null)
-			or (primitive != 'f' and ast is null)),
+		check (
+			(primitive = 'f' and gc is null and ast is not null)
+			or
+			(ast is null and (primitive != 'f' or gc = 1))
+		),
 
-	-- Current position within the frame's ast. Frame-only. Mutable. [ghi]
+	-- Current position within the frame's ast. Set on real frames
+	-- (primitive='f', gc null), null on markers and non-frames.
+	-- Parallels the ast column check: a marker has no code and no
+	-- position; the walker dispatches it to GC, not to statement
+	-- walking. Mutable (walker advances by +1 per statement dispatched). [ghi]
 	stmt_idx integer
-		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f')),
+		check (
+			(primitive = 'f' and gc is null and stmt_idx >= 0)
+			or
+			(stmt_idx is null and (primitive != 'f' or gc = 1))
+		),
 
-	-- FK to processes for frame 0. Set on push, nulled on pop. Sub-frames
-	-- leave this null and use parent_frame instead. Frame-only. [ghi]
+	-- FK to processes for frame 0 (and any marker that replaced it).
+	-- Frame-only. Frames are destroyed when finished — no null-on-pop
+	-- transition; the row goes away instead. [ghi]
 	process_pk text
 		references processes(process_pk)
 		check (process_pk is null or primitive = 'f'),
 
-	-- Sub-frame → parent-frame FK. Frame-only. No cascade. [ghi]
+	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
+	-- has exactly one parent — either a parent_frame or a process_pk,
+	-- never both, never neither. Enforced by the mutual-exclusion check
+	-- on this column. [ghi]
 	parent_frame text
 		references objects(object_pk)
-		check (parent_frame is null or primitive = 'f'),
+		check (parent_frame is null or primitive = 'f')
+		check (primitive != 'f'
+			or (parent_frame is not null and process_pk is null)
+			or (parent_frame is null and process_pk is not null)),
 
 	-- Bucket / stack back-refs on collection rows. If set, this row is
 	-- the bucket / stack for the referenced full object. At most one
@@ -138,6 +159,15 @@ create table objects (
 
 	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
 	persistent integer check (persistent = 1),
+
+	-- GC marker flag. A row with gc = 1 is a marker in the frame stack —
+	-- not an actual Caspian call. Frames-only; markers carry no bucket,
+	-- no stack. Only 1 or null. [ghi]
+	gc integer
+		check (gc = 1)
+		check (gc is null or primitive = 'f')
+		check (gc is null or bucket_pk is null)
+		check (gc is null or stack_pk is null),
 
 	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
 	needs_trace integer check (needs_trace = 1),
@@ -241,9 +271,17 @@ begin
 	select raise(abort, 'parent_must_be_primitive_container: only container primitives can be parents');
 end;
 
--- refs rows are immutable; rebind is delete + insert. [ghi]
+-- refs rows are immutable; rebind is delete + insert. WHEN gates on
+-- any actual column change; a no-op re-write of the same row is
+-- silently accepted. [ghi]
 create trigger refs_no_update
 before update on refs
+when new.ref_pk is not old.ref_pk
+	or new.parent is not old.parent
+	or new.child is not old.child
+	or new.key is not old.key
+	or new.idx is not old.idx
+	or new.debug is not old.debug
 begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
@@ -266,6 +304,8 @@ create table cvm (
 
 create trigger cvm_no_update
 before update on cvm
+when new.key is not old.key
+	or new.value is not old.value
 begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no updates allowed');
 end;
@@ -283,10 +323,12 @@ insert into cvm (key, value) values ('schema', '9.0');
 -- Frame ast validation triggers.
 -- ------------------------------------------------------------
 
--- BEFORE INSERT: reject non-array or non-JSON ast on frame rows. [ghi]
+-- BEFORE INSERT: reject non-array or non-JSON ast on real frame rows.
+-- Skipped on markers (gc=1) — markers have ast=null by column-check
+-- and this validator would raise on json_valid(null). [ghi]
 create trigger objects_ast_valid_insert
 before insert on objects
-when new.primitive = 'f'
+when new.primitive = 'f' and new.gc is null
 begin
 	select case
 		when not json_valid(new.ast)
@@ -304,14 +346,111 @@ begin
 	select raise(abort, 'ast_immutable: objects.ast is immutable once set');
 end;
 
--- Advancing a frame's stmt_idx clears any child frames it pushed —
--- atomic at the SQL layer, no Lua-side savepoint needed. [ghi]
-create trigger frames_delete_children_after_stmt_idx_update
-after update of stmt_idx on objects
-when new.primitive = 'f'
+-- A real frame is born with stmt_idx = 0. Only fires for real frames
+-- (gc null); markers have stmt_idx = null by column check, so this
+-- doesn't apply. Transitional rule, so it's a trigger, not a column
+-- CHECK — a bulk-load with triggers off can install a frame at any
+-- mid-state stmt_idx. [ghi]
+create trigger frames_stmt_idx_starts_at_zero
+before insert on objects
+when new.primitive = 'f' and new.gc is null and new.stmt_idx is not 0
 begin
-	delete from objects where parent_frame = new.object_pk and primitive = 'f';
+	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a real frame is born with stmt_idx = 0');
 end;
+
+-- stmt_idx moves +1 at a time. Skips and rewinds are rejected. A no-op
+-- re-write of the same value is silently accepted — no advance semantics
+-- fire (marker-required, marker-delete). WHEN gates on actual change so
+-- the advance machinery only runs when something is really moving. [ghi]
+create trigger frames_stmt_idx_advances_by_one
+before update of stmt_idx on objects
+when new.stmt_idx is not old.stmt_idx
+	and new.stmt_idx is not old.stmt_idx + 1
+begin
+	select raise(abort, 'frames_stmt_idx_must_advance_by_one: stmt_idx moves +1 at a time');
+end;
+
+-- stmt_idx can only advance when the frame has a GC marker child ready
+-- to be swept. Fires only on actual change; a no-op re-write is silently
+-- accepted (no marker required). [ghi]
+create trigger frames_stmt_idx_requires_marker_child
+before update of stmt_idx on objects
+when new.stmt_idx is not old.stmt_idx
+	and not exists (
+		select 1 from objects
+		where parent_frame = new.object_pk and gc = 1
+	)
+begin
+	select raise(abort, 'frames_stmt_idx_requires_marker_child: stmt_idx can only advance when a GC marker child is present to sweep');
+end;
+
+-- Advancing a frame's stmt_idx deletes its GC marker child in the same
+-- SQL operation. WHEN gates on actual change — a no-op re-write MUST
+-- NOT delete a marker (it would be an observable side effect from a
+-- write that changed no data). [ghi]
+create trigger frames_delete_marker_after_stmt_idx_update
+after update of stmt_idx on objects
+when new.stmt_idx is not old.stmt_idx
+begin
+	delete from objects where parent_frame = new.object_pk and gc = 1;
+end;
+
+-- `gc` is immutable. A row's marker-vs-real identity is set at INSERT
+-- and never changes — flipping it in place would break drop-and-replace
+-- (fires only on real-frame deletes) and the "markers have no bucket/
+-- stack" invariant. Rejects only on actual change; a no-op re-write of
+-- the same value is silently accepted. [ghi]
+create trigger objects_gc_immutable
+before update of gc on objects
+when new.gc is not old.gc
+begin
+	select raise(abort, 'objects_gc_immutable: objects.gc is immutable');
+end;
+
+-- `parent_frame` is immutable. A frame's parent is set at INSERT and
+-- never changes — reparenting a live frame would break the "frames are
+-- destroyed when finished" invariant. Rejects only on actual change. [ghi]
+create trigger objects_parent_frame_immutable
+before update of parent_frame on objects
+when new.parent_frame is not old.parent_frame
+begin
+	select raise(abort, 'objects_parent_frame_immutable: objects.parent_frame is immutable');
+end;
+
+-- `process_pk` is immutable. A frame 0 (or its replacement marker) is
+-- anchored to a specific process at INSERT and never moves. Rejects
+-- only on actual change. [ghi]
+create trigger objects_process_pk_immutable
+before update of process_pk on objects
+when new.process_pk is not old.process_pk
+begin
+	select raise(abort, 'objects_process_pk_immutable: objects.process_pk is immutable');
+end;
+
+-- Drop-and-replace. When a non-marker frame is deleted, a GC marker
+-- is inserted in its place, inheriting the dropped frame's anchor
+-- (parent_frame for a nested frame, process_pk for frame 0) and its
+-- owner_role. Markers themselves don't trigger this — their drop is
+-- final. AFTER (not BEFORE) DELETE so the outgoing row's slot in the
+-- unique-child index is freed before the marker's INSERT takes it. [ghi]
+create trigger frames_drop_and_replace
+after delete on objects
+when old.primitive = 'f' and old.gc is null
+begin
+	insert into objects
+		(primitive, gc, ast, stmt_idx,
+		 parent_frame, process_pk, owner_role)
+	values
+		('f', 1, null, null,
+		 old.parent_frame, old.process_pk, old.owner_role);
+end;
+
+-- A parent frame can have at most one child frame at a time. Partial
+-- index keeps it empty of nulls (root frames don't participate). Drop-
+-- and-replace lands cleanly because the outgoing frame is gone by the
+-- time the trigger body runs. [ghi]
+create unique index objects_one_child_per_frame on objects(parent_frame)
+	where primitive = 'f' and parent_frame is not null;
 
 
 -- ------------------------------------------------------------
@@ -457,10 +596,34 @@ begin
 	select raise(abort, 'root_role_cannot_be_deleted: core-role rows cannot be deleted');
 end;
 
--- Guards any core-role row (symmetric with the delete version). [ghi]
+-- Guards any core-role row (symmetric with the delete version). WHEN
+-- gates on actual change to any column; a no-op re-write of a core-
+-- role row is silently accepted. [ghi]
 create trigger objects_no_update_root_role
 before update on objects
 when old.core_role is not null
+	and (
+		new.object_pk is not old.object_pk
+		or new.primitive is not old.primitive
+		or new.scalar_type is not old.scalar_type
+		or new.scalar_value is not old.scalar_value
+		or new.core_role is not old.core_role
+		or new.role_parent is not old.role_parent
+		or new.owner_role is not old.owner_role
+		or new.ast is not old.ast
+		or new.stmt_idx is not old.stmt_idx
+		or new.process_pk is not old.process_pk
+		or new.parent_frame is not old.parent_frame
+		or new.bucket_for is not old.bucket_for
+		or new.stack_for is not old.stack_for
+		or new.bucket_pk is not old.bucket_pk
+		or new.stack_pk is not old.stack_pk
+		or new.persistent is not old.persistent
+		or new.gc is not old.gc
+		or new.needs_trace is not old.needs_trace
+		or new.in_trace is not old.in_trace
+		or new.debug is not old.debug
+	)
 begin
 	select raise(abort, 'root_role_cannot_be_updated: core-role rows cannot be updated');
 end;
@@ -493,9 +656,15 @@ create index instance_listeners_broadcaster on instance_listeners(broadcaster, e
 -- Unlisten-all lookup. [ghi]
 create index instance_listeners_listener on instance_listeners(listener);
 
--- Registrations are immutable; change = delete + insert. [ghi]
+-- Registrations are immutable; change = delete + insert. WHEN gates
+-- on actual change; a no-op re-write is silently accepted. [ghi]
 create trigger instance_listeners_no_update
 before update on instance_listeners
+when new.reg_pk is not old.reg_pk
+	or new.broadcaster is not old.broadcaster
+	or new.listener is not old.listener
+	or new.event_name is not old.event_name
+	or new.method_name is not old.method_name
 begin
 	select raise(abort, 'instance_listeners_no_update: rows are immutable');
 end;
@@ -523,16 +692,29 @@ create index class_listeners_listener on class_listeners(listener);
 
 create trigger class_listeners_no_update
 before update on class_listeners
+when new.reg_pk is not old.reg_pk
+	or new.class is not old.class
+	or new.listener is not old.listener
+	or new.event_name is not old.event_name
+	or new.method_name is not old.method_name
 begin
 	select raise(abort, 'class_listeners_no_update: rows are immutable');
 end;
 
 
--- When frame 0 of a process is deleted, flip processes.complete = 1.
--- Bundles mark-complete + delete-frame into one atomic SQL operation. [ghi]
-create trigger processes_complete_after_frame_0_delete
+-- Process is complete when a process-anchored marker drops. Every real
+-- frame gets replaced by a marker via drop-and-replace, so the marker
+-- is always the last thing standing; firing on marker-drop-with-
+-- process_pk is equivalent to "last frame gone" but doesn't have to
+-- reason about trigger ordering. `not exists` guard is defense-in-
+-- depth against any state that somehow leaves another frame behind. [ghi]
+create trigger processes_complete_after_marker_drop
 after delete on objects
-when old.primitive = 'f' and old.process_pk is not null
+when old.primitive = 'f' and old.gc = 1 and old.process_pk is not null
+	and not exists (
+		select 1 from objects
+		where process_pk = old.process_pk and primitive = 'f'
+	)
 begin
 	update processes set complete = 1 where process_pk = old.process_pk;
 end;
@@ -542,9 +724,12 @@ end;
 -- Frame-column indexes.
 -- ------------------------------------------------------------
 
--- Frames currently on a stack. Only frame 0 carries process_pk;
--- sub-frames chain via parent_frame. [ghi]
-create index objects_frame_on_stack on objects(process_pk)
+-- One process-anchored frame per process. Frame 0 carries process_pk;
+-- when it drops-and-replaces, the marker inherits that anchor and
+-- takes the slot. Sub-frames chain via parent_frame, never
+-- process_pk. Parallels objects_one_child_per_frame; together the two
+-- indexes enforce "any parent (frame or process) has one child." [ghi]
+create unique index objects_one_child_per_process on objects(process_pk)
 	where primitive = 'f' and process_pk is not null;
 
 -- Child-of-frame walk: given a frame pk, find its child sub-frame. [ghi]
