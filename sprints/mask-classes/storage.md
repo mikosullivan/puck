@@ -15,8 +15,8 @@ Just after `cvm.open` returns and before any process has been seeded.
 
 <table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-objects" colspan="2">objects</th></tr>
-<tr><th>object pk</th><th class="col-comment">comment</th></tr>
+<tr><th class="tbl-title-objects" colspan="3">objects</th></tr>
+<tr><th>object pk</th><th>ec</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 </tbody>
@@ -37,11 +37,11 @@ The first mask-related write lands: one row appears in `objects` for the class m
 
 <table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-objects" colspan="2">objects</th></tr>
-<tr><th>object pk</th><th class="col-comment">comment</th></tr>
+<tr><th class="tbl-title-objects" colspan="3">objects</th></tr>
+<tr><th>object pk</th><th>ec</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
-<tr><td><code>c010cafe-…</code></td><td class="col-comment">class mask</td></tr>
+<tr><td><code>c010cafe-…</code></td><td><code>1</code></td><td class="col-comment">class mask</td></tr>
 </tbody>
 </table>
 
