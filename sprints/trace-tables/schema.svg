@@ -26,15 +26,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="1.20491"
-     inkscape:cx="1002.9795"
-     inkscape:cy="560.62281"
+     inkscape:zoom="4.8196398"
+     inkscape:cx="1097.7999"
+     inkscape:cy="689.57435"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g-in-trace" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
@@ -144,11 +144,11 @@
      transform="translate(-132.09451,-295.48071)">
     <path
        class="fk-arrow"
-       d="M 1211.261,983.96889 V 873.72542"
+       d="M 1211.261,985.9689 V 875.72542"
        id="path2381"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1210.1306,910.21095)"
+       transform="translate(1210.1306,912.21095)"
        id="g2389">
       <rect
          x="-40.033443"
@@ -169,15 +169,15 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan2534">trace_pk</tspan></text>
+           id="tspan4268">trace_pk</tspan></text>
     </g>
     <path
        class="fk-arrow"
-       d="M 1163.059,962.67986 H 1042.5837"
+       d="M 1163.059,964.67986 H 1042.5837"
        id="path2371"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1107.8368,961.76189)"
+       transform="translate(1107.8368,963.76189)"
        id="g2379">
       <rect
          x="-40.033443"
@@ -198,7 +198,7 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan2536">object_pk</tspan></text>
+           id="tspan4270">object_pk</tspan></text>
     </g>
     <path
        class="fk-arrow"
@@ -227,7 +227,7 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan2538">object_pk</tspan></text>
+           id="tspan4272">object_pk</tspan></text>
     </g>
     <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
     <g
@@ -759,7 +759,7 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan2540">object_pk</tspan></text>
+           id="tspan4274">object_pk</tspan></text>
     </g>
     <g
        transform="translate(1162.8261,554.40837)"
@@ -875,7 +875,8 @@
          fill="#ffffff"
          stroke="#26a69a"
          stroke-width="1.5"
-         id="rect-traces" />
+         id="rect-traces"
+         style="stroke-dasharray:6,1.5;stroke-dashoffset:0" />
       <path
          d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
          fill="#26a69a"
@@ -901,16 +902,16 @@
          y="54"
          font-size="11px"
          fill="#616161"
-         id="text-traces-process">col: process_pk</text>
+         id="text-traces-object">FK: object_pk</text>
       <text
          x="10"
          y="68"
          font-size="11px"
          fill="#616161"
-         id="text-traces-object">FK: object_pk</text>
+         id="text-traces-done">col: done</text>
     </g>
     <g
-       transform="translate(1162.2915,936.10201)"
+       transform="translate(1162.2915,938.10201)"
        id="g-in-trace"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -923,7 +924,8 @@
          fill="#ffffff"
          stroke="#26a69a"
          stroke-width="1.5"
-         id="rect-in-trace" />
+         id="rect-in-trace"
+         style="stroke-dasharray:6,1.5;stroke-dashoffset:0" />
       <path
          d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
          fill="#26a69a"
