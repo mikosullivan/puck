@@ -1,13 +1,19 @@
 ~~~vibecode
 {"doc": "sprint-index", "sprint": "mask-classes",
-	"role": "Sprint on mask classes in Caspian. Kicked off; scope TBD.",
-	"status": "kicked off — scope pending"}
+	"role": "Sprint on mask classes: a mask class looks like a Caspian class from the surface, but it's actually a Lua class. Sprint's work: figure out how masks are stored in the CVM database.",
+	"status": "active — starting from the pre-run database state and working forward"}
 ~~~
 
 # mask-classes
 
-Sprint on mask classes. Just kicked off — specific slice hasn't been chosen yet.
+Sprint on mask classes. A mask class **looks** like a Caspian class from the surface — same syntax, same shape — but it's actually implemented as a Lua class. That means we need a way to store masks in the CVM database that mirrors the surface concept without paying full class-in-Caspian machinery for it.
+
+**Storage design isn't decided yet.** The sprint works forward from the pre-run database state, exploring what a mask actually looks like in the graph as the first mask-touching command runs.
+
+## Pages so far
+
+- [pre-run](./pre-run) — the CVM database state before the first command runs, minimal display (object_pk + comment only)
 
 ## Status
 
-**Sprint kicked off.** No code, no design docs yet. Waiting on scope decision.
+**Active.** Storage design open. Pre-run state captured; next steps will layer in the first mask-related writes.
