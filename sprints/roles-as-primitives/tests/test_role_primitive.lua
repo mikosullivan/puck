@@ -319,6 +319,109 @@ end)
 
 
 -- ============================================================
+-- Core roles are pinned (persistent=1) and cannot be unpinned
+-- ============================================================
+
+test('seeded engine/cache/user rows all have persistent = 1', function()
+	local db = fresh_db()
+
+	for _, code in ipairs({'e', 'c', 'u'}) do
+		local row = first(db, "select persistent from objects where core_role = '" .. code .. "'")
+		assert(tonumber(row.persistent) == 1,
+			"core_role='" .. code .. "' should have persistent=1; got: " .. tostring(row.persistent))
+	end
+	db:close()
+end)
+
+test('inserting a core role with persistent = null is rejected (cross-column CHECK)', function()
+	-- Build a scratch schema with the seed inserts stripped out, so the
+	-- unique index on core_role doesn't fire before the CHECK. This
+	-- isolates the "core role must be persistent = 1" rule.
+	local schema = slurp(SCHEMA_PATH)
+	-- Comment out every seed insert (they all match /^insert into objects/).
+	local defs_only = schema:gsub("insert into objects", "-- insert into objects")
+
+	local db = sqlite.open_memory()
+	db:exec('pragma foreign_keys = on;')
+	local rc = db:exec(defs_only)
+	assert(rc == sqlite.OK, 'schema-def apply failed: ' .. tostring(db:errmsg()))
+
+	-- Now try to insert engine WITHOUT persistent — CHECK should reject.
+	assert_fails_with(
+		db:exec("insert into objects (primitive, core_role) values ('r', 'e')"),
+		db, 'CHECK constraint',
+		'core role with implicit-null persistent rejected')
+
+	-- Same, but explicit null.
+	assert_fails_with(
+		db:exec("insert into objects (primitive, core_role, persistent) values ('r', 'e', null)"),
+		db, 'CHECK constraint',
+		'core role with explicit-null persistent rejected')
+
+	-- Sanity: WITH persistent = 1, engine inserts fine.
+	assert_ok(
+		db:exec("insert into objects (primitive, core_role, persistent) values ('r', 'e', 1)"),
+		db, 'core role with persistent=1 accepted')
+	db:close()
+end)
+
+test('a non-core row inserted without persistent gets null (default = unpinned)', function()
+	local db = fresh_db()
+	local eng = engine_pk(db)
+
+	local sql = "insert into objects (primitive, owner_role) values ('h', '"
+		.. eng .. "') returning object_pk, persistent"
+	local row
+	for r in db:nrows(sql) do row = r end
+
+	assert(row.persistent == nil,
+		'non-core hash without persistent should be null; got: ' .. tostring(row.persistent))
+	db:close()
+end)
+
+test('a non-core row can opt into pinning by setting persistent = 1', function()
+	local db = fresh_db()
+	local eng = engine_pk(db)
+
+	assert_ok(
+		db:exec("insert into objects (primitive, owner_role, persistent) values ('h', '"
+			.. eng .. "', 1)"),
+		db, 'non-core row with persistent=1 accepted')
+	db:close()
+end)
+
+test('a non-core row cannot set persistent = 0 (only 1 or null allowed)', function()
+	local db = fresh_db()
+	local eng = engine_pk(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, owner_role, persistent) values ('h', '"
+			.. eng .. "', 0)"),
+		db, 'CHECK constraint',
+		'persistent=0 rejected by the "= 1" CHECK')
+	db:close()
+end)
+
+test('updating a core role to clear persistent is rejected', function()
+	local db = fresh_db()
+
+	assert_fails_with(
+		db:exec("update objects set persistent = null where core_role = 'e'"),
+		db, 'root_role_cannot_be_updated',
+		'clearing persistent on engine role rejected')
+	assert_fails_with(
+		db:exec("update objects set persistent = null where core_role = 'c'"),
+		db, 'root_role_cannot_be_updated',
+		'clearing persistent on cache role rejected')
+	assert_fails_with(
+		db:exec("update objects set persistent = null where core_role = 'u'"),
+		db, 'root_role_cannot_be_updated',
+		'clearing persistent on user role rejected')
+	db:close()
+end)
+
+
+-- ============================================================
 -- Cycle-free by construction (note-only)
 -- ============================================================
 

@@ -142,8 +142,22 @@ create table objects (
 	-- Buckets and stacks can be shared across multiple owners — the
 	-- graph reads exactly like the refs table shows.
 
-	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
-	persistent integer check (persistent = 1),
+	-- Persistence pin. Rows with `persistent = 1` are kept alive; rows
+	-- with `persistent = null` (the SQL default when the column is
+	-- omitted) are ordinary and eligible for GC.
+	--
+	--   * Core-role rows MUST be pinned. The cross-column check rejects
+	--     any core-role INSERT that leaves persistent null (uses `is 1`
+	--     not `= 1` — SQL three-valued logic makes `null = 1` yield
+	--     NULL, which doesn't fire a CHECK; `null is 1` yields false,
+	--     which does).
+	--   * Non-core rows default to unpinned. Omit the column to get null;
+	--     set `persistent = 1` to opt into pinning.
+	--   * Combined with objects_no_update_root_role's persistent guard,
+	--     core roles are pinned at INSERT and can never be unpinned. [ghi]
+	persistent integer
+		check (persistent = 1)
+		check (core_role is null or persistent is 1),
 
 	-- gc-cycle state flag. Bidirectional: null (frame executing normally)
 	-- ↔ 1 (frame is past-dispatch, cleanup phase). The cycle:

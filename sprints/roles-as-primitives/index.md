@@ -1,8 +1,10 @@
 ~~~vibecode
 {"doc": "sprint-index", "sprint": "roles-as-primitives",
 	"role": "Sprint to promote roles from a column-marked shape (any primitive with core_role or role_parent set) to their own primitive value 'r'. Minimal role semantics — roles exist in a hierarchical tree and nothing else. Fixes critique § 3 by construction (a role IS a role because it's typed 'r'); collapses the roles view; removes cross-row role-check subqueries.",
-	"status": "active — scope decided, work not started"}
+	"status": "pre-integration — sprint schema + tests complete (20 passing); integration plan in integration-plan.md; spec draft in roles.md; shipping untouched"}
 ~~~
+
+> **Status: pre-integration.** All work lives under `sprints/roles-as-primitives/` — `src/schema.sql`, `tests/test_role_primitive.lua` (20 passing), `roles.md` (spec draft in requirements/cvm/roles.md shape), and `integration-plan.md` (four phases). Shipping is untouched. Promotion follows the integration plan.
 
 # roles-as-primitives
 
@@ -52,4 +54,4 @@ Under `'r'`-as-primitive:
 
 ## Status
 
-**Active.** Scope decided; work not started.
+**Pre-integration.** Sprint schema + tests complete (20 passing); integration plan lands in [integration-plan.md](integration-plan.md); spec draft in [roles.md](roles.md). Shipping untouched.
