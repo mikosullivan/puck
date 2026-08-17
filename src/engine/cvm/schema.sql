@@ -1,3 +1,9 @@
+-- Caspian virtual machine
+-- This schema defines the SQLite format for a Caspian virtual
+-- machine. The intent of this design is that only valid programmatic
+-- states can be stored in the database. It should not be possible
+-- to build an invalid state.
+
 -- Every connection to a CVM database must run these two pragmas
 -- immediately after opening. [ghi]
 pragma foreign_keys = on;
