@@ -36,7 +36,7 @@ local function scalar(cvm, sql, ...)
 	return out
 end
 
-h.test('after empty run, the cap is in terminal state (stmt_idx=1, gc=null, no children)', function()
+h.test('after empty run, the cap is in terminal state (stmt_idx=0, gc=null, no children)', function()
 	local e = engine.new()
 	e.caspm = {}
 	local result = e:run()
@@ -44,7 +44,7 @@ h.test('after empty run, the cap is in terminal state (stmt_idx=1, gc=null, no c
 	local cap = scalar(e.cvm,
 		"select stmt_idx from objects where object_pk = ?",
 		result.cap_pk)
-	h.assert_eq(cap, 1, 'cap stmt_idx should be 1 (terminal)')
+	h.assert_eq(cap, 0, 'cap stmt_idx should be 0 (cap has empty ast, terminal = length = 0)')
 
 	local gc = scalar(e.cvm,
 		"select gc from objects where object_pk = ?",

@@ -165,8 +165,14 @@ function M.new(opts)
 		get_ast          = db:prepare('select ast from objects where object_pk = ?'),
 		get_stmt_idx     = db:prepare('select stmt_idx from objects where object_pk = ?'),
 		get_user_role    = db:prepare("select object_pk from objects where core_role = 'u'"),
-		advance_with_gc  = db:prepare('update objects set stmt_idx = ?, gc = 1 where object_pk = ?'),
-		reset_gc         = db:prepare('update objects set gc = null where object_pk = ?'),
+		-- Bare advance: `SET stmt_idx = ?` with no gc mention. The
+		-- schema's frames_advance_requires_gc trigger requires the
+		-- handler to have already set `gc = 1` (via cvm:mark_frame_gc),
+		-- and the frames_advance_sets_gc_null AFTER trigger auto-resets
+		-- gc back to null. Mentioning gc = 1 in this SET clause is
+		-- rejected as an engine bug (frames_advance_rejects_non_null_gc)
+		-- and at terminal is doubly rejected (frames_gc_set_rejects_at_terminal).
+		advance           = db:prepare('update objects set stmt_idx = ? where object_pk = ?'),
 		insert_cap       = db:prepare("insert into objects (primitive, process, ast, stmt_idx, owner_role) values ('f', 1, '[]', 0, ?) returning object_pk"),
 		insert_frame_0   = db:prepare("insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) values ('f', ?, 0, ?, ?) returning object_pk"),
 	}
@@ -266,18 +272,14 @@ function M:run()
 
 	self.caspm = nil
 
-	-- 3. Walk frame 0's ast.
+	-- 3. Walk frame 0's ast. When frame 0 exhausts its ast (or when
+	-- the ast was empty to begin with — frame 0 self-deletes on
+	-- INSERT via `frames_auto_delete_at_terminal_on_insert`), it's
+	-- gone. Cap stays alive at (stmt_idx=0, gc=null) as the process
+	-- anchor — caps are exempt from the child-delete cascade and
+	-- from the terminal auto-delete, so cap.gc is never touched and
+	-- cap.stmt_idx never advances.
 	self:run_frame(frame_0_pk)
-
-	-- 4. Advance the cap: sweeps frame 0 via cascade.
-	stmts.advance_with_gc:bind_values(1, cap_pk)
-	stmts.advance_with_gc:step()
-	stmts.advance_with_gc:reset()
-
-	-- 5. Reset cap's gc → null. Cap is now terminal.
-	stmts.reset_gc:bind_values(cap_pk)
-	stmts.reset_gc:step()
-	stmts.reset_gc:reset()
 
 	return {complete = 1, cap_pk = cap_pk}
 end
@@ -305,6 +307,13 @@ function M:run_frame(frame_pk)
 
 	stmts.get_ast:reset()
 
+	-- Frame was already gone by the time we opened it. Empty-ast
+	-- frames self-delete on INSERT via
+	-- `frames_auto_delete_at_terminal_on_insert`; run() calling
+	-- run_frame(frame_0_pk) on an empty program lands here. Nothing
+	-- to walk.
+	if ast_json == nil then return end
+
 	local ast = cjson.decode(ast_json)
 
 	-- Shape check: ast should be a JSON array. Table + first key is
@@ -316,7 +325,9 @@ function M:run_frame(frame_pk)
 
 	-- Live read of the frame's stmt_idx. Called every time the loop
 	-- wants the value (the condition, the array index) — the DB is the
-	-- single source of truth.
+	-- single source of truth. Returns `nil` if the frame has been
+	-- deleted (auto-swept by frames_auto_delete_at_terminal); callers
+	-- treat nil as "loop is done."
 	local function get_stmt_idx()
 		stmts.get_stmt_idx:bind_values(frame_pk)
 
@@ -331,8 +342,15 @@ function M:run_frame(frame_pk)
 		return idx
 	end
 
-	while get_stmt_idx() < #ast do
+	while true do
 		local idx = get_stmt_idx()
+
+		-- Frame is gone (auto-deleted at terminal by the schema's
+		-- `frames_auto_delete_at_terminal` trigger). Nothing more to do.
+		if idx == nil then break end
+
+		-- Loop guard: still-within-ast check.
+		if idx >= #ast then break end
 
 		-- Handlers need access to the current frame to write into it —
 		-- e.g., set_local_to_scalar on a variable-assignment handler.
@@ -342,18 +360,15 @@ function M:run_frame(frame_pk)
 		-- Lua arrays are 1-based, so `+ 1` at the site.
 		self:run_row(ast[idx + 1])
 
-		-- Advance + set gc=1 in one UPDATE. AFTER-UPDATE cascade sweeps
-		-- any marker child the handler pushed. All four gc-cycle
-		-- invariants enforced by triggers on `objects`.
-		stmts.advance_with_gc:bind_values(idx + 1, frame_pk)
-		stmts.advance_with_gc:step()
-		stmts.advance_with_gc:reset()
-
-		-- Complete the gc cycle: no children remain (marker cascade-swept),
-		-- so the gc-reset trigger passes.
-		stmts.reset_gc:bind_values(frame_pk)
-		stmts.reset_gc:step()
-		stmts.reset_gc:reset()
+		-- Bare advance. The handler was responsible for setting
+		-- `gc = 1` (via cvm:mark_frame_gc) as part of its writes; the
+		-- BEFORE trigger frames_advance_requires_gc enforces that
+		-- precondition. After stmt_idx changes, the AFTER trigger
+		-- frames_advance_sets_gc_null completes the cycle by resetting
+		-- gc back to null. The walker just SETs stmt_idx.
+		stmts.advance:bind_values(idx + 1, frame_pk)
+		stmts.advance:step()
+		stmts.advance:reset()
 	end
 
 	self.current_frame = nil

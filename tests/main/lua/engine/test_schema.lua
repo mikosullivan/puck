@@ -97,24 +97,30 @@ local function insert_frame_0(db, cap_pk, user_pk)
 end
 
 --[[
-Push a mid-dispatch marker child under `parent_pk` — a frame born
-in the terminal shape: empty ast, gc=null. Its presence signals
-"parent is mid-dispatch"; parent's next advance cascade-deletes it,
-and the terminal-state check passes cleanly.
+Signal that `parent_pk` is mid-dispatch. Under the current gc-cycle
+design, that signal is `gc = 1` on the frame itself — no marker
+child needed. The old name is kept so existing tests that call
+push_marker(...) get the equivalent state without rewrites.
 ]]
-local function push_marker(db, parent_pk, user_pk)
-	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[]', 0, '" .. parent_pk .. "', '" .. user_pk .. "');"
-	assert(db:exec(sql) == sqlite.OK, 'push marker failed: ' .. tostring(db:errmsg()))
+local function push_marker(db, parent_pk, _user_pk)
+	local sql = "update objects set gc = 1 where object_pk = '" .. parent_pk .. "';"
+	assert(db:exec(sql) == sqlite.OK, 'push marker (set gc=1) failed: ' .. tostring(db:errmsg()))
 end
 
 --[[
-Walker's canonical advance: increment stmt_idx AND set gc=1 in one
-UPDATE. Wrapped so tests read at the intent level.
+Walker's canonical advance. Under the current cycle it's two SQL
+statements: SET gc = 1 (the handler's mid-dispatch signal) then
+bare SET stmt_idx = ? (the walker's advance). The BEFORE trigger
+`frames_advance_requires_gc` and the AFTER trigger
+`frames_advance_sets_gc_null` handle the rest.
+
+Wrapped so tests read at the intent level and don't have to know
+the two-statement shape.
 ]]
 local function walker_advance(db, parent_pk, new_stmt_idx)
-	local sql = "update objects set stmt_idx = " .. new_stmt_idx
-		.. ", gc = 1 where object_pk = '" .. parent_pk .. "'"
+	local sql = "update objects set gc = 1 where object_pk = '" .. parent_pk .. "';"
+		.. "update objects set stmt_idx = " .. new_stmt_idx
+		.. " where object_pk = '" .. parent_pk .. "'"
 	return db:exec(sql)
 end
 
@@ -187,12 +193,17 @@ end)
 -- ============================================================
 
 test('gc = 0 is rejected (only 1 or null)', function()
+	-- Two things reject gc = 0 on an inserted frame: (a) the CHECK
+	-- constraint `check (gc = 1)` on the column, and (b) the trigger
+	-- `frames_gc_starts_null` which requires frames to be born with
+	-- gc = null. The BEFORE trigger fires first — either rejection
+	-- is correct for this test's intent.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local sql = "insert into objects (primitive, gc, ast, stmt_idx, parent_frame, owner_role) "
 		.. "values ('f', 0, '[]', 0, '" .. cap_pk .. "', '" .. user_pk .. "');"
-	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
+	assert_fails_with(db:exec(sql), db, 'frames_gc_starts_null',
 		'gc = 0 should be rejected')
 	db:close()
 end)
@@ -235,15 +246,24 @@ test('frame with NEITHER parent_frame nor process=1 is rejected', function()
 end)
 
 test('a parent frame can only have one child at a time', function()
+	-- Insert a first nested frame under frame_0 (with a non-empty ast so
+	-- it doesn't self-delete via frames_auto_delete_at_terminal_on_insert),
+	-- then try to insert a second. The `objects_one_child_per_frame`
+	-- unique index on parent_frame rejects the second.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	-- Try a second child.
-	local sql = "insert into objects (primitive, gc, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. parent_pk .. "', '" .. user_pk .. "');"
-	assert_fails_with(db:exec(sql), db, 'UNIQUE',
+
+	local first_child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. parent_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(first_child_sql), db, 'first child insert')
+
+	local second_child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"y\",{\"v\":2}]]', 0, '"
+		.. parent_pk .. "', '" .. user_pk .. "');"
+	assert_fails_with(db:exec(second_child_sql), db, 'UNIQUE',
 		'second child rejected')
 	db:close()
 end)
@@ -326,9 +346,12 @@ test('parent_frame is immutable', function()
 	local frame_a = insert_frame_0(db, cap_a, user_pk)
 	local frame_b = insert_frame_0(db, cap_b, user_pk)
 
-	-- push a nested frame under a
+	-- Push a nested frame under a. Non-empty ast so it survives past
+	-- INSERT (an empty ast would trip the born-terminal auto-delete
+	-- and there'd be nothing to reparent).
 	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[]', 0, '" .. frame_a .. "', '" .. user_pk .. "');"
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. frame_a .. "', '" .. user_pk .. "');"
 	assert_ok(db:exec(sql), db, 'nested insert')
 	local nested_pk = first(db, "select object_pk from objects where parent_frame = '" .. frame_a .. "'").object_pk
 
@@ -408,17 +431,24 @@ test('stmt_idx skip (0 → 5) is rejected', function()
 end)
 
 test('stmt_idx rewind is rejected', function()
+	-- Use a length-3 ast so the frame survives two advances without
+	-- hitting terminal (and its auto-delete). After advancing to 1,
+	-- try to rewind to 0 → rejected by `frames_stmt_idx_advances_by_one`.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'first advance')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'reset gc')
+	local parent_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do parent_pk = row.object_pk end
+
+	assert_ok(walker_advance(db, parent_pk, 1), db, 'first advance 0→1')
+
 	push_marker(db, parent_pk, user_pk)
 	assert_fails_with(
-		walker_advance(db, parent_pk, 0),
+		db:exec("update objects set stmt_idx = 0 where object_pk = '" .. parent_pk .. "';"),
 		db, 'frames_stmt_idx_',
 		'rewind rejected')
 	db:close()
@@ -426,18 +456,31 @@ end)
 
 
 -- ============================================================
--- The gc cycle — four invariants
+-- The gc cycle — current invariants
+-- ============================================================
+--
+-- Under the current cycle:
+--   * `mark_frame_gc` sets gc=1 as a standalone UPDATE (rule that
+--     old `frames_gc_set_requires_advance` enforced against is gone).
+--   * The walker does a BARE `SET stmt_idx = ?` UPDATE. The BEFORE
+--     trigger `frames_advance_requires_gc` requires old.gc=1; the
+--     AFTER trigger `frames_advance_sets_gc_null` auto-resets gc.
+--   * Mentioning gc in the advance UPDATE with any non-null value
+--     is rejected by `frames_advance_rejects_non_null_gc`.
+--   * Setting gc=1 while the frame has a child is rejected by
+--     `frames_gc_change_requires_no_child` (bidirectional).
+--   * Child-delete cascades set parent.gc=1 via
+--     `frames_child_delete_sets_parent_gc` (cap-exempt).
 -- ============================================================
 
---[[
-Invariant 1a: advancing stmt_idx requires gc = 1 in the same UPDATE.
-]]
 test('advance without gc=1 is rejected', function()
+	-- Bare `SET stmt_idx = ?` on a frame whose gc is still null
+	-- (never marked mid-dispatch) is rejected by
+	-- `frames_advance_requires_gc`. Fresh frame, no push_marker.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
 
 	assert_fails_with(
 		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. parent_pk .. "';"),
@@ -446,193 +489,125 @@ test('advance without gc=1 is rejected', function()
 	db:close()
 end)
 
-test('advance with gc explicitly null is rejected', function()
+test('advance mentioning gc = 1 in the SET clause is rejected', function()
+	-- The advance UPDATE must be bare — `SET stmt_idx = ?` only.
+	-- Any mention of `gc = 1` (or any non-null gc) in the same
+	-- UPDATE is rejected by `frames_advance_rejects_non_null_gc`,
+	-- because the AFTER auto-set would silently overwrite it with
+	-- null anyway. Loud rejection surfaces the engine bug.
+	--
+	-- Uses a length-3 ast so the advance target (stmt_idx=1) is not
+	-- terminal — otherwise `frames_gc_set_rejects_at_terminal`
+	-- would fire first for a different reason.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set stmt_idx = 1, gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'frames_advance_requires_gc',
-		'advance with explicit gc=null rejected')
-	db:close()
-end)
-
-test('advance while gc is already 1 is rejected (cycle not completed)', function()
-	-- The canonical advance is a null→1 gc transition. Advancing while
-	-- gc is ALREADY 1 (skipping the reset step of the previous cycle)
-	-- must be rejected — otherwise the state machine's "one advance per
-	-- cycle" contract can be broken silently.
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-
-	-- Use a length-2 ast so we have room for two advances.
 	local parent_pk
 	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}],[{\"in\":\"as\"},\"y\",{\"v\":2}]]', 0, '"
-		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
 	for row in db:nrows(sql) do parent_pk = row.object_pk end
 
-	-- Cycle 1: canonical advance 0 → 1 with gc=1.
 	push_marker(db, parent_pk, user_pk)
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'cycle 1 advance')
-	-- Deliberately DO NOT reset gc. Frame is now (stmt_idx=1, gc=1).
 
-	-- Attempt cycle 2 advance without first resetting gc → should reject.
-	push_marker(db, parent_pk, user_pk)
 	assert_fails_with(
-		walker_advance(db, parent_pk, 2),
-		db, 'frames_advance_requires_gc',
-		'advance while gc is already 1 rejected')
+		db:exec("update objects set stmt_idx = 1, gc = 1 where object_pk = '" .. parent_pk .. "';"),
+		db, 'frames_advance_rejects_non_null_gc',
+		'advance mentioning gc=1 rejected')
 	db:close()
 end)
 
---[[
-Invariant 1b: setting gc=1 requires stmt_idx to advance in the same UPDATE.
-]]
-test('setting gc=1 alone (no stmt_idx change) is rejected', function()
+test('setting gc=1 while the frame has a child is rejected', function()
+	-- `frames_gc_change_requires_no_child` — bidirectional. Parent
+	-- has a live nested child; try to set gc=1 → rejected.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	-- Insert a live (non-empty ast) child so it doesn't auto-delete.
+	local child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. parent_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(child_sql), db, 'child insert')
 
 	assert_fails_with(
 		db:exec("update objects set gc = 1 where object_pk = '" .. parent_pk .. "';"),
-		db, 'frames_gc_set_requires_advance',
-		'gc=1 without stmt_idx change rejected')
-	db:close()
-end)
-
-test('setting gc=1 with stmt_idx = stmt_idx (no-op mention) is rejected', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set stmt_idx = stmt_idx, gc = 1 where object_pk = '" .. parent_pk .. "';"),
-		db, 'frames_gc_set_requires_advance',
-		'gc=1 with no stmt_idx change rejected')
-	db:close()
-end)
-
---[[
-Setting gc=1 sweeps children unconditionally — including a still-
-active (gc=null) child. The schema doesn't distinguish; walker
-discipline is expected to only advance when children are ready to
-sweep. Test locks in the mechanical rule.
-]]
-test('advance while an active (gc=null) child exists sweeps the child', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-
-	-- Push an ACTIVE nested frame (gc=null), not a marker.
-	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[]', 0, '" .. parent_pk .. "', '" .. user_pk .. "');"
-	assert_ok(db:exec(sql), db)
-	local active_child_pk = first(db,
-		"select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
-
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'advance succeeds')
-
-	-- Active child was swept along with everything else under parent.
-	local still = first(db, "select object_pk from objects where object_pk = '" .. active_child_pk .. "'")
-	assert(still == nil, 'active child should have been swept by the cascade')
-	db:close()
-end)
-
---[[
-Invariant 2: setting gc=1 cascade-deletes children.
-Invariant 3: child-delete requires parent.gc = 1.
-Both exercised together in the happy-path cycle.
-]]
-test('advance sweeps the child in the same op (invariants 2 + 3)', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	local marker_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
-
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'advance succeeded')
-
-	-- Child is gone; parent is at stmt_idx=1, gc=1.
-	local marker_row = first(db, "select object_pk from objects where object_pk = '" .. marker_pk .. "'")
-	assert(marker_row == nil, 'marker should be deleted')
-
-	local parent_row = first(db, "select stmt_idx, gc from objects where object_pk = '" .. parent_pk .. "'")
-	assert(tonumber(parent_row.stmt_idx) == 1, 'stmt_idx should be 1')
-	assert(parent_row.gc == 1, 'gc should be 1')
-	db:close()
-end)
-
---[[
-Invariant 3 as bypass check: direct DELETE of a child frame with
-parent.gc = null must abort.
-]]
-test('direct DELETE of a child frame under a gc-null parent is rejected', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	local child_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
-
-	assert_fails_with(
-		db:exec("delete from objects where object_pk = '" .. child_pk .. "';"),
-		db, 'frames_child_delete_requires_parent_gc',
-		'direct child delete rejected')
-
-	-- Child still present after rejection.
-	local still = first(db, "select object_pk from objects where object_pk = '" .. child_pk .. "'")
-	assert(still ~= nil, 'child survives the rejected delete')
-	db:close()
-end)
-
---[[
-Invariant 4: resetting gc=null requires no child frames.
-]]
-test('resetting gc to null with no children is allowed', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'advance')
-
-	-- After advance, no children. Reset should succeed.
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'gc reset succeeded')
+		db, 'frames_gc_change_requires_no_child',
+		'gc=1 with child rejected')
 	db:close()
 end)
 
 test('resetting gc to null while a child still exists is rejected', function()
-	-- Simulating a bug: engine tries to reset gc without cleaning up
-	-- callback children. Should abort.
+	-- The same bidirectional trigger: gc cannot change while a child
+	-- exists — including the 1 → null direction. Parent must be at
+	-- gc=1 first (to have something to reset from); we mark it before
+	-- adding the child so both preconditions are met.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
-	assert_ok(walker_advance(db, parent_pk, 1), db, 'advance')
 
-	-- Manually insert a child under this parent (simulating an
-	-- on_close callback that added work). The parent is gc=1, so the
-	-- child insert is legal.
-	local sql = "insert into objects (primitive, gc, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', 1, '[]', 0, '" .. parent_pk .. "', '" .. user_pk .. "');"
-	assert_ok(db:exec(sql), db, 'callback-style child insert')
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. parent_pk .. "'"),
+		db, 'mark gc=1 before adding child')
 
-	-- Now engine tries to reset gc. Should fail because a child still exists.
+	-- Add a live child (with non-empty ast so it doesn't auto-delete).
+	local child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. parent_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(child_sql), db, 'child insert')
+
 	assert_fails_with(
-		db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'frames_gc_reset_requires_no_children',
-		'gc reset with children rejected')
+		db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "'"),
+		db, 'frames_gc_change_requires_no_child',
+		'gc reset with a child rejected')
+	db:close()
+end)
+
+test('deleting a child frame cascade-sets parent.gc = 1 (non-cap parent)', function()
+	-- `frames_child_delete_sets_parent_gc` — direct delete of a child
+	-- frame triggers the parent's gc → 1 (unless the parent is a cap,
+	-- which is exempt). Verifies the mechanism that ends every
+	-- non-cap frame's lifecycle.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. parent_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(child_sql), db, 'child insert')
+	local child_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
+
+	-- Mark the child ready to advance, advance it to terminal — that
+	-- fires `frames_auto_delete_at_terminal` on the child, which
+	-- deletes it, which cascade-sets parent.gc = 1.
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. child_pk .. "'"),
+		db, 'child gc=1')
+	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. child_pk .. "'"),
+		db, 'child advance → auto-delete')
+
+	local parent_row = first(db, "select gc from objects where object_pk = '" .. parent_pk .. "'")
+	assert(tonumber(parent_row.gc) == 1,
+		'parent gc should be 1 after child auto-delete cascade; got: ' .. tostring(parent_row.gc))
+	db:close()
+end)
+
+test('resetting gc to null with no children is allowed', function()
+	-- Mark gc=1, then reset. No children involved. The bidirectional
+	-- gc-change trigger's WHEN clause has an existence check for
+	-- children; with none, gc = 1 → null succeeds.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. parent_pk .. "'"),
+		db, 'mark gc=1')
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "'"),
+		db, 'gc reset succeeded')
 	db:close()
 end)
 
@@ -642,34 +617,31 @@ end)
 -- ============================================================
 
 test('two full advance cycles in sequence', function()
+	-- Use a length-3 ast so cycle 2 doesn't hit terminal (which
+	-- would auto-delete the frame). Each cycle: mark gc=1, bare
+	-- advance, verify gc auto-nulled.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 
-	-- Use a length-2 ast so stmt_idx can reach 2 within the ast-bounds
-	-- cap (`stmt_idx <= max(json_array_length(ast), 1)`). insert_frame_0
-	-- uses a length-1 ast; that would fail cycle 2.
 	local parent_pk
 	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
-		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}],[{\"in\":\"as\"},\"y\",{\"v\":2}]]', 0, '"
-		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
 	for row in db:nrows(sql) do parent_pk = row.object_pk end
 
-	-- Cycle 1.
+	-- Cycle 1: 0 → 1.
 	push_marker(db, parent_pk, user_pk)
 	assert_ok(walker_advance(db, parent_pk, 1), db, 'cycle 1 advance')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'cycle 1 gc reset')
 
-	-- Cycle 2.
+	-- Cycle 2: 1 → 2.
 	push_marker(db, parent_pk, user_pk)
 	assert_ok(walker_advance(db, parent_pk, 2), db, 'cycle 2 advance')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. parent_pk .. "';"),
-		db, 'cycle 2 gc reset')
 
 	local row = first(db, "select stmt_idx, gc from objects where object_pk = '" .. parent_pk .. "'")
 	assert(tonumber(row.stmt_idx) == 2, 'stmt_idx should be 2 after two cycles')
-	assert(row.gc == nil, 'gc should be null after both cycles complete')
+	assert(row.gc == nil, 'gc should be null after both cycles (auto-reset by frames_advance_sets_gc_null)')
 
 	local n = first(db, "select count(*) as n from objects where parent_frame = '" .. parent_pk .. "'")
 	assert(tonumber(n.n) == 0, 'no children remain')
@@ -1317,34 +1289,33 @@ end)
 -- Process completion
 -- ============================================================
 
-test('cap reaches terminal state (stmt_idx=1, gc=null, no children) after frame 0 is swept', function()
+test('cap reaches its at-rest state (stmt_idx=0, gc=null, no children) after frame 0 completes', function()
+	-- Under the current design, caps are static process anchors —
+	-- they don't advance stmt_idx and don't participate in the gc
+	-- cycle (cap-exempt from `frames_child_delete_sets_parent_gc`
+	-- and from `frames_auto_delete_at_terminal*`). The cap's at-rest
+	-- state is where it was born: stmt_idx=0, gc=null. Frame 0 does
+	-- its cycle underneath, exhausts its ast, hits terminal, and is
+	-- auto-deleted by `frames_auto_delete_at_terminal` — the cap's
+	-- state is unchanged except that its child is now gone.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Frame 0 finishes normally: advance past its single statement,
-	-- run gc cycle to completion. Now frame 0 is in terminal state
-	-- and cascade-sweep-eligible.
-	assert_ok(walker_advance(db, frame_pk, 1), db, 'frame 0 advance')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "';"),
-		db, 'frame 0 gc reset')
+	-- Frame 0 (length-1 ast): mark gc=1, bare advance to 1 (terminal).
+	-- The advance auto-nulls gc and the auto-delete-at-terminal
+	-- trigger removes frame 0.
+	assert_ok(walker_advance(db, frame_pk, 1), db, 'frame 0 advance to terminal')
 
-	-- Cap advances 0→1 with gc=1; cascade sweeps frame 0 (which is
-	-- gc=null and passes the delete rule).
-	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance sweeps frame 0')
-
-	-- Cap resets gc → null. No children remain.
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "';"),
-		db, 'cap gc reset')
-
-	-- Cap is now terminal: stmt_idx=1, gc=null, no children.
+	-- Cap unchanged.
 	local cap_row = first(db, "select stmt_idx, gc from objects where object_pk = '" .. cap_pk .. "'")
-	assert(tonumber(cap_row.stmt_idx) == 1, 'cap stmt_idx should be 1')
-	assert(cap_row.gc == nil, 'cap gc should be null')
+	assert(tonumber(cap_row.stmt_idx) == 0, 'cap stmt_idx stays at 0')
+	assert(cap_row.gc == nil, 'cap gc stays null (caps are exempt from the child-delete cascade)')
 
+	-- Frame 0 is gone; cap has no children.
 	local children = first(db, "select count(*) as n from objects where parent_frame = '" .. cap_pk .. "'")
-	assert(tonumber(children.n) == 0, 'cap should have no children')
+	assert(tonumber(children.n) == 0, 'cap should have no children (frame 0 auto-deleted at terminal)')
 	db:close()
 end)
 
@@ -1361,40 +1332,49 @@ test('deleting a frame with gc=null is accepted regardless of stmt_idx', functio
 	db:close()
 end)
 
-test('deleting a frame in gc=1 (mid-cleanup) state is rejected', function()
+test('a frame with a child cannot be deleted', function()
+	-- The current schema replaces the old `frames_delete_requires_gc_null`
+	-- with `frames_delete_requires_no_child` — the invariant is
+	-- "no live child" rather than "gc is null." Reaches for the same
+	-- protection: you can't destroy a parent while a child is
+	-- executing under it.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Advance to past-max with gc=1 — mid-cleanup, gc not yet reset.
-	assert_ok(walker_advance(db, frame_pk, 1), db, 'advance')
+	local child_sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. frame_pk .. "', '" .. user_pk .. "');"
+	assert_ok(db:exec(child_sql), db, 'child insert')
 
 	assert_fails_with(
 		db:exec("delete from objects where object_pk = '" .. frame_pk .. "';"),
-		db, 'frames_delete_requires_gc_null',
-		'mid-cleanup delete rejected')
+		db, 'frames_delete_requires_no_child',
+		'parent-with-child delete rejected')
 	db:close()
 end)
 
-test('deleting a frame marks its bucket needs_trace=1 via cascade of the owner→bucket ref', function()
+test('frame delete cascades its refs and marks each child needs_trace=1', function()
+	-- Frame 0 exhausts its ast, hits terminal, auto-deletes
+	-- (`frames_auto_delete_at_terminal`). Its outgoing refs cascade
+	-- via `refs.parent ON DELETE CASCADE`; each ref-delete fires
+	-- `refs_mark_needs_trace_after_delete` on the child, marking the
+	-- bucket needs_trace = 1. Verifies the mark path via the natural
+	-- lifecycle end.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Attach a bucket to frame 0 as a refs row (owner→bucket).
 	local bucket_pk = insert_hash(db, user_pk)
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
 
-	-- Delete frame 0 via cap-advance cascade. Frame 0's row goes; its
-	-- outgoing refs (including owner→bucket) cascade-delete (refs.parent
-	-- ON DELETE CASCADE); each ref-delete fires
-	-- refs_mark_needs_trace_after_delete → marks the bucket needs_trace=1.
-	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance sweeps frame 0')
+	-- Frame 0 runs to terminal. The auto-delete cascades refs, which
+	-- marks the bucket.
+	assert_ok(walker_advance(db, frame_pk, 1), db, 'frame 0 advance to terminal')
 
-	-- Bucket survives; needs_trace set.
 	local bucket = first(db, "select needs_trace from objects "
 		.. "where object_pk = '" .. bucket_pk .. "'")
 	assert(bucket ~= nil, 'bucket should survive frame delete')
@@ -1551,23 +1531,30 @@ test('scalars can own a bucket (regular objects, no exclusion)', function()
 	db:close()
 end)
 
-test('sweeping a nested marker leaves the cap untouched (still stmt_idx=0)', function()
+test('a nested frame advancing does not touch the cap (still stmt_idx=0, gc=null)', function()
+	-- Nested-frame advance is a local operation. Cap stays at
+	-- (stmt_idx=0, gc=null) — its exempt from the child-gc cascade
+	-- so even a frame-delete at terminal doesn't reach it. Use a
+	-- length-3 nested ast so we can advance without hitting terminal.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	push_marker(db, parent_pk, user_pk)
 
-	-- Advance sweeps the marker under frame 0. Cap is unaffected —
-	-- still at stmt_idx=0, gc=null, still parent of frame 0.
-	assert_ok(walker_advance(db, parent_pk, 1), db)
+	local parent_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do parent_pk = row.object_pk end
+
+	assert_ok(walker_advance(db, parent_pk, 1), db, 'nested advance 0→1')
 
 	local cap_row = first(db, "select stmt_idx, gc from objects where object_pk = '" .. cap_pk .. "'")
 	assert(tonumber(cap_row.stmt_idx) == 0, 'cap stmt_idx should still be 0')
 	assert(cap_row.gc == nil, 'cap gc should still be null')
 
-	local frame_0_still_there = first(db, "select object_pk from objects where object_pk = '" .. parent_pk .. "'")
-	assert(frame_0_still_there ~= nil, 'frame 0 should still exist under cap')
+	local nested_still_there = first(db, "select object_pk from objects where object_pk = '" .. parent_pk .. "'")
+	assert(nested_still_there ~= nil, 'nested frame should still exist under cap (not at terminal)')
 	db:close()
 end)
 
@@ -2428,62 +2415,83 @@ end)
 
 -- ============================================================
 -- stmt_idx upper bound relative to ast.
--- A frame's stmt_idx may not exceed max(json_array_length(ast), 1).
--- Two shapes: length-N ast → {0..N} valid; empty ast → {0, 1} valid
--- (0 = born, 1 = cap terminal). Enforced on INSERT and on UPDATE OF
--- stmt_idx (two triggers, same error id).
+-- A frame's stmt_idx may not exceed `json_array_length(ast)`.
+-- Length-N ast → {0..N} valid; empty ast → {0} valid (born terminal).
+-- Enforced by the column-level CHECK constraint
+-- `check (stmt_idx is null or stmt_idx <= json_array_length(ast))`.
 -- ============================================================
 
-test('empty ast: cap advance beyond 1 is rejected', function()
+test('empty ast: INSERT with stmt_idx > 0 is rejected', function()
+	-- Empty ast → json_array_length(ast) = 0 → only stmt_idx = 0 is
+	-- valid. stmt_idx = 1 fails BOTH the column CHECK constraint
+	-- (`stmt_idx <= json_array_length(ast)`) and the trigger
+	-- `frames_stmt_idx_must_start_at_zero` (must be 0 at INSERT).
+	-- The trigger fires first — either rejection is correct.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 
-	-- Cap has ast='[]', stmt_idx=0. Advance to 1 is legal (terminal).
-	-- Advance to 2 should be out of bounds.
-	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance 0→1 accepted')
-	-- Reset gc so we can advance again (need gc null before next update).
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "';"),
-		db, 'gc reset')
-	assert_fails_with(
-		walker_advance(db, cap_pk, 2),
-		db, 'frames_stmt_idx_out_of_bounds',
-		'advance beyond 1 on empty-ast frame rejected')
-	db:close()
-end)
-
-test('length-1 ast: advance beyond 1 is rejected on UPDATE', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local cap_pk = insert_process(db, user_pk)
-	local frame_pk = insert_frame_0(db, cap_pk, user_pk)  -- length-1 ast
-
-	-- Advance 0 → 1 is legal (past the last statement, terminal).
-	push_marker(db, frame_pk, user_pk)
-	assert_ok(walker_advance(db, frame_pk, 1), db, 'advance 0→1 accepted')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "';"),
-		db, 'gc reset')
-
-	-- Advance to 2 should be out of bounds.
-	assert_fails_with(
-		walker_advance(db, frame_pk, 2),
-		db, 'frames_stmt_idx_out_of_bounds',
-		'advance beyond 1 on length-1 ast rejected')
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[]', 1, '" .. cap_pk .. "', '" .. user_pk .. "')"
+	local rc = db:exec(sql)
+	assert(rc ~= sqlite.OK, 'stmt_idx=1 on empty ast should have been rejected')
+	local msg = db:errmsg()
+	assert(msg:find('frames_stmt_idx_must_start_at_zero', 1, true)
+			or msg:find('CHECK constraint', 1, true),
+		'expected start-at-zero or CHECK constraint; got: ' .. tostring(msg))
 	db:close()
 end)
 
 test('length-3 ast: INSERT with stmt_idx = 4 is rejected', function()
+	-- Length-3 ast → valid stmt_idx ∈ {0..3}. stmt_idx=4 fails the
+	-- column CHECK. Two rules fire: the CHECK constraint AND
+	-- `frames_stmt_idx_starts_at_zero` (must be 0 at INSERT).
+	-- The trigger fires first — either rejection is correct for the
+	-- test's intent (stmt_idx=4 is not a valid birth state).
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 
-	-- Length-3 ast. Valid stmt_idx values: {0..3}. stmt_idx=4 is out.
 	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
 		.. "values ('f', "
 		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
 		.. "4, '" .. cap_pk .. "', '" .. user_pk .. "')"
-	assert_fails_with(db:exec(sql), db, 'frames_stmt_idx_out_of_bounds',
-		'INSERT with stmt_idx=4 on length-3 ast rejected')
+	local rc = db:exec(sql)
+	assert(rc ~= sqlite.OK, 'stmt_idx=4 on insert should have been rejected')
+	local msg = db:errmsg()
+	assert(msg:find('frames_stmt_idx_must_start_at_zero', 1, true)
+			or msg:find('CHECK constraint', 1, true),
+		'expected start-at-zero or CHECK-constraint rejection; got: ' .. tostring(msg))
+	db:close()
+end)
+
+test('length-3 ast: UPDATE stmt_idx to 4 is rejected', function()
+	-- The CHECK constraint fires on UPDATE too. Advance the frame
+	-- to a legal position, then try to jump to 4.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	local parent_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do parent_pk = row.object_pk end
+
+	-- Mark gc=1 so an advance is allowed, then try a legal +1 first
+	-- (fine), then push_marker again and try to jump to 4 — that
+	-- fires the "+1 at a time" trigger before the CHECK; but if we
+	-- go straight from any legal stmt_idx directly to 4 (as an
+	-- illegal update), we hit the CHECK. Simpler: set gc=1, jump 0→4.
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. parent_pk .. "'"),
+		db, 'mark gc=1')
+	local rc = db:exec("update objects set stmt_idx = 4 where object_pk = '" .. parent_pk .. "'")
+	assert(rc ~= sqlite.OK, 'stmt_idx=4 update should have been rejected')
+	local msg = db:errmsg()
+	assert(msg:find('CHECK constraint', 1, true)
+			or msg:find('frames_stmt_idx_must_advance_by_one', 1, true),
+		'expected CHECK or advance-by-one rejection; got: ' .. tostring(msg))
 	db:close()
 end)
 

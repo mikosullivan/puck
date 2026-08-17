@@ -78,8 +78,8 @@ h.test('$x = 1: runs end-to-end through the dispatch chain', function()
 	local cap = first(e.cvm,
 		"select stmt_idx, gc from objects where object_pk = '" .. result.cap_pk .. "'")
 	h.assert_true(cap ~= nil, 'cap should still exist (GC-substrate reap out of scope)')
-	h.assert_eq(tonumber(cap.stmt_idx), 1, 'cap stmt_idx should be 1')
-	h.assert_true(cap.gc == nil, 'cap gc should be null')
+	h.assert_eq(tonumber(cap.stmt_idx), 0, 'cap stmt_idx should be 0 (cap is born terminal — empty ast, terminal = length(ast) = 0)')
+	h.assert_true(cap.gc == nil, 'cap gc should be null (caps are exempt from the child-delete → gc=1 cascade)')
 
 	local cap_kids = scalar(e.cvm,
 		"select count(*) from objects where parent_frame = '" .. result.cap_pk .. "'")

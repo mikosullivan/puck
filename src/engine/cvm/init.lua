@@ -13,7 +13,8 @@
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
 		"add_frame":     "(ast, process_pk, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
-		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key"
+		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key",
+		"mark_frame_gc": "(object_pk) — sets gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass"
 	},
 	"policy": "CVM DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the cvm class. Every statement the cvm uses is prepared upfront in cvm.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
 	"performance": "Every method on this class is on a hot path. Once the dispatch loop lands (see the open questions in the docstring), most will fire on every statement dispatch; any cycle saved multiplies across the whole running program.",
@@ -172,6 +173,10 @@ function cvm.new(db)
 
 	self.stmt_get_ref_child = db:prepare(
 		"select child from refs where parent = ? and key = ?"
+	)
+
+	self.stmt_mark_frame_gc = db:prepare(
+		"update objects set gc = 1 where object_pk = ?"
 	)
 
 	return self
@@ -447,6 +452,26 @@ function cvm:get_ref_child(parent_pk, key)
 
 	stmt:reset()
 	return child_pk
+end
+
+--[[
+## `mark_frame_gc` — flag a frame as mid-dispatch (gc = 1)
+
+Sets `gc = 1` on the target frame's objects row. The row-handler for
+`$var = <scalar>` (and eventually other in-frame mutations) calls
+this after its writes to signal that the frame is mid-dispatch and
+the walker must run its GC pass before the next statement.
+
+Replaces the older marker-frame pattern where the routine pushed an
+empty child frame as the "mid-dispatch signal" — under the current
+cycle, `gc = 1` on the frame itself carries that signal directly, no
+scratch row needed.
+]]
+function cvm:mark_frame_gc(object_pk)
+	local stmt = self.stmt_mark_frame_gc
+	stmt:bind_values(object_pk)
+	stmt:step()
+	stmt:reset()
 end
 
 return cvm

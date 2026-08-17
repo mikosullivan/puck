@@ -147,10 +147,19 @@ create table objects (
 		check (process is null or ast = '[]'),
 
 	-- Current position within the frame's ast. Set on frames, null on
-	-- non-frames. Under the gc cycle, stmt_idx increments by 1 per
-	-- statement dispatched, in the SAME UPDATE that sets gc=1. [ghi]
+	-- non-frames. Under the gc cycle the handler sets `gc = 1` on the
+	-- frame before the walker's bare `SET stmt_idx = ?` advance; the
+	-- schema's advance-requires-gc + auto-set-gc-null triggers handle
+	-- the rest. Terminal state: `stmt_idx = json_array_length(ast)`
+	-- (for an empty ast, that's 0 — the frame is born terminal).
+	--
+	-- Third CHECK enforces the upper bound built into the column
+	-- itself: stmt_idx never exceeds the ast's length. Replaces the
+	-- earlier pair of BEFORE-INSERT and BEFORE-UPDATE OF stmt_idx
+	-- triggers with a declarative constraint that fires on any write. [ghi]
 	stmt_idx integer
-		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f')),
+		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f'))
+		check (stmt_idx is null or stmt_idx <= json_array_length(ast)),
 
 	-- Root-of-process flag. `process = 1` marks this frame as the top
 	-- cap of a call stack — the object identity of the process itself.
@@ -520,31 +529,6 @@ end;
 --
 -- Bidirectional gc: null (executing) ↔ 1 (post-dispatch cleanup).
 
--- stmt_idx upper bound relative to ast. A frame's stmt_idx may not
--- exceed `max(json_array_length(ast), 1)`. Two shapes:
---   * Non-empty ast (length N): stmt_idx in {0..N} — 0..N-1 is a
---     position within the ast; N is one past the last statement
---     (terminal for an ordinary frame).
---   * Empty ast (length 0): stmt_idx in {0, 1} — 0 is the born state;
---     1 is the cap's terminal transition (advanced past nothing).
--- Enforced on INSERT and on UPDATE OF stmt_idx. [ghi]
-create trigger frames_stmt_idx_within_ast_bounds
-before insert on objects
-when new.primitive = 'f'
-	and new.stmt_idx is not null
-	and new.stmt_idx > max(json_array_length(new.ast), 1)
-begin
-	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
-end;
-
-create trigger frames_stmt_idx_within_ast_bounds_on_update
-before update of stmt_idx on objects
-when new.stmt_idx is not null
-	and new.stmt_idx > max(json_array_length(new.ast), 1)
-begin
-	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
-end;
-
 -- New gc-cycle design, rule 8: auto-delete a frame the moment it
 -- reaches the terminal state (stmt_idx past the last executable
 -- position). Chain reaction with rule 3: the delete fires an
@@ -566,11 +550,31 @@ create trigger frames_auto_delete_at_terminal
 after update of stmt_idx on objects
 when new.primitive = 'f'
 	and new.process is not 1
-	and new.stmt_idx = max(json_array_length(new.ast), 1)
+	and new.stmt_idx >= json_array_length(new.ast)
 	and not exists (
 		select 1 from objects
 		where parent_frame = new.object_pk and primitive = 'f'
 	)
+begin
+	delete from objects where object_pk = new.object_pk;
+end;
+
+-- Sibling of `frames_auto_delete_at_terminal`, on the INSERT side.
+-- A non-cap frame born already in terminal state (stmt_idx already
+-- past json_array_length(ast) — the empty-ast case is the canonical
+-- example, stmt_idx=0 with length 0) self-deletes on birth. Same
+-- rule, both entry points. The immediate delete fires
+-- `frames_child_delete_sets_parent_gc` on the parent (unless the
+-- parent is a cap, which the cascade skips).
+--
+-- Caps excluded (`process is not 1`) — a cap has empty ast and IS
+-- born terminal by design, and stays alive as the process anchor.
+-- [ghi]
+create trigger frames_auto_delete_at_terminal_on_insert
+after insert on objects
+when new.primitive = 'f'
+	and new.process is not 1
+	and new.stmt_idx >= json_array_length(new.ast)
 begin
 	delete from objects where object_pk = new.object_pk;
 end;
@@ -650,6 +654,7 @@ end;
 create trigger frames_child_delete_sets_parent_gc
 after delete on objects
 when old.primitive = 'f' and old.parent_frame is not null
+	and (select process from objects where object_pk = old.parent_frame) is not 1
 begin
 	update objects set gc = 1 where object_pk = old.parent_frame;
 end;
@@ -687,7 +692,7 @@ end;
 create trigger frames_gc_set_rejects_at_terminal
 before update of gc on objects
 when new.gc is 1
-	and new.stmt_idx = max(json_array_length(new.ast), 1)
+	and new.stmt_idx >= json_array_length(new.ast)
 begin
 	select raise(abort, 'frames_gc_set_rejects_at_terminal: cannot set gc = 1 when the frame is in its terminal state');
 end;
@@ -740,16 +745,21 @@ begin
 	select raise(abort, 'parent_frame_must_be_frame: parent_frame must reference a frame (primitive = ''f'')');
 end;
 
--- New gc-cycle design: a child frame cannot be inserted under a
--- parent that is in its terminal state. A terminal parent has no
--- more statements to dispatch; spawning a child there would
--- resurrect a done frame. Applies uniformly to caps and nested
--- frames. [ghi]
+-- A child frame cannot be inserted under a nested-frame parent
+-- that is in its terminal state. A terminal parent has no more
+-- statements to dispatch; spawning a child there would resurrect a
+-- done frame.
+--
+-- CAP parents are exempt (`process is not 1` on the parent). Caps
+-- have empty ast and are born terminal under the new formula, and
+-- frame 0 is always inserted as a cap's child at boot — that's the
+-- normal case, not a resurrection. Caps are static process
+-- anchors, not executing frames. [ghi]
 create trigger frames_no_child_under_terminal_parent
 before insert on objects
 when new.parent_frame is not null
 	and (
-		select stmt_idx = max(json_array_length(ast), 1)
+		select stmt_idx >= json_array_length(ast) and process is not 1
 		from objects
 		where object_pk = new.parent_frame
 	)

@@ -149,14 +149,14 @@ end
 --[[
 ## `set_local_to_scalar` — specialized routine for `$name = <scalar>`
 
-Writes a fresh binding to the frame's own scope (scopes[0]) and plants a GC marker as the frame's child. All atomic inside `SAVEPOINT set_local_to_scalar`.
+Writes a fresh binding to the frame's own scope (scopes[0]) and marks the current frame `gc = 1`. All atomic inside `SAVEPOINT set_local_to_scalar`.
 
 Four composed writes:
 
 1. `engine:add_scalar(scalar_type, scalar_value, self.owner_role)` — materialize the scalar.
 2. `self:ensure_own_scope()` — get-or-create bucket → scopes → scopes[0].
 3. `engine:add_ref(own_scope.object_pk, name, scalar_pk)` — bind the variable name to the scalar in the own scope hash.
-4. **Push a GC marker** as child of this frame — a row with `primitive='f'`, `gc=1`, `ast='[]'`, `stmt_idx=0`, `parent_frame = self.object_pk`. Satisfies the "frame with children = mid-execution" invariant, the marker-required-for-stmt-idx-advance trigger, and enqueues the GC pass that must run before the next statement.
+4. `engine:mark_frame_gc(self.object_pk)` — set the current frame's `gc = 1`. That flag IS the mid-dispatch signal; the walker's next tick runs the GC pass before advancing. No child marker row is created — the earlier "push an empty child frame" pattern is retired under the current cycle.
 
 **Fresh-binding only.** The `unique (parent, key)` constraint on `refs` means calling this with a `name` that's already bound in the own scope hash fails the ref insert (rolled back with the savepoint).
 
@@ -172,21 +172,11 @@ function frame:set_local_to_scalar(name, scalar_type, scalar_value)
 		local own_scope = self:ensure_own_scope()
 		self.engine:add_ref(own_scope.object_pk, name, scalar_pk)
 
-		-- Push mid-dispatch marker last — after the writes so a
-		-- resume-mid-savepoint can't observe a marker without the writes
-		-- it signals. Marker is born in the terminal shape: empty ast
-		-- (stmt_idx=0 is past the max valid index of -1 for []) and
-		-- gc=null. Its presence as a child signals "parent is mid-
-		-- dispatch"; parent's next advance cascade-deletes it, and
-		-- the `frames_delete_requires_terminal_state` trigger passes
-		-- because the marker is already terminal.
-		local push_marker = db:prepare(
-			"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) " ..
-			"values ('f', '[]', 0, ?, ?)"
-		)
-		push_marker:bind_values(self.object_pk, self.owner_role)
-		push_marker:step()
-		push_marker:finalize()
+		-- Mark the current frame as mid-dispatch. Set last so a
+		-- resume-mid-savepoint can't observe gc=1 without the writes
+		-- it signals. The walker's next tick sees gc=1 and runs its
+		-- GC pass before advancing stmt_idx.
+		self.engine:mark_frame_gc(self.object_pk)
 	end)
 
 	if not ok then
