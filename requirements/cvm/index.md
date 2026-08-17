@@ -16,9 +16,7 @@ Roles are also not a separate table. A role is an `objects` row with `primitive 
 
 A process is also not a separate table. A process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent — the top of a call stack. Its `object_pk` IS the process identity. Frame 0 (the top of user code) sits under the cap as a nested frame; sub-frames chain from frame 0 via `parent_frame`. The cap participates in the same lifecycle machinery as any frame, which is what lets the walker cascade-clean frame 0 uniformly.
 
-![CVM entity-relationship diagram: color-coded clusters — cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple). Frames and processes are not separate tables — a frame is an `objects` row with primitive='f'; a process is an objects row with primitive='f' and process=1.](./schema.svg)
-
-**Diagram staleness note.** The rendered SVG above is stale — a rewrite is a follow-on. Under the current schema: no `processes` table (a process is a cap frame in `objects`); no `bucket_pk` / `stack_pk` / `bucket_for` / `stack_for` columns (ownership is a normal refs row from owner to collection); `parent_frame` chains sub-frames to their parent; `process = 1` marks the cap frame; the `primitive` domain includes `'r'` for roles, and role-tree parentage is `parent_role` (renamed from `role_parent`).
+![CVM schema: five tables in three color-coded clusters — `cvm` marker (gray), `objects` and `refs` object graph (teal), `instance_listeners` and `class_listeners` (purple). Frames, roles, and processes are not separate tables — they are `objects` rows discriminated by the `primitive` column ('f' = frame, 'r' = role, 'o' / 'h' / 'a' for scalars and containers; `process = 1` marks the cap frame). Self-referential FKs (parent_role, owner_role, parent_frame) are drawn as dashed loops on the right edge of the `objects` box.](./schema.svg)
 
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL
 - [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB
