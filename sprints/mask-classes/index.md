@@ -14,7 +14,7 @@ Sprint on mask classes. A mask class **looks** like a Caspian class from the sur
 
 ## Pages so far
 
-- [pre-run](./pre-run) — the CVM database state before the first command runs, minimal display (object_pk + comment only)
+- [storage](./storage) — how masks live in the CVM database; starts from the state before the first command runs and grows as the sprint layers in writes
 
 ## Status
 
