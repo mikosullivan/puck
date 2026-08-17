@@ -5,14 +5,14 @@
 	"exports": {
 		"stock_instances": "() -> array of Handler instances — one fresh instance of each stock Handler subclass; called by engine.new() to populate row_handlers"
 	},
-	"status": "empty — no stock handlers landed yet; first-variable sprint will register the first"
+	"status": "V0.1 — VariableScalar is the first stock handler"
 }
 ]]
 
 --[[
 # `handlers`
 
-Aggregator module for the engine's stock Handler subclasses. Currently empty — no handlers have landed yet. The first (a `DispatchAs` subclass for `$x = 1`-style assignments) arrives with the first-variable sprint.
+Aggregator module for the engine's stock Handler subclasses. Currently one handler: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape. More handlers land as later slices add support for other row-head shapes.
 
 **Adding a new stock handler:**
 
