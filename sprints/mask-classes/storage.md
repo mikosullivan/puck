@@ -30,3 +30,26 @@ Just after `cvm.open` returns and before any process has been seeded.
 <tbody>
 </tbody>
 </table>
+
+## After the class mask is stored
+
+The first mask-related write lands: one row appears in `objects` for the class mask itself.
+
+<table class="tbl-cvm">
+<thead>
+<tr><th class="tbl-title-objects" colspan="2">objects</th></tr>
+<tr><th>object pk</th><th class="col-comment">comment</th></tr>
+</thead>
+<tbody>
+<tr><td><code>c010cafe-…</code></td><td class="col-comment">class mask</td></tr>
+</tbody>
+</table>
+
+<table class="tbl-cvm">
+<thead>
+<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
+<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
+</thead>
+<tbody>
+</tbody>
+</table>
