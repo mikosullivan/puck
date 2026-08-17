@@ -135,7 +135,7 @@ create table objects (
 	owner_role text references objects(object_pk),
 
 	-- CaspM tree as JSON text. Biconditional with primitive='f' — every
-	-- frame has an ast, no non-frame does. A cap frame (process=1) has
+	-- frame has an ast, no non-frame does. A cap frame (process_cap=1) has
 	-- ast='[]' — the cap doesn't dispatch anything, its "one slot" is
 	-- just a lifecycle position (0=live, 1=terminal). Immutable once
 	-- set (see objects_ast_immutable). SQL guarantees storage integrity
@@ -144,7 +144,7 @@ create table objects (
 	ast text
 		check ((primitive = 'f' and ast is not null)
 			or (primitive != 'f' and ast is null))
-		check (process is null or ast = '[]'),
+		check (process_cap is null or ast = '[]'),
 
 	-- Current position within the frame's ast. Set on frames, null on
 	-- non-frames. Under the gc cycle, stmt_idx increments by 1 per
@@ -152,27 +152,27 @@ create table objects (
 	stmt_idx integer
 		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f')),
 
-	-- Root-of-process flag. `process = 1` marks this frame as the top
+	-- Root-of-process flag. `process_cap = 1` marks this frame as the top
 	-- cap of a call stack — the object identity of the process itself.
 	-- Null on nested frames (which have parent_frame set instead).
 	-- A cap has ast='[]' (see check below), starts at stmt_idx=0, and
 	-- becomes terminal when it reaches stmt_idx=1 with gc=null and no
 	-- children. Frame 0 sits under the cap as a nested frame. Immutable
-	-- via objects_process_immutable. [ghi]
-	process integer
-		check (process = 1)
-		check (process is null or primitive = 'f'),
+	-- via objects_process_cap_immutable. [ghi]
+	process_cap integer
+		check (process_cap = 1)
+		check (process_cap is null or primitive = 'f'),
 
 	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
 	-- has exactly one anchor: either parent_frame (nested frame) or
-	-- process=1 (the cap), never both, never neither. Enforced by the
+	-- process_cap=1 (the cap), never both, never neither. Enforced by the
 	-- mutual-exclusion check on this column. [ghi]
 	parent_frame text
 		references objects(object_pk)
 		check (parent_frame is null or primitive = 'f')
 		check (primitive != 'f'
-			or (parent_frame is not null and process is null)
-			or (parent_frame is null and process is 1)),
+			or (parent_frame is not null and process_cap is null)
+			or (parent_frame is null and process_cap is 1)),
 
 	-- No dedicated bucket/stack columns. Ownership of a bucket or a
 	-- stack is a normal `refs` row from the owner to the collection.
@@ -212,19 +212,6 @@ create table objects (
 		check (gc = 1)
 		check (gc is null or primitive = 'f'),
 
-	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
-	needs_trace integer check (needs_trace = 1),
-
-	-- GC scratch: callback-order index. Null in the common case.
-	-- `typeof(in_trace) = 'integer'` closes SQLite's affinity hole —
-	-- `integer` alone is affinity, not strict typing, so a real like
-	-- 1.5 or a text like 'abc' would satisfy `> 0` without the
-	-- typeof clause. [ghi]
-	in_trace integer check (
-		in_trace is null
-		or (typeof(in_trace) = 'integer' and in_trace > 0)
-	),
-
 	-- Human-readable label. Informational; no query path reads it. [ghi]
 	debug text
 );
@@ -233,19 +220,157 @@ create table objects (
 create index objects_persistent on objects(persistent) where persistent = 1;
 
 -- Cap frames — the `uspace` view's process-anchor branch selects
--- `process = 1`; partial index keeps it empty of nulls so the branch
+-- `process_cap = 1`; partial index keeps it empty of nulls so the branch
 -- doesn't fall back to a full objects scan. [ghi]
-create index objects_process on objects(process) where process = 1;
-
--- Partial indexes for the drain's worklist / callback-order walks. [ghi]
-create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
-create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
+create index objects_process_cap on objects(process_cap) where process_cap = 1;
 
 -- Roles are a small population inside a large objects table. The `roles`
 -- view (see below) is `select object_pk from objects where primitive = 'r'`;
 -- this partial index keeps the view — and every uspace evaluation that
 -- pulls the roles branch — off a full table scan. [ghi]
 create index objects_roles on objects(object_pk) where primitive = 'r';
+
+
+-- ------------------------------------------------------------
+-- GC trace-state table. Split out of `objects` so GC scratch —
+-- the drain worklist mark — doesn't clutter every row and every
+-- objects query with an always-null column. Presence in this
+-- table IS the mark; absence means the object is not queued for
+-- retrace. The callback-order index (formerly `in_trace` on
+-- objects) is deferred to a later sprint step.
+-- ------------------------------------------------------------
+
+-- Drain worklist. A row here means the object has been marked for
+-- retrace by the trace routine.
+--
+-- `process_pk` scopes the mark to a specific process's trace (each
+-- process cap runs its own reachability sweep independently) and is
+-- required. Defaults to `current_process_pk()` — the engine's UDF
+-- returning the currently-dispatching process cap's pk — so triggers
+-- and callers that INSERT without specifying it pick up the engine's
+-- runtime context automatically. The companion trigger
+-- `needs_trace_process_pk_must_be_cap` verifies the referenced row
+-- is actually a cap (`process_cap = 1`); the FK alone can't check
+-- other columns of the target row.
+--
+-- ON DELETE semantics on the two FKs differ deliberately:
+--   * `object_pk` — CASCADE. If the marked object is deleted, its
+--     mark row goes with it (the mark is meaningless once the target
+--     is gone).
+--   * `process_pk` — NO ACTION (RESTRICT). A process cannot be
+--     deleted until it has cleaned up its own needs_trace rows.
+--     Companion trigger `process_cap_terminal_requires_no_needs_trace`
+--     enforces the earlier phase: a cap cannot even advance to its
+--     terminal state while any needs_trace rows still reference it. [ghi]
+create table needs_trace (
+	process_pk text not null
+		default (current_process_pk())
+		references objects(object_pk),
+	object_pk text primary key
+		references objects(object_pk) on delete cascade
+);
+
+-- process_pk must reference a cap frame (`process_cap = 1`). [ghi]
+create trigger needs_trace_process_pk_must_be_cap
+before insert on needs_trace
+when (select process_cap from objects where object_pk = new.process_pk) is not 1
+begin
+	select raise(abort, 'needs_trace_process_pk_must_be_cap: process_pk must reference an objects row with process_cap = 1');
+end;
+
+-- A process cap cannot advance stmt_idx into its terminal position
+-- while any needs_trace row still references it. Combined with the
+-- process_pk FK's RESTRICT semantic (no cascade on delete), this
+-- means a process must fully clean up its trace worklist before it
+-- can either reach terminal OR be deleted. [ghi]
+create trigger process_cap_terminal_requires_no_needs_trace
+before update of stmt_idx on objects
+when new.process_cap = 1
+	and new.stmt_idx = max(json_array_length(new.ast), 1)
+	and exists (select 1 from needs_trace where process_pk = new.object_pk)
+begin
+	select raise(abort, 'process_cap_terminal_requires_no_needs_trace: process cap cannot advance to terminal while needs_trace rows still reference it');
+end;
+
+
+-- Trace log. One row per trace run (or per event within a run —
+-- semantics filled in later). Independent of `needs_trace`: the
+-- worklist drives WHAT to trace next; `traces` accumulates the log
+-- of what happened.
+--
+-- `trace_pk` is a monotonic integer PK (AUTOINCREMENT, not just
+-- rowid aliasing — the current max isn't reused after delete).
+--
+-- `process_pk` follows the same rules as `needs_trace.process_pk`:
+--   * NOT NULL, DEFAULT `current_process_pk()`.
+--   * References `objects(object_pk)` with NO ACTION (RESTRICT).
+--   * Companion trigger `traces_process_pk_must_be_cap` enforces
+--     that the referenced object is a cap (`process_cap = 1`).
+--   * Companion trigger `process_cap_terminal_requires_no_traces`
+--     prevents the cap from reaching its terminal stmt_idx while
+--     any trace rows still reference it.
+--
+-- `object_pk` is the object the trace entry is about:
+--   * NOT NULL.
+--   * References `objects(object_pk)` with ON DELETE CASCADE — a
+--     trace entry is meaningless once its target is gone, so it
+--     goes with it. Unlike `needs_trace.object_pk`, this is NOT
+--     the PK; many trace rows may reference the same object.
+--
+-- Net effect: a process must clear its trace log before it can
+-- either reach terminal OR be deleted, mirroring the discipline
+-- imposed on the needs_trace worklist. [ghi]
+create table traces (
+	trace_pk integer primary key autoincrement,
+	process_pk text not null
+		default (current_process_pk())
+		references objects(object_pk),
+	object_pk text not null
+		references objects(object_pk) on delete cascade
+);
+
+-- process_pk must reference a cap frame (`process_cap = 1`). [ghi]
+create trigger traces_process_pk_must_be_cap
+before insert on traces
+when (select process_cap from objects where object_pk = new.process_pk) is not 1
+begin
+	select raise(abort, 'traces_process_pk_must_be_cap: process_pk must reference an objects row with process_cap = 1');
+end;
+
+-- A process cap cannot advance stmt_idx into its terminal position
+-- while any traces row still references it. Combined with the
+-- process_pk FK's RESTRICT semantic, a process must fully clean up
+-- its trace log before it can either reach terminal OR be
+-- deleted. [ghi]
+create trigger process_cap_terminal_requires_no_traces
+before update of stmt_idx on objects
+when new.process_cap = 1
+	and new.stmt_idx = max(json_array_length(new.ast), 1)
+	and exists (select 1 from traces where process_pk = new.object_pk)
+begin
+	select raise(abort, 'process_cap_terminal_requires_no_traces: process cap cannot advance to terminal while traces rows still reference it');
+end;
+
+
+-- Per-trace object membership. One row per (trace, object) pair
+-- indicates that `object` was visited during `trace`.
+--
+-- Composite PK on `(trace_pk, object_pk)` gives the uniqueness
+-- constraint for free (SQLite indexes PKs; no separate UNIQUE
+-- declaration needed).
+--
+-- Both FKs CASCADE on delete:
+--   * If the trace goes away, its membership rows go with it.
+--   * If the object goes away, every trace's record of having
+--     visited it goes with it. [ghi]
+create table in_trace (
+	trace_pk integer not null
+		references traces(trace_pk) on delete cascade,
+	object_pk text not null
+		references objects(object_pk) on delete cascade,
+	primary key (trace_pk, object_pk)
+);
+
 
 -- Base immutability for objects. Per-column triggers below handle
 -- core_role, parent_role, owner_role, and ast. [ghi]
@@ -352,11 +477,19 @@ begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
 
--- On refs DELETE: mark the old child for trace. [ghi]
+-- On refs DELETE: mark the old child for trace. Insertion into the
+-- separate `needs_trace` table. `process_pk` is omitted from the
+-- INSERT — the column's DEFAULT is `current_process_pk()`, so the
+-- engine's currently-dispatching process cap gets recorded
+-- automatically. `insert or ignore` handles the double-mark case
+-- (already in the worklist). The child is guaranteed to still
+-- exist in objects at this point — `refs.child` has ON DELETE
+-- RESTRICT, so a child object can't be deleted while any ref
+-- points at it. [ghi]
 create trigger refs_mark_needs_trace_after_delete
 after delete on refs
 begin
-	update objects set needs_trace = 1 where object_pk = old.child;
+	insert or ignore into needs_trace (object_pk) values (old.child);
 end;
 
 -- Hash keys must be Caspian-compliant identifiers — start with a
@@ -554,7 +687,7 @@ end;
 -- upward.
 --
 -- Guards:
---   * Cap frames are excluded (`process is not 1`). The cap stays
+--   * Cap frames are excluded (`process_cap is not 1`). The cap stays
 --     terminal-alive as the process anchor.
 --   * The frame must have no child at the moment of delete
 --     (`not exists ...`). Defense in depth — under the state machine
@@ -565,7 +698,7 @@ end;
 create trigger frames_auto_delete_at_terminal
 after update of stmt_idx on objects
 when new.primitive = 'f'
-	and new.process is not 1
+	and new.process_cap is not 1
 	and new.stmt_idx = max(json_array_length(new.ast), 1)
 	and not exists (
 		select 1 from objects
@@ -692,7 +825,6 @@ begin
 	select raise(abort, 'frames_gc_set_rejects_at_terminal: cannot set gc = 1 when the frame is in its terminal state');
 end;
 
-
 -- `parent_frame` is immutable. A frame's parent is set at INSERT and
 -- never changes. Rejects only on actual change. [ghi]
 create trigger objects_parent_frame_immutable
@@ -757,13 +889,13 @@ begin
 	select raise(abort, 'frames_no_child_under_terminal_parent: cannot insert a child frame under a parent that is in its terminal state');
 end;
 
--- `process` is immutable. A frame's identity as a cap (or not) is
+-- `process_cap` is immutable. A frame's identity as a cap (or not) is
 -- fixed at INSERT and never changes. Rejects only on actual change. [ghi]
-create trigger objects_process_immutable
-before update of process on objects
-when new.process is not old.process
+create trigger objects_process_cap_immutable
+before update of process_cap on objects
+when new.process_cap is not old.process_cap
 begin
-	select raise(abort, 'objects_process_immutable: objects.process is immutable');
+	select raise(abort, 'objects_process_cap_immutable: objects.process_cap is immutable');
 end;
 
 -- A parent frame can have at most one child frame at a time. Partial
@@ -1018,7 +1150,7 @@ create view uspace as
 	union
 	-- Process caps — the top of every live call stack. Frame 0 and
 	-- everything below it are reachable via parent_frame from the cap. [ghi]
-	select object_pk from objects where primitive = 'f' and process = 1;
+	select object_pk from objects where primitive = 'f' and process_cap = 1;
 
 
 -- ------------------------------------------------------------
