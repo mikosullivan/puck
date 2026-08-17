@@ -35,16 +35,27 @@ insert into cvm (key, value) values ('schema', '9.0');
 -- ------------------------------------------------------------
 
 create table objects (
-	-- UUID4-shaped hex string via SQLite's randomblob(). [ghi]
-	object_pk text primary key default (
-		lower(
-			substr(hex(randomblob(4)), 1, 8) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(6)), 1, 12)
+	-- UUID v4 shape, lowercase. DEFAULT builds a full v4 (position 15
+	-- = '4' for version, position 20 ∈ {8,9,a,b} for variant, all
+	-- lowercase via the wrapping `lower()`). CHECK enforces lowercase
+	-- 8-4-4-4-12 hex — accepts non-v4 UUIDs (v1, v3, v7, etc.) so
+	-- callers passing IDs generated elsewhere aren't rejected, but
+	-- requires lowercase so uppercase-vs-lowercase can't produce two
+	-- distinct PKs for the same conceptual UUID. Enforced via `like`
+	-- (positional shape) plus a `glob` reject on any character other
+	-- than lowercase hex or hyphen. [ghi]
+	object_pk text primary key
+		default (
+			lower(
+				substr(hex(randomblob(4)), 1, 8) || '-' ||
+				substr(hex(randomblob(2)), 1, 4) || '-' ||
+				'4' || substr(hex(randomblob(2)), 1, 3) || '-' ||
+				substr('89ab', 1 + (abs(random()) % 4), 1) || substr(hex(randomblob(2)), 1, 3) || '-' ||
+				substr(hex(randomblob(6)), 1, 12)
+			)
 		)
-	),
+		check (object_pk like '________-____-____-____-____________'
+			and object_pk not glob '*[^0-9a-f-]*'),
 
 	-- Row-kind discriminator:
 	--   'o' → object

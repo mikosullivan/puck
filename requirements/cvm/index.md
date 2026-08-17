@@ -16,6 +16,8 @@ Roles are also not a separate table. A role is an `objects` row with `primitive 
 
 A process is also not a separate table. A process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent — the top of a call stack. Its `object_pk` IS the process identity. Frame 0 (the top of user code) sits under the cap as a nested frame; sub-frames chain from frame 0 via `parent_frame`. The cap participates in the same lifecycle machinery as any frame, which is what lets the walker cascade-clean frame 0 uniformly.
 
+`object_pk` is a lowercase-hex UUID (8-4-4-4-12 shape). The column DEFAULT generates a fresh v4 UUID; the column CHECK accepts any UUID of that shape (v1, v3, v7, etc.) so callers passing IDs from elsewhere aren't rejected. Lowercase is enforced so the same conceptual UUID can't sit under two distinct PKs (SQLite's default TEXT collation is binary).
+
 ![CVM schema: five tables in three color-coded clusters — `cvm` marker (gray), `objects` and `refs` object graph (teal), `instance_listeners` and `class_listeners` (purple). Frames, roles, and processes are not separate tables — they are `objects` rows discriminated by the `primitive` column ('f' = frame, 'r' = role, 'o' / 'h' / 'a' for scalars and containers; `process = 1` marks the cap frame). Self-referential FKs (parent_role, owner_role, parent_frame) are drawn as dashed loops on the right edge of the `objects` box.](./schema.svg)
 
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL

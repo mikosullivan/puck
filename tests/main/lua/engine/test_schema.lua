@@ -1781,5 +1781,186 @@ test('persistent = 0 is rejected (only 1 or null allowed)', function()
 end)
 
 
+-- ============================================================
+-- Object pk shape and DEFAULT
+-- `object_pk` is a lowercase-hex UUID (8-4-4-4-12). The DEFAULT
+-- generates a proper v4 UUID (version bit at position 15, variant
+-- bit at position 20). The CHECK is looser about version/variant
+-- (accepts v1/v3/v7/etc.) but strict about case (lowercase only)
+-- so the same conceptual UUID can't sit under two distinct PKs.
+-- ============================================================
+
+test('seeded core-role rows have compliant object_pks', function()
+	local db = fresh_db()
+
+	for _, code in ipairs({'e', 'c', 'u'}) do
+		local row = first(db, "select object_pk from objects where core_role = '" .. code .. "'")
+		local pk = row.object_pk
+
+		-- length 36
+		assert(#pk == 36, "core_role='" .. code .. "' object_pk should be length 36; got: " .. #pk .. " (" .. pk .. ")")
+		-- hyphens at 9, 14, 19, 24 (1-indexed)
+		assert(pk:sub(9, 9) == '-', "hyphen expected at position 9 in " .. pk)
+		assert(pk:sub(14, 14) == '-', "hyphen expected at position 14 in " .. pk)
+		assert(pk:sub(19, 19) == '-', "hyphen expected at position 19 in " .. pk)
+		assert(pk:sub(24, 24) == '-', "hyphen expected at position 24 in " .. pk)
+		-- v4: position 15 (start of third block) must be '4'
+		assert(pk:sub(15, 15) == '4', "position 15 should be '4' (v4 version bit) in " .. pk)
+		-- variant: position 20 (start of fourth block) must be 8/9/a/b
+		local v = pk:sub(20, 20)
+		assert(v == '8' or v == '9' or v == 'a' or v == 'b',
+			"position 20 should be one of 8/9/a/b (variant bit) in " .. pk .. " (got '" .. v .. "')")
+	end
+	db:close()
+end)
+
+test('DEFAULT generates v4-shaped pks across 100 inserts', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	for i = 1, 100 do
+		local sql = "insert into objects (primitive, owner_role) values ('h', '"
+			.. user_pk .. "') returning object_pk"
+		local row = first(db, sql)
+		local pk = row.object_pk
+
+		assert(#pk == 36, "iteration " .. i .. ": pk length should be 36; got: " .. #pk .. " (" .. pk .. ")")
+		assert(pk:sub(15, 15) == '4', "iteration " .. i .. ": position 15 should be '4'; got: " .. pk)
+
+		local v = pk:sub(20, 20)
+		assert(v == '8' or v == '9' or v == 'a' or v == 'b',
+			"iteration " .. i .. ": position 20 should be 8/9/a/b; got: '" .. v .. "' in " .. pk)
+	end
+	db:close()
+end)
+
+test('CHECK accepts a caller-supplied lowercase v4 UUID', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdef01-2345-4678-9abc-def012345678', 'h', '" .. user_pk .. "')"),
+		db, 'compliant lowercase v4 UUID accepted')
+	db:close()
+end)
+
+test('CHECK rejects a caller-supplied uppercase UUID (lowercase enforced)', function()
+	-- Same conceptual UUID as the lowercase-accept test above but in
+	-- uppercase. Rejected because SQLite's default TEXT collation is
+	-- binary — accepting both cases would let the same UUID sit under
+	-- two distinct PKs.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('ABCDEF01-2345-4678-9ABC-DEF012345678', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'uppercase UUID rejected')
+	db:close()
+end)
+
+test('CHECK rejects a caller-supplied mixed-case UUID (lowercase enforced)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('AbCdEf01-2345-4678-9aBc-dEf012345678', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'mixed-case UUID rejected')
+	db:close()
+end)
+
+test('CHECK accepts a non-v4 UUID (loose shape — no version-bit check)', function()
+	-- Version-3 (position 15 = '3') and non-v4 variants should pass —
+	-- the CHECK only enforces the general 8-4-4-4-12 hex shape.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdef01-2345-3678-c000-def012345678', 'h', '" .. user_pk .. "')"),
+		db, 'v3-shaped UUID accepted (no version-bit check)')
+	db:close()
+end)
+
+test("CHECK rejects 'banana' (not UUID-shaped at all)", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('banana', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'banana rejected')
+	db:close()
+end)
+
+test("CHECK rejects a UUID-length-but-wrong-hyphen-position string", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	-- Same length (36) but hyphens in wrong places.
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdef0123-45-4678-9abc-def012345678', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'wrong hyphen positions rejected')
+	db:close()
+end)
+
+test("CHECK rejects a UUID-shape with a non-hex character in place", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	-- Same layout, but position 5 is 'g' (not hex).
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdgf01-2345-4678-9abc-def012345678', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'non-hex character rejected')
+	db:close()
+end)
+
+test("CHECK rejects the historical 'no-such-uuid-...' sentinel", function()
+	-- The word 'no-such-uuid' has non-hex letters (n, o, s, u).
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('no-such-uuid-0000-0000-000000000000', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		"'no-such-uuid-...' rejected")
+	db:close()
+end)
+
+test("CHECK rejects a too-short string", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdef01-2345', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'too-short string rejected')
+	db:close()
+end)
+
+test("CHECK rejects a too-long string", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcdef01-2345-4678-9abc-def012345678-extra', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'too-long string rejected')
+	db:close()
+end)
+
+
 -- Runner (tests/main/lua/engine/run.lua) aggregates results across
 -- files; no per-file report or os.exit here.
