@@ -2,9 +2,9 @@
 
 --[[
 {
-	"module": "test_refs_debug_mutable",
-	"role": "Sprint-scoped test: refs.debug is mutable. `debug` is a human-readable informational label with no query path reading it; the refs_no_update trigger's WHEN clause omits it, so changing debug on an existing ref is accepted. The other columns (ref_pk, parent, child, key, idx) remain immutable.",
-	"run": "lua5.4 sprints/close-schema-holes/tests/test_refs_debug_mutable.lua (from repo root)"
+	"module": "test_hash_array_keys",
+	"role": "Sprint-scoped tests for the two new triggers in sprints/hash-array-key-semantics/src/schema.sql — `refs_hash_key_required` (hash parents must have a non-null key) and `refs_array_key_forbidden` (array parents must have a null key). Runs standalone against the sprint's copy of the schema.",
+	"run": "lua5.4 sprints/hash-array-key-semantics/tests/test_hash_array_keys.lua (from repo root)"
 }
 ]]
 
@@ -13,7 +13,7 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local sqlite = require('lsqlite3')
 
-local SCHEMA_PATH = 'sprints/close-schema-holes/src/schema.sql'
+local SCHEMA_PATH = 'sprints/hash-array-key-semantics/src/schema.sql'
 
 
 -- ------------------------------------------------------------
@@ -102,6 +102,15 @@ local function insert_hash(db, owner_role)
 	end
 end
 
+local function insert_array(db, owner_role)
+	local sql = "insert into objects (primitive, owner_role) values ('a', '"
+		.. owner_role .. "') returning object_pk"
+
+	for row in db:nrows(sql) do
+		return row.object_pk
+	end
+end
+
 local function insert_scalar(db, owner_role)
 	local sql = "insert into objects (primitive, scalar_type, scalar_value, owner_role) "
 		.. "values ('o', 'n', 1, '" .. owner_role .. "') returning object_pk"
@@ -113,102 +122,84 @@ end
 
 
 -- ============================================================
--- refs.debug is mutable
+-- refs_hash_key_required — hash parent must have non-null key
 -- ============================================================
 
-test('setting refs.debug from null to a value is accepted', function()
+test('hash parent with null key is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_pk = insert_scalar(db, user_pk)
-
-	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
-		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"), db, 'insert ref')
-
-	assert_ok(db:exec("update refs set debug = 'first label' where parent = '"
-		.. hash_pk .. "' and key = 'x'"), db, 'set debug from null')
-
-	local row = first(db, "select debug from refs where parent = '"
-		.. hash_pk .. "' and key = 'x'")
-	assert(row.debug == 'first label',
-		'debug should be "first label"; got: ' .. tostring(row.debug))
-	db:close()
-end)
-
-test('changing refs.debug to a different value is accepted', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-	local child_pk = insert_scalar(db, user_pk)
-
-	assert_ok(db:exec("insert into refs (parent, child, key, idx, debug) values ('"
-		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0, 'first')"), db, 'insert with debug')
-
-	assert_ok(db:exec("update refs set debug = 'second' where parent = '"
-		.. hash_pk .. "' and key = 'x'"), db, 'update debug')
-
-	local row = first(db, "select debug from refs where parent = '"
-		.. hash_pk .. "' and key = 'x'")
-	assert(row.debug == 'second',
-		'debug should be "second"; got: ' .. tostring(row.debug))
-	db:close()
-end)
-
-test('clearing refs.debug (back to null) is accepted', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-	local child_pk = insert_scalar(db, user_pk)
-
-	assert_ok(db:exec("insert into refs (parent, child, key, idx, debug) values ('"
-		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0, 'label')"), db, 'insert with debug')
-
-	assert_ok(db:exec("update refs set debug = null where parent = '"
-		.. hash_pk .. "' and key = 'x'"), db, 'clear debug')
-
-	local row = first(db, "select debug from refs where parent = '"
-		.. hash_pk .. "' and key = 'x'")
-	assert(row.debug == nil, 'debug should be null; got: ' .. tostring(row.debug))
-	db:close()
-end)
-
-
--- ============================================================
--- Regression: the other columns remain immutable
--- ============================================================
-
-test('changing refs.key is still rejected (regression)', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-	local child_pk = insert_scalar(db, user_pk)
-
-	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
-		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"), db, 'insert ref')
 
 	assert_fails_with(
-		db:exec("update refs set key = 'y' where parent = '"
-			.. hash_pk .. "' and idx = 0"),
-		db, 'refs_immutable',
-		'changing key should still be rejected')
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'refs_hash_key_required',
+		'null key under hash parent rejected')
 	db:close()
 end)
 
-test('changing refs.child is still rejected (regression)', function()
+test('hash parent with non-null key is accepted', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
-	local child_a = insert_scalar(db, user_pk)
-	local child_b = insert_scalar(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
 
-	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
-		.. hash_pk .. "', '" .. child_a .. "', 'x', 0)"), db, 'insert ref')
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"),
+		db, 'non-null key under hash parent accepted')
+	db:close()
+end)
+
+
+-- ============================================================
+-- refs_array_key_forbidden — array parent must have null key
+-- ============================================================
+
+test('array parent with non-null key is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local array_pk = insert_array(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
 
 	assert_fails_with(
-		db:exec("update refs set child = '" .. child_b .. "' where parent = '"
-			.. hash_pk .. "' and key = 'x'"),
-		db, 'refs_immutable',
-		'changing child should still be rejected')
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. array_pk .. "', '" .. child_pk .. "', 'k', 0)"),
+		db, 'refs_array_key_forbidden',
+		'non-null key under array parent rejected')
+	db:close()
+end)
+
+test('array parent with null key is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local array_pk = insert_array(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. array_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'null key under array parent accepted')
+	db:close()
+end)
+
+
+-- ============================================================
+-- Non-container parents still unaffected — the two new rules
+-- only fire when parent is 'h' or 'a', not 'o' or 'f'.
+-- ============================================================
+
+test('non-container (object) parent with null key is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local owner_pk = insert_scalar(db, user_pk)
+	local child_pk = insert_hash(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. owner_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'null-keyed bucket-ref from a scalar owner accepted')
 	db:close()
 end)
 

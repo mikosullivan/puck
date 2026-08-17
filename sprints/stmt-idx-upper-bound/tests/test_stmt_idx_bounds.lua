@@ -3,8 +3,8 @@
 --[[
 {
 	"module": "test_stmt_idx_bounds",
-	"role": "Sprint-scoped tests for the frames_stmt_idx_within_ast_bounds triggers (insert + update variants) in sprints/close-schema-holes/src/schema.sql. Enforces that a frame's stmt_idx cannot exceed max(json_array_length(ast), 1) — i.e., for empty ast, {0, 1}; for length-N ast, {0..N}.",
-	"run": "lua5.4 sprints/close-schema-holes/tests/test_stmt_idx_bounds.lua (from repo root)"
+	"role": "Sprint-scoped tests for the frames_stmt_idx_within_ast_bounds triggers (insert + update variants) in sprints/stmt-idx-upper-bound/src/schema.sql. Enforces that a frame's stmt_idx cannot exceed max(json_array_length(ast), 1) — i.e., for empty ast, {0, 1}; for length-N ast, {0..N}.",
+	"run": "lua5.4 sprints/stmt-idx-upper-bound/tests/test_stmt_idx_bounds.lua (from repo root)"
 }
 ]]
 
@@ -13,7 +13,7 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local sqlite = require('lsqlite3')
 
-local SCHEMA_PATH = 'sprints/close-schema-holes/src/schema.sql'
+local SCHEMA_PATH = 'sprints/stmt-idx-upper-bound/src/schema.sql'
 
 
 -- ------------------------------------------------------------

@@ -174,7 +174,7 @@ end)
 h.test('cannot insert a parent_role pointing at a nonexistent row', function()
 	local db = cvm.open()
 
-	local rc = db:exec("insert into objects (primitive, parent_role) values ('r', 'no-such-uuid-0000-0000-000000000000');")
+	local rc = db:exec("insert into objects (primitive, parent_role) values ('r', '00000000-0000-4000-8000-000000000000');")
 	local msg = db:errmsg()
 
 	-- Either error is acceptable: the FK would fire for a nonexistent
