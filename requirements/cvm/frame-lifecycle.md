@@ -1,93 +1,93 @@
 ~~~vibecode
-{"doc": "note",
-	"role": "Step-by-step trace of the CVM state through the lifecycle of a process: create_frame_0 pushes the process row and frame 0; the walker advances the frame's stmt_idx through its ast; the frame-0 shutdown deletes the frame (trigger flips processes.complete = 1); the engine's default auto-delete removes the process record. Every state along the way is a valid resume state."}
+{"doc": "requirements_cvm_frame_lifecycle",
+	"role": "The lifecycle of a process from seed to terminal. A process is a cap frame (`primitive='f'`, `process=1`, `ast='[]'`) at the top of a call stack; frame 0 sits under the cap as a nested frame. The walker advances each frame's stmt_idx through its ast; every advance couples with `gc = 1` and cascade-sweeps children in one UPDATE. The process reaches terminal state when the cap hits `stmt_idx = 1, gc = null, no children`. Every state along the way is a valid resume state.",
+	"key_concepts": ["cap_as_frame", "advance_with_gc", "cascade_cleanup", "terminal_state", "resume_safety"]}
 ~~~
 
 # Frame lifecycle
 
-Step-by-step CVM state through the lifecycle of a process. Uses an empty program (`caspm = {}`) as the driving example — the ast column shows `[]` throughout, so the walker's while loop exits immediately and shutdown fires on the first iteration. A non-empty program only changes the ast string; the surrounding shape is the same.
+Step-by-step CVM state through the lifecycle of a process. Uses the assignment `$x = 1` as the driving example — one statement, one dispatch, one cycle. A longer program adds more advance cycles but no shape changes.
 
 Every state below is a valid resume state. If the database crashes at any moment (and it's persistent), the process can be resumed cleanly.
 
-## After the process is added to `processes`
+## The concept: cap-as-frame
 
-`initialize_process` has inserted one row into `processes` and returned its pk. Nothing else has changed yet — the user seed is still the only row in `objects`.
+A process is not a separate table row — a process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent. The cap's `object_pk` IS the process identity.
 
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-processes" colspan="3">processes</th></tr>
-<tr><th>process pk</th><th>complete</th><th>message</th></tr>
-</thead>
-<tbody>
-<tr><td><code>36685fb5-…</code></td><td><code>0</code></td><td>null</td></tr>
-</tbody>
-</table>
+Frame 0 — the top of the user's call stack — sits directly under the cap as a nested frame (`parent_frame = cap_pk`, `process = null`). Sub-frames chain further down from frame 0 via `parent_frame`.
 
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-objects" colspan="8">objects</th></tr>
-<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>process</th><th class="col-comment">comment</th></tr>
-</thead>
-<tbody>
-<tr class="tbl-row-user"><td><code>e87440b5-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed — root role, HashPrimitive, pinned</td></tr>
-</tbody>
-</table>
+The cap participates in the same lifecycle machinery as any frame — same `stmt_idx` field, same `gc` state, same advance rules, same terminal check. Its ast is empty (`'[]'`) so its `stmt_idx = 0 → 1` transition doesn't dispatch anything; it's the mechanism the walker uses to sweep frame 0 when the program is done.
 
-## After frame 0 is pushed to `objects`
+**Why a cap.** A process needs a top-of-stack anchor so the walker can cascade-clean frame 0 with the same trigger machinery it uses everywhere else. Rather than special-case "sweep frame 0" logic, the cap gives frame 0 a parent whose advance-with-gc cascade handles it uniformly.
 
-The frame INSERT has now landed. `primitive = 'f'`, ast copied in as JSON, `stmt_idx = 0`, `process` set to the process pk from the previous step, `owner_role` set to the user seed. `parent_frame` is null (frame 0 has no parent frame). `bucket_pk` and `stack_pk` are null — the frame hasn't touched anything that would need a bucket or stack yet.
+## The mechanism: advance-with-gc
 
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-processes" colspan="3">processes</th></tr>
-<tr><th>process pk</th><th>complete</th><th>message</th></tr>
-</thead>
-<tbody>
-<tr><td><code>b56705d4-…</code></td><td><code>0</code></td><td>null</td></tr>
-</tbody>
-</table>
+The walker's per-statement operation on a frame is **one UPDATE that increments `stmt_idx` and sets `gc = 1` together**:
 
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-objects" colspan="8">objects</th></tr>
-<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>process</th><th class="col-comment">comment</th></tr>
-</thead>
-<tbody>
-<tr class="tbl-row-user"><td><code>ac70370e-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>d5d2ad94-…</code></td><td><code>f</code></td><td>null</td><td><code>ac70370e-…</code></td><td><code>[]</code></td><td><code>0</code></td><td><code>b56705d4-…</code></td><td class="col-comment">frame 0 — freshly pushed, no dispatch yet, no bucket / stack</td></tr>
-</tbody>
-</table>
+~~~sql
+update objects set stmt_idx = stmt_idx + 1, gc = 1
+where object_pk = <frame_pk>;
+~~~
 
-## Shutdown
+The AFTER-UPDATE trigger on `gc` cascade-deletes child frames (including any marker the just-completed dispatch pushed). The engine then resets `gc = null` once no children remain.
 
-Now that the frame has completed its cycle, it should remove itself from the frame stack. It must also set its parent (in this case the process) to a state that marks the completion of the process.
+Four invariants guard the cycle (all enforced by triggers on `objects`):
 
-These two operations — **deleting the last frame** and **setting `processes.complete = 1`** — *must* be done together in a single transaction. This is not a soft rule; splitting them corrupts the process's observable state.
+1. **`frames_advance_requires_gc`** — advancing `stmt_idx` requires `gc = 1` in the same UPDATE.
+2. **`frames_gc_set_deletes_children`** — the AFTER-UPDATE cascade sweeps child frames.
+3. **`frames_child_delete_requires_parent_gc`** — a child frame can only be deleted when its parent's `gc = 1` (i.e., only via the cascade, not by direct DELETE).
+4. **`frames_gc_reset_requires_no_children`** — resetting `gc = null` requires no child frames.
 
-In the current implementation the atomicity is enforced by the `processes_complete_after_frame_0_delete` trigger: the walker issues one DELETE on the frame row, and the trigger flips `processes.complete = 1` as part of that same DELETE. One SQL statement, one atomic transition.
+Plus the delete rule: **`frames_delete_requires_gc_null`** — a frame can only be deleted when its own `gc is null` (mid-cleanup deletes rejected). Any `stmt_idx` is fine — early return via `%call.return` legitimately leaves a frame mid-ast with `gc = null`.
 
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-processes" colspan="3">processes</th></tr>
-<tr><th>process pk</th><th>complete</th><th>message</th></tr>
-</thead>
-<tbody>
-<tr><td><code>b56705d4-…</code></td><td><code>1</code></td><td>null</td></tr>
-</tbody>
-</table>
+## Terminal state
+
+A frame is in terminal state when `stmt_idx > max valid ast index AND gc is null AND no children`. Once terminal, the frame's `object_pk` is a safe delete candidate — it has completed its execution and its cleanup cycle.
+
+For the cap specifically, `ast = '[]'` means max valid idx is -1. The cap is born past-max at `stmt_idx = 0`, but stays alive because nothing cascades into deleting it. The cap advancing to `stmt_idx = 1` (with `gc = 1`) is the mechanism that sweeps frame 0; when the cap's `gc` resets to `null`, the cap itself is terminal. That's the "program is done" signal.
+
+## Step-by-step example: `$x = 1`
+
+Each state below is at-rest — a valid state to persist to disk.
+
+### After frame 0 is loaded
+
+Cap seeded, frame 0 seeded under it. Nothing has run yet.
 
 <table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="8">objects</th></tr>
-<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>process</th><th class="col-comment">comment</th></tr>
+<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>parent_frame</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
-<tr class="tbl-row-user"><td><code>ac70370e-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
+<tr class="tbl-row-user"><td><code>01111111-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
+<tr><td><code>0c72f81a-…</code></td><td><code>f</code></td><td>null</td><td><code>01111111-…</code></td><td><code>[]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>process = 1</code>, process root</td></tr>
+<tr><td><code>2dc612e0-…</code></td><td><code>f</code></td><td>null</td><td><code>01111111-…</code></td><td><code>[[{"in":"as"},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
 </tbody>
 </table>
 
-The process is now at a state in which any results from it can be reaped or ignored.
+### After frame 0's statement dispatches
 
-Typically the engine would next delete the process record. By default that's what Caspian will do. However, the engine can be configured (via `engine.auto_delete_process = false`) to leave the database at the current state.
+The handler for `{in='as'}` ran `frame:set_local_to_scalar('x', 'n', 1)` in a single savepoint: materialize the scalar, ensure the bucket → scopes → scopes[0] chain, bind `x`, push a marker child. The marker signals "handler done; walker may advance."
 
-If an attempt is made to run the process again that should raise an exception. The process is already completed.
+Frame 0's `stmt_idx` still `0` (the walker hasn't advanced yet). See [scopes](./scopes) for the bucket/scopes chain shape.
+
+### After frame 0's advance
+
+Walker's advance on frame 0: `stmt_idx = 1, gc = 1`. Cascade sweeps the marker (marker's `gc` is null; frame 0's is 1; both delete rules pass). Engine resets frame 0's `gc = null`. Frame 0 is now terminal (past max ast idx, `gc = null`, no children).
+
+### After the cap's advance
+
+Walker's advance on the cap: `stmt_idx = 1, gc = 1`. Cascade sweeps frame 0 (frame 0's `gc` is null; cap's is 1). Frame 0's outgoing refs cascade too — the owner→bucket ref fires the standard mark trigger, leaving the bucket `needs_trace = 1`. Engine resets cap's `gc = null`. Cap is now at `stmt_idx = 1, gc = null, no children` — **terminal**.
+
+**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because terminal shape IS the completion signal. Anything reading process status looks at the cap's row.
+
+### After the engine reaps the cap
+
+Engine marks the cap `needs_trace = 1`. GC traces reachability from roots (roles, persistent objects, other live process caps). Nothing reaches the cap or the orphaned bucket / scopes / scalar. GC sweeps unreachable rows; each deletion cascades outgoing refs, marking their targets `needs_trace = 1`; the loop runs until the queue is dry. DB back to just the seed rows.
+
+## Resume safety
+
+Every state above is a valid state to crash-and-resume from. The walker's operations are per-statement atomic (one UPDATE = advance + cascade), and the shutdown is per-frame atomic (advance + cascade on the cap = the process closes). There is no in-memory bookkeeping the engine needs to reconstruct; every fact about the process's progress lives on the cap and frames' `stmt_idx` and `gc` columns.
+
+Frame 0 as a nested frame (not a special row) means resume machinery treats it exactly like any other frame — no special "frame 0 handling" branch in the walker.

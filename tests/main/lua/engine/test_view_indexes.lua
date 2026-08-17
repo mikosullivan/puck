@@ -120,7 +120,7 @@ test("uspace: pk lookup uses the PK index in each union branch", function()
 	db:close()
 end)
 
-test("uspace: full listing uses core_role + role_parent + persistent indexes, no full scan", function()
+test("uspace: full listing uses core_role + role_parent + persistent + process indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
 	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)",
@@ -129,6 +129,8 @@ test("uspace: full listing uses core_role + role_parent + persistent indexes, no
 		"role_parent branch should use the partial index")
 	assert_plan_contains(p, "USING INDEX objects_persistent",
 		"persistent branch should use the partial index")
+	assert_plan_contains(p, "USING INDEX objects_process",
+		"cap-frame branch should use the objects_process partial index")
 	assert_plan_lacks(p, "SCAN objects",
 		"no branch of uspace should full-scan objects")
 	db:close()
@@ -182,13 +184,13 @@ test("`where core_role = 'e'` uses the objects_core_role partial unique index", 
 	db:close()
 end)
 
-test("uspace's frame-anchor branch uses the objects_frame_on_stack partial index", function()
+test("uspace's cap-frame branch uses the objects_process partial index", function()
 	local db = fresh_db()
-	-- uspace's third branch is `where primitive = 'f' and process_pk is not null`.
+	-- uspace's cap-frame branch is `where primitive = 'f' and process = 1`.
 	-- Test that predicate directly against objects so the plan
 	-- output surfaces the specific index; the same predicate inside
 	-- the view flattens to it.
-	local p = plan(db, "select object_pk from objects where primitive = 'f' and process_pk is not null")
-	assert_plan_contains(p, "USING INDEX objects_frame_on_stack")
+	local p = plan(db, "select object_pk from objects where primitive = 'f' and process = 1")
+	assert_plan_contains(p, "USING INDEX objects_process")
 	db:close()
 end)

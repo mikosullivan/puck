@@ -1,64 +1,41 @@
 --[[
 {
-	"module": "frame",
-	"role": "Class attached to every `objects` row with `primitive = 'f'` — a frame, an instance of a call. Distinct from a function or closure, which is a plain `primitive = 'o'` object storing its CaspM in a bucket entry; calling a function creates a fresh frame row and copies the function's CaspM into the frame's `ast`. Covers two runtime states: on-stack (stack coordinates set) and popped-but-captured (stack coordinates null, kept alive by an incoming ref). Inherits from `object` — picks up the `bucket` and `stack` accessors for free. Adds `locals` (read-only accessor), `ensure_locals` (get-or-create), and `set_local_to_scalar` (specialized write path for scalar-RHS assignments like `$x = 1`).",
+	"module": "frame (first-variable sprint)",
+	"role": "Sprint-scoped rewrite of shipping `cvm.frame`. Class attached to `objects` rows with `primitive = 'f'`. Under the sprint's scopes design, the frame's bucket holds a `scopes` key pointing at an ArrayPrimitive; scopes[0] is the frame's own locals hash for this call, scopes[1..] are captured scopes from closures (once those land). Adds `own_scope` (read-only accessor for scopes[0]), `ensure_own_scope` (get-or-create), and `set_local_to_scalar` (specialized write path for `$name = <scalar>` assignments).",
 	"inherits_from": "object",
 	"exports": {
 		"new":                 "(engine, row) -> frame — constructor",
-		"locals":              "() -> object — the frame's locals hash; nil if it hasn't been created yet (read-only)",
-		"ensure_locals":       "() -> object — the frame's locals hash, materializing it on first call",
-		"set_local_to_scalar": "(name, scalar_type, scalar_value) — specialized routine for `$name = <primitive scalar>`"
+		"own_scope":           "() -> object — the frame's own scope hash (scopes[0]); nil if not yet created (read-only)",
+		"ensure_own_scope":    "() -> object — the frame's own scope hash, materializing bucket → scopes → scopes[0] on first call",
+		"set_local_to_scalar": "(name, scalar_type, scalar_value) — specialized write path for `$name = <primitive scalar>`"
 	},
-	"status": "sketch — walking-skeleton, first pass at Lua-native class file"
+	"depends_on": ["cvm.object", "lsqlite3 (for SQLITE_ROW)"],
+	"status": "sprint rewrite in progress — scopes design"
 }
 ]]
 
 --[[
-# Frame
+# Frame (sprint rewrite)
 
-The class attached to every `objects` row with `primitive = 'f'` —
-an instance of a call. Distinct from a function or closure: those
-are plain `primitive = 'o'` objects that store their CaspM in a
-bucket entry. When one is called, the engine creates a fresh
-`primitive = 'f'` row and copies the CaspM into its `ast` column.
-The function object stays where it is; the frame is a separate row
-with the code it's actually running.
+The class attached to every `objects` row with `primitive = 'f'` — a frame, an instance of a call. Distinct from a function or closure: those are plain `primitive = 'o'` objects that store their CaspM in a bucket entry. When one is called, the engine creates a fresh `primitive = 'f'` row and copies the CaspM into its `ast` column. The function object stays where it is; the frame is a separate row with the code it's actually running.
 
-The schema's `ast` column is biconditional with `primitive = 'f'`,
-so "is this a frame?" and "does this row carry code being executed?"
-are the same question — answered structurally at row-write time.
+Under the sprint's design, frames are destroyed when finished (drop-and-replace plants a GC marker in their place). There is no popped-but-captured state — closures carry the captured *hash*, not the frame.
 
-Two runtime states:
+**Scopes.** The frame's bucket holds a `scopes` key pointing at an ArrayPrimitive:
 
-- **On-stack.** A frame currently pushed onto some process's call
-  stack. `process`, `idx`, `stmt_idx` all set.
-- **Popped-but-captured.** A frame that returned but is kept alive
-  by an incoming ref (a closure captured it). Same row; stack
-  coordinates go null on pop. GC decides its fate through normal
-  reachability.
+- `scopes[0]` — this frame's OWN scope hash. Where `set_local_to_scalar` writes.
+- `scopes[1]`, `scopes[2]`, ... — captured scopes from an enclosing closure, if any.
 
-Class methods (`locals`, `ensure_locals`, `set_local_to_scalar`) work
-against the frame's bucket regardless — a bucket is a bucket. Runtime
-paths that care about on-stack-ness read the stack coordinates
-directly.
+`own_scope` / `ensure_own_scope` deal specifically with scopes[0]. Multi-scope lookup (walk from scopes[0] outward for variable resolution) lands with the closure work.
 
-Inherits from `object`, so it picks up the `bucket` and `stack`
-accessors for free. Every local variable in the frame is a key in
-the locals hash — a HashPrimitive stored inside the frame's bucket
-under the key `locals`.
+Inherits from `object` — picks up the `bucket` accessor for free.
 ]]
-
---[[
-## Inheriting from `object`
-
-Single inheritance via Lua's metatable chain. `frame` starts as an
-empty table whose metatable delegates lookups to `object` — that's
-what `setmetatable({}, {__index = object})` sets up. Any method not
-defined directly on `frame` (like `bucket`) resolves via `object`.
-`frame.__index = frame` then makes `frame` itself the index for its
-own instances, so `frame:locals()` and friends resolve on the wrapper.
-]]
+local sqlite = require('lsqlite3')
 local object = require("cvm.object")
+
+-- Cached at module load; avoids a `sqlite.ROW` global lookup per step check.
+local SQLITE_ROW = sqlite.ROW
+
 
 local frame = setmetatable({}, {__index = object})
 frame.__index = frame
@@ -66,20 +43,7 @@ frame.__index = frame
 --[[
 ## Constructing a frame
 
-`frame.new(engine, row)` uses `object._wrap` — the shared
-row-as-instance helper — with `frame` as the metatable. Going through
-`_wrap` (rather than calling `object.new`) skips `object.new`'s
-primitive-based dispatch, so a frame row loaded via
-`engine:object_by_pk` doesn't recurse into `object.new → frame.new →
-object.new → …`.
-
-**Defense-in-depth check.** Asserts `row.primitive == 'f'` before
-wrapping. `object.new` already dispatches on that, so any correct
-call site can't hit this branch — but the check catches any direct
-caller that bypasses the dispatch and hands frame.new a non-frame
-row. During the walking-skeleton phase the extra cycles are cheap
-insurance; once the callers are provably-correct this can be
-relaxed.
+`frame.new(engine, row)` uses `object._wrap` — the shared row-as-instance helper — with `frame` as the metatable. Going through `_wrap` (rather than calling `object.new`) skips `object.new`'s primitive-based dispatch, so a frame row loaded via `engine:object_by_pk` doesn't recurse into `object.new → frame.new → object.new → …`.
 ]]
 function frame.new(engine, row)
 	if row.primitive ~= 'f' then
@@ -94,123 +58,109 @@ function frame.new(engine, row)
 end
 
 --[[
-## `locals` — the frame's locals hash (read-only)
+## `_get_array_child_at` — internal helper: array element by idx
 
-Returns the frame's locals hash — a HashPrimitive stored inside the
-frame's bucket under the key `locals`. `nil` if it hasn't been created
-yet.
-
-Composes on the inherited `bucket` accessor and on
-`engine:get_ref_child`: get the bucket (which materializes it on first
-access), then look up the child of the ref where `parent = bucket` and
-`key = 'locals'`.
-
-**Read-only.** `locals` doesn't create the locals hash — it only
-returns whatever's stored under `bucket['locals']`. On a fresh frame,
-before anything has been assigned, that entry doesn't exist yet and
-this returns `nil`. For the get-or-create variant, see `ensure_locals`.
-
-**Wrapper memoized on `self._locals`.** Same treatment as
-`object:bucket`. The locals hash's identity never changes once it
-exists — the ref planted under `bucket['locals']` is immutable and
-points at one specific hash forever — so the wrapper is cached on
-`self._locals` on the first successful return and every subsequent
-call short-circuits to a single field lookup. `ensure_locals` writes
-into the same cache field, so calling one after the other doesn't
-re-run the fetch. **Negative results are not cached** — on a fresh
-frame `locals()` returns nil without setting `_locals`, so a later
-call after `ensure_locals` populates it will still see the new hash.
+Looks up the child of the ref where `parent = ?` and `idx = ?`. Sprint-scoped inline SQL; if the array-by-idx access pattern proves permanent, this belongs on the engine as a prepared statement (`cvm.get_ref_child_by_idx`) alongside the existing `get_ref_child`.
 ]]
-function frame:locals()
-	local locals = self._locals
-	if locals then return locals end
+local function _get_array_child_at(db, parent_pk, idx)
+	local stmt = db:prepare('select child from refs where parent = ? and idx = ?')
+	stmt:bind_values(parent_pk, idx)
 
-	local engine = self.engine
-	local bucket = self:bucket()
-	local locals_pk = engine:get_ref_child(bucket.object_pk, 'locals')
+	local child_pk
 
-	if not locals_pk then
-		return nil
+	if stmt:step() == SQLITE_ROW then
+		child_pk = stmt:get_value(0)
 	end
 
-	locals = engine:object_by_pk(locals_pk)
-	self._locals = locals
-	return locals
+	stmt:finalize()
+
+	return child_pk
 end
 
 --[[
-## `ensure_locals` — get-or-create the frame's locals hash
+## `own_scope` — the frame's own scope hash (read-only)
 
-Returns the frame's locals hash, materializing it on first call. On
-every subsequent call, returns the same hash — the ref planted under
-`bucket['locals']` makes the lookup idempotent.
+Returns the hash at `scopes[0]` — the frame's own locals for this call. `nil` if the scopes chain hasn't been created yet.
 
-Composes on three engine methods:
+Path: bucket → `'scopes'` (ArrayPrimitive) → idx=0 (HashPrimitive).
 
-- `engine:get_ref_child(bucket.object_pk, 'locals')` — is there already
-  a `locals` entry in the bucket?
-- `engine:add_hash(self.owner_role)` — if not, create a fresh
-  HashPrimitive owned by the same role that owns the frame.
-- `engine:add_ref(bucket.object_pk, 'locals', locals_pk)` — bind that
-  new hash under the key `locals` inside the bucket.
+**Read-only.** `own_scope` doesn't create anything — it only returns whatever's at the end of the chain. On a fresh frame, before anything has been assigned, the chain doesn't exist yet and this returns `nil`. For the get-or-create variant, see `ensure_own_scope`.
 
-The write path (`set_local_to_scalar`, and any other future write
-routine) calls this before adding the actual variable binding.
-
-**Wrapper memoized on `self._locals`** — shared with `frame:locals`.
-Once the hash exists, both accessors short-circuit through the same
-cache field. `set_local_to_scalar` calls `ensure_locals` for every
-binding; after the first, the whole `bucket + get_ref_child + wrap`
-chain collapses to one field lookup.
+**Wrapper memoized on `self._own_scope`.** The scope hash's identity never changes once it exists — the ref at scopes[0] is immutable and points at one specific hash forever — so the wrapper is cached on first successful return. `ensure_own_scope` writes into the same cache field, so calling one after the other doesn't re-run the fetch.
 ]]
-function frame:ensure_locals()
-	local locals = self._locals
-	if locals then return locals end
+function frame:own_scope()
+	local own = self._own_scope
+	if own then return own end
+
+	local engine = self.engine
+	local bucket = self:bucket()
+
+	local scopes_pk = engine:get_ref_child(bucket.object_pk, 'scopes')
+	if not scopes_pk then return nil end
+
+	local own_pk = _get_array_child_at(engine.db, scopes_pk, 0)
+	if not own_pk then return nil end
+
+	own = engine:object_by_pk(own_pk)
+	self._own_scope = own
+
+	return own
+end
+
+--[[
+## `ensure_own_scope` — get-or-create the frame's own scope hash
+
+Returns the frame's own scope hash (scopes[0]), materializing the chain on first call:
+
+1. Get or create the frame's `scopes` ArrayPrimitive, hung off the bucket under key `'scopes'`.
+2. Get or create the own scope HashPrimitive at `scopes[0]` (array append with the first entry lands at idx 0).
+
+Idempotent — subsequent calls short-circuit through `self._own_scope`.
+]]
+function frame:ensure_own_scope()
+	local own = self._own_scope
+	if own then return own end
 
 	local engine = self.engine
 	local bucket = self:bucket()
 	local bucket_pk = bucket.object_pk
-	local locals_pk = engine:get_ref_child(bucket_pk, 'locals')
 
-	if not locals_pk then
-		locals_pk = engine:add_hash(self.owner_role)
-		engine:add_ref(bucket_pk, 'locals', locals_pk)
+	-- Get or create the scopes array.
+	local scopes_pk = engine:get_ref_child(bucket_pk, 'scopes')
+	if not scopes_pk then
+		scopes_pk = engine:add_array(self.owner_role)
+		engine:add_ref(bucket_pk, 'scopes', scopes_pk)
 	end
 
-	locals = engine:object_by_pk(locals_pk)
-	self._locals = locals
-	return locals
+	-- Get or create the own_scope hash at scopes[0].
+	local own_pk = _get_array_child_at(engine.db, scopes_pk, 0)
+	if not own_pk then
+		own_pk = engine:add_hash(self.owner_role)
+		-- Array-style append: key=nil, idx auto-computed. First entry lands at idx=0.
+		engine:add_ref(scopes_pk, nil, own_pk)
+	end
+
+	own = engine:object_by_pk(own_pk)
+	self._own_scope = own
+
+	return own
 end
 
 --[[
 ## `set_local_to_scalar` — specialized routine for `$name = <scalar>`
 
-Handles the single, specific case of a scalar-RHS assignment to a
-local variable in this frame — e.g. `$x = 1`, `$name = 'alice'`,
-`$flag = true`. Not a general-purpose "set a local" method. Per the
-first-variable walkthrough's design intent, each shape of assignment
-(scalar RHS, name-lookup RHS, function-call RHS, closure RHS,
-attribute-target LHS, ...) gets its own routine — trying to unify
-them prematurely picks the wrong abstraction.
+Writes a fresh binding to the frame's own scope (scopes[0]) and plants a GC marker as the frame's child. All atomic inside `SAVEPOINT set_local_to_scalar`.
 
-Three composed engine/frame calls:
+Four composed writes:
 
-1. `engine:add_scalar(scalar_type, scalar_value, self.owner_role)` —
-   materialize the scalar as a new objects row, owned by the same role
-   as the frame.
-2. `self:ensure_locals()` — get-or-create the frame's locals hash.
-3. `engine:add_ref(locals.object_pk, name, scalar_pk)` — bind the
-   variable name to the scalar inside the locals hash.
+1. `engine:add_scalar(scalar_type, scalar_value, self.owner_role)` — materialize the scalar.
+2. `self:ensure_own_scope()` — get-or-create bucket → scopes → scopes[0].
+3. `engine:add_ref(own_scope.object_pk, name, scalar_pk)` — bind the variable name to the scalar in the own scope hash.
+4. **Push a GC marker** as child of this frame — a row with `primitive='f'`, `gc=1`, `ast='[]'`, `stmt_idx=0`, `parent_frame = self.object_pk`. Satisfies the "frame with children = mid-execution" invariant, the marker-required-for-stmt-idx-advance trigger, and enqueues the GC pass that must run before the next statement.
 
-**Fresh-binding only.** The `unique (parent, key)` constraint on
-`refs` means calling this with a `name` that's already bound in the
-locals hash fails the ref insert. Reassignment is a separate
-specialized routine (not yet written).
+**Fresh-binding only.** The `unique (parent, key)` constraint on `refs` means calling this with a `name` that's already bound in the own scope hash fails the ref insert (rolled back with the savepoint).
 
-**Long name deliberate.** `set_local` or `assign` would be inviting
-call sites to reach for this method when their RHS isn't actually a
-primitive scalar. `set_local_to_scalar` signals the specialization at
-the point of use.
+**Long name deliberate.** `set_local` or `assign` would be inviting call sites to reach for this method when their RHS isn't actually a primitive scalar. `set_local_to_scalar` signals the specialization at the point of use.
 ]]
 function frame:set_local_to_scalar(name, scalar_type, scalar_value)
 	local db = self.engine.db
@@ -218,25 +168,25 @@ function frame:set_local_to_scalar(name, scalar_type, scalar_value)
 	db:exec('savepoint set_local_to_scalar;')
 
 	local ok, err = pcall(function()
-		-- Push an empty sub-frame BEFORE doing the assignment writes,
-		-- inside the same savepoint. Its presence marks this frame as
-		-- mid-dispatch — the invariant "frame with children = mid-
-		-- execution" applies. On crash between this savepoint's release
-		-- and the walker's per-statement stmt_idx UPDATE, the sub-frame
-		-- is what tells the walker "the row at stmt_idx has already been
-		-- dispatched; don't re-run its handler." The walker's UPDATE
-		-- deletes the sub-frame via the child-cleanup trigger.
-		local push_sub = db:prepare(
+		local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
+		local own_scope = self:ensure_own_scope()
+		self.engine:add_ref(own_scope.object_pk, name, scalar_pk)
+
+		-- Push mid-dispatch marker last — after the writes so a
+		-- resume-mid-savepoint can't observe a marker without the writes
+		-- it signals. Marker is born in the terminal shape: empty ast
+		-- (stmt_idx=0 is past the max valid index of -1 for []) and
+		-- gc=null. Its presence as a child signals "parent is mid-
+		-- dispatch"; parent's next advance cascade-deletes it, and
+		-- the `frames_delete_requires_terminal_state` trigger passes
+		-- because the marker is already terminal.
+		local push_marker = db:prepare(
 			"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) " ..
 			"values ('f', '[]', 0, ?, ?)"
 		)
-		push_sub:bind_values(self.object_pk, self.owner_role)
-		push_sub:step()
-		push_sub:finalize()
-
-		local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
-		local locals = self:ensure_locals()
-		self.engine:add_ref(locals.object_pk, name, scalar_pk)
+		push_marker:bind_values(self.object_pk, self.owner_role)
+		push_marker:step()
+		push_marker:finalize()
 	end)
 
 	if not ok then

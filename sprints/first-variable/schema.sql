@@ -155,6 +155,11 @@ create table objects (
 -- Partial index for reachability queries over pinned rows. [ghi]
 create index objects_persistent on objects(persistent) where persistent = 1;
 
+-- Cap frames — the `uspace` view's process-anchor branch selects
+-- `process = 1`; partial index keeps it empty of nulls so the branch
+-- doesn't fall back to a full objects scan. [ghi]
+create index objects_process on objects(process) where process = 1;
+
 -- Partial indexes for the drain's worklist / callback-order walks. [ghi]
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
 create index objects_in_trace    on objects(in_trace)    where in_trace is not null;

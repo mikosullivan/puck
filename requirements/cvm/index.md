@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_cvm",
-	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm/schema.sql), per-subsystem specs (garbage-collection, pause-resume), and the CVM's data-access layer at src/engine/cvm/. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
+	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm/schema.sql), per-subsystem specs (frame-lifecycle, ownership, scopes, garbage-collection, pause-resume), and the CVM's data-access layer at src/engine/cvm/. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
 	"status": "V1 spec"
 }}
 ~~~
@@ -12,12 +12,17 @@ Purpose-built SQLite schema for CVM — every field of the runtime state hash ma
 
 Frames are not a separate table. A frame is an `objects` row with `primitive = 'f'` — a fourth primitive kind alongside `'o'` (object / scalar), `'h'` (HashPrimitive), and `'a'` (ArrayPrimitive). The `ast` column is biconditional with `primitive = 'f'`: every frame row carries the code it's executing; no non-frame row carries an ast. That fold is what lets the standard object-graph GC keep captured scope alive for closures that outlive their defining frame.
 
-![CVM entity-relationship diagram: six tables in color-coded clusters — cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive='f'.](./schema.svg)
+A process is also not a separate table. A process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent — the top of a call stack. Its `object_pk` IS the process identity. Frame 0 (the top of user code) sits under the cap as a nested frame; sub-frames chain from frame 0 via `parent_frame`. The cap participates in the same lifecycle machinery as any frame, which is what lets the walker cascade-clean frame 0 uniformly.
 
-**Diagram staleness note.** The rendered SVG above still shows an `idx` column on `objects` and doesn't yet show `parent_frame`. Post frame-0 integration, the actual schema drops `idx` (stack ordering is derived from the `parent_frame` chain) and adds `parent_frame` (sub-frames chain to their pusher via this column; only frame 0 binds to `processes` directly). Regenerating the SVG is a follow-on to this integration.
+![CVM entity-relationship diagram: color-coded clusters — cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple). Frames and processes are not separate tables — a frame is an `objects` row with primitive='f'; a process is an objects row with primitive='f' and process=1.](./schema.svg)
+
+**Diagram staleness note.** The rendered SVG above is stale — a rewrite is a follow-on. Under the current schema: no `processes` table (a process is a cap frame in `objects`); no `bucket_pk` / `stack_pk` / `bucket_for` / `stack_for` columns (ownership is a normal refs row from owner to collection); `parent_frame` chains sub-frames to their parent; `process = 1` marks the cap frame.
 
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL
 - [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB
+- [frame-lifecycle](https://www.puck.uno/requirements/cvm/frame-lifecycle) — cap-as-frame, advance-with-gc, terminal state; step-by-step through `$x = 1`
+- [ownership](https://www.puck.uno/requirements/cvm/ownership) — buckets and stacks as refs; the one-hash-one-array cap; shared collections
+- [scopes](https://www.puck.uno/requirements/cvm/scopes) — the bucket → scopes → scopes[0] chain, hash-key identifier rule, `frame_scoped_vars` view
 - [garbage-collection](https://www.puck.uno/requirements/cvm/garbage-collection/) — mark triggers + the trace routine
 - [pause-resume](https://www.puck.uno/requirements/cvm/pause-resume/) — pause via top-of-stack frame + DB close, resume via SQL edit + optional payload
 
@@ -25,11 +30,6 @@ Code and tests live outside the doc tree:
 
 - Schema, connection-open, and CVM's data-access layer: [src/engine/cvm/](../../src/engine/cvm/) — `schema.sql`, `open.lua`, `engine.lua`, `object.lua`, `frame.lua`
 - Tests: [tests/main/lua/engine/test_cvm.lua](../../tests/main/lua/engine/test_cvm.lua)
-
-Still in flux (in ideas/):
-
-- [api](https://www.puck.uno/ideas/drinian-with-sqlite/api/) — first-pass method sketch of the CVM API
-- [features](https://www.puck.uno/ideas/drinian-with-sqlite/features) — features the SQLite substrate unlocks (including transferring consciousness / big processes)
 
 ## The Lua-owner contract
 

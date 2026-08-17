@@ -45,9 +45,8 @@ has a clear signal about what to build next.
 local cjson              = require('cjson')
 local transpiler         = require('transpiler')
 local normalize          = require('normalize')
-local cvm                = require('cvm.open')
-local create_frame_0     = require('cvm.create_frame_0')
-local get_latest_frame   = require('cvm.get_latest_frame')
+local cvm_open           = require('cvm.open')
+local Cvm                = require('cvm')
 local dispatch           = require('dispatch')
 local handlers           = require('handlers')
 
@@ -118,17 +117,10 @@ load-artifact slots start nil:
   transpiler module directly. Reassigning the slot doesn't yet change
   behavior. Added ahead of the wiring so downstream sprints can rely on
   the field's presence.
-- **`process_pk`** — nil at construction. Fresh vs revival signal for
-  `run()`. Host sets it to an existing process pk before calling
-  `run()` to revive that process (dispatch resumes from the process's
-  deepest live frame). Leaves it nil for a fresh run (dispatch pushes
-  frame 0 into a new process). Consulted only by `run()`.
-- **`caspm`** — nil at construction. Populated by `engine:load` with the
-  normalized program that gets stashed into frame 0's `ast` on push.
-  Input-staging slot with a short lifetime: `create_frame_0` reads it
-  and JSON-encodes it into the DB frame, then `run()` nils it out so
-  the loaded program has one source of truth (the DB frame's ast), not
-  two. Not populated on revival runs.
+- **`data`** — the CVM data-access layer (an instance of `cvm`) wrapping the SQLite handle. Every method callers reach for on `engine.data` (`add_scalar`, `add_bucket`, `object_by_pk`, etc.) operates via prepared statements over the schema. Populated at construction.
+- **`cap_pk`** — nil at construction. `run()` sets it to the process's cap-frame pk (the top of the call stack; its `object_pk` IS the process identity). Callers can inspect this after `run()` returns to reach the resulting graph. Not consulted for revival — revival semantics land with GC-substrate work.
+- **`caspm`** — nil at construction. Populated by `engine:load` with the normalized program that `run()` JSON-encodes into frame 0's `ast` on seed, then nils out so the loaded program has one source of truth (the DB frame's ast), not two.
+- **`current_frame`** — nil at construction. `run_frame` sets it to the wrapped frame object before each dispatch, so handlers can reach the frame they're writing into (e.g., `frame:set_local_to_scalar`). Nil again after `run_frame` returns.
 - **`row_handlers`** — the row-head dispatch chain. Populated at
   construction from `handlers.stock_instances()` — the aggregator at
   [src/engine/handlers/init.lua](../engine/handlers/init.lua) that
@@ -151,15 +143,18 @@ site.
 function M.new(opts)
 	opts = opts or {}
 
+	local db = cvm_open.open(opts.cvm)
+
 	local engine = setmetatable({
-		cvm                  = cvm.open(opts.cvm),
-		stdout               = nil,
-		debugger             = nil,
-		transpiler           = transpiler,
-		process_pk           = nil,
-		caspm                = nil,
-		row_handlers         = {},
-		auto_delete_process  = true,
+		cvm                 = db,
+		data                = Cvm.new(db),
+		stdout              = nil,
+		debugger            = nil,
+		transpiler          = transpiler,
+		cap_pk              = nil,
+		caspm               = nil,
+		current_frame       = nil,
+		row_handlers        = {},
 	}, M)
 
 	-- Every SQL statement the walker issues gets compiled once here and
@@ -167,13 +162,13 @@ function M.new(opts)
 	-- on a hot dispatch loop; the walker's SQL surface is small enough
 	-- that a fixed named set covers it.
 	engine.stmts = {
-		get_ast          = engine.cvm:prepare('select ast from objects where object_pk = ?'),
-		get_stmt_idx     = engine.cvm:prepare('select stmt_idx from objects where object_pk = ?'),
-		advance_stmt_idx = engine.cvm:prepare('update objects set stmt_idx = stmt_idx + 1 where object_pk = ?'),
-		get_process      = engine.cvm:prepare('select process_pk from objects where object_pk = ?'),
-		delete_frame     = engine.cvm:prepare('delete from objects where object_pk = ?'),
-		reap_process     = engine.cvm:prepare('select complete, message from processes where process_pk = ?'),
-		delete_process   = engine.cvm:prepare('delete from processes where process_pk = ?'),
+		get_ast          = db:prepare('select ast from objects where object_pk = ?'),
+		get_stmt_idx     = db:prepare('select stmt_idx from objects where object_pk = ?'),
+		get_user_role    = db:prepare("select object_pk from objects where core_role = 'u'"),
+		advance_with_gc  = db:prepare('update objects set stmt_idx = ?, gc = 1 where object_pk = ?'),
+		reset_gc         = db:prepare('update objects set gc = null where object_pk = ?'),
+		insert_cap       = db:prepare("insert into objects (primitive, process, ast, stmt_idx, owner_role) values ('f', 1, '[]', 0, ?) returning object_pk"),
+		insert_frame_0   = db:prepare("insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) values ('f', ?, 0, ?, ?) returning object_pk"),
 	}
 
 	-- Wire the stock handler roster through the public API so even the
@@ -211,74 +206,90 @@ end
 --[[
 ## `run`
 
-Resolves frame 0 (fresh or revival, per the `process_pk` slot), delegates to `run_frame` to walk it, then reaps the process's `complete` + `message` into a return hash. If `self.auto_delete_process` is true (the default), deletes the process record after the reap.
+Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`) end-to-end. Under the current CVM design a process is a cap frame — an `objects` row with `primitive='f'`, `process=1`, `ast='[]'`. Frame 0 sits under the cap as a nested frame. `run` seeds both, walks frame 0's ast through the handler chain, then advances the cap to sweep frame 0 and reach terminal state.
 
-**Fresh vs revival.** If `self.process_pk` is nil, `run` treats the run as fresh: `create_frame_0` invents a new process, encodes `self.caspm` into frame 0's `ast`, and pushes the frame. `self.caspm` is nil'd immediately after — once the CaspM lives in the DB frame, the Lua-side staging slot is spent, and keeping it around would give the loaded program two sources of truth. If `self.process_pk` is set, `run` treats the run as revival: `get_latest_frame` finds the deepest live frame in that process; `self.caspm` is not consulted (the program lives in the DB frame, not on the engine).
+**Steps:**
 
-**Precondition.** Fresh runs require `self.caspm` to be set (via `engine:load(source)` before `run()`); missing raises `engine:run() called before engine:load()`. Revival runs have no such requirement.
+1. Seed the cap: INSERT a cap row (`process=1`, `ast='[]'`, `stmt_idx=0`, no parent).
+2. Seed frame 0 as a nested frame under the cap (`parent_frame=cap_pk`, `ast=<caspm>`, `stmt_idx=0`).
+3. `self:run_frame(frame_0_pk)` — walks the ast; per statement: set `self.current_frame`, dispatch, advance `stmt_idx += 1, gc = 1` (cascades any marker child), reset `gc = null`.
+4. Advance the cap: `stmt_idx = 1, gc = 1` — cascade sweeps frame 0. Frame 0's outgoing refs (including any owner→bucket ref) cascade too, firing the standard mark-needs-trace trigger on each ref-delete.
+5. Reset cap's `gc = null` — cap is now terminal (`stmt_idx=1, gc=null, no children`). This is the "program is done" state.
 
-**Return value.** A hash with `complete` (0 or 1) and `message` (text or nil) reaped from the process record before its auto-delete. Callers who set `auto_delete_process = false` before `run()` can also read the row directly from the DB after `run()` returns.
+**GC not wired here.** After `run` returns, the cap and any orphaned graph (`needs_trace = 1` rows) still sit in the DB. Marking the cap `needs_trace = 1` and running the trace-and-sweep pass lands with GC-substrate integration.
+
+**Precondition.** `self.caspm` must be populated via `engine:load(source)`; missing raises `engine:run() called before engine:load()`.
+
+**Return value.** A hash `{complete = 1, cap_pk = <cap_pk>}`. The completion signal is derivable from the cap's terminal shape; the cap_pk lets callers inspect post-run state.
 ]]
 function M:run()
-	local frame_pk
-
-	if self.process_pk then
-		frame_pk = get_latest_frame(self.cvm, self.process_pk)
-	else
-		if not self.caspm then
-			error("engine:run() called before engine:load(); no program to execute")
-		end
-
-		frame_pk = create_frame_0(self.cvm, self)
-		self.caspm = nil
+	if not self.caspm then
+		error("engine:run() called before engine:load(); no program to execute")
 	end
 
-	local message = {}
+	local stmts = self.stmts
 
-	local process_pk = self:run_frame(frame_pk)
+	-- Look up the user role (schema-seeded).
+	local user_pk
 
-	-- Reap the process's post-run state. For frame 0, run_frame returns
-	-- the process pk it just marked complete; look up complete + message
-	-- and drop them into the return hash the caller inspects. For a
-	-- sub-frame (process_pk nil here), there's nothing at process level
-	-- to reap — that frame's parent handles its own reap when the
-	-- parent's frame-0 ancestor completes.
-	if process_pk then
-		self.stmts.reap_process:bind_values(process_pk)
-
-		for row in self.stmts.reap_process:nrows() do
-			message.complete = row.complete
-			message.message = row.message
-		end
-
-		self.stmts.reap_process:reset()
-
-		-- Default: auto-delete the process record now that the caller
-		-- has what they need in the return hash. Callers that want the
-		-- record retained for inspection set auto_delete_process = false
-		-- before run.
-		if self.auto_delete_process then
-			self.stmts.delete_process:bind_values(process_pk)
-			self.stmts.delete_process:step()
-			self.stmts.delete_process:reset()
-		end
+	if stmts.get_user_role:step() == 100 then
+		user_pk = stmts.get_user_role:get_value(0)
 	end
 
-	return message
+	stmts.get_user_role:reset()
+
+	-- 1. Seed the cap.
+	stmts.insert_cap:bind_values(user_pk)
+	stmts.insert_cap:step()
+	local cap_pk = stmts.insert_cap:get_value(0)
+	stmts.insert_cap:reset()
+	self.cap_pk = cap_pk
+
+	-- 2. Seed frame 0 under the cap.
+	local ast_json = cjson.encode(self.caspm)
+	stmts.insert_frame_0:bind_values(ast_json, cap_pk, user_pk)
+
+	-- If the INSERT raises (e.g., the ast_valid_insert trigger fires on
+	-- a non-array ast), step returns an error code and get_value on the
+	-- failed statement returns "misuse of function." Check the return
+	-- and surface the DB's error text instead.
+	local rc = stmts.insert_frame_0:step()
+
+	if rc ~= 100 then  -- 100 == sqlite.ROW; anything else means no row returned
+		local err = self.cvm:errmsg()
+		stmts.insert_frame_0:reset()
+		error(err)
+	end
+
+	local frame_0_pk = stmts.insert_frame_0:get_value(0)
+	stmts.insert_frame_0:reset()
+
+	self.caspm = nil
+
+	-- 3. Walk frame 0's ast.
+	self:run_frame(frame_0_pk)
+
+	-- 4. Advance the cap: sweeps frame 0 via cascade.
+	stmts.advance_with_gc:bind_values(1, cap_pk)
+	stmts.advance_with_gc:step()
+	stmts.advance_with_gc:reset()
+
+	-- 5. Reset cap's gc → null. Cap is now terminal.
+	stmts.reset_gc:bind_values(cap_pk)
+	stmts.reset_gc:step()
+	stmts.reset_gc:reset()
+
+	return {complete = 1, cap_pk = cap_pk}
 end
 
 --[[
 ## `run_frame`
 
-Runs one frame from the top of its ast to the end.
+Runs one frame from the top of its ast to the end. Per statement: set `self.current_frame` so handlers can reach the frame; dispatch the row through the handler chain (via `run_row`); advance `stmt_idx += 1, gc = 1` in one UPDATE (the AFTER-UPDATE cascade sweeps any marker child the handler pushed); reset `gc = null` (completes the gc cycle for this statement).
 
-**Per-statement advance.** For each row: hand it to `run_row` (which walks the row-handler chain via `dispatch`). If dispatch claims the row, one UPDATE on the frame bumps `stmt_idx` by 1. The `frames_delete_children_after_stmt_idx_update` SQL trigger fires as part of that UPDATE and clears any child frame the dispatch may have pushed — advance-plus-cleanup are atomic at the SQL layer with no Lua-side savepoint needed. If no handler claims the row, `run_row` raises `unrecognized_caspm` (with an atom-keys reshape).
+**Live stmt_idx.** `stmt_idx` is read live from the DB each iteration; nothing resets it at entry. Fresh frames start at 0 (seeded that way); revived frames pick up wherever they were when the last run left off. Every at-rest state is a valid resume state.
 
-**Final (frame-0) shutdown.** After the ast is exhausted, if the frame's `process` column is set (i.e., this is frame 0 of a process), one DELETE on the frame row runs. The `processes_complete_after_frame_0_delete` trigger fires as part of that DELETE and flips `processes.complete = 1` — mark-complete and frame-delete are one atomic SQL operation. Sub-frames (`process` null) skip this step; their parent's `stmt_idx` advance is what deletes them (via the child-cleanup trigger).
-
-**Mid-frame revival.** `stmt_idx` is read live from the DB via `get_stmt_idx()` each iteration; nothing resets it at entry. Fresh frames start at 0 (`create_frame_0`'s doing); revived frames pick up wherever they were when the last run left off. Every valid DB state is a valid resume state.
-
-**Returns** the process pk for the frame just walked (nil for sub-frames, the frame-0 owner's process pk otherwise). Lets `run` reap the process record.
+**Does not shut down the frame.** After the ast is exhausted, the frame is at `stmt_idx > max, gc = null` — terminal, but still present. The frame's parent (a nested-frame parent, or the cap for frame 0) will sweep it via its own advance-with-gc cascade. This method only walks; sweep-me happens externally.
 ]]
 function M:run_frame(frame_pk)
 	local stmts = self.stmts
@@ -321,41 +332,31 @@ function M:run_frame(frame_pk)
 	end
 
 	while get_stmt_idx() < #ast do
+		local idx = get_stmt_idx()
+
+		-- Handlers need access to the current frame to write into it —
+		-- e.g., set_local_to_scalar on a variable-assignment handler.
+		self.current_frame = self.data:object_by_pk(frame_pk)
+
 		-- ast indices are 0-based in the DB (stmt_idx starts at 0);
 		-- Lua arrays are 1-based, so `+ 1` at the site.
-		self:run_row(ast[get_stmt_idx() + 1])
+		self:run_row(ast[idx + 1])
 
-		-- Advance stmt_idx. The frames_delete_children_after_stmt_idx_
-		-- update trigger fires as part of this UPDATE and clears any
-		-- child frame the just-completed dispatch may have pushed.
-		stmts.advance_stmt_idx:bind_values(frame_pk)
-		stmts.advance_stmt_idx:step()
-		stmts.advance_stmt_idx:reset()
+		-- Advance + set gc=1 in one UPDATE. AFTER-UPDATE cascade sweeps
+		-- any marker child the handler pushed. All four gc-cycle
+		-- invariants enforced by triggers on `objects`.
+		stmts.advance_with_gc:bind_values(idx + 1, frame_pk)
+		stmts.advance_with_gc:step()
+		stmts.advance_with_gc:reset()
+
+		-- Complete the gc cycle: no children remain (marker cascade-swept),
+		-- so the gc-reset trigger passes.
+		stmts.reset_gc:bind_values(frame_pk)
+		stmts.reset_gc:step()
+		stmts.reset_gc:reset()
 	end
 
-	-- Look up whether this frame is frame 0 (process_pk set) or a
-	-- sub-frame (process_pk null). Only frame 0 runs the final shutdown;
-	-- sub-frames get deleted by their parent's per-statement UPDATE.
-	local process_pk
-
-	stmts.get_process:bind_values(frame_pk)
-
-	for row in stmts.get_process:nrows() do
-		process_pk = row.process_pk
-	end
-
-	stmts.get_process:reset()
-
-	if process_pk then
-		-- Delete the frame. The processes_complete_after_frame_0_delete
-		-- trigger fires as part of this DELETE and flips the process's
-		-- complete to 1. One statement, atomic at the SQL layer.
-		stmts.delete_frame:bind_values(frame_pk)
-		stmts.delete_frame:step()
-		stmts.delete_frame:reset()
-	end
-
-	return process_pk
+	self.current_frame = nil
 end
 
 --[[

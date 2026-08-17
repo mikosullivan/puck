@@ -472,23 +472,6 @@ h.test("engine seed has role_parent and owner_role both null (root of the core-r
 	db:close()
 end)
 
-------------------------------------------------------------
--- Process record — NOT auto-created at open time
-------------------------------------------------------------
-
-h.test('processes table is empty after open (no auto-creation)', function()
-	local db = cvm.open()
-
-	local count
-
-	for row in db:nrows('select count(*) as n from processes') do
-		count = row.n
-	end
-
-	h.assert_eq(count, 0, 'expected zero processes rows after open — process rows are created per-run, not at open time')
-	db:close()
-end)
-
 h.test('cvm.open returns only the db handle (no second return value)', function()
 	local db, second = cvm.open()
 
