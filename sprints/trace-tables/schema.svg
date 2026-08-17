@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 1500 1500"
-   width="1500"
+   viewBox="0 0 970 500"
+   width="970"
    role="img"
    aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
    version="1.1"
    id="svg707"
    sodipodi:docname="schema.svg"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   height="1500"
+   height="500"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -26,25 +26,19 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="4.8196398"
-     inkscape:cx="1097.7999"
-     inkscape:cy="689.57435"
+     inkscape:zoom="0.76830885"
+     inkscape:cx="620.84408"
+     inkscape:cy="125.60053"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g-in-trace" />
+     inkscape:current-layer="layer1" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
      id="defs493">
-    <rect
-       x="203.54988"
-       y="24.604931"
-       width="191.33627"
-       height="57.925514"
-       id="rect396" />
     <marker
        id="fk-arrow"
        viewBox="0 0 10 10"
@@ -100,12 +94,6 @@
          fill="context-stroke"
          id="path13238-6" />
     </marker>
-    <rect
-       x="203.54988"
-       y="24.604931"
-       width="204.23842"
-       height="65.091995"
-       id="rect1117" />
     <marker
        id="fk-arrow-36"
        viewBox="0 0 10 10"
@@ -136,19 +124,19 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="majors"
-     transform="translate(-132.09451,-295.48071)" />
+     transform="translate(-414.4918,-540.99647)" />
   <g
      inkscape:groupmode="layer"
      id="layer1"
      inkscape:label="diagram"
-     transform="translate(-132.09451,-295.48071)">
+     transform="translate(-414.4918,-540.99647)">
     <path
        class="fk-arrow"
-       d="M 1211.261,985.9689 V 875.72542"
+       d="M 1231.7189,994.6261 V 884.38262"
        id="path2381"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1210.1306,912.21095)"
+       transform="translate(1230.5885,920.86815)"
        id="g2389">
       <rect
          x="-40.033443"
@@ -169,15 +157,15 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan4268">trace_pk</tspan></text>
+           id="tspan5020">trace_pk</tspan></text>
     </g>
     <path
        class="fk-arrow"
-       d="M 1163.059,964.67986 H 1042.5837"
+       d="M 1183.5169,973.33706 H 1063.0416"
        id="path2371"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1107.8368,963.76189)"
+       transform="translate(1128.2947,972.41909)"
        id="g2379">
       <rect
          x="-40.033443"
@@ -198,15 +186,15 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan4270">object_pk</tspan></text>
+           id="tspan5022">object_pk</tspan></text>
     </g>
     <path
        class="fk-arrow"
-       d="M 1163.059,806.67986 H 1042.5837"
+       d="M 1183.5169,815.33706 H 1063.0416"
        id="path1966"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1107.8368,805.76189)"
+       transform="translate(1128.2947,814.41909)"
        id="g1974">
       <rect
          x="-40.033443"
@@ -227,11 +215,10 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan4272">object_pk</tspan></text>
+           id="tspan5024">object_pk</tspan></text>
     </g>
-    <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
     <g
-       transform="matrix(1.4457791,0,0,1.4474001,772.31116,541.7468)"
+       transform="matrix(1.4457791,0,0,1.4474001,792.76901,550.404)"
        id="g575"
        style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-width:0.691281">
       <rect
@@ -268,42 +255,42 @@
          style="stroke-width:0.47787"
          id="text1026">object_pk (uuid)</text>
       <text
-         x="32.000000"
+         x="32"
          y="62"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1028">primitive</text>
       <text
-         x="32.000000"
-         y="79.3"
+         x="32"
+         y="79.300003"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1030">scalar_type</text>
       <text
-         x="32.000000"
-         y="96.6"
+         x="32"
+         y="96.599998"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1032">scalar_value</text>
       <text
-         x="32.000000"
+         x="32"
          y="113.9"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1034">engine_class</text>
       <text
-         x="32.000000"
+         x="32"
          y="131.2"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1036">core_role</text>
       <text
-         x="32.000000"
+         x="32"
          y="148.5"
          font-size="11px"
          fill="#616161"
@@ -315,7 +302,7 @@
          sodipodi:nodetypes="csssc"
          id="path1040" />
       <text
-         x="32.000000"
+         x="32"
          y="165.8"
          font-size="11px"
          fill="#616161"
@@ -327,28 +314,28 @@
          sodipodi:nodetypes="csssc"
          id="path1044" />
       <text
-         x="32.000000"
-         y="183.1"
+         x="32"
+         y="183.10001"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1046">ast</text>
       <text
-         x="32.000000"
-         y="200.4"
+         x="32"
+         y="200.39999"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1048">stmt_idx</text>
       <text
-         x="32.000000"
+         x="32"
          y="217.7"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1050">process</text>
       <text
-         x="32.000000"
+         x="32"
          y="235"
          font-size="11px"
          fill="#616161"
@@ -360,35 +347,35 @@
          sodipodi:nodetypes="csssc"
          id="path1054" />
       <text
-         x="32.000000"
+         x="32"
          y="252.3"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1056">persistent</text>
       <text
-         x="32.000000"
-         y="269.6"
+         x="32"
+         y="269.60001"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1058">gc</text>
       <text
-         x="32.000000"
-         y="286.9"
+         x="32"
+         y="286.89999"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1060">needs_trace</text>
       <text
-         x="32.000000"
-         y="304.2"
+         x="32"
+         y="304.20001"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1062">in_trace</text>
       <text
-         x="32.000000"
+         x="32"
          y="321.5"
          font-size="11px"
          fill="#616161"
@@ -396,7 +383,7 @@
          id="text1064">debug</text>
     </g>
     <g
-       transform="translate(413.2418,436.33364)"
+       transform="translate(443.79632,565.38185)"
        id="g529"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -438,7 +425,7 @@
     </g>
     <g
        id="g508"
-       transform="translate(218.30986,-68.075117)">
+       transform="translate(240.76771,18.582078)">
       <path
          class="fk-arrow"
          d="M 360.88235,752.33496 H 540.83884"
@@ -545,7 +532,7 @@
     </g>
     <g
        id="g489"
-       transform="translate(218.30986,-68.075117)">
+       transform="translate(240.76771,18.582078)">
       <path
          class="fk-arrow"
          d="M 360.88235,879.16441 H 540.83884"
@@ -650,54 +637,16 @@
            id="text-cl-method-name">col: method_name</text>
       </g>
     </g>
-    <g
-       id="g5101"
-       transform="translate(-440.71286,230.00212)">
-      <rect
-         x="1249.7628"
-         y="210.5493"
-         width="180"
-         height="52"
-         rx="6"
-         ry="6"
-         fill="#ffffff"
-         stroke="#42a5f5"
-         stroke-width="1.5"
-         id="rect591"
-         style="font-family:'Helvetica Neue', Arial, sans-serif;stroke:#426320;stroke-opacity:1" />
-      <path
-         d="m 1249.7628,215.7993 q 0,-6 6,-6 h 168 q 6,0 6,6 v 20 h -180 z"
-         fill="#42a5f5"
-         id="path593"
-         style="font-family:'Helvetica Neue', Arial, sans-serif;fill:#426320;fill-opacity:1" />
-      <text
-         x="1339.7628"
-         y="227.7993"
-         text-anchor="middle"
-         font-size="13px"
-         font-weight="700"
-         fill="#ffffff"
-         id="text595"
-         style="font-family:'Helvetica Neue', Arial, sans-serif">processes</text>
-      <text
-         x="1259.7628"
-         y="253.7993"
-         font-size="11px"
-         font-weight="700"
-         fill="#212121"
-         id="text597"
-         style="font-family:'Helvetica Neue', Arial, sans-serif">PK: process_pk</text>
-    </g>
     <path
        class="fk-arrow"
-       d="M 1163.059,588.53987 H 1042.5837"
+       d="M 1183.5169,597.19707 H 1063.0416"
        id="path-refs-objects-2" />
     <path
        class="fk-arrow"
-       d="M 1163.059,633.4405 H 1042.5837"
+       d="M 1183.5169,642.0977 H 1063.0416"
        id="path2376" />
     <g
-       transform="translate(1108.9672,587.62189)"
+       transform="translate(1129.4251,596.27909)"
        id="fk-label-parent">
       <rect
          x="-33"
@@ -715,7 +664,7 @@
          id="text-fk-label-parent">parent</text>
     </g>
     <g
-       transform="translate(1108.9672,633.19484)"
+       transform="translate(1129.4251,641.85204)"
        id="fk-label-9">
       <rect
          x="-29"
@@ -734,11 +683,11 @@
     </g>
     <path
        class="fk-arrow"
-       d="M 1163.059,720.67986 H 1042.5837"
+       d="M 1183.5169,729.33706 H 1063.0416"
        id="path-refs-objects-2-5"
        style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
     <g
-       transform="translate(1107.8368,719.76189)"
+       transform="translate(1128.2947,728.41909)"
        id="fk-label-parent-3">
       <rect
          x="-40.033443"
@@ -759,10 +708,10 @@
          xml:space="preserve"><tspan
            x="0"
            y="5"
-           id="tspan4274">object_pk</tspan></text>
+           id="tspan5026">object_pk</tspan></text>
     </g>
     <g
-       transform="translate(1162.8261,554.40837)"
+       transform="translate(1183.284,563.06557)"
        id="g589"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -821,7 +770,7 @@
          id="text-rel-idx">col: idx</text>
     </g>
     <g
-       transform="translate(1162.2915,703.10201)"
+       transform="translate(1182.7494,711.75921)"
        id="g572"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -862,7 +811,7 @@
          id="text566">FK: object_pk</text>
     </g>
     <g
-       transform="translate(1162.2915,790.10201)"
+       transform="translate(1182.7494,798.75921)"
        id="g-traces"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -876,7 +825,7 @@
          stroke="#26a69a"
          stroke-width="1.5"
          id="rect-traces"
-         style="stroke-dasharray:6,1.5;stroke-dashoffset:0" />
+         style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
       <path
          d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
          fill="#26a69a"
@@ -911,7 +860,7 @@
          id="text-traces-done">col: done</text>
     </g>
     <g
-       transform="translate(1162.2915,938.10201)"
+       transform="translate(1182.7494,946.75921)"
        id="g-in-trace"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -925,7 +874,7 @@
          stroke="#26a69a"
          stroke-width="1.5"
          id="rect-in-trace"
-         style="stroke-dasharray:6,1.5;stroke-dashoffset:0" />
+         style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
       <path
          d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
          fill="#26a69a"
@@ -952,5 +901,6 @@
          fill="#616161"
          id="text-in-trace-object">FK: object_pk</text>
     </g>
+    <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
   </g>
 </svg>
