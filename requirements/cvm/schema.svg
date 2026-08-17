@@ -1,194 +1,239 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 950" width="1500" role="img"
-	aria-label="CVM schema. Five tables: `cvm` marker (gray), `objects` and `refs` in the object-graph cluster (teal), `instance_listeners` and `class_listeners` in the listeners cluster (purple). Frames, processes, and roles are not separate tables — they are `objects` rows discriminated by the `primitive` column ('f' = frame, 'r' = role, 'o'/'h'/'a' for scalars and containers; `process = 1` marks a cap frame). Foreign keys are drawn as curved arrows; self-referential FKs (parent_role, owner_role, parent_frame) as dashed self-loops on the right edge of the `objects` box.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 950" width="1500"
+	role="img"
+	aria-label="CVM schema entity-relationship diagram. Five tables in three color-coded clusters: `cvm` marker (gray), `objects` and `refs` object graph (teal), `instance_listeners` and `class_listeners` (purple). Plus five derived views (blue-gray). Frames, roles, and processes are not separate tables — they are `objects` rows discriminated by the `primitive` column ('f' = frame, 'r' = role, 'o' / 'h' / 'a' for scalars and containers; `process = 1` marks a cap frame). Foreign keys drawn as curved gray arrows; self-referential FKs (parent_role, owner_role, parent_frame) as small circular self-loops on the source column.">
 
 	<defs>
 		<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
 			markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-			<path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/>
+			<path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
 		</marker>
 		<style>
-			.title      { font: 600 20px system-ui, -apple-system, sans-serif; fill: #111 }
-			.tbl-name   { font: 600 15px system-ui, -apple-system, sans-serif; fill: #111 }
-			.col        { font: 12px ui-monospace, "SF Mono", monospace; fill: #222 }
-			.col-pk     { font: 600 12px ui-monospace, "SF Mono", monospace; fill: #222 }
-			.col-fk     { font: 600 12px ui-monospace, "SF Mono", monospace; fill: #144a6c }
-			.col-note   { font: 11px system-ui, sans-serif; fill: #666 }
-			.note       { font: italic 11px system-ui, sans-serif; fill: #555 }
-			.legend     { font: 12px system-ui, sans-serif; fill: #333 }
-			.legend-h   { font: 600 13px system-ui, sans-serif; fill: #111 }
-			.fk-line    { stroke: #555; stroke-width: 1.4; fill: none }
-			.fk-self    { stroke: #555; stroke-width: 1.4; fill: none; stroke-dasharray: 4 3 }
+			.table-name { font: 700 13px 'Helvetica Neue', Arial, sans-serif; fill: #ffffff }
+			.pk         { font: 700 11px 'Helvetica Neue', Arial, sans-serif; fill: #212121 }
+			.col        { font:     11px 'Helvetica Neue', Arial, sans-serif; fill: #616161 }
+			.fk         { font: 600 11px 'Helvetica Neue', Arial, sans-serif; fill: #005580 }
+			.note       { font: italic 11px 'Helvetica Neue', Arial, sans-serif; fill: #757575 }
+			.fk-arrow   { stroke: #333; stroke-width: 1.4; fill: none }
+			.self-fk    { stroke: #000; stroke-width: 1.4; fill: none }
+			.cluster-label { font: italic 12px 'Helvetica Neue', Arial, sans-serif; fill: #757575 }
+			.title      { font: 700 20px 'Helvetica Neue', Arial, sans-serif; fill: #212121 }
 		</style>
 	</defs>
 
-	<rect width="100%" height="100%" fill="#fff"/>
-
+	<rect width="100%" height="100%" fill="#ffffff"/>
 	<text x="750" y="34" text-anchor="middle" class="title">CVM schema</text>
 
-	<!-- ============================================================ -->
-	<!-- cvm marker table (gray)                                       -->
-	<!-- ============================================================ -->
-	<g id="tbl-cvm">
-		<rect x="60" y="80" width="220" height="90" fill="#f4f4f4" stroke="#6b6b6b" stroke-width="1.5" rx="3"/>
-		<rect x="60" y="80" width="220" height="28" fill="#d8d8d8" stroke="#6b6b6b" stroke-width="1.5" rx="3"/>
-		<text x="170" y="100" text-anchor="middle" class="tbl-name">cvm</text>
-		<text x="72" y="128" class="col-pk">key</text>       <text x="270" y="128" text-anchor="end" class="col-note">text pk</text>
-		<text x="72" y="152" class="col">value</text>         <text x="270" y="152" text-anchor="end" class="col-note">text</text>
-	</g>
-	<text x="170" y="188" text-anchor="middle" class="note">version marker (single row)</text>
+	<!-- =========================================================== -->
+	<!-- Cluster labels                                              -->
+	<!-- =========================================================== -->
+	<text x="170" y="58" text-anchor="middle" class="cluster-label" fill="#616161">marker</text>
+	<text x="420" y="58" text-anchor="middle" class="cluster-label" fill="#26a69a">object graph</text>
+	<text x="890" y="58" text-anchor="middle" class="cluster-label" fill="#9575cd">listeners</text>
 
-	<!-- ============================================================ -->
-	<!-- objects table (teal) — the big one                            -->
-	<!-- ============================================================ -->
-	<g id="tbl-objects">
-		<rect x="340" y="80" width="440" height="452" fill="#dcebec" stroke="#4a9999" stroke-width="1.5" rx="3"/>
-		<rect x="340" y="80" width="440" height="28" fill="#a8d4d5" stroke="#4a9999" stroke-width="1.5" rx="3"/>
-		<text x="560" y="100" text-anchor="middle" class="tbl-name">objects</text>
-
-		<!-- columns: y starts at 128, step 24 -->
-		<text x="352" y="128" class="col-pk">object_pk</text>        <text x="770" y="128" text-anchor="end" class="col-note">text pk</text>
-		<text x="352" y="152" class="col">primitive</text>            <text x="770" y="152" text-anchor="end" class="col-note">text not null · 'o' 'h' 'a' 'f' 'r'</text>
-		<text x="352" y="176" class="col">scalar_type</text>          <text x="770" y="176" text-anchor="end" class="col-note">text · 's' 'n' 'b' 'u' (o only)</text>
-		<text x="352" y="200" class="col">scalar_value</text>         <text x="770" y="200" text-anchor="end" class="col-note">blob (typeof matches scalar_type)</text>
-		<text x="352" y="224" class="col">core_role</text>            <text x="770" y="224" text-anchor="end" class="col-note">text · 'e' 'c' 'u' (r only, unique)</text>
-		<text x="352" y="248" class="col-fk">parent_role</text>       <text x="770" y="248" text-anchor="end" class="col-note">fk → objects · r only · immutable · RESTRICT</text>
-		<text x="352" y="272" class="col-fk">owner_role</text>        <text x="770" y="272" text-anchor="end" class="col-note">fk → objects · required on non-roles · immutable</text>
-		<text x="352" y="296" class="col">ast</text>                  <text x="770" y="296" text-anchor="end" class="col-note">text json · biconditional with primitive='f'</text>
-		<text x="352" y="320" class="col">stmt_idx</text>             <text x="770" y="320" text-anchor="end" class="col-note">int (f only) · advances with gc=1</text>
-		<text x="352" y="344" class="col">process</text>              <text x="770" y="344" text-anchor="end" class="col-note">int · 1 marks the cap frame (f only)</text>
-		<text x="352" y="368" class="col-fk">parent_frame</text>      <text x="770" y="368" text-anchor="end" class="col-note">fk → objects · nested-frame link (f only)</text>
-		<text x="352" y="392" class="col">persistent</text>           <text x="770" y="392" text-anchor="end" class="col-note">int · 1 = pinned · mandatory on core roles</text>
-		<text x="352" y="416" class="col">gc</text>                   <text x="770" y="416" text-anchor="end" class="col-note">int · 1 = cleanup phase (f only)</text>
-		<text x="352" y="440" class="col">needs_trace</text>          <text x="770" y="440" text-anchor="end" class="col-note">int · GC-drain worklist mark</text>
-		<text x="352" y="464" class="col">in_trace</text>             <text x="770" y="464" text-anchor="end" class="col-note">int · GC callback-order index</text>
-		<text x="352" y="488" class="col">debug</text>                <text x="770" y="488" text-anchor="end" class="col-note">text · informational label</text>
-	</g>
-	<text x="560" y="552" text-anchor="middle" class="note">frames, roles, and processes are `objects` rows — discriminated by `primitive`</text>
-
-	<!-- self-FKs on parent_role (y=248), owner_role (y=272), parent_frame (y=368) -->
-	<!-- loops on the right edge of the objects box (x=780) -->
-	<path class="fk-self" d="M 780 248 C 810 248 810 232 795 232 C 780 232 780 248 780 248" marker-end="url(#arrow)"/>
-	<path class="fk-self" d="M 780 272 C 815 272 815 254 800 254 C 785 254 785 272 780 272" marker-end="url(#arrow)"/>
-	<path class="fk-self" d="M 780 368 C 810 368 810 352 795 352 C 780 352 780 368 780 368" marker-end="url(#arrow)"/>
-	<text x="822" y="240" class="note">parent_role → self</text>
-	<text x="822" y="264" class="note">owner_role → self</text>
-	<text x="822" y="360" class="note">parent_frame → self</text>
-
-	<!-- ============================================================ -->
-	<!-- refs table (teal) — the ref graph                             -->
-	<!-- ============================================================ -->
-	<g id="tbl-refs">
-		<rect x="1080" y="80" width="360" height="180" fill="#dcebec" stroke="#4a9999" stroke-width="1.5" rx="3"/>
-		<rect x="1080" y="80" width="360" height="28" fill="#a8d4d5" stroke="#4a9999" stroke-width="1.5" rx="3"/>
-		<text x="1260" y="100" text-anchor="middle" class="tbl-name">refs</text>
-
-		<text x="1092" y="128" class="col-pk">ref_pk</text>           <text x="1430" y="128" text-anchor="end" class="col-note">int pk autoincrement</text>
-		<text x="1092" y="152" class="col-fk">parent</text>            <text x="1430" y="152" text-anchor="end" class="col-note">fk → objects · ON DELETE CASCADE</text>
-		<text x="1092" y="176" class="col-fk">child</text>             <text x="1430" y="176" text-anchor="end" class="col-note">fk → objects · ON DELETE RESTRICT</text>
-		<text x="1092" y="200" class="col">key</text>                  <text x="1430" y="200" text-anchor="end" class="col-note">text · required when parent is 'h'</text>
-		<text x="1092" y="224" class="col">idx</text>                  <text x="1430" y="224" text-anchor="end" class="col-note">int · required when parent is 'a'</text>
-	</g>
-	<text x="1260" y="278" text-anchor="middle" class="note">object-graph edges · one-hash-one-array cap on non-container parents</text>
-
-	<!-- ============================================================ -->
-	<!-- instance_listeners (purple)                                   -->
-	<!-- ============================================================ -->
-	<g id="tbl-instance-listeners">
-		<rect x="1080" y="320" width="360" height="180" fill="#eedde8" stroke="#a04c88" stroke-width="1.5" rx="3"/>
-		<rect x="1080" y="320" width="360" height="28" fill="#dbb0ce" stroke="#a04c88" stroke-width="1.5" rx="3"/>
-		<text x="1260" y="340" text-anchor="middle" class="tbl-name">instance_listeners</text>
-
-		<text x="1092" y="368" class="col-pk">reg_pk</text>            <text x="1430" y="368" text-anchor="end" class="col-note">int pk autoincrement</text>
-		<text x="1092" y="392" class="col-fk">broadcaster</text>       <text x="1430" y="392" text-anchor="end" class="col-note">fk → objects · CASCADE (weak-ref)</text>
-		<text x="1092" y="416" class="col-fk">listener</text>          <text x="1430" y="416" text-anchor="end" class="col-note">fk → objects · CASCADE (weak-ref)</text>
-		<text x="1092" y="440" class="col">event_name</text>           <text x="1430" y="440" text-anchor="end" class="col-note">text</text>
-		<text x="1092" y="464" class="col">method_name</text>          <text x="1430" y="464" text-anchor="end" class="col-note">text</text>
-	</g>
-	<text x="1260" y="518" text-anchor="middle" class="note">unique (broadcaster, event_name, listener, method_name)</text>
-
-	<!-- ============================================================ -->
-	<!-- class_listeners (purple)                                      -->
-	<!-- ============================================================ -->
-	<g id="tbl-class-listeners">
-		<rect x="1080" y="560" width="360" height="180" fill="#eedde8" stroke="#a04c88" stroke-width="1.5" rx="3"/>
-		<rect x="1080" y="560" width="360" height="28" fill="#dbb0ce" stroke="#a04c88" stroke-width="1.5" rx="3"/>
-		<text x="1260" y="580" text-anchor="middle" class="tbl-name">class_listeners</text>
-
-		<text x="1092" y="608" class="col-pk">reg_pk</text>            <text x="1430" y="608" text-anchor="end" class="col-note">int pk autoincrement</text>
-		<text x="1092" y="632" class="col-fk">class</text>             <text x="1430" y="632" text-anchor="end" class="col-note">fk → objects · CASCADE (weak-ref)</text>
-		<text x="1092" y="656" class="col-fk">listener</text>          <text x="1430" y="656" text-anchor="end" class="col-note">fk → objects · CASCADE (weak-ref)</text>
-		<text x="1092" y="680" class="col">event_name</text>           <text x="1430" y="680" text-anchor="end" class="col-note">text</text>
-		<text x="1092" y="704" class="col">method_name</text>          <text x="1430" y="704" text-anchor="end" class="col-note">text</text>
-	</g>
-	<text x="1260" y="758" text-anchor="middle" class="note">unique (class, event_name, listener, method_name)</text>
-
-	<!-- ============================================================ -->
-	<!-- FK arrows: cross-table                                        -->
-	<!-- refs.parent → objects.object_pk    (from refs row y=152 to objects header) -->
-	<!-- refs.child → objects.object_pk     (from refs row y=176 to objects, offset) -->
-	<!-- instance_listeners.broadcaster → objects (from y=392) -->
-	<!-- instance_listeners.listener → objects (from y=416) -->
-	<!-- class_listeners.class → objects (from y=632) -->
-	<!-- class_listeners.listener → objects (from y=656) -->
-	<!-- ============================================================ -->
-
-	<!-- All FK arrows converge on objects.object_pk (right edge, x=780,y=128). -->
-	<!-- Grouped by source table; each source's arrows share a curve family     -->
-	<!-- to keep the target uncluttered.                                        -->
-
-	<!-- refs.parent → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 152 C 960 152 900 128 780 128"
-		marker-end="url(#arrow)"/>
-	<!-- refs.child → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 176 C 970 176 900 128 780 128"
-		marker-end="url(#arrow)"/>
-
-	<!-- instance_listeners.broadcaster → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 392 C 940 392 900 260 780 128"
-		marker-end="url(#arrow)"/>
-	<!-- instance_listeners.listener → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 416 C 930 416 900 270 780 128"
-		marker-end="url(#arrow)"/>
-
-	<!-- class_listeners.class → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 632 C 900 632 870 350 780 128"
-		marker-end="url(#arrow)"/>
-	<!-- class_listeners.listener → objects.object_pk -->
-	<path class="fk-line"
-		d="M 1080 656 C 890 656 860 360 780 128"
-		marker-end="url(#arrow)"/>
-
-	<!-- ============================================================ -->
-	<!-- Legend / notes                                                -->
-	<!-- ============================================================ -->
-	<g id="legend" transform="translate(60, 630)">
-		<text x="0" y="0" class="legend-h">Views (single-column filters over `objects`)</text>
-		<text x="0" y="22" class="legend"><tspan class="col-pk">roles</tspan> — objects where primitive = 'r'</text>
-		<text x="0" y="42" class="legend"><tspan class="col-pk">uspace</tspan> — roles ∪ persistent = 1 ∪ process = 1 (GC anchors)</text>
-		<text x="0" y="62" class="legend"><tspan class="col-pk">frame_scoped_vars</tspan> — flattened variable lookup across a frame's scopes</text>
-		<text x="0" y="82" class="legend"><tspan class="col-pk">object_bucket</tspan>, <tspan class="col-pk">object_stack</tspan> — utility joins over refs</text>
-
-		<text x="0" y="120" class="legend-h">Primitive discriminator (`objects.primitive`)</text>
-		<text x="0" y="142" class="legend"><tspan class="col-pk">'o'</tspan> object / scalar   <tspan class="col-pk">'h'</tspan> HashPrimitive   <tspan class="col-pk">'a'</tspan> ArrayPrimitive   <tspan class="col-pk">'f'</tspan> frame   <tspan class="col-pk">'r'</tspan> role</text>
-		<text x="0" y="162" class="legend">frames, roles, and processes fold into `objects` — the row-kind carries the discriminator</text>
-
-		<text x="0" y="200" class="legend-h">Line styles</text>
-		<line x1="0" y1="220" x2="60" y2="220" class="fk-line" marker-end="url(#arrow)"/>
-		<text x="72" y="224" class="legend">solid: cross-table foreign key</text>
-		<line x1="360" y1="220" x2="420" y2="220" class="fk-self" marker-end="url(#arrow)"/>
-		<text x="432" y="224" class="legend">dashed: self-referential FK on `objects`</text>
+	<!-- =========================================================== -->
+	<!-- cvm — marker table (gray)                                   -->
+	<!-- =========================================================== -->
+	<g transform="translate(70, 70)">
+		<rect x="0" y="0" width="200" height="80" rx="6" ry="6"
+			fill="#ffffff" stroke="#9e9e9e" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 188 q 6,0 6,6 V 26 H 0 Z" fill="#9e9e9e"/>
+		<text x="100" y="18" text-anchor="middle" class="table-name">cvm</text>
+		<text x="10" y="44" class="pk">PK: key</text>
+		<text x="10" y="62" class="col">col: value</text>
 	</g>
 
-	<!-- ============================================================ -->
-	<!-- Cluster labels                                                -->
-	<!-- ============================================================ -->
-	<text x="170" y="60" text-anchor="middle" class="note" fill="#6b6b6b">marker</text>
-	<text x="560" y="60" text-anchor="middle" class="note" fill="#4a9999">object graph</text>
-	<text x="1260" y="60" text-anchor="middle" class="note" fill="#a04c88">listeners</text>
+	<!-- =========================================================== -->
+	<!-- objects — object graph (teal), the big one                  -->
+	<!-- =========================================================== -->
+	<g transform="translate(320, 70)">
+		<rect x="0" y="0" width="200" height="426" rx="6" ry="6"
+			fill="#ffffff" stroke="#26a69a" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 188 q 6,0 6,6 V 26 H 0 Z" fill="#26a69a"/>
+		<text x="100" y="18" text-anchor="middle" class="table-name">objects</text>
+
+		<text x="10" y="44"  class="pk">PK: object_pk</text>
+		<text x="10" y="66"  class="col">col: primitive</text>
+		<text x="10" y="88"  class="col">col: scalar_type</text>
+		<text x="10" y="110" class="col">col: scalar_value</text>
+		<text x="10" y="132" class="col">col: engine_class</text>
+		<text x="10" y="154" class="col">col: core_role</text>
+		<text x="10" y="176" class="fk">FK: parent_role</text>
+		<text x="10" y="198" class="fk">FK: owner_role</text>
+		<text x="10" y="220" class="col">col: ast</text>
+		<text x="10" y="242" class="col">col: stmt_idx</text>
+		<text x="10" y="264" class="col">col: process</text>
+		<text x="10" y="286" class="fk">FK: parent_frame</text>
+		<text x="10" y="308" class="col">col: persistent</text>
+		<text x="10" y="330" class="col">col: gc</text>
+		<text x="10" y="352" class="col">col: needs_trace</text>
+		<text x="10" y="374" class="col">col: in_trace</text>
+		<text x="10" y="396" class="col">col: debug</text>
+
+		<!-- Self-loop for parent_role (y=176) -->
+		<path class="self-fk"
+			d="M 200,176 c 12,-8 12,-14 4,-16 c -8,-2 -12,10 -4,16"
+			marker-end="url(#arrow)"/>
+		<!-- Self-loop for owner_role (y=198) -->
+		<path class="self-fk"
+			d="M 200,198 c 12,-8 12,-14 4,-16 c -8,-2 -12,10 -4,16"
+			marker-end="url(#arrow)"/>
+		<!-- Self-loop for parent_frame (y=286) -->
+		<path class="self-fk"
+			d="M 200,286 c 12,-8 12,-14 4,-16 c -8,-2 -12,10 -4,16"
+			marker-end="url(#arrow)"/>
+	</g>
+
+	<!-- Cluster note under objects -->
+	<text x="420" y="516" text-anchor="middle" class="note">frames, roles, processes → `objects` rows via the `primitive` discriminator</text>
+
+	<!-- =========================================================== -->
+	<!-- refs — object graph (teal)                                  -->
+	<!-- =========================================================== -->
+	<g transform="translate(580, 70)">
+		<rect x="0" y="0" width="220" height="162" rx="6" ry="6"
+			fill="#ffffff" stroke="#26a69a" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 208 q 6,0 6,6 V 26 H 0 Z" fill="#26a69a"/>
+		<text x="110" y="18" text-anchor="middle" class="table-name">refs</text>
+
+		<text x="10" y="44"  class="pk">PK: ref_pk</text>
+		<text x="10" y="66"  class="fk">FK: parent  →  objects</text>
+		<text x="10" y="88"  class="fk">FK: child   →  objects</text>
+		<text x="10" y="110" class="col">col: key</text>
+		<text x="10" y="132" class="col">col: idx</text>
+		<text x="10" y="154" class="col">col: debug</text>
+	</g>
+
+	<!-- =========================================================== -->
+	<!-- instance_listeners (purple)                                 -->
+	<!-- =========================================================== -->
+	<g transform="translate(830, 70)">
+		<rect x="0" y="0" width="260" height="162" rx="6" ry="6"
+			fill="#ffffff" stroke="#9575cd" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 248 q 6,0 6,6 V 26 H 0 Z" fill="#9575cd"/>
+		<text x="130" y="18" text-anchor="middle" class="table-name">instance_listeners</text>
+
+		<text x="10" y="44"  class="pk">PK: reg_pk</text>
+		<text x="10" y="66"  class="fk">FK: broadcaster  →  objects</text>
+		<text x="10" y="88"  class="fk">FK: listener     →  objects</text>
+		<text x="10" y="110" class="col">col: event_name</text>
+		<text x="10" y="132" class="col">col: method_name</text>
+	</g>
+
+	<!-- =========================================================== -->
+	<!-- class_listeners (purple)                                    -->
+	<!-- =========================================================== -->
+	<g transform="translate(830, 270)">
+		<rect x="0" y="0" width="260" height="162" rx="6" ry="6"
+			fill="#ffffff" stroke="#9575cd" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 248 q 6,0 6,6 V 26 H 0 Z" fill="#9575cd"/>
+		<text x="130" y="18" text-anchor="middle" class="table-name">class_listeners</text>
+
+		<text x="10" y="44"  class="pk">PK: reg_pk</text>
+		<text x="10" y="66"  class="fk">FK: class     →  objects</text>
+		<text x="10" y="88"  class="fk">FK: listener  →  objects</text>
+		<text x="10" y="110" class="col">col: event_name</text>
+		<text x="10" y="132" class="col">col: method_name</text>
+	</g>
+
+	<!-- =========================================================== -->
+	<!-- FK arrows: cross-table                                      -->
+	<!-- All FKs into objects converge on `object_pk` (y=44 inside   -->
+	<!-- the objects box translated by (320,70) — absolute (330,114)) -->
+	<!-- =========================================================== -->
+
+	<!-- refs.parent → objects (from left edge of refs at y=66 abs 136) -->
+	<path class="fk-arrow"
+		d="M 580,136 C 560,136 550,120 520,114"
+		marker-end="url(#arrow)"/>
+	<!-- refs.child → objects -->
+	<path class="fk-arrow"
+		d="M 580,158 C 560,158 550,125 520,114"
+		marker-end="url(#arrow)"/>
+
+	<!-- instance_listeners.broadcaster → objects -->
+	<path class="fk-arrow"
+		d="M 830,136 C 700,136 660,120 520,114"
+		marker-end="url(#arrow)"/>
+	<!-- instance_listeners.listener → objects -->
+	<path class="fk-arrow"
+		d="M 830,158 C 700,158 660,125 520,114"
+		marker-end="url(#arrow)"/>
+
+	<!-- class_listeners.class → objects -->
+	<path class="fk-arrow"
+		d="M 830,336 C 680,336 620,200 520,114"
+		marker-end="url(#arrow)"/>
+	<!-- class_listeners.listener → objects -->
+	<path class="fk-arrow"
+		d="M 830,358 C 670,358 610,210 520,114"
+		marker-end="url(#arrow)"/>
+
+	<!-- =========================================================== -->
+	<!-- Views (blue-gray) — derived queries, no FK arrows           -->
+	<!-- =========================================================== -->
+	<text x="70" y="560" class="cluster-label" fill="#607d8b">views (derived)</text>
+
+	<g transform="translate(70, 580)">
+		<rect x="0" y="0" width="180" height="52" rx="6" ry="6"
+			fill="#ffffff" stroke="#607d8b" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z" fill="#607d8b"/>
+		<text x="90" y="18" text-anchor="middle" class="table-name">roles</text>
+		<text x="10" y="44" class="col">col: object_pk</text>
+	</g>
+
+	<g transform="translate(270, 580)">
+		<rect x="0" y="0" width="180" height="52" rx="6" ry="6"
+			fill="#ffffff" stroke="#607d8b" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z" fill="#607d8b"/>
+		<text x="90" y="18" text-anchor="middle" class="table-name">uspace</text>
+		<text x="10" y="44" class="col">col: object_pk</text>
+	</g>
+
+	<g transform="translate(470, 580)">
+		<rect x="0" y="0" width="240" height="70" rx="6" ry="6"
+			fill="#ffffff" stroke="#607d8b" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 228 q 6,0 6,6 V 26 H 0 Z" fill="#607d8b"/>
+		<text x="120" y="18" text-anchor="middle" class="table-name">frame_scoped_vars</text>
+		<text x="10" y="44" class="col">col: frame_pk, scope_idx,</text>
+		<text x="10" y="60" class="col">     var_name, value_pk</text>
+	</g>
+
+	<g transform="translate(730, 580)">
+		<rect x="0" y="0" width="180" height="52" rx="6" ry="6"
+			fill="#ffffff" stroke="#607d8b" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z" fill="#607d8b"/>
+		<text x="90" y="18" text-anchor="middle" class="table-name">object_bucket</text>
+		<text x="10" y="44" class="col">col: object_pk, bucket_pk</text>
+	</g>
+
+	<g transform="translate(930, 580)">
+		<rect x="0" y="0" width="180" height="52" rx="6" ry="6"
+			fill="#ffffff" stroke="#607d8b" stroke-width="1.5"/>
+		<path d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z" fill="#607d8b"/>
+		<text x="90" y="18" text-anchor="middle" class="table-name">object_stack</text>
+		<text x="10" y="44" class="col">col: object_pk, stack_pk</text>
+	</g>
+
+	<!-- =========================================================== -->
+	<!-- Legend                                                      -->
+	<!-- =========================================================== -->
+	<g transform="translate(70, 700)">
+		<text x="0" y="0" class="cluster-label" fill="#212121">Legend</text>
+		<text x="0" y="24" class="pk">PK</text>
+		<text x="60" y="24" class="col">primary key</text>
+		<text x="0" y="42" class="fk">FK</text>
+		<text x="60" y="42" class="col">foreign key</text>
+		<text x="0" y="60" class="col">col</text>
+		<text x="60" y="60" class="col">regular column</text>
+
+		<line x1="200" y1="20" x2="270" y2="20" class="fk-arrow" marker-end="url(#arrow)"/>
+		<text x="280" y="24" class="col">cross-table FK reference</text>
+
+		<path class="self-fk" d="M 220,42 c 12,-8 12,-14 4,-16 c -8,-2 -12,10 -4,16" marker-end="url(#arrow)"/>
+		<text x="280" y="42" class="col">self-referential FK on `objects`</text>
+
+		<text x="0" y="90" class="col">Primitive discriminator (`objects.primitive`):</text>
+		<text x="0" y="108" class="col">'o' object · 'h' HashPrimitive · 'a' ArrayPrimitive · 'f' frame · 'r' role</text>
+	</g>
 </svg>
