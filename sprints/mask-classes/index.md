@@ -10,6 +10,8 @@ Sprint on mask classes. A mask class **looks** like a Caspian class from the sur
 
 **Storage design isn't decided yet.** The sprint works forward from the pre-run database state, exploring what a mask actually looks like in the graph as the first mask-touching command runs.
 
+**Working example.** The mask class we're modeling as we go is `puck.uno/color` — "color" for short in conversation. Everything the sprint captures lands as concrete operations on that specific class.
+
 ## Pages so far
 
 - [pre-run](./pre-run) — the CVM database state before the first command runs, minimal display (object_pk + comment only)
