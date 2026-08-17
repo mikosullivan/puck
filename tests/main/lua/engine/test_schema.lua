@@ -1518,5 +1518,72 @@ test('sweeping a nested marker leaves the cap untouched (still stmt_idx=0)', fun
 end)
 
 
+-- ============================================================
+-- Core-role rows: needs_trace and in_trace are freely writable
+-- (close-schema-holes sprint, issue #1667)
+-- ============================================================
+
+test('a core role\'s needs_trace can be set (not blocked by objects_no_update_root_role)', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	assert_ok(db:exec("update objects set needs_trace = 1 where object_pk = '" .. engine_pk .. "'"),
+		db, 'setting needs_trace on the engine core role')
+
+	local row = first(db, "select needs_trace from objects where object_pk = '" .. engine_pk .. "'")
+	assert(tonumber(row.needs_trace) == 1, 'engine.needs_trace should be 1 after the update')
+	db:close()
+end)
+
+test('a core role\'s in_trace can be set (not blocked by objects_no_update_root_role)', function()
+	local db = fresh_db()
+	local cache_pk = first(db, "select object_pk from objects where core_role = 'c'").object_pk
+
+	assert_ok(db:exec("update objects set in_trace = 1 where object_pk = '" .. cache_pk .. "'"),
+		db, 'setting in_trace on the cache core role')
+
+	local row = first(db, "select in_trace from objects where object_pk = '" .. cache_pk .. "'")
+	assert(tonumber(row.in_trace) == 1, 'cache.in_trace should be 1 after the update')
+	db:close()
+end)
+
+test('deleting a ref whose child is a core role succeeds', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	-- Point a ref from hash_pk at the user core role.
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. user_pk .. "', 'r', 0)"), db, 'insert ref → user')
+
+	-- Deleting that ref used to fail: the refs_mark_needs_trace_after_delete
+	-- trigger would set user.needs_trace=1, and the no-update-root-role
+	-- guard would reject it. Now needs_trace is exempt from the guard.
+	assert_ok(db:exec("delete from refs where parent = '" .. hash_pk
+		.. "' and child = '" .. user_pk .. "'"), db, 'delete ref → user')
+
+	-- Ref is gone; user.needs_trace is set to 1 by the mark trigger.
+	local ref_count_row = first(db, "select count(*) as n from refs where child = '" .. user_pk .. "'")
+	assert(tonumber(ref_count_row.n) == 0, 'ref should be gone')
+
+	local user_row = first(db, "select needs_trace from objects where object_pk = '" .. user_pk .. "'")
+	assert(tonumber(user_row.needs_trace) == 1, 'user.needs_trace should be marked 1 by the ref-delete trigger')
+	db:close()
+end)
+
+test('a core role\'s persistent field is still blocked by objects_no_update_root_role', function()
+	-- Regression check — carving out needs_trace and in_trace from the
+	-- guard should not have widened the exemption to other columns.
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	assert_fails_with(
+		db:exec("update objects set persistent = null where object_pk = '" .. engine_pk .. "'"),
+		db, 'root_role_cannot_be_updated',
+		'clearing persistent on the engine core role should still be rejected')
+	db:close()
+end)
+
+
 -- Runner (tests/main/lua/engine/run.lua) aggregates results across
 -- files; no per-file report or os.exit here.

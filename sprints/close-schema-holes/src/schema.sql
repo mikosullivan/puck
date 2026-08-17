@@ -242,7 +242,6 @@ when new.ref_pk is not old.ref_pk
 	or new.child is not old.child
 	or new.key is not old.key
 	or new.idx is not old.idx
-	or new.debug is not old.debug
 begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
@@ -269,6 +268,30 @@ when new.key is not null
 	)
 begin
 	select raise(abort, 'refs_hash_key_must_be_identifier: hash keys must match [a-zA-Z_][a-zA-Z0-9_]*');
+end;
+
+-- Hash entries REQUIRE a non-null key. Companion to
+-- refs_hash_key_must_be_identifier: that trigger checks the shape when
+-- a key IS present; this trigger rejects the missing-key case. Together
+-- they enforce "hash parent ⇒ key is a Caspian-compliant identifier."
+-- Only fires on INSERT because refs are immutable. [ghi]
+create trigger refs_hash_key_required
+before insert on refs
+when new.key is null
+	and (select primitive from objects where object_pk = new.parent) = 'h'
+begin
+	select raise(abort, 'refs_hash_key_required: refs whose parent is a HashPrimitive must have a non-null key');
+end;
+
+-- Array entries must NOT have a key — arrays use idx only. Rejects a
+-- key set on any ref whose parent is an ArrayPrimitive. Only fires on
+-- INSERT because refs are immutable. [ghi]
+create trigger refs_array_key_forbidden
+before insert on refs
+when new.key is not null
+	and (select primitive from objects where object_pk = new.parent) = 'a'
+begin
+	select raise(abort, 'refs_array_key_forbidden: refs whose parent is an ArrayPrimitive must have a null key (arrays use idx)');
 end;
 
 -- Scopes convention enforcement. A frame's bucket has a `scopes` key
@@ -356,6 +379,31 @@ when new.stmt_idx is not old.stmt_idx
 	and new.stmt_idx is not old.stmt_idx + 1
 begin
 	select raise(abort, 'frames_stmt_idx_must_advance_by_one: stmt_idx moves +1 at a time');
+end;
+
+-- stmt_idx upper bound relative to ast. A frame's stmt_idx may not
+-- exceed `max(json_array_length(ast), 1)`. Two shapes:
+--   * Non-empty ast (length N): stmt_idx in {0..N} — 0..N-1 is a
+--     position within the ast; N is one past the last statement
+--     (terminal for an ordinary frame).
+--   * Empty ast (length 0): stmt_idx in {0, 1} — 0 is the born state;
+--     1 is the cap's terminal transition (advanced past nothing).
+-- Enforced on INSERT and on UPDATE OF stmt_idx. [ghi]
+create trigger frames_stmt_idx_within_ast_bounds
+before insert on objects
+when new.primitive = 'f'
+	and new.stmt_idx is not null
+	and new.stmt_idx > max(json_array_length(new.ast), 1)
+begin
+	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
+end;
+
+create trigger frames_stmt_idx_within_ast_bounds_on_update
+before update of stmt_idx on objects
+when new.stmt_idx is not null
+	and new.stmt_idx > max(json_array_length(new.ast), 1)
+begin
+	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
 end;
 
 
@@ -630,11 +678,12 @@ end;
 
 -- Guards any core-role row (symmetric with the delete version). WHEN
 -- gates on actual change to any GUARDED column; a no-op re-write of a
--- core-role row is silently accepted. `needs_trace` and `in_trace` are
--- GC-scratch columns and are freely writable on core roles too —
--- otherwise deleting a ref whose child is a core role would fail (the
--- ref-delete trigger marks the child needs_trace=1 and would hit this
--- guard). See sprints/close-schema-holes/ref-delete-blockers. [ghi]
+-- core-role row is silently accepted. `needs_trace`, `in_trace`, and
+-- `debug` are exempt — the first two are GC-scratch columns (otherwise
+-- deleting a ref whose child is a core role would fail: the ref-delete
+-- trigger marks the child needs_trace=1 and would hit this guard);
+-- `debug` is an informational label with no query path reading it. All
+-- three are freely writable on core roles too. [ghi]
 create trigger objects_no_update_root_role
 before update on objects
 when old.core_role is not null

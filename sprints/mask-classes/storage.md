@@ -31,6 +31,13 @@ Just after `cvm.open` returns and before any process has been seeded.
 </tbody>
 </table>
 
+## The `ec` column
+
+Marks a row as an instance of an engine (Lua) class. The value is a short string identifier — `class`, and eventually `function`, `array`, and others.
+
+- **Immutable.** A row IS a `caspian/class` at INSERT; there's no rebind. If a different engine class is wanted, insert a different row.
+- **No value constraint (yet).** The field takes any string. A naming scheme lands later.
+
 ## After the class mask is stored
 
 The first mask-related write lands: one row appears in `objects` for the class mask itself.
@@ -41,7 +48,7 @@ The first mask-related write lands: one row appears in `objects` for the class m
 <tr><th>object pk</th><th>ec</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
-<tr><td><code>c010cafe-…</code></td><td><code>1</code></td><td class="col-comment">class mask</td></tr>
+<tr><td><code>c010cafe-…</code></td><td><code>class</code></td><td class="col-comment">class mask</td></tr>
 </tbody>
 </table>
 
