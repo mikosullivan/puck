@@ -158,7 +158,8 @@ create table objects (
 	-- earlier pair of BEFORE-INSERT and BEFORE-UPDATE OF stmt_idx
 	-- triggers with a declarative constraint that fires on any write. [ghi]
 	stmt_idx integer
-		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f'))
+		check (stmt_idx is null
+			or (typeof(stmt_idx) = 'integer' and stmt_idx >= 0 and primitive = 'f'))
 		check (stmt_idx is null or stmt_idx <= json_array_length(ast)),
 
 	-- Root-of-process flag. `process = 1` marks this frame as the top

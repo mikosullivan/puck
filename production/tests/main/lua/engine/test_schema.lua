@@ -2587,6 +2587,55 @@ end)
 
 
 -- ============================================================
+-- stmt_idx: typeof-integer guard on the range-check column.
+--
+-- The bounds check (`stmt_idx >= 0 and stmt_idx <= json_array_length(ast)`)
+-- is a range compare, so a real like 1.5 passes numerically. The
+-- `check (typeof(stmt_idx) = 'integer' ...)` clause on the column
+-- rejects it at write time.
+--
+-- Not applied to the flag columns (`gc`, `process`, `persistent`,
+-- `needs_trace`) because their `check (X = 1)` is a value check, not
+-- a range check: SQLite's INTEGER affinity converts `1.0` and `'1'`
+-- to integer 1 before the CHECK runs, so they land as integer; any
+-- other value fails `= 1` on its own. No affinity hole to close.
+-- ============================================================
+
+test('stmt_idx CHECK rejects a real (1.5) — defense-in-depth', function()
+	-- Under normal operations the +1-at-a-time and starts-at-zero
+	-- triggers catch non-integer stmt_idx values before the column
+	-- CHECK gets a chance. This test drops those triggers so the
+	-- CHECK is the only rule left, then confirms it rejects a real.
+	--
+	-- Rationale: the CHECK is defense-in-depth. If the triggers
+	-- ever evolve (e.g., allowing skips), the CHECK still guarantees
+	-- the column holds only integers.
+	local db = fresh_db()
+	db:exec("drop trigger frames_stmt_idx_starts_at_zero;")
+	db:exec("drop trigger frames_stmt_idx_advances_by_one;")
+
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	-- Length-3 ast so 1.5 would pass the bounds check numerically.
+	local frame_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "0, '" .. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do frame_pk = row.object_pk end
+
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_pk .. "'"),
+		db, 'gc=1 precondition')
+	assert_fails_with(
+		db:exec("update objects set stmt_idx = 1.5 where object_pk = '" .. frame_pk .. "'"),
+		db, 'CHECK constraint',
+		'stmt_idx=1.5 rejected by CHECK once the surrounding triggers are out of the way')
+	db:close()
+end)
+
+
+-- ============================================================
 -- refs.idx CHECK: typeof + non-negative
 -- Same SQLite affinity fix as in_trace — `integer` alone accepts
 -- 1.5 (real) and 'abc' (text) if the value satisfies `>= 0`. The
