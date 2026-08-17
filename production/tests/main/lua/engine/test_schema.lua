@@ -650,7 +650,14 @@ end)
 
 
 -- ============================================================
--- refs — hash keys must be identifier-compliant
+-- refs — hash keys accept any non-null string
+--
+-- The schema places no grammar rule on hash-key content — any
+-- non-null string works. `refs_hash_key_required` still enforces
+-- the hash-vs-array distinction (hash entries carry a key; array
+-- entries leave it null). Identifier-shape rules for particular
+-- uses of hashes (variable names, method dispatch) live in the
+-- language layer, not the schema.
 -- ============================================================
 
 --[[
@@ -700,59 +707,64 @@ test('hash key: alphanumerics after first char accepted', function()
 	db:close()
 end)
 
-test('hash key: leading digit is rejected', function()
+test('hash key: leading digit is accepted', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_pk = insert_hash(db, user_pk)
 
-	assert_fails_with(
-		db:exec("insert into refs (parent, child, key, idx) values ('"
-			.. hash_pk .. "', '" .. child_pk .. "', '1x', 0)"),
-		db, 'refs_hash_key_must_be_identifier',
-		'leading digit rejected')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', '1x', 0)"),
+		db, 'leading digit accepted')
 	db:close()
 end)
 
-test('hash key: dash character is rejected', function()
+test('hash key: dash character is accepted', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_pk = insert_hash(db, user_pk)
 
-	assert_fails_with(
-		db:exec("insert into refs (parent, child, key, idx) values ('"
-			.. hash_pk .. "', '" .. child_pk .. "', 'my-var', 0)"),
-		db, 'refs_hash_key_must_be_identifier',
-		'dash rejected')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'my-var', 0)"),
+		db, 'dash accepted')
 	db:close()
 end)
 
-test('hash key: space is rejected', function()
+test('hash key: space is accepted', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_pk = insert_hash(db, user_pk)
 
-	assert_fails_with(
-		db:exec("insert into refs (parent, child, key, idx) values ('"
-			.. hash_pk .. "', '" .. child_pk .. "', 'foo bar', 0)"),
-		db, 'refs_hash_key_must_be_identifier',
-		'space rejected')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'foo bar', 0)"),
+		db, 'space accepted')
 	db:close()
 end)
 
-test('hash key: empty string is rejected', function()
+test('hash key: empty string is accepted', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_pk = insert_hash(db, user_pk)
 
-	assert_fails_with(
-		db:exec("insert into refs (parent, child, key, idx) values ('"
-			.. hash_pk .. "', '" .. child_pk .. "', '', 0)"),
-		db, 'refs_hash_key_must_be_identifier',
-		'empty key rejected')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', '', 0)"),
+		db, 'empty string accepted (any non-null string is a valid key)')
+	db:close()
+end)
+
+test('hash key: unicode content is accepted', function()
+	-- The dropped grammar rule was ASCII-only. Confirm unicode works.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_hash(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'πρι', 0)"),
+		db, 'unicode accepted')
 	db:close()
 end)
 

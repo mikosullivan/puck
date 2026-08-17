@@ -25,7 +25,7 @@ A process is also not a separate table. A process is a **cap frame**: an `object
 - [frame-lifecycle](https://puck.uno/requirements/cvm/frame-lifecycle) — cap-as-frame, the nine gc-cycle rules, auto-delete at terminal; step-by-step through `$x = 1`
 - [ownership](https://www.puck.uno/requirements/cvm/ownership) — buckets and stacks as refs; the one-hash-one-array cap; shared collections
 - [roles](https://www.puck.uno/requirements/cvm/roles) — role tree, `'r'` primitive, `core_role` marker, cycle-free-by-construction
-- [scopes](https://www.puck.uno/requirements/cvm/scopes) — the bucket → scopes → scopes[0] chain, hash-key identifier rule, `frame_scoped_vars` view
+- [scopes](https://www.puck.uno/requirements/cvm/scopes) — the bucket → scopes → scopes[0] chain, hash-key required rule, `frame_scoped_vars` view
 - [garbage-collection](https://www.puck.uno/requirements/cvm/garbage-collection/) — mark triggers + the trace routine
 - [pause-resume](https://www.puck.uno/requirements/cvm/pause-resume/) — pause via top-of-stack frame + DB close, resume via SQL edit + optional payload
 

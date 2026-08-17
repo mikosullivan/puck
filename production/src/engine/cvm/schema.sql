@@ -368,28 +368,16 @@ begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
--- Hash keys must be Caspian-compliant identifiers — start with a
--- letter or underscore, then only letters, digits, or underscores.
--- Rejects malformed strings, punctuation, whitespace, and keys that
--- lead with a digit. Only applies to hash entries; array entries
--- (key is null) are unaffected. [ghi]
-create trigger refs_hash_key_must_be_identifier
-before insert on refs
-when new.key is not null
-	and (select primitive from objects where object_pk = new.parent) = 'h'
-	and (
-		substr(new.key, 1, 1) not glob '[a-zA-Z_]'
-		or new.key glob '*[^a-zA-Z0-9_]*'
-	)
-begin
-	select raise(abort, 'refs_hash_key_must_be_identifier: hash keys must match [a-zA-Z_][a-zA-Z0-9_]*');
-end;
-
--- Hash entries REQUIRE a non-null key. Companion to
--- refs_hash_key_must_be_identifier: that trigger checks the shape when
--- a key IS present; this trigger rejects the missing-key case. Together
--- they enforce "hash parent ⇒ key is a Caspian-compliant identifier."
--- Only fires on INSERT because refs are immutable. [ghi]
+-- Hash entries REQUIRE a non-null key. A hash-vs-array distinction:
+-- hash refs carry a key; array refs use idx and leave key null. This
+-- trigger rejects the missing-key case on hash inserts. Only fires on
+-- INSERT because refs are immutable.
+--
+-- No grammar rule on the key's content — any non-null string is a
+-- valid hash key. Identifier-shape enforcement is out of scope for
+-- the schema; if a language layer wants stricter rules for a
+-- particular use of hashes (variable names, method dispatch, etc.),
+-- that lives in the language layer. [ghi]
 create trigger refs_hash_key_required
 before insert on refs
 when new.key is null

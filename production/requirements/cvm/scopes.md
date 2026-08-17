@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "requirements_cvm_scopes",
-	"role": "The scopes convention for variable storage: a frame's bucket has a `scopes` key pointing at an ArrayPrimitive whose entries are hash primitives. Scope[0] is the frame's own locals; scope[1..] are captured scopes from enclosing closures. Hash keys inside a bucket must be Caspian-compliant identifiers. The `frame_scoped_vars` view flattens the whole chain into (frame_pk, scope_idx, var_name, value_pk) rows for lookup.",
-	"key_concepts": ["scopes_array", "own_scope_at_index_zero", "captured_scopes", "hash_key_identifier_rule", "frame_scoped_vars"]}
+	"role": "The scopes convention for variable storage: a frame's bucket has a `scopes` key pointing at an ArrayPrimitive whose entries are hash primitives. Scope[0] is the frame's own locals; scope[1..] are captured scopes from enclosing closures. Hash keys are any non-null string at the schema level; identifier grammar for variable names lives in the language layer. The `frame_scoped_vars` view flattens the whole chain into (frame_pk, scope_idx, var_name, value_pk) rows for lookup.",
+	"key_concepts": ["scopes_array", "own_scope_at_index_zero", "captured_scopes", "frame_scoped_vars"]}
 ~~~
 
 # Scopes
@@ -32,14 +32,11 @@ Together these guarantee the shape: `scopes` → array → hashes, always.
 
 By convention, a `'scopes'`-keyed ref lives on a **frame's bucket**. The schema does NOT enforce this on the parent side — any HashPrimitive can carry a `'scopes'` ref, whether or not it's a frame's bucket, and the three triggers above still fire on the child side. The looseness is intentional: enforcing "parent must be a frame's bucket" would require a subquery join on every ref insert, and the write path (`ensure_own_scope`) already places `scopes` refs on frame buckets and nowhere else. If a bug ever produces a `scopes` ref under a non-bucket hash, the child-side triggers keep the array-of-hashes shape correct; the misplaced ref just doesn't participate in `frame_scoped_vars` (which walks the chain from `object_bucket`).
 
-## Hash-key identifier rule
+## Hash-key rule
 
-Any key inside a hash primitive (which includes the scope hashes above) must be a Caspian-compliant identifier — starts with a letter or underscore, then letters, digits, or underscores. Enforced by the `refs_hash_key_must_be_identifier` trigger using a GLOB pattern:
+Any non-null string is a valid hash key at the schema level — no grammar rule on content, ASCII or otherwise. Variable names inside scope hashes still follow Caspian's identifier grammar, but that's a language-layer rule, not a schema one; the schema stores whatever the language layer writes.
 
-- Accepted: `x`, `_foo`, `bar_2`, `Class1`
-- Rejected: `1foo` (leading digit), `foo-bar` (dash), `foo bar` (space), the empty string
-
-Array entries (which leave `key` null) are not affected — the rule only fires when `key` is set and the parent is a HashPrimitive.
+The one thing the schema DOES enforce for hash entries is that the key be present (non-null): `refs_hash_key_required`. Array entries leave `key` null and use `idx` instead, so the trigger distinguishes hash-vs-array by the presence of a key.
 
 ## The `frame_scoped_vars` view
 
