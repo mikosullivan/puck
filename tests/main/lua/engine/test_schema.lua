@@ -1571,15 +1571,16 @@ test('deleting a ref whose child is a core role succeeds', function()
 	db:close()
 end)
 
-test('a core role\'s persistent field is still blocked by objects_no_update_root_role', function()
-	-- Regression check — carving out needs_trace and in_trace from the
-	-- guard should not have widened the exemption to other columns.
+test("a core role's persistent field cannot be cleared (CHECK on persistent)", function()
+	-- The cross-column CHECK on `persistent` fires on UPDATE, not
+	-- just INSERT, so clearing persistent on a core-role row is
+	-- rejected even without a dedicated update-guard trigger.
 	local db = fresh_db()
 	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
 
 	assert_fails_with(
 		db:exec("update objects set persistent = null where object_pk = '" .. engine_pk .. "'"),
-		db, 'root_role_cannot_be_updated',
+		db, 'CHECK constraint failed: core_role is null or persistent is 1',
 		'clearing persistent on the engine core role should still be rejected')
 	db:close()
 end)

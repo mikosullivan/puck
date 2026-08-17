@@ -673,36 +673,6 @@ begin
 	select raise(abort, 'root_role_cannot_be_deleted: core-role rows cannot be deleted');
 end;
 
--- Guards any core-role row (symmetric with the delete version). WHEN
--- gates on actual change to any GUARDED column; a no-op re-write of a
--- core-role row is silently accepted. `needs_trace` and `in_trace` are
--- GC-scratch columns and are freely writable on core roles too —
--- otherwise deleting a ref whose child is a core role would fail (the
--- ref-delete trigger marks the child needs_trace=1 and would hit this
--- guard). [ghi]
-create trigger objects_no_update_root_role
-before update on objects
-when old.core_role is not null
-	and (
-		new.object_pk is not old.object_pk
-		or new.primitive is not old.primitive
-		or new.scalar_type is not old.scalar_type
-		or new.scalar_value is not old.scalar_value
-		or new.core_role is not old.core_role
-		or new.parent_role is not old.parent_role
-		or new.owner_role is not old.owner_role
-		or new.ast is not old.ast
-		or new.stmt_idx is not old.stmt_idx
-		or new.process is not old.process
-		or new.parent_frame is not old.parent_frame
-		or new.persistent is not old.persistent
-		or new.gc is not old.gc
-	)
-begin
-	select raise(abort, 'root_role_cannot_be_updated: core-role rows cannot be updated');
-end;
-
-
 -- ------------------------------------------------------------
 -- Instance-level event listeners. Registrations are bookkeeping,
 -- not graph edges — GC does NOT count them as reachability. Weak-ref
