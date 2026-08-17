@@ -5,46 +5,29 @@ pragma recursive_triggers = on;
 
 
 -- ------------------------------------------------------------
--- Processes — call stack roots.
+-- cvm marker table — presence signals "this DB is a CVM." [ghi]
+-- Append-only.
 -- ------------------------------------------------------------
-
--- Holds the list of currently running processes.
-
-create table processes (
-	process_pk text primary key default (
-		lower(
-			substr(hex(randomblob(4)), 1, 8) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(2)), 1, 4) || '-' ||
-			substr(hex(randomblob(6)), 1, 12)
-		)
-	),
-
-	-- Completion flag. 0 = has frames left; 1 = finished. Default 0. [ghi]
-	complete integer not null default 0 check (complete in (0, 1)),
-
-	-- Message. Text. The caller reaps this into the return hash after run(). [ghi]
-	message text default null
+create table cvm (
+	key text primary key,
+	value text
 );
 
--- process_pk is immutable. [ghi]
-create trigger processes_no_update
-before update on processes
-when new.process_pk is not old.process_pk
+create trigger cvm_no_update
+before update on cvm
+when new.key is not old.key
+	or new.value is not old.value
 begin
-	select raise(abort, 'processes_pk_immutable: processes.process_pk is immutable');
+	select raise(abort, 'cvm_append_only: cvm is append-only; no updates allowed');
 end;
 
--- `complete` is one-way: 0 → 1 is allowed, 1 → 0 is not. Once a process
--- is marked complete the caller may reap it at any point; reverting the
--- flag would let a reaped-but-not-yet-deleted process look live again. [ghi]
-create trigger processes_complete_no_reverse
-before update on processes
-when old.complete = 1 and new.complete = 0
+create trigger cvm_no_delete
+before delete on cvm
 begin
-	select raise(abort, 'processes_complete_no_reverse: processes.complete cannot go from 1 back to 0');
+	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
+
+insert into cvm (key, value) values ('schema', '9.0');
 
 
 -- ------------------------------------------------------------
@@ -99,87 +82,73 @@ create table objects (
 	-- also carry it (cache and user are owned by engine). No cascade. [ghi]
 	owner_role text references objects(object_pk),
 
-	-- CaspM tree as JSON text. Set on real frames (primitive='f',
-	-- gc null), null on everything else — markers (primitive='f',
-	-- gc=1) and non-frames. A marker carries no code; it's a
-	-- bookkeeping row that the walker dispatches to the GC routine,
-	-- not to ast-walking. Immutable once set (objects_ast_immutable). [ghi]
+	-- CaspM tree as JSON text. Biconditional with primitive='f' — every
+	-- frame has an ast, no non-frame does. A cap frame (process=1) has
+	-- ast='[]' — the cap doesn't dispatch anything, its "one slot" is
+	-- just a lifecycle position (0=live, 1=terminal). Immutable once
+	-- set (see objects_ast_immutable). [ghi]
 	ast text
-		check (
-			(primitive = 'f' and gc is null and ast is not null)
-			or
-			(ast is null and (primitive != 'f' or gc = 1))
-		),
+		check ((primitive = 'f' and ast is not null)
+			or (primitive != 'f' and ast is null))
+		check (process is null or ast = '[]'),
 
-	-- Current position within the frame's ast. Set on real frames
-	-- (primitive='f', gc null), null on markers and non-frames.
-	-- Parallels the ast column check: a marker has no code and no
-	-- position; the walker dispatches it to GC, not to statement
-	-- walking. Mutable (walker advances by +1 per statement dispatched). [ghi]
+	-- Current position within the frame's ast. Set on frames, null on
+	-- non-frames. Under the gc cycle, stmt_idx increments by 1 per
+	-- statement dispatched, in the SAME UPDATE that sets gc=1. [ghi]
 	stmt_idx integer
-		check (
-			(primitive = 'f' and gc is null and stmt_idx >= 0)
-			or
-			(stmt_idx is null and (primitive != 'f' or gc = 1))
-		),
+		check (stmt_idx is null or (stmt_idx >= 0 and primitive = 'f')),
 
-	-- FK to processes for frame 0 (and any marker that replaced it).
-	-- Frame-only. Frames are destroyed when finished — no null-on-pop
-	-- transition; the row goes away instead. [ghi]
-	process_pk text
-		references processes(process_pk)
-		check (process_pk is null or primitive = 'f'),
+	-- Root-of-process flag. `process = 1` marks this frame as the top
+	-- cap of a call stack — the object identity of the process itself.
+	-- Null on nested frames (which have parent_frame set instead).
+	-- A cap has ast='[]' (see check below), starts at stmt_idx=0, and
+	-- becomes terminal when it reaches stmt_idx=1 with gc=null and no
+	-- children. Frame 0 sits under the cap as a nested frame. Immutable
+	-- via objects_process_immutable. [ghi]
+	process integer
+		check (process = 1)
+		check (process is null or primitive = 'f'),
 
 	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
-	-- has exactly one parent — either a parent_frame or a process_pk,
-	-- never both, never neither. Enforced by the mutual-exclusion check
-	-- on this column. [ghi]
+	-- has exactly one anchor: either parent_frame (nested frame) or
+	-- process=1 (the cap), never both, never neither. Enforced by the
+	-- mutual-exclusion check on this column. [ghi]
 	parent_frame text
 		references objects(object_pk)
 		check (parent_frame is null or primitive = 'f')
 		check (primitive != 'f'
-			or (parent_frame is not null and process_pk is null)
-			or (parent_frame is null and process_pk is not null)),
+			or (parent_frame is not null and process is null)
+			or (parent_frame is null and process is 1)),
 
-	-- Bucket / stack back-refs on collection rows. If set, this row is
-	-- the bucket / stack for the referenced full object. At most one
-	-- per collection. Cascades on owner delete. [ghi]
-	bucket_for text unique references objects(object_pk) on delete cascade
-		check (bucket_for is null or primitive = 'h'),
-	stack_for  text unique references objects(object_pk) on delete cascade
-		check (stack_for  is null or primitive = 'a')
-		check (bucket_for is null or stack_for is null),
-
-	-- Owner-side denormalization of bucket_for / stack_for. Set once by
-	-- the denormalize triggers below; then immutable via objects_no_update. [ghi]
-	bucket_pk text unique
+	-- Owner-side pointers to the object's bucket / stack. Only frames
+	-- and non-scalar full objects can carry them (checked here). The
+	-- primitive of the TARGET (must be 'h' for bucket_pk, 'a' for
+	-- stack_pk) is enforced by a trigger below — SQLite CHECK can't
+	-- reach across rows. `bucket_pk` and `stack_pk` are MUTABLE: an
+	-- owner can swap its collection at any time. Not UNIQUE — a bucket
+	-- (or stack) can be shared across multiple owners; a bucket doesn't
+	-- know it's a bucket, and cascades no longer thread through here.
+	-- On any change (update to a different value, or owner deletion),
+	-- the OLD target is marked needs_trace = 1 so GC can decide its
+	-- fate based on reachability. See the trigger set below. [ghi]
+	bucket_pk text references objects(object_pk)
 		check (bucket_pk is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
-	stack_pk  text unique
+	stack_pk  text references objects(object_pk)
 		check (stack_pk  is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
 
 	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
 	persistent integer check (persistent = 1),
 
-	-- GC marker flag. A row with gc = 1 is a marker in the frame stack —
-	-- not an actual Caspian call. Frames-only; markers carry no bucket,
-	-- no stack. Only 1 or null. [ghi]
+	-- gc-cycle state flag. Bidirectional: null (frame executing normally)
+	-- ↔ 1 (frame is past-dispatch, cleanup phase). The cycle:
+	--   1. Walker advances stmt_idx AND sets gc=1 (must be same UPDATE).
+	--   2. gc=1 fires AFTER trigger that cascade-deletes children.
+	--   3. Child-frame delete requires parent's gc=1 (BEFORE-DELETE check).
+	--   4. Resetting gc to null requires no child frames (BEFORE-UPDATE check).
+	-- Frames-only. [ghi]
 	gc integer
 		check (gc = 1)
-		check (gc is null or primitive = 'f')
-		check (gc is null or bucket_pk is null)
-		check (gc is null or stack_pk is null),
-
-	-- Delete-child-ok flag. Set to 1 in the same UPDATE that advances
-	-- stmt_idx; the sweep trigger reads it to authorize the child-
-	-- marker DELETE; the AFTER-DELETE trigger resets it. Between
-	-- cycles, always null. Real-frame-only (a marker has no children).
-	-- Enforcement lives across four triggers (advance_requires_dcok,
-	-- dcok_only_with_advance, sweep_child_when_dcok_set, and
-	-- markers_no_direct_delete) that together make the walker's
-	-- `SET stmt_idx = +1, dcok = 1` the only path to a marker delete. [ghi]
-	dcok integer
-		check (dcok = 1)
-		check (dcok is null or (primitive = 'f' and gc is null)),
+		check (gc is null or primitive = 'f'),
 
 	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
 	needs_trace integer check (needs_trace = 1),
@@ -212,38 +181,87 @@ begin
 			then raise(abort, 'objects_scalar_type_immutable: objects.scalar_type is immutable')
 		when new.scalar_value is not old.scalar_value
 			then raise(abort, 'objects_scalar_value_immutable: objects.scalar_value is immutable')
-		when new.bucket_for is not old.bucket_for
-			then raise(abort, 'objects_bucket_for_immutable: objects.bucket_for is immutable')
-		when new.stack_for is not old.stack_for
-			then raise(abort, 'objects_stack_for_immutable: objects.stack_for is immutable')
-		when old.bucket_pk is not null and new.bucket_pk is not old.bucket_pk
-			then raise(abort, 'objects_bucket_pk_write_once: objects.bucket_pk is write-once')
-		when old.stack_pk is not null and new.stack_pk is not old.stack_pk
-			then raise(abort, 'objects_stack_pk_write_once: objects.stack_pk is write-once')
+		-- bucket_pk and stack_pk are mutable; owners can swap collections
+		-- at any time. The change-tracking triggers below mark the OLD
+		-- target needs_trace = 1 whenever the value moves.
 	end;
 end;
 
 -- Bucket / stack are lazily created by the Lua write layer (no auto-provision). [ghi]
 
 -- ------------------------------------------------------------
--- Denormalization triggers — keep owner-side bucket_pk / stack_pk
--- in sync with collection-side bucket_for / stack_for. [ghi]
+-- bucket_pk / stack_pk — target primitive check + needs_trace
+-- marking on change or owner delete.
 -- ------------------------------------------------------------
 
--- On bucket INSERT: write the new bucket's pk into the owner's bucket_pk. [ghi]
-create trigger objects_denormalize_bucket
-after insert on objects
-when new.bucket_for is not null
+-- Target primitive check: bucket_pk (when set) must point at a hash;
+-- stack_pk (when set) must point at an array. Cross-row check via
+-- trigger since SQLite CHECK can't reach into another row. Fires on
+-- insert and update. [ghi]
+create trigger objects_bucket_pk_target_must_be_hash
+before insert on objects
+when new.bucket_pk is not null
+	and (select primitive from objects where object_pk = new.bucket_pk) is not 'h'
 begin
-	update objects set bucket_pk = new.object_pk where object_pk = new.bucket_for;
+	select raise(abort, 'objects_bucket_pk_target_must_be_hash: bucket_pk must reference a HashPrimitive');
 end;
 
--- Same for stack. [ghi]
-create trigger objects_denormalize_stack
-after insert on objects
-when new.stack_for is not null
+create trigger objects_bucket_pk_target_must_be_hash_on_update
+before update of bucket_pk on objects
+when new.bucket_pk is not null
+	and (select primitive from objects where object_pk = new.bucket_pk) is not 'h'
 begin
-	update objects set stack_pk = new.object_pk where object_pk = new.stack_for;
+	select raise(abort, 'objects_bucket_pk_target_must_be_hash: bucket_pk must reference a HashPrimitive');
+end;
+
+create trigger objects_stack_pk_target_must_be_array
+before insert on objects
+when new.stack_pk is not null
+	and (select primitive from objects where object_pk = new.stack_pk) is not 'a'
+begin
+	select raise(abort, 'objects_stack_pk_target_must_be_array: stack_pk must reference an ArrayPrimitive');
+end;
+
+create trigger objects_stack_pk_target_must_be_array_on_update
+before update of stack_pk on objects
+when new.stack_pk is not null
+	and (select primitive from objects where object_pk = new.stack_pk) is not 'a'
+begin
+	select raise(abort, 'objects_stack_pk_target_must_be_array: stack_pk must reference an ArrayPrimitive');
+end;
+
+-- On bucket_pk change (owner swaps its bucket for a different one, or
+-- clears it): mark the OLD target needs_trace = 1. A no-op re-write of
+-- the same value silently accepted. [ghi]
+create trigger objects_mark_needs_trace_on_bucket_pk_change
+after update of bucket_pk on objects
+when old.bucket_pk is not null and new.bucket_pk is not old.bucket_pk
+begin
+	update objects set needs_trace = 1 where object_pk = old.bucket_pk;
+end;
+
+create trigger objects_mark_needs_trace_on_stack_pk_change
+after update of stack_pk on objects
+when old.stack_pk is not null and new.stack_pk is not old.stack_pk
+begin
+	update objects set needs_trace = 1 where object_pk = old.stack_pk;
+end;
+
+-- On owner delete: mark the owner's bucket / stack needs_trace = 1
+-- so GC can decide whether they stay based on reachability. Fires
+-- before the delete so we can still read the old values. [ghi]
+create trigger objects_mark_bucket_needs_trace_on_delete
+before delete on objects
+when old.bucket_pk is not null
+begin
+	update objects set needs_trace = 1 where object_pk = old.bucket_pk;
+end;
+
+create trigger objects_mark_stack_needs_trace_on_delete
+before delete on objects
+when old.stack_pk is not null
+begin
+	update objects set needs_trace = 1 where object_pk = old.stack_pk;
 end;
 
 -- ------------------------------------------------------------
@@ -305,42 +323,73 @@ begin
 	update objects set needs_trace = 1 where object_pk = old.child;
 end;
 
--- ------------------------------------------------------------
--- cvm marker table — presence signals "this DB is a CVM." [ghi]
--- Append-only.
--- ------------------------------------------------------------
-create table cvm (
-	key text primary key,
-	value text
-);
-
-create trigger cvm_no_update
-before update on cvm
-when new.key is not old.key
-	or new.value is not old.value
+-- Hash keys must be Caspian-compliant identifiers — start with a
+-- letter or underscore, then only letters, digits, or underscores.
+-- Rejects malformed strings, punctuation, whitespace, and keys that
+-- lead with a digit. Only applies to hash entries; array entries
+-- (key is null) are unaffected. [ghi]
+create trigger refs_hash_key_must_be_identifier
+before insert on refs
+when new.key is not null
+	and (select primitive from objects where object_pk = new.parent) = 'h'
+	and (
+		substr(new.key, 1, 1) not glob '[a-zA-Z_]'
+		or new.key glob '*[^a-zA-Z0-9_]*'
+	)
 begin
-	select raise(abort, 'cvm_append_only: cvm is append-only; no updates allowed');
+	select raise(abort, 'refs_hash_key_must_be_identifier: hash keys must match [a-zA-Z_][a-zA-Z0-9_]*');
 end;
 
-create trigger cvm_no_delete
-before delete on cvm
+-- Scopes convention enforcement. A frame's bucket has a `scopes` key
+-- pointing at an ArrayPrimitive whose entries are hash-primitive scope
+-- rows. See sprints/first-variable/closures.md for the design. [ghi]
+
+-- A ref keyed 'scopes' must point at an ArrayPrimitive.
+create trigger refs_scopes_key_requires_array
+before insert on refs
+when new.key = 'scopes'
+	and (select primitive from objects where object_pk = new.child) is not 'a'
 begin
-	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
+	select raise(abort, 'refs_scopes_key_requires_array: a ref with key=''scopes'' must point at an ArrayPrimitive');
 end;
 
-insert into cvm (key, value) values ('schema', '9.0');
+-- Entries in a scopes array must be hashes. Fires on INSERT into any
+-- array that's referenced by a `scopes`-keyed ref. [ghi]
+create trigger refs_scopes_array_entries_must_be_hashes
+before insert on refs
+when exists (select 1 from refs where child = new.parent and key = 'scopes')
+	and (select primitive from objects where object_pk = new.child) is not 'h'
+begin
+	select raise(abort, 'refs_scopes_array_entries_must_be_hashes: entries in a scopes array must be hashes');
+end;
 
+-- Retro-check: when the `scopes`-keyed ref is inserted, verify any
+-- existing entries in the target array are all hashes. Handles the
+-- case where refs into the array were inserted before the scopes ref
+-- was attached (so refs_scopes_array_entries_must_be_hashes above
+-- couldn't fire on them). [ghi]
+create trigger refs_scopes_key_existing_entries_must_be_hashes
+before insert on refs
+when new.key = 'scopes'
+	and exists (
+		select 1 from refs r
+		join objects o on o.object_pk = r.child
+		where r.parent = new.child and o.primitive is not 'h'
+	)
+begin
+	select raise(abort, 'refs_scopes_key_existing_entries_must_be_hashes: the target array already contains non-hash entries');
+end;
 
 -- ------------------------------------------------------------
 -- Frame ast validation triggers.
 -- ------------------------------------------------------------
 
--- BEFORE INSERT: reject non-array or non-JSON ast on real frame rows.
--- Skipped on markers (gc=1) — markers have ast=null by column-check
--- and this validator would raise on json_valid(null). [ghi]
+-- BEFORE INSERT: reject non-array or non-JSON ast on frame rows.
+-- Every frame has an ast (biconditional column check); this validator
+-- guards the shape. [ghi]
 create trigger objects_ast_valid_insert
 before insert on objects
-when new.primitive = 'f' and new.gc is null
+when new.primitive = 'f'
 begin
 	select case
 		when not json_valid(new.ast)
@@ -358,22 +407,18 @@ begin
 	select raise(abort, 'ast_immutable: objects.ast is immutable once set');
 end;
 
--- A real frame is born with stmt_idx = 0. Only fires for real frames
--- (gc null); markers have stmt_idx = null by column check, so this
--- doesn't apply. Transitional rule, so it's a trigger, not a column
--- CHECK — a bulk-load with triggers off can install a frame at any
--- mid-state stmt_idx. [ghi]
+-- A frame is born with stmt_idx = 0. Transitional rule (trigger,
+-- not column CHECK), so a bulk-load with triggers off can install a
+-- frame at any mid-state stmt_idx. [ghi]
 create trigger frames_stmt_idx_starts_at_zero
 before insert on objects
-when new.primitive = 'f' and new.gc is null and new.stmt_idx is not 0
+when new.primitive = 'f' and new.stmt_idx is not 0
 begin
-	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a real frame is born with stmt_idx = 0');
+	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a frame is born with stmt_idx = 0');
 end;
 
 -- stmt_idx moves +1 at a time. Skips and rewinds are rejected. A no-op
--- re-write of the same value is silently accepted — no advance semantics
--- fire (marker-required, marker-delete). WHEN gates on actual change so
--- the advance machinery only runs when something is really moving. [ghi]
+-- re-write of the same value is silently accepted. [ghi]
 create trigger frames_stmt_idx_advances_by_one
 before update of stmt_idx on objects
 when new.stmt_idx is not old.stmt_idx
@@ -382,86 +427,99 @@ begin
 	select raise(abort, 'frames_stmt_idx_must_advance_by_one: stmt_idx moves +1 at a time');
 end;
 
--- stmt_idx can only advance when the frame has a GC marker child ready
--- to be swept. Fires only on actual change; a no-op re-write is silently
--- accepted (no marker required). [ghi]
-create trigger frames_stmt_idx_requires_marker_child
+
+-- ------------------------------------------------------------
+-- The gc cycle — four invariants
+-- ------------------------------------------------------------
+-- The walker's per-statement operation is `UPDATE frame SET stmt_idx =
+-- stmt_idx + 1, gc = 1`. That single statement's cascade goes:
+--
+--   1. BEFORE-UPDATE checks pass (advance +1 rule, advance-requires-gc,
+--      no-active-children).
+--   2. Row updates: stmt_idx moves, gc becomes 1.
+--   3. AFTER-UPDATE OF gc fires: DELETE FROM objects WHERE parent_frame
+--      = frame — the child (marker or completed nested call) is swept.
+--   4. Each child's BEFORE-DELETE checks parent.gc = 1 — passes because
+--      step 2 already updated the row.
+--   5. Child deleted.
+--
+-- At-rest state after the cascade: frame at new stmt_idx, gc = 1, no
+-- children. The engine then runs GC (needs_trace sweep, on_close
+-- callbacks if any) and completes the cycle with `UPDATE frame SET
+-- gc = null` — which requires no children (invariant 4).
+--
+-- Bidirectional gc: null (executing) ↔ 1 (post-dispatch cleanup).
+
+-- Invariant 1a: advancing stmt_idx requires gc = 1 in same UPDATE. [ghi]
+create trigger frames_advance_requires_gc
 before update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx
-	and not exists (
+when new.stmt_idx is not old.stmt_idx and new.gc is not 1
+begin
+	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires gc=1 in the same UPDATE');
+end;
+
+-- Invariant 1b: setting gc=1 requires stmt_idx to advance in same UPDATE. [ghi]
+create trigger frames_gc_set_requires_advance
+before update of gc on objects
+when new.gc = 1 and old.gc is null and new.stmt_idx is old.stmt_idx
+begin
+	select raise(abort, 'frames_gc_set_requires_advance: setting gc=1 requires stmt_idx to advance in the same UPDATE');
+end;
+
+-- Invariant 2: setting gc=1 cascade-deletes children. [ghi]
+create trigger frames_gc_set_deletes_children
+after update of gc on objects
+when new.gc = 1 and old.gc is null
+begin
+	delete from objects where parent_frame = new.object_pk and primitive = 'f';
+end;
+
+-- Invariant 3: a child frame can only be deleted when its parent's
+-- gc = 1. The BEFORE-DELETE trigger checks the parent at delete time;
+-- since the cascade from invariant 2 fires AFTER the parent's gc was
+-- set to 1, the check passes for legitimate sweep. Direct DELETE
+-- attempts (parent still gc=null) abort. [ghi]
+create trigger frames_child_delete_requires_parent_gc
+before delete on objects
+when old.primitive = 'f'
+	and old.parent_frame is not null
+	and (select gc from objects where object_pk = old.parent_frame) is not 1
+begin
+	select raise(abort, 'frames_child_delete_requires_parent_gc: a child frame can only be deleted when parent.gc = 1');
+end;
+
+-- A frame can only be deleted when its own gc cycle is complete
+-- (gc is null). Rejects mid-cleanup deletes. Does NOT require the
+-- frame to be past its last statement — early return via `return X`
+-- is a legitimate delete at any stmt_idx. Cascade-swept markers pass
+-- because they're born gc=null; frames finishing normally pass because
+-- their own advance-then-reset cycle ends with gc=null. [ghi]
+create trigger frames_delete_requires_gc_null
+before delete on objects
+when old.primitive = 'f' and old.gc is not null
+begin
+	select raise(abort, 'frames_delete_requires_gc_null: a frame can only be deleted when its gc cycle is complete (gc is null); mid-cleanup deletes are rejected');
+end;
+
+-- Invariant 4: resetting gc = null requires no child frames. Engine's
+-- `UPDATE frame SET gc = null` at the end of a cleanup phase only
+-- succeeds when all children (including any on_close callback frames)
+-- have run to completion and been swept. Guarantees at-rest gc=null
+-- always means "ready for next dispatch." [ghi]
+create trigger frames_gc_reset_requires_no_children
+before update of gc on objects
+when new.gc is null and old.gc = 1
+	and exists (
 		select 1 from objects
-		where parent_frame = new.object_pk and gc = 1
+		where parent_frame = new.object_pk and primitive = 'f'
 	)
 begin
-	select raise(abort, 'frames_stmt_idx_requires_marker_child: stmt_idx can only advance when a GC marker child is present to sweep');
+	select raise(abort, 'frames_gc_reset_requires_no_children: cannot reset gc to null while child frames exist');
 end;
 
--- dcok-based marker sweep. The walker's advance is `UPDATE parent SET
--- stmt_idx = stmt_idx + 1, dcok = 1` — one statement, both fields.
--- Five triggers together enforce that a nested marker can be deleted
--- ONLY via this exact operation:
---
---   1. frames_advance_requires_dcok — reject stmt_idx change without dcok=1
---   2. frames_dcok_only_with_advance — reject dcok=1 without stmt_idx change
---   3. frames_sweep_child_when_dcok_set — AFTER dcok=1, DELETE marker child
---   4. markers_no_direct_delete — reject direct nested-marker DELETE
---   5. frames_reset_dcok_after_sweep — AFTER marker DELETE, reset dcok
---
--- Together: any bypass path other than the walker's exact UPDATE is
--- rejected. Between cycles, dcok is always null. [ghi]
-
-create trigger frames_advance_requires_dcok
-before update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx and new.dcok is not 1
-begin
-	select raise(abort, 'frames_advance_requires_dcok: advancing stmt_idx requires dcok=1 in the same UPDATE');
-end;
-
-create trigger frames_dcok_only_with_advance
-before update of dcok on objects
-when new.dcok = 1 and new.stmt_idx is old.stmt_idx
-begin
-	select raise(abort, 'frames_dcok_only_with_advance: dcok=1 can only be set when stmt_idx is also advancing');
-end;
-
-create trigger frames_sweep_child_when_dcok_set
-after update of dcok on objects
-when new.dcok = 1
-begin
-	delete from objects where parent_frame = new.object_pk and gc = 1;
-end;
-
-create trigger markers_no_direct_delete
-before delete on objects
-when old.gc = 1
-	and old.parent_frame is not null
-	and (select dcok from objects where object_pk = old.parent_frame) is not 1
-begin
-	select raise(abort, 'markers_no_direct_delete: a nested marker can only be deleted via a stmt_idx advance (with dcok=1)');
-end;
-
-create trigger frames_reset_dcok_after_sweep
-after delete on objects
-when old.gc = 1 and old.parent_frame is not null
-begin
-	update objects set dcok = null where object_pk = old.parent_frame;
-end;
-
--- `gc` is immutable. A row's marker-vs-real identity is set at INSERT
--- and never changes — flipping it in place would break drop-and-replace
--- (fires only on real-frame deletes) and the "markers have no bucket/
--- stack" invariant. Rejects only on actual change; a no-op re-write of
--- the same value is silently accepted. [ghi]
-create trigger objects_gc_immutable
-before update of gc on objects
-when new.gc is not old.gc
-begin
-	select raise(abort, 'objects_gc_immutable: objects.gc is immutable');
-end;
 
 -- `parent_frame` is immutable. A frame's parent is set at INSERT and
--- never changes — reparenting a live frame would break the "frames are
--- destroyed when finished" invariant. Rejects only on actual change. [ghi]
+-- never changes. Rejects only on actual change. [ghi]
 create trigger objects_parent_frame_immutable
 before update of parent_frame on objects
 when new.parent_frame is not old.parent_frame
@@ -469,32 +527,23 @@ begin
 	select raise(abort, 'objects_parent_frame_immutable: objects.parent_frame is immutable');
 end;
 
--- `process_pk` is immutable. A frame 0 (or its replacement marker) is
--- anchored to a specific process at INSERT and never moves. Rejects
--- only on actual change. [ghi]
-create trigger objects_process_pk_immutable
-before update of process_pk on objects
-when new.process_pk is not old.process_pk
+-- A frame cannot be its own parent. Defense-in-depth against a state
+-- that would spin the walker's "focus on deepest live child" traversal
+-- forever. Parallels objects_role_parent_not_self. [ghi]
+create trigger frames_parent_frame_not_self
+before insert on objects
+when new.primitive = 'f' and new.parent_frame = new.object_pk
 begin
-	select raise(abort, 'objects_process_pk_immutable: objects.process_pk is immutable');
+	select raise(abort, 'frames_parent_frame_not_self: a frame cannot be its own parent');
 end;
 
--- Drop-and-replace. When a non-marker frame is deleted, a GC marker
--- is inserted in its place, inheriting the dropped frame's anchor
--- (parent_frame for a nested frame, process_pk for frame 0) and its
--- owner_role. Markers themselves don't trigger this — their drop is
--- final. AFTER (not BEFORE) DELETE so the outgoing row's slot in the
--- unique-child index is freed before the marker's INSERT takes it. [ghi]
-create trigger frames_drop_and_replace
-after delete on objects
-when old.primitive = 'f' and old.gc is null
+-- `process` is immutable. A frame's identity as a cap (or not) is
+-- fixed at INSERT and never changes. Rejects only on actual change. [ghi]
+create trigger objects_process_immutable
+before update of process on objects
+when new.process is not old.process
 begin
-	insert into objects
-		(primitive, gc, ast, stmt_idx,
-		 parent_frame, process_pk, owner_role)
-	values
-		('f', 1, null, null,
-		 old.parent_frame, old.process_pk, old.owner_role);
+	select raise(abort, 'objects_process_immutable: objects.process is immutable');
 end;
 
 -- A parent frame can have at most one child frame at a time. Partial
@@ -664,10 +713,8 @@ when old.core_role is not null
 		or new.owner_role is not old.owner_role
 		or new.ast is not old.ast
 		or new.stmt_idx is not old.stmt_idx
-		or new.process_pk is not old.process_pk
+		or new.process is not old.process
 		or new.parent_frame is not old.parent_frame
-		or new.bucket_for is not old.bucket_for
-		or new.stack_for is not old.stack_for
 		or new.bucket_pk is not old.bucket_pk
 		or new.stack_pk is not old.stack_pk
 		or new.persistent is not old.persistent
@@ -754,35 +801,9 @@ begin
 end;
 
 
--- Process is complete when a process-anchored marker drops. Every real
--- frame gets replaced by a marker via drop-and-replace, so the marker
--- is always the last thing standing; firing on marker-drop-with-
--- process_pk is equivalent to "last frame gone" but doesn't have to
--- reason about trigger ordering. `not exists` guard is defense-in-
--- depth against any state that somehow leaves another frame behind. [ghi]
-create trigger processes_complete_after_marker_drop
-after delete on objects
-when old.primitive = 'f' and old.gc = 1 and old.process_pk is not null
-	and not exists (
-		select 1 from objects
-		where process_pk = old.process_pk and primitive = 'f'
-	)
-begin
-	update processes set complete = 1 where process_pk = old.process_pk;
-end;
-
-
 -- ------------------------------------------------------------
 -- Frame-column indexes.
 -- ------------------------------------------------------------
-
--- One process-anchored frame per process. Frame 0 carries process_pk;
--- when it drops-and-replaces, the marker inherits that anchor and
--- takes the slot. Sub-frames chain via parent_frame, never
--- process_pk. Parallels objects_one_child_per_frame; together the two
--- indexes enforce "any parent (frame or process) has one child." [ghi]
-create unique index objects_one_child_per_process on objects(process_pk)
-	where primitive = 'f' and process_pk is not null;
 
 -- Child-of-frame walk: given a frame pk, find its child sub-frame. [ghi]
 create index objects_frame_by_parent on objects(parent_frame)
@@ -801,5 +822,41 @@ create view uspace as
 	-- Objects flagged persistent. [ghi]
 	select object_pk from objects where persistent = 1
 	union
-	-- Frames currently on a process's stack. [ghi]
-	select object_pk from objects where primitive = 'f' and process_pk is not null;
+	-- Process caps — the top of every live call stack. Frame 0 and
+	-- everything below it are reachable via parent_frame from the cap. [ghi]
+	select object_pk from objects where primitive = 'f' and process = 1;
+
+
+-- ------------------------------------------------------------
+-- frame_scoped_vars — flattened view of every variable visible from
+-- a frame's scope chain. One row per (frame, scope position, var
+-- name). scope_idx=0 is the frame's own scope (innermost); higher
+-- indexes are captured scopes from an enclosing closure.
+--
+-- For a straight lookup: `SELECT value_pk FROM frame_scoped_vars
+-- WHERE frame_pk = ? AND var_name = ? ORDER BY scope_idx LIMIT 1` —
+-- returns the effective binding (nearest scope wins).
+--
+-- For a full dump: `SELECT * FROM frame_scoped_vars WHERE frame_pk
+-- = ?` — every scoped var, with its scope depth.
+--
+-- Cost per row: all joins go through indexed lookups (bucket_pk PK
+-- lookup, refs.parent, PK on objects). [ghi]
+-- ------------------------------------------------------------
+create view frame_scoped_vars as
+select
+	f.object_pk         as frame_pk,
+	scope_ref.idx       as scope_idx,
+	var_ref.key         as var_name,
+	var_ref.child       as value_pk
+from objects f
+	join objects bucket
+		on bucket.object_pk = f.bucket_pk
+	join refs scopes_ref
+		on scopes_ref.parent = bucket.object_pk
+		and scopes_ref.key = 'scopes'
+	join refs scope_ref
+		on scope_ref.parent = scopes_ref.child
+	join refs var_ref
+		on var_ref.parent = scope_ref.child
+where f.primitive = 'f';

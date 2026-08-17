@@ -172,13 +172,17 @@ function frame:set_local_to_scalar(name, scalar_type, scalar_value)
 		local own_scope = self:ensure_own_scope()
 		self.engine:add_ref(own_scope.object_pk, name, scalar_pk)
 
-		-- Push GC marker last — after the writes so a resume-mid-savepoint
-		-- can't observe a marker without the writes it signals. Marker
-		-- carries no ast and no stmt_idx (schema column checks: gc=1 →
-		-- both are null).
+		-- Push mid-dispatch marker last — after the writes so a
+		-- resume-mid-savepoint can't observe a marker without the writes
+		-- it signals. Marker is born in the terminal shape: empty ast
+		-- (stmt_idx=0 is past the max valid index of -1 for []) and
+		-- gc=null. Its presence as a child signals "parent is mid-
+		-- dispatch"; parent's next advance cascade-deletes it, and
+		-- the `frames_delete_requires_terminal_state` trigger passes
+		-- because the marker is already terminal.
 		local push_marker = db:prepare(
-			"insert into objects (primitive, gc, parent_frame, owner_role) " ..
-			"values ('f', 1, ?, ?)"
+			"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) " ..
+			"values ('f', '[]', 0, ?, ?)"
 		)
 		push_marker:bind_values(self.object_pk, self.owner_role)
 		push_marker:step()

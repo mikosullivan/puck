@@ -1,6 +1,6 @@
 ~~~vibecode
 {"doc": "template",
-	"role": "Boilerplate for a page (or a section of one) that shows CVM state — processes, objects, refs — at a moment in time. Used in traces, walkthroughs, and any spec that needs to point at 'here's what the DB looks like right now.' Copy the source, fill in the placeholders, run the values through cjson to get real pks."}
+	"role": "Boilerplate for a page (or a section of one) that shows CVM state — objects, refs — at a moment in time. Used in traces, walkthroughs, and any spec that needs to point at 'here's what the DB looks like right now.' Copy the source, fill in the placeholders, run the values through cjson to get real pks."}
 ~~~
 
 # CVM state page template
@@ -10,7 +10,7 @@ Boilerplate for a page (or a section of one) that shows CVM state at a moment in
 ## What the template gives you
 
 - HTML tables using the `tbl-cvm` wrapper class and `tbl-title-<name>` title-row class.
-- Standard column sets for the three tables that show up most (`processes`, `objects`, `refs`).
+- Standard column sets for the two tables (`objects`, `refs`). Processes aren't a separate table — a process is a `primitive='f'` cap row in `objects` with `process=1`.
 - A `col-comment` column on each table for a short per-row description.
 - `tbl-row-user` class marker for the user seed row when it appears.
 - Conventions for placeholder pks — real UUIDs truncated with `…` after the first 8 hex chars (e.g. `<code>02d0bdec-…</code>`).
@@ -36,32 +36,20 @@ Copy from between the fence below into a fresh doc. Update the intro prose, the 
 
 {One or two intro sentences describing the moment being captured — what just happened, what's about to happen, what the reader should know before looking at the tables.}
 
-## `processes`
-
-<table class="tbl-cvm">
-<thead>
-<tr><th class="tbl-title-processes" colspan="3">processes</th></tr>
-<tr><th>process pk</th><th>complete</th><th>message</th></tr>
-</thead>
-<tbody>
-<tr><td><code>{first-8}-…</code></td><td><code>{0 or 1}</code></td><td>{null or text}</td></tr>
-</tbody>
-</table>
-
-{Optional per-table prose — what's notable about this state's processes rows.}
-
 ## `objects`
 
 <table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="8">objects</th></tr>
-<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>process</th><th class="col-comment">comment</th></tr>
+<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner role</th><th>ast</th><th>stmt idx</th><th>process</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
 <tr class="tbl-row-user"><td><code>{first-8}-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>{first-8}-…</code></td><td><code>{primitive}</code></td><td>null</td><td><code>{first-8}-…</code></td><td><code>{ast or null}</code></td><td><code>{stmt_idx or null}</code></td><td><code>{first-8}-…</code></td><td class="col-comment">{comment}</td></tr>
+<tr><td><code>{first-8}-…</code></td><td><code>{primitive}</code></td><td>null</td><td><code>{first-8}-…</code></td><td><code>{ast or null}</code></td><td><code>{stmt_idx or null}</code></td><td><code>{1 or null}</code></td><td class="col-comment">{comment}</td></tr>
 </tbody>
 </table>
+
+The `process` column is `1` on a cap frame (top of a call stack — its `object_pk` IS the process identity) and null on every other row. `parent_frame` (shown in the expanded set as "parent frame") points a nested frame at its cap or at another nested frame.
 
 {Optional per-table prose.}
 
@@ -69,13 +57,15 @@ Copy from between the fence below into a fresh doc. Update the intro prose, the 
 
 <table class="tbl-cvm">
 <thead>
-<tr><th class="tbl-title-refs" colspan="5">refs</th></tr>
-<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th></tr>
+<tr><th class="tbl-title-refs" colspan="8">refs</th></tr>
+<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">from</th><th class="col-comment">to</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
-<tr><td>{ref_pk}</td><td><code>{first-8}-…</code></td><td><code>{first-8}-…</code></td><td>{key or null}</td><td>{idx}</td></tr>
+<tr><td>{ref_pk}</td><td><code>{first-8}-…</code></td><td><code>{first-8}-…</code></td><td>{key or null}</td><td>{idx}</td><td class="col-comment">{friendly name of parent, e.g. "bucket"}</td><td class="col-comment">{friendly name of child, e.g. "scopes array"}</td><td class="col-comment">{comment}</td></tr>
 </tbody>
 </table>
+
+The `from` and `to` columns are display-only comments — they give friendly names for what the parent and child objects ARE conceptually (e.g., "bucket", "scopes array", "scopes[0]", "scalar"). Not stored in the DB.
 
 {Optional per-table prose.}
 ~~~
@@ -90,16 +80,16 @@ The template above shows the columns that appear most. Adjust `colspan` on the t
 <tr><th class="tbl-title-objects" colspan="11">objects</th></tr>
 <tr>
 	<th>object pk</th><th>primitive</th><th>scalar</th><th>user</th>
-	<th>role_parent</th><th>owner_role</th><th>ast</th><th>stmt_idx</th>
-	<th>process</th><th>parent_frame</th><th class="col-comment">comment</th>
+	<th>role parent</th><th>owner role</th><th>ast</th><th>stmt idx</th>
+	<th>process</th><th>parent frame</th><th class="col-comment">comment</th>
 </tr>
 ~~~
 
-**`refs` — with comment column**:
+**`refs` — minimal (drop the `from` / `to` / `comment` columns when readers don't need them)**:
 
 ~~~html
-<tr><th class="tbl-title-refs" colspan="6">refs</th></tr>
-<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th><th class="col-comment">comment</th></tr>
+<tr><th class="tbl-title-refs" colspan="5">refs</th></tr>
+<tr><th>ref pk</th><th>parent</th><th>child</th><th>key</th><th>idx</th></tr>
 ~~~
 
 ## Capturing real pks from a running CVM

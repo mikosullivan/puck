@@ -58,31 +58,35 @@ local function count(db, sql)
 end
 
 --[[
-Seed a fresh process + frame 0 and return the frame wrapper. Uses a CVM data-access instance (`cvm_mod.new(handle)`) to wrap rows, since the frame class expects its `self.engine` to be a data-access CVM (with `add_scalar`, `add_hash`, `add_array`, `add_ref`, `get_ref_child`, `object_by_pk`), not the SQLite handle directly.
+Seed a fresh process cap + frame 0 and return the frame wrapper. Uses Larry's own data-access CVM instance (`larry.data`) — that instance carries the sprint's overridden `add_bucket` / `add_stack` methods, which write via the owner's mutable `bucket_pk` / `stack_pk` columns (the sprint schema has no `bucket_for` / `stack_for` for the shipping methods to target).
 
-Returns `(frame, cvm, process_pk, user_pk)`. Caller uses `cvm.db` for raw SQL when needed.
+The process is a `primitive='f'` cap row with `process=1`, `ast='[]'`, no parent. Frame 0 sits under it as a nested frame (`parent_frame=cap_pk`).
+
+Returns `(frame, cvm, cap_pk, user_pk)`. Caller uses `cvm.db` for raw SQL when needed.
 ]]
 local function seed_frame_0(larry, ast_json)
 	local handle = larry.cvm  -- SQLite handle
-	local cvm    = cvm_mod.new(handle)
-
-	-- process row
-	handle:exec('insert into processes default values;')
-	local process_pk = first(handle, 'select process_pk from processes').process_pk
+	local cvm    = larry.data  -- Larry's data-access CVM (with sprint overrides)
 
 	-- user role pk (seeded by schema)
 	local user_pk = first(handle, "select object_pk from objects where core_role = 'u'").object_pk
 
-	-- frame 0
-	local sql = "insert into objects (primitive, ast, stmt_idx, process_pk, owner_role) "
-		.. "values ('f', '" .. ast_json .. "', 0, '" .. process_pk .. "', '" .. user_pk .. "') "
+	-- process cap: primitive='f', process=1, ast='[]'
+	local cap_sql = "insert into objects (primitive, process, ast, stmt_idx, owner_role) "
+		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk"
+	local cap_pk
+	for row in handle:nrows(cap_sql) do cap_pk = row.object_pk end
+
+	-- frame 0: nested under the cap
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '" .. ast_json .. "', 0, '" .. cap_pk .. "', '" .. user_pk .. "') "
 		.. "returning object_pk"
 	local frame_pk
 	for row in handle:nrows(sql) do frame_pk = row.object_pk end
 
 	local frame = cvm:object_by_pk(frame_pk)
 
-	return frame, cvm, process_pk, user_pk
+	return frame, cvm, cap_pk, user_pk
 end
 
 
@@ -116,7 +120,7 @@ test('after set_local_to_scalar: bucket exists with a scopes ref', function()
 
 	frame:set_local_to_scalar('x', 'n', 1)
 
-	-- Frame's bucket_pk is now populated (denormalized from bucket_for).
+	-- Frame's bucket_pk is now populated (Larry's add_bucket wrote it directly).
 	local bucket_pk = first(larry.cvm, "select bucket_pk from objects where object_pk = '" .. frame.object_pk .. "'").bucket_pk
 	assert(bucket_pk ~= nil, 'frame should have a bucket_pk after set_local_to_scalar')
 
@@ -165,9 +169,9 @@ test('after set_local_to_scalar: a GC marker is present as child of the frame', 
 		.. "from objects where parent_frame = '" .. frame.object_pk .. "'")
 	assert(marker_row ~= nil, 'a child should exist under frame')
 	assert(marker_row.primitive == 'f', 'child should be a frame row')
-	assert(marker_row.gc == 1, 'child should be a GC marker (gc=1)')
-	assert(marker_row.ast == nil, 'marker ast should be null')
-	assert(marker_row.stmt_idx == nil, 'marker stmt_idx should be null')
+	assert(marker_row.gc == nil, 'marker gc should be null (terminal shape)')
+	assert(marker_row.ast == '[]', 'marker ast should be empty array')
+	assert(tonumber(marker_row.stmt_idx) == 0, 'marker stmt_idx should be 0')
 
 	-- exactly one child, per objects_one_child_per_frame
 	assert(count(larry.cvm, "select count(*) as n from objects where parent_frame = '" .. frame.object_pk .. "'") == 1,
@@ -185,13 +189,14 @@ test('advancing the frame stmt_idx sweeps the marker (atomic in one UPDATE)', fu
 
 	frame:set_local_to_scalar('x', 'n', 1)
 
-	-- Sanity: marker present
-	assert(count(larry.cvm, "select count(*) as n from objects where parent_frame = '" .. frame.object_pk .. "' and gc = 1") == 1)
+	-- Sanity: marker present (born gc=null, terminal shape)
+	assert(count(larry.cvm, "select count(*) as n from objects where parent_frame = '" .. frame.object_pk .. "'") == 1)
 
-	-- Walker's advance: stmt_idx = 1 (+1 from 0). Under the sprint schema,
-	-- the marker-required trigger passes (marker exists), and the after-
-	-- update trigger deletes the marker in the same op.
-	larry.cvm:exec("update objects set stmt_idx = 1, dcok = 1 where object_pk = '" .. frame.object_pk .. "';")
+	-- Walker's advance: stmt_idx = 1 (+1 from 0) coupled with gc = 1
+	-- in the same UPDATE. The AFTER-UPDATE OF gc trigger cascade-
+	-- deletes the marker child; child's BEFORE-DELETE checks parent.gc=1
+	-- (which it just became) and passes.
+	larry.cvm:exec("update objects set stmt_idx = 1, gc = 1 where object_pk = '" .. frame.object_pk .. "';")
 
 	assert(count(larry.cvm, "select count(*) as n from objects where parent_frame = '" .. frame.object_pk .. "'") == 0,
 		'marker should be gone after stmt_idx advance')
@@ -237,6 +242,89 @@ test('own_scope returns nil on a fresh frame (before ensure)', function()
 
 	assert(frame:own_scope() == nil,
 		'own_scope should return nil before ensure_own_scope has run')
+end)
+
+
+-- ------------------------------------------------------------
+-- Handler behavior: match / decline / raise
+-- ------------------------------------------------------------
+
+test('variable-scalar handler declines rows without {in="as"} head', function()
+	local larry = Larry.new()
+
+	-- Find the VariableScalar handler in the chain.
+	local handler
+	for _, h in ipairs(larry.row_handlers) do
+		if h.handle and getmetatable(h).__index ~= require('handler') then
+			handler = h
+		end
+	end
+	assert(handler ~= nil, 'variable-scalar handler should be registered')
+
+	-- Row with a different head atom.
+	local claimed = handler:handle(larry, {{["in"] = "somethingelse"}, "x", {v = 1}})
+	assert(claimed == false, 'handler should decline non-`as` heads (return false)')
+end)
+
+test('variable-scalar handler raises on an unsupported value atom', function()
+	local larry = Larry.new()
+
+	local handler
+	for _, h in ipairs(larry.row_handlers) do
+		if h.handle and getmetatable(h).__index ~= require('handler') then
+			handler = h
+		end
+	end
+
+	larry.current_frame = {}  -- doesn't matter — we should raise before reaching it
+
+	local ok, err = pcall(handler.handle, handler, larry, {{["in"] = "as"}, "x", {some_other_kind = 42}})
+	assert(ok == false, 'handler should raise on unsupported value atom')
+	assert(tostring(err):find('variable_scalar_unsupported_value_atom'),
+		'raise should carry variable_scalar_unsupported_value_atom id: ' .. tostring(err))
+end)
+
+
+-- ------------------------------------------------------------
+-- $x = 1 : end-to-end via larry:load + larry:run
+-- ------------------------------------------------------------
+
+test('larry:run runs `$x = 1` end-to-end through the dispatch chain', function()
+	local larry = Larry.new()
+
+	larry:load('$x = 1')
+	local result = larry:run()
+
+	-- Completion signal: cap in terminal shape (stmt_idx=1, gc=null,
+	-- no children).
+	assert(result.complete == 1, 'result should report complete=1')
+
+	local cap = first(larry.cvm,
+		"select stmt_idx, gc from objects where object_pk = '" .. result.cap_pk .. "'")
+	assert(cap ~= nil, 'cap should still exist post-run (needs_trace + GC not wired)')
+	assert(tonumber(cap.stmt_idx) == 1, 'cap stmt_idx should be 1')
+	assert(cap.gc == nil, 'cap gc should be null')
+
+	local cap_kids = count(larry.cvm,
+		"select count(*) as n from objects where parent_frame = '" .. result.cap_pk .. "'")
+	assert(cap_kids == 0, 'cap should have no children (frame 0 was cascade-swept)')
+
+	-- The x binding survived orphaned. Bucket survives, marked
+	-- needs_trace=1 (the next-GC-pass signal — set by frame 0's
+	-- BEFORE DELETE trigger reading bucket_pk). The scopes chain
+	-- hangs off it via the still-live refs.
+	local binding = first(larry.cvm,
+		"select o.scalar_type, o.scalar_value from objects o "
+		.. "join refs r on r.child = o.object_pk where r.key = 'x'")
+	assert(binding ~= nil, 'x binding should still be walkable via ref chain')
+	assert(binding.scalar_type == 'n', 'x should bind to scalar_type=n')
+	assert(tonumber(binding.scalar_value) == 1, 'x should bind to value 1')
+
+	-- The orphaned bucket should be marked needs_trace=1.
+	local bucket = first(larry.cvm,
+		"select object_pk, needs_trace from objects "
+		.. "where primitive = 'h' and needs_trace = 1")
+	assert(bucket ~= nil, 'bucket should be marked needs_trace=1')
 end)
 
 
