@@ -912,11 +912,11 @@ test('frame_scoped_vars: dumps all visible variables with scope depth', function
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Frame's bucket. Under the sprint design, the owner→bucket link
-	-- lives entirely on the owner's mutable bucket_pk column.
+	-- Frame's bucket. Under the sprint design, ownership is a refs row
+	-- from the owner to the collection (no dedicated column).
 	local bucket_pk = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. bucket_pk
-		.. "' where object_pk = '" .. frame_pk .. "'"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
 
 	-- Scopes array under the bucket.
 	local scopes_pk = insert_object(db, user_pk, 'a')
@@ -970,8 +970,8 @@ test('frame_scoped_vars: effective binding via ORDER BY scope_idx LIMIT 1', func
 
 	-- Build a bucket + scopes with x in both scopes; scope 0 shadows.
 	local bucket_pk = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. bucket_pk
-		.. "' where object_pk = '" .. frame_pk .. "'"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
 
 	local scopes_pk = insert_object(db, user_pk, 'a')
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
@@ -1007,6 +1007,79 @@ test('frame_scoped_vars: empty result on a fresh frame with no scopes chain', fu
 	local row = first(db, "select scope_idx from frame_scoped_vars "
 		.. "where frame_pk = '" .. frame_pk .. "'")
 	assert(row == nil, 'fresh frame yields no rows')
+	db:close()
+end)
+
+test('frame_scoped_vars: empty result when frame has a bucket but no scopes ref', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	-- Attach a bucket but don't hang a scopes ref off it.
+	local bucket_pk = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
+
+	local row = first(db, "select scope_idx from frame_scoped_vars "
+		.. "where frame_pk = '" .. frame_pk .. "'")
+	assert(row == nil, 'bucket-without-scopes yields no rows (not an error)')
+	db:close()
+end)
+
+test('frame_scoped_vars: empty result when scopes array exists but has no entries', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local bucket_pk = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
+
+	-- Attach an empty scopes array.
+	local scopes_pk = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. bucket_pk .. "', '" .. scopes_pk .. "', 'scopes', 0)"), db)
+
+	local row = first(db, "select scope_idx from frame_scoped_vars "
+		.. "where frame_pk = '" .. frame_pk .. "'")
+	assert(row == nil, 'empty scopes array yields no rows (not an error)')
+	db:close()
+end)
+
+test('frame_scoped_vars: empty result when scope hash exists but has no bindings', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local bucket_pk = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
+
+	local scopes_pk = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. bucket_pk .. "', '" .. scopes_pk .. "', 'scopes', 0)"), db)
+
+	-- Attach an empty scope hash at scopes[0].
+	local scope0 = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. scopes_pk .. "', '" .. scope0 .. "', null, 0)"), db)
+
+	local row = first(db, "select scope_idx from frame_scoped_vars "
+		.. "where frame_pk = '" .. frame_pk .. "'")
+	assert(row == nil, 'empty scope hash yields no rows (not an error)')
+	db:close()
+end)
+
+test('frame_scoped_vars: no error when queried on a frame_pk that doesn\'t exist', function()
+	local db = fresh_db()
+
+	-- Non-existent frame_pk. Should return zero rows, not raise.
+	local row = first(db, "select scope_idx from frame_scoped_vars "
+		.. "where frame_pk = 'no-such-frame'")
+	assert(row == nil, 'nonexistent frame yields no rows (not an error)')
 	db:close()
 end)
 
@@ -1048,9 +1121,12 @@ test('frame_scoped_vars: full-dump query is fully indexed (no scans)', function(
 	-- PK lookup on the starting frame.
 	assert_plan_contains(p, 'SEARCH f USING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
 		'f should use the objects PK index')
-	-- bucket join is via bucket.object_pk = f.bucket_pk — PK lookup.
-	assert_plan_contains(p, 'SEARCH bucket USING COVERING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
-		'bucket should be found via the objects PK index (covering)')
+	-- bucket_ref (owner→bucket) via refs_parent.
+	assert_plan_contains(p, 'SEARCH bucket_ref USING INDEX refs_parent (parent=?)',
+		'bucket_ref should use the refs_parent index')
+	-- bucket row via objects PK.
+	assert_plan_contains(p, 'SEARCH bucket USING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
+		'bucket should be found via the objects PK index')
 	-- scopes ref filters by (parent, key) — the refs unique(parent, key) index.
 	assert_plan_contains(p, 'scopes_ref USING INDEX sqlite_autoindex_refs_1 (parent=? AND key=?)',
 		'scopes_ref should use the refs unique(parent, key) index')
@@ -1070,17 +1146,127 @@ test('frame_scoped_vars: effective-binding query is fully indexed (no scans)', f
 		"select value_pk from frame_scoped_vars "
 		.. "where frame_pk = 'x' and var_name = 'y' order by scope_idx limit 1")
 
-	-- All five joins hit indexes; the extra `var_name = ?` predicate
+	-- All six joins hit indexes; the extra `var_name = ?` predicate
 	-- lets var_ref use the (parent, key) unique index for a direct hit.
 	assert_plan_contains(p, 'SEARCH f USING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
 		'f should use the PK index')
-	assert_plan_contains(p, 'SEARCH bucket USING COVERING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
-		'bucket joined via objects PK index (covering)')
+	assert_plan_contains(p, 'SEARCH bucket_ref USING INDEX refs_parent (parent=?)',
+		'bucket_ref should use the refs_parent index')
+	assert_plan_contains(p, 'SEARCH bucket USING INDEX sqlite_autoindex_objects_1 (object_pk=?)',
+		'bucket joined via objects PK index')
 	assert_plan_contains(p, 'scopes_ref USING INDEX sqlite_autoindex_refs_1 (parent=? AND key=?)',
 		'scopes_ref uses (parent, key) unique index')
 	assert_plan_contains(p, 'var_ref USING INDEX sqlite_autoindex_refs_1 (parent=? AND key=?)',
 		'var_ref uses (parent, key) unique index for direct var lookup')
 	assert_plan_lacks(p, 'SCAN', 'effective-binding plan should have no full scans')
+	db:close()
+end)
+
+
+-- ============================================================
+-- object_bucket / object_stack views
+-- ============================================================
+
+test('object_bucket: returns null for an object with no bucket', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local obj = insert_object(db, user_pk, 'o')
+
+	local row = first(db, "select bucket_pk from object_bucket "
+		.. "where object_pk = '" .. obj .. "'")
+	assert(row ~= nil, 'object should appear in the view')
+	assert(row.bucket_pk == nil, 'bucket_pk should be null (no bucket)')
+	db:close()
+end)
+
+test('object_bucket: returns the bucket_pk when the object has a hash-child', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local obj = insert_object(db, user_pk, 'o')
+	local bucket = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. obj .. "', '" .. bucket .. "', null, 0)"), db)
+
+	local row = first(db, "select bucket_pk from object_bucket "
+		.. "where object_pk = '" .. obj .. "'")
+	assert(row.bucket_pk == bucket, 'bucket_pk should match the linked hash')
+	db:close()
+end)
+
+test('object_bucket: array-child does not count as bucket', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local obj = insert_object(db, user_pk, 'o')
+	local stack = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. obj .. "', '" .. stack .. "', null, 0)"), db)
+
+	local row = first(db, "select bucket_pk from object_bucket "
+		.. "where object_pk = '" .. obj .. "'")
+	assert(row.bucket_pk == nil, 'bucket_pk should be null when only an array-child exists')
+	db:close()
+end)
+
+test('object_stack: returns null for an object with no stack', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local obj = insert_object(db, user_pk, 'o')
+
+	local row = first(db, "select stack_pk from object_stack "
+		.. "where object_pk = '" .. obj .. "'")
+	assert(row.stack_pk == nil, 'stack_pk should be null (no stack)')
+	db:close()
+end)
+
+test('object_stack: returns the stack_pk when the object has an array-child', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local obj = insert_object(db, user_pk, 'o')
+	local stack = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. obj .. "', '" .. stack .. "', null, 0)"), db)
+
+	local row = first(db, "select stack_pk from object_stack "
+		.. "where object_pk = '" .. obj .. "'")
+	assert(row.stack_pk == stack, 'stack_pk should match the linked array')
+	db:close()
+end)
+
+test('object_bucket / object_stack: frames are included (non-container)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local bucket = insert_hash(db, user_pk)
+	local stack  = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket .. "', null, 0)"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. stack .. "', null, 1)"), db)
+
+	local b = first(db, "select bucket_pk from object_bucket "
+		.. "where object_pk = '" .. frame_pk .. "'")
+	assert(b.bucket_pk == bucket, 'frame bucket found')
+
+	local s = first(db, "select stack_pk from object_stack "
+		.. "where object_pk = '" .. frame_pk .. "'")
+	assert(s.stack_pk == stack, 'frame stack found')
+	db:close()
+end)
+
+test('object_bucket / object_stack: containers do not appear (out of scope)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash = insert_hash(db, user_pk)
+
+	local row = first(db, "select object_pk from object_bucket "
+		.. "where object_pk = '" .. hash .. "'")
+	assert(row == nil, 'hash should not appear in object_bucket')
+
+	row = first(db, "select object_pk from object_stack "
+		.. "where object_pk = '" .. hash .. "'")
+	assert(row == nil, 'hash should not appear in object_stack')
 	db:close()
 end)
 
@@ -1149,32 +1335,32 @@ test('deleting a frame in gc=1 (mid-cleanup) state is rejected', function()
 	db:close()
 end)
 
-test('deleting a frame marks its bucket needs_trace=1 via bucket_pk trigger', function()
+test('deleting a frame marks its bucket needs_trace=1 via cascade of the owner→bucket ref', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Attach a bucket to frame 0 via bucket_pk (the mutable owner-side
-	-- pointer; buckets have no back-reference of their own).
+	-- Attach a bucket to frame 0 as a refs row (owner→bucket).
 	local bucket_pk = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. bucket_pk
-		.. "' where object_pk = '" .. frame_pk .. "'"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
 
-	-- Delete frame 0 via cap-advance cascade (frame 0's gc is null,
-	-- cap's gc becomes 1 in the same UPDATE — both delete rules pass).
-	-- BEFORE DELETE trigger on frame 0 marks the bucket needs_trace=1.
+	-- Delete frame 0 via cap-advance cascade. Frame 0's row goes; its
+	-- outgoing refs (including owner→bucket) cascade-delete (refs.parent
+	-- ON DELETE CASCADE); each ref-delete fires
+	-- refs_mark_needs_trace_after_delete → marks the bucket needs_trace=1.
 	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance sweeps frame 0')
 
 	-- Bucket survives; needs_trace set.
 	local bucket = first(db, "select needs_trace from objects "
 		.. "where object_pk = '" .. bucket_pk .. "'")
-	assert(bucket ~= nil, 'bucket should survive frame delete (no cascade)')
+	assert(bucket ~= nil, 'bucket should survive frame delete')
 	assert(tonumber(bucket.needs_trace) == 1, 'bucket should be marked needs_trace=1')
 	db:close()
 end)
 
-test('updating bucket_pk to a different target marks the old target needs_trace=1', function()
+test('swapping the owner→bucket ref for a different target marks the old target needs_trace=1', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
@@ -1182,15 +1368,18 @@ test('updating bucket_pk to a different target marks the old target needs_trace=
 
 	-- Attach bucket A to frame 0.
 	local bucket_a = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. bucket_a
-		.. "' where object_pk = '" .. frame_pk .. "'"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_a .. "', null, 0)"), db)
 
-	-- Swap for bucket B.
+	-- Swap for bucket B: delete the old ref, insert a new one.
+	assert_ok(db:exec("delete from refs where parent = '" .. frame_pk
+		.. "' and child = '" .. bucket_a .. "'"), db, 'drop old ref')
+
 	local bucket_b = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. bucket_b
-		.. "' where object_pk = '" .. frame_pk .. "'"), db)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_b .. "', null, 0)"), db, 'add new ref')
 
-	-- Old bucket (A) marked needs_trace=1; new bucket (B) not.
+	-- Old bucket (A) marked needs_trace=1 (from the ref-delete); new (B) not.
 	local a = first(db, "select needs_trace from objects "
 		.. "where object_pk = '" .. bucket_a .. "'")
 	assert(tonumber(a.needs_trace) == 1, 'old bucket should be marked needs_trace=1')
@@ -1201,23 +1390,97 @@ test('updating bucket_pk to a different target marks the old target needs_trace=
 	db:close()
 end)
 
-test('bucket_pk target must be a HashPrimitive', function()
+test('a non-container owner can hold at most one hash-child (its bucket)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
-	-- Try to point bucket_pk at an array — should fail.
-	local array_pk = insert_object(db, user_pk, 'a')
+	-- First hash-ref: accepted.
+	local hash_a = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. hash_a .. "', null, 0)"), db, 'first hash-child')
+
+	-- Second hash-ref: rejected by the one-hash-one-array cap trigger.
+	local hash_b = insert_hash(db, user_pk)
 	assert_fails_with(
-		db:exec("update objects set bucket_pk = '" .. array_pk
-			.. "' where object_pk = '" .. frame_pk .. "'"),
-		db, 'objects_bucket_pk_target_must_be_hash',
-		'array target rejected')
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. frame_pk .. "', '" .. hash_b .. "', null, 1)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second hash-child rejected')
 	db:close()
 end)
 
-test('a bucket can be shared across multiple owners (no UNIQUE on bucket_pk)', function()
+test('a non-container owner can hold at most one array-child (its stack)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local arr_a = insert_object(db, user_pk, 'a')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. arr_a .. "', null, 0)"), db, 'first array-child')
+
+	local arr_b = insert_object(db, user_pk, 'a')
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. frame_pk .. "', '" .. arr_b .. "', null, 1)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second array-child rejected')
+	db:close()
+end)
+
+test('a regular object (primitive=o) can hold at most one hash and one array', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	-- A full object (non-scalar 'o').
+	local obj = insert_object(db, user_pk, 'o')
+
+	local bucket_a = insert_hash(db, user_pk)
+	local bucket_b = insert_hash(db, user_pk)
+	local stack_a  = insert_object(db, user_pk, 'a')
+	local stack_b  = insert_object(db, user_pk, 'a')
+
+	-- First hash + first array: accepted.
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. obj .. "', '" .. bucket_a .. "', null, 0)"), db, 'first hash-child')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. obj .. "', '" .. stack_a .. "', null, 1)"), db, 'first array-child')
+
+	-- Second hash: rejected.
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. obj .. "', '" .. bucket_b .. "', null, 2)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second hash-child on regular object rejected')
+
+	-- Second array: rejected.
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. obj .. "', '" .. stack_b .. "', null, 3)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second array-child on regular object rejected')
+	db:close()
+end)
+
+test('a non-container owner can hold one hash AND one array (bucket + stack)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	local bucket_pk = insert_hash(db, user_pk)
+	local stack_pk  = insert_object(db, user_pk, 'a')
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db, 'bucket ref')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_pk .. "', '" .. stack_pk .. "', null, 1)"), db, 'stack ref')
+	db:close()
+end)
+
+test('a bucket can be shared across multiple owners (owner→bucket is just a ref)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_a = insert_process(db, user_pk)
@@ -1226,10 +1489,23 @@ test('a bucket can be shared across multiple owners (no UNIQUE on bucket_pk)', f
 	local frame_b = insert_frame_0(db, cap_b, user_pk)
 
 	local shared = insert_hash(db, user_pk)
-	assert_ok(db:exec("update objects set bucket_pk = '" .. shared
-		.. "' where object_pk = '" .. frame_a .. "'"), db, 'first owner')
-	assert_ok(db:exec("update objects set bucket_pk = '" .. shared
-		.. "' where object_pk = '" .. frame_b .. "'"), db, 'second owner (shared)')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_a .. "', '" .. shared .. "', null, 0)"), db, 'first owner')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. frame_b .. "', '" .. shared .. "', null, 0)"), db, 'second owner (shared)')
+	db:close()
+end)
+
+test('scalars can own a bucket (regular objects, no exclusion)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	local scalar_pk = first(db, "insert into objects (primitive, scalar_type, scalar_value, owner_role) "
+		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+
+	local bucket_pk = insert_hash(db, user_pk)
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. scalar_pk .. "', '" .. bucket_pk .. "', null, 0)"), db, 'scalar owns bucket')
 	db:close()
 end)
 

@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "sprint-index", "sprint": "first-variable",
 	"role": "Implementation sprint: add the one dispatch function that recognizes the CaspM assignment pattern (`{in: 'as'}` row head) and implements it, so `$x = 1` runs end-to-end. The concept was captured in the (now-deleted) understanding-frame-rows sprint doc; this sprint executes it.",
-	"status": "kicked off",
+	"status": "pre-integration",
 	"trigger_word": "integration"}
 ~~~
 
@@ -50,4 +50,6 @@ Every building block called above already exists in the CVM data-access layer. M
 
 ## Status
 
-**Sprint kicked off.** No code yet.
+**Pre-integration.** All sprint code and design work is done in-tree under `sprints/first-variable/`. `larry:load('$x = 1'); larry:run()` runs end-to-end through the dispatch chain, up to the first-GC boundary (cap in terminal state, orphaned bucket marked `needs_trace = 1`); GC-substrate work is Mikobase-owned and out of sprint scope. 80 tests pass (71 schema + 9 Larry).
+
+Remaining work is promotion to shipping — spec drafts in `requirements/` for the sprint's schema-level design (cap-as-frame, gc-cycle, refs-based ownership, scopes convention, hash-key identifier rule, the two views), then code promotion (schema, `cvm/frame.lua`, `cvm/init.lua` `add_bucket` / `add_stack`, `engine.lua` `run` / `run_frame` / `current_frame`, `handlers/variable-scalar.lua` real body), then an equivalent shipping end-to-end test, then archive of the sprint dir. See the last "What's left before integration" walkthrough in the sprint's issue history for the ordered list.

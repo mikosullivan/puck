@@ -74,7 +74,7 @@ The `from` and `to` columns are display-only comments — they give friendly nam
 
 The template above shows the columns that appear most. Adjust `colspan` on the title row if you add or remove columns.
 
-**`objects` — expanded set** (when the state depends on columns not in the basic set, e.g., `parent_frame`, `bucket_pk`, `stack_pk`, `role_parent`):
+**`objects` — expanded set** (when the state depends on columns not in the basic set, e.g., `parent_frame`, `role_parent`, GC scratch columns):
 
 ~~~html
 <tr><th class="tbl-title-objects" colspan="11">objects</th></tr>
@@ -84,6 +84,8 @@ The template above shows the columns that appear most. Adjust `colspan` on the t
 	<th>process</th><th>parent frame</th><th class="col-comment">comment</th>
 </tr>
 ~~~
+
+Ownership of a bucket or stack is a normal `refs` row from the owner to the collection — no dedicated columns on `objects`. To show the ownership edge in a state, add the ref row to the `refs` table (parent = owner, child = bucket/stack, `key = null`).
 
 **`refs` — minimal (drop the `from` / `to` / `comment` columns when readers don't need them)**:
 

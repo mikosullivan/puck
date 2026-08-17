@@ -44,10 +44,13 @@ package.path = _sprint_dir .. '?.lua;'
 	.. package.path
 
 
+local sqlite = require('lsqlite3')
 local cjson  = require('cjson')
 local Engine = require('engine')
 local cvm    = require('cvm.open')
 local Cvm    = require('cvm')
+
+local sqlite_row = sqlite.ROW
 
 
 local function sprint_schema_path()
@@ -83,58 +86,80 @@ function Larry.new(opts)
 	local larry = Engine.new(opts)
 	larry.data  = Cvm.new(larry.cvm)
 
-	-- Sprint override: shipping's add_bucket / add_stack write via the
-	-- collection's `bucket_for` / `stack_for` column, which the sprint
-	-- schema has dropped. Under the sprint design, a bucket is a plain
-	-- HashPrimitive with no back-reference; the owner→collection link
-	-- lives entirely on the owner's mutable `bucket_pk` / `stack_pk`
-	-- column. Rewrite the two methods here: insert the collection with
-	-- inherited owner_role, then UPDATE the owner's bucket_pk /
-	-- stack_pk to point at the new row.
+	-- Sprint override: shipping's add_bucket / add_stack write via a
+	-- `bucket_for` / `stack_for` column on the collection, which the
+	-- sprint schema has dropped. Under the sprint design ownership of a
+	-- bucket / stack is a normal refs row from the owner to the
+	-- collection — no dedicated columns anywhere. Rewrite the two
+	-- methods here: if the owner already has a hash-child (or
+	-- array-child), return it; else INSERT the collection with
+	-- inherited owner_role and add a refs row from owner to it.
 	local db = larry.cvm
 
-	local stmt_insert_bucket = db:prepare(
+	local stmt_find_owner_hash_child = db:prepare(
+		"select r.child from refs r " ..
+		"join objects c on c.object_pk = r.child " ..
+		"where r.parent = ? and c.primitive = 'h'"
+	)
+
+	local stmt_find_owner_array_child = db:prepare(
+		"select r.child from refs r " ..
+		"join objects c on c.object_pk = r.child " ..
+		"where r.parent = ? and c.primitive = 'a'"
+	)
+
+	local stmt_insert_hash_with_inherited_role = db:prepare(
 		"insert into objects (primitive, owner_role) " ..
 		"select 'h', owner_role from objects where object_pk = ? " ..
 		"returning object_pk"
 	)
 
-	local stmt_set_owner_bucket_pk = db:prepare(
-		"update objects set bucket_pk = ? where object_pk = ?"
-	)
-
-	function larry.data:add_bucket(for_object_pk)
-		stmt_insert_bucket:bind_values(for_object_pk)
-		stmt_insert_bucket:step()
-		local bucket_pk = stmt_insert_bucket:get_value(0)
-		stmt_insert_bucket:reset()
-
-		stmt_set_owner_bucket_pk:bind_values(bucket_pk, for_object_pk)
-		stmt_set_owner_bucket_pk:step()
-		stmt_set_owner_bucket_pk:reset()
-
-		return bucket_pk
-	end
-
-	local stmt_insert_stack = db:prepare(
+	local stmt_insert_array_with_inherited_role = db:prepare(
 		"insert into objects (primitive, owner_role) " ..
 		"select 'a', owner_role from objects where object_pk = ? " ..
 		"returning object_pk"
 	)
 
-	local stmt_set_owner_stack_pk = db:prepare(
-		"update objects set stack_pk = ? where object_pk = ?"
-	)
+	function larry.data:add_bucket(for_object_pk)
+		-- Return existing if the owner already has a hash-child.
+		stmt_find_owner_hash_child:bind_values(for_object_pk)
+		local existing
+
+		if stmt_find_owner_hash_child:step() == sqlite_row then
+			existing = stmt_find_owner_hash_child:get_value(0)
+		end
+
+		stmt_find_owner_hash_child:reset()
+		if existing then return existing end
+
+		-- Otherwise insert the hash and add the owner→bucket ref.
+		stmt_insert_hash_with_inherited_role:bind_values(for_object_pk)
+		stmt_insert_hash_with_inherited_role:step()
+		local bucket_pk = stmt_insert_hash_with_inherited_role:get_value(0)
+		stmt_insert_hash_with_inherited_role:reset()
+
+		self:add_ref(for_object_pk, nil, bucket_pk)
+
+		return bucket_pk
+	end
 
 	function larry.data:add_stack(for_object_pk)
-		stmt_insert_stack:bind_values(for_object_pk)
-		stmt_insert_stack:step()
-		local stack_pk = stmt_insert_stack:get_value(0)
-		stmt_insert_stack:reset()
+		stmt_find_owner_array_child:bind_values(for_object_pk)
+		local existing
 
-		stmt_set_owner_stack_pk:bind_values(stack_pk, for_object_pk)
-		stmt_set_owner_stack_pk:step()
-		stmt_set_owner_stack_pk:reset()
+		if stmt_find_owner_array_child:step() == sqlite_row then
+			existing = stmt_find_owner_array_child:get_value(0)
+		end
+
+		stmt_find_owner_array_child:reset()
+		if existing then return existing end
+
+		stmt_insert_array_with_inherited_role:bind_values(for_object_pk)
+		stmt_insert_array_with_inherited_role:step()
+		local stack_pk = stmt_insert_array_with_inherited_role:get_value(0)
+		stmt_insert_array_with_inherited_role:reset()
+
+		self:add_ref(for_object_pk, nil, stack_pk)
 
 		return stack_pk
 	end

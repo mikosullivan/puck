@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_larry",
-	"role": "End-to-end tests for the sprint's Larry (Engine subclass) exercising the new scopes-based variable-storage design. Builds up frame 0 by hand and calls `frame:set_local_to_scalar` directly — the variable-scalar handler is still a stub in shipping, so we don't drive this from Caspian source yet. Verifies the resulting object graph (`bucket → scopes → scopes[0] → x → scalar`) and the marker-then-advance flow.",
+	"role": "End-to-end tests for the sprint's Larry (Engine subclass) exercising the new scopes-based variable-storage design. Two flavors of test coverage: (1) hand-built tests that seed frame 0 directly and call `frame:set_local_to_scalar` to verify the CVM-level graph shape (`bucket → scopes → scopes[0] → x → scalar`), and (2) full-dispatch-chain tests that run `larry:load('$x = 1'); larry:run()` and verify the resulting state. The larry:run path stops at 'cap reaches terminal state, orphans marked needs_trace' — GC isn't written yet, so nothing sweeps the orphaned graph or reaps the cap.",
 	"run": "lua5.4 sprints/first-variable/test_larry.lua (from repo root)"
 }
 ]]
@@ -11,14 +11,15 @@
 --[[
 # `test_larry`
 
-Tests the Larry (sprint's Engine subclass) end-to-end using the sprint's rewritten `cvm.frame`. Each test:
+Tests the Larry (sprint's Engine subclass) end-to-end using the sprint's rewritten `cvm.frame` and the sprint's `variable-scalar` handler.
 
-1. Instantiates a Larry — brings up an in-memory CVM on the sprint schema.
-2. Seeds a process + a frame 0 directly (bypassing the handler chain, which still sits on a stub in shipping).
-3. Calls `frame:set_local_to_scalar('x', 'n', 1)`.
-4. Asserts against the object-graph shape the scopes design specifies.
+Two flavors of tests here:
 
-A separate case simulates the walker's `stmt_idx` advance and verifies the marker gets swept.
+1. **Graph-shape tests** — seed frame 0 by hand, call `frame:set_local_to_scalar('x', 'n', 1)` directly, assert the object-graph shape the scopes design specifies. Bypasses the handler chain to isolate the write mechanics.
+
+2. **Full-dispatch tests** — run `larry:load('$x = 1'); larry:run()` and verify the resulting state. Exercises the whole path: transpile → normalize → dispatch through the handler chain → variable-scalar handler → set_local_to_scalar → cap advance.
+
+**GC isn't written yet.** The full-dispatch test takes the process only as far as "cap in terminal state, orphaned bucket marked `needs_trace = 1`" — i.e., "the script has run, everything is ready for the first GC pass." Sweeping the orphans and reaping the cap land with GC-substrate integration.
 ]]
 
 
@@ -58,7 +59,20 @@ local function count(db, sql)
 end
 
 --[[
-Seed a fresh process cap + frame 0 and return the frame wrapper. Uses Larry's own data-access CVM instance (`larry.data`) — that instance carries the sprint's overridden `add_bucket` / `add_stack` methods, which write via the owner's mutable `bucket_pk` / `stack_pk` columns (the sprint schema has no `bucket_for` / `stack_for` for the shipping methods to target).
+Fetch a frame's bucket pk (the frame's hash-child via refs) under the
+sprint's refs-based ownership design. Returns nil if the frame has no
+bucket yet.
+]]
+local function frame_bucket_pk(db, frame_pk)
+	local row = first(db,
+		"select r.child from refs r "
+		.. "join objects o on o.object_pk = r.child "
+		.. "where r.parent = '" .. frame_pk .. "' and o.primitive = 'h'")
+	return row and row.child
+end
+
+--[[
+Seed a fresh process cap + frame 0 and return the frame wrapper. Uses Larry's own data-access CVM instance (`larry.data`) — that instance carries the sprint's overridden `add_bucket` / `add_stack` methods, which represent ownership as a normal `refs` row from the owner to the collection (the sprint schema has no `bucket_pk` / `stack_pk` columns for the shipping methods to touch).
 
 The process is a `primitive='f'` cap row with `process=1`, `ast='[]'`, no parent. Frame 0 sits under it as a nested frame (`parent_frame=cap_pk`).
 
@@ -120,9 +134,9 @@ test('after set_local_to_scalar: bucket exists with a scopes ref', function()
 
 	frame:set_local_to_scalar('x', 'n', 1)
 
-	-- Frame's bucket_pk is now populated (Larry's add_bucket wrote it directly).
-	local bucket_pk = first(larry.cvm, "select bucket_pk from objects where object_pk = '" .. frame.object_pk .. "'").bucket_pk
-	assert(bucket_pk ~= nil, 'frame should have a bucket_pk after set_local_to_scalar')
+	-- Frame's bucket is now attached via a refs row (owner→bucket).
+	local bucket_pk = frame_bucket_pk(larry.cvm, frame.object_pk)
+	assert(bucket_pk ~= nil, 'frame should have a bucket after set_local_to_scalar')
 
 	-- Bucket exists.
 	local bucket_row = first(larry.cvm, "select primitive from objects where object_pk = '" .. bucket_pk .. "'")
@@ -141,7 +155,7 @@ test('after set_local_to_scalar: scopes[0] is a hash holding the binding', funct
 
 	frame:set_local_to_scalar('x', 'n', 1)
 
-	local bucket_pk = first(larry.cvm, "select bucket_pk from objects where object_pk = '" .. frame.object_pk .. "'").bucket_pk
+	local bucket_pk = frame_bucket_pk(larry.cvm, frame.object_pk)
 	local scopes_pk = first(larry.cvm, "select child from refs where parent = '" .. bucket_pk .. "' and key = 'scopes'").child
 
 	-- scopes[0] — the ref with idx = 0
@@ -205,7 +219,7 @@ test('advancing the frame stmt_idx sweeps the marker (atomic in one UPDATE)', fu
 	local frame_row = first(larry.cvm, "select stmt_idx from objects where object_pk = '" .. frame.object_pk .. "'")
 	assert(tonumber(frame_row.stmt_idx) == 1)
 
-	local bucket_pk = first(larry.cvm, "select bucket_pk from objects where object_pk = '" .. frame.object_pk .. "'").bucket_pk
+	local bucket_pk = frame_bucket_pk(larry.cvm, frame.object_pk)
 	local scopes_pk = first(larry.cvm, "select child from refs where parent = '" .. bucket_pk .. "' and key = 'scopes'").child
 	local own_pk = first(larry.cvm, "select child from refs where parent = '" .. scopes_pk .. "' and idx = 0").child
 	local x_binding = first(larry.cvm, "select scalar_value from objects "
@@ -228,7 +242,7 @@ test('ensure_own_scope is idempotent — same hash across calls, one scopes entr
 	assert(first_call.object_pk == second_call.object_pk,
 		'both calls should return the same own_scope hash')
 
-	local bucket_pk = first(larry.cvm, "select bucket_pk from objects where object_pk = '" .. frame.object_pk .. "'").bucket_pk
+	local bucket_pk = frame_bucket_pk(larry.cvm, frame.object_pk)
 	local scopes_pk = first(larry.cvm, "select child from refs where parent = '" .. bucket_pk .. "' and key = 'scopes'").child
 
 	-- Only one entry in the scopes array (no duplicate scopes[0]).
@@ -287,6 +301,14 @@ end)
 
 -- ------------------------------------------------------------
 -- $x = 1 : end-to-end via larry:load + larry:run
+--
+-- **This is NOT a full-process test.** GC hasn't been written yet.
+-- The test takes the process up to the point where the cap reaches
+-- terminal state (stmt_idx=1, gc=null, no children) and the orphaned
+-- bucket is marked `needs_trace = 1` — i.e., "the script has run and
+-- everything is ready for the first GC pass." It does NOT run GC,
+-- does NOT sweep the bucket / scopes chain / scalar, and does NOT
+-- reap the cap. Those steps land with GC-substrate integration.
 -- ------------------------------------------------------------
 
 test('larry:run runs `$x = 1` end-to-end through the dispatch chain', function()
@@ -310,9 +332,10 @@ test('larry:run runs `$x = 1` end-to-end through the dispatch chain', function()
 	assert(cap_kids == 0, 'cap should have no children (frame 0 was cascade-swept)')
 
 	-- The x binding survived orphaned. Bucket survives, marked
-	-- needs_trace=1 (the next-GC-pass signal — set by frame 0's
-	-- BEFORE DELETE trigger reading bucket_pk). The scopes chain
-	-- hangs off it via the still-live refs.
+	-- needs_trace=1 (the next-GC-pass signal — set by the standard
+	-- refs_mark_needs_trace_after_delete trigger when the owner→bucket
+	-- ref was cascade-deleted with frame 0). The scopes chain hangs
+	-- off it via the still-live refs.
 	local binding = first(larry.cvm,
 		"select o.scalar_type, o.scalar_value from objects o "
 		.. "join refs r on r.child = o.object_pk where r.key = 'x'")

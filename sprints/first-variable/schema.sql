@@ -120,21 +120,13 @@ create table objects (
 			or (parent_frame is not null and process is null)
 			or (parent_frame is null and process is 1)),
 
-	-- Owner-side pointers to the object's bucket / stack. Only frames
-	-- and non-scalar full objects can carry them (checked here). The
-	-- primitive of the TARGET (must be 'h' for bucket_pk, 'a' for
-	-- stack_pk) is enforced by a trigger below — SQLite CHECK can't
-	-- reach across rows. `bucket_pk` and `stack_pk` are MUTABLE: an
-	-- owner can swap its collection at any time. Not UNIQUE — a bucket
-	-- (or stack) can be shared across multiple owners; a bucket doesn't
-	-- know it's a bucket, and cascades no longer thread through here.
-	-- On any change (update to a different value, or owner deletion),
-	-- the OLD target is marked needs_trace = 1 so GC can decide its
-	-- fate based on reachability. See the trigger set below. [ghi]
-	bucket_pk text references objects(object_pk)
-		check (bucket_pk is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
-	stack_pk  text references objects(object_pk)
-		check (stack_pk  is null or primitive = 'f' or (primitive = 'o' and scalar_type is null)),
+	-- No dedicated bucket/stack columns. Ownership of a bucket or a
+	-- stack is a normal `refs` row from the owner to the collection.
+	-- The one-hash-one-array trigger (see refs section below) caps a
+	-- non-container parent to at most one HashPrimitive child (its
+	-- bucket) and at most one ArrayPrimitive child (its stack).
+	-- Buckets and stacks can be shared across multiple owners — the
+	-- graph reads exactly like the refs table shows.
 
 	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
 	persistent integer check (persistent = 1),
@@ -181,92 +173,13 @@ begin
 			then raise(abort, 'objects_scalar_type_immutable: objects.scalar_type is immutable')
 		when new.scalar_value is not old.scalar_value
 			then raise(abort, 'objects_scalar_value_immutable: objects.scalar_value is immutable')
-		-- bucket_pk and stack_pk are mutable; owners can swap collections
-		-- at any time. The change-tracking triggers below mark the OLD
-		-- target needs_trace = 1 whenever the value moves.
 	end;
 end;
 
--- Bucket / stack are lazily created by the Lua write layer (no auto-provision). [ghi]
-
 -- ------------------------------------------------------------
--- bucket_pk / stack_pk — target primitive check + needs_trace
--- marking on change or owner delete.
--- ------------------------------------------------------------
-
--- Target primitive check: bucket_pk (when set) must point at a hash;
--- stack_pk (when set) must point at an array. Cross-row check via
--- trigger since SQLite CHECK can't reach into another row. Fires on
--- insert and update. [ghi]
-create trigger objects_bucket_pk_target_must_be_hash
-before insert on objects
-when new.bucket_pk is not null
-	and (select primitive from objects where object_pk = new.bucket_pk) is not 'h'
-begin
-	select raise(abort, 'objects_bucket_pk_target_must_be_hash: bucket_pk must reference a HashPrimitive');
-end;
-
-create trigger objects_bucket_pk_target_must_be_hash_on_update
-before update of bucket_pk on objects
-when new.bucket_pk is not null
-	and (select primitive from objects where object_pk = new.bucket_pk) is not 'h'
-begin
-	select raise(abort, 'objects_bucket_pk_target_must_be_hash: bucket_pk must reference a HashPrimitive');
-end;
-
-create trigger objects_stack_pk_target_must_be_array
-before insert on objects
-when new.stack_pk is not null
-	and (select primitive from objects where object_pk = new.stack_pk) is not 'a'
-begin
-	select raise(abort, 'objects_stack_pk_target_must_be_array: stack_pk must reference an ArrayPrimitive');
-end;
-
-create trigger objects_stack_pk_target_must_be_array_on_update
-before update of stack_pk on objects
-when new.stack_pk is not null
-	and (select primitive from objects where object_pk = new.stack_pk) is not 'a'
-begin
-	select raise(abort, 'objects_stack_pk_target_must_be_array: stack_pk must reference an ArrayPrimitive');
-end;
-
--- On bucket_pk change (owner swaps its bucket for a different one, or
--- clears it): mark the OLD target needs_trace = 1. A no-op re-write of
--- the same value silently accepted. [ghi]
-create trigger objects_mark_needs_trace_on_bucket_pk_change
-after update of bucket_pk on objects
-when old.bucket_pk is not null and new.bucket_pk is not old.bucket_pk
-begin
-	update objects set needs_trace = 1 where object_pk = old.bucket_pk;
-end;
-
-create trigger objects_mark_needs_trace_on_stack_pk_change
-after update of stack_pk on objects
-when old.stack_pk is not null and new.stack_pk is not old.stack_pk
-begin
-	update objects set needs_trace = 1 where object_pk = old.stack_pk;
-end;
-
--- On owner delete: mark the owner's bucket / stack needs_trace = 1
--- so GC can decide whether they stay based on reachability. Fires
--- before the delete so we can still read the old values. [ghi]
-create trigger objects_mark_bucket_needs_trace_on_delete
-before delete on objects
-when old.bucket_pk is not null
-begin
-	update objects set needs_trace = 1 where object_pk = old.bucket_pk;
-end;
-
-create trigger objects_mark_stack_needs_trace_on_delete
-before delete on objects
-when old.stack_pk is not null
-begin
-	update objects set needs_trace = 1 where object_pk = old.stack_pk;
-end;
-
--- ------------------------------------------------------------
--- Refs: parent-to-child object edges. Parents must be container
--- primitives ('h' or 'a'). [ghi]
+-- Refs: parent-to-child object edges. Any primitive can be a parent;
+-- non-container parents ('o', 'f') are capped at one hash-child (its
+-- bucket) and one array-child (its stack) by a trigger below.
 -- ------------------------------------------------------------
 
 create table refs (
@@ -293,12 +206,25 @@ create table refs (
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
--- Only container primitives can be parents in refs. [ghi]
-create trigger refs_parent_must_be_primitive_container
+-- Non-container parents ('o', 'f') can hold at most one HashPrimitive
+-- child (which serves as its bucket) and at most one ArrayPrimitive
+-- child (which serves as its stack). Container parents ('h', 'a') have
+-- no such cap — they hold as many children as they want by their
+-- native semantics. Owner-owns-bucket / owner-owns-stack is just a
+-- normal refs row now; the whole "ownership" story lives in this one
+-- table. [ghi]
+create trigger refs_owner_at_most_one_hash_and_one_array
 before insert on refs
-when (select primitive from objects where object_pk = new.parent) not in ('h', 'a')
+when (select primitive from objects where object_pk = new.parent) in ('o', 'f')
+	and (select primitive from objects where object_pk = new.child) in ('h', 'a')
+	and exists (
+		select 1 from refs r
+		join objects c on c.object_pk = r.child
+		where r.parent = new.parent
+			and c.primitive = (select primitive from objects where object_pk = new.child)
+	)
 begin
-	select raise(abort, 'parent_must_be_primitive_container: only container primitives can be parents');
+	select raise(abort, 'refs_owner_at_most_one_hash_and_one_array: a non-container object can hold at most one hash (its bucket) and one array (its stack) as refs children');
 end;
 
 -- refs rows are immutable; rebind is delete + insert. WHEN gates on
@@ -715,8 +641,6 @@ when old.core_role is not null
 		or new.stmt_idx is not old.stmt_idx
 		or new.process is not old.process
 		or new.parent_frame is not old.parent_frame
-		or new.bucket_pk is not old.bucket_pk
-		or new.stack_pk is not old.stack_pk
 		or new.persistent is not old.persistent
 		or new.gc is not old.gc
 		or new.needs_trace is not old.needs_trace
@@ -840,8 +764,9 @@ create view uspace as
 -- For a full dump: `SELECT * FROM frame_scoped_vars WHERE frame_pk
 -- = ?` — every scoped var, with its scope depth.
 --
--- Cost per row: all joins go through indexed lookups (bucket_pk PK
--- lookup, refs.parent, PK on objects). [ghi]
+-- Cost per row: all joins go through indexed lookups (refs.parent,
+-- PK on objects). The bucket join uses refs_parent + a primitive
+-- filter to pick out the frame's hash-child. [ghi]
 -- ------------------------------------------------------------
 create view frame_scoped_vars as
 select
@@ -850,8 +775,11 @@ select
 	var_ref.key         as var_name,
 	var_ref.child       as value_pk
 from objects f
+	join refs bucket_ref
+		on bucket_ref.parent = f.object_pk
 	join objects bucket
-		on bucket.object_pk = f.bucket_pk
+		on bucket.object_pk = bucket_ref.child
+		and bucket.primitive = 'h'
 	join refs scopes_ref
 		on scopes_ref.parent = bucket.object_pk
 		and scopes_ref.key = 'scopes'
@@ -860,3 +788,47 @@ from objects f
 	join refs var_ref
 		on var_ref.parent = scope_ref.child
 where f.primitive = 'f';
+
+
+-- ------------------------------------------------------------
+-- object_bucket — every non-container object with its bucket_pk
+-- (or null if it hasn't been given one). "Non-container" = primitive
+-- in ('o', 'f'); those are the ones the one-hash-one-array trigger
+-- caps, so the correlated subquery returns at most one row and lands
+-- safely as a scalar value.
+--
+-- **No caller yet.** Kept in the schema as a convenience for whoever
+-- eventually needs "give me this object's bucket" without hand-writing
+-- the refs + objects + primitive-filter join. Usage:
+-- `SELECT bucket_pk FROM object_bucket WHERE object_pk = ?`. [ghi]
+-- ------------------------------------------------------------
+create view object_bucket as
+select
+	o.object_pk as object_pk,
+	(
+		select r.child
+		from refs r
+			join objects h on h.object_pk = r.child and h.primitive = 'h'
+		where r.parent = o.object_pk
+	) as bucket_pk
+from objects o
+where o.primitive in ('o', 'f');
+
+
+-- ------------------------------------------------------------
+-- object_stack — every non-container object with its stack_pk
+-- (or null if it hasn't been given one). Same shape as object_bucket
+-- but filtered to array-children. Same "no caller yet, kept as a
+-- convenience" note applies. [ghi]
+-- ------------------------------------------------------------
+create view object_stack as
+select
+	o.object_pk as object_pk,
+	(
+		select r.child
+		from refs r
+			join objects a on a.object_pk = r.child and a.primitive = 'a'
+		where r.parent = o.object_pk
+	) as stack_pk
+from objects o
+where o.primitive in ('o', 'f');
