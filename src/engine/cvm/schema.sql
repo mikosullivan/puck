@@ -352,7 +352,7 @@ begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
 
--- On refs DELETE: mark the old child for retrace. [ghi]
+-- On refs DELETE: mark the old child for trace. [ghi]
 create trigger refs_mark_needs_trace_after_delete
 after delete on refs
 begin
@@ -477,6 +477,16 @@ begin
 	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a frame is born with stmt_idx = 0');
 end;
 
+-- New gc-cycle design, rule 2: a frame cannot be inserted with
+-- gc = 1. Fresh frames are always born at gc = null; the gc = 1
+-- state is reached later via rule 3 (child delete) or manual set. [ghi]
+create trigger frames_gc_starts_null
+before insert on objects
+when new.primitive = 'f' and new.gc is not null
+begin
+	select raise(abort, 'frames_gc_starts_null: a frame must be born with gc = null');
+end;
+
 -- stmt_idx moves +1 at a time. Skips and rewinds are rejected. A no-op
 -- re-write of the same value is silently accepted. [ghi]
 create trigger frames_stmt_idx_advances_by_one
@@ -535,78 +545,151 @@ begin
 	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
 end;
 
--- Invariant 1a: advancing stmt_idx is a null→1 gc transition in the
--- same UPDATE. The WHEN clause rejects three of the four cases where
--- stmt_idx changes: gc stays null (advance without setting gc), gc
--- was already 1 (advance while still in cleanup — cycle not
--- completed), and gc going from 1 back to null while advancing. The
--- only accepted shape is old.gc = null AND new.gc = 1 — the walker's
--- canonical `UPDATE ... SET stmt_idx = stmt_idx + 1, gc = 1`. [ghi]
+-- New gc-cycle design, rule 8: auto-delete a frame the moment it
+-- reaches the terminal state (stmt_idx past the last executable
+-- position). Chain reaction with rule 3: the delete fires an
+-- AFTER-DELETE trigger on the parent that flips parent.gc from null
+-- to 1, the parent's walker advances, and if that advance also
+-- reaches terminal, this trigger fires again. Whole stack collapses
+-- upward.
+--
+-- Guards:
+--   * Cap frames are excluded (`process is not 1`). The cap stays
+--     terminal-alive as the process anchor.
+--   * The frame must have no child at the moment of delete
+--     (`not exists ...`). Defense in depth — under the state machine
+--     an advance to terminal requires gc=1, gc=1 requires no children
+--     per rule 4, so this can't fire with a child in practice. The
+--     FK on parent_frame (NO ACTION) would also reject the delete if
+--     a child existed. [ghi]
+create trigger frames_auto_delete_at_terminal
+after update of stmt_idx on objects
+when new.primitive = 'f'
+	and new.process is not 1
+	and new.stmt_idx = max(json_array_length(new.ast), 1)
+	and not exists (
+		select 1 from objects
+		where parent_frame = new.object_pk and primitive = 'f'
+	)
+begin
+	delete from objects where object_pk = new.object_pk;
+end;
+
+-- New gc-cycle design, rule 5: advancing stmt_idx requires gc = 1
+-- to consume. The advance can be issued as bare `UPDATE ... SET
+-- stmt_idx = stmt_idx + 1` — the caller does not need to touch gc.
+-- The AFTER trigger frames_advance_sets_gc_null (below) auto-sets
+-- gc = null as a side effect. [ghi]
 create trigger frames_advance_requires_gc
 before update of stmt_idx on objects
+when new.stmt_idx is not old.stmt_idx and old.gc is not 1
+begin
+	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires gc = 1');
+end;
+
+-- New gc-cycle design, rule 6 (auto-mechanism): advancing stmt_idx
+-- automatically sets gc to null. AFTER UPDATE trigger runs a follow-
+-- up UPDATE on the same row. The caller never has to include
+-- `gc = null` in the advance UPDATE (though it's harmless if they
+-- do — the auto-set becomes a no-op). The inner UPDATE fires
+-- frames_gc_change_requires_no_child, but rule 4 combined with rule
+-- 5 means the frame has no children at the moment of advance
+-- (advancing requires gc = 1, gc = 1 requires no children), so the
+-- inner UPDATE's WHEN is satisfied. [ghi]
+create trigger frames_advance_sets_gc_null
+after update of stmt_idx on objects
 when new.stmt_idx is not old.stmt_idx
-	and (old.gc is not null or new.gc is not 1)
 begin
-	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires the same UPDATE to set gc from null to 1');
+	update objects set gc = null where object_pk = new.object_pk;
 end;
 
--- Invariant 1b: setting gc=1 requires stmt_idx to advance in same UPDATE. [ghi]
-create trigger frames_gc_set_requires_advance
+-- New gc-cycle design: on advance, the caller may include gc in the
+-- SET clause only if the value is null. `SET stmt_idx = N+1, gc = 1`
+-- is an engine bug — the auto-set trigger above would silently
+-- overwrite the caller's 1 with null, which correct the state but
+-- hides the bug. Reject it loudly.
+--
+-- SQLite fires BEFORE UPDATE OF <col> only when the column appears
+-- in the UPDATE's SET clause. So this trigger sees only cases where
+-- the caller explicitly wrote gc, not the bare-advance case where
+-- gc was left out (and the auto-set does its work). [ghi]
+create trigger frames_advance_rejects_non_null_gc
 before update of gc on objects
-when new.gc = 1 and old.gc is null and new.stmt_idx is old.stmt_idx
+when new.stmt_idx is not old.stmt_idx and new.gc is not null
 begin
-	select raise(abort, 'frames_gc_set_requires_advance: setting gc=1 requires stmt_idx to advance in the same UPDATE');
+	select raise(abort, 'frames_advance_rejects_non_null_gc: an advance UPDATE that mentions gc must set it to null');
 end;
 
--- Invariant 2: setting gc=1 cascade-deletes children. [ghi]
-create trigger frames_gc_set_deletes_children
-after update of gc on objects
-when new.gc = 1 and old.gc is null
-begin
-	delete from objects where parent_frame = new.object_pk and primitive = 'f';
-end;
-
--- Invariant 3: a child frame can only be deleted when its parent's
--- gc = 1. The BEFORE-DELETE trigger checks the parent at delete time;
--- since the cascade from invariant 2 fires AFTER the parent's gc was
--- set to 1, the check passes for legitimate sweep. Direct DELETE
--- attempts (parent still gc=null) abort. [ghi]
-create trigger frames_child_delete_requires_parent_gc
+-- New gc-cycle design, rule 9: a frame cannot be deleted while it
+-- has a child. The parent_frame FK (NO ACTION) would already reject
+-- the delete with a generic FOREIGN KEY error — this trigger fires
+-- first with a specific error id for cleaner diagnostics. [ghi]
+create trigger frames_delete_requires_no_child
 before delete on objects
 when old.primitive = 'f'
-	and old.parent_frame is not null
-	and (select gc from objects where object_pk = old.parent_frame) is not 1
+	and exists (
+		select 1 from objects
+		where parent_frame = old.object_pk and primitive = 'f'
+	)
 begin
-	select raise(abort, 'frames_child_delete_requires_parent_gc: a child frame can only be deleted when parent.gc = 1');
+	select raise(abort, 'frames_delete_requires_no_child: a frame cannot be deleted while it has a child frame');
 end;
 
--- A frame can only be deleted when its own gc cycle is complete
--- (gc is null). Rejects mid-cleanup deletes. Does NOT require the
--- frame to be past its last statement — early return via `return X`
--- is a legitimate delete at any stmt_idx. Cascade-swept markers pass
--- because they're born gc=null; frames finishing normally pass because
--- their own advance-then-reset cycle ends with gc=null. [ghi]
-create trigger frames_delete_requires_gc_null
-before delete on objects
-when old.primitive = 'f' and old.gc is not null
+-- New gc-cycle design, rule 3: deleting a child frame auto-sets the
+-- parent's gc to 1. The parent now has 0 children (linear-stack
+-- rule: at most 1 child per frame; the one that was there is now
+-- gone), so rule 4 permits the change.
+--
+-- Unconditional. If a bug ever produces a "child under a terminal
+-- parent" state (currently unreachable — `no_child_under_terminal_
+-- parent` and rules 4+5 together prevent it), rule 7 will reject the
+-- auto-set with a specific error id, aborting the outer DELETE. That's
+-- the correct diagnostic: a specific rule identifies exactly which
+-- invariant was broken, instead of the guard silently absorbing the
+-- inconsistency. [ghi]
+create trigger frames_child_delete_sets_parent_gc
+after delete on objects
+when old.primitive = 'f' and old.parent_frame is not null
 begin
-	select raise(abort, 'frames_delete_requires_gc_null: a frame can only be deleted when its gc cycle is complete (gc is null); mid-cleanup deletes are rejected');
+	update objects set gc = 1 where object_pk = old.parent_frame;
 end;
 
--- Invariant 4: resetting gc = null requires no child frames. Engine's
--- `UPDATE frame SET gc = null` at the end of a cleanup phase only
--- succeeds when all children (including any on_close callback frames)
--- have run to completion and been swept. Guarantees at-rest gc=null
--- always means "ready for next dispatch." [ghi]
-create trigger frames_gc_reset_requires_no_children
+-- New gc-cycle design, rule 4: gc cannot change while the frame has
+-- a child. Bidirectional — rejects both null→1 and 1→null. Under
+-- the old design, only 1→null was blocked (via
+-- frames_gc_reset_requires_no_children) and null→1 cascade-deleted
+-- children; the new state machine drops the cascade in favor of
+-- strict rejection. At most one child exists per frame
+-- (`objects_one_child_per_frame` unique index), so the check is a
+-- single existence test. [ghi]
+create trigger frames_gc_change_requires_no_child
 before update of gc on objects
-when new.gc is null and old.gc = 1
+when new.gc is not old.gc
 	and exists (
 		select 1 from objects
 		where parent_frame = new.object_pk and primitive = 'f'
 	)
 begin
-	select raise(abort, 'frames_gc_reset_requires_no_children: cannot reset gc to null while child frames exist');
+	select raise(abort, 'frames_gc_change_requires_no_child: gc cannot change while the frame has a child');
+end;
+
+-- New gc-cycle design, rule 7: gc cannot be set to 1 when the frame
+-- is already in its terminal state (stmt_idx past the last executable
+-- position). Setting gc=1 there would signal "ready to advance," but
+-- a terminal frame can't advance — the bounds trigger blocks any
+-- further stmt_idx change. A terminal frame's only next legal step
+-- is DELETE. Rule 7 keeps the state machine from stalling at
+-- (terminal, 1, no children) with no path forward.
+--
+-- Under normal flow this is unreachable: reaching terminal triggers
+-- the auto-delete (rule 8). Guard is for the direct-INSERT edge case
+-- and for hardening against engine bugs. [ghi]
+create trigger frames_gc_set_rejects_at_terminal
+before update of gc on objects
+when new.gc is 1
+	and new.stmt_idx = max(json_array_length(new.ast), 1)
+begin
+	select raise(abort, 'frames_gc_set_rejects_at_terminal: cannot set gc = 1 when the frame is in its terminal state');
 end;
 
 
@@ -655,6 +738,23 @@ when new.parent_frame is not null
 	and (select primitive from objects where object_pk = new.parent_frame) is not 'f'
 begin
 	select raise(abort, 'parent_frame_must_be_frame: parent_frame must reference a frame (primitive = ''f'')');
+end;
+
+-- New gc-cycle design: a child frame cannot be inserted under a
+-- parent that is in its terminal state. A terminal parent has no
+-- more statements to dispatch; spawning a child there would
+-- resurrect a done frame. Applies uniformly to caps and nested
+-- frames. [ghi]
+create trigger frames_no_child_under_terminal_parent
+before insert on objects
+when new.parent_frame is not null
+	and (
+		select stmt_idx = max(json_array_length(ast), 1)
+		from objects
+		where object_pk = new.parent_frame
+	)
+begin
+	select raise(abort, 'frames_no_child_under_terminal_parent: cannot insert a child frame under a parent that is in its terminal state');
 end;
 
 -- `process` is immutable. A frame's identity as a cap (or not) is

@@ -1,7 +1,7 @@
 ~~~vibecode
 {"doc": "requirements_cvm_frame_lifecycle",
-	"role": "The lifecycle of a process from seed to terminal. A process is a cap frame (`primitive='f'`, `process=1`, `ast='[]'`) at the top of a call stack; frame 0 sits under the cap as a nested frame. The walker advances each frame's stmt_idx through its ast; every advance couples with `gc = 1` and cascade-sweeps children in one UPDATE. The process reaches terminal state when the cap hits `stmt_idx = 1, gc = null, no children`. Every state along the way is a valid resume state.",
-	"key_concepts": ["cap_as_frame", "advance_with_gc", "cascade_cleanup", "terminal_state", "resume_safety"]}
+	"role": "The lifecycle of a process from seed to terminal. A process is a cap frame (`primitive='f'`, `process=1`, `ast='[]'`) at the top of a call stack; frame 0 sits under the cap as a nested frame. The walker dispatches each frame's statement, then advances stmt_idx. Advancing requires gc=1 to consume and auto-sets gc back to null. When a frame reaches its terminal position it auto-deletes; the cap is excluded and stays alive as the terminal signal.",
+	"key_concepts": ["cap_as_frame", "gc_ready_to_advance", "auto_delete_at_terminal", "rule_3_child_delete_cascade", "resume_safety"]}
 ~~~
 
 # Frame lifecycle
@@ -16,35 +16,63 @@ A process is not a separate table row — a process is a **cap frame**: an `obje
 
 Frame 0 — the top of the user's call stack — sits directly under the cap as a nested frame (`parent_frame = cap_pk`, `process = null`). Sub-frames chain further down from frame 0 via `parent_frame`.
 
-The cap participates in the same lifecycle machinery as any frame — same `stmt_idx` field, same `gc` state, same advance rules, same terminal check. Its ast is empty (`'[]'`) so its `stmt_idx = 0 → 1` transition doesn't dispatch anything; it's the mechanism the walker uses to sweep frame 0 when the program is done.
+The cap participates in the same lifecycle machinery as any frame — same `stmt_idx` field, same `gc` state, same advance rules. Its ast is empty (`'[]'`) so it has no statements to dispatch; it's the terminal-alive anchor that lets the walker cascade cleanup uniformly.
 
-**Why a cap.** A process needs a top-of-stack anchor so the walker can cascade-clean frame 0 with the same trigger machinery it uses everywhere else. Rather than special-case "sweep frame 0" logic, the cap gives frame 0 a parent whose advance-with-gc cascade handles it uniformly.
+**Why a cap.** A process needs a top-of-stack anchor so the walker can cascade-signal up from frame 0 with the same trigger machinery it uses everywhere else. Rather than special-case "sweep frame 0" logic, the cap gives frame 0 a parent that participates in the same lifecycle.
 
-## The mechanism: advance-with-gc
+## What gc means
 
-The walker's per-statement operation on a frame is **one UPDATE that increments `stmt_idx` and sets `gc = 1` together**:
+The `gc` column is a two-state flag on each frame:
 
-~~~sql
-update objects set stmt_idx = stmt_idx + 1, gc = 1
-where object_pk = <frame_pk>;
+- **`gc = null`** — ready to dispatch the command at `stmt_idx`.
+- **`gc = 1`** — ready to advance to the next `stmt_idx`.
+
+A frame born fresh is `(stmt_idx = 0, gc = null)`. Between commands, the frame moves from ready-to-dispatch through some in-flight state (dispatch spawns a child, or the leaf command sets `gc = 1` directly), and eventually reaches ready-to-advance. The walker then advances, taking `stmt_idx` up by one and `gc` back to null — ready for the next command.
+
+## The rules
+
+The state machine is enforced by nine rules (all triggers or CHECKs on `objects`; names below match the trigger names in `src/engine/cvm/schema.sql`):
+
+1. **In-progress = has child OR gc=1.** A frame with no children AND gc=null is at rest — walker's next action is to dispatch the command at stmt_idx.
+2. **INSERT never sets gc=1** (`frames_gc_starts_null`). Fresh frames are born at gc=null.
+3. **Child delete auto-sets parent's gc=1** (`frames_child_delete_sets_parent_gc`). When a child frame is deleted, the parent's gc is set to 1 as a side effect — the signal that the parent's dispatch is done.
+4. **gc cannot change while there is a child** (`frames_gc_change_requires_no_child`). Bidirectional. At most one child per frame (`objects_one_child_per_frame` unique index).
+5. **Advancing stmt_idx requires gc=1** (`frames_advance_requires_gc`). Only accepted when `old.gc = 1`.
+6. **Advancing stmt_idx auto-sets gc to null** (`frames_advance_sets_gc_null` + `frames_advance_rejects_non_null_gc`). The caller writes just `SET stmt_idx = stmt_idx + 1` — the AFTER trigger sets gc back to null. Explicit `gc = null` in the SET is redundant but accepted; explicit `gc = 1` is rejected loudly (engine-bug catch).
+7. **Cannot set gc=1 in the terminal state** (`frames_gc_set_rejects_at_terminal`). Terminal frames stay terminal; a done frame can't be reactivated.
+8. **Auto-delete at terminal** (`frames_auto_delete_at_terminal`). A non-cap frame is deleted the moment its stmt_idx reaches its terminal position. Cap is excluded (`process = 1`) so the process anchor stays alive.
+9. **Frame cannot be deleted while it has a child** (`frames_delete_requires_no_child`). Backed by the parent_frame FK; specific error id.
+
+Plus `frames_no_child_under_terminal_parent` — reject inserting a child under a terminal parent.
+
+## The canonical cycle
+
+For a non-leaf command (one that spawns a nested frame):
+
+~~~text
+executing         →   ready to advance   →   executing (next stmt)
+(stmt_idx = N,        (stmt_idx = N,          (stmt_idx = N+1,
+ gc = null,            gc = 1,                 gc = null,
+ has children)         no children)            has/hasn't children)
+
+    ↑                     ↑                        ↑
+    ┃                     ┃                        ┃
+    ┃  dispatch spawns    ┃  last child            ┃  UPDATE frame
+    ┃  a child frame;     ┃  deleted → rule 3      ┃    SET stmt_idx
+    ┃  rule 4 pins gc     ┃  fires → parent's      ┃    += 1
+    ┃  = null while       ┃  gc auto-sets to 1     ┃  (auto-set
+    ┃  the child exists   ┃                        ┃   nulls gc)
 ~~~
 
-The AFTER-UPDATE trigger on `gc` cascade-deletes child frames (including any marker the just-completed dispatch pushed). The engine then resets `gc = null` once no children remain.
-
-Four invariants guard the cycle (all enforced by triggers on `objects`):
-
-1. **`frames_advance_requires_gc`** — advancing `stmt_idx` requires `gc = 1` in the same UPDATE.
-2. **`frames_gc_set_deletes_children`** — the AFTER-UPDATE cascade sweeps child frames.
-3. **`frames_child_delete_requires_parent_gc`** — a child frame can only be deleted when its parent's `gc = 1` (i.e., only via the cascade, not by direct DELETE).
-4. **`frames_gc_reset_requires_no_children`** — resetting `gc = null` requires no child frames.
-
-Plus the delete rule: **`frames_delete_requires_gc_null`** — a frame can only be deleted when its own `gc is null` (mid-cleanup deletes rejected). Any `stmt_idx` is fine — early return via `%call.return` legitimately leaves a frame mid-ast with `gc = null`.
+For a leaf command (one that spawns nothing — e.g., `$x = 1`), the dispatcher can skip the child dance entirely: do the work, then `UPDATE frame SET gc = 1`. No marker frame needed. The walker then advances.
 
 ## Terminal state
 
-A frame is in terminal state when `stmt_idx > max valid ast index AND gc is null AND no children`. Once terminal, the frame's `object_pk` is a safe delete candidate — it has completed its execution and its cleanup cycle.
+A frame is in **terminal state** when `stmt_idx` is past its last executable position — specifically, `stmt_idx = max(json_array_length(ast), 1)`. The `frames_stmt_idx_within_ast_bounds` trigger prevents stmt_idx from going higher.
 
-For the cap specifically, `ast = '[]'` means max valid idx is -1. The cap is born past-max at `stmt_idx = 0`, but stays alive because nothing cascades into deleting it. The cap advancing to `stmt_idx = 1` (with `gc = 1`) is the mechanism that sweeps frame 0; when the cap's `gc` resets to `null`, the cap itself is terminal. That's the "program is done" signal.
+When a non-cap frame reaches terminal, `frames_auto_delete_at_terminal` deletes it. Deletion fires rule 3 on the parent → parent's gc auto-sets to 1 → parent's walker advances → if parent also reaches terminal, auto-delete fires again → cascades upward.
+
+The **cap** is excluded from auto-delete. Its terminal state — `(stmt_idx = 1, gc = null, no children)` — IS the "program is done" signal. Anything reading process status looks at the cap's row.
 
 ## Step-by-step example: `$x = 1`
 
@@ -57,37 +85,35 @@ Cap seeded, frame 0 seeded under it. Nothing has run yet.
 <table class="tbl-cvm">
 <thead>
 <tr><th class="tbl-title-objects" colspan="8">objects</th></tr>
-<tr><th>object pk</th><th>primitive</th><th>user</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>parent_frame</th><th class="col-comment">comment</th></tr>
+<tr><th>object pk</th><th>primitive</th><th>core_role</th><th>owner_role</th><th>ast</th><th>stmt_idx</th><th>parent_frame</th><th class="col-comment">comment</th></tr>
 </thead>
 <tbody>
-<tr class="tbl-row-user"><td><code>01111111-…</code></td><td><code>h</code></td><td><code>1</code></td><td>null</td><td>null</td><td>null</td><td>null</td><td class="col-comment">user seed</td></tr>
-<tr><td><code>0c72f81a-…</code></td><td><code>f</code></td><td>null</td><td><code>01111111-…</code></td><td><code>[]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>process = 1</code>, process root</td></tr>
-<tr><td><code>2dc612e0-…</code></td><td><code>f</code></td><td>null</td><td><code>01111111-…</code></td><td><code>[[{"in":"as"},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
+<tr class="tbl-row-user"><td><code>eae0b9fb-…</code></td><td><code>r</code></td><td><code>u</code></td><td><code>eae0b9fb-…</code></td><td>null</td><td>null</td><td>null</td><td class="col-comment">user role</td></tr>
+<tr><td><code>0c72f81a-…</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[]</code></td><td><code>0</code></td><td>null</td><td class="col-comment">cap — <code>process = 1</code>, process root</td></tr>
+<tr><td><code>2dc612e0-…</code></td><td><code>f</code></td><td>null</td><td><code>eae0b9fb-…</code></td><td><code>[[{"in":"as"},"x",{"v":1}]]</code></td><td><code>0</code></td><td><code>0c72f81a-…</code></td><td class="col-comment">frame 0 — under the cap</td></tr>
 </tbody>
 </table>
 
 ### After frame 0's statement dispatches
 
-The handler for `{in='as'}` ran `frame:set_local_to_scalar('x', 'n', 1)` in a single savepoint: materialize the scalar, ensure the bucket → scopes → scopes[0] chain, bind `x`, push a marker child. The marker signals "handler done; walker may advance."
-
-Frame 0's `stmt_idx` still `0` (the walker hasn't advanced yet). See [scopes](./scopes) for the bucket/scopes chain shape.
+The handler for `{in='as'}` ran `frame:set_local_to_scalar('x', 'n', 1)` in a single savepoint: materialize the scalar, ensure the bucket → scopes → scopes[0] chain, bind `x`, then `UPDATE frame SET gc = 1`. Frame 0 is now at `(stmt_idx=0, gc=1, no children)` — ready to advance. See [scopes](./scopes) for the bucket/scopes chain shape.
 
 ### After frame 0's advance
 
-Walker's advance on frame 0: `stmt_idx = 1, gc = 1`. Cascade sweeps the marker (marker's `gc` is null; frame 0's is 1; both delete rules pass). Engine resets frame 0's `gc = null`. Frame 0 is now terminal (past max ast idx, `gc = null`, no children).
+Walker's advance on frame 0: `UPDATE frame SET stmt_idx = 1`. The auto-set trigger fires, taking gc to null. Frame 0 is now at `(stmt_idx=1, gc=null, no children)` — its terminal position. `frames_auto_delete_at_terminal` fires and deletes frame 0. That delete fires rule 3 on the cap: cap's gc goes to 1.
 
 ### After the cap's advance
 
-Walker's advance on the cap: `stmt_idx = 1, gc = 1`. Cascade sweeps frame 0 (frame 0's `gc` is null; cap's is 1). Frame 0's outgoing refs cascade too — the owner→bucket ref fires the standard mark trigger, leaving the bucket `needs_trace = 1`. Engine resets cap's `gc = null`. Cap is now at `stmt_idx = 1, gc = null, no children` — **terminal**.
+Walker's advance on the cap: `UPDATE cap SET stmt_idx = 1`. The auto-set trigger fires, taking gc to null. Cap is now at `(stmt_idx=1, gc=null, no children)` — its terminal position. Auto-delete does NOT fire (cap has `process = 1`, excluded from the auto-delete rule). Cap sits terminal.
 
-**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because terminal shape IS the completion signal. Anything reading process status looks at the cap's row.
+**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because terminal shape IS the completion signal.
 
 ### After the engine reaps the cap
 
-Engine marks the cap `needs_trace = 1`. GC traces reachability from roots (roles, persistent objects, other live process caps). Nothing reaches the cap or the orphaned bucket / scopes / scalar. GC sweeps unreachable rows; each deletion cascades outgoing refs, marking their targets `needs_trace = 1`; the loop runs until the queue is dry. DB back to just the seed rows.
+At the caller's discretion, the engine can DELETE the cap (rule 9 permits — no children). That delete cascades the cap's outgoing refs; the standard mark trigger leaves those objects `needs_trace = 1`; the trace routine walks reachability and sweeps orphans until the queue is dry. DB back to just the seed rows.
 
 ## Resume safety
 
-Every state above is a valid state to crash-and-resume from. The walker's operations are per-statement atomic (one UPDATE = advance + cascade), and the shutdown is per-frame atomic (advance + cascade on the cap = the process closes). There is no in-memory bookkeeping the engine needs to reconstruct; every fact about the process's progress lives on the cap and frames' `stmt_idx` and `gc` columns.
+Every state above is a valid state to crash-and-resume from. The walker's per-statement work is a small number of atomic UPDATEs, and every intermediate state at rest is legal per the nine rules. There is no in-memory bookkeeping the engine needs to reconstruct; every fact about a frame's progress lives on its `stmt_idx` and `gc` columns.
 
 Frame 0 as a nested frame (not a special row) means resume machinery treats it exactly like any other frame — no special "frame 0 handling" branch in the walker.

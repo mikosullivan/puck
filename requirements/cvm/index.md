@@ -14,7 +14,7 @@ Frames are not a separate table. A frame is an `objects` row with `primitive = '
 
 Roles are also not a separate table. A role is an `objects` row with `primitive = 'r'`. Roles exist in a strict hierarchical tree via `parent_role`, don't hold state (can't be `refs` parents), and serve as identity anchors. The three seeded core roles — engine, cache, user — are `'r'` rows marked by `core_role`. See [roles](https://puck.uno/requirements/cvm/roles) for the full storage contract.
 
-A process is also not a separate table. A process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent — the top of a call stack. Its `object_pk` IS the process identity. Frame 0 (the top of user code) sits under the cap as a nested frame; sub-frames chain from frame 0 via `parent_frame`. The cap participates in the same lifecycle machinery as any frame, which is what lets the walker cascade-clean frame 0 uniformly.
+A process is also not a separate table. A process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent — the top of a call stack. Its `object_pk` IS the process identity. Frame 0 (the top of user code) sits under the cap as a nested frame; sub-frames chain from frame 0 via `parent_frame`. The cap participates in the same lifecycle machinery as any frame; when a program is done, the cap sits at terminal state (`stmt_idx = 1, gc = null, no children`) as the completion signal.
 
 `object_pk` is a lowercase-hex UUID (8-4-4-4-12 shape). The column DEFAULT generates a fresh v4 UUID; the column CHECK accepts any UUID of that shape (v1, v3, v7, etc.) so callers passing IDs from elsewhere aren't rejected. Lowercase is enforced so the same conceptual UUID can't sit under two distinct PKs (SQLite's default TEXT collation is binary).
 
@@ -22,7 +22,7 @@ A process is also not a separate table. A process is a **cap frame**: an `object
 
 - [sql](https://www.puck.uno/requirements/cvm/sql) — display of the schema DDL
 - [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage) — why ast blobs are stored as JSON text, not SQLite JSONB
-- [frame-lifecycle](https://www.puck.uno/requirements/cvm/frame-lifecycle) — cap-as-frame, advance-with-gc, terminal state; step-by-step through `$x = 1`
+- [frame-lifecycle](https://puck.uno/requirements/cvm/frame-lifecycle) — cap-as-frame, the nine gc-cycle rules, auto-delete at terminal; step-by-step through `$x = 1`
 - [ownership](https://www.puck.uno/requirements/cvm/ownership) — buckets and stacks as refs; the one-hash-one-array cap; shared collections
 - [roles](https://www.puck.uno/requirements/cvm/roles) — role tree, `'r'` primitive, `core_role` marker, cycle-free-by-construction
 - [scopes](https://www.puck.uno/requirements/cvm/scopes) — the bucket → scopes → scopes[0] chain, hash-key identifier rule, `frame_scoped_vars` view
