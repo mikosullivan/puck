@@ -294,13 +294,22 @@ test('a frame cannot be its own parent', function()
 
 	-- Try to insert a frame whose parent_frame equals its own object_pk.
 	-- Need to supply the pk explicitly so we know the target value.
+	-- Two triggers apply: frames_parent_frame_not_self and
+	-- objects_parent_frame_must_be_frame (the target row doesn't exist
+	-- yet, so `select primitive from objects where object_pk = <self>`
+	-- returns null, and `null is not 'f'` fires the must-be-frame guard).
+	-- Either rejection is correct — both mean the insert is invalid.
 	local self_pk = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
 	local sql = string.format(
 		"insert into objects (object_pk, primitive, ast, stmt_idx, parent_frame, owner_role) "
 		.. "values ('%s', 'f', '[]', 0, '%s', '%s')",
 		self_pk, self_pk, user_pk)
-	assert_fails_with(db:exec(sql), db, 'frames_parent_frame_not_self',
-		'self-parenting frame rejected')
+	local rc = db:exec(sql)
+	assert(rc ~= sqlite.OK, 'self-parenting frame should have been rejected')
+	local msg = db:errmsg()
+	assert(msg:find('frames_parent_frame_not_self', 1, true)
+			or msg:find('parent_frame_must_be_frame', 1, true),
+		'expected frames_parent_frame_not_self or parent_frame_must_be_frame; got: ' .. tostring(msg))
 	db:close()
 end)
 
@@ -372,8 +381,15 @@ test('a frame at INSERT must have stmt_idx = 0', function()
 	local cap_pk = insert_process(db, user_pk)
 	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
 		.. "values ('f', '[]', 5, '" .. cap_pk .. "', '" .. user_pk .. "');"
-	assert_fails_with(db:exec(sql), db, 'frames_stmt_idx_must_start_at_zero',
-		'stmt_idx = 5 at insert rejected')
+	-- Two triggers apply: frames_stmt_idx_must_start_at_zero and
+	-- frames_stmt_idx_within_ast_bounds (5 > max(json_array_length('[]'),
+	-- 1) = 1). Either rejection is correct.
+	local rc = db:exec(sql)
+	assert(rc ~= sqlite.OK, 'stmt_idx = 5 at insert should have been rejected')
+	local msg = db:errmsg()
+	assert(msg:find('frames_stmt_idx_must_start_at_zero', 1, true)
+			or msg:find('frames_stmt_idx_out_of_bounds', 1, true),
+		'expected frames_stmt_idx_must_start_at_zero or frames_stmt_idx_out_of_bounds; got: ' .. tostring(msg))
 	db:close()
 end)
 
@@ -599,7 +615,15 @@ test('two full advance cycles in sequence', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
-	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
+
+	-- Use a length-2 ast so stmt_idx can reach 2 within the ast-bounds
+	-- cap (`stmt_idx <= max(json_array_length(ast), 1)`). insert_frame_0
+	-- uses a length-1 ast; that would fail cycle 2.
+	local parent_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}],[{\"in\":\"as\"},\"y\",{\"v\":2}]]', 0, '"
+		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do parent_pk = row.object_pk end
 
 	-- Cycle 1.
 	push_marker(db, parent_pk, user_pk)
@@ -1958,6 +1982,550 @@ test("CHECK rejects a too-long string", function()
 			.. "values ('abcdef01-2345-4678-9abc-def012345678-extra', 'h', '" .. user_pk .. "')"),
 		db, 'CHECK constraint',
 		'too-long string rejected')
+	db:close()
+end)
+
+test("CHECK rejects 36 hyphens (per-segment hex-only)", function()
+	-- The earlier CHECK accepted this because LIKE's `_` matches any
+	-- character and the global character class included `-`. Per-segment
+	-- substr checks now require actual hex inside each segment.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('------------------------------------', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'36 hyphens rejected')
+	db:close()
+end)
+
+test("CHECK rejects a hyphen inside a hex segment", function()
+	-- Length 36, hyphens at positions 9/14/19/24 (correct), but position 5
+	-- is a hyphen instead of hex. Fails the per-segment hex-only check on
+	-- the first segment.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (object_pk, primitive, owner_role) "
+			.. "values ('abcd-f01-2345-4678-9abc-def012345678', 'h', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'hyphen inside a segment rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- refs.debug is mutable
+-- `debug` is an informational label with no query path reading it,
+-- so freezing it at INSERT-time offers no invariant value. Carved
+-- out of `refs_no_update`'s WHEN clause (matches the same carve-out
+-- for objects.debug).
+-- ============================================================
+
+local function insert_scalar(db, owner_role)
+	local sql = "insert into objects (primitive, scalar_type, scalar_value, owner_role) "
+		.. "values ('o', 'n', 1, '" .. owner_role .. "') returning object_pk"
+	for row in db:nrows(sql) do
+		return row.object_pk
+	end
+end
+
+test('setting refs.debug from null to a value is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"), db, 'insert ref')
+
+	assert_ok(db:exec("update refs set debug = 'first label' where parent = '"
+		.. hash_pk .. "' and key = 'x'"), db, 'set debug from null')
+
+	local row = first(db, "select debug from refs where parent = '"
+		.. hash_pk .. "' and key = 'x'")
+	assert(row.debug == 'first label',
+		'debug should be "first label"; got: ' .. tostring(row.debug))
+	db:close()
+end)
+
+test('changing refs.debug to a different value is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx, debug) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0, 'first')"), db, 'insert with debug')
+
+	assert_ok(db:exec("update refs set debug = 'second' where parent = '"
+		.. hash_pk .. "' and key = 'x'"), db, 'update debug')
+
+	local row = first(db, "select debug from refs where parent = '"
+		.. hash_pk .. "' and key = 'x'")
+	assert(row.debug == 'second',
+		'debug should be "second"; got: ' .. tostring(row.debug))
+	db:close()
+end)
+
+test('clearing refs.debug (back to null) is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx, debug) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0, 'label')"), db, 'insert with debug')
+
+	assert_ok(db:exec("update refs set debug = null where parent = '"
+		.. hash_pk .. "' and key = 'x'"), db, 'clear debug')
+
+	local row = first(db, "select debug from refs where parent = '"
+		.. hash_pk .. "' and key = 'x'")
+	assert(row.debug == nil, 'debug should be null; got: ' .. tostring(row.debug))
+	db:close()
+end)
+
+test('changing refs.key is still rejected (regression)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"), db, 'insert ref')
+
+	assert_fails_with(
+		db:exec("update refs set key = 'y' where parent = '"
+			.. hash_pk .. "' and idx = 0"),
+		db, 'refs_immutable',
+		'changing key should still be rejected')
+	db:close()
+end)
+
+test('changing refs.child is still rejected (regression)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_a = insert_scalar(db, user_pk)
+	local child_b = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_a .. "', 'x', 0)"), db, 'insert ref')
+
+	assert_fails_with(
+		db:exec("update refs set child = '" .. child_b .. "' where parent = '"
+			.. hash_pk .. "' and key = 'x'"),
+		db, 'refs_immutable',
+		'changing child should still be rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- refs key-vs-idx: hash parents require a key; array parents forbid one.
+-- refs already enforces key + idx shape via CHECKs and unique
+-- indexes; these two triggers add "the parent primitive determines
+-- whether key or idx applies."
+-- ============================================================
+
+local function insert_array(db, owner_role)
+	local sql = "insert into objects (primitive, owner_role) values ('a', '"
+		.. owner_role .. "') returning object_pk"
+	for row in db:nrows(sql) do
+		return row.object_pk
+	end
+end
+
+test('hash parent with null key is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'refs_hash_key_required',
+		'null key under hash parent rejected')
+	db:close()
+end)
+
+test('hash parent with non-null key is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"),
+		db, 'non-null key under hash parent accepted')
+	db:close()
+end)
+
+test('array parent with non-null key is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local array_pk = insert_array(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. array_pk .. "', '" .. child_pk .. "', 'k', 0)"),
+		db, 'refs_array_key_forbidden',
+		'non-null key under array parent rejected')
+	db:close()
+end)
+
+test('array parent with null key is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local array_pk = insert_array(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. array_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'null key under array parent accepted')
+	db:close()
+end)
+
+test('non-container (object) parent with null key is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local owner_pk = insert_scalar(db, user_pk)
+	local child_pk = insert_hash(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. owner_pk .. "', '" .. child_pk .. "', null, 0)"),
+		db, 'null-keyed bucket-ref from a scalar owner accepted')
+	db:close()
+end)
+
+
+-- ============================================================
+-- parent_frame's target must be a frame.
+-- The column-level CHECK covers the ROW HOLDING the pointer (must
+-- be a frame); this trigger covers the TARGET (must also be a
+-- frame). Together they enforce "parent_frame links a frame to a
+-- frame."
+-- ============================================================
+
+test('parent_frame pointing at a non-frame row is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	-- A hash owned by user — non-frame target.
+	local hash_pk = insert_hash(db, user_pk)
+
+	-- Try to insert a frame whose parent_frame points at the hash.
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[]', 0, '" .. hash_pk .. "', '" .. user_pk .. "')"
+	assert_fails_with(db:exec(sql), db, 'parent_frame_must_be_frame',
+		'parent_frame → hash rejected')
+	db:close()
+end)
+
+test('parent_frame pointing at a role row is rejected', function()
+	-- Roles ('r' primitive) are the specific case the sprint index
+	-- flagged: nothing in the old schema prevented parent_frame from
+	-- pointing at a role.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[]', 0, '" .. engine_pk .. "', '" .. user_pk .. "')"
+	assert_fails_with(db:exec(sql), db, 'parent_frame_must_be_frame',
+		'parent_frame → role rejected')
+	db:close()
+end)
+
+test('parent_frame pointing at a frame is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	-- Insert a nested frame under the cap — normal case.
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[]', 0, '" .. cap_pk .. "', '" .. user_pk .. "')"
+	assert_ok(db:exec(sql), db, 'parent_frame → cap frame accepted')
+	db:close()
+end)
+
+
+-- ============================================================
+-- engine_class column
+-- Nullable text; when set, the row must be primitive='o'. What a
+-- specific value MEANS (which Lua class, how it dispatches, how it
+-- surfaces as a Caspian class) is deferred to a later sprint.
+-- ============================================================
+
+test('engine_class defaults to null on a fresh row', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	local row = first(db, "select engine_class from objects where object_pk = '" .. hash_pk .. "'")
+	assert(row.engine_class == nil,
+		'engine_class should default to null; got: ' .. tostring(row.engine_class))
+	db:close()
+end)
+
+test("setting engine_class on an object ('o') row is accepted", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (primitive, scalar_type, scalar_value, engine_class, owner_role) "
+			.. "values ('o', 's', 'blue', 'puck.uno/color', '" .. user_pk .. "')"),
+		db, "engine_class on 'o' row accepted")
+
+	local row = first(db, "select engine_class from objects where engine_class = 'puck.uno/color'")
+	assert(row and row.engine_class == 'puck.uno/color',
+		"engine_class value should round-trip")
+	db:close()
+end)
+
+test('setting engine_class on a hash row is rejected (cross-column CHECK)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, engine_class, owner_role) "
+			.. "values ('h', 'puck.uno/color', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		"engine_class on 'h' row rejected")
+	db:close()
+end)
+
+test('setting engine_class on an array row is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, engine_class, owner_role) "
+			.. "values ('a', 'puck.uno/color', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		"engine_class on 'a' row rejected")
+	db:close()
+end)
+
+test('setting engine_class on a role row is rejected', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, engine_class, parent_role, owner_role) "
+			.. "values ('r', 'puck.uno/color', '" .. engine_pk .. "', '" .. engine_pk .. "')"),
+		db, 'CHECK constraint',
+		"engine_class on 'r' row rejected")
+	db:close()
+end)
+
+
+-- ============================================================
+-- stmt_idx upper bound relative to ast.
+-- A frame's stmt_idx may not exceed max(json_array_length(ast), 1).
+-- Two shapes: length-N ast → {0..N} valid; empty ast → {0, 1} valid
+-- (0 = born, 1 = cap terminal). Enforced on INSERT and on UPDATE OF
+-- stmt_idx (two triggers, same error id).
+-- ============================================================
+
+test('empty ast: cap advance beyond 1 is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	-- Cap has ast='[]', stmt_idx=0. Advance to 1 is legal (terminal).
+	-- Advance to 2 should be out of bounds.
+	assert_ok(walker_advance(db, cap_pk, 1), db, 'cap advance 0→1 accepted')
+	-- Reset gc so we can advance again (need gc null before next update).
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "';"),
+		db, 'gc reset')
+	assert_fails_with(
+		walker_advance(db, cap_pk, 2),
+		db, 'frames_stmt_idx_out_of_bounds',
+		'advance beyond 1 on empty-ast frame rejected')
+	db:close()
+end)
+
+test('length-1 ast: advance beyond 1 is rejected on UPDATE', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	local frame_pk = insert_frame_0(db, cap_pk, user_pk)  -- length-1 ast
+
+	-- Advance 0 → 1 is legal (past the last statement, terminal).
+	push_marker(db, frame_pk, user_pk)
+	assert_ok(walker_advance(db, frame_pk, 1), db, 'advance 0→1 accepted')
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "';"),
+		db, 'gc reset')
+
+	-- Advance to 2 should be out of bounds.
+	assert_fails_with(
+		walker_advance(db, frame_pk, 2),
+		db, 'frames_stmt_idx_out_of_bounds',
+		'advance beyond 1 on length-1 ast rejected')
+	db:close()
+end)
+
+test('length-3 ast: INSERT with stmt_idx = 4 is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	-- Length-3 ast. Valid stmt_idx values: {0..3}. stmt_idx=4 is out.
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', "
+		.. "'[[{\"in\":\"as\"},\"a\",{\"v\":1}],[{\"in\":\"as\"},\"b\",{\"v\":2}],[{\"in\":\"as\"},\"c\",{\"v\":3}]]', "
+		.. "4, '" .. cap_pk .. "', '" .. user_pk .. "')"
+	assert_fails_with(db:exec(sql), db, 'frames_stmt_idx_out_of_bounds',
+		'INSERT with stmt_idx=4 on length-3 ast rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- in_trace CHECK: typeof + positive
+-- SQLite's `integer` is affinity, not strict typing, so `in_trace >
+-- 0` alone accepts real (1.5) and text ('abc'). The typeof clause
+-- closes the affinity hole; the `> 0` regression stays.
+-- ============================================================
+
+test('in_trace defaults to null on a fresh row', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	local row = first(db, "select in_trace from objects where object_pk = '" .. hash_pk .. "'")
+	assert(row.in_trace == nil, 'in_trace should default to null; got: ' .. tostring(row.in_trace))
+	db:close()
+end)
+
+test('setting in_trace to a positive integer is accepted', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	assert_ok(db:exec("update objects set in_trace = 1 where object_pk = '" .. hash_pk .. "'"),
+		db, 'in_trace=1 accepted')
+	assert_ok(db:exec("update objects set in_trace = 42 where object_pk = '" .. hash_pk .. "'"),
+		db, 'in_trace=42 accepted')
+	db:close()
+end)
+
+test('setting in_trace to a real (1.5) is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set in_trace = 1.5 where object_pk = '" .. hash_pk .. "'"),
+		db, 'CHECK constraint',
+		'in_trace=1.5 rejected')
+	db:close()
+end)
+
+test("setting in_trace to text ('abc') is rejected", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set in_trace = 'abc' where object_pk = '" .. hash_pk .. "'"),
+		db, 'CHECK constraint',
+		"in_trace='abc' rejected")
+	db:close()
+end)
+
+test('setting in_trace to 0 is rejected (regression of the > 0 rule)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set in_trace = 0 where object_pk = '" .. hash_pk .. "'"),
+		db, 'CHECK constraint',
+		'in_trace=0 rejected')
+	db:close()
+end)
+
+test('setting in_trace to a negative integer is rejected (regression)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+
+	assert_fails_with(
+		db:exec("update objects set in_trace = -1 where object_pk = '" .. hash_pk .. "'"),
+		db, 'CHECK constraint',
+		'in_trace=-1 rejected')
+	db:close()
+end)
+
+
+-- ============================================================
+-- refs.idx CHECK: typeof + non-negative
+-- Same SQLite affinity fix as in_trace — `integer` alone accepts
+-- 1.5 (real) and 'abc' (text) if the value satisfies `>= 0`. The
+-- typeof clause closes the hole; the `>= 0` regression stays.
+-- ============================================================
+
+test('refs.idx accepts a non-negative integer', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_ok(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', 0)"),
+		db, 'idx=0 accepted')
+	db:close()
+end)
+
+test('refs.idx = 1.5 (real) is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', 1.5)"),
+		db, 'CHECK constraint',
+		'idx=1.5 rejected')
+	db:close()
+end)
+
+test("refs.idx = 'abc' (text) is rejected", function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', 'abc')"),
+		db, 'CHECK constraint',
+		"idx='abc' rejected")
+	db:close()
+end)
+
+test('refs.idx = -1 is rejected (regression of the >= 0 rule)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_pk = insert_scalar(db, user_pk)
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. hash_pk .. "', '" .. child_pk .. "', 'x', -1)"),
+		db, 'CHECK constraint',
+		'idx=-1 rejected')
 	db:close()
 end)
 

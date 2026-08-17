@@ -41,9 +41,11 @@ create table objects (
 	-- 8-4-4-4-12 hex — accepts non-v4 UUIDs (v1, v3, v7, etc.) so
 	-- callers passing IDs generated elsewhere aren't rejected, but
 	-- requires lowercase so uppercase-vs-lowercase can't produce two
-	-- distinct PKs for the same conceptual UUID. Enforced via `like`
-	-- (positional shape) plus a `glob` reject on any character other
-	-- than lowercase hex or hyphen. [ghi]
+	-- distinct PKs for the same conceptual UUID. Per-segment `substr`
+	-- checks rather than one global char-class — earlier the LIKE-plus-
+	-- global-glob shape accepted 36 hyphens because `_` in LIKE matches
+	-- any character and `-` was in the allowed character class
+	-- everywhere. [ghi]
 	object_pk text primary key
 		default (
 			lower(
@@ -54,8 +56,18 @@ create table objects (
 				substr(hex(randomblob(6)), 1, 12)
 			)
 		)
-		check (object_pk like '________-____-____-____-____________'
-			and object_pk not glob '*[^0-9a-f-]*'),
+		check (
+			length(object_pk) = 36
+			and substr(object_pk, 9,  1) = '-'
+			and substr(object_pk, 14, 1) = '-'
+			and substr(object_pk, 19, 1) = '-'
+			and substr(object_pk, 24, 1) = '-'
+			and substr(object_pk, 1,  8)  not glob '*[^0-9a-f]*'
+			and substr(object_pk, 10, 4)  not glob '*[^0-9a-f]*'
+			and substr(object_pk, 15, 4)  not glob '*[^0-9a-f]*'
+			and substr(object_pk, 20, 4)  not glob '*[^0-9a-f]*'
+			and substr(object_pk, 25, 12) not glob '*[^0-9a-f]*'
+		),
 
 	-- Row-kind discriminator:
 	--   'o' → object
@@ -79,6 +91,15 @@ create table objects (
 		check (scalar_type is null or scalar_type != 'n' or typeof(scalar_value) in ('integer', 'real'))
 		check (scalar_type is null or scalar_type != 's' or typeof(scalar_value) = 'text')
 		check (scalar_type is not null or scalar_value is null),
+
+	-- Mask marker: names a Lua-side engine class whose behavior the row
+	-- surfaces as. Nullable — most rows carry null. Only `'o'` rows may
+	-- set it (a mask sits on an object; frames, roles, hashes, arrays
+	-- can't be masks). The meaning of a specific value (which Lua class
+	-- name, how it's looked up, how it surfaces as a Caspian class) is
+	-- deferred to a later sprint. [ghi]
+	engine_class text
+		check (engine_class is null or primitive = 'o'),
 
 	-- Core-role marker: 'e' (engine), 'c' (cache), 'u' (user). Nullable
 	-- — most rows aren't core roles. Unique per value via the partial
@@ -111,7 +132,9 @@ create table objects (
 	-- frame has an ast, no non-frame does. A cap frame (process=1) has
 	-- ast='[]' — the cap doesn't dispatch anything, its "one slot" is
 	-- just a lifecycle position (0=live, 1=terminal). Immutable once
-	-- set (see objects_ast_immutable). [ghi]
+	-- set (see objects_ast_immutable). SQL guarantees storage integrity
+	-- only (valid JSON, top-level array); semantic CaspM validity is
+	-- guaranteed out-of-band by the engine/parser. [ghi]
 	ast text
 		check ((primitive = 'f' and ast is not null)
 			or (primitive != 'f' and ast is null))
@@ -164,8 +187,10 @@ create table objects (
 	--     which does).
 	--   * Non-core rows default to unpinned. Omit the column to get null;
 	--     set `persistent = 1` to opt into pinning.
-	--   * Combined with objects_no_update_root_role's persistent guard,
-	--     core roles are pinned at INSERT and can never be unpinned. [ghi]
+	--   * The cross-column CHECK keeps core roles pinned on both write
+	--     paths — INSERT with `persistent = null` fails, and UPDATE that
+	--     clears `persistent` on a core-role row also fails (CHECKs fire
+	--     on INSERT and UPDATE). [ghi]
 	persistent integer
 		check (persistent = 1)
 		check (core_role is null or persistent is 1),
@@ -184,8 +209,15 @@ create table objects (
 	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
 	needs_trace integer check (needs_trace = 1),
 
-	-- GC scratch: callback-order index. Null in the common case. [ghi]
-	in_trace integer check (in_trace > 0),
+	-- GC scratch: callback-order index. Null in the common case.
+	-- `typeof(in_trace) = 'integer'` closes SQLite's affinity hole —
+	-- `integer` alone is affinity, not strict typing, so a real like
+	-- 1.5 or a text like 'abc' would satisfy `> 0` without the
+	-- typeof clause. [ghi]
+	in_trace integer check (
+		in_trace is null
+		or (typeof(in_trace) = 'integer' and in_trace > 0)
+	),
 
 	-- Human-readable label. Informational; no query path reads it. [ghi]
 	debug text
@@ -242,8 +274,12 @@ create table refs (
 	-- Hash entries use `key`; array entries leave key null and use idx. [ghi]
 	key     text,
 
-	-- Position for arrays; insertion order for hashes. [ghi]
-	idx     integer not null check (idx >= 0),
+	-- Position for arrays; insertion order for hashes.
+	-- `typeof(idx) = 'integer'` closes SQLite's affinity hole —
+	-- `integer` alone is affinity, not strict typing, so a real like
+	-- 1.5 or a text like 'abc' would satisfy `>= 0` without the
+	-- typeof clause. [ghi]
+	idx     integer not null check (typeof(idx) = 'integer' and idx >= 0),
 
 	-- Human-readable label. Informational. [ghi]
 	debug text,
@@ -287,9 +323,11 @@ begin
 	select raise(abort, 'refs_owner_at_most_one_hash_and_one_array: a non-container object can hold at most one hash (its bucket) and one array (its stack) as refs children');
 end;
 
--- refs rows are immutable; rebind is delete + insert. WHEN gates on
--- any actual column change; a no-op re-write of the same row is
--- silently accepted. [ghi]
+-- refs rows are immutable except for `debug`, which is a human-
+-- readable informational label with no query path reading it (so
+-- freezing it at INSERT-time offers no invariant value). Rebind is
+-- delete + insert. WHEN gates on any actual guarded-column change;
+-- a no-op re-write of the same row is silently accepted. [ghi]
 create trigger refs_no_update
 before update on refs
 when new.ref_pk is not old.ref_pk
@@ -297,7 +335,6 @@ when new.ref_pk is not old.ref_pk
 	or new.child is not old.child
 	or new.key is not old.key
 	or new.idx is not old.idx
-	or new.debug is not old.debug
 begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
@@ -324,6 +361,30 @@ when new.key is not null
 	)
 begin
 	select raise(abort, 'refs_hash_key_must_be_identifier: hash keys must match [a-zA-Z_][a-zA-Z0-9_]*');
+end;
+
+-- Hash entries REQUIRE a non-null key. Companion to
+-- refs_hash_key_must_be_identifier: that trigger checks the shape when
+-- a key IS present; this trigger rejects the missing-key case. Together
+-- they enforce "hash parent ⇒ key is a Caspian-compliant identifier."
+-- Only fires on INSERT because refs are immutable. [ghi]
+create trigger refs_hash_key_required
+before insert on refs
+when new.key is null
+	and (select primitive from objects where object_pk = new.parent) = 'h'
+begin
+	select raise(abort, 'refs_hash_key_required: refs whose parent is a HashPrimitive must have a non-null key');
+end;
+
+-- Array entries must NOT have a key — arrays use idx only. Rejects a
+-- key set on any ref whose parent is an ArrayPrimitive. Only fires on
+-- INSERT because refs are immutable. [ghi]
+create trigger refs_array_key_forbidden
+before insert on refs
+when new.key is not null
+	and (select primitive from objects where object_pk = new.parent) = 'a'
+begin
+	select raise(abort, 'refs_array_key_forbidden: refs whose parent is an ArrayPrimitive must have a null key (arrays use idx)');
 end;
 
 -- Scopes convention enforcement. A frame's bucket has a `scopes` key
@@ -436,6 +497,31 @@ end;
 --
 -- Bidirectional gc: null (executing) ↔ 1 (post-dispatch cleanup).
 
+-- stmt_idx upper bound relative to ast. A frame's stmt_idx may not
+-- exceed `max(json_array_length(ast), 1)`. Two shapes:
+--   * Non-empty ast (length N): stmt_idx in {0..N} — 0..N-1 is a
+--     position within the ast; N is one past the last statement
+--     (terminal for an ordinary frame).
+--   * Empty ast (length 0): stmt_idx in {0, 1} — 0 is the born state;
+--     1 is the cap's terminal transition (advanced past nothing).
+-- Enforced on INSERT and on UPDATE OF stmt_idx. [ghi]
+create trigger frames_stmt_idx_within_ast_bounds
+before insert on objects
+when new.primitive = 'f'
+	and new.stmt_idx is not null
+	and new.stmt_idx > max(json_array_length(new.ast), 1)
+begin
+	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
+end;
+
+create trigger frames_stmt_idx_within_ast_bounds_on_update
+before update of stmt_idx on objects
+when new.stmt_idx is not null
+	and new.stmt_idx > max(json_array_length(new.ast), 1)
+begin
+	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
+end;
+
 -- Invariant 1a: advancing stmt_idx requires gc = 1 in same UPDATE. [ghi]
 create trigger frames_advance_requires_gc
 before update of stmt_idx on objects
@@ -521,6 +607,22 @@ before insert on objects
 when new.primitive = 'f' and new.parent_frame = new.object_pk
 begin
 	select raise(abort, 'frames_parent_frame_not_self: a frame cannot be its own parent');
+end;
+
+-- parent_frame's target must itself be a frame. The column-level
+-- CHECK `check (parent_frame is null or primitive = 'f')` covers the
+-- ROW HOLDING the pointer (must be a frame); this trigger covers the
+-- TARGET (must also be a frame). Together they enforce
+-- "parent_frame links a frame to a frame." Direct primitive check on
+-- the target row. Mirrors objects_parent_role_must_be_role and
+-- objects_owner_role_must_be_role. No update-side trigger needed —
+-- objects_parent_frame_immutable already blocks changes after INSERT. [ghi]
+create trigger objects_parent_frame_must_be_frame
+before insert on objects
+when new.parent_frame is not null
+	and (select primitive from objects where object_pk = new.parent_frame) is not 'f'
+begin
+	select raise(abort, 'parent_frame_must_be_frame: parent_frame must reference a frame (primitive = ''f'')');
 end;
 
 -- `process` is immutable. A frame's identity as a cap (or not) is

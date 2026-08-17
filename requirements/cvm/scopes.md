@@ -28,6 +28,10 @@ The convention is enforced at the schema level so a violating write raises loudl
 
 Together these guarantee the shape: `scopes` → array → hashes, always.
 
+## Not enforced: which rows may CARRY a `scopes` ref
+
+By convention, a `'scopes'`-keyed ref lives on a **frame's bucket**. The schema does NOT enforce this on the parent side — any HashPrimitive can carry a `'scopes'` ref, whether or not it's a frame's bucket, and the three triggers above still fire on the child side. The looseness is intentional: enforcing "parent must be a frame's bucket" would require a subquery join on every ref insert, and the write path (`ensure_own_scope`) already places `scopes` refs on frame buckets and nowhere else. If a bug ever produces a `scopes` ref under a non-bucket hash, the child-side triggers keep the array-of-hashes shape correct; the misplaced ref just doesn't participate in `frame_scoped_vars` (which walks the chain from `object_bucket`).
+
 ## Hash-key identifier rule
 
 Any key inside a hash primitive (which includes the scope hashes above) must be a Caspian-compliant identifier — starts with a letter or underscore, then letters, digits, or underscores. Enforced by the `refs_hash_key_must_be_identifier` trigger using a GLOB pattern:
