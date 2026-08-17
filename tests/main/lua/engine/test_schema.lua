@@ -460,6 +460,36 @@ test('advance with gc explicitly null is rejected', function()
 	db:close()
 end)
 
+test('advance while gc is already 1 is rejected (cycle not completed)', function()
+	-- The canonical advance is a null→1 gc transition. Advancing while
+	-- gc is ALREADY 1 (skipping the reset step of the previous cycle)
+	-- must be rejected — otherwise the state machine's "one advance per
+	-- cycle" contract can be broken silently.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+
+	-- Use a length-2 ast so we have room for two advances.
+	local parent_pk
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}],[{\"in\":\"as\"},\"y\",{\"v\":2}]]', 0, '"
+		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do parent_pk = row.object_pk end
+
+	-- Cycle 1: canonical advance 0 → 1 with gc=1.
+	push_marker(db, parent_pk, user_pk)
+	assert_ok(walker_advance(db, parent_pk, 1), db, 'cycle 1 advance')
+	-- Deliberately DO NOT reset gc. Frame is now (stmt_idx=1, gc=1).
+
+	-- Attempt cycle 2 advance without first resetting gc → should reject.
+	push_marker(db, parent_pk, user_pk)
+	assert_fails_with(
+		walker_advance(db, parent_pk, 2),
+		db, 'frames_advance_requires_gc',
+		'advance while gc is already 1 rejected')
+	db:close()
+end)
+
 --[[
 Invariant 1b: setting gc=1 requires stmt_idx to advance in the same UPDATE.
 ]]
@@ -2323,6 +2353,75 @@ test('setting engine_class on a role row is rejected', function()
 			.. "values ('r', 'puck.uno/color', '" .. engine_pk .. "', '" .. engine_pk .. "')"),
 		db, 'CHECK constraint',
 		"engine_class on 'r' row rejected")
+	db:close()
+end)
+
+test('engine_class is immutable — UPDATE from one value to another is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (object_pk, primitive, scalar_type, scalar_value, engine_class, owner_role) "
+			.. "values ('11111111-1111-4111-8111-111111111111', 'o', 's', 'blue', 'puck.uno/color', '"
+			.. user_pk .. "')"),
+		db, 'insert with engine_class')
+
+	assert_fails_with(
+		db:exec("update objects set engine_class = 'puck.uno/other' "
+			.. "where object_pk = '11111111-1111-4111-8111-111111111111'"),
+		db, 'objects_engine_class_immutable',
+		'changing engine_class rejected')
+	db:close()
+end)
+
+test('engine_class is immutable — UPDATE from null to a value is also rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	-- Insert with no engine_class.
+	local pk = first(db, "insert into objects (primitive, scalar_type, scalar_value, owner_role) "
+		.. "values ('o', 's', 'blue', '" .. user_pk .. "') returning object_pk").object_pk
+
+	assert_fails_with(
+		db:exec("update objects set engine_class = 'puck.uno/color' where object_pk = '" .. pk .. "'"),
+		db, 'objects_engine_class_immutable',
+		'promoting a plain object to a masked one after INSERT is rejected')
+	db:close()
+end)
+
+test('engine_class is immutable — UPDATE from a value to null is also rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	local pk = first(db, "insert into objects (primitive, scalar_type, scalar_value, engine_class, owner_role) "
+		.. "values ('o', 's', 'blue', 'puck.uno/color', '" .. user_pk .. "') returning object_pk").object_pk
+
+	assert_fails_with(
+		db:exec("update objects set engine_class = null where object_pk = '" .. pk .. "'"),
+		db, 'objects_engine_class_immutable',
+		'clearing engine_class after INSERT is rejected')
+	db:close()
+end)
+
+test('engine_class is NOT unique — many rows may share the same value', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (primitive, scalar_type, scalar_value, engine_class, owner_role) "
+			.. "values ('o', 's', 'red',   'puck.uno/color', '" .. user_pk .. "')"),
+		db, 'first color row accepted')
+	assert_ok(
+		db:exec("insert into objects (primitive, scalar_type, scalar_value, engine_class, owner_role) "
+			.. "values ('o', 's', 'green', 'puck.uno/color', '" .. user_pk .. "')"),
+		db, 'second color row accepted')
+	assert_ok(
+		db:exec("insert into objects (primitive, scalar_type, scalar_value, engine_class, owner_role) "
+			.. "values ('o', 's', 'blue',  'puck.uno/color', '" .. user_pk .. "')"),
+		db, 'third color row accepted')
+
+	local n = first(db, "select count(*) as n from objects where engine_class = 'puck.uno/color'").n
+	assert(tonumber(n) == 3, 'three color rows expected; got: ' .. tostring(n))
 	db:close()
 end)
 

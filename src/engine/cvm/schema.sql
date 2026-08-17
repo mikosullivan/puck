@@ -314,7 +314,14 @@ end;
 -- no such cap — they hold as many children as they want by their
 -- native semantics. Owner-owns-bucket / owner-owns-stack is just a
 -- normal refs row now; the whole "ownership" story lives in this one
--- table. [ghi]
+-- table.
+--
+-- Buckets and stacks CAN be shared across multiple owners — the trigger
+-- caps a parent's outgoing 'h'/'a' children but places no cap on a
+-- child's incoming refs. Two 'o' rows can both point at the same hash;
+-- the graph reads exactly like the refs table shows. The trigger name
+-- says "owner" because "owner" is the domain term for the parent side
+-- of a bucket/stack ref, not because it implies exclusive ownership. [ghi]
 create trigger refs_owner_at_most_one_hash_and_one_array
 before insert on refs
 when (select primitive from objects where object_pk = new.parent) in ('o', 'f')
@@ -528,12 +535,19 @@ begin
 	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
 end;
 
--- Invariant 1a: advancing stmt_idx requires gc = 1 in same UPDATE. [ghi]
+-- Invariant 1a: advancing stmt_idx is a null→1 gc transition in the
+-- same UPDATE. The WHEN clause rejects three of the four cases where
+-- stmt_idx changes: gc stays null (advance without setting gc), gc
+-- was already 1 (advance while still in cleanup — cycle not
+-- completed), and gc going from 1 back to null while advancing. The
+-- only accepted shape is old.gc = null AND new.gc = 1 — the walker's
+-- canonical `UPDATE ... SET stmt_idx = stmt_idx + 1, gc = 1`. [ghi]
 create trigger frames_advance_requires_gc
 before update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx and new.gc is not 1
+when new.stmt_idx is not old.stmt_idx
+	and (old.gc is not null or new.gc is not 1)
 begin
-	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires gc=1 in the same UPDATE');
+	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires the same UPDATE to set gc from null to 1');
 end;
 
 -- Invariant 1b: setting gc=1 requires stmt_idx to advance in same UPDATE. [ghi]
@@ -603,6 +617,18 @@ before update of parent_frame on objects
 when new.parent_frame is not old.parent_frame
 begin
 	select raise(abort, 'objects_parent_frame_immutable: objects.parent_frame is immutable');
+end;
+
+-- `engine_class` is immutable. The mask marker is set at object
+-- creation and never changes. Many rows may share the same value
+-- (no uniqueness constraint) — that's the intent, since one Lua
+-- class typically backs many instances. Rejects only on actual
+-- change. [ghi]
+create trigger objects_engine_class_immutable
+before update of engine_class on objects
+when new.engine_class is not old.engine_class
+begin
+	select raise(abort, 'objects_engine_class_immutable: objects.engine_class is immutable');
 end;
 
 -- A frame cannot be its own parent. Defense-in-depth against a state
