@@ -20,7 +20,7 @@ way to check.
 
 local sqlite = require("lsqlite3")
 
-local SCHEMA_PATH = "src/engine/cvm/schema.sql"
+local SCHEMA_PATH = "production/src/engine/cvm/schema.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

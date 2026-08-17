@@ -24,16 +24,17 @@ readable — most fixtures don't need to spell out identical JSON
 twice.
 ]]
 
--- Wire up bare-name requires against ./src/engine/ and ./tests/main/lua/transpiler/.
--- Prepending to package.path preserves luarocks-provided paths (dkjson, etc.).
-package.path = "./src/engine/?.lua;./tests/main/lua/transpiler/?.lua;" .. package.path
+-- Wire up bare-name requires against ./production/src/engine/ and
+-- ./production/tests/main/lua/transpiler/. Prepending to package.path
+-- preserves luarocks-provided paths (dkjson, etc.).
+package.path = "./production/src/engine/?.lua;./production/tests/main/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 local normalize  = require("normalize")
 local extractor  = require("parse-extract")
 
 describe("transpile parse.casp", function()
-	local cases = extractor.extract("tests/main/lua/transpiler/parse.casp")
+	local cases = extractor.extract("production/tests/main/lua/transpiler/parse.casp")
 
 	for _, case in ipairs(cases) do
 		if case.kind == "expects" then

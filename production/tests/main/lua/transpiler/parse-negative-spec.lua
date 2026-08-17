@@ -20,13 +20,13 @@ purpose is negative coverage, so a non-raises fixture there is a
 fixture-format bug that must be surfaced loudly.
 ]]
 
-package.path = "./src/engine/?.lua;./tests/main/lua/transpiler/?.lua;" .. package.path
+package.path = "./production/src/engine/?.lua;./production/tests/main/lua/transpiler/?.lua;" .. package.path
 
 local transpiler = require("transpiler")
 local extractor  = require("parse-extract")
 
 describe("transpile parse-negative.casp", function()
-	local cases = extractor.extract("tests/main/lua/transpiler/parse-negative.casp")
+	local cases = extractor.extract("production/tests/main/lua/transpiler/parse-negative.casp")
 
 	for _, case in ipairs(cases) do
 		assert(case.kind == "raises",

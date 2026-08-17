@@ -28,7 +28,7 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local sqlite = require('lsqlite3')
 
-local SCHEMA_PATH = 'src/engine/cvm/schema.sql'
+local SCHEMA_PATH = 'production/src/engine/cvm/schema.sql'
 
 
 -- ------------------------------------------------------------
