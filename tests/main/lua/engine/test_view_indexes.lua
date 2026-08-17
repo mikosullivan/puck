@@ -90,18 +90,19 @@ test("roles: pk lookup does not fall back to a full scan", function()
 	db:close()
 end)
 
-test("roles: full listing uses the core_role + role_parent indexes, no full scan", function()
+test("roles: full listing uses the objects_roles partial index, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from roles")
-	-- The core_role='e' branch should hit the objects_core_role partial
-	-- unique index; the role_parent branch should hit its partial index.
-	-- Neither should scan.
-	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)",
-		"engine branch should use the objects_core_role partial unique index")
-	assert_plan_contains(p, "USING INDEX objects_role_parent",
-		"role_parent branch should use the partial index")
-	assert_plan_lacks(p, "SCAN objects",
-		"neither union branch should full-scan objects")
+	-- Under the 'r'-as-primitive design, the roles view is
+	-- `select object_pk from objects where primitive = 'r'` — a
+	-- single-column filter that reads through the objects_roles
+	-- partial index (WHERE primitive = 'r'). The plan reads
+	-- "SCAN objects USING COVERING INDEX objects_roles" — that's
+	-- a full scan OF THE INDEX (all indexed rows are wanted), not
+	-- a table scan; the partial predicate keeps it bounded to the
+	-- 'r'-primitive rows only.
+	assert_plan_contains(p, "USING COVERING INDEX objects_roles",
+		"roles view should use the objects_roles partial index")
 	db:close()
 end)
 
@@ -120,19 +121,23 @@ test("uspace: pk lookup uses the PK index in each union branch", function()
 	db:close()
 end)
 
-test("uspace: full listing uses core_role + role_parent + persistent + process indexes, no full scan", function()
+test("uspace: full listing uses roles + persistent + process indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
-	assert_plan_contains(p, "USING INDEX objects_core_role (core_role=?)",
-		"engine branch of roles → uspace should use the objects_core_role partial unique index")
-	assert_plan_contains(p, "USING INDEX objects_role_parent",
-		"role_parent branch should use the partial index")
+	assert_plan_contains(p, "USING COVERING INDEX objects_roles",
+		"roles branch (feeding uspace) should use the objects_roles partial index")
 	assert_plan_contains(p, "USING INDEX objects_persistent",
 		"persistent branch should use the partial index")
 	assert_plan_contains(p, "USING INDEX objects_process",
 		"cap-frame branch should use the objects_process partial index")
-	assert_plan_lacks(p, "SCAN objects",
-		"no branch of uspace should full-scan objects")
+	-- Every reference to `objects` in the plan should be qualified by
+	-- an index name — never a bare table scan. A partial-index covering
+	-- scan (SCAN objects USING COVERING INDEX ...) is fine.
+	for line in p:gmatch("[^\n]+") do
+		if line:match("SCAN objects") and not line:match("USING") then
+			error("uspace plan contains a bare table scan on objects:\n  " .. line)
+		end
+	end
 	db:close()
 end)
 
@@ -140,10 +145,10 @@ end)
 -- Underlying single-column filters that the views compose from
 -- =============================================================================
 
-test("`where role_parent is not null` uses the objects_role_parent partial index", function()
+test("`where parent_role is not null` uses the objects_parent_role partial index", function()
 	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where role_parent is not null")
-	assert_plan_contains(p, "USING INDEX objects_role_parent")
+	local p = plan(db, "select object_pk from objects where parent_role is not null")
+	assert_plan_contains(p, "USING INDEX objects_parent_role")
 	db:close()
 end)
 

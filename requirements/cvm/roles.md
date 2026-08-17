@@ -1,6 +1,7 @@
 ~~~vibecode
-{"doc": "sprint-note", "sprint": "roles-as-primitives",
-	"role": "Draft spec text for the roles-as-primitives design — a role is an `objects` row with `primitive = 'r'`. Single-section explainer, in the shape it'll take when promoted to requirements/cvm/roles.md."}
+{"doc": "requirements_cvm_roles",
+	"role": "Role storage in the CVM. A role is an `objects` row with `primitive = 'r'` — the whole role/non-role discriminator. Covers the single-root guarantee, cycle-free-by-construction property, `core_role` vs `parent_role` vs `owner_role`, and the invariant that roles can't hold state.",
+	"status": "V1 spec"}
 ~~~
 
 # Roles
@@ -16,6 +17,7 @@ Under the current CVM design, a role has one job: **exist in a strict hierarchic
 - **`primitive = 'r'`.** The whole discriminator; the `roles` view is `select object_pk from objects where primitive = 'r'`.
 - **`core_role`** — nullable text; when set, must be one of `'e'` (engine), `'c'` (cache), `'u'` (user). Cross-column checked so only `'r'` rows can carry it.
 - **`parent_role`** — nullable FK to `objects(object_pk)`. Cross-column checked so only `'r'` rows can carry it. The target must be an `'r'` row (enforced by `objects_parent_role_must_be_role`).
+- **`persistent = 1` is mandatory on core roles.** A cross-column CHECK (`check (core_role is null or persistent is 1)`) rejects any core-role INSERT that leaves `persistent` null. Non-core rows default to unpinned (null); pin by opting in with `persistent = 1`.
 - **Roles can't be `refs` parents.** `refs_role_cannot_be_parent` blocks any INSERT into `refs` where the parent row's primitive is `'r'`. Roles are structurally leaves in the object graph — nothing hangs off them.
 
 ## The role tree
@@ -28,13 +30,6 @@ Under the current CVM design, a role has one job: **exist in a strict hierarchic
 ## `owner_role` is not the same thing
 
 Any row (not just roles) can have `owner_role` set — that's the role that CREATED the row. Non-role rows are REQUIRED to have `owner_role` set (`objects_owner_role_required_on_non_roles`); role rows may omit it (the engine seed does). The `owner_role` FK must point at an `'r'` row (`objects_owner_role_must_be_role`), just like `parent_role`.
-
-## Why not use `'h'` for roles
-
-Earlier drafts stored roles as HashPrimitives (`primitive = 'h'`) marked by having `core_role` or `parent_role` set. That worked but had two costs:
-
-- **"Is this row a role?" required the `roles` view** — a UNION of two queries. Under `'r'`, it's a column read.
-- **Nothing prevented other primitives from becoming roles.** A scalar or frame with `parent_role` set was structurally a role per the view, even though nothing in the design supported that. `'r'`-as-primitive closes the hole by construction.
 
 ## Related
 

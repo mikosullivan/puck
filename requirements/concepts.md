@@ -56,7 +56,7 @@ If a section needs to describe an unusual situation, use language like "the case
 
 **When the engine detects an invariant violation, the whole program terminates immediately.** No cleanup, no rollback, no attempt to recover — the OS process dies where the check fired, with the error message emitted on the way out.
 
-Invariants are the schema-level and engine-level claims the runtime treats as always true. Under the SQLite-backed reference implementation, they're expressed as `CHECK` constraints, foreign keys, and triggers that `raise(abort, '<snake_id>: <message>')` — for example, `role_parent_must_be_role` when a non-role is proposed as a role's parent, `parent_must_be_primitive_container` when something tries to hang a ref off a non-container row, `objects_no_update` when an immutable column is mutated. Any check with an equivalent contract in the engine's own Lua code counts the same way.
+Invariants are the schema-level and engine-level claims the runtime treats as always true. Under the SQLite-backed reference implementation, they're expressed as `CHECK` constraints, foreign keys, and triggers that `raise(abort, '<snake_id>: <message>')` — for example, `parent_role_must_be_role` when a non-role is proposed as a role's parent, `parent_must_be_primitive_container` when something tries to hang a ref off a non-container row, `objects_no_update` when an immutable column is mutated. Any check with an equivalent contract in the engine's own Lua code counts the same way.
 
 When one fires, the runtime is in a state its authors didn't anticipate. Continuing — running cleanup, popping the call stack, rolling back a partial transaction, handing control back to user code — risks compounding the damage or hiding the underlying bug. So we don't.
 
@@ -70,7 +70,7 @@ When one fires, the runtime is in a state its authors didn't anticipate. Continu
 - **Post-crash state is trustworthy.** Nothing ran after the failure, so debugging can trust what it sees. Recovery paths that succeed some of the time leave debug state fuzzy.
 - **Simpler code path.** No cleanup-on-failure branches, no partial-rollback bookkeeping, no "are we consistent again?" audits. The engine doesn't grow error-recovery code that itself has to be correct.
 
-**The line between invariant and application error.** If a check exists to catch a bug the language wants a developer to fix, it's an invariant — fatal. If it exists to inform code about a runtime condition it might reasonably handle, it's an application error — catchable. A network fetch failing is application; a `role_parent` pointing at something that isn't a role is invariant.
+**The line between invariant and application error.** If a check exists to catch a bug the language wants a developer to fix, it's an invariant — fatal. If it exists to inform code about a runtime condition it might reasonably handle, it's an application error — catchable. A network fetch failing is application; a `parent_role` pointing at something that isn't a role is invariant.
 
 ## Long descriptive names for rarely-used surfaces
 

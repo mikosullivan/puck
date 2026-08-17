@@ -1585,5 +1585,200 @@ test('a core role\'s persistent field is still blocked by objects_no_update_root
 end)
 
 
+-- ============================================================
+-- Roles as primitives
+-- Under 'r'-as-primitive: a role is `primitive = 'r'`. The
+-- discriminator carries the whole role/non-role answer; the
+-- `roles` view is a single-column filter; and cross-column
+-- checks pin `core_role` / `parent_role` to `'r'` rows only.
+-- ============================================================
+
+test('seeded engine/cache/user rows have primitive = r', function()
+	local db = fresh_db()
+	for _, code in ipairs({'e', 'c', 'u'}) do
+		local row = first(db, "select primitive from objects where core_role = '" .. code .. "'")
+		assert(row.primitive == 'r',
+			"core_role='" .. code .. "' should have primitive='r'; got: " .. tostring(row.primitive))
+	end
+	db:close()
+end)
+
+test('non-r row with core_role is rejected (cross-column CHECK)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, scalar_type, scalar_value, core_role, owner_role) "
+			.. "values ('o', 'n', 42, 'e', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'scalar with core_role rejected')
+	db:close()
+end)
+
+test('non-r row with parent_role is rejected (cross-column CHECK)', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, parent_role, owner_role) "
+			.. "values ('h', '" .. engine_pk .. "', '" .. user_pk .. "')"),
+		db, 'CHECK constraint',
+		'hash with parent_role rejected')
+	db:close()
+end)
+
+test('a ref whose parent is a role row is rejected (roles cannot hold state)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local child_pk = first(db, "insert into objects (primitive, owner_role) values ('h', '"
+		.. user_pk .. "') returning object_pk").object_pk
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. user_pk .. "', '" .. child_pk .. "', 'x', 0)"),
+		db, 'refs_role_cannot_be_parent',
+		'ref-under-role rejected')
+	db:close()
+end)
+
+test('parent_role pointing at a non-role row is rejected', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+	local hash_pk = first(db, "insert into objects (primitive, owner_role) values ('h', '"
+		.. user_pk .. "') returning object_pk").object_pk
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, parent_role, owner_role) "
+			.. "values ('r', '" .. hash_pk .. "', '" .. engine_pk .. "')"),
+		db, 'parent_role_must_be_role',
+		'parent_role → non-role hash rejected')
+	db:close()
+end)
+
+test('only the engine role can be a role-tree root (parent_role = null)', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, owner_role) values ('r', '" .. engine_pk .. "')"),
+		db, 'objects_only_engine_can_be_role_root',
+		'root-shaped runtime role rejected')
+	db:close()
+end)
+
+test('roles view returns exactly the primitive = r rows', function()
+	local db = fresh_db()
+	local view_count = first(db, "select count(*) as n from roles").n
+	local r_count = first(db, "select count(*) as n from objects where primitive = 'r'").n
+	assert(tonumber(view_count) == tonumber(r_count),
+		'roles view count (' .. tostring(view_count) .. ') should equal count of primitive=r rows ('
+		.. tostring(r_count) .. ')')
+	assert(tonumber(view_count) == 3, 'roles view should have 3 rows at init; got: ' .. tostring(view_count))
+	db:close()
+end)
+
+test('deleting a role with descendants is rejected (parent_role FK RESTRICT)', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	-- Create a runtime role under engine, then a grandchild under it.
+	local parent_pk = first(db, "insert into objects (primitive, parent_role, owner_role) "
+		.. "values ('r', '" .. engine_pk .. "', '" .. engine_pk .. "') returning object_pk").object_pk
+	assert_ok(db:exec("insert into objects (primitive, parent_role, owner_role) "
+		.. "values ('r', '" .. parent_pk .. "', '" .. engine_pk .. "')"),
+		db, 'grandchild role insert')
+
+	-- Deleting the intermediate role should hit FK RESTRICT because
+	-- the grandchild still references it via parent_role.
+	assert_fails_with(
+		db:exec("delete from objects where object_pk = '" .. parent_pk .. "'"),
+		db, 'FOREIGN KEY constraint',
+		'delete of role with descendants rejected')
+	db:close()
+end)
+
+test('deleting a childless runtime role is accepted', function()
+	local db = fresh_db()
+	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
+
+	local role_pk = first(db, "insert into objects (primitive, parent_role, owner_role) "
+		.. "values ('r', '" .. engine_pk .. "', '" .. engine_pk .. "') returning object_pk").object_pk
+
+	assert_ok(db:exec("delete from objects where object_pk = '" .. role_pk .. "'"),
+		db, 'leaf role deletable')
+	db:close()
+end)
+
+test('seeded engine/cache/user rows all have persistent = 1 (mandatory for core roles)', function()
+	local db = fresh_db()
+	for _, code in ipairs({'e', 'c', 'u'}) do
+		local row = first(db, "select persistent from objects where core_role = '" .. code .. "'")
+		assert(tonumber(row.persistent) == 1,
+			"core_role='" .. code .. "' should have persistent=1; got: " .. tostring(row.persistent))
+	end
+	db:close()
+end)
+
+test('inserting a core role without persistent is rejected (cross-column CHECK)', function()
+	-- Uses a scratch schema with seed inserts commented out so the
+	-- core_role unique index doesn't intercept before the CHECK fires.
+	local schema = slurp(SCHEMA_PATH):gsub("insert into objects", "-- insert into objects")
+
+	local db = sqlite.open_memory()
+	db:exec('pragma foreign_keys = on;')
+	local rc = db:exec(schema)
+	assert(rc == sqlite.OK, 'schema-def apply failed: ' .. tostring(db:errmsg()))
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, core_role) values ('r', 'e')"),
+		db, 'CHECK constraint',
+		'core role with implicit-null persistent rejected')
+	assert_fails_with(
+		db:exec("insert into objects (primitive, core_role, persistent) values ('r', 'e', null)"),
+		db, 'CHECK constraint',
+		'core role with explicit-null persistent rejected')
+	assert_ok(
+		db:exec("insert into objects (primitive, core_role, persistent) values ('r', 'e', 1)"),
+		db, 'core role with persistent=1 accepted')
+	db:close()
+end)
+
+test('a non-core row inserted without persistent gets null (default = unpinned)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	local row = first(db, "insert into objects (primitive, owner_role) values ('h', '"
+		.. user_pk .. "') returning object_pk, persistent")
+	assert(row.persistent == nil,
+		'non-core hash without persistent should be null; got: ' .. tostring(row.persistent))
+	db:close()
+end)
+
+test('a non-core row can opt into pinning by setting persistent = 1', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_ok(
+		db:exec("insert into objects (primitive, owner_role, persistent) values ('h', '"
+			.. user_pk .. "', 1)"),
+		db, 'non-core row with persistent=1 accepted')
+	db:close()
+end)
+
+test('persistent = 0 is rejected (only 1 or null allowed)', function()
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	assert_fails_with(
+		db:exec("insert into objects (primitive, owner_role, persistent) values ('h', '"
+			.. user_pk .. "', 0)"),
+		db, 'CHECK constraint',
+		'persistent=0 rejected by the persistent CHECK')
+	db:close()
+end)
+
+
 -- Runner (tests/main/lua/engine/run.lua) aggregates results across
 -- files; no per-file report or os.exit here.

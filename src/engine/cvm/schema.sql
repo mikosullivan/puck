@@ -51,8 +51,9 @@ create table objects (
 	--   'h' → HashPrimitive
 	--   'a' → ArrayPrimitive
 	--   'f' → frame
+	--   'r' → role
 	-- [ghi]
-	primitive text not null check (primitive in ('o', 'h', 'a', 'f')),
+	primitive text not null check (primitive in ('o', 'h', 'a', 'f', 'r')),
 
 	-- Scalar type. Only meaningful when primitive = 'o'. [ghi]
 	scalar_type text
@@ -70,16 +71,29 @@ create table objects (
 
 	-- Core-role marker: 'e' (engine), 'c' (cache), 'u' (user). Nullable
 	-- — most rows aren't core roles. Unique per value via the partial
-	-- index below. [ghi]
-	core_role text check (core_role in ('e', 'c', 'u')),
+	-- index below. Only role rows ('r') may carry a core_role. [ghi]
+	core_role text
+		check (core_role in ('e', 'c', 'u'))
+		check (core_role is null or primitive = 'r'),
 
 	-- Role-tree parentage. Non-root roles set this. Immutable via
-	-- objects_role_parent_immutable. [ghi]
-	role_parent text references objects(object_pk) on delete cascade,
+	-- objects_parent_role_immutable. Only role rows ('r') may carry a
+	-- parent_role — enforced by the cross-column check below. The
+	-- target-primitive check (that parent_role points at an 'r' row)
+	-- lives in the objects_parent_role_must_be_role trigger. No
+	-- ON DELETE clause — defaults to NO ACTION, which with
+	-- `foreign_keys = on` acts as RESTRICT: a role can't be deleted if
+	-- any other role references it via parent_role. Force cleanup from
+	-- the leaves up. [ghi]
+	parent_role text
+		references objects(object_pk)
+		check (parent_role is null or primitive = 'r'),
 
 	-- Pointer to the role that created this row. Required for non-role
 	-- rows (see objects_owner_role_required_on_non_roles). Roles may
-	-- also carry it (cache and user are owned by engine). No cascade. [ghi]
+	-- also carry it (cache and user are owned by engine). No cascade.
+	-- Target-primitive check (points at an 'r' row) enforced by the
+	-- objects_owner_role_must_be_role trigger below. [ghi]
 	owner_role text references objects(object_pk),
 
 	-- CaspM tree as JSON text. Biconditional with primitive='f' — every
@@ -128,8 +142,22 @@ create table objects (
 	-- Buckets and stacks can be shared across multiple owners — the
 	-- graph reads exactly like the refs table shows.
 
-	-- Persistence pin. Rows with `persistent = 1` are kept alive. [ghi]
-	persistent integer check (persistent = 1),
+	-- Persistence pin. Rows with `persistent = 1` are kept alive; rows
+	-- with `persistent = null` (the SQL default when the column is
+	-- omitted) are ordinary and eligible for GC.
+	--
+	--   * Core-role rows MUST be pinned. The cross-column check rejects
+	--     any core-role INSERT that leaves persistent null (uses `is 1`
+	--     not `= 1` — SQL three-valued logic makes `null = 1` yield
+	--     NULL, which doesn't fire a CHECK; `null is 1` yields false,
+	--     which does).
+	--   * Non-core rows default to unpinned. Omit the column to get null;
+	--     set `persistent = 1` to opt into pinning.
+	--   * Combined with objects_no_update_root_role's persistent guard,
+	--     core roles are pinned at INSERT and can never be unpinned. [ghi]
+	persistent integer
+		check (persistent = 1)
+		check (core_role is null or persistent is 1),
 
 	-- gc-cycle state flag. Bidirectional: null (frame executing normally)
 	-- ↔ 1 (frame is past-dispatch, cleanup phase). The cycle:
@@ -164,8 +192,14 @@ create index objects_process on objects(process) where process = 1;
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
 create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
 
+-- Roles are a small population inside a large objects table. The `roles`
+-- view (see below) is `select object_pk from objects where primitive = 'r'`;
+-- this partial index keeps the view — and every uspace evaluation that
+-- pulls the roles branch — off a full table scan. [ghi]
+create index objects_roles on objects(object_pk) where primitive = 'r';
+
 -- Base immutability for objects. Per-column triggers below handle
--- core_role, role_parent, owner_role, and ast. [ghi]
+-- core_role, parent_role, owner_role, and ast. [ghi]
 create trigger objects_no_update
 before update on objects
 begin
@@ -210,6 +244,16 @@ create table refs (
 
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
+
+-- Role rows ('r') cannot be a ref parent. Roles don't carry state —
+-- nothing hangs off them. If role features grow later (permissions,
+-- config, etc.), that's a separate slice with its own rules. [ghi]
+create trigger refs_role_cannot_be_parent
+before insert on refs
+when (select primitive from objects where object_pk = new.parent) = 'r'
+begin
+	select raise(abort, 'refs_role_cannot_be_parent: role rows cannot be ref parents (roles do not carry state)');
+end;
 
 -- Non-container parents ('o', 'f') can hold at most one HashPrimitive
 -- child (which serves as its bucket) and at most one ArrayPrimitive
@@ -460,7 +504,7 @@ end;
 
 -- A frame cannot be its own parent. Defense-in-depth against a state
 -- that would spin the walker's "focus on deepest live child" traversal
--- forever. Parallels objects_role_parent_not_self. [ghi]
+-- forever. Parallels objects_parent_role_not_self. [ghi]
 create trigger frames_parent_frame_not_self
 before insert on objects
 when new.primitive = 'f' and new.parent_frame = new.object_pk
@@ -493,32 +537,22 @@ create unique index objects_one_child_per_frame on objects(parent_frame)
 create unique index objects_core_role on objects(core_role)
 	where core_role is not null;
 
--- Partial index on role_parent for role-tree traversal. [ghi]
-create index objects_role_parent on objects(role_parent) where role_parent is not null;
+-- Partial index on parent_role for role-tree traversal. [ghi]
+create index objects_parent_role on objects(parent_role) where parent_role is not null;
 
 create index objects_owner_role  on objects(owner_role)  where owner_role is not null;
 
 
 -- ------------------------------------------------------------
 -- Roles view — single source of truth for "what is a role."
--- ------------------------------------------------------------
--- Written as UNION rather than `where core_role = 'e' or role_parent
--- is not null` because the OR form defeats index selection — the
--- planner can't split an OR across two indexes. UNION lets each
--- branch use its own partial index. Verified by tests/view-indexes.lua. [ghi]
-
--- First branch matches only the engine (core_role = 'e', root of the
--- core-role tree). Cache, user, and every runtime-added role reach the
--- view via the second branch (they all have role_parent set). [ghi]
+-- A role is `primitive = 'r'`; the view is a single-column filter. [ghi]
 create view roles as
-	select object_pk from objects where core_role = 'e'
-	union
-	select object_pk from objects where role_parent is not null;
+	select object_pk from objects where primitive = 'r';
 
 
 -- ------------------------------------------------------------
 -- Immutability triggers for the role columns (core_role,
--- role_parent, owner_role). Below the roles view because they
+-- parent_role, owner_role). Below the roles view because they
 -- reference role concepts. [ghi]
 -- ------------------------------------------------------------
 
@@ -530,78 +564,87 @@ begin
 	select raise(abort, 'objects_core_role_immutable: objects.core_role is immutable');
 end;
 
--- role_parent is set at INSERT and never changes. Load-bearing: this
+-- parent_role is set at INSERT and never changes. Load-bearing: this
 -- immutability is what makes the role tree cycle-free. [ghi]
-create trigger objects_role_parent_immutable
-before update of role_parent on objects
-when new.role_parent is not old.role_parent
+create trigger objects_parent_role_immutable
+before update of parent_role on objects
+when new.parent_role is not old.parent_role
 begin
-	select raise(abort, 'objects_role_parent_immutable: objects.role_parent is immutable (no role reparenting)');
+	select raise(abort, 'objects_parent_role_immutable: objects.parent_role is immutable (no role reparenting)');
 end;
 
 -- Seeds three core-role rows: engine (root), cache, user (both children
--- of engine via role_parent, owned by engine via owner_role). All three
--- are HashPrimitives and pinned. Seeded before the ownership triggers
--- below, so any grandfathering is transparent. [ghi]
+-- of engine via parent_role, owned by engine via owner_role). All three
+-- are role primitives ('r') and pinned. Seeded before the ownership
+-- triggers below, so any grandfathering is transparent. [ghi]
 
 -- Engine — root of the core-role tree.
 insert into objects (primitive, core_role, persistent)
-	values ('h', 'e', 1);
+	values ('r', 'e', 1);
 
 -- Cache — child of engine, owned by engine.
-insert into objects (primitive, core_role, role_parent, owner_role, persistent)
-	values ('h', 'c',
+insert into objects (primitive, core_role, parent_role, owner_role, persistent)
+	values ('r', 'c',
 		(select object_pk from objects where core_role = 'e'),
 		(select object_pk from objects where core_role = 'e'),
 		1);
 
 -- User — child of engine, owned by engine.
-insert into objects (primitive, core_role, role_parent, owner_role, persistent)
-	values ('h', 'u',
+insert into objects (primitive, core_role, parent_role, owner_role, persistent)
+	values ('r', 'u',
 		(select object_pk from objects where core_role = 'e'),
 		(select object_pk from objects where core_role = 'e'),
 		1);
 
--- Roles may carry owner_role (cache and user are owned by engine).
--- Non-role rows must have owner_role set. [ghi]
+-- Non-role rows must have owner_role set. Roles ('r') may omit it —
+-- the engine seed does. Direct primitive check reads cleaner than
+-- the pre-'r' composite test on parent_role + core_role. [ghi]
 create trigger objects_owner_role_required_on_non_roles
 before insert on objects
+when new.primitive != 'r' and new.owner_role is null
 begin
-	select case
-		when new.role_parent is null and new.core_role is null
-				and new.owner_role is null
-			then raise(abort, 'objects_owner_role_required: a non-role must have owner_role set')
-	end;
+	select raise(abort, 'objects_owner_role_required: a non-role must have owner_role set');
 end;
 
--- Every non-root role's role_parent must point at an existing role. [ghi]
-create trigger objects_role_parent_must_be_role
+-- Every non-root role's parent_role must point at a role. Direct
+-- primitive check on the target row — no view subquery. [ghi]
+create trigger objects_parent_role_must_be_role
 before insert on objects
-when new.role_parent is not null
+when new.parent_role is not null
+	and (select primitive from objects where object_pk = new.parent_role) is not 'r'
 begin
-	select case
-		when (select 1 from roles where object_pk = new.role_parent) is null
-		then raise(abort, 'role_parent_must_be_role: role_parent must reference a role')
-	end;
+	select raise(abort, 'parent_role_must_be_role: parent_role must reference a role (primitive = ''r'')');
 end;
 
--- role_parent cannot be self. Defense-in-depth with a specific error ID. [ghi]
-create trigger objects_role_parent_not_self
+-- parent_role cannot be self. Defense-in-depth with a specific error ID. [ghi]
+create trigger objects_parent_role_not_self
 before insert on objects
-when new.role_parent is not null and new.role_parent = new.object_pk
+when new.parent_role is not null and new.parent_role = new.object_pk
 begin
-	select raise(abort, 'objects_role_parent_not_self: role_parent cannot equal object_pk');
+	select raise(abort, 'objects_parent_role_not_self: parent_role cannot equal object_pk');
 end;
 
--- owner_role, if set, must point at an existing role. [ghi]
+-- The engine role is the only role that can be tree-root — every
+-- other role (cache, user, and any runtime-added role) must have a
+-- parent_role. Locks the "single root" shape of the role tree at
+-- INSERT time. [ghi]
+create trigger objects_only_engine_can_be_role_root
+before insert on objects
+when new.primitive = 'r'
+	and new.parent_role is null
+	and new.core_role is not 'e'
+begin
+	select raise(abort, 'objects_only_engine_can_be_role_root: only the engine role can have parent_role = null; every other role must have a parent_role');
+end;
+
+-- owner_role, if set, must point at a role. Direct primitive check
+-- on the target row — no view subquery. [ghi]
 create trigger objects_owner_role_must_be_role
 before insert on objects
 when new.owner_role is not null
+	and (select primitive from objects where object_pk = new.owner_role) is not 'r'
 begin
-	select case
-		when (select 1 from roles where object_pk = new.owner_role) is null
-		then raise(abort, 'owner_role_must_be_role: owner_role must reference a role')
-	end;
+	select raise(abort, 'owner_role_must_be_role: owner_role must reference a role (primitive = ''r'')');
 end;
 
 -- owner_role is immutable at INSERT — no reparenting. [ghi]
@@ -620,7 +663,9 @@ begin
 	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk');
 end;
 
--- Guards any core-role row. [ghi]
+-- Guards any core-role row. `old.core_role is not null` is sufficient —
+-- the cross-column check on core_role means only 'r' rows can have it
+-- set, so this WHEN implicitly filters to core-role 'r' rows. [ghi]
 create trigger objects_no_delete_root_role
 before delete on objects
 when old.core_role is not null
@@ -634,7 +679,7 @@ end;
 -- GC-scratch columns and are freely writable on core roles too —
 -- otherwise deleting a ref whose child is a core role would fail (the
 -- ref-delete trigger marks the child needs_trace=1 and would hit this
--- guard). See sprints/close-schema-holes/ref-delete-blockers. [ghi]
+-- guard). [ghi]
 create trigger objects_no_update_root_role
 before update on objects
 when old.core_role is not null
@@ -644,7 +689,7 @@ when old.core_role is not null
 		or new.scalar_type is not old.scalar_type
 		or new.scalar_value is not old.scalar_value
 		or new.core_role is not old.core_role
-		or new.role_parent is not old.role_parent
+		or new.parent_role is not old.parent_role
 		or new.owner_role is not old.owner_role
 		or new.ast is not old.ast
 		or new.stmt_idx is not old.stmt_idx
@@ -746,7 +791,11 @@ create index objects_frame_by_parent on objects(parent_frame)
 -- ------------------------------------------------------------
 
 create view uspace as
-	-- Every role (root + non-root) — pulled from the roles view. [ghi]
+	-- Every role (root + non-root) — pulled from the roles view.
+	-- Roles branch is now a single-column filter on `primitive = 'r'`
+	-- via the roles view; the eventual test_view_indexes.lua uspace
+	-- plan will show one lookup on this branch, not the historical
+	-- UNION-of-two. [ghi]
 	select object_pk from roles
 	union
 	-- Objects flagged persistent. [ghi]
