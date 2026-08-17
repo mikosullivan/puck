@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.76830885"
-     inkscape:cx="620.84408"
-     inkscape:cy="125.60053"
+     inkscape:zoom="1.2151749"
+     inkscape:cx="485.11534"
+     inkscape:cy="225.07048"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
@@ -130,102 +130,15 @@
      id="layer1"
      inkscape:label="diagram"
      transform="translate(-414.4918,-540.99647)">
-    <path
-       class="fk-arrow"
-       d="M 1231.7189,994.6261 V 884.38262"
-       id="path2381"
-       style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
-    <g
-       transform="translate(1230.5885,920.86815)"
-       id="g2389">
-      <rect
-         x="-40.033443"
-         y="-11"
-         width="82.327629"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect2383"
-         style="fill:#c7e2e4;stroke:none;stroke-width:1" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text2387"
-         style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
-         xml:space="preserve"><tspan
-           x="0"
-           y="5"
-           id="tspan5020">trace_pk</tspan></text>
-    </g>
-    <path
-       class="fk-arrow"
-       d="M 1183.5169,973.33706 H 1063.0416"
-       id="path2371"
-       style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
-    <g
-       transform="translate(1128.2947,972.41909)"
-       id="g2379">
-      <rect
-         x="-40.033443"
-         y="-11"
-         width="82.327629"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect2373"
-         style="fill:#c7e2e4;stroke:none;stroke-width:1" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text2377"
-         style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
-         xml:space="preserve"><tspan
-           x="0"
-           y="5"
-           id="tspan5022">object_pk</tspan></text>
-    </g>
-    <path
-       class="fk-arrow"
-       d="M 1183.5169,815.33706 H 1063.0416"
-       id="path1966"
-       style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
-    <g
-       transform="translate(1128.2947,814.41909)"
-       id="g1974">
-      <rect
-         x="-40.033443"
-         y="-11"
-         width="82.327629"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect1968"
-         style="fill:#c7e2e4;stroke:none;stroke-width:1" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text1972"
-         style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
-         xml:space="preserve"><tspan
-           x="0"
-           y="5"
-           id="tspan5024">object_pk</tspan></text>
-    </g>
     <g
        transform="matrix(1.4457791,0,0,1.4474001,792.76901,550.404)"
        id="g575"
        style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-width:0.691281">
       <rect
          x="0.16671056"
-         y="0.16668473"
+         y="0.16664372"
          width="179.66658"
-         height="332.11441"
+         height="296.62631"
          rx="5.9888859"
          ry="8.4097929"
          fill="#ffffff"
@@ -256,127 +169,125 @@
          id="text1026">object_pk (uuid)</text>
       <text
          x="32"
-         y="62"
+         y="61.435669"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1028">primitive</text>
       <text
          x="32"
-         y="79.300003"
+         y="78.871338"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1030">scalar_type</text>
       <text
          x="32"
-         y="96.599998"
+         y="96.355347"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1032">scalar_value</text>
       <text
          x="32"
-         y="113.9"
+         y="113.74268"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1034">engine_class</text>
       <text
          x="32"
-         y="131.2"
+         y="131.22668"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1036">core_role</text>
+      <g
+         id="g1153"
+         transform="translate(0,0.11401498)">
+        <text
+           x="32"
+           y="148.5"
+           font-size="11px"
+           fill="#616161"
+           style="stroke-width:0.47787"
+           id="text1038">parent_role</text>
+        <path
+           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+           d="m 12.978052,149.5476 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           sodipodi:nodetypes="csssc"
+           id="path1040" />
+      </g>
+      <g
+         id="g1157"
+         transform="translate(0,0.29802393)">
+        <text
+           x="32"
+           y="165.8"
+           font-size="11px"
+           fill="#616161"
+           style="stroke-width:0.47787"
+           id="text1042">owner_role</text>
+        <path
+           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+           d="m 12.978052,166.79926 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           sodipodi:nodetypes="csssc"
+           id="path1044" />
+      </g>
       <text
          x="32"
-         y="148.5"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1038">parent_role</text>
-      <path
-         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 12.978052,149.5 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
-         sodipodi:nodetypes="csssc"
-         id="path1040" />
-      <text
-         x="32"
-         y="165.8"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1042">owner_role</text>
-      <path
-         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 12.978052,166.85 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
-         sodipodi:nodetypes="csssc"
-         id="path1044" />
-      <text
-         x="32"
-         y="183.10001"
+         y="184.14331"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1046">ast</text>
       <text
          x="32"
-         y="200.39999"
+         y="200.96936"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1048">stmt_idx</text>
       <text
          x="32"
-         y="217.7"
+         y="217.33081"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1050">process</text>
+      <g
+         id="g1161"
+         transform="translate(0,0.78698971)">
+        <text
+           x="32"
+           y="235"
+           font-size="11px"
+           fill="#616161"
+           style="stroke-width:0.47787"
+           id="text1052">parent_frame</text>
+        <path
+           style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
+           d="m 12.978052,236.05297 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           sodipodi:nodetypes="csssc"
+           id="path1054" />
+      </g>
       <text
          x="32"
-         y="235"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1052">parent_frame</text>
-      <path
-         style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-         d="m 12.978052,236.05 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
-         sodipodi:nodetypes="csssc"
-         id="path1054" />
-      <text
-         x="32"
-         y="252.3"
+         y="253.22803"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1056">persistent</text>
       <text
          x="32"
-         y="269.60001"
+         y="269.63782"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1058">gc</text>
       <text
          x="32"
-         y="286.89999"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1060">needs_trace</text>
-      <text
-         x="32"
-         y="304.20001"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1062">in_trace</text>
-      <text
-         x="32"
-         y="321.5"
+         y="288.09937"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
@@ -637,269 +548,371 @@
            id="text-cl-method-name">col: method_name</text>
       </g>
     </g>
-    <path
-       class="fk-arrow"
-       d="M 1183.5169,597.19707 H 1063.0416"
-       id="path-refs-objects-2" />
-    <path
-       class="fk-arrow"
-       d="M 1183.5169,642.0977 H 1063.0416"
-       id="path2376" />
     <g
-       transform="translate(1129.4251,596.27909)"
-       id="fk-label-parent">
-      <rect
-         x="-33"
-         y="-11"
-         width="66"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect-fk-label-parent" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text-fk-label-parent">parent</text>
-    </g>
-    <g
-       transform="translate(1129.4251,641.85204)"
-       id="fk-label-9">
-      <rect
-         x="-29"
-         y="-11"
-         width="58"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect11597" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text11599">child</text>
-    </g>
-    <path
-       class="fk-arrow"
-       d="M 1183.5169,729.33706 H 1063.0416"
-       id="path-refs-objects-2-5"
-       style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
-    <g
-       transform="translate(1128.2947,728.41909)"
-       id="fk-label-parent-3">
-      <rect
-         x="-40.033443"
-         y="-11"
-         width="82.327629"
-         height="22"
-         rx="4"
-         ry="4"
-         class="fk-label-rect"
-         id="rect-fk-label-parent-5"
-         style="fill:#c7e2e4;stroke:none;stroke-width:1" />
-      <text
-         x="0"
-         y="5"
-         class="fk-label-text"
-         id="text-fk-label-parent-6"
-         style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
-         xml:space="preserve"><tspan
+       id="g1370">
+      <path
+         class="fk-arrow"
+         d="M 1183.5169,597.19707 H 1063.0416"
+         id="path-refs-objects-2" />
+      <path
+         class="fk-arrow"
+         d="M 1183.5169,642.0977 H 1063.0416"
+         id="path2376" />
+      <g
+         transform="translate(1129.4251,596.27909)"
+         id="fk-label-parent">
+        <rect
+           x="-33"
+           y="-11"
+           width="66"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect-fk-label-parent" />
+        <text
            x="0"
            y="5"
-           id="tspan5026">object_pk</tspan></text>
+           class="fk-label-text"
+           id="text-fk-label-parent">parent</text>
+      </g>
+      <g
+         transform="translate(1129.4251,641.85204)"
+         id="fk-label-9">
+        <rect
+           x="-29"
+           y="-11"
+           width="58"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect11597" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text11599">child</text>
+      </g>
+      <g
+         transform="translate(1183.284,563.06557)"
+         id="g589"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="180"
+           height="112"
+           rx="6"
+           ry="6"
+           fill="#ffffff"
+           stroke="#26a69a"
+           stroke-width="1.5"
+           id="rect577" />
+        <path
+           d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+           fill="#26a69a"
+           id="path579" />
+        <text
+           x="90"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text581">refs</text>
+        <text
+           x="10"
+           y="44"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text583">PK: ref_pk</text>
+        <text
+           x="10"
+           y="60"
+           font-size="11px"
+           fill="#616161"
+           id="text585">FK: parent</text>
+        <text
+           x="10"
+           y="74"
+           font-size="11px"
+           fill="#616161"
+           id="text587">FK: child</text>
+        <text
+           x="10"
+           y="88"
+           font-size="11px"
+           fill="#616161"
+           id="text-rel-key">col: key</text>
+        <text
+           x="10"
+           y="102"
+           font-size="11px"
+           fill="#616161"
+           id="text-rel-idx">col: idx</text>
+      </g>
     </g>
     <g
-       transform="translate(1183.284,563.06557)"
-       id="g589"
-       style="font-family:'Helvetica Neue', Arial, sans-serif">
-      <rect
-         x="0"
-         y="0"
-         width="180"
-         height="112"
-         rx="6"
-         ry="6"
-         fill="#ffffff"
-         stroke="#26a69a"
-         stroke-width="1.5"
-         id="rect577" />
+       id="g1351"
+       transform="translate(0,-24)">
       <path
-         d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
-         fill="#26a69a"
-         id="path579" />
-      <text
-         x="90"
-         y="18"
-         text-anchor="middle"
-         font-size="13px"
-         font-weight="700"
-         fill="#ffffff"
-         id="text581">refs</text>
-      <text
-         x="10"
-         y="44"
-         font-size="11px"
-         font-weight="700"
-         fill="#212121"
-         id="text583">PK: ref_pk</text>
-      <text
-         x="10"
-         y="60"
-         font-size="11px"
-         fill="#616161"
-         id="text585">FK: parent</text>
-      <text
-         x="10"
-         y="74"
-         font-size="11px"
-         fill="#616161"
-         id="text587">FK: child</text>
-      <text
-         x="10"
-         y="88"
-         font-size="11px"
-         fill="#616161"
-         id="text-rel-key">col: key</text>
-      <text
-         x="10"
-         y="102"
-         font-size="11px"
-         fill="#616161"
-         id="text-rel-idx">col: idx</text>
+         class="fk-arrow"
+         d="M 1183.5169,729.33706 H 1063.0416"
+         id="path-refs-objects-2-5"
+         style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
+      <g
+         transform="translate(1128.2947,728.41909)"
+         id="fk-label-parent-3">
+        <rect
+           x="-40.033443"
+           y="-11"
+           width="82.327629"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect-fk-label-parent-5"
+           style="fill:#c7e2e4;stroke:none;stroke-width:1" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text-fk-label-parent-6"
+           style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
+           xml:space="preserve"><tspan
+             x="0"
+             y="5"
+             id="tspan1513">object_pk</tspan></text>
+      </g>
+      <g
+         transform="translate(1182.7494,711.75921)"
+         id="g572"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="97.938965"
+           height="61.733177"
+           rx="6"
+           ry="5.9999995"
+           fill="#ffffff"
+           stroke="#26a69a"
+           stroke-width="1.5"
+           id="rect556" />
+        <path
+           d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
+           fill="#26a69a"
+           id="path558"
+           style="stroke-width:0.999997" />
+        <text
+           x="47.193272"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text560">needs_trace</text>
+        <text
+           x="10"
+           y="40"
+           font-size="11px"
+           fill="#616161"
+           id="text564">col: process_pk</text>
+        <text
+           x="10"
+           y="54"
+           font-size="11px"
+           fill="#616161"
+           id="text566">FK: object_pk</text>
+      </g>
     </g>
     <g
-       transform="translate(1182.7494,711.75921)"
-       id="g572"
-       style="font-family:'Helvetica Neue', Arial, sans-serif">
-      <rect
-         x="0"
-         y="0"
-         width="97.938965"
-         height="61.733177"
-         rx="6"
-         ry="5.9999995"
-         fill="#ffffff"
-         stroke="#26a69a"
-         stroke-width="1.5"
-         id="rect556" />
+       id="g1338"
+       transform="translate(0,-24)">
       <path
-         d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
-         fill="#26a69a"
-         id="path558"
-         style="stroke-width:0.999997" />
-      <text
-         x="47.193272"
-         y="18"
-         text-anchor="middle"
-         font-size="13px"
-         font-weight="700"
-         fill="#ffffff"
-         id="text560">needs_trace</text>
-      <text
-         x="10"
-         y="40"
-         font-size="11px"
-         fill="#616161"
-         id="text564">col: process_pk</text>
-      <text
-         x="10"
-         y="54"
-         font-size="11px"
-         fill="#616161"
-         id="text566">FK: object_pk</text>
+         class="fk-arrow"
+         d="M 1183.5169,815.33706 H 1063.0416"
+         id="path1966"
+         style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
+      <g
+         transform="translate(1128.2947,814.41909)"
+         id="g1974">
+        <rect
+           x="-40.033443"
+           y="-11"
+           width="82.327629"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect1968"
+           style="fill:#c7e2e4;stroke:none;stroke-width:1" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text1972"
+           style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
+           xml:space="preserve"><tspan
+             x="0"
+             y="5"
+             id="tspan1515">object_pk</tspan></text>
+      </g>
+      <g
+         transform="translate(1182.7494,798.75921)"
+         id="g-traces"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="97.938965"
+           height="75.733177"
+           rx="6"
+           ry="5.9999995"
+           fill="#ffffff"
+           stroke="#26a69a"
+           stroke-width="1.5"
+           id="rect-traces"
+           style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
+        <path
+           d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
+           fill="#26a69a"
+           id="path-traces"
+           style="stroke-width:0.999997" />
+        <text
+           x="47.193272"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text-traces-title">traces</text>
+        <text
+           x="10"
+           y="40"
+           font-size="11px"
+           font-weight="700"
+           fill="#212121"
+           id="text-traces-pk">PK: trace_pk</text>
+        <text
+           x="10"
+           y="54"
+           font-size="11px"
+           fill="#616161"
+           id="text-traces-object">FK: object_pk</text>
+        <text
+           x="10"
+           y="68"
+           font-size="11px"
+           fill="#616161"
+           id="text-traces-done">col: done</text>
+      </g>
     </g>
     <g
-       transform="translate(1182.7494,798.75921)"
-       id="g-traces"
-       style="font-family:'Helvetica Neue', Arial, sans-serif">
-      <rect
-         x="0"
-         y="0"
-         width="97.938965"
-         height="75.733177"
-         rx="6"
-         ry="5.9999995"
-         fill="#ffffff"
-         stroke="#26a69a"
-         stroke-width="1.5"
-         id="rect-traces"
-         style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
+       id="g1324"
+       transform="translate(0,-26)">
       <path
-         d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
-         fill="#26a69a"
-         id="path-traces"
-         style="stroke-width:0.999997" />
-      <text
-         x="47.193272"
-         y="18"
-         text-anchor="middle"
-         font-size="13px"
-         font-weight="700"
-         fill="#ffffff"
-         id="text-traces-title">traces</text>
-      <text
-         x="10"
-         y="40"
-         font-size="11px"
-         font-weight="700"
-         fill="#212121"
-         id="text-traces-pk">PK: trace_pk</text>
-      <text
-         x="10"
-         y="54"
-         font-size="11px"
-         fill="#616161"
-         id="text-traces-object">FK: object_pk</text>
-      <text
-         x="10"
-         y="68"
-         font-size="11px"
-         fill="#616161"
-         id="text-traces-done">col: done</text>
-    </g>
-    <g
-       transform="translate(1182.7494,946.75921)"
-       id="g-in-trace"
-       style="font-family:'Helvetica Neue', Arial, sans-serif">
-      <rect
-         x="0"
-         y="0"
-         width="97.938965"
-         height="61.733177"
-         rx="6"
-         ry="5.9999995"
-         fill="#ffffff"
-         stroke="#26a69a"
-         stroke-width="1.5"
-         id="rect-in-trace"
-         style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
+         class="fk-arrow"
+         d="M 1231.7189,994.6261 V 884.38262"
+         id="path2381"
+         style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
+      <g
+         transform="translate(1230.5885,920.86815)"
+         id="g2389">
+        <rect
+           x="-40.033443"
+           y="-11"
+           width="82.327629"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect2383"
+           style="fill:#c7e2e4;stroke:none;stroke-width:1" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text2387"
+           style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
+           xml:space="preserve"><tspan
+             x="0"
+             y="5"
+             id="tspan1517">trace_pk</tspan></text>
+      </g>
       <path
-         d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
-         fill="#26a69a"
-         id="path-in-trace"
-         style="stroke-width:0.999997" />
-      <text
-         x="47.193272"
-         y="18"
-         text-anchor="middle"
-         font-size="13px"
-         font-weight="700"
-         fill="#ffffff"
-         id="text-in-trace-title">in_trace</text>
-      <text
-         x="10"
-         y="40"
-         font-size="11px"
-         fill="#616161"
-         id="text-in-trace-trace">FK: trace_pk</text>
-      <text
-         x="10"
-         y="54"
-         font-size="11px"
-         fill="#616161"
-         id="text-in-trace-object">FK: object_pk</text>
+         class="fk-arrow"
+         d="M 1183.5169,973.33706 H 1063.0416"
+         id="path2371"
+         style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36);paint-order:stroke fill markers" />
+      <g
+         transform="translate(1128.2947,972.41909)"
+         id="g2379">
+        <rect
+           x="-40.033443"
+           y="-11"
+           width="82.327629"
+           height="22"
+           rx="4"
+           ry="4"
+           class="fk-label-rect"
+           id="rect2373"
+           style="fill:#c7e2e4;stroke:none;stroke-width:1" />
+        <text
+           x="0"
+           y="5"
+           class="fk-label-text"
+           id="text2377"
+           style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
+           xml:space="preserve"><tspan
+             x="0"
+             y="5"
+             id="tspan1519">object_pk</tspan></text>
+      </g>
+      <g
+         transform="translate(1182.7494,946.75921)"
+         id="g-in-trace"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">
+        <rect
+           x="0"
+           y="0"
+           width="97.938965"
+           height="61.733177"
+           rx="6"
+           ry="5.9999995"
+           fill="#ffffff"
+           stroke="#26a69a"
+           stroke-width="1.5"
+           id="rect-in-trace"
+           style="stroke-dasharray:6, 1.5;stroke-dashoffset:0" />
+        <path
+           d="M 0,6 Q 0,0 3.2646322,0 H 94.674334 q 3.264633,0 3.264633,6 V 26 H 0 Z"
+           fill="#26a69a"
+           id="path-in-trace"
+           style="stroke-width:0.999997" />
+        <text
+           x="47.193272"
+           y="18"
+           text-anchor="middle"
+           font-size="13px"
+           font-weight="700"
+           fill="#ffffff"
+           id="text-in-trace-title">in_trace</text>
+        <text
+           x="10"
+           y="40"
+           font-size="11px"
+           fill="#616161"
+           id="text-in-trace-trace">FK: trace_pk</text>
+        <text
+           x="10"
+           y="54"
+           font-size="11px"
+           fill="#616161"
+           id="text-in-trace-object">FK: object_pk</text>
+      </g>
     </g>
     <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
   </g>
