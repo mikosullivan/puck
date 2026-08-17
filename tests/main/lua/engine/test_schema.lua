@@ -3,8 +3,7 @@
 --[[
 {
 	"module": "test_schema",
-	"role": "Standalone tests for `sprints/first-variable/schema.sql`. Exercises the sprint-local additions to the shipping schema: the `gc` column on `objects`, the four gc-cycle invariants (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the plain immutability triggers (parent_frame, process), the process cap design (a frame with `process=1` and `ast='[]'` sits atop each call stack), and stmt_idx transition rules.",
-	"run": "lua5.4 sprints/first-variable/test_schema.lua (from repo root)"
+	"role": "Schema tests for `src/engine/cvm/schema.sql`. Exercises the load-bearing invariants: the `gc` column and its four gc-cycle rules (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the parent_frame / process immutability triggers, the cap-as-frame design (a frame with `process=1` and `ast='[]'` sits atop each call stack), refs-based ownership + the one-hash-one-array cap, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack views."
 }
 ]]
 
@@ -29,7 +28,7 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local sqlite = require('lsqlite3')
 
-local SCHEMA_PATH = 'sprints/first-variable/schema.sql'
+local SCHEMA_PATH = 'src/engine/cvm/schema.sql'
 
 
 -- ------------------------------------------------------------
@@ -121,23 +120,12 @@ end
 
 
 -- ------------------------------------------------------------
--- test runner
+-- test runner — delegates to the shipping test-runner helpers so
+-- results roll up into the aggregated per-file totals.
 -- ------------------------------------------------------------
 
-local passed, failed = 0, 0
-local failures = {}
-
-local function test(name, fn)
-	local ok, err = xpcall(fn, debug.traceback)
-	if ok then
-		passed = passed + 1
-		print('  PASS  ' .. name)
-	else
-		failed = failed + 1
-		print('  FAIL  ' .. name)
-		table.insert(failures, {name = name, err = err})
-	end
-end
+local h = require('helpers')
+local test = h.test
 
 local function assert_ok(rc, db, note)
 	if rc ~= sqlite.OK then
@@ -1530,23 +1518,5 @@ test('sweeping a nested marker leaves the cap untouched (still stmt_idx=0)', fun
 end)
 
 
--- ============================================================
--- report
--- ============================================================
-
-print()
-print(string.format('TOTAL: %d passed, %d failed', passed, failed))
-
-if failed > 0 then
-	print()
-	print('Failures:')
-	for _, f in ipairs(failures) do
-		print('  [' .. f.name .. ']')
-		for line in tostring(f.err):gmatch('[^\n]+') do
-			print('    ' .. line)
-		end
-	end
-	os.exit(1)
-end
-
-os.exit(0)
+-- Runner (tests/main/lua/engine/run.lua) aggregates results across
+-- files; no per-file report or os.exit here.

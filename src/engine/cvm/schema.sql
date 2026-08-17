@@ -273,7 +273,7 @@ end;
 
 -- Scopes convention enforcement. A frame's bucket has a `scopes` key
 -- pointing at an ArrayPrimitive whose entries are hash-primitive scope
--- rows. See sprints/first-variable/closures.md for the design. [ghi]
+-- rows. See requirements/cvm/scopes for the design. [ghi]
 
 -- A ref keyed 'scopes' must point at an ArrayPrimitive.
 create trigger refs_scopes_key_requires_array
