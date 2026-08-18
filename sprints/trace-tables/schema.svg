@@ -27,14 +27,14 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="1.2151749"
-     inkscape:cx="485.11534"
-     inkscape:cy="225.07048"
+     inkscape:cx="448.08364"
+     inkscape:cy="299.13389"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g575" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
@@ -169,42 +169,42 @@
          id="text1026">object_pk (uuid)</text>
       <text
          x="32"
-         y="61.435669"
+         y="61.166622"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1028">primitive</text>
       <text
          x="32"
-         y="78.871338"
+         y="78.333244"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1030">scalar_type</text>
       <text
          x="32"
-         y="96.355347"
+         y="95.548203"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1032">scalar_value</text>
       <text
          x="32"
-         y="113.74268"
+         y="112.66649"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1034">engine_class</text>
       <text
          x="32"
-         y="131.22668"
+         y="129.88145"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1036">core_role</text>
       <g
          id="g1153"
-         transform="translate(0,0.11401498)">
+         transform="translate(0,-1.500269)">
         <text
            x="32"
            y="148.5"
@@ -220,7 +220,7 @@
       </g>
       <g
          id="g1157"
-         transform="translate(0,0.29802393)">
+         transform="translate(0,-1.5853074)">
         <text
            x="32"
            y="165.8"
@@ -236,28 +236,28 @@
       </g>
       <text
          x="32"
-         y="184.14331"
+         y="181.99094"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1046">ast</text>
       <text
          x="32"
-         y="200.96936"
+         y="198.54793"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1048">stmt_idx</text>
       <text
          x="32"
-         y="217.33081"
+         y="214.64034"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1050">process</text>
       <g
          id="g1161"
-         transform="translate(0,0.78698971)">
+         transform="translate(0,-2.1725309)">
         <text
            x="32"
            y="235"
@@ -273,21 +273,21 @@
       </g>
       <text
          x="32"
-         y="253.22803"
+         y="249.99947"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1056">persistent</text>
       <text
          x="32"
-         y="269.63782"
+         y="283.30682"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1058">gc</text>
       <text
          x="32"
-         y="288.09937"
+         y="267.16608"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
@@ -684,7 +684,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1513">object_pk</tspan></text>
+             id="tspan1662">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,711.75921)"
@@ -758,7 +758,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1515">object_pk</tspan></text>
+             id="tspan1664">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,798.75921)"
@@ -840,7 +840,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1517">trace_pk</tspan></text>
+             id="tspan1666">trace_pk</tspan></text>
       </g>
       <path
          class="fk-arrow"
@@ -869,7 +869,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1519">object_pk</tspan></text>
+             id="tspan1668">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,946.75921)"

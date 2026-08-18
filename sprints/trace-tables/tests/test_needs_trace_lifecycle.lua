@@ -15,7 +15,8 @@ package.path = 'sprints/trace-tables/src/engine/cvm/udfs/?.lua;' .. package.path
 local sqlite = require('lsqlite3')
 local current_process_pk = require('current_process_pk')
 
-local SCHEMA_PATH = 'sprints/trace-tables/src/schema.sql'
+local SCHEMA_PATH    = 'sprints/trace-tables/src/schema.sql'
+local PREFLIGHT_PATH = 'sprints/trace-tables/src/preflight.sql'
 
 
 -- ------------------------------------------------------------
@@ -31,10 +32,14 @@ end
 
 local function schema_db()
 	local db = sqlite.open_memory()
-	db:exec('pragma foreign_keys = on;')
-	db:exec('pragma recursive_triggers = on;')
+	-- schema.sql sets up main; preflight.sql sets pragmas and
+	-- creates temp tables + temp triggers. Matches what the engine
+	-- does on a connect: schema at DB creation, preflight on every
+	-- connection open.
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
+	rc = db:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 	return db
 end
 
@@ -380,45 +385,91 @@ test('deleting the target object cascades traces rows away', function()
 	db:close()
 end)
 
-test('current cap cannot advance to terminal while traces has rows', function()
-	-- traces no longer carries process_pk (it's temp = per-process
-	-- implicitly). The terminal-advance guard is scoped by
-	-- current_process_pk() instead — the current cap can't finish
-	-- while any traces row is outstanding.
+-- ============================================================
+-- frames_gc_reset_requires_empty_needs_trace
+-- ============================================================
+
+test('gc 1 → null is rejected while the current process has needs_trace rows', function()
+	-- Mark an object, mark gc=1 on the cap, then try to reset gc to
+	-- null. Rejected — needs_trace still has an outstanding entry for
+	-- the current process.
 	local db = schema_db()
 	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
 
-	assert_ok(db:exec("insert into traces (object_pk) values ('" .. scalar_pk .. "')"),
-		db, 'traces insert')
-
-	-- Try to advance the current cap to terminal. Blocked.
+	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
+		db, 'needs_trace insert')
 	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
 		db, 'cap gc=1')
-	assert_fails_with(
-		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'process_cap_terminal_requires_no_traces',
-		'terminal advance blocked while traces non-empty')
 
-	-- Clean up traces and the advance succeeds.
-	assert_ok(db:exec("delete from traces"), db, 'clear traces')
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap advance after cleanup')
+	assert_fails_with(
+		db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "'"),
+		db, 'frames_gc_reset_requires_empty_needs_trace',
+		'gc reset blocked while needs_trace non-empty for current process')
+	db:close()
+end)
+
+test('gc 1 → null succeeds once needs_trace is cleared', function()
+	local db = schema_db()
+	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
+
+	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
+		db, 'needs_trace insert')
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
+		db, 'cap gc=1')
+
+	assert_ok(db:exec("delete from needs_trace"), db, 'clear needs_trace')
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "'"),
+		db, 'gc reset after cleanup')
+	db:close()
+end)
+
+test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process', function()
+	-- Two caps, A (current) and B. Mark an object under B (by swinging
+	-- current_process_pk temporarily), then swing back to A. A's gc
+	-- reset succeeds because its own needs_trace worklist is empty —
+	-- B's outstanding row is scoped to B.
+	local db = schema_db()
+	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
+
+	local cap_a_pk = first(db,
+		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
+		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+	local cap_b_pk = first(db,
+		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
+		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+
+	local scalar_pk = first(db,
+		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
+		.. "values ('o', 'n', 42, '" .. user_pk .. "') returning object_pk").object_pk
+
+	local current = cap_b_pk
+	current_process_pk.register(db, function() return current end)
+
+	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
+		db, 'mark under cap B')
+
+	current = cap_a_pk
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_a_pk .. "'"),
+		db, 'cap A gc=1')
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_a_pk .. "'"),
+		db, 'cap A gc reset — B\'s worklist doesn\'t block A')
 	db:close()
 end)
 
 test('deleting a traces row cascades matching in_trace rows away', function()
-	-- Set up: hash -> scalar chain. Trace the scalar; in_trace gets
-	-- both the seed and the hash. Delete the traces row directly and
-	-- verify in_trace empties.
+	-- Isolated test of `traces_delete_cascades_in_trace`. Populate
+	-- traces and in_trace directly (no trace-run trigger involved),
+	-- delete the traces row, verify in_trace empties.
 	local db = schema_db()
-	local user_pk, _cap_pk, hash_pk, scalar_pk = setup(db)
-
-	assert_ok(db:exec(
-		"insert into refs (parent, child, key, idx) values ('"
-		.. hash_pk .. "', '" .. scalar_pk .. "', 'x', 0)"), db, 'ref')
+	local _user_pk, _cap_pk, hash_pk, scalar_pk = setup(db)
 
 	local trace_pk = first(db,
 		"insert into traces (object_pk) values ('" .. scalar_pk .. "') returning trace_pk").trace_pk
+
+	assert_ok(db:exec(
+		"insert into in_trace (trace_pk, object_pk) values ("
+		.. trace_pk .. ", '" .. scalar_pk .. "'), (" .. trace_pk .. ", '" .. hash_pk .. "')"),
+		db, 'in_trace seed')
 
 	local before = first(db,
 		"select count(*) as c from in_trace where trace_pk = " .. trace_pk)
@@ -446,10 +497,10 @@ test('needs_trace persists across connections; traces does not', function()
 	os.remove(path)  -- os.tmpname creates it; SQLite will.
 
 	local db1 = sqlite.open(path)
-	db1:exec('pragma foreign_keys = on;')
-	db1:exec('pragma recursive_triggers = on;')
 	local rc = db1:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'db1 schema: ' .. tostring(db1:errmsg()))
+	rc = db1:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, 'db1 preflight: ' .. tostring(db1:errmsg()))
 
 	-- Set up state in db1.
 	local user_pk = first(db1, "select object_pk from objects where core_role = 'u'").object_pk
@@ -470,15 +521,11 @@ test('needs_trace persists across connections; traces does not', function()
 	db1:close()
 
 	-- Open a fresh connection. Main tables carry over from disk;
-	-- temp tables must be recreated. Apply just the `create temp`
-	-- statements — the main DDL would double-create.
+	-- preflight recreates the temp tables + triggers and sets pragmas.
+	-- The engine follows exactly this pattern on every connection open.
 	local db2 = sqlite.open(path)
-	db2:exec('pragma foreign_keys = on;')
-	db2:exec('pragma recursive_triggers = on;')
-	local sql = slurp(SCHEMA_PATH)
-	for stmt in sql:gmatch('(create temp[^;]-;)') do
-		db2:exec(stmt)  -- ignore errors; only care about `create temp`
-	end
+	rc = db2:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, 'db2 preflight: ' .. tostring(db2:errmsg()))
 
 	-- needs_trace: persisted, should still be there.
 	local nt_rows = first(db2, "select count(*) as c from needs_trace")

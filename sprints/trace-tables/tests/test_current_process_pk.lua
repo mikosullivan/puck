@@ -15,7 +15,8 @@ package.path = 'sprints/trace-tables/src/engine/cvm/udfs/?.lua;' .. package.path
 local sqlite = require('lsqlite3')
 local current_process_pk = require('current_process_pk')
 
-local SCHEMA_PATH = 'sprints/trace-tables/src/schema.sql'
+local SCHEMA_PATH    = 'sprints/trace-tables/src/schema.sql'
+local PREFLIGHT_PATH = 'sprints/trace-tables/src/preflight.sql'
 
 
 -- ------------------------------------------------------------
@@ -29,6 +30,11 @@ local function slurp(path)
 	return text
 end
 
+-- bare_db is the pre-schema state: pragmas set, but no CVM DDL
+-- applied. Used by UDF-behavior tests that don't need the schema.
+-- Note: since the UDF isn't registered here, the preflight file
+-- would fail to apply (its triggers reference current_process_pk
+-- in their WHEN clauses at fire time; schema-apply-time is fine).
 local function bare_db()
 	local db = sqlite.open_memory()
 	db:exec('pragma foreign_keys = on;')
@@ -40,6 +46,8 @@ local function schema_db()
 	local db = bare_db()
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
+	rc = db:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 	return db
 end
 

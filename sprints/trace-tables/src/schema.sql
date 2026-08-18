@@ -240,21 +240,12 @@ create index objects_roles on objects(object_pk) where primitive = 'r';
 -- know on restart that those objects still need to be traced.
 -- Losing the mark would leak.
 --
--- `traces` and `in_trace` are TEMP. A trace itself is transient
--- work — an engine can restart and re-run a trace at any point
--- from the needs_trace worklist. Keeping trace state out of the
--- persistent store avoids WAL writes for pure scratch.
---
--- Trade-off with temp: SQLite disallows cross-schema FKs, so
--- `temp.traces` and `temp.in_trace` cannot reference `main.objects`
--- via FK. Cascade and restrict semantics that FKs would have
--- enforced are reconstructed as `create temp trigger` blocks at
--- the end of this section.
---
--- Every trigger that references a temp table (either as its host
--- or in its body) must itself be `create temp trigger` — permanent
--- triggers in `main` cannot reference `temp.*`. The needs_trace
--- triggers stay permanent (they only reference `main.*`).
+-- The rest of the trace state — `traces`, `in_trace`, and the
+-- three FK-equivalent triggers that reproduce cascade semantics
+-- for those temp tables — lives in `preflight.sql`. It's
+-- per-connection scratch and gets created on every connection
+-- open, so it can't live in `schema.sql` (which runs once at
+-- DB creation). See preflight.sql for the details.
 -- ------------------------------------------------------------
 
 -- Drain worklist. A row here means the object has been marked for
@@ -317,150 +308,20 @@ begin
 	select raise(abort, 'process_cap_terminal_requires_no_needs_trace: process cap cannot advance to terminal while needs_trace rows still reference it');
 end;
 
-
--- Trace log. One row per trace run. TEMP — a trace is scratch
--- work; the engine can always re-run traces from the needs_trace
--- worklist on restart. Keeping trace state out of the persistent
--- store avoids WAL writes for churny GC bookkeeping.
+-- A frame's gc cannot flip 1 → null while the current process has
+-- any needs_trace rows outstanding. gc = null means "cleanup done,
+-- back to executing normally"; that's premature if there's still
+-- pending trace work in the worklist.
 --
--- No `process_pk` column: because the table is temp, every row
--- belongs to the connection's current process by construction.
--- `current_process_pk()` gives the engine's live view of "which
--- process's trace state is this" whenever it needs to reason
--- across the boundary.
---
--- `trace_pk` is a monotonic integer PK (AUTOINCREMENT, not just
--- rowid aliasing — the current max isn't reused after delete).
---
--- `object_pk` is the object the trace entry is about:
---   * NOT NULL.
---   * CASCADE on object delete enforced by
---     `objects_delete_cascades_scratch`.
---
--- `done` is a boolean flag (SQLite integer 0 / 1, CHECK-enforced)
--- indicating whether the trace has completed. NOT NULL, DEFAULT 0. [ghi]
-create temp table traces (
-	trace_pk integer primary key autoincrement,
-	object_pk text not null,
-	done integer not null default 0
-		check (done in (0, 1))
-);
-
--- A process cap cannot advance stmt_idx into its terminal position
--- while any traces row exists — the connection's current process
--- would be walking away from its GC work. Scoped by
--- `current_process_pk()` so that if some administrative path
--- advances a non-current cap, this trigger stays out of its way. [ghi]
-create temp trigger process_cap_terminal_requires_no_traces
-before update of stmt_idx on main.objects
-when new.process_cap = 1
-	and new.object_pk = current_process_pk()
-	and new.stmt_idx = max(json_array_length(new.ast), 1)
-	and exists (select 1 from traces)
+-- Scoped by `current_process_pk()` so a background administrative
+-- path touching a non-current cap's gc doesn't get blocked by an
+-- unrelated process's worklist. [ghi]
+create trigger frames_gc_reset_requires_empty_needs_trace
+before update of gc on objects
+when old.gc is 1 and new.gc is null
+	and exists (select 1 from needs_trace where process_pk = current_process_pk())
 begin
-	select raise(abort, 'process_cap_terminal_requires_no_traces: current process cap cannot advance to terminal while traces rows exist');
-end;
-
-
--- Per-trace object membership. One row per (trace, object) pair
--- indicates that `object` was visited during `trace`.
---
--- Composite PK on `(trace_pk, object_pk)` gives the uniqueness
--- constraint for free (SQLite indexes PKs; no separate UNIQUE
--- declaration needed).
---
--- Both cascade semantics reproduced by triggers:
---   * On traces DELETE, `traces_delete_cascades_in_trace` drops
---     matching rows.
---   * On objects DELETE, `objects_delete_cascades_scratch` drops
---     matching rows. [ghi]
-create temp table in_trace (
-	trace_pk integer not null,
-	object_pk text not null,
-	primary key (trace_pk, object_pk)
-);
-
-
--- Run the trace when a new row lands in `traces`.
---
--- Semantics: given a seed object (`new.object_pk`), determine
--- whether it is still reachable from any GC anchor (uspace = roles,
--- persistent objects, process caps). Backward reachability — walk
--- UP the ref graph collecting every parent transitively.
---
--- Per-suspect trace, not a global mark-sweep — cousin of the
--- Bacon-Rajan concurrent cycle collector (2001), which likewise
--- starts from a candidate and walks locally rather than sweeping
--- from roots. The cost of a trace is bounded by the seed's own
--- reachable neighborhood, not by the size of the live set.
---
--- Algorithm:
---   1. Compute the ancestor closure of the seed via a recursive
---      CTE over `refs` (join refs.child = ancestor_pk to collect
---      refs.parent). UNION dedups; cycles terminate naturally.
---   2. Record every ancestor (including the seed itself) in
---      `in_trace` for this trace_pk.
---   3. If any in_trace row for this trace_pk sits in `uspace`,
---      the seed IS reachable — abandon the trace (DELETE the
---      traces row; `traces_delete_cascades_in_trace` drops the
---      matching in_trace rows).
---   4. Otherwise the seed's whole ancestor set is unanchored
---      garbage — mark the trace `done = 1`. Callers can then
---      sweep everything in `in_trace` for that trace_pk.
---
--- Guarded on `new.done = 0` so a trace pre-marked done doesn't
--- kick the walker. The subsequent UPDATE of `done` doesn't
--- re-fire this trigger (INSERT-only). [ghi]
-create temp trigger traces_run_on_insert
-after insert on traces
-when new.done = 0
-begin
-	insert or ignore into in_trace (trace_pk, object_pk)
-	with recursive ancestors(pk) as (
-		select new.object_pk
-		union
-		select refs.parent
-			from main.refs
-			join ancestors on refs.child = ancestors.pk
-	)
-	select new.trace_pk, pk from ancestors;
-
-	delete from traces
-		where trace_pk = new.trace_pk
-			and exists (
-				select 1
-					from in_trace
-					join uspace on in_trace.object_pk = uspace.object_pk
-					where in_trace.trace_pk = new.trace_pk
-			);
-
-	update traces set done = 1
-		where trace_pk = new.trace_pk;
-end;
-
-
--- ============================================================
--- FK-equivalent triggers: cascade and restrict semantics that
--- cross-schema FKs cannot express (only the temp tables need
--- these — needs_trace is persistent and uses real FKs).
--- ============================================================
-
--- CASCADE on main.objects DELETE. Wipes rows in the temp scratch
--- tables that referenced the deleted object as `object_pk`. The
--- persistent `needs_trace` table's own FK handles its side; this
--- trigger only covers `traces` and `in_trace`. [ghi]
-create temp trigger objects_delete_cascades_scratch
-after delete on main.objects
-begin
-	delete from traces   where object_pk = old.object_pk;
-	delete from in_trace where object_pk = old.object_pk;
-end;
-
--- CASCADE: on traces DELETE, drop matching in_trace rows. [ghi]
-create temp trigger traces_delete_cascades_in_trace
-after delete on traces
-begin
-	delete from in_trace where trace_pk = old.trace_pk;
+	select raise(abort, 'frames_gc_reset_requires_empty_needs_trace: cannot reset gc to null while the current process has outstanding needs_trace rows');
 end;
 
 
@@ -771,36 +632,6 @@ when new.stmt_idx is not null
 	and new.stmt_idx > max(json_array_length(new.ast), 1)
 begin
 	select raise(abort, 'frames_stmt_idx_out_of_bounds: stmt_idx cannot exceed max(json_array_length(ast), 1)');
-end;
-
--- New gc-cycle design, rule 8: auto-delete a frame the moment it
--- reaches the terminal state (stmt_idx past the last executable
--- position). Chain reaction with rule 3: the delete fires an
--- AFTER-DELETE trigger on the parent that flips parent.gc from null
--- to 1, the parent's walker advances, and if that advance also
--- reaches terminal, this trigger fires again. Whole stack collapses
--- upward.
---
--- Guards:
---   * Cap frames are excluded (`process_cap is not 1`). The cap stays
---     terminal-alive as the process anchor.
---   * The frame must have no child at the moment of delete
---     (`not exists ...`). Defense in depth — under the state machine
---     an advance to terminal requires gc=1, gc=1 requires no children
---     per rule 4, so this can't fire with a child in practice. The
---     FK on parent_frame (NO ACTION) would also reject the delete if
---     a child existed. [ghi]
-create trigger frames_auto_delete_at_terminal
-after update of stmt_idx on objects
-when new.primitive = 'f'
-	and new.process_cap is not 1
-	and new.stmt_idx = max(json_array_length(new.ast), 1)
-	and not exists (
-		select 1 from objects
-		where parent_frame = new.object_pk and primitive = 'f'
-	)
-begin
-	delete from objects where object_pk = new.object_pk;
 end;
 
 -- New gc-cycle design, rule 5: advancing stmt_idx requires gc = 1
