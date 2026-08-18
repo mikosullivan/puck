@@ -1697,17 +1697,16 @@ test('non-r row with parent_role is rejected (cross-column CHECK)', function()
 	db:close()
 end)
 
-test('a ref whose parent is a role row is rejected (roles cannot hold state)', function()
+test('a role row can be a ref parent — roles can hold buckets and stacks like any other object', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local child_pk = first(db, "insert into objects (primitive, owner_role) values ('h', '"
 		.. user_pk .. "') returning object_pk").object_pk
 
-	assert_fails_with(
+	assert_ok(
 		db:exec("insert into refs (parent, child, key, idx) values ('"
 			.. user_pk .. "', '" .. child_pk .. "', 'x', 0)"),
-		db, 'refs_role_cannot_be_parent',
-		'ref-under-role rejected')
+		db, 'ref under a role accepted')
 	db:close()
 end)
 

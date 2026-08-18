@@ -18,7 +18,7 @@ Under the current CVM design, a role has one job: **exist in a strict hierarchic
 - **`core_role`** — nullable text; when set, must be one of `'e'` (engine), `'c'` (cache), `'u'` (user). Cross-column checked so only `'r'` rows can carry it.
 - **`parent_role`** — nullable FK to `objects(object_pk)`. Cross-column checked so only `'r'` rows can carry it. The target must be an `'r'` row (enforced by `objects_parent_role_must_be_role`).
 - **`persistent = 1` is mandatory on core roles.** A cross-column CHECK (`check (core_role is null or persistent is 1)`) rejects any core-role INSERT that leaves `persistent` null. Non-core rows default to unpinned (null); pin by opting in with `persistent = 1`.
-- **Roles can't be `refs` parents.** `refs_role_cannot_be_parent` blocks any INSERT into `refs` where the parent row's primitive is `'r'`. Roles are structurally leaves in the object graph — nothing hangs off them.
+- **Roles can be `refs` parents.** A role can own a bucket, a stack, or arbitrary refs just like any other object — same one-hash-and-one-array cap that applies to non-container primitives, same mark trigger on ref-delete.
 
 ## The role tree
 

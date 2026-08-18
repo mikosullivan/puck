@@ -380,16 +380,6 @@ create table refs (
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
--- Role rows ('r') cannot be a ref parent. Roles don't carry state —
--- nothing hangs off them. If role features grow later (permissions,
--- config, etc.), that's a separate slice with its own rules. [ghi]
-create trigger refs_role_cannot_be_parent
-before insert on refs
-when (select primitive from objects where object_pk = new.parent) = 'r'
-begin
-	select raise(abort, 'refs_role_cannot_be_parent: role rows cannot be ref parents (roles do not carry state)');
-end;
-
 -- Non-container parents ('o', 'f') can hold at most one HashPrimitive
 -- child (which serves as its bucket) and at most one ArrayPrimitive
 -- child (which serves as its stack). Container parents ('h', 'a') have
