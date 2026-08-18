@@ -1528,6 +1528,36 @@ test('a regular object (primitive=o) can hold at most one hash and one array', f
 	db:close()
 end)
 
+test('a role (primitive=r) is subject to the same one-hash-one-array cap', function()
+	-- Roles are non-containers for this purpose. They can hold at most
+	-- one hash-child (their bucket) and one array-child (their stack).
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+
+	local bucket_a = insert_hash(db, user_pk)
+	local bucket_b = insert_hash(db, user_pk)
+	local stack_a  = insert_object(db, user_pk, 'a')
+	local stack_b  = insert_object(db, user_pk, 'a')
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. user_pk .. "', '" .. bucket_a .. "', null, 0)"), db, 'first hash-child on role')
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. user_pk .. "', '" .. stack_a .. "', null, 1)"), db, 'first array-child on role')
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. user_pk .. "', '" .. bucket_b .. "', null, 2)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second hash-child on role rejected')
+
+	assert_fails_with(
+		db:exec("insert into refs (parent, child, key, idx) values ('"
+			.. user_pk .. "', '" .. stack_b .. "', null, 3)"),
+		db, 'refs_owner_at_most_one_hash_and_one_array',
+		'second array-child on role rejected')
+	db:close()
+end)
+
 test('a non-container owner can hold one hash AND one array (bucket + stack)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)

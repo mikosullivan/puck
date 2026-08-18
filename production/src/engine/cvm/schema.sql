@@ -380,13 +380,16 @@ create table refs (
 create index refs_parent on refs(parent);
 create index refs_child  on refs(child);
 
--- Non-container parents ('o', 'f') can hold at most one HashPrimitive
--- child (which serves as its bucket) and at most one ArrayPrimitive
--- child (which serves as its stack). Container parents ('h', 'a') have
--- no such cap — they hold as many children as they want by their
--- native semantics. Owner-owns-bucket / owner-owns-stack is just a
--- normal refs row now; the whole "ownership" story lives in this one
--- table.
+-- Non-container parents ('o', 'f', 'r') can hold at most one
+-- HashPrimitive child (which serves as its bucket) and at most one
+-- ArrayPrimitive child (which serves as its stack). Container parents
+-- ('h', 'a') have no such cap — they hold as many children as they
+-- want by their native semantics. Owner-owns-bucket / owner-owns-stack
+-- is just a normal refs row now; the whole "ownership" story lives in
+-- this one table.
+--
+-- Roles ('r') are regular objects for this purpose — they can own a
+-- bucket and a stack like any other non-container.
 --
 -- Buckets and stacks CAN be shared across multiple owners — the trigger
 -- caps a parent's outgoing 'h'/'a' children but places no cap on a
@@ -396,7 +399,7 @@ create index refs_child  on refs(child);
 -- of a bucket/stack ref, not because it implies exclusive ownership. [ghi]
 create trigger refs_owner_at_most_one_hash_and_one_array
 before insert on refs
-when (select primitive from objects where object_pk = new.parent) in ('o', 'f')
+when (select primitive from objects where object_pk = new.parent) in ('o', 'f', 'r')
 	and (select primitive from objects where object_pk = new.child) in ('h', 'a')
 	and exists (
 		select 1 from refs r
