@@ -4,11 +4,9 @@
 {"vibecode": {
 	"doc": "requirements_cvm_garbage_collection",
 	"role": "CVM's garbage collection — the schema-level mark triggers that populate the needs_trace table as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
-	"status": "in progress — mark trigger inventory + needs_trace table integrated (trace-tables sprint); trace-routine loops below are the original column-form design and are being reshaped in a follow-on sprint"
+	"status": "specified — mark triggers landed with the trace-tables sprint; trace-routine implementation lives in a follow-on sprint"
 }}
 ~~~
-
-> **Design shift note.** Marks previously landed on an `objects.needs_trace` column and traversal used an `objects.in_trace` counter. Under the trace-tables sprint (integrated), marks land as rows in a persistent `needs_trace(process_pk, object_pk)` table, and traversal state lives in temp `traces` and `in_trace` tables (per-connection). The mark-trigger section below reflects the current design. The outer/inner loop pseudocode later in this doc is still the OLD column-form; the trace-routine sprint will replace it with a rewrite over the new tables.
 
 GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row in the `needs_trace` table for the current process, determines each object's reachability with respect to the `uspace` view (defined in [cvm.sql](../sql)), and either deletes the mark (object proven live) or deletes the object (proven orphaned).
 
@@ -30,79 +28,141 @@ Ownership of a bucket or stack no longer needs its own column-tracked mark trigg
 
 ## Who calls the trace
 
-The trace is invoked from within the Caspian implementation. Nothing in the database itself triggers a trace. The mark triggers set `needs_trace = 1` and stop; the trace only runs when Caspian's Lua-side write layer explicitly invokes it.
+The trace is invoked from within the Caspian implementation. Nothing in the database itself triggers a trace. The mark triggers insert into `needs_trace` and stop; the trace only runs when Caspian's Lua-side write layer explicitly invokes it.
 
 Where in the Caspian implementation those invocations happen is out of scope for this document. This document specifies what the trace DOES once invoked, not where it gets called from.
 
+## Trace state tables
+
+The trace routine uses three tables — one persistent, two temp — to record what it's doing:
+
+- **`needs_trace(process_pk, object_pk)`** — persistent, main schema, real FKs. The worklist. Populated by the mark triggers; drained by the outer loop. Persistent so a crash mid-run doesn't lose pending marks.
+- **`traces(trace_pk, object_pk, done)`** — temp, per-connection. One row per trace run. `trace_pk` is a monotonic integer PK (AUTOINCREMENT). `object_pk` is the seed (the candidate the trace is proving live or orphaned). `done` is a 0/1 flag flipped once the trace terminates.
+- **`in_trace(trace_pk, object_pk)`** — temp, per-connection. Composite PK on `(trace_pk, object_pk)`. Per-trace membership: one row per (trace, object) pair records that `object` was visited during `trace`.
+
+The temp / persistent split matches the design intent — marks must survive restart; trace scratch doesn't. See [preflight.sql](../sql) for the temp-table declarations that recreate `traces` and `in_trace` on every connection open.
+
 ## needs_trace loop
 
-The trace's outer loop. Each iteration picks one candidate object (a row where `needs_trace = 1`), processes it, and loops back for the next. The loop ends when no marks remain.
-
-Stub — details of the iteration land here as we work through them.
-
-## in_trace loop
-
-The trace's inner loop, run once per candidate picked by the outer loop. It uses the `in_trace` column to track which rows are being examined for the current candidate's reachability, growing the set outward until either a uspace anchor is reached (candidate is alive) or the set stops growing (candidate is orphaned).
-
-### Seed
-
-The first thing the inner loop does is mark the candidate's `in_trace` column with `1`:
-
-~~~sql
-update objects set in_trace = 1 where object_pk = ?;
-~~~
-
-That row is now the starting point of the visited set. Subsequent expansion steps will pull additional rows into the set with successive `in_trace` values (`2`, `3`, ...) as the walk moves outward.
-
-### Expand
-
-The inner loop's core step: every object that references any row currently marked `in_trace` also becomes `in_trace`. Grow the visited set by one hop of parents.
-
-Concretely — find every row in `refs` whose `child` is currently in the `in_trace` set, and mark those rows' `parent` objects with the next `in_trace` counter value:
-
-~~~sql
-update objects set in_trace = <next_counter>
-where in_trace is null
-    and object_pk in (
-        select parent from refs
-        where child in (select object_pk from objects where in_trace is not null)
-    );
-~~~
-
-The `in_trace is null` guard prevents re-marking rows already in the visited set — that both stops us from double-counting and gives cycle safety for free (a cycle collapses when the walk revisits an already-marked row).
-
-**The counter is incremented per iteration.** The seed sets `in_trace = 1`; the first expansion uses `2`; the next uses `3`; and so on. Each visited row's `in_trace` value records which iteration first pulled it into the set — hop 1 from the candidate is `2`, hop 2 is `3`, etc. That ordering isn't load-bearing for reachability (any distinct-non-null marker would suffice for cycle safety), but it makes snapshots of a mid-trace state legible: an inspector reading `in_trace = 5` on a row knows that row was reached at the fifth hop out from the candidate.
-
-**The increment happens in the Lua layer, not in SQL.** The trace routine is Lua code (see [Who calls the trace](#who-calls-the-trace)) and holds the counter as a local variable that starts at `1` at seed time and increments before each expansion. The value is passed into the UPDATE as a bind parameter. SQL-side alternatives (a `(select max(in_trace) from objects) + 1` subquery, or a sequence row somewhere) would work but add cost for no benefit — the Lua routine already exists, already owns the trace's state, and Lua-local increments are free.
-
-Each expansion adds one hop of parents to the visited set. The loop keeps expanding until a termination condition fires.
-
-### Trace termination
-
-The inner loop ends the moment either of two conditions holds. The outcome for the candidate depends on which one fired. Order of the checks doesn't matter — both are cheap (a single view lookup on one side, a Lua-side integer comparison on the other).
-
-#### Uspace hit — candidate is alive
-
-If any row currently marked `in_trace` appears in the `uspace` view, the candidate has a path to a uspace anchor. Detect with:
-
-~~~sql
-select 1 from uspace
-where object_pk in (select object_pk from objects where in_trace is not null)
-limit 1;
-~~~
-
-If this returns a row, terminate the inner loop with a live outcome. Cleanup follows.
-
-#### No growth — candidate is orphaned
-
-If the last `expand` step affected zero rows, the visited set is a closed subgraph — every ancestor reachable from the candidate has been visited and none of them is (or reaches) a uspace anchor. The candidate is genuinely orphaned; so is every other row currently marked `in_trace` (they're all in the same disconnected island). Detect via the changes-count returned by the UPDATE:
+The trace's outer loop. Each iteration picks one candidate from `needs_trace` scoped to the current process, runs a per-suspect backward-reachability trace against it (the inner loop), and disposes of the outcome. The loop ends when the process's `needs_trace` rows are all drained.
 
 ~~~lua
-if db:changes() == 0 then
-    -- terminate the inner loop with an orphaned outcome
+while true do
+	-- Pick one candidate for the current process. Any row works;
+	-- iteration order isn't load-bearing for correctness.
+	local candidate = first(db,
+		"select object_pk from needs_trace "
+		.. "where process_pk = current_process_pk() limit 1")
+
+	if candidate == nil then break end
+
+	-- Kick off a fresh trace against this candidate.
+	local trace_pk = first(db,
+		"insert into traces (object_pk) values (?) returning trace_pk",
+		candidate.object_pk).trace_pk
+
+	-- Run the inner loop (see below). Returns 'live' or 'orphaned'.
+	local outcome = run_trace(trace_pk, candidate.object_pk)
+
+	if outcome == 'live' then
+		-- Candidate is still reachable. Drop its mark; leave the
+		-- object itself alone.
+		db:exec("delete from needs_trace "
+			.. "where process_pk = current_process_pk() "
+			.. "and object_pk = '" .. candidate.object_pk .. "'")
+	else
+		-- Candidate is orphaned. Every row visited during this
+		-- trace (including the candidate) is also orphaned — the
+		-- closure is a disconnected island. Delete all of them.
+		db:exec("delete from objects where object_pk in ("
+			.. "select object_pk from in_trace "
+			.. "where trace_pk = " .. trace_pk .. ")")
+		-- The mark rows for these objects go with them via
+		-- `needs_trace.object_pk ON DELETE CASCADE`.
+	end
+
+	-- Whichever branch we took, this trace run is done.
+	db:exec("update traces set done = 1 where trace_pk = " .. trace_pk)
 end
 ~~~
 
-The actual collection mechanism that fires once we've established this outcome — deleting the orphaned rows, running `on_close` hooks, handling cascades, ordering the cleanup — is deferred. This subsection only spec's the detection.
+**The cascade does the mark cleanup.** When an orphaned object is DELETEd, any `needs_trace` rows referencing it — for any process — go with it (the `object_pk` FK cascades). Any `in_trace` rows referencing it (in any trace) also go via the equivalent temp cascade. The outer loop doesn't have to hand-delete marks.
 
-Stub — cleanup lands here as we work through it.
+**Any trace whose seed was an object we just deleted also gets swept.** In the current schema `traces.object_pk` also cascades on `objects` DELETE (via `objects_delete_cascades_scratch`, the temp cascade in preflight.sql). So if the outer loop's next iteration finds the same island through a different mark, it starts a fresh trace — no re-entry concerns.
+
+## in_trace loop
+
+The trace's inner loop — Bacon-Rajan-style per-suspect backward reachability. Walk UP the ref graph starting from the seed, growing the visited set one hop of parents at a time, until either a `uspace` anchor is hit (candidate is live) or the walk stops growing (candidate is orphaned).
+
+The inner loop's state — which objects have been visited by this trace — lives entirely in `in_trace` rows keyed by the caller's `trace_pk`. Multiple concurrent traces (which the design doesn't currently need but the schema supports) can coexist without interfering.
+
+### Seed
+
+The first thing the inner loop does is record the candidate in `in_trace`:
+
+~~~sql
+insert into in_trace (trace_pk, object_pk) values (?, ?);
+~~~
+
+That row is the starting point of the visited set.
+
+### Expand
+
+The inner loop's core step: every object that references any row currently in `in_trace` (for this trace) gets added to `in_trace`. Grow the visited set by one hop of parents.
+
+Concretely — find every row in `refs` whose `child` is currently in `in_trace` for this trace, and insert those rows' `parent` objects into `in_trace`:
+
+~~~sql
+insert or ignore into in_trace (trace_pk, object_pk)
+select ?, refs.parent
+from refs
+join in_trace on in_trace.object_pk = refs.child
+where in_trace.trace_pk = ?;
+~~~
+
+`INSERT OR IGNORE` skips rows already in `in_trace` for this trace — the composite PK guards it. That's both the double-count guard and cycle safety (a cycle collapses when the walk revisits an already-visited row).
+
+Each expansion adds one hop of parents. The loop keeps expanding until a termination condition fires.
+
+### Trace termination
+
+The inner loop ends the moment either of two conditions holds. The outcome for the candidate depends on which one fired.
+
+#### Uspace hit — candidate is alive
+
+If any row currently in `in_trace` for this trace appears in the `uspace` view, the candidate has a path to a uspace anchor. Detect with:
+
+~~~sql
+select 1 from uspace
+where object_pk in (
+	select object_pk from in_trace where trace_pk = ?
+)
+limit 1;
+~~~
+
+If this returns a row, terminate the inner loop with a **live** outcome.
+
+**Only the candidate is proven live.** The other rows in `in_trace` are just fellow-travelers along the closure — some of them may be genuinely orphaned, some may be reachable through different paths. The trace doesn't classify them; they'll get their own traces on later marks (or already have live ones). Only the seed's mark is dropped.
+
+#### No growth — candidate is orphaned
+
+If the last `expand` step affected zero rows, the visited set is a closed subgraph — every ancestor reachable from the candidate has been visited and none of them is (or reaches) a uspace anchor. The candidate is genuinely orphaned; so is every other row in `in_trace` for this trace (they're all in the same disconnected island). Detect via the changes-count returned by the INSERT:
+
+~~~lua
+if db:changes() == 0 then
+	-- terminate the inner loop with an orphaned outcome
+end
+~~~
+
+**The whole `in_trace` set is a proven-orphan subgraph.** The outer loop reads all of them and deletes them together. This is the case where the outer loop's `delete from objects where object_pk in (...)` sweeps more than just the seed.
+
+## Cleanup
+
+Cleanup happens at the outer loop's disposition step. Two paths:
+
+- **Live outcome** — drop the mark row (`delete from needs_trace where process_pk = current_process_pk() and object_pk = seed`). Nothing else changes.
+- **Orphaned outcome** — delete every object in `in_trace` for the trace. Cascades handle the rest: `needs_trace.object_pk ON DELETE CASCADE` sweeps the marks; `refs.parent ON DELETE CASCADE` sweeps outgoing refs; the ref-delete trigger inserts fresh marks for whatever those refs pointed AT (that's how the worklist grows during a sweep and drives subsequent iterations of the outer loop).
+
+The `on_close` / on-collection callback path — user-code that runs when a specific object is being collected — attaches at the "delete every object in `in_trace`" step. Ordering, cascades within the callback chain, and callback error handling belong to a later sprint that specifies the callback contract itself.
+
+The trace's own `traces` and `in_trace` rows go away when the outer loop advances (see the `update traces set done = 1` step and any subsequent `delete from traces where done = 1` housekeeping — the schema permits either sync deletion or lazy accumulation, whichever the implementer prefers).
