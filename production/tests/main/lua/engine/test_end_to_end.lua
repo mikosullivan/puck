@@ -10,7 +10,7 @@
 
 End-to-end assertions. Two programs:
 
-- **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty ast (nothing to dispatch), advances the cap to close the process. Returns `{complete = 1, cap_pk = ...}`.
+- **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty ast (nothing to dispatch), advances the cap to close the process_cap. Returns `{complete = 1, cap_pk = ...}`.
 - **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler → `frame:set_local_to_scalar('x', 'n', 1)` → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; cap's advance sweeps frame 0. Post-run: cap terminal, orphaned bucket marked `needs_trace = 1`, the `x` binding still walkable via the surviving ref chain. GC substrate not wired here; the reap of the orphans lands with GC integration.
 ]]
 

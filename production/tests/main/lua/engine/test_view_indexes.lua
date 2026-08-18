@@ -121,15 +121,15 @@ test("uspace: pk lookup uses the PK index in each union branch", function()
 	db:close()
 end)
 
-test("uspace: full listing uses roles + persistent + process indexes, no full scan", function()
+test("uspace: full listing uses roles + persistent + process_cap indexes, no full scan", function()
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from uspace")
 	assert_plan_contains(p, "USING COVERING INDEX objects_roles",
 		"roles branch (feeding uspace) should use the objects_roles partial index")
 	assert_plan_contains(p, "USING INDEX objects_persistent",
 		"persistent branch should use the partial index")
-	assert_plan_contains(p, "USING INDEX objects_process",
-		"cap-frame branch should use the objects_process partial index")
+	assert_plan_contains(p, "USING INDEX objects_process_cap",
+		"cap-frame branch should use the objects_process_cap partial index")
 	-- Every reference to `objects` in the plan should be qualified by
 	-- an index name — never a bare table scan. A partial-index covering
 	-- scan (SCAN objects USING COVERING INDEX ...) is fine.
@@ -189,13 +189,13 @@ test("`where core_role = 'e'` uses the objects_core_role partial unique index", 
 	db:close()
 end)
 
-test("uspace's cap-frame branch uses the objects_process partial index", function()
+test("uspace's cap-frame branch uses the objects_process_cap partial index", function()
 	local db = fresh_db()
-	-- uspace's cap-frame branch is `where primitive = 'f' and process = 1`.
+	-- uspace's cap-frame branch is `where primitive = 'f' and process_cap = 1`.
 	-- Test that predicate directly against objects so the plan
 	-- output surfaces the specific index; the same predicate inside
 	-- the view flattens to it.
-	local p = plan(db, "select object_pk from objects where primitive = 'f' and process = 1")
-	assert_plan_contains(p, "USING INDEX objects_process")
+	local p = plan(db, "select object_pk from objects where primitive = 'f' and process_cap = 1")
+	assert_plan_contains(p, "USING INDEX objects_process_cap")
 	db:close()
 end)

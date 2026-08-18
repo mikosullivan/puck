@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_schema",
-	"role": "Schema tests for `src/engine/cvm/schema.sql`. Exercises the load-bearing invariants: the `gc` column and its four gc-cycle rules (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the parent_frame / process immutability triggers, the cap-as-frame design (a frame with `process=1` and `ast='[]'` sits atop each call stack), refs-based ownership + the one-hash-one-array cap, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack views."
+	"role": "Schema tests for `src/engine/cvm/schema.sql`. Exercises the load-bearing invariants: the `gc` column and its four gc-cycle rules (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the parent_frame / process_cap immutability triggers, the cap-as-frame design (a frame with `process_cap=1` and `ast='[]'` sits atop each call stack), refs-based ownership + the one-hash-one-array cap, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack views."
 }
 ]]
 
@@ -66,14 +66,14 @@ local function seed_user(db)
 end
 
 --[[
-Insert a fresh process cap — a `primitive='f'` frame with `process=1`,
-`ast='[]'`, `stmt_idx=0`, no parent. This IS the process (its
-`object_pk` is the process identity). Frame 0 gets seeded under it as
+Insert a fresh process_cap cap — a `primitive='f'` frame with `process_cap=1`,
+`ast='[]'`, `stmt_idx=0`, no parent. This IS the process_cap (its
+`object_pk` is the process_cap identity). Frame 0 gets seeded under it as
 a nested frame.
 ]]
 local function insert_process(db, user_pk)
 	local pk
-	local sql = "insert into objects (primitive, process, ast, stmt_idx, owner_role) "
+	local sql = "insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
 		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk"
 	for row in db:nrows(sql) do
 		pk = row.object_pk
@@ -83,7 +83,7 @@ end
 
 --[[
 Insert frame 0 under the cap. Frame 0 is a nested frame (parent_frame
-= cap_pk, process = null). Returns frame 0's `object_pk`.
+= cap_pk, process_cap = null). Returns frame 0's `object_pk`.
 ]]
 local function insert_frame_0(db, cap_pk, user_pk)
 	local pk
@@ -223,19 +223,19 @@ end)
 -- Frame anchor rules — XOR and uniqueness
 -- ============================================================
 
-test('frame with BOTH parent_frame and process=1 is rejected', function()
+test('frame with BOTH parent_frame and process_cap=1 is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local parent_pk = insert_frame_0(db, cap_pk, user_pk)
-	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, process, owner_role) "
+	local sql = "insert into objects (primitive, ast, stmt_idx, parent_frame, process_cap, owner_role) "
 		.. "values ('f', '[]', 0, '" .. parent_pk .. "', 1, '" .. user_pk .. "');"
 	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
 		'both anchors rejected')
 	db:close()
 end)
 
-test('frame with NEITHER parent_frame nor process=1 is rejected', function()
+test('frame with NEITHER parent_frame nor process_cap=1 is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local sql = "insert into objects (primitive, ast, stmt_idx, owner_role) "
@@ -276,30 +276,30 @@ end)
 test('cap with non-empty ast is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
-	local sql = "insert into objects (primitive, process, ast, stmt_idx, owner_role) "
+	local sql = "insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
 		.. "values ('f', 1, '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '" .. user_pk .. "');"
 	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
 		'non-empty ast on cap rejected')
 	db:close()
 end)
 
-test('process = 1 on a non-frame row is rejected', function()
+test('process_cap = 1 on a non-frame row is rejected', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
-	local sql = "insert into objects (primitive, process, owner_role) "
+	local sql = "insert into objects (primitive, process_cap, owner_role) "
 		.. "values ('h', 1, '" .. user_pk .. "');"
 	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
-		'process=1 on hash rejected')
+		'process_cap=1 on hash rejected')
 	db:close()
 end)
 
-test('process = 0 is rejected (only 1 or null)', function()
+test('process_cap = 0 is rejected (only 1 or null)', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
-	local sql = "insert into objects (primitive, process, ast, stmt_idx, owner_role) "
+	local sql = "insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
 		.. "values ('f', 0, '[]', 0, '" .. user_pk .. "');"
 	assert_fails_with(db:exec(sql), db, 'CHECK constraint',
-		'process=0 rejected')
+		'process_cap=0 rejected')
 	db:close()
 end)
 
@@ -362,16 +362,16 @@ test('parent_frame is immutable', function()
 	db:close()
 end)
 
-test('process is immutable', function()
+test('process_cap is immutable', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 
-	-- try to un-cap the cap by clearing its process flag
+	-- try to un-cap the cap by clearing its process_cap flag
 	assert_fails_with(
-		db:exec("update objects set process = null where object_pk = '" .. cap_pk .. "';"),
-		db, 'objects_process_immutable',
-		'clearing process rejected')
+		db:exec("update objects set process_cap = null where object_pk = '" .. cap_pk .. "';"),
+		db, 'objects_process_cap_immutable',
+		'clearing process_cap rejected')
 	db:close()
 end)
 
@@ -1302,7 +1302,7 @@ end)
 -- ============================================================
 
 test('cap reaches its at-rest state (stmt_idx=0, gc=null, no children) after frame 0 completes', function()
-	-- Under the current design, caps are static process anchors —
+	-- Under the current design, caps are static process_cap anchors —
 	-- they don't advance stmt_idx and don't participate in the gc
 	-- cycle (cap-exempt from `frames_child_delete_sets_parent_gc`
 	-- and from `frames_auto_delete_at_terminal*`). The cap's at-rest
@@ -2594,7 +2594,7 @@ end)
 -- `check (typeof(stmt_idx) = 'integer' ...)` clause on the column
 -- rejects it at write time.
 --
--- Not applied to the flag columns (`gc`, `process`, `persistent`,
+-- Not applied to the flag columns (`gc`, `process_cap`, `persistent`,
 -- `needs_trace`) because their `check (X = 1)` is a value check, not
 -- a range check: SQLite's INTEGER affinity converts `1.0` and `'1'`
 -- to integer 1 before the CHECK runs, so they land as integer; any

@@ -1,7 +1,7 @@
 --[[
 {
 	"spec": "test_end_to_end_state",
-	"role": "DB-state assertions for the end-to-end empty-program scenario. Runs an empty program and inspects the resulting CVM tables to confirm the shutdown behavior. Under the current design, a process is a cap frame in `objects`; the empty-program run leaves the cap in terminal state (stmt_idx=1, gc=null, no children) and frame 0 swept — the cap itself still sits until GC reaps it (GC substrate is out of scope for now)."
+	"role": "DB-state assertions for the end-to-end empty-program scenario. Runs an empty program and inspects the resulting CVM tables to confirm the shutdown behavior. Under the current design, a process_cap is a cap frame in `objects`; the empty-program run leaves the cap in terminal state (stmt_idx=1, gc=null, no children) and frame 0 swept — the cap itself still sits until GC reaps it (GC substrate is out of scope for now)."
 }
 ]]
 
@@ -66,9 +66,9 @@ h.test('after empty run, frame 0 is gone from objects', function()
 		"select count(*) from objects where primitive = 'f' and parent_frame is not null")
 	h.assert_eq(nested_frame_count, 0, 'expected zero nested frames after shutdown (frame 0 swept)')
 
-	-- Cap itself is still there — it's the process's row, awaiting reap.
+	-- Cap itself is still there — it's the process_cap's row, awaiting reap.
 	local cap_count = scalar(e.cvm,
-		"select count(*) from objects where primitive = 'f' and process = 1")
+		"select count(*) from objects where primitive = 'f' and process_cap = 1")
 	h.assert_eq(cap_count, 1, 'expected the cap to still be present (awaiting GC-substrate reap)')
 end)
 
@@ -83,8 +83,8 @@ h.test('after empty run, only the three core-role seeds + the cap remain in obje
 	local core_role_count = scalar(e.cvm, 'select count(*) from objects where core_role is not null')
 	h.assert_eq(core_role_count, 3, 'expected the three core-role seeds')
 
-	local cap_count = scalar(e.cvm, "select count(*) from objects where process = 1")
-	h.assert_eq(cap_count, 1, 'expected one cap frame (the process anchor)')
+	local cap_count = scalar(e.cvm, "select count(*) from objects where process_cap = 1")
+	h.assert_eq(cap_count, 1, 'expected one cap frame (the process_cap anchor)')
 end)
 
 h.test('after empty run, refs is still empty', function()

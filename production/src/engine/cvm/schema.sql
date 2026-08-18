@@ -135,7 +135,7 @@ create table objects (
 	owner_role text references objects(object_pk),
 
 	-- CaspM tree as JSON text. Biconditional with primitive='f' — every
-	-- frame has an ast, no non-frame does. A cap frame (process=1) has
+	-- frame has an ast, no non-frame does. A cap frame (process_cap=1) has
 	-- ast='[]' — the cap doesn't dispatch anything, its "one slot" is
 	-- just a lifecycle position (0=live, 1=terminal). Immutable once
 	-- set (see objects_ast_immutable). SQL guarantees storage integrity
@@ -144,7 +144,7 @@ create table objects (
 	ast text
 		check ((primitive = 'f' and ast is not null)
 			or (primitive != 'f' and ast is null))
-		check (process is null or ast = '[]'),
+		check (process_cap is null or ast = '[]'),
 
 	-- Current position within the frame's ast. Set on frames, null on
 	-- non-frames. Under the gc cycle the handler sets `gc = 1` on the
@@ -162,27 +162,27 @@ create table objects (
 			or (typeof(stmt_idx) = 'integer' and stmt_idx >= 0 and primitive = 'f'))
 		check (stmt_idx is null or stmt_idx <= json_array_length(ast)),
 
-	-- Root-of-process flag. `process = 1` marks this frame as the top
-	-- cap of a call stack — the object identity of the process itself.
+	-- Root-of-process_cap flag. `process_cap = 1` marks this frame as the top
+	-- cap of a call stack — the object identity of the process_cap itself.
 	-- Null on nested frames (which have parent_frame set instead).
 	-- A cap has ast='[]' (see check below), starts at stmt_idx=0, and
 	-- becomes terminal when it reaches stmt_idx=1 with gc=null and no
 	-- children. Frame 0 sits under the cap as a nested frame. Immutable
-	-- via objects_process_immutable. [ghi]
-	process integer
-		check (process = 1)
-		check (process is null or primitive = 'f'),
+	-- via objects_process_cap_immutable. [ghi]
+	process_cap integer
+		check (process_cap = 1)
+		check (process_cap is null or primitive = 'f'),
 
 	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
 	-- has exactly one anchor: either parent_frame (nested frame) or
-	-- process=1 (the cap), never both, never neither. Enforced by the
+	-- process_cap=1 (the cap), never both, never neither. Enforced by the
 	-- mutual-exclusion check on this column. [ghi]
 	parent_frame text
 		references objects(object_pk)
 		check (parent_frame is null or primitive = 'f')
 		check (primitive != 'f'
-			or (parent_frame is not null and process is null)
-			or (parent_frame is null and process is 1)),
+			or (parent_frame is not null and process_cap is null)
+			or (parent_frame is null and process_cap is 1)),
 
 	-- No dedicated bucket/stack columns. Ownership of a bucket or a
 	-- stack is a normal `refs` row from the owner to the collection.
@@ -242,10 +242,10 @@ create table objects (
 -- Partial index for reachability queries over pinned rows. [ghi]
 create index objects_persistent on objects(persistent) where persistent = 1;
 
--- Cap frames — the `uspace` view's process-anchor branch selects
--- `process = 1`; partial index keeps it empty of nulls so the branch
+-- Cap frames — the `uspace` view's process_cap-anchor branch selects
+-- `process_cap = 1`; partial index keeps it empty of nulls so the branch
 -- doesn't fall back to a full objects scan. [ghi]
-create index objects_process on objects(process) where process = 1;
+create index objects_process_cap on objects(process_cap) where process_cap = 1;
 
 -- Partial indexes for the drain's worklist / callback-order walks. [ghi]
 create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
@@ -527,8 +527,8 @@ end;
 -- upward.
 --
 -- Guards:
---   * Cap frames are excluded (`process is not 1`). The cap stays
---     terminal-alive as the process anchor.
+--   * Cap frames are excluded (`process_cap is not 1`). The cap stays
+--     terminal-alive as the process_cap anchor.
 --   * The frame must have no child at the moment of delete
 --     (`not exists ...`). Defense in depth — under the state machine
 --     an advance to terminal requires gc=1, gc=1 requires no children
@@ -538,7 +538,7 @@ end;
 create trigger frames_auto_delete_at_terminal
 after update of stmt_idx on objects
 when new.primitive = 'f'
-	and new.process is not 1
+	and new.process_cap is not 1
 	and new.stmt_idx >= json_array_length(new.ast)
 	and not exists (
 		select 1 from objects
@@ -556,13 +556,13 @@ end;
 -- `frames_child_delete_sets_parent_gc` on the parent (unless the
 -- parent is a cap, which the cascade skips).
 --
--- Caps excluded (`process is not 1`) — a cap has empty ast and IS
--- born terminal by design, and stays alive as the process anchor.
+-- Caps excluded (`process_cap is not 1`) — a cap has empty ast and IS
+-- born terminal by design, and stays alive as the process_cap anchor.
 -- [ghi]
 create trigger frames_auto_delete_at_terminal_on_insert
 after insert on objects
 when new.primitive = 'f'
-	and new.process is not 1
+	and new.process_cap is not 1
 	and new.stmt_idx >= json_array_length(new.ast)
 begin
 	delete from objects where object_pk = new.object_pk;
@@ -643,7 +643,7 @@ end;
 create trigger frames_child_delete_sets_parent_gc
 after delete on objects
 when old.primitive = 'f' and old.parent_frame is not null
-	and (select process from objects where object_pk = old.parent_frame) is not 1
+	and (select process_cap from objects where object_pk = old.parent_frame) is not 1
 begin
 	update objects set gc = 1 where object_pk = old.parent_frame;
 end;
@@ -739,16 +739,16 @@ end;
 -- statements to dispatch; spawning a child there would resurrect a
 -- done frame.
 --
--- CAP parents are exempt (`process is not 1` on the parent). Caps
+-- CAP parents are exempt (`process_cap is not 1` on the parent). Caps
 -- have empty ast and are born terminal under the new formula, and
 -- frame 0 is always inserted as a cap's child at boot — that's the
--- normal case, not a resurrection. Caps are static process
+-- normal case, not a resurrection. Caps are static process_cap
 -- anchors, not executing frames. [ghi]
 create trigger frames_no_child_under_terminal_parent
 before insert on objects
 when new.parent_frame is not null
 	and (
-		select stmt_idx >= json_array_length(ast) and process is not 1
+		select stmt_idx >= json_array_length(ast) and process_cap is not 1
 		from objects
 		where object_pk = new.parent_frame
 	)
@@ -756,13 +756,13 @@ begin
 	select raise(abort, 'frames_no_child_under_terminal_parent: cannot insert a child frame under a parent that is in its terminal state');
 end;
 
--- `process` is immutable. A frame's identity as a cap (or not) is
+-- `process_cap` is immutable. A frame's identity as a cap (or not) is
 -- fixed at INSERT and never changes. Rejects only on actual change. [ghi]
-create trigger objects_process_immutable
-before update of process on objects
-when new.process is not old.process
+create trigger objects_process_cap_immutable
+before update of process_cap on objects
+when new.process_cap is not old.process_cap
 begin
-	select raise(abort, 'objects_process_immutable: objects.process is immutable');
+	select raise(abort, 'objects_process_cap_immutable: objects.process_cap is immutable');
 end;
 
 -- A parent frame can have at most one child frame at a time. Partial
@@ -1017,7 +1017,7 @@ create view uspace as
 	union
 	-- Process caps — the top of every live call stack. Frame 0 and
 	-- everything below it are reachable via parent_frame from the cap. [ghi]
-	select object_pk from objects where primitive = 'f' and process = 1;
+	select object_pk from objects where primitive = 'f' and process_cap = 1;
 
 
 -- ------------------------------------------------------------

@@ -173,7 +173,7 @@ function M.new(opts)
 		-- rejected as an engine bug (frames_advance_rejects_non_null_gc)
 		-- and at terminal is doubly rejected (frames_gc_set_rejects_at_terminal).
 		advance           = db:prepare('update objects set stmt_idx = ? where object_pk = ?'),
-		insert_cap       = db:prepare("insert into objects (primitive, process, ast, stmt_idx, owner_role) values ('f', 1, '[]', 0, ?) returning object_pk"),
+		insert_cap       = db:prepare("insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) values ('f', 1, '[]', 0, ?) returning object_pk"),
 		insert_frame_0   = db:prepare("insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) values ('f', ?, 0, ?, ?) returning object_pk"),
 	}
 
@@ -212,11 +212,11 @@ end
 --[[
 ## `run`
 
-Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`) end-to-end. Under the current CVM design a process is a cap frame — an `objects` row with `primitive='f'`, `process=1`, `ast='[]'`. Frame 0 sits under the cap as a nested frame. `run` seeds both, walks frame 0's ast through the handler chain, then advances the cap to sweep frame 0 and reach terminal state.
+Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`) end-to-end. Under the current CVM design a process is a cap frame — an `objects` row with `primitive='f'`, `process_cap=1`, `ast='[]'`. Frame 0 sits under the cap as a nested frame. `run` seeds both, walks frame 0's ast through the handler chain, then advances the cap to sweep frame 0 and reach terminal state.
 
 **Steps:**
 
-1. Seed the cap: INSERT a cap row (`process=1`, `ast='[]'`, `stmt_idx=0`, no parent).
+1. Seed the cap: INSERT a cap row (`process_cap=1`, `ast='[]'`, `stmt_idx=0`, no parent).
 2. Seed frame 0 as a nested frame under the cap (`parent_frame=cap_pk`, `ast=<caspm>`, `stmt_idx=0`).
 3. `self:run_frame(frame_0_pk)` — walks the ast; per statement: set `self.current_frame`, dispatch, advance `stmt_idx += 1, gc = 1` (cascades any marker child), reset `gc = null`.
 4. Advance the cap: `stmt_idx = 1, gc = 1` — cascade sweeps frame 0. Frame 0's outgoing refs (including any owner→bucket ref) cascade too, firing the standard mark-needs-trace trigger on each ref-delete.
