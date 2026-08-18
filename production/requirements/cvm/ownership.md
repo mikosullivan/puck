@@ -33,9 +33,9 @@ Sharing is an escape hatch for meta-programming scenarios. Common cases still ha
 
 ## Cascade cleanup
 
-When an owner is deleted, its outgoing refs cascade-delete via the `refs.parent ON DELETE CASCADE` FK — including the owner→bucket ref. Each ref-delete fires the standard `refs_mark_needs_trace_after_delete` trigger, which marks the ref's `child` (the bucket) `needs_trace = 1`.
+When an owner is deleted, its outgoing refs cascade-delete via the `refs.parent ON DELETE CASCADE` FK — including the owner→bucket ref. Each ref-delete fires the standard `refs_mark_needs_trace_after_delete` trigger, which marks the ref's `child` (the bucket) a `needs_trace` row.
 
-The bucket survives with a `needs_trace` flag. GC decides its fate: if any live root still reaches the bucket via some other ref, the bucket stays; otherwise GC sweeps it.
+The bucket survives with a row in the `needs_trace` table. GC decides its fate: if any live root still reaches the bucket via some other ref, the bucket stays; otherwise GC sweeps it.
 
 No dedicated per-collection triggers exist — the whole lifecycle runs through the standard refs-cleanup machinery.
 

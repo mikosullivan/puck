@@ -3,20 +3,16 @@
 --[[
 {
 	"module": "test_needs_trace_lifecycle",
-	"role": "Sprint-scoped tests for the needs_trace table's cascade / restrict semantics: `object_pk` FK cascades on object delete, `process_pk` FK restricts (a process can't be deleted while it has outstanding needs_trace rows), and a process cap can't advance to terminal while any needs_trace rows still reference it.",
-	"run": "lua5.4 sprints/trace-tables/tests/test_needs_trace_lifecycle.lua (from repo root)"
+	"role": "Tests for the needs_trace table's cascade / restrict semantics: `object_pk` FK cascades on object delete, `process_pk` FK restricts (a process can't be deleted while it has outstanding needs_trace rows), a process cap can't advance to terminal while any needs_trace rows still reference it, and gc can't flip 1 → null while needs_trace has rows for the current process.",
+	"run": "lua5.4 production/tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
 
-local home = os.getenv('HOME') or ''
-package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
-package.path = 'sprints/trace-tables/src/engine/cvm/udfs/?.lua;' .. package.path
+local sqlite             = require('lsqlite3')
+local current_process_pk = require('cvm.udfs.current_process_pk')
 
-local sqlite = require('lsqlite3')
-local current_process_pk = require('current_process_pk')
-
-local SCHEMA_PATH    = 'sprints/trace-tables/src/schema.sql'
-local PREFLIGHT_PATH = 'sprints/trace-tables/src/preflight.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/schema.sql'
+local PREFLIGHT_PATH = 'production/src/engine/cvm/preflight.sql'
 
 
 -- ------------------------------------------------------------
@@ -51,21 +47,8 @@ local function first(db, sql)
 end
 
 
-local passed, failed = 0, 0
-local failures = {}
-
-local function test(name, fn)
-	local ok, err = xpcall(fn, debug.traceback)
-
-	if ok then
-		passed = passed + 1
-		print('  PASS  ' .. name)
-	else
-		failed = failed + 1
-		print('  FAIL  ' .. name)
-		table.insert(failures, {name = name, err = err})
-	end
-end
+local h = require('helpers')
+local test = h.test
 
 local function assert_ok(rc, db, note)
 	if rc ~= sqlite.OK then
@@ -180,58 +163,17 @@ test('deleting a process cap after clearing its needs_trace succeeds', function(
 end)
 
 
--- ============================================================
--- process_cap_terminal_requires_no_needs_trace
--- ============================================================
+-- (The three "cap advance to terminal" tests that lived here in
+-- the sprint tested `process_cap_terminal_requires_no_needs_trace`.
+-- That trigger is gone in production — caps are born at terminal,
+-- never advance, so the trigger was effectively unreachable. The
+-- worklist-must-be-drained invariant is now enforced by
+-- `frames_gc_reset_requires_empty_needs_trace`, tested below.)
 
-test('cap cannot advance to terminal while needs_trace rows reference it', function()
-	local db = schema_db()
-	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
-
-	-- Mark the scalar.
-	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
-		db, 'needs_trace insert')
-
-	-- Get the cap to gc=1 (unrestricted set) so it's advance-eligible.
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap gc=1')
-
-	-- Try to advance the cap to its terminal (stmt_idx = 1). Should be rejected.
-	assert_fails_with(
-		db:exec("update objects set stmt_idx = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'process_cap_terminal_requires_no_needs_trace',
-		'cap advance to terminal blocked by outstanding needs_trace')
-	db:close()
-end)
-
-test('cap CAN advance to terminal after clearing its needs_trace', function()
-	local db = schema_db()
-	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
-
-	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
-		db, 'needs_trace insert')
-
-	assert_ok(db:exec("delete from needs_trace where object_pk = '" .. scalar_pk .. "'"),
-		db, 'needs_trace delete')
-
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap gc=1')
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap advance to terminal after cleanup')
-	db:close()
-end)
-
-test('cap CAN advance to terminal when it never had any needs_trace rows', function()
-	-- Baseline: nothing marked, cap should reach terminal cleanly.
-	local db = schema_db()
-	local _user_pk, cap_pk, _hash_pk, _scalar_pk = setup(db)
-
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap gc=1')
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap advance to terminal with no needs_trace')
-	db:close()
-end)
+-- (Two more "cap CAN advance to terminal" tests lived here in the
+-- sprint. Same reasoning as the trigger removal above — caps are
+-- born at terminal in production and don't advance; there's no
+-- terminal-advance to test.)
 
 
 -- ============================================================
@@ -389,20 +331,35 @@ end)
 -- frames_gc_reset_requires_empty_needs_trace
 -- ============================================================
 
+--[[
+Insert a non-cap nested frame under `cap_pk` with a non-empty ast
+so it starts at stmt_idx=0, NOT at terminal — the ast has length 1,
+so terminal is at stmt_idx=1. Enough headroom to set gc=1 on it
+without hitting `frames_gc_set_rejects_at_terminal`.
+]]
+local function insert_nested_frame(db, cap_pk, user_pk)
+	return first(db,
+		"insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) "
+		.. "values ('f', '[[{\"in\":\"as\"},\"x\",{\"v\":1}]]', 0, '"
+		.. cap_pk .. "', '" .. user_pk .. "') returning object_pk").object_pk
+end
+
 test('gc 1 → null is rejected while the current process has needs_trace rows', function()
-	-- Mark an object, mark gc=1 on the cap, then try to reset gc to
-	-- null. Rejected — needs_trace still has an outstanding entry for
-	-- the current process.
+	-- Mark an object, mark gc=1 on a nested frame (a cap can't have
+	-- gc=1 set — it's born at terminal — so use a nested frame with
+	-- a non-empty ast), then try to reset gc. Rejected — needs_trace
+	-- still has an outstanding entry for the current process.
 	local db = schema_db()
-	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
+	local user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
+	local frame_pk = insert_nested_frame(db, cap_pk, user_pk)
 
 	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
 		db, 'needs_trace insert')
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap gc=1')
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_pk .. "'"),
+		db, 'frame gc=1')
 
 	assert_fails_with(
-		db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "'"),
+		db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "'"),
 		db, 'frames_gc_reset_requires_empty_needs_trace',
 		'gc reset blocked while needs_trace non-empty for current process')
 	db:close()
@@ -410,24 +367,25 @@ end)
 
 test('gc 1 → null succeeds once needs_trace is cleared', function()
 	local db = schema_db()
-	local _user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
+	local user_pk, cap_pk, _hash_pk, scalar_pk = setup(db)
+	local frame_pk = insert_nested_frame(db, cap_pk, user_pk)
 
 	assert_ok(db:exec("insert into needs_trace (object_pk) values ('" .. scalar_pk .. "')"),
 		db, 'needs_trace insert')
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_pk .. "'"),
-		db, 'cap gc=1')
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_pk .. "'"),
+		db, 'frame gc=1')
 
 	assert_ok(db:exec("delete from needs_trace"), db, 'clear needs_trace')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_pk .. "'"),
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_pk .. "'"),
 		db, 'gc reset after cleanup')
 	db:close()
 end)
 
 test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process', function()
-	-- Two caps, A (current) and B. Mark an object under B (by swinging
-	-- current_process_pk temporarily), then swing back to A. A's gc
-	-- reset succeeds because its own needs_trace worklist is empty —
-	-- B's outstanding row is scoped to B.
+	-- Two caps A and B, each with a nested frame under them. Mark an
+	-- object under cap B (by swinging current_process_pk), then swing
+	-- to A and set/reset gc on A's nested frame. Succeeds because A's
+	-- own needs_trace worklist is empty; B's row is scoped to B.
 	local db = schema_db()
 	local user_pk = first(db, "select object_pk from objects where core_role = 'u'").object_pk
 
@@ -437,6 +395,8 @@ test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process',
 	local cap_b_pk = first(db,
 		"insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
 		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk").object_pk
+
+	local frame_a_pk = insert_nested_frame(db, cap_a_pk, user_pk)
 
 	local scalar_pk = first(db,
 		"insert into objects (primitive, scalar_type, scalar_value, owner_role) "
@@ -449,10 +409,10 @@ test('gc 1 → null is not blocked by needs_trace rows for a DIFFERENT process',
 		db, 'mark under cap B')
 
 	current = cap_a_pk
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. cap_a_pk .. "'"),
-		db, 'cap A gc=1')
-	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. cap_a_pk .. "'"),
-		db, 'cap A gc reset — B\'s worklist doesn\'t block A')
+	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. frame_a_pk .. "'"),
+		db, 'frame_a gc=1')
+	assert_ok(db:exec("update objects set gc = null where object_pk = '" .. frame_a_pk .. "'"),
+		db, 'frame_a gc reset — B\'s worklist doesn\'t block A')
 	db:close()
 end)
 
@@ -542,26 +502,3 @@ test('needs_trace persists across connections; traces does not', function()
 end)
 
 
--- ------------------------------------------------------------
--- report
--- ------------------------------------------------------------
-
-print()
-print(string.format('TOTAL: %d passed, %d failed', passed, failed))
-
-if failed > 0 then
-	print()
-	print('Failures:')
-
-	for _, f in ipairs(failures) do
-		print('  [' .. f.name .. ']')
-
-		for line in tostring(f.err):gmatch('[^\n]+') do
-			print('    ' .. line)
-		end
-	end
-
-	os.exit(1)
-end
-
-os.exit(0)

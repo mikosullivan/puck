@@ -26,9 +26,11 @@ Every state between steps is a legal at-rest state. Bypass paths get rejected.
 local home = os.getenv('HOME') or ''
 package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
-local sqlite = require('lsqlite3')
+local sqlite             = require('lsqlite3')
+local current_process_pk = require('cvm.udfs.current_process_pk')
 
-local SCHEMA_PATH = 'production/src/engine/cvm/schema.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/schema.sql'
+local PREFLIGHT_PATH = 'production/src/engine/cvm/preflight.sql'
 
 
 -- ------------------------------------------------------------
@@ -42,13 +44,41 @@ local function slurp(path)
 	return text
 end
 
+--[[
+Fresh CVM DB. Pragmas set, schema and preflight applied. A shared
+mutable holder table stores the "current process cap" for each db
+handle; the UDF is registered once per connection with a closure
+that reads through the holder, and tests swap the current process
+by calling `set_current_process(db, cap_pk)` which writes to the
+holder. Avoids the lsqlite3 create_function replacement quirk where
+re-registering the callback doesn't reliably override across
+statement boundaries.
+]]
+local _current_process_pk_holders = setmetatable({}, {__mode = 'k'})
+
 local function fresh_db()
 	local db = sqlite.open_memory()
 	db:exec('pragma foreign_keys = on;')
 	db:exec('pragma recursive_triggers = on;')
+	local holder = {pk = nil}
+	_current_process_pk_holders[db] = holder
+	current_process_pk.register(db, function() return holder.pk end)
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
+	rc = db:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 	return db
+end
+
+--[[
+Set the current process cap for `db`. The UDF reads through the
+shared holder so the value swap is visible to every subsequent SQL
+call without re-registering the callback.
+]]
+local function set_current_process(db, cap_pk)
+	local holder = _current_process_pk_holders[db]
+	assert(holder, 'set_current_process: db not from fresh_db()')
+	holder.pk = cap_pk
 end
 
 local function first(db, sql)
@@ -569,7 +599,9 @@ test('deleting a child frame cascade-sets parent.gc = 1 (non-cap parent)', funct
 	-- `frames_child_delete_sets_parent_gc` — direct delete of a child
 	-- frame triggers the parent's gc → 1 (unless the parent is a cap,
 	-- which is exempt). Verifies the mechanism that ends every
-	-- non-cap frame's lifecycle.
+	-- non-cap frame's lifecycle. Under the current design terminal is
+	-- an at-rest state — auto-delete is gone — so this test explicitly
+	-- deletes the child rather than relying on advance-triggers-delete.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
@@ -581,17 +613,14 @@ test('deleting a child frame cascade-sets parent.gc = 1 (non-cap parent)', funct
 	assert_ok(db:exec(child_sql), db, 'child insert')
 	local child_pk = first(db, "select object_pk from objects where parent_frame = '" .. parent_pk .. "'").object_pk
 
-	-- Mark the child ready to advance, advance it to terminal — that
-	-- fires `frames_auto_delete_at_terminal` on the child, which
-	-- deletes it, which cascade-sets parent.gc = 1.
-	assert_ok(db:exec("update objects set gc = 1 where object_pk = '" .. child_pk .. "'"),
-		db, 'child gc=1')
-	assert_ok(db:exec("update objects set stmt_idx = 1 where object_pk = '" .. child_pk .. "'"),
-		db, 'child advance → auto-delete')
+	-- Explicit delete of the child — simulates the engine's reap step
+	-- at the end of run_frame. The cascade flips parent.gc to 1.
+	assert_ok(db:exec("delete from objects where object_pk = '" .. child_pk .. "'"),
+		db, 'child delete')
 
 	local parent_row = first(db, "select gc from objects where object_pk = '" .. parent_pk .. "'")
 	assert(tonumber(parent_row.gc) == 1,
-		'parent gc should be 1 after child auto-delete cascade; got: ' .. tostring(parent_row.gc))
+		'parent gc should be 1 after child delete cascade; got: ' .. tostring(parent_row.gc))
 	db:close()
 end)
 
@@ -1302,23 +1331,24 @@ end)
 -- ============================================================
 
 test('cap reaches its at-rest state (stmt_idx=0, gc=null, no children) after frame 0 completes', function()
-	-- Under the current design, caps are static process_cap anchors —
-	-- they don't advance stmt_idx and don't participate in the gc
-	-- cycle (cap-exempt from `frames_child_delete_sets_parent_gc`
-	-- and from `frames_auto_delete_at_terminal*`). The cap's at-rest
-	-- state is where it was born: stmt_idx=0, gc=null. Frame 0 does
-	-- its cycle underneath, exhausts its ast, hits terminal, and is
-	-- auto-deleted by `frames_auto_delete_at_terminal` — the cap's
-	-- state is unchanged except that its child is now gone.
+	-- Under the current design, caps are static process anchors — they
+	-- don't advance stmt_idx and don't participate in the gc cycle
+	-- (cap-exempt from `frames_child_delete_sets_parent_gc`). Frame 0
+	-- runs its ast to terminal, the engine's reap step deletes it, and
+	-- the cap's state is unchanged except the child is now gone.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
 	-- Frame 0 (length-1 ast): mark gc=1, bare advance to 1 (terminal).
-	-- The advance auto-nulls gc and the auto-delete-at-terminal
-	-- trigger removes frame 0.
+	-- Auto-nulls gc via frames_advance_sets_gc_null. Frame stays alive
+	-- at terminal until we reap it.
 	assert_ok(walker_advance(db, frame_pk, 1), db, 'frame 0 advance to terminal')
+
+	-- Simulate the engine's reap step.
+	assert_ok(db:exec("delete from objects where object_pk = '" .. frame_pk .. "';"),
+		db, 'frame 0 reap')
 
 	-- Cap unchanged.
 	local cap_row = first(db, "select stmt_idx, gc from objects where object_pk = '" .. cap_pk .. "'")
@@ -1327,7 +1357,7 @@ test('cap reaches its at-rest state (stmt_idx=0, gc=null, no children) after fra
 
 	-- Frame 0 is gone; cap has no children.
 	local children = first(db, "select count(*) as n from objects where parent_frame = '" .. cap_pk .. "'")
-	assert(tonumber(children.n) == 0, 'cap should have no children (frame 0 auto-deleted at terminal)')
+	assert(tonumber(children.n) == 0, 'cap should have no children (frame 0 reaped)')
 	db:close()
 end)
 
@@ -1368,36 +1398,38 @@ test('a frame with a child cannot be deleted', function()
 end)
 
 test('frame delete cascades its refs and marks each child needs_trace=1', function()
-	-- Frame 0 exhausts its ast, hits terminal, auto-deletes
-	-- (`frames_auto_delete_at_terminal`). Its outgoing refs cascade
-	-- via `refs.parent ON DELETE CASCADE`; each ref-delete fires
-	-- `refs_mark_needs_trace_after_delete` on the child, marking the
-	-- bucket needs_trace = 1. Verifies the mark path via the natural
-	-- lifecycle end.
+	-- Frame 0 exhausts its ast, reaps explicitly (simulating the
+	-- engine's reap step). Its outgoing refs cascade via
+	-- `refs.parent ON DELETE CASCADE`; each ref-delete fires
+	-- `refs_mark_needs_trace_after_delete` on the child, which
+	-- inserts the child into the needs_trace table (scoped to the
+	-- current process via the DEFAULT-driven upsert).
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
+	set_current_process(db, cap_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
 	local bucket_pk = insert_hash(db, user_pk)
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. frame_pk .. "', '" .. bucket_pk .. "', null, 0)"), db)
 
-	-- Frame 0 runs to terminal. The auto-delete cascades refs, which
-	-- marks the bucket.
 	assert_ok(walker_advance(db, frame_pk, 1), db, 'frame 0 advance to terminal')
+	assert_ok(db:exec("delete from objects where object_pk = '" .. frame_pk .. "';"),
+		db, 'frame 0 reap')
 
-	local bucket = first(db, "select needs_trace from objects "
-		.. "where object_pk = '" .. bucket_pk .. "'")
+	local bucket = first(db, "select object_pk from objects where object_pk = '" .. bucket_pk .. "'")
 	assert(bucket ~= nil, 'bucket should survive frame delete')
-	assert(tonumber(bucket.needs_trace) == 1, 'bucket should be marked needs_trace=1')
+	local mark = first(db, "select object_pk from needs_trace where object_pk = '" .. bucket_pk .. "'")
+	assert(mark ~= nil, 'bucket should be in the needs_trace table')
 	db:close()
 end)
 
-test('swapping the owner→bucket ref for a different target marks the old target needs_trace=1', function()
+test('swapping the owner→bucket ref for a different target marks the old target', function()
 	local db = fresh_db()
 	local user_pk = seed_user(db)
 	local cap_pk = insert_process(db, user_pk)
+	set_current_process(db, cap_pk)
 	local frame_pk = insert_frame_0(db, cap_pk, user_pk)
 
 	-- Attach bucket A to frame 0.
@@ -1413,14 +1445,12 @@ test('swapping the owner→bucket ref for a different target marks the old targe
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. frame_pk .. "', '" .. bucket_b .. "', null, 0)"), db, 'add new ref')
 
-	-- Old bucket (A) marked needs_trace=1 (from the ref-delete); new (B) not.
-	local a = first(db, "select needs_trace from objects "
-		.. "where object_pk = '" .. bucket_a .. "'")
-	assert(tonumber(a.needs_trace) == 1, 'old bucket should be marked needs_trace=1')
+	-- Old bucket (A) landed in needs_trace via the ref-delete; new (B) didn't.
+	local a = first(db, "select object_pk from needs_trace where object_pk = '" .. bucket_a .. "'")
+	assert(a ~= nil, 'old bucket should be in needs_trace')
 
-	local b = first(db, "select needs_trace from objects "
-		.. "where object_pk = '" .. bucket_b .. "'")
-	assert(b.needs_trace == nil, 'new bucket should not be marked')
+	local b = first(db, "select object_pk from needs_trace where object_pk = '" .. bucket_b .. "'")
+	assert(b == nil, 'new bucket should NOT be in needs_trace')
 	db:close()
 end)
 
@@ -1572,55 +1602,40 @@ end)
 
 
 -- ============================================================
--- Core-role rows: needs_trace and in_trace are freely writable
--- (close-schema-holes sprint, issue #1667)
+-- ref-delete with a core-role child
 -- ============================================================
 
-test('a core role\'s needs_trace can be set (not blocked by objects_no_update_root_role)', function()
-	local db = fresh_db()
-	local engine_pk = first(db, "select object_pk from objects where core_role = 'e'").object_pk
-
-	assert_ok(db:exec("update objects set needs_trace = 1 where object_pk = '" .. engine_pk .. "'"),
-		db, 'setting needs_trace on the engine core role')
-
-	local row = first(db, "select needs_trace from objects where object_pk = '" .. engine_pk .. "'")
-	assert(tonumber(row.needs_trace) == 1, 'engine.needs_trace should be 1 after the update')
-	db:close()
-end)
-
-test('a core role\'s in_trace can be set (not blocked by objects_no_update_root_role)', function()
-	local db = fresh_db()
-	local cache_pk = first(db, "select object_pk from objects where core_role = 'c'").object_pk
-
-	assert_ok(db:exec("update objects set in_trace = 1 where object_pk = '" .. cache_pk .. "'"),
-		db, 'setting in_trace on the cache core role')
-
-	local row = first(db, "select in_trace from objects where object_pk = '" .. cache_pk .. "'")
-	assert(tonumber(row.in_trace) == 1, 'cache.in_trace should be 1 after the update')
-	db:close()
-end)
-
 test('deleting a ref whose child is a core role succeeds', function()
+	-- The ref-delete trigger inserts the old child into the
+	-- needs_trace table via a DEFAULT-driven upsert. The insert
+	-- reads `current_process_pk()` — with no process set (fresh db
+	-- + no override), the getter returns nil, the DEFAULT resolves
+	-- to null, and `needs_trace.process_pk NOT NULL` rejects the
+	-- insert. For this test we set a getter that returns a cap pk.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
+	local cap_pk
+	local sql = "insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) "
+		.. "values ('f', 1, '[]', 0, '" .. user_pk .. "') returning object_pk"
+	for row in db:nrows(sql) do cap_pk = row.object_pk end
+	set_current_process(db, cap_pk)
+
 	local hash_pk = insert_hash(db, user_pk)
 
 	-- Point a ref from hash_pk at the user core role.
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. hash_pk .. "', '" .. user_pk .. "', 'r', 0)"), db, 'insert ref → user')
 
-	-- Deleting that ref used to fail: the refs_mark_needs_trace_after_delete
-	-- trigger would set user.needs_trace=1, and the no-update-root-role
-	-- guard would reject it. Now needs_trace is exempt from the guard.
+	-- Deleting the ref fires refs_mark_needs_trace_after_delete;
+	-- the child (user core role) lands in the needs_trace table.
 	assert_ok(db:exec("delete from refs where parent = '" .. hash_pk
 		.. "' and child = '" .. user_pk .. "'"), db, 'delete ref → user')
 
-	-- Ref is gone; user.needs_trace is set to 1 by the mark trigger.
 	local ref_count_row = first(db, "select count(*) as n from refs where child = '" .. user_pk .. "'")
 	assert(tonumber(ref_count_row.n) == 0, 'ref should be gone')
 
-	local user_row = first(db, "select needs_trace from objects where object_pk = '" .. user_pk .. "'")
-	assert(tonumber(user_row.needs_trace) == 1, 'user.needs_trace should be marked 1 by the ref-delete trigger')
+	local nt_row = first(db, "select object_pk from needs_trace where object_pk = '" .. user_pk .. "'")
+	assert(nt_row ~= nil, 'user should have been marked in the needs_trace table by the ref-delete trigger')
 	db:close()
 end)
 
@@ -2509,81 +2524,10 @@ end)
 
 
 -- ============================================================
--- in_trace CHECK: typeof + positive
--- SQLite's `integer` is affinity, not strict typing, so `in_trace >
--- 0` alone accepts real (1.5) and text ('abc'). The typeof clause
--- closes the affinity hole; the `> 0` regression stays.
+-- (The in_trace column CHECK tests moved out with the column
+-- itself when the trace-tables sprint integrated. in_trace is now
+-- a temp table with a composite PK, not a column on objects.)
 -- ============================================================
-
-test('in_trace defaults to null on a fresh row', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	local row = first(db, "select in_trace from objects where object_pk = '" .. hash_pk .. "'")
-	assert(row.in_trace == nil, 'in_trace should default to null; got: ' .. tostring(row.in_trace))
-	db:close()
-end)
-
-test('setting in_trace to a positive integer is accepted', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	assert_ok(db:exec("update objects set in_trace = 1 where object_pk = '" .. hash_pk .. "'"),
-		db, 'in_trace=1 accepted')
-	assert_ok(db:exec("update objects set in_trace = 42 where object_pk = '" .. hash_pk .. "'"),
-		db, 'in_trace=42 accepted')
-	db:close()
-end)
-
-test('setting in_trace to a real (1.5) is rejected', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set in_trace = 1.5 where object_pk = '" .. hash_pk .. "'"),
-		db, 'CHECK constraint',
-		'in_trace=1.5 rejected')
-	db:close()
-end)
-
-test("setting in_trace to text ('abc') is rejected", function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set in_trace = 'abc' where object_pk = '" .. hash_pk .. "'"),
-		db, 'CHECK constraint',
-		"in_trace='abc' rejected")
-	db:close()
-end)
-
-test('setting in_trace to 0 is rejected (regression of the > 0 rule)', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set in_trace = 0 where object_pk = '" .. hash_pk .. "'"),
-		db, 'CHECK constraint',
-		'in_trace=0 rejected')
-	db:close()
-end)
-
-test('setting in_trace to a negative integer is rejected (regression)', function()
-	local db = fresh_db()
-	local user_pk = seed_user(db)
-	local hash_pk = insert_hash(db, user_pk)
-
-	assert_fails_with(
-		db:exec("update objects set in_trace = -1 where object_pk = '" .. hash_pk .. "'"),
-		db, 'CHECK constraint',
-		'in_trace=-1 rejected')
-	db:close()
-end)
 
 
 -- ============================================================

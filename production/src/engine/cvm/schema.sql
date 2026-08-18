@@ -222,19 +222,6 @@ create table objects (
 		check (gc = 1)
 		check (gc is null or primitive = 'f'),
 
-	-- GC scratch: mark from the drain's retrace pass. Null in the common case. [ghi]
-	needs_trace integer check (needs_trace = 1),
-
-	-- GC scratch: callback-order index. Null in the common case.
-	-- `typeof(in_trace) = 'integer'` closes SQLite's affinity hole —
-	-- `integer` alone is affinity, not strict typing, so a real like
-	-- 1.5 or a text like 'abc' would satisfy `> 0` without the
-	-- typeof clause. [ghi]
-	in_trace integer check (
-		in_trace is null
-		or (typeof(in_trace) = 'integer' and in_trace > 0)
-	),
-
 	-- Human-readable label. Informational; no query path reads it. [ghi]
 	debug text
 );
@@ -246,10 +233,6 @@ create index objects_persistent on objects(persistent) where persistent = 1;
 -- `process_cap = 1`; partial index keeps it empty of nulls so the branch
 -- doesn't fall back to a full objects scan. [ghi]
 create index objects_process_cap on objects(process_cap) where process_cap = 1;
-
--- Partial indexes for the drain's worklist / callback-order walks. [ghi]
-create index objects_needs_trace on objects(needs_trace) where needs_trace = 1;
-create index objects_in_trace    on objects(in_trace)    where in_trace is not null;
 
 -- Roles are a small population inside a large objects table. The `roles`
 -- view (see below) is `select object_pk from objects where primitive = 'r'`;
@@ -273,6 +256,95 @@ begin
 			then raise(abort, 'objects_scalar_value_immutable: objects.scalar_value is immutable')
 	end;
 end;
+
+
+-- ------------------------------------------------------------
+-- GC trace-state.
+--
+-- `needs_trace` is PERSISTENT (main schema, real FKs). A mark
+-- means "this object needs tracing" and must survive engine
+-- restart — an engine that crashes with pending marks needs to
+-- know on restart that those objects still need to be traced.
+-- Losing the mark would leak.
+--
+-- The rest of the trace state — `traces`, `in_trace`, and the
+-- two FK-equivalent triggers that reproduce cascade semantics
+-- for those temp tables — lives in `preflight.sql`. It's
+-- per-connection scratch and gets created on every connection
+-- open, so it can't live in `schema.sql` (which runs once at
+-- DB creation). See preflight.sql for the details.
+-- ------------------------------------------------------------
+
+-- Drain worklist. A row here means the object has been marked for
+-- retrace by a specific process. PERSISTENT because a mark must
+-- survive engine restart — the engine needs to re-trace on the
+-- next run if it crashed mid-mark.
+--
+-- `process_pk` scopes the mark to a specific process's trace (each
+-- process cap runs its own reachability sweep independently) and is
+-- required. Defaults to `current_process_pk()` — the engine's UDF
+-- returning the currently-dispatching process cap's pk — so triggers
+-- and callers that INSERT without specifying it pick up the engine's
+-- runtime context automatically. The companion trigger
+-- `needs_trace_process_pk_must_be_cap` verifies the referenced row
+-- is actually a cap (`process_cap = 1`); the FK alone can't check
+-- other columns of the target row.
+--
+-- PRIMARY KEY is composite `(process_pk, object_pk)` — the same
+-- object can be marked once per process (each cap runs an
+-- independent trace), but a single process cannot double-mark. The
+-- ref-delete trigger uses an `ON CONFLICT DO NOTHING` upsert so
+-- repeated ref-drops within the same process silently coalesce.
+--
+-- ON DELETE semantics on the two FKs differ deliberately:
+--   * `object_pk` — CASCADE. If the marked object is deleted, its
+--     mark row goes with it. Cascades across all processes' marks.
+--   * `process_pk` — NO ACTION (RESTRICT). A process cannot be
+--     deleted until it has cleaned up its own needs_trace rows.
+--     Companion trigger `process_cap_terminal_requires_no_needs_trace`
+--     enforces the earlier phase: a cap cannot even advance to its
+--     terminal state while any needs_trace rows still reference it. [ghi]
+create table needs_trace (
+	process_pk text not null
+		default (current_process_pk())
+		references objects(object_pk),
+	object_pk text not null
+		references objects(object_pk) on delete cascade,
+	primary key (process_pk, object_pk)
+);
+
+-- process_pk must reference a cap frame (`process_cap = 1`). [ghi]
+create trigger needs_trace_process_pk_must_be_cap
+before insert on needs_trace
+when (select process_cap from objects where object_pk = new.process_pk) is not 1
+begin
+	select raise(abort, 'needs_trace_process_pk_must_be_cap: process_pk must reference an objects row with process_cap = 1');
+end;
+
+-- (No `process_cap_terminal_requires_no_needs_trace` here — under
+-- the current design caps are born at terminal, don't participate
+-- in the gc cycle, and don't advance. The worklist-must-be-drained
+-- discipline is enforced instead by
+-- `frames_gc_reset_requires_empty_needs_trace` below, which blocks
+-- the cleanup-complete transition on ANY frame whose current process
+-- still has outstanding marks.)
+
+-- A frame's gc cannot flip 1 → null while the current process has
+-- any needs_trace rows outstanding. gc = null means "cleanup done,
+-- back to executing normally"; that's premature if there's still
+-- pending trace work in the worklist.
+--
+-- Scoped by `current_process_pk()` so a background administrative
+-- path touching a non-current cap's gc doesn't get blocked by an
+-- unrelated process's worklist. [ghi]
+create trigger frames_gc_reset_requires_empty_needs_trace
+before update of gc on objects
+when old.gc is 1 and new.gc is null
+	and exists (select 1 from needs_trace where process_pk = current_process_pk())
+begin
+	select raise(abort, 'frames_gc_reset_requires_empty_needs_trace: cannot reset gc to null while the current process has outstanding needs_trace rows');
+end;
+
 
 -- ------------------------------------------------------------
 -- Refs: parent-to-child object edges. Any primitive can be a parent;
@@ -362,11 +434,22 @@ begin
 	select raise(abort, 'refs_immutable: refs rows are immutable');
 end;
 
--- On refs DELETE: mark the old child for trace. [ghi]
+-- On refs DELETE: mark the old child for trace. Insertion into the
+-- separate `needs_trace` table. `process_pk` is omitted from the
+-- INSERT — the column's DEFAULT is `current_process_pk()`, so the
+-- engine's currently-dispatching process cap gets recorded
+-- automatically. The `ON CONFLICT DO NOTHING` upsert coalesces
+-- duplicate marks from the same process (matching the composite
+-- `(process_pk, object_pk)` PK on needs_trace); a different
+-- process dropping a ref to the same child writes a fresh row.
+-- The child is guaranteed to still exist in objects at this point
+-- — `refs.child` has ON DELETE RESTRICT, so a child object can't
+-- be deleted while any ref points at it. [ghi]
 create trigger refs_mark_needs_trace_after_delete
 after delete on refs
 begin
-	update objects set needs_trace = 1 where object_pk = old.child;
+	insert into needs_trace (object_pk) values (old.child)
+		on conflict do nothing;
 end;
 
 -- Hash entries REQUIRE a non-null key. A hash-vs-array distinction:
@@ -517,56 +600,6 @@ end;
 -- gc = null` — which requires no children (invariant 4).
 --
 -- Bidirectional gc: null (executing) ↔ 1 (post-dispatch cleanup).
-
--- New gc-cycle design, rule 8: auto-delete a frame the moment it
--- reaches the terminal state (stmt_idx past the last executable
--- position). Chain reaction with rule 3: the delete fires an
--- AFTER-DELETE trigger on the parent that flips parent.gc from null
--- to 1, the parent's walker advances, and if that advance also
--- reaches terminal, this trigger fires again. Whole stack collapses
--- upward.
---
--- Guards:
---   * Cap frames are excluded (`process_cap is not 1`). The cap stays
---     terminal-alive as the process_cap anchor.
---   * The frame must have no child at the moment of delete
---     (`not exists ...`). Defense in depth — under the state machine
---     an advance to terminal requires gc=1, gc=1 requires no children
---     per rule 4, so this can't fire with a child in practice. The
---     FK on parent_frame (NO ACTION) would also reject the delete if
---     a child existed. [ghi]
-create trigger frames_auto_delete_at_terminal
-after update of stmt_idx on objects
-when new.primitive = 'f'
-	and new.process_cap is not 1
-	and new.stmt_idx >= json_array_length(new.ast)
-	and not exists (
-		select 1 from objects
-		where parent_frame = new.object_pk and primitive = 'f'
-	)
-begin
-	delete from objects where object_pk = new.object_pk;
-end;
-
--- Sibling of `frames_auto_delete_at_terminal`, on the INSERT side.
--- A non-cap frame born already in terminal state (stmt_idx already
--- past json_array_length(ast) — the empty-ast case is the canonical
--- example, stmt_idx=0 with length 0) self-deletes on birth. Same
--- rule, both entry points. The immediate delete fires
--- `frames_child_delete_sets_parent_gc` on the parent (unless the
--- parent is a cap, which the cascade skips).
---
--- Caps excluded (`process_cap is not 1`) — a cap has empty ast and IS
--- born terminal by design, and stays alive as the process_cap anchor.
--- [ghi]
-create trigger frames_auto_delete_at_terminal_on_insert
-after insert on objects
-when new.primitive = 'f'
-	and new.process_cap is not 1
-	and new.stmt_idx >= json_array_length(new.ast)
-begin
-	delete from objects where object_pk = new.object_pk;
-end;
 
 -- New gc-cycle design, rule 5: advancing stmt_idx requires gc = 1
 -- to consume. The advance can be issued as bare `UPDATE ... SET

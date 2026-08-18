@@ -3,20 +3,16 @@
 --[[
 {
 	"module": "test_current_process_pk",
-	"role": "Sprint-scoped tests for the `current_process_pk` UDF. Covers: bare-connection tests that the UDF returns whatever the registered getter provides (including nil), reflects updates to the getter's state, and can be invoked in query contexts. Also a schema-loaded integration test that uses the UDF to populate `needs_trace.process_pk` and verifies the row lands with the right value.",
-	"run": "lua5.4 sprints/trace-tables/tests/test_current_process_pk.lua (from repo root)"
+	"role": "Tests for the `current_process_pk` UDF. Covers: bare-connection tests that the UDF returns whatever the registered getter provides (including nil), reflects updates to the getter's state, and can be invoked in query contexts. Also a schema-loaded integration test that uses the UDF to populate `needs_trace.process_pk` and verifies the row lands with the right value.",
+	"run": "lua5.4 production/tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
 
-local home = os.getenv('HOME') or ''
-package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
-package.path = 'sprints/trace-tables/src/engine/cvm/udfs/?.lua;' .. package.path
+local sqlite             = require('lsqlite3')
+local current_process_pk = require('cvm.udfs.current_process_pk')
 
-local sqlite = require('lsqlite3')
-local current_process_pk = require('current_process_pk')
-
-local SCHEMA_PATH    = 'sprints/trace-tables/src/schema.sql'
-local PREFLIGHT_PATH = 'sprints/trace-tables/src/preflight.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/schema.sql'
+local PREFLIGHT_PATH = 'production/src/engine/cvm/preflight.sql'
 
 
 -- ------------------------------------------------------------
@@ -59,21 +55,8 @@ local function first(db, sql)
 end
 
 
-local passed, failed = 0, 0
-local failures = {}
-
-local function test(name, fn)
-	local ok, err = xpcall(fn, debug.traceback)
-
-	if ok then
-		passed = passed + 1
-		print('  PASS  ' .. name)
-	else
-		failed = failed + 1
-		print('  FAIL  ' .. name)
-		table.insert(failures, {name = name, err = err})
-	end
-end
+local h = require('helpers')
+local test = h.test
 
 local function assert_ok(rc, db, note)
 	if rc ~= sqlite.OK then
@@ -222,26 +205,3 @@ test('INSERT via ref-delete trigger (implicit DEFAULT) records the current proce
 end)
 
 
--- ------------------------------------------------------------
--- report
--- ------------------------------------------------------------
-
-print()
-print(string.format('TOTAL: %d passed, %d failed', passed, failed))
-
-if failed > 0 then
-	print()
-	print('Failures:')
-
-	for _, f in ipairs(failures) do
-		print('  [' .. f.name .. ']')
-
-		for line in tostring(f.err):gmatch('[^\n]+') do
-			print('    ' .. line)
-		end
-	end
-
-	os.exit(1)
-end
-
-os.exit(0)

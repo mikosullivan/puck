@@ -18,9 +18,11 @@ assertion that's genuinely load-bearing because there's no other
 way to check.
 ]]
 
-local sqlite = require("lsqlite3")
+local sqlite             = require("lsqlite3")
+local current_process_pk = require('cvm.udfs.current_process_pk')
 
-local SCHEMA_PATH = "production/src/engine/cvm/schema.sql"
+local SCHEMA_PATH    = "production/src/engine/cvm/schema.sql"
+local PREFLIGHT_PATH = "production/src/engine/cvm/preflight.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)
@@ -33,8 +35,11 @@ local function fresh_db()
 	local db = sqlite.open_memory()
 	db:exec("pragma foreign_keys = on;")
 	db:exec("pragma recursive_triggers = on;")
+	current_process_pk.register(db, function() return nil end)
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, "schema apply failed: " .. tostring(db:errmsg()))
+	rc = db:exec(slurp(PREFLIGHT_PATH))
+	assert(rc == sqlite.OK, "preflight apply failed: " .. tostring(db:errmsg()))
 	return db
 end
 
@@ -156,20 +161,6 @@ test("`where owner_role is not null` uses the objects_owner_role partial index",
 	local db = fresh_db()
 	local p = plan(db, "select object_pk from objects where owner_role is not null")
 	assert_plan_contains(p, "USING INDEX objects_owner_role")
-	db:close()
-end)
-
-test("`where needs_trace = 1` uses the objects_needs_trace partial index", function()
-	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where needs_trace = 1")
-	assert_plan_contains(p, "USING INDEX objects_needs_trace")
-	db:close()
-end)
-
-test("`where in_trace is not null` uses the objects_in_trace partial index", function()
-	local db = fresh_db()
-	local p = plan(db, "select object_pk from objects where in_trace is not null")
-	assert_plan_contains(p, "USING INDEX objects_in_trace")
 	db:close()
 end)
 

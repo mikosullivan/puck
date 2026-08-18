@@ -3,18 +3,20 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_cvm_garbage_collection",
-	"role": "CVM's garbage collection — the schema-level mark triggers that set needs_trace = 1 as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
-	"status": "in progress — mark trigger inventory + outer/inner loop skeleton drafted; drain-loop details and cleanup still to come"
+	"role": "CVM's garbage collection — the schema-level mark triggers that populate the needs_trace table as reference-drops happen, plus the Lua-side trace routine that drains marked rows, determines reachability against the uspace view, and either clears the mark (row proven live) or deletes the row (row proven orphaned).",
+	"status": "in progress — mark trigger inventory + needs_trace table integrated (trace-tables sprint); trace-routine loops below are the original column-form design and are being reshaped in a follow-on sprint"
 }}
 ~~~
 
-GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row where `needs_trace = 1`, determines its reachability with respect to the `uspace` view (defined in [cvm.sql](../sql)), and either clears the row's mark (if it's still alive) or deletes it (if it's genuinely orphaned).
+> **Design shift note.** Marks previously landed on an `objects.needs_trace` column and traversal used an `objects.in_trace` counter. Under the trace-tables sprint (integrated), marks land as rows in a persistent `needs_trace(process_pk, object_pk)` table, and traversal state lives in temp `traces` and `in_trace` tables (per-connection). The mark-trigger section below reflects the current design. The outer/inner loop pseudocode later in this doc is still the OLD column-form; the trace-routine sprint will replace it with a rewrite over the new tables.
+
+GC is done by a Lua routine that consumes marks set by the mark triggers (see [Mark triggers](#mark-triggers) below). Each pass drains every row in the `needs_trace` table for the current process, determines each object's reachability with respect to the `uspace` view (defined in [cvm.sql](../sql)), and either deletes the mark (object proven live) or deletes the object (proven orphaned).
 
 ## Mark triggers
 
-Every table in the schema that holds a pointer to an `objects` row is a potential source of orphaning — when the pointer changes or the row holding it goes away, the previously-pointed-at object might have just lost its last incoming reference. The schema attaches a mark trigger to each such source. Each trigger does one thing: set `needs_trace = 1` on the row that just lost the incoming pointer. That's the trigger's entire job — no trace call, no re-entry check, no other logic. Marking is schema-enforced; the actual drain is scheduled by the Lua write layer.
+Every table in the schema that holds a pointer to an `objects` row is a potential source of orphaning — when the pointer changes or the row holding it goes away, the previously-pointed-at object might have just lost its last incoming reference. The schema attaches a mark trigger to each such source. Each trigger does one thing: insert a row into `needs_trace` with `object_pk` set to the row that just lost the incoming pointer, `process_pk` set to `current_process_pk()` via the column's DEFAULT. That's the trigger's entire job — no trace call, no re-entry check, no other logic. Marking is schema-enforced; the actual drain is scheduled by the Lua write layer.
 
-Mark triggers are idempotent: setting `needs_trace = 1` on a row that's already marked is a harmless no-op. Each trigger in the schema is annotated with a `[set-needs-trace]` comment prefix so `grep [set-needs-trace] src/engine/cvm/schema.sql` enumerates the whole inventory.
+Mark inserts use `ON CONFLICT DO NOTHING` so same-process double-marks silently coalesce. The composite primary key `(process_pk, object_pk)` scopes marks to the running process — a different process dropping a ref to the same object writes a fresh row.
 
 The current inventory:
 

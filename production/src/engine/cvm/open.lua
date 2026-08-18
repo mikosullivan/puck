@@ -1,10 +1,11 @@
 --[[
 {
 	"module": "cvm.open",
-	"role": "CVM connection entry point: opens a SQLite connection (in-memory or file), enables `foreign_keys` and `recursive_triggers` pragmas per the CVM's per-connection rules, and installs the CVM infrastructure from the sibling `schema.sql` file if this is a fresh DB (skips the install if the `cvm` marker table is already present so revive-open on a persisted file is idempotent). Returns just the db handle. Process rows are created per-run by `create_frame_0` (fresh case) or handed in by the caller (revival case) — no auto-creation at open time.",
+	"role": "CVM connection entry point: opens a SQLite connection (in-memory or file), enables `foreign_keys` and `recursive_triggers` pragmas per the CVM's per-connection rules, registers the `current_process_pk` UDF, installs the CVM infrastructure from the sibling `schema.sql` file if this is a fresh DB (skips the install if the `cvm` marker table is already present so revive-open on a persisted file is idempotent), and applies the sibling `preflight.sql` on every open (creates the temp tables + temp triggers that are per-connection by construction). Returns just the db handle. Process rows are created per-run by `create_frame_0` (fresh case) or handed in by the caller (revival case) — no auto-creation at open time.",
 	"exports": {
-		"open":        "(opts?) -> db — opts.path (default ':memory:'), opts.schema (SQL text override), opts.schema_path (path to schema.sql)",
-		"load_schema": "(path?) -> SQL text — path defaults to the sibling schema.sql"
+		"open":           "(opts?) -> db — opts.path (default ':memory:'), opts.schema/schema_path, opts.preflight/preflight_path, opts.get_current_process_pk (getter closure for the UDF)",
+		"load_schema":    "(path?) -> SQL text — path defaults to the sibling schema.sql",
+		"load_preflight": "(path?) -> SQL text — path defaults to the sibling preflight.sql"
 	},
 	"status": "walking-skeleton — open + gated install",
 	"depends_on": ["lsqlite3"]
@@ -38,8 +39,9 @@ time. Auto-creating a process here would allocate one nobody asked
 for and force one-process-per-open assumptions on the caller.
 ]]
 
-local sqlite = require('lsqlite3')
-local cjson  = require('cjson')
+local sqlite             = require('lsqlite3')
+local cjson              = require('cjson')
+local current_process_pk = require('cvm.udfs.current_process_pk')
 
 -- Process-wide cjson configuration. Empty Lua tables encode as JSON
 -- arrays (`[]`), not as JSON objects (`{}`). The `objects_ast_valid_
@@ -71,6 +73,17 @@ local function default_schema_path()
 end
 
 --[[
+Sibling `preflight.sql`. Same resolution strategy as
+`default_schema_path` — locate relative to this module file, not
+CWD, so tests and tools all find the same file regardless of `pwd`.
+]]
+local function default_preflight_path()
+	local this_file = debug.getinfo(1, 'S').source:sub(2)
+	local this_dir = this_file:match('(.*/)') or './'
+	return this_dir .. 'preflight.sql'
+end
+
+--[[
 ## `M.load_schema` — read the schema SQL text
 
 Reads the CVM schema from disk and returns it as a string. Default
@@ -92,6 +105,33 @@ function M.load_schema(path)
 
 	if not file then
 		error('cvm_schema_read_failed: could not open ' .. tostring(path) .. ': ' .. tostring(err))
+	end
+
+	local text = file:read('*a')
+	file:close()
+
+	return text
+end
+
+--[[
+## `M.load_preflight` — read the preflight SQL text
+
+Reads `preflight.sql` and returns it as a string. Default path is
+the sibling `preflight.sql`; callers can override with an explicit
+`path`. Raises `cvm_preflight_read_failed` when the file can't be
+opened.
+
+Same shape as `M.load_schema` — kept as a public export so an audit
+or tooling caller can inspect the per-connection material without
+opening a connection.
+]]
+function M.load_preflight(path)
+	path = path or default_preflight_path()
+
+	local file, err = io.open(path, 'r')
+
+	if not file then
+		error('cvm_preflight_read_failed: could not open ' .. tostring(path) .. ': ' .. tostring(err))
 	end
 
 	local text = file:read('*a')
@@ -134,6 +174,7 @@ function M.open(opts)
 
 	local path = opts.path or ':memory:'
 	local schema = opts.schema or M.load_schema(opts.schema_path)
+	local preflight = opts.preflight or M.load_preflight(opts.preflight_path)
 
 	local db, err_code, err_msg = sqlite.open(path)
 
@@ -161,6 +202,15 @@ function M.open(opts)
 		error('cvm_pragma_recursive_triggers_failed: ' .. tostring(msg))
 	end
 
+	-- Register the current_process_pk UDF BEFORE schema apply (the
+	-- DEFAULT expression on needs_trace.process_pk references it) and
+	-- BEFORE preflight apply (several temp triggers reference it at
+	-- fire time). The getter closure defaults to returning nil — engine
+	-- callers pass their own via `opts.get_current_process_pk` so the
+	-- UDF sees the live cap_pk without threading state through SQL.
+	local get_current_process_pk = opts.get_current_process_pk or function() return nil end
+	current_process_pk.register(db, get_current_process_pk)
+
 	-- Install-infrastructure gate: presence of the cvm marker table
 	-- is the "already installed" flag. No cvm table means this is a
 	-- fresh DB and the DDL from schema.sql needs to run; cvm table
@@ -185,6 +235,19 @@ function M.open(opts)
 			db:close()
 			error('cvm_schema_apply_failed: ' .. tostring(msg))
 		end
+	end
+
+	-- Apply preflight on EVERY open. Sets session pragmas (redundant
+	-- with the two above, harmless), creates temp tables (`traces`,
+	-- `in_trace`) and their temp triggers. Temp tables die when the
+	-- connection closes, so this runs every time — including on the
+	-- fresh-DB path above, where the schema apply just finished.
+	ok = db:exec(preflight)
+
+	if ok ~= sqlite.OK then
+		local msg = db:errmsg()
+		db:close()
+		error('cvm_preflight_apply_failed: ' .. tostring(msg))
 	end
 
 	-- Process rows are NOT created here. Under frames-as-objects, each

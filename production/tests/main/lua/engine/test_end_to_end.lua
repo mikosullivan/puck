@@ -93,8 +93,10 @@ h.test('$x = 1: runs end-to-end through the dispatch chain', function()
 	h.assert_eq(binding.scalar_type, 'n', 'x should bind to scalar_type=n')
 	h.assert_eq(tonumber(binding.scalar_value), 1, 'x should bind to value 1')
 
-	-- The orphaned bucket should be marked needs_trace=1.
+	-- The orphaned bucket should be in the needs_trace worklist.
 	local bucket = first(e.cvm,
-		"select needs_trace from objects where primitive = 'h' and needs_trace = 1")
-	h.assert_true(bucket ~= nil, 'bucket should be marked needs_trace=1')
+		"select nt.object_pk from needs_trace nt "
+		.. "join objects o on o.object_pk = nt.object_pk "
+		.. "where o.primitive = 'h'")
+	h.assert_true(bucket ~= nil, 'bucket should be in the needs_trace table')
 end)

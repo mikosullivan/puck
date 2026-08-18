@@ -12,7 +12,7 @@ Every state below is a valid resume state. If the database crashes at any moment
 
 ## The concept: cap-as-frame
 
-A process is not a separate table row — a process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process = 1`, `ast = '[]'`, and no parent. The cap's `object_pk` IS the process identity.
+A process is not a separate table row — a process is a **cap frame**: an `objects` row with `primitive = 'f'`, `process_cap = 1`, `ast = '[]'`, and no parent. The cap's `object_pk` IS the process identity.
 
 Frame 0 — the top of the user's call stack — sits directly under the cap as a nested frame (`parent_frame = cap_pk`, `process = null`). Sub-frames chain further down from frame 0 via `parent_frame`.
 
@@ -40,7 +40,7 @@ The state machine is enforced by nine rules (all triggers or CHECKs on `objects`
 5. **Advancing stmt_idx requires gc=1** (`frames_advance_requires_gc`). Only accepted when `old.gc = 1`.
 6. **Advancing stmt_idx auto-sets gc to null** (`frames_advance_sets_gc_null` + `frames_advance_rejects_non_null_gc`). The caller writes just `SET stmt_idx = stmt_idx + 1` — the AFTER trigger sets gc back to null. Explicit `gc = null` in the SET is redundant but accepted; explicit `gc = 1` is rejected loudly (engine-bug catch).
 7. **Cannot set gc=1 in the terminal state** (`frames_gc_set_rejects_at_terminal`). Terminal frames stay terminal; a done frame can't be reactivated.
-8. **Auto-delete at terminal** (`frames_auto_delete_at_terminal`). A non-cap frame is deleted the moment its stmt_idx reaches its terminal position. Cap is excluded (`process = 1`) so the process anchor stays alive.
+8. **Terminal is an at-rest state.** A non-cap frame that reaches its terminal position stays there — no auto-delete. The engine reaps the frame explicitly (see `run_frame` in engine.lua) after its ast is exhausted. Reaping triggers rule 3 on the parent (cap-exempt); the parent's walker continues from there. Caps are process anchors and never advance; they sit at their birth position for the process's lifetime.
 9. **Frame cannot be deleted while it has a child** (`frames_delete_requires_no_child`). Backed by the parent_frame FK; specific error id.
 
 Plus `frames_no_child_under_terminal_parent` — reject inserting a child under a terminal parent.
@@ -68,11 +68,11 @@ For a leaf command (one that spawns nothing — e.g., `$x = 1`), the dispatcher 
 
 ## Terminal state
 
-A frame is in **terminal state** when `stmt_idx` is past its last executable position — specifically, `stmt_idx = max(json_array_length(ast), 1)`. The `frames_stmt_idx_within_ast_bounds` trigger prevents stmt_idx from going higher.
+A frame is in **terminal state** when `stmt_idx >= json_array_length(ast)`. The column CHECK on `stmt_idx` bounds it at `<= json_array_length(ast)`. Empty ast means terminal at `stmt_idx = 0` — the frame is born terminal.
 
-When a non-cap frame reaches terminal, `frames_auto_delete_at_terminal` deletes it. Deletion fires rule 3 on the parent → parent's gc auto-sets to 1 → parent's walker advances → if parent also reaches terminal, auto-delete fires again → cascades upward.
+When a non-cap frame reaches terminal, it stays there until the engine reaps it (typically at the tail of `run_frame`). Reaping fires rule 3 on the parent → parent's gc goes to 1 → parent's walker continues. If the parent's advance also lands it at terminal, the parent is reaped in turn.
 
-The **cap** is excluded from auto-delete. Its terminal state — `(stmt_idx = 1, gc = null, no children)` — IS the "program is done" signal. Anything reading process status looks at the cap's row.
+The **cap** is born terminal (empty ast, stmt_idx = 0) and stays there for the process's lifetime — cap-exempt from the child-delete cascade, so a non-cap child's reap doesn't touch the cap's gc. The cap's row is the "program is done" signal.
 
 ## Step-by-step example: `$x = 1`
 
@@ -100,17 +100,17 @@ The handler for `{in='as'}` ran `frame:set_local_to_scalar('x', 'n', 1)` in a si
 
 ### After frame 0's advance
 
-Walker's advance on frame 0: `UPDATE frame SET stmt_idx = 1`. The auto-set trigger fires, taking gc to null. Frame 0 is now at `(stmt_idx=1, gc=null, no children)` — its terminal position. `frames_auto_delete_at_terminal` fires and deletes frame 0. That delete fires rule 3 on the cap: cap's gc goes to 1.
+Walker's advance on frame 0: `UPDATE frame SET stmt_idx = 1`. The auto-set trigger fires, taking gc to null. Frame 0 is now at `(stmt_idx=1, gc=null, no children)` — its terminal position, but still alive.
 
-### After the cap's advance
+### After the engine reaps frame 0
 
-Walker's advance on the cap: `UPDATE cap SET stmt_idx = 1`. The auto-set trigger fires, taking gc to null. Cap is now at `(stmt_idx=1, gc=null, no children)` — its terminal position. Auto-delete does NOT fire (cap has `process = 1`, excluded from the auto-delete rule). Cap sits terminal.
+`run_frame` finishes its loop and issues `DELETE FROM objects WHERE object_pk = <frame 0>`. That delete fires rule 3 on the parent — the cap — but the cap is exempt from the cascade, so cap.gc stays null. Cap is now at `(stmt_idx=0, gc=null, no children)` — the "program is done" state.
 
-**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because terminal shape IS the completion signal.
+**This is the "program is done" state.** The cap itself still sits — no `complete` flag anywhere, because "cap at its birth position with no children" IS the completion signal.
 
 ### After the engine reaps the cap
 
-At the caller's discretion, the engine can DELETE the cap (rule 9 permits — no children). That delete cascades the cap's outgoing refs; the standard mark trigger leaves those objects `needs_trace = 1`; the trace routine walks reachability and sweeps orphans until the queue is dry. DB back to just the seed rows.
+At the caller's discretion, the engine can DELETE the cap (rule 9 permits — no children). That delete cascades the cap's outgoing refs; the standard mark trigger inserts each ex-child into the `needs_trace` table (scoped to the current process); the trace routine walks reachability and sweeps orphans until the queue is dry. DB back to just the seed rows.
 
 ## Resume safety
 
