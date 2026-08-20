@@ -3,7 +3,7 @@
 ~~~vibecode
 {"vibecode": {
 	"doc": "requirements_cvm",
-	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm/schema.sql), per-subsystem specs (frame-lifecycle, ownership, scopes, garbage-collection, pause-resume), and the CVM's data-access layer at src/engine/cvm/. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
+	"role": "CVM is Caspian's runtime state store, implemented as a SQLite database — the authoritative schema (src/engine/cvm/sqlite/schema.sql), per-subsystem specs (frame-lifecycle, ownership, scopes, garbage-collection, pause-resume), and the CVM's data-access layer at src/engine/cvm/. Two-layer split: Mikobase (general-purpose DBMS pieces) + CVM (Caspian-specific runtime layer added via ALTER TABLE).",
 	"status": "V1 spec"
 }}
 ~~~
@@ -32,7 +32,7 @@ A process is also not a separate table. A process is a **cap frame**: an `object
 
 Code and tests live outside the doc tree:
 
-- Schema, connection-open, and CVM's data-access layer: [src/engine/cvm/](../../../src/engine/cvm/) — `schema.sql`, `open.lua`, `engine.lua`, `object.lua`, `frame.lua`
+- Schema, connection-open, and CVM's data-access layer: [src/engine/cvm/](../../../src/engine/cvm/sqlite/) — `schema.sql`, `open.lua`, `engine.lua`, `object.lua`, `frame.lua`
 - Tests: [tests/main/lua/engine/test_cvm.lua](../../../tests/main/lua/engine/test_cvm.lua)
 
 ## The Lua-owner contract

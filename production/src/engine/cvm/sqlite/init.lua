@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "cvm",
-	"role": "Data-access layer for a CVM connection. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk, frame_by_pk, plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the CVM constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring). Not to be confused with the top-level Caspian runtime at `src/engine/engine.lua`; this file is the CVM's internal object-store, required as `require('cvm')`.",
+	"role": "Data-access layer for a CVM connection. Owns the SQLite handle, preps every statement upfront, and exposes cached-statement methods (object_by_pk, frame_by_pk, plus the add_* / get_* family) so callers work in objects/pks rather than raw SQL. Sits above `object` and `frame` — the CVM constructs them today; whether it will also call into them, and how, is still open (see the 'Open questions' block in the docstring). Not to be confused with the top-level Caspian runtime at `src/engine/engine.lua`; this file is the CVM's internal object-store, required as `require('cvm.sqlite')`.",
 	"exports": {
 		"new":           "(db) -> cvm — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
@@ -27,8 +27,8 @@
 --[[
 # CVM (data-access layer)
 
-The data-access layer for a CVM connection — required as `require('cvm')`
-(this file is `src/engine/cvm/init.lua`, so Lua's require system
+The data-access layer for a CVM connection — required as `require('cvm.sqlite')`
+(this file is `src/engine/cvm/sqlite/init.lua`, so Lua's require system
 resolves the bare namespace to this module). Owns the SQLite handle,
 preps every statement upfront, and exposes cached-statement methods
 (`object_by_pk`, `add_bucket`, `add_stack`, `add_scalar`, `add_hash`,
@@ -80,7 +80,7 @@ across the whole running program.
 ]]
 
 local sqlite = require("lsqlite3")
-local object = require("cvm.object")
+local object = require("cvm.sqlite.object")
 
 -- Cache the ROW status constant into a local. Compared against
 -- inside every single-column read path (`stmt:step()` returns

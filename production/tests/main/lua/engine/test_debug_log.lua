@@ -9,10 +9,10 @@
 ]]
 
 local sqlite             = require('lsqlite3')
-local current_process_pk = require('cvm.udfs.current_process_pk')
+local current_process_pk = require('cvm.sqlite.udfs.current_process_pk')
 
-local SCHEMA_PATH    = 'production/src/engine/cvm/schema.sql'
-local PREFLIGHT_PATH = 'production/src/engine/cvm/preflight.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/sqlite/schema.sql'
+local PREFLIGHT_PATH = 'production/src/engine/cvm/sqlite/preflight.sql'
 
 
 -- ------------------------------------------------------------

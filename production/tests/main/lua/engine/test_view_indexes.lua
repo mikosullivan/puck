@@ -1,7 +1,7 @@
 --[[
 {
 	"spec": "test_view_indexes",
-	"role": "Verifies the views defined in `src/engine/cvm/schema.sql` use the intended indexes. Each case loads the schema into an in-memory SQLite, runs `EXPLAIN QUERY PLAN` against a target query, and asserts on the plan text — index-scan hits over full-table scans on the columns the schema declares indexes for.",
+	"role": "Verifies the views defined in `src/engine/cvm/sqlite/schema.sql` use the intended indexes. Each case loads the schema into an in-memory SQLite, runs `EXPLAIN QUERY PLAN` against a target query, and asserts on the plan text — index-scan hits over full-table scans on the columns the schema declares indexes for.",
 	"run": "lua5.4 tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
@@ -19,10 +19,10 @@ way to check.
 ]]
 
 local sqlite             = require("lsqlite3")
-local current_process_pk = require('cvm.udfs.current_process_pk')
+local current_process_pk = require('cvm.sqlite.udfs.current_process_pk')
 
-local SCHEMA_PATH    = "production/src/engine/cvm/schema.sql"
-local PREFLIGHT_PATH = "production/src/engine/cvm/preflight.sql"
+local SCHEMA_PATH    = "production/src/engine/cvm/sqlite/schema.sql"
+local PREFLIGHT_PATH = "production/src/engine/cvm/sqlite/preflight.sql"
 
 local function slurp(path)
 	local f = assert(io.open(path, "r"), "cannot open " .. path)

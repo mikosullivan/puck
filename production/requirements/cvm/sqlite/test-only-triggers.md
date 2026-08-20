@@ -10,7 +10,7 @@
 
 Some assertions about CVM behavior need to see events **as they happen** — not just the end-state of the DB after the run. Example: `$x = 2` on top of `$x = 1` marks scalar_1 in `needs_trace`, but the between-statement drain reaps scalar_1 the instant it's marked, so the row is gone before `run()` returns. Reading `needs_trace` at end-of-run tells you nothing about whether the mark ever fired.
 
-The strategy: **install a SQLite trigger from test code at runtime**, before running the program. The trigger fires on the schema event you want to observe, and its body writes an entry into `debug_log` (see [debug_log](https://puck.uno/production/src/engine/cvm/schema.sql), search for `create table debug_log`). After the run, the test reads `debug_log` and asserts on what it finds.
+The strategy: **install a SQLite trigger from test code at runtime**, before running the program. The trigger fires on the schema event you want to observe, and its body writes an entry into `debug_log` (see [debug_log](https://puck.uno/production/src/engine/cvm/sqlite/schema.sql), search for `create table debug_log`). After the run, the test reads `debug_log` and asserts on what it finds.
 
 ## The pattern
 
@@ -65,6 +65,6 @@ Every `new_engine()` call returns an engine with the trigger already in place. T
 
 ## Related
 
-- [debug_log](https://puck.uno/production/src/engine/cvm/schema.sql) — the target table for probe entries. Cap-scoped, cascades on cap-delete.
+- [debug_log](https://puck.uno/production/src/engine/cvm/sqlite/schema.sql) — the target table for probe entries. Cap-scoped, cascades on cap-delete.
 - [garbage-collection](https://puck.uno/production/requirements/cvm/garbage-collection/) — the drain routine whose behavior the second-assignment tests use this pattern to observe.
 - [test_second_assignment.lua](https://puck.uno/production/tests/main/lua/engine/test_second_assignment.lua) — first use of the pattern in the test suite.

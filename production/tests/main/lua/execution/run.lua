@@ -18,7 +18,7 @@ summary line and exits 0 on all-pass / 1 on any-failure.
 
 `package.path` is set so `require('engine')` and the engine module's
 own requires (`require('transpiler')`, `require('normalize')`,
-`require('cvm.open')`) resolve against `src/engine/`. `package.cpath`
+`require('cvm.sqlite.open')`) resolve against `src/engine/`. `package.cpath`
 picks up the system `luarocks` tree for `lsqlite3.so`.
 ]]
 

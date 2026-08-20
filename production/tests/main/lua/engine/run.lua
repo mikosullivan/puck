@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "run",
-	"role": "Runner for the engine test suite. Discovers every `test_*.lua` file next to itself, sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Sets `package.path` so the fresh engine code under `src/engine/` resolves via bare-name requires (`require('engine')`, `require('cvm.open')`, etc.).",
+	"role": "Runner for the engine test suite. Discovers every `test_*.lua` file next to itself, sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Sets `package.path` so the fresh engine code under `src/engine/` resolves via bare-name requires (`require('engine')`, `require('cvm.sqlite.open')`, etc.).",
 	"run": "lua5.4 tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
@@ -17,7 +17,7 @@ before each file so failures aggregate per-file, then prints a final
 summary line and exits 0 on all-pass / 1 on any-failure.
 
 `package.path` is set so `require('engine')`, `require('normalize')`,
-`require('cvm.open')`, and the other bare-name requires the tests
+`require('cvm.sqlite.open')`, and the other bare-name requires the tests
 issue resolve against `src/engine/`. `package.cpath` picks up the
 system `luarocks` tree for `lsqlite3.so`.
 ]]

@@ -41,7 +41,7 @@ for and force one-process-per-open assumptions on the caller.
 
 local sqlite             = require('lsqlite3')
 local cjson              = require('cjson')
-local current_process_pk = require('cvm.udfs.current_process_pk')
+local current_process_pk = require('cvm.sqlite.udfs.current_process_pk')
 
 -- Process-wide cjson configuration. Empty Lua tables encode as JSON
 -- arrays (`[]`), not as JSON objects (`{}`). The `objects_ast_valid_

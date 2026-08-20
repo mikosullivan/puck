@@ -1,7 +1,7 @@
 --[[
 {
 	"spec": "test_cvm",
-	"role": "Walking-skeleton tests for `src/engine/cvm/open.lua`: open an in-memory DB, install the infrastructure via `schema.sql`, verify the seed row exists and a couple of schema-level guarantees fire. Covers the pragmas (`foreign_keys`, `recursive_triggers`), the fresh-vs-revive install gate, the initial `processes` row, and a set of trigger / constraint behaviors that the schema is expected to enforce.",
+	"role": "Walking-skeleton tests for `src/engine/cvm/sqlite/open.lua`: open an in-memory DB, install the infrastructure via `schema.sql`, verify the seed row exists and a couple of schema-level guarantees fire. Covers the pragmas (`foreign_keys`, `recursive_triggers`), the fresh-vs-revive install gate, the initial `processes` row, and a set of trigger / constraint behaviors that the schema is expected to enforce.",
 	"status": "walking-skeleton — proves the DB opens and the schema loads without error"
 }
 ]]
@@ -22,7 +22,7 @@ actually wired up — not to cover every column on every table.
 ]]
 
 local h = require('helpers')
-local cvm = require('cvm.open')
+local cvm = require('cvm.sqlite.open')
 
 ------------------------------------------------------------
 -- open + apply schema

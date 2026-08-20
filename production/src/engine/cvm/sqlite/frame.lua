@@ -31,7 +31,7 @@ Frames are destroyed when finished — the walker's advance-with-gc UPDATE casca
 Inherits from `object` — picks up the `bucket` accessor for free.
 ]]
 local sqlite = require('lsqlite3')
-local object = require("cvm.object")
+local object = require("cvm.sqlite.object")
 
 -- Cached at module load; avoids a `sqlite.ROW` global lookup per step check.
 local SQLITE_ROW = sqlite.ROW

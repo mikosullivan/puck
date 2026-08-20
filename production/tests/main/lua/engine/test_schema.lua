@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_schema",
-	"role": "Schema tests for `src/engine/cvm/schema.sql`. Exercises the load-bearing invariants: the `gc` column and its four gc-cycle rules (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the parent_frame / process_cap immutability triggers, the cap-as-frame design (a frame with `process_cap=1` and `ast='[]'` sits atop each call stack), refs-based ownership + the one-hash-one-array cap, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack views."
+	"role": "Schema tests for `src/engine/cvm/sqlite/schema.sql`. Exercises the load-bearing invariants: the `gc` column and its four gc-cycle rules (advance-couples-with-gc, gc-set-cascade-deletes-children, child-delete-requires-parent-gc, gc-reset-requires-no-children), the parent_frame / process_cap immutability triggers, the cap-as-frame design (a frame with `process_cap=1` and `ast='[]'` sits atop each call stack), refs-based ownership + the one-hash-one-array cap, the scopes convention (bucket → 'scopes' → array of hashes), the hash-key identifier rule, and the frame_scoped_vars / object_bucket / object_stack views."
 }
 ]]
 
@@ -27,10 +27,10 @@ local home = os.getenv('HOME') or ''
 package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local sqlite             = require('lsqlite3')
-local current_process_pk = require('cvm.udfs.current_process_pk')
+local current_process_pk = require('cvm.sqlite.udfs.current_process_pk')
 
-local SCHEMA_PATH    = 'production/src/engine/cvm/schema.sql'
-local PREFLIGHT_PATH = 'production/src/engine/cvm/preflight.sql'
+local SCHEMA_PATH    = 'production/src/engine/cvm/sqlite/schema.sql'
+local PREFLIGHT_PATH = 'production/src/engine/cvm/sqlite/preflight.sql'
 
 
 -- ------------------------------------------------------------

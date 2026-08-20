@@ -71,7 +71,7 @@ end
 
 function object.new(engine, row)
 	if row.primitive == 'f' then
-		local frame = require("cvm.frame")
+		local frame = require("cvm.sqlite.frame")
 		return frame.new(engine, row)
 	end
 

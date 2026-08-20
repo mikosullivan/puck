@@ -45,8 +45,8 @@ has a clear signal about what to build next.
 local cjson              = require('cjson')
 local transpiler         = require('transpiler')
 local normalize          = require('normalize')
-local cvm_open           = require('cvm.open')
-local Cvm                = require('cvm')
+local cvm_open           = require('cvm.sqlite.open')
+local Cvm                = require('cvm.sqlite')
 local dispatch           = require('dispatch')
 local handlers           = require('handlers')
 

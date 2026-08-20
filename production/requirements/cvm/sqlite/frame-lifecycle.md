@@ -31,7 +31,7 @@ A frame born fresh is `(stmt_idx = 0, gc = null)`. Between commands, the frame m
 
 ## The rules
 
-The state machine is enforced by nine rules (all triggers or CHECKs on `objects`; names below match the trigger names in `src/engine/cvm/schema.sql`):
+The state machine is enforced by nine rules (all triggers or CHECKs on `objects`; names below match the trigger names in `src/engine/cvm/sqlite/schema.sql`):
 
 1. **In-progress = has child OR gc=1.** A frame with no children AND gc=null is at rest — walker's next action is to dispatch the command at stmt_idx.
 2. **INSERT never sets gc=1** (`frames_gc_starts_null`). Fresh frames are born at gc=null.
