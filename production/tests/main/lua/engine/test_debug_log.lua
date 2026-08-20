@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "test_debug_log",
-	"role": "Tests for the debug_log table: shape (entry_pk PK / object_pk FK / note NOT NULL), valid insert, autoincrement, NOT NULL rejection, missing FK rejection, non-cap object_pk rejection via debug_log_object_pk_must_be_cap, and ON DELETE CASCADE from the process cap.",
+	"role": "Tests for the debug_log table: shape (entry_pk PK / object_pk FK / note NOT NULL), valid insert, autoincrement, NOT NULL rejection, missing FK rejection, non-cap object_pk rejection via debug_log_object_pk_must_be_cap, ON DELETE CASCADE from the process cap, and DEFAULT (current_process_pk()) auto-populating object_pk when the caller omits it.",
 	"run": "lua5.4 production/tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
@@ -26,11 +26,19 @@ local function slurp(path)
 	return text
 end
 
+-- Per-connection holder for the current-process pk. The UDF reads
+-- through this table so tests can swap the returned pk mid-connection
+-- without re-registering the callback.
+local _current_process_pk_holders = setmetatable({}, {__mode = 'k'})
+
 local function schema_db()
 	local db = sqlite.open_memory()
 	db:exec('pragma foreign_keys = on;')
 	db:exec('pragma recursive_triggers = on;')
-	current_process_pk.register(db, function() return nil end)
+
+	local holder = {pk = nil}
+	_current_process_pk_holders[db] = holder
+	current_process_pk.register(db, function() return holder.pk end)
 
 	local rc = db:exec(slurp(SCHEMA_PATH))
 	assert(rc == sqlite.OK, 'schema apply failed: ' .. tostring(db:errmsg()))
@@ -38,6 +46,17 @@ local function schema_db()
 	rc = db:exec(slurp(PREFLIGHT_PATH))
 	assert(rc == sqlite.OK, 'preflight apply failed: ' .. tostring(db:errmsg()))
 	return db
+end
+
+--[[
+Point the current-process pk at `cap_pk` for `db`. The UDF reads
+through the shared holder, so the swap is visible to every subsequent
+SQL call without re-registering the callback.
+]]
+local function set_current_process(db, cap_pk)
+	local holder = _current_process_pk_holders[db]
+	assert(holder, 'set_current_process: db not from schema_db()')
+	holder.pk = cap_pk
 end
 
 local function first(db, sql)
@@ -292,6 +311,66 @@ test('deleting a process cap cascades to its debug_log rows', function()
 	h.assert_eq(
 		first(db, 'select object_pk from debug_log').object_pk, cap_b,
 		'cap_b row survives')
+
+	db:close()
+end)
+
+
+-- ============================================================
+-- DEFAULT (current_process_pk()) — object_pk auto-populates from
+-- the engine's UDF when the caller omits it.
+-- ============================================================
+
+test('omitting object_pk populates it from current_process_pk()', function()
+	local db = schema_db()
+	local user_pk = seed_user(db)
+	local cap_pk  = seed_cap(db, user_pk)
+	set_current_process(db, cap_pk)
+
+	-- Insert with only `note` — no object_pk. The DEFAULT should fire.
+	assert_ok(
+		db:exec("insert into debug_log (note) values ('hello')"),
+		db, 'default-only insert should succeed')
+
+	local row = first(db, "select object_pk, note from debug_log")
+	h.assert_eq(row.object_pk, cap_pk, 'object_pk should equal the current process cap')
+	h.assert_eq(row.note, 'hello',     'note should carry the caller value')
+
+	db:close()
+end)
+
+test('omitting object_pk when current_process_pk() returns nil is rejected', function()
+	-- Holder starts at nil; UDF returns nil; DEFAULT lands nil into
+	-- the column. The cap-check trigger's WHEN clause evaluates the
+	-- object-lookup subquery to nothing (nothing joins on NULL), and
+	-- `is not 1` on null → true, so the trigger aborts before NOT
+	-- NULL gets its turn. Same "not a cap" semantic as an
+	-- explicit-null insert or a missing-target insert.
+	local db = schema_db()
+	seed_cap(db, seed_user(db))  -- cap exists, but we don't point the UDF at it
+
+	assert_fails_with(
+		db:exec("insert into debug_log (note) values ('hello')"),
+		db, 'debug_log_object_pk_must_be_cap',
+		'default-only insert with no current process should be rejected')
+
+	db:close()
+end)
+
+test('explicit object_pk overrides the default', function()
+	local db = schema_db()
+	local user_pk = seed_user(db)
+	local cap_a   = seed_cap(db, user_pk)
+	local cap_b   = seed_cap(db, user_pk)
+	set_current_process(db, cap_a)
+
+	-- Explicit cap_b even though the UDF returns cap_a.
+	assert_ok(
+		db:exec("insert into debug_log (object_pk, note) values ('" .. cap_b .. "', 'explicit')"),
+		db, 'explicit-object_pk insert')
+
+	local row = first(db, "select object_pk from debug_log where note = 'explicit'")
+	h.assert_eq(row.object_pk, cap_b, 'explicit value should win over the default')
 
 	db:close()
 end)

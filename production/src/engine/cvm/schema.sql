@@ -33,7 +33,7 @@ begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
 
-insert into cvm (key, value) values ('schema', '9.2');
+insert into cvm (key, value) values ('schema', '9.3');
 
 
 -- ------------------------------------------------------------
@@ -1046,12 +1046,19 @@ end;
 create table debug_log (
 	entry_pk integer primary key autoincrement,
 
-	-- FK to a process cap in objects. The FK alone only checks
-	-- that the target row exists; the companion trigger
+	-- FK to a process cap in objects. Defaults to
+	-- `current_process_pk()` — the engine's UDF returning the
+	-- currently-dispatching process cap's pk — so triggers and
+	-- callers that INSERT without specifying object_pk pick up the
+	-- engine's runtime context automatically. Same pattern
+	-- needs_trace.process_pk uses. The FK alone only checks that
+	-- the target row exists; the companion trigger
 	-- debug_log_object_pk_must_be_cap enforces that the target's
 	-- process_cap column is 1. ON DELETE CASCADE: when the process
 	-- cap is deleted, its debug_log rows go with it. [ghi]
-	object_pk text not null references objects(object_pk) on delete cascade,
+	object_pk text not null
+		default (current_process_pk())
+		references objects(object_pk) on delete cascade,
 
 	-- Free-form log text. Required. No shape check on the content —
 	-- the log's whole surface is a bag of strings the engine chose
