@@ -171,6 +171,12 @@ function M.new(opts)
 		cap_pk              = nil,
 		caspm               = nil,
 		current_frame       = nil,
+		-- `stopped` is the %process.stop flag. The ProcessStop handler
+		-- sets it to true; the walker's per-iteration check breaks the
+		-- dispatch loop on true; run() returns a "stopped" result and
+		-- skips frame 0's reap so the DB stays exactly as the last
+		-- executed statement left it.
+		stopped             = false,
 		row_handlers        = {},
 	}, M)
 
@@ -249,7 +255,7 @@ Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`)
 
 **Precondition.** `self.caspm` must be populated via `engine:load(source)`; missing raises `engine:run() called before engine:load()`.
 
-**Return value.** A hash `{complete = 1, cap_pk = <cap_pk>}`. The completion signal is derivable from the cap's terminal shape; the cap_pk lets callers inspect post-run state.
+**Return value.** A hash `{complete = 1, cap_pk = <cap_pk>}` on normal completion. If `%process.stop` fired during the walk, a hash `{complete = 0, stopped = 1, cap_pk = <cap_pk>}` is returned instead — the frame stayed alive, the reap was skipped, and the DB sits exactly as the last executed statement left it.
 ]]
 function M:run()
 	if not self.caspm then
@@ -295,13 +301,24 @@ function M:run()
 
 	self.caspm = nil
 
+	-- Reset stopped in case this engine is being reused across runs.
+	self.stopped = false
+
 	-- 3. Walk frame 0's ast. run_frame reaps at the end (whether the
 	-- ast was empty from birth or exhausted through the loop), so by
 	-- the time this returns, frame 0 is gone. Cap stays alive at
 	-- (stmt_idx=0, gc=null) as the process anchor — the
 	-- child-delete cascade that fires against the cap is cap-exempt,
 	-- so cap.gc never gets touched and cap.stmt_idx never advances.
+	--
+	-- If the walker halted via %process.stop, frame 0 is still alive
+	-- (run_frame skipped the reap) and the return value below signals
+	-- that to the caller.
 	self:run_frame(frame_0_pk)
+
+	if self.stopped then
+		return {complete = 0, stopped = 1, cap_pk = cap_pk}
+	end
 
 	return {complete = 1, cap_pk = cap_pk}
 end
@@ -378,6 +395,13 @@ function M:run_frame(frame_pk)
 		-- Lua arrays are 1-based, so `+ 1` at the site.
 		self:run_row(ast[idx + 1])
 
+		-- %process.stop lands here. If the handler set the flag,
+		-- break BEFORE advancing — that leaves the frame at its
+		-- current stmt_idx, gc as whatever the handler left it, and
+		-- (up in run()) the reap step gets skipped too. Whole DB
+		-- state is preserved for the caller to inspect.
+		if self.stopped then break end
+
 		-- Bare advance. The handler was responsible for setting
 		-- `gc = 1` (via cvm:mark_frame_gc) as part of its writes; the
 		-- BEFORE trigger frames_advance_requires_gc enforces that
@@ -390,6 +414,11 @@ function M:run_frame(frame_pk)
 	end
 
 	self.current_frame = nil
+
+	-- If %process.stop halted the walker, skip the reap — leaving the
+	-- frame alive is part of the "leaves the database as it is"
+	-- promise. Normal completion still reaps.
+	if self.stopped then return end
 
 	-- Reap: frame is done with its ast (either exhausted the loop or
 	-- was born terminal with an empty ast). Delete it. The

@@ -244,6 +244,7 @@ h.test("engine.new()'s row_handlers is exactly the stock roster, one of each", f
 
 	local expected_classes = {
 		VariableScalar = handlers.VariableScalar,
+		ProcessStop    = handlers.ProcessStop,
 		-- add more here as new handler classes get registered:
 		--   NextHandler = handlers.NextHandler,
 	}

@@ -5,14 +5,14 @@
 	"exports": {
 		"stock_instances": "() -> array of Handler instances — one fresh instance of each stock Handler subclass; called by engine.new() to populate row_handlers"
 	},
-	"status": "V0.1 — VariableScalar is the first stock handler"
+	"status": "V0.1 — VariableScalar for `$x = 1`, ProcessStop for `%process.stop`"
 }
 ]]
 
 --[[
 # `handlers`
 
-Aggregator module for the engine's stock Handler subclasses. Currently one handler: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape. More handlers land as later slices add support for other row-head shapes.
+Aggregator module for the engine's stock Handler subclasses. Currently two handlers: [`VariableScalar`](https://puck.uno/src/engine/handlers/variable-scalar.lua) for the `$x = 1` assignment shape, and [`ProcessStop`](https://puck.uno/src/engine/handlers/process-stop.lua) for the `%process.stop` halt primitive. More handlers land as later slices add support for other row-head shapes.
 
 **Adding a new stock handler:**
 
@@ -26,7 +26,9 @@ Aggregator module for the engine's stock Handler subclasses. Currently one handl
 local M = {}
 
 local VariableScalar = require('handlers.variable-scalar')
+local ProcessStop    = require('handlers.process-stop')
 M.VariableScalar = VariableScalar
+M.ProcessStop    = ProcessStop
 
 --[[
 ## `stock_instances` — fresh instances of every stock handler
@@ -40,6 +42,7 @@ Empty for now; grows as sprints register subclasses.
 function M.stock_instances()
 	return {
 		VariableScalar.new(),
+		ProcessStop.new(),
 	}
 end
 
