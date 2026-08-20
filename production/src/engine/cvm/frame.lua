@@ -155,10 +155,10 @@ Four composed writes:
 
 1. `engine:add_scalar(scalar_type, scalar_value, self.owner_role)` — materialize the scalar.
 2. `self:ensure_own_scope()` — get-or-create bucket → scopes → scopes[0].
-3. `engine:add_ref(own_scope.object_pk, name, scalar_pk)` — bind the variable name to the scalar in the own scope hash.
+3. `engine:upsert_ref(own_scope.object_pk, name, scalar_pk)` — bind (or rebind) the variable name to the scalar in the own scope hash. On rebind the schema's after-update mark trigger inserts the old child into `needs_trace` so the walker's drain can sweep it.
 4. `engine:mark_frame_gc(self.object_pk)` — set the current frame's `gc = 1`. That flag IS the mid-dispatch signal; the walker's next tick runs the GC pass before advancing. No child marker row is created — the earlier "push an empty child frame" pattern is retired under the current cycle.
 
-**Fresh-binding only.** The `unique (parent, key)` constraint on `refs` means calling this with a `name` that's already bound in the own scope hash fails the ref insert (rolled back with the savepoint).
+**Rebind supported.** The upsert path lets `$x = 2` on top of an existing `$x = 1` land as a single UPDATE of the existing ref's `child` column. The old scalar goes into `needs_trace` via the after-update mark trigger, the walker's drain sweeps it, and the ref now points at the new scalar.
 
 **Long name deliberate.** `set_local` or `assign` would be inviting call sites to reach for this method when their RHS isn't actually a primitive scalar. `set_local_to_scalar` signals the specialization at the point of use.
 ]]
@@ -170,7 +170,7 @@ function frame:set_local_to_scalar(name, scalar_type, scalar_value)
 	local ok, err = pcall(function()
 		local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
 		local own_scope = self:ensure_own_scope()
-		self.engine:add_ref(own_scope.object_pk, name, scalar_pk)
+		self.engine:upsert_ref(own_scope.object_pk, name, scalar_pk)
 
 		-- Mark the current frame as mid-dispatch. Set last so a
 		-- resume-mid-savepoint can't observe gc=1 without the writes

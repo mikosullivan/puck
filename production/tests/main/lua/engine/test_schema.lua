@@ -2178,9 +2178,16 @@ test('changing refs.key is still rejected (regression)', function()
 	db:close()
 end)
 
-test('changing refs.child is still rejected (regression)', function()
+test('changing refs.child succeeds and marks the old child in needs_trace', function()
+	-- The `child` column is editable so a rebind like `$x = 2` on top
+	-- of `$x = 1` can UPSERT rather than delete-then-insert. The
+	-- `refs_mark_needs_trace_after_child_update` trigger inserts the
+	-- OLD child into `needs_trace` on any actual change, so GC can
+	-- reason about the newly-orphaned object.
 	local db = fresh_db()
 	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	set_current_process(db, cap_pk)
 	local hash_pk = insert_hash(db, user_pk)
 	local child_a = insert_scalar(db, user_pk)
 	local child_b = insert_scalar(db, user_pk)
@@ -2188,11 +2195,41 @@ test('changing refs.child is still rejected (regression)', function()
 	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
 		.. hash_pk .. "', '" .. child_a .. "', 'x', 0)"), db, 'insert ref')
 
-	assert_fails_with(
-		db:exec("update refs set child = '" .. child_b .. "' where parent = '"
-			.. hash_pk .. "' and key = 'x'"),
-		db, 'refs_immutable',
-		'changing child should still be rejected')
+	assert_ok(db:exec("update refs set child = '" .. child_b .. "' where parent = '"
+		.. hash_pk .. "' and key = 'x'"), db, 'update child should succeed')
+
+	-- The ref now points at child_b.
+	local now = first(db, "select child from refs where parent = '"
+		.. hash_pk .. "' and key = 'x'")
+	assert(now.child == child_b, 'ref.child should now be child_b; got: ' .. tostring(now.child))
+
+	-- The old child (child_a) should be sitting in needs_trace against
+	-- the current cap.
+	local mark = first(db, "select object_pk from needs_trace where object_pk = '"
+		.. child_a .. "'")
+	assert(mark ~= nil, 'child_a should be in needs_trace after the rebind')
+	db:close()
+end)
+
+test('changing refs.child to the same value is a silent no-op (no mark)', function()
+	-- The trigger's WHEN clause guards on `new.child is not old.child`
+	-- so a bulk touch that writes the same value back doesn't
+	-- spuriously enqueue an unnecessary trace.
+	local db = fresh_db()
+	local user_pk = seed_user(db)
+	local cap_pk = insert_process(db, user_pk)
+	set_current_process(db, cap_pk)
+	local hash_pk = insert_hash(db, user_pk)
+	local child_a = insert_scalar(db, user_pk)
+
+	assert_ok(db:exec("insert into refs (parent, child, key, idx) values ('"
+		.. hash_pk .. "', '" .. child_a .. "', 'x', 0)"), db, 'insert ref')
+
+	assert_ok(db:exec("update refs set child = '" .. child_a .. "' where parent = '"
+		.. hash_pk .. "' and key = 'x'"), db, 'no-op child update should succeed')
+
+	local marks = first(db, 'select count(*) as n from needs_trace')
+	assert(tonumber(marks.n) == 0, 'needs_trace should stay empty on a no-op child update')
 	db:close()
 end)
 

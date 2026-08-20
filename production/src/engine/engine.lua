@@ -402,6 +402,14 @@ function M:run_frame(frame_pk)
 		-- state is preserved for the caller to inspect.
 		if self.stopped then break end
 
+		-- Drain the current process's needs_trace worklist between
+		-- statements. The handler's writes may have marked orphaned
+		-- children (e.g. a `$x = 2` rebind on top of `$x = 1` marks
+		-- scalar_1); the drain reaps those before the advance so the
+		-- schema's `frames_gc_reset_requires_empty_needs_trace` guard
+		-- doesn't trip on the auto-null that fires with the advance.
+		self.data:drain_needs_trace(self.cap_pk)
+
 		-- Bare advance. The handler was responsible for setting
 		-- `gc = 1` (via cvm:mark_frame_gc) as part of its writes; the
 		-- BEFORE trigger frames_advance_requires_gc enforces that
@@ -427,6 +435,15 @@ function M:run_frame(frame_pk)
 	stmts.reap_frame:bind_values(frame_pk)
 	stmts.reap_frame:step()
 	stmts.reap_frame:reset()
+
+	-- Reap cascades: the frame's outgoing refs (parent = frame_pk)
+	-- cascade-delete, and each fires `refs_mark_needs_trace_after_delete`
+	-- against the ref's child. Those marks sit in `needs_trace` until
+	-- something sweeps them; the drain below is that sweep. Under the
+	-- current design the whole orphaned subgraph (bucket → scopes →
+	-- scopes[0] → any bindings) unwinds through the drain's iterative
+	-- reap-and-cascade cycle, and this process's worklist ends empty.
+	self.data:drain_needs_trace(self.cap_pk)
 end
 
 --[[

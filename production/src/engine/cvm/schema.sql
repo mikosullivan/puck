@@ -33,7 +33,7 @@ begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
 
-insert into cvm (key, value) values ('schema', '9.0');
+insert into cvm (key, value) values ('schema', '9.1');
 
 
 -- ------------------------------------------------------------
@@ -411,20 +411,24 @@ begin
 	select raise(abort, 'refs_owner_at_most_one_hash_and_one_array: a non-container object can hold at most one hash (its bucket) and one array (its stack) as refs children');
 end;
 
--- refs rows are immutable except for `debug`, which is a human-
--- readable informational label with no query path reading it (so
--- freezing it at INSERT-time offers no invariant value). Rebind is
--- delete + insert. WHEN gates on any actual guarded-column change;
--- a no-op re-write of the same row is silently accepted. [ghi]
+-- refs rows are mostly immutable — `debug` is freely editable (it's
+-- informational, no invariant value in freezing it), and `child` is
+-- editable so a rebind like `$x = 2` on top of `$x = 1` can UPSERT
+-- rather than delete-then-insert. Every other guarded column stays
+-- immutable. The WHEN clause guards on any actual guarded-column
+-- change; a no-op re-write of the same row is silently accepted.
+-- Array child updates are permitted at the schema level too — the
+-- same after-update mark trigger below fires on any `child` change,
+-- so rebinding an array element by idx (whenever the engine grows
+-- that path) marks the outgoing child the same way as a hash rebind. [ghi]
 create trigger refs_no_update
 before update on refs
 when new.ref_pk is not old.ref_pk
 	or new.parent is not old.parent
-	or new.child is not old.child
 	or new.key is not old.key
 	or new.idx is not old.idx
 begin
-	select raise(abort, 'refs_immutable: refs rows are immutable');
+	select raise(abort, 'refs_immutable: refs.ref_pk / parent / key / idx are immutable (only child and debug are editable)');
 end;
 
 -- On refs DELETE: mark the old child for trace. Insertion into the
@@ -440,6 +444,21 @@ end;
 -- be deleted while any ref points at it. [ghi]
 create trigger refs_mark_needs_trace_after_delete
 after delete on refs
+begin
+	insert into needs_trace (object_pk) values (old.child)
+		on conflict do nothing;
+end;
+
+-- On refs UPDATE OF child: mark the OLD child for trace. Mirror of
+-- the after-delete mark — a rebind that replaces the child with a
+-- new object leaves the previous child dangling exactly the same
+-- way a delete-then-insert would, so it needs the same worklist
+-- entry. Guarded on `new.child is not old.child` so a no-op UPDATE
+-- (same child value written to the same ref, e.g. a bulk touch)
+-- doesn't spuriously mark anything. [ghi]
+create trigger refs_mark_needs_trace_after_child_update
+after update of child on refs
+when new.child is not old.child
 begin
 	insert into needs_trace (object_pk) values (old.child)
 		on conflict do nothing;

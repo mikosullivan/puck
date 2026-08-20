@@ -13,8 +13,10 @@
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
 		"add_frame":     "(ast, process_pk, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
+		"upsert_ref":    "(parent_pk, key, child_pk) -> ref_pk — insert OR update on conflict (parent, key); on update, the schema's after-update mark trigger inserts the old child into needs_trace",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key",
-		"mark_frame_gc": "(object_pk) — sets gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass"
+		"mark_frame_gc": "(object_pk) — sets gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass",
+		"drain_needs_trace": "(process_pk) — sweeps every needs_trace mark for process_pk. Each marked object is either unmarked (still reachable — in uspace or has an incoming ref) or reaped (unreachable — no incoming refs; DELETE cascades outgoing refs, which fire the mark trigger on their children). Loops until the worklist is empty."
 	},
 	"policy": "CVM DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the cvm class. Every statement the cvm uses is prepared upfront in cvm.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
 	"performance": "Every method on this class is on a hot path. Once the dispatch loop lands (see the open questions in the docstring), most will fire on every statement dispatch; any cycle saved multiplies across the whole running program.",
@@ -171,12 +173,46 @@ function cvm.new(db)
 		"returning ref_pk"
 	)
 
+	-- upsert_ref: insert a hash ref, OR update its child if a ref with
+	-- the same (parent, key) already exists. On update, the trigger
+	-- `refs_mark_needs_trace_after_child_update` inserts the old child
+	-- into needs_trace so GC can reason about it later. Same idx-
+	-- computation clause as add_ref — redundant on the conflict branch
+	-- (idx isn't mutated) but keeps the insert path correct.
+	self.stmt_upsert_ref = db:prepare(
+		"insert into refs (parent, child, key, idx) " ..
+		"values (?1, ?2, ?3, coalesce((select max(idx) + 1 from refs where parent = ?1), 0)) " ..
+		"on conflict(parent, key) do update set child = excluded.child " ..
+		"returning ref_pk"
+	)
+
 	self.stmt_get_ref_child = db:prepare(
 		"select child from refs where parent = ? and key = ?"
 	)
 
 	self.stmt_mark_frame_gc = db:prepare(
 		"update objects set gc = 1 where object_pk = ?"
+	)
+
+	-- drain_needs_trace: the four prepared statements the drain loop
+	-- issues per marked object. `list_marks` pulls every mark for a
+	-- given process; the drain then iterates and, per object, checks
+	-- (a) uspace membership and (b) incoming refs to decide unmark vs
+	-- reap. See drain_needs_trace() below.
+	self.stmt_list_marks = db:prepare(
+		"select object_pk from needs_trace where process_pk = ?"
+	)
+	self.stmt_object_in_uspace = db:prepare(
+		"select 1 from uspace where object_pk = ?"
+	)
+	self.stmt_object_has_incoming_ref = db:prepare(
+		"select 1 from refs where child = ? limit 1"
+	)
+	self.stmt_unmark_needs_trace = db:prepare(
+		"delete from needs_trace where process_pk = ? and object_pk = ?"
+	)
+	self.stmt_reap_object = db:prepare(
+		"delete from objects where object_pk = ?"
 	)
 
 	return self
@@ -431,6 +467,31 @@ function cvm:add_ref(parent_pk, key, child_pk)
 end
 
 --[[
+## `upsert_ref` — INSERT a hash ref OR update its child if it already exists
+
+Like `add_ref`, but if a ref with the same `(parent_pk, key)` already
+exists the schema's UNIQUE constraint gets absorbed into an
+`ON CONFLICT DO UPDATE SET child = excluded.child`. On the update
+branch, the after-update mark trigger inserts the OLD child into
+`needs_trace` so GC can decide what to do with it.
+
+Used by the variable-scalar handler for rebinds like `$x = 2` on top
+of an existing `$x = 1`. On first assignment this is behaviourally
+identical to `add_ref`; on rebind it swaps the child without a
+delete-then-insert round trip.
+
+Returns the ref_pk in both branches via `RETURNING ref_pk`.
+]]
+function cvm:upsert_ref(parent_pk, key, child_pk)
+	local stmt = self.stmt_upsert_ref
+	stmt:bind_values(parent_pk, child_pk, key)
+	stmt:step()
+	local ref_pk = stmt:get_value(0)
+	stmt:reset()
+	return ref_pk
+end
+
+--[[
 ## `get_ref_child` — look up a ref's child by (parent, key)
 
 Returns the `child` object_pk for the ref with the given `parent` and
@@ -472,6 +533,109 @@ function cvm:mark_frame_gc(object_pk)
 	stmt:bind_values(object_pk)
 	stmt:step()
 	stmt:reset()
+end
+
+--[[
+## `drain_needs_trace` — sweep every mark for a process, unmarking or reaping
+
+Walks the current process's `needs_trace` worklist and, per marked
+object, either unmarks (still reachable) or reaps (unreachable). Loops
+until the process's worklist is empty. Runs the walking-skeleton's
+stand-in for a proper reachability trace — cheap and correct for the
+acyclic graphs the language can build today; the cycle case lands
+with the real Bacon-Rajan trace-and-sweep pass in a later sprint.
+
+**Per marked object:**
+
+1. **Uspace check.** If the object appears in the `uspace` view (roles,
+   `persistent = 1` rows, process caps), it's still anchored — unmark and
+   move on.
+2. **Incoming refs check.** If any `refs` row points at the object as
+   `child`, someone still owns it — unmark and move on.
+3. **Reap.** Otherwise the object is unreachable. DELETE the objects row.
+   The schema's cascades take care of the fallout:
+   - Outgoing refs (`parent = object_pk`) cascade-delete; each fires
+     `refs_mark_needs_trace_after_delete`, adding fresh marks to the
+     worklist for the reaped object's children.
+   - The `needs_trace` row for this object cascade-deletes too
+     (`object_pk` FK on delete cascade) — no explicit unmark needed.
+
+The outer loop re-fetches the worklist after each pass so newly-added
+marks from cascades are picked up. Convergence: every iteration either
+reaps at least one row (strict progress toward empty) or unmarks all
+remaining rows (also strict progress).
+
+**Called by the walker** between each dispatched statement (so the
+schema's `frames_gc_reset_requires_empty_needs_trace` guard doesn't
+trip on the auto-null that fires with the advance) and after
+`run_frame`'s tail reap (so the process's graph is fully swept before
+the walker returns to its caller).
+
+**Cycles are out of scope.** Two objects mutually referencing each
+other with no external ref would both unmark under step 2 above,
+leaving them alive as an unreachable pair. The walking-skeleton
+grammar can't construct such a state; a real trace-and-sweep pass
+lands when it can.
+]]
+function cvm:drain_needs_trace(process_pk)
+	while true do
+		-- Fetch the current worklist for this process.
+		local list = self.stmt_list_marks
+		list:bind_values(process_pk)
+
+		local pks = {}
+
+		for row in list:nrows() do
+			table.insert(pks, row.object_pk)
+		end
+
+		list:reset()
+
+		if #pks == 0 then break end
+
+		for _, pk in ipairs(pks) do
+			local reachable = false
+
+			-- Uspace membership beats an incoming-ref check.
+			local u = self.stmt_object_in_uspace
+			u:bind_values(pk)
+
+			if u:step() == SQLITE_ROW then
+				reachable = true
+			end
+
+			u:reset()
+
+			if not reachable then
+				local r = self.stmt_object_has_incoming_ref
+				r:bind_values(pk)
+
+				if r:step() == SQLITE_ROW then
+					reachable = true
+				end
+
+				r:reset()
+			end
+
+			if reachable then
+				-- Unmark. The DELETE on needs_trace does not cascade
+				-- to objects — the objects row stays where it is.
+				local um = self.stmt_unmark_needs_trace
+				um:bind_values(process_pk, pk)
+				um:step()
+				um:reset()
+			else
+				-- Reap. Deleting the objects row cascade-deletes its
+				-- outgoing refs (each firing the after-delete mark on
+				-- their children) and cascade-deletes the needs_trace
+				-- row itself (via the object_pk FK).
+				local rp = self.stmt_reap_object
+				rp:bind_values(pk)
+				rp:step()
+				rp:reset()
+			end
+		end
+	end
 end
 
 return cvm

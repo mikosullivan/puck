@@ -11,7 +11,7 @@
 End-to-end assertions. Two programs:
 
 - **Empty program** (`engine.caspm = {}`) — `run()` seeds the cap + frame 0, walks the empty ast (nothing to dispatch), advances the cap to close the process_cap. Returns `{complete = 1, cap_pk = ...}`.
-- **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler → `frame:set_local_to_scalar('x', 'n', 1)` → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; cap's advance sweeps frame 0. Post-run: cap terminal, orphaned bucket marked `needs_trace = 1`, the `x` binding still walkable via the surviving ref chain. GC substrate not wired here; the reap of the orphans lands with GC integration.
+- **`$x = 1`** — full dispatch through the handler chain: variable-scalar handler → `frame:set_local_to_scalar('x', 'n', 1)` → scalar + bucket + scopes chain + marker; walker's advance sweeps the marker; frame 0's reap orphans the whole chain; the tail drain unwinds bucket → scopes → scopes[0] → scalar_1 via successive reap-and-cascade cycles. Post-run: cap terminal, `refs` empty, `needs_trace` empty, only the cap and the three core-role seeds remain in `objects`.
 ]]
 
 local h      = require('helpers')
@@ -77,26 +77,24 @@ h.test('$x = 1: runs end-to-end through the dispatch chain', function()
 
 	local cap = first(e.cvm,
 		"select stmt_idx, gc from objects where object_pk = '" .. result.cap_pk .. "'")
-	h.assert_true(cap ~= nil, 'cap should still exist (GC-substrate reap out of scope)')
+	h.assert_true(cap ~= nil, 'cap should still exist (the cap is the process anchor)')
 	h.assert_eq(tonumber(cap.stmt_idx), 0, 'cap stmt_idx should be 0 (cap is born terminal — empty ast, terminal = length(ast) = 0)')
 	h.assert_true(cap.gc == nil, 'cap gc should be null (caps are exempt from the child-delete → gc=1 cascade)')
 
 	local cap_kids = scalar(e.cvm,
 		"select count(*) from objects where parent_frame = '" .. result.cap_pk .. "'")
-	h.assert_eq(cap_kids, 0, 'cap should have no children (frame 0 was cascade-swept)')
+	h.assert_eq(cap_kids, 0, 'cap should have no children (frame 0 reaped)')
 
-	-- The x binding survived orphaned. Walkable via the surviving ref chain.
-	local binding = first(e.cvm,
-		"select o.scalar_type, o.scalar_value from objects o "
-		.. "join refs r on r.child = o.object_pk where r.key = 'x'")
-	h.assert_true(binding ~= nil, 'x binding should still be walkable via ref chain')
-	h.assert_eq(binding.scalar_type, 'n', 'x should bind to scalar_type=n')
-	h.assert_eq(tonumber(binding.scalar_value), 1, 'x should bind to value 1')
+	-- The whole orphaned chain (bucket → scopes → scopes[0] → x → scalar_1)
+	-- was reaped by the tail drain after frame 0 went. refs is empty.
+	local refs_count = scalar(e.cvm, 'select count(*) from refs')
+	h.assert_eq(refs_count, 0, 'refs should be empty (whole orphaned chain reaped)')
 
-	-- The orphaned bucket should be in the needs_trace worklist.
-	local bucket = first(e.cvm,
-		"select nt.object_pk from needs_trace nt "
-		.. "join objects o on o.object_pk = nt.object_pk "
-		.. "where o.primitive = 'h'")
-	h.assert_true(bucket ~= nil, 'bucket should be in the needs_trace table')
+	-- Nothing left in the drain worklist.
+	local marks = scalar(e.cvm, 'select count(*) from needs_trace')
+	h.assert_eq(marks, 0, 'needs_trace should be empty after the drain sweeps everything orphaned')
+
+	-- Only the cap and the three core-role seeds remain in objects.
+	local total = scalar(e.cvm, 'select count(*) from objects')
+	h.assert_eq(total, 4, 'expected four object rows (engine/cache/user seeds + cap)')
 end)
