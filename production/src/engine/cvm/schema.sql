@@ -33,7 +33,7 @@ begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
 
-insert into cvm (key, value) values ('schema', '9.1');
+insert into cvm (key, value) values ('schema', '9.2');
 
 
 -- ------------------------------------------------------------
@@ -1032,6 +1032,46 @@ when new.reg_pk is not old.reg_pk
 	or new.method_name is not old.method_name
 begin
 	select raise(abort, 'class_listeners_no_update: rows are immutable');
+end;
+
+
+-- ------------------------------------------------------------
+-- Debug log. Free-form per-process log entries. `object_pk`
+-- references a process cap (an objects row with `process_cap = 1`);
+-- ON DELETE CASCADE ties each entry's lifetime to its cap so when a
+-- process's cap goes away, its log goes with it. `note` is a
+-- required text column — the log's only payload.
+-- ------------------------------------------------------------
+
+create table debug_log (
+	entry_pk integer primary key autoincrement,
+
+	-- FK to a process cap in objects. The FK alone only checks
+	-- that the target row exists; the companion trigger
+	-- debug_log_object_pk_must_be_cap enforces that the target's
+	-- process_cap column is 1. ON DELETE CASCADE: when the process
+	-- cap is deleted, its debug_log rows go with it. [ghi]
+	object_pk text not null references objects(object_pk) on delete cascade,
+
+	-- Free-form log text. Required. No shape check on the content —
+	-- the log's whole surface is a bag of strings the engine chose
+	-- to record. [ghi]
+	note text not null
+);
+
+-- Lookup by process. Every read of the log filters by object_pk
+-- (`select ... from debug_log where object_pk = ?`), so a plain
+-- index on that column keeps it off a full scan.
+create index debug_log_object_pk on debug_log(object_pk);
+
+-- object_pk must reference a cap frame (process_cap = 1). The FK
+-- alone can't check other columns of the target row; this trigger
+-- fills the gap. Mirrors needs_trace_process_pk_must_be_cap. [ghi]
+create trigger debug_log_object_pk_must_be_cap
+before insert on debug_log
+when (select process_cap from objects where object_pk = new.object_pk) is not 1
+begin
+	select raise(abort, 'debug_log_object_pk_must_be_cap: object_pk must reference an objects row with process_cap = 1');
 end;
 
 

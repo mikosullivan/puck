@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS file's layout, coloring, and notation ARE the format Miko wants for every CVM ER diagram. Update WITHIN this format; never redesign it into a different shape.",
+	"do_not_redesign": "Prior model (Claude) rewrote this diagram wholesale into a legend-heavy, column-listing format that Miko did not want (commit e170ab3, 'requirements/cvm/schema.svg: rewrite to match current schema'). That rewrite got reverted. If a schema change makes the diagram stale, edit THIS SVG in place: add a table box, add/remove a column line, add an FK arrow. Do not re-author the diagram from scratch.",
+	"authoring_tool": "Inkscape. The file carries sodipodi/inkscape namespace attributes and edit-time metadata. Edits made with a text editor are fine; keep the Inkscape attributes so Miko can still open and adjust the file visually.",
+	"layout": {
+		"canvas": "970 x 500 viewBox. Tables laid out horizontally in loose clusters, roughly cvm-marker on the left, objects-and-refs center, listeners right, temp tables in their own area.",
+		"clusters": {
+			"cvm_marker": "The single-row cvm marker table. Rendered in gray (#9e9e9e stroke).",
+			"object_graph": "objects + refs. Rendered in teal (#26a69a stroke, #c7e2e4 fill). This is the load-bearing cluster; every other table joins it via object_pk.",
+			"listeners": "instance_listeners + class_listeners. Rendered in purple (#9575cd stroke). Weak-ref lifetime via ON DELETE CASCADE.",
+			"temp_tables": "needs_trace + in_trace. TEMP tables (per-connection scratch) are drawn with DASHED borders (stroke-dasharray: 6 1.5). This is how at-a-glance the reader distinguishes persistent-schema tables from temp tables that get recreated on every connection open. If a new temp table lands, it MUST get the dashed-border treatment."
+		},
+		"fk_notation": "Foreign keys drawn as curved gray lines with arrowheads. Self-referential FKs (parent_role, owner_role, parent_frame) drawn as small self-loop arrows on the source column, NOT as full loops back into the same table box.",
+		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with primitive='f' (biconditional with the ast column). A role is an objects row with primitive='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
+	},
+	"sprint_integration": "When a sprint modifies the schema, it forks THIS file into sprints/<sprint-name>/requirements/cvm/schema.svg and edits the fork. When the sprint is assimilated into production, the ER diagram MUST be copied to production/requirements/cvm/schema.svg alongside the schema.sql and Lua changes. Failure mode: the trace-tables sprint (2026-08) landed the needs_trace/in_trace temp tables in production but the assimilation commit (28ac08a) deleted sprints/trace-tables/schema.svg without copying it forward, so production's ER diagram stopped matching production's schema for a stretch. Every sprint-assimilation checklist step for schema work now includes: copy the sprint's schema.svg to production/requirements/cvm/schema.svg."}
+-->
+
 <svg
-   viewBox="0 0 970 500"
+   viewBox="0 0 970 620"
    width="970"
    role="img"
    aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
@@ -8,7 +26,7 @@
    id="svg707"
    sodipodi:docname="schema.svg"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   height="500"
+   height="620"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -26,15 +44,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="1.2151749"
-     inkscape:cx="448.08364"
-     inkscape:cy="299.13389"
+     inkscape:zoom="0.90368247"
+     inkscape:cx="497.40923"
+     inkscape:cy="334.74147"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g575" />
+     inkscape:current-layer="layer1" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
@@ -108,6 +126,20 @@
          fill="context-stroke"
          id="path13238-7" />
     </marker>
+    <marker
+       id="fk-arrow-36-6"
+       viewBox="0 0 10 10"
+       refX="6"
+       refY="5"
+       markerWidth="3"
+       markerHeight="3"
+       orient="auto"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="context-stroke"
+         id="path13238-7-7" />
+    </marker>
   </defs>
   <!-- Page background -->
   <metadata
@@ -131,7 +163,43 @@
      inkscape:label="diagram"
      transform="translate(-414.4918,-540.99647)">
     <g
-       transform="matrix(1.4457791,0,0,1.4474001,792.76901,550.404)"
+       id="g2192"
+       transform="translate(-1.4348724,14)">
+      <path
+         class="fk-arrow"
+         d="M 916.0568,1100.4315 V 990.18801"
+         id="path2381-5"
+         style="fill:none;stroke:#000000;stroke-width:6.73455;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-36-6);paint-order:stroke fill markers" />
+      <g
+         id="g2184">
+        <g
+           transform="translate(914.9264,1026.6735)"
+           id="g2389-3">
+          <rect
+             x="-40.033443"
+             y="-11"
+             width="82.327629"
+             height="22"
+             rx="4"
+             ry="4"
+             class="fk-label-rect"
+             id="rect2383-5"
+             style="fill:#c7e2e4;stroke:none;stroke-width:1" />
+          <text
+             x="0"
+             y="5"
+             class="fk-label-text"
+             id="text2387-6"
+             style="font-size:14px;font-family:'DejaVu Sans Mono', monospace;text-anchor:middle;white-space:pre;inline-size:92.2936;display:inline;fill:#000000;stroke:#ffffff;stroke-width:2.5;stroke-linejoin:round;paint-order:stroke fill markers"
+             xml:space="preserve"><tspan
+               x="0"
+               y="5"
+               id="tspan2696">object_pk</tspan></text>
+        </g>
+      </g>
+    </g>
+    <g
+       transform="matrix(1.4457791,0,0,1.4474001,792.76901,564.404)"
        id="g575"
        style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-width:0.691281">
       <rect
@@ -294,7 +362,7 @@
          id="text1064">debug</text>
     </g>
     <g
-       transform="translate(443.79632,565.38185)"
+       transform="translate(443.79632,579.38185)"
        id="g529"
        style="font-family:'Helvetica Neue', Arial, sans-serif">
       <rect
@@ -336,7 +404,7 @@
     </g>
     <g
        id="g508"
-       transform="translate(240.76771,18.582078)">
+       transform="translate(240.76771,32.582078)">
       <path
          class="fk-arrow"
          d="M 360.88235,752.33496 H 540.83884"
@@ -443,7 +511,7 @@
     </g>
     <g
        id="g489"
-       transform="translate(240.76771,18.582078)">
+       transform="translate(240.76771,32.582078)">
       <path
          class="fk-arrow"
          d="M 360.88235,879.16441 H 540.83884"
@@ -549,7 +617,8 @@
       </g>
     </g>
     <g
-       id="g1370">
+       id="g1370"
+       transform="translate(0,14)">
       <path
          class="fk-arrow"
          d="M 1183.5169,597.19707 H 1063.0416"
@@ -601,7 +670,7 @@
         <rect
            x="0"
            y="0"
-           width="180"
+           width="99.116302"
            height="112"
            rx="6"
            ry="6"
@@ -610,11 +679,12 @@
            stroke-width="1.5"
            id="rect577" />
         <path
-           d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+           d="M 0,6 Q 0,0 3.3038767,0 H 95.812423 Q 99.1163,0 99.1163,6 V 26 H 0 Z"
            fill="#26a69a"
-           id="path579" />
+           id="path579"
+           style="stroke-width:1" />
         <text
-           x="90"
+           x="49.396286"
            y="18"
            text-anchor="middle"
            font-size="13px"
@@ -656,7 +726,7 @@
     </g>
     <g
        id="g1351"
-       transform="translate(0,-24)">
+       transform="translate(0,-10)">
       <path
          class="fk-arrow"
          d="M 1183.5169,729.33706 H 1063.0416"
@@ -684,7 +754,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1662">object_pk</tspan></text>
+             id="tspan2698">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,711.75921)"
@@ -730,7 +800,7 @@
     </g>
     <g
        id="g1338"
-       transform="translate(0,-24)">
+       transform="translate(0,-10)">
       <path
          class="fk-arrow"
          d="M 1183.5169,815.33706 H 1063.0416"
@@ -758,7 +828,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1664">object_pk</tspan></text>
+             id="tspan2700">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,798.75921)"
@@ -812,7 +882,7 @@
     </g>
     <g
        id="g1324"
-       transform="translate(0,-26)">
+       transform="translate(0,-12)">
       <path
          class="fk-arrow"
          d="M 1231.7189,994.6261 V 884.38262"
@@ -840,7 +910,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1666">trace_pk</tspan></text>
+             id="tspan2702">trace_pk</tspan></text>
       </g>
       <path
          class="fk-arrow"
@@ -869,7 +939,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1668">object_pk</tspan></text>
+             id="tspan2704">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,946.75921)"
@@ -915,5 +985,71 @@
       </g>
     </g>
     <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
+    <g
+       id="g2178"
+       transform="translate(0,14)">
+      <rect
+         x="865.06555"
+         y="1051.6981"
+         width="99.112694"
+         height="79.338821"
+         rx="6"
+         ry="5.9999995"
+         fill="#ffffff"
+         stroke="#26a69a"
+         stroke-width="1.5"
+         id="rect1397"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-dasharray:none;stroke-dashoffset:0" />
+      <path
+         d="m 865.06555,1057.6981 q 0,-6 3.30376,-6 h 92.5052 q 3.30375,0 3.30375,6 v 20 h -99.11271 z"
+         fill="#26a69a"
+         id="path1399"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;stroke-width:0.999995" />
+      <text
+         x="914.7901"
+         y="1069.6981"
+         text-anchor="middle"
+         font-size="13px"
+         font-weight="700"
+         fill="#ffffff"
+         id="text1401"
+         style="font-family:'Helvetica Neue', Arial, sans-serif"><tspan
+           sodipodi:role="line"
+           id="tspan2047"
+           x="914.7901"
+           y="1069.6981">debug_log</tspan></text>
+      <text
+         x="875.06555"
+         y="1107.6981"
+         font-size="11px"
+         fill="#616161"
+         id="text2051"
+         style="font-family:'Helvetica Neue', Arial, sans-serif">FK: object_pk</text>
+      <text
+         x="875.23206"
+         y="1062.9705"
+         font-size="11px"
+         font-weight="700"
+         fill="#212121"
+         id="text583-3"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;white-space:pre;inline-size:105.152;display:inline"
+         transform="translate(0,30)"
+         xml:space="preserve"><tspan
+           x="875.23206"
+           y="1062.9705"
+           id="tspan2706">PK: entry_pk</tspan></text>
+      <text
+         x="875.06555"
+         y="1093.6981"
+         font-size="11px"
+         fill="#616161"
+         id="text2091"
+         style="font-family:'Helvetica Neue', Arial, sans-serif;white-space:pre;inline-size:76.5523;display:inline"
+         transform="translate(0,30)"
+         xml:space="preserve"><tspan
+           x="875.06555"
+           y="1093.6981"
+           id="tspan2708">col: note</tspan></text>
+    </g>
   </g>
 </svg>
