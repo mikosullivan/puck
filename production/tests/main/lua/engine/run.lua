@@ -3,7 +3,7 @@
 --[[
 {
 	"module": "run",
-	"role": "Runner for the engine test suite. Discovers every `test_*.lua` file next to itself, sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Sets `package.path` so the fresh engine code under `src/engine/` resolves via bare-name requires (`require('engine')`, `require('cvm.sqlite.open')`, etc.).",
+	"role": "Runner for the engine test suite. Discovers every `test_*.lua` file at or under this directory (recursive), sources each one under a shared `helpers` accumulator, and prints an aggregated pass/fail report. Backend-specific tests live in subdirectories (e.g. `sqlite/`); the runner walks them all. Sets `package.path` so the fresh engine code under `src/engine/` resolves via bare-name requires (`require('engine')`, `require('cvm.sqlite.open')`, etc.).",
 	"run": "lua5.4 tests/main/lua/engine/run.lua (from repo root)"
 }
 ]]
@@ -11,15 +11,22 @@
 --[[
 # `run`
 
-Discovers and runs every `test_*.lua` file in this directory. Each
-file registers cases via `helpers.test`; `run` calls `helpers.reset`
-before each file so failures aggregate per-file, then prints a final
-summary line and exits 0 on all-pass / 1 on any-failure.
+Discovers and runs every `test_*.lua` file at or under this
+directory. Backend-specific suites live in subdirectories — e.g.
+`sqlite/` for tests that assert against the CVM's SQLite
+implementation (schema DDL, triggers, table structure). The
+non-backend tests (engine dispatch API, Sequence, host-wiring smoke)
+sit at the top level. Each file registers cases via `helpers.test`;
+`run` calls `helpers.reset` before each file so failures aggregate
+per-file, then prints a final summary line and exits 0 on all-pass
+/ 1 on any-failure.
 
 `package.path` is set so `require('engine')`, `require('normalize')`,
 `require('cvm.sqlite.open')`, and the other bare-name requires the tests
 issue resolve against `src/engine/`. `package.cpath` picks up the
-system `luarocks` tree for `lsqlite3.so`.
+system `luarocks` tree for `lsqlite3.so`. `helpers` and `larry`
+resolve against this file's directory so subdirectory tests find them
+without further configuration.
 ]]
 
 local script_dir = arg[0]:match('(.*/)') or './'
@@ -34,17 +41,25 @@ package.cpath = home .. '/.luarocks/lib/lua/5.4/?.so;' .. package.cpath
 
 local h = require('helpers')
 
+--[[
+Recursively find every `test_*.lua` under `dir`. Returns paths as
+they appear relative to `dir` (with subdir prefix), sorted, so the
+runner's per-file line prints something like `sqlite/test_schema.lua`
+rather than a bare filename that could collide across subdirs.
+]]
 local function list_test_files(dir)
 	local files = {}
-	local handle = io.popen('ls -1 "' .. dir .. '" 2>/dev/null')
+	local handle = io.popen('find "' .. dir .. '" -type f -name "test_*.lua" 2>/dev/null')
 
 	if not handle then
 		return files
 	end
 
 	for line in handle:lines() do
-		if line:match('^test_.*%.lua$') then
-			table.insert(files, line)
+		-- Strip the directory prefix so the returned path is relative to `dir`.
+		local rel = line:sub(#dir + 1)
+		if rel:match('^test_.*%.lua$') or rel:match('/test_.*%.lua$') then
+			table.insert(files, rel)
 		end
 	end
 
