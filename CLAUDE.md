@@ -15,13 +15,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 User-level AI collaboration preferences live in [~/CLAUDE.md](../../../../CLAUDE.md) — communication style, workflow cadence, writing conventions, and engineering principles that travel with Miko across every project. Claude Code reads that file automatically. This project's CLAUDE.md (the one you're reading) only covers things specific to this codebase.
 
-## Linking to docs: always puck.uno, never repo paths
+## Linking to files: always puck.uno, never repo paths
 
-**Every** link to a doc file in this repo uses a **puck.uno URL** — in chat replies, commit messages, PR descriptions, GitHub issue text, and inside doc files. Never `requirements/foo/bar.md`. Never a repo-relative path. This **overrides** the VS Code IDE default (which would have you use `[name](relative/path)`) — that default doesn't apply here.
+**Every** link to a file in this repo — doc file, source file, test file, config file, anything — uses a **puck.uno URL**. Applies in chat replies, commit messages, PR descriptions, GitHub issue text, and inside doc files. Never `requirements/foo/bar.md`. Never `production/src/engine/engine.lua`. Never a repo-relative path. This **overrides** the VS Code IDE default (which would have you use `[name](relative/path)`) — that default doesn't apply here.
 
-**Doc trees** (top-level directories Orlando renders as docs): `documentation/`, `ideas/`, `requirements/`, `skills/`, `sprints/`. Anything under these trees needs the puck.uno form.
+**Why every file, not just docs:** Miko virtually never opens files locally — everything goes through the web site. A relative path forces a local checkout to be useful; a puck.uno URL works from anywhere Miko happens to be reading the response.
 
-Translation rule (the URL path is the filesystem path — no `documentation/` prefix wrapping the whole thing):
+Translation rule (the URL path is the filesystem path — no wrapping prefix):
 
 - `requirements/foo/bar.md` → `https://puck.uno/requirements/foo/bar` (strip the `.md`)
 - `ideas/foo.md` → `https://puck.uno/ideas/foo`
@@ -30,12 +30,14 @@ Translation rule (the URL path is the filesystem path — no `documentation/` pr
 - Non-`.md` extensions stay: `requirements/foo/bar.json` → `https://puck.uno/requirements/foo/bar.json`
 - Same-name-index (`foo/foo.md`) → `https://puck.uno/foo/` (trailing slash)
 - Section anchors stay: `https://puck.uno/requirements/foo/bar#section-name`
-- Files outside doc trees (`code/`, `tests/`, `orlando/`, `scripts/`) — relative path or GitHub URL is fine; no puck.uno form.
+- Source / test / anything else: `production/src/engine/engine.lua` → `https://puck.uno/production/src/engine/engine.lua` (full repo path, extension kept). Same for `sprints/…`, `tests/…`, `orlando/…`, `scripts/…`, `web/…`, etc.
 - Repo README: `https://puck.uno/` (root of the site) or `https://puck.uno/README` — both serve `README.md`.
+
+**Line numbers go in prose, not in the URL.** Don't append `#L42` to a puck.uno link. Link the FILE; if a specific line matters, name it in prose ("see line 42 of …").
 
 **Tag form for in-repo cross-doc links inside doc files:** prefer `[text](tag:name)` over the full puck.uno URL. Grep for existing tags first — no central index. Tags survive file moves without link sweeps; puck.uno URLs don't.
 
-**Self-check before sending a chat response** that mentions any doc: scan for `.md`, or `[name](relative/path)`, or a bare `requirements/…` / `documentation/…` / `ideas/…` / `skills/…` prose path — if found, convert. End-of-task summaries that list recently-edited files are the most common slip spot.
+**Self-check before sending a chat response** that mentions any file: scan for `.md`, or `[name](relative/path)`, or a bare `production/…` / `sprints/…` / `requirements/…` / `documentation/…` / `ideas/…` / `skills/…` / `tests/…` / `orlando/…` / `scripts/…` prose path — if found, convert. End-of-task summaries that list recently-touched files are the most common slip spot.
 
 ## What this repo is
 

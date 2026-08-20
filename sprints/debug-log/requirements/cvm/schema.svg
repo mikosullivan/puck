@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS file's layout, coloring, and notation ARE the format Miko wants for every CVM ER diagram. Update WITHIN this format; never redesign it into a different shape.",
+	"do_not_redesign": "Prior model (Claude) rewrote this diagram wholesale into a legend-heavy, column-listing format that Miko did not want (commit e170ab3, 'requirements/cvm/schema.svg: rewrite to match current schema'). That rewrite got reverted. If a schema change makes the diagram stale, edit THIS SVG in place: add a table box, add/remove a column line, add an FK arrow. Do not re-author the diagram from scratch.",
+	"authoring_tool": "Inkscape. The file carries sodipodi/inkscape namespace attributes and edit-time metadata. Edits made with a text editor are fine; keep the Inkscape attributes so Miko can still open and adjust the file visually.",
+	"layout": {
+		"canvas": "970 x 500 viewBox. Tables laid out horizontally in loose clusters, roughly cvm-marker on the left, objects-and-refs center, listeners right, temp tables in their own area.",
+		"clusters": {
+			"cvm_marker": "The single-row cvm marker table. Rendered in gray (#9e9e9e stroke).",
+			"object_graph": "objects + refs. Rendered in teal (#26a69a stroke, #c7e2e4 fill). This is the load-bearing cluster; every other table joins it via object_pk.",
+			"listeners": "instance_listeners + class_listeners. Rendered in purple (#9575cd stroke). Weak-ref lifetime via ON DELETE CASCADE.",
+			"temp_tables": "needs_trace + in_trace. TEMP tables (per-connection scratch) are drawn with DASHED borders (stroke-dasharray: 6 1.5). This is how at-a-glance the reader distinguishes persistent-schema tables from temp tables that get recreated on every connection open. If a new temp table lands, it MUST get the dashed-border treatment."
+		},
+		"fk_notation": "Foreign keys drawn as curved gray lines with arrowheads. Self-referential FKs (parent_role, owner_role, parent_frame) drawn as small self-loop arrows on the source column, NOT as full loops back into the same table box.",
+		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with primitive='f' (biconditional with the ast column). A role is an objects row with primitive='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
+	},
+	"sprint_integration": "When a sprint modifies the schema, it forks THIS file into sprints/<sprint-name>/requirements/cvm/schema.svg and edits the fork. When the sprint is assimilated into production, the ER diagram MUST be copied to production/requirements/cvm/schema.svg alongside the schema.sql and Lua changes. Failure mode: the trace-tables sprint (2026-08) landed the needs_trace/in_trace temp tables in production but the assimilation commit (28ac08a) deleted sprints/trace-tables/schema.svg without copying it forward, so production's ER diagram stopped matching production's schema for a stretch. Every sprint-assimilation checklist step for schema work now includes: copy the sprint's schema.svg to production/requirements/cvm/schema.svg."}
+-->
 <svg
    viewBox="0 0 970 500"
    width="970"
@@ -26,15 +43,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="1.2151749"
-     inkscape:cx="448.08364"
-     inkscape:cy="299.13389"
+     inkscape:zoom="1.7185168"
+     inkscape:cx="691.87568"
+     inkscape:cy="422.16636"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g575" />
+     inkscape:current-layer="layer1" />
   <title
      id="title473">CVM schema — entity-relationship diagram</title>
   <defs
@@ -601,7 +618,7 @@
         <rect
            x="0"
            y="0"
-           width="180"
+           width="99.116302"
            height="112"
            rx="6"
            ry="6"
@@ -610,11 +627,12 @@
            stroke-width="1.5"
            id="rect577" />
         <path
-           d="M 0,6 Q 0,0 6,0 h 168 q 6,0 6,6 V 26 H 0 Z"
+           d="M 0,6 Q 0,0 3.3038767,0 H 95.812423 Q 99.1163,0 99.1163,6 V 26 H 0 Z"
            fill="#26a69a"
-           id="path579" />
+           id="path579"
+           style="stroke-width:1" />
         <text
-           x="90"
+           x="49.396286"
            y="18"
            text-anchor="middle"
            font-size="13px"
@@ -684,7 +702,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1662">object_pk</tspan></text>
+             id="tspan1174">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,711.75921)"
@@ -758,7 +776,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1664">object_pk</tspan></text>
+             id="tspan1176">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,798.75921)"
@@ -840,7 +858,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1666">trace_pk</tspan></text>
+             id="tspan1178">trace_pk</tspan></text>
       </g>
       <path
          class="fk-arrow"
@@ -869,7 +887,7 @@
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan1668">object_pk</tspan></text>
+             id="tspan1180">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,946.75921)"
