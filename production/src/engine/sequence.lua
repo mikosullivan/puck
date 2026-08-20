@@ -23,8 +23,9 @@ without ever repeating within a program's lifetime.
 
 Nested-object platter IDs are the one exception — they use UUIDs
 because they appear as keys inside user buckets where integer-strings
-could collide with user-chosen field names. See
-[cvm/objects § Object IDs](https://www.puck.uno/requirements/cvm/objects#object-ids).
+could collide with user-chosen field names. See the `object_pk`
+description in [cvm](https://puck.uno/requirements/cvm/sqlite/) for
+the UUID shape rule.
 ]]
 
 local M = {}
