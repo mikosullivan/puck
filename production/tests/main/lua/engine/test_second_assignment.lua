@@ -18,7 +18,7 @@ Assertions for the rebind path — `$x = 1` followed by `$x = 2`.
 
 ## Test-only trigger on `needs_trace`
 
-Every engine.new() call in this file goes through the local `new_engine()` shim, which installs a test-only trigger on `needs_trace` that mirrors each mark into `debug_log`. The trigger is not part of the schema — it's a runtime probe added by test code — see [test-only-triggers](https://puck.uno/production/requirements/cvm/test-only-triggers) for the strategy and the format guarantees (`mark <marked_object_pk> <scalar_value_or_null>`, whole-number values rendered by `format('%g')` so they don't drag a trailing `.0`).
+Every engine.new() call in this file goes through the local `new_engine()` shim, which installs a test-only trigger on `needs_trace` that mirrors each mark into `debug_log`. The trigger is not part of the schema — it's a runtime probe added by test code — see [test-only-triggers](https://puck.uno/production/requirements/cvm/sqlite/test-only-triggers) for the strategy and the format guarantees (`mark <marked_object_pk> <scalar_value_or_null>`, whole-number values rendered by `format('%g')` so they don't drag a trailing `.0`).
 ]]
 
 local h      = require('helpers')

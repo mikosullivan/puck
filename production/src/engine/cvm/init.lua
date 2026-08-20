@@ -307,7 +307,7 @@ Ownership under the current schema is a normal refs row from owner to
 collection — no dedicated `bucket_pk` / `bucket_for` columns. The
 `refs_owner_at_most_one_hash_and_one_array` trigger caps a
 non-container parent at one hash-child. See
-[ownership](https://puck.uno/requirements/cvm/ownership).
+[ownership](https://puck.uno/requirements/cvm/sqlite/ownership).
 
 Used by `object:bucket` as the lazy-create branch of the accessor.
 ]]
@@ -433,8 +433,8 @@ INSERTs a bare `objects` row with `primitive = 'f'`, `stmt_idx = 0`,
 the given `ast` and `owner_role`. Callers wire up the frame's anchor
 after the fact — either `parent_frame = <parent>` for a nested frame
 (via a follow-up UPDATE) or `process = 1` for a cap frame at the top
-of a call stack. See [frame-lifecycle](https://puck.uno/requirements/cvm/frame-lifecycle)
-and [ownership](https://puck.uno/requirements/cvm/ownership) for the
+of a call stack. See [frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle)
+and [ownership](https://puck.uno/requirements/cvm/sqlite/ownership) for the
 lifecycle rules.
 ]]
 function cvm:add_frame(ast, owner_role_pk)

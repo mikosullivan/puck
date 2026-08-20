@@ -21,7 +21,7 @@
 
 Caspian's runtime. A host constructs an engine with `engine.new()` — which
 opens an CVM (the runtime state store — CVM in V1; see
-[cvm](https://www.puck.uno/requirements/cvm/)) via `cvm.open()`
+[cvm](https://www.puck.uno/requirements/cvm/sqlite/)) via `cvm.open()`
 and stashes the SQLite handle as `engine.cvm`. From that moment on, every
 runtime state read or write goes through that handle: objects, frames,
 frame_locals, roles, listeners — everything the CVM schema tracks.

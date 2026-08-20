@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "frame",
-	"role": "Class attached to `objects` rows with `primitive = 'f'`. Under the scopes design (see requirements/cvm/scopes), the frame's bucket holds a `scopes` key pointing at an ArrayPrimitive; scopes[0] is the frame's own locals hash for this call, scopes[1..] are captured scopes from closures (once those land). Adds `own_scope` (read-only accessor for scopes[0]), `ensure_own_scope` (get-or-create), and `set_local_to_scalar` (specialized write path for `$name = <scalar>` assignments).",
+	"role": "Class attached to `objects` rows with `primitive = 'f'`. Under the scopes design (see requirements/cvm/sqlite/scopes), the frame's bucket holds a `scopes` key pointing at an ArrayPrimitive; scopes[0] is the frame's own locals hash for this call, scopes[1..] are captured scopes from closures (once those land). Adds `own_scope` (read-only accessor for scopes[0]), `ensure_own_scope` (get-or-create), and `set_local_to_scalar` (specialized write path for `$name = <scalar>` assignments).",
 	"inherits_from": "object",
 	"exports": {
 		"new":                 "(engine, row) -> frame — constructor",
@@ -19,7 +19,7 @@
 
 The class attached to every `objects` row with `primitive = 'f'` — a frame, an instance of a call. Distinct from a function or closure: those are plain `primitive = 'o'` objects that store their CaspM in a bucket entry. When one is called, the engine creates a fresh `primitive = 'f'` row and copies the CaspM into its `ast` column. The function object stays where it is; the frame is a separate row with the code it's actually running.
 
-Frames are destroyed when finished — the walker's advance-with-gc UPDATE cascade-sweeps any child (marker or completed nested call); when a frame's own ast is exhausted its parent's next advance cascade-sweeps it in turn. See [frame-lifecycle](https://puck.uno/requirements/cvm/frame-lifecycle) for the full walkthrough. Closures capture the locals hash directly (not the frame).
+Frames are destroyed when finished — the walker's advance-with-gc UPDATE cascade-sweeps any child (marker or completed nested call); when a frame's own ast is exhausted its parent's next advance cascade-sweeps it in turn. See [frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle) for the full walkthrough. Closures capture the locals hash directly (not the frame).
 
 **Scopes.** The frame's bucket holds a `scopes` key pointing at an ArrayPrimitive:
 

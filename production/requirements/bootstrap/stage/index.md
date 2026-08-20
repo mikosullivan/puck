@@ -10,7 +10,7 @@
 
 The fifth step in the bootstrap sequence. `engine:load(source)` takes a Caspian source string and gets it ready for execution: parses to CaspM, then inserts frame 0 as an `objects` row with the CaspM in its `ast` column. After Stage returns, the current process's stack has one frame waiting to be walked; bootstrap ends here.
 
-Two sub-steps — under [frames-as-objects](https://www.puck.uno/requirements/cvm/) a single INSERT lands both the frame and the CaspM together, so writing the CaspM isn't a separate sub-step of its own.
+Two sub-steps — under [frames-as-objects](https://www.puck.uno/requirements/cvm/sqlite/) a single INSERT lands both the frame and the CaspM together, so writing the CaspM isn't a separate sub-step of its own.
 
 ![Stage sub-process, top to bottom: transpile Caspian to CaspM, then set up frame 0 (an objects row with primitive='f' and the CaspM in its ast column).](./stage-process.svg)
 

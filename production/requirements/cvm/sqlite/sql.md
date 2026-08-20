@@ -8,6 +8,6 @@
 }}
 ~~~
 
-The authoritative CVM DDL. Edited in [src/engine/cvm/schema.sql](../../src/engine/cvm/schema.sql); shown here.
+The authoritative CVM DDL. Edited in [src/engine/cvm/schema.sql](../../../src/engine/cvm/schema.sql); shown here.
 
 <!-- file: ../../src/engine/cvm/schema.sql -->

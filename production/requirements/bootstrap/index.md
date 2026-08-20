@@ -58,4 +58,4 @@ After Stage, the CVM holds a seeded runtime state store plus a fully-loaded Casp
 ## Where to go for details
 
 - [execution](https://www.puck.uno/requirements/execution/) — the operational phase that follows bootstrap.
-- [cvm](https://www.puck.uno/requirements/cvm/) — the CVM's V1 implementation.
+- [cvm](https://www.puck.uno/requirements/cvm/sqlite/) — the CVM's V1 implementation.

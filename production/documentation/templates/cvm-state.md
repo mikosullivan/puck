@@ -109,5 +109,5 @@ Then truncate each `object_pk` to the first 8 hex characters and drop into the t
 
 ## Related
 
-- Live examples using this template: [requirements/cvm/frame-lifecycle](https://puck.uno/requirements/cvm/frame-lifecycle), and any pre-run / trace pages under [sprints/](https://puck.uno/sprints/).
+- Live examples using this template: [requirements/cvm/frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle), and any pre-run / trace pages under [sprints/](https://puck.uno/sprints/).
 - CSS classes are defined in `orlando/client-assets/style.css`.

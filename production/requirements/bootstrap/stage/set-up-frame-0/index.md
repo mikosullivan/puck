@@ -20,7 +20,7 @@ values ('f', <caspm_json>, <bootstrap_process_pk>, 0, <user_pk>);
 Column by column:
 
 - `primitive = 'f'` — this row is a frame. The `ast` column is biconditional with this primitive; every frame row carries the code it's executing.
-- `ast` — the CaspM tree produced by Transpile, serialized as JSON text (see [ast-storage](https://www.puck.uno/requirements/cvm/ast-storage)).
+- `ast` — the CaspM tree produced by Transpile, serialized as JSON text (see [ast-storage](https://www.puck.uno/requirements/cvm/sqlite/ast-storage)).
 - `process` — the fresh process's pk, created by this sub-step (see [Fresh vs revival](#fresh-vs-revival) below). Only frame 0 binds to `processes` via this column; sub-frames (frames 1, 2, ...) chain via `parent_frame` and leave `process` null. Under the fan-in-friendly design, this leaves the door open for multiple processes to share the tail of a call chain.
 - `stmt_idx = 0` — dispatch position within `ast`. Frame 0 is about to execute the first top-level statement.
 - `owner_role` — the user seed's pk. Frame 0 runs as the user role.
@@ -50,7 +50,7 @@ The frame's bucket, and any locals hash inside it, are created lazily on first w
 
 ## No caller — this is the root
 
-Frame 0 has no caller in the call stack. The mechanism that will eventually point child frames back at their pusher (a frame-caller pointer, or an equivalent capture link for closures) is deferred to the closure-design slice — see [CVM § Deferred: closure capture reconciliation](https://www.puck.uno/requirements/cvm/#deferred-closure-capture-reconciliation) for the open questions this connects to.
+Frame 0 has no caller in the call stack. The mechanism that will eventually point child frames back at their pusher (a frame-caller pointer, or an equivalent capture link for closures) is deferred to the closure-design slice — see [CVM § Deferred: closure capture reconciliation](https://www.puck.uno/requirements/cvm/sqlite/#deferred-closure-capture-reconciliation) for the open questions this connects to.
 
 ## What's next
 
