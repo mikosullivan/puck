@@ -12,21 +12,21 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
 			"temp_tables": "needs_trace + in_trace. TEMP tables (per-connection scratch) are drawn with DASHED borders (stroke-dasharray: 6 1.5). This is how at-a-glance the reader distinguishes persistent-schema tables from temp tables that get recreated on every connection open. If a new temp table lands, it MUST get the dashed-border treatment."
 		},
 		"fk_notation": "Foreign keys drawn as curved gray lines with arrowheads. Self-referential FKs (parent_role, owner_role, parent_frame) drawn as small self-loop arrows on the source column, NOT as full loops back into the same table box.",
-		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with primitive='f' (biconditional with the ast column). A role is an objects row with primitive='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
+		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with control='f' (biconditional with the ast column). A role is an objects row with control='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
 	},
 	"sprint_integration": "When a sprint modifies the schema, it forks THIS file into sprints/<sprint-name>/requirements/cvm/schema.svg and edits the fork. When the sprint is assimilated into production, the ER diagram MUST be copied to production/requirements/cvm/schema.svg alongside the schema.sql and Lua changes. Failure mode: the trace-tables sprint (2026-08) landed the needs_trace/in_trace temp tables in production but the assimilation commit (28ac08a) deleted sprints/trace-tables/schema.svg without copying it forward, so production's ER diagram stopped matching production's schema for a stretch. Every sprint-assimilation checklist step for schema work now includes: copy the sprint's schema.svg to production/requirements/cvm/schema.svg."}
 -->
 
 <svg
-   viewBox="0 0 970 620"
+   viewBox="0 0 970 800"
    width="970"
    role="img"
-   aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with primitive = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
+   aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with control = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
    version="1.1"
    id="svg707"
    sodipodi:docname="schema.svg"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   height="620"
+   height="800"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -44,9 +44,9 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="0.90368247"
-     inkscape:cx="497.40923"
-     inkscape:cy="334.74147"
+     inkscape:zoom="1.278"
+     inkscape:cx="616.19718"
+     inkscape:cy="317.29264"
      inkscape:window-width="1600"
      inkscape:window-height="824"
      inkscape:window-x="0"
@@ -164,7 +164,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
      transform="translate(-414.4918,-540.99647)">
     <g
        id="g2192"
-       transform="translate(-1.4348724,14)">
+       transform="translate(-1.4348724,100)">
       <path
          class="fk-arrow"
          d="M 916.0568,1100.4315 V 990.18801"
@@ -194,7 +194,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
              xml:space="preserve"><tspan
                x="0"
                y="5"
-               id="tspan2696">object_pk</tspan></text>
+               id="tspan2845">object_pk</tspan></text>
         </g>
       </g>
     </g>
@@ -206,7 +206,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
          x="0.16671056"
          y="0.16664372"
          width="179.66658"
-         height="296.62631"
+         height="355"
          rx="5.9888859"
          ry="8.4097929"
          fill="#ffffff"
@@ -237,129 +237,150 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
          id="text1026">object_pk (uuid)</text>
       <text
          x="32"
-         y="61.166622"
+         y="62.305023"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1028">primitive</text>
+         id="text_base">base</text>
       <text
          x="32"
-         y="78.333244"
+         y="79.5224"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1030">scalar_type</text>
+         id="text_control">control</text>
       <text
          x="32"
-         y="95.548203"
+         y="164.56996"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1032">scalar_value</text>
+         id="text1030">scalar_null</text>
       <text
          x="32"
-         y="112.66649"
+         y="181.739"
+         font-size="11px"
+         fill="#616161"
+         style="stroke-width:0.47787"
+         id="text1032">scalar_string</text>
+      <text
+         x="32"
+         y="199.00471"
+         font-size="11px"
+         fill="#616161"
+         style="stroke-width:0.47787"
+         id="text_scalar_number">scalar_number</text>
+      <text
+         x="32"
+         y="216.22209"
+         font-size="11px"
+         fill="#616161"
+         style="stroke-width:0.47787"
+         id="text_scalar_bool">scalar_bool</text>
+      <text
+         x="32"
+         y="130.08687"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1034">engine_class</text>
       <text
          x="32"
-         y="129.88145"
+         y="233.43947"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1036">core_role</text>
+         id="text1036">role_core</text>
       <g
          id="g1153"
-         transform="translate(0,-1.500269)">
+         transform="translate(0,0.01848028)">
         <text
            x="32"
-           y="148.5"
+           y="250.59"
            font-size="11px"
            fill="#616161"
            style="stroke-width:0.47787"
-           id="text1038">parent_role</text>
+           id="text1038">role_parent</text>
         <path
            style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 12.978052,149.5476 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           d="m 12.978052,251.63762 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
            sodipodi:nodetypes="csssc"
            id="path1040" />
       </g>
       <g
          id="g1157"
-         transform="translate(0,-1.5853074)">
+         transform="translate(0,0.08784097)">
         <text
            x="32"
-           y="165.8"
+           y="112.83"
            font-size="11px"
            fill="#616161"
            style="stroke-width:0.47787"
            id="text1042">owner_role</text>
         <path
            style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 12.978052,166.79926 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           d="m 12.978052,113.82926 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
            sodipodi:nodetypes="csssc"
            id="path1044" />
       </g>
       <text
          x="32"
-         y="181.99094"
+         y="267.86884"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1046">ast</text>
+         id="text1046">frame_ast</text>
       <text
          x="32"
-         y="198.54793"
+         y="285.09158"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1048">stmt_idx</text>
-      <text
-         x="32"
-         y="214.64034"
-         font-size="11px"
-         fill="#616161"
-         style="stroke-width:0.47787"
-         id="text1050">process</text>
+         id="text1048">frame_stmt_idx</text>
       <g
          id="g1161"
-         transform="translate(0,-2.1725309)">
+         transform="translate(0,0.00261993)">
         <text
            x="32"
-           y="235"
+           y="319.47"
            font-size="11px"
            fill="#616161"
            style="stroke-width:0.47787"
-           id="text1052">parent_frame</text>
+           id="text1052">frame_parent</text>
         <path
            style="fill:none;stroke:#000001;stroke-width:2.29053;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#fk-arrow-3);paint-order:stroke fill markers;stop-color:#000000"
-           d="m 12.978052,236.05297 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
+           d="m 12.978052,320.52298 c -2.424482,-1.36725 -3.3780252,-3.7429 -2.398032,-6.36184 0.979993,-2.61895 3.713515,-4.12284 6.430767,-3.53801 2.717259,0.58484 4.601866,3.08269 4.433659,5.87635 -0.168212,2.79367 -2.338703,5.0438 -5.106211,5.29357"
            sodipodi:nodetypes="csssc"
            id="path1054" />
       </g>
       <text
          x="32"
-         y="249.99947"
+         y="95.652122"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1056">persistent</text>
       <text
          x="32"
-         y="283.30682"
+         y="336.69000"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
-         id="text1058">gc</text>
+         id="text1058">frame_gc</text>
       <text
          x="32"
-         y="267.16608"
+         y="147.30424"
          font-size="11px"
          fill="#616161"
          style="stroke-width:0.47787"
          id="text1064">debug</text>
+      <text
+         x="32"
+         y="302.25525"
+         font-size="11px"
+         fill="#616161"
+         style="stroke-width:0.47787"
+         id="text_frame_process_cap">frame_process_cap</text>
     </g>
     <g
        transform="translate(443.79632,579.38185)"
@@ -754,7 +775,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan2698">object_pk</tspan></text>
+             id="tspan2847">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,711.75921)"
@@ -828,7 +849,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan2700">object_pk</tspan></text>
+             id="tspan2849">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,798.75921)"
@@ -910,7 +931,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan2702">trace_pk</tspan></text>
+             id="tspan2851">trace_pk</tspan></text>
       </g>
       <path
          class="fk-arrow"
@@ -939,7 +960,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
            xml:space="preserve"><tspan
              x="0"
              y="5"
-             id="tspan2704">object_pk</tspan></text>
+             id="tspan2853">object_pk</tspan></text>
       </g>
       <g
          transform="translate(1182.7494,946.75921)"
@@ -987,7 +1008,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
     <!-- Views: derived queries, no FK arrows to source tables per design intent. -->
     <g
        id="g2178"
-       transform="translate(0,14)">
+       transform="translate(0,100)">
       <rect
          x="865.06555"
          y="1051.6981"
@@ -1037,7 +1058,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
          xml:space="preserve"><tspan
            x="875.23206"
            y="1062.9705"
-           id="tspan2706">PK: entry_pk</tspan></text>
+           id="tspan2855">PK: entry_pk</tspan></text>
       <text
          x="875.06555"
          y="1093.6981"
@@ -1049,7 +1070,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
          xml:space="preserve"><tspan
            x="875.06555"
            y="1093.6981"
-           id="tspan2708">col: note</tspan></text>
+           id="tspan2857">col: note</tspan></text>
     </g>
   </g>
 </svg>
