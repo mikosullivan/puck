@@ -80,7 +80,7 @@ With those two rules holding, disambiguation is deterministic and single-pass:
 
 ## Integers and floats are both `number`
 
-`42` and `3.14` are both instances of the same class: `number`. Caspian has no separate `integer` or `float` type at the language level. Arithmetic between any two numbers is just arithmetic — no int-vs-float promotion rules, no conversion methods (`.to_integer`, `.to_float`) to reach for. The internal representation the engine uses to store a number may still distinguish (an integer-shaped value can be stored more efficiently than a fractional one), but that's an implementation detail; from the language's perspective, everything is `number`.
+`42` and `3.14` are both instances of the same class: `number`. Caspian has no separate `integer` or `float` type at the language level. Arithmetic between any two numbers is just arithmetic — no int-vs-float promotion rules.
 
 Methods that only make sense for whole-value numbers **raise** when called on a non-integer. `.even?` and `.odd?` raise (a fractional number is neither even nor odd — those categories only apply to integers, and returning `false` for both would conflate "the question doesn't apply" with "the answer is no"). Bitwise operations raise on any number with a fractional part. Callers who don't know whether they're holding an integer should guard with `.integer?` first. See [Testing](#testing) and [Bitwise](#bitwise) below.
 
@@ -427,7 +427,7 @@ Numeric iteration helpers — `.times`, `.upto`, `.downto` — live under [loops
 
 ### `.integer?`, `.even?`, `.odd?`
 
-- **`.integer?`** — `5.integer?` is `true`; `5.0.integer?` is spec-dependent (test the settled rule for float-valued whole numbers); `3.14.integer?` is `false`.
+- **`.integer?`** — `5.integer?` is `true`; `5.0.integer?` is `true` (Caspian doesn't distinguish int from float — the two literal forms produce the same value with the same shape); `3.14.integer?` is `false`.
 - **`.even?` on integer** — `4.even?` is `true`; `5.even?` is `false`; `0.even?` is `true`.
 - **`.odd?` on integer** — `5.odd?` is `true`; `4.odd?` is `false`.
 - **`.even?` on non-integer raises** — `3.14.even?` raises.

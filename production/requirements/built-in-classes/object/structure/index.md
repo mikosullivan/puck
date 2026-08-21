@@ -241,7 +241,7 @@ Some objects additionally carry a **primitive field** — an internal, engine-ma
 The primitive field can hold any JSON primitive:
 
 - **String** — the raw UTF-8 bytes.
-- **Number** — the raw integer or fractional bits.
+- **Number** — the raw float bits.
 - **Array** — the underlying element sequence.
 - **Hash** — the key/value table.
 - **True** — the boolean `true`.
