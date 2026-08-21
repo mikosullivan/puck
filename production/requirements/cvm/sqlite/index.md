@@ -29,6 +29,7 @@ A process is also not a separate table. A process is a **cap frame**: an `object
 - [garbage-collection](https://www.puck.uno/requirements/cvm/garbage-collection/) — mark triggers + the trace routine
 - [pause-resume](https://www.puck.uno/requirements/cvm/pause-resume/) — pause via top-of-stack frame + DB close, resume via SQL edit + optional payload
 - [test-only-triggers](https://puck.uno/production/requirements/cvm/test-only-triggers) — the pattern for installing SQLite triggers from test code to observe in-flight state (mirror into `debug_log`, assert after the run)
+- [x-equals-1](https://puck.uno/requirements/cvm/sqlite/x-equals-1) — concrete run of `$x = 1` with `%process.stop` afterward; dumps `objects` and `refs`, walks every row and every ref
 
 Code and tests live outside the doc tree:
 
