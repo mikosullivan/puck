@@ -70,7 +70,7 @@ When one fires, the runtime is in a state its authors didn't anticipate. Continu
 - **Post-crash state is trustworthy.** Nothing ran after the failure, so debugging can trust what it sees. Recovery paths that succeed some of the time leave debug state fuzzy.
 - **Simpler code path.** No cleanup-on-failure branches, no partial-rollback bookkeeping, no "are we consistent again?" audits. The engine doesn't grow error-recovery code that itself has to be correct.
 
-**The line between invariant and application error.** If a check exists to catch a bug the language wants a developer to fix, it's an invariant — fatal. If it exists to inform code about a runtime condition it might reasonably handle, it's an application error — catchable. A network fetch failing is application; a `parent_role` pointing at something that isn't a role is invariant.
+**The line between invariant and application error.** If a check exists to catch a bug the language wants a developer to fix, it's an invariant — fatal. If it exists to inform code about a runtime condition it might reasonably handle, it's an application error — catchable. A network fetch failing is application; a `role_parent` pointing at something that isn't a role is invariant.
 
 ## Long descriptive names for rarely-used surfaces
 

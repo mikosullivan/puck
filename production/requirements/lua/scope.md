@@ -15,7 +15,7 @@ A **scope** is a runtime object that tracks the variable bindings visible to cur
 
 **Not a Caspian-facing class.** Developers do not construct `%('core:scope')`; the scope runtime is engine-internal machinery.
 
-**Reconciliation with the CVM's frame model — open.** [CVM](https://puck.uno/requirements/cvm/sqlite/) stores frames as `objects` rows (`primitive = 'f'`) and their locals as a HashPrimitive under `bucket['locals']`. This page describes a different capture model — a scope agg (chain of per-frame hashes) that a closure captures as one reference. Both target the same problem (closures need their captured scope kept alive), through different structures. The two designs have to be reconciled when the closure slice lands; that slice is deferred and this cross-model open item is what it inherits.
+**Reconciliation with the CVM's frame model — open.** [CVM](https://puck.uno/requirements/cvm/sqlite/) stores frames as `objects` rows (`control = 'f'`) and their locals as a HashPrimitive under `bucket['locals']`. This page describes a different capture model — a scope agg (chain of per-frame hashes) that a closure captures as one reference. Both target the same problem (closures need their captured scope kept alive), through different structures. The two designs have to be reconciled when the closure slice lands; that slice is deferred and this cross-model open item is what it inherits.
 
 ## Multiple scopes coexist
 

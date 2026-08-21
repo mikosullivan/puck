@@ -69,4 +69,4 @@ The view uses inner joins, so any missing link (no bucket, no scopes ref, empty 
 
 ## Write path
 
-The engine's `frame:set_local_to_scalar(name, scalar_type, scalar_value)` writes a binding into scope[0]. In one savepoint it: materializes the scalar, ensures the bucket → scopes → scopes[0] chain exists (`ensure_own_scope`), and adds the ref binding `name` to the scalar. See [frame-lifecycle](./frame-lifecycle) for how the enclosing walker advance handles the marker that gets pushed alongside.
+The engine's `frame:set_local_to_scalar(name, value)` writes a binding into scope[0]. In one savepoint it: materializes the scalar (polymorphic on the Lua-type of `value` — dispatches to `cvm:add_scalar`, which routes to `scalar_string` / `scalar_number` / `scalar_bool` / `scalar_null`), ensures the bucket → scopes → scopes[0] chain exists (`ensure_own_scope`), and adds the ref binding `name` to the scalar. See [frame-lifecycle](./frame-lifecycle) for how the enclosing walker advance handles the marker that gets pushed alongside.

@@ -22,6 +22,6 @@ See [Transpile](https://www.puck.uno/requirements/bootstrap/stage/transpile/) fo
 
 ## Set up frame 0
 
-Insert frame 0 as an `objects` row with `primitive = 'f'`, `ast` holding the CaspM directly, `stmt_idx = 0`, `process = <fresh process pk>`, `owner_role = <user pk>`. One INSERT covers both "install the CaspM" and "push the frame" — under frames-as-objects those are the same act. Fresh runs create the process here inside the same savepoint that pushes frame 0; revival runs are handed a process pk by the caller and find its deepest live frame instead.
+Insert the process cap (an `objects` row with `control = 'f'`, `frame_process_cap = 1`, empty `frame_ast`, `frame_stmt_idx = 0`, no parent), then insert frame 0 under it (`control = 'f'`, `frame_ast` holding the CaspM directly, `frame_stmt_idx = 0`, `frame_parent = <cap pk>`, `owner_role = <user pk>`). Two INSERTs — one for the cap, one for frame 0 — cover both "create the process" and "install the CaspM and push the frame" under the frames-as-objects design. Fresh runs create both inside the same savepoint; revival runs are handed the cap's `object_pk` by the caller and find the process's deepest live frame by walking down from the cap via `frame_parent`.
 
 See [Set up frame 0](https://www.puck.uno/requirements/bootstrap/stage/set-up-frame-0/) for the full sub-step.

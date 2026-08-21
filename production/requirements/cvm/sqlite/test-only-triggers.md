@@ -19,7 +19,7 @@ The strategy: **install a SQLite trigger from test code at runtime**, before run
 3. Load and run the program.
 4. Query `debug_log` at end-of-run and assert.
 
-Example from [test_second_assignment.lua](https://puck.uno/production/tests/main/lua/engine/test_second_assignment.lua):
+Example from [test_second_assignment.lua](https://puck.uno/production/tests/main/lua/engine/sqlite/test_second_assignment.lua):
 
 ~~~lua
 local NEEDS_TRACE_DEBUG_TRIGGER = [[
@@ -31,8 +31,8 @@ local NEEDS_TRACE_DEBUG_TRIGGER = [[
             new.process_pk,
             'mark ' || new.object_pk || ' ' || (
                 select case
-                    when scalar_value is null then 'null'
-                    else format('%g', scalar_value)
+                    when scalar_number is null then 'null'
+                    else format('%g', scalar_number)
                 end
                 from objects where object_pk = new.object_pk
             )

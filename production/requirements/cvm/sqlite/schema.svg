@@ -11,8 +11,8 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
 			"listeners": "instance_listeners + class_listeners. Rendered in purple (#9575cd stroke). Weak-ref lifetime via ON DELETE CASCADE.",
 			"temp_tables": "needs_trace + in_trace. TEMP tables (per-connection scratch) are drawn with DASHED borders (stroke-dasharray: 6 1.5). This is how at-a-glance the reader distinguishes persistent-schema tables from temp tables that get recreated on every connection open. If a new temp table lands, it MUST get the dashed-border treatment."
 		},
-		"fk_notation": "Foreign keys drawn as curved gray lines with arrowheads. Self-referential FKs (parent_role, owner_role, parent_frame) drawn as small self-loop arrows on the source column, NOT as full loops back into the same table box.",
-		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with control='f' (biconditional with the ast column). A role is an objects row with control='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
+		"fk_notation": "Foreign keys drawn as curved gray lines with arrowheads. Self-referential FKs (role_parent, owner_role, frame_parent) drawn as small self-loop arrows on the source column, NOT as full loops back into the same table box.",
+		"frames_role_note": "Frames and roles are NOT separate tables. A frame is an objects row with control='f' (biconditional with the frame_ast column). A role is an objects row with control='r'. The diagram calls this out inline near the objects box; keep that annotation when editing."
 	},
 	"sprint_integration": "When a sprint modifies the schema, it forks THIS file into sprints/<sprint-name>/requirements/cvm/schema.svg and edits the fork. When the sprint is assimilated into production, the ER diagram MUST be copied to production/requirements/cvm/schema.svg alongside the schema.sql and Lua changes. Failure mode: the trace-tables sprint (2026-08) landed the needs_trace/in_trace temp tables in production but the assimilation commit (28ac08a) deleted sprints/trace-tables/schema.svg without copying it forward, so production's ER diagram stopped matching production's schema for a stretch. Every sprint-assimilation checklist step for schema work now includes: copy the sprint's schema.svg to production/requirements/cvm/schema.svg."}
 -->
@@ -21,7 +21,7 @@ vibecode {"doc": "er-diagram", "role": "CVM entity-relationship diagram. THIS fi
    viewBox="0 0 970 800"
    width="970"
    role="img"
-   aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with control = 'f' (biconditional with the ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
+   aria-label="CVM entity-relationship diagram under the frames-as-objects design. Six tables grouped into: cvm marker (gray), object graph (objects and refs, teal), listeners (instance_listeners and class_listeners, purple), and execution (processes, green). Frames are not a separate table — a frame is an `objects` row with control = 'f' (biconditional with the frame_ast column, which carries the code the frame is executing). Foreign keys drawn as curved gray lines with arrowheads. Self-referential foreign keys are drawn as small self-loop arrows on the source column."
    version="1.1"
    id="svg707"
    sodipodi:docname="schema.svg"

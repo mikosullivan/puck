@@ -22,7 +22,7 @@ The name `engine:run()` (or whatever the invocation ends up being called) is a b
 
 Almost everything else about this phase is open design work:
 
-- **Frame 0** — settled at the schema level by [frames-as-objects](https://www.puck.uno/requirements/cvm/sqlite/): it's an `objects` row with `primitive = 'f'` and the CaspM in its `ast` column, populated by [Set up frame 0](https://www.puck.uno/requirements/bootstrap/stage/set-up-frame-0/). What remains open at the runtime level is how the frame ADVANCES — see the "First-dispatch mechanics" bullet below. Closure-lifetime questions live in the closure-design slice, not here.
+- **Frame 0** — settled at the schema level by [frames-as-objects](https://www.puck.uno/requirements/cvm/sqlite/): it's an `objects` row with `control = 'f'` and the CaspM in its `frame_ast` column, populated by [Set up frame 0](https://www.puck.uno/requirements/bootstrap/stage/set-up-frame-0/). What remains open at the runtime level is how the frame ADVANCES — see the "First-dispatch mechanics" bullet below. Closure-lifetime questions live in the closure-design slice, not here.
 - **First-dispatch mechanics** — how the engine transitions from "CVM has CaspM" to "the first statement executed."
 - **The invocation shape** — explicit `engine:run()`, implicit on first use, coroutine-based, event-loop-driven — all open.
 

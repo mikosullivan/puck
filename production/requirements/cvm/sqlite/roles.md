@@ -1,12 +1,12 @@
 ~~~vibecode
 {"doc": "requirements_cvm_roles",
-	"role": "Role storage in the CVM. A role is an `objects` row with `primitive = 'r'` — the whole role/non-role discriminator. Covers the single-root guarantee, cycle-free-by-construction property, `core_role` vs `parent_role` vs `owner_role`, and the invariant that roles can't hold state.",
+	"role": "Role storage in the CVM. A role is an `objects` row with `control = 'r'` — the whole role/non-role discriminator. Covers the single-root guarantee, cycle-free-by-construction property, `role_core` vs `role_parent` vs `owner_role`, and the invariant that roles can't hold state.",
 	"status": "V1 spec"}
 ~~~
 
 # Roles
 
-A **role** is an `objects` row with `primitive = 'r'`. The row-kind discriminator carries the whole "is this a role?" answer — no view lookup, no composite column test.
+A **role** is an `objects` row with `control = 'r'`. The row-kind discriminator carries the whole "is this a role?" answer — no view lookup, no composite column test.
 
 ## What a role does
 
@@ -14,22 +14,22 @@ Under the current CVM design, a role has one job: **exist in a strict hierarchic
 
 ## Storage rules
 
-- **`primitive = 'r'`.** The whole discriminator; the `roles` view is `select object_pk from objects where primitive = 'r'`.
-- **`core_role`** — nullable text; when set, must be one of `'e'` (engine), `'c'` (cache), `'u'` (user). Cross-column checked so only `'r'` rows can carry it.
-- **`parent_role`** — nullable FK to `objects(object_pk)`. Cross-column checked so only `'r'` rows can carry it. The target must be an `'r'` row (enforced by `objects_parent_role_must_be_role`).
-- **`persistent = 1` is mandatory on core roles.** A cross-column CHECK (`check (core_role is null or persistent is 1)`) rejects any core-role INSERT that leaves `persistent` null. Non-core rows default to unpinned (null); pin by opting in with `persistent = 1`.
+- **`control = 'r'`.** The whole discriminator; the `roles` view is `select object_pk from objects where control = 'r'`.
+- **`role_core`** — nullable text; when set, must be one of `'e'` (engine), `'c'` (cache), `'u'` (user). Cross-column checked so only `control = 'r'` rows can carry it.
+- **`role_parent`** — nullable FK to `objects(object_pk)`. Cross-column checked so only `control = 'r'` rows can carry it. The target must be a `control = 'r'` row (enforced by `objects_parent_role_must_be_role`).
+- **`persistent = 1` is mandatory on core roles.** A cross-column CHECK (`check (role_core is null or persistent is 1)`) rejects any core-role INSERT that leaves `persistent` null. Non-core rows default to unpinned (null); pin by opting in with `persistent = 1`.
 - **Roles can be `refs` parents.** A role can own a bucket, a stack, or arbitrary refs just like any other object — same one-hash-and-one-array cap that applies to non-container primitives, same mark trigger on ref-delete.
 
 ## The role tree
 
-- **Single root.** Only the engine role (`core_role = 'e'`) may have `parent_role = null`. Every other role — cache, user, and any runtime-added role — must have a `parent_role`. Enforced by `objects_only_engine_can_be_role_root`.
-- **`parent_role` is immutable.** Set at INSERT; never changes.
-- **Cycle-free by construction.** At INSERT time, `parent_role` must reference an already-existing role. Combined with immutability, the tree can only grow downward from existing nodes — no back-edge can form. **No runtime cycle check exists because none is needed.** A future reader shouldn't wonder where the cycle guard lives; the invariant is structural.
-- **Delete rules.** Core roles can't be deleted (`objects_no_delete_root_role`). A runtime role can be deleted only when nothing references it: `parent_role` FK is `NO ACTION` (RESTRICT), so a role with descendants blocks; `owner_role` FK is also `NO ACTION`, so a role that owns other rows blocks. Deletion must work leaves-inward.
+- **Single root.** Only the engine role (`role_core = 'e'`) may have `role_parent = null`. Every other role — cache, user, and any runtime-added role — must have a `role_parent`. Enforced by `objects_only_engine_can_be_role_root`.
+- **`role_parent` is immutable.** Set at INSERT; never changes.
+- **Cycle-free by construction.** At INSERT time, `role_parent` must reference an already-existing role. Combined with immutability, the tree can only grow downward from existing nodes — no back-edge can form. **No runtime cycle check exists because none is needed.** A future reader shouldn't wonder where the cycle guard lives; the invariant is structural.
+- **Delete rules.** Core roles can't be deleted (`objects_no_delete_root_role`). A runtime role can be deleted only when nothing references it: `role_parent` FK is `NO ACTION` (RESTRICT), so a role with descendants blocks; `owner_role` FK is also `NO ACTION`, so a role that owns other rows blocks. Deletion must work leaves-inward.
 
 ## `owner_role` is not the same thing
 
-Any row (not just roles) can have `owner_role` set — that's the role that CREATED the row. Non-role rows are REQUIRED to have `owner_role` set (`objects_owner_role_required_on_non_roles`); role rows may omit it (the engine seed does). The `owner_role` FK must point at an `'r'` row (`objects_owner_role_must_be_role`), just like `parent_role`.
+Any row (not just roles) can have `owner_role` set — that's the role that CREATED the row. Non-role rows are REQUIRED to have `owner_role` set (`objects_owner_role_required_on_non_roles`); role rows may omit it (the engine seed does). The `owner_role` FK must point at a `control = 'r'` row (`objects_owner_role_must_be_role`), just like `role_parent`.
 
 ## Related
 
