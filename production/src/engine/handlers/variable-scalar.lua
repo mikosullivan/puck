@@ -21,9 +21,9 @@ Handler for the CaspM shape produced by `$x = 1` — a three-element row whose h
 **On match, execute:**
 
 1. Unpack the target name (`row[2]`) and value atom (`row[3]`).
-2. Recognize the value atom. Currently only `{v = <number>}` — one value-atom shape. Other shapes (strings, refs, calls, hash/array literals) raise `variable_scalar_unsupported_value_atom` and land in later work.
+2. Recognize the value atom. Currently only `{v = <literal>}` — one value-atom shape. Other shapes (refs, calls, hash/array literals) raise `variable_scalar_unsupported_value_atom` and land in later work.
 3. Read the current frame from `engine.current_frame` (set by `engine:run_frame` before each dispatch).
-4. Call `frame:set_local_to_scalar(name, scalar_type, scalar_value)`. That call is where the graph writes happen — the scalar object, the bucket → scopes → scopes[0] chain, the binding, and the mid-dispatch marker.
+4. Call `frame:set_local_to_scalar(name, value)`. `frame:set_local_to_scalar` and `cvm:add_scalar` under it dispatch on the Lua type of the value — string / number / boolean / nil each route to the right scalar_* column. This handler doesn't need to know or say which scalar type it's storing.
 
 Returns `true` on successful execute. Any raise from `set_local_to_scalar` propagates through dispatch to `run_row`.
 ]]
@@ -48,18 +48,9 @@ function VariableScalar:handle(engine, row)
 	local name       = row[2]
 	local value_atom = row[3]
 
-	-- Value atom must be {v = <number>} for now.
+	-- Value atom must be {v = <literal>} for now.
 	if type(value_atom) ~= 'table' or value_atom.v == nil then
 		error("variable_scalar_unsupported_value_atom: only {v = <literal>} value atoms are supported")
-	end
-
-	local scalar_value = value_atom.v
-	local scalar_type
-
-	if type(scalar_value) == 'number' then
-		scalar_type = 'n'
-	else
-		error("variable_scalar_unsupported_scalar_type: only number scalars supported; got " .. type(scalar_value))
 	end
 
 	-- The current frame is set by engine:run_frame before dispatch.
@@ -69,7 +60,9 @@ function VariableScalar:handle(engine, row)
 		error("variable_scalar_no_current_frame: engine.current_frame is unset — engine:run_frame must set it before dispatch")
 	end
 
-	frame:set_local_to_scalar(name, scalar_type, scalar_value)
+	-- Pass the value verbatim. frame:set_local_to_scalar → cvm:add_scalar
+	-- dispatches on type(value) and routes to the right scalar_* column.
+	frame:set_local_to_scalar(name, value_atom.v)
 
 	return true
 end

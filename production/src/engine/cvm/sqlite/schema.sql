@@ -4,6 +4,41 @@
 -- states can be stored in the database. It should not be possible
 -- to build an invalid state.
 
+-- vibecode
+/*
+{"doc": "cvm-schema-sqlite", "version": "12.0",
+	"role": "SQLite DDL for the CVM — Caspian's runtime state store. Every runtime state read or write flows through this schema. Design intent: only valid programmatic states can be stored; the DB itself refuses invalid states at write time via CHECK constraints and triggers, each raising a grep-able error id (e.g. `objects_frame_ast_immutable`, `refs_owner_at_most_one_hash_and_one_array`). Engine bugs that would produce a bad state raise at the exact write site instead of silently corrupting the DB.",
+	"tables": {
+		"cvm":                "single-row marker; presence signals 'this DB is a CVM'. Append-only.",
+		"objects":            "load-bearing table. Every CVM entity — plain objects, hashes, arrays, frames, roles — is a row here, discriminated by the (base, control) pair. See `axes`.",
+		"refs":               "parent-to-child object edges. Any row can be a parent. Container children (base='h'/'a') hold refs by their own semantics; non-container parents are capped at one hash-child (bucket) + one array-child (stack).",
+		"instance_listeners": "per-instance event dispatch registrations. Weak-ref lifetime via ON DELETE CASCADE on either party.",
+		"class_listeners":    "per-class event dispatch registrations. Same shape.",
+		"needs_trace":        "per-process GC worklist. Persistent — marks must survive engine restart. PK (process_pk, object_pk); repeated marks coalesce via ON CONFLICT DO NOTHING.",
+		"debug_log":          "per-process diagnostic log. Free-form note scoped to a process cap; ON DELETE CASCADE from the cap."},
+	"axes": {
+		"base":    "row's underlying storage shape. NOT NULL. Values: 'o' (regular object — the base every user object, frame, and role uses), 'h' (HashPrimitive container), 'a' (ArrayPrimitive container).",
+		"control": "optional CVM control-plane role, layered on top of base='o'. Values: 'f' (frame — carries executable frame_ast + a stmt_idx/gc/parent_frame/process_cap lifecycle), 'r' (role — identity anchor via role_core/role_parent). NULL on plain objects. Cross-column CHECK enforces `control is null or base = 'o'` (a container-that-is-also-a-frame is a schema violation)."},
+	"scalar_columns": "Scalar-carrying objects use one of four typed columns rather than a polymorphic blob: scalar_string (TEXT — affinity preserves numeric-looking strings verbatim), scalar_number (REAL — affinity forces integer inputs to float, enforcing 'all numbers are floats' at the storage layer), scalar_bool (0/1 integer), scalar_null (marker '1' for the u-type null value; distinct from 'no scalar assigned' which is all four columns null). Cross-column trigger `objects_scalar_at_most_one_column` enforces exclusivity; the `scalars` view coalesces the four into (object_pk, scalar_type, value).",
+	"naming_conventions": {
+		"prefix_by_control_kind": "columns that only apply to a specific control kind wear that kind's prefix. Frame-only: frame_ast, frame_stmt_idx, frame_process_cap, frame_parent, frame_gc. Role-only: role_core, role_parent. Scalar-only: scalar_null, scalar_string, scalar_number, scalar_bool. Reading a `frame_*` column name tells you the column is only meaningful when control='f'.",
+		"unprefixed": "columns any row can carry are unprefixed: object_pk, base, control, owner_role, engine_class, persistent, debug. owner_role points at a role but sits on every non-role row, so it doesn't wear the role_ prefix."},
+	"views": {
+		"scalars":           "(object_pk, scalar_type, value) — coalesces the four scalar_* columns; derives scalar_type from which column is populated; filters to scalar-carrying rows only.",
+		"roles":             "single-column filter on control='r'. Single source of truth for 'what is a role'.",
+		"uspace":            "GC anchor set — roles + persistent=1 rows + process caps. Anything transitively reachable from uspace via refs is alive.",
+		"frame_scoped_vars": "(frame_pk, scope_idx, var_name, value_pk) — every variable visible from a frame's scope chain, ordered by scope depth. scope_idx=0 is the frame's own scope; higher indexes are captured scopes.",
+		"object_bucket":     "(object_pk, bucket_pk) — every base='o' row with its bucket pk (or null if not yet materialized).",
+		"object_stack":      "(object_pk, stack_pk) — same shape for stacks."},
+	"gc_cycle_state_machine": "A frame's (stmt_idx, gc) pair moves through a strict state machine enforced by triggers on `objects`. The walker's per-statement operation is `UPDATE frame SET stmt_idx = stmt_idx + 1` — the trigger stack takes care of gc auto-null, child-delete cascades, and the parent's gc auto-set. Names to grep: frames_advance_requires_gc, frames_advance_sets_gc_null, frames_advance_rejects_non_null_gc, frames_gc_change_requires_no_child, frames_gc_set_rejects_at_terminal, frames_gc_reset_requires_empty_needs_trace, frames_delete_requires_no_child, frames_child_delete_sets_parent_gc, frames_no_child_under_terminal_parent, frames_stmt_idx_starts_at_zero, frames_stmt_idx_advances_by_one, frames_gc_starts_null. Each raises with its trigger name as the error id — grep to see what invariant fired.",
+	"gc_marking": "Any orphaned pk lands in needs_trace automatically via `refs_mark_needs_trace_after_delete` (on ref DELETE) and `refs_mark_needs_trace_after_child_update` (on ref child UPDATE — the sprint's upsert-ref path). The mark is scoped to the current process via the current_process_pk UDF. The drain (`cvm:drain_needs_trace` in Lua) sweeps the worklist by reaping unreachable rows and unmarking reachable ones.",
+	"immutability": "The primary structural columns on objects are immutable after INSERT — enforced by per-column BEFORE-UPDATE triggers with error ids of the form `objects_<column>_immutable`. Only `gc`, `stmt_idx`, `bucket_pk`, `stack_pk`, `debug`, and the scalar columns' NULL→populated transition permit updates.",
+	"companions": {
+		"preflight.sql":       "per-connection temp tables (traces, in_trace) + temp triggers that reproduce cascade semantics across the temp/persistent boundary (SQLite disallows cross-schema FKs). Runs on every connection open.",
+		"current_process_pk":  "engine-supplied UDF returning the currently-dispatching process cap's pk. Called by needs_trace.process_pk's DEFAULT, by debug_log.object_pk's DEFAULT, and by frames_gc_reset_requires_empty_needs_trace's per-process scoping. Every connection must register this UDF before applying the schema, or the schema apply fails."},
+	"sprint_context": "This is the numbers-sprint fork at schema version 12.0. Changes vs. production baseline (9.3): replaced scalar_type + scalar_value polymorphic pair with four typed scalar_* columns (`scalar_string` / `scalar_number` / `scalar_bool` / `scalar_null`); split `primitive` into `base` + `control`; renamed frame-only and role-only columns to prefix by control kind (`ast` → `frame_ast`, `gc` → `frame_gc`, `core_role` → `role_core`, etc.); added `scalars` view. All storage-layer enforcement of 'all numbers are floats' rides on `scalar_number`'s REAL affinity."}
+*/
+
 -- Every connection to a CVM database must run these two pragmas
 -- immediately after opening. [ghi]
 pragma foreign_keys = on;
@@ -33,7 +68,7 @@ begin
 	select raise(abort, 'cvm_append_only: cvm is append-only; no deletes allowed');
 end;
 
-insert into cvm (key, value) values ('schema', '9.3');
+insert into cvm (key, value) values ('schema', '12.0');
 
 
 -- ------------------------------------------------------------
@@ -75,122 +110,37 @@ create table objects (
 			and substr(object_pk, 25, 12) not glob '*[^0-9a-f]*'
 		),
 
-	-- Row-kind discriminator:
-	--   'o' → object
-	--   'h' → HashPrimitive
-	--   'a' → ArrayPrimitive
-	--   'f' → frame
-	--   'r' → role
-	-- [ghi]
-	primitive text not null check (primitive in ('o', 'h', 'a', 'f', 'r')),
-
-	-- Scalar type. Only meaningful when primitive = 'o'. [ghi]
-	scalar_type text
-		check (scalar_type in ('s', 'n', 'b', 'u'))
-		check (primitive = 'o' or scalar_type is null),
-
-	-- Scalar value. Meaningful only when `scalar_type` is set. Declared
-	-- `blob` for no-affinity storage. [ghi]
-	scalar_value blob
-		check (scalar_type is null or scalar_type != 'b' or scalar_value is 0 or scalar_value is 1)
-		check (scalar_type is null or scalar_type != 'u' or scalar_value is null)
-		check (scalar_type is null or scalar_type != 'n' or typeof(scalar_value) in ('integer', 'real'))
-		check (scalar_type is null or scalar_type != 's' or typeof(scalar_value) = 'text')
-		check (scalar_type is not null or scalar_value is null),
-
-	-- Mask marker: names a Lua-side engine class whose behavior the row
-	-- surfaces as. Nullable — most rows carry null. Only `'o'` rows may
-	-- set it (a mask sits on an object; frames, roles, hashes, arrays
-	-- can't be masks). The meaning of a specific value (which Lua class
-	-- name, how it's looked up, how it surfaces as a Caspian class) is
-	-- deferred to a later sprint. [ghi]
-	engine_class text
-		check (engine_class is null or primitive = 'o'),
-
-	-- Core-role marker: 'e' (engine), 'c' (cache), 'u' (user). Nullable
-	-- — most rows aren't core roles. Unique per value via the partial
-	-- index below. Only role rows ('r') may carry a core_role. [ghi]
-	core_role text
-		check (core_role in ('e', 'c', 'u'))
-		check (core_role is null or primitive = 'r'),
-
-	-- Role-tree parentage. Non-root roles set this. Immutable via
-	-- objects_parent_role_immutable. Only role rows ('r') may carry a
-	-- parent_role — enforced by the cross-column check below. The
-	-- target-primitive check (that parent_role points at an 'r' row)
-	-- lives in the objects_parent_role_must_be_role trigger. No
-	-- ON DELETE clause — defaults to NO ACTION, which with
-	-- `foreign_keys = on` acts as RESTRICT: a role can't be deleted if
-	-- any other role references it via parent_role. Force cleanup from
-	-- the leaves up. [ghi]
-	parent_role text
-		references objects(object_pk)
-		check (parent_role is null or primitive = 'r'),
-
-	-- Pointer to the role that created this row. Required for non-role
-	-- rows (see objects_owner_role_required_on_non_roles). Roles may
-	-- also carry it (cache and user are owned by engine). No cascade.
-	-- Target-primitive check (points at an 'r' row) enforced by the
-	-- objects_owner_role_must_be_role trigger below. [ghi]
-	owner_role text references objects(object_pk),
-
-	-- CaspM tree as JSON text. Biconditional with primitive='f' — every
-	-- frame has an ast, no non-frame does. A cap frame (process_cap=1) has
-	-- ast='[]' — the cap doesn't dispatch anything, its "one slot" is
-	-- just a lifecycle position (0=live, 1=terminal). Immutable once
-	-- set (see objects_ast_immutable). SQL guarantees storage integrity
-	-- only (valid JSON, top-level array); semantic CaspM validity is
-	-- guaranteed out-of-band by the engine/parser. [ghi]
-	ast text
-		check ((primitive = 'f' and ast is not null)
-			or (primitive != 'f' and ast is null))
-		check (process_cap is null or ast = '[]'),
-
-	-- Current position within the frame's ast. Set on frames, null on
-	-- non-frames. Under the gc cycle the handler sets `gc = 1` on the
-	-- frame before the walker's bare `SET stmt_idx = ?` advance; the
-	-- schema's advance-requires-gc + auto-set-gc-null triggers handle
-	-- the rest. Terminal state: `stmt_idx = json_array_length(ast)`
-	-- (for an empty ast, that's 0 — the frame is born terminal).
+	-- Base type — the row's underlying storage shape. Every row is
+	-- one of three bases:
 	--
-	-- Third CHECK enforces the upper bound built into the column
-	-- itself: stmt_idx never exceeds the ast's length. Replaces the
-	-- earlier pair of BEFORE-INSERT and BEFORE-UPDATE OF stmt_idx
-	-- triggers with a declarative constraint that fires on any write. [ghi]
-	stmt_idx integer
-		check (stmt_idx is null
-			or (typeof(stmt_idx) = 'integer' and stmt_idx >= 0 and primitive = 'f'))
-		check (stmt_idx is null or stmt_idx <= json_array_length(ast)),
+	--   'o' → object (a "regular" object: user-defined, scalar-carriers,
+	--         frames, and roles all use this base — the last two add a
+	--         `control` value below to name their special CVM role).
+	--   'h' → HashPrimitive (a container that holds hash-refs by its
+	--         own semantics).
+	--   'a' → ArrayPrimitive (a container that holds array-refs by its
+	--         own semantics).
+	--
+	-- Immutable via objects_no_update. [ghi]
+	base text not null check (base in ('o', 'h', 'a')),
 
-	-- Root-of-process_cap flag. `process_cap = 1` marks this frame as the top
-	-- cap of a call stack — the object identity of the process_cap itself.
-	-- Null on nested frames (which have parent_frame set instead).
-	-- A cap has ast='[]' (see check below), starts at stmt_idx=0, and
-	-- becomes terminal when it reaches stmt_idx=1 with gc=null and no
-	-- children. Frame 0 sits under the cap as a nested frame. Immutable
-	-- via objects_process_cap_immutable. [ghi]
-	process_cap integer
-		check (process_cap = 1)
-		check (process_cap is null or primitive = 'f'),
-
-	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
-	-- has exactly one anchor: either parent_frame (nested frame) or
-	-- process_cap=1 (the cap), never both, never neither. Enforced by the
-	-- mutual-exclusion check on this column. [ghi]
-	parent_frame text
-		references objects(object_pk)
-		check (parent_frame is null or primitive = 'f')
-		check (primitive != 'f'
-			or (parent_frame is not null and process_cap is null)
-			or (parent_frame is null and process_cap is 1)),
-
-	-- No dedicated bucket/stack columns. Ownership of a bucket or a
-	-- stack is a normal `refs` row from the owner to the collection.
-	-- The one-hash-one-array trigger (see refs section below) caps a
-	-- non-container parent to at most one HashPrimitive child (its
-	-- bucket) and at most one ArrayPrimitive child (its stack).
-	-- Buckets and stacks can be shared across multiple owners — the
-	-- graph reads exactly like the refs table shows.
+	-- Control aspect — an OPTIONAL special role in the CVM's control
+	-- plane. Null on plain objects (the common case). Values:
+	--
+	--   'f' → frame. The row carries executable code via the `frame_ast`
+	--         column plus a frame_stmt_idx / frame_gc / frame_parent / frame_process_cap
+	--         lifecycle.
+	--   'r' → role. The row is an identity anchor via role_core /
+	--         role_parent.
+	--
+	-- Frames and roles are still "regular objects" (base = 'o') that
+	-- additionally play a control-plane role — the second CHECK below
+	-- enforces that control can only be set when base = 'o' (a
+	-- hash-that-is-also-a-frame is a schema violation). Immutable via
+	-- objects_no_update. [ghi]
+	control text
+		check (control is null or control in ('f', 'r'))
+		check (control is null or base = 'o'),
 
 	-- Persistence pin. Rows with `persistent = 1` are kept alive; rows
 	-- with `persistent = null` (the SQL default when the column is
@@ -209,52 +159,212 @@ create table objects (
 	--     on INSERT and UPDATE). [ghi]
 	persistent integer
 		check (persistent = 1)
-		check (core_role is null or persistent is 1),
+		check (role_core is null or persistent is 1),
 
-	-- gc-cycle state flag. Bidirectional: null (frame executing normally)
-	-- ↔ 1 (frame is past-dispatch, cleanup phase). The cycle:
-	--   1. Walker advances stmt_idx AND sets gc=1 (must be same UPDATE).
-	--   2. gc=1 fires AFTER trigger that cascade-deletes children.
-	--   3. Child-frame delete requires parent's gc=1 (BEFORE-DELETE check).
-	--   4. Resetting gc to null requires no child frames (BEFORE-UPDATE check).
-	-- Frames-only. [ghi]
-	gc integer
-		check (gc = 1)
-		check (gc is null or primitive = 'f'),
+	-- Pointer to the role that created this row. Required for non-role
+	-- rows (see objects_owner_role_required_on_non_roles). Roles may
+	-- also carry it (cache and user are owned by engine). No cascade.
+	-- Target-column check (points at an 'r' row) enforced by the
+	-- objects_owner_role_must_be_role trigger below. [ghi]
+	owner_role text references objects(object_pk),
+
+	-- Mask marker: names a Lua-side engine class whose behavior the row
+	-- surfaces as. Nullable — most rows carry null. Only `'o'` rows may
+	-- set it (a mask sits on an object; frames, roles, hashes, arrays
+	-- can't be masks). The meaning of a specific value (which Lua class
+	-- name, how it's looked up, how it surfaces as a Caspian class) is
+	-- deferred to a later sprint. [ghi]
+	engine_class text
+		check (engine_class is null or (base = 'o' and control is null)),
 
 	-- Human-readable label. Informational; no query path reads it. [ghi]
-	debug text
+	debug text,
+	
+	-- Scalar value columns. One column per scalar type; type is
+	-- derived from which column is populated rather than carried in
+	-- a separate discriminator column. A base='o' row IS or IS
+	-- NOT a scalar-carrying object based on whether any of these
+	-- four columns is non-null. Non-'o' rows can't carry a scalar
+	-- in any form (see the objects_scalar_columns_only_on_objects
+	-- and objects_scalar_at_most_one_column CHECKs later on).
+	--
+	-- `scalar_null` is the load-bearing marker for an explicit null
+	-- value (the `u` type at the language level). Without it, an
+	-- object holding an explicit null value would look identical to
+	-- an object with no scalar assigned yet — both would have all
+	-- value columns null. The distinct marker preserves that split.
+	-- CHECK pins the payload to `1` so the column has one canonical
+	-- non-null value. [ghi]
+	scalar_null integer check (scalar_null = 1),
+
+	-- `scalar_string` holds the text of a string scalar. `text`
+	-- affinity keeps SQLite from coercing numeric-looking strings
+	-- like '42' into REAL storage. [ghi]
+	scalar_string text,
+
+	-- `scalar_number` holds the value of a number scalar. `real`
+	-- affinity forces integer values to floating-point representation
+	-- at insert time — this is what enforces the "all numbers are
+	-- floats" language rule at the storage layer. Bind a Lua integer
+	-- `1` here and SQLite stores REAL `1.0`. Companion CHECK pins
+	-- the affinity so a text-like value can't sneak in via the
+	-- NUMERIC-affinity text→numeric fallback. [ghi]
+	scalar_number real
+		check (scalar_number is null or typeof(scalar_number) = 'real'),
+
+	-- `scalar_bool` holds the value of a boolean scalar as SQLite's
+	-- native 0/1 convention. Kept in its own column rather than
+	-- riding along in `scalar_number` — the column name should not
+	-- lie about its contents. [ghi]
+	scalar_bool integer
+		check (scalar_bool is null or scalar_bool in (0, 1)),
+
+	-- Core-role marker: 'e' (engine), 'c' (cache), 'u' (user). Nullable
+	-- — most rows aren't core roles. Unique per value via the partial
+	-- index below. Only role rows ('r') may carry a role_core. [ghi]
+	role_core text
+		check (role_core in ('e', 'c', 'u'))
+		check (role_core is null or control = 'r'),
+
+	-- Role-tree parentage. Non-root roles set this. Immutable via
+	-- objects_parent_role_immutable. Only role rows ('r') may carry a
+	-- role_parent — enforced by the cross-column check below. The
+	-- target-column check (that role_parent points at an 'r' row)
+	-- lives in the objects_parent_role_must_be_role trigger. No
+	-- ON DELETE clause — defaults to NO ACTION, which with
+	-- `foreign_keys = on` acts as RESTRICT: a role can't be deleted if
+	-- any other role references it via role_parent. Force cleanup from
+	-- the leaves up. [ghi]
+	role_parent text
+		references objects(object_pk)
+		check (role_parent is null or control = 'r'),
+
+	-- CaspM tree as JSON text. Biconditional with control='f' — every
+	-- frame has an frame_ast, no non-frame does. A cap frame (frame_process_cap=1) has
+	-- frame_ast='[]' — the cap doesn't dispatch anything, its "one slot" is
+	-- just a lifecycle position (0=live, 1=terminal). Immutable once
+	-- set (see objects_ast_immutable). SQL guarantees storage integrity
+	-- only (valid JSON, top-level array); semantic CaspM validity is
+	-- guaranteed out-of-band by the engine/parser. [ghi]
+	frame_ast text
+		check ((control = 'f' and frame_ast is not null)
+			or (control is not 'f' and frame_ast is null))
+		check (frame_process_cap is null or frame_ast = '[]'),
+
+	-- Current position within the frame's frame_ast. Set on frames, null on
+	-- non-frames. Under the frame_gc cycle the handler sets `frame_gc = 1` on the
+	-- frame before the walker's bare `SET frame_stmt_idx = ?` advance; the
+	-- schema's advance-requires-frame_gc + auto-set-frame_gc-null triggers handle
+	-- the rest. Terminal state: `frame_stmt_idx = json_array_length(frame_ast)`
+	-- (for an empty frame_ast, that's 0 — the frame is born terminal).
+	--
+	-- Third CHECK enforces the upper bound built into the column
+	-- itself: frame_stmt_idx never exceeds the frame_ast's length. Replaces the
+	-- earlier pair of BEFORE-INSERT and BEFORE-UPDATE OF frame_stmt_idx
+	-- triggers with a declarative constraint that fires on any write. [ghi]
+	frame_stmt_idx integer
+		check (frame_stmt_idx is null
+			or (typeof(frame_stmt_idx) = 'integer' and frame_stmt_idx >= 0 and control = 'f'))
+		check (frame_stmt_idx is null or frame_stmt_idx <= json_array_length(frame_ast)),
+
+	-- Root-of-frame_process_cap flag. `frame_process_cap = 1` marks this frame as the top
+	-- cap of a call stack — the object identity of the frame_process_cap itself.
+	-- Null on nested frames (which have frame_parent set instead).
+	-- A cap has frame_ast='[]' (see check below), starts at frame_stmt_idx=0, and
+	-- becomes terminal when it reaches frame_stmt_idx=1 with frame_gc=null and no
+	-- children. Frame 0 sits under the cap as a nested frame. Immutable
+	-- via objects_process_cap_immutable. [ghi]
+	frame_process_cap integer
+		check (frame_process_cap = 1)
+		check (frame_process_cap is null or control = 'f'),
+
+	-- Sub-frame → parent-frame FK. Frame-only. No cascade. Every frame
+	-- has exactly one anchor: either frame_parent (nested frame) or
+	-- frame_process_cap=1 (the cap), never both, never neither. Enforced by the
+	-- mutual-exclusion check on this column. [ghi]
+	frame_parent text
+		references objects(object_pk)
+		check (frame_parent is null or control = 'f')
+		check (control is not 'f'
+			or (frame_parent is not null and frame_process_cap is null)
+			or (frame_parent is null and frame_process_cap is 1)),
+
+	-- frame_gc-cycle state flag. Bidirectional: null (frame executing normally)
+	-- ↔ 1 (frame is past-dispatch, cleanup phase). The cycle:
+	--   1. Walker advances frame_stmt_idx AND sets frame_gc=1 (must be same UPDATE).
+	--   2. frame_gc=1 fires AFTER trigger that cascade-deletes children.
+	--   3. Child-frame delete requires parent's frame_gc=1 (BEFORE-DELETE check).
+	--   4. Resetting frame_gc to null requires no child frames (BEFORE-UPDATE check).
+	-- Frames-only. [ghi]
+	frame_gc integer
+		check (frame_gc = 1)
+		check (frame_gc is null or control = 'f')
 );
 
 -- Partial index for reachability queries over pinned rows. [ghi]
 create index objects_persistent on objects(persistent) where persistent = 1;
 
--- Cap frames — the `uspace` view's process_cap-anchor branch selects
--- `process_cap = 1`; partial index keeps it empty of nulls so the branch
+-- Cap frames — the `uspace` view's frame_process_cap-anchor branch selects
+-- `frame_process_cap = 1`; partial index keeps it empty of nulls so the branch
 -- doesn't fall back to a full objects scan. [ghi]
-create index objects_process_cap on objects(process_cap) where process_cap = 1;
+create index objects_process_cap on objects(frame_process_cap) where frame_process_cap = 1;
 
 -- Roles are a small population inside a large objects table. The `roles`
--- view (see below) is `select object_pk from objects where primitive = 'r'`;
+-- view (see below) is `select object_pk from objects where control = 'r'`;
 -- this partial index keeps the view — and every uspace evaluation that
 -- pulls the roles branch — off a full table scan. [ghi]
-create index objects_roles on objects(object_pk) where primitive = 'r';
+create index objects_roles on objects(object_pk) where control = 'r';
 
 -- Base immutability for objects. Per-column triggers below handle
--- core_role, parent_role, owner_role, and ast. [ghi]
+-- role_core, role_parent, owner_role, and frame_ast. [ghi]
 create trigger objects_no_update
 before update on objects
 begin
 	select case
 		when new.object_pk is not old.object_pk
 			then raise(abort, 'objects_pk_immutable: objects.object_pk is immutable')
-		when new.primitive is not old.primitive
-			then raise(abort, 'objects_primitive_immutable: objects.primitive is immutable')
-		when new.scalar_type is not old.scalar_type
-			then raise(abort, 'objects_scalar_type_immutable: objects.scalar_type is immutable')
-		when new.scalar_value is not old.scalar_value
-			then raise(abort, 'objects_scalar_value_immutable: objects.scalar_value is immutable')
+		when new.base is not old.base
+			then raise(abort, 'objects_base_immutable: objects.base is immutable')
+		when new.scalar_null is not old.scalar_null
+			then raise(abort, 'objects_scalar_null_immutable: objects.scalar_null is immutable')
+		when new.scalar_string is not old.scalar_string
+			then raise(abort, 'objects_scalar_string_immutable: objects.scalar_string is immutable')
+		when new.scalar_number is not old.scalar_number
+			then raise(abort, 'objects_scalar_number_immutable: objects.scalar_number is immutable')
+		when new.scalar_bool is not old.scalar_bool
+			then raise(abort, 'objects_scalar_bool_immutable: objects.scalar_bool is immutable')
 	end;
+end;
+
+-- Non-'o' rows can't carry a scalar in any form: all four value
+-- columns must be null. This is the schema-side companion to the
+-- per-column check on base='o' rows below. [ghi]
+create trigger objects_scalar_columns_only_on_objects
+before insert on objects
+when (new.base is not 'o' or new.control is not null)
+	and (new.scalar_null is not null
+		or new.scalar_string is not null
+		or new.scalar_number is not null
+		or new.scalar_bool is not null)
+begin
+	select raise(abort, 'objects_scalar_columns_only_on_objects: non-''o'' rows must have all four scalar_* columns null');
+end;
+
+-- 'o' rows can hold at most one scalar-value column. Zero columns
+-- populated is legal — that's an object that carries no scalar
+-- value (a plain object). One column populated identifies the
+-- scalar type. Two or more is a schema violation. [ghi]
+create trigger objects_scalar_at_most_one_column
+before insert on objects
+when (new.base = 'o' and new.control is null)
+	and (
+		(case when new.scalar_null   is not null then 1 else 0 end)
+		+ (case when new.scalar_string is not null then 1 else 0 end)
+		+ (case when new.scalar_number is not null then 1 else 0 end)
+		+ (case when new.scalar_bool   is not null then 1 else 0 end)
+	) > 1
+begin
+	select raise(abort, 'objects_scalar_at_most_one_column: at most one of scalar_null / scalar_string / scalar_number / scalar_bool may be non-null');
 end;
 
 
@@ -287,7 +397,7 @@ end;
 -- and callers that INSERT without specifying it pick up the engine's
 -- runtime context automatically. The companion trigger
 -- `needs_trace_process_pk_must_be_cap` verifies the referenced row
--- is actually a cap (`process_cap = 1`); the FK alone can't check
+-- is actually a cap (`frame_process_cap = 1`); the FK alone can't check
 -- other columns of the target row.
 --
 -- PRIMARY KEY is composite `(process_pk, object_pk)` — the same
@@ -313,41 +423,41 @@ create table needs_trace (
 	primary key (process_pk, object_pk)
 );
 
--- process_pk must reference a cap frame (`process_cap = 1`). [ghi]
+-- process_pk must reference a cap frame (`frame_process_cap = 1`). [ghi]
 create trigger needs_trace_process_pk_must_be_cap
 before insert on needs_trace
-when (select process_cap from objects where object_pk = new.process_pk) is not 1
+when (select frame_process_cap from objects where object_pk = new.process_pk) is not 1
 begin
-	select raise(abort, 'needs_trace_process_pk_must_be_cap: process_pk must reference an objects row with process_cap = 1');
+	select raise(abort, 'needs_trace_process_pk_must_be_cap: process_pk must reference an objects row with frame_process_cap = 1');
 end;
 
 -- (No `process_cap_terminal_requires_no_needs_trace` here — under
 -- the current design caps are born at terminal, don't participate
--- in the gc cycle, and don't advance. The worklist-must-be-drained
+-- in the frame_gc cycle, and don't advance. The worklist-must-be-drained
 -- discipline is enforced instead by
 -- `frames_gc_reset_requires_empty_needs_trace` below, which blocks
 -- the cleanup-complete transition on ANY frame whose current process
 -- still has outstanding marks.)
 
--- A frame's gc cannot flip 1 → null while the current process has
--- any needs_trace rows outstanding. gc = null means "cleanup done,
+-- A frame's frame_gc cannot flip 1 → null while the current process has
+-- any needs_trace rows outstanding. frame_gc = null means "cleanup done,
 -- back to executing normally"; that's premature if there's still
 -- pending trace work in the worklist.
 --
 -- Scoped by `current_process_pk()` so a background administrative
--- path touching a non-current cap's gc doesn't get blocked by an
+-- path touching a non-current cap's frame_gc doesn't get blocked by an
 -- unrelated process's worklist. [ghi]
 create trigger frames_gc_reset_requires_empty_needs_trace
-before update of gc on objects
-when old.gc is 1 and new.gc is null
+before update of frame_gc on objects
+when old.frame_gc is 1 and new.frame_gc is null
 	and exists (select 1 from needs_trace where process_pk = current_process_pk())
 begin
-	select raise(abort, 'frames_gc_reset_requires_empty_needs_trace: cannot reset gc to null while the current process has outstanding needs_trace rows');
+	select raise(abort, 'frames_gc_reset_requires_empty_needs_trace: cannot reset frame_gc to null while the current process has outstanding needs_trace rows');
 end;
 
 
 -- ------------------------------------------------------------
--- Refs: parent-to-child object edges. Any primitive can be a parent;
+-- Refs: parent-to-child object edges. Any row can be a parent;
 -- non-container parents ('o', 'f') are capped at one hash-child (its
 -- bucket) and one array-child (its stack) by a trigger below.
 -- ------------------------------------------------------------
@@ -399,13 +509,13 @@ create index refs_child  on refs(child);
 -- of a bucket/stack ref, not because it implies exclusive ownership. [ghi]
 create trigger refs_owner_at_most_one_hash_and_one_array
 before insert on refs
-when (select primitive from objects where object_pk = new.parent) in ('o', 'f', 'r')
-	and (select primitive from objects where object_pk = new.child) in ('h', 'a')
+when (select base from objects where object_pk = new.parent) = 'o'
+	and (select base from objects where object_pk = new.child) in ('h', 'a')
 	and exists (
 		select 1 from refs r
 		join objects c on c.object_pk = r.child
 		where r.parent = new.parent
-			and c.primitive = (select primitive from objects where object_pk = new.child)
+			and c.base = (select base from objects where object_pk = new.child)
 	)
 begin
 	select raise(abort, 'refs_owner_at_most_one_hash_and_one_array: a non-container object can hold at most one hash (its bucket) and one array (its stack) as refs children');
@@ -477,7 +587,7 @@ end;
 create trigger refs_hash_key_required
 before insert on refs
 when new.key is null
-	and (select primitive from objects where object_pk = new.parent) = 'h'
+	and (select base from objects where object_pk = new.parent) = 'h'
 begin
 	select raise(abort, 'refs_hash_key_required: refs whose parent is a HashPrimitive must have a non-null key');
 end;
@@ -488,7 +598,7 @@ end;
 create trigger refs_array_key_forbidden
 before insert on refs
 when new.key is not null
-	and (select primitive from objects where object_pk = new.parent) = 'a'
+	and (select base from objects where object_pk = new.parent) = 'a'
 begin
 	select raise(abort, 'refs_array_key_forbidden: refs whose parent is an ArrayPrimitive must have a null key (arrays use idx)');
 end;
@@ -501,7 +611,7 @@ end;
 create trigger refs_scopes_key_requires_array
 before insert on refs
 when new.key = 'scopes'
-	and (select primitive from objects where object_pk = new.child) is not 'a'
+	and (select base from objects where object_pk = new.child) is not 'a'
 begin
 	select raise(abort, 'refs_scopes_key_requires_array: a ref with key=''scopes'' must point at an ArrayPrimitive');
 end;
@@ -511,7 +621,7 @@ end;
 create trigger refs_scopes_array_entries_must_be_hashes
 before insert on refs
 when exists (select 1 from refs where child = new.parent and key = 'scopes')
-	and (select primitive from objects where object_pk = new.child) is not 'h'
+	and (select base from objects where object_pk = new.child) is not 'h'
 begin
 	select raise(abort, 'refs_scopes_array_entries_must_be_hashes: entries in a scopes array must be hashes');
 end;
@@ -527,154 +637,154 @@ when new.key = 'scopes'
 	and exists (
 		select 1 from refs r
 		join objects o on o.object_pk = r.child
-		where r.parent = new.child and o.primitive is not 'h'
+		where r.parent = new.child and o.base is not 'h'
 	)
 begin
 	select raise(abort, 'refs_scopes_key_existing_entries_must_be_hashes: the target array already contains non-hash entries');
 end;
 
 -- ------------------------------------------------------------
--- Frame ast validation triggers.
+-- Frame frame_ast validation triggers.
 -- ------------------------------------------------------------
 
--- BEFORE INSERT: reject non-array or non-JSON ast on frame rows.
--- Every frame has an ast (biconditional column check); this validator
+-- BEFORE INSERT: reject non-array or non-JSON frame_ast on frame rows.
+-- Every frame has an frame_ast (biconditional column check); this validator
 -- guards the shape. [ghi]
 create trigger objects_ast_valid_insert
 before insert on objects
-when new.primitive = 'f'
+when new.control = 'f'
 begin
 	select case
-		when not json_valid(new.ast)
-			then raise(abort, 'ast_not_valid_json: frame ast must be valid JSON')
-		when json_type(new.ast) != 'array'
-			then raise(abort, 'ast_not_array: frame ast must be a JSON array')
+		when not json_valid(new.frame_ast)
+			then raise(abort, 'ast_not_valid_json: frame frame_ast must be valid JSON')
+		when json_type(new.frame_ast) != 'array'
+			then raise(abort, 'ast_not_array: frame frame_ast must be a JSON array')
 	end;
 end;
 
--- ast is immutable once set. [ghi]
+-- frame_ast is immutable once set. [ghi]
 create trigger objects_ast_immutable
-before update of ast on objects
-when new.ast is not old.ast
+before update of frame_ast on objects
+when new.frame_ast is not old.frame_ast
 begin
-	select raise(abort, 'ast_immutable: objects.ast is immutable once set');
+	select raise(abort, 'ast_immutable: objects.frame_ast is immutable once set');
 end;
 
--- A frame is born with stmt_idx = 0. Transitional rule (trigger,
+-- A frame is born with frame_stmt_idx = 0. Transitional rule (trigger,
 -- not column CHECK), so a bulk-load with triggers off can install a
--- frame at any mid-state stmt_idx. [ghi]
+-- frame at any mid-state frame_stmt_idx. [ghi]
 create trigger frames_stmt_idx_starts_at_zero
 before insert on objects
-when new.primitive = 'f' and new.stmt_idx is not 0
+when new.control = 'f' and new.frame_stmt_idx is not 0
 begin
-	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a frame is born with stmt_idx = 0');
+	select raise(abort, 'frames_stmt_idx_must_start_at_zero: a frame is born with frame_stmt_idx = 0');
 end;
 
--- New gc-cycle design, rule 2: a frame cannot be inserted with
--- gc = 1. Fresh frames are always born at gc = null; the gc = 1
+-- New frame_gc-cycle design, rule 2: a frame cannot be inserted with
+-- frame_gc = 1. Fresh frames are always born at frame_gc = null; the frame_gc = 1
 -- state is reached later via rule 3 (child delete) or manual set. [ghi]
 create trigger frames_gc_starts_null
 before insert on objects
-when new.primitive = 'f' and new.gc is not null
+when new.control = 'f' and new.frame_gc is not null
 begin
-	select raise(abort, 'frames_gc_starts_null: a frame must be born with gc = null');
+	select raise(abort, 'frames_gc_starts_null: a frame must be born with frame_gc = null');
 end;
 
--- stmt_idx moves +1 at a time. Skips and rewinds are rejected. A no-op
+-- frame_stmt_idx moves +1 at a time. Skips and rewinds are rejected. A no-op
 -- re-write of the same value is silently accepted. [ghi]
 create trigger frames_stmt_idx_advances_by_one
-before update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx
-	and new.stmt_idx is not old.stmt_idx + 1
+before update of frame_stmt_idx on objects
+when new.frame_stmt_idx is not old.frame_stmt_idx
+	and new.frame_stmt_idx is not old.frame_stmt_idx + 1
 begin
-	select raise(abort, 'frames_stmt_idx_must_advance_by_one: stmt_idx moves +1 at a time');
+	select raise(abort, 'frames_stmt_idx_must_advance_by_one: frame_stmt_idx moves +1 at a time');
 end;
 
 
 -- ------------------------------------------------------------
--- The gc cycle — four invariants
+-- The frame_gc cycle — four invariants
 -- ------------------------------------------------------------
--- The walker's per-statement operation is `UPDATE frame SET stmt_idx =
--- stmt_idx + 1, gc = 1`. That single statement's cascade goes:
+-- The walker's per-statement operation is `UPDATE frame SET frame_stmt_idx =
+-- frame_stmt_idx + 1, frame_gc = 1`. That single statement's cascade goes:
 --
---   1. BEFORE-UPDATE checks pass (advance +1 rule, advance-requires-gc,
+--   1. BEFORE-UPDATE checks pass (advance +1 rule, advance-requires-frame_gc,
 --      no-active-children).
---   2. Row updates: stmt_idx moves, gc becomes 1.
---   3. AFTER-UPDATE OF gc fires: DELETE FROM objects WHERE parent_frame
+--   2. Row updates: frame_stmt_idx moves, frame_gc becomes 1.
+--   3. AFTER-UPDATE OF frame_gc fires: DELETE FROM objects WHERE frame_parent
 --      = frame — the child (marker or completed nested call) is swept.
---   4. Each child's BEFORE-DELETE checks parent.gc = 1 — passes because
+--   4. Each child's BEFORE-DELETE checks parent.frame_gc = 1 — passes because
 --      step 2 already updated the row.
 --   5. Child deleted.
 --
--- At-rest state after the cascade: frame at new stmt_idx, gc = 1, no
+-- At-rest state after the cascade: frame at new frame_stmt_idx, frame_gc = 1, no
 -- children. The engine then runs GC (needs_trace sweep, on_close
 -- callbacks if any) and completes the cycle with `UPDATE frame SET
--- gc = null` — which requires no children (invariant 4).
+-- frame_gc = null` — which requires no children (invariant 4).
 --
--- Bidirectional gc: null (executing) ↔ 1 (post-dispatch cleanup).
+-- Bidirectional frame_gc: null (executing) ↔ 1 (post-dispatch cleanup).
 
--- New gc-cycle design, rule 5: advancing stmt_idx requires gc = 1
+-- New frame_gc-cycle design, rule 5: advancing frame_stmt_idx requires frame_gc = 1
 -- to consume. The advance can be issued as bare `UPDATE ... SET
--- stmt_idx = stmt_idx + 1` — the caller does not need to touch gc.
+-- frame_stmt_idx = frame_stmt_idx + 1` — the caller does not need to touch frame_gc.
 -- The AFTER trigger frames_advance_sets_gc_null (below) auto-sets
--- gc = null as a side effect. [ghi]
+-- frame_gc = null as a side effect. [ghi]
 create trigger frames_advance_requires_gc
-before update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx and old.gc is not 1
+before update of frame_stmt_idx on objects
+when new.frame_stmt_idx is not old.frame_stmt_idx and old.frame_gc is not 1
 begin
-	select raise(abort, 'frames_advance_requires_gc: advancing stmt_idx requires gc = 1');
+	select raise(abort, 'frames_advance_requires_gc: advancing frame_stmt_idx requires frame_gc = 1');
 end;
 
--- New gc-cycle design, rule 6 (auto-mechanism): advancing stmt_idx
--- automatically sets gc to null. AFTER UPDATE trigger runs a follow-
+-- New frame_gc-cycle design, rule 6 (auto-mechanism): advancing frame_stmt_idx
+-- automatically sets frame_gc to null. AFTER UPDATE trigger runs a follow-
 -- up UPDATE on the same row. The caller never has to include
--- `gc = null` in the advance UPDATE (though it's harmless if they
+-- `frame_gc = null` in the advance UPDATE (though it's harmless if they
 -- do — the auto-set becomes a no-op). The inner UPDATE fires
 -- frames_gc_change_requires_no_child, but rule 4 combined with rule
 -- 5 means the frame has no children at the moment of advance
--- (advancing requires gc = 1, gc = 1 requires no children), so the
+-- (advancing requires frame_gc = 1, frame_gc = 1 requires no children), so the
 -- inner UPDATE's WHEN is satisfied. [ghi]
 create trigger frames_advance_sets_gc_null
-after update of stmt_idx on objects
-when new.stmt_idx is not old.stmt_idx
+after update of frame_stmt_idx on objects
+when new.frame_stmt_idx is not old.frame_stmt_idx
 begin
-	update objects set gc = null where object_pk = new.object_pk;
+	update objects set frame_gc = null where object_pk = new.object_pk;
 end;
 
--- New gc-cycle design: on advance, the caller may include gc in the
--- SET clause only if the value is null. `SET stmt_idx = N+1, gc = 1`
+-- New frame_gc-cycle design: on advance, the caller may include frame_gc in the
+-- SET clause only if the value is null. `SET frame_stmt_idx = N+1, frame_gc = 1`
 -- is an engine bug — the auto-set trigger above would silently
 -- overwrite the caller's 1 with null, which correct the state but
 -- hides the bug. Reject it loudly.
 --
 -- SQLite fires BEFORE UPDATE OF <col> only when the column appears
 -- in the UPDATE's SET clause. So this trigger sees only cases where
--- the caller explicitly wrote gc, not the bare-advance case where
--- gc was left out (and the auto-set does its work). [ghi]
+-- the caller explicitly wrote frame_gc, not the bare-advance case where
+-- frame_gc was left out (and the auto-set does its work). [ghi]
 create trigger frames_advance_rejects_non_null_gc
-before update of gc on objects
-when new.stmt_idx is not old.stmt_idx and new.gc is not null
+before update of frame_gc on objects
+when new.frame_stmt_idx is not old.frame_stmt_idx and new.frame_gc is not null
 begin
-	select raise(abort, 'frames_advance_rejects_non_null_gc: an advance UPDATE that mentions gc must set it to null');
+	select raise(abort, 'frames_advance_rejects_non_null_gc: an advance UPDATE that mentions frame_gc must set it to null');
 end;
 
--- New gc-cycle design, rule 9: a frame cannot be deleted while it
--- has a child. The parent_frame FK (NO ACTION) would already reject
+-- New frame_gc-cycle design, rule 9: a frame cannot be deleted while it
+-- has a child. The frame_parent FK (NO ACTION) would already reject
 -- the delete with a generic FOREIGN KEY error — this trigger fires
 -- first with a specific error id for cleaner diagnostics. [ghi]
 create trigger frames_delete_requires_no_child
 before delete on objects
-when old.primitive = 'f'
+when old.control = 'f'
 	and exists (
 		select 1 from objects
-		where parent_frame = old.object_pk and primitive = 'f'
+		where frame_parent = old.object_pk and control = 'f'
 	)
 begin
 	select raise(abort, 'frames_delete_requires_no_child: a frame cannot be deleted while it has a child frame');
 end;
 
--- New gc-cycle design, rule 3: deleting a child frame auto-sets the
--- parent's gc to 1. The parent now has 0 children (linear-stack
+-- New frame_gc-cycle design, rule 3: deleting a child frame auto-sets the
+-- parent's frame_gc to 1. The parent now has 0 children (linear-stack
 -- rule: at most 1 child per frame; the one that was there is now
 -- gone), so rule 4 permits the change.
 --
@@ -687,13 +797,13 @@ end;
 -- inconsistency. [ghi]
 create trigger frames_child_delete_sets_parent_gc
 after delete on objects
-when old.primitive = 'f' and old.parent_frame is not null
-	and (select process_cap from objects where object_pk = old.parent_frame) is not 1
+when old.control = 'f' and old.frame_parent is not null
+	and (select frame_process_cap from objects where object_pk = old.frame_parent) is not 1
 begin
-	update objects set gc = 1 where object_pk = old.parent_frame;
+	update objects set frame_gc = 1 where object_pk = old.frame_parent;
 end;
 
--- New gc-cycle design, rule 4: gc cannot change while the frame has
+-- New frame_gc-cycle design, rule 4: frame_gc cannot change while the frame has
 -- a child. Bidirectional — rejects both null→1 and 1→null. Under
 -- the old design, only 1→null was blocked (via
 -- frames_gc_reset_requires_no_children) and null→1 cascade-deleted
@@ -702,21 +812,21 @@ end;
 -- (`objects_one_child_per_frame` unique index), so the check is a
 -- single existence test. [ghi]
 create trigger frames_gc_change_requires_no_child
-before update of gc on objects
-when new.gc is not old.gc
+before update of frame_gc on objects
+when new.frame_gc is not old.frame_gc
 	and exists (
 		select 1 from objects
-		where parent_frame = new.object_pk and primitive = 'f'
+		where frame_parent = new.object_pk and control = 'f'
 	)
 begin
-	select raise(abort, 'frames_gc_change_requires_no_child: gc cannot change while the frame has a child');
+	select raise(abort, 'frames_gc_change_requires_no_child: frame_gc cannot change while the frame has a child');
 end;
 
--- New gc-cycle design, rule 7: gc cannot be set to 1 when the frame
--- is already in its terminal state (stmt_idx past the last executable
--- position). Setting gc=1 there would signal "ready to advance," but
+-- New frame_gc-cycle design, rule 7: frame_gc cannot be set to 1 when the frame
+-- is already in its terminal state (frame_stmt_idx past the last executable
+-- position). Setting frame_gc=1 there would signal "ready to advance," but
 -- a terminal frame can't advance — the bounds trigger blocks any
--- further stmt_idx change. A terminal frame's only next legal step
+-- further frame_stmt_idx change. A terminal frame's only next legal step
 -- is DELETE. Rule 7 keeps the state machine from stalling at
 -- (terminal, 1, no children) with no path forward.
 --
@@ -724,21 +834,21 @@ end;
 -- the auto-delete (rule 8). Guard is for the direct-INSERT edge case
 -- and for hardening against engine bugs. [ghi]
 create trigger frames_gc_set_rejects_at_terminal
-before update of gc on objects
-when new.gc is 1
-	and new.stmt_idx >= json_array_length(new.ast)
+before update of frame_gc on objects
+when new.frame_gc is 1
+	and new.frame_stmt_idx >= json_array_length(new.frame_ast)
 begin
-	select raise(abort, 'frames_gc_set_rejects_at_terminal: cannot set gc = 1 when the frame is in its terminal state');
+	select raise(abort, 'frames_gc_set_rejects_at_terminal: cannot set frame_gc = 1 when the frame is in its terminal state');
 end;
 
 
--- `parent_frame` is immutable. A frame's parent is set at INSERT and
+-- `frame_parent` is immutable. A frame's parent is set at INSERT and
 -- never changes. Rejects only on actual change. [ghi]
 create trigger objects_parent_frame_immutable
-before update of parent_frame on objects
-when new.parent_frame is not old.parent_frame
+before update of frame_parent on objects
+when new.frame_parent is not old.frame_parent
 begin
-	select raise(abort, 'objects_parent_frame_immutable: objects.parent_frame is immutable');
+	select raise(abort, 'objects_parent_frame_immutable: objects.frame_parent is immutable');
 end;
 
 -- `engine_class` is immutable. The mask marker is set at object
@@ -758,25 +868,25 @@ end;
 -- forever. Parallels objects_parent_role_not_self. [ghi]
 create trigger frames_parent_frame_not_self
 before insert on objects
-when new.primitive = 'f' and new.parent_frame = new.object_pk
+when new.control = 'f' and new.frame_parent = new.object_pk
 begin
 	select raise(abort, 'frames_parent_frame_not_self: a frame cannot be its own parent');
 end;
 
--- parent_frame's target must itself be a frame. The column-level
--- CHECK `check (parent_frame is null or primitive = 'f')` covers the
+-- frame_parent's target must itself be a frame. The column-level
+-- CHECK `check (frame_parent is null or control = 'f')` covers the
 -- ROW HOLDING the pointer (must be a frame); this trigger covers the
 -- TARGET (must also be a frame). Together they enforce
--- "parent_frame links a frame to a frame." Direct primitive check on
+-- "frame_parent links a frame to a frame." Direct control check on
 -- the target row. Mirrors objects_parent_role_must_be_role and
 -- objects_owner_role_must_be_role. No update-side trigger needed —
 -- objects_parent_frame_immutable already blocks changes after INSERT. [ghi]
 create trigger objects_parent_frame_must_be_frame
 before insert on objects
-when new.parent_frame is not null
-	and (select primitive from objects where object_pk = new.parent_frame) is not 'f'
+when new.frame_parent is not null
+	and (select control from objects where object_pk = new.frame_parent) is not 'f'
 begin
-	select raise(abort, 'parent_frame_must_be_frame: parent_frame must reference a frame (primitive = ''f'')');
+	select raise(abort, 'parent_frame_must_be_frame: frame_parent must reference a frame (control = ''f'')');
 end;
 
 -- A child frame cannot be inserted under a nested-frame parent
@@ -784,156 +894,187 @@ end;
 -- statements to dispatch; spawning a child there would resurrect a
 -- done frame.
 --
--- CAP parents are exempt (`process_cap is not 1` on the parent). Caps
--- have empty ast and are born terminal under the new formula, and
+-- CAP parents are exempt (`frame_process_cap is not 1` on the parent). Caps
+-- have empty frame_ast and are born terminal under the new formula, and
 -- frame 0 is always inserted as a cap's child at boot — that's the
--- normal case, not a resurrection. Caps are static process_cap
+-- normal case, not a resurrection. Caps are static frame_process_cap
 -- anchors, not executing frames. [ghi]
 create trigger frames_no_child_under_terminal_parent
 before insert on objects
-when new.parent_frame is not null
+when new.frame_parent is not null
 	and (
-		select stmt_idx >= json_array_length(ast) and process_cap is not 1
+		select frame_stmt_idx >= json_array_length(frame_ast) and frame_process_cap is not 1
 		from objects
-		where object_pk = new.parent_frame
+		where object_pk = new.frame_parent
 	)
 begin
 	select raise(abort, 'frames_no_child_under_terminal_parent: cannot insert a child frame under a parent that is in its terminal state');
 end;
 
--- `process_cap` is immutable. A frame's identity as a cap (or not) is
+-- `frame_process_cap` is immutable. A frame's identity as a cap (or not) is
 -- fixed at INSERT and never changes. Rejects only on actual change. [ghi]
 create trigger objects_process_cap_immutable
-before update of process_cap on objects
-when new.process_cap is not old.process_cap
+before update of frame_process_cap on objects
+when new.frame_process_cap is not old.frame_process_cap
 begin
-	select raise(abort, 'objects_process_cap_immutable: objects.process_cap is immutable');
+	select raise(abort, 'objects_process_cap_immutable: objects.frame_process_cap is immutable');
 end;
 
 -- A parent frame can have at most one child frame at a time. Partial
 -- index keeps it empty of nulls (root frames don't participate). Drop-
 -- and-replace lands cleanly because the outgoing frame is gone by the
 -- time the trigger body runs. [ghi]
-create unique index objects_one_child_per_frame on objects(parent_frame)
-	where primitive = 'f' and parent_frame is not null;
+create unique index objects_one_child_per_frame on objects(frame_parent)
+	where control = 'f' and frame_parent is not null;
 
 
 -- ------------------------------------------------------------
 -- Indexes for the role / ownership / frame columns.
 -- ------------------------------------------------------------
 
--- Unique per core_role value ('e', 'c', 'u'); partial keeps it empty of nulls. [ghi]
-create unique index objects_core_role on objects(core_role)
-	where core_role is not null;
+-- Unique per role_core value ('e', 'c', 'u'); partial keeps it empty of nulls. [ghi]
+create unique index objects_core_role on objects(role_core)
+	where role_core is not null;
 
--- Partial index on parent_role for role-tree traversal. [ghi]
-create index objects_parent_role on objects(parent_role) where parent_role is not null;
+-- Partial index on role_parent for role-tree traversal. [ghi]
+create index objects_parent_role on objects(role_parent) where role_parent is not null;
 
 create index objects_owner_role  on objects(owner_role)  where owner_role is not null;
 
 
 -- ------------------------------------------------------------
--- Roles view — single source of truth for "what is a role."
--- A role is `primitive = 'r'`; the view is a single-column filter. [ghi]
-create view roles as
-	select object_pk from objects where primitive = 'r';
+-- Scalars view — read shape for scalar-carrying rows. Derives the
+-- scalar type from which value column is populated (no scalar_type
+-- column stored anywhere) and coalesces the three data columns into
+-- a single `value` field so callers reach the payload without
+-- needing to know which affinity slot it lived in.
+--
+-- `scalar_null` scalars come back with `value` = NULL and
+-- `scalar_type` = 'u' — the language-level null value. Non-scalar
+-- 'o' rows (plain objects with no scalar assigned) are filtered
+-- out — this view is scalar-only. Non-'o' rows are also filtered.
+-- Anyone wanting a raw objects-table peek queries `objects`
+-- directly; anyone wanting scalar semantics goes through here. [ghi]
+create view scalars as
+select
+	object_pk,
+	case
+		when scalar_string is not null then 's'
+		when scalar_number is not null then 'n'
+		when scalar_bool   is not null then 'b'
+		when scalar_null   is not null then 'u'
+	end as scalar_type,
+	coalesce(scalar_string, scalar_number, scalar_bool) as value
+from objects
+where base = 'o' and control is null
+	and (scalar_null   is not null
+		or scalar_string is not null
+		or scalar_number is not null
+		or scalar_bool   is not null);
 
 
 -- ------------------------------------------------------------
--- Immutability triggers for the role columns (core_role,
--- parent_role, owner_role). Below the roles view because they
+-- Roles view — single source of truth for "what is a role."
+-- A role is `control = 'r'`; the view is a single-column filter. [ghi]
+create view roles as
+	select object_pk from objects where control = 'r';
+
+
+-- ------------------------------------------------------------
+-- Immutability triggers for the role columns (role_core,
+-- role_parent, owner_role). Below the roles view because they
 -- reference role concepts. [ghi]
 -- ------------------------------------------------------------
 
--- core_role is set at INSERT and never changes. [ghi]
+-- role_core is set at INSERT and never changes. [ghi]
 create trigger objects_core_role_immutable
-before update of core_role on objects
-when new.core_role is not old.core_role
+before update of role_core on objects
+when new.role_core is not old.role_core
 begin
-	select raise(abort, 'objects_core_role_immutable: objects.core_role is immutable');
+	select raise(abort, 'objects_core_role_immutable: objects.role_core is immutable');
 end;
 
--- parent_role is set at INSERT and never changes. Load-bearing: this
+-- role_parent is set at INSERT and never changes. Load-bearing: this
 -- immutability is what makes the role tree cycle-free. [ghi]
 create trigger objects_parent_role_immutable
-before update of parent_role on objects
-when new.parent_role is not old.parent_role
+before update of role_parent on objects
+when new.role_parent is not old.role_parent
 begin
-	select raise(abort, 'objects_parent_role_immutable: objects.parent_role is immutable (no role reparenting)');
+	select raise(abort, 'objects_parent_role_immutable: objects.role_parent is immutable (no role reparenting)');
 end;
 
 -- Seeds three core-role rows: engine (root), cache, user (both children
--- of engine via parent_role, owned by engine via owner_role). All three
+-- of engine via role_parent, owned by engine via owner_role). All three
 -- are role primitives ('r') and pinned. Seeded before the ownership
 -- triggers below, so any grandfathering is transparent. [ghi]
 
 -- Engine — root of the core-role tree.
-insert into objects (primitive, core_role, persistent)
-	values ('r', 'e', 1);
+insert into objects (base, control, role_core, persistent)
+	values ('o', 'r', 'e', 1);
 
 -- Cache — child of engine, owned by engine.
-insert into objects (primitive, core_role, parent_role, owner_role, persistent)
-	values ('r', 'c',
-		(select object_pk from objects where core_role = 'e'),
-		(select object_pk from objects where core_role = 'e'),
+insert into objects (base, control, role_core, role_parent, owner_role, persistent)
+	values ('o', 'r', 'c',
+		(select object_pk from objects where role_core = 'e'),
+		(select object_pk from objects where role_core = 'e'),
 		1);
 
 -- User — child of engine, owned by engine.
-insert into objects (primitive, core_role, parent_role, owner_role, persistent)
-	values ('r', 'u',
-		(select object_pk from objects where core_role = 'e'),
-		(select object_pk from objects where core_role = 'e'),
+insert into objects (base, control, role_core, role_parent, owner_role, persistent)
+	values ('o', 'r', 'u',
+		(select object_pk from objects where role_core = 'e'),
+		(select object_pk from objects where role_core = 'e'),
 		1);
 
 -- Non-role rows must have owner_role set. Roles ('r') may omit it —
--- the engine seed does. Direct primitive check reads cleaner than
--- the pre-'r' composite test on parent_role + core_role. [ghi]
+-- the engine seed does. Direct control check reads cleaner than
+-- the pre-'r' composite test on role_parent + role_core. [ghi]
 create trigger objects_owner_role_required_on_non_roles
 before insert on objects
-when new.primitive != 'r' and new.owner_role is null
+when new.control is not 'r' and new.owner_role is null
 begin
 	select raise(abort, 'objects_owner_role_required: a non-role must have owner_role set');
 end;
 
--- Every non-root role's parent_role must point at a role. Direct
--- primitive check on the target row — no view subquery. [ghi]
+-- Every non-root role's role_parent must point at a role. Direct
+-- control check on the target row — no view subquery. [ghi]
 create trigger objects_parent_role_must_be_role
 before insert on objects
-when new.parent_role is not null
-	and (select primitive from objects where object_pk = new.parent_role) is not 'r'
+when new.role_parent is not null
+	and (select control from objects where object_pk = new.role_parent) is not 'r'
 begin
-	select raise(abort, 'parent_role_must_be_role: parent_role must reference a role (primitive = ''r'')');
+	select raise(abort, 'parent_role_must_be_role: role_parent must reference a role (control = ''r'')');
 end;
 
--- parent_role cannot be self. Defense-in-depth with a specific error ID. [ghi]
+-- role_parent cannot be self. Defense-in-depth with a specific error ID. [ghi]
 create trigger objects_parent_role_not_self
 before insert on objects
-when new.parent_role is not null and new.parent_role = new.object_pk
+when new.role_parent is not null and new.role_parent = new.object_pk
 begin
-	select raise(abort, 'objects_parent_role_not_self: parent_role cannot equal object_pk');
+	select raise(abort, 'objects_parent_role_not_self: role_parent cannot equal object_pk');
 end;
 
 -- The engine role is the only role that can be tree-root — every
 -- other role (cache, user, and any runtime-added role) must have a
--- parent_role. Locks the "single root" shape of the role tree at
+-- role_parent. Locks the "single root" shape of the role tree at
 -- INSERT time. [ghi]
 create trigger objects_only_engine_can_be_role_root
 before insert on objects
-when new.primitive = 'r'
-	and new.parent_role is null
-	and new.core_role is not 'e'
+when new.control = 'r'
+	and new.role_parent is null
+	and new.role_core is not 'e'
 begin
-	select raise(abort, 'objects_only_engine_can_be_role_root: only the engine role can have parent_role = null; every other role must have a parent_role');
+	select raise(abort, 'objects_only_engine_can_be_role_root: only the engine role can have role_parent = null; every other role must have a role_parent');
 end;
 
--- owner_role, if set, must point at a role. Direct primitive check
+-- owner_role, if set, must point at a role. Direct control check
 -- on the target row — no view subquery. [ghi]
 create trigger objects_owner_role_must_be_role
 before insert on objects
 when new.owner_role is not null
-	and (select primitive from objects where object_pk = new.owner_role) is not 'r'
+	and (select control from objects where object_pk = new.owner_role) is not 'r'
 begin
-	select raise(abort, 'owner_role_must_be_role: owner_role must reference a role (primitive = ''r'')');
+	select raise(abort, 'owner_role_must_be_role: owner_role must reference a role (control = ''r'')');
 end;
 
 -- owner_role is immutable at INSERT — no reparenting. [ghi]
@@ -952,12 +1093,12 @@ begin
 	select raise(abort, 'objects_owner_role_not_self: owner_role cannot equal object_pk');
 end;
 
--- Guards any core-role row. `old.core_role is not null` is sufficient —
--- the cross-column check on core_role means only 'r' rows can have it
+-- Guards any core-role row. `old.role_core is not null` is sufficient —
+-- the cross-column check on role_core means only 'r' rows can have it
 -- set, so this WHEN implicitly filters to core-role 'r' rows. [ghi]
 create trigger objects_no_delete_root_role
 before delete on objects
-when old.core_role is not null
+when old.role_core is not null
 begin
 	select raise(abort, 'root_role_cannot_be_deleted: core-role rows cannot be deleted');
 end;
@@ -1037,7 +1178,7 @@ end;
 
 -- ------------------------------------------------------------
 -- Debug log. Free-form per-process log entries. `object_pk`
--- references a process cap (an objects row with `process_cap = 1`);
+-- references a process cap (an objects row with `frame_process_cap = 1`);
 -- ON DELETE CASCADE ties each entry's lifetime to its cap so when a
 -- process's cap goes away, its log goes with it. `note` is a
 -- required text column — the log's only payload.
@@ -1054,7 +1195,7 @@ create table debug_log (
 	-- needs_trace.process_pk uses. The FK alone only checks that
 	-- the target row exists; the companion trigger
 	-- debug_log_object_pk_must_be_cap enforces that the target's
-	-- process_cap column is 1. ON DELETE CASCADE: when the process
+	-- frame_process_cap column is 1. ON DELETE CASCADE: when the process
 	-- cap is deleted, its debug_log rows go with it. [ghi]
 	object_pk text not null
 		default (current_process_pk())
@@ -1071,14 +1212,14 @@ create table debug_log (
 -- index on that column keeps it off a full scan.
 create index debug_log_object_pk on debug_log(object_pk);
 
--- object_pk must reference a cap frame (process_cap = 1). The FK
+-- object_pk must reference a cap frame (frame_process_cap = 1). The FK
 -- alone can't check other columns of the target row; this trigger
 -- fills the gap. Mirrors needs_trace_process_pk_must_be_cap. [ghi]
 create trigger debug_log_object_pk_must_be_cap
 before insert on debug_log
-when (select process_cap from objects where object_pk = new.object_pk) is not 1
+when (select frame_process_cap from objects where object_pk = new.object_pk) is not 1
 begin
-	select raise(abort, 'debug_log_object_pk_must_be_cap: object_pk must reference an objects row with process_cap = 1');
+	select raise(abort, 'debug_log_object_pk_must_be_cap: object_pk must reference an objects row with frame_process_cap = 1');
 end;
 
 
@@ -1087,8 +1228,8 @@ end;
 -- ------------------------------------------------------------
 
 -- Child-of-frame walk: given a frame pk, find its child sub-frame. [ghi]
-create index objects_frame_by_parent on objects(parent_frame)
-	where primitive = 'f' and parent_frame is not null;
+create index objects_frame_by_parent on objects(frame_parent)
+	where control = 'f' and frame_parent is not null;
 
 
 -- ------------------------------------------------------------
@@ -1098,7 +1239,7 @@ create index objects_frame_by_parent on objects(parent_frame)
 
 create view uspace as
 	-- Every role (root + non-root) — pulled from the roles view.
-	-- Roles branch is now a single-column filter on `primitive = 'r'`
+	-- Roles branch is now a single-column filter on `control = 'r'`
 	-- via the roles view; the eventual test_view_indexes.lua uspace
 	-- plan will show one lookup on this branch, not the historical
 	-- UNION-of-two. [ghi]
@@ -1108,8 +1249,8 @@ create view uspace as
 	select object_pk from objects where persistent = 1
 	union
 	-- Process caps — the top of every live call stack. Frame 0 and
-	-- everything below it are reachable via parent_frame from the cap. [ghi]
-	select object_pk from objects where primitive = 'f' and process_cap = 1;
+	-- everything below it are reachable via frame_parent from the cap. [ghi]
+	select object_pk from objects where control = 'f' and frame_process_cap = 1;
 
 
 -- ------------------------------------------------------------
@@ -1126,7 +1267,7 @@ create view uspace as
 -- = ?` — every scoped var, with its scope depth.
 --
 -- Cost per row: all joins go through indexed lookups (refs.parent,
--- PK on objects). The bucket join uses refs_parent + a primitive
+-- PK on objects). The bucket join uses refs_parent + a base
 -- filter to pick out the frame's hash-child. [ghi]
 -- ------------------------------------------------------------
 create view frame_scoped_vars as
@@ -1140,7 +1281,7 @@ from objects f
 		on bucket_ref.parent = f.object_pk
 	join objects bucket
 		on bucket.object_pk = bucket_ref.child
-		and bucket.primitive = 'h'
+		and bucket.base = 'h'
 	join refs scopes_ref
 		on scopes_ref.parent = bucket.object_pk
 		and scopes_ref.key = 'scopes'
@@ -1148,19 +1289,19 @@ from objects f
 		on scope_ref.parent = scopes_ref.child
 	join refs var_ref
 		on var_ref.parent = scope_ref.child
-where f.primitive = 'f';
+where f.control = 'f';
 
 
 -- ------------------------------------------------------------
 -- object_bucket — every non-container object with its bucket_pk
--- (or null if it hasn't been given one). "Non-container" = primitive
+-- (or null if it hasn't been given one). "Non-container" = base
 -- in ('o', 'f'); those are the ones the one-hash-one-array trigger
 -- caps, so the correlated subquery returns at most one row and lands
 -- safely as a scalar value.
 --
 -- **No caller yet.** Kept in the schema as a convenience for whoever
 -- eventually needs "give me this object's bucket" without hand-writing
--- the refs + objects + primitive-filter join. Usage:
+-- the refs + objects + base-filter join. Usage:
 -- `SELECT bucket_pk FROM object_bucket WHERE object_pk = ?`. [ghi]
 -- ------------------------------------------------------------
 create view object_bucket as
@@ -1169,11 +1310,11 @@ select
 	(
 		select r.child
 		from refs r
-			join objects h on h.object_pk = r.child and h.primitive = 'h'
+			join objects h on h.object_pk = r.child and h.base = 'h'
 		where r.parent = o.object_pk
 	) as bucket_pk
 from objects o
-where o.primitive in ('o', 'f');
+where o.base = 'o';
 
 
 -- ------------------------------------------------------------
@@ -1188,8 +1329,8 @@ select
 	(
 		select r.child
 		from refs r
-			join objects a on a.object_pk = r.child and a.primitive = 'a'
+			join objects a on a.object_pk = r.child and a.base = 'a'
 		where r.parent = o.object_pk
 	) as stack_pk
 from objects o
-where o.primitive in ('o', 'f');
+where o.base = 'o';

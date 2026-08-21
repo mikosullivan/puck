@@ -119,7 +119,7 @@ load-artifact slots start nil:
   the field's presence.
 - **`data`** — the CVM data-access layer (an instance of `cvm`) wrapping the SQLite handle. Every method callers reach for on `engine.data` (`add_scalar`, `add_bucket`, `object_by_pk`, etc.) operates via prepared statements over the schema. Populated at construction.
 - **`cap_pk`** — nil at construction. `run()` sets it to the process's cap-frame pk (the top of the call stack; its `object_pk` IS the process identity). Callers can inspect this after `run()` returns to reach the resulting graph. Not consulted for revival — revival semantics land with GC-substrate work.
-- **`caspm`** — nil at construction. Populated by `engine:load` with the normalized program that `run()` JSON-encodes into frame 0's `ast` on seed, then nils out so the loaded program has one source of truth (the DB frame's ast), not two.
+- **`caspm`** — nil at construction. Populated by `engine:load` with the normalized program that `run()` JSON-encodes into frame 0's `frame_ast` on seed, then nils out so the loaded program has one source of truth (the DB frame's frame_ast), not two.
 - **`current_frame`** — nil at construction. `run_frame` sets it to the wrapped frame object before each dispatch, so handlers can reach the frame they're writing into (e.g., `frame:set_local_to_scalar`). Nil again after `run_frame` returns.
 - **`row_handlers`** — the row-head dispatch chain. Populated at
   construction from `handlers.stock_instances()` — the aggregator at
@@ -185,25 +185,25 @@ function M.new(opts)
 	-- on a hot dispatch loop; the walker's SQL surface is small enough
 	-- that a fixed named set covers it.
 	engine.stmts = {
-		get_ast          = db:prepare('select ast from objects where object_pk = ?'),
-		get_stmt_idx     = db:prepare('select stmt_idx from objects where object_pk = ?'),
-		get_user_role    = db:prepare("select object_pk from objects where core_role = 'u'"),
-		-- Bare advance: `SET stmt_idx = ?` with no gc mention. The
+		get_ast          = db:prepare('select frame_ast from objects where object_pk = ?'),
+		get_stmt_idx     = db:prepare('select frame_stmt_idx from objects where object_pk = ?'),
+		get_user_role    = db:prepare("select object_pk from objects where role_core = 'u'"),
+		-- Bare advance: `SET frame_stmt_idx = ?` with no frame_gc mention. The
 		-- schema's frames_advance_requires_gc trigger requires the
-		-- handler to have already set `gc = 1` (via cvm:mark_frame_gc),
+		-- handler to have already set `frame_gc = 1` (via cvm:mark_frame_gc),
 		-- and the frames_advance_sets_gc_null AFTER trigger auto-resets
-		-- gc back to null. Mentioning gc = 1 in this SET clause is
+		-- frame_gc back to null. Mentioning frame_gc = 1 in this SET clause is
 		-- rejected as an engine bug (frames_advance_rejects_non_null_gc)
 		-- and at terminal is doubly rejected (frames_gc_set_rejects_at_terminal).
-		advance           = db:prepare('update objects set stmt_idx = ? where object_pk = ?'),
-		-- Reap: delete a frame that's finished its ast. Under the current
+		advance           = db:prepare('update objects set frame_stmt_idx = ? where object_pk = ?'),
+		-- Reap: delete a frame that's finished its frame_ast. Under the current
 		-- design terminal frames don't auto-delete — the engine reaps
 		-- them explicitly. The AFTER-DELETE cascade
-		-- (frames_child_delete_sets_parent_gc) flips the parent's gc from
+		-- (frames_child_delete_sets_parent_gc) flips the parent's frame_gc from
 		-- null to 1 (unless the parent is a cap; that cascade is exempt).
 		reap_frame       = db:prepare('delete from objects where object_pk = ?'),
-		insert_cap       = db:prepare("insert into objects (primitive, process_cap, ast, stmt_idx, owner_role) values ('f', 1, '[]', 0, ?) returning object_pk"),
-		insert_frame_0   = db:prepare("insert into objects (primitive, ast, stmt_idx, parent_frame, owner_role) values ('f', ?, 0, ?, ?) returning object_pk"),
+		insert_cap       = db:prepare("insert into objects (base, control, frame_process_cap, frame_ast, frame_stmt_idx, owner_role) values ('o', 'f', 1, '[]', 0, ?) returning object_pk"),
+		insert_frame_0   = db:prepare("insert into objects (base, control, frame_ast, frame_stmt_idx, frame_parent, owner_role) values ('o', 'f', ?, 0, ?, ?) returning object_pk"),
 	}
 
 	-- Wire the stock handler roster through the public API so even the
@@ -241,15 +241,15 @@ end
 --[[
 ## `run`
 
-Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`) end-to-end. Under the current CVM design a process is a cap frame — an `objects` row with `primitive='f'`, `process_cap=1`, `ast='[]'`. Frame 0 sits under the cap as a nested frame. `run` seeds both, walks frame 0's ast through the handler chain, then advances the cap to sweep frame 0 and reach terminal state.
+Runs the loaded CaspM program (`self.caspm`, populated by `engine:load(source)`) end-to-end. Under the current CVM design a process is a cap frame — an `objects` row with `control='f'`, `frame_process_cap=1`, `frame_ast='[]'`. Frame 0 sits under the cap as a nested frame. `run` seeds both, walks frame 0's frame_ast through the handler chain, then advances the cap to sweep frame 0 and reach terminal state.
 
 **Steps:**
 
-1. Seed the cap: INSERT a cap row (`process_cap=1`, `ast='[]'`, `stmt_idx=0`, no parent).
-2. Seed frame 0 as a nested frame under the cap (`parent_frame=cap_pk`, `ast=<caspm>`, `stmt_idx=0`).
-3. `self:run_frame(frame_0_pk)` — walks the ast; per statement: set `self.current_frame`, dispatch, advance `stmt_idx += 1, gc = 1` (cascades any marker child), reset `gc = null`.
-4. Advance the cap: `stmt_idx = 1, gc = 1` — cascade sweeps frame 0. Frame 0's outgoing refs (including any owner→bucket ref) cascade too, firing the standard mark-needs-trace trigger on each ref-delete.
-5. Reset cap's `gc = null` — cap is now terminal (`stmt_idx=1, gc=null, no children`). This is the "program is done" state.
+1. Seed the cap: INSERT a cap row (`frame_process_cap=1`, `frame_ast='[]'`, `frame_stmt_idx=0`, no parent).
+2. Seed frame 0 as a nested frame under the cap (`frame_parent=cap_pk`, `frame_ast=<caspm>`, `frame_stmt_idx=0`).
+3. `self:run_frame(frame_0_pk)` — walks the frame_ast; per statement: set `self.current_frame`, dispatch, advance `frame_stmt_idx += 1, frame_gc = 1` (cascades any marker child), reset `frame_gc = null`.
+4. Advance the cap: `frame_stmt_idx = 1, frame_gc = 1` — cascade sweeps frame 0. Frame 0's outgoing refs (including any owner→bucket ref) cascade too, firing the standard mark-needs-trace trigger on each ref-delete.
+5. Reset cap's `frame_gc = null` — cap is now terminal (`frame_stmt_idx=1, frame_gc=null, no children`). This is the "program is done" state.
 
 **GC not wired here.** After `run` returns, the cap and any orphaned graph (rows referenced by `needs_trace` entries) still sit in the DB. Running the trace-and-sweep pass over that worklist lands with GC-substrate integration.
 
@@ -285,7 +285,7 @@ function M:run()
 	stmts.insert_frame_0:bind_values(ast_json, cap_pk, user_pk)
 
 	-- If the INSERT raises (e.g., the ast_valid_insert trigger fires on
-	-- a non-array ast), step returns an error code and get_value on the
+	-- a non-array frame_ast), step returns an error code and get_value on the
 	-- failed statement returns "misuse of function." Check the return
 	-- and surface the DB's error text instead.
 	local rc = stmts.insert_frame_0:step()
@@ -304,12 +304,12 @@ function M:run()
 	-- Reset stopped in case this engine is being reused across runs.
 	self.stopped = false
 
-	-- 3. Walk frame 0's ast. run_frame reaps at the end (whether the
-	-- ast was empty from birth or exhausted through the loop), so by
+	-- 3. Walk frame 0's frame_ast. run_frame reaps at the end (whether the
+	-- frame_ast was empty from birth or exhausted through the loop), so by
 	-- the time this returns, frame 0 is gone. Cap stays alive at
-	-- (stmt_idx=0, gc=null) as the process anchor — the
+	-- (frame_stmt_idx=0, frame_gc=null) as the process anchor — the
 	-- child-delete cascade that fires against the cap is cap-exempt,
-	-- so cap.gc never gets touched and cap.stmt_idx never advances.
+	-- so cap.frame_gc never gets touched and cap.frame_stmt_idx never advances.
 	--
 	-- If the walker halted via %process.stop, frame 0 is still alive
 	-- (run_frame skipped the reap) and the return value below signals
@@ -326,22 +326,22 @@ end
 --[[
 ## `run_frame`
 
-Runs one frame from the top of its ast to the end, then reaps it. Per statement: set `self.current_frame` so handlers can reach the frame; dispatch the row through the handler chain (via `run_row`); do a bare `SET stmt_idx = ?` advance (the schema's BEFORE `frames_advance_requires_gc` enforces the handler-set gc=1 precondition; the AFTER `frames_advance_sets_gc_null` auto-resets gc).
+Runs one frame from the top of its frame_ast to the end, then reaps it. Per statement: set `self.current_frame` so handlers can reach the frame; dispatch the row through the handler chain (via `run_row`); do a bare `SET frame_stmt_idx = ?` advance (the schema's BEFORE `frames_advance_requires_gc` enforces the handler-set frame_gc=1 precondition; the AFTER `frames_advance_sets_gc_null` auto-resets frame_gc).
 
-**Live stmt_idx.** `stmt_idx` is read live from the DB each iteration; nothing resets it at entry. Fresh frames start at 0 (seeded that way); revived frames pick up wherever they were when the last run left off. Every at-rest state is a valid resume state.
+**Live frame_stmt_idx.** `frame_stmt_idx` is read live from the DB each iteration; nothing resets it at entry. Fresh frames start at 0 (seeded that way); revived frames pick up wherever they were when the last run left off. Every at-rest state is a valid resume state.
 
-**Reap at end.** When the loop exits (ast exhausted, or frame born at terminal with an empty ast), the frame is DELETEd. The AFTER-DELETE cascade `frames_child_delete_sets_parent_gc` flips the parent's gc from null to 1 (cap-exempt, so a cap parent stays untouched). Under the current design terminal is a valid at-rest state; the frame stays there until this reap runs.
+**Reap at end.** When the loop exits (frame_ast exhausted, or frame born at terminal with an empty frame_ast), the frame is DELETEd. The AFTER-DELETE cascade `frames_child_delete_sets_parent_gc` flips the parent's frame_gc from null to 1 (cap-exempt, so a cap parent stays untouched). Under the current design terminal is a valid at-rest state; the frame stays there until this reap runs.
 ]]
 function M:run_frame(frame_pk)
 	local stmts = self.stmts
 
-	-- Pull the ast out of the frame and parse it. One fetch, one decode.
+	-- Pull the frame_ast out of the frame and parse it. One fetch, one decode.
 	stmts.get_ast:bind_values(frame_pk)
 
 	local ast_json
 
 	for row in stmts.get_ast:nrows() do
-		ast_json = row.ast
+		ast_json = row.frame_ast
 	end
 
 	stmts.get_ast:reset()
@@ -352,16 +352,16 @@ function M:run_frame(frame_pk)
 	-- shouldn't happen on the normal path.
 	if ast_json == nil then return end
 
-	local ast = cjson.decode(ast_json)
+	local frame_ast = cjson.decode(ast_json)
 
-	-- Shape check: ast should be a JSON array. Table + first key is
+	-- Shape check: frame_ast should be a JSON array. Table + first key is
 	-- either nil (empty) or numeric. The ast_valid_insert trigger
 	-- enforces this at write time; the Lua check is defense-in-depth.
-	if type(ast) ~= 'table' or (next(ast) ~= nil and type(next(ast)) ~= 'number') then
-		error('caspm_not_array: expected frame ast to decode as a JSON array')
+	if type(frame_ast) ~= 'table' or (next(frame_ast) ~= nil and type(next(frame_ast)) ~= 'number') then
+		error('caspm_not_array: expected frame frame_ast to decode as a JSON array')
 	end
 
-	-- Live read of the frame's stmt_idx. Called every time the loop
+	-- Live read of the frame's frame_stmt_idx. Called every time the loop
 	-- wants the value (the condition, the array index) — the DB is the
 	-- single source of truth. Returns `nil` if the frame has been
 	-- deleted (auto-swept by frames_auto_delete_at_terminal); callers
@@ -372,7 +372,7 @@ function M:run_frame(frame_pk)
 		local idx
 
 		for row in stmts.get_stmt_idx:nrows() do
-			idx = row.stmt_idx
+			idx = row.frame_stmt_idx
 		end
 
 		stmts.get_stmt_idx:reset()
@@ -384,20 +384,20 @@ function M:run_frame(frame_pk)
 		local idx = get_stmt_idx()
 		if idx == nil then break end
 
-		-- Loop guard: still-within-ast check.
-		if idx >= #ast then break end
+		-- Loop guard: still-within-frame_ast check.
+		if idx >= #frame_ast then break end
 
 		-- Handlers need access to the current frame to write into it —
 		-- e.g., set_local_to_scalar on a variable-assignment handler.
 		self.current_frame = self.data:object_by_pk(frame_pk)
 
-		-- ast indices are 0-based in the DB (stmt_idx starts at 0);
+		-- frame_ast indices are 0-based in the DB (frame_stmt_idx starts at 0);
 		-- Lua arrays are 1-based, so `+ 1` at the site.
-		self:run_row(ast[idx + 1])
+		self:run_row(frame_ast[idx + 1])
 
 		-- %process.stop lands here. If the handler set the flag,
 		-- break BEFORE advancing — that leaves the frame at its
-		-- current stmt_idx, gc as whatever the handler left it, and
+		-- current frame_stmt_idx, frame_gc as whatever the handler left it, and
 		-- (up in run()) the reap step gets skipped too. Whole DB
 		-- state is preserved for the caller to inspect.
 		if self.stopped then break end
@@ -411,11 +411,11 @@ function M:run_frame(frame_pk)
 		self.data:drain_needs_trace(self.cap_pk)
 
 		-- Bare advance. The handler was responsible for setting
-		-- `gc = 1` (via cvm:mark_frame_gc) as part of its writes; the
+		-- `frame_gc = 1` (via cvm:mark_frame_gc) as part of its writes; the
 		-- BEFORE trigger frames_advance_requires_gc enforces that
-		-- precondition. After stmt_idx changes, the AFTER trigger
+		-- precondition. After frame_stmt_idx changes, the AFTER trigger
 		-- frames_advance_sets_gc_null completes the cycle by resetting
-		-- gc back to null. The walker just SETs stmt_idx.
+		-- frame_gc back to null. The walker just SETs frame_stmt_idx.
 		stmts.advance:bind_values(idx + 1, frame_pk)
 		stmts.advance:step()
 		stmts.advance:reset()
@@ -428,8 +428,8 @@ function M:run_frame(frame_pk)
 	-- promise. Normal completion still reaps.
 	if self.stopped then return end
 
-	-- Reap: frame is done with its ast (either exhausted the loop or
-	-- was born terminal with an empty ast). Delete it. The
+	-- Reap: frame is done with its frame_ast (either exhausted the loop or
+	-- was born terminal with an empty frame_ast). Delete it. The
 	-- frames_child_delete_sets_parent_gc cascade fires against the
 	-- parent (cap-exempt).
 	stmts.reap_frame:bind_values(frame_pk)

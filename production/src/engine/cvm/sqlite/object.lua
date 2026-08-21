@@ -1,7 +1,7 @@
 --[[
 {
 	"module": "object",
-	"role": "Root wrapper class in the frames-as-objects design. Every `objects` row loaded via engine:object_by_pk gets wrapped through here: `primitive = 'f'` rows wrap as `frame` (which inherits from `object`); every other primitive wraps as `object` itself. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
+	"role": "Root wrapper class in the frames-as-objects design. Every `objects` row loaded via engine:object_by_pk gets wrapped through here: `control = 'f'` rows wrap as `frame` (which inherits from `object`); every other row wraps as `object` itself. Provides the `bucket` and `stack` accessors that lazily materialize the owner's bucket / stack on first access. All DB access is composed on the engine; this class does not touch self.db directly.",
 	"exports": {
 		"new":    "(engine, row) -> object — constructor; stamps the metatable on the row table itself (row-as-instance)",
 		"bucket": "() -> object — the object's bucket, lazily created on first call",
@@ -40,15 +40,15 @@ without a separate copy step.
 Callers get one via `engine:object_by_pk(pk)`, which fetches the row
 and passes it here.
 
-**Class dispatch is on `row.primitive`.** `primitive = 'f'` wraps as
-`frame`; every other primitive (including functions and closures,
+**Class dispatch is on `row.control`.** `control = 'f'` wraps as
+`frame`; every other row (including functions and closures,
 which are plain `'o'` objects with their CaspM in the bucket) wraps
-as a plain `object`. The schema's `ast` column is biconditional with
-`primitive = 'f'`, so "is this a frame?" and "does this row carry
+as a plain `object`. The schema's `frame_ast` column is biconditional with
+`control = 'f'`, so "is this a frame?" and "does this row carry
 executable code" are the same structural question — answered at
 row-write time, not inferred by the wrapper. What distinguishes an
 on-stack frame from a popped-but-captured one is whether the stack
-coordinates (`process`, `idx`, `stmt_idx`) are set — a runtime
+coordinates (`process`, `idx`, `frame_stmt_idx`) are set — a runtime
 question the class answers with its methods, not class dispatch.
 
 The internal `_wrap` helper does the actual metatable set + engine
@@ -70,7 +70,7 @@ local function _wrap(mt, engine, row)
 end
 
 function object.new(engine, row)
-	if row.primitive == 'f' then
+	if row.control == 'f' then
 		local frame = require("cvm.sqlite.frame")
 		return frame.new(engine, row)
 	end

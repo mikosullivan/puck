@@ -5,17 +5,17 @@
 	"exports": {
 		"new":           "(db) -> cvm — constructor; binds an lsqlite3 handle and preps every statement upfront",
 		"object_by_pk":  "(pk) -> object — canonical pk-to-object load; nil if no row",
-		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts primitive='f'; raises frame_by_pk_not_found if no such row, frame_by_pk_not_a_frame if the row isn't a frame",
+		"frame_by_pk":   "(pk) -> frame — retrieves the row and asserts control='f'; raises frame_by_pk_not_found if no such row, frame_by_pk_not_a_frame if the row isn't a frame",
 		"add_bucket":    "(for_object_pk) -> new bucket's object_pk — INSERTs a HashPrimitive owned by the target's owner_role",
 		"add_stack":     "(for_object_pk) -> new stack's object_pk — INSERTs an ArrayPrimitive owned by the target's owner_role",
-		"add_scalar":    "(scalar_type, scalar_value, owner_role_pk) -> new scalar's object_pk",
+		"add_scalar":    "(value, owner_role_pk) -> new scalar's object_pk — dispatches on Lua type(value): string → scalar_string, number → scalar_number (REAL affinity coerces integer to float), boolean → scalar_bool (true/false → 1/0), nil → scalar_null (marker for the u type). Any other Lua type raises `add_scalar_unsupported_value_type`.",
 		"add_hash":      "(owner_role_pk) -> new HashPrimitive's object_pk — plain hash, no bucket_for set",
 		"add_array":     "(owner_role_pk) -> new ArrayPrimitive's object_pk — plain array, no stack_for set",
-		"add_frame":     "(ast, process_pk, owner_role_pk) -> new frame's object_pk — INSERTs a primitive='f' row with stmt_idx=0",
+		"add_frame":     "(frame_ast, process_pk, owner_role_pk) -> new frame's object_pk — INSERTs a control='f' row with frame_stmt_idx=0",
 		"add_ref":       "(parent_pk, key, child_pk) -> new ref_pk — auto-computes the next idx for parent",
 		"upsert_ref":    "(parent_pk, key, child_pk) -> ref_pk — insert OR update on conflict (parent, key); on update, the schema's after-update mark trigger inserts the old child into needs_trace",
 		"get_ref_child": "(parent_pk, key) -> child object_pk or nil — hash lookup by key",
-		"mark_frame_gc": "(object_pk) — sets gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass",
+		"mark_frame_gc": "(object_pk) — sets frame_gc=1 on the frame; the mid-dispatch signal for the walker's next GC pass",
 		"drain_needs_trace": "(process_pk) — sweeps every needs_trace mark for process_pk. Each marked object is either unmarked (still reachable — in uspace or has an incoming ref) or reaped (unreachable — no incoming refs; DELETE cascades outgoing refs, which fire the mark trigger on their children). Loops until the worklist is empty."
 	},
 	"policy": "CVM DB access goes through dedicated per-statement methods only — no ad-hoc db:exec / db:nrows / db:prepare. Each cached SQL is its own method on the cvm class. Every statement the cvm uses is prepared upfront in cvm.new(); methods just fetch the cached handle, bind, execute, reset. Single-column reads use stmt:step + stmt:get_value(0) to skip nrows()'s per-row table allocation; full-row reads (object_by_pk) stay on nrows() so callers get every column at once.",
@@ -42,7 +42,7 @@ implementation detail below the runtime.
 
 ## Open questions — not yet built
 
-- **Frame dispatch.** How does a frame-object's `ast` advance
+- **Frame dispatch.** How does a frame-object's `frame_ast` advance
   statement by statement? What's the loop shape — engine-owned, frame-
   owned, or trampoline? What pushes a new frame onto the stack; what
   pops one when it finishes; what marks a frame "done"?
@@ -120,13 +120,13 @@ function cvm.new(db)
 	-- bodies below. Under the ownership-via-refs design, the collection
 	-- has no back-reference to its owner — the whole link lives in refs.
 	self.stmt_add_bucket_insert = db:prepare(
-		"insert into objects (primitive, owner_role) " ..
+		"insert into objects (base, owner_role) " ..
 		"select 'h', owner_role from objects where object_pk = ? " ..
 		"returning object_pk"
 	)
 
 	self.stmt_add_stack_insert = db:prepare(
-		"insert into objects (primitive, owner_role) " ..
+		"insert into objects (base, owner_role) " ..
 		"select 'a', owner_role from objects where object_pk = ? " ..
 		"returning object_pk"
 	)
@@ -138,33 +138,53 @@ function cvm.new(db)
 	self.stmt_find_hash_child = db:prepare(
 		"select r.child from refs r " ..
 		"join objects c on c.object_pk = r.child " ..
-		"where r.parent = ? and c.primitive = 'h'"
+		"where r.parent = ? and c.base = 'h'"
 	)
 
 	self.stmt_find_array_child = db:prepare(
 		"select r.child from refs r " ..
 		"join objects c on c.object_pk = r.child " ..
-		"where r.parent = ? and c.primitive = 'a'"
+		"where r.parent = ? and c.base = 'a'"
 	)
 
-	self.stmt_add_scalar = db:prepare(
-		"insert into objects (primitive, scalar_type, scalar_value, owner_role) " ..
-		"values ('o', ?, ?, ?) returning object_pk"
+	-- add_scalar: four prepared statements, one per scalar type.
+	-- The polymorphic `cvm:add_scalar(value, owner_role_pk)` method
+	-- picks the right one based on Lua's `type(value)`. Each INSERT
+	-- populates exactly one scalar_* column (per the schema's
+	-- at-most-one-column constraint); the others stay null.
+	self.stmt_add_scalar_string = db:prepare(
+		"insert into objects (base, scalar_string, owner_role) " ..
+		"values ('o', ?, ?) returning object_pk"
+	)
+
+	self.stmt_add_scalar_number = db:prepare(
+		"insert into objects (base, scalar_number, owner_role) " ..
+		"values ('o', ?, ?) returning object_pk"
+	)
+
+	self.stmt_add_scalar_bool = db:prepare(
+		"insert into objects (base, scalar_bool, owner_role) " ..
+		"values ('o', ?, ?) returning object_pk"
+	)
+
+	self.stmt_add_scalar_null = db:prepare(
+		"insert into objects (base, scalar_null, owner_role) " ..
+		"values ('o', 1, ?) returning object_pk"
 	)
 
 	self.stmt_add_hash = db:prepare(
-		"insert into objects (primitive, owner_role) values ('h', ?) returning object_pk"
+		"insert into objects (base, owner_role) values ('h', ?) returning object_pk"
 	)
 
 	self.stmt_add_array = db:prepare(
-		"insert into objects (primitive, owner_role) values ('a', ?) returning object_pk"
+		"insert into objects (base, owner_role) values ('a', ?) returning object_pk"
 	)
 
 	-- add_frame: bare frame insert. Callers wire up the anchor
-	-- (parent_frame for nested; process=1 for a cap) separately.
+	-- (frame_parent for nested; process=1 for a cap) separately.
 	self.stmt_add_frame = db:prepare(
-		"insert into objects (primitive, ast, stmt_idx, owner_role) " ..
-		"values ('f', ?, 0, ?) returning object_pk"
+		"insert into objects (base, control, frame_ast, frame_stmt_idx, owner_role) " ..
+		"values ('o', 'f', ?, 0, ?) returning object_pk"
 	)
 
 	self.stmt_add_ref = db:prepare(
@@ -191,7 +211,7 @@ function cvm.new(db)
 	)
 
 	self.stmt_mark_frame_gc = db:prepare(
-		"update objects set gc = 1 where object_pk = ?"
+		"update objects set frame_gc = 1 where object_pk = ?"
 	)
 
 	-- drain_needs_trace: the four prepared statements the drain loop
@@ -233,8 +253,8 @@ prepared statements; without it the next `bind_values` on the same
 handle raises.
 
 `object.new(self, row)` wraps the row as an object instance. Class
-dispatch is primitive-based: `row.primitive == 'f'` wraps as `frame`;
-every other primitive wraps as a plain `object`. No per-pk cache — a
+dispatch is control-based: `row.control == 'f'` wraps as `frame`;
+every other row wraps as a plain `object`. No per-pk cache — a
 fresh wrapper is built each call. Per-instance memoization for the
 `bucket`, `stack`, and `locals` accessors lives on the wrappers
 themselves (`self._bucket`, `self._stack`, `self._locals`).
@@ -258,10 +278,10 @@ function cvm:object_by_pk(pk)
 end
 
 --[[
-## `frame_by_pk` — retrieve and assert primitive='f'
+## `frame_by_pk` — retrieve and assert control='f'
 
 Retrieval-with-check for callers that expect a frame. Composes on
-`object_by_pk` for the fetch, then asserts `primitive == 'f'` before
+`object_by_pk` for the fetch, then asserts `control == 'f'` before
 returning. Raises specific errors if the row doesn't exist or isn't
 a frame.
 
@@ -283,10 +303,10 @@ function cvm:frame_by_pk(pk)
 		error("frame_by_pk_not_found: no objects row with pk " .. tostring(pk))
 	end
 
-	if obj.primitive ~= 'f' then
+	if obj.control ~= 'f' then
 		error(
 			"frame_by_pk_not_a_frame: pk " .. tostring(pk) ..
-			" has primitive '" .. tostring(obj.primitive) .. "', expected 'f'"
+			" has control '" .. tostring(obj.control) .. "', expected 'f'"
 		)
 	end
 
@@ -301,7 +321,7 @@ holds as a refs child. If the owner already has a hash-child, returns
 that pk (calling `add_bucket` twice on the same owner is idempotent).
 Otherwise: INSERT a plain HashPrimitive with the owner's `owner_role`,
 add a `refs` row linking owner → bucket (key null; the child's
-primitive disambiguates bucket from stack), return the new pk.
+base disambiguates bucket from stack), return the new pk.
 
 Ownership under the current schema is a normal refs row from owner to
 collection — no dedicated `bucket_pk` / `bucket_for` columns. The
@@ -372,16 +392,49 @@ end
 --[[
 ## `add_scalar` — INSERT a scalar objects row, return its pk
 
-Creates a scalar objects row (`primitive = 'o'`, `scalar_type` and
-`scalar_value` set) owned by the caller-supplied role. Returns the new
-row's `object_pk` via `RETURNING`.
+Creates a scalar objects row (`base = 'o'`) owned by the
+caller-supplied role. The scalar type is INFERRED from the Lua type
+of `value` — the caller passes the value directly, not a
+type-plus-value pair.
+
+Dispatch:
+
+- `type(value) == 'string'` → populates `scalar_string`.
+- `type(value) == 'number'` → populates `scalar_number`. The column's
+  REAL affinity coerces an integer input to a float on the way in,
+  so the "all numbers are floats" storage rule is enforced by the
+  schema, not by this method.
+- `type(value) == 'boolean'` → populates `scalar_bool` with `1` for
+  true, `0` for false.
+- `type(value) == 'nil'` → populates `scalar_null` with `1`, marking
+  a Caspian null scalar (the `u` type — an explicit null value,
+  distinct from "no scalar assigned").
+- Anything else raises `add_scalar_unsupported_value_type` with the
+  Lua type name in the error text.
 
 Used by `frame:set_local_to_scalar` and any other write path that
 materializes a primitive value inside the object graph.
 ]]
-function cvm:add_scalar(scalar_type, scalar_value, owner_role_pk)
-	local stmt = self.stmt_add_scalar
-	stmt:bind_values(scalar_type, scalar_value, owner_role_pk)
+function cvm:add_scalar(value, owner_role_pk)
+	local vtype = type(value)
+	local stmt
+
+	if vtype == 'string' then
+		stmt = self.stmt_add_scalar_string
+		stmt:bind_values(value, owner_role_pk)
+	elseif vtype == 'number' then
+		stmt = self.stmt_add_scalar_number
+		stmt:bind_values(value, owner_role_pk)
+	elseif vtype == 'boolean' then
+		stmt = self.stmt_add_scalar_bool
+		stmt:bind_values(value and 1 or 0, owner_role_pk)
+	elseif vtype == 'nil' then
+		stmt = self.stmt_add_scalar_null
+		stmt:bind_values(owner_role_pk)
+	else
+		error("add_scalar_unsupported_value_type: cannot store value of Lua type '" .. vtype .. "'")
+	end
+
 	stmt:step()
 	local scalar_pk = stmt:get_value(0)
 	stmt:reset()
@@ -391,7 +444,7 @@ end
 --[[
 ## `add_hash` — INSERT a standalone HashPrimitive, return its pk
 
-Creates a plain HashPrimitive (`primitive = 'h'`) owned by the given
+Creates a plain HashPrimitive (`base = 'h'`) owned by the given
 role, with no `bucket_for` set. This is the "just a hash" case —
 distinct from `add_bucket`, which creates a HashPrimitive AS an
 object's bucket via the `bucket_for` FK.
@@ -412,7 +465,7 @@ end
 ## `add_array` — INSERT a standalone ArrayPrimitive, return its pk
 
 Parallel to `add_hash`, on the array side. Creates a plain
-ArrayPrimitive (`primitive = 'a'`) owned by the given role, with no
+ArrayPrimitive (`base = 'a'`) owned by the given role, with no
 `stack_for` set — a standalone array, not any object's stack.
 
 Same shape as `add_hash`: one INSERT with `RETURNING object_pk`.
@@ -429,17 +482,17 @@ end
 --[[
 ## `add_frame` — INSERT a frame row, return its pk
 
-INSERTs a bare `objects` row with `primitive = 'f'`, `stmt_idx = 0`,
-the given `ast` and `owner_role`. Callers wire up the frame's anchor
-after the fact — either `parent_frame = <parent>` for a nested frame
+INSERTs a bare `objects` row with `control = 'f'`, `frame_stmt_idx = 0`,
+the given `frame_ast` and `owner_role`. Callers wire up the frame's anchor
+after the fact — either `frame_parent = <parent>` for a nested frame
 (via a follow-up UPDATE) or `process = 1` for a cap frame at the top
 of a call stack. See [frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle)
 and [ownership](https://puck.uno/requirements/cvm/sqlite/ownership) for the
 lifecycle rules.
 ]]
-function cvm:add_frame(ast, owner_role_pk)
+function cvm:add_frame(frame_ast, owner_role_pk)
 	local stmt = self.stmt_add_frame
-	stmt:bind_values(ast, owner_role_pk)
+	stmt:bind_values(frame_ast, owner_role_pk)
 	stmt:step()
 	local frame_pk = stmt:get_value(0)
 	stmt:reset()
@@ -516,16 +569,16 @@ function cvm:get_ref_child(parent_pk, key)
 end
 
 --[[
-## `mark_frame_gc` — flag a frame as mid-dispatch (gc = 1)
+## `mark_frame_gc` — flag a frame as mid-dispatch (frame_gc = 1)
 
-Sets `gc = 1` on the target frame's objects row. The row-handler for
+Sets `frame_gc = 1` on the target frame's objects row. The row-handler for
 `$var = <scalar>` (and eventually other in-frame mutations) calls
 this after its writes to signal that the frame is mid-dispatch and
 the walker must run its GC pass before the next statement.
 
 Replaces the older marker-frame pattern where the routine pushed an
 empty child frame as the "mid-dispatch signal" — under the current
-cycle, `gc = 1` on the frame itself carries that signal directly, no
+cycle, `frame_gc = 1` on the frame itself carries that signal directly, no
 scratch row needed.
 ]]
 function cvm:mark_frame_gc(object_pk)

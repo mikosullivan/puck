@@ -1,13 +1,13 @@
 --[[
 {
 	"module": "frame",
-	"role": "Class attached to `objects` rows with `primitive = 'f'`. Under the scopes design (see requirements/cvm/sqlite/scopes), the frame's bucket holds a `scopes` key pointing at an ArrayPrimitive; scopes[0] is the frame's own locals hash for this call, scopes[1..] are captured scopes from closures (once those land). Adds `own_scope` (read-only accessor for scopes[0]), `ensure_own_scope` (get-or-create), and `set_local_to_scalar` (specialized write path for `$name = <scalar>` assignments).",
+	"role": "Class attached to `objects` rows with `control = 'f'`. Under the scopes design (see requirements/cvm/sqlite/scopes), the frame's bucket holds a `scopes` key pointing at an ArrayPrimitive; scopes[0] is the frame's own locals hash for this call, scopes[1..] are captured scopes from closures (once those land). Adds `own_scope` (read-only accessor for scopes[0]), `ensure_own_scope` (get-or-create), and `set_local_to_scalar` (specialized write path for `$name = <scalar>` assignments).",
 	"inherits_from": "object",
 	"exports": {
 		"new":                 "(engine, row) -> frame — constructor",
 		"own_scope":           "() -> object — the frame's own scope hash (scopes[0]); nil if not yet created (read-only)",
 		"ensure_own_scope":    "() -> object — the frame's own scope hash, materializing bucket → scopes → scopes[0] on first call",
-		"set_local_to_scalar": "(name, scalar_type, scalar_value) — specialized write path for `$name = <primitive scalar>`"
+		"set_local_to_scalar": "(name, value) — specialized write path for `$name = <primitive scalar>`. The scalar type is inferred from the Lua type of `value` (see cvm:add_scalar)."
 	},
 	"depends_on": ["cvm.object", "lsqlite3 (for SQLITE_ROW)"],
 	"status": "V0.1"
@@ -17,9 +17,9 @@
 --[[
 # Frame
 
-The class attached to every `objects` row with `primitive = 'f'` — a frame, an instance of a call. Distinct from a function or closure: those are plain `primitive = 'o'` objects that store their CaspM in a bucket entry. When one is called, the engine creates a fresh `primitive = 'f'` row and copies the CaspM into its `ast` column. The function object stays where it is; the frame is a separate row with the code it's actually running.
+The class attached to every `objects` row with `control = 'f'` — a frame, an instance of a call. Distinct from a function or closure: those are plain `base = 'o'` objects that store their CaspM in a bucket entry. When one is called, the engine creates a fresh `control = 'f'` row and copies the CaspM into its `frame_ast` column. The function object stays where it is; the frame is a separate row with the code it's actually running.
 
-Frames are destroyed when finished — the walker's advance-with-gc UPDATE cascade-sweeps any child (marker or completed nested call); when a frame's own ast is exhausted its parent's next advance cascade-sweeps it in turn. See [frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle) for the full walkthrough. Closures capture the locals hash directly (not the frame).
+Frames are destroyed when finished — the walker's advance-with-frame_gc UPDATE cascade-sweeps any child (marker or completed nested call); when a frame's own frame_ast is exhausted its parent's next advance cascade-sweeps it in turn. See [frame-lifecycle](https://puck.uno/requirements/cvm/sqlite/frame-lifecycle) for the full walkthrough. Closures capture the locals hash directly (not the frame).
 
 **Scopes.** The frame's bucket holds a `scopes` key pointing at an ArrayPrimitive:
 
@@ -43,13 +43,13 @@ frame.__index = frame
 --[[
 ## Constructing a frame
 
-`frame.new(engine, row)` uses `object._wrap` — the shared row-as-instance helper — with `frame` as the metatable. Going through `_wrap` (rather than calling `object.new`) skips `object.new`'s primitive-based dispatch, so a frame row loaded via `engine:object_by_pk` doesn't recurse into `object.new → frame.new → object.new → …`.
+`frame.new(engine, row)` uses `object._wrap` — the shared row-as-instance helper — with `frame` as the metatable. Going through `_wrap` (rather than calling `object.new`) skips `object.new`'s control-based dispatch, so a frame row loaded via `engine:object_by_pk` doesn't recurse into `object.new → frame.new → object.new → …`.
 ]]
 function frame.new(engine, row)
-	if row.primitive ~= 'f' then
+	if row.control ~= 'f' then
 		error(
-			"frame_new_not_a_frame_row: expected primitive='f', got '" ..
-			tostring(row.primitive) .. "' (pk " ..
+			"frame_new_not_a_frame_row: expected control='f', got '" ..
+			tostring(row.control) .. "' (pk " ..
 			tostring(row.object_pk) .. ")"
 		)
 	end
@@ -149,33 +149,33 @@ end
 --[[
 ## `set_local_to_scalar` — specialized routine for `$name = <scalar>`
 
-Writes a fresh binding to the frame's own scope (scopes[0]) and marks the current frame `gc = 1`. All atomic inside `SAVEPOINT set_local_to_scalar`.
+Writes a fresh binding to the frame's own scope (scopes[0]) and marks the current frame `frame_gc = 1`. All atomic inside `SAVEPOINT set_local_to_scalar`.
 
 Four composed writes:
 
-1. `engine:add_scalar(scalar_type, scalar_value, self.owner_role)` — materialize the scalar.
+1. `engine:add_scalar(value, self.owner_role)` — materialize the scalar. The scalar type is inferred from Lua's `type(value)` inside `add_scalar`; the caller here doesn't have to say (or know) which scalar type it's storing.
 2. `self:ensure_own_scope()` — get-or-create bucket → scopes → scopes[0].
 3. `engine:upsert_ref(own_scope.object_pk, name, scalar_pk)` — bind (or rebind) the variable name to the scalar in the own scope hash. On rebind the schema's after-update mark trigger inserts the old child into `needs_trace` so the walker's drain can sweep it.
-4. `engine:mark_frame_gc(self.object_pk)` — set the current frame's `gc = 1`. That flag IS the mid-dispatch signal; the walker's next tick runs the GC pass before advancing. No child marker row is created — the earlier "push an empty child frame" pattern is retired under the current cycle.
+4. `engine:mark_frame_gc(self.object_pk)` — set the current frame's `frame_gc = 1`. That flag IS the mid-dispatch signal; the walker's next tick runs the GC pass before advancing. No child marker row is created — the earlier "push an empty child frame" pattern is retired under the current cycle.
 
 **Rebind supported.** The upsert path lets `$x = 2` on top of an existing `$x = 1` land as a single UPDATE of the existing ref's `child` column. The old scalar goes into `needs_trace` via the after-update mark trigger, the walker's drain sweeps it, and the ref now points at the new scalar.
 
 **Long name deliberate.** `set_local` or `assign` would be inviting call sites to reach for this method when their RHS isn't actually a primitive scalar. `set_local_to_scalar` signals the specialization at the point of use.
 ]]
-function frame:set_local_to_scalar(name, scalar_type, scalar_value)
+function frame:set_local_to_scalar(name, value)
 	local db = self.engine.db
 
 	db:exec('savepoint set_local_to_scalar;')
 
 	local ok, err = pcall(function()
-		local scalar_pk = self.engine:add_scalar(scalar_type, scalar_value, self.owner_role)
+		local scalar_pk = self.engine:add_scalar(value, self.owner_role)
 		local own_scope = self:ensure_own_scope()
 		self.engine:upsert_ref(own_scope.object_pk, name, scalar_pk)
 
 		-- Mark the current frame as mid-dispatch. Set last so a
-		-- resume-mid-savepoint can't observe gc=1 without the writes
-		-- it signals. The walker's next tick sees gc=1 and runs its
-		-- GC pass before advancing stmt_idx.
+		-- resume-mid-savepoint can't observe frame_gc=1 without the writes
+		-- it signals. The walker's next tick sees frame_gc=1 and runs its
+		-- GC pass before advancing frame_stmt_idx.
 		self.engine:mark_frame_gc(self.object_pk)
 	end)
 
