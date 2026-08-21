@@ -362,6 +362,8 @@ body.home .content h1 .hero-logo {
 .content th.tbl-title-cvm {background: #9e9e9e}
 .content th.tbl-title-processes {background: #616161}
 .content tr.tbl-row-user td {background: #fff9c4}
+.content tr.tbl-row-role td {background: #e3f2fd}
+.content tr.tbl-row-frame td {background: #fff9c4}
 .content table.tbl-cvm th,
 .content table.tbl-cvm td {text-align: center}
 .content table.tbl-cvm th.col-comment,
