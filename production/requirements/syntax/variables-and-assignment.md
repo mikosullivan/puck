@@ -89,6 +89,12 @@ Note the yielded value is the **new** value, not the old value as in C-style pos
 - **`/=` on integer** — `$x = 12; $x /= 3; $x` returns `4`.
 - **`%=` on integer** — `$x = 10; $x %= 3; $x` returns `1`.
 - **`**=` on integer** — `$x = 2; $x **= 3; $x` returns `8`.
+- **`+=` on fractional** — `$x = 5.5; $x += 3.25; $x` returns `8.75`.
+- **`-=` on fractional** — `$x = 5.5; $x -= 3.25; $x` returns `2.25`.
+- **`*=` on fractional** — `$x = 2.5; $x *= 4.5; $x` returns `11.25`.
+- **`/=` on fractional** — `$x = 7.5; $x /= 2.5; $x` returns `3`.
+- **`%=` on fractional** — `$x = 10.5; $x %= 4; $x` returns `2.5`.
+- **`**=` on fractional** — `$x = 1.5; $x **= 2; $x` returns `2.25`.
 - **`||=` assigns when LHS is falsy** — `$flag = null; $flag ||= 'default'; $flag` returns `'default'`.
 - **`||=` leaves LHS alone when truthy** — `$flag = 'set'; $flag ||= 'default'; $flag` returns `'set'`.
 - **`||=` treats `0` as truthy (no reassignment)** — `$flag = 0; $flag ||= 'default'; $flag` returns `0`.

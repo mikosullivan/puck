@@ -53,8 +53,13 @@ Whitespace on both sides is recommended for readability; `$x <+ 5` and `$x<+5` b
 - **Integer division of exact multiples** — `10 / 2` returns `5`.
 - **Integer modulo** — `10 % 3` returns `1`.
 - **Integer exponent** — `2 ** 8` returns `256`.
-- **Float addition** — `1.5 + 2.25` returns `3.75`.
-- **Mixed int + float returns float** — `1 + 2.5` returns `3.5`.
+- **Fractional addition** — `1.5 + 2.25` returns `3.75`.
+- **Fractional subtraction** — `10.75 - 2.5` returns `8.25`.
+- **Fractional multiplication** — `2.5 * 4.5` returns `11.25`.
+- **Fractional division** — `7.5 / 2.5` returns `3`.
+- **Fractional modulo** — `10.5 % 4` returns `2.5`.
+- **Fractional exponent** — `1.5 ** 2` returns `2.25`.
+- **Mixed whole-value and fractional operands** — `1 + 2.5` returns `3.5`; `10 / 4` returns `2.5`.
 - **Negative number arithmetic** — `-5 + 3` returns `-2`.
 - **Unary minus on variable** — `$x = 5; -$x` returns `-5`.
 - **Division by zero raises** — `1 / 0` raises.
